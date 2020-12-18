@@ -1,0 +1,177 @@
+<template>
+  <modal
+    @close="close"
+  >
+    <h4 slot="header">
+      <i class="fa fa-fw fa-save" />
+      Save Scenario As
+    </h4>
+
+    <div
+      slot="body"
+      class="modal-body"
+    >
+      <label class="one-line">
+        Scenario name*:
+        <input
+          v-model="newScenarioName"
+          type="text"
+          class="form-control"
+          :disabled="scenarioToOverwriteId !== null"
+        >
+      </label>
+      <label class="one-line">
+        Description:
+        <input
+          v-model="newScenarioDescription"
+          type="text"
+          class="form-control"
+          :disabled="scenarioToOverwriteId !== null"
+        >
+      </label>
+
+      <p
+        v-if="hasScenarios"
+        class="overwrite-description"
+      >
+        Or, select a scenario to overwrite:
+      </p>
+
+      <ul class="unstyled-list scenario-list">
+        <li
+          v-for="scenario of overwritableScenarios"
+          :key="scenario.id"
+        >
+          <label @click="toggleSelectedToOverwrite(scenario.id)">
+            <i
+              class="fa fa-lg fa-fw"
+              :class="{
+                'fa-check-square-o': scenario.id === scenarioToOverwriteId,
+                'fa-square-o': scenario.id !== scenarioToOverwriteId
+              }"
+            />
+            <b>{{ scenario.name }}</b> {{ scenario.description }}
+          </label>
+        </li>
+      </ul>
+    </div>
+
+    <ul
+      slot="footer"
+      class="unstyled-list"
+    >
+      <button
+        type="button"
+        class="btn first-button"
+        @click.stop="close()">Cancel
+      </button>
+      <button
+        ref="confirm"
+        type="button"
+        class="btn btn-primary btn-call-for-action"
+        @click.stop="save()"
+      >
+        <i class="fa fa-fw fa-save" />
+        Save
+      </button>
+    </ul>
+  </modal>
+</template>
+
+<script>
+import _ from 'lodash';
+
+import Modal from './modal';
+
+export default {
+  name: 'SaveScenarioModal',
+  components: {
+    Modal
+  },
+  props: {
+    scenarios: {
+      type: Array,
+      default: () => []
+    }
+  },
+  data: () => ({
+    scenarioToOverwriteId: null,
+    newScenarioName: '',
+    newScenarioDescription: ''
+  }),
+  computed: {
+    hasScenarios() {
+      const nonBaselineScenarios = this.scenarios.filter(s => !s.is_baseline && s.id);
+      return !_.isEmpty(nonBaselineScenarios);
+    },
+    overwritableScenarios() {
+      return this.scenarios.filter(scenario => !scenario.is_baseline && scenario.id);
+    }
+  },
+  methods: {
+    close() {
+      this.$emit('close');
+    },
+    save() {
+      if (this.scenarioToOverwriteId !== null) {
+        this.$emit('overwrite-scenario', this.scenarioToOverwriteId);
+      } else {
+        this.$emit('save-new-scenario', {
+          name: this.newScenarioName,
+          description: this.newScenarioDescription
+        });
+      }
+      this.close();
+    },
+    toggleSelectedToOverwrite(scenarioId) {
+      if (this.scenarioToOverwriteId === scenarioId) {
+        this.scenarioToOverwriteId = null;
+      } else {
+        this.scenarioToOverwriteId = scenarioId;
+      }
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+.modal-body {
+  padding: 10px;
+}
+
+.first-button {
+  margin-right: 10px;
+}
+
+.one-line {
+  display: flex;
+  align-items: center;
+
+  .form-control {
+    flex: 1;
+    margin-left: 10px;
+    font-weight: normal;
+
+    // Hide text that the user has typed if it's not going to be
+    //  used when they click Save
+    &:disabled {
+      color: transparent;
+    }
+  }
+}
+
+.overwrite-description {
+  margin: 20px 0 10px;
+}
+
+.scenario-list {
+  li {
+    display: block;
+    label {
+      font-weight: normal;
+      cursor: pointer;
+    }
+  }
+}
+
+</style>

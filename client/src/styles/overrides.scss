@@ -1,0 +1,145 @@
+//** Navbar
+.navbar-default {
+  margin-bottom: 0px;
+}
+
+//** Navbar
+.nav-tabs {
+  padding-left: 10px;
+}
+
+//Navigation tabs
+.nav-item.underlined {
+  border-bottom: 3px solid $selected;
+  color: #ffffff;
+  .nav-link {
+    color: #ffffff;
+  }
+}
+
+.nav-link.router-link-exact-active.router-link-active {
+  color: #ffffff;
+}
+
+//Remove gutter spaces for rows
+.row.no-gutter {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.row.no-gutter [class*='col-']:not(:first-child),
+.row.no-gutter [class*='col-']:not(:last-child) {
+  padding-right: 0;
+  padding-left: 0;
+}
+
+//For transparent buttons
+.btn-primary-outline {
+  background-color: transparent;
+}
+.btn-primary.off {
+  background-color: #ddd;
+}
+// Override default black colour defined in _variables.scss
+.btn-danger {
+  &, &:active {
+    color:  $color-text-base-light;
+  }
+}
+.btn-danger:hover {
+  color:  $color-text-base-light;
+}
+
+//Overrides the existing alert-info style
+.alert-info {
+  background-color: #F0F0F0;
+  font-style: italic;
+  margin-top: 10px;
+}
+
+.alert {
+  margin-bottom: 0px;
+}
+
+//Overrides the default bootstrap label
+.label-default {
+  margin: 2px;
+  background-color: #e8e8e8;
+  color: #707070;
+  font-size: 12px;
+  font-weight: normal;
+}
+
+
+// Leaflet overrides
+.leaflet-container {
+  font-family: inherit;
+}
+
+//Facets overrides
+.facets-facet-vertical .facet-bar-selected {
+  box-shadow: inset 0 0 0 1000px $facets-color;
+}
+.facets-facet-vertical:hover .facet-bar-selected {
+  box-shadow: inset 0 0 0 1000px $facets-color-hover; }
+
+.facet-label-count {
+  span{
+    color: $facets-color-hover !important;
+  }
+}
+
+.facets-facet-horizontal .facet-histogram-bar-highlighted {
+  fill: $facets-color;
+}
+
+.facets-facet-horizontal g:hover .facet-histogram-bar-highlighted {
+  fill: $facets-color-hover; }
+
+.facets-facet-horizontal .facet-range-filter { 
+  box-shadow: inset 0 0 0 1000px rgba(86, 179, 233,.15);
+}
+
+//Navigation tabs
+.nav-tabs > li.active > a, .nav-tabs > li.active > a:hover, .nav-tabs > li.active > a:focus {
+  color: $text-color;
+  background-color: #ffffff;
+  border-top: 3px solid $selected;
+}
+
+//Tab panels
+.tab-content {
+  background-color: #ffffff;
+}
+
+input {
+  -webkit-appearance: none;
+  appearance: none;
+
+  &:focus {
+    outline: none;
+
+    &::-webkit-slider-thumb {
+      border: 2px solid $selected;
+    }
+  }
+}
+
+input::-webkit-slider-thumb {
+  -webkit-appearance: none;
+  appearance: none;
+  background: #ffffff;
+  width: 16px;
+  height: 16px;
+  border-radius: 50%;
+  margin-top: -4px;
+  border: 2px solid $color-btn-primary;
+  cursor: pointer;
+}
+
+input::-webkit-slider-runnable-track {
+  background: $color-btn-primary;
+  width: 100px;
+  height: 8px;
+  border-radius: 8px;
+}

@@ -1,0 +1,154 @@
+<template>
+  <div class="document-view-container h-100 flex flex-col">
+    <uncharted-cards
+      ref="cards"
+      class="flex-grow-1 h-0"
+      :data="cardsData"
+      :config="cardsConfig"
+      @card-click="onCardClick"
+      @card-navigate="updateReaderContent"
+    />
+    <pagination
+      :label="'documents'"
+      :total="documentsCount"
+    />
+  </div>
+</template>
+
+<script>
+
+import _ from 'lodash';
+import { mapActions, mapGetters } from 'vuex';
+import API from '@/api/api';
+import filtersUtil from '@/utils/filters-util';
+import { toCardsData, toCardData } from '@/utils/document-util';
+import Pagination from '@/components/pagination';
+import UnchartedCards from '@/components/cards/uncharted-cards';
+import { createPDFViewer } from '@/utils/pdf/viewer';
+
+const isPdf = (card) => {
+  return card.data.metadata && card.data.metadata['File type'] === 'application/pdf';
+};
+
+const READER_TRANSITION_DURATION = 300;
+export default {
+  name: 'DocumentsView',
+  components: {
+    UnchartedCards,
+    Pagination
+  },
+  props: {
+  },
+  data: () => ({
+    cardsConfig: {
+      'card.width': 210,
+      'card.height': 200,
+      'card.disableFlipping': true,
+      'card.displayBackCardByDefault': true,
+      'verticalReader.height': 680
+    },
+    cardsData: []
+  }),
+  computed: {
+    ...mapGetters({
+      filters: 'query/filters',
+      documentsQuery: 'query/documents',
+      project: 'app/project',
+      documentsCount: 'kb/documentsCount'
+    }),
+    pageFrom() {
+      return this.documentsQuery.from;
+    },
+    pageSize() {
+      return this.documentsQuery.size;
+    },
+    sort() {
+      return this.documentsQuery.sort;
+    }
+  },
+  watch: {
+    filters(n, o) {
+      if (filtersUtil.isEqual(n, o)) return;
+      this.refresh();
+    },
+    documentsQuery(n, o) {
+      if (_.isEqual(n, o)) return;
+      this.refresh();
+    }
+  },
+  mounted () {
+    this.refresh();
+  },
+  methods: {
+    ...mapActions({
+      enableOverlay: 'app/enableOverlay',
+      disableOverlay: 'app/disableOverlay'
+    }),
+    refresh() {
+      this.refreshcardsData();
+    },
+    refreshcardsData() {
+      this.enableOverlay('Refreshing...');
+      const url = `projects/${this.project}/documents/`;
+      const params = {
+        filters: this.filters,
+        from: this.pageFrom,
+        size: this.pageSize,
+        sort: this.sort
+      };
+      API.get(url, { params }).then(d => {
+        this.cardsData = toCardsData(d.data);
+        this.disableOverlay();
+      });
+    },
+    async fetchReaderContentRawDoc(targetCard) {
+      if (!isPdf(targetCard)) return;
+      const url = `/api/dart/${targetCard.data.id}/raw`;
+      const viewer = await createPDFViewer({ url });
+      return viewer;
+    },
+    async fetchReaderContentData(targetCard) {
+      const docId = targetCard.data.id;
+      const url = `documents/${docId}`;
+      const { data } = await API.get(url);
+      const { content } = data ? toCardData(data) : { content: '' };
+      return content;
+    },
+    async fetchReaderContent(targetCard) {
+      const customElementObj = await this.fetchReaderContentRawDoc(targetCard);
+      const content = await this.fetchReaderContentData(targetCard);
+      return {
+        customElementObj,
+        content
+      };
+    },
+    async updateReaderContent(targetCard) {
+      this.$refs.cards.updateReaderContent(targetCard, 'Loading...', { switchButton: false });
+      const { customElementObj, content } = await this.fetchReaderContent(targetCard);
+      if (customElementObj) {
+        // NOTE: rendering pages is expensive so that it makes reader's opening animation sluggish.
+        // So give some time for reader to finish it's transition and then start rendering pages
+        await new Promise(resolve => setTimeout(resolve, READER_TRANSITION_DURATION));
+        this.$refs.cards.updateReaderContent(targetCard, content);
+        isPdf(targetCard) && customElementObj.renderPages();
+        return this.$refs.cards.updateReaderContentCustomElement(targetCard, customElementObj.element);
+      }
+      this.$refs.cards.updateReaderContent(targetCard, content, { switchButton: false });
+    },
+    onCardClick(targetCard) {
+      this.$refs.cards.openReader(targetCard);
+      this.updateReaderContent(targetCard);
+    }
+  }
+};
+</script>
+
+
+<style scoped lang="scss">
+@import "~styles/wm-theme/wm-theme";
+
+.document-view-container {
+  padding: $padding-base-vertical;
+}
+
+</style>

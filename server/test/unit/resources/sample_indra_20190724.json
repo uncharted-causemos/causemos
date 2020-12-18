@@ -1,0 +1,617 @@
+[
+  {
+    "type": "Influence",
+    "subj": {
+      "type": "Event",
+      "concept": {
+        "name": "surplus",
+        "db_refs": {
+          "TEXT": "surplus",
+          "WM": [
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/revenue",
+              0.5095548033714294
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/currency",
+              0.4979844093322754
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/supply/food supply",
+              0.48211902379989624
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/assets",
+              0.46773257851600647
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/demand/food demand",
+              0.4479038417339325
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/cross_boarder_trade/export/food export",
+              0.43226101994514465
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/inflation",
+              0.4318062365055084
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/price/food_price",
+              0.43050384521484375
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/depreciation",
+              0.42554333806037903
+            ],
+            [
+              "wm/concept/causal_factor/intervention/provision of goods and services/provide cash",
+              0.42447149753570557
+            ]
+          ],
+          "UN": [
+            [
+              "UN/entities/human/financial/economic/economy",
+              0.5698031783103943
+            ],
+            [
+              "UN/entities/human/financial/economic/budget",
+              0.5191026329994202
+            ],
+            [
+              "UN/entities/human/financial/economic/revenue",
+              0.5095548033714294
+            ],
+            [
+              "UN/entities/human/financial/economic/currency",
+              0.4979844093322754
+            ],
+            [
+              "UN/entities/human/financial/economic/assets",
+              0.46773257851600647
+            ],
+            [
+              "UN/entities/natural/crop_technology/management",
+              0.4322585463523865
+            ],
+            [
+              "UN/entities/human/financial/economic/inflation",
+              0.4318062365055084
+            ],
+            [
+              "UN/entities/human/food/food_price",
+              0.43050384521484375
+            ],
+            [
+              "UN/entities/human/financial/economic/depreciation",
+              0.42554333806037903
+            ],
+            [
+              "UN/entities/human/financial/economic/fuel",
+              0.42433586716651917
+            ]
+          ]
+        }
+      },
+      "delta": {
+        "type": "qualitative",
+        "polarity": null
+      },
+      "context": {
+        "type": "world",
+        "time": {
+          "text": "October 2014.",
+          "start": "2014-10-01T00:00",
+          "end": "2014-11-01T00:00"
+        },
+        "geo_location": null
+      },
+      "belief": 1,
+      "id": "6484b394-9ed7-4a12-9070-8773d3100a86",
+      "matches_hash": "-13063331748034474"
+    },
+    "obj": {
+      "type": "Event",
+      "concept": {
+        "name": "zone capital",
+        "db_refs": {
+          "TEXT": "zone  of  the capital Bangui",
+          "WM": [
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/assets",
+              0.5716278553009033
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/revenue",
+              0.5149140954017639
+            ],
+            [
+              "wm/concept/causal_factor/environment/natural_resources/land",
+              0.49758580327033997
+            ],
+            [
+              "wm/concept/causal_factor/intervention/institutional support/protection/capacity building human right",
+              0.4823613464832306
+            ],
+            [
+              "wm/concept/causal_factor/access/infrastructure/road",
+              0.4805199205875397
+            ],
+            [
+              "wm/concept/causal_factor/social_and_political/political/political_instability",
+              0.47960978746414185
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/currency",
+              0.4679025113582611
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/livelihood",
+              0.463092565536499
+            ],
+            [
+              "wm/concept/causal_factor/environment/resource_management",
+              0.4628291726112366
+            ],
+            [
+              "wm/concept/causal_factor/intervention/provision of goods and services/provide moving of houseHolds",
+              0.44316062331199646
+            ]
+          ],
+          "UN": [
+            [
+              "UN/entities/GPE",
+              0.7099361419677734
+            ],
+            [
+              "UN/entities/human/financial/economic/market",
+              0.5902684330940247
+            ],
+            [
+              "UN/entities/human/financial/economic/assets",
+              0.5716278553009033
+            ],
+            [
+              "UN/entities/human/financial/economic/economy",
+              0.5655248761177063
+            ],
+            [
+              "UN/entities/natural/crop_technology/management",
+              0.5333036184310913
+            ],
+            [
+              "UN/entities/human/infrastructure/building",
+              0.5328521132469177
+            ],
+            [
+              "UN/entities/human/government/government_actions/duty",
+              0.5196586847305298
+            ],
+            [
+              "UN/entities/human/financial/economic/revenue",
+              0.5149140954017639
+            ],
+            [
+              "UN/entities/human/government/government_entity",
+              0.5005538463592529
+            ],
+            [
+              "UN/entities/natural/natural_resources/abiotic_resources/land",
+              0.49758580327033997
+            ]
+          ]
+        }
+      },
+      "delta": {
+        "type": "qualitative",
+        "polarity": null
+      },
+      "context": {
+        "type": "world",
+        "time": {
+          "text": "October 2014.",
+          "start": "2014-10-01T00:00",
+          "end": "2014-11-01T00:00"
+        },
+        "geo_location": {
+          "name": "Bangui",
+          "db_refs": {
+            "GEOID": "2596686"
+          }
+        }
+      },
+      "belief": 1,
+      "id": "4370d038-49c9-476f-8658-d3ed41b9f6f5",
+      "matches_hash": "11409095459061722"
+    },
+    "belief": 0.7053,
+    "evidence": [
+      {
+        "source_api": "eidos",
+        "text": "The  low  prices  are  mainly  due  to  the  increase  in  production  and  limited trade , due to the continuing conflict , which maintained  ample  availabilities  around  the  surplus  producing  zone  of  the capital Bangui .",
+        "annotations": {
+          "found_by": "ported_syntax_1_verb-Causal",
+          "provenance": [
+            {
+              "@type": "Provenance",
+              "document": {
+                "@id": "0cf20ec5c53e77d46f0e8960c9e8335d8ac18a63f4dcd6ff378ecad7b9d1f57f"
+              },
+              "documentCharPositions": [
+                {
+                  "@type": "Interval",
+                  "start": 63610,
+                  "end": 63657
+                }
+              ],
+              "sentence": {
+                "@id": "_:Sentence_730"
+              },
+              "sentenceWordPositions": [
+                {
+                  "@type": "Interval",
+                  "start": 28,
+                  "end": 34
+                }
+              ]
+            }
+          ],
+          "document_creation_time": {
+            "text": "October 2014.",
+            "start": "2014-10-01T00:00",
+            "end": "2014-11-01T00:00"
+          },
+          "subj_polarity": null,
+          "obj_polarity": null,
+          "subj_adjectives": [],
+          "obj_adjectives": [],
+          "subj_context": {
+            "type": "world",
+            "time": {
+              "text": "October 2014.",
+              "start": "2014-10-01T00:00",
+              "end": "2014-11-01T00:00"
+            },
+            "geo_location": null
+          },
+          "obj_context": {
+            "type": "world",
+            "time": {
+              "text": "October 2014.",
+              "start": "2014-10-01T00:00",
+              "end": "2014-11-01T00:00"
+            },
+            "geo_location": {
+              "name": "Bangui",
+              "db_refs": {
+                "GEOID": "2596686"
+              }
+            }
+          },
+          "agents": {
+            "raw_text": [
+              "surplus",
+              "zone  of  the capital Bangui"
+            ]
+          },
+          "prior_uuids": [
+            "e58e348d-50c3-4772-9f7b-f59eb7d059cd"
+          ]
+        },
+        "context": {
+          "type": "world",
+          "time": null,
+          "geo_location": {
+            "name": "Bangui",
+            "db_refs": {
+              "GEOID": "2596686"
+            }
+          }
+        },
+        "source_hash": 7066649247037282000
+      }
+    ],
+    "id": "e58e348d-50c3-4772-9f7b-f59eb7d059cd",
+    "matches_hash": "24951829068908673"
+  },
+  {
+    "type": "Influence",
+    "subj": {
+      "type": "Event",
+      "concept": {
+        "name": "South Sudanese",
+        "db_refs": {
+          "TEXT": "Approximately one  in every three South Sudanese",
+          "WM": [
+            [
+              "wm/concept/causal_factor/environment/natural_resources/land",
+              0.4033809006214142
+            ],
+            [
+              "wm/concept/causal_factor/social_and_political/migration/human_migration",
+              0.367319792509079
+            ],
+            [
+              "wm/concept/entity/person_and_group/population",
+              0.35233786702156067
+            ],
+            [
+              "wm/concept/causal_factor/access/infrastructure/road",
+              0.3304424285888672
+            ],
+            [
+              "wm/concept/causal_factor/health_and_life/famine",
+              0.30862948298454285
+            ],
+            [
+              "wm/concept/causal_factor/environment/natural_resources/water",
+              0.2957960367202759
+            ],
+            [
+              "wm/concept/causal_factor/access/infrastructure/water",
+              0.2957960367202759
+            ],
+            [
+              "wm/concept/causal_factor/crisis_and_disaster/crisis/natural_disaster/flooding",
+              0.29510119557380676
+            ],
+            [
+              "wm/concept/causal_factor/weather/precipitation/flooding",
+              0.29510119557380676
+            ],
+            [
+              "wm/concept/causal_factor/social_and_political/conflict/war",
+              0.29127928614616394
+            ]
+          ],
+          "UN": [
+            [
+              "UN/entities/GPE",
+              0.4342211186885834
+            ],
+            [
+              "UN/entities/natural/natural_resources/abiotic_resources/land",
+              0.4033809006214142
+            ],
+            [
+              "UN/entities/human/infrastructure/shipping_facilities_water",
+              0.38688743114471436
+            ],
+            [
+              "UN/events/human/human_migration",
+              0.367319792509079
+            ],
+            [
+              "UN/entities/human/infrastructure/building",
+              0.36213192343711853
+            ],
+            [
+              "UN/entities/human/population",
+              0.35233786702156067
+            ],
+            [
+              "UN/entities/human/infrastructure/water_management",
+              0.3316044211387634
+            ],
+            [
+              "UN/entities/human/infrastructure/transportation/road",
+              0.3304424285888672
+            ],
+            [
+              "UN/events/natural_disaster/storm",
+              0.3049387037754059
+            ],
+            [
+              "UN/entities/natural/natural_resources/abiotic_resources/water",
+              0.2957960367202759
+            ]
+          ]
+        }
+      },
+      "delta": {
+        "type": "qualitative",
+        "polarity": null,
+        "adjectives": [
+          "Approximately"
+        ]
+      },
+      "context": {
+        "type": "world",
+        "time": {
+          "text": "2017-12-14.",
+          "start": "2017-12-14T00:00",
+          "end": "2017-12-15T00:00"
+        },
+        "geo_location": null
+      },
+      "belief": 1,
+      "id": "e90c6a01-4d28-4656-8e77-fba47af5a5f5",
+      "matches_hash": "11409095459061722"
+    },
+    "obj": {
+      "type": "Event",
+      "concept": {
+        "name": "flee home",
+        "db_refs": {
+          "TEXT": "flee their  homes",
+          "WM": [
+            [
+              "wm/concept/causal_factor/social_and_political/conflict/strike",
+              0.5500006675720215
+            ],
+            [
+              "wm/concept/causal_factor/social_and_political/conflict/attack",
+              0.5480929017066956
+            ],
+            [
+              "wm/concept/causal_factor/social_and_political/conflict/war",
+              0.5419211387634277
+            ],
+            [
+              "wm/concept/causal_factor/social_and_political/conflict/demostrate",
+              0.5392757058143616
+            ],
+            [
+              "wm/concept/causal_factor/movement/movement/evacuate humanitarian workers",
+              0.521888256072998
+            ],
+            [
+              "wm/concept/causal_factor/economic_and_commerce/economic activity/market/revenue",
+              0.4955442249774933
+            ],
+            [
+              "wm/concept/causal_factor/intervention/institutional support/protection/capacity building human right",
+              0.4903142750263214
+            ],
+            [
+              "wm/concept/causal_factor/intervention/provision of goods and services/provide moving of houseHolds",
+              0.48099789023399353
+            ],
+            [
+              "wm/concept/causal_factor/crisis_and_disaster/fire",
+              0.4761295020580292
+            ],
+            [
+              "wm/concept/entity/person_and_group/population",
+              0.4695988893508911
+            ]
+          ],
+          "UN": [
+            [
+              "UN/entities/GPE",
+              0.5013797283172607
+            ],
+            [
+              "UN/entities/human/financial/economic/revenue",
+              0.4955442249774933
+            ],
+            [
+              "UN/entities/human/population",
+              0.4695988893508911
+            ],
+            [
+              "UN/events/human/conflict",
+              0.46569588780403137
+            ],
+            [
+              "UN/events/human/human_migration",
+              0.4625258445739746
+            ],
+            [
+              "UN/events/human/death",
+              0.4623769223690033
+            ],
+            [
+              "UN/entities/natural/natural_resources/abiotic_resources/land",
+              0.45191776752471924
+            ],
+            [
+              "UN/events/human/political/political_instability",
+              0.4512871503829956
+            ],
+            [
+              "UN/entities/human/financial/economic/market",
+              0.44337573647499084
+            ],
+            [
+              "UN/entities/human/financial/economic/assets",
+              0.4390358328819275
+            ]
+          ]
+        }
+      },
+      "delta": {
+        "type": "qualitative",
+        "polarity": null
+      },
+      "context": {
+        "type": "world",
+        "time": {
+          "text": "2017-12-14.",
+          "start": "2017-12-14T00:00",
+          "end": "2017-12-15T00:00"
+        },
+        "geo_location": null
+      },
+      "belief": 1,
+      "id": "160c9528-7a73-4741-8605-3c4364fe67f6",
+      "matches_hash": "11409095459061722"
+    },
+    "belief": 0.7053,
+    "evidence": [
+      {
+        "source_api": "eidos",
+        "text": "Approximately one  in every three South Sudanese have been forced to flee their  homes and are either internally displaced or have sought refuge  in neighbouring countries .",
+        "annotations": {
+          "found_by": "ported_syntax_1_verb-Causal",
+          "provenance": [
+            {
+              "@type": "Provenance",
+              "document": {
+                "@id": "b690ac2b40bcb32239888d253dedb22beebc1644f13ca81733bf0cdf52806f89"
+              },
+              "documentCharPositions": [
+                {
+                  "@type": "Interval",
+                  "start": 68280,
+                  "end": 68365
+                }
+              ],
+              "sentence": {
+                "@id": "_:Sentence_1871"
+              },
+              "sentenceWordPositions": [
+                {
+                  "@type": "Interval",
+                  "start": 1,
+                  "end": 14
+                }
+              ]
+            }
+          ],
+          "document_creation_time": {
+            "text": "2017-12-14.",
+            "start": "2017-12-14T00:00",
+            "end": "2017-12-15T00:00"
+          },
+          "subj_polarity": null,
+          "obj_polarity": null,
+          "subj_adjectives": [
+            "Approximately"
+          ],
+          "obj_adjectives": [],
+          "subj_context": {
+            "type": "world",
+            "time": {
+              "text": "2017-12-14.",
+              "start": "2017-12-14T00:00",
+              "end": "2017-12-15T00:00"
+            },
+            "geo_location": null
+          },
+          "obj_context": {
+            "type": "world",
+            "time": {
+              "text": "2017-12-14.",
+              "start": "2017-12-14T00:00",
+              "end": "2017-12-15T00:00"
+            },
+            "geo_location": null
+          },
+          "agents": {
+            "raw_text": [
+              "Approximately one  in every three South Sudanese",
+              "flee their  homes"
+            ]
+          },
+          "prior_uuids": [
+            "e37e1fe8-b18c-4144-9e01-edbda9dc6ae9"
+          ]
+        },
+        "source_hash": -3346155412326347300
+      }
+    ],
+    "id": "e37e1fe8-b18c-4144-9e01-edbda9dc6ae9",
+    "matches_hash": "-17993038367284835"
+  }
+]

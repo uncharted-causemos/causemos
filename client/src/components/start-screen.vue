@@ -1,0 +1,125 @@
+<template>
+  <div class="start-screen-container">
+    <div
+      v-if="showCreateSection"
+      class="quarter-column"
+    >
+      <h4 class="section-header">{{ createSectionHeader }}</h4>
+      <start-screen-card
+        is-create-card
+        @click="onCreate"
+      />
+    </div>
+    <div class="recent">
+      <h4 class="section-header">{{ openSectionHeader }}</h4>
+      <div class="recent-card-list">
+        <start-screen-card
+          v-for="(recentCard, i) in recentCards"
+          :key="i"
+          :preview-image-src="recentCard.previewImageSrc"
+          :title="recentCard.title"
+          :subtitle="recentCard.subtitle"
+          @click="onOpenRecent(recentCard)"
+          @rename="onRename(recentCard)"
+          @duplicate="onDuplicate(recentCard)"
+          @delete="onDelete(recentCard)"
+        />
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import StartScreenCard from '@/components/widgets/start-screen-card';
+
+export default {
+  name: 'StartScreen',
+  components: {
+    StartScreenCard
+  },
+  props: {
+    createSectionHeader: {
+      type: String,
+      default: 'Create'
+    },
+    openSectionHeader: {
+      type: String,
+      default: 'Open'
+    },
+    recentCards: {
+      type: Array,
+      default: () => []
+    },
+    showCreateSection: {
+      type: Boolean,
+      default: true
+    }
+  },
+  data: () => ({
+  }),
+  computed: {
+  },
+  mounted() {
+  },
+  methods: {
+    onCreate() {
+      this.$emit('create');
+    },
+    onOpenRecent(recentCard) {
+      this.$emit('open-recent', recentCard);
+    },
+    onRename(recentCard) {
+      this.$emit('rename', recentCard);
+    },
+    onDuplicate(recentCard) {
+      this.$emit('duplicate', recentCard);
+    },
+    onDelete(recentCard) {
+      this.$emit('delete', recentCard);
+    }
+  }
+};
+</script>
+
+<style lang="scss">
+@import "~styles/variables";
+
+.start-screen-container {
+  height: $content-full-height;
+  display: flex;
+  overflow: hidden;
+
+  .quarter-column {
+    width: 25vw;
+    background: #C4C4C4;
+    padding: 16px 32px;
+  }
+
+  .recent {
+    flex: 1;
+    // Use 22px instead of 32px to account for cards' 10px horizontal margin
+    padding: 16px 22px 16px 22px;
+    overflow-y: auto;
+
+    .section-header {
+      // Match cards' 10px horizontal margin
+      margin-left: 10px;
+    }
+
+    .recent-card-list {
+      width: 100%;
+      display: flex;
+      flex-wrap: wrap;
+
+      .card-container {
+        margin: 0 10px 20px 10px;
+      }
+    }
+  }
+
+  .section-header {
+    font-weight: normal;
+    margin: 0 0 8px 0;
+  }
+}
+</style>

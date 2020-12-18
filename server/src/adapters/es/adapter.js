@@ -1,0 +1,53 @@
+const { Project } = require('./project');
+const { DocumentContext } = require('./document-context');
+const { Statement } = require('./statement');
+const { Base } = require('./base');
+
+const SEARCH_LIMIT = 10000;
+const MAX_ES_BUCKET_SIZE = 50000;
+
+const RESOURCE = Object.freeze({
+  // Data hierarchy
+  KNOWLEDGE_BASE: 'knowledge-base',
+  PROJECT: 'project',
+  MODEL: 'model',
+  ANALYSIS: 'analysis',
+  CAG: 'model', // Duplicate for the time being
+
+  // Qualitative data
+  STATEMENT: 'statement',
+  DOCUMENT: 'corpus',
+  DOCUMENT_CONTEXT: 'document-context',
+
+  // Quantitative data
+  NODE_PARAMETER: 'node-parameter',
+  EDGE_PARAMETER: 'edge-parameter',
+  SCENARIO: 'scenario',
+
+  // Misc
+  AUDIT: 'audit',
+  BOOKMARK: 'bookmark',
+  ONTOLOGY: 'ontology',
+  SESSION_LOG: 'session-log'
+});
+
+class Adapter {
+  static get(type, id) {
+    if (type === RESOURCE.STATEMENT) {
+      return new Statement(id);
+    } else if (type === RESOURCE.DOCUMENT_CONTEXT) {
+      return new DocumentContext(id, 'corpus');
+    } else if (type === RESOURCE.PROJECT) {
+      return new Project(type);
+    } else {
+      return new Base(type);
+    }
+  }
+}
+
+module.exports = {
+  Adapter,
+  RESOURCE,
+  SEARCH_LIMIT,
+  MAX_ES_BUCKET_SIZE
+};

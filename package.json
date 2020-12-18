@@ -1,0 +1,15 @@
+{
+  "private": true,
+  "name": "causemos",
+  "version": "1.0.0",
+  "main": "index.js",
+  "license": "MIT",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "start-client": "yarn workspace client run serve",
+    "start-server": "yarn workspace server run start"
+  }
+}

@@ -1,0 +1,60 @@
+@import "~@uncharted/uncharted-bootstrap/scss/uncharted/_custom-variables";
+
+//=== Colors Base
+// 1. Find a color you like
+// 2. Convert to Hsl (Hue, Saturation, Lightness)
+// 3. Add the hue to $primary-hue
+// 4. Add the saturation and lightness to $color-primary
+// 5. Enjoy the consistence color theme in your app
+// Base colour hue
+$primary-hue: 240;
+// Primary or brand color
+$color-primary: hsl($primary-hue, 53.85, 45.5); //##3636B2
+//=== Colors
+// Base highlight hues
+$success-hue: 144.9;
+$info-hue: 198.67;
+$warning-hue: 48.9;
+$danger-hue: 4.11;
+// Highlight colors
+$color-success: hsl($success-hue, 100, 39.22); //#00C853
+$color-info: hsl($info-hue, 97.57, 48.43); //#03A9F4
+$color-warning: hsl($warning-hue, 98.04, 60); //#FDD835
+$color-danger: hsl($danger-hue, 89.62, 58.43); //#F44336
+// Background - level 0
+$color-background-lvl-0: hsl($primary-hue, 0, 95); //#F2F2F2
+// Content - level 1
+$color-background-lvl-1: hsl($primary-hue, 0, 98); //#FAFAFA
+// Content nav - level 2
+$color-background-lvl-2: hsl($primary-hue, 0, 100); //#FFF
+// Sub navigation - level 3
+$color-background-lvl-3: hsl($primary-hue, 8.11, 15.73); // #25252b
+// Main navigation 2 - level 4
+$color-background-lvl-4: hsl($primary-hue, 5.82, 19.85); // #303036
+// Main navigation 1 - level 5
+$color-background-lvl-5: hsl($primary-hue, 4.71, 25.79);
+// Border colors
+$color-border-light: hsl($primary-hue, 3.89, 88.56); // #E1E1E3
+$color-border-dark: hsl($primary-hue, 11.11, 9.9); // #16161c
+// Text light (For dark backgrounds)
+$color-text-base-light: hsl($primary-hue, 0, 100); // #FFFFFF
+$color-text-second-light: hsl($primary-hue, 0, 89); // #E3E3E3
+$color-text-disable-light: hsl($primary-hue, 1.65, 76.61); //#C2C2C4
+// Text dark (For light backgrounds)
+$color-text-base-dark: hsl($primary-hue, 11.11, 9.9); // #16161c
+$color-text-second-dark: hsl($primary-hue, 4.71, 25.79); // #0000009c
+$color-text-disable-dark: hsl($primary-hue, 2.56, 39.98); // #636369
+// Button default
+$color-btn-default: hsl($primary-hue, 12.2, 91.96); // #DCDCDE
+$color-btn-default-hover: hsl($primary-hue, 30.31, 81.35); // #C1C1DE
+$color-btn-default-disable: lighten($color-btn-default, 25%); // #fff
+// Button primary
+$color-btn-primary: hsl($primary-hue, 3.63, 31.85);  // #4E4E54
+$color-btn-primary-hover: hsl($primary-hue, 22.7, 26.9);  // #353554
+$color-btn-primary-disable: lighten($color-btn-primary, 25%); // #8d8d95
+$color-viz-1: hsl($primary-hue, 100, 90); //#CCF
+$color-viz-2: hsl($primary-hue, 56.62, 76.95); // #a3a3e6
+$color-viz-3: hsl($primary-hue, 45.05, 63.6);
+$color-viz-4: hsl($primary-hue, 38.65, 51.1);
+$color-viz-5: hsl($primary-hue, 56.25, 38.4);
+$color-viz-6: hsl($primary-hue, 100, 25);

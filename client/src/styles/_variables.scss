@@ -1,0 +1,79 @@
+$searchbar-background: #FFFFFF;
+
+// General map of component z-orderings
+$z-index-order: (
+  overlay: 9999, // Should in almost all cases be the highest
+  map-ui: 500,
+  lex-assistant: 99,
+  side-panel: 50,
+  column-selector: 20,
+  graph: 10,
+  corrections-dropdown: 51,
+  modal: 9998,
+  autocomplete-results: 52,
+  map-panel: 5,
+  bookmark-panel: 600
+);
+
+//Positive values
+$positive: #0072b2;
+//Negative values
+$negative: #d55e00;
+
+//Selection color
+$selected: #56b3e9;
+$selected-dark: #1673aa;
+
+$text-color:  $selected-dark; //For readability
+
+//Color used for button links
+$link-color: $text-color;
+
+//Colors used for correction icons
+$color-correction-icon-dark: $text-color;
+$color-correction-icon-light: #FFFFFF;
+
+//Color used for vetted states
+$vetted-state-light: 	#00ebac;
+$vetted-state-dark: #009e74;
+$edited-state: 	#e69f00;
+
+
+
+$faded: #D6DBDF;
+
+// Disabled color
+$disabled: #CCCCCC;
+
+// Main navbar height (includes margin and border height)
+$navbar-outer-height: 51px;
+
+// 100% height - navbar
+$content-full-height: calc(100vh - #{$navbar-outer-height});
+
+$label-color: #707070;
+
+
+//Bookmark panel
+$bookmark-panel-width: 20vw;
+
+$hover-color: rgba(86,179,233, 0.1);
+
+$secondary-navbar-color: transparent;
+
+$facets-color: $selected;
+$facets-color-hover: $selected-dark;
+
+//Color used for borders and separators
+$separator: #e5e5e5;
+
+
+//Side bar width
+$navbar-outer-width: $navbar-outer-height;
+
+//Background Colors
+$background-light-1: #FFFFFF;
+$background-light-2: #F0F1F2;
+$background-light-3: #E3E4E6;
+
+

@@ -1,0 +1,186 @@
+<template>
+  <div class="multi-relationships-container">
+    <div class="pane-controls">
+      <div class="bulk-actions">
+        <i
+          class="fa fa-lg fa-fw"
+          :class="{
+            'fa-check-square-o': summaryData.meta.checked,
+            'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
+            'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+          }"
+          @click="toggle(summaryData)"
+        />
+        <button
+          v-tooltip.top-center="'Add to CAG'"
+          type="button"
+          class="btn btn-sm btn-primary btn-call-for-action"
+          @click="addToCAG"
+        >
+          <i class="fa fa-fw fa-plus-circle" />
+          Add to CAG
+        </button>
+        <span class="counter">{{ numselectedRelationships | number-formatter }} selected</span>
+      </div>
+    </div>
+    <hr class="pane-separator">
+    <div class="relationships-list">
+      <div
+        v-for="(relationship, idx) in summaryData.children"
+        :key="idx"
+        class="relationships-item"
+        :class="{ 'disabled': relationship.meta.style.disabled, '': !relationship.meta.style.disabled }"
+      >
+        <i
+          class="fa fa-lg fa-fw"
+          :class="{ 'fa-check-square-o': relationship.meta.checked, 'fa-square-o': !relationship.meta.checked }"
+          @click.stop="toggle(relationship)" />
+        <span @click="handleClick(relationship)"> {{ relationship.source | ontology-formatter }}
+          <i
+            class="fa fa-fw  fa-long-arrow-right"
+            :style="relationship.meta.style"
+          />
+          {{ relationship.target | ontology-formatter }} </span>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import _ from 'lodash';
+import { mapActions } from 'vuex';
+
+import { calcEdgeColor } from '@/utils/scales-util';
+
+export default {
+  name: 'MultiRelationshipsPane',
+  components: {
+  },
+  props: {
+    relationships: {
+      type: Array,
+      default: () => []
+    },
+    graphData: {
+      type: Object,
+      default: () => ({ })
+    }
+  },
+  data: () => ({
+    summaryData: { children: [], meta: { checked: false } }
+  }),
+  computed: {
+    numselectedRelationships() {
+      let cnt = 0;
+      this.summaryData.children.forEach(relationship => {
+        if (relationship.meta.checked) {
+          cnt++;
+        }
+      });
+      return cnt;
+    }
+  },
+  watch: {
+    relationships(n, o) {
+      if (_.isEqual(n, o)) return;
+      this.refresh();
+    },
+    graphData() {
+      this.refresh();
+    }
+  },
+  mounted() {
+    this.refresh();
+  },
+  methods: {
+    ...mapActions({
+      setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges'
+    }),
+    refresh() {
+      // Massage the structure to include checked states and styles
+      let children = this.relationships.map(relationship => Object.assign({}, relationship, { meta: { checked: true, style: { color: calcEdgeColor(relationship), disabled: this.isEdgeinCAG({ source: relationship.source, target: relationship.target }) } } }));
+      children = _.orderBy(children, d => d.belief_score, ['desc']);
+
+      this.summaryData = {
+        children,
+        meta: { checked: true, isSomeChildChecked: false }
+      };
+    },
+    updateSelectedSubgraphEdges() {
+      const edges = [];
+      this.summaryData.children.forEach(relationship => {
+        if (relationship.meta.checked === true) {
+          edges.push(relationship);
+        }
+      });
+      this.setSelectedSubgraphEdges(edges);
+    },
+    toggle(item) {
+      // Recursive helpers
+      const recursiveDown = (item, newState) => {
+        item.meta.checked = newState;
+        if (!item.children) return;
+        item.children.forEach(child => recursiveDown(child, newState));
+      };
+
+      const recursiveUp = (item) => {
+        if (!_.isEmpty(item.children)) {
+          item.children.forEach(child => recursiveUp(child));
+          const numChecked = item.children.filter(d => d.meta.checked || d.meta.isSomeChildChecked).length;
+          item.meta.checked = numChecked === item.children.length;
+          item.meta.isSomeChildChecked = numChecked > 0;
+        }
+      };
+
+      // Toggle on if not currently checked and no children are partially or fully checked
+      //  otherwise toggle off
+      item.meta.checked = !item.meta.isSomeChildChecked && !item.meta.checked;
+
+      // Traverse down to change children, then traverse up to update parents
+      recursiveDown(item, item.meta.checked);
+      recursiveUp(this.summaryData);
+
+      this.updateSelectedSubgraphEdges();
+    },
+    isEdgeinCAG(edge) {
+      if (_.isEmpty(this.graphData)) return;
+      const graphData = this.graphData;
+      const edges = graphData.edges.map(edge => edge.source + '///' + edge.target);
+      return edges.indexOf(edge.source + '///' + edge.target) !== -1;
+    },
+    addToCAG() {
+      this.updateSelectedSubgraphEdges();
+      this.$emit('add-to-CAG');
+    },
+    handleClick(edge) {
+      this.$emit('select-edge', edge);
+    }
+  }
+};
+</script>
+
+<style lang="scss" scoped>
+@import '~styles/variables';
+.counter {
+  padding: 5px;
+}
+.relationships-list {
+  padding: 3px 0;
+  list-style: none;
+  span {
+    cursor: pointer;
+  }
+  span:hover {
+    text-decoration: underline;
+  }
+}
+
+.relationships-item {
+  margin-bottom: 2px;
+  padding: 2px 0;
+}
+
+.pane-controls {
+  padding-top: 8px;
+}
+</style>
