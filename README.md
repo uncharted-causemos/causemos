@@ -1,5 +1,5 @@
 ## Causemos
-
+World Modelers application for exploring and building models!!
 
 ### Prerequisite
 The following need to be installed
@@ -35,3 +35,4 @@ yarn start-server
 
 
 ### Build
+TODO

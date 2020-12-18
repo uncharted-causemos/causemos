@@ -11,7 +11,7 @@ describe('collapsible-item', () => {
   });
 
 
-  it('collapsible-item slots', () => {
+  it('collapsible-item slots', async () => {
     const ci = shallowMount(CollapsibleItem, {
       slots: {
         title: '<p class="dummy-title">dummy title</p>',
@@ -24,7 +24,7 @@ describe('collapsible-item', () => {
     // Not expanded yet so not available
     expect(ci.find('.dummy-content').exists()).to.equal(false);
 
-    ci.setData({ expanded: true });
+    await ci.setData({ expanded: true });
 
     // Should be expanded now
     expect(ci.find('.dummy-content').exists()).to.equal(true);
