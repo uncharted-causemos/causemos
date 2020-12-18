@@ -8,12 +8,12 @@ describe('overlay', () => {
     expect(ci.find('.message-container').text()).to.equal('Loading...');
   });
 
-  it('overlay custom', () => {
+  it('overlay custom', async () => {
     const ci = shallowMount(Overlay, {});
     expect(ci.find('.message-container').text()).to.equal('Loading...');
 
     const msg = 'hello world';
-    ci.setProps({ message: msg });
+    await ci.setProps({ message: msg });
     expect(ci.find('.message-container').text()).to.equal(msg);
   });
 });

@@ -4,7 +4,7 @@ import ToggleButton from '@/components/widgets/toggle-button';
 
 
 describe('toggle-button', () => {
-  it('optional label', () => {
+  it('optional label', async () => {
     const tb = shallowMount(ToggleButton, {
       propsData: {
         label: 'toggle button test'
@@ -14,7 +14,7 @@ describe('toggle-button', () => {
     const title = tb.findAll('.title').at(0);
     expect(title.text()).to.equal('toggle button test');
 
-    tb.setProps({ label: '' });
+    await tb.setProps({ label: '' });
     expect(tb.findAll('.title').length).to.equal(0);
   });
 

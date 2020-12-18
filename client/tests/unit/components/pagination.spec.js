@@ -30,7 +30,7 @@ describe('pagination', () => {
     expect(query.from).to.equal(0);
   });
 
-  it('pagination next/previous page', () => {
+  it('pagination next/previous page', async () => {
     const pagination = shallowMount(Pagination, {
       propsData: {
         total: 200
@@ -41,20 +41,20 @@ describe('pagination', () => {
 
     let query = null;
     const buttons = pagination.findAll('button');
-    buttons.at(1).trigger('click');
+    await buttons.at(1).trigger('click');
     query = store.getters['query/query'].statements;
     expect(query.from).to.equal(50);
 
-    buttons.at(1).trigger('click');
+    await buttons.at(1).trigger('click');
     query = store.getters['query/query'].statements;
     expect(query.from).to.equal(100);
 
-    buttons.at(0).trigger('click');
+    await buttons.at(0).trigger('click');
     query = store.getters['query/query'].statements;
     expect(query.from).to.equal(50);
   });
 
-  it('pagination total limit', () => {
+  it('pagination total limit', async () => {
     const pagination = shallowMount(Pagination, {
       propsData: {
         total: 20
@@ -65,7 +65,7 @@ describe('pagination', () => {
 
     let query = null;
     const buttons = pagination.findAll('button');
-    buttons.at(1).trigger('click');
+    await buttons.at(1).trigger('click');
     query = store.getters['query/query'].statements;
     expect(query.from).to.equal(0);
   });

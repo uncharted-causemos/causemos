@@ -16,13 +16,13 @@ describe('navbar', () => {
     expect(navItems.length).to.equal(1);
   });
 
-  it('navigation changes', () => {
+  it('navigation changes', async () => {
     const navbar = shallowMount(NavBar, {
       router,
       store,
       localVue
     });
-    router.push({ name: 'kb', params: { project: 'xyz' } });
+    await router.push({ name: 'kb', params: { project: 'xyz' } });
     const navItems = navbar.findAll('.navbar-header .nav .nav-item');
     // home, overview, data, kb, models
     expect(navItems.length).to.equal(5);
