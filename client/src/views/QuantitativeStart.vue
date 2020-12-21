@@ -29,6 +29,7 @@ import RenameModal from '@/components/action-bar/rename-modal';
 import EmptyStateInstructions from '@/components/empty-state-instructions';
 import { CAG } from '@/utils/messages-util';
 import dateFormatter from '@/filters/date-formatter';
+import modelService from '@/services/model-service';
 
 export default {
   name: 'QuantitativeStart',
@@ -55,18 +56,13 @@ export default {
   },
   methods: {
     async refresh() {
-      API.get('models', {
-        params: {
-          project_id: this.project
-        }
-      }).then(result => {
-        this.recentCards = result.data.map(model => ({
-          id: model.id,
-          previewImageSrc: model.thumbnail_source || null,
-          title: model.name,
-          subtitle: dateFormatter(new Date(model.modified_at), 'MMM DD, YYYY')
-        }));
-      });
+      const result = await modelService.getProjectModels(this.project);
+      this.recentCards = result.models.map(model => ({
+        id: model.id,
+        previewImageSrc: model.thumbnail_source || null,
+        title: model.name,
+        subtitle: dateFormatter(new Date(model.modified_at), 'MMM DD, YYYY')
+      }));
     },
     onRecent(recentCard) {
       this.$router.push({
