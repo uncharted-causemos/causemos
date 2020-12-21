@@ -25,7 +25,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
   Logger.info(`initializing model with id ${modelId}`);
 
-  const model = await cagService.findOne(modelId);
+  const model = await modelService.findOne(modelId);
   if (model.is_synced === true && model.is_stale === false) {
     Logger.info(`Model is alraedy initialized ${modelId}`);
     res.status(200).send({ updateToken: moment().valueOf() });
@@ -90,11 +90,6 @@ router.put('/:modelId', asyncHandler(async (req, res) => {
   }
 
   // Reset sync flag
-  // const model = await cagService.findOne(modelId);
-  // if (!_.isEqual(model.parameter.engine, engine) ||
-  //     !_.isEqual(model.parameter.indicator_time_series_range, indicatorTimeSeriesRange)) {
-  //   modelFields.is_synced = false;
-  // }
   modelFields.is_synced = false;
 
   if (!_.isEmpty(parameter)) {
@@ -117,7 +112,11 @@ router.put('/:modelId', asyncHandler(async (req, res) => {
 router.get('/', asyncHandler(async (req, res) => {
   const { project_id, size, from } = req.query;
   const models = await modelService.find(project_id, size, from);
-  res.json(models);
+  res.json({
+    models: models,
+    size,
+    from
+  });
 }));
 
 
