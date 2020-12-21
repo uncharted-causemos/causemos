@@ -19,7 +19,7 @@ Enter the proper application credentials into the .env file (replacing xxx... en
 
 Latest `.env` credentials:
 
-https://confluence.uncharted.software/pages/viewpage.action?spaceKey=WM&title=Getting+Started
+https://confluence.uncharted.software/display/WM/Configurations
 
 
 ### Running
