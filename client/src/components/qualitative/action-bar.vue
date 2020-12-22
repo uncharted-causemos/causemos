@@ -57,17 +57,18 @@
           <i
             class="fa fa-fw"
             :class="{'fa-commenting': comment !== '', 'fa-commenting-o': comment === ''}"
-          /></button>
+          />
+        </button>
+        <text-area-card
+          v-if="isCommentOpen"
+          class="comment-box"
+          :title="'Comments'"
+          :initial-text="comment"
+          @close="isCommentOpen = false"
+          @saveText="updateComments"
+        />
       </div>
     </nav>
-
-    <text-area-card
-      v-if="isCommentOpen"
-      :title="'Comments'"
-      :initial-text="comment"
-      @close="isCommentOpen = false"
-      @saveText="updateComments"
-    />
 
     <rename-modal
       v-if="showRenameModal"
@@ -217,6 +218,18 @@ export default {
     margin-left: 10px;
     display: flex;
     align-items: flex-end;
+    position: relative;
+
+    i {
+      margin-right: 0;
+    }
+
+    .comment-box {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 3px);
+      width: 25vw;
+    }
   }
   .nav-item {
     margin-left: 5px;

@@ -1,6 +1,7 @@
 <template>
   <div
     class="card-container"
+    :class="{ 'hoverable': isHoverable }"
     @click="onClick"
   >
     <slot />
@@ -11,6 +12,12 @@
 
 export default {
   name: 'Card',
+  props: {
+    isHoverable: {
+      type: Boolean,
+      default: true
+    }
+  },
   methods: {
     onClick() {
       this.$emit('click');
@@ -48,7 +55,7 @@ export default {
     pointer-events: none;
   }
 
-  &:hover {
+  &.hoverable:hover {
     cursor: pointer;
     transform: translateY(-2px);
 
