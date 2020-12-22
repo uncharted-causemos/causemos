@@ -1,20 +1,20 @@
 <template>
   <div class="data-explorer-container flex-col">
-    <action-bar @cancel="onCancel" />
+    <modal-header @close="onCancel" />
     <search class="flex-grow-1 h-0" />
   </div>
 </template>
 
 <script>
 import Search from '@/components/data-explorer/search';
-import ActionBar from '@/components/data-explorer/action-bar';
 
+import ModalHeader from '../components/data-explorer/modal-header.vue';
 
 export default {
   name: 'DataExplorer',
   components: {
     Search,
-    ActionBar
+    ModalHeader
   },
   methods: {
     onCancel() {
@@ -33,4 +33,5 @@ export default {
   box-sizing: border-box;
   overflow: hidden;
 }
+
 </style>
