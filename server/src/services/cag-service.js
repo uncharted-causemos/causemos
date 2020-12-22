@@ -104,27 +104,6 @@ const deleteComponents = async(modelId, resource, components) => {
 };
 // ---------------------------------------------------------------------------
 
-const findOne = async (modelId) => {
-  const connection = Adapter.get(RESOURCE.CAG);
-  const modelData = await connection.findOne([{ field: 'id', value: modelId }], {});
-  return modelData;
-};
-
-/**
- * Lists CAGs
- *
- * @param {object} projectId - it's nice when field names need no introduction
- * @param {object} size - number of cags returned
- * @param {object} from - offset for paginated results
- * @param {object} sort - results sort field - {field: order} object, eg [{field1: 'asc'}, {field2: 'desc'}]
- */
-const listCAGs = async (projectId, size, from, sort) => {
-  const connection = Adapter.get(RESOURCE.CAG);
-  if (_.isNil(size)) size = 20;
-  if (_.isNil(sort)) sort = { modified_at: 'desc' };
-  return connection.find([{ field: 'project_id', value: projectId }], { size, from, sort });
-};
-
 /**
  * Wrapper to create a new CAG
  *
@@ -632,8 +611,6 @@ const getStatementsByNode = async (modelId, concept) => {
 };
 
 module.exports = {
-  listCAGs,
-  findOne,
   createCAG,
   updateCAG,
   updateCAGMetadata,

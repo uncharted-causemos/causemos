@@ -7,12 +7,6 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const createModel = async (payload) => {
   Logger.info('creating model in delphi');
 
-  console.log('');
-  console.log('');
-  console.log(JSON.stringify(payload));
-  console.log('');
-  console.log('');
-
   // create to delphi
   const delphiOptions = {
     method: 'POST',

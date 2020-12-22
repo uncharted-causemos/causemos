@@ -3,6 +3,7 @@ const moment = require('moment');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const cagService = rootRequire('/services/cag-service');
+const modelService = rootRequire('/services/model-service');
 
 const OPERATION = Object.freeze({
   REMOVE: 'remove',
@@ -38,7 +39,7 @@ router.post('/', asyncHandler(async (req, res) => {
 router.get('/', asyncHandler(async (req, res) => {
   const { project_id, size, from } = req.query;
 
-  const cags = await cagService.listCAGs(project_id, size, from, { modified_at: 'desc' });
+  const cags = await modelService.find(project_id, size, from, { modified_at: 'desc' });
   res.json({
     cags,
     size,
@@ -51,7 +52,7 @@ router.get('/', asyncHandler(async (req, res) => {
  * GET existing CAG
  */
 router.get('/:mid', asyncHandler(async (req, res) => {
-  const cag = await cagService.findOne(req.params.mid);
+  const cag = await modelService.findOne(req.params.mid);
   res.json(cag);
 }));
 
