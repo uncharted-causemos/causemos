@@ -3,45 +3,43 @@
     class="tab-panel-container">
     <div class="main-content h-100 flex flex-col">
       <div class="tab-nav-bar">
-        <div class="row no-gutter flex">
-          <quantitative-model-options />
-          <tab-bar
-            class="tab-bar"
-            :tabs="tabs"
-            :active-tab-id="activeTab"
-            @tab-click="setActive"
-          />
-          <slot name="action-bar" />
-          <div class="augment-model">
-            <button
-              v-tooltip.top-center="'Augment Model'"
-              type="button"
-              class="btn btn-call-for-action btn-arrow-left"
-              @click="onAugmentCAG"
-            > <i class="fa fa-fw fa-book" />Augment Model</button>
-          </div>
+        <quantitative-model-options />
+        <tab-bar
+          class="tab-bar"
+          :tabs="tabs"
+          :active-tab-id="activeTab"
+          @tab-click="setActive"
+        />
+        <slot name="action-bar" />
+        <div class="augment-model">
+          <button
+            v-tooltip.top-center="'Augment Model'"
+            type="button"
+            class="btn btn-call-for-action btn-arrow-left"
+            @click="onAugmentCAG"
+          > <i class="fa fa-fw fa-book" />Augment Model</button>
+        </div>
 
-          <div class="comment-btn">
-            <button
-              v-tooltip.top-center="'Comments'"
-              type="button"
-              class="btn btn-primary"
-              @click="toggleComments"
-            >
-              <i
-                class="fa fa-fw"
-                :class="{'fa-commenting': savedComment !== '', 'fa-commenting-o': savedComment === ''}"
-              /></button>
-          </div>
-          <div class="comment-area">
-            <text-area-card
-              v-if="isCommentOpen"
-              :title="'Comments'"
-              :initial-text="savedComment"
-              @close="isCommentOpen = false"
-              @saveText="updateComments"
+        <div class="comment-btn">
+          <button
+            v-tooltip.top-center="'Comments'"
+            type="button"
+            class="btn btn-primary"
+            @click="toggleComments"
+          >
+            <i
+              class="fa fa-fw"
+              :class="{'fa-commenting': savedComment !== '', 'fa-commenting-o': savedComment === ''}"
             />
-          </div>
+          </button>
+          <text-area-card
+            v-if="isCommentOpen"
+            class="comment-box"
+            :title="'Comments'"
+            :initial-text="savedComment"
+            @close="isCommentOpen = false"
+            @saveText="updateComments"
+          />
         </div>
       </div>
       <div class="tab-content">
@@ -337,7 +335,6 @@ export default {
 @import "~styles/variables";
 
 .tab-panel-container {
-  display: flex;
   height: $content-full-height;
 }
 
@@ -345,6 +342,11 @@ export default {
   position: relative;
   width: 100%;
   min-width: 0;
+}
+
+.tab-nav-bar {
+  display: flex;
+  align-items: center;
 }
 
 .tab-content {
@@ -396,9 +398,14 @@ export default {
 .comment-btn {
   margin-right: 5px;
   margin-left: 5px;
-  display: flex;
-  align-items: center;
-  justify-content: right;
+  position: relative;
+
+  .comment-box {
+    position: absolute;
+    right: 0;
+    top: calc(100% + 3px);
+    width: 25vw;
+  }
 }
 
 .comment-area {

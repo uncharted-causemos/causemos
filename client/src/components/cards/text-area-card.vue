@@ -1,19 +1,20 @@
 <template>
-  <card class="text-area-card-container">
+  <card
+    class="text-area-card-container"
+    :is-hoverable="false"
+  >
     <h4>
       {{ title + (hasUnsavedText ? '*' : '') }}
       <close-button
         @click="close()"
       />
     </h4>
-    <div
+    <textarea
+      v-model="enteredText"
+      rows="10"
+      class="form-control"
       @focusout="lostFocus"
-    >
-      <textarea
-        v-model="enteredText"
-        rows="10"
-        class="form-control" />
-    </div>
+    />
   </card>
 </template>
 
@@ -76,24 +77,15 @@ export default {
 @import "~styles/_variables.scss";
 .text-area-card-container {
   width: 25%;
-  display: table;
-  right: 5px;
   z-index: map-get($z-index-order, modal);
-  position: fixed;
-
-  &:hover h3 {
-    background: lighten(#15223D, 10%);
-  }
 }
 
 .close-button {
-  cursor: pointer;
 
   &:hover {
     color: #E0E0E0;
   }
 
-  position: center;
   top: 8px;
   right: 8px;
 }
@@ -112,13 +104,9 @@ h4 {
   background: #ffffff;
   resize: none;
   font-size: medium;
-}
-
-.card-container {
-  &:hover {
-    cursor: auto;
-    transform: none;
-  }
+  border-radius: 0;
+  border-bottom-left-radius: inherit;
+  border-bottom-right-radius: inherit;
 }
 
 </style>

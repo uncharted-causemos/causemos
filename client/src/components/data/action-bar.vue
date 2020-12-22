@@ -68,7 +68,16 @@
           <i
             class="fa fa-fw"
             :class="{'fa-commenting': description !== '', 'fa-commenting-o': description === ''}"
-          /></button>
+          />
+        </button>
+        <text-area-card
+          v-if="isCommentOpen"
+          class="comment-box"
+          :title="'Comments'"
+          :initial-text="description"
+          @close="isCommentOpen = false"
+          @saveText="updateComments"
+        />
       </div>
       <rename-modal
         v-if="showRenameModal"
@@ -78,14 +87,6 @@
         @cancel="onRenameModalClose"
       />
     </nav>
-
-    <text-area-card
-      v-if="isCommentOpen"
-      :title="'Comments'"
-      :initial-text="description"
-      @close="isCommentOpen = false"
-      @saveText="updateComments"
-    />
   </div>
 
 </template>
@@ -213,6 +214,7 @@ $width-name: 10vw;
   border: 1px solid $separator;
   background-color: $background-light-2;
   padding: 0 10px;
+  position: relative;
 
   .nav-item:not(:first-child) {
     margin-left: 20px;
@@ -225,6 +227,17 @@ $width-name: 10vw;
   .comment-btn {
     position: absolute;
     right: 5px;
+
+    i {
+      margin-right: 0;
+    }
+
+    .comment-box {
+      position: absolute;
+      right: 0;
+      top: calc(100% + 3px);
+      width: 25vw;
+    }
   }
   .btn-new-analysis {
     min-width: $width-name;
