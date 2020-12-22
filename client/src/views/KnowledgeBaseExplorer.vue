@@ -1,8 +1,9 @@
 <template>
   <div class="knowledge-base-explorer-container">
-    <action-bar
+    <modal-header
+      @close="onCancel"
       @add-to-CAG="onAddToCAG"
-      @cancel="onCancel" />
+    />
     <div class="body flex">
       <facet-panel />
 
@@ -87,7 +88,7 @@ import { mapActions, mapGetters } from 'vuex';
 
 import API from '@/api/api';
 
-import ActionBar from '@/components/kb-explorer/action-bar';
+import ModalHeader from '../components/kb-explorer/modal-header.vue';
 import SearchBar from '@/components/kb-explorer/search-bar';
 import TabPanel from '@/components/kb-explorer/tab-panel';
 import FacetPanel from '@/components/facet-panel/facet-panel';
@@ -144,7 +145,6 @@ const STATEMENT_REQUEST_LIMIT = 10000;
 export default {
   name: 'KnowledgeBaseExplorer',
   components: {
-    ActionBar,
     SearchBar,
     FacetPanel,
     TabPanel,
@@ -153,7 +153,8 @@ export default {
     MultiRelationshipsPane,
     RelationshipsPane,
     FactorsPane,
-    ModalAddedToCag
+    ModalAddedToCag,
+    ModalHeader
   },
   data: () => ({
     isDrilldownOpen: false,

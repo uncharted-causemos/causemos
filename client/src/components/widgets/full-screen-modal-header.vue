@@ -12,6 +12,10 @@
       />
       <span class="title">{{ title }}</span>
     </div>
+    <div class="centered">
+      <slot />
+    </div>
+    <slot name="trailing" />
   </div>
 </template>
 
@@ -81,4 +85,12 @@ export default {
   font-size: 16px;
   margin-left: 5px;
 }
+
+.centered {
+  flex-grow: 1;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
 </style>
