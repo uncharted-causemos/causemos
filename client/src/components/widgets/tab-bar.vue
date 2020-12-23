@@ -30,7 +30,7 @@ export default {
     },
     activeTabId: {
       type: String,
-      required: true
+      default: ''
     },
     hasWhiteBackground: {
       type: Boolean,
