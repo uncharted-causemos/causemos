@@ -10,7 +10,7 @@ const getKBs = async () => {
 };
 
 const getProjects = async () => {
-  const result = API.get('projects', { params: { size: PROJECT_LIMIT } });
+  const result = await API.get('projects', { params: { size: PROJECT_LIMIT } });
   return result.data;
 };
 
@@ -33,11 +33,19 @@ const createProject = async (baseId, projectName, projectDescrption) => {
     threshold: 10
   };
   await startPolling(taskFn, pollerConfig);
+  return id;
+};
+
+const deleteProject = async (projectId) => {
+  const result = await API.delete(`projects/${projectId}`).then(() => {
+    return result.data;
+  });
 };
 
 export default {
   getKBs,
   getProjects,
-  createProject
+  createProject,
+  deleteProject
 };
 
