@@ -100,6 +100,9 @@ import FactorsPane from '@/components/drilldown-panel/factors-pane';
 import ModalAddedToCag from '@/components/modals/modal-added-to-cag';
 import filtersUtil from '@/utils/filters-util';
 import { conceptShortName } from '@/utils/concept-util';
+import projectService from '@/services/project-service';
+import modelService from '@/services/model-service';
+import curationService from '@/services/curation-service';
 
 import messagesUtil from '@/utils/messages-util';
 
@@ -264,28 +267,18 @@ export default {
       setUpdateToken: 'app/setUpdateToken'
     }),
     async refresh() {
-      // test
-      this.graphData = (await this.getCAG()).data;
-      API.get(`projects/${this.project}/count-stats`, {
-        params: { filters: this.filters }
-      }).then(d => {
-        const counts = d.data;
-        this.setDocumentsCount(counts.documentsCount);
-        this.setEvidencesCount(counts.evidenceCount);
-        this.setFilteredStatementCount(counts.statementsCount);
-      });
-    },
-    async getCAG() {
-      return API.get(`cags/${this.cag}/components`);
+      this.graphData = await modelService.getComponents(this.cag);
+
+      const counts = await projectService.getProjectStats(this.project, this.filters);
+      this.setDocumentsCount(counts.documentsCount);
+      this.setEvidencesCount(counts.evidenceCount);
+      this.setFilteredStatementCount(counts.statementsCount);
     },
     async getEdgeData(edges) {
       return API.post(`projects/${this.project}/edge-data`, { edges, filters: this.filters });
     },
-    async addCAGComponents(nodes, edges) {
-      return API.put(`cags/${this.cag}/components`, { operation: 'update', nodes, edges });
-    },
     async onAddToCAG() {
-      const currentCAG = (await this.getCAG()).data;
+      const currentCAG = await modelService.getComponents(this.cag);
 
       const selectedEdges = this.selectedSubgraphEdges;
 
@@ -336,7 +329,7 @@ export default {
           };
         }
       });
-      await this.addCAGComponents(formattedNodes, formattedEdges);
+      await modelService.addComponents(this.cag, formattedNodes, formattedEdges);
 
       this.numberOfRelationsAdded = formattedEdges.length;
       this.showModalAddedToCag = true;
@@ -354,21 +347,12 @@ export default {
       }
       statementIds = _.uniq(statementIds);
 
-      const updateResult = await API.put(`/projects/${this.project}`, {
-        payload: {
-          updateType: 'discard_statement'
-        },
-        ids: statementIds
-      });
-
-      this.incrementCurationCounter(statementIds.length);
-
+      const updateResult = await curationService.discardStatements(this.project, statementIds);
       if (updateResult.status === 200) {
         this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, 'success', false);
       } else {
         this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
       }
-      this.setUpdateToken(updateResult.data.updateToken);
     },
     onSearch() {
       this.showModalAddedToCag = false;
@@ -445,16 +429,9 @@ export default {
       this.mostRecentFetchParameters = { field, term };
       const searchFilters = _.cloneDeep(this.filters);
       filtersUtil.addSearchTerm(searchFilters, field, term, 'or', false);
-      API.get(`projects/${this.project}/statements`, {
-        params: {
-          filters: searchFilters,
-          // Manually specify a high upper limit on the number of statements
-          //  to override the low default that leaves some statements out.
-          size: STATEMENT_REQUEST_LIMIT,
-          documents: true
-        }
-      }).then(result => {
-        this.selectedStatements = result.data;
+
+      projectService.getProjectStatements(this.project, searchFilters, { size: STATEMENT_REQUEST_LIMIT, documents: true }).then(result => {
+        this.selectedStatements = result;
         this.isFetchingStatements = false;
       });
     }

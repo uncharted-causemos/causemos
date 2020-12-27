@@ -42,10 +42,28 @@ const deleteProject = async (projectId) => {
   });
 };
 
+const getProjectStats = async (projectId, filters = null) => {
+  const result = await API.get(`projects/${projectId}/count-stats`, { params: { filters: filters } });
+  return result.data;
+};
+
+const getProjectStatements = async (projectId, filters, options) => {
+  const result = await API.get(`projects/${projectId}/statements`, {
+    params: {
+      filters,
+      ...options
+    }
+  });
+  return result.data;
+};
+
 export default {
   getKBs,
   getProjects,
   createProject,
-  deleteProject
+  deleteProject,
+
+  getProjectStats,
+  getProjectStatements
 };
 

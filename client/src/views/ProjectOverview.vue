@@ -44,9 +44,9 @@
 <script>
 import OverviewCard from '@/components/project-overview/overview-card';
 import { mapGetters, mapActions } from 'vuex';
-import API from '@/api/api';
 import { getModelDatacubesCount, getIndicatorDatacubesCount } from '@/services/datacube-service';
 import modelService from '@/services/model-service';
+import projectService from '@/services/project-service';
 
 export default {
   name: 'ProjectOverview',
@@ -111,8 +111,6 @@ export default {
     }
   },
   async mounted() {
-    // Fetch document count and relationship count
-    const fetchDocAndRelationshipCount = API.get(`projects/${this.project}/count-stats`);
     // Fetch model count
     // FIXME: might be worth creating a more lightweight endpoint, or add this
     //  stat to the count-stats call above
@@ -120,16 +118,12 @@ export default {
 
     this.modelOutputVariableCount = await getModelDatacubesCount();
     this.indicatorCount = await getIndicatorDatacubesCount();
+
     // Handle document count and relationship count result
-    let result = await fetchDocAndRelationshipCount;
-    let _documentCount = 0;
-    let _relationshipCount = 0;
-    if (result.status === 200) {
-      _documentCount = result.data.documentsCount;
-      _relationshipCount = result.data.relationshipsCount;
-    }
-    this.setDocumentsCount(_documentCount);
-    this.relationshipCount = _relationshipCount;
+    let result = await projectService.getProjectStats(this.project);
+    this.setDocumentsCount(result.documentsCount || 0);
+    this.relationshipCount = result.relationshipsCount || 0;
+
     // Handle model result
     result = await fetchModels;
     this.modelCount = result.models
