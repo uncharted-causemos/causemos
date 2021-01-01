@@ -53,9 +53,8 @@ const createProject = async (baseId, projectName, projectDescrption) => {
 };
 
 const deleteProject = async (projectId) => {
-  const result = await API.delete(`projects/${projectId}`).then(result => {
-    return result.data;
-  });
+  const result = await API.delete(`projects/${projectId}`);
+  return result.data;
 };
 
 const getProjectStats = async (projectId, filters = null) => {
