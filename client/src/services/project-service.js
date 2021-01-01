@@ -14,6 +14,22 @@ const getProjects = async () => {
   return result.data;
 };
 
+const getProject = async (projectId) => {
+  const result = await API.get(`projects/${projectId}`);
+  return result.data;
+};
+
+const getProjectOntologyExamples = async (projectId) => {
+  const result = await API.get(`projects/${projectId}/ontology-examples`, {});
+  return result.data;
+};
+
+const getProjectFacetsPromise = async (projectId, facets, filters) => {
+  return API.get(`projects/${projectId}/facets?facets=${JSON.stringify(facets)}`, {
+    params: { filters: filters }
+  });
+};
+
 // Create new project based on KB specified by baseId
 const createProject = async (baseId, projectName, projectDescrption) => {
   const result = await API.post('projects', {
@@ -60,6 +76,9 @@ const getProjectStatements = async (projectId, filters, options) => {
 export default {
   getKBs,
   getProjects,
+  getProject,
+  getProjectOntologyExamples,
+  getProjectFacetsPromise,
   createProject,
   deleteProject,
 
