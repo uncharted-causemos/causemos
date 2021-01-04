@@ -262,9 +262,7 @@ export default {
       setDocumentsCount: 'kb/setDocumentsCount',
       setEvidencesCount: 'kb/setEvidencesCount',
       setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges',
-      setSelectedEdge: 'graph/setSelectedEdge',
-      incrementCurationCounter: 'kb/incrementCurationCounter',
-      setUpdateToken: 'app/setUpdateToken'
+      setSelectedEdge: 'graph/setSelectedEdge'
     }),
     async refresh() {
       this.graphData = await modelService.getComponents(this.cag);
