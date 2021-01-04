@@ -44,8 +44,7 @@ const app = express();
 
 // This code block is for handling issues with setting up the .env file for environment variables.
 if (dotenvConfigResult.error) {
-  Logger.error('Please set-up a .env file using the .env.template file to run application.');
-  throw dotenvConfigResult.error;
+  Logger.warn('No .env file found or has initialization errors - will use default environment');
 }
 
 // TODO: selectively add cache busting header for performance
