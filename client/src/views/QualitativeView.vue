@@ -17,6 +17,7 @@
       <CAG-graph
         v-else
         ref="cagGraph"
+        class="cagGraph"
         :data="modelComponents"
         :show-new-node="showNewNode"
         @refresh="captureThumbnail"
@@ -679,12 +680,18 @@ export default {
 
   .graph-container {
     width: 100%;
-    height: 100%;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
     position: relative;
 
     .empty-state-instructions-container {
       padding-top: 2 * $navbar-outer-height;
+    }
+
+    .cagGraph {
+      flex: 1;
+      min-height: 0;
     }
   }
 

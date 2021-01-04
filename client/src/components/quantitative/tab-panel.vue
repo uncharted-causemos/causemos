@@ -353,6 +353,7 @@ export default {
   flex: 1;
   min-height: 0;
   position: relative;
+  overflow: hidden;
 }
 .model-graph-layout-container {
   width: 100%;
