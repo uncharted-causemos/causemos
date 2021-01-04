@@ -5,9 +5,7 @@
       v-model="userInput"
       type="text"
       placeholder="Type a concept"
-      @keyup.enter.stop="onEnterPressed"
-      @keyup.up.stop="shiftFocus(-1)"
-      @keyup.down.stop="shiftFocus(1)"
+      @keydown="onKeyDown"
     >
     <dropdown-control class="suggestion-dropdown">
       <div slot="content">
@@ -83,6 +81,21 @@ export default {
         newFocusIndex = 0;
       }
       this.focusedSuggestionIndex = newFocusIndex;
+    },
+    onKeyDown(event) {
+      switch (event.key) {
+        case 'Enter':
+          this.onEnterPressed(event);
+          break;
+        case 'ArrowUp':
+          this.shiftFocus(-1);
+          event.preventDefault();
+          break;
+        case 'ArrowDown':
+          this.shiftFocus(1);
+          event.preventDefault();
+          break;
+      }
     },
     mouseEnter(index) {
       this.mouseOverIndex = index;
