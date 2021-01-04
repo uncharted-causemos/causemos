@@ -1,16 +1,8 @@
 # WM-Server
 Provides storage and lookup services to WM-Client application
 
-### Install dependencies
-package | versions
---- | ---
-node | 12.10.0
-npm | 6.11.3
-
+### Initialization
 ```
-### Install sever dependencies
-npm install
-
 ### Create a file for storing environment variables
 Navigate to the root directory of the project in terminal.
 Type 'cp .env.template .env' into the terminal to create a .env file.
@@ -56,33 +48,10 @@ Refer to https://gitlab.uncharted.software/WM/wm-iaas
 
 # Deploy demo
 
-### Openstack deployment
-A bash script is currently used to do demo deployment, you will need to have your public key added to authorized_keys on the Openstack VM. The script will:
-- Stop existing demo instance on Openstack
-- Pull *wm-server* and *wm-client* projects
-- Test and build *wm-client*
-- Package *wm-client* build into *wm-server*
-- Copy *wm-server* to Openstack and install dependencies
-- Restart the demo instance on Openstack
-
-Note the demo instance is governed via the PM2 process manager.
-
-### Run deployment
-```
-./deploy.sh
-```
-
-### Run deployment with different ports (for experimentation)
-```
-env PORT=<specific port to deploy> ./deploy.sh
-```
 
 # Docker scripts
 ### To build a docker image for:
 ```
-### authentication (wm-nginx)
-docker build -t docker.uncharted.software/worldmodeler/wm-nginx .
-
 ### server (wm-server)
 ./build.sh <target> <version>
 ```

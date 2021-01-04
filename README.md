@@ -26,13 +26,21 @@ npm login --registry=https://npm.uncharted.software --scope=@uncharted
 
 ### Running 
 ```
-# Start client
+# Start client - Defaults to localhost:8080
 yarn start-client
 
-# start server
+# start server - Defaults to localhost:3000
 yarn start-server
 ```
 
 
 ### Build
-TODO
+Deploy to internal Openstack for testing. Note you need to have your public-key added to the target machine.
+
+```
+# Default
+./deploy_openstack.sh
+
+# Use specific branch and port
+PORT=4002 BRANCH="fix-123" ./deploy_openstack.sh
+```
