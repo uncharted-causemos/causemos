@@ -746,15 +746,13 @@ export default {
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-$margin-bottom:5vh;
-
 .CAG-graph-container {
   position: relative;
 }
 
 .CAG-graph {
   width: 100%;
-  height: calc(#{$content-full-height} - #{$margin-bottom});
+  height: 100%;
   background-color: #ffffff;
   overflow: hidden;
 }

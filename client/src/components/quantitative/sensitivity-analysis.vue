@@ -216,6 +216,7 @@ export default {
       'empty x-axis-label'
       'y-axis-label matrix';
     position: relative;
+    overflow: hidden;
   }
 
   .x-axis-label h5, .y-axis-label h5 {

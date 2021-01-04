@@ -17,7 +17,7 @@
     <div
       ref="graph"
       class="full" />
-    <color-legend v-if="showLegend" />
+    <color-legend />
   </div>
 </template>
 
@@ -58,7 +58,6 @@ export default {
     }
   },
   data: () => ({
-    showLegend: true,
     showEdges: false,
     showExpandControls: false,
     showAllExpandControls: false,

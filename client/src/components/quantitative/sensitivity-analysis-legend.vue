@@ -1,30 +1,40 @@
 <template>
-  <div class="sensitivity-analysis-legend-container">
-    <div class="color-scale" />
-    <span class="no-influence">No Influence</span>
-    <span class="major-influence">Major Influence</span>
-  </div>
+  <hideable-legend class="sensitivity-analysis-legend-container">
+    <div class="content">
+      <div class="color-scale" />
+      <div class="labels">
+        <span class="no-influence">No Influence</span>
+        <span class="major-influence">Major Influence</span>
+      </div>
+    </div>
+  </hideable-legend>
 </template>
 
 <script>
+import HideableLegend from '../widgets/hideable-legend.vue';
+
 export default {
-  name: 'SensitivityAnalysisLegend'
+  name: 'SensitivityAnalysisLegend',
+  components: {
+    HideableLegend
+  }
 };
 </script>
 
 <style lang="scss" scoped>
-  $scaleHeight: 20px;
-  $padding: 10px;
 
-  .sensitivity-analysis-legend-container {
-    position: absolute;
-    background: white;
-    padding: $padding;
-    padding-top: $padding + $scaleHeight + $padding;
-    bottom: 10px;
+  .sensitivity-analysis-legend-container.hideable-legend-container {
+    left: auto;
     right: 10px;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
-    z-index: 1;
+  }
+
+  .content {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .labels {
+    display: flex;
   }
 
   .no-influence {
@@ -32,12 +42,10 @@ export default {
   }
 
   .color-scale {
-    position: absolute;
     background: linear-gradient(90deg, white 0%, black 100%);
-    width: calc(100% - #{2 * $padding});
-    height: $scaleHeight;
-    top: $padding;
-    left: $padding;
+    width: 100%;
+    height: 20px;
+    margin-bottom: 10px;
   }
 
 </style>
