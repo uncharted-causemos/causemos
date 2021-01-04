@@ -164,8 +164,7 @@
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
-import API from '@/api/api';
-
+import projectService from '@/services/project-service';
 import Facets from '@/components/facets/facets';
 import HistogramFacets from '@/components/facets/histogram-facets';
 import SidePanel from '@/components/side-panel/side-panel';
@@ -297,9 +296,7 @@ export default {
         const { field, values, operand, isNot } = enableClause;
         filtersUtil.setClause(baseFilters, field, values, operand, isNot);
       }
-      const promise = API.get(`projects/${this.project}/facets?facets=${JSON.stringify(facetGroup)}`, {
-        params: { filters: baseFilters }
-      });
+      const promise = projectService.getProjectFacetsPromise(this.project, facetGroup, baseFilters);
       this.cachedPromises[this.currentTab] = promise;
       promise.then(result => {
         Object.keys(result.data).forEach(key => {
@@ -320,9 +317,7 @@ export default {
       if (filtersUtil.isEmpty(this.filters) && {}.hasOwnProperty.call(this.cachedPromises, this.currentTab)) {
         promise = this.cachedPromises[this.currentTab];
       } else {
-        promise = API.get(`projects/${this.project}/facets?facets=${JSON.stringify(facetGroup)}`, {
-          params: { filters: this.filters }
-        });
+        promise = projectService.getProjectFacetsPromise(this.project, facetGroup, this.filters);
       }
       promise.then(result => {
         Object.keys(result.data).forEach(key => {

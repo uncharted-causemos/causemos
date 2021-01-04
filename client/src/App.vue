@@ -15,7 +15,7 @@ import { mapActions, mapGetters } from 'vuex';
 
 import NavBar from '@/components/nav-bar';
 import Overlay from '@/components/overlay';
-import API from '@/api/api';
+import projectService from '@/services/project-service';
 import 'leaflet/dist/leaflet.css';
 
 /* Vue Resize helper */
@@ -64,13 +64,13 @@ export default {
         this.setProjectMetadata({});
         return;
       }
-      API.get(`projects/${this.project}`, {}).then(result => {
-        this.setProjectMetadata(result.data);
+      projectService.getProject(this.project).then(project => {
+        this.setProjectMetadata(project);
       });
 
-      API.get(`projects/${this.project}/ontology-examples`, {}).then(result => {
-        this.setConceptExamples(result.data);
-        this.setOntologyConcepts(Object.keys(result.data));
+      projectService.getProjectOntologyExamples(this.project).then(data => {
+        this.setConceptExamples(data);
+        this.setOntologyConcepts(Object.keys(data));
       });
     }
   }

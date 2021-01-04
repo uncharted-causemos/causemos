@@ -137,7 +137,7 @@
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
-import API from '@/api/api';
+import projectService from '@/services/project-service';
 import SortIndicator from '@/components/sort-indicator';
 import Pagination from '@/components/pagination';
 import MessageDisplay from '@/components/widgets/message-display';
@@ -207,11 +207,11 @@ export default {
     }),
     refresh() {
       this.enableOverlay('Refreshing...');
-      API.get(`projects/${this.project}/statements`, {
-        params: { filters: this.filters, from: this.pageStart, size: this.pageLimit, sort: this.sort }
-      }).then(d => {
-        this.statements = d.data;
 
+      projectService.getProjectStatements(this.project, this.filters, {
+        from: this.pageStart, size: this.pageLimit, sort: this.sort
+      }).then(statements => {
+        this.statements = statements;
         this.statements.forEach(statement => {
           statement.years = [];
           if (statement.subj.time_context.start) {

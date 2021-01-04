@@ -90,7 +90,7 @@
 
 <script>
 import { mapActions } from 'vuex';
-import API from '@/api/api';
+import projectService from '@/services/project-service';
 import ProjectCard from '@/components/project-card';
 import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
@@ -129,15 +129,14 @@ export default {
     deleteProject(project) {
       this.showModal = false;
       this.enableOverlay(`Deleting project '${project.name}'`);
-      API.delete(`projects/${project.id}`).then(() => {
+      projectService.deleteProject(project.id).then(() => {
         this.disableOverlay();
         this.refresh();
       });
     },
     refresh() {
-      API.get('projects', {
-      }).then(results => {
-        this.projectsList = results.data;
+      projectService.getProjects().then(projects => {
+        this.projectsList = projects;
         this.projectsList.forEach(project => {
           this.$set(project, 'isOpen', false);
         });
@@ -149,9 +148,8 @@ export default {
       const storage = window.localStorage;
 
       // Poll the knowledge-base indices for new indices
-      API.get('kbs', {
-      }).then(results => {
-        results.data.forEach(knowledgeBase => {
+      projectService.getKBs().then(kbs => {
+        kbs.forEach(knowledgeBase => {
           const match = JSON.parse(storage.getItem(knowledgeBase.id));
           if (!match) {
             storage.setItem(knowledgeBase.id, JSON.stringify(knowledgeBase));

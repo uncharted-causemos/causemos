@@ -175,6 +175,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
       initialParameters = await dyseService.createModel(enginePayload);
     }
   } catch (error) {
+    Logger.debug(error);
     res.status(400).send(`Failed to sync with ${engine} : ${modelId}`);
     return;
   }

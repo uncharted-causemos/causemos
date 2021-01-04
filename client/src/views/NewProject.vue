@@ -78,13 +78,11 @@
 <script>
 import _ from 'lodash';
 import { mapActions } from 'vuex';
-import API from '@/api/api';
-import { startPolling } from '@/api/poller';
+import projectService from '@/services/project-service';
 
 import KnowledgeBaseRow from '@/components/new-project/knowledge-base-row';
 
 const MSG_EMPTY_PROJECT_NAME = 'Project name cannot be blank';
-const KB_REQUEST_LIMIT = 10000;
 
 export default {
   name: 'NewProjectView',
@@ -128,23 +126,9 @@ export default {
       this.isProcessing = true;
       this.enableOverlay('Preparing project ' + this.projectName);
 
-      const result = await API.post('projects', {
-        baseId: this.baseKB,
-        projectName: this.projectName
-      });
+      const id = await projectService.createProject(this.baseKB, this.projectName, this.projectDescrption);
 
-      const id = result.data.index;
       this.isProcessing = false;
-
-      const taskFn = async () => {
-        const status = await API.get(`projects/${id}/health`);
-        return status.data.indexStatus === 'green' ? [true, status] : [false, null];
-      };
-      const pollerConfig = {
-        interval: 2000,
-        threshold: 10
-      };
-      await startPolling(taskFn, pollerConfig);
       this.disableOverlay();
       this.$router.push({ name: 'overview', params: { project: id } });
     },
@@ -152,15 +136,9 @@ export default {
       this.$router.push({ name: 'home' });
     },
     refresh() {
-      API.get('kbs', {
-        params: {
-          // Manually specify a high upper limit on the number of KBs
-          //  to override the low default that leaves some KBs out.
-          size: KB_REQUEST_LIMIT
-        }
-      }).then(result => {
+      projectService.getKBs().then(kbs => {
         // ISO-8601 dates can be sorted lexicographically
-        this.kbList = _.sortBy(result.data, 'created_at').reverse();
+        this.kbList = _.sortBy(kbs, 'created_at').reverse();
         this.baseKB = this.kbList[0].id;
       });
     },
