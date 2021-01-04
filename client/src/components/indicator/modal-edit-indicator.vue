@@ -64,6 +64,11 @@
         :model-summary="modelSummary"
         @parameter-change="onParameterChange"
       />
+      <message-display
+        v-else
+        class="no-indicator-message"
+        :message="messageNoIndicator"
+      />
     </template>
     <div slot="footer">
       <div
@@ -83,16 +88,19 @@ import API from '@/api/api';
 import IndicatorEditor from '@/components/indicator/indicator-editor';
 import Modal from '@/components/modals/modal';
 import DropdownControl from '@/components/dropdown-control';
+import MessageDisplay from '@/components/widgets/message-display';
 import filtersUtil from '@/utils/filters-util';
 import IndicatorSearchResult from '@/components/indicator/indicator-search-result';
 import IndicatorSearchHeader from '@/components/indicator/indicator-search-header';
 import aggregationsUtil from '@/utils/aggregations-util';
+import { INDICATOR } from '@/utils/messages-util';
 
 export default {
   name: 'EditIndicatorModal',
   components: {
     Modal,
     DropdownControl,
+    MessageDisplay,
     IndicatorEditor,
     IndicatorSearchResult,
     IndicatorSearchHeader
@@ -120,7 +128,8 @@ export default {
     indicatorAlternatives: [],
     isAlternativeDropdownOpen: false,
     searchText: '',
-    newIndicatorParameters: null
+    newIndicatorParameters: null,
+    messageNoIndicator: INDICATOR.EDITOR_NO_INDICATOR
   }),
   computed: {
     headerSuffix() {
@@ -348,5 +357,11 @@ export default {
   color: #888;
   width: 100%;
   margin: 5px 10px;
+}
+
+.no-indicator-message {
+  margin-left: auto;
+  margin-right: auto;
+  width: fit-content;
 }
 </style>

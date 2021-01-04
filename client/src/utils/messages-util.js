@@ -9,6 +9,10 @@ export const SIDE_PANEL = {
   FACTORS_NO_DATA: 'Concept not in a relationship yet'
 };
 
+export const INDICATOR = {
+  EDITOR_NO_INDICATOR: 'Automatic mapping did not find an indicator to quantify this node.'
+};
+
 export const CORRECTIONS = {
   SUCCESSFUL_CORRECTION: 'Successful correction',
   ERRONEOUS_CORRECTION: 'Correction was unsuccessful. Try again',
@@ -106,6 +110,7 @@ export const SUBGRAPH = {
 
 export default {
   SIDE_PANEL,
+  INDICATOR,
   CORRECTIONS,
   UNKNOWN_POLARITY_BULK_MESSAGE,
   EXPORT_MESSAGES,
