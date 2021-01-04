@@ -96,8 +96,11 @@
         class="metadata-row"
       >
         <b class="choice-label">Source</b>
-        <!-- TODO: make this an anchor tag if it's a valid URL -->
-        <span>{{ indicator.source }}</span>
+        <a
+          v-if="isSourceValidUrl"
+          :href="indicator.source"
+        >{{ indicator.source }}</a>
+        <span v-else>{{ indicator.source }}</span>
       </div>
     </div>
     <div class="right-column">
@@ -128,6 +131,7 @@ import MessageDisplay from '@/components/widgets/message-display';
 
 import dateFormatter from '@/filters/date-formatter';
 import { DEFAULT_COLOR } from '@/utils/colors-util';
+import stringUtil from '@/utils/string-util';
 
 // FIXME: Simulating Delphi's aggregation functions, should resue Delphi
 // when time resolution is fixed (eg: we can use both monthly and yearly)
@@ -232,6 +236,9 @@ export default {
     },
     historicalRange() {
       return this.modelSummary.parameter.indicator_time_series_range;
+    },
+    isSourceValidUrl() {
+      return stringUtil.isValidUrl(this.indicator.source);
     }
   },
   watch: {
