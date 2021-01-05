@@ -46,7 +46,7 @@
           v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
           class="btn btn-primary action-button"
           @click="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
-        ><i class="fa fa-fw fa-plus" />Find more</button>
+        ><i class="fa fa-fw fa-plus" />Find More</button>
       </div>
       <div slot="content">
         <evidence-pane
