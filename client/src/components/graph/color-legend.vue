@@ -50,6 +50,7 @@ export default {
       const labelWidth = this.showCagEncodings ? 80 : 105;
       const width = rightColumnTextStart + labelWidth;
       createChart(svg, width, LEGEND_HEIGHT);
+      svg.style('overflow', 'visible');
 
       // Value-Suppressing uncertainty palettes
       const uncertaintyScale = createVSUPscale();
