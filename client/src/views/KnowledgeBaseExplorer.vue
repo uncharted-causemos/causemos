@@ -102,7 +102,7 @@ import filtersUtil from '@/utils/filters-util';
 import { conceptShortName } from '@/utils/concept-util';
 import projectService from '@/services/project-service';
 import modelService from '@/services/model-service';
-import curationService from '@/services/curation-service';
+import * as curationService from '@/services/curation-service';
 
 import messagesUtil from '@/utils/messages-util';
 
