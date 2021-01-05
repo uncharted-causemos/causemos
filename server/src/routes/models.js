@@ -21,6 +21,9 @@ const DEFAULT_NUM_STEPS = 12;
 
 // const esLock = {};
 
+// FIXME: This is a bit confusing with the regsiter endpoint because they kind of operate along the
+// same lines (you can't really have a quantified model without also having it registered). Should
+// consider merging.
 router.post('/:modelId', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
   Logger.info(`initializing model with id ${modelId}`);

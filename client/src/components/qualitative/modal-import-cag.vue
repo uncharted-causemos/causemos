@@ -48,9 +48,9 @@
 import _ from 'lodash';
 import Vue from 'vue';
 import { mapGetters } from 'vuex';
-import API from '@/api/api';
 import Modal from '@/components/modals/modal';
 import Card from '@/components/widgets/card';
+import modelService from '@/services/model-service';
 
 export default {
   name: 'ModalImportCag',
@@ -63,7 +63,7 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      collection: 'app/collection',
+      project: 'app/project',
       currentCAG: 'app/currentCAG'
     }),
     selectedCAGIds() {
@@ -75,12 +75,8 @@ export default {
   },
   methods: {
     refresh() {
-      API.get('cags', {
-        params: {
-          project_id: this.collection
-        }
-      }).then(result => {
-        this.availableCAGs = result.data.cags.filter(d => d.id !== this.currentCAG);
+      modelService.getProjectModels(this.project).then(result => {
+        this.availableCAGs = result.models.filter(d => d.id !== this.currentCAG);
       });
     },
     toggleCAGSelection(cag) {

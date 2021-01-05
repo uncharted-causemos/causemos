@@ -29,3 +29,4 @@ build:
     - yarn workspace client run build
   only:
     - merge_requests
+

@@ -21,9 +21,6 @@
 
 <script>
 import { mapGetters } from 'vuex';
-
-import API from '@/api/api';
-
 import StartScreen from '@/components/start-screen';
 import RenameModal from '@/components/action-bar/rename-modal';
 import EmptyStateInstructions from '@/components/empty-state-instructions';
@@ -78,16 +75,19 @@ export default {
       this.openRenameModal();
     },
     onDuplicate(recentCard) {
-      API.post(`cags/${recentCard.id}/`).then(() => this.refresh());
+      modelService.duplicateModel(recentCard.id).then(() => {
+        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
+        this.refresh();
+      }).catch(() => {
+        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
+      });
     },
     onDelete(recentCard) {
-      API.delete(`cags/${recentCard.id}/`).then(result => {
-        if (result.status === 200) {
-          this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
-        } else {
-          this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
-        }
+      modelService.removeModel(recentCard.id).then(() => {
+        this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
         this.refresh();
+      }).catch(() => {
+        this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
       });
     },
     openRenameModal() {
@@ -99,19 +99,11 @@ export default {
     },
     onRenameModalConfirm(newName) {
       if (newName !== null && newName !== this.selectedCard.title) {
-        API.put(`cags/${this.selectedCard.id}/`, {
-          name: newName
-        }).then((result) => {
-          if (result.status === 200) {
-            this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
-          } else {
-            this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);
-          }
-
+        modelService.updateModelMetadata(this.selectedCard.id, { name: newName }).then(() => {
+          this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
           this.refresh();
         });
       }
-
       this.closeRenameModal();
     }
   }

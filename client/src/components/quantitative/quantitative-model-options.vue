@@ -23,7 +23,7 @@
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
 
-import API from '@/api/api';
+import modelService from '@/services/model-service';
 import RenameModal from '@/components/action-bar/rename-modal';
 import ModelOptions from '@/components/action-bar/model-options';
 import { CAG } from '@/utils/messages-util';
@@ -48,13 +48,10 @@ export default {
   },
   async mounted() {
     // Initialize name
-    const data = (await this.getCAG()).data;
+    const data = await modelService.getComponents(this.currentCAG);
     this.cagName = data.name;
   },
   methods: {
-    async getCAG() {
-      return API.get(`cags/${this.currentCAG}/components`);
-    },
     onRenameModalConfirm(newCagNameInput) {
       // Optimistically set new name
       this.newCagName = newCagNameInput;
@@ -62,16 +59,12 @@ export default {
       this.closeRenameModal();
     },
     async saveNewCagName() {
-      const result = await API.put(`cags/${this.currentCAG}`, {
-        name: this.newCagName
-      });
-      if (result.status === 200) {
+      modelService.updateModelMetadata(this.currentCAG, { name: this.newCagName }).then(() => {
         this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
-      } else {
-        // Revert displayed name to what it was before the rename operation
+      }).catch(() => {
         this.newCagName = '';
         this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);
-      }
+      });
     },
     openRenameModal() {
       this.showRenameModal = true;
