@@ -109,6 +109,12 @@ const newModel = async (projectId, name = 'untitled') => {
   return result.data;
 };
 
+// This sets the default indicators for each node in the model
+const quantifyModelNodes = async (modelId) => {
+  const result = await API.post(`models/${modelId}`);
+  return result.data;
+};
+
 
 /**
  * Get statement data backing an edge
@@ -453,6 +459,7 @@ export default {
   removeModel,
   duplicateModel,
   newModel,
+  quantifyModelNodes,
 
   buildNodeChartData,
 

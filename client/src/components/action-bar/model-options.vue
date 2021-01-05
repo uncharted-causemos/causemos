@@ -43,7 +43,7 @@
 import DropdownControl from '@/components/dropdown-control';
 
 import { CAG } from '@/utils/messages-util';
-import API from '@/api/api';
+import modelService from '@/services/model-service';
 import { mapGetters } from 'vuex';
 
 export default {
@@ -79,35 +79,31 @@ export default {
       this.showModelOptionsDropdown = false;
     },
     onDeleteCAG() {
-      API.delete(`cags/${this.currentCAG}/`).then(result => {
-        if (result.status === 200) {
-          this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
-          // Back to splash page
-          this.$router.push({
-            name: this.viewAfterDeletion,
-            params: {
-              project: this.project
-            }
-          });
-        } else {
-          this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
-        }
+      modelService.removeModel(this.currentCAG).then(() => {
+        this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
+        // Back to splash page
+        this.$router.push({
+          name: this.viewAfterDeletion,
+          params: {
+            project: this.project
+          }
+        });
+      }).catch(() => {
+        this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
       });
     },
     onDuplicate() {
-      API.post(`cags/${this.currentCAG}/`).then((result) => {
-        if (result.status === 200) {
-          this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
-          // Back to splash page
-          this.$router.push({
-            name: this.viewAfterDeletion,
-            params: {
-              project: this.project
-            }
-          });
-        } else {
-          this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
-        }
+      modelService.duplicateModel(this.currentCAG).then(() => {
+        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
+        // Back to splash page
+        this.$router.push({
+          name: this.viewAfterDeletion,
+          params: {
+            project: this.project
+          }
+        });
+      }).catch(() => {
+        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
       });
     }
   }

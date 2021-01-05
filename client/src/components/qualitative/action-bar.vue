@@ -83,7 +83,7 @@
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
 
-import API from '@/api/api';
+import modelService from '@/services/model-service';
 import RenameModal from '@/components/action-bar/rename-modal';
 import ModelOptions from '@/components/action-bar/model-options';
 import TextAreaCard from '../cards/text-area-card';
@@ -147,16 +147,12 @@ export default {
       this.closeRenameModal();
     },
     async saveNewCagName() {
-      const result = await API.put(`cags/${this.currentCAG}`, {
-        name: this.newCagName
-      });
-      if (result.status === 200) {
+      modelService.updateModelMetadata(this.currentCAG, { name: this.newCagName }).then(() => {
         this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
-      } else {
-        // Revert displayed name to what it was before the rename operation
+      }).catch(() => {
         this.newCagName = '';
         this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);
-      }
+      });
     },
     openRenameModal() {
       this.showRenameModal = true;
@@ -169,30 +165,29 @@ export default {
     },
     async updateComments(commentsText) {
       this.savedComment = commentsText;
-      const result = await API.put(`cags/${this.currentCAG}`, {
-        description: commentsText
-      });
-      if (result.status !== 200) {
+      modelService.updateModelMetadata(this.currentCAG, { description: commentsText }).catch(() => {
         this.toaster(EXPORT_MESSAGES.COMMENT_NOT_SAVED, 'error', true);
-      }
+      });
     },
     async onRunModel() {
       this.isRunningModel = true;
       // Quantify the model on the back end
-      const result = await API.post(`models/${this.currentCAG}`);
-      this.isRunningModel = false;
-      if (result.status !== 200) {
+      try {
+        await modelService.quantifyModelNodes(this.currentCAG);
+        // Navigate to the Quantitative View
+        this.$router.push({
+          name: 'quantitative',
+          params: {
+            project: this.project,
+            currentCAG: this.currentCAG
+          }
+        });
+      } catch {
         this.toaster(CAG.ERRONEOUS_MODEL_RUN, 'error', true);
         return;
+      } finally {
+        this.isRunningModel = false;
       }
-      // Navigate to the Quantitative View
-      this.$router.push({
-        name: 'quantitative',
-        params: {
-          project: this.project,
-          currentCAG: this.currentCAG
-        }
-      });
     }
   }
 };

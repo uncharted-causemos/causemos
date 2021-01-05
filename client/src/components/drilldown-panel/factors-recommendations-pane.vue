@@ -74,9 +74,9 @@
 
 <script>
 import _ from 'lodash';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters } from 'vuex';
 
-import API from '@/api/api';
+import { updateStatementsFactorGrounding } from '@/services/curation-service';
 import ModalDocument from '@/components/modals/modal-document';
 import MessageDisplay from '@/components/widgets/message-display';
 import SmallTextButton from '@/components/widgets/small-text-button';
@@ -141,10 +141,6 @@ export default {
     this.refresh();
   },
   methods: {
-    ...mapActions({
-      setUpdateToken: 'app/setUpdateToken',
-      incrementCurationCounter: 'kb/incrementCurationCounter'
-    }),
     initializeData() {
       this.expandAll = null;
     },
@@ -235,29 +231,12 @@ export default {
         statementIds = statementIds.concat(d.dataArray.map(statement => statement.id));
       });
 
-      const updateResult = await API.put(`/projects/${this.project}`, {
-        payload: {
-          updateType: 'factor_grounding',
-          subj,
-          obj
-        },
-        ids: statementIds
-      });
-
-      this.incrementCurationCounter(statementIds.length);
-
+      const updateResult = await updateStatementsFactorGrounding(this.project, statementIds, subj, obj);
       if (updateResult.status === 200) {
         this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, 'success', false);
       } else {
         this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
       }
-
-      if (!_.isNil(this.currentCAG)) {
-        // Invoke recovery endpoint to resolve staleness of current cag
-        await API.post(`cags/${this.currentCAG}/recalculate`);
-      }
-
-      this.setUpdateToken(updateResult.data.updateToken);
       this.closePane();
     }
   }

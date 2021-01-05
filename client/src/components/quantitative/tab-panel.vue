@@ -119,7 +119,6 @@ import modelService from '@/services/model-service';
 
 import ColorLegend from '@/components/graph/color-legend';
 import TextAreaCard from '@/components/cards/text-area-card';
-import API from '@/api/api';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
 
@@ -301,12 +300,9 @@ export default {
     },
     async updateComments(commentsText) {
       this.savedComment = commentsText;
-      const result = await API.put(`cags/${this.currentCAG}`, {
-        description: commentsText
-      });
-      if (result.status !== 200) {
+      modelService.updateModelMetadata(this.currentCAG, { description: commentsText }).catch(() => {
         this.toaster(EXPORT_MESSAGES.COMMENT_NOT_SAVED, 'error', true);
-      }
+      });
     },
     onBackgroundClick() {
       this.$emit('background-click');
