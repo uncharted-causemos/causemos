@@ -46,7 +46,7 @@
           v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
           class="btn btn-primary action-button"
           @click="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
-        ><i class="fa fa-fw fa-long-arrow-right" />Suggestions</button>
+        ><i class="fa fa-fw fa-plus" />Find More</button>
       </div>
       <div slot="content">
         <evidence-pane
@@ -181,7 +181,7 @@ const NODE_DRILLDOWN_TABS = [
     icon: 'fa-sitemap'
   },
   {
-    name: 'Relationships',
+    name: 'Relationships in CAG',
     id: PANE_ID.RELATIONSHIPS,
     icon: 'fa-long-arrow-right'
   }
@@ -265,7 +265,7 @@ export default {
     overlayPaneTitle() {
       let title = '';
       if (this.activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS) {
-        title = 'Suggested Relationships';
+        title = 'Top Relationships in KB';
       } else if (this.activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS) {
         title = 'Suggested Factors to Correct';
       }

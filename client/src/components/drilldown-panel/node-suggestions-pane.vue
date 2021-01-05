@@ -43,13 +43,13 @@
           class="suggestions-title"
         >
           <span v-if="relationshipGroup.key === 'cause'">
-            Top 5 Drivers ( ? <i
+            Top Drivers ( ? <i
               class="fa fa-fw  fa-long-arrow-right"
             />
             {{ selectedNode.concept | ontology-formatter }} )
           </span>
           <span v-else>
-            Top 5 Impacts ({{ selectedNode.concept | ontology-formatter }} <i
+            Top Impacts ({{ selectedNode.concept | ontology-formatter }} <i
               class="fa fa-fw  fa-long-arrow-right"
             />
             ?)
