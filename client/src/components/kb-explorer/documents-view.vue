@@ -104,8 +104,11 @@ export default {
     async fetchReaderContentRawDoc(targetCard) {
       if (!isPdf(targetCard)) return;
       const url = `/api/dart/${targetCard.data.id}/raw`;
-      const viewer = await createPDFViewer({ url });
-      return viewer;
+      try {
+        const viewer = await createPDFViewer({ url });
+        return viewer;
+      } catch (error) {
+      }
     },
     async fetchReaderContentData(targetCard) {
       const docId = targetCard.data.id;

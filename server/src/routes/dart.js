@@ -12,9 +12,13 @@ const dartService = rootRequire('/services/external/dart-service');
  * Note: This endpoint is meant to be used for fetching the document
  * from the dart service and sending it back in the original request.
  */
-router.get('/:docId/raw', asyncHandler(async (req, res) => {
+router.get('/:docId/raw', asyncHandler(async (req, res, next) => {
   const docId = req.params.docId;
   const docStream = await dartService.getRawDoc(docId);
+  docStream.on('error', error => {
+    console.error(error);
+    return next(new Error('Failed to fetch raw PDF'));
+  });
   docStream.pipe(res);
 }));
 
