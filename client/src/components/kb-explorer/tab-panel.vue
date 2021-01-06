@@ -46,7 +46,7 @@
 
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
-import API from '@/api/api';
+import projectService from '@/services/project-service';
 import Counters from '@/components/kb-explorer/counters';
 import StatementsView from '@/components/kb-explorer/statements-view';
 import DocumentsView from '@/components/kb-explorer/documents-view';
@@ -156,9 +156,8 @@ export default {
       }
     },
     refreshGraphData() {
-      const url = `projects/${this.project}/graphs/`;
-      API.get(url, { params: { filters: this.filters } }).then(d => {
-        this.graphData = d.data;
+      projectService.getProjectGraph(this.project, this.filters).then(graph => {
+        this.graphData = graph;
       });
     },
     setActive (tabId) {
@@ -172,7 +171,7 @@ export default {
       }
     },
     setMapData() {
-      this.setMapDataPromise = API.get(`projects/${this.project}/locations`, { }).then(d => {
+      this.setMapDataPromise = projectService.getProjectLocationsPromise(this.project, null).then(d => {
         const transformedData = geo.transformMapData(d.data);
         this.mapData = Object.assign({}, this.mapData, { type: 'FeatureCollection', features: transformedData });
       });
@@ -185,7 +184,7 @@ export default {
        *  - unrelated (not in filtered, colour scheme: grey)
       */
       Promise.all([
-        API.get(`projects/${this.project}/locations`, { params: { filters: this.filters } }),
+        projectService.getProjectLocationsPromise(this.project, this.filters),
         this.setMapDataPromise
       ]).then(results => {
         const geoJSON = results[0].data.geoJSON;
@@ -209,10 +208,7 @@ export default {
       });
     },
     setSubGraphByFilters() {
-      // TODO: Do a more performant fetch like retrieving wm.edge instead of computing aggregating and fetching  the graph as a whole
-      // to better handle larger datasets - Aug 25
-      API.get(`projects/${this.project}/edges`, { params: { filters: this.filters } }).then(result => {
-        const edges = result.data;
+      projectService.getProjectEdges(this.project, this.filters).then(edges => {
         this.setSelectedSubgraphEdges(edges);
         this.setFilteredEdgesCount(edges.length);
       });

@@ -74,11 +74,30 @@ const getProjectStatements = async (projectId, filters, options) => {
   return result.data;
 };
 
+const getProjectGraph = async (projectId, filters) => {
+  const result = await API.get(`projects/${projectId}/graphs`, { params: { filters: filters } });
+  return result.data;
+};
+
+// Given a filter, return the edge structure composition
+// TODO: Do a more performant fetch like retrieving wm.edge instead of computing aggregating and fetching  the graph as a whole
+// to better handle larger datasets - Aug 25
+const getProjectEdges = async (projectId, filters) => {
+  const result = await API.get(`projects/${projectId}/edges`, { params: { filters: filters } });
+  return result.data;
+};
 
 // Given a list of source/target pair and filters, get corresponding statements
 const getProjectStatementIdsByEdges = async (projectId, edges, filters) => {
   const result = await API.post(`projects/${projectId}/edge-data`, { edges, filters: filters });
   return result.data;
+};
+
+const getProjectLocationsPromise = async (projectId, filters) => {
+  const promise = API.get(`projects/${projectId}/locations`, {
+    params: { filters: filters }
+  });
+  return promise;
 };
 
 export default {
@@ -92,7 +111,10 @@ export default {
 
   getProjectStats,
   getProjectStatements,
+  getProjectGraph,
+  getProjectEdges,
   getProjectStatementIdsByEdges,
+  getProjectLocationsPromise,
 
   STATEMENT_LIMIT
 };
