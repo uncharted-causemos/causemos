@@ -3,6 +3,7 @@ import { startPolling } from '@/api/poller';
 
 const KB_LIMIT = 200;
 const PROJECT_LIMIT = 500;
+const STATEMENT_LIMIT = 10000;
 
 const getKBs = async () => {
   const result = await API.get('kbs', { params: { size: KB_LIMIT } });
@@ -63,12 +64,20 @@ const getProjectStats = async (projectId, filters = null) => {
 };
 
 const getProjectStatements = async (projectId, filters, options) => {
+  if (options.size > STATEMENT_LIMIT) options.size = STATEMENT_LIMIT;
   const result = await API.get(`projects/${projectId}/statements`, {
     params: {
       filters,
       ...options
     }
   });
+  return result.data;
+};
+
+
+// Given a list of source/target pair and filters, get corresponding statements
+const getProjectStatementIdsByEdges = async (projectId, edges, filters) => {
+  const result = await API.post(`projects/${projectId}/edge-data`, { edges, filters: filters });
   return result.data;
 };
 
@@ -82,6 +91,9 @@ export default {
   deleteProject,
 
   getProjectStats,
-  getProjectStatements
+  getProjectStatements,
+  getProjectStatementIdsByEdges,
+
+  STATEMENT_LIMIT
 };
 
