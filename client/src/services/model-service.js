@@ -14,7 +14,7 @@ const getProjectModels = async (projectId) => {
  * Get basic model information without underyling data
  */
 const getSummary = async (modelId) => {
-  const result = await API.get(`cags/${modelId}`);
+  const result = await API.get(`models/${modelId}`);
   return result.data;
 };
 
@@ -60,12 +60,12 @@ const updateEdgeParameter = async (modelId, edgeParameter) => {
 };
 
 const updateModelMetadata = async (modelId, fields) => {
-  const result = await API.put(`cags/${modelId}`, fields);
+  const result = await API.put(`models/${modelId}/model-metadata`, fields);
   return result.data;
 };
 
 const updateModelParameter = async (modelId, modelParameter) => {
-  const result = await API.put(`models/${modelId}`, modelParameter);
+  const result = await API.put(`models/${modelId}/model-parameter`, modelParameter);
   return result.data;
 };
 
@@ -90,7 +90,7 @@ const removeComponents = async (modelId, nodes, edges) => {
 };
 
 const removeModel = async (modelId) => {
-  const result = await API.delete(`cags/${modelId}`);
+  const result = await API.delete(`models/${modelId}`);
   return result.data;
 };
 
@@ -100,7 +100,7 @@ const duplicateModel = async (modelId) => {
 };
 
 const newModel = async (projectId, name = 'untitled') => {
-  const result = await API.post('cags', {
+  const result = await API.post('models', {
     project_id: projectId,
     name: name,
     nodes: [],
