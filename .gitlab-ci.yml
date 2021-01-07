@@ -10,15 +10,10 @@ before_script:
   - npm config set //npm.uncharted.software/:_authToken=${NPM_TOKEN}
   - yarn install
 
-lint:
+test:
   script:
     - yarn workspace client run lint -- --no-fix
     - yarn workspace server run lint
-  only:
-    - merge_requests
-
-test-unit:
-  script:
     - yarn workspace client run test:unit
     - yarn workspace server run test
   only:
