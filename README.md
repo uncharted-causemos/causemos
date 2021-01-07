@@ -34,7 +34,7 @@ yarn start-server
 ```
 
 
-### Build
+### Build: Internal testing
 Deploy to internal Openstack for testing. Note you need to have your public-key added to the target machine.
 
 ```
@@ -44,3 +44,30 @@ Deploy to internal Openstack for testing. Note you need to have your public-key 
 # Use specific branch and port
 PORT=4002 BRANCH="fix-123" ./deploy_openstack.sh
 ```
+
+### Build: Docker
+You can build a stand-alone image locally with the following steps. Here we assume you want to build a "local" version
+
+```
+# Build and pack client
+yarn workspace client run build
+
+# Install to server
+cp -r client/dist server/public
+
+# Build server
+docker build -t docker.uncharted.software/worldmodeler/wm-server:local .
+
+# Run image
+docker run -p 3000:3000 --env-file <envfile> -t docker.uncharted.software/worldmodeler/wm-server:local
+```
+
+Note docker interprets envfiles differently, the variables cannot be quoted!! So it is A=123 and not A="123"
+
+
+### Swarm Deployment
+For deployment to docker-swarm (external) the procedure is similar but uses different sets of scripts to ensure no side-effects from local changes, it will also tag and version the git repository.
+Please see: https://gitlab.uncharted.software/WM/wm-playbooks/-/tree/master/causemos
+
+For configuration and environment changes, the config and compose files are kept in a separate repository along with other WM artifacts.
+Please see: https://gitlab.uncharted.software/WM/wm-env
