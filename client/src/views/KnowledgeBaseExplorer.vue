@@ -81,12 +81,9 @@
   </div>
 </template>
 
-
 <script>
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
-
-import API from '@/api/api';
 
 import ModalHeader from '../components/kb-explorer/modal-header.vue';
 import SearchBar from '@/components/kb-explorer/search-bar';
@@ -142,8 +139,6 @@ const RELATIONSHIPS_DRILLDOWN_TABS = [
     id: PANE_ID.MULTIRELATIONSHIPS
   }
 ];
-
-const STATEMENT_REQUEST_LIMIT = 10000;
 
 export default {
   name: 'KnowledgeBaseExplorer',
@@ -272,9 +267,6 @@ export default {
       this.setEvidencesCount(counts.evidenceCount);
       this.setFilteredStatementCount(counts.statementsCount);
     },
-    async getEdgeData(edges) {
-      return API.post(`projects/${this.project}/edge-data`, { edges, filters: this.filters });
-    },
     async onAddToCAG() {
       const currentCAG = await modelService.getComponents(this.cag);
 
@@ -297,10 +289,10 @@ export default {
       });
 
       // Retrieve reference ids for the selected edges to be able to compare statement ids with the existing CAG
-      const selectedEdgesData = (await this.getEdgeData(selectedEdges.map(edge => {
-        return { source: edge.source, target: edge.target };
-      }))).data;
-
+      const selectedEdgesData = await projectService.getProjectStatementIdsByEdges(
+        this.project,
+        selectedEdges.map(e => ({ source: e.source, target: e.target })),
+        this.filters);
 
       const formattedNodes = nodesToAdd.map(node => {
         return { concept: node.id, label: conceptShortName(node.id) };
@@ -428,7 +420,7 @@ export default {
       const searchFilters = _.cloneDeep(this.filters);
       filtersUtil.addSearchTerm(searchFilters, field, term, 'or', false);
 
-      projectService.getProjectStatements(this.project, searchFilters, { size: STATEMENT_REQUEST_LIMIT, documents: true }).then(result => {
+      projectService.getProjectStatements(this.project, searchFilters, { size: projectService.STATEMENT_LIMIT, documents: true }).then(result => {
         this.selectedStatements = result;
         this.isFetchingStatements = false;
       });

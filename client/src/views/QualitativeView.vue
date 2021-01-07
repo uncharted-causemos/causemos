@@ -143,8 +143,6 @@ import _ from 'lodash';
 import html2canvas from 'html2canvas';
 import { mapActions, mapGetters } from 'vuex';
 
-import API from '@/api/api';
-
 import EmptyStateInstructions from '@/components/empty-state-instructions';
 import ActionBar from '@/components/qualitative/action-bar';
 import CAGGraph from '@/components/graph/CAG-graph';
@@ -165,6 +163,7 @@ import ModalImportConflict from '@/components/qualitative/modal-import-conflict'
 import cagUtil from '@/utils/cag-util';
 
 import modelService from '@/services/model-service';
+import projectService from '@/services/project-service';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -193,8 +192,6 @@ const EDGE_DRILLDOWN_TABS = [
     id: PANE_ID.EVIDENCE
   }
 ];
-
-const STATEMENT_REQUEST_LIMIT = 10000;
 
 export default {
   name: 'QualitativeView',
@@ -307,9 +304,6 @@ export default {
       this.modelSummary = await modelService.getSummary(this.currentCAG);
       this.modelComponents = await modelService.getComponents(this.currentCAG);
     },
-    async getEdgeData(edges) {
-      return API.post(`projects/${this.project}/edge-data`, { edges, filters: null });
-    },
     async addCAGComponents(nodes, edges) {
       return modelService.addComponents(this.currentCAG, nodes, edges);
     },
@@ -322,7 +316,7 @@ export default {
       const edges = this.modelComponents.edges.map(edge => edge.source + '///' + edge.target);
 
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
-        const edgeData = (await this.getEdgeData([edge])).data;
+        const edgeData = await projectService.getProjectStatementIdsByEdges(this.project, [edge], null);
         const formattedEdge = Object.assign({}, edge, { reference_ids: edgeData[edge.source + '///' + edge.target] || [] });
         const data = await this.addCAGComponents([], [formattedEdge]);
         this.setUpdateToken(data.updateToken);
@@ -562,15 +556,9 @@ export default {
       filtersUtil.addSearchTerm(searchFilters, 'topic', concept, 'or', false);
 
       this.isFetchingStatements = true;
-      API.get(`projects/${this.project}/statements`, {
-        params: {
-          filters: searchFilters,
-          // Manually specify a high upper limit on the number of statements
-          //  to override the low default that leaves some statements out.
-          size: STATEMENT_REQUEST_LIMIT
-        }
-      }).then(result => {
-        this.selectedStatements = result.data;
+
+      projectService.getProjectStatements(this.project, searchFilters, { size: projectService.STATEMENT_LIMIT }).then(result => {
+        this.selectedStatements = result;
         this.isFetchingStatements = false;
       });
     },
