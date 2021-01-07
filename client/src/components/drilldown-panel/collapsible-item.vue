@@ -97,17 +97,16 @@ export default {
     flex-direction: row;
     padding: 2px 0;
     .item-controls {
-      align-items: baseline;
-      flex: 1;
+      align-items: center;
       margin-top: auto;
       margin-bottom: auto;
     }
     .item-title {
       display: flex;
       flex-direction: row;
-      align-items: baseline;
+      align-items: center;
       cursor: pointer;
-      flex: 16;
+      flex: 1;
       min-width: 0px;
     }
   }
