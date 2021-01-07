@@ -51,6 +51,11 @@ hr.pane-separator {
       margin: 0 0 0 8px;
     }
   }
+  .expand-collapse:only-child {
+    // Right-align expand/collapse buttons when
+    // bulk edit options aren't shown
+    margin-left: auto;
+  }
   .expand-collapse button:first-child {
     margin-right: 8px;
   }
