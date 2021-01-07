@@ -83,7 +83,15 @@
         <span>{{ indicator.indicator_source }}</span>
       </div>
       <p v-if="modelDescription !== null">{{ modelDescription }}</p>
-      <div class="metadata-row"><strong>Source: </strong>{{ source }}</div>
+      <div class="metadata-row"><strong>Source: </strong>
+        <a
+          v-if="isSourceValidUrl"
+          :href="source"
+          target="_blank"
+          rel="noopener noreferrer"
+        >{{ source }}</a>
+        <span v-else>{{ source }}</span>
+      </div>
     </div>
     <div class="footer-buttons">
       <hr class="pane-separator">
@@ -100,6 +108,7 @@ import LineChart from '@/components/widgets/charts/line-chart';
 import MessageDisplay from '@/components/widgets/message-display';
 import { MARKER_COLOR, DEFAULT_COLOR } from '@/utils/colors-util';
 import { SIDE_PANEL } from '@/utils/messages-util';
+import stringUtil from '@/utils/string-util';
 
 
 // FIXME: Simulating Delphi's aggregation functions, should resue Delphi
@@ -145,6 +154,9 @@ export default {
   computed: {
     isIndicatorEmpty() {
       return _.isEmpty(this.selectedParameterOptions);
+    },
+    isSourceValidUrl() {
+      return stringUtil.isValidUrl(this.source);
     },
     indicator() {
       if (_.isEmpty(this.node.parameter)) return {};
