@@ -99,6 +99,8 @@
         <a
           v-if="isSourceValidUrl"
           :href="indicator.source"
+          target="_blank"
+          rel="noopener noreferrer"
         >{{ indicator.source }}</a>
         <span v-else>{{ indicator.source }}</span>
       </div>
