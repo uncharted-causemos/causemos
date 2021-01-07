@@ -10,6 +10,10 @@
   ],
   "scripts": {
     "start-client": "yarn workspace client run serve",
-    "start-server": "yarn workspace server run start"
+    "start-server": "yarn workspace server run start",
+    "start-dev": "concurrently \"yarn workspace server run dev\" \"yarn workspace client run serve\""
+  },
+  "devDependencies": {
+    "concurrently": "^5.3.0"
   }
 }
