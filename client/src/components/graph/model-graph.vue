@@ -50,6 +50,7 @@ export default {
       el: this.$refs.container,
       nodeWidth: 120,
       nodeHeight: 60,
+      adapter: new ElkAdaptor({ nodeWidth: 120, nodeHeight: 60 }),
       useEdgeControl: true,
       strategy: layered
     });
