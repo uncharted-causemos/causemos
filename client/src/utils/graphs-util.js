@@ -38,6 +38,16 @@ export function hasBackingEvidence(edge) {
   */
 }
 
+export function traverse (root, callBackFn, p) {
+  callBackFn(root, p);
+  if (root.nodes) {
+    for (let i = 0; i < root.nodes.length; i++) {
+      traverse(root.nodes[i], callBackFn, root);
+    }
+  }
+}
+
 export default {
-  calculateNeighborhood
+  calculateNeighborhood,
+  traverse
 };
