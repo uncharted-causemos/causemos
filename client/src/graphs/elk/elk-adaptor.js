@@ -56,12 +56,7 @@ export default class ElkAdaptor {
       });
     }
 
-    // 4) Rearrange the nested data structure to make delta computation easier
-    const groups = rawLayout.children.filter(d => d.type === 'container');
-    const ungroupedNodes = rawLayout.children.filter(d => d.type === 'node');
-    const groupedNodes = _.flatten(groups.map(g => g.children));
-
-    // 5) Populate the source and target id fields in the format that svg-flowgraph wants (this primary enables nodeDrag)
+    // 4) Populate the source and target id fields in the format that svg-flowgraph wants (this primary enables nodeDrag)
     rawLayout.edges.forEach(e => {
       e.source = _.first(e.sources[0].split(':'));
       e.target = _.first(e.targets[0].split(':'));
@@ -72,9 +67,8 @@ export default class ElkAdaptor {
     return {
       width: rawLayout.width,
       height: rawLayout.height,
-      nodes: [...ungroupedNodes, ...groupedNodes],
-      edges: rawLayout.edges,
-      groups: groups
+      nodes: rawLayout.children,
+      edges: rawLayout.edges
     };
   }
 }
