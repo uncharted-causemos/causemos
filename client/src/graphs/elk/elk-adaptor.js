@@ -2,7 +2,6 @@
 import _ from 'lodash';
 import ELK from 'elkjs/lib/elk.bundled';
 import { createGraph } from '@/graphs/elk/elk-data';
-import { traverse } from '@/utils/graphs-util';
 import { layered } from '@/graphs/elk/elk-strategies';
 
 export default class ElkAdaptor {
@@ -13,29 +12,14 @@ export default class ElkAdaptor {
   }
 
   makeRenderingGraph(graphData) {
-    traverse(graphData, (node, parent) => {
-      if (!node.nodes) {
-        node.width = this.nodeWidth;
-        node.height = this.nodeHeight;
-      }
-      if (parent) node.parent = parent;
-      node.data = node;
-    }, null);
-
-    graphData.edges.forEach(e => {
-      e.data = e;
+    return createGraph(graphData, {
+      nodeSize: { width: this.nodeWidth, height: this.nodeHeight }
     });
-
-    return graphData;
   }
 
   async run(renderGraph) {
-    const graph = createGraph(renderGraph, {
-      nodeSize: { width: this.nodeWidth, height: this.nodeHeight }
-    });
-
     // 1) Apply layout options
-    graph.nodes.forEach(n => {
+    renderGraph.nodes.forEach(n => {
       n.layoutOptions = this.strategy.nodesLayoutOptions(n);
       if (n.ports) {
         n.ports.forEach(p => {
@@ -44,22 +28,14 @@ export default class ElkAdaptor {
       }
     });
 
-    // 1.1) Populate the source and target id fields in the format that svg-flowgraph wants (this primary enables nodeDrag)
-    graph.edges.forEach(e => {
-      e.source = _.first(e.sources[0].split(':'));
-      e.target = _.first(e.targets[0].split(':'));
-      e.source = graph.nodes.find(node => node.concept === e.source).id;
-      e.target = graph.nodes.find(node => node.concept === e.target).id;
-    });
-
     // 2) Run the layout algorithm, rawLayout is the hierarchical output which we will
     // flatten later to make node access easier.
     const elk = new ELK();
     const rawLayout = await elk.layout({
       id: this.strategy.id,
       layoutOptions: this.strategy.layoutOptions(renderGraph),
-      edges: graph.edges,
-      children: graph.nodes
+      edges: renderGraph.edges,
+      children: renderGraph.nodes
     });
 
     // 3) Compensate for relative, absolute positions. Add cache.
@@ -84,6 +60,14 @@ export default class ElkAdaptor {
     const groups = rawLayout.children.filter(d => d.type === 'container');
     const ungroupedNodes = rawLayout.children.filter(d => d.type === 'node');
     const groupedNodes = _.flatten(groups.map(g => g.children));
+
+    // 5) Populate the source and target id fields in the format that svg-flowgraph wants (this primary enables nodeDrag)
+    rawLayout.edges.forEach(e => {
+      e.source = _.first(e.sources[0].split(':'));
+      e.target = _.first(e.targets[0].split(':'));
+      e.source = renderGraph.nodes.find(node => node.concept === e.source).id;
+      e.target = renderGraph.nodes.find(node => node.concept === e.target).id;
+    });
 
     return {
       width: rawLayout.width,
