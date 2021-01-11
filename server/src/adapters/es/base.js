@@ -221,6 +221,10 @@ class Base {
       searchPayload.body._source = {
         includes: options.includes
       };
+    } else if (options.excludes) {
+      searchPayload.body._source = {
+        excludes: options.excludes
+      };
     }
 
     const response = await this.client.search(searchPayload);
