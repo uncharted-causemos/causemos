@@ -3,79 +3,12 @@ const moment = require('moment');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const cagService = rootRequire('/services/cag-service');
-const modelService = rootRequire('/services/model-service');
+// const modelService = rootRequire('/services/model-service');
 
 const OPERATION = Object.freeze({
   REMOVE: 'remove',
   UPDATE: 'update'
 });
-
-/**
- * POST a new CAG
- */
-router.post('/', asyncHandler(async (req, res) => {
-  const {
-    name,
-    project_id,
-    description,
-    thumbnail_source,
-    edges,
-    nodes
-  } = req.body;
-
-  // Create the CAG
-  const result = await cagService.createCAG({
-    project_id,
-    name,
-    description,
-    thumbnail_source
-  }, edges, nodes);
-  res.json(result);
-}));
-
-/**
- * GET listing of CAGs
- */
-router.get('/', asyncHandler(async (req, res) => {
-  const { project_id, size, from } = req.query;
-
-  const cags = await modelService.find(project_id, size, from, { modified_at: 'desc' });
-  res.json({
-    cags,
-    size,
-    from
-  });
-}));
-
-
-/**
- * GET existing CAG
- */
-router.get('/:mid', asyncHandler(async (req, res) => {
-  const cag = await modelService.findOne(req.params.mid);
-  res.json(cag);
-}));
-
-/**
- * PUT updated data in an existing CAG
- */
-router.put('/:mid/', asyncHandler(async (req, res) => {
-  const editTime = moment().valueOf();
-  const modelId = req.params.mid;
-  const {
-    name,
-    description,
-    thumbnail_source: thumbnailSource
-  } = req.body;
-
-  // Update the CAG metadata
-  await cagService.updateCAGMetadata(modelId, {
-    name: name,
-    description: description,
-    thumbnail_source: thumbnailSource
-  });
-  res.status(200).send({ updateToken: editTime });
-}));
 
 /**
  * POST an edge polarity
@@ -202,16 +135,6 @@ router.get('/:mid/node-statements', asyncHandler(async (req, res) => {
   const concept = req.query.concept;
   const result = await cagService.getStatementsByNode(modelId, concept);
   res.json(result);
-}));
-
-/**
- * DELETE a CAG
- */
-router.delete('/:mid/', asyncHandler(async (req, res) => {
-  const editTime = moment().valueOf();
-  const modelId = req.params.mid;
-  await cagService.deleteCAG(modelId);
-  res.status(200).send({ updateToken: editTime });
 }));
 
 

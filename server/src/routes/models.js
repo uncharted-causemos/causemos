@@ -62,9 +62,31 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
 }));
 
 /**
- * PUT update model parameter update
+ * PUT updated metadata in an existing Model
  */
-router.put('/:modelId', asyncHandler(async (req, res) => {
+router.put('/:modelId/model-metadata', asyncHandler(async (req, res) => {
+  const editTime = moment().valueOf();
+  const modelId = req.params.modelId;
+  const {
+    name,
+    description,
+    thumbnail_source: thumbnailSource
+  } = req.body;
+
+  // Update the CAG metadata
+  await cagService.updateCAGMetadata(modelId, {
+    name: name,
+    description: description,
+    thumbnail_source: thumbnailSource
+  });
+  res.status(200).send({ updateToken: editTime });
+}));
+
+
+/**
+ * PUT update model parameters (time interval, steps ... etc)
+ */
+router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
   const editTime = moment().valueOf();
   Logger.info(`Update model parameters with id ${modelId}`);
@@ -111,7 +133,7 @@ router.put('/:modelId', asyncHandler(async (req, res) => {
 }));
 
 
-/* GET models */
+/* GET get models */
 router.get('/', asyncHandler(async (req, res) => {
   const { project_id, size, from } = req.query;
   const models = await modelService.find(project_id, size, from);
@@ -122,6 +144,45 @@ router.get('/', asyncHandler(async (req, res) => {
   });
 }));
 
+
+/* GET retrieve single model */
+router.get('/:modelId', asyncHandler(async (req, res) => {
+  const model = await modelService.findOne(req.params.modelId);
+  res.json(model);
+}));
+
+
+/* POST new model */
+router.post('/', asyncHandler(async (req, res) => {
+  const {
+    name,
+    project_id,
+    description,
+    thumbnail_source,
+    edges,
+    nodes
+  } = req.body;
+
+  // Create the CAG
+  const result = await cagService.createCAG({
+    project_id,
+    name,
+    description,
+    thumbnail_source
+  }, edges, nodes);
+  res.json(result);
+}));
+
+
+/**
+ * DELETE a CAG
+ */
+router.delete('/:modelId/', asyncHandler(async (req, res) => {
+  const editTime = moment().valueOf();
+  const modelId = req.params.modelId;
+  await cagService.deleteCAG(modelId);
+  res.status(200).send({ updateToken: editTime });
+}));
 
 
 

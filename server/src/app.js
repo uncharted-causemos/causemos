@@ -126,7 +126,6 @@ app.use('/api/old/maas', [
 
 // Forward /api/maas/* to WM_GO_URL/maas/*
 app.use('/api/maas', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/maas' + req.url }));
-// app.use('/api/analysis', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/analysis' + req.url }));
 
 app.use('/api/map', [
   mapProxyRouter
