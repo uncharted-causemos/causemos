@@ -7,6 +7,7 @@
       class="button-column"
     >
       <i
+        v-if="showCurationActions"
         class="fa fa-lg fa-fw"
         :class="{ 'fa-check-square-o': item.meta.checked, 'fa-square-o': !item.meta.checked }"
         @click="toggle(item)"
@@ -70,37 +71,32 @@
           <i class="fa fa-sitemap fa-lg" />
         </small-icon-button>
       </div>
-      <div
-        v-if="showCurationActions"
-        class="center-vertically"
+      <small-icon-button
+        v-if="showCurationActions && item.meta.state !== CURATION_STATES.VETTED && item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN"
+        v-tooltip.top="'Vet evidence'"
+        :use-white-bg="true"
+        @click.stop="vet(item)"
       >
+        <i class="fa fa-check-circle fa-lg" />
+      </small-icon-button>
 
-        <small-icon-button
-          v-if="item.meta.state !== CURATION_STATES.VETTED && item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN"
-          v-tooltip.top="'Vet evidence'"
-          :use-white-bg="true"
-          @click.stop="vet(item)"
-        >
-          <i class="fa fa-check-circle fa-lg" />
-        </small-icon-button>
+      <small-icon-button
+        v-if="showCurationActions && item.meta.state === CURATION_STATES.VETTED && item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN"
+        v-tooltip.top="'Vetted evidence'"
+        :use-white-bg="true"
+        class="vetted"
+      >
+        <i class="fa fa-check-circle fa-lg" />
+      </small-icon-button>
 
-        <small-icon-button
-          v-if="item.meta.state === CURATION_STATES.VETTED && item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN"
-          v-tooltip.top="'Vetted evidence'"
-          :use-white-bg="true"
-          class="vetted"
-        >
-          <i class="fa fa-check-circle fa-lg" />
-        </small-icon-button>
-
-        <small-icon-button
-          v-tooltip.top="'Discard'"
-          :use-white-bg="true"
-          @click.stop="discardStatements(item)"
-        >
-          <i class="fa fa-trash fa-lg" />
-        </small-icon-button>
-      </div>
+      <small-icon-button
+        v-if="showCurationActions"
+        v-tooltip.top="'Discard'"
+        :use-white-bg="true"
+        @click.stop="discardStatements(item)"
+      >
+        <i class="fa fa-trash fa-lg" />
+      </small-icon-button>
     </div>
     <div slot="content">
       <div
@@ -230,7 +226,10 @@ button.white-bg.vetted {
   background: #f2f2f2;
 }
 
-.statements-container:not(:hover) button.white-bg {
+.statements-container:not(:hover) button.white-bg,
+.statements-container button.white-bg:disabled {
+  // When not hovering over a row, or when a button is disabled,
+  // remove its white rounded rectangle background and fade its colour
   color: #D4D4D4;
   background: none;
 }
@@ -240,16 +239,12 @@ button.white-bg.vetted {
 }
 
 button.polarity-correction {
-  margin: 4px 0 0 4px;
+  margin-left: 4px;
   width: 16px;
 
   i {
     margin-left: 1px;
   }
-}
-
-.center-vertically {
-  align-self: center;
 }
 
 .factor-title-group {
@@ -262,8 +257,18 @@ button.polarity-correction {
   min-width: 0;
 }
 
-.title-slot-container:not(:hover) button.active {
-  color: #000;
+.button-column > *:not(:first-child) {
+  margin-top: 4px;
+}
+
+.title-slot-container {
+  align-items: center;
+
+  &:not(:hover) button.active {
+    // When a factor regrounding button is clicked, it turns
+    // black until the dialog is closed
+    color: #000;
+  }
 }
 
 .highlights {

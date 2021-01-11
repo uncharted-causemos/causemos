@@ -98,7 +98,7 @@ export default {
   props: {
     modelSummary: {
       type: Object,
-      required: true
+      default: null
     },
     modelComponents: {
       type: Object,
@@ -118,17 +118,17 @@ export default {
       currentCAG: 'app/currentCAG'
     }),
     cagNameToDisplay() {
-      return !_.isEmpty(this.newCagName) ? this.newCagName : this.modelSummary.name;
+      return !_.isEmpty(this.newCagName) ? this.newCagName : _.get(this.modelSummary, 'name');
     },
     comment() {
-      return this.savedComment === null ? this.modelSummary.description : this.savedComment;
+      return this.savedComment === null ? _.get(this.modelSummary, 'description', null) : this.savedComment;
     },
     numEdges() {
       return _.get(this.modelComponents, 'edges', []).length;
     }
   },
   mounted() {
-    this.savedComment = this.modelSummary.description;
+    this.savedComment = _.get(this.modelSummary, 'description', null);
   },
   methods: {
     openKBExplorer() {

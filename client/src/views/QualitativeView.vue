@@ -217,7 +217,7 @@ export default {
     }
   },
   data: () => ({
-    modelSummary: {},
+    modelSummary: null,
     modelComponents: {},
 
     isDrilldownOpen: false,
