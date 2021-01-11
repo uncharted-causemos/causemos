@@ -41,7 +41,9 @@ const find = (projectId, size, from, sort) => {
  */
 const findOne = async (modelId) => {
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
-  const model = modelAdapter.findOne([{ field: 'id', value: modelId }], {});
+  const model = modelAdapter.findOne([{ field: 'id', value: modelId }], {
+    excludes: ['thumbnail_source']
+  });
 
   return model;
 };
