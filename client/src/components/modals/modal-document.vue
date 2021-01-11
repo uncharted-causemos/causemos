@@ -13,6 +13,7 @@
 </template>
 
 <script>
+import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import API from '@/api/api';
 import { toCardData, DOC_FIELD } from '@/utils/document-util';
@@ -24,7 +25,7 @@ const CONTENT_WIDTH = 800;
 
 const isPdf = (data) => {
   const fileType = data && data[DOC_FIELD.FILE_TYPE];
-  return fileType === 'pdf';
+  return fileType === 'pdf' || fileType === 'application/pdf';
 };
 
 export default {
@@ -75,7 +76,7 @@ export default {
       // fetch and update custom element content data
       const viewer = await this.fetchReaderContentRawDoc(data, docId);
 
-      const isRawData = !isPdf(data); // if pdf, we provide custom element
+      const isRawData = !isPdf(data) || _.isNil(viewer); // if pdf, we provide custom element
 
       // render reader content with custom element data (pdf viewer) by default
       this.updateReaderContentData(isRawData, isRawData);
@@ -84,9 +85,12 @@ export default {
     async fetchReaderContentRawDoc(docData, docId) {
       if (!isPdf(docData)) return;
       const rawDocUrl = `/api/dart/${docId}/raw`;
-      const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
-      this.readerContentCustomElementData = Object.assign(toCardData(docData), { content: viewer.element });
-      return viewer;
+      try {
+        const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
+        this.readerContentCustomElementData = Object.assign(toCardData(docData), { content: viewer.element });
+        return viewer;
+      } catch (error) {
+      }
     },
     updateReaderContentData(isRaw = false, disableSwtich = false) {
       this.readerContentData = isRaw ? this.readerContentRawData : this.readerContentCustomElementData;
