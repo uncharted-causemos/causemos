@@ -463,5 +463,6 @@ export default {
 
   buildNodeChartData,
 
+  getSuggestions,
   getConceptSuggestions
 };

@@ -13,7 +13,7 @@ import lexUtil from '@/utils/lex-util';
 export default class KeyValuePill extends BasePill {
   constructor(config, map, msg) {
     super(config);
-    this.branchConfig = lexUtil.mappedSuggestionBuilder(msg, true, map);
+    this.branchConfig = lexUtil.dynamicMappedSuggestionBuilder(msg, true, () => map);
     this.keyMap = map;
   }
 
