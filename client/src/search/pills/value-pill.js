@@ -11,7 +11,7 @@ import lexUtil from '@/utils/lex-util';
 export default class ValuePill extends BasePill {
   constructor(config, list, msg) {
     super(config);
-    this.branchConfig = lexUtil.simpleSuggestionBuilder(msg, true, list);
+    this.branchConfig = lexUtil.dynamicSimpleSuggestionBuilder(msg, true, () => list);
   }
 
   makeBranch() {

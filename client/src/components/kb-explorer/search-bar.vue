@@ -27,6 +27,7 @@ import TextPill from '@/search/pills/text-pill';
 import EdgePill from '@/search/pills/edge-pill';
 import NumEvidencePill from '@/search/pills/num-evidence-pill';
 import BinaryRelationState from '@/search/binary-relation-state';
+import SingleRelationState from '@/search/single-relation-state';
 
 import codeUtil from '@/utils/code-util';
 import readersUtil from '@/utils/readers-util';
@@ -36,11 +37,14 @@ import contradictionUtil from '@/utils/contradiction-util';
 import hedgingUtil from '@/utils/hedging-util';
 import conceptUtil from '@/utils/concept-util';
 
+import suggestionService from '@/services/suggestion-service';
 import ontologyFormatter from '@/filters/ontology-formatter';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
 const CONCEPTS_MSG = 'Select one or more ontological concepts';
 const INTERVENTION_MSG = 'Select one or more interventions';
+const AUTHOR_MSG = 'Select an author';
+const ORGANIZATION_MSG = 'Select an organization';
 
 const QUALITY = [
   'Not Evaluated',
@@ -62,7 +66,8 @@ export default {
   computed: {
     ...mapGetters({
       filters: 'query/filters',
-      ontologyConcepts: 'app/ontologyConcepts'
+      ontologyConcepts: 'app/ontologyConcepts',
+      project: 'app/project'
     })
   },
   watch: {
@@ -74,34 +79,35 @@ export default {
   mounted() {
     const topicPill = new DynamicValuePill(
       CODE_TABLE.TOPIC,
-      () => this.ontologyConcepts,
+      suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts),
       CONCEPTS_MSG,
       true,
       BinaryRelationState
     );
     const causePill = new DynamicValuePill(
       CODE_TABLE.SUBJ_CONCEPT,
-      () => this.ontologyConcepts,
+      suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts),
       CONCEPTS_MSG,
       true,
       BinaryRelationState
     );
     const effectPill = new DynamicValuePill(
       CODE_TABLE.OBJ_CONCEPT,
-      () => this.ontologyConcepts,
+      suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts),
       CONCEPTS_MSG,
       true,
       BinaryRelationState
     );
     const interventionPill = new DynamicValuePill(
       CODE_TABLE.INTERVENTION,
-      () =>
-        this.ontologyConcepts.filter(d => conceptUtil.isInterventionNode(d)),
+      suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts,
+        concepts => concepts.filter(d => conceptUtil.isInterventionNode(d))),
       INTERVENTION_MSG,
       true,
       BinaryRelationState
     );
-    const edgePill = new EdgePill(CODE_TABLE.EDGE, () => this.ontologyConcepts);
+    const edgePill = new EdgePill(CODE_TABLE.EDGE,
+      suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts));
     const numEvidencePill = new NumEvidencePill(CODE_TABLE.NUM_EVIDENCES);
     // Concept formatter
     [
@@ -163,9 +169,17 @@ export default {
       new TextPill(CODE_TABLE.DOC_FILE_TYPE),
       new TextPill(CODE_TABLE.DOC_PUBLICATION_YEAR),
       new TextPill(CODE_TABLE.DOC_SOURCE_DOMAIN),
-      new TextPill(CODE_TABLE.DOC_AUTHOR),
+      new DynamicValuePill(CODE_TABLE.DOC_AUTHOR,
+        suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_AUTHOR.field),
+        AUTHOR_MSG,
+        false,
+        SingleRelationState),
       new TextPill(CODE_TABLE.DOC_LOCATION),
-      new TextPill(CODE_TABLE.DOC_ORGANIZATION),
+      new DynamicValuePill(CODE_TABLE.DOC_ORGANIZATION,
+        suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_ORGANIZATION.field),
+        ORGANIZATION_MSG,
+        false,
+        SingleRelationState),
       new TextPill(CODE_TABLE.DOC_STANCE),
       new TextPill(CODE_TABLE.DOC_SENTIMENT),
       new TextPill(CODE_TABLE.GEO_LOCATION_NAME),

@@ -10,6 +10,17 @@ const { get, set } = rootRequire('/cache/node-lru-cache');
 
 const modelUtil = rootRequire('/util/model-util');
 
+
+// Get model with no thumbnail
+const _getModel = async (modelId) => {
+  const connection = Adapter.get(RESOURCE.CAG);
+  const modelData = await connection.findOne([{ field: 'id', value: modelId }], {
+    excludes: ['thumbnail_source']
+  });
+  return modelData;
+};
+
+
 // -------------- Helper Functions for Components of the CAG -----------------
 /**
  * Create or Update a new Component(s)
@@ -183,8 +194,7 @@ const updateCAGMetadata = async(modelId, modelFields) => {
 const getComponents = async(modelId) => {
   // Get the CAG Metadata, if there is no CAG with the given ID, then
   // throw an error
-  const connection = Adapter.get(RESOURCE.CAG);
-  const modelData = await connection.findOne([{ field: 'id', value: modelId }], {});
+  const modelData = await _getModel(modelId);
   if (modelData === null) {
     throw new Error(`No model found with id: ${modelId}`);
   }
@@ -320,18 +330,16 @@ const pruneCAG = async(modelId, edges, nodes) => {
  */
 const deleteCAG = async(modelId) => {
   Logger.info('Deleting CAG: ' + modelId);
-  // Attempt to delete the CAG with the specified modelId, if results are null
-  // throw an error
-  const CAGConnection = Adapter.get(RESOURCE.CAG);
 
   // Update CAG/model count in cache
-  const model = await CAGConnection.findOne([{ field: 'id', value: modelId }], {});
+  const model = await _getModel(modelId);
   const projectId = model.project_id;
   const projectCache = get(projectId);
   projectCache.stat.model_count -= 1;
   set(projectId, projectCache);
 
   // Delete CAG
+  const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.remove([{ field: 'id', value: modelId }]);
   if (!results.deleted) {
     throw new Error(`Unable to delete model: ${modelId}`);
@@ -464,10 +472,7 @@ const checkStaleCAGs = async (projectId, updatedStatementIds) => {
 const recalculateCAG = async (modelId) => {
   const cagAdapter = Adapter.get(RESOURCE.CAG);
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-
-  const cag = await cagAdapter.findOne([
-    { field: 'id', value: modelId }
-  ], {});
+  const cag = await _getModel(modelId);
 
   const statementAdapter = Adapter.get(RESOURCE.STATEMENT, cag.project_id);
   const edges = await edgeParameterAdapter.find([
@@ -570,9 +575,8 @@ const _getCAGStatements = async (projectId, referenceIds) => {
  */
 const getStatementsByEdge = async (modelId, edge) => {
   Logger.info(`Getting statements by CAG edge ${modelId}, ${edge.source} => ${edge.target}`);
-  const cagAdapter = Adapter.get(RESOURCE.CAG);
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-  const projectId = (await cagAdapter.findOne([{ field: 'id', value: modelId }], {})).project_id;
+  const projectId = (await _getModel(modelId)).project_id;
 
   const result = await edgeAdapter.find([
     { field: 'source', value: edge.source },
@@ -589,8 +593,7 @@ const getStatementsByEdge = async (modelId, edge) => {
  */
 const getStatementsByNode = async (modelId, concept) => {
   Logger.info(`Getting statements by CAG node/concept ${modelId}, ${concept}`);
-  const cagAdapter = Adapter.get(RESOURCE.CAG);
-  const projectId = (await cagAdapter.findOne([{ field: 'id', value: modelId }], {})).project_id;
+  const projectId = (await _getModel(modelId)).project_id;
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
 
   const sourceResult = await edgeAdapter.find([
