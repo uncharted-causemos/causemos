@@ -53,8 +53,8 @@ function dynamicMappedSuggestionBuilder(message, isMultiValue, mapFn) {
   return {
     name: message,
     suggestionLimit: SUGGESTIONS_LIMIT,
-    fetchSuggestions: function(hint = '') {
-      const map = mapFn();
+    fetchSuggestions: async function(hint = '') {
+      const map = await mapFn();
       const states = createStates(map);
       this.keyMap = map;
       return states.filter(d => {
@@ -67,52 +67,23 @@ function dynamicMappedSuggestionBuilder(message, isMultiValue, mapFn) {
 }
 
 /**
- * Suggestion builder for ValueState
- *
- * @param {string} message - assistant message
- * @param {boolean} isMultiValue - if state allows multi value
- * @param {array} suggestions - list of string suggestions
- */
-function simpleSuggestionBuilder(message, isMultiValue, suggestions) {
-  const states = suggestions.map(suggestion => {
-    return new ValueStateValue(suggestion);
-  });
-  return {
-    name: message,
-    suggestionLimit: SUGGESTIONS_LIMIT,
-    fetchSuggestions: function(hint = '') {
-      return states.filter(d => _matches(d.key, hint));
-    },
-    multivalue: isMultiValue,
-    allowUnknown: false
-  };
-}
-
-/**
  * Suggestion builder for ValueState where the states are dynamic
  *
  * @param {string} message - assistant message
  * @param {boolean} isMultiValue - if state allows multi value
  * @param {function} suggestionFn - a function that returns a list of suggestion strings
+ * @param {function} customMatchFn - a function that matches the search text to the suggestions
  */
 function dynamicSimpleSuggestionBuilder(message, isMultiValue, suggestionFn, customMatchFn = _matches) {
-  const createStates = (suggestions) => {
-    return suggestions.map(suggestion => {
-      return new ValueStateValue(suggestion);
-    });
-  };
-
   return {
     name: message,
     suggestionLimit: SUGGESTIONS_LIMIT,
-    fetchSuggestions: function(hint = '') {
-      return new Promise((resolve) => {
-        const states = createStates(suggestionFn());
-        if (_.isEmpty(hint)) {
-          resolve(states);
-        }
-        resolve(states.filter(d => customMatchFn(d.key, hint)));
+    fetchSuggestions: async function(hint = '') {
+      const suggestions = await suggestionFn(hint);
+      const states = suggestions.map(suggestion => {
+        return new ValueStateValue(suggestion);
       });
+      return states.filter(d => customMatchFn(d.key, hint));
     },
     multivalue: isMultiValue,
     allowUnknown: false
@@ -141,7 +112,6 @@ function _convertTo (values, convertType) {
 
 export default {
   mappedSuggestionBuilder,
-  simpleSuggestionBuilder,
   dynamicMappedSuggestionBuilder,
   dynamicSimpleSuggestionBuilder,
   convertToLex,

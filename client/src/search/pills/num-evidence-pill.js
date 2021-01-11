@@ -13,9 +13,9 @@ export default class NumEvidencePill extends BasePill {
   constructor(config) {
     super(config);
     // Create start range suggestion list
-    this.branchStartConfig = lexUtil.simpleSuggestionBuilder('Select # of evidence pieces', false, NUM_EVIDENCE_START_LIST);
+    this.branchStartConfig = lexUtil.dynamicSimpleSuggestionBuilder('Select # of evidence pieces', false, () => NUM_EVIDENCE_START_LIST);
     // Create end range suggestion list
-    this.branchEndConfig = lexUtil.simpleSuggestionBuilder('Select # of evidence pieces', false, NUM_EVIDENCE_END_LIST);
+    this.branchEndConfig = lexUtil.dynamicSimpleSuggestionBuilder('Select # of evidence pieces', false, () => NUM_EVIDENCE_END_LIST);
   }
 
   makeBranch() {

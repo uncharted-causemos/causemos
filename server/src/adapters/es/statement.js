@@ -4,7 +4,7 @@ const ES = require('./client');
 const queryUtil = require('./query-util');
 const { findFilter } = rootRequire('/util/filters-util');
 const { rangeAggregation, termsAggregation, dateRangeAggregation } = require('./agg-util');
-const { FIELDS, FIELD_TYPES, FIELD_LEVELS } = require('./config');
+const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./config');
 const Logger = rootRequire('/config/logger');
 
 const MAX_ES_SUGGESTION_BUCKET_SIZE = 20;
@@ -248,7 +248,7 @@ class Statement {
 
     // Wrap each word in * *
     const processedQuery = decodeURI(queryString)
-      .toLowerCase()
+      // .toLowerCase() TODO: case insensitive search works for concepts but not author
       .split(' ')
       .filter(el => el !== '')
       .map(el => `*${el}*`)
@@ -259,21 +259,25 @@ class Statement {
       searchBodies.push({ index: projectId });
       searchBodies.push({
         size: 0,
-        query: {
-          query_string: {
-            fields: [field],
-            query: processedQuery,
-            default_operator: 'AND'
-          }
-        },
-        aggs: {
-          fieldAgg: {
-            terms: {
-              field: field,
-              size: MAX_ES_SUGGESTION_BUCKET_SIZE
+        aggs: this._createNestedQuery(field, {
+          filtered: {
+            filter: {
+              query_string: {
+                fields: [field],
+                query: processedQuery,
+                default_operator: 'AND'
+              }
+            },
+            aggs: {
+              fieldAgg: {
+                terms: {
+                  field: field,
+                  size: MAX_ES_SUGGESTION_BUCKET_SIZE
+                }
+              }
             }
           }
-        }
+        })
       });
     });
     const { body } = await this.client.msearch({
@@ -281,7 +285,8 @@ class Statement {
     });
 
     const allResults = body.responses.reduce((acc, resp) => {
-      return acc.concat(resp.aggregations.fieldAgg.buckets);
+      const aggs = resp.aggregations.nestedAgg || resp.aggregations;
+      return acc.concat(aggs.filtered.fieldAgg.buckets);
     }, []);
 
     // Combine duplicate results by adding doc_count and sort in descending order
@@ -298,6 +303,29 @@ class Statement {
       .value();
 
     return matchedTerms;
+  }
+
+  /**
+   * Checks if the field is a nested type, and if so creates a nested EQ query from the one provided.
+   * @param {string} field - the field being searched in the query
+   * @param {object} query - the ES query
+   * @returns {{nestedAgg: {nested: {path: {string}}, aggs: {object}}}|{object}} a nested ES query if needed, or the original query if the field isn't nested.
+   * @private
+   */
+  _createNestedQuery(field, query) {
+    const nestedPath = _.find(Object.values(NESTED_FIELD_PATHS), path => field.startsWith(path));
+    if (nestedPath) {
+      return {
+        nestedAgg: {
+          nested: {
+            path: nestedPath
+          },
+          aggs: query
+        }
+      };
+    }
+
+    return query;
   }
 
   /**
