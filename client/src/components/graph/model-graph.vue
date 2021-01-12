@@ -106,12 +106,11 @@ export default {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data.graph);
       this.renderer.setScenarioData(this.scenarioData);
-      this.renderer.render().then(() => {
-        this.renderer.centerGraph();
-        this.renderer.enableDrag();
-        this.renderer.enableSubInteractions();
-        this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
-      });
+      await this.renderer.render();
+      this.renderer.centerGraph();
+      this.renderer.enableDrag();
+      this.renderer.enableSubInteractions();
+      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
     }
   }
 };
