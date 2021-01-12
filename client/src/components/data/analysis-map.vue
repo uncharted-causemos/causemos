@@ -197,7 +197,7 @@ export default {
       }
       // FIXME: This is old api call that accepts bounds and returns stats calculated based on geohash grids. Result won't quite match with current geotiled vector map ouput
       // We need to update the api so we get the stats based on geotile gtrid. Ideally we need to get the stats for all available zoom (precision) levels in single request
-      const stats = (await API.get(`/old/maas/output/${runId}/stats`, {
+      const stats = (await API.get(`/maas/output/${runId}/stats`, {
         params: {
           feature: outputVariable,
           model: modelId,

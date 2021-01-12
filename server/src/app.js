@@ -26,7 +26,6 @@ const documentsRouter = rootRequire('/routes/documents');
 const scenariosRouter = rootRequire('/routes/scenario');
 const settingsRouter = rootRequire('/routes/settings');
 const dartRouter = rootRequire('/routes/dart');
-const maasRouter = rootRequire('/routes/maas');
 const bookmarksRouter = rootRequire('/routes/bookmarks');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
@@ -117,11 +116,6 @@ app.use('/api/cags', [
 // Routes for project auditing
 app.use('/api/audits', [
   auditsRouter
-]);
-
-// The routes here are for the model-as-a-service group related requests
-app.use('/api/old/maas', [
-  maasRouter
 ]);
 
 // Forward /api/maas/* to WM_GO_URL/maas/*
