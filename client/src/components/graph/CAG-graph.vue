@@ -23,8 +23,8 @@ import { mapGetters } from 'vuex';
 import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
-import ELKBaseRenderer from '@/graphs/elk/elk-base-renderer';
-import { layered } from '@/graphs/elk/elk-strategies';
+import { SVGRenderer, highlight, nodeDrag, panZoom } from 'svg-flowgraph';
+import ElkAdaptor from '@/graphs/elk/elk-adaptor';
 import svgUtil from '@/utils/svg-util';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
@@ -68,7 +68,7 @@ const FADED_OPACITY = 0.2;
 
 const THRESHOLD_TIME = 1;
 
-class CAGRenderer extends ELKBaseRenderer {
+class CAGRenderer extends SVGRenderer {
   renderNodes() {
     const chart = this.chart;
 
@@ -494,8 +494,6 @@ class CAGRenderer extends ELKBaseRenderer {
     chart.selectAll('.edge').style('opacity', 1);
     chart.selectAll('.node-header').classed('node-selected', false);
     chart.selectAll('.edge-control').remove();
-    this.resetNodesPositions();
-    this.render();
   }
 
   // Highlights the neighborhood
@@ -576,9 +574,9 @@ export default {
   mounted() {
     this.renderer = new CAGRenderer({
       el: this.$refs.container,
-      strategy: layered,
-      nodeWidth: 130,
-      nodeHeight: 30,
+      adapter: new ElkAdaptor({ nodeWidth: 130, nodeHeight: 30 }),
+      renderMode: 'basic',
+      addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
       newEdgeFn: (source, target) => {
         this.renderer.disableNodeHandles();
@@ -613,8 +611,6 @@ export default {
       node.select('.node-header').classed('node-selected', true);
       this.selectedNode = concept;
       this.renderer.selectNode(node);
-      this.renderer.bringNodes(node.datum(), neighborhood);
-      this.renderer.render();
 
       const payload = node.datum();
       this.$emit('node-click', payload);
@@ -636,8 +632,6 @@ export default {
       edge.append('g')
         .classed('edge-control', true)
         .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
-
-      this.renderer.render();
     });
 
     this.renderer.setCallback('nodeMouseEnter', (evt, node, renderer) => {
@@ -702,7 +696,9 @@ export default {
         d3.select('.node input[type=text]').node().focus();
       }
 
-      this.renderer.centerGraphInViewbox();
+      this.renderer.centerGraph();
+      this.renderer.enableDrag();
+
       this.$emit('refresh', null);
     },
     highlight() {
@@ -736,8 +732,6 @@ export default {
 
       this.deselectNodeAndEdge();
       this.renderer.showNeighborhood(neighborhood);
-
-      this.renderer.render();
     }
   }
 };
