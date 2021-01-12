@@ -19,7 +19,8 @@
           contradictory evidence, and other factors to provide an estimate of confidence in the relationship.
         </p>
         <p>
-          These scores may be updated to take any curations into account.
+          These scores only apply to the current project,
+          and may be updated to take any curations into account.
         </p>
         <button
           class="btn btn-primary btn-call-for-action"
