@@ -1,7 +1,7 @@
 <template>
   <div class="data-view-container flex">
     <analysis-side-panel />
-    <div class="analysis-container flex-grow-1 flex-col">
+    <div class="main-content flex-grow-1 flex-col">
       <action-bar />
       <div class="analysis-content flex-grow-1">
         <data-analysis
@@ -226,6 +226,11 @@ export default {
     line-height: 28px;
   }
 }
+
+.main-content {
+  min-width: 0;
+}
+
 // TODO: apply these transition animations to the drilldown panel
 //  across views, and extract these default transition values for reuse
 //  in analysis.vue and elsewhere
