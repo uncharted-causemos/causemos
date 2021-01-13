@@ -10,7 +10,8 @@ import _ from 'lodash';
 
 import { mapGetters } from 'vuex';
 import ModelRenderer from '@/graphs/elk/model-renderer';
-import ElkAdaptor from '@/graphs/elk/elk-adaptor';
+import Adapter from '@/graphs/elk/adapter';
+import { layered } from '@/graphs/elk/layouts';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
 
@@ -49,9 +50,8 @@ export default {
   mounted() {
     this.renderer = new ModelRenderer({
       el: this.$refs.container,
-      adapter: new ElkAdaptor({ nodeWidth: 120, nodeHeight: 60 }),
+      adapter: new Adapter({ nodeWidth: 120, nodeHeight: 60, layout: layered }),
       renderMode: 'basic',
-      useDebugger: false,
       useEdgeControl: true,
       addons: [highlight, nodeDrag, panZoom]
     });
@@ -105,6 +105,23 @@ export default {
     async refresh() {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data.graph);
+      /*
+      this.renderer.setData({
+        nodes: [
+          {
+            id: 'abc',
+            label: 'abc'
+          },
+          {
+            id: 'def',
+            label: 'def'
+          }
+        ],
+        edges: [
+          { id: 'abc-def', source: 'abc', target: 'def', polarity: 1, parameter: { weight: 0.2  } }
+        ]
+      });
+      */
       this.renderer.setScenarioData(this.scenarioData);
       await this.renderer.render();
       this.renderer.centerGraph();
