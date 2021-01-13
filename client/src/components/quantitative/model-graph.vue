@@ -10,8 +10,10 @@ import _ from 'lodash';
 
 import { mapGetters } from 'vuex';
 import ModelRenderer from '@/graphs/elk/model-renderer';
-import { layered } from '@/graphs/elk/elk-strategies';
+import Adapter from '@/graphs/elk/adapter';
+import { layered } from '@/graphs/elk/layouts';
 import { calculateNeighborhood } from '@/utils/graphs-util';
+import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
 
 export default {
   name: 'ModelGraph',
@@ -48,10 +50,10 @@ export default {
   mounted() {
     this.renderer = new ModelRenderer({
       el: this.$refs.container,
-      nodeWidth: 120,
-      nodeHeight: 60,
+      adapter: new Adapter({ nodeWidth: 120, nodeHeight: 60, layout: layered }),
+      renderMode: 'basic',
       useEdgeControl: true,
-      strategy: layered
+      addons: [highlight, nodeDrag, panZoom]
     });
 
     this.renderer.setCallback('nodeClick', (evt, node) => {
@@ -102,11 +104,28 @@ export default {
   methods: {
     async refresh() {
       if (_.isEmpty(this.data)) return;
-      this.renderer.setData(this.data.graph, []);
+      this.renderer.setData(this.data.graph);
+      /*
+      this.renderer.setData({
+        nodes: [
+          {
+            id: 'abc',
+            label: 'abc'
+          },
+          {
+            id: 'def',
+            label: 'def'
+          }
+        ],
+        edges: [
+          { id: 'abc-def', source: 'abc', target: 'def', polarity: 1, parameter: { weight: 0.2  } }
+        ]
+      });
+      */
       this.renderer.setScenarioData(this.scenarioData);
-
       await this.renderer.render();
-      this.renderer.centerGraphInViewbox();
+      this.renderer.centerGraph();
+      this.renderer.enableDrag();
       this.renderer.enableSubInteractions();
       this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
     }

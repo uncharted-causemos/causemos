@@ -24,11 +24,10 @@
       >
         {{ heading }}
       </b>
-      <div
-        v-if="hasFilter"
-        class="has-filter-label">
-        <i class="fa fa-filter filtered-card-icon" />
-      </div>
+      <span
+        v-if="isFullscreen"
+        class="source"
+      >Source: {{ data && data.model }} - {{ data && data.source }}</span>
       <options-button
         v-if="!isCheckboxVisible"
         class="menu"
@@ -64,12 +63,63 @@
         </div>
       </options-button>
     </div>
-    <data-analysis-map
-      class="card-map"
-      :selection="selection"
-      :show-tooltip="true"
-      @on-map-load="onMapLoad"
-    />
+    <div
+      v-if="isFullscreen"
+      class="scenario"
+    >
+      <span>Scenario:</span>
+      <div class="output-runs">
+        <button
+          type="button"
+          class="btn dropdown-btn"
+          :disabled="!isRunSelected"
+          @click="toggleRunDropdown"
+        >
+          <div class="button-text">
+            {{ selectedRun ? selectedRun : { parameters: [] } | indicator-run-formatter }}
+          </div>
+          <i
+            v-if="isRunSelected"
+            class="fa fa-fw fa-angle-down"
+          />
+          <span v-else>No scenarios available</span>
+        </button>
+        <dropdown-control
+          v-if="isRunDropdownOpen"
+          class="dropdown-control"
+        >
+          <div
+            slot="content"
+          >
+            <div
+              v-for="run in runs"
+              :key="run.id"
+              class="dropdown-option"
+              :class="{ 'dropdown-option-selected': selection && selection.runId === run.id }"
+              @click="handleRunSelection(run.id)"
+            >
+              {{ run | indicator-run-formatter }}
+            </div>
+          </div>
+        </dropdown-control>
+      </div>
+    </div>
+    <div class="columns">
+      <data-analysis-input-panel
+        v-if="isFullscreen && data && data.modelId"
+        class="input-panel"
+        :model-id="data.modelId"
+        :output-variable="data.outputVariable"
+        @runsupdated="updateRuns"
+      />
+      <data-analysis-map
+        class="card-map"
+        :class="{'full-width': !isFullscreen}"
+        :selection="selection"
+        :show-tooltip="true"
+        @on-map-load="onMapLoad"
+      />
+    </div>
     <line-chart
       class="line-chart"
       :data="formattedTimeseriesData"
@@ -92,6 +142,8 @@ import API from '@/api/api';
 import { mapActions, mapGetters } from 'vuex';
 import { getModelRuns } from '@/services/datacube-service';
 import DataAnalysisMap from '@/components/data/analysis-map';
+import DataAnalysisInputPanel from '@/components/data/analysis-input-panel';
+import DropdownControl from '@/components/dropdown-control';
 import LineChart from '@/components/widgets/charts/line-chart';
 import OptionsButton from '@/components/widgets/options-button';
 import Disclaimer from '@/components/widgets/disclaimer';
@@ -106,7 +158,9 @@ export default {
     LineChart,
     DataAnalysisMap,
     OptionsButton,
-    Disclaimer
+    Disclaimer,
+    DataAnalysisInputPanel,
+    DropdownControl
   },
   props: {
     data: {
@@ -119,7 +173,9 @@ export default {
     }
   },
   data: () => ({
-    timeseries: []
+    runs: [],
+    timeseries: [],
+    isRunDropdownOpen: false
   }),
   computed: {
     ...mapGetters({
@@ -127,9 +183,6 @@ export default {
       algebraicTransform: 'dataAnalysis/algebraicTransform',
       algebraicTransformInputIds: 'dataAnalysis/algebraicTransformInputIds'
     }),
-    hasFilter() {
-      return this.data.filter && this.data.filter.global;
-    },
     selection() {
       const { id, modelId, outputVariable, selection } = this.data;
       return { id, modelId, outputVariable, ...selection };
@@ -137,10 +190,21 @@ export default {
     selectedRunId() {
       return _.get(this.selection, 'runId');
     },
+    selectedRun() {
+      return this.runs.find(run => run.id === this.selectedRunId);
+    },
+    isRunSelected() {
+      return this.selectedRun !== undefined;
+    },
     heading() {
       const outputVariable = _.get(this.data, 'outputVariable');
       const units = _.get(this.data, 'units');
-      return `${outputVariable} (${units})`;
+      let result = `${outputVariable} (${units})`;
+      if (this.isFullscreen) {
+        const outputDescription = _.get(this.data, 'outputDescription');
+        result += ` - ${outputDescription}`;
+      }
+      return result;
     },
     formattedTimeseriesData() {
       const formatted = [
@@ -261,6 +325,29 @@ export default {
     },
     onMapLoad() {
       this.$emit('on-map-load');
+    },
+    toggleRunDropdown() {
+      this.isRunDropdownOpen = !this.isRunDropdownOpen;
+    },
+    handleRunSelection(runId) {
+      this.selectRun(runId);
+      this.toggleRunDropdown();
+    },
+    updateRuns(runs) {
+      this.runs = runs;
+
+      const selectedRun = _.get(this.selection, 'runId');
+      const found = this.runs.find(({ id }) => id === selectedRun);
+      if (this.runs.length && !found) {
+        this.selectRun(this.runs[0].id);
+      }
+    },
+    selectRun(runId) {
+      const { id } = this.data;
+      this.updateSelection({
+        analysisItemId: id,
+        selection: { runId }
+      });
     }
   }
 };
@@ -289,6 +376,10 @@ $fullscreenTransition: all .5s ease-in-out;
       // Hardcode height to enable animation
       height: 34px;
     }
+
+    &:not(.isVisible) {
+      padding: 0;
+    }
   }
 }
 .heading {
@@ -307,33 +398,65 @@ $fullscreenTransition: all .5s ease-in-out;
     text-overflow: ellipsis;
     white-space: nowrap;
   }
+}
 
-  .has-filter-label {
-    .filtered-card-icon {
-      color: #6FC5DE;
+.scenario {
+  display: flex;
+  align-items: center;
+  margin-bottom: 5px;
+  margin-left: 10px;
+}
+
+.output-runs {
+  flex: 1;
+  min-width: 0;
+  padding-left: 10px;
+
+  .dropdown-control {
+    position: absolute;
+    max-height: 400px;
+    overflow-y: auto;
+  }
+  .dropdown-option-selected {
+    color: $selected-dark;
+  }
+  .dropdown-btn {
+    max-width: 100%;
+    display: flex;
+    align-items: center;
+
+    .button-text {
+      flex: 1;
+      text-overflow: ellipsis;
+      overflow: hidden;
     }
   }
 }
+
 .menu {
   position: relative;
   margin-left: 5px;
 }
-.card-map {
+
+.columns {
   flex: 3;
+  display: flex;
+  min-height: 0;
 }
-.input-params-container {
-  font-size: 85%;
-  margin-top: 10px;
-  text-align: center;
-  .input-label {
-    color: #bbb;
-    padding-right: 2px;
-  }
-  .input-value {
-    text-align: left;
-    padding-left: 2px;
+
+.input-panel {
+  width: 30%;
+}
+
+.card-map {
+  height: 100%;
+  width: 70%;
+
+  &.full-width {
+    width: 100%;
   }
 }
+
 .line-chart {
   flex: 1;
   height: 0;

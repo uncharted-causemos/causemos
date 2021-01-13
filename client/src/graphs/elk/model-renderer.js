@@ -1,8 +1,6 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 
-import ElkBaseRenderer from '@/graphs/elk/elk-base-renderer';
-import { createGraph } from '@/graphs/elk/elk-data';
 import {
   truncateTextToWidth, translate,
   hideSvgTooltip, showSvgTooltip,
@@ -17,6 +15,7 @@ import { calculateScenarioPercentageChange } from '@/utils/projection-util';
 import ontologyFormatter from '@/filters/ontology-formatter';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { interpolatePath } from 'd3-interpolate-path';
+import { SVGRenderer } from 'svg-flowgraph';
 
 const DEFAULT_STYLE = {
   node: {
@@ -58,7 +57,7 @@ const lineFn = d3.line()
   .y(d => d.y)
   .curve(d3.curveBasis);
 
-export default class ModelRenderer extends ElkBaseRenderer {
+export default class ModelRenderer extends SVGRenderer {
   setScenarioData(d) {
     this.scenarioData = d;
   }
@@ -407,15 +406,6 @@ export default class ModelRenderer extends ElkBaseRenderer {
     return svg;
   }
 
-  setData(data) {
-    super.setData(data, {});
-    const nodeSize = { width: DEFAULT_STYLE.node.width, height: DEFAULT_STYLE.node.height };
-    this.graph = createGraph(data, { nodeSize });
-
-    this.layout = null; // clear previous layout since it needs to be updated
-    return this;
-  }
-
   clearSelections() {
     const chart = this.chart;
     chart.selectAll('.node-container') // Clean up previous highlights
@@ -440,7 +430,7 @@ export default class ModelRenderer extends ElkBaseRenderer {
       .classed('edge-control', true)
       .attr('transform', translate(controlPoint[0], controlPoint[1]));
 
-    this.render();
+    this.renderEdgeControls();
   }
 
   mouseEnterEdge(evt, edge) {
@@ -474,10 +464,6 @@ export default class ModelRenderer extends ElkBaseRenderer {
     const nodesBody = chart.selectAll('.node-body-group');
     const registry = this.registry;
 
-    const registered = (eventName) => {
-      return ({}.hasOwnProperty.call(registry, eventName));
-    };
-
     this.chart.selectAll('.node').on('mouseenter', function (evt, d) {
       // if some of the label name was shortened, tooltip the whole label (so helpful)
       if (d.label.length !== d3.select(this).select('.node-label').text().replace(/^\*/, '').length) {
@@ -506,8 +492,8 @@ export default class ModelRenderer extends ElkBaseRenderer {
         .text('\uf044')
         .on('click', function(evt) {
           evt.stopPropagation();
-          if (registered('nodeClick')) {
-            registry.nodeClick(evt, d3.select(this), self);
+          if (registry.has('nodeClick')) {
+            registry.get('nodeClick')(evt, d3.select(this), self);
           }
           d3.select(this).remove();
         });
@@ -531,8 +517,8 @@ export default class ModelRenderer extends ElkBaseRenderer {
         .text('\uf044')
         .on('click', function(evt) {
           evt.stopPropagation();
-          if (registered('nodeClick')) {
-            registry.nodeClick(evt, d3.select(this), self);
+          if (registry.has('nodeClick')) {
+            registry.get('nodeClick')(evt, d3.select(this), self);
           }
           d3.select(this).remove();
         });

@@ -1,36 +1,53 @@
 <template>
-  <wm-map
-    v-bind="mapFixedOptions"
-    :bounds="mapBounds"
-    @move="syncBounds"
-    @load="onMapLoad"
-    @mousemove="onMouseMove"
-    @mouseout="onMouseOut"
-  >
-    <wm-map-vector
-      v-if="vectorSource"
-      :source-id="vectorSourceId"
-      :source="vectorSource"
-      :source-layer="vectorSourceLayer"
-      :source-maxzoom="vectorSourceMaxzoom"
-      :promote-id="idPropName"
-      :layer-id="colorLayerId"
-      :layer="colorLayer"
-    />
-    <wm-map-vector
-      v-if="vectorSource"
-      :source-id="vectorSourceId"
-      :source-layer="vectorSourceLayer"
-      :layer-id="baseLayerId"
-      :layer="baseLayer"
-    />
-    <wm-map-popup
-      v-if="showTooltip"
-      :layer-id="baseLayerId"
-      :formatter-fn="popupValueFormatter"
-      :cursor="'default'"
-    />
-  </wm-map>
+  <div class="analysis-map-container">
+    <div class="value-filter">
+      <div
+        class="filter-toggle-button"
+        :class="{ active: !!isFilterGlobal }"
+        @click="toggleFilterGlobal">
+        <i class="fa fa-filter" />
+      </div>
+      <slider-continuous-range
+        v-if="extent"
+        v-model="range"
+        :min="extent.min"
+        :max="extent.max"
+        :color-option="colorOption"
+      />
+    </div>
+    <wm-map
+      v-bind="mapFixedOptions"
+      :bounds="mapBounds"
+      @move="syncBounds"
+      @load="onMapLoad"
+      @mousemove="onMouseMove"
+      @mouseout="onMouseOut"
+    >
+      <wm-map-vector
+        v-if="vectorSource"
+        :source-id="vectorSourceId"
+        :source="vectorSource"
+        :source-layer="vectorSourceLayer"
+        :source-maxzoom="vectorSourceMaxzoom"
+        :promote-id="idPropName"
+        :layer-id="colorLayerId"
+        :layer="colorLayer"
+      />
+      <wm-map-vector
+        v-if="vectorSource"
+        :source-id="vectorSourceId"
+        :source-layer="vectorSourceLayer"
+        :layer-id="baseLayerId"
+        :layer="baseLayer"
+      />
+      <wm-map-popup
+        v-if="showTooltip"
+        :layer-id="baseLayerId"
+        :formatter-fn="popupValueFormatter"
+        :cursor="'default'"
+      />
+    </wm-map>
+  </div>
 </template>
 
 <script>
@@ -45,9 +62,10 @@ import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { getColors } from '@/utils/colors-util';
 import { BASE_MAP_OPTIONS, createHeatmapLayerStyle } from '@/utils/map-utils';
 import { chartValueFormatter } from '@/utils/string-util';
+import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
 
-const DEFAULT_EXTENT = { min: 0, max: 1 };
-const EXTENT_UPDATE_EVENT = 'update-extent';
+// Map filter animation fps rate (Use lower value if there's a performance issue)
+const FILTER_ANIMATION_FPS = 15;
 
 const createRangeFilter = ({ min, max }, prop) => {
   const lowerBound = ['>=', prop, Number(min)];
@@ -77,7 +95,8 @@ export default {
   components: {
     WmMap,
     WmMapVector,
-    WmMapPopup
+    WmMapPopup,
+    SliderContinuousRange
   },
   props: {
     // A model ouput selection object
@@ -94,7 +113,8 @@ export default {
     baseLayer: undefined,
     colorLayer: undefined,
     hoverId: undefined,
-    extent: DEFAULT_EXTENT
+    extent: undefined,
+    range: undefined
   }),
   computed: {
     ...mapGetters({
@@ -147,6 +167,15 @@ export default {
     colorOption() {
       const { modelId, outputVariable } = this.selection || {};
       return getModelOutputColorOption(modelId, outputVariable);
+    },
+    filter() {
+      return this.filters.find(filter => filter.id === this.valueProp);
+    },
+    isFilterGlobal() {
+      return this.filter && this.filter.global;
+    },
+    filterRange() {
+      return this.filter && this.filter.range;
     }
   },
   watch: {
@@ -155,6 +184,12 @@ export default {
     },
     selection() {
       this.refresh();
+    },
+    range: {
+      handler() {
+        this.updateFilterRange();
+      },
+      deep: true
     }
   },
   created() {
@@ -174,9 +209,11 @@ export default {
   },
   methods: {
     ...mapActions({
-      setMapBounds: 'dataAnalysis/setMapBounds'
+      setMapBounds: 'dataAnalysis/setMapBounds',
+      updateFilter: 'dataAnalysis/updateFilter'
     }),
     refresh() {
+      this.range = this.filterRange;
       // Intilaize min max boundary value
       this.updateStats().then(() => {
         this.refreshLayers();
@@ -192,7 +229,6 @@ export default {
     async updateStats() {
       const { runId, outputVariable, modelId } = this.selection || {};
       if (!runId || !outputVariable || !modelId) {
-        this.extent = DEFAULT_EXTENT;
         return;
       }
       // FIXME: This is old api call that accepts bounds and returns stats calculated based on geohash grids. Result won't quite match with current geotiled vector map ouput
@@ -205,11 +241,9 @@ export default {
         }
       })).data;
       this.extent = {
-        ...DEFAULT_EXTENT,
         min: stats.min,
         max: stats.max
       };
-      this.$emit(EXTENT_UPDATE_EVENT, this.extent);
     },
     onMapLoad(event) {
       const map = event.map;
@@ -283,7 +317,46 @@ export default {
     popupValueFormatter(feature) {
       const value = _.isNil(feature) ? 0 : feature.properties[this.valueProp];
       return chartValueFormatter([this.extent.min, this.extent.max])(value);
-    }
+    },
+    toggleFilterGlobal() {
+      this.updateFilter({
+        analysisItemId: this.valueProp,
+        filter: { global: !this.isFilterGlobal }
+      });
+    },
+    updateFilterRange: _.throttle(function () {
+      if (!this.range || !this.valueProp) return;
+      this.updateFilter({
+        analysisItemId: this.valueProp,
+        filter: { range: this.range }
+      });
+    }, 1000 / FILTER_ANIMATION_FPS)
   }
 };
 </script>
+
+<style lang="scss" scoped>
+.analysis-map-container {
+  position: relative;
+}
+.value-filter {
+  position: absolute;
+  right: 5px;
+  top: 5px;
+  padding: 5px;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  cursor: pointer;
+  .filter-toggle-button {
+    padding: 5px;
+    border: 1px solid #888;
+    border-radius: 3px;
+    background-color: #ccc;
+    &.active {
+      background-color: #6FC5DE;
+    }
+  }
+}
+</style>
