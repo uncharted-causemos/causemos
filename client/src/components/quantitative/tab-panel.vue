@@ -108,7 +108,7 @@ import { mapGetters } from 'vuex';
 import QuantitativeModelOptions from '@/components/quantitative/quantitative-model-options';
 import ConfigBar from '@/components/quantitative/config-bar';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis';
-import ModelGraph from '@/components/graph/model-graph';
+import ModelGraph from '@/components/quantitative/model-graph';
 import LabelsList from '@/components/model/models-matrix/labels-list';
 import ArcDiagram from '@/components/model/models-matrix/arc-diagram';
 
