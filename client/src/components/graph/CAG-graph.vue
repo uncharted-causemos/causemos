@@ -24,7 +24,8 @@ import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
 import { SVGRenderer, highlight, nodeDrag, panZoom } from 'svg-flowgraph';
-import ElkAdaptor from '@/graphs/elk/elk-adaptor';
+import Adapter from '@/graphs/elk/adapter';
+import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
@@ -510,6 +511,18 @@ class CAGRenderer extends SVGRenderer {
     nonNeighborEdges.style('opacity', FADED_OPACITY);
   }
 
+  selectEdge(evt, edge) {
+    const mousePoint = d3.pointer(evt, edge.node());
+    const pathNode = edge.select('.edge-path').node();
+    const controlPoint = svgUtil.closestPointOnPath(pathNode, mousePoint);
+
+    edge.append('g')
+      .classed('edge-control', true)
+      .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
+
+    this.renderEdgeControls();
+  }
+
   selectNode(node) {
     node.select('.node-header')
       .style('border-radius', DEFAULT_STYLE.nodeHeader.highlighted.borderRadius)
@@ -574,7 +587,7 @@ export default {
   mounted() {
     this.renderer = new CAGRenderer({
       el: this.$refs.container,
-      adapter: new ElkAdaptor({ nodeWidth: 130, nodeHeight: 30 }),
+      adapter: new Adapter({ nodeWidth: 130, nodeHeight: 30, layout: layered }),
       renderMode: 'basic',
       addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
@@ -624,14 +637,7 @@ export default {
 
       this.deselectNodeAndEdge();
       this.renderer.showNeighborhood(neighborhood);
-
-      const mousePoint = d3.pointer(evt, edge.node());
-      const pathNode = edge.select('.edge-path').node();
-      const controlPoint = svgUtil.closestPointOnPath(pathNode, mousePoint);
-
-      edge.append('g')
-        .classed('edge-control', true)
-        .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
+      this.renderer.selectEdge(evt, edge);
     });
 
     this.renderer.setCallback('nodeMouseEnter', (evt, node, renderer) => {
