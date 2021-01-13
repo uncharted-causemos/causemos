@@ -1,6 +1,6 @@
 <template>
   <div
-    class="analysis-container h-100 flex flex-col"
+    class="analysis-container"
     :class="{'fullscreen-mode': isFocusedCardFullscreen}"
   >
     <div
@@ -16,26 +16,17 @@
         <span class="badge badge-default">{{ filter.name }}: <b>{{ filter.min }}</b> to <b>{{ filter.max }}</b></span>
       </span>
     </div>
-    <div class="split-container flex flex-row flex-grow-1 h-0">
-      <data-analysis-control-panel
-        v-if="focusedItem"
-        class="control-panel"
-        :data="focusedItem"
+    <div class="cards-container">
+      <data-analysis-card
+        v-for="item in analysisItems"
+        :key="item.id"
+        class="card-box"
+        :class="{'isFullscreen': item.isFocused}"
+        :data="item"
+        :is-focused-card-fullscreen="isFocusedCardFullscreen"
+        @toggle-fullscreen="toggleFullscreen(item)"
+        @on-map-load="onMapLoad(item.id)"
       />
-      <div class="cards-container flex-grow-1 w-0 flex flex-row flex-wrap">
-        <!-- Rerender when card index changes. This is needed because when focused card is put back to the list, it needs to re-render -->
-        <data-analysis-card
-          v-for="item in analysisItems"
-          :key="item.id"
-          class="card-box"
-          :class="{ isFocused: item.isFocused }"
-          :data="item"
-          :is-focused-card-fullscreen="isFocusedCardFullscreen"
-          @click="onCardSelect(item)"
-          @toggle-fullscreen="toggleFullscreen(item)"
-          @on-map-load="onMapLoad(item.id)"
-        />
-      </div>
     </div>
   </div>
 </template>
@@ -44,7 +35,6 @@
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 import DataAnalysisCard from '@/components/data/analysis-card';
-import DataAnalysisControlPanel from '@/components/data/analysis-control-panel';
 import html2canvas from 'html2canvas';
 import { updateAnalysis } from '@/services/analysis-service';
 import { chartValueFormatter } from '@/utils/string-util';
@@ -52,8 +42,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 export default {
   name: 'Analysis',
   components: {
-    DataAnalysisCard,
-    DataAnalysisControlPanel
+    DataAnalysisCard
   },
   props: {
     isFocusedCardFullscreen: {
@@ -68,9 +57,6 @@ export default {
       analysisItems: 'dataAnalysis/analysisItems',
       focusedItem: 'dataAnalysis/focusedItem'
     }),
-    focusedSelection() {
-      return this.focusedItem && this.focusedItem.selection;
-    },
     activeFilters() {
       const filterStrings = this.analysisItems
         .filter(item => item.filter && item.filter.global)
@@ -88,10 +74,13 @@ export default {
   watch: {
     timeSelectionSyncing(newVal, oldVal) {
       if (_.isEqual(oldVal, newVal)) return;
-      if (newVal && this.focusedSelection && this.focusedSelection.timestamp) {
-        // sync with the selected time of currently focused data
-        this.updateAllTimeSelection(this.focusedSelection.timestamp);
-      }
+      // TODO: if a card is fullscreen, sync with its selected time
+      //  else, sync with the first card's selected time
+      // if (newVal && this.focusedSelection && this.focusedSelection.timestamp) {
+      //   // sync with the selected time of currently focused data
+      //   this.updateAllTimeSelection(this.focusedSelection.timestamp);
+      // }
+      console.log('TODO: time selection syncing');
     },
     analysisItems() {
       this.captureThumbnail();
@@ -103,21 +92,18 @@ export default {
       updateAllTimeSelection: 'dataAnalysis/updateAllTimeSelection',
       setFocusedItem: 'dataAnalysis/setFocusedItem'
     }),
-    onCardSelect(data) {
-      this.setFocusedItem(data.id);
-    },
     toggleFullscreen(cardData) {
+      this.setFocusedItem(cardData.id);
       if (this.isFocusedCardFullscreen) {
         this.$emit('setFocusedCardFullscreen', false);
         return;
       }
-      this.onCardSelect(cardData);
       this.$emit('setFocusedCardFullscreen', true);
     },
     captureThumbnail: _.throttle(async function() {
       // Generate a thumbnail at most 1 second after function is called, ignoring multiple calls
       try {
-        const el = this.$el.querySelector('.split-container');
+        const el = this.$el.querySelector('.cards-container');
         const thumbnailSource = (await html2canvas(el, { scale: 0.5 })).toDataURL();
         await updateAnalysis(this.analysisId, {
           thumbnail_source: thumbnailSource
@@ -126,10 +112,8 @@ export default {
         console.error('Error occurred when generating thumbnail for analysis:', e);
       }
     }, 1000, { trailing: true, leading: false }),
-    onMapLoad(itemId) {
-      if (!this.focusedItem.id || itemId === this.focusedItem.id) {
-        this.captureThumbnail();
-      }
+    onMapLoad() {
+      this.captureThumbnail();
     }
   }
 };
@@ -144,6 +128,11 @@ $fullscreenTransition: all .5s ease-in-out;
 .analysis-container {
   background-color: $background-light-1;
   padding: 10px;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+
   .header {
     transition: $fullscreenTransition;
     padding-bottom: 10px;
@@ -160,17 +149,15 @@ $fullscreenTransition: all .5s ease-in-out;
     }
   }
 
-  .control-panel {
-    transition: $fullscreenTransition;
-    overflow: hidden;
-  }
-
   .cards-container {
     transition: $fullscreenTransition;
     align-content: space-between;
-    padding-left: 10px;
     overflow-y: auto;
     position: relative;
+    display: flex;
+    width: 100%;
+    flex: 1;
+    flex-flow: wrap;
   }
 
   .card-box {
@@ -184,13 +171,6 @@ $fullscreenTransition: all .5s ease-in-out;
     &:nth-child(3n) {
       margin-right: 0;
     }
-
-    &.isFocused {
-      border-color: $selected;
-      -webkit-box-shadow: 0 0 7px $selected;
-      -moz-box-shadow: 0 0 7px $selected;
-      box-shadow: 0 0 7px $selected;
-    }
   }
 }
 
@@ -202,16 +182,6 @@ $fullscreenTransition: all .5s ease-in-out;
 }
 
 .analysis-container.fullscreen-mode {
-  .control-panel {
-    width: 0;
-    min-width: 0;
-    padding: 0;
-    border-width: 0;
-  }
-
-  .cards-container {
-    padding: 0;
-  }
 
   .card-box {
     flex-basis: 100%;
@@ -219,7 +189,7 @@ $fullscreenTransition: all .5s ease-in-out;
     flex-grow: 1;
     margin: 0;
 
-    &:not(.isFocused) {
+    &:not(.isFullscreen) {
       flex-basis: 0;
       height: 0;
       padding: 0;
