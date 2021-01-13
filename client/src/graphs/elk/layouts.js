@@ -1,11 +1,14 @@
 export const layered = {
   id: 'layered',
-  layoutOptions: () => {
+  layoutOptions: (/* graph */) => {
+    const layerBound = 6; // FIXME: should to take graph size into account
     return {
       'elk.algorithm': 'layered',
       'elk.edgeRouting': 'POLYLINE', // [POLYLINE, ORTHOGONAL, SPLINES]
       'elk.direction': 'RIGHT',
-      // 'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
+      'elk.randomSeed': 666, // might as well be a coool number
+      'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
+      'elk.layered.layering.coffmanGraham.layerBound': layerBound,
       'elk.hierarchyHandling': 'INCLUDE_CHILDREN',
       'elk.padding': '[top=25, left=25, bottom=25, right=25]',
       'elk.validateGraph': true,
@@ -13,7 +16,7 @@ export const layered = {
       'elk.layered.spacing.edgeNodeBetweenLayers': 1
     };
   },
-  nodesLayoutOptions: () => {
+  nodesLayoutOptions: (/* node */) => {
     return {
       'elk.portConstraints': 'FIXED_SIDE',
       'elk.portAlignment.default': 'DISTRIBUTED',

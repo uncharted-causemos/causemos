@@ -221,15 +221,17 @@ export default {
 
     window.renderer = this.renderer;
 
+    const nd = (s) => ({ id: s, label: s, concept: s });
+
     this.renderer.setData({
-      id: 'root',
+      id: 'root', concept: 'root',
       nodes: [
-        { id: 'A', label: 'outside',
+        { ...nd('outside'),
           nodes: [
-            { id: 'inside', label: 'inside' ,
+            { ...nd('inside'),
               nodes: [
-                { id: 'n1', label: 'n1' },
-                { id: 'n2', label: 'n2' }
+                nd('n1'),
+                nd('n2')
               ],
               edges: [
                 { id: 'e1', source: 'n1', target: 'n2' }
@@ -237,8 +239,7 @@ export default {
             }
           ]
         },
-        { id: 'hi', label: 'hi'
-        }
+        nd('hi')
       ],
       edges: [
         { id: 'e2', source: 'hi', target: 'n1' }

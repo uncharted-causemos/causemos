@@ -91,7 +91,6 @@ export const makeEdgeMaps = (root) => {
  */
 const build = (root) => {
   const _walk = (node, depth, parent) => {
-    console.log('debug', node);
     const nodeSpec = {
       id: node.concept || '',
       concept: node.concept, // FIXME ... should just rely on id
