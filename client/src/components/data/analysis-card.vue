@@ -282,7 +282,7 @@ export default {
         this.timeseries = [];
         return;
       }
-      const timeseries = (await API.get(`old/maas/output/${runId}/timeseries`, {
+      const timeseries = (await API.get(`maas/output/${runId}/timeseries`, {
         params: {
           model: modelId,
           feature: outputVariable

@@ -11,7 +11,6 @@ router.get('/settings', function(req, res, next) {
     curationURL: env.WM_CURATION_SERVICE_URL,
     goURL: env.WM_GO_URL,
     tdDataURL: env.TD_DATA_URL,
-    buDataURL: env.BU_DATA_URL,
     delphiURL: env.DELPHI_URL,
     dyseURL: env.DYSE_URL,
     indraURL: env.INDRA_CURATION_URL,
