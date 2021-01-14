@@ -163,13 +163,6 @@ export default {
     setActive (tabId) {
       this.setView(tabId);
     },
-    onSettingSelectedEdge(edge) {
-      if (!_.isEmpty(edge)) {
-        this.setSelectedEdge({ source: edge.cause, target: edge.effect });
-      } else {
-        this.setSelectedEdge({ source: null, target: null });
-      }
-    },
     setMapData() {
       this.setMapDataPromise = projectService.getProjectLocationsPromise(this.project, null).then(d => {
         const transformedData = geo.transformMapData(d.data);
