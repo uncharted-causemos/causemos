@@ -21,7 +21,10 @@
         v-for="item in analysisItems"
         :key="item.id"
         class="card-box"
-        :class="{'isFullscreen': item.isFocused}"
+        :class="[
+          item.isFocused ? 'is-fullscreen' : '',
+          `card-count-${analysisItems.length}`
+        ]"
         :data="item"
         :is-focused-card-fullscreen="isFocusedCardFullscreen"
         @toggle-fullscreen="toggleFullscreen(item)"
@@ -166,11 +169,44 @@ $fullscreenTransition: all .5s ease-in-out;
     border: 1px solid #CACBCC;
     border-radius: 3px;
     overflow: hidden;
-    height: calc(calc(100% - 5px) / 2);
-    flex: 0 1 calc(calc(100% - 10px) / 3);
-    &:nth-child(3n) {
+    height: 100%;
+    flex-shrink: 1;
+    flex-grow: 1;
+    flex-basis: 0;
+    &:last-child {
       margin-right: 0;
     }
+
+    // If there are > 3 cards,
+    //  split into two rows
+    &.card-count-4,
+    &.card-count-5,
+    &.card-count-6 {
+      height: calc(calc(100% - 5px) / 2);
+    }
+
+    &.card-count-4 {
+      // Each card should take half the available width
+      flex-basis: calc(calc(100% - 5px) / 2);
+
+      &:nth-child(2) {
+        margin-right: 0;
+      }
+    }
+
+    &.card-count-5,
+    &.card-count-6 {
+      // Each card should take up a third of the available width
+      flex-basis: calc(calc(100% - 10px) / 3);
+      // If there are only two cards on the bottom row,
+      //  don't expand them to be larger than the top row cards
+      flex-grow: 0;
+
+      &:nth-child(3) {
+        margin-right: 0;
+      }
+    }
+
   }
 }
 
@@ -189,7 +225,7 @@ $fullscreenTransition: all .5s ease-in-out;
     flex-grow: 1;
     margin: 0;
 
-    &:not(.isFullscreen) {
+    &:not(.is-fullscreen) {
       flex-basis: 0;
       height: 0;
       padding: 0;

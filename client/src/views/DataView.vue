@@ -152,6 +152,21 @@ export default {
       if (isFullscreen && !wasFullscreen) {
         this.fetchMetadata(this.focusedItem.id);
       }
+    },
+    analysisItems(n, o) {
+      const newLength = n.length;
+      const oldLength = o.length;
+      if (newLength === 1 && oldLength !== 1) {
+        // Just added our first card or removed our second-last card,
+        //  so fullscreen our only card
+        this.setFocusedCardFullscreen(true);
+        return;
+      }
+      if (oldLength === 1 && newLength !== 1) {
+        // Just removed our last card or added a second card
+        //  so exit fullscreen
+        this.setFocusedCardFullscreen(false);
+      }
     }
   },
   created() {
