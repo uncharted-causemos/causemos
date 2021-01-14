@@ -426,10 +426,6 @@ export default {
         this.selectedStatements = statements;
         this.selectedEdge = edgeData;
         this.isFetchingStatements = false;
-
-        // FIXME: hack, need to standarsize
-        this.selectedEdge.cause = this.selectedEdge.source;
-        this.selectedEdge.effect = this.selectedEdge.target;
       });
     },
     onBackgroundClick() {

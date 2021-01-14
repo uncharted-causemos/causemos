@@ -32,7 +32,7 @@
         <div slot="content">
           <evidence-pane
             v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-            :selected-relationship="restructuredEdge"
+            :selected-relationship="selectedEdge"
             :statements="selectedStatements"
             :project="project"
             :is-fetching-statements="isFetchingStatements"
@@ -64,7 +64,7 @@
         <div slot="overlay-pane">
           <evidence-pane
             v-if="activeDrilldownTab === PANE_ID.EVIDENCE_OVERLAY && selectedEdge !== null"
-            :selected-relationship="restructuredEdge"
+            :selected-relationship="selectedEdge"
             :statements="selectedStatements"
             :project="project"
             :is-fetching-statements="isFetchingStatements"
@@ -181,14 +181,6 @@ export default {
       selectedRelationships: 'graph/selectedRelationships',
       view: 'query/view'
     }),
-    restructuredEdge() {
-      // Massages the structure of selectedEdge to line up with the format used by
-      //  the relationships pane and expected by the evidence pane
-      const result = this.selectedEdge;
-      result.cause = result.source;
-      result.effect = result.target;
-      return result;
-    },
     restructuredNode() {
       // Massages the structure of selectedEdge to line up with the format used by
       //  the relationships pane and factors pane
@@ -382,7 +374,7 @@ export default {
         case PANE_ID.EVIDENCE:
           this.drilldownTabs = EDGE_DRILLDOWN_TABS;
           this.activeDrilldownTab = PANE_ID.EVIDENCE;
-          this.loadStatements('edge', this.restructuredEdge.cause + '///' + this.restructuredEdge.effect);
+          this.loadStatements('edge', this.selectedEdge.source + '///' + this.selectedEdge.target);
           this.openDrilldown();
           break;
         case PANE_ID.RELATIONSHIPS:
@@ -404,7 +396,7 @@ export default {
           break;
         case PANE_ID.EVIDENCE_OVERLAY:
           this.activeDrilldownTab = PANE_ID.EVIDENCE_OVERLAY;
-          this.loadStatements('edge', this.restructuredEdge.cause + '///' + this.restructuredEdge.effect);
+          this.loadStatements('edge', this.selectedEdge.source + '///' + this.selectedEdge.target);
           this.openDrilldownOverlay();
           break;
         default:

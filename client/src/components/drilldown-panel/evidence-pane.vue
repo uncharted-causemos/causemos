@@ -6,11 +6,11 @@
       @close="documentModalData = null"
     />
     <div class="pane-summary">
-      {{ selectedRelationship.cause | ontology-formatter }}
+      {{ selectedRelationship.source | ontology-formatter }}
       <i
         class="fa fa-long-arrow-right fa-lg icon"
         :style="polarityColor"
-      /> &nbsp;{{ selectedRelationship.effect | ontology-formatter }}
+      /> &nbsp;{{ selectedRelationship.target | ontology-formatter }}
     </div>
     <slot />
     <div class="pane-summary">Evidence ({{ evidenceCount | number-formatter }})</div>
@@ -125,16 +125,16 @@
               @close="closeEditor" />
             <ontology-editor
               v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_SUBJ"
-              :concept="selectedRelationship.cause"
+              :concept="selectedRelationship.source"
               :suggestions="suggestions"
-              @select="confirmUpdateGrounding(item, selectedRelationship.cause, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
+              @select="confirmUpdateGrounding(item, selectedRelationship.source, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
               @close="closeEditor" />
 
             <ontology-editor
               v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
-              :concept="selectedRelationship.effect"
+              :concept="selectedRelationship.target"
               :suggestions="suggestions"
-              @select="confirmUpdateGrounding(item, selectedRelationship.effect, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
+              @select="confirmUpdateGrounding(item, selectedRelationship.target, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
               @close="closeEditor" />
           </div>
         </collapsible-item>
@@ -203,8 +203,8 @@ export default {
       default: null,
       validator(selectedRelationship) {
         return (selectedRelationship !== undefined &&
-          selectedRelationship.cause !== undefined &&
-          selectedRelationship.effect !== undefined
+          selectedRelationship.source !== undefined &&
+          selectedRelationship.target !== undefined
         );
       }
     },

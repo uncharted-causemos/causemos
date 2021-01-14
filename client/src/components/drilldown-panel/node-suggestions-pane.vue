@@ -214,8 +214,8 @@ export default {
             const splitted = s.key.split('///');
             const meta = {};
             meta.checked = false;
-            meta.cause = splitted[0];
-            meta.effect = splitted[1];
+            meta.source = splitted[0];
+            meta.target = splitted[1];
             meta.num_evidence = _.sumBy(s.dataArray, d => {
               return d.wm.num_evidence;
             });
@@ -268,8 +268,8 @@ export default {
     },
     filterRedundantConcept(relationshipGroupKey, relationship) {
       return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
-        ? relationship.cause
-        : relationship.effect;
+        ? relationship.source
+        : relationship.target;
     },
     openKBExplorer(relationshipGroupKey) {
       const selectedNode = this.selectedNode.concept;
@@ -305,7 +305,7 @@ export default {
           causeGroup.children.forEach(edge => {
             if (edge.meta.checked) {
               const referenceIds = edge.dataArray.map(statement => statement.id);
-              causeEdges.push({ source: edge.meta.cause, target: edge.meta.effect, reference_ids: referenceIds });
+              causeEdges.push({ source: edge.meta.source, target: edge.meta.target, reference_ids: referenceIds });
             }
           });
           // Check existing nodes in the CAG. We don't need to check existing edges because we don't allow to add existing edges from the list.
@@ -320,7 +320,7 @@ export default {
           effectGroup.children.forEach(edge => {
             if (edge.meta.checked) {
               const referenceIds = edge.dataArray.map(statement => statement.id);
-              effectEdges.push({ source: edge.meta.cause, target: edge.meta.effect, reference_ids: referenceIds });
+              effectEdges.push({ source: edge.meta.source, target: edge.meta.target, reference_ids: referenceIds });
             }
           });
 

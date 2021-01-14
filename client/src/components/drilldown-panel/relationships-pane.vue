@@ -271,8 +271,8 @@ export default {
             const meta = {};
             meta.checked = false;
             meta.isSomeChildChecked = false;
-            meta.cause = splitted[0];
-            meta.effect = splitted[1];
+            meta.source = splitted[0];
+            meta.target = splitted[1];
             meta.num_evidence = _.sumBy(s.dataArray, d => {
               return d.wm.num_evidence;
             });
@@ -305,8 +305,8 @@ export default {
           meta: {
             checked: false,
             isSomeChildChecked: false,
-            cause: edge.source,
-            effect: edge.target,
+            source: edge.source,
+            target: edge.target,
             num_evidence: 0,
             style: { color: calcEdgeColor({ polarity: edge.user_polarity, belief_score: 0.5 }) }
           }
@@ -340,7 +340,7 @@ export default {
       recursiveUp(this.summaryData);
     },
     handleClick(edge) {
-      const formattedEdge = { source: edge.cause, target: edge.effect };
+      const formattedEdge = { source: edge.source, target: edge.target };
       this.$emit('select-edge', formattedEdge);
     },
     removeRelationship(relationship) {
@@ -366,8 +366,8 @@ export default {
     },
     filterRedundantConcept(relationshipGroupKey, relationship) {
       return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
-        ? relationship.cause
-        : relationship.effect;
+        ? relationship.source
+        : relationship.target;
     },
     getRelationshipGroupCause(relationshipGroupKey) {
       return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
