@@ -1,5 +1,6 @@
 import _ from 'lodash';
 
+import API from '@/api/api';
 import modelService from '@/services/model-service';
 
 /**
@@ -47,7 +48,15 @@ const getSuggestionFunction = (projectId, field, postProcessFn) => {
   }, 500, { trailing: true, leading: true });
 };
 
+// Find indirect paths between source/target
+const getPathSuggestions = async (projectId, source, target) => {
+  const payload = { source, target };
+  const result = await API.get(`projects/${projectId}/path-suggestions`, { params: payload });
+  return result.data;
+};
+
 export default {
   getConceptSuggestionFunction,
-  getSuggestionFunction
+  getSuggestionFunction,
+  getPathSuggestions
 };

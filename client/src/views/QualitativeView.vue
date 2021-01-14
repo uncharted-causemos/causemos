@@ -135,6 +135,10 @@
       @retain="importCAGs(false)"
       @overwrite="importCAGs(true)"
       @close="showModalConflict=false" />
+    <modal-path-find
+      :source="'wm/concept/causal_factor/environmental/meteorologic/precipitation/rainfall'"
+      :target="'wm/concept/causal_factor/crisis_and_disaster/environmental_disasters/natural_disaster/flooding'"
+    />
   </div>
 </template>
 
@@ -158,6 +162,7 @@ import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-rec
 import { conceptShortName } from '@/utils/concept-util';
 import filtersUtil from '@/utils/filters-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
+import ModalPathFind from '@/components/modals/modal-path-find';
 import ModalImportCag from '@/components/qualitative/modal-import-cag';
 import ModalImportConflict from '@/components/qualitative/modal-import-conflict';
 import cagUtil from '@/utils/cag-util';
@@ -209,7 +214,8 @@ export default {
     FactorsRecommendationsPane,
     ModalConfirmation,
     ModalImportCag,
-    ModalImportConflict
+    ModalImportConflict,
+    ModalPathFind
   },
   filters: {
     shortName: function (concept) {
