@@ -124,7 +124,7 @@ export default {
       */
       this.renderer.setScenarioData(this.scenarioData);
       await this.renderer.render();
-      this.renderer.centerGraph();
+      this.renderer.hideNeighbourhood();
       this.renderer.enableDrag();
       this.renderer.enableSubInteractions();
       this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
