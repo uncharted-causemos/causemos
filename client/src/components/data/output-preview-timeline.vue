@@ -102,7 +102,7 @@ export default {
       if (!modelId || !runId || !outputVariable) {
         return [];
       }
-      const timeseries = (await API.get(`old/maas/output/${runId}/timeseries`, {
+      const timeseries = (await API.get(`maas/output/${runId}/timeseries`, {
         params: {
           model: modelId,
           feature: outputVariable

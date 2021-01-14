@@ -3,7 +3,6 @@ export const ADD_TO_CAG_THRESHOLD = 1000;
 export const SERVICE_NOT_AVAILABLE = 'Service not available at the moment';
 
 export const SIDE_PANEL = {
-  INDICATORS_PANE_INTERVENTION_NODES: 'Intervention nodes do not have indicators associated',
   INDICATORS_PANE_NO_INDICATOR: 'Automatic mapping did not find an indicator to quantify this node. Click "Edit" to search for one.',
   EVIDENCE_NO_DATA: 'No evidence in Knowledge Base',
   FACTORS_NO_DATA: 'Concept not in a relationship yet'
@@ -15,8 +14,7 @@ export const INDICATOR = {
 
 export const CORRECTIONS = {
   SUCCESSFUL_CORRECTION: 'Successful correction',
-  ERRONEOUS_CORRECTION: 'Correction was unsuccessful. Try again',
-  EMPTY_CORRECTION: 'There are no statements to correct. Try again'
+  ERRONEOUS_CORRECTION: 'Correction was unsuccessful. Try again'
 };
 
 export const UNKNOWN_POLARITY_BULK_MESSAGE = {
@@ -51,11 +49,6 @@ export const UPDATE_BELIEF_SCORE = {
 export const ONTOLOGY_AUGMENTATION = {
   SUCCESSFUL_ADDITION: 'New concept succesfully added',
   ERRONEOUS_ADDITION: 'There was an error in adding a new concept.'
-};
-
-export const MODEL_CHECKING = {
-  EXCEEDED_POOLING_THRESHOLD: 'Exceeded polling threshold',
-  FAILED_EXPORT_MODEL: 'Failed to export model'
 };
 
 export const UPDATE_GROUNDINGS = {
@@ -118,7 +111,6 @@ export default {
   CURATIONS,
   UPDATE_BELIEF_SCORE,
   ONTOLOGY_AUGMENTATION,
-  MODEL_CHECKING,
   UPDATE_GROUNDINGS,
   SERVICE_NOT_AVAILABLE,
   MODEL_CREATION,
