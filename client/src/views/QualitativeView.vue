@@ -427,7 +427,7 @@ export default {
     onEdgeClick(edge) {
       // Called when an edge is clicked in the CAG
       this.isDrilldownOverlayOpen = false;
-      this.selectEdge(this.standardizeEdgeStructure(edge));
+      this.selectEdge(edge);
     },
     onRelationshipClick(relationship) {
       // Called when a relationship is clicked in the relationships pane
@@ -438,7 +438,7 @@ export default {
       const foundEdge = this.modelComponents.edges.find((edge) => {
         return edge.source === relationship.source && edge.target === relationship.target;
       });
-      this.selectEdge(this.standardizeEdgeStructure(foundEdge));
+      this.selectEdge(foundEdge);
       this.$refs.cagGraph.renderEdgeClick(foundEdge.source, foundEdge.target);
     },
     async setEdgeUserPolarity(edge, polarity) {
@@ -534,12 +534,6 @@ export default {
         tabToSwitchTo = PANE_ID.FACTORS;
       }
       this.switchToTab(tabToSwitchTo);
-    },
-    // Panes expect cause/effect, graphs expect source/target
-    standardizeEdgeStructure(edge) {
-      edge.cause = edge.source;
-      edge.effect = edge.target;
-      return edge;
     },
     loadCAGEdgeStatements(edge) {
       this.isFetchingStatements = true;
