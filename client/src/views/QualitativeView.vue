@@ -135,9 +135,12 @@
       @retain="importCAGs(false)"
       @overwrite="importCAGs(true)"
       @close="showModalConflict=false" />
+
     <modal-path-find
-      :source="'wm/concept/causal_factor/environmental/meteorologic/precipitation/rainfall'"
-      :target="'wm/concept/causal_factor/crisis_and_disaster/environmental_disasters/natural_disaster/flooding'"
+      v-if="showPathSuggestions"
+      :source="pathSuggestionSource"
+      :target="pathSuggestionTarget"
+      @close="showPathSuggestions=false"
     />
   </div>
 </template>
@@ -226,20 +229,25 @@ export default {
     modelSummary: null,
     modelComponents: {},
 
+    // State flags
     isDrilldownOpen: false,
-    drilldownTabs: [],
-    activeDrilldownTab: '',
     isDrilldownOverlayOpen: false,
+    isFetchingStatements: false,
     showModalConfirmation: false,
     showModalConflict: false,
     showModalImportCAG: false,
+    showPathSuggestions: false,
+
+    drilldownTabs: [],
+    activeDrilldownTab: '',
     selectedNode: null,
     selectedEdge: null,
     selectedStatements: [],
-    isFetchingStatements: false,
     showNewNode: false,
     correction: null,
-    factorRecommendationsList: []
+    factorRecommendationsList: [],
+    pathSuggestionSource: '',
+    pathSuggestionTarget: ''
   }),
   computed: {
     ...mapGetters({
@@ -324,8 +332,14 @@ export default {
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
         const edgeData = await projectService.getProjectStatementIdsByEdges(this.project, [edge], null);
         const formattedEdge = Object.assign({}, edge, { reference_ids: edgeData[edge.source + '///' + edge.target] || [] });
-        const data = await this.addCAGComponents([], [formattedEdge]);
-        this.setUpdateToken(data.updateToken);
+        if (formattedEdge.reference_ids.length === 0) {
+          this.showPathSuggestions = true;
+          this.pathSuggestionSource = formattedEdge.source;
+          this.pathSuggestionTarget = formattedEdge.target;
+        } else {
+          const data = await this.addCAGComponents([], [formattedEdge]);
+          this.setUpdateToken(data.updateToken);
+        }
       } else {
         this.toaster(conceptShortName(edge.source) + ' ' + conceptShortName(edge.target) + ' already exists in the CAG', 'error', false);
       }

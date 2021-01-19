@@ -3,11 +3,21 @@
     :use-green-header="true"
     @close="close()">
     <h4 slot="header">
-      Add paths
+      Path suggestions
     </h4>
     <div slot="body">
-      There are no backing evidence supporting the edge <strong>{{ conceptShortName(source) }}</strong>
-      to <strong>{{ conceptShortName(target) }}</strong>
+      <p>
+        There are no backing evidence supporting the edge <strong>{{ conceptShortName(source) }}</strong>
+        to <strong>{{ conceptShortName(target) }}</strong>. Choose from the list of indirect paths below, or
+        click Cancel to use the unsupportd path anyway.
+      </p>
+      <div>
+        <div
+          v-for="(path, idx) in paths"
+          :key="idx">
+          <i class="fa fa-fw fa-square-o" /> {{ path.map(conceptShortName).join(" > ") }}
+        </div>
+      </div>
     </div>
     <ul
       slot="footer"
@@ -21,13 +31,14 @@
         ref="confirm"
         type="button"
         class="btn btn-primary btn-call-for-action"
-        @click.stop="confirm()">Confirm
+        @click.stop="confirm()">Add
       </button>
     </ul>
   </modal>
 </template>
 
 <script>
+import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal';
 import suggestionService from '@/services/suggestion-service';
@@ -48,6 +59,9 @@ export default {
       required: true
     }
   },
+  data: () => ({
+    paths: []
+  }),
   computed: {
     ...mapGetters({
       project: 'app/project'
@@ -58,8 +72,8 @@ export default {
   },
   methods: {
     refresh() {
-      suggestionService.getPathSuggestions(this.project, this.source, this.target).then(path => {
-        console.log('!!!', path);
+      suggestionService.getPathSuggestions(this.project, this.source, this.target).then(paths => {
+        this.paths = _.take(paths, 5);
       });
     },
     close() {
