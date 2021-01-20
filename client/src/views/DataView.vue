@@ -1,9 +1,9 @@
 <template>
   <div class="data-view-container flex">
-    <analysis-side-panel />
     <div class="main-content flex-grow-1 flex-col">
       <action-bar />
-      <div class="analysis-content flex-grow-1">
+      <div class="analysis-content flex-grow-1 flex h-0">
+        <analysis-side-panel v-if="analysisItems.length && mapReady" />
         <data-analysis
           v-if="analysisItems.length && mapReady"
           :is-focused-card-fullscreen="isFocusedCardFullscreen"
@@ -222,23 +222,14 @@ export default {
 
 .data-view-container {
   height: $content-full-height;
+  background: $background-light-2;
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
 
   .helper {
-    padding-top: 200px;
-    height: 100%;
+    width: 100%;
     position: relative;
-  }
-  .helper .text {
-    color: #C4C4C4;
-    text-align: center;
-    font-family: IBM Plex Sans;
-    font-style: normal;
-    font-weight: 300;
-    font-size: 18px;
-    line-height: 28px;
   }
 }
 

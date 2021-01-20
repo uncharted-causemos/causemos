@@ -18,12 +18,12 @@
         @click.stop="onToggleSelected"
         @dblclick.stop=""
       />
-      <b
+      <span
         v-tooltip="heading"
         class="text"
       >
         {{ heading }}
-      </b>
+      </span>
       <span
         v-if="isFullscreen"
         class="source"
@@ -364,6 +364,7 @@ $fullscreenTransition: all .5s ease-in-out;
   padding: 5px 0;
   display: flex;
   flex-direction: column;
+  box-shadow: 0 2px 4px rgba(39, 40, 51, 0.12);
 
   .aggregation-message {
     padding-bottom: 5px;
@@ -397,6 +398,7 @@ $fullscreenTransition: all .5s ease-in-out;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
+    font-size: 1.6rem;
   }
 }
 
@@ -424,6 +426,7 @@ $fullscreenTransition: all .5s ease-in-out;
     max-width: 100%;
     display: flex;
     align-items: center;
+    font-weight: normal;
 
     .button-text {
       flex: 1;

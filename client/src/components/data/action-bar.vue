@@ -62,7 +62,7 @@
         <button
           v-tooltip.top-center="'Comments'"
           type="button"
-          class="btn btn-primary"
+          class="btn"
           @click="toggleComments"
         >
           <i
@@ -211,8 +211,8 @@ export default {
 $width-name: 10vw;
 
 .action-bar {
-  border: 1px solid $separator;
-  background-color: $background-light-2;
+  background-color: $background-light-1;
+  box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.12);
   padding: 0 10px;
   position: relative;
 

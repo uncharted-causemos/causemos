@@ -141,16 +141,34 @@ export default {
 
   /deep/ .facets-group {
     box-shadow: none;
-    border: 1px solid #CACBCC;
-    border-radius: 2px;
-    padding: 5px 2px;
+    background: $background-light-2;
+    padding: 5px 0;
   }
 
   /deep/.facets-group-container {
-    margin-bottom: 10px;
+    margin-bottom: 5px;
     // Padding so the facet border isn't pressed right against the scrollbar
-    padding-right: 10px;
+    padding: 0 5px;
     background-color: transparent;
+  }
+
+  // Remove 'Oswald' font
+  /deep/ .group-header,
+  /deep/ .facet-label,
+  /deep/ .facet-label-count {
+    font-family: inherit;
+  }
+
+  /deep/ .facet-label-count {
+    font-size: 16px;
+    top: -4px;
+    position: relative;
+  }
+
+  // Remove 'box-shadow' transition which is used to darken the bar on hover
+  //  since the transition felt slow and less snappy
+  /deep/ .facets-facet-vertical .facet-bar-base {
+    transition: width .4s, opacity 0.5s;
   }
 }
 </style>
