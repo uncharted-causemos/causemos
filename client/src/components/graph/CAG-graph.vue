@@ -704,6 +704,19 @@ export default {
 
       this.renderer.enableDrag();
 
+      // we should fix the zoomLevel in svg-flowgraph but I did it here instead because that makes me happier
+      const minZoom = 0.05;
+      const maxZoom = Math.max(2, Math.floor(this.renderer.layout.width / this.renderer.chartSize.width));
+      const zoomLevel = Math.min(1, 1 / (this.renderer.layout.height / this.renderer.chartSize.height), 1 / (this.renderer.layout.width / this.renderer.chartSize.width));
+      this.renderer.zoom.scaleExtent([minZoom, maxZoom]);
+      d3.select(this.renderer.svgEl).call(
+        this.renderer.zoom.transform,
+        d3.zoomIdentity.scale(zoomLevel).translate(
+          (-(this.renderer.layout.width * zoomLevel * 0.5) + 0.5 * this.renderer.chartSize.width) / zoomLevel,
+          (-(this.renderer.layout.height * zoomLevel * 0.5) + 0.5 * this.renderer.chartSize.height) / zoomLevel
+        )
+      );
+
       this.$emit('refresh', null);
     },
     highlight() {
