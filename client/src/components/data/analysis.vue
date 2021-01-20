@@ -7,7 +7,7 @@
       class="header"
       :class="{ 'no-filters': activeFilters.length === 0 }"
     >
-      <b><i class="fa fa-filter" /> Filter regions where: </b>
+      <span><i class="fa fa-filter filter-icon" />Filter regions where</span>
       <span
         v-for="(filter, index) of activeFilters"
         :key="index"
@@ -129,7 +129,6 @@ export default {
 $fullscreenTransition: all .5s ease-in-out;
 
 .analysis-container {
-  background-color: $background-light-1;
   padding: 10px;
   min-width: 0;
   height: 100%;
@@ -143,19 +142,28 @@ $fullscreenTransition: all .5s ease-in-out;
     height: 36px;
     overflow: auto;
     line-height: 24px;
+
+    .filter-icon {
+      margin-right: 5px;
+      color: $selected;
+    }
+
     .badge {
       font-weight: normal;
       border-radius: 3px;
       padding: 5px;
       position: relative;
       bottom: 1px; // align baselines better
+
+      &:first-of-type {
+        margin-left: 5px;
+      }
     }
   }
 
   .cards-container {
     transition: $fullscreenTransition;
     align-content: space-between;
-    overflow-y: auto;
     position: relative;
     display: flex;
     width: 100%;
@@ -164,9 +172,8 @@ $fullscreenTransition: all .5s ease-in-out;
   }
 
   .card-box {
-    transition: $fullscreenTransition, border-color 0s;
+    transition: $fullscreenTransition;
     margin: 0 5px 0 0;
-    border: 1px solid #CACBCC;
     border-radius: 3px;
     overflow: hidden;
     height: 100%;
@@ -210,7 +217,6 @@ $fullscreenTransition: all .5s ease-in-out;
   }
 }
 
-.analysis-container.fullscreen-mode .header,
 .header.no-filters {
   height: 0;
   opacity: 0;
