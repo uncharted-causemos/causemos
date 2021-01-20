@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 
 import {
-  truncateTextToWidth, translate,
+  pathFn, truncateTextToWidth, translate,
   hideSvgTooltip, showSvgTooltip,
   closestPointOnPath, POLARITY_ICON_SVG_SETTINGS,
   MARKER_VIEWBOX, ARROW
@@ -15,6 +15,7 @@ import { calculateScenarioPercentageChange } from '@/utils/projection-util';
 import ontologyFormatter from '@/filters/ontology-formatter';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { SVGRenderer } from 'svg-flowgraph';
+import { interpolatePath } from 'd3-interpolate-path';
 
 const DEFAULT_STYLE = {
   node: {
@@ -51,17 +52,14 @@ const DEFAULT_STYLE = {
 const OPACITY = 0.2;
 const GRAPH_HEIGHT = 40;
 
-const lineFn = d3.line()
-  .x(d => d.x)
-  .y(d => d.y)
-  .curve(d3.curveBasis);
+const lineFn = pathFn.curve(d3.curveBasis);
 
 export default class ModelRenderer extends SVGRenderer {
   setScenarioData(d) {
     this.scenarioData = d;
   }
 
-  renderNode(nodeSelection) {
+  renderNodeAdded(nodeSelection) {
     nodeSelection.each(function() {
       const selection = d3.select(this);
 
@@ -147,13 +145,21 @@ export default class ModelRenderer extends SVGRenderer {
     });
   }
 
-  renderEdge(selection) {
+  renderNodeUpdated() {
+    // not sure anything is needed here, function is requird though
+  }
+
+  renderNodeRemoved(selection) {
+    selection.remove();
+  }
+
+  renderEdgeAdded(selection) {
     selection
       .append('path')
       .classed('edge-path-bg', true)
+      .attr('d', d => lineFn(d.points))
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
       .style('stroke', DEFAULT_STYLE.edgeBg.stroke)
-      .attr('d', d => lineFn(d.points))
       .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight) + 2);
 
     selection
@@ -161,10 +167,9 @@ export default class ModelRenderer extends SVGRenderer {
       .classed('edge-path', true)
       .attr('d', d => lineFn(d.points))
       .style('fill', DEFAULT_STYLE.edge.fill)
-      .style('stroke', DEFAULT_STYLE.edge.stroke)
-      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .style('stroke', d => calcEdgeColor(d.data))
       .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight))
+      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .attr('marker-end', d => {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
@@ -175,6 +180,40 @@ export default class ModelRenderer extends SVGRenderer {
         const target = d.data.target.replace(/\s/g, '');
         return `url(#start-${source}-${target})`;
       });
+  }
+
+  renderEdgeUpdated(selection) {
+    selection
+      .selectAll('.edge-path')
+      .transition()
+      .duration(1000)
+      .style('stroke', d => calcEdgeColor(d.data))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight))
+      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
+      .attrTween('d', function (d) {
+        const currentPath = lineFn(d.points);
+        const previousPath = d3.select(this).attr('d') || currentPath;
+        return (t) => {
+          return interpolatePath(previousPath, currentPath)(t);
+        };
+      });
+
+    selection
+      .selectAll('.edge-path-bg')
+      .transition()
+      .duration(1000)
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight) + 2)
+      .attrTween('d', function (d) {
+        const currentPath = lineFn(d.points);
+        const previousPath = d3.select(this).attr('d') || currentPath;
+        return (t) => {
+          return interpolatePath(previousPath, currentPath)(t);
+        };
+      });
+  }
+
+  renderEdgeRemoved(selection) {
+    selection.remove();
   }
 
   renderEdgeControl(selection) {
@@ -211,6 +250,8 @@ export default class ModelRenderer extends SVGRenderer {
     const self = this;
 
     chart.selectAll('.node-ui').each(function(node) {
+      if (node.nodes) return; // node has children
+
       const nodeWidth = node.width;
       const nodeHeight = node.height;
       const graphHeight = 32;

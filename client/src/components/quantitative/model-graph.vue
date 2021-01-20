@@ -51,7 +51,7 @@ export default {
     this.renderer = new ModelRenderer({
       el: this.$refs.container,
       adapter: new Adapter({ nodeWidth: 120, nodeHeight: 60, layout: layered }),
-      renderMode: 'basic',
+      renderMode: 'delta',
       useEdgeControl: true,
       addons: [highlight, nodeDrag, panZoom]
     });
