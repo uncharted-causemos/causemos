@@ -105,6 +105,8 @@ class CAGRenderer extends SVGRenderer {
           .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
           .attr('width', d => d.width)
           .attr('height', d => d.height)
+          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+          .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth)
           .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
         // Circle = regular concepts, diamond = intervention concepts
