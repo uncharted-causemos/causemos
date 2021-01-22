@@ -265,11 +265,11 @@ class CAGRenderer extends SVGRenderer {
   renderEdgeUpdated(selection) {
     selection
       .select('.edge-path')
-      .transition()
-      .duration(1000)
+      .style('stroke', d => calcEdgeColor(d.data))
       .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5))
       .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
-      .style('stroke', d => calcEdgeColor(d.data))
+      .transition()
+      .duration(1000)
       .attrTween('d', function (d) {
         const currentPath = pathFn(d.points);
         const previousPath = d3.select(this).attr('d') || currentPath;
