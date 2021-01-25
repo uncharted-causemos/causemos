@@ -140,7 +140,8 @@
       v-if="showPathSuggestions"
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
-      @close="showPathSuggestions=false"
+      @add-path="addSuggestedPath"
+      @close="addSuggestedPath([{source: pathSuggestionSource, target: pathSuggestionTarget}])"
     />
   </div>
 </template>
@@ -666,6 +667,10 @@ export default {
       // Invoke recovery endpoint to resolve invalid/stale CAGS
       await modelService.recalculate(this.currentCAG);
       this.refresh();
+    },
+    async addSuggestedPath(paths) {
+      console.log('paths', paths);
+      this.showPathSuggestions = false;
     }
   }
 };

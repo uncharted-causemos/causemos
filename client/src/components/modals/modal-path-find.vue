@@ -13,9 +13,14 @@
       </p>
       <div>
         <div
-          v-for="(path, idx) in paths"
-          :key="idx">
-          <i class="fa fa-fw fa-square-o" /> {{ path.map(conceptShortName).join(" > ") }}
+          v-for="(path, idx) in suggestions"
+          :key="idx"
+          @click="toggleSelection(path)">
+          <i
+            class="fa fa-fw fa-check-square-o"
+            :class="{'fa-square-o': path.selected === false, 'fa-check-square-o': path.selected === true}"
+          />
+          {{ path.map(conceptShortName).join(" > ") }}
         </div>
       </div>
     </div>
@@ -28,10 +33,9 @@
         @click.stop="close()">Cancel
       </button>
       <button
-        ref="confirm"
         type="button"
         class="btn btn-primary btn-call-for-action"
-        @click.stop="confirm()">Add
+        @click.stop="addSuggestedPaths()">Add
       </button>
     </ul>
   </modal>
@@ -60,7 +64,7 @@ export default {
     }
   },
   data: () => ({
-    paths: []
+    suggestions: []
   }),
   computed: {
     ...mapGetters({
@@ -73,14 +77,21 @@ export default {
   methods: {
     refresh() {
       suggestionService.getPathSuggestions(this.project, this.source, this.target).then(paths => {
-        this.paths = _.take(paths, 5);
+        this.suggestions = _.take(paths, 5);
+        this.suggestions.forEach(s => {
+          s.selected = false;
+        });
       });
     },
     close() {
       this.$emit('close', null);
     },
-    confirm() {
-      this.$emit('confirm', null);
+    addSuggestedPaths() {
+      this.$emit('add-paths', null);
+    },
+    toggleSelection(path) {
+      path.selected = !path.selected;
+      this.suggestions = _.clone(this.suggestions);
     },
     conceptShortName
   }
