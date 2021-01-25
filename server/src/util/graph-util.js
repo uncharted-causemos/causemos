@@ -80,7 +80,7 @@ const normalPath = (edges, nodes, k) => {
     return [];
   }
 
-  const adjacencyMap = buildAdjacency(edges).incoming;
+  const adjacencyMap = buildAdjacency(edges).outgoing;
   const links = combinatorics.combination(nodes, 2);
   while (true) {
     const link = links.next();
@@ -105,7 +105,7 @@ const normalPath = (edges, nodes, k) => {
       return false;
     };
     _crawler(adjacencyMap, link[0], [link[0]], goalFnGenerator(link[1]), terminateFn);
-    _crawler(adjacencyMap, link[1], [link[1]], goalFnGenerator(link[0]), terminateFn);
+    // _crawler(adjacencyMap, link[1], [link[1]], goalFnGenerator(link[0]), terminateFn);
   }
   return neighborhoodNodes;
 };

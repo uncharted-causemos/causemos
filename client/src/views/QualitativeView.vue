@@ -141,7 +141,7 @@
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
       @add-paths="addSuggestedPath"
-      @close="addSuggestedPath([{source: pathSuggestionSource, target: pathSuggestionTarget}])"
+      @close="addSuggestedPath([[{source: pathSuggestionSource, target: pathSuggestionTarget}]])"
     />
   </div>
 </template>
@@ -669,8 +669,51 @@ export default {
       this.refresh();
     },
     async addSuggestedPath(paths) {
-      console.log('paths', paths);
       this.showPathSuggestions = false;
+
+      const key = (e) => `${e.source}///${e.target}`;
+
+      // 1 Find segments not already in the graph
+      const newEdges = [];
+      const newNodes = [];
+      const edgeSet = new Set();
+      const nodeSet = new Set();
+      this.modelComponents.edges.forEach(edge => {
+        edgeSet.add(key(edge));
+      });
+      this.modelComponents.nodes.forEach(node => {
+        nodeSet.add(node.concept);
+      });
+
+      paths.forEach(path => {
+        path.forEach(edge => {
+          if (!edgeSet.has(key(edge))) {
+            newEdges.push(edge);
+          }
+          if (!nodeSet.has(edge.source) && newNodes.indexOf(edge.source) === -1) {
+            newNodes.push(edge.source);
+          }
+          if (!nodeSet.has(edge.target) && newNodes.indexOf(edge.target) === -1) {
+            newNodes.push(edge.target);
+          }
+        });
+      });
+
+      // 2 Get edge statement references
+      const edgeData = await projectService.getProjectStatementIdsByEdges(this.project, newEdges, null);
+      newEdges.forEach(edge => {
+        edge.reference_ids = edgeData[key(edge)] || [];
+      });
+
+      // 3 Save
+      const newNodesPayload = newNodes.map(concept => {
+        return {
+          concept: concept,
+          label: conceptShortName(concept)
+        };
+      });
+      const result = await this.addCAGComponents(newNodesPayload, newEdges);
+      this.setUpdateToken(result.updateToken);
     }
   }
 };
