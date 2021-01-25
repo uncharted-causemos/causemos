@@ -5,7 +5,7 @@
   >
     <div
       class="heading"
-      @dblclick="toggleFullscreen"
+      @click="toggleFullscreen"
     >
       <i
         v-if="isCheckboxVisible"
@@ -167,9 +167,9 @@ export default {
       type: Object,
       default: () => {}
     },
-    isFocusedCardFullscreen: {
+    isFullscreen: {
       type: Boolean,
-      default: false
+      default: null
     }
   },
   data: () => ({
@@ -225,9 +225,6 @@ export default {
     },
     isSelected() {
       return !_.isNil(this.algebraicTransformInputIds.find(inputId => inputId === this.data.id));
-    },
-    isFullscreen() {
-      return this.data.isFocused && this.isFocusedCardFullscreen;
     },
     canSelectMoreCubes() {
       return this.isCheckboxVisible &&
@@ -317,11 +314,10 @@ export default {
       this.$emit('click', e);
     },
     onToggleSelected() {
-      const { id } = this.data;
-      this.toggleAlgebraicTransformInput(id);
+      this.toggleAlgebraicTransformInput(this.data.id);
     },
-    toggleFullscreen(e) {
-      this.$emit('toggle-fullscreen', e);
+    toggleFullscreen() {
+      this.$emit('set-card-fullscreen', this.isFullscreen ? null : this.data.id);
     },
     onMapLoad() {
       this.$emit('on-map-load');
