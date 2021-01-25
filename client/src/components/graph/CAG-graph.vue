@@ -23,9 +23,12 @@ import { mapGetters } from 'vuex';
 import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
-import ELKBaseRenderer from '@/graphs/elk/elk-base-renderer';
-import { layered } from '@/graphs/elk/elk-strategies';
+// import { SVGRenderer, highlight, nodeDrag, panZoom, group } from 'svg-flowgraph';
+import { SVGRenderer, highlight, nodeDrag, panZoom } from 'svg-flowgraph';
+import Adapter from '@/graphs/elk/adapter';
+import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
+import ontologyFormatter from '@/filters/ontology-formatter';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
@@ -65,75 +68,83 @@ const DEFAULT_STYLE = {
 };
 
 const FADED_OPACITY = 0.2;
-
+const GRAPH_HEIGHT = 40;
 const THRESHOLD_TIME = 1;
 
-class CAGRenderer extends ELKBaseRenderer {
-  renderNodes() {
-    const chart = this.chart;
+class CAGRenderer extends SVGRenderer {
+  renderNodeAdded(nodeSelection) {
+    nodeSelection.each(function() {
+      const selection = d3.select(this);
 
-    const nodes = chart.selectAll('.node')
-      .data(this.layout.nodes, d => d.id);
+      // container node
+      if (selection.datum().nodes) {
+        selection.append('rect')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
+          .attr('width', d => d.width)
+          .attr('height', d => d.height)
+          .style('fill', '#FAFAFA')
+          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke);
 
-    const newNodes = nodes.enter()
-      .append('g')
-      .classed('node', true)
-      .attr('cursor', 'pointer');
+        selection.append('text')
+          .classed('node-label', true)
+          .attr('transform', svgUtil.translate(20, GRAPH_HEIGHT * 0.5 - 6))
+          .style('stroke', 'none')
+          .style('fill', '#888')
+          .style('font-weight', '600')
+          .text(d => ontologyFormatter(d.concept))
+          .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
+      } else {
+        selection.append('g').classed('node-handles', true);
 
-    nodes.exit().remove();
+        selection.append('rect')
+          .classed('node-header', true)
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
+          .attr('width', d => d.width)
+          .attr('height', d => d.height)
+          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+          .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth)
+          .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
-    chart.selectAll('.node')
+        // Circle = regular concepts, diamond = intervention concepts
+        selection.append('path')
+          .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width))
+          .attr('d', (d) => {
+            const symbol = ConceptUtil.isInterventionNode(d.concept) ? d3.symbolDiamond : d3.symbolCircle;
+            const generator = d3.symbol()
+              .type(symbol)
+              .size(50);
+            return generator();
+          })
+          .style('stroke', 'none')
+          .style('fill', '#111');
+
+        selection
+          .append('text')
+          .classed('node-label', true)
+          .attr('x', 25)
+          .attr('y', 20)
+          .style('font-weight', '600')
+          .style('pointer-events', 'none')
+          .text(d => d.label)
+          .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
+      }
+    });
+  }
+
+  renderNodeUpdated() {
+    // not sure anything is needed here, function is requird though
+  }
+
+  renderNodeRemoved(selection) {
+    selection
       .transition()
-      .duration(500)
-      .attrTween('transform', function (d) {
-        const startTranslateState = d3.select(this).attr('transform');
-        return d3.interpolateString(startTranslateState, svgUtil.translate(d.x, d.y));
-      });
-
-    // Place holder for handles
-    newNodes.append('g').classed('node-handles', true);
-
-    newNodes.append('rect')
-      .classed('node-header', true)
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
-      .attr('width', d => d.width) // TODO: Explore the idea of adapting the node width to text
-      .attr('height', d => d.height)
-      .style('fill', DEFAULT_STYLE.nodeHeader.fill);
-
-    // Circle = regular concepts, diamond = intervention concepts
-    newNodes.append('path')
-      .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width))
-      .attr('d', (d) => {
-        const symbol = ConceptUtil.isInterventionNode(d.concept) ? d3.symbolDiamond : d3.symbolCircle;
-        const generator = d3.symbol()
-          .type(symbol)
-          .size(50);
-        return generator();
-      })
-      .style('stroke', 'none')
-      .style('fill', '#111');
-
-    chart.selectAll('.node-header.node-selected')
-      .attr('rx', DEFAULT_STYLE.nodeHeader.highlighted.borderRadius)
-      .style('stroke', DEFAULT_STYLE.nodeHeader.highlighted.stroke)
-      .style('stroke-width', DEFAULT_STYLE.nodeHeader.highlighted.strokeWidth);
-
-    chart.selectAll('.node-header:not(.node-selected)')
-      .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
-      .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-      .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
-
-    newNodes
-      .append('text')
-      .classed('node-label', true)
-      .attr('x', 25)
-      .attr('y', 20)
-      .style('font-weight', '600')
-      .style('pointer-events', 'none')
-      .text(d => d.label)
-      .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
+      .duration(1000)
+      .style('opacity', 0)
+      .remove();
   }
 
   buildDefs() {
@@ -224,21 +235,8 @@ class CAGRenderer extends ELKBaseRenderer {
       .style('stroke', 'none');
   }
 
-  renderEdges() {
-    const chart = this.chart;
-
-    const edges = chart.selectAll('.edge')
-      .data(this.layout.edges, d => d.id);
-
-    const newEdges = edges.enter()
-      .append('g')
-      .classed('edge', true)
-      .attr('cursor', 'pointer')
-      .attr('d', d => pathFn(d.points));
-
-    edges.exit().remove();
-
-    newEdges
+  renderEdgeAdded(selection) {
+    selection
       .append('path')
       .classed('edge-path-bg', true)
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
@@ -246,32 +244,12 @@ class CAGRenderer extends ELKBaseRenderer {
       .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5) + 2)
       .attr('d', d => pathFn(d.points));
 
-    chart.selectAll('.edge').select('.edge-path-bg')
-      .transition()
-      .duration(500)
-      .attrTween('d', function (d) {
-        const currentPath = pathFn(d.points);
-        const previousPath = d3.select(this).attr('d') || currentPath;
-        return (t) => {
-          return interpolatePath(previousPath, currentPath)(t);
-        };
-      });
-
-    newEdges
+    selection
       .append('path')
       .classed('edge-path', true)
       .style('fill', DEFAULT_STYLE.edge.fill)
-      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5));
-
-    // FIXME: Disabled for now
-    // const strokeDash = edge => {
-    //   if (edge.polarity === -1) return edge.opposite > 0;
-    //   if (edge.polarity === 0) return edge.unknown > 0 || (edge.opposite > 0 && edge.same > 0);
-    //   if (edge.polarity === 1) return edge.same > 0;
-    //   return 0;
-    // };
-
-    chart.selectAll('.edge').select('.edge-path')
+      .attr('d', d => pathFn(d.points))
+      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5))
       .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .style('stroke', d => calcEdgeColor(d.data))
       .attr('marker-end', d => {
@@ -283,22 +261,46 @@ class CAGRenderer extends ELKBaseRenderer {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
         return `url(#start-${source}-${target})`;
-      })
+      });
+  }
+
+  renderEdgeUpdated(selection) {
+    selection
+      .select('.edge-path')
+      .style('stroke', d => calcEdgeColor(d.data))
+      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5))
+      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .transition()
-      .duration(500)
+      .duration(1000)
       .attrTween('d', function (d) {
         const currentPath = pathFn(d.points);
         const previousPath = d3.select(this).attr('d') || currentPath;
+        const interPath = interpolatePath(previousPath, currentPath);
         return (t) => {
-          return interpolatePath(previousPath, currentPath)(t);
+          return interPath(t);
         };
       });
 
-    // move all edges, to be drawn last (except if there is any temp/new nodes with foreignObjects)
-    const firstTempNode = chart.selectAll('.node')
-      .filter(d => d.label === '').node([0]);
-    chart.selectAll('.edge')
-      .each(function () { this.parentNode.insertBefore(this, firstTempNode); });
+    selection
+      .select('.edge-path-bg')
+      .transition()
+      .duration(1000)
+      .attrTween('d', function (d) {
+        const currentPath = pathFn(d.points);
+        const previousPath = d3.select(this).attr('d') || currentPath;
+        const interPath = interpolatePath(previousPath, currentPath);
+        return (t) => {
+          return interPath(t);
+        };
+      });
+  }
+
+  renderEdgeRemoved(selection) {
+    selection
+      .transition()
+      .duration(1000)
+      .style('opacity', 0)
+      .remove();
   }
 
   renderEdgeControls() {
@@ -494,8 +496,6 @@ class CAGRenderer extends ELKBaseRenderer {
     chart.selectAll('.edge').style('opacity', 1);
     chart.selectAll('.node-header').classed('node-selected', false);
     chart.selectAll('.edge-control').remove();
-    this.resetNodesPositions();
-    this.render();
   }
 
   // Highlights the neighborhood
@@ -510,6 +510,18 @@ class CAGRenderer extends ELKBaseRenderer {
 
     const nonNeighborEdges = chart.selectAll('.edge').filter(d => !_.some(edges, edge => edge.source === d.data.source && edge.target === d.data.target));
     nonNeighborEdges.style('opacity', FADED_OPACITY);
+  }
+
+  selectEdge(evt, edge) {
+    const mousePoint = d3.pointer(evt, edge.node());
+    const pathNode = edge.select('.edge-path').node();
+    const controlPoint = svgUtil.closestPointOnPath(pathNode, mousePoint);
+
+    edge.append('g')
+      .classed('edge-control', true)
+      .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
+
+    this.renderEdgeControls();
   }
 
   selectNode(node) {
@@ -576,9 +588,10 @@ export default {
   mounted() {
     this.renderer = new CAGRenderer({
       el: this.$refs.container,
-      strategy: layered,
-      nodeWidth: 130,
-      nodeHeight: 30,
+      adapter: new Adapter({ nodeWidth: 130, nodeHeight: 30, layout: layered }),
+      renderMode: 'delta',
+      addons: [highlight, nodeDrag, panZoom],
+      // addons: [highlight, nodeDrag, panZoom, group],
       useEdgeControl: true,
       newEdgeFn: (source, target) => {
         this.renderer.disableNodeHandles();
@@ -613,8 +626,6 @@ export default {
       node.select('.node-header').classed('node-selected', true);
       this.selectedNode = concept;
       this.renderer.selectNode(node);
-      this.renderer.bringNodes(node.datum(), neighborhood);
-      this.renderer.render();
 
       const payload = node.datum();
       this.$emit('node-click', payload);
@@ -628,19 +639,11 @@ export default {
 
       this.deselectNodeAndEdge();
       this.renderer.showNeighborhood(neighborhood);
-
-      const mousePoint = d3.pointer(evt, edge.node());
-      const pathNode = edge.select('.edge-path').node();
-      const controlPoint = svgUtil.closestPointOnPath(pathNode, mousePoint);
-
-      edge.append('g')
-        .classed('edge-control', true)
-        .attr('transform', svgUtil.translate(controlPoint[0], controlPoint[1]));
-
-      this.renderer.render();
+      this.renderer.selectEdge(evt, edge);
     });
 
     this.renderer.setCallback('nodeMouseEnter', (evt, node, renderer) => {
+      if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.enableNodeHandles(node);
       const data = node.datum();
       if (data.label !== node.select('.node-label').text()) {
@@ -649,6 +652,7 @@ export default {
     });
 
     this.renderer.setCallback('nodeMouseLeave', (evt, node, renderer) => {
+      if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.disableNodeHandles();
 
       if (!_.isEmpty(this.selectedNode)) {
@@ -694,6 +698,19 @@ export default {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data, []);
       await this.renderer.render();
+
+      // this doesn't really work well on the CAG graph
+      // const conceptsDDSAT = [
+      //   'wm/concept/causal_factor/interventions/provide/agriculture_inputs/crop_production_equipment/soil_inputs/fertilizer',
+      //   'wm/concept/causal_factor/environmental/meteorologic/precipitation/rainfall',
+      //   'wm/concept/causal_factor/agriculture/crop_production'
+      // ];
+      // const conceptsGraph = this.data.nodes.map(n => n.concept);
+
+      // if (conceptsDDSAT.every(concept => conceptsGraph.includes(concept))) {
+      //   await this.renderer.group('DSSAT', conceptsDDSAT);
+      // }
+
       this.highlight();
       this.renderer.hideNeighbourhood();
 
@@ -702,7 +719,7 @@ export default {
         d3.select('.node input[type=text]').node().focus();
       }
 
-      this.renderer.centerGraphInViewbox();
+      this.renderer.enableDrag();
       this.$emit('refresh', null);
     },
     highlight() {
@@ -736,8 +753,6 @@ export default {
 
       this.deselectNodeAndEdge();
       this.renderer.showNeighborhood(neighborhood);
-
-      this.renderer.render();
     }
   }
 };

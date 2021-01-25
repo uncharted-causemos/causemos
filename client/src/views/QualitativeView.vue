@@ -376,7 +376,7 @@ export default {
 
       if (!_.isEmpty(this.selectedNode)) {
         const data = await this.removeCAGComponents(
-          [{ id: this.selectedNode.id }],
+          [{ id: this.selectedNode.data.id }],
           this.modelComponents.edges.filter((edge) => edge.source === this.selectedNode.concept || edge.target === this.selectedNode.concept)
             .map((edge) => ({ id: edge.id }))
         );
