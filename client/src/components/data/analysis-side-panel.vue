@@ -1,5 +1,6 @@
 <template>
   <side-panel
+    class="analysis-side-panel-container"
     :current-tab-name="activeSidePanelTab"
     :tabs="sidePanelTabs"
     :add-padding="true"
@@ -139,6 +140,31 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~styles/variables";
+
+  // TODO: eventually all side-panels should use these
+  // styles and the overrides will be unnecessary
+  .analysis-side-panel-container {
+    margin: 10px 0;
+    height: auto;
+    overflow: hidden;
+    filter: drop-shadow(0px 4px 8px rgba(0, 0, 0, 0.12));
+
+    & /deep/ .side-panel-body {
+      display: flex;
+      flex-direction: column;
+      height: 100%;
+
+      .side-panel-content {
+        height: 0;
+        flex: 1;
+      }
+    }
+  }
+  .analysis-side-panel-container /deep/ ul{
+    background: $background-light-1;
+  }
+
   ol {
     margin: 0;
     margin-top: 20px;

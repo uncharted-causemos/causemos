@@ -2,9 +2,9 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 
 import {
-  truncateTextToWidth, translate,
+  pathFn, truncateTextToWidth, translate,
   hideSvgTooltip, showSvgTooltip,
-  getTranslateFromSVGTransform, closestPointOnPath, POLARITY_ICON_SVG_SETTINGS,
+  closestPointOnPath, POLARITY_ICON_SVG_SETTINGS,
   MARKER_VIEWBOX, ARROW
 } from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
@@ -14,8 +14,8 @@ import { SELECTED_COLOR, EDGE_COLOR_PALETTE } from '@/utils/colors-util';
 import { calculateScenarioPercentageChange } from '@/utils/projection-util';
 import ontologyFormatter from '@/filters/ontology-formatter';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
-import { interpolatePath } from 'd3-interpolate-path';
 import { SVGRenderer } from 'svg-flowgraph';
+import { interpolatePath } from 'd3-interpolate-path';
 
 const DEFAULT_STYLE = {
   node: {
@@ -52,143 +52,124 @@ const DEFAULT_STYLE = {
 const OPACITY = 0.2;
 const GRAPH_HEIGHT = 40;
 
-const lineFn = d3.line()
-  .x(d => d.x)
-  .y(d => d.y)
-  .curve(d3.curveBasis);
+const lineFn = pathFn.curve(d3.curveBasis);
 
 export default class ModelRenderer extends SVGRenderer {
   setScenarioData(d) {
     this.scenarioData = d;
   }
 
-  renderNodes() {
-    const chart = this.chart;
-    const nodes = chart.selectAll('.node')
-      .data(this.layout.nodes, d => d.id);
+  renderNodeAdded(nodeSelection) {
+    nodeSelection.each(function() {
+      const selection = d3.select(this);
 
-    const newNodes = nodes.enter()
-      .append('g')
-      .classed('node', true);
+      // container node
+      if (selection.datum().nodes) {
+        selection.append('rect')
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
+          .attr('width', d => d.width)
+          .attr('height', d => d.height)
+          .style('fill', '#F0F0F0')
+          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke);
 
-    nodes.exit().remove();
+        selection.append('text')
+          .classed('node-label', true)
+          .attr('transform', translate(20, GRAPH_HEIGHT * 0.5 - 6))
+          .style('stroke', 'none')
+          .style('fill', '#888')
+          .style('font-weight', '600')
+          .text(d => ontologyFormatter(d.concept))
+          .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 30); });
+      } else {
+        selection.append('rect')
+          .classed('node-container', true)
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('rx', DEFAULT_STYLE.node.borderRadius)
+          .attr('width', d => d.width)
+          .attr('height', d => d.height)
+          .style('fill', DEFAULT_STYLE.node.fill)
+          .style('stroke', DEFAULT_STYLE.node.stroke)
+          .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
 
-    chart.selectAll('.node')
-      .transition()
-      .duration(500)
-      .attrTween('transform', function (d) {
-        const startTranslateState = d3.select(this).attr('transform');
-        return d3.interpolateString(startTranslateState, translate(d.x, d.y));
-      });
+        const groupHeader = selection.append('g')
+          .classed('node-header-group', true);
 
-    newNodes
-      .append('rect')
-      .classed('node-container', true)
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('rx', DEFAULT_STYLE.node.borderRadius)
-      .attr('width', d => d.width)
-      .attr('height', d => d.height)
-      .style('fill', DEFAULT_STYLE.node.fill)
-      .style('stroke', DEFAULT_STYLE.node.stroke)
-      .style('stroke-width', DEFAULT_STYLE.node.strokeWidth);
+        // Node header
+        groupHeader
+          .append('rect')
+          .classed('node-header', true)
+          .attr('x', 0)
+          .attr('y', 0)
+          .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
+          .attr('width', d => d.width)
+          .attr('height', GRAPH_HEIGHT * 0.5)
+          .style('fill', DEFAULT_STYLE.nodeHeader.fill)
+          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+          .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
 
-    const groupHeader = newNodes
-      .append('g')
-      .classed('node-header-group', true);
+        // Circle = regular concepts, diamond = intervention concepts
+        groupHeader.append('path')
+          .attr('transform', translate(10, GRAPH_HEIGHT * 0.5 - 10))
+          .attr('d', (d) => {
+            const symbol = ConceptUtil.isInterventionNode(d.id) ? d3.symbolDiamond : d3.symbolCircle;
+            const diamondGenerator = d3.symbol()
+              .type(symbol)
+              .size(50);
+            return diamondGenerator();
+          })
+          .style('stroke', 'none')
+          .style('fill', '#111');
 
-    // Node header
-    const margin = 5;
-    groupHeader.append('rect')
-      .classed('node-header', true)
-      .attr('x', 0)
-      .attr('y', 0)
-      .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
-      .attr('width', d => d.width)
-      .attr('height', GRAPH_HEIGHT * 0.5)
-      .style('fill', DEFAULT_STYLE.nodeHeader.fill)
-      .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-      .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
+        selection.append('text')
+          .classed('node-label', true)
+          .attr('transform', translate(20, GRAPH_HEIGHT * 0.5 - 6))
+          .style('stroke', 'none')
+          .style('fill', '#000')
+          .style('font-weight', '600')
+          .text(d => ontologyFormatter(d.concept))
+          .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 30); });
 
-    // Circle = regular concepts, diamond = intervention concepts
-    groupHeader.append('path')
-      .attr('transform', translate(10, GRAPH_HEIGHT * 0.5 - (margin * 2)))
-      .attr('d', (d) => {
-        const symbol = ConceptUtil.isInterventionNode(d.id) ? d3.symbolDiamond : d3.symbolCircle;
-        const diamondGenerator = d3.symbol()
-          .type(symbol)
-          .size(50);
-        return diamondGenerator();
-      })
-      .style('stroke', 'none')
-      .style('fill', '#111');
-
-    groupHeader.append('text')
-      .classed('node-label', true)
-      .attr('transform', translate(20, GRAPH_HEIGHT * 0.5 - 6))
-      .style('stroke', 'none')
-      .style('fill', '#000')
-      .style('font-weight', '600')
-      .text(d => ontologyFormatter(d.concept))
-      .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 30); });
-
-    const groupBody = newNodes
-      .append('g')
-      .classed('node-body-group', true);
-
-    // Node body
-    groupBody.append('rect')
-      .classed('node-body', true)
-      .attr('x', 0)
-      .attr('y', GRAPH_HEIGHT * 0.5)
-      .attr('width', d => d.width)
-      .attr('height', GRAPH_HEIGHT)
-      .style('fill', 'transparent');
+        selection.append('g')
+          .classed('node-body-group', true)
+          .append('rect')
+          .classed('node-body', true)
+          .attr('x', 0)
+          .attr('y', GRAPH_HEIGHT * 0.5)
+          .attr('width', d => d.width)
+          .attr('height', GRAPH_HEIGHT)
+          .style('fill', 'transparent');
+      }
+    });
   }
 
-  renderEdges() {
-    const chart = this.chart;
+  renderNodeUpdated() {
+    // not sure anything is needed here, function is requird though
+  }
 
-    const edges = chart.selectAll('.edge')
-      .data(this.layout.edges, d => d.id);
+  renderNodeRemoved(selection) {
+    selection.remove();
+  }
 
-    const newEdges = edges.enter()
-      .append('g')
-      .classed('edge', true)
-      .attr('cursor', 'pointer')
-      .attr('d', d => lineFn(d.points));
-
-    edges.exit().remove();
-
-    newEdges
+  renderEdgeAdded(selection) {
+    selection
       .append('path')
       .classed('edge-path-bg', true)
+      .attr('d', d => lineFn(d.points))
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
       .style('stroke', DEFAULT_STYLE.edgeBg.stroke)
-      .attr('d', d => lineFn(d.points));
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight) + 2);
 
-    chart.selectAll('.edge').select('.edge-path-bg')
-      .style('stroke-width', d => {
-        return scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight) + 2;
-      })
-      .transition()
-      .duration(500)
-      .attrTween('d', function (d) {
-        const currentPath = lineFn(d.points);
-        const previousPath = d3.select(this).attr('d') || currentPath;
-        return (t) => {
-          return interpolatePath(previousPath, currentPath)(t);
-        };
-      });
-
-    newEdges
+    selection
       .append('path')
       .classed('edge-path', true)
-      .style('fill', DEFAULT_STYLE.edge.fill);
-
-    chart.selectAll('.edge').select('.edge-path')
-      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
+      .attr('d', d => lineFn(d.points))
+      .style('fill', DEFAULT_STYLE.edge.fill)
       .style('stroke', d => calcEdgeColor(d.data))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight))
+      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .attr('marker-end', d => {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
@@ -198,12 +179,17 @@ export default class ModelRenderer extends SVGRenderer {
         const source = d.data.source.replace(/\s/g, '');
         const target = d.data.target.replace(/\s/g, '');
         return `url(#start-${source}-${target})`;
-      })
-      .style('stroke-width', d => {
-        return scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight);
-      })
+      });
+  }
+
+  renderEdgeUpdated(selection) {
+    selection
+      .selectAll('.edge-path')
       .transition()
-      .duration(500)
+      .duration(1000)
+      .style('stroke', d => calcEdgeColor(d.data))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight))
+      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .attrTween('d', function (d) {
         const currentPath = lineFn(d.points);
         const previousPath = d3.select(this).attr('d') || currentPath;
@@ -212,39 +198,33 @@ export default class ModelRenderer extends SVGRenderer {
         };
       });
 
-    // move all edges, to be drawn last
-    chart.selectAll('.edge')
-      .each(function () { this.parentNode.insertBefore(this, null); });
-  }
-
-  renderEdgeControls() {
-    const chart = this.chart;
-
-    const edgeControls = chart.selectAll('.edge-control');
-
-    edgeControls
+    selection
+      .selectAll('.edge-path-bg')
       .transition()
-      .duration(500)
-      .attrTween('transform', function () {
-        return () => {
-          // this is a bit odd because there is no transition per say, instead each time it just moves it back on to the line as the line is transitioned.
-          const newTranslate = getTranslateFromSVGTransform(this.transform);
-          const pathNode = d3.select(this.parentNode).select('.edge-path').node();
-          const controlPoint = closestPointOnPath(pathNode, newTranslate);
-          return translate(controlPoint[0], controlPoint[1]);
+      .duration(1000)
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight) + 2)
+      .attrTween('d', function (d) {
+        const currentPath = lineFn(d.points);
+        const previousPath = d3.select(this).attr('d') || currentPath;
+        return (t) => {
+          return interpolatePath(previousPath, currentPath)(t);
         };
       });
+  }
 
-    edgeControls.selectAll('*').remove();
+  renderEdgeRemoved(selection) {
+    selection.remove();
+  }
 
-    edgeControls
+  renderEdgeControl(selection) {
+    selection
       .append('circle')
       .attr('r', DEFAULT_STYLE.edge.controlRadius + 2)
       .style('fill', DEFAULT_STYLE.edgeBg.stroke)
       .attr('stroke', SELECTED_COLOR)
       .style('cursor', 'pointer');
 
-    edgeControls
+    selection
       .append('circle')
       .attr('r', DEFAULT_STYLE.edge.controlRadius)
       .style('fill', d => calcEdgeColor(d.data))
@@ -252,7 +232,7 @@ export default class ModelRenderer extends SVGRenderer {
 
     const controlStyles = POLARITY_ICON_SVG_SETTINGS;
 
-    edgeControls
+    selection
       .append('text')
       .attr('x', d => controlStyles[d.data.polarity].x)
       .attr('y', d => controlStyles[d.data.polarity].y)
@@ -269,7 +249,9 @@ export default class ModelRenderer extends SVGRenderer {
     const chart = this.chart;
     const self = this;
 
-    chart.selectAll('.node').each(function(node) {
+    chart.selectAll('.node-ui').each(function(node) {
+      if (node.nodes) return; // node has children
+
       const nodeWidth = node.width;
       const nodeHeight = node.height;
       const graphHeight = 32;
@@ -426,11 +408,9 @@ export default class ModelRenderer extends SVGRenderer {
     const pathNode = edge.select('.edge-path').node();
     const controlPoint = closestPointOnPath(pathNode, mousePoint);
 
-    edge.append('g')
+    this.renderEdgeControl(edge.append('g')
       .classed('edge-control', true)
-      .attr('transform', translate(controlPoint[0], controlPoint[1]));
-
-    this.renderEdgeControls();
+      .attr('transform', translate(controlPoint[0], controlPoint[1])));
   }
 
   mouseEnterEdge(evt, edge) {
@@ -464,7 +444,7 @@ export default class ModelRenderer extends SVGRenderer {
     const nodesBody = chart.selectAll('.node-body-group');
     const registry = this.registry;
 
-    this.chart.selectAll('.node').on('mouseenter', function (evt, d) {
+    this.chart.selectAll('.node-ui').on('mouseenter', function (evt, d) {
       // if some of the label name was shortened, tooltip the whole label (so helpful)
       if (d.label.length !== d3.select(this).select('.node-label').text().replace(/^\*/, '').length) {
         showSvgTooltip(chart, (d.data.parameter.indicator_name === undefined) ? d.label : `${d.label}\n\n${d.data.parameter.indicator_name}`, [d.x + d.width / 2, d.y]);
@@ -539,7 +519,7 @@ export default class ModelRenderer extends SVGRenderer {
 
   hideNeighbourhood() {
     const chart = this.chart;
-    chart.selectAll('.node').style('opacity', 1);
+    chart.selectAll('.node-ui').style('opacity', 1);
     chart.selectAll('.edge').style('opacity', 1);
     chart.selectAll('.edge-control').remove();
   }
@@ -549,7 +529,7 @@ export default class ModelRenderer extends SVGRenderer {
     const chart = this.chart;
 
     // FIXME: not very efficient
-    const nonNeighborNodes = chart.selectAll('.node').filter(d => {
+    const nonNeighborNodes = chart.selectAll('.node-ui').filter(d => {
       return !nodes.map(node => node.concept).includes(d.concept);
     });
     nonNeighborNodes.style('opacity', OPACITY);
