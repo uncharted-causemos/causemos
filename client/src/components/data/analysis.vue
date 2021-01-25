@@ -1,7 +1,7 @@
 <template>
   <div
     class="analysis-container"
-    :class="{'fullscreen-mode': isFocusedCardFullscreen}"
+    :class="{'fullscreen-mode': fullscreenCardId !== null}"
   >
     <div
       class="header"
@@ -22,12 +22,12 @@
         :key="item.id"
         class="card-box"
         :class="[
-          item.isFocused ? 'is-fullscreen' : '',
+          item.id === fullscreenCardId ? 'is-fullscreen' : '',
           `card-count-${analysisItems.length}`
         ]"
         :data="item"
-        :is-focused-card-fullscreen="isFocusedCardFullscreen"
-        @toggle-fullscreen="toggleFullscreen(item)"
+        :is-fullscreen="item.id === fullscreenCardId"
+        @set-card-fullscreen="setCardFullscreen"
         @on-map-load="onMapLoad(item.id)"
       />
     </div>
@@ -48,17 +48,16 @@ export default {
     DataAnalysisCard
   },
   props: {
-    isFocusedCardFullscreen: {
-      type: Boolean,
-      default: false
+    fullscreenCardId: {
+      type: String,
+      default: null
     }
   },
   computed: {
     ...mapGetters({
       analysisId: 'dataAnalysis/analysisId',
       timeSelectionSyncing: 'dataAnalysis/timeSelectionSyncing',
-      analysisItems: 'dataAnalysis/analysisItems',
-      focusedItem: 'dataAnalysis/focusedItem'
+      analysisItems: 'dataAnalysis/analysisItems'
     }),
     activeFilters() {
       const filterStrings = this.analysisItems
@@ -92,16 +91,10 @@ export default {
   methods: {
     ...mapActions({
       setTimeSelectionSyncing: 'dataAnalysis/setTimeSelectionSyncing',
-      updateAllTimeSelection: 'dataAnalysis/updateAllTimeSelection',
-      setFocusedItem: 'dataAnalysis/setFocusedItem'
+      updateAllTimeSelection: 'dataAnalysis/updateAllTimeSelection'
     }),
-    toggleFullscreen(cardData) {
-      this.setFocusedItem(cardData.id);
-      if (this.isFocusedCardFullscreen) {
-        this.$emit('setFocusedCardFullscreen', false);
-        return;
-      }
-      this.$emit('setFocusedCardFullscreen', true);
+    setCardFullscreen(cardId) {
+      this.$emit('set-card-fullscreen', cardId);
     },
     captureThumbnail: _.throttle(async function() {
       // Generate a thumbnail at most 1 second after function is called, ignoring multiple calls

@@ -29,7 +29,6 @@ import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
  * @property {string} outputVariable - Model output variable name
  * @property {AnalysisItemFilter} filter - A filter object
  * @property {AnalysisItemSelection} selection - A selection object
- * @property {boolean} isFocused - true if the item is on focus
  */
 
 // List of analysis item state field name that needs to be preserved
@@ -39,8 +38,7 @@ const ANALYSIS_ITEM_STATE_FIELDS = Object.freeze({
   modelId: 'modelId',
   outputVariable: 'outputVariable',
   filter: 'filter',
-  selection: 'selection',
-  isFocused: 'isFocused'
+  selection: 'selection'
 });
 
 /**
@@ -60,7 +58,6 @@ const createNewAnalysisItem = (datacubeID, modelId, outputVariable, source, unit
     [ANALYSIS_ITEM_STATE_FIELDS.outputVariable]: outputVariable,
     [ANALYSIS_ITEM_STATE_FIELDS.filter]: undefined,
     [ANALYSIS_ITEM_STATE_FIELDS.selection]: undefined,
-    [ANALYSIS_ITEM_STATE_FIELDS.isFocused]: false,
     model: model,
     source: source || 'No source provided',
     units: units || 'No units provided',
@@ -117,15 +114,6 @@ const ensureAlgebraicInputsArePresent = (inputIds, analysisItems) => {
   });
 };
 
-const ensureOneItemFocused = (analysisItems) => {
-  // Focuses the first data cube card if it exists, and no
-  //  others are focused
-  if (analysisItems.findIndex(item => item.isFocused) === -1 &&
-    analysisItems.length > 0) {
-    analysisItems[0].isFocused = true;
-  }
-};
-
 // Default state for state that can be saved/loaded
 const DEFAULT_STATE = {
   /** @type {AnalysisItem[]} */
@@ -149,7 +137,6 @@ export default {
     analysisItems: state => state.analysisItems,
     timeSelectionSyncing: state => state.timeSelectionSyncing,
     mapBounds: state => state.mapBounds,
-    focusedItem: state => state.analysisItems.find(item => item.isFocused),
     analysisId: state => state.currentAnalysisId,
     algebraicTransform: state => state.algebraicTransform,
     algebraicTransformInputIds: state => state.algebraicTransformInputIds
@@ -186,8 +173,6 @@ export default {
       // Remove any algebraic input IDs whose matching analysis item has also been removed
       const newInputIds = ensureAlgebraicInputsArePresent(state.algebraicTransformInputIds, analysisItems);
       commit('setAlgebraicTransformInputIds', newInputIds);
-
-      ensureOneItemFocused(analysisItems);
       commit('setAnalysisItems', analysisItems);
     },
     setMapBounds({ commit }, bounds) {
@@ -226,11 +211,7 @@ export default {
     },
     removeAnalysisItems({ state, commit }, analysisItemIds = []) {
       const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
-      ensureOneItemFocused(items);
       commit('setAnalysisItems', items);
-    },
-    setFocusedItem({ commit }, id) {
-      commit('setFocusedItem', id);
     },
     setAlgebraicTransform({ state, commit }, transform) {
       if (transform === null) {
@@ -286,13 +267,6 @@ export default {
     setTimeSelectionSyncing(state, bool = false) {
       state.timeSelectionSyncing = bool;
       saveState(state);
-    },
-    setFocusedItem(state, id) {
-      if (state.analysisItems.find(item => item.id === id) === undefined) return;
-      // analysisItems contains the item, so focus it
-      state.analysisItems.forEach(item => {
-        item.isFocused = item.id === id;
-      });
     },
     setAlgebraicTransform(state, transform) {
       state.algebraicTransform = transform;
