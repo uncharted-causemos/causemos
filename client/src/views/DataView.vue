@@ -6,8 +6,8 @@
         <analysis-side-panel v-if="analysisItems.length && mapReady" />
         <data-analysis
           v-if="analysisItems.length && mapReady"
-          :is-focused-card-fullscreen="isFocusedCardFullscreen"
-          @setFocusedCardFullscreen="setFocusedCardFullscreen"
+          :fullscreen-card-id="fullscreenCardId"
+          @set-card-fullscreen="setCardFullscreen"
         />
         <div
           v-else
@@ -19,11 +19,11 @@
     </div>
     <drilldown-panel
       class="drilldown"
-      :is-open="isFocusedCardFullscreen"
+      :is-open="fullscreenCardId !== null"
       :tabs="drilldownTabs"
       :active-tab-id="activeDrilldownTab"
       @tab-click="onTabClick"
-      @close="setFocusedCardFullscreen(false)"
+      @close="exitFullscreenMode"
     >
       <div slot="content">
         <!-- Metadata Pane -->
@@ -34,32 +34,32 @@
           <i class="fa fa-spin fa-spinner pane-loading-icon" /><span>Loading metadata...</span>
         </div>
         <div
-          v-else-if="activeDrilldownTab ==='metadata' && focusedCardMetadata === null"
+          v-else-if="activeDrilldownTab ==='metadata' && fullscreenCardMetadata === null"
           class="pane-loading-message"
         >
           <span>Error loading metadata. Please try again.</span>
         </div>
         <div v-else-if="activeDrilldownTab ==='metadata'">
-          <h5><strong>{{ focusedCardMetadata.name }}</strong> ({{ focusedCardMetadata.units }})</h5>
+          <h5><strong>{{ fullscreenCardMetadata.name }}</strong> ({{ fullscreenCardMetadata.units }})</h5>
           <p
-            v-for="(period, index) of focusedCardMetadata.period"
+            v-for="(period, index) of fullscreenCardMetadata.period"
             :key="index"
           >
             <em>{{ Number.parseInt(period.gte) | date-formatter('MMM YYYY') }}</em>
             -
             <em>{{ Number.parseInt(period.lte) | date-formatter('MMM YYYY') }}</em>
           </p>
-          <p>{{ focusedCardMetadata.description }}</p>
-          <p><strong>Source: </strong>{{ focusedCardMetadata.source }}</p>
-          <p><strong>Model: </strong>{{ focusedCardMetadata.modelName }}</p>
-          <p>{{ focusedCardMetadata.modelDescription }}</p>
-          <strong v-if="focusedCardMetadata.parameters.length > 0">Parameters:</strong>
+          <p>{{ fullscreenCardMetadata.description }}</p>
+          <p><strong>Source: </strong>{{ fullscreenCardMetadata.source }}</p>
+          <p><strong>Model: </strong>{{ fullscreenCardMetadata.modelName }}</p>
+          <p>{{ fullscreenCardMetadata.modelDescription }}</p>
+          <strong v-if="fullscreenCardMetadata.parameters.length > 0">Parameters:</strong>
           <ul
-            v-if="focusedCardMetadata.parameters.length > 0"
+            v-if="fullscreenCardMetadata.parameters.length > 0"
             class="parameter-metadata"
           >
             <li
-              v-for="(parameter, index) of focusedCardMetadata.parameters"
+              v-for="(parameter, index) of fullscreenCardMetadata.parameters"
               :key="index"
             >
               <strong>{{ parameter.name }}</strong>: {{ parameter.description }}
@@ -123,17 +123,16 @@ export default {
   },
   data: () => ({
     mapReady: false,
-    isFocusedCardFullscreen: false,
+    fullscreenCardId: null,
     isFetchingMetadata: false,
-    focusedCardMetadata: null,
+    fullscreenCardMetadata: null,
     activeDrilldownTab: ALL_DRILLDOWN_TABS.metadata.id,
     aggregationLevel: 1,
     adminLevelData: ADMIN_LEVEL_DATA.data
   }),
   computed: {
     ...mapGetters({
-      analysisItems: 'dataAnalysis/analysisItems',
-      focusedItem: 'dataAnalysis/focusedItem'
+      analysisItems: 'dataAnalysis/analysisItems'
     }),
     drilldownTabs() {
       // TODO: only show the adminData pane for the models that we've
@@ -148,9 +147,9 @@ export default {
     }
   },
   watch: {
-    isFocusedCardFullscreen(isFullscreen, wasFullscreen) {
-      if (isFullscreen && !wasFullscreen) {
-        this.fetchMetadata(this.focusedItem.id);
+    fullscreenCardId(current, previous) {
+      if (previous !== current && current !== null) {
+        this.fetchMetadata(this.fullscreenCardId);
       }
     },
     analysisItems(n, o) {
@@ -159,13 +158,18 @@ export default {
       if (newLength === 1 && oldLength !== 1) {
         // Just added our first card or removed our second-last card,
         //  so fullscreen our only card
-        this.setFocusedCardFullscreen(true);
+        this.setCardFullscreen(n[0].id);
         return;
       }
       if (oldLength === 1 && newLength !== 1) {
         // Just removed our last card or added a second card
         //  so exit fullscreen
-        this.setFocusedCardFullscreen(false);
+        this.exitFullscreenMode();
+        return;
+      }
+      if (n.find(item => item.id === this.fullscreenCardId) === undefined) {
+        // Card that was previously fullscreen has been removed
+        this.exitFullscreenMode();
       }
     }
   },
@@ -176,12 +180,15 @@ export default {
     disableConcurrentTileRequestsCaching();
   },
   methods: {
-    setFocusedCardFullscreen(newValue) {
-      this.isFocusedCardFullscreen = newValue;
+    setCardFullscreen(id) {
+      this.fullscreenCardId = id;
+    },
+    exitFullscreenMode() {
+      this.fullscreenCardId = null;
     },
     async fetchMetadata(itemId) {
       this.isFetchingMetadata = true;
-      this.focusedCardMetadata = this.parseRawMetadata(await getDatacubeById(itemId)) || null;
+      this.fullscreenCardMetadata = this.parseRawMetadata(await getDatacubeById(itemId)) || null;
       this.isFetchingMetadata = false;
     },
     parseRawMetadata(raw) {
