@@ -140,7 +140,7 @@
       v-if="showPathSuggestions"
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
-      @add-path="addSuggestedPath"
+      @add-paths="addSuggestedPath"
       @close="addSuggestedPath([{source: pathSuggestionSource, target: pathSuggestionTarget}])"
     />
   </div>

@@ -87,7 +87,21 @@ export default {
       this.$emit('close', null);
     },
     addSuggestedPaths() {
-      this.$emit('add-paths', null);
+      const selectedPathsRaw = this.suggestions.filter(s => s.selected === true);
+      const selectedPaths = [];
+      for (let i = 0; i < selectedPathsRaw.length; i++) {
+        const pathRaw = selectedPathsRaw[i];
+        const path = [];
+
+        for (let j = 0; j < pathRaw.length - 1; j++) {
+          path.push({
+            source: pathRaw[j],
+            target: pathRaw[j + 1]
+          });
+        }
+        selectedPaths.push(path);
+      }
+      this.$emit('add-paths', selectedPaths);
     },
     toggleSelection(path) {
       path.selected = !path.selected;
