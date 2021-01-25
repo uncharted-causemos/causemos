@@ -13,7 +13,7 @@ const edges = [
 describe('graph-util', function() {
   it('norml path - path found', function() {
     const result = graphUtil.normalPath(edges, ['a', 'd'], 3);
-    expect(result.length).to.equal(2);
+    expect(result.length).to.equal(1);
   });
 
   it('norml path - path not found', function() {
