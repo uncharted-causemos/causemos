@@ -124,6 +124,7 @@ $fullscreenTransition: all .5s ease-in-out;
 .analysis-container {
   padding: 10px;
   min-width: 0;
+  flex: 1;
   height: 100%;
   display: flex;
   flex-direction: column;
