@@ -135,6 +135,14 @@
       @retain="importCAGs(false)"
       @overwrite="importCAGs(true)"
       @close="showModalConflict=false" />
+
+    <modal-path-find
+      v-if="showPathSuggestions"
+      :source="pathSuggestionSource"
+      :target="pathSuggestionTarget"
+      @add-paths="addSuggestedPath"
+      @close="addSuggestedPath([[{source: pathSuggestionSource, target: pathSuggestionTarget}]])"
+    />
   </div>
 </template>
 
@@ -158,6 +166,7 @@ import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-rec
 import { conceptShortName } from '@/utils/concept-util';
 import filtersUtil from '@/utils/filters-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
+import ModalPathFind from '@/components/modals/modal-path-find';
 import ModalImportCag from '@/components/qualitative/modal-import-cag';
 import ModalImportConflict from '@/components/qualitative/modal-import-conflict';
 import cagUtil from '@/utils/cag-util';
@@ -209,7 +218,8 @@ export default {
     FactorsRecommendationsPane,
     ModalConfirmation,
     ModalImportCag,
-    ModalImportConflict
+    ModalImportConflict,
+    ModalPathFind
   },
   filters: {
     shortName: function (concept) {
@@ -220,20 +230,25 @@ export default {
     modelSummary: null,
     modelComponents: {},
 
+    // State flags
     isDrilldownOpen: false,
-    drilldownTabs: [],
-    activeDrilldownTab: '',
     isDrilldownOverlayOpen: false,
+    isFetchingStatements: false,
     showModalConfirmation: false,
     showModalConflict: false,
     showModalImportCAG: false,
+    showPathSuggestions: false,
+
+    drilldownTabs: [],
+    activeDrilldownTab: '',
     selectedNode: null,
     selectedEdge: null,
     selectedStatements: [],
-    isFetchingStatements: false,
     showNewNode: false,
     correction: null,
-    factorRecommendationsList: []
+    factorRecommendationsList: [],
+    pathSuggestionSource: '',
+    pathSuggestionTarget: ''
   }),
   computed: {
     ...mapGetters({
@@ -318,8 +333,14 @@ export default {
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
         const edgeData = await projectService.getProjectStatementIdsByEdges(this.project, [edge], null);
         const formattedEdge = Object.assign({}, edge, { reference_ids: edgeData[edge.source + '///' + edge.target] || [] });
-        const data = await this.addCAGComponents([], [formattedEdge]);
-        this.setUpdateToken(data.updateToken);
+        if (formattedEdge.reference_ids.length === 0) {
+          this.showPathSuggestions = true;
+          this.pathSuggestionSource = formattedEdge.source;
+          this.pathSuggestionTarget = formattedEdge.target;
+        } else {
+          const data = await this.addCAGComponents([], [formattedEdge]);
+          this.setUpdateToken(data.updateToken);
+        }
       } else {
         this.toaster(conceptShortName(edge.source) + ' ' + conceptShortName(edge.target) + ' already exists in the CAG', 'error', false);
       }
@@ -646,6 +667,53 @@ export default {
       // Invoke recovery endpoint to resolve invalid/stale CAGS
       await modelService.recalculate(this.currentCAG);
       this.refresh();
+    },
+    async addSuggestedPath(paths) {
+      this.showPathSuggestions = false;
+
+      const key = (e) => `${e.source}///${e.target}`;
+
+      // 1 Find segments not already in the graph
+      const newEdges = [];
+      const newNodes = [];
+      const edgeSet = new Set();
+      const nodeSet = new Set();
+      this.modelComponents.edges.forEach(edge => {
+        edgeSet.add(key(edge));
+      });
+      this.modelComponents.nodes.forEach(node => {
+        nodeSet.add(node.concept);
+      });
+
+      paths.forEach(path => {
+        path.forEach(edge => {
+          if (!edgeSet.has(key(edge))) {
+            newEdges.push(edge);
+          }
+          if (!nodeSet.has(edge.source) && newNodes.indexOf(edge.source) === -1) {
+            newNodes.push(edge.source);
+          }
+          if (!nodeSet.has(edge.target) && newNodes.indexOf(edge.target) === -1) {
+            newNodes.push(edge.target);
+          }
+        });
+      });
+
+      // 2 Get edge statement references
+      const edgeData = await projectService.getProjectStatementIdsByEdges(this.project, newEdges, null);
+      newEdges.forEach(edge => {
+        edge.reference_ids = edgeData[key(edge)] || [];
+      });
+
+      // 3 Save
+      const newNodesPayload = newNodes.map(concept => {
+        return {
+          concept: concept,
+          label: conceptShortName(concept)
+        };
+      });
+      const result = await this.addCAGComponents(newNodesPayload, newEdges);
+      this.setUpdateToken(result.updateToken);
     }
   }
 };
