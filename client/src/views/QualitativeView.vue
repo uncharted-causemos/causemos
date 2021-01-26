@@ -687,7 +687,7 @@ export default {
 
       paths.forEach(path => {
         path.forEach(edge => {
-          if (!edgeSet.has(key(edge))) {
+          if (!edgeSet.has(key(edge)) && !_.some(newEdges, e => e.source === edge.source && e.target === edge.target)) {
             newEdges.push(edge);
           }
           if (!nodeSet.has(edge.source) && newNodes.indexOf(edge.source) === -1) {
