@@ -7,9 +7,9 @@
     </h4>
     <div slot="body">
       <p>
-        There are no backing evidence supporting the edge <strong>{{ conceptShortName(source) }}</strong>
+        There is no evidence to support the edge <strong>{{ conceptShortName(source) }}</strong>
         to <strong>{{ conceptShortName(target) }}</strong>. Choose from the list of indirect paths below, or
-        click Cancel to use the unsupportd path anyway.
+        click Cancel to use the unsupported path anyway.
       </p>
       <div>
         <div
@@ -49,7 +49,7 @@ import suggestionService from '@/services/suggestion-service';
 import { conceptShortName } from '@/utils/concept-util';
 
 export default {
-  name: 'ModalConfirm',
+  name: 'ModalPathFind',
   components: {
     Modal
   },
