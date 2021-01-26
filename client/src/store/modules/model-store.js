@@ -4,7 +4,6 @@
 export default {
   namespaced: true,
   state: {
-    view: 'flow',
     selectedScenarioId: null
   },
   getters: {
