@@ -4,7 +4,7 @@
     :current-tab-name="currentTab"
     @set-active="setActive"
   >
-    <div v-if="currentTab === 'Statements'">
+    <div v-if="currentTab === 'Evidence quality'">
       <!--
       <keyword-facets
         key="CODE_TABLE.KEYWORD.field"
@@ -211,9 +211,9 @@ const DOCUMENT_FACETS = [
 ];
 
 const FACET_GROUPS = {
-  Documents: DOCUMENT_FACETS,
-  Relationships: RELATIONSHIP_FACETS,
-  Statements: STATEMENT_FACETS
+  'Documents': DOCUMENT_FACETS,
+  'Relationships': RELATIONSHIP_FACETS,
+  'Evidence quality': STATEMENT_FACETS
 };
 
 
@@ -238,7 +238,7 @@ export default {
     facetTabs: [
       { name: 'Documents', icon: 'fa fa-file-text' },
       { name: 'Relationships', icon: 'fa fa-sitemap' },
-      { name: 'Statements', icon: 'fa fa-long-arrow-right' }
+      { name: 'Evidence quality', icon: 'fa fa-long-arrow-right' }
     ],
     baseData: {},
     facetData: {},
