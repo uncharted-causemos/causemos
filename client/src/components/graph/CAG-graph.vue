@@ -462,18 +462,23 @@ class CAGRenderer extends SVGRenderer {
 
               const targetHandlePoint = { x: newEdgeTarget.x, y: newEdgeTarget.y + 0.5 * newEdgeTarget.height };
 
-              if (newEdgePoints.length > 2 && Math.hypot(lastPoint.x - targetHandlePoint.x, lastPoint.y - targetHandlePoint.y) < 25) {
-                newEdgePoints.splice(newEdgePoints.length - 1, 1);
-              }
+              const grid = { x: 10, y: 10 };
+              const collider = (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
+
+              const path = this.renderer.getPath(this.newEdgePoints[0], targetHandlePoint, grid, collider);
+
+              // if (newEdgePoints.length > 2 && Math.hypot(lastPoint.x - targetHandlePoint.x, lastPoint.y - targetHandlePoint.y) < 25) {
+              //   newEdgePoints.splice(newEdgePoints.length - 1, 1);
+              // }
 
               return pathFn(newEdgePoints
-                .concat({ x: targetHandlePoint.x - 25, y: targetHandlePoint.y })
+                // .concat({ x: targetHandlePoint.x - 25, y: targetHandlePoint.y })
                 .concat(targetHandlePoint));
             } else {
               self.newEdgeTargetId = null;
-              if (Math.hypot(lastPoint.x - mousePoint.x, lastPoint.y - mousePoint.y) > 25) {
-                newEdgePoints.push(mousePoint);
-              }
+              // if (Math.hypot(lastPoint.x - mousePoint.x, lastPoint.y - mousePoint.y) > 25) {
+              //   newEdgePoints.push(mousePoint);
+              // }
               return pathFn(newEdgePoints.concat(mousePoint));
             }
           })
@@ -488,6 +493,146 @@ class CAGRenderer extends SVGRenderer {
         this.options.newEdgeFn(getLayoutNodeById(self.newEdgeSourceId), getLayoutNodeById(self.newEdgeTargetId));
       });
     handles.call(drag);
+  }
+
+  addCircle(p, opacity, colour) {
+    const chart = this.chart;
+
+    chart.append('circle')
+      .attr('cx', p.x)
+      .attr('cy', p.y)
+      .attr('r', 4)
+      .attr('stroke', 'none')
+      .style('opacity', opacity)
+      .attr('fill', colour || 'red');
+  }
+
+  getPath(start, goal, grid, collider) {
+    // const start = { x: 10, y: 0 };
+    // const goal = { x: 200, y: 100 };
+    // const grid = { x: 10, y: 10 };
+    // const collider = (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
+
+    // this.addCircle(start, 1.0, 'blue');
+    // this.addCircle(goal, 1.0, 'green');
+
+    const openSet = [];
+    const cameFrom = [];
+    const gScore = [];
+    const fScore = [];
+
+    const getNeighbours = (p, grid) => {
+      return [
+        // orthogonals
+        { x: p.x + grid.x, y: p.y },
+        { x: p.x - grid.x, y: p.y },
+        { x: p.x, y: p.y - grid.y },
+        { x: p.x, y: p.y + grid.y },
+
+        // diagonals
+        { x: p.x + grid.x, y: p.y + grid.y },
+        { x: p.x + grid.x, y: p.y - grid.y },
+        { x: p.x - grid.x, y: p.y - grid.y },
+        { x: p.x - grid.x, y: p.y + grid.y }
+      ].filter(p => !collider(p));
+    };
+
+    const pAsKey = (p) => `${p.x},${p.y}`;
+    const keyAsP = (key) => ({ x: parseInt(key.split(',')[0]), y: parseInt(key.split(',')[1]) });
+    const distance = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    const heuristic = (p) => distance(p, goal) * 1.2;
+    const pEqual = (p1, p2) => p1.x === p2.x && p1.y === p2.y;
+
+    openSet.push(pAsKey(start));
+    gScore[pAsKey(start)] = 0;
+    fScore[pAsKey(start)] = heuristic(start);
+
+    // so slow, so embarrassing
+    const getMin = () => {
+      let minScore = Number.MAX_VALUE;
+      let minKey = '';
+      for (let i = 0; i < openSet.length; i++) {
+        const key = openSet[i];
+        if (fScore[key] < minScore) {
+          minScore = fScore[key];
+          minKey = key;
+        }
+      }
+      return minKey;
+    };
+
+    let count = 0;
+    while (openSet.length > 0) {
+      count = count + 1;
+      if (count > 1000) {
+        break;
+      }
+
+      const currentKey = getMin(fScore);
+      const current = keyAsP(currentKey);
+      openSet.splice(openSet.indexOf(currentKey), 1);
+
+      // this.addCircle(current, 0.1, 'red');
+
+      if (pEqual(current, goal)) {
+        const path = [currentKey];
+        while (cameFrom[path[path.length - 1]] !== undefined) {
+          path.push(cameFrom[path[path.length - 1]]);
+        }
+        // console.log(count, openSet.length, Object.keys(gScore).length, Object.keys(fScore).length);
+        return path.map(keyAsP);
+      }
+
+      const neighbours = getNeighbours(current, grid);
+      // getJumpPoints was here but not anymore no one knows where it went, probably home though
+
+      for (let i = 0; i < neighbours.length; i++) {
+        const neighbour = neighbours[i];
+        const neighbourKey = pAsKey(neighbour);
+
+        const tgScore = gScore[pAsKey(current)] + distance(current, neighbour);
+        if (gScore[neighbourKey] === undefined || tgScore < gScore[neighbourKey]) {
+          cameFrom[neighbourKey] = currentKey;
+          gScore[neighbourKey] = tgScore;
+          fScore[neighbourKey] = tgScore + heuristic(neighbour);
+          if (openSet.indexOf(neighbourKey) === -1) {
+            openSet.push(neighbourKey);
+          }
+        }
+      }
+    }
+
+    console.log('path not found');
+    return [];
+  }
+
+  highlightLoop() {
+    const chart = this.chart;
+
+    const conceptsLoop = [
+      ['wm/concept/causal_factor/economic_and_commerce/economic_activity/livelihood', 'wm/concept/causal_factor/economic_and_commerce/economic_activity/market/transaction/food_purchase'],
+      ['wm/concept/causal_factor/economic_and_commerce/economic_activity/market/transaction/food_purchase', 'wm/concept/causal_factor/health_and_life/nutrition/malnutrition'],
+      ['wm/concept/causal_factor/health_and_life/nutrition/malnutrition', 'wm/concept/causal_factor/health_and_life/disease/human_disease'],
+      ['wm/concept/causal_factor/health_and_life/disease/human_disease', 'wm/concept/causal_factor/economic_and_commerce/economic_activity/livelihood']
+    ];
+
+    const edges = chart.selectAll('.edge').filter(edge => conceptsLoop.some(e => edge.source === e[0] && edge.target === e[1]));
+    const bgPaths = edges.select('.edge-path-bg').nodes();
+    const loopLength = d3.sum(bgPaths.map(n => n.getTotalLength()));
+
+    d3.selectAll(bgPaths)
+      .style('stroke-dashoffset', loopLength)
+      .style('stroke', d => calcEdgeColor(d.data))
+      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5) + 4)
+      .style('stroke-dasharray', 100)
+      .transition()
+      .duration(5000)
+      .ease(d3.easeLinear)
+      .style('stroke', DEFAULT_STYLE.edgeBg.stroke)
+      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5) + 2)
+      .style('stroke-dashoffset', 0)
+      .end()
+      .then(() => d3.selectAll(bgPaths).style('stroke-dasharray', 0));
   }
 
   hideNeighbourhood() {
@@ -718,6 +863,8 @@ export default {
       if (d3.select('.node input[type=text]').node()) {
         d3.select('.node input[type=text]').node().focus();
       }
+
+      window.renderer = this.renderer;
 
       this.renderer.enableDrag();
       this.$emit('refresh', null);
