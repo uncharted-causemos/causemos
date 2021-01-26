@@ -141,7 +141,7 @@
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
       @add-paths="addSuggestedPath"
-      @close="addSuggestedPath([[{source: pathSuggestionSource, target: pathSuggestionTarget}]])"
+      @close="showPathSuggestions = false"
     />
   </div>
 </template>
