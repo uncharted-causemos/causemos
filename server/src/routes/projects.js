@@ -77,6 +77,11 @@ router.put('/:projectId', asyncHandler(async (req, res) => {
     });
   }
 
+  // Bust project's graph cache if update changes the topology
+  if (['discard_statement', 'factor_grounding', 'reverse_relation'].includes(payload.updateType)) {
+    projectService.bustProjectGraphCache(projectId);
+  }
+
   const editTime = moment().valueOf();
   res.status(200).send({ updateToken: editTime });
 }));

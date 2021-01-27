@@ -581,6 +581,12 @@ const searchPath = async (projectId, sourceConcept, targetConcept, hops) => {
   return graphUtil.normalPath(g, [sourceConcept, targetConcept], hops);
 };
 
+const bustProjectGraphCache = async (projectId) => {
+  Logger.info(`Busting/reset project ${projectId} graph cache`);
+  const promise = getProjectEdges(projectId, null);
+  set(_graphKey(projectId), promise);
+};
+
 module.exports = {
   listProjects,
   findProject,
@@ -602,5 +608,6 @@ module.exports = {
   getProjectEdges,
 
   searchFields,
-  searchPath
+  searchPath,
+  bustProjectGraphCache
 };

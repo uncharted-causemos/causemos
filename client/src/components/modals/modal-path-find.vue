@@ -8,7 +8,7 @@
     <div slot="body">
       <p>
         There is no evidence to support the edge <strong>{{ conceptShortName(source) }}</strong>
-        to <strong>{{ conceptShortName(target) }}</strong>. You can still create it, or select from the indrect paths listed below.
+        to <strong>{{ conceptShortName(target) }}</strong>. You can still use it, or select from the indirect paths listed below.
       </p>
       <div>
         <div v-if="suggestions.length === 0">
