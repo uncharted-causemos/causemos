@@ -1,5 +1,6 @@
 <template>
   <side-panel
+    class="facet-panel-container"
     :tabs="facetTabs"
     :current-tab-name="currentTab"
     @set-active="setActive"
@@ -356,6 +357,9 @@ export default {
 
 <style lang="scss" scoped>
   @import "~styles/variables";
+  .facet-panel-container {
+    margin-top: 5px;
+  }
 
   /deep/.facet-container:not(:first-child) {
     // This needs to be /deep/, since some facet containers

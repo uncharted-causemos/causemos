@@ -267,5 +267,27 @@ export default {
     }
   }
 
+  // Remove 'Oswald' font
+  /deep/ .group-header,
+  /deep/ .facet-label,
+  /deep/ .facet-label-count {
+    font-family: inherit;
+  }
+
+  /deep/ .facet-label-count {
+    font-size: 16px;
+    top: -4px;
+    position: relative;
+  }
+
+  // Remove hover transition since it felt slow and less snappy
+  /deep/ .facets-facet-vertical {
+    transition: margin .5s ease, padding .5s ease, height .5s ease, opacity .5s ease;
+  }
+  // Remove 'box-shadow' transition which is used to darken the bar on hover
+  // for the same reason
+  /deep/ .facets-facet-vertical .facet-bar-base {
+    transition: width .4s, opacity 0.5s;
+  }
 }
 </style>
