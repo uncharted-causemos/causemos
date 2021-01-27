@@ -26,47 +26,10 @@
       @close="exitFullscreenMode"
     >
       <div slot="content">
-        <!-- Metadata Pane -->
-        <div
-          v-if="activeDrilldownTab ==='metadata' && isFetchingMetadata"
-          class="pane-loading-message"
-        >
-          <i class="fa fa-spin fa-spinner pane-loading-icon" /><span>Loading metadata...</span>
-        </div>
-        <div
-          v-else-if="activeDrilldownTab ==='metadata' && fullscreenCardMetadata === null"
-          class="pane-loading-message"
-        >
-          <span>Error loading metadata. Please try again.</span>
-        </div>
-        <div v-else-if="activeDrilldownTab ==='metadata'">
-          <h5><strong>{{ fullscreenCardMetadata.name }}</strong> ({{ fullscreenCardMetadata.units }})</h5>
-          <p
-            v-for="(period, index) of fullscreenCardMetadata.period"
-            :key="index"
-          >
-            <em>{{ Number.parseInt(period.gte) | date-formatter('MMM YYYY') }}</em>
-            -
-            <em>{{ Number.parseInt(period.lte) | date-formatter('MMM YYYY') }}</em>
-          </p>
-          <p>{{ fullscreenCardMetadata.description }}</p>
-          <p><strong>Source: </strong>{{ fullscreenCardMetadata.source }}</p>
-          <p><strong>Model: </strong>{{ fullscreenCardMetadata.modelName }}</p>
-          <p>{{ fullscreenCardMetadata.modelDescription }}</p>
-          <strong v-if="fullscreenCardMetadata.parameters.length > 0">Parameters:</strong>
-          <ul
-            v-if="fullscreenCardMetadata.parameters.length > 0"
-            class="parameter-metadata"
-          >
-            <li
-              v-for="(parameter, index) of fullscreenCardMetadata.parameters"
-              :key="index"
-            >
-              <strong>{{ parameter.name }}</strong>: {{ parameter.description }}
-            </li>
-          </ul>
-        </div>
-
+        <datacube-metadata-pane
+          v-if="activeDrilldownTab === 'metadata'"
+          :fullscreen-card-id="fullscreenCardId"
+        />
         <!-- Aggregation Pane -->
         <aggregation-checklist-pane
           v-if="activeDrilldownTab ==='adminData'"
@@ -84,9 +47,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
-import _ from 'lodash';
 
-import { getDatacubeById } from '@/services/datacube-service';
 import ActionBar from '@/components/data/action-bar';
 import DataAnalysis from '@/components/data/analysis';
 import DrilldownPanel from '@/components/drilldown-panel';
@@ -95,6 +56,7 @@ import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCachi
 import AnalysisSidePanel from '@/components/data/analysis-side-panel';
 import AggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
+import DatacubeMetadataPane from '../components/drilldown-panel/datacube-metadata-pane.vue';
 
 const ALL_DRILLDOWN_TABS = {
   metadata: {
@@ -119,13 +81,12 @@ export default {
     DrilldownPanel,
     EmptyStateInstructions,
     AnalysisSidePanel,
-    AggregationChecklistPane
+    AggregationChecklistPane,
+    DatacubeMetadataPane
   },
   data: () => ({
     mapReady: false,
     fullscreenCardId: null,
-    isFetchingMetadata: false,
-    fullscreenCardMetadata: null,
     activeDrilldownTab: ALL_DRILLDOWN_TABS.metadata.id,
     aggregationLevel: 1,
     adminLevelData: ADMIN_LEVEL_DATA.data
@@ -147,11 +108,6 @@ export default {
     }
   },
   watch: {
-    fullscreenCardId(current, previous) {
-      if (previous !== current && current !== null) {
-        this.fetchMetadata(this.fullscreenCardId);
-      }
-    },
     analysisItems(n, o) {
       const newLength = n.length;
       const oldLength = o.length;
@@ -185,37 +141,6 @@ export default {
     },
     exitFullscreenMode() {
       this.fullscreenCardId = null;
-    },
-    async fetchMetadata(itemId) {
-      this.isFetchingMetadata = true;
-      this.fullscreenCardMetadata = this.parseRawMetadata(await getDatacubeById(itemId)) || null;
-      this.isFetchingMetadata = false;
-    },
-    parseRawMetadata(raw) {
-      const parameters = [];
-      if (
-        _.isArray(raw.parameters) &&
-        _.isArray(raw.parameter_descriptions) &&
-        raw.parameters.length === raw.parameter_descriptions.length
-      ) {
-        raw.parameters.forEach((parameter, index) => {
-          parameters.push({ name: parameter, description: raw.parameter_descriptions[index] });
-        });
-      }
-      return {
-        name: raw.output_name,
-        description: raw.output_description,
-        units: raw.output_units,
-        source: raw.source,
-        modelName: raw.label,
-        modelDescription: raw.model_description,
-        period: raw.period,
-        parameters
-        // TODO: aggregation method
-        // TODO: periodicity
-        // TODO: limitations
-        // TODO: statistical concept and methodology
-      };
     },
     onTabClick(newTabId) {
       this.activeDrilldownTab = newTabId;
@@ -267,9 +192,5 @@ $fullscreenTransition: .5s ease-in-out;
     }
   }
 
-}
-
-.parameter-metadata {
-  padding-inline-start: 20px;
 }
 </style>
