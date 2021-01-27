@@ -439,6 +439,7 @@ export default {
 
 .body {
   flex: 1;
+  min-height: 0;
 
   .body-main-content {
     flex: 1;

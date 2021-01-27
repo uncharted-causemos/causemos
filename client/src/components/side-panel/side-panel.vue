@@ -1,36 +1,38 @@
 <template>
-  <div class="side-panel-container">
+  <div
+    class="side-panel-container"
+    :class="{'large': isLarge}"
+  >
     <side-panel-nav
       :tabs="tabs"
       :current-tab-name="currentTabName"
       @set-active="tabName => $emit('set-active', tabName)"
     />
-    <div
-      v-if="isPanelOpen"
-      class="side-panel-body"
-    >
-      <div class="side-panel-header">
-        <h5>{{ currentTabName }}</h5>
-        <close-button @click="$emit('set-active', '')" />
-      </div>
+    <transition name="slide-fade">
       <div
-        class="side-panel-content"
-        :class="{'has-padding': addPadding, 'large': isLarge}"
+        v-if="isPanelOpen"
+        class="side-panel-body"
       >
-        <slot />
+        <div class="side-panel-header">
+          <h5>{{ currentTabName }}</h5>
+        </div>
+        <div
+          class="side-panel-content"
+          :class="{'has-padding': addPadding}"
+        >
+          <slot />
+        </div>
       </div>
-    </div>
+    </transition>
   </div>
 </template>
 
 <script>
-import CloseButton from '@/components/widgets/close-button.vue';
 import SidePanelNav from '@/components/side-panel/side-panel-nav.vue';
 
 export default {
   name: 'SidePanel',
   components: {
-    CloseButton,
     SidePanelNav
   },
   props: {
@@ -64,12 +66,40 @@ export default {
 
 <style lang="scss" scoped>
 @import '~styles/variables';
+$small-width: 250px;
+$large-width: 380px;
+
 .side-panel-container {
   flex-grow: 0;
   flex-shrink: 0;
   min-width: $navbar-outer-width;
-  height: $content-full-height;
   position: relative;
+  margin-right: 10px;
+  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.12));
+
+  .side-panel-header,
+  .side-panel-body,
+  .side-panel-content {
+    width: $small-width;
+  }
+
+  &.large {
+    .side-panel-header,
+    .side-panel-body,
+    .side-panel-content {
+      width: $large-width;
+    }
+  }
+
+  .side-panel-body.slide-fade-enter,
+  .side-panel-body.slide-fade-leave-to {
+    width: 0;
+
+    .side-panel-content,
+    .side-panel-header {
+      opacity: 0;
+    }
+  }
 }
 
 .side-panel-header {
@@ -80,39 +110,38 @@ export default {
     margin: 0;
     margin-left: 8px;
     flex: 1;
-  }
-  border-bottom: 1px solid $separator;
-
-  .close-button {
-    position: relative;
-    right: 0; top: 0;
-    margin-right: 10px;
+    color: $label-color;
+    text-transform: uppercase;
+    font-size: 1.5rem;
+    letter-spacing: .66px;
   }
 }
 
 .side-panel-body {
   position: relative;
-  margin-left: $navbar-outer-width; // width of the side-panel-nav
+  margin-right: $navbar-outer-width; // width of the side-panel-nav
   background-color: #ffffff;
-  border-right: 1px solid $separator;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+.slide-fade-enter-active, .slide-fade-leave-active {
+  transition: all .3s ease;
+  .side-panel-content,
+  .side-panel-header {
+    transition: opacity .1s ease;
+  }
 }
 
 .side-panel-content {
   position: relative;
-  // A concrete height is required for the list to be scrollable
-  //  Subtract the height of the navbar and of the facet-panel-header
-  height: calc(100vh - 2 * #{$navbar-outer-width});
+  min-height: 0;
+  flex: 1;
   overflow-y: auto;
-  overflow-x: hidden;
-  width: 16.667vw;
-  max-width: 380px;
 
   &.has-padding {
-    padding: 10px;
-  }
-
-  &.large {
-    width: 25vw;
+    padding: 0 10px;
   }
 }
 
