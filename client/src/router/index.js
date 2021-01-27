@@ -14,8 +14,6 @@ import QualitativeStart from '@/views/QualitativeStart.vue';
 import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeStart from '@/views/QuantitativeStart.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
-// import ModelConcepts from '@/views/ModelConcepts.vue';
-// import ModelProjections from '@/views/ModelProjections.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import qs from 'qs';
@@ -135,16 +133,6 @@ export default new Router({
       name: 'quantitative',
       component: QuantitativeView
     },
-    // {
-    //   path: '/:project/model-concepts',
-    //   name: 'modelConcepts',
-    //   component: ModelConcepts
-    // },
-    // {
-    //   path: '/:project/model-projections/:selectedModel?',
-    //   name: 'modelProjections',
-    //   component: ModelProjections
-    // },
     {
       path: '/:project/audit-trail',
       name: 'auditTrail',
