@@ -36,6 +36,23 @@ export default {
     SidePanelNav
   },
   props: {
+    /**
+     * `tabs` prop structure
+     * {
+     *  name: string,
+     *  icon: string (optional) - only include one of [icon, imgSrc],
+     *  imgSrc: string (optional) - relative to assets folder,
+     *  isGreyscale: boolean (optional),
+     *  badgeCount: number (optional)
+     * }
+     * e.g. {
+     *  name: 'Cube Information',
+     *  icon: useIcon ? 'fa fa-fw fa-cube' : null,
+     *  imgSrc: useIcon ? null : 'imageOfCube.png',
+     *  isGreyscale: !useIcon,
+     *  badgeCount: 12
+     * }
+     */
     tabs: {
       type: Array,
       default: () => []
