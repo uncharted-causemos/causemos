@@ -75,14 +75,20 @@ export default {
   },
   watch: {
     timeSelectionSyncing(newVal, oldVal) {
-      if (_.isEqual(oldVal, newVal)) return;
-      // TODO: if a card is fullscreen, sync with its selected time
+      if (
+        newVal === false || _.isEqual(oldVal, newVal) || this.analysisItems.length === 0
+      ) return;
+      // If a card is fullscreen, sync with its selected time
       //  else, sync with the first card's selected time
-      // if (newVal && this.focusedSelection && this.focusedSelection.timestamp) {
-      //   // sync with the selected time of currently focused data
-      //   this.updateAllTimeSelection(this.focusedSelection.timestamp);
-      // }
-      console.log('TODO: time selection syncing');
+      let timestampToFocus = this.analysisItems[0].selection.timestamp;
+      if (this.fullscreenCardId !== null) {
+        const fullscreenCard = this.analysisItems
+          .find(item => item.id === this.fullscreenCardId);
+        if (fullscreenCard && fullscreenCard.selection.timestamp) {
+          timestampToFocus = fullscreenCard.selection.timestamp;
+        }
+      }
+      this.updateAllTimeSelection(timestampToFocus);
     },
     analysisItems() {
       this.captureThumbnail();
