@@ -12,9 +12,23 @@
       <button
         v-tooltip.right="tab.name"
         role="tab"
+        :class="{'is-greyscale': tab.isGreyscale}"
         @click="toggleActive(tab.name)"
       >
-        <i :class="tab.icon" />
+        <img
+          v-if="tab.imgSrc !== undefined && tab.imgSrc !== null"
+          :src="getImgUrl(tab.imgSrc)"
+        >
+        <i
+          v-else
+          :class="tab.icon"
+        />
+        <span
+          v-if="tab.badgeCount && tab.badgeCount > 0"
+          class="badge"
+        >
+          {{ tab.badgeCount }}
+        </span>
       </button>
     </li>
   </ul>
@@ -43,6 +57,10 @@ export default {
       // If the tab is currently selected, pass '' to signify it should be
       //  unselected. Otherwise, pass the tab's name to select it
       this.$emit('set-active', tabName === this.currentTabName ? '' : tabName);
+    },
+    getImgUrl(imgSrc) {
+      const assetFolder = require.context('@/assets/');
+      return assetFolder('./' + imgSrc);
     }
   }
 };
@@ -102,6 +120,29 @@ li {
     background-color: transparent;
     border-radius: 0;
     border: none;
+
+    &.is-greyscale {
+      img, i {
+        filter: grayscale(100%);
+      }
+    }
+
+    .badge {
+      position: absolute;
+      left: $navbar-outer-width / 2;
+      bottom: $navbar-outer-width / 2;
+      top: auto;
+    }
+  }
+
+
+  img {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 40%;
+    height: 40%;
   }
 
   &:not(.active):hover {

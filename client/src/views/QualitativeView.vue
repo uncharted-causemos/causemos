@@ -1,6 +1,6 @@
 <template>
   <div class="qualitative-view-container">
-    <action-column
+    <qualitative-side-panel
       @belief-scores-updated="refresh"
     />
     <div
@@ -154,7 +154,6 @@ import { mapActions, mapGetters } from 'vuex';
 import EmptyStateInstructions from '@/components/empty-state-instructions';
 import ActionBar from '@/components/qualitative/action-bar';
 import CAGGraph from '@/components/graph/CAG-graph';
-import ActionColumn from '@/components/action-column';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
@@ -173,6 +172,7 @@ import cagUtil from '@/utils/cag-util';
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
+import QualitativeSidePanel from '../components/qualitative/qualitative-side-panel.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -208,7 +208,6 @@ export default {
     EmptyStateInstructions,
     ActionBar,
     CAGGraph,
-    ActionColumn,
     DrilldownPanel,
     EvidencePane,
     EdgePolaritySwitcher,
@@ -219,7 +218,8 @@ export default {
     ModalConfirmation,
     ModalImportCag,
     ModalImportConflict,
-    ModalPathFind
+    ModalPathFind,
+    QualitativeSidePanel
   },
   filters: {
     shortName: function (concept) {
