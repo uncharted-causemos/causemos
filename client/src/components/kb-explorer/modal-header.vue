@@ -16,10 +16,10 @@
     </button>
     <span>
       <span class="selected">
-        {{ selectedSubgraphEdges.length | number-formatter }} Selected
+        {{ selectedSubgraphEdges.length | number-formatter }} selected
       </span>
-      / {{ filteredEdgesCount | number-formatter }}
-      {{ areEdgesDrawn ? '': '(Disabled) ' }} Relationships
+      of {{ filteredEdgesCount | number-formatter }}
+      {{ areEdgesDrawn ? '': '(hidden) ' }} relationships
     </span>
     <bookmark-controls slot="trailing" />
   </full-screen-modal-header>

@@ -15,7 +15,7 @@
     </button>
     <span>
       <span class="selected">{{ selectedDatacubes.length }} selected</span>
-      / {{ searchResultsCount }} data cubes (select up to 6)
+      of {{ searchResultsCount }} data cubes (select up to 6)
     </span>
   </full-screen-modal-header>
 </template>
