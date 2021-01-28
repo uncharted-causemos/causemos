@@ -563,7 +563,13 @@ const searchFields = async (projectId, searchField, queryString) => {
 
 
 const _graphKey = (projectId) => 'graph-' + projectId;
-const searchPath = async (projectId, sourceConcept, targetConcept) => {
+/**
+ * @param {string} projectId
+ * @param {string} sourceConcept
+ * @param {string} targetConcept
+ * @param {number} hops
+ */
+const searchPath = async (projectId, sourceConcept, targetConcept, hops) => {
   let promise = null;
   promise = get(_graphKey(projectId));
 
@@ -572,7 +578,13 @@ const searchPath = async (projectId, sourceConcept, targetConcept) => {
     set(_graphKey(projectId), promise);
   }
   const g = await promise;
-  return graphUtil.normalPath(g, [sourceConcept, targetConcept], 2);
+  return graphUtil.normalPath(g, [sourceConcept, targetConcept], hops);
+};
+
+const bustProjectGraphCache = async (projectId) => {
+  Logger.info(`Busting/reset project ${projectId} graph cache`);
+  const promise = getProjectEdges(projectId, null);
+  set(_graphKey(projectId), promise);
 };
 
 module.exports = {
@@ -596,5 +608,6 @@ module.exports = {
   getProjectEdges,
 
   searchFields,
-  searchPath
+  searchPath,
+  bustProjectGraphCache
 };

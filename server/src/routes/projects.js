@@ -77,6 +77,11 @@ router.put('/:projectId', asyncHandler(async (req, res) => {
     });
   }
 
+  // Bust project's graph cache if update changes the topology
+  if (['discard_statement', 'factor_grounding', 'reverse_relation'].includes(payload.updateType)) {
+    projectService.bustProjectGraphCache(projectId);
+  }
+
   const editTime = moment().valueOf();
   res.status(200).send({ updateToken: editTime });
 }));
@@ -256,7 +261,8 @@ router.get('/:projectId/path-suggestions', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
   const source = req.query.source;
   const target = req.query.target;
-  const result = await projectService.searchPath(projectId, source, target, 2);
+  const hops = req.query.hops || 2;
+  const result = await projectService.searchPath(projectId, source, target, hops);
   res.json(result);
 }));
 

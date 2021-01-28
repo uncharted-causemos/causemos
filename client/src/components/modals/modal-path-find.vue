@@ -8,10 +8,12 @@
     <div slot="body">
       <p>
         There is no evidence to support the edge <strong>{{ conceptShortName(source) }}</strong>
-        to <strong>{{ conceptShortName(target) }}</strong>. Choose from the list of indirect paths below, or
-        click Cancel to use the unsupported path anyway.
+        to <strong>{{ conceptShortName(target) }}</strong>. You can still use it, or select from the indirect paths listed below.
       </p>
       <div>
+        <div v-if="suggestions.length === 0">
+          <div>Loading suggestions...</div>
+        </div>
         <div
           v-for="(path, idx) in suggestions"
           :key="idx"
@@ -21,6 +23,7 @@
             :class="{'fa-square-o': path.selected === false, 'fa-check-square-o': path.selected === true}"
           />
           {{ path.map(conceptShortName).join(" > ") }}
+          <hr v-if="idx === 0">
         </div>
       </div>
     </div>
@@ -77,7 +80,8 @@ export default {
   methods: {
     refresh() {
       suggestionService.getPathSuggestions(this.project, this.source, this.target).then(paths => {
-        this.suggestions = _.take(paths, 5);
+        const sortedPaths = _.orderBy(paths, p => p.length);
+        this.suggestions = [[this.source, this.target], ..._.take(sortedPaths, 5)];
         this.suggestions.forEach(s => {
           s.selected = false;
         });
