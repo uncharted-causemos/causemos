@@ -69,6 +69,7 @@ export default {
   },
   methods: {
     async fetchMetadata(itemId) {
+      if (itemId === null) return;
       this.isFetchingMetadata = true;
       this.fullscreenCardMetadata = this.parseRawMetadata(await getDatacubeById(itemId)) || null;
       this.isFetchingMetadata = false;
