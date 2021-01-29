@@ -22,6 +22,7 @@
       </tab-panel>
     </div>
     <drilldown-panel
+      class="quantitative-drilldown"
       :is-open="isDrilldownOpen"
       :tabs="drilldownTabs"
       :active-tab-id="activeDrilldownTab"
@@ -612,5 +613,9 @@ export default {
     }
     margin-right: 10px;
   }
+}
+
+.quantitative-drilldown {
+  z-index: 1;
 }
 </style>

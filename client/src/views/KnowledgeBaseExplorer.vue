@@ -422,6 +422,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~styles/variables";
 
 .knowledge-base-explorer-container {
   height: 100vh;
@@ -440,6 +441,7 @@ export default {
 .body {
   flex: 1;
   min-height: 0;
+  background: $background-light-3;
 
   .body-main-content {
     flex: 1;

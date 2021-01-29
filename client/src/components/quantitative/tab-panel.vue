@@ -343,6 +343,7 @@ export default {
 .tab-nav-bar {
   display: flex;
   align-items: center;
+  background: $background-light-3;
 }
 
 .tab-content {
@@ -350,13 +351,15 @@ export default {
   min-height: 0;
   position: relative;
   overflow: hidden;
+  background: $background-light-2;
+  box-shadow: $shadow-level-2;
+  z-index: 1;
 }
 .model-graph-layout-container {
   width: 100%;
   height: 100%;
 }
 .tabular-layout {
-  background-color: #ffffff;
   padding: 5px;
   display: flex;
   height: 95vh;
@@ -410,6 +413,8 @@ export default {
 }
 
 /deep/ .tab-bar li.active {
-  background: white;
+  background: $background-light-2;
+  box-shadow: 0px -8px 8px 4px rgba(0, 0, 0, 0.02);
+  z-index: 2;
 }
 </style>

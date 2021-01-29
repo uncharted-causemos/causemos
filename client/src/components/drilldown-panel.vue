@@ -125,8 +125,8 @@ export default {
   display: flex;
   flex-direction: column;
   background-color: $color-background-lvl-2;
-  border-left: 1px solid $color-text-second-light;
   padding: 0 8px;
+  overflow: hidden;
 
   &.closed {
     display: none;

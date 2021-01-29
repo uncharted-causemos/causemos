@@ -1,104 +1,106 @@
 <template>
   <div class="qualitative-view-container">
-    <qualitative-side-panel
-      @belief-scores-updated="refresh"
+    <action-bar
+      :model-summary="modelSummary"
+      :model-components="modelComponents"
+      @add-concept="createNewNode()"
+      @import-cag="showModalImportCAG=true"
     />
-    <div
-      class="graph-container"
-      @dblclick="onBackgroundDblClick"
-    >
-      <action-bar
-        :model-summary="modelSummary"
-        :model-components="modelComponents"
-        @add-concept="createNewNode()"
-        @import-cag="showModalImportCAG=true"
+    <main>
+      <qualitative-side-panel
+        @belief-scores-updated="refresh"
       />
-      <empty-state-instructions v-if="showEmptyStateInstructions" />
-      <CAG-graph
-        v-else
-        ref="cagGraph"
-        class="cagGraph"
-        :data="modelComponents"
-        :show-new-node="showNewNode"
-        @refresh="captureThumbnail"
-        @new-edge="addEdge"
-        @background-click="onBackgroundClick"
-        @background-dbl-click="onBackgroundDblClick"
-        @node-click="onNodeClick"
-        @edge-click="onEdgeClick"
-        @delete="onDelete"
-        @edge-set-user-polarity="setEdgeUserPolarity"
-        @suggestion-selected="onSuggestionSelected"
-      />
-    </div>
-    <drilldown-panel
-      :is-open="isDrilldownOpen"
-      :tabs="drilldownTabs"
-      :active-tab-id="activeDrilldownTab"
-      :overlay-pane-title="overlayPaneTitle"
-      :is-overlay-open="isDrilldownOverlayOpen"
-      @close="closeDrilldown"
-      @tab-click="onTabClick"
-      @overlay-back="onDrilldownOverlayBack"
-    >
-      <div slot="action">
-        <button
-          v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
-          class="btn btn-primary action-button"
-          @click="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
-        ><i class="fa fa-fw fa-plus" />Find More</button>
+      <div
+        class="graph-container"
+        @dblclick="onBackgroundDblClick"
+      >
+        <empty-state-instructions v-if="showEmptyStateInstructions" />
+        <CAG-graph
+          v-else
+          ref="cagGraph"
+          class="cagGraph"
+          :data="modelComponents"
+          :show-new-node="showNewNode"
+          @refresh="captureThumbnail"
+          @new-edge="addEdge"
+          @background-click="onBackgroundClick"
+          @background-dbl-click="onBackgroundDblClick"
+          @node-click="onNodeClick"
+          @edge-click="onEdgeClick"
+          @delete="onDelete"
+          @edge-set-user-polarity="setEdgeUserPolarity"
+          @suggestion-selected="onSuggestionSelected"
+        />
       </div>
-      <div slot="content">
-        <evidence-pane
-          v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-          :selected-relationship="selectedEdge"
-          :statements="selectedStatements"
-          :project="project"
-          :is-fetching-statements="isFetchingStatements"
-          :should-confirm-curations="true">
-          <edge-polarity-switcher
+      <drilldown-panel
+        :is-open="isDrilldownOpen"
+        :tabs="drilldownTabs"
+        :active-tab-id="activeDrilldownTab"
+        :overlay-pane-title="overlayPaneTitle"
+        :is-overlay-open="isDrilldownOverlayOpen"
+        @close="closeDrilldown"
+        @tab-click="onTabClick"
+        @overlay-back="onDrilldownOverlayBack"
+      >
+        <div slot="action">
+          <button
+            v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
+            class="btn btn-primary action-button"
+            @click="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
+          ><i class="fa fa-fw fa-plus" />Find More</button>
+        </div>
+        <div slot="content">
+          <evidence-pane
+            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
             :selected-relationship="selectedEdge"
-            @edge-set-user-polarity="setEdgeUserPolarity" />
-        </evidence-pane>
-        <relationships-pane
-          v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
-          :selected-node="selectedNode"
-          :model-components="modelComponents"
-          :statements="selectedStatements"
-          :project="project"
-          :is-fetching-statements="isFetchingStatements"
-          @select-edge="onRelationshipClick"
-          @remove-edge="onRemoveRelationship"
-        />
-        <factors-pane
-          v-if="activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null"
-          :selected-item="selectedNode"
-          :number-relationships="countNodeRelationships"
-          :statements="selectedStatements"
-          :project="project"
-          :is-fetching-statements="isFetchingStatements"
-          :should-confirm-curations="true"
-          @show-factor-recommendations="onShowFactorRecommendations"
-        />
-      </div>
-      <div slot="overlay-pane">
-        <node-suggestions-pane
-          v-if="activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS && selectedNode !== null"
-          :selected-node="selectedNode"
-          :statements="selectedStatements"
-          :graph-data="modelComponents"
-          :is-fetching-statements="isFetchingStatements"
-          @add-to-CAG="onAddToCAG"
-        />
-        <factors-recommendations-pane
-          v-if="activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS && selectedNode !== null && factorRecommendationsList.length > 0"
-          :correction="correction"
-          :recommendations="factorRecommendationsList"
-          :is-fetching-statements="isFetchingStatements"
-          @close-overlay="onDrilldownOverlayBack"
-        />
-      </div>
-    </drilldown-panel>
+            :statements="selectedStatements"
+            :project="project"
+            :is-fetching-statements="isFetchingStatements"
+            :should-confirm-curations="true">
+            <edge-polarity-switcher
+              :selected-relationship="selectedEdge"
+              @edge-set-user-polarity="setEdgeUserPolarity" />
+          </evidence-pane>
+          <relationships-pane
+            v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
+            :selected-node="selectedNode"
+            :model-components="modelComponents"
+            :statements="selectedStatements"
+            :project="project"
+            :is-fetching-statements="isFetchingStatements"
+            @select-edge="onRelationshipClick"
+            @remove-edge="onRemoveRelationship"
+          />
+          <factors-pane
+            v-if="activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null"
+            :selected-item="selectedNode"
+            :number-relationships="countNodeRelationships"
+            :statements="selectedStatements"
+            :project="project"
+            :is-fetching-statements="isFetchingStatements"
+            :should-confirm-curations="true"
+            @show-factor-recommendations="onShowFactorRecommendations"
+          />
+        </div>
+        <div slot="overlay-pane">
+          <node-suggestions-pane
+            v-if="activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS && selectedNode !== null"
+            :selected-node="selectedNode"
+            :statements="selectedStatements"
+            :graph-data="modelComponents"
+            :is-fetching-statements="isFetchingStatements"
+            @add-to-CAG="onAddToCAG"
+          />
+          <factors-recommendations-pane
+            v-if="activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS && selectedNode !== null && factorRecommendationsList.length > 0"
+            :correction="correction"
+            :recommendations="factorRecommendationsList"
+            :is-fetching-statements="isFetchingStatements"
+            @close-overlay="onDrilldownOverlayBack"
+          />
+        </div>
+      </drilldown-panel>
+    </main>
     <modal-import-cag
       v-if="showModalImportCAG"
       @import-cag="runImportChecks"
@@ -727,6 +729,14 @@ export default {
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
+
+  main {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    box-shadow: $shadow-level-2
+  }
 
   .graph-container {
     width: 100%;

@@ -203,6 +203,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+  @import "~styles/variables";
   $axisMargin: 90px; // Should equal the AXIS_LABEL_MARGIN_PX in this file
 
   .sensitivity-analysis-container {
@@ -277,6 +278,6 @@ export default {
 
   /deep/ .grid-lines line {
     stroke-width: 4px;
-    stroke: white;
+    stroke: $background-light-2;
   }
 </style>
