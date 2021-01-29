@@ -4,7 +4,7 @@
       <div ref="lexContainer" />
       <div class="clear-button-container">
         <button
-          class="btn btn-default clear-button"
+          class="btn clear-button"
           @click="clearSearch()">
           <i class="fa fa-remove" /> Clear
         </button>

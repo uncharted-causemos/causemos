@@ -49,7 +49,7 @@ export default {
     left: 0;
     right: 0;
     bottom: 0;
-    box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+    box-shadow: $shadow-level-1;
     transition: all 0.15s;
     border-radius: 3px;
     pointer-events: none;

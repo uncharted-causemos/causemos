@@ -48,11 +48,11 @@ const DEFAULT_STYLE = {
   },
   edgeBg: {
     fill: 'none',
-    stroke: 'white'
+    stroke: '#F2F2F2'
   },
   nodeHeader: {
     iconRadius: 6,
-    fill: '#F2F2F2',
+    fill: '#FFFFFF',
     stroke: '#999',
     strokeWidth: 0.5,
     borderRadius: 4,
@@ -107,6 +107,7 @@ class CAGRenderer extends SVGRenderer {
           .attr('height', d => d.height)
           .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
           .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth)
+          .style('cursor', 'pointer')
           .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
         // Circle = regular concepts, diamond = intervention concepts
@@ -412,8 +413,7 @@ class CAGRenderer extends SVGRenderer {
       .attr('ry', 5)
       .attr('width', nodeData.width)
       .attr('height', nodeData.height)
-      .style('stroke-width', '2px')
-      .style('stroke', 'white')
+      .style('cursor', 'pointer')
       .style('fill', '#4E4F51');
 
     handles.append('text')
@@ -423,7 +423,7 @@ class CAGRenderer extends SVGRenderer {
       .style('font-size', '12px')
       .style('stroke', 'none')
       .style('fill', 'white')
-      .style('cursor', 'pointer')
+      .style('pointer-events', 'none')
       .text('\uf061');
 
     handles.append('text')
@@ -768,7 +768,6 @@ export default {
 .CAG-graph {
   width: 100%;
   height: 100%;
-  background-color: #ffffff;
   overflow: hidden;
 }
 </style>

@@ -211,11 +211,16 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~styles/variables";
 .tab-panel-container {
   position: relative;
 }
 
 .tab-bar-row  {
   padding: 0 10px;
+}
+
+.tab-content {
+  background: $background-light-2;
 }
 </style>

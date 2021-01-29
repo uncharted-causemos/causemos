@@ -91,7 +91,7 @@ export default {
 
   .quarter-column {
     width: 25vw;
-    background: #C4C4C4;
+    background: $background-light-3;
     padding: 16px 32px;
   }
 
@@ -100,6 +100,7 @@ export default {
     // Use 22px instead of 32px to account for cards' 10px horizontal margin
     padding: 16px 22px 16px 22px;
     overflow-y: auto;
+    background: $background-light-2;
 
     .section-header {
       // Match cards' 10px horizontal margin

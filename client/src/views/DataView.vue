@@ -1,47 +1,42 @@
 <template>
-  <div class="data-view-container flex">
-    <div class="main-content flex-grow-1 flex-col">
-      <action-bar />
-      <div class="analysis-content flex-grow-1 flex h-0">
-        <analysis-side-panel v-if="analysisItems.length && mapReady" />
+  <div class="data-view-container">
+    <action-bar />
+    <main>
+      <analysis-side-panel v-if="analysisItems.length && mapReady" />
+      <div class="analysis-content">
         <data-analysis
           v-if="analysisItems.length && mapReady"
           :fullscreen-card-id="fullscreenCardId"
           @set-card-fullscreen="setCardFullscreen"
         />
-        <div
-          v-else
-          class="helper"
-        >
-          <empty-state-instructions />
+        <empty-state-instructions v-else />
+      </div>
+      <drilldown-panel
+        class="drilldown"
+        :is-open="fullscreenCardId !== null"
+        :tabs="drilldownTabs"
+        :active-tab-id="activeDrilldownTab"
+        @tab-click="onTabClick"
+        @close="exitFullscreenMode"
+      >
+        <div slot="content">
+          <datacube-metadata-pane
+            v-if="activeDrilldownTab === 'metadata'"
+            :fullscreen-card-id="fullscreenCardId"
+          />
+          <!-- Aggregation Pane -->
+          <aggregation-checklist-pane
+            v-if="activeDrilldownTab ==='adminData'"
+            :aggregation-level-count="aggregationLevels.length"
+            :aggregation-level="aggregationLevel"
+            :aggregation-level-type="'Admin level'"
+            :aggregation-level-title="aggregationLevels[aggregationLevel]"
+            :raw-data="adminLevelData"
+            @aggregation-level-change="(newVal) => { aggregationLevel = newVal }"
+          />
         </div>
-      </div>
-    </div>
-    <drilldown-panel
-      class="drilldown"
-      :is-open="fullscreenCardId !== null"
-      :tabs="drilldownTabs"
-      :active-tab-id="activeDrilldownTab"
-      @tab-click="onTabClick"
-      @close="exitFullscreenMode"
-    >
-      <div slot="content">
-        <datacube-metadata-pane
-          v-if="activeDrilldownTab === 'metadata'"
-          :fullscreen-card-id="fullscreenCardId"
-        />
-        <!-- Aggregation Pane -->
-        <aggregation-checklist-pane
-          v-if="activeDrilldownTab ==='adminData'"
-          :aggregation-level-count="aggregationLevels.length"
-          :aggregation-level="aggregationLevel"
-          :aggregation-level-type="'Admin level'"
-          :aggregation-level-title="aggregationLevels[aggregationLevel]"
-          :raw-data="adminLevelData"
-          @aggregation-level-change="(newVal) => { aggregationLevel = newVal }"
-        />
-      </div>
-    </drilldown-panel>
+      </drilldown-panel>
+    </main>
   </div>
 </template>
 
@@ -155,18 +150,21 @@ export default {
 .data-view-container {
   height: $content-full-height;
   background: $background-light-2;
-  box-sizing: border-box;
-  overflow: hidden;
   display: flex;
-
-  .helper {
-    width: 100%;
-    position: relative;
-  }
+  flex-direction: column;
 }
 
-.main-content {
+main {
+  min-height: 0;
+  flex: 1;
+  display: flex;
+  box-shadow: $shadow-level-2;
+  z-index: 1;
+}
+
+.analysis-content {
   min-width: 0;
+  flex: 1;
 }
 
 // TODO: apply these transition animations to the drilldown panel
