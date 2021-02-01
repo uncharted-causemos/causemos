@@ -56,7 +56,7 @@ import _ from 'lodash';
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
-import { getModelOutputColorOption, modelOutputMaxPrecision } from '@/utils/model-output-util';
+import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION, modelOutputMaxPrecision } from '@/utils/model-output-util';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { getColors } from '@/utils/colors-util';
@@ -165,8 +165,7 @@ export default {
       return `${window.location.protocol}/${window.location.host}/api/maas/output/tiles/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
     },
     colorOption() {
-      const { modelId, outputVariable } = this.selection || {};
-      return getModelOutputColorOption(modelId, outputVariable);
+      return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
     },
     filter() {
       return this.filters.find(filter => filter.id === this.valueProp);

@@ -55,71 +55,6 @@ import { mapActions, mapGetters } from 'vuex';
 import filtersUtil from '@/utils/filters-util';
 import { getDatacubes } from '@/services/datacube-service';
 
-// HACK: Whitelist models that we can display its output.
-const availableModelsOld = [
-  'PIHM',
-  'G-Range',
-  'consumption_model',
-  'cropland_model',
-  'population_model',
-  'asset_wealth_model',
-  'malnutrition_model',
-
-  'APSIM',
-  'DSSAT',
-  'lpjml',
-  'lpjml_historic',
-  'market_price_model',
-  'flood_index_model',
-
-  'world_population_africa'
-
-  // ==== No runs/input parameters found for theses ====
-  // 'agmip',
-  // 'chirps',
-
-  // === we don't have datacube metadata for this ===
-  // 'yeild_anomalies_lpjml'
-];
-
-// There are the models we have processed output tiles for
-const availableModelsNew = [
-  // SuperMaas models
-  '01115b70-c119-4853-941d-69070ca9a2ab',
-  '2825e6eb-b715-4ba1-8a64-d105d48519c2',
-  '2c945fc2-cf50-4dc0-95aa-a7bcc89822bd',
-  '2fe40c11-8862-4ab4-b528-c85dacdc615e',
-  '337337ab-ef63-4231-b1e8-770a079857fa',
-  '43dfec98-d6b5-403d-a138-683aa1da0ccb',
-  '6248023f-ffe0-49ee-aad9-83cc7a4d5fa5',
-  '713f37d5-a101-4e4c-af06-b0d8c3455f5a',
-  '8622a51f-d4ab-4968-8394-3be4250c52f4',
-  '8e14a356-8be1-4a36-8cb4-69293e9375b0',
-  '93cba07b-72b3-45e4-854a-fd748e88cd24',
-  'a51eb181-7140-4f7b-bd6d-a8c47c256f12',
-  'c35d50df-6d26-4c23-bf5e-fdef7b07de13',
-  'c4c5b067-47b1-4592-82e8-7ba90037c3c8',
-  'c7ec06e0-a8cc-43f4-84df-3158dd2b3652',
-  'd594fd1a-f10d-4a36-9e41-8708c30e3765',
-  'da78c5d7-b31a-438d-ac19-1ffa41458be7',
-  'dcaf34bb-469e-41ab-ad11-9d94211305dc',
-  'e4a68875-6405-4e57-979e-f453155b9c9a',
-  // atlas models
-  '32434828-b469-41bd-8467-c67ab0d3ebf1',
-  '57d1ae38-4874-4ee2-95ed-28aa8e3bc6be',
-  'd50dcd3c-88df-4875-b2df-cef09d578345',
-  'ed11c3dd-f3aa-4464-8c15-7759e95237c7',
-
-  // New models from new cubes ( CHIRPS rainfall relative to average, and gadm?)
-  '598f80ae-70a8-43ec-90a8-ee3504f60109',
-  '4eae97ee-4758-4ae1-848f-b423351f51c3',
-
-  // lpjml
-  'e0a14dbf-e8e6-42bd-b908-e72a956fadd5',
-  // lpjml new version
-  '3fd5794e-f7d3-4fcf-922b-652c93853caa'
-];
-
 const MAX_SELECTION = 6;
 export default {
   name: 'SearchListview',
@@ -155,14 +90,9 @@ export default {
     },
     async fetchDatacubes() {
       this.enableOverlay();
-      const filterOldModel = _.cloneDeep(this.filters);
-      filtersUtil.setClause(filterOldModel, 'type', ['model'], 'or', false);
-      filtersUtil.setClause(filterOldModel, 'model', availableModelsOld, 'or', false);
-      const filterNewModel = _.cloneDeep(this.filters);
-      filtersUtil.setClause(filterNewModel, 'type', ['model'], 'or', false);
-      filtersUtil.setClause(filterNewModel, 'model_id', availableModelsNew, 'or', false);
-      const [oldCubes, newCubes] = await Promise.all([getDatacubes(filterOldModel), getDatacubes(filterNewModel)]);
-      this.datacubes = _.unionBy([...oldCubes, ...newCubes], cube => cube.id);
+      const filters = _.cloneDeep(this.filters);
+      filtersUtil.setClause(filters, 'type', ['model'], 'or', false);
+      this.datacubes = await getDatacubes(filters);
       this.datacubes.forEach(item => (item.isAvailable = true));
       this.setSearchResultsCount(this.datacubes.length);
       this.disableOverlay();
