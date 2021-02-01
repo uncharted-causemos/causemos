@@ -7,7 +7,7 @@
       <i
         class="fa fa-fw fa-plus card-icon"
       />
-      <h4>New</h4>
+      <h4 class="card-title">New</h4>
     </div>
     <div
       v-if="!isCreateCard"
@@ -23,7 +23,7 @@
           :alt="'Preview of ' + title"
         >
       </div>
-      <h5>{{ title }}</h5>
+      <h5 class="card-title">{{ title }}</h5>
       <h6 class="subtitle">{{ subtitle }}</h6>
       <options-button class="menu">
         <div
@@ -171,5 +171,9 @@ export default {
       bottom: 4px;
     }
 
+  }
+
+  .card-title {
+    font-weight: normal;
   }
 </style>

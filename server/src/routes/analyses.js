@@ -7,10 +7,10 @@ const analysisService = rootRequire('/services/analysis-service');
  * GET find analysis by project
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const projectId = req.query.project_id;
+  const { project_id: projectId, size } = req.query;
   const results = await analysisService.find([
     { field: 'project_id', value: projectId }
-  ], 100, 0);
+  ], size, 0);
   res.json(results);
 }));
 

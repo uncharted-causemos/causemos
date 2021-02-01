@@ -11,10 +11,17 @@
       />
     </div>
     <div class="recent">
-      <h4 class="section-header">{{ openSectionHeader }}</h4>
+      <div class="header-row">
+        <h4 class="section-header">{{ openSectionHeader }}</h4>
+        <input
+          v-model="searchText"
+          type="text"
+          placeholder="Search"
+        >
+      </div>
       <div class="recent-card-list">
         <start-screen-card
-          v-for="(recentCard, i) in recentCards"
+          v-for="(recentCard, i) in filteredRecentCards"
           :key="i"
           :preview-image-src="recentCard.previewImageSrc"
           :title="recentCard.title"
@@ -56,8 +63,18 @@ export default {
     }
   },
   data: () => ({
+    searchText: ''
   }),
   computed: {
+    filteredRecentCards() {
+      if (this.searchText.length === 0) return this.recentCards;
+      return this.recentCards.filter(card => {
+        const searchText = this.searchText.toLowerCase();
+        const title = card.title.toLowerCase();
+        const subtitle = card.subtitle.toLowerCase();
+        return title.includes(searchText) || subtitle.includes(searchText);
+      });
+    }
   },
   mounted() {
   },
@@ -120,7 +137,20 @@ export default {
 
   .section-header {
     font-weight: normal;
-    margin: 0 0 8px 0;
+    margin: 0 0 10px 0;
+  }
+
+  .header-row {
+    display: flex;
+    justify-content: space-between;
+
+    input {
+      margin: 0 0 10px 10px;
+      padding: 0 5px;
+      border: none;
+      flex: 1;
+      max-width: 33.3%;
+    }
   }
 }
 </style>

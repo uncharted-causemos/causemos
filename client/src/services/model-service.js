@@ -6,7 +6,7 @@ import { startPolling } from '@/api/poller';
 
 
 const getProjectModels = async (projectId) => {
-  const result = await API.get('models', { params: { project_id: projectId } });
+  const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
   return result.data;
 };
 

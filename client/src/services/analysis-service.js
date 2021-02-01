@@ -72,7 +72,7 @@ export const updateAnalysis = async(analysisId, payload) => {
  * @param {string} projectId Project Id
  */
 export const getAnalysesByProjectId = async (projectId) => {
-  const result = await API.get('analyses', { params: { project_id: projectId } });
+  const result = await API.get('analyses', { params: { project_id: projectId, size: 200 } });
   return result.data || [];
 };
 
