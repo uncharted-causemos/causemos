@@ -1,52 +1,54 @@
 <template>
-  <div
-    class="drilldown-panel-container"
-    :class="{ 'closed': isOpen !== null && !isOpen }"
-  >
+  <transition name="slide-fade">
     <div
-      v-if="isOpen !== null"
-      class="navigation-button close-button"
-      @click="onClose"
+      v-if="isOpen"
+      class="drilldown-panel-container"
     >
-      <i
-        class="fa fa-fw fa-close"
-      />
-    </div>
-    <tab-bar
-      v-if="tabs.length > 1"
-      :tabs="tabs"
-      :active-tab-id="activeTabId"
-      has-white-background
-      only-display-icons
-      @tab-click="onTabClick"
-    />
-    <div class="panel-header">
-      <h5>{{ paneTitle }}</h5>
-      <slot name="action" />
-    </div>
-    <div class="panel-content">
-      <hr class="pane-separator">
-      <slot name="content" />
-    </div>
-    <div
-      class="overlay-pane"
-      :class="{ 'open': isOverlayOpen }"
-    >
-      <div class="panel-header">
-        <div
-          class="navigation-button back-button"
-          @click="onOverlayBack"
-        >
-          <i
-            class="fa fa-fw fa-angle-left"
-          />
-        </div>
-        <h5>{{ overlayPaneTitle }}</h5>
+      <div
+        v-if="isOpen !== null"
+        class="navigation-button close-button"
+        @click="onClose"
+      >
+        <i
+          class="fa fa-fw fa-close"
+        />
       </div>
-      <hr class="pane-separator">
-      <slot name="overlay-pane" />
+      <tab-bar
+        v-if="tabs.length > 1"
+        :tabs="tabs"
+        :active-tab-id="activeTabId"
+        has-white-background
+        only-display-icons
+        @tab-click="onTabClick"
+      />
+      <div class="panel-header">
+        <h5>{{ paneTitle }}</h5>
+        <slot name="action" />
+      </div>
+      <div class="panel-content">
+        <hr class="pane-separator">
+        <slot name="content" />
+      </div>
+      <div
+        class="overlay-pane"
+        :class="{ 'open': isOverlayOpen }"
+      >
+        <div class="panel-header">
+          <div
+            class="navigation-button back-button"
+            @click="onOverlayBack"
+          >
+            <i
+              class="fa fa-fw fa-angle-left"
+            />
+          </div>
+          <h5>{{ overlayPaneTitle }}</h5>
+        </div>
+        <hr class="pane-separator">
+        <slot name="overlay-pane" />
+      </div>
     </div>
-  </div>
+  </transition>
 </template>
 
 <script>
@@ -117,26 +119,33 @@ export default {
 @import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 
+$drilldown-width: 25vw;
+
 .drilldown-panel-container {
-  height: $content-full-height;
-  width: 25vw;
+  width: $drilldown-width;
   flex-shrink: 0;
   position: relative;
   display: flex;
   flex-direction: column;
   background-color: $color-background-lvl-2;
-  padding: 0 8px;
-  overflow: hidden;
 
-  &.closed {
-    display: none;
+  &.slide-fade-enter,
+  &.slide-fade-leave-to {
+    width: 0;
+
+    .panel-header,
+    .panel-content,
+    .close-button {
+      opacity: 0;
+    }
   }
 
-  /deep/ .panel-header {
+  .panel-header {
     height: 56px; // 56px = 32px button + (2 * 12px) padding above and below
     display: flex;
     align-items: center;
     justify-content: space-between;
+    padding: 0 8px;
 
     h5 {
       margin: 0;
@@ -162,6 +171,22 @@ export default {
       margin-left: 4px;
     }
   }
+}
+
+.slide-fade-enter-active,
+.slide-fade-leave-active {
+  transition: all $layout-transition;
+  .panel-content,
+  .panel-header,
+  .close-button {
+    transition: opacity .1s ease;
+  }
+}
+
+.panel-header,
+.panel-body,
+.panel-content {
+  width: $drilldown-width;
 }
 
 .navigation-button {
@@ -192,20 +217,22 @@ export default {
 }
 
 .panel-content {
+  height: 0;
   flex: 1;
   overflow-y: auto;
+  padding: 0 8px;
 }
 
 .overlay-pane {
   position: absolute;
   width: 25vw;
-  left: 25vw;
+  left: 0;
   top: 0;
   bottom: 0;
   background: $color-background-lvl-2;
-  padding: 0 8px;
   opacity: 0;
-  transition: left 0.3s ease-out, opacity 0.3s ease-out;
+  transition: transform $layout-transition, opacity $layout-transition;
+  transform: translateX(100%);
 
   .panel-header {
     // Override 'space-between' so that back button and text are
@@ -214,8 +241,8 @@ export default {
   }
 
   &.open {
-    left: 0;
     opacity: 1;
+    transform: translateX(0);
   }
 }
 </style>
