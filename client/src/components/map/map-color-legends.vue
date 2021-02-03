@@ -56,7 +56,7 @@ export default {
   position: absolute;
   top: 0;
   right: 10px;
-  z-index: map-get($z-index-order, map-ui);
+  z-index: 500;
   .labels {
     display: flex;
     justify-content: space-between;

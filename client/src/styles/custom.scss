@@ -219,7 +219,7 @@ hr.pane-separator {
   width: 100%;
   height: 100%;
   overflow-y: hidden;
-  z-index: map-get($z-index-order, map-panel);
+  z-index: 5;
   .marker-tooltip {
     background: $color-background-lvl-4;
     border-color: $color-background-lvl-4;

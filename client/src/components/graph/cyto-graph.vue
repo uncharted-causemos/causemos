@@ -414,7 +414,7 @@ export default {
 .full {
   height: 100%;
   width: 100%;
-  z-index: map-get($z-index-order, graph);
+  z-index: 10;
 
   /deep/ canvas {
     width: 100%;

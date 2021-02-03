@@ -50,7 +50,7 @@ $padding: 10px;
   left: 10px;
   padding: $padding;
   padding-bottom: $padding + $hover-nudge-height;
-  z-index: map-get($z-index-order, column-selector);
+  z-index: 20;
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   cursor: pointer;

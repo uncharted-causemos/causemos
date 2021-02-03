@@ -1,20 +1,5 @@
 $searchbar-background: #FFFFFF;
 
-// General map of component z-orderings
-$z-index-order: (
-  overlay: 9999, // Should in almost all cases be the highest
-  map-ui: 500,
-  lex-assistant: 99,
-  side-panel: 50,
-  column-selector: 20,
-  graph: 10,
-  corrections-dropdown: 51,
-  modal: 9998,
-  autocomplete-results: 52,
-  map-panel: 5,
-  bookmark-panel: 600
-);
-
 //Positive values
 $positive: #0072b2;
 //Negative values
