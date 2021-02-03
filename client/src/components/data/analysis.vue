@@ -125,8 +125,6 @@ export default {
 @import "~styles/variables";
 @import "~styles/wm-theme/wm-theme";
 
-$fullscreenTransition: all .5s ease-in-out;
-
 .analysis-container {
   padding: 10px;
   min-width: 0;
@@ -136,7 +134,7 @@ $fullscreenTransition: all .5s ease-in-out;
   flex-direction: column;
 
   .header {
-    transition: $fullscreenTransition;
+    transition: all $layout-transition;
     padding-bottom: 10px;
     // This needs an explicit height instead of `auto` for the transition animation to work.
     height: 36px;
@@ -162,7 +160,7 @@ $fullscreenTransition: all .5s ease-in-out;
   }
 
   .cards-container {
-    transition: $fullscreenTransition;
+    transition: all $layout-transition;
     align-content: space-between;
     position: relative;
     display: flex;
@@ -172,7 +170,7 @@ $fullscreenTransition: all .5s ease-in-out;
   }
 
   .card-box {
-    transition: $fullscreenTransition;
+    transition: all $layout-transition;
     margin: 0 5px 0 0;
     border-radius: 3px;
     overflow: hidden;

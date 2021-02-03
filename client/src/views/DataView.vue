@@ -12,7 +12,6 @@
         <empty-state-instructions v-else />
       </div>
       <drilldown-panel
-        class="drilldown"
         :is-open="fullscreenCardId !== null"
         :tabs="drilldownTabs"
         :active-tab-id="activeDrilldownTab"
@@ -152,6 +151,7 @@ export default {
   background: $background-light-2;
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 main {
@@ -165,30 +165,5 @@ main {
 .analysis-content {
   min-width: 0;
   flex: 1;
-}
-
-// TODO: apply these transition animations to the drilldown panel
-//  across views, and extract these default transition values for reuse
-//  in analysis.vue and elsewhere
-$fullscreenTransition: .5s ease-in-out;
-
-.drilldown {
-  transition: all $fullscreenTransition;
-
-  /deep/ .close-button {
-    transition: opacity $fullscreenTransition;
-  }
-
-  &.closed {
-    display: block;
-    width: 0;
-    padding: 0;
-
-    /deep/ .close-button {
-      opacity: 0;
-      pointer-events: none;
-    }
-  }
-
 }
 </style>

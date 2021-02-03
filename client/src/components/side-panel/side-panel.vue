@@ -144,7 +144,7 @@ $large-width: 380px;
 }
 
 .slide-fade-enter-active, .slide-fade-leave-active {
-  transition: all .3s ease;
+  transition: all $layout-transition;
   .side-panel-content,
   .side-panel-header {
     transition: opacity .1s ease;
