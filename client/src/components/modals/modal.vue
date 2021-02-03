@@ -87,7 +87,7 @@ export default {
 
 .modal-mask {
   position: fixed;
-  z-index: map-get($z-index-order, modal);
+  z-index: 9998;
   top: 0;
   left: 0;
   width: 100%;

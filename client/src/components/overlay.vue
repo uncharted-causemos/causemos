@@ -36,7 +36,7 @@ export default {
   align-items: center;
   background: #000;
   opacity: 0.5;
-  z-index: map-get($z-index-order, overlay);
+  z-index: 9999;
 
   .message-container {
     font-size: $font-size-h1;

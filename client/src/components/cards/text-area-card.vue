@@ -77,7 +77,7 @@ export default {
 @import "~styles/_variables.scss";
 .text-area-card-container {
   width: 25%;
-  z-index: map-get($z-index-order, modal);
+  z-index: 9998;
 }
 
 .close-button {

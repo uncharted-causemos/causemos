@@ -147,7 +147,7 @@ export default {
 $searchbar-height: 40px;
 
 .lex-assistant-box {
-  z-index: map-get($z-index-order, lex-assistant);
+  z-index: 99;
   max-width: 50vw !important; // lex sets this style in-line and require important flag
   .selectable {
     // this is backup just in case we have a really long identifier

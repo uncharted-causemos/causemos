@@ -60,7 +60,7 @@ export default {
   right: 0;
   width: $bookmark-panel-width;
   height: calc(100vh - #{$navbar-outer-height});
-  z-index: map-get($z-index-order, bookmark-panel);
+  z-index: 600;
   transition: all 0.5s ease;
   padding: 0 10px;
   background: $color-background-lvl-2;
