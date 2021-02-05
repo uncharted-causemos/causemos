@@ -4,13 +4,13 @@
       class="close-button"
       @click="close"
     />
-    <div>
+    <div class="title">
       <i
         v-if="icon !== null"
         class="fa fa-fw"
         :class="`fa-${icon}`"
       />
-      <span class="title">{{ title }}</span>
+      <span>{{ title }}</span>
     </div>
     <div class="centered">
       <slot />
@@ -51,7 +51,6 @@ export default {
   background-color: #0e3480;
   display: flex;
   align-items: center;
-  color: #FFFFFF;
   min-height: 48px;
   position: relative;
 
@@ -83,7 +82,11 @@ export default {
 .title {
   font-weight: 600;
   font-size: 16px;
-  margin-left: 5px;
+  color: #FFFFFF;
+
+  i {
+    margin-right: 5px;
+  }
 }
 
 .centered {
@@ -91,6 +94,7 @@ export default {
   display: flex;
   justify-content: center;
   align-items: center;
+  color: #FFFFFF;
 }
 
 </style>
