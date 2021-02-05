@@ -3,6 +3,14 @@
     <div class="pane-summary">
       {{ selectedNode.concept | ontology-formatter }} ({{ relationshipCount }})
     </div>
+    <button
+      v-if="showGetSuggestionsButton"
+      class="btn btn-primary btn-call-for-action find-more-button"
+      @click="showRelationshipSuggestions"
+    >
+      <i class="fa fa-fw fa-plus" />
+      Get Suggestions
+    </button>
     <div class="pane-controls">
       <div class="bulk-actions">
         <i
@@ -165,6 +173,10 @@ export default {
       default: () => []
     },
     isFetchingStatements: {
+      type: Boolean,
+      default: false
+    },
+    showGetSuggestionsButton: {
       type: Boolean,
       default: false
     }
@@ -378,6 +390,9 @@ export default {
       return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.EFFECT
         ? '?'
         : ontologyFormatter(this.selectedNode.concept);
+    },
+    showRelationshipSuggestions() {
+      this.$emit('show-relationship-suggestions');
     }
   }
 };
@@ -416,6 +431,11 @@ export default {
 
 .empty-relationship {
   margin-left: 48px;
+}
+
+.find-more-button {
+  margin-bottom: 5px;
+  width: 100%;
 }
 
 </style>

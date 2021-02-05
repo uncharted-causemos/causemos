@@ -33,6 +33,7 @@
         />
       </div>
       <drilldown-panel
+        class="qualitative-drilldown"
         :is-open="isDrilldownOpen"
         :tabs="drilldownTabs"
         :active-tab-id="activeDrilldownTab"
@@ -42,13 +43,6 @@
         @tab-click="onTabClick"
         @overlay-back="onDrilldownOverlayBack"
       >
-        <div slot="action">
-          <button
-            v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
-            class="btn btn-primary action-button"
-            @click="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
-          ><i class="fa fa-fw fa-plus" />Find More</button>
-        </div>
         <div slot="content">
           <evidence-pane
             v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
@@ -68,8 +62,10 @@
             :statements="selectedStatements"
             :project="project"
             :is-fetching-statements="isFetchingStatements"
+            :show-get-suggestions-button="true"
             @select-edge="onRelationshipClick"
             @remove-edge="onRemoveRelationship"
+            @show-relationship-suggestions="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
           />
           <factors-pane
             v-if="activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null"
@@ -759,6 +755,16 @@ export default {
     i {
       margin-right: 5px;
     }
+  }
+}
+
+.qualitative-drilldown {
+  margin-top: 10px;
+  // Some panes have tabs in this space, some don't
+  //  remove the padding that's baked into the tabs
+  //  to always have a 10px gap exactly
+  /deep/ .tab-bar {
+    padding-top: 0;
   }
 }
 </style>
