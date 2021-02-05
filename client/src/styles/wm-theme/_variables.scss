@@ -17,8 +17,6 @@ $brand-danger: $color-danger !default;
 
 //** Background color for `<body>`.
 $body-bg: $color-background-lvl-0 !default;
-//** Global text color on `<body>`.
-$text-color: $color-text-base-dark !default;
 
 //** Global textual link color.
 $link-color: $color-text-second-dark !default;
@@ -144,10 +142,6 @@ $btn-info-border: $brand-info !default;
 $btn-warning-color: $color-text-base-dark !default;
 $btn-warning-bg: $brand-warning !default;
 $btn-warning-border: $brand-warning !default;
-
-$btn-danger-color: $color-text-base-dark !default;
-$btn-danger-bg: $brand-danger !default;
-$btn-danger-border: $brand-danger !default;
 
 $btn-link-disabled-color: $color-text-disable-light !default;
 
@@ -410,18 +404,6 @@ $nav-link-hover-bg: $color-btn-default-hover !default;
 $nav-disabled-link-color: $color-text-disable-dark !default;
 $nav-disabled-link-hover-color: $color-text-second-dark !default;
 
-//== Tabs
-$nav-tabs-border-color: $color-border-light !default;
-
-$nav-tabs-link-hover-border-color: $color-border-light !default;
-
-$nav-tabs-active-link-hover-bg: $color-btn-primary !default;
-$nav-tabs-active-link-hover-color: $color-text-base-light !default;
-$nav-tabs-active-link-hover-border-color: $color-border-light !default;
-
-$nav-tabs-justified-link-border-color: $color-border-light !default;
-$nav-tabs-justified-active-link-border-color: $body-bg !default;
-
 //== Pills
 $nav-pills-border-radius: $border-radius-base !default;
 $nav-pills-active-link-hover-bg: $component-active-bg !default;
@@ -541,52 +523,6 @@ $popover-arrow-outer-fallback-color: darken(
   20%
 ) !default;
 
-//== Labels
-//
-//##
-
-//** Default label background color
-$label-default-bg: $color-btn-primary !default;
-//** Primary label background color
-$label-primary-bg: $brand-primary !default;
-//** Success label background color
-$label-success-bg: $brand-success !default;
-//** Info label background color
-$label-info-bg: $brand-info !default;
-//** Warning label background color
-$label-warning-bg: $brand-warning !default;
-//** Danger label background color
-$label-danger-bg: $brand-danger !default;
-
-//** Default label text color
-$label-color: $color-text-base-dark !default;
-//** Default text color of a linked label
-$label-link-hover-color: $color-text-second-dark !default;
-
-//== Alerts
-//
-//## Define alert colors, border radius, and padding.
-
-$alert-padding: 15px !default;
-$alert-border-radius: $border-radius-base !default;
-$alert-link-font-weight: bold !default;
-
-$alert-success-bg: $state-success-bg !default;
-$alert-success-text: $color-text-base-dark !default;
-$alert-success-border: $state-success-border !default;
-
-$alert-info-bg: $state-info-bg !default;
-$alert-info-text: $color-text-base-dark !default;
-$alert-info-border: $state-info-border !default;
-
-$alert-warning-bg: $state-warning-bg !default;
-$alert-warning-text: $color-text-base-dark !default;
-$alert-warning-border: $state-warning-border !default;
-
-$alert-danger-bg: $state-danger-bg !default;
-$alert-danger-text: $color-text-base-dark !default;
-$alert-danger-border: $state-danger-border !default;
-
 //== Progress bars
 //
 //##
@@ -679,24 +615,6 @@ $panel-warning-heading-bg: $state-warning-bg !default;
 $panel-danger-text: $color-text-base-dark !default;
 $panel-danger-border: $state-danger-border !default;
 $panel-danger-heading-bg: $state-danger-bg !default;
-
-//== Thumbnails
-//
-//##
-
-//** Padding around the thumbnail image
-$thumbnail-padding: 4px !default;
-//** Thumbnail background color
-$thumbnail-bg: $body-bg !default;
-//** Thumbnail border color
-$thumbnail-border: $color-border-light !default;
-//** Thumbnail border radius
-$thumbnail-border-radius: $border-radius-base !default;
-
-//** Custom text color for thumbnail captions
-$thumbnail-caption-color: $text-color !default;
-//** Padding around the thumbnail caption
-$thumbnail-caption-padding: 9px !default;
 
 //== Wells
 //

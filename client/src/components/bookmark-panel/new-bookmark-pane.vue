@@ -148,6 +148,7 @@ export default {
 </script>
 
 <style lang="scss">
+@import "~styles/wm-theme/wm-theme";
 
 .new-bookmark-pane-container {
   .controls {
@@ -165,6 +166,11 @@ export default {
     box-sizing: border-box;
     resize: none;
     outline: none;
+  }
+
+  .pane-title {
+    font-size: $font-size-large;
+    padding: 10px 0;
   }
 }
 

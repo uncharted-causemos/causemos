@@ -9,21 +9,6 @@
   color: $color-text-base-light;
 }
 
-// Tabs
-// -------------------------
-
-// Give the tabs something to sit on
-.nav-tabs {
-  > li {
-    > a {
-      &:hover,
-      &:focus {
-        color: $color-text-base-dark;
-      }
-    }
-  }
-}
-
 // Pills
 // -------------------------
 .nav-pills {

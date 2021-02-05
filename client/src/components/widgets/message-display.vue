@@ -74,10 +74,20 @@ export default {
 </script>
 
 <style lang='scss' scoped>
+.alert {
+  margin-bottom: 0px;
+}
+
 .alert-primary {
   color: #004085;
   background-color: #cce5ff;
   border-color: #b8daff;
+}
+
+.alert-info {
+  background-color: #F0F0F0;
+  font-style: italic;
+  margin-top: 10px;
 }
 
 .message-container {

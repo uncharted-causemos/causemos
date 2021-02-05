@@ -9,11 +9,10 @@
       <div slot="title">Delete Project</div>
       <div slot="message">
         <p>Are you sure you want to delete <strong>{{ project.name }}</strong> and all associated CAGs/Models/Scenarios?</p>
-        <div
-          class="alert alert-warning"
-          role="alert">
-          Warning: This action cannot be undone.
-        </div>
+        <message-display
+          :message="'Warning: This action cannot be undone.'"
+          :message-type="'alert-warning'"
+        />
       </div>
     </modal-confirmation>
     <div
@@ -93,6 +92,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation';
 import TextDisplay from '@/components/widgets/text-display';
 
 import messagesUtil from '@/utils/messages-util';
+import MessageDisplay from './widgets/message-display.vue';
 
 /**
  * A card-styled widget to view project summary
@@ -101,7 +101,8 @@ export default {
   name: 'ProjectCard',
   components: {
     TextDisplay,
-    ModalConfirmation
+    ModalConfirmation,
+    MessageDisplay
   },
   props: {
     project: {
