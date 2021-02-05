@@ -89,7 +89,7 @@ $large-width: 380px;
 .side-panel-container {
   flex-grow: 0;
   flex-shrink: 0;
-  min-width: $navbar-outer-width;
+  min-width: $navbar-outer-height;
   position: relative;
   margin-right: 10px;
   filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.12));
@@ -120,7 +120,7 @@ $large-width: 380px;
 }
 
 .side-panel-header {
-  height: $navbar-outer-width;
+  height: $navbar-outer-height;
   display: flex;
   align-items: center;
   h5 {
@@ -136,7 +136,7 @@ $large-width: 380px;
 
 .side-panel-body {
   position: relative;
-  margin-right: $navbar-outer-width; // width of the side-panel-nav
+  margin-right: $navbar-outer-height; // width of the side-panel-nav
   background-color: #ffffff;
   display: flex;
   flex-direction: column;

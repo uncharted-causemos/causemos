@@ -112,6 +112,18 @@ export default {
   min-height: $navbar-outer-height;
 }
 
+.navbar {
+  margin-bottom: 0px;
+}
+
+.nav-item.underlined {
+  border-bottom: 3px solid $selected;
+  color: #ffffff;
+  .nav-link {
+    color: #ffffff;
+  }
+}
+
 button {
   height: $navbar-outer-height;
   background-color: transparent;

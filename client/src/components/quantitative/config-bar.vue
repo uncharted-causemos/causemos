@@ -57,7 +57,7 @@ export default {
 .config-bar-container {
   background: $background-light-1;
   box-shadow: $shadow-level-1;
-  height: $navbar-outer-width;
+  height: $navbar-outer-height;
   display: flex;
   align-items: center;
   justify-content: space-between;

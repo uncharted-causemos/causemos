@@ -318,7 +318,7 @@ div.lex-assistant-box {
 div.lex-box {
   min-height: $searchbar-height;
   height: auto;
-  background: $searchbar-background;
+  background: #FFFFFF;
   border: 1px solid #f2f2f2;
   padding-right: $clear-button-width;
 
