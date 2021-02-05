@@ -1,5 +1,18 @@
 <template>
   <div class="indicator-summary-container">
+    <div class="button-group">
+      <button
+        class="btn"
+        @click="editIndicator">
+        <i class="fa fa-fw fa-edit" />Edit
+      </button>
+      <button
+        v-if="hasIndicator"
+        class="btn remove-button"
+        @click="removeIndicator">
+        <i class="fa fa-fw fa-trash" />Remove
+      </button>
+    </div>
     <div
       v-if="isIndicatorEmpty"
       class="indicator-summary-content"
@@ -92,10 +105,6 @@
         >{{ source }}</a>
         <span v-else>{{ source }}</span>
       </div>
-    </div>
-    <div class="footer-buttons">
-      <hr class="pane-separator">
-      <slot name="footer-buttons" />
     </div>
   </div>
 </template>
@@ -211,6 +220,9 @@ export default {
     },
     availableFunctions() {
       return Object.keys(AGGREGATION_FUNCTIONS);
+    },
+    hasIndicator() {
+      return !_.isEmpty(_.get(this.node, 'parameter.indicator_time_series_parameter', {}));
     }
   },
   watch: {
@@ -285,12 +297,19 @@ export default {
           func: this.selectedFunction
         }
       });
+    },
+    editIndicator() {
+      this.$emit('edit-indicator');
+    },
+    removeIndicator() {
+      this.$emit('remove-indicator');
     }
   }
 };
 </script>
 
 <style lang="scss" scoped>
+  @import "~styles/variables";
 
   .indicator-summary-content {
     padding: 0;
@@ -303,17 +322,23 @@ export default {
     padding-bottom: 70px;
   }
 
-  .footer-buttons {
-    position: absolute;
-    bottom: 0;
-    left: 0;
+  .button-group {
+    display: flex;
     width: 100%;
-    padding: 0 8px 10px 10px;
-    background: white;
 
-    hr {
-      margin-bottom: 10px;
+    button {
+      flex: 1;
+      i {
+        margin-right: 5px;
+      }
+      &:first-child {
+        margin-right: 5px;
+      }
     }
+  }
+
+  .remove-button {
+    color: $negative;
   }
 
   .line-chart {

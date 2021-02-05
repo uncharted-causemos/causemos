@@ -4,29 +4,23 @@
       v-if="isOpen"
       class="drilldown-panel-container"
     >
-      <div
-        v-if="isOpen !== null"
-        class="navigation-button close-button"
-        @click="onClose"
-      >
-        <i
-          class="fa fa-fw fa-close"
-        />
-      </div>
       <tab-bar
         v-if="tabs.length > 1"
+        class="tab-bar"
         :tabs="tabs"
         :active-tab-id="activeTabId"
-        has-white-background
         only-display-icons
         @tab-click="onTabClick"
       />
       <div class="panel-header">
         <h5>{{ paneTitle }}</h5>
-        <slot name="action" />
+        <close-button
+          v-if="isOpen !== null"
+          class="navigation-button close-button"
+          @click="onClose"
+        />
       </div>
       <div class="panel-content">
-        <hr class="pane-separator">
         <slot name="content" />
       </div>
       <div
@@ -44,20 +38,23 @@
           </div>
           <h5>{{ overlayPaneTitle }}</h5>
         </div>
-        <hr class="pane-separator">
-        <slot name="overlay-pane" />
+        <div class="panel-content">
+          <slot name="overlay-pane" />
+        </div>
       </div>
     </div>
   </transition>
 </template>
 
 <script>
+import CloseButton from './widgets/close-button.vue';
 import TabBar from './widgets/tab-bar.vue';
 
 export default {
   name: 'DrilldownPanel',
   components: {
-    TabBar
+    TabBar,
+    CloseButton
   },
   props: {
     // If isOpen isn't passed, no close button
@@ -127,7 +124,7 @@ $drilldown-width: 25vw;
   position: relative;
   display: flex;
   flex-direction: column;
-  background-color: $color-background-lvl-2;
+  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.12));
 
   &.slide-fade-enter,
   &.slide-fade-leave-to {
@@ -135,26 +132,34 @@ $drilldown-width: 25vw;
 
     .panel-header,
     .panel-content,
-    .close-button {
+    .tab-bar {
       opacity: 0;
     }
   }
 
+  /deep/ .tab-bar li.active {
+    background: $background-light-1;
+    z-index: -1;
+  }
+
   .panel-header {
-    height: 56px; // 56px = 32px button + (2 * 12px) padding above and below
+    height: $navbar-outer-width;
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 0 8px;
+    padding: 0 10px;
 
     h5 {
       margin: 0;
-      line-height: 18px;
+      flex: 1;
+      color: $label-color;
+      text-transform: uppercase;
+      font-size: 1.5rem;
+      letter-spacing: .66px;
     }
   }
 
   /deep/ .pane-summary {
-    padding: 12px 5px;
+    padding-bottom: 5px;
     font-size: $font-size-large;
     font-weight: 600;
 
@@ -165,7 +170,7 @@ $drilldown-width: 25vw;
   }
 
   /deep/ .pane-loading-message {
-    padding: 12px 8px;
+    padding: 10px;
 
     .pane-loading-icon ~ span {
       margin-left: 4px;
@@ -178,7 +183,7 @@ $drilldown-width: 25vw;
   transition: all $layout-transition;
   .panel-content,
   .panel-header,
-  .close-button {
+  .tab-bar {
     transition: opacity .1s ease;
   }
 }
@@ -187,6 +192,7 @@ $drilldown-width: 25vw;
 .panel-body,
 .panel-content {
   width: $drilldown-width;
+  background-color: $background-light-1;
 }
 
 .navigation-button {
@@ -206,9 +212,9 @@ $drilldown-width: 25vw;
 }
 
 .close-button {
-  position: absolute;
-  top: 12px;
-  right: 12px;
+  position: relative;
+  top: auto;
+  right: auto;
 }
 
 .back-button {
@@ -220,7 +226,7 @@ $drilldown-width: 25vw;
   height: 0;
   flex: 1;
   overflow-y: auto;
-  padding: 0 8px;
+  padding: 0 10px;
 }
 
 .overlay-pane {
@@ -233,12 +239,8 @@ $drilldown-width: 25vw;
   opacity: 0;
   transition: transform $layout-transition, opacity $layout-transition;
   transform: translateX(100%);
-
-  .panel-header {
-    // Override 'space-between' so that back button and text are
-    //  both aligned left
-    justify-content: start;
-  }
+  display: flex;
+  flex-direction: column;
 
   &.open {
     opacity: 1;
