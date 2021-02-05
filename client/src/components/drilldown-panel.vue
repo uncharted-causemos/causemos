@@ -143,7 +143,7 @@ $drilldown-width: 25vw;
   }
 
   .panel-header {
-    height: $navbar-outer-width;
+    height: $navbar-outer-height;
     display: flex;
     align-items: center;
     padding: 0 10px;
