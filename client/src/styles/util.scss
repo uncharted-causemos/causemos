@@ -1,9 +1,6 @@
 // Utility CSS Classes
 
-
 // often used with flex-grow-1 to create height that fits remaining space
-// Note: this was needed for certain browsers because of flexbox inconsistency across browsers
-// It seems you no longer need to set height 0 with flex-grow-1 to fill remaining space in most recent browsers
 .h-0 {
   height: 0;
 }
@@ -23,31 +20,11 @@
   flex-direction: row;
 }
 
-.flex-wrap {
-  flex-wrap: wrap
-}
-
 .flex-col {
   display: flex;
   flex-direction: column;
 }
 
-.flex-shrink-0 {
-  flex-shrink: 0;
-}
-
-.flex-shrink-1 {
-  flex-shrink: 1;
-}
-
-.flex-grow-0 {
-  flex-grow: 0;
-}
-
 .flex-grow-1 {
   flex-grow: 1;
-}
-
-.flex-row-centered {
-  align-items: center;
 }

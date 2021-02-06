@@ -43,55 +43,91 @@
         </div>
       </div>
       <div class="tab-content">
-        <div class="tab-pane active" />
-        <div
-          v-if="activeTab === 'flow' && scenarioData && graphData"
-          class="model-graph-layout-container">
-          <model-graph
-            :data="graphData"
-            :scenario-data="scenarioData"
-            @background-click="onBackgroundClick"
-            @node-body-click="showConstraints"
-            @node-header-click="showIndicator"
-            @edge-click="showRelation"
-          />
-          <color-legend
-            :show-cag-encodings="true" />
-        </div>
-        <div
-          v-if="activeTab === 'table'"
-          class="tabular-layout">
-          <div>
-            <div class="header">
-              <h4 class="labels-list-title">Concepts</h4>
-            </div>
-            <labels-list
-              :data="labelsData"
-              :config="layoutConfig"
-              :highlights="listHighlights"
-              :hovered="hovered"
-              @select-node="handleSelectNode"
-              @hover-node="handleHoverNode"
-            />
-          </div>
-          <div>
-            <div class="header">&nbsp;</div>
-            <arc-diagram
+        <main>
+          <div
+            v-if="activeTab === 'flow' && scenarioData && graphData"
+            class="model-graph-layout-container">
+            <model-graph
               :data="graphData"
-              :config="layoutConfigArcDiagram"
-              :highlights="highlights"
-              :hovered="hovered"
-              @select-node="handleSelectNode"
-              @select-edge="handleSelectEdge"
-              @hover-node="handleHoverNode"
+              :scenario-data="scenarioData"
+              @background-click="onBackgroundClick"
+              @node-body-click="showConstraints"
+              @node-header-click="showIndicator"
+              @edge-click="showRelation"
             />
+            <color-legend
+              :show-cag-encodings="true" />
           </div>
-        </div>
-        <sensitivity-analysis
-          v-if="activeTab === 'matrix'"
-          :model-summary="modelSummary"
-          :scenarios="scenarios"
-        />
+          <div
+            v-if="activeTab === 'table'"
+            class="tabular-layout">
+            <div>
+              <div class="header">
+                <h4 class="labels-list-title">Concepts</h4>
+              </div>
+              <labels-list
+                :data="labelsData"
+                :config="layoutConfig"
+                :highlights="listHighlights"
+                :hovered="hovered"
+                @select-node="handleSelectNode"
+                @hover-node="handleHoverNode"
+              />
+            </div>
+            <div>
+              <div class="header">&nbsp;</div>
+              <arc-diagram
+                :data="graphData"
+                :config="layoutConfigArcDiagram"
+                :highlights="highlights"
+                :hovered="hovered"
+                @select-node="handleSelectNode"
+                @select-edge="handleSelectEdge"
+                @hover-node="handleHoverNode"
+              />
+            </div>
+          </div>
+          <sensitivity-analysis
+            v-if="activeTab === 'matrix'"
+            :model-summary="modelSummary"
+            :scenarios="scenarios"
+          />
+        </main>
+        <drilldown-panel
+          class="quantitative-drilldown"
+          :is-open="isDrilldownOpen"
+          :tabs="drilldownTabs"
+          :active-tab-id="activeDrilldownTab"
+          @close="closeDrilldown"
+          @tab-click="onDrilldownTabClick"
+        >
+          <indicator-summary
+            v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
+            slot="content"
+            :node="selectedNode"
+            :model-summary="modelSummary"
+            @function-selected="onFunctionSelected"
+            @edit-indicator="editIndicator"
+            @remove-indicator="removeIndicator"
+          />
+          <evidence-pane
+            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
+            slot="content"
+            :show-curation-actions="false"
+            :selected-relationship="selectedEdge"
+            :statements="selectedStatements"
+            :project="project"
+            :is-fetching-statements="isFetchingStatements"
+            :should-confirm-curations="true"
+            @edge-weight="setEdgeWeight">
+            <edge-polarity-switcher
+              :selected-relationship="selectedEdge"
+              @edge-set-user-polarity="setEdgeUserPolarity" />
+            <edge-weight-slider
+              :selected-relationship="selectedEdge"
+              @edge-weight="setEdgeWeight" />
+          </evidence-pane>
+        </drilldown-panel>
       </div>
       <config-bar
         :model-summary="modelSummary"
@@ -119,8 +155,34 @@ import modelService from '@/services/model-service';
 
 import ColorLegend from '@/components/graph/color-legend';
 import TextAreaCard from '@/components/cards/text-area-card';
+import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
+import DrilldownPanel from '@/components/drilldown-panel';
+import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
+import EvidencePane from '@/components/drilldown-panel/evidence-pane';
+import IndicatorSummary from '@/components/indicator/indicator-summary';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
+
+
+const PANE_ID = {
+  INDICATOR: 'indicator',
+  EVIDENCE: 'evidence'
+};
+
+const NODE_DRILLDOWN_TABS = [
+  {
+    name: 'Indicator',
+    id: PANE_ID.INDICATOR
+  }
+];
+
+const EDGE_DRILLDOWN_TABS = [
+  {
+    name: 'Relationship',
+    id: PANE_ID.EVIDENCE
+  }
+];
+
 
 export default {
   name: 'TabPanel',
@@ -133,7 +195,12 @@ export default {
     ArcDiagram,
     ColorLegend,
     TextAreaCard,
-    TabBar
+    TabBar,
+    DrilldownPanel,
+    EdgePolaritySwitcher,
+    EdgeWeightSlider,
+    EvidencePane,
+    IndicatorSummary
   },
   props: {
     modelSummary: {
@@ -147,6 +214,10 @@ export default {
     scenarios: {
       type: Array,
       required: true
+    },
+    selectedNode: {
+      type: Object,
+      default: null
     }
   },
   data: () => ({
@@ -168,6 +239,13 @@ export default {
     graphData: {},
     scenarioData: null,
 
+
+    drilldownTabs: NODE_DRILLDOWN_TABS,
+    activeDrilldownTab: PANE_ID.INDICATOR,
+    isDrilldownOpen: false,
+    isFetchingStatements: false,
+    selectedEdge: null,
+
     labelsData: {},
     highlights: {},
     listHighlights: {},
@@ -187,6 +265,7 @@ export default {
     }
   },
   created() {
+    this.PANE_ID = PANE_ID;
     this.layoutConfig = {
       itemHeight: 70,
       margin: { top: 10, right: 20, bottom: 20, left: 30 }
@@ -212,6 +291,7 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
+      this.closeDrilldown();
     },
     setActive (tabId) {
       this.activeTab = tabId;
@@ -306,12 +386,27 @@ export default {
     },
     onBackgroundClick() {
       this.$emit('background-click');
+      this.closeDrilldown();
+      this.selectedEdge = null;
     },
     handleHoverNode(selection) {
       this.hovered = _.isNil(selection) ? '' : selection;
     },
     showIndicator(nodeData) {
       this.$emit('show-indicator', nodeData);
+      this.drilldownTabs = NODE_DRILLDOWN_TABS;
+      this.activeDrilldownTab = PANE_ID.INDICATOR;
+      const indicatorTab = this.drilldownTabs.find(tab => tab.id === PANE_ID.INDICATOR);
+      if (indicatorTab !== undefined) {
+        indicatorTab.name = `Data to quantify ${nodeData.label}`;
+      }
+      this.openDrilldown();
+    },
+    openDrilldown() {
+      this.isDrilldownOpen = true;
+    },
+    closeDrilldown() {
+      this.isDrilldownOpen = false;
     },
     showConstraints(nodeData) {
       this.$emit('show-constraints', nodeData, this.scenarioData[nodeData.concept]);
@@ -319,8 +414,57 @@ export default {
     showModelParameters() {
       this.$emit('show-model-parameters');
     },
-    showRelation(edge) {
-      this.$emit('show-edge', edge);
+    showRelation(edgeData) {
+      this.isFetchingStatements = true;
+      this.drilldownTabs = EDGE_DRILLDOWN_TABS;
+      this.activeDrilldownTab = PANE_ID.EVIDENCE;
+      this.openDrilldown();
+
+      modelService.getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target).then(statements => {
+        this.selectedStatements = statements;
+        this.selectedEdge = edgeData;
+        this.isFetchingStatements = false;
+      });
+    },
+    onDrilldownTabClick(tab) {
+      this.activeDrilldownTab = tab;
+    },
+    async removeIndicator() {
+      // FIXME: Needs a bit of thought, how to properly clean out values in ES vs empty vs nulls
+      const payload = { id: this.selectedNode.id, concept: this.selectedNode.concept };
+      payload.parameter = {
+        indicator_time_series: [],
+        indicator_time_series_parameter: null,
+        indicator_name: null,
+        indicator_score: null,
+        indicator_id: null,
+        initial_value_parameter: { func: 'last' },
+        initial_value: null,
+        indicator_source: null
+      };
+      await modelService.updateNodeParameter(this.currentCAG, payload);
+      this.closeDrilldown();
+      this.$emit('refresh');
+    },
+    onFunctionSelected(newProperties) {
+      const newParameter = Object.assign({}, this.selectedNode.parameter, newProperties);
+      this.closeDrilldown();
+      this.$emit('save-indicator-edits', newParameter);
+    },
+    async setEdgeUserPolarity(edge, polarity) {
+      await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
+      this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
+      this.closeDrilldown();
+      this.$emit('refresh');
+    },
+    async setEdgeWeight(edgeData) {
+      await modelService.updateEdgeParameter(this.currentCAG, edgeData);
+      this.selectedEdge.parameter.weight = edgeData.parameter.weight;
+      this.closeDrilldown();
+      this.$emit('refresh');
+    },
+    editIndicator() {
+      this.$emit('edit-indicator');
     }
   }
 };
@@ -354,7 +498,18 @@ export default {
   background: $background-light-2;
   box-shadow: $shadow-level-2;
   z-index: 1;
+  display: flex;
 }
+
+main {
+  min-width: 0;
+  flex: 1;
+}
+
+.quantitative-drilldown {
+  margin: 10px 0;
+}
+
 .model-graph-layout-container {
   width: 100%;
   height: 100%;

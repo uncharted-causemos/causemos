@@ -119,5 +119,23 @@ export default {
 <style lang="scss" scoped>
 .map-panel {
   height: 100%;
+  position: relative;
+  box-sizing: border-box;
+  border: 1px solid #ccc;
+  width: 100%;
+  height: 100%;
+  overflow-y: hidden;
+  z-index: 5;
+  .marker-tooltip {
+    background: $color-background-lvl-4;
+    border-color: $color-background-lvl-4;
+    color: white;
+  }
+
+  .leaflet-tooltip-top.marker-tooltip::before {
+    border-left-color: transparent;
+    border-right-color: transparent;
+    border-top-color: $color-background-lvl-4;
+  }
 }
 </style>

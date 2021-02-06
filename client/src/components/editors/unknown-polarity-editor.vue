@@ -135,4 +135,14 @@ export default {
 .selection-message {
   color: $state-danger-text
 }
+
+.alert {
+  margin-bottom: 0px;
+}
+
+.alert-info {
+  background-color: #F0F0F0;
+  font-style: italic;
+  margin-top: 10px;
+}
 </style>

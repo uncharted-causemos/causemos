@@ -57,10 +57,9 @@
         </dropdown-control>
       </div>
       <indicator-editor
-        v-if="selectedIndicator !== null && selectedIndicatorData !== null"
+        v-if="selectedIndicator !== null"
         :indicator="selectedIndicator"
-        :indicator-parameters="selectedIndicatorParameters"
-        :all-regional-data="selectedIndicatorData"
+        :initial-indicator-parameters="selectedIndicatorParameters"
         :model-summary="modelSummary"
         @parameter-change="onParameterChange"
       />
@@ -83,7 +82,7 @@
 
 <script>
 import _ from 'lodash';
-import API from '@/api/api';
+import { getDatacubes } from '@/services/datacube-service';
 
 import IndicatorEditor from '@/components/indicator/indicator-editor';
 import Modal from '@/components/modals/modal';
@@ -92,7 +91,6 @@ import MessageDisplay from '@/components/widgets/message-display';
 import filtersUtil from '@/utils/filters-util';
 import IndicatorSearchResult from '@/components/indicator/indicator-search-result';
 import IndicatorSearchHeader from '@/components/indicator/indicator-search-header';
-import aggregationsUtil from '@/utils/aggregations-util';
 import { INDICATOR } from '@/utils/messages-util';
 
 export default {
@@ -120,10 +118,6 @@ export default {
     selectedIndicator: null,
     // Contains the selected region at each admin level, selected unit, and function
     selectedIndicatorParameters: null,
-    // A much larger data structure that contains timeseries for all
-    //  regions at all admin levels that are supported by the currently
-    //  selected indicator
-    selectedIndicatorData: null,
     defaultAlternatives: [],
     indicatorAlternatives: [],
     isAlternativeDropdownOpen: false,
@@ -155,13 +149,36 @@ export default {
     },
     hasNoIndicator() {
       return _.isEmpty(this.selectedIndicator && this.selectedIndicator.variable);
+    },
+    fullSavePayload() {
+      const {
+        selectedUnit,
+        selectedCountry,
+        selectedAdmin1,
+        selectedAdmin2,
+        timeseries,
+        aggregatedTimeseriesValue
+      } = this.newIndicatorParameters;
+      return {
+        indicator_id: this.selectedIndicator.variable,
+        indicator_name: this.selectedIndicator.output_name,
+        indicator_source: this.selectedIndicator.model,
+        indicator_score: this.selectedIndicator._search_score,
+        indicator_time_series: timeseries,
+        indicator_time_series_parameter: {
+          unit: selectedUnit,
+          country: selectedCountry,
+          admin1: selectedAdmin1,
+          admin2: selectedAdmin2
+        },
+        initial_value: aggregatedTimeseriesValue,
+        initial_value_parameter: {
+          func: _.get(this.selectedIndicatorParameters, 'initial_value_parameter.func') || null
+        }
+      };
     }
   },
   watch: {
-    selectedIndicator(n, o) {
-      if (_.isNil(n) || _.isEqual(n, o)) return;
-      this.fetchIndicatorData();
-    },
     searchText() {
       this.throttledSearch();
     }
@@ -175,57 +192,8 @@ export default {
       this.$emit('close');
     },
     save() {
-      this.$emit('save', this.newIndicatorParameters);
+      this.$emit('save', this.fullSavePayload);
       this.close();
-    },
-    async fetchIndicatorData() {
-      if (this.hasNoIndicator) return;
-      this.selectedIndicatorData = null;
-
-      const indicatorUnit = this.selectedIndicator.output_units;
-      const url = 'maas/indicator-data' +
-        `?indicator=${encodeURI(this.selectedIndicator.variable)}` +
-        `&model=${encodeURI(this.selectedIndicator.model)}` +
-        (indicatorUnit ? `&unit=${encodeURI(indicatorUnit)}` : '');
-
-      const result = await API.get(url);
-      if (result.status !== 200) {
-        console.error(`Failed to fetch data points for indicator "${this.selectedIndicator.variable}"`);
-        return;
-      }
-
-      const pipeline = [
-        {
-          keyFn: (d) => d.country,
-          metaFn: (c) => {
-            return { timeseries: _.sortBy(c.dataArray, 'timestamp') };
-          }
-        },
-        {
-          keyFn: (d) => d.admin1,
-          metaFn: (c) => {
-            return { timeseries: _.sortBy(c.dataArray, 'timestamp') };
-          }
-        },
-        {
-          keyFn: (d) => d.admin2,
-          metaFn: (c) => {
-            return { timeseries: _.sortBy(c.dataArray, 'timestamp') };
-          }
-        }
-      ];
-
-      const groupedResult = {};
-      if (!_.isNil(indicatorUnit)) {
-        groupedResult[indicatorUnit] = aggregationsUtil.groupDataArray(result.data, pipeline);
-      } else {
-        const byUnit = _.groupBy(result.data, d => d.value_unit);
-        Object.keys(byUnit).forEach(unitKey => {
-          groupedResult[unitKey] = aggregationsUtil.groupDataArray(byUnit[unitKey], pipeline);
-        });
-      }
-
-      this.selectedIndicatorData = groupedResult;
     },
     async fetchInitialMetadata() {
       const savedParameters = _.get(this.nodeData, 'parameter') || null;
@@ -247,13 +215,13 @@ export default {
       if (unit) {
         filtersUtil.addSearchTerm(filters, 'output_units', unit, 'and', false);
       }
-      const result = await API.get(`maas/datacubes?filters=${encodeURI(JSON.stringify(filters))}`);
-      if (result.status !== 200) {
+      let indicators;
+      try {
+        indicators = await getDatacubes(filters);
+      } catch (e) {
         console.error('Failed to fetch initial metadata');
         return;
       }
-
-      let indicators = result.data || [];
       if (indicators.length > 1 && !_.isNil(unit)) {
         indicators = indicators.filter(i => i.output_units === unit);
       }
@@ -267,12 +235,12 @@ export default {
       const filters = filtersUtil.newFilters();
       filtersUtil.addSearchTerm(filters, 'concepts.name', concept, 'or', false);
       filtersUtil.addSearchTerm(filters, 'type', 'indicator', 'or', false);
-      const result = await API.get(`maas/datacubes?filters=${encodeURI(JSON.stringify(filters))}`);
-      if (result.status !== 200) {
+      try {
+        this.indicatorAlternatives = await getDatacubes(filters);
+      } catch (e) {
         console.error('Failed to fetch indicator suggestions');
         return;
       }
-      this.indicatorAlternatives = !_.isEmpty(result.data) ? result.data : [];
       if (_.isEmpty(this.visibleAlternatives)) {
         await this.searchForAlternatives(this.nodeData.label);
       }
@@ -290,12 +258,11 @@ export default {
       const filters = filtersUtil.newFilters();
       filtersUtil.addSearchTerm(filters, '_search', text, 'and', false);
       filtersUtil.addSearchTerm(filters, 'type', 'indicator', 'or', false);
-      const result = await API.get(`maas/datacubes?filters=${encodeURI(JSON.stringify(filters))}`);
-      if (result.status !== 200) {
+      try {
+        this.indicatorAlternatives = await getDatacubes(filters);
+      } catch (e) {
         console.error('Failed to search for indicator suggestions');
-        return;
       }
-      this.indicatorAlternatives = result.data;
     },
     throttledSearch: _.throttle(function() {
       if (this.isAlternativeDropdownOpen) {
@@ -317,8 +284,22 @@ export default {
       this.selectedIndicatorParameters = null;
       this.setIsAlternativeDropdownOpen(false);
     },
-    onParameterChange(newIndicatorState) {
-      this.newIndicatorParameters = newIndicatorState;
+    onParameterChange(
+      selectedUnit,
+      selectedCountry,
+      selectedAdmin1,
+      selectedAdmin2,
+      timeseries,
+      aggregatedTimeseriesValue
+    ) {
+      this.newIndicatorParameters = {
+        selectedUnit,
+        selectedCountry,
+        selectedAdmin1,
+        selectedAdmin2,
+        timeseries,
+        aggregatedTimeseriesValue
+      };
     }
   }
 };

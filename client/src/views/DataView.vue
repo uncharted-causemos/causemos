@@ -12,6 +12,7 @@
         <empty-state-instructions v-else />
       </div>
       <drilldown-panel
+        class="drilldown"
         :is-open="fullscreenCardId !== null"
         :tabs="drilldownTabs"
         :active-tab-id="activeDrilldownTab"
@@ -165,5 +166,10 @@ main {
 .analysis-content {
   min-width: 0;
   flex: 1;
+}
+
+.drilldown {
+  // Drilldown tabs have 3px of padding at the top already
+  margin-top: 7px;
 }
 </style>

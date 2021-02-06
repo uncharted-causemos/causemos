@@ -4,7 +4,6 @@
       <h6>Saved Insights</h6>
       <close-button @click="closeBookmarkPanel()" />
     </div>
-    <div class="pane-separator" />
     <div
       v-if="listBookmarks.length > 0"
       class="pane-content">
@@ -28,7 +27,6 @@
               />
             </div>
           </div>
-          <div class="pane-separator" />
           <div
             class="bookmark-content">
             <div class="bookmark-thumbnail">
@@ -172,7 +170,7 @@ export default {
         font-weight: bold;
       }
       .bookmark-empty-description {
-        color: $faded;
+        color: #D6DBDF;
       }
       .bookmark-thumbnail {
         .thumbnail {

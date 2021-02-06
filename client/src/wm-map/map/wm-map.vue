@@ -124,9 +124,19 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~styles/wm-theme/wm-theme";
+
 .wm-map {
   height: 100%;
   position: relative;
   overflow: hidden;
+  /deep/ .mapboxgl-popup-content {
+    background: $color-background-lvl-4;
+    border-color: $color-background-lvl-4;
+    color: #FFFFFF;
+  }
+  /deep/ .mapboxgl-popup-tip {
+    border-top-color: $color-background-lvl-4;
+  }
 }
 </style>

@@ -143,4 +143,9 @@ export default {
   }
 }
 
+//For transparent buttons
+.btn-primary-outline {
+  background-color: transparent;
+}
+
 </style>

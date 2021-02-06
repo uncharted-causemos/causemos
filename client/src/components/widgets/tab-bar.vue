@@ -1,7 +1,6 @@
 <template>
   <ul
     class="unstyled-list"
-    :class="{'white-bg': hasWhiteBackground}"
   >
     <li
       v-for="tab in tabs"
@@ -31,10 +30,6 @@ export default {
     activeTabId: {
       type: String,
       default: ''
-    },
-    hasWhiteBackground: {
-      type: Boolean,
-      default: false
     },
     onlyDisplayIcons: {
       type: Boolean,
@@ -103,37 +98,4 @@ i.right-margin {
   margin-right: 5px;
 }
 
-ul.white-bg li {
-  border: 1px solid transparent;
-  border-bottom: 1px solid $separator;
-  overflow: visible;
-
-  &:hover {
-    background: transparent;
-    border-color: $separator;
-    border-bottom-color: transparent;
-  }
-
-  &.active {
-    background: transparent;
-    border-color: $selected;
-    border-bottom-color: transparent;
-
-    &::before {
-      display: none;
-    }
-  }
-
-  // Add bottom border between tabs
-  &:not(:last-child)::after {
-    content: '';
-    display: block;
-    position: absolute;
-    height: 1px;
-    width: $spaceBetweenTabs;
-    bottom: -1px;
-    left: calc(100% + 1px);
-    background: $separator;
-  }
-}
 </style>

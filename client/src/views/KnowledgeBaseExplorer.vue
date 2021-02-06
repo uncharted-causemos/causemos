@@ -20,6 +20,7 @@
       </div>
 
       <drilldown-panel
+        class="kb-drilldown-panel"
         :is-open="showDrilldownPanel"
         :tabs="drilldownTabs"
         :active-tab-id="activeDrilldownTab"
@@ -431,6 +432,7 @@ export default {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  z-index: 0;
 }
 
 .search {
@@ -447,6 +449,10 @@ export default {
     flex: 1;
     min-width: 0;
   }
+}
+
+.kb-drilldown-panel {
+  z-index: 1;
 }
 
 </style>

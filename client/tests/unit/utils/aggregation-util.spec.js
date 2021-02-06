@@ -27,6 +27,41 @@ describe('aggregation-util', () => {
     }
   ];
 
+  const OBJECT_DATA = [
+    { value: 1, oddOrEven: 'odd', size: 'small' },
+    { value: 2, oddOrEven: 'even', size: 'small' },
+    { value: 3, oddOrEven: 'odd', size: 'small' },
+    { value: 4, oddOrEven: 'even', size: 'small' },
+    { value: 5, oddOrEven: 'odd', size: 'small' },
+    { value: 6, oddOrEven: 'even', size: 'large' },
+    { value: 7, oddOrEven: 'odd', size: 'large' },
+    { value: 8, oddOrEven: 'even', size: 'large' },
+    { value: 9, oddOrEven: 'odd', size: 'large' }
+  ];
+  const LEAN_NESTED_RESULT = {
+    odd: {
+      small: [
+        { value: 1, oddOrEven: 'odd', size: 'small' },
+        { value: 3, oddOrEven: 'odd', size: 'small' },
+        { value: 5, oddOrEven: 'odd', size: 'small' }
+      ],
+      large: [
+        { value: 7, oddOrEven: 'odd', size: 'large' },
+        { value: 9, oddOrEven: 'odd', size: 'large' }
+      ]
+    },
+    even: {
+      small: [
+        { value: 2, oddOrEven: 'even', size: 'small' },
+        { value: 4, oddOrEven: 'even', size: 'small' }
+      ],
+      large: [
+        { value: 6, oddOrEven: 'even', size: 'large' },
+        { value: 8, oddOrEven: 'even', size: 'large' }
+      ]
+    }
+  };
+
   it('basic aggregation', () => {
     const result = AggregationsUtil.groupDataArray(DATA, [
       {
@@ -36,6 +71,13 @@ describe('aggregation-util', () => {
     expect(result).to.deep.equal(BASIC_RESULT);
   });
 
+  it('correctly groups a flat array of objects repeatedly', () => {
+    const result = AggregationsUtil.groupRepeatedly(OBJECT_DATA, [
+      (dataPoint) => dataPoint.oddOrEven,
+      (dataPoint) => dataPoint.size
+    ]);
+    expect(result).to.deep.equal(LEAN_NESTED_RESULT);
+  });
 
   it('nested aggregation', () => {
     const result = AggregationsUtil.groupDataArray(DATA, [

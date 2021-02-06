@@ -71,7 +71,7 @@ export default {
 @import "~styles/wm-theme/wm-theme";
 
 .side-panel-nav-container {
-  width: $navbar-outer-width;
+  width: $navbar-outer-height;
   margin: 0;
   padding: 0;
   position: absolute;
@@ -115,8 +115,8 @@ li {
   }
 
   button {
-    width: $navbar-outer-width;
-    height: $navbar-outer-width;
+    width: $navbar-outer-height;
+    height: $navbar-outer-height;
     background-color: transparent;
     border-radius: 0;
     border: none;
@@ -129,8 +129,8 @@ li {
 
     .badge {
       position: absolute;
-      left: $navbar-outer-width / 2;
-      bottom: $navbar-outer-width / 2;
+      left: $navbar-outer-height / 2;
+      bottom: $navbar-outer-height / 2;
       top: auto;
     }
   }
