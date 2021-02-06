@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const ES = rootRequire('adapters/es/client');
+const { SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
 const Logger = rootRequire('/config/logger');
 const cache = rootRequire('/cache/node-lru-cache');
 
@@ -8,6 +9,21 @@ const headers = {
   'Content-type': 'application/json',
   'Accept': 'application/json'
 };
+
+const statementIncludes = [
+  'id',
+  'subj.factor',
+  'obj.factor',
+  'subj.polarity',
+  'obj.polarity',
+  'wm.statement_polarity',
+  'evidence.evidence_context.text',
+  'evidence.evidence_context.agents_text',
+  'evidence.document_context.doc_id',
+  'evidence.document_context.author',
+  'evidence.document_context.publication_date',
+  'evidence.document_context.publisher_name'
+];
 
 /**
  * Get recommendation for a factor-regrounding operation
@@ -69,7 +85,7 @@ const _mapRegroundingRecommendationsToStatementIds = async (projectId, statement
   const statementDocs = await _getStatementsForRegroundingRecommendations(projectId, statementIds, recommendations);
   if (_.isEmpty(statementDocs)) return [];
   const factorToStatementsMap = _buildFactorsToStatmentsMap(statementDocs);
-  recommendations = recommendations.filter(r => r.factor in factorToStatementsMap && factorToStatementsMap[r.factor].length > 0)
+  recommendations = recommendations.filter(r => r.factor in factorToStatementsMap && factorToStatementsMap[r.factor].length > 0);
   recommendations = recommendations.map(r => {
     return {
       statements: factorToStatementsMap[r.factor],
@@ -86,22 +102,9 @@ const _getStatementsForRegroundingRecommendations = async (projectId, statementI
   const response = await client.search({
     index: projectId,
     body: {
-      size: 10000,
+      size: SEARCH_LIMIT,
       _source: {
-        includes: [
-          'id',
-          'subj.factor',
-          'obj.factor',
-          'subj.polarity',
-          'obj.polarity',
-          'wm.statement_polarity',
-          'evidence.evidence_context.text',
-          'evidence.evidence_context.agents_text',
-          'evidence.document_context.doc_id',
-          'evidence.document_context.author',
-          'evidence.document_context.publication_date',
-          'evidence.document_context.publisher_name'
-        ]
+        includes: statementIncludes
       },
       query: {
         bool: {
@@ -147,7 +150,7 @@ const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, 
   const statementDocs = await _getStatementsForPolarityRecommendations(projectId, statementIds, polarity, recommendations);
   if (_.isEmpty(statementDocs)) return [];
   const factorPairsToStatementsMap = _buildFactorPairsToStatmentsMap(statementDocs);
-  recommendations = recommendations.filter(r => (r.subj_factor + r.obj_factor) in factorPairsToStatementsMap && factorPairsToStatementsMap[r.subj_factor + r.obj_factor].length > 0)
+  recommendations = recommendations.filter(r => (r.subj_factor + r.obj_factor) in factorPairsToStatementsMap && factorPairsToStatementsMap[r.subj_factor + r.obj_factor].length > 0);
   recommendations = recommendations.map(r => {
     return {
       statements: factorPairsToStatementsMap[r.subj_factor + r.obj_factor],
@@ -162,27 +165,15 @@ const _getStatementsForPolarityRecommendations = async (projectId, statementIds,
   const response = await client.search({
     index: projectId,
     body: {
-      size: 10000,
+      size: SEARCH_LIMIT,
       _source: {
-        includes: [
-          'id',
-          'subj.factor',
-          'obj.factor',
-          'subj.polarity',
-          'obj.polarity',
-          'wm.statement_polarity',
-          'evidence.evidence_context.text',
-          'evidence.document_context.doc_id',
-          'evidence.document_context.author',
-          'evidence.document_context.publication_date',
-          'evidence.document_context.publisher_name'
-        ]
+        includes: statementIncludes
       },
       query: {
         bool: {
           filter: [
-            {terms: { id: statementIds }},
-            {term: {'wm.statement_polarity': polarity}}
+            { terms: { id: statementIds } },
+            { term: { 'wm.statement_polarity': polarity } }
           ],
           should: _.map(recommendations, r => {
             return {
