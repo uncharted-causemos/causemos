@@ -133,7 +133,7 @@ const _buildFactorsToStatmentsMap = (statementDocs) => {
     factorToStatementsMap[factor] = statements;
   };
 
-  statementDocs.forEach((stmtDoc) => {
+  statementDocs.forEach(stmtDoc => {
     _updateMap(stmtDoc._source.subj.factor, stmtDoc);
     _updateMap(stmtDoc._source.obj.factor, stmtDoc);
   });
@@ -150,10 +150,13 @@ const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, 
   const statementDocs = await _getStatementsForPolarityRecommendations(projectId, statementIds, polarity, recommendations);
   if (_.isEmpty(statementDocs)) return [];
   const factorPairsToStatementsMap = _buildFactorPairsToStatmentsMap(statementDocs);
-  recommendations = recommendations.filter(r => (r.subj_factor + r.obj_factor) in factorPairsToStatementsMap && factorPairsToStatementsMap[r.subj_factor + r.obj_factor].length > 0);
+
+  const key = (r) => r.subj_factor + r.obj_factor;
+
+  recommendations = recommendations.filter(r => key(r) in factorPairsToStatementsMap && factorPairsToStatementsMap[key(r)].length > 0);
   recommendations = recommendations.map(r => {
     return {
-      statements: factorPairsToStatementsMap[r.subj_factor + r.obj_factor],
+      statements: factorPairsToStatementsMap[key(r)],
       score: r.score
     };
   });
@@ -198,7 +201,7 @@ const _getStatementsForPolarityRecommendations = async (projectId, statementIds,
 const _buildFactorPairsToStatmentsMap = (statementDocs) => {
   const factorPairsToStatementsMap = {};
 
-  statementDocs.forEach((stmtDoc) => {
+  statementDocs.forEach(stmtDoc => {
     const mapKey = stmtDoc._source.subj.factor + stmtDoc._source.obj.factor;
     const statements = _.get(factorPairsToStatementsMap, mapKey, []);
     statements.push(stmtDoc._source);
