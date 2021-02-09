@@ -4,7 +4,6 @@ const delphiUtil = require('../util/delphi-util');
 const Logger = rootRequire('/config/logger');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const convertUtil = rootRequire('/util/convert-util');
 const modelUtil = rootRequire('/util/model-util');
 
 const DEFAULT_BATCH_SIZE = 1000;
@@ -128,8 +127,7 @@ const buildModelStatements = async (modelId) => {
     // if an edge had a user_polarity set, filter statements by that.
     const statementsFiltered = statements.filter(s => _.isNil(statementEdgeUserPolarities[s.id].polarity) || ((s.subj.polarity * s.obj.polarity) === statementEdgeUserPolarities[s.id].polarity));
 
-    const converted = convertUtil.convertToIndra(statementsFiltered);
-    modelStatements = modelStatements.concat(converted);
+    modelStatements = modelStatements.concat(statementsFiltered);
   }
 
   // 3.2. edges that didn't survive the filtering based on user_polarity need to be a 'userEdge' basically
@@ -141,7 +139,7 @@ const buildModelStatements = async (modelId) => {
     }
   });
   if (dummyStatements.length > 0) {
-    modelStatements = modelStatements.concat(convertUtil.convertToIndra(dummyStatements));
+    modelStatements = modelStatements.concat(dummyStatements);
   }
 
   // 4. Create dummy statement(s) for edges with no statements
@@ -153,9 +151,8 @@ const buildModelStatements = async (modelId) => {
       ];
     } else { return _edge2statement(e, e.user_polarity); }
   }).flat();
-  const dummyConverted = convertUtil.convertToIndra(dummyStatements);
-  modelStatements = modelStatements.concat(dummyConverted);
 
+  modelStatements = modelStatements.concat(dummyStatements);
   return modelStatements;
 };
 
