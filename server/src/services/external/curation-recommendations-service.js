@@ -1,6 +1,7 @@
 const _ = require('lodash');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const ES = rootRequire('adapters/es/client');
+const { SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
 const Logger = rootRequire('/config/logger');
 const cache = rootRequire('/cache/node-lru-cache');
 
@@ -8,6 +9,21 @@ const headers = {
   'Content-type': 'application/json',
   'Accept': 'application/json'
 };
+
+const statementIncludes = [
+  'id',
+  'subj.factor',
+  'obj.factor',
+  'subj.polarity',
+  'obj.polarity',
+  'wm.statement_polarity',
+  'evidence.evidence_context.text',
+  'evidence.evidence_context.agents_text',
+  'evidence.document_context.doc_id',
+  'evidence.document_context.author',
+  'evidence.document_context.publication_date',
+  'evidence.document_context.publisher_name'
+];
 
 /**
  * Get recommendation for a factor-regrounding operation
@@ -22,8 +38,7 @@ const getFactorRecommendations = async (projectId, statementIds, factor, numReco
   const payload = {
     knowledge_base_id: cache.get(projectId).kb_id,
     factor,
-    num_recommendations: numRecommendations,
-    statement_ids: statementIds
+    num_recommendations: numRecommendations
   };
   const options = {
     url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/regrounding',
@@ -52,9 +67,7 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
     knowledge_base_id: cache.get(projectId).kb_id,
     subj_factor: subjFactor,
     obj_factor: objFactor,
-    polarity,
-    num_recommendations: numRecommendations,
-    statement_ids: statementIds
+    num_recommendations: numRecommendations
   };
 
   const options = {
@@ -64,7 +77,7 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
     json: payload
   };
   const result = await requestAsPromise(options);
-  result.recommendations = await _mapPolarityRecommendationsToStatements(projectId, statementIds, result.recommendations);
+  result.recommendations = await _mapPolarityRecommendationsToStatements(projectId, statementIds, polarity, result.recommendations);
   return result;
 };
 
@@ -72,14 +85,15 @@ const _mapRegroundingRecommendationsToStatementIds = async (projectId, statement
   const statementDocs = await _getStatementsForRegroundingRecommendations(projectId, statementIds, recommendations);
   if (_.isEmpty(statementDocs)) return [];
   const factorToStatementsMap = _buildFactorsToStatmentsMap(statementDocs);
-  const recommendationsWithStatements = recommendations.map(r => {
+  recommendations = recommendations.filter(r => r.factor in factorToStatementsMap && factorToStatementsMap[r.factor].length > 0);
+  recommendations = recommendations.map(r => {
     return {
       statements: factorToStatementsMap[r.factor],
       factor: r.factor,
       score: r.score
     };
   });
-  return recommendationsWithStatements;
+  return recommendations;
 };
 
 const _getStatementsForRegroundingRecommendations = async (projectId, statementIds, recommendations) => {
@@ -88,22 +102,9 @@ const _getStatementsForRegroundingRecommendations = async (projectId, statementI
   const response = await client.search({
     index: projectId,
     body: {
-      size: 10000,
+      size: SEARCH_LIMIT,
       _source: {
-        includes: [
-          'id',
-          'subj.factor',
-          'obj.factor',
-          'subj.polarity',
-          'obj.polarity',
-          'wm.statement_polarity',
-          'evidence.evidence_context.text',
-          'evidence.evidence_context.agents_text',
-          'evidence.document_context.doc_id',
-          'evidence.document_context.author',
-          'evidence.document_context.publication_date',
-          'evidence.document_context.publisher_name'
-        ]
+        includes: statementIncludes
       },
       query: {
         bool: {
@@ -132,7 +133,7 @@ const _buildFactorsToStatmentsMap = (statementDocs) => {
     factorToStatementsMap[factor] = statements;
   };
 
-  statementDocs.forEach((stmtDoc) => {
+  statementDocs.forEach(stmtDoc => {
     _updateMap(stmtDoc._source.subj.factor, stmtDoc);
     _updateMap(stmtDoc._source.obj.factor, stmtDoc);
   });
@@ -145,45 +146,38 @@ const _buildFactorsToStatmentsMap = (statementDocs) => {
  *
  * The assumption here is that there will only ever be one unique subj/factor/polarity tuple in the database.
  */
-const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, recommendations) => {
-  const statementDocs = await _getStatementsForPolarityRecommendations(projectId, statementIds, recommendations);
+const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, polarity, recommendations) => {
+  const statementDocs = await _getStatementsForPolarityRecommendations(projectId, statementIds, polarity, recommendations);
   if (_.isEmpty(statementDocs)) return [];
   const factorPairsToStatementsMap = _buildFactorPairsToStatmentsMap(statementDocs);
-  const recommendationsWithStatements = recommendations.map(r => {
+
+  const key = (r) => r.subj_factor + r.obj_factor;
+
+  recommendations = recommendations.filter(r => key(r) in factorPairsToStatementsMap && factorPairsToStatementsMap[key(r)].length > 0);
+  recommendations = recommendations.map(r => {
     return {
-      statements: factorPairsToStatementsMap[r.subj_factor + r.obj_factor],
+      statements: factorPairsToStatementsMap[key(r)],
       score: r.score
     };
   });
-  return recommendationsWithStatements;
+  return recommendations;
 };
 
-const _getStatementsForPolarityRecommendations = async (projectId, statementIds, recommendations) => {
+const _getStatementsForPolarityRecommendations = async (projectId, statementIds, polarity, recommendations) => {
   const client = ES.client;
   const response = await client.search({
     index: projectId,
     body: {
-      size: 10000,
+      size: SEARCH_LIMIT,
       _source: {
-        includes: [
-          'id',
-          'subj.factor',
-          'obj.factor',
-          'subj.polarity',
-          'obj.polarity',
-          'wm.statement_polarity',
-          'evidence.evidence_context.text',
-          'evidence.document_context.doc_id',
-          'evidence.document_context.author',
-          'evidence.document_context.publication_date',
-          'evidence.document_context.publisher_name'
-        ]
+        includes: statementIncludes
       },
       query: {
         bool: {
-          filter: {
-            terms: { id: statementIds }
-          },
+          filter: [
+            { terms: { id: statementIds } },
+            { term: { 'wm.statement_polarity': polarity } }
+          ],
           should: _.map(recommendations, r => {
             return {
               bool: {
@@ -207,7 +201,7 @@ const _getStatementsForPolarityRecommendations = async (projectId, statementIds,
 const _buildFactorPairsToStatmentsMap = (statementDocs) => {
   const factorPairsToStatementsMap = {};
 
-  statementDocs.forEach((stmtDoc) => {
+  statementDocs.forEach(stmtDoc => {
     const mapKey = stmtDoc._source.subj.factor + stmtDoc._source.obj.factor;
     const statements = _.get(factorPairsToStatementsMap, mapKey, []);
     statements.push(stmtDoc._source);
