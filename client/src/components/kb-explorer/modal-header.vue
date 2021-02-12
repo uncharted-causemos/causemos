@@ -64,7 +64,7 @@ export default {
 };
 </script>
 
-<style>
+<style lang="scss" scoped>
   .selected {
     font-weight: bold;
     margin-left: 5px;
