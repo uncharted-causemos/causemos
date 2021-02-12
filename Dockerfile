@@ -24,8 +24,8 @@ RUN ln -s /server /wm-server
 
 WORKDIR /server
 
-HEALTHCHECK --interval=20s --timeout=2s --start-period=60s \
-CMD node ./docker_scripts/health_check.js
+# HEALTHCHECK --interval=20s --timeout=2s --start-period=60s \
+# CMD node ./docker_scripts/health_check.js
 
 WORKDIR /
 RUN yarn install
