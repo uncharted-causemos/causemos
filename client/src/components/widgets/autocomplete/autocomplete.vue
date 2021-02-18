@@ -128,7 +128,7 @@ $input-element-height: 37px;
   }
   .autocomplete-results {
     padding: 0;
-    z-index: map-get($z-index-order, autocomplete-results);
+    z-index: 52;
     background-color: white;
   }
   /deep/ .autocomplete-result {

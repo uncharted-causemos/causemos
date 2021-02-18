@@ -6,89 +6,33 @@
         <span v-if="indicator.output_description !== undefined">{{ indicator.output_description }}</span>
       </div>
       <!-- Unit -->
-      <div class="metadata-row metadata-row--top-margin">
-        <b class="choice-label">Units</b>
-        <span v-if="availableUnits.length === 1">
-          {{ availableUnits[0] === '' ? 'MISSING' : availableUnits[0] }}
-        </span>
-        <select
-          v-else-if="availableUnits.length > 1"
-          v-model="selectedUnit"
-          class="form-control input-sm"
-          @change="setUnit()">
-          <option
-            v-for="unit in availableUnits"
-            :key="unit"
-            :value="unit">{{ unit }}</option>
-        </select>
-      </div>
-      <!-- Country -->
-      <div
-        v-if="hasSelectableAdmins(availableAdmin0s)"
-        class="metadata-row"
-      >
-        <b class="choice-label">Country</b>
-        <span v-if="availableAdmin0s.length === 1">
-          {{ availableAdmin0s[0] === '' ? 'MISSING' : availableAdmin0s[0] }}
-        </span>
-        <select
-          v-else
-          v-model="selectedAdmin0"
-          class="form-control input-sm"
-          @change="setAdminLevel(0)">
-          <option
-            v-for="admin0 in availableAdmin0s"
-            :key="admin0"
-            :value="admin0">{{ admin0 }}</option>
-        </select>
-      </div>
-      <!-- Admin level 1-->
-      <div
-        v-if="hasSelectableAdmins(availableAdmin1s)"
-        class="metadata-row"
-      >
-        <b class="choice-label">Admin L1</b>
-        <span v-if="availableAdmin1s.length === 1">
-          {{ availableAdmin1s[0] === '' ? 'MISSING' : availableAdmin1s[0] }}
-        </span>
-        <select
-          v-else
-          v-model="selectedAdmin1"
-          class="form-control input-sm"
-          @change="setAdminLevel(1)">
-          <option
-            v-for="admin1 in availableAdmin1s"
-            :key="admin1"
-            :value="admin1">{{ admin1 }}</option>
-        </select>
-      </div>
-      <!-- Admin level 2 -->
-      <div
-        v-if="hasSelectableAdmins(availableAdmin2s)"
-        class="metadata-row"
-      >
-        <b class="choice-label">Admin L2</b>
-        <span v-if="availableAdmin2s.length === 1">
-          {{ availableAdmin2s[0] === '' ? 'MISSING' : availableAdmin2s[0] }}
-        </span>
-        <select
-          v-else
-          v-model="selectedAdmin2"
-          class="form-control input-sm"
-          @change="setAdminLevel(2)">
-          <option
-            v-for="admin2 in availableAdmin2s"
-            :key="admin2"
-            :value="admin2">{{ admin2 }}</option>
-        </select>
-      </div>
-      <!-- Dataset/Model -->
-      <div
-        class="metadata-row metadata-row--top-margin"
-      >
-        <b class="choice-label">Dataset/Model</b>
-        <span>{{ indicator.model }}</span>
-      </div>
+      <indicator-metadata-row
+        v-model="selectedUnit"
+        class="metadata-row--top-margin"
+        :row-label="'Units'"
+        :options="availableUnits"
+      />
+      <indicator-metadata-row
+        v-model="selectedCountry"
+        :row-label="'Country'"
+        :options="availableCountries"
+      />
+      <indicator-metadata-row
+        v-model="selectedAdmin1"
+        :row-label="'Admin L1'"
+        :options="availableAdmin1s"
+      />
+      <indicator-metadata-row
+        v-model="selectedAdmin2"
+        :row-label="'Admin L2'"
+        :options="availableAdmin2s"
+      />
+      <indicator-metadata-row
+        v-model="indicator.model"
+        class="metadata-row--top-margin"
+        :row-label="'Dataset/Model'"
+        :options="[indicator.model]"
+      />
       <p v-if="indicator.model_description !== undefined">
         {{ indicator.model_description }}
       </p>
@@ -134,6 +78,9 @@ import MessageDisplay from '@/components/widgets/message-display';
 import dateFormatter from '@/filters/date-formatter';
 import { DEFAULT_COLOR } from '@/utils/colors-util';
 import stringUtil from '@/utils/string-util';
+import aggregationsUtil from '@/utils/aggregations-util';
+import { fetchIndicator } from '@/services/indicator-service';
+import IndicatorMetadataRow from './indicator-metadata-row.vue';
 
 // FIXME: Simulating Delphi's aggregation functions, should resue Delphi
 // when time resolution is fixed (eg: we can use both monthly and yearly)
@@ -152,30 +99,24 @@ const AGGREGATION_FUNCTIONS = {
   }
 };
 
-
 const ALL = 'All';
 
-const merge = (list) => {
-  const dateGroup = _.groupBy(list, (d) => {
-    return d.year + ':' + d.month;
-  });
-  const result = [];
-  const values = Object.values(dateGroup);
-  values.forEach(d => {
-    result.push({
-      timestamp: d[0].timestamp,
-      year: d[0].year,
-      month: d[0].month,
-      value: _.sumBy(d, 'value')
-    });
-  });
-  return _.orderBy(result, d => d.timestamp);
-};
+function prependAllOption(optionsList) {
+  if (optionsList.length < 2) return optionsList;
+  return [ALL, ...optionsList];
+}
 
-const ADMIN_LEVELS = [0, 1, 2].map(levelNumber => ({
-  availableDataName: `availableAdmin${levelNumber}s`,
-  selectedDataName: `selectedAdmin${levelNumber}`
-}));
+function sumByTimestamp(dataPoints) {
+  const groupedByDate = _.groupBy(dataPoints, (d) => d.timestamp);
+  const summedByDate = Object.values(groupedByDate).map(points => {
+    const { timestamp } = points[0];
+    return {
+      timestamp,
+      value: _.sumBy(points, 'value')
+    };
+  });
+  return _.sortBy(summedByDate, date => date.timestamp);
+}
 
 /**
  * Default indicator editor. Handles Delphi
@@ -184,23 +125,17 @@ export default {
   name: 'IndicatorEditor',
   components: {
     LineChart,
-    MessageDisplay
+    MessageDisplay,
+    IndicatorMetadataRow
   },
   props: {
     // Contains metadata for the currently selected indicator
     indicator: {
       type: Object,
-      default: () => ({})
+      required: true
     },
     // Contains the selected region at each admin level, selected unit, and function
-    indicatorParameters: {
-      type: Object,
-      default: () => ({})
-    },
-    // A much larger data structure that contains timeseries for all
-    //  regions at all admin levels that are supported by the currently
-    //  selected indicator
-    allRegionalData: {
+    initialIndicatorParameters: {
       type: Object,
       default: () => ({})
     },
@@ -210,25 +145,31 @@ export default {
     }
   },
   data: () => ({
-    chartData: [],
-    indicatorValue: 0,
-    indicatorTimeseries: [],
-    availableUnits: [],
-    availableAdmin0s: [],
-    availableAdmin1s: [],
-    availableAdmin2s: [],
-
-    selectedFunction: '',
     selectedUnit: null,
-    selectedAdmin0: null,
+    selectedCountry: null,
     selectedAdmin1: null,
-    selectedAdmin2: null
+    selectedAdmin2: null,
+    // A large data structure that contains timeseries for all
+    //  regions at all admin levels that are supported by the currently
+    //  selected indicator
+    allRegionalData: null
   }),
   computed: {
-    hasAvailableUnits: function() {
-      return !_.isEmpty(this.availableUnits);
+    chartData: function() {
+      const series = this.timeseries.map(d => ({
+        timestamp: d.timestamp,
+        value: d.value
+      }));
+      if (series.length === 0) return [];
+      return [
+        {
+          name: '',
+          color: DEFAULT_COLOR,
+          series
+        }
+      ];
     },
-    hasChartData: function () {
+    hasChartData: function() {
       return !_.isEmpty(this.chartData);
     },
     emptyRangeMessage() {
@@ -241,167 +182,195 @@ export default {
     },
     isSourceValidUrl() {
       return stringUtil.isValidUrl(this.indicator.source);
-    }
-  },
-  watch: {
-    indicator(n, o) {
-      if (n === o) return;
-      this.initialize();
-    }
-  },
-  created() {
-    this.usableTimeseries = [];
-  },
-  mounted() {
-    this.initialize();
-  },
-  methods: {
-    initialize() {
-      const params = _.get(this.indicatorParameters, 'indicator_time_series_parameter', {}) || {};
-      this.selectedUnit = params.unit;
-      this.selectedAdmin0 = params.country;
-      this.selectedAdmin1 = params.admin1;
-      this.selectedAdmin2 = params.admin2;
-
-      this.selectedFunction = _.get(this.indicatorParameters, 'initial_value_parameter.func', 'last');
-
-      this.recalculate();
-      this.refresh();
     },
-    setUnit() {
-      ADMIN_LEVELS.forEach(level => {
-        // e.g. this.selectedAdmin1 = null;
-        this[level.selectedDataName] = null;
-      });
-      this.recalculate();
-      this.refresh();
+    availableUnits() {
+      if (this.allRegionalData === null) return [];
+      return Object.keys(this.allRegionalData);
     },
-    // reset all selected admin levels after the specified index, then recalculate
-    setAdminLevel(adminLevelIndex) {
-      // i.e. setAdmin1 === setAdminLevel(1)
-      ADMIN_LEVELS.slice(adminLevelIndex + 1).forEach(level => {
-        // e.g. this.selectedAdmin2 = null;
-        this[level.selectedDataName] = null;
-      });
-      this.recalculate();
-      this.refresh();
-    },
-    recalculateRecursive(regions, levelIndex) {
-      // Called recursively for each admin level
-      if (levelIndex >= ADMIN_LEVELS.length) return;
-      const adminLevel = ADMIN_LEVELS[levelIndex];
-      const availableRegions = regions.map(d => d.key);
-
+    availableCountries() {
+      if (this.allRegionalData === null) return [];
+      const selectedUnit = this.allRegionalData[this.selectedUnit];
+      if (selectedUnit === undefined) return [];
+      const countries = Object.keys(selectedUnit);
       // HACK: Sometimes there is a "" region, if it's there move it to the end of the list
-      const emptyIndex = availableRegions.indexOf('');
-      if (emptyIndex >= 0 && availableRegions.length > 1) {
-        availableRegions.splice(emptyIndex, 1);
-        availableRegions.push('');
+      const containsEmptyString = countries.includes('');
+      if (containsEmptyString) {
+        return [...countries.filter(country => country !== ''), ''];
       }
-
-      // Append "All" option unless this is admin level 0 (country),
-      // or there aren't multiple regions available
-      if (levelIndex > 0 && availableRegions.length > 1) {
-        availableRegions.unshift(ALL);
-      }
-
-      // this[adminLevel.availableDataName] === this.availableAdmin1s (for example)
-      this[adminLevel.availableDataName] = availableRegions;
-
-      if (levelIndex === 0) {
-        // TEMP: Set Country to Ethiopia if it exists
-        const index = _.findIndex(this[adminLevel.availableDataName], i => i.toLowerCase() === 'ethiopia');
-        const defaultIndex = Math.max(index, 0);
-        this[adminLevel.selectedDataName] = _.isNil(this[adminLevel.selectedDataName])
-          ? this[adminLevel.availableDataName][defaultIndex]
-          : this[adminLevel.selectedDataName];
-      } else {
-        const hasAll = _.indexOf(this[adminLevel.availableDataName], ALL) >= 0;
-        // this[adminLevel.selectedDataName] === this.selectedAdmin1 (for example)
-        this[adminLevel.selectedDataName] = this[adminLevel.selectedDataName] ||
-          (hasAll ? ALL : this[adminLevel.availableDataName][0]);
-      }
-
-      if (this[adminLevel.selectedDataName] === ALL) {
-        this.indicatorTimeseries = merge(_.flatten(regions.map(d => d.meta.timeseries)));
-        this.updateSeries();
-        return;
-      }
-      const nextLevel = regions.find(region => region.key === this[adminLevel.selectedDataName]);
-      if (levelIndex === ADMIN_LEVELS.length - 1) {
-        this.indicatorTimeseries = nextLevel.meta.timeseries;
-        this.updateSeries();
-      }
-      this.recalculateRecursive(nextLevel.children, levelIndex + 1);
+      return countries;
     },
-    recalculate() {
-      // Reset list of available regions for each admin level
-      ADMIN_LEVELS.forEach(level => {
-        // e.g. this.availableAdmin1s = [];
-        this[level.availableDataName] = [];
+    availableAdmin1s() {
+      if (this.allRegionalData === null) return [];
+      const selectedCountry = _.get(
+        this.allRegionalData,
+        [this.selectedUnit, this.selectedCountry],
+        []
+      );
+      const admin1s = Object.keys(selectedCountry);
+      // Append an 'ALL' option if there is more than one region
+      return prependAllOption(admin1s);
+    },
+    availableAdmin2s() {
+      if (this.allRegionalData === null || this.selectedAdmin1 === ALL) return [];
+      const selectedAdmin1 = _.get(
+        this.allRegionalData,
+        [this.selectedUnit, this.selectedCountry, this.selectedAdmin1],
+        []
+      );
+      const admin2s = Object.keys(selectedAdmin1);
+      // Append an 'ALL' option if there is more than one region
+      return prependAllOption(admin2s);
+    },
+    timeseries() {
+      if (this.allRegionalData === null) return [];
+      const countries = this.allRegionalData[this.selectedUnit];
+      const selectedCountry = countries[this.selectedCountry];
+      if (selectedCountry === undefined) return [];
+      if (this.selectedAdmin1 === ALL) {
+        const allAdmin2sByAdmin1 = Object.values(selectedCountry).map(admin1 => Object.values(admin1));
+        const allAdmin2s = _.flatten(allAdmin2sByAdmin1);
+        const flattenedAdmin2Series = _.flatten(allAdmin2s);
+        return sumByTimestamp(flattenedAdmin2Series);
+      }
+      const selectedAdmin1 = selectedCountry[this.selectedAdmin1];
+      if (selectedAdmin1 === undefined) return [];
+      if (this.selectedAdmin2 === ALL) {
+        const allAdmin2s = Object.values[selectedAdmin1];
+        const flattenedAdmin2Series = _.flatten(allAdmin2s);
+        return sumByTimestamp(flattenedAdmin2Series);
+      }
+      const selectedAdmin2 = selectedAdmin1[this.selectedAdmin2];
+      if (selectedAdmin2 === undefined) return [];
+      const cleanedData = selectedAdmin2.map(dataPoint => {
+        const { timestamp, value } = dataPoint;
+        return { timestamp, value };
       });
-      // Recalculate options for units
-      this.availableUnits = Object.keys(this.allRegionalData);
-      this.selectedUnit = this.selectedUnit || this.availableUnits[0];
-
-      this.recalculateRecursive(this.allRegionalData[this.selectedUnit], 0);
+      return _.sortBy(cleanedData, dataPoint => dataPoint.timestamp);
     },
-    updateSeries() {
-      const func = AGGREGATION_FUNCTIONS[this.selectedFunction];
-      this.usableTimeseries = this.indicatorTimeseries.filter(d => {
+    usableTimeseries() {
+      return this.timeseries.filter(d => {
         return d.timestamp >= this.historicalRange.start &&
           d.timestamp <= this.historicalRange.end;
       });
-
-      this.indicatorValue = this.usableTimeseries.length > 0
+    },
+    aggregatedTimeseriesValue() {
+      const selectedFunction = _.get(this.initialIndicatorParameters, 'initial_value_parameter.func', 'last');
+      const func = AGGREGATION_FUNCTIONS[selectedFunction];
+      return this.usableTimeseries.length > 0
         ? func(this.usableTimeseries.map(d => d.value))
         : 0.0;
-
-      this.setIndicatorValue();
+    }
+  },
+  watch: {
+    indicator: {
+      handler: function () {
+        this.fetchAllRegionalData();
+      },
+      immediate: true
     },
-    refresh() {
-      const series = this.indicatorTimeseries.map(d => {
-        return {
-          timestamp: d.timestamp,
-          value: d.value
-        };
-      });
-
-      this.chartData = [
-        {
-          name: '',
-          color: DEFAULT_COLOR,
-          series
-        }
+    availableUnits(units) {
+      // If no unit is selected, or the selected unit isn't an option,
+      //  select the first one
+      if (_.isNil(this.selectedUnit) || !units.includes(this.selectedUnit)) {
+        this.selectedUnit = units[0];
+      }
+    },
+    availableCountries(countries) {
+      // If no country is selected, or the selected country isn't an option,
+      // HACK: Added for a demo, set country to Ethiopia if it exists
+      // Otherwise, default to first option
+      if (_.isNil(this.selectedCountry) || !countries.includes(this.selectedCountry)) {
+        this.selectedCountry = countries.includes('Ethiopia')
+          ? 'Ethiopia'
+          : countries[0];
+      }
+    },
+    availableAdmin1s(admin1s) {
+      // If no admin1 is selected, or the selected admin1 isn't an option,
+      //  default to the first option
+      if (_.isNil(this.selectedAdmin1) || !admin1s.includes(this.selectedAdmin1)) {
+        this.selectedAdmin1 = admin1s[0];
+      }
+    },
+    availableAdmin2s(admin2s) {
+      // If no admin2 is selected, or the selected admin2 isn't an option,
+      //  default to the first option
+      if (_.isNil(this.selectedAdmin2) || !admin2s.includes(this.selectedAdmin2)) {
+        this.selectedAdmin2 = admin2s[0];
+      }
+    },
+    // FIXME: with Vue 3 we can consolidate all of these into
+    //  one watcher targetting multiple properties
+    timeseries() {
+      this.emitParameterChange();
+    },
+    selectedUnit() {
+      this.emitParameterChange();
+    },
+    selectedCountry() {
+      this.emitParameterChange();
+    },
+    selectedAdmin1() {
+      this.emitParameterChange();
+    },
+    selectedAdmin2() {
+      this.emitParameterChange();
+    },
+    aggregatedTimeseriesValue() {
+      this.emitParameterChange();
+    }
+  },
+  mounted() {
+    this.storeInitialIndicatorParameters();
+  },
+  methods: {
+    storeInitialIndicatorParameters() {
+      const { unit, country, admin1, admin2 } = _.get(
+        this.initialIndicatorParameters,
+        'indicator_time_series_parameter',
+        {}
+      );
+      this.selectedUnit = unit;
+      this.selectedCountry = country;
+      this.selectedAdmin1 = admin1;
+      this.selectedAdmin2 = admin2;
+    },
+    async fetchAllRegionalData() {
+      this.allRegionalData = null;
+      const { variable, model, output_units: unit } = this.indicator;
+      const result = await fetchIndicator(variable, model, unit);
+      const data = result.data;
+      let groupedResult = {};
+      if (!_.isNil(unit)) {
+        groupedResult[unit] = data;
+      } else {
+        groupedResult = _.groupBy(data, dataPoint => dataPoint.value_unit);
+      }
+      const pipeline = [
+        (dataPoint) => dataPoint.country,
+        (dataPoint) => dataPoint.admin1,
+        (dataPoint) => dataPoint.admin2
       ];
-    },
-
-    setIndicatorValue() {
-      this.$emit('parameter-change', {
-        indicator_id: this.indicator.variable,
-        indicator_name: this.indicator.output_name,
-        indicator_source: this.indicator.model,
-        indicator_score: this.indicator._search_score,
-        indicator_time_series: this.indicatorTimeseries.map(d => {
-          return {
-            timestamp: d.timestamp,
-            value: d.value
-          };
-        }),
-        indicator_time_series_parameter: {
-          unit: this.selectedUnit,
-          country: this.selectedAdmin0,
-          admin1: this.selectedAdmin1,
-          admin2: this.selectedAdmin2
-        },
-        initial_value: this.indicatorValue,
-        initial_value_parameter: {
-          func: this.selectedFunction
-        }
+      Object.keys(groupedResult).forEach(unit => {
+        const groupedByUnit = groupedResult[unit];
+        groupedResult[unit] = aggregationsUtil.groupRepeatedly(groupedByUnit, pipeline);
       });
+      this.allRegionalData = groupedResult;
     },
-    hasSelectableAdmins(availableAdmin) {
-      return availableAdmin.length > 0;
+    emitParameterChange() {
+      const timeseries = this.timeseries.map(dataPoint => {
+        const { timestamp, value } = dataPoint;
+        return { timestamp, value };
+      });
+      this.$emit(
+        'parameter-change',
+        this.selectedUnit,
+        this.selectedCountry,
+        this.selectedAdmin1,
+        this.selectedAdmin2,
+        timeseries,
+        this.aggregatedTimeseriesValue
+      );
     }
   }
 };

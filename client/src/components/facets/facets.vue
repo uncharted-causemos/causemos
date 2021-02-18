@@ -247,6 +247,7 @@ export default {
 </script>
 
 <style lang="scss">
+@import "~styles/variables";
 .facet-container {
   padding: 5px 0;
   box-sizing: border-box;
@@ -267,5 +268,51 @@ export default {
     }
   }
 
+  // Remove 'Oswald' font
+  .group-header,
+  .facet-label,
+  .facet-label-count {
+    font-family: inherit;
+  }
+
+  .facet-label-count {
+    font-size: 16px;
+    top: -4px;
+    position: relative;
+  }
+
+  // Remove hover transition since it felt slow and less snappy
+  .facets-facet-vertical {
+    transition: margin .5s ease, padding .5s ease, height .5s ease, opacity .5s ease;
+  }
+  // Remove 'box-shadow' transition which is used to darken the bar on hover
+  // for the same reason
+  .facets-facet-vertical .facet-bar-base {
+    transition: width .4s, opacity 0.5s;
+  }
+
+  //Facets overrides
+  .facets-facet-vertical .facet-bar-selected {
+    box-shadow: inset 0 0 0 1000px $selected;
+  }
+  .facets-facet-vertical:hover .facet-bar-selected {
+    box-shadow: inset 0 0 0 1000px $selected-dark; }
+
+  .facet-label-count {
+    span{
+      color: $selected-dark !important;
+    }
+  }
+
+  .facets-facet-horizontal .facet-histogram-bar-highlighted {
+    fill: $selected;
+  }
+
+  .facets-facet-horizontal g:hover .facet-histogram-bar-highlighted {
+    fill: $selected-dark; }
+
+  .facets-facet-horizontal .facet-range-filter {
+    box-shadow: inset 0 0 0 1000px rgba(86, 179, 233,.15);
+  }
 }
 </style>

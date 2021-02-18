@@ -8,13 +8,14 @@ const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('ada
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const queryUtil = rootRequire('adapters/es/query-util');
 const conceptUtil = rootRequire('/util/concept-util');
+const graphUtil = rootRequire('/util/graph-util');
 const {
   NODE_AGGREGATION_QUERY,
   EDGE_AGGREGATION_QUERY,
   formatNodeAggregation,
   formatEdgeAggregation
 } = rootRequire('adapters/es/graph-query-util');
-const { set, del } = rootRequire('/cache/node-lru-cache');
+const { set, del, get } = rootRequire('/cache/node-lru-cache');
 
 const MAX_NUMBER_PROJECTS = 100;
 
@@ -560,6 +561,32 @@ const searchFields = async (projectId, searchField, queryString) => {
   return matchedTerms;
 };
 
+
+const _graphKey = (projectId) => 'graph-' + projectId;
+/**
+ * @param {string} projectId
+ * @param {string} sourceConcept
+ * @param {string} targetConcept
+ * @param {number} hops
+ */
+const searchPath = async (projectId, sourceConcept, targetConcept, hops) => {
+  let promise = null;
+  promise = get(_graphKey(projectId));
+
+  if (!promise) {
+    promise = getProjectEdges(projectId, null);
+    set(_graphKey(projectId), promise);
+  }
+  const g = await promise;
+  return graphUtil.normalPath(g, [sourceConcept, targetConcept], hops);
+};
+
+const bustProjectGraphCache = async (projectId) => {
+  Logger.info(`Busting/reset project ${projectId} graph cache`);
+  const promise = getProjectEdges(projectId, null);
+  set(_graphKey(projectId), promise);
+};
+
 module.exports = {
   listProjects,
   findProject,
@@ -580,5 +607,7 @@ module.exports = {
   getProjectStatementsScores,
   getProjectEdges,
 
-  searchFields
+  searchFields,
+  searchPath,
+  bustProjectGraphCache
 };

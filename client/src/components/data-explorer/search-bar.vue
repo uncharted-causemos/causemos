@@ -147,7 +147,7 @@ export default {
 $searchbar-height: 40px;
 
 .lex-assistant-box {
-  z-index: map-get($z-index-order, lex-assistant);
+  z-index: 99;
   max-width: 50vw !important; // lex sets this style in-line and require important flag
   .selectable {
     // this is backup just in case we have a really long identifier
@@ -160,7 +160,7 @@ $searchbar-height: 40px;
 div.lex-box {
   min-height: $searchbar-height;
   height: auto;
-  background: $searchbar-background;
+  background: #FFFFFF;
 }
 
 .form-control {
@@ -174,6 +174,18 @@ div.lex-box {
 
 .search-bar {
   padding-bottom: 5px;
+  padding-left: 0;
+}
+
+//Remove gutter spaces for rows
+.row.no-gutter {
+  margin-left: 0;
+  margin-right: 0;
+}
+
+.row.no-gutter [class*='col-']:not(:first-child),
+.row.no-gutter [class*='col-']:not(:last-child) {
+  padding-right: 0;
   padding-left: 0;
 }
 </style>

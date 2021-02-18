@@ -199,8 +199,7 @@ export default {
 @import "~styles/custom";
 
 .action-bar {
-  border: 1px solid $separator;
-  background-color: transparent;
+  background: $background-light-3;
   .run-model {
     margin-right: 20px;
     display: flex;

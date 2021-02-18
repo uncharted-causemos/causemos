@@ -14,7 +14,7 @@ import _ from 'lodash';
  *
  * Each config object must define a set of functions
  * - keyFn(d, i): key
- * - filerFn(d, i): filter
+ * - filterFn(d, i): filter
  * - sortFn(d): determines the children order
  * - metaFn(d, i): optional, embeds additional information at each level if needed, has access to
  *   d.key, d.count, and d.dataArray
@@ -75,6 +75,41 @@ const groupDataArray = (dataArray, configs) => {
   return config.sortFn ? _.sortBy(children, config.sortFn) : children;
 };
 
+/**
+ * Less general variation on groupDataArray with a lighter-weight output structure
+ *
+ * @param {array} dataArray - an array of objects, e.g. array of timeseries values
+ * @param {array} groupingFunctions - functions determining how to group each level
+ *
+ * Each function should be of the form
+ *  (dataPoint) => dataPoint.country
+ *
+ * Result data struture will look something like:
+ * {
+ *  'Ethiopia': {
+ *    'Oromia': {
+ *      'Oromia L2 Region A': [ *timeseries values* ],
+ *      'Oromia L2 Region B': [ *timeseries values* ],
+ *      ...
+ *    },
+ *    'Amhara': { ... },
+ *    ...
+ *  },
+ *  'South Sudan': { ... },
+ *  ...
+ * }
+ */
+const groupRepeatedly = (dataArray, groupingFunctions) => {
+  if (groupingFunctions.length === 0) return dataArray;
+  const [groupingFunction, ...remainingFunctions] = groupingFunctions;
+  const grouped = _.groupBy(dataArray, groupingFunction);
+  Object.keys(grouped).forEach(key => {
+    const subArray = grouped[key];
+    grouped[key] = groupRepeatedly(subArray, remainingFunctions);
+  });
+  return grouped;
+};
+
 const getMostFrequentPolarityPair = (statements) => {
   const groupedPolaritiesByFactor = _.groupBy(statements, s => {
     return s.subj_polarity + '///' + s.obj_polarity;
@@ -94,5 +129,6 @@ const getMostFrequentPolarityPair = (statements) => {
 
 export default {
   groupDataArray,
+  groupRepeatedly,
   getMostFrequentPolarityPair
 };

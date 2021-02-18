@@ -4,7 +4,7 @@
       <div ref="lexContainer" />
       <div class="clear-button-container">
         <button
-          class="btn btn-default clear-button"
+          class="btn clear-button"
           @click="clearSearch()">
           <i class="fa fa-remove" /> Clear
         </button>
@@ -293,7 +293,7 @@ $searchbar-height: 40px;
 $clear-button-width: 80px;
 
 div.lex-assistant-box {
-  z-index: map-get($z-index-order, lex-assistant);
+  z-index: 99;
   max-width: 50vw !important; // lex sets this style in-line and require important flag
   border-radius: 4px; // Match dropdown-control
   box-shadow: 0 -1px 0 #e5e5e5, 0 0 2px rgba(0,0,0,.12), 0 2px 4px rgba(0,0,0,.24);
@@ -318,7 +318,7 @@ div.lex-assistant-box {
 div.lex-box {
   min-height: $searchbar-height;
   height: auto;
-  background: $searchbar-background;
+  background: #FFFFFF;
   border: 1px solid #f2f2f2;
   padding-right: $clear-button-width;
 

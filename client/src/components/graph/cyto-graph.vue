@@ -78,7 +78,7 @@ export default {
     },
     layoutMessage() {
       if (this.showEdges === false) {
-        return `Relationships are disabled when there are more than ${EDGE_THRESHOLD} relationships in the result.`;
+        return `Relationships are hidden when there are more than ${EDGE_THRESHOLD} relationships in the result.`;
       }
       return '';
     }
@@ -414,7 +414,7 @@ export default {
 .full {
   height: 100%;
   width: 100%;
-  z-index: map-get($z-index-order, graph);
+  z-index: 10;
 
   /deep/ canvas {
     width: 100%;

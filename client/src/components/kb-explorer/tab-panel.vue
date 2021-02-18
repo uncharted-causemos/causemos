@@ -11,7 +11,7 @@
       />
       <sub-action-bar />
     </div>
-    <div class="row no-gutter data-awareness-bar">
+    <div class="data-awareness-bar">
       <counters
         :documents-count="documentsCount"
         :evidences-count="evidencesCount"
@@ -211,11 +211,22 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~styles/wm-theme/wm-theme";
+@import "~styles/variables";
 .tab-panel-container {
   position: relative;
 }
 
 .tab-bar-row  {
   padding: 0 10px;
+}
+
+.tab-content {
+  background: $background-light-2;
+}
+
+.data-awareness-bar {
+  background-color: $color-background-lvl-1;
+  display: flex;
 }
 </style>

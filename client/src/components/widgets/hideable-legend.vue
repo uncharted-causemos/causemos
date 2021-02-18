@@ -44,13 +44,13 @@ $hover-nudge-height: 25px;
 $padding: 10px;
 
 .hideable-legend-container {
-  box-shadow: 0 4px 8px 0 rgba(0,0,0,0.2);
+  box-shadow: $shadow-level-1;
   position: absolute;
   bottom: 0;
   left: 10px;
   padding: $padding;
   padding-bottom: $padding + $hover-nudge-height;
-  z-index: map-get($z-index-order, column-selector);
+  z-index: 20;
   border-top-left-radius: 5px;
   border-top-right-radius: 5px;
   cursor: pointer;

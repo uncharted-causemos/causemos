@@ -1,104 +1,102 @@
 <template>
   <div class="qualitative-view-container">
-    <action-column
-      @belief-scores-updated="refresh"
+    <action-bar
+      :model-summary="modelSummary"
+      :model-components="modelComponents"
+      @add-concept="createNewNode()"
+      @import-cag="showModalImportCAG=true"
     />
-    <div
-      class="graph-container"
-      @dblclick="onBackgroundDblClick"
-    >
-      <action-bar
-        :model-summary="modelSummary"
-        :model-components="modelComponents"
-        @add-concept="createNewNode()"
-        @import-cag="showModalImportCAG=true"
+    <main>
+      <qualitative-side-panel
+        @belief-scores-updated="refresh"
       />
-      <empty-state-instructions v-if="showEmptyStateInstructions" />
-      <CAG-graph
-        v-else
-        ref="cagGraph"
-        class="cagGraph"
-        :data="modelComponents"
-        :show-new-node="showNewNode"
-        @refresh="captureThumbnail"
-        @new-edge="addEdge"
-        @background-click="onBackgroundClick"
-        @background-dbl-click="onBackgroundDblClick"
-        @node-click="onNodeClick"
-        @edge-click="onEdgeClick"
-        @delete="onDelete"
-        @edge-set-user-polarity="setEdgeUserPolarity"
-        @suggestion-selected="onSuggestionSelected"
-      />
-    </div>
-    <drilldown-panel
-      :is-open="isDrilldownOpen"
-      :tabs="drilldownTabs"
-      :active-tab-id="activeDrilldownTab"
-      :overlay-pane-title="overlayPaneTitle"
-      :is-overlay-open="isDrilldownOverlayOpen"
-      @close="closeDrilldown"
-      @tab-click="onTabClick"
-      @overlay-back="onDrilldownOverlayBack"
-    >
-      <div slot="action">
-        <button
-          v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
-          class="btn btn-primary action-button"
-          @click="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
-        ><i class="fa fa-fw fa-plus" />Find More</button>
+      <div
+        class="graph-container"
+        @dblclick="onBackgroundDblClick"
+      >
+        <empty-state-instructions v-if="showEmptyStateInstructions" />
+        <CAG-graph
+          v-else
+          ref="cagGraph"
+          class="cagGraph"
+          :data="modelComponents"
+          :show-new-node="showNewNode"
+          @refresh="captureThumbnail"
+          @new-edge="addEdge"
+          @background-click="onBackgroundClick"
+          @background-dbl-click="onBackgroundDblClick"
+          @node-click="onNodeClick"
+          @edge-click="onEdgeClick"
+          @delete="onDelete"
+          @edge-set-user-polarity="setEdgeUserPolarity"
+          @suggestion-selected="onSuggestionSelected"
+        />
       </div>
-      <div slot="content">
-        <evidence-pane
-          v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-          :selected-relationship="selectedEdge"
-          :statements="selectedStatements"
-          :project="project"
-          :is-fetching-statements="isFetchingStatements"
-          :should-confirm-curations="true">
-          <edge-polarity-switcher
+      <drilldown-panel
+        class="qualitative-drilldown"
+        :is-open="isDrilldownOpen"
+        :tabs="drilldownTabs"
+        :active-tab-id="activeDrilldownTab"
+        :overlay-pane-title="overlayPaneTitle"
+        :is-overlay-open="isDrilldownOverlayOpen"
+        @close="closeDrilldown"
+        @tab-click="onTabClick"
+        @overlay-back="onDrilldownOverlayBack"
+      >
+        <div slot="content">
+          <evidence-pane
+            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
             :selected-relationship="selectedEdge"
-            @edge-set-user-polarity="setEdgeUserPolarity" />
-        </evidence-pane>
-        <relationships-pane
-          v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
-          :selected-node="selectedNode"
-          :model-components="modelComponents"
-          :statements="selectedStatements"
-          :project="project"
-          :is-fetching-statements="isFetchingStatements"
-          @select-edge="onRelationshipClick"
-          @remove-edge="onRemoveRelationship"
-        />
-        <factors-pane
-          v-if="activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null"
-          :selected-item="selectedNode"
-          :number-relationships="countNodeRelationships"
-          :statements="selectedStatements"
-          :project="project"
-          :is-fetching-statements="isFetchingStatements"
-          :should-confirm-curations="true"
-          @show-factor-recommendations="onShowFactorRecommendations"
-        />
-      </div>
-      <div slot="overlay-pane">
-        <node-suggestions-pane
-          v-if="activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS && selectedNode !== null"
-          :selected-node="selectedNode"
-          :statements="selectedStatements"
-          :graph-data="modelComponents"
-          :is-fetching-statements="isFetchingStatements"
-          @add-to-CAG="onAddToCAG"
-        />
-        <factors-recommendations-pane
-          v-if="activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS && selectedNode !== null && factorRecommendationsList.length > 0"
-          :correction="correction"
-          :recommendations="factorRecommendationsList"
-          :is-fetching-statements="isFetchingStatements"
-          @close-overlay="onDrilldownOverlayBack"
-        />
-      </div>
-    </drilldown-panel>
+            :statements="selectedStatements"
+            :project="project"
+            :is-fetching-statements="isFetchingStatements"
+            :should-confirm-curations="true">
+            <edge-polarity-switcher
+              :selected-relationship="selectedEdge"
+              @edge-set-user-polarity="setEdgeUserPolarity" />
+          </evidence-pane>
+          <relationships-pane
+            v-if="activeDrilldownTab === PANE_ID.RELATIONSHIPS && selectedNode !== null"
+            :selected-node="selectedNode"
+            :model-components="modelComponents"
+            :statements="selectedStatements"
+            :project="project"
+            :is-fetching-statements="isFetchingStatements"
+            :show-get-suggestions-button="true"
+            @select-edge="onRelationshipClick"
+            @remove-edge="onRemoveRelationship"
+            @show-relationship-suggestions="openDrilldownOverlay(PANE_ID.NODE_SUGGESTIONS)"
+          />
+          <factors-pane
+            v-if="activeDrilldownTab === PANE_ID.FACTORS && selectedNode !== null"
+            :selected-item="selectedNode"
+            :number-relationships="countNodeRelationships"
+            :statements="selectedStatements"
+            :project="project"
+            :is-fetching-statements="isFetchingStatements"
+            :should-confirm-curations="true"
+            @show-factor-recommendations="onShowFactorRecommendations"
+          />
+        </div>
+        <div slot="overlay-pane">
+          <node-suggestions-pane
+            v-if="activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS && selectedNode !== null"
+            :selected-node="selectedNode"
+            :statements="selectedStatements"
+            :graph-data="modelComponents"
+            :is-fetching-statements="isFetchingStatements"
+            @add-to-CAG="onAddToCAG"
+          />
+          <factors-recommendations-pane
+            v-if="activeDrilldownTab === PANE_ID.FACTOR_RECOMMENDATIONS && selectedNode !== null && factorRecommendationsList.length > 0"
+            :correction="correction"
+            :recommendations="factorRecommendationsList"
+            :is-fetching-statements="isFetchingStatements"
+            @close-overlay="onDrilldownOverlayBack"
+          />
+        </div>
+      </drilldown-panel>
+    </main>
     <modal-import-cag
       v-if="showModalImportCAG"
       @import-cag="runImportChecks"
@@ -135,6 +133,14 @@
       @retain="importCAGs(false)"
       @overwrite="importCAGs(true)"
       @close="showModalConflict=false" />
+
+    <modal-path-find
+      v-if="showPathSuggestions"
+      :source="pathSuggestionSource"
+      :target="pathSuggestionTarget"
+      @add-paths="addSuggestedPath"
+      @close="showPathSuggestions = false"
+    />
   </div>
 </template>
 
@@ -146,7 +152,6 @@ import { mapActions, mapGetters } from 'vuex';
 import EmptyStateInstructions from '@/components/empty-state-instructions';
 import ActionBar from '@/components/qualitative/action-bar';
 import CAGGraph from '@/components/graph/CAG-graph';
-import ActionColumn from '@/components/action-column';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
@@ -158,12 +163,14 @@ import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-rec
 import { conceptShortName } from '@/utils/concept-util';
 import filtersUtil from '@/utils/filters-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
+import ModalPathFind from '@/components/modals/modal-path-find';
 import ModalImportCag from '@/components/qualitative/modal-import-cag';
 import ModalImportConflict from '@/components/qualitative/modal-import-conflict';
 import cagUtil from '@/utils/cag-util';
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
+import QualitativeSidePanel from '../components/qualitative/qualitative-side-panel.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -199,7 +206,6 @@ export default {
     EmptyStateInstructions,
     ActionBar,
     CAGGraph,
-    ActionColumn,
     DrilldownPanel,
     EvidencePane,
     EdgePolaritySwitcher,
@@ -209,7 +215,9 @@ export default {
     FactorsRecommendationsPane,
     ModalConfirmation,
     ModalImportCag,
-    ModalImportConflict
+    ModalImportConflict,
+    ModalPathFind,
+    QualitativeSidePanel
   },
   filters: {
     shortName: function (concept) {
@@ -220,20 +228,25 @@ export default {
     modelSummary: null,
     modelComponents: {},
 
+    // State flags
     isDrilldownOpen: false,
-    drilldownTabs: [],
-    activeDrilldownTab: '',
     isDrilldownOverlayOpen: false,
+    isFetchingStatements: false,
     showModalConfirmation: false,
     showModalConflict: false,
     showModalImportCAG: false,
+    showPathSuggestions: false,
+
+    drilldownTabs: [],
+    activeDrilldownTab: '',
     selectedNode: null,
     selectedEdge: null,
     selectedStatements: [],
-    isFetchingStatements: false,
     showNewNode: false,
     correction: null,
-    factorRecommendationsList: []
+    factorRecommendationsList: [],
+    pathSuggestionSource: '',
+    pathSuggestionTarget: ''
   }),
   computed: {
     ...mapGetters({
@@ -318,8 +331,14 @@ export default {
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
         const edgeData = await projectService.getProjectStatementIdsByEdges(this.project, [edge], null);
         const formattedEdge = Object.assign({}, edge, { reference_ids: edgeData[edge.source + '///' + edge.target] || [] });
-        const data = await this.addCAGComponents([], [formattedEdge]);
-        this.setUpdateToken(data.updateToken);
+        if (formattedEdge.reference_ids.length === 0) {
+          this.showPathSuggestions = true;
+          this.pathSuggestionSource = formattedEdge.source;
+          this.pathSuggestionTarget = formattedEdge.target;
+        } else {
+          const data = await this.addCAGComponents([], [formattedEdge]);
+          this.setUpdateToken(data.updateToken);
+        }
       } else {
         this.toaster(conceptShortName(edge.source) + ' ' + conceptShortName(edge.target) + ' already exists in the CAG', 'error', false);
       }
@@ -646,6 +665,53 @@ export default {
       // Invoke recovery endpoint to resolve invalid/stale CAGS
       await modelService.recalculate(this.currentCAG);
       this.refresh();
+    },
+    async addSuggestedPath(paths) {
+      this.showPathSuggestions = false;
+
+      const key = (e) => `${e.source}///${e.target}`;
+
+      // 1 Find segments not already in the graph
+      const newEdges = [];
+      const newNodes = [];
+      const edgeSet = new Set();
+      const nodeSet = new Set();
+      this.modelComponents.edges.forEach(edge => {
+        edgeSet.add(key(edge));
+      });
+      this.modelComponents.nodes.forEach(node => {
+        nodeSet.add(node.concept);
+      });
+
+      paths.forEach(path => {
+        path.forEach(edge => {
+          if (!edgeSet.has(key(edge)) && !_.some(newEdges, e => e.source === edge.source && e.target === edge.target)) {
+            newEdges.push(edge);
+          }
+          if (!nodeSet.has(edge.source) && newNodes.indexOf(edge.source) === -1) {
+            newNodes.push(edge.source);
+          }
+          if (!nodeSet.has(edge.target) && newNodes.indexOf(edge.target) === -1) {
+            newNodes.push(edge.target);
+          }
+        });
+      });
+
+      // 2 Get edge statement references
+      const edgeData = await projectService.getProjectStatementIdsByEdges(this.project, newEdges, null);
+      newEdges.forEach(edge => {
+        edge.reference_ids = edgeData[key(edge)] || [];
+      });
+
+      // 3 Save
+      const newNodesPayload = newNodes.map(concept => {
+        return {
+          concept: concept,
+          label: conceptShortName(concept)
+        };
+      });
+      const result = await this.addCAGComponents(newNodesPayload, newEdges);
+      this.setUpdateToken(result.updateToken);
     }
   }
 };
@@ -659,6 +725,14 @@ export default {
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
+  flex-direction: column;
+
+  main {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+    box-shadow: $shadow-level-2
+  }
 
   .graph-container {
     width: 100%;
@@ -681,6 +755,16 @@ export default {
     i {
       margin-right: 5px;
     }
+  }
+}
+
+.qualitative-drilldown {
+  margin-top: 10px;
+  // Some panes have tabs in this space, some don't
+  //  remove the padding that's baked into the tabs
+  //  to always have a 10px gap exactly
+  /deep/ .tab-bar {
+    padding-top: 0;
   }
 }
 </style>

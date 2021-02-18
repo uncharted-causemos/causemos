@@ -58,9 +58,9 @@ export default {
   flex-direction: column;
   top: $navbar-outer-height;
   right: 0;
-  width: $bookmark-panel-width;
+  width: 20vw;
   height: calc(100vh - #{$navbar-outer-height});
-  z-index: map-get($z-index-order, bookmark-panel);
+  z-index: 600;
   transition: all 0.5s ease;
   padding: 0 10px;
   background: $color-background-lvl-2;
@@ -79,10 +79,6 @@ export default {
   justify-content: space-between;
   align-items: center;
   height: 56px;
-}
-
-/deep/ .pane-title {
-  padding: 10px 0;
 }
 </style>
 

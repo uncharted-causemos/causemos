@@ -19,10 +19,13 @@ ADD ./server/package.json /server/package.json
 # `If npm was invoked with root privileges, then it will change the uid to the user account or uid specified by the user config, which defaults to nobody. Set the unsafe-perm flag to run scripts with root privileges.`
 # Ref: https://docs.npmjs.com/misc/scripts#user
 
+# Hack: get around docker-compose needing wm-server - Feb 11, 2021
+RUN ln -s /server /wm-server
+
 WORKDIR /server
 
-HEALTHCHECK --interval=20s --timeout=2s --start-period=60s \
-CMD node ./docker_scripts/health_check.js
+# HEALTHCHECK --interval=20s --timeout=2s --start-period=60s \
+# CMD node ./docker_scripts/health_check.js
 
 WORKDIR /
 RUN yarn install

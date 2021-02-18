@@ -6,11 +6,14 @@
         :model-summary="modelSummary"
         :model-components="modelComponents"
         :scenarios="scenarios"
+        :selected-node="selectedNode"
         @background-click="onBackgroundClick"
         @show-indicator="showIndicator"
-        @show-edge="showEdge"
         @show-constraints="showConstraints"
         @show-model-parameters="showModelParameters"
+        @edit-indicator="editIndicator"
+        @save-indicator-edits="saveIndicatorEdits"
+        @refresh="refresh"
       >
         <action-bar
           slot="action-bar"
@@ -21,52 +24,6 @@
         />
       </tab-panel>
     </div>
-    <drilldown-panel
-      :is-open="isDrilldownOpen"
-      :tabs="drilldownTabs"
-      :active-tab-id="activeDrilldownTab"
-      @close="closeDrilldown"
-      @tab-click="onTabClick"
-    >
-      <indicator-summary
-        v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
-        slot="content"
-        :node="selectedNode"
-        :model-summary="modelSummary"
-        @function-selected="onFunctionSelected"
-      >
-        <div slot="footer-buttons">
-          <button
-            class="btn btn-primary action-button"
-            @click="editIndicator">
-            <i class="fa fa-fw fa-edit" />Edit
-          </button>
-          <button
-            v-if="hasIndicator"
-            class="btn btn-danger action-button"
-            @click="removeIndicator">
-            <i class="fa fa-fw fa-trash" />Remove
-          </button>
-        </div>
-      </indicator-summary>
-      <evidence-pane
-        v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-        slot="content"
-        :show-curation-actions="false"
-        :selected-relationship="selectedEdge"
-        :statements="selectedStatements"
-        :project="project"
-        :is-fetching-statements="isFetchingStatements"
-        :should-confirm-curations="true"
-        @edge-weight="setEdgeWeight">
-        <edge-polarity-switcher
-          :selected-relationship="selectedEdge"
-          @edge-set-user-polarity="setEdgeUserPolarity" />
-        <edge-weight-slider
-          :selected-relationship="selectedEdge"
-          @edge-weight="setEdgeWeight" />
-      </evidence-pane>
-    </drilldown-panel>
     <edit-indicator-modal
       v-if="isEditIndicatorModalOpen"
       :node-data="selectedNode"
@@ -96,36 +53,11 @@ import _ from 'lodash';
 import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import TabPanel from '@/components/quantitative/tab-panel';
-import DrilldownPanel from '@/components/drilldown-panel';
 import modelService from '@/services/model-service';
 import ActionBar from '@/components/quantitative/action-bar';
 import EditIndicatorModal from '@/components/indicator/modal-edit-indicator';
-import IndicatorSummary from '@/components/indicator/indicator-summary';
-import EvidencePane from '@/components/drilldown-panel/evidence-pane';
-import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
-import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
 import ModalEditConstraints from '@/components/modals/modal-edit-constraints';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
-
-
-const PANE_ID = {
-  INDICATOR: 'indicator',
-  EVIDENCE: 'evidence'
-};
-
-const NODE_DRILLDOWN_TABS = [
-  {
-    name: 'Indicator',
-    id: PANE_ID.INDICATOR
-  }
-];
-
-const EDGE_DRILLDOWN_TABS = [
-  {
-    name: 'Relationship',
-    id: PANE_ID.EVIDENCE
-  }
-];
 
 const DRAFT_SCENARIO_ID = null; // ID for draft scenario
 
@@ -174,30 +106,19 @@ export default {
   name: 'QuantitativeView',
   components: {
     TabPanel,
-    DrilldownPanel,
     ActionBar,
     EditIndicatorModal,
     ModalEditConstraints,
-    ModalEditParameters,
-    IndicatorSummary,
-    EvidencePane,
-    EdgePolaritySwitcher,
-    EdgeWeightSlider
+    ModalEditParameters
   },
   data: () => ({
     // States
-    drilldownTabs: NODE_DRILLDOWN_TABS,
-    activeDrilldownTab: PANE_ID.INDICATOR,
-    isDrilldownOpen: false,
     isEditIndicatorModalOpen: false,
     isEditConstraintsOpen: false,
-    isDrilldownOverlayOpen: false,
     isModelParametersOpen: false,
-    isFetchingStatements: false,
 
     // Data for drilldown
     selectedNode: null,
-    selectedEdge: null,
     selectedStatements: [],
 
     // Core data relating to model and projections
@@ -223,9 +144,6 @@ export default {
     },
     projectionSteps() {
       return this.modelSummary.parameter.num_steps;
-    },
-    hasIndicator() {
-      return !_.isEmpty(_.get(this.selectedNode, 'parameter.indicator_time_series_parameter', {}));
     }
   },
   watch: {
@@ -236,9 +154,6 @@ export default {
         this.recalculateScenario(scenario);
       }
     }
-  },
-  created() {
-    this.PANE_ID = PANE_ID;
   },
   mounted() {
     this.refresh();
@@ -315,15 +230,6 @@ export default {
           this.recalculateScenario(scenario);
         }
       }
-    },
-    openDrilldown() {
-      this.isDrilldownOpen = true;
-    },
-    closeDrilldown() {
-      this.isDrilldownOpen = false;
-    },
-    onTabClick(tab) {
-      this.activeDrilldownTab = tab;
     },
     revertDraftChanges() {
       this.setSelectedScenarioId(this.previousScenarioId);
@@ -416,61 +322,17 @@ export default {
       this.setSelectedScenarioId(response.id);
       this.disableOverlay();
     },
-    showEdge(edgeData) {
-      this.isFetchingStatements = true;
-      this.drilldownTabs = EDGE_DRILLDOWN_TABS;
-      this.activeDrilldownTab = PANE_ID.EVIDENCE;
-      this.openDrilldown();
-
-      modelService.getEdgeStatements(this.currentCAG, edgeData.source, edgeData.target).then(statements => {
-        this.selectedStatements = statements;
-        this.selectedEdge = edgeData;
-        this.isFetchingStatements = false;
-      });
-    },
     onBackgroundClick() {
-      this.isDrilldownOverlayOpen = false;
-      this.closeDrilldown();
       this.selectedNode = null;
-      this.selectedEdge = null;
     },
     showIndicator(nodeData) {
       Vue.set(this, 'selectedNode', nodeData);
-      this.drilldownTabs = NODE_DRILLDOWN_TABS;
-      this.activeDrilldownTab = PANE_ID.INDICATOR;
-      const indicatorTab = this.drilldownTabs.find(tab => tab.id === PANE_ID.INDICATOR);
-      if (indicatorTab !== undefined) {
-        indicatorTab.name = `Data to quantify ${nodeData.label}`;
-      }
-      this.openDrilldown();
-    },
-    async removeIndicator() {
-      // FIXME: Needs a bit of thought, how to properly clean out values in ES vs empty vs nulls
-      const payload = { id: this.selectedNode.id, concept: this.selectedNode.concept };
-      payload.parameter = {
-        indicator_time_series: [],
-        indicator_time_series_parameter: null,
-        indicator_name: null,
-        indicator_score: null,
-        indicator_id: null,
-        initial_value_parameter: { func: 'last' },
-        initial_value: null,
-        indicator_source: null
-      };
-      await modelService.updateNodeParameter(this.currentCAG, payload);
-      this.selectedNode = null;
-      this.closeDrilldown();
-      this.refresh();
     },
     editIndicator() {
       this.isEditIndicatorModalOpen = true;
     },
     closeEditIndicatorModal() {
       this.isEditIndicatorModalOpen = false;
-    },
-    onFunctionSelected(newProperties) {
-      const newParameter = Object.assign({}, this.selectedNode.parameter, newProperties);
-      this.saveIndicatorEdits(newParameter);
     },
     async saveIndicatorEdits(newParameter) {
       // Check if we actually changed something
@@ -492,7 +354,6 @@ export default {
       // FIXME: Reset all selection state to have a clean start - we should try to preserve states when things are stable - Sept 2020.
       await modelService.updateNodeParameter(this.currentCAG, this.selectedNode);
       this.selectedNode = null;
-      this.closeDrilldown();
       this.refresh();
     },
     showConstraints(nodeData, scenarios) {
@@ -577,16 +438,6 @@ export default {
     },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
-    },
-    async setEdgeUserPolarity(edge, polarity) {
-      await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
-      this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
-      this.refresh();
-    },
-    async setEdgeWeight(edgeData) {
-      await modelService.updateEdgeParameter(this.currentCAG, edgeData);
-      this.selectedEdge.parameter.weight = edgeData.parameter.weight;
-      this.refresh();
     }
   }
 };
@@ -606,11 +457,9 @@ export default {
     height: 100%;
     min-width: 0;
   }
-  .action-button {
-    i {
-      margin-right: 5px;
-    }
-    margin-right: 10px;
-  }
+}
+
+.quantitative-drilldown {
+  z-index: 1;
 }
 </style>

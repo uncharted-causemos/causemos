@@ -39,13 +39,13 @@ const DEFAULT_STYLE = {
   },
   edgeBg: {
     fill: 'none',
-    stroke: 'white'
+    stroke: '#F2F2F2'
   },
   nodeHeader: {
     fill: '#F2F2F2',
     stroke: '#999',
-    strokeWidth: 0.5,
-    borderRadius: 4
+    strokeWidth: 0,
+    borderRadius: 3
   }
 };
 
@@ -97,14 +97,16 @@ export default class ModelRenderer extends SVGRenderer {
         const groupHeader = selection.append('g')
           .classed('node-header-group', true);
 
+        const halfStrokeWidth = DEFAULT_STYLE.node.strokeWidth / 2;
+
         // Node header
         groupHeader
           .append('rect')
           .classed('node-header', true)
-          .attr('x', 0)
-          .attr('y', 0)
+          .attr('x', halfStrokeWidth)
+          .attr('y', halfStrokeWidth)
           .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
-          .attr('width', d => d.width)
+          .attr('width', d => d.width - DEFAULT_STYLE.node.strokeWidth)
           .attr('height', GRAPH_HEIGHT * 0.5)
           .style('fill', DEFAULT_STYLE.nodeHeader.fill)
           .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
@@ -316,7 +318,7 @@ export default class ModelRenderer extends SVGRenderer {
         margin: {
           top: 3, bottom: 3, left: 0, right: 0
         },
-        width: nodeWidth - xAxisLeftPadding,
+        width: nodeWidth - xAxisLeftPadding - (DEFAULT_STYLE.node.strokeWidth / 2),
         height: graphHeight - 0.5
       };
 

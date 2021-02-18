@@ -75,14 +75,20 @@ export default {
   },
   watch: {
     timeSelectionSyncing(newVal, oldVal) {
-      if (_.isEqual(oldVal, newVal)) return;
-      // TODO: if a card is fullscreen, sync with its selected time
+      if (
+        newVal === false || _.isEqual(oldVal, newVal) || this.analysisItems.length === 0
+      ) return;
+      // If a card is fullscreen, sync with its selected time
       //  else, sync with the first card's selected time
-      // if (newVal && this.focusedSelection && this.focusedSelection.timestamp) {
-      //   // sync with the selected time of currently focused data
-      //   this.updateAllTimeSelection(this.focusedSelection.timestamp);
-      // }
-      console.log('TODO: time selection syncing');
+      let timestampToFocus = this.analysisItems[0].selection.timestamp;
+      if (this.fullscreenCardId !== null) {
+        const fullscreenCard = this.analysisItems
+          .find(item => item.id === this.fullscreenCardId);
+        if (fullscreenCard && fullscreenCard.selection.timestamp) {
+          timestampToFocus = fullscreenCard.selection.timestamp;
+        }
+      }
+      this.updateAllTimeSelection(timestampToFocus);
     },
     analysisItems() {
       this.captureThumbnail();
@@ -119,17 +125,16 @@ export default {
 @import "~styles/variables";
 @import "~styles/wm-theme/wm-theme";
 
-$fullscreenTransition: all .5s ease-in-out;
-
 .analysis-container {
   padding: 10px;
   min-width: 0;
+  flex: 1;
   height: 100%;
   display: flex;
   flex-direction: column;
 
   .header {
-    transition: $fullscreenTransition;
+    transition: all $layout-transition;
     padding-bottom: 10px;
     // This needs an explicit height instead of `auto` for the transition animation to work.
     height: 36px;
@@ -155,7 +160,7 @@ $fullscreenTransition: all .5s ease-in-out;
   }
 
   .cards-container {
-    transition: $fullscreenTransition;
+    transition: all $layout-transition;
     align-content: space-between;
     position: relative;
     display: flex;
@@ -165,7 +170,7 @@ $fullscreenTransition: all .5s ease-in-out;
   }
 
   .card-box {
-    transition: $fullscreenTransition;
+    transition: all $layout-transition;
     margin: 0 5px 0 0;
     border-radius: 3px;
     overflow: hidden;

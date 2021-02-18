@@ -55,12 +55,14 @@ export default {
 @import "~styles/variables";
 
 .config-bar-container {
-  background: $background-light-2;
-  height: $navbar-outer-width;
+  background: $background-light-1;
+  box-shadow: $shadow-level-1;
+  height: $navbar-outer-height;
   display: flex;
   align-items: center;
   justify-content: space-between;
   padding: 0 20px;
+  z-index: 1;
 
   p {
     margin: 0;
