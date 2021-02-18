@@ -733,18 +733,6 @@ export default {
       this.renderer.setData(this.data, []);
       await this.renderer.render();
 
-      // this doesn't really work well on the CAG graph
-      // const conceptsDDSAT = [
-      //   'wm/concept/causal_factor/interventions/provide/agriculture_inputs/crop_production_equipment/soil_inputs/fertilizer',
-      //   'wm/concept/causal_factor/environmental/meteorologic/precipitation/rainfall',
-      //   'wm/concept/causal_factor/agriculture/crop_production'
-      // ];
-      // const conceptsGraph = this.data.nodes.map(n => n.concept);
-
-      // if (conceptsDDSAT.every(concept => conceptsGraph.includes(concept))) {
-      //   this.renderer.group('DSSAT', conceptsDDSAT);
-      // }
-
       this.highlight();
       this.renderer.hideNeighbourhood();
 
