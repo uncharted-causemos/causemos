@@ -23,8 +23,7 @@ import { mapGetters } from 'vuex';
 import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
-// import { SVGRenderer, highlight, nodeDrag, panZoom, group } from 'svg-flowgraph';
-import { SVGRenderer, highlight, nodeDrag, panZoom } from 'svg-flowgraph';
+import { SVGRenderer, highlight, nodeDrag, panZoom, astar, shape } from 'svg-flowgraph';
 import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
@@ -120,6 +119,7 @@ class CAGRenderer extends SVGRenderer {
             return generator();
           })
           .style('stroke', 'none')
+          .style('pointer-events', 'none')
           .style('fill', '#111');
 
         selection
@@ -355,7 +355,6 @@ class CAGRenderer extends SVGRenderer {
     const chart = this.chart;
     chart.selectAll('.new-edge').remove();
     this.newEdgeSource = null;
-    this.newEdgePoints = [];
     this.newEdgeTarget = null;
   }
 
@@ -412,6 +411,7 @@ class CAGRenderer extends SVGRenderer {
       .attr('ry', 5)
       .attr('width', nodeData.width)
       .attr('height', nodeData.height)
+      .style('cursor', 'pointer')
       .style('stroke-width', '2px')
       .style('stroke', 'white')
       .style('fill', '#4E4F51');
@@ -419,32 +419,31 @@ class CAGRenderer extends SVGRenderer {
     handles.append('text')
       .attr('x', DEFAULT_STYLE.nodeHandles.width * 0.2)
       .attr('y', nodeData.height * 0.625)
+      .style('pointer-events', 'none')
       .style('font-family', 'FontAwesome')
       .style('font-size', '12px')
       .style('stroke', 'none')
       .style('fill', 'white')
-      .style('cursor', 'pointer')
       .text('\uf061');
 
     handles.append('text')
       .attr('x', nodeData.width - DEFAULT_STYLE.nodeHandles.width * 0.85)
       .attr('y', nodeData.height * 0.625)
+      .style('pointer-events', 'none')
       .style('font-family', 'FontAwesome')
       .style('font-size', '12px')
       .style('stroke', 'none')
       .style('fill', 'white')
-      .style('cursor', 'pointer')
       .text('\uf061');
 
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
+    const nodeCollider = (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
+    const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
+    const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
     const drag = d3.drag()
       .on('start', (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
-        const newEdgeSource = getLayoutNodeById(evt.subject.id);
-        this.newEdgePoints = [
-          { x: newEdgeSource.x + newEdgeSource.width, y: newEdgeSource.y + 0.5 * newEdgeSource.height }
-        ];
       })
       .on('drag', function(evt) {
         chart.selectAll('.new-edge').remove();
@@ -452,34 +451,21 @@ class CAGRenderer extends SVGRenderer {
         chart.append('path')
           .classed('new-edge', true)
           .attr('d', () => {
-            const newEdgePoints = self.newEdgePoints;
-            const lastPoint = newEdgePoints[newEdgePoints.length - 1];
+            const newEdgeSource = getLayoutNodeById(evt.subject.id);
+            const newEdgeStart = getNodeExit(newEdgeSource);
             const mousePoint = { x: pointerCoords[0], y: pointerCoords[1] };
 
-            if (d3.select(evt.sourceEvent.target).classed('node-header')) {
+            if (d3.select(evt.sourceEvent.target).classed('node-header') || d3.select(evt.sourceEvent.target).classed('handle')) {
               self.newEdgeTargetId = d3.select(evt.sourceEvent.target).datum().id;
-              const newEdgeTarget = getLayoutNodeById(self.newEdgeTargetId);
 
-              const targetHandlePoint = { x: newEdgeTarget.x, y: newEdgeTarget.y + 0.5 * newEdgeTarget.height };
-
-              const grid = { x: 10, y: 10 };
-              const collider = (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
-
-              const path = this.renderer.getPath(this.newEdgePoints[0], targetHandlePoint, grid, collider);
-
-              // if (newEdgePoints.length > 2 && Math.hypot(lastPoint.x - targetHandlePoint.x, lastPoint.y - targetHandlePoint.y) < 25) {
-              //   newEdgePoints.splice(newEdgePoints.length - 1, 1);
-              // }
-
-              return pathFn(newEdgePoints
-                // .concat({ x: targetHandlePoint.x - 25, y: targetHandlePoint.y })
-                .concat(targetHandlePoint));
+              if (self.newEdgeSourceId === self.newEdgeTargetId && distance(newEdgeStart, mousePoint) < 20) {
+                self.newEdgeTargetId = null;
+                return pathFn([]);
+              }
+              return pathFn(self.getPathBetweenNodes(newEdgeSource, getLayoutNodeById(self.newEdgeTargetId)));
             } else {
               self.newEdgeTargetId = null;
-              // if (Math.hypot(lastPoint.x - mousePoint.x, lastPoint.y - mousePoint.y) > 25) {
-              //   newEdgePoints.push(mousePoint);
-              // }
-              return pathFn(newEdgePoints.concat(mousePoint));
+              return pathFn(self.simplifyPath(self.getPath(newEdgeStart, mousePoint, nodeCollider)));
             }
           })
           .style('pointer-events', 'none')
@@ -495,115 +481,16 @@ class CAGRenderer extends SVGRenderer {
     handles.call(drag);
   }
 
-  addCircle(p, opacity, colour) {
-    const chart = this.chart;
+  getPathBetweenNodes(source, target) {
+    const nodeCollider = (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
+    const getNodeEntrance = (node, offset = 0) => ({ x: node.x + offset, y: node.y + 0.5 * node.height });
+    const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
 
-    chart.append('circle')
-      .attr('cx', p.x)
-      .attr('cy', p.y)
-      .attr('r', 4)
-      .attr('stroke', 'none')
-      .style('opacity', opacity)
-      .attr('fill', colour || 'red');
-  }
-
-  getPath(start, goal, grid, collider) {
-    // const start = { x: 10, y: 0 };
-    // const goal = { x: 200, y: 100 };
-    // const grid = { x: 10, y: 10 };
-    // const collider = (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
-
-    // this.addCircle(start, 1.0, 'blue');
-    // this.addCircle(goal, 1.0, 'green');
-
-    const openSet = [];
-    const cameFrom = [];
-    const gScore = [];
-    const fScore = [];
-
-    const getNeighbours = (p, grid) => {
-      return [
-        // orthogonals
-        { x: p.x + grid.x, y: p.y },
-        { x: p.x - grid.x, y: p.y },
-        { x: p.x, y: p.y - grid.y },
-        { x: p.x, y: p.y + grid.y },
-
-        // diagonals
-        { x: p.x + grid.x, y: p.y + grid.y },
-        { x: p.x + grid.x, y: p.y - grid.y },
-        { x: p.x - grid.x, y: p.y - grid.y },
-        { x: p.x - grid.x, y: p.y + grid.y }
-      ].filter(p => !collider(p));
-    };
-
-    const pAsKey = (p) => `${p.x},${p.y}`;
-    const keyAsP = (key) => ({ x: parseInt(key.split(',')[0]), y: parseInt(key.split(',')[1]) });
-    const distance = (p1, p2) => Math.hypot(p1.x - p2.x, p1.y - p2.y);
-    const heuristic = (p) => distance(p, goal) * 1.2;
-    const pEqual = (p1, p2) => p1.x === p2.x && p1.y === p2.y;
-
-    openSet.push(pAsKey(start));
-    gScore[pAsKey(start)] = 0;
-    fScore[pAsKey(start)] = heuristic(start);
-
-    // so slow, so embarrassing
-    const getMin = () => {
-      let minScore = Number.MAX_VALUE;
-      let minKey = '';
-      for (let i = 0; i < openSet.length; i++) {
-        const key = openSet[i];
-        if (fScore[key] < minScore) {
-          minScore = fScore[key];
-          minKey = key;
-        }
-      }
-      return minKey;
-    };
-
-    let count = 0;
-    while (openSet.length > 0) {
-      count = count + 1;
-      if (count > 1000) {
-        break;
-      }
-
-      const currentKey = getMin(fScore);
-      const current = keyAsP(currentKey);
-      openSet.splice(openSet.indexOf(currentKey), 1);
-
-      // this.addCircle(current, 0.1, 'red');
-
-      if (pEqual(current, goal)) {
-        const path = [currentKey];
-        while (cameFrom[path[path.length - 1]] !== undefined) {
-          path.push(cameFrom[path[path.length - 1]]);
-        }
-        // console.log(count, openSet.length, Object.keys(gScore).length, Object.keys(fScore).length);
-        return path.map(keyAsP);
-      }
-
-      const neighbours = getNeighbours(current, grid);
-      // getJumpPoints was here but not anymore no one knows where it went, probably home though
-
-      for (let i = 0; i < neighbours.length; i++) {
-        const neighbour = neighbours[i];
-        const neighbourKey = pAsKey(neighbour);
-
-        const tgScore = gScore[pAsKey(current)] + distance(current, neighbour);
-        if (gScore[neighbourKey] === undefined || tgScore < gScore[neighbourKey]) {
-          cameFrom[neighbourKey] = currentKey;
-          gScore[neighbourKey] = tgScore;
-          fScore[neighbourKey] = tgScore + heuristic(neighbour);
-          if (openSet.indexOf(neighbourKey) === -1) {
-            openSet.push(neighbourKey);
-          }
-        }
-      }
-    }
-
-    console.log('path not found');
-    return [];
+    return [].concat(
+      [getNodeExit(source)],
+      this.simplifyPath(this.getPath(getNodeExit(source, 5), getNodeEntrance(target, -5), nodeCollider)),
+      [getNodeEntrance(target)]
+    );
   }
 
   highlightLoop() {
@@ -716,7 +603,40 @@ export default {
   },
   watch: {
     data() {
-      this.refresh();
+      // TODO: smart add node, instead of this
+      const nodesAdded = this.data.nodes.filter(node => !this.renderer.layout.nodes.some(layoutNode => node.id === layoutNode.data.id));
+      if (nodesAdded.length > 0) {
+        this.refresh();
+        return;
+      }
+
+      const edgesAdded = this.data.edges.filter(edge => !this.renderer.layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
+      edgesAdded.forEach(edge => {
+        const source = this.renderer.layout.nodes.filter(layoutNode => layoutNode.concept === edge.source)[0];
+        const target = this.renderer.layout.nodes.filter(layoutNode => layoutNode.concept === edge.target)[0];
+
+        // lets add edges
+        this.renderer.layout.edges.push(Object.assign({}, {
+          id: edge.source + ':' + edge.target,
+          data: edge,
+          points: this.renderer.getPathBetweenNodes(source, target),
+          source: edge.source,
+          target: edge.target
+        }));
+      });
+
+      this.renderer.buildDefs();
+
+      // don't forget to deal with deleted nodes/edges too
+      this.renderer.layout.nodes = this.renderer.layout.nodes.filter(layoutNode => this.data.nodes.some(node => node.id === layoutNode.data.id));
+      this.renderer.layout.edges = this.renderer.layout.edges.filter(layoutEdge => this.data.edges.some(edge => edge.id === layoutEdge.data.id));
+
+      this.selectedNode = null;
+      this.renderer.hideNeighbourhood();
+      this.renderer.enableDrag();
+
+      this.renderer.renderNodesDelta();
+      this.renderer.renderEdgesDelta();
     },
     showNewNode(newValue) {
       if (newValue) {
@@ -735,8 +655,7 @@ export default {
       el: this.$refs.container,
       adapter: new Adapter({ nodeWidth: 130, nodeHeight: 30, layout: layered }),
       renderMode: 'delta',
-      addons: [highlight, nodeDrag, panZoom],
-      // addons: [highlight, nodeDrag, panZoom, group],
+      addons: [highlight, nodeDrag, panZoom, astar, shape],
       useEdgeControl: true,
       newEdgeFn: (source, target) => {
         this.renderer.disableNodeHandles();
@@ -853,7 +772,7 @@ export default {
       // const conceptsGraph = this.data.nodes.map(n => n.concept);
 
       // if (conceptsDDSAT.every(concept => conceptsGraph.includes(concept))) {
-      //   await this.renderer.group('DSSAT', conceptsDDSAT);
+      //   this.renderer.group('DSSAT', conceptsDDSAT);
       // }
 
       this.highlight();
@@ -863,8 +782,6 @@ export default {
       if (d3.select('.node input[type=text]').node()) {
         d3.select('.node input[type=text]').node().focus();
       }
-
-      window.renderer = this.renderer;
 
       this.renderer.enableDrag();
       this.$emit('refresh', null);
