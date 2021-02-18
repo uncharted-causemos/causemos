@@ -6,12 +6,12 @@ export const layered = {
     const spacingOptions = {
       'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
       'elk.layered.layering.coffmanGraham.layerBound': layerBound,
-      'elk.layered.spacing.nodeNodeBetweenLayers': 10,
+      'elk.layered.spacing.nodeNodeBetweenLayers': 20,
       'elk.spacing.nodeNode': 15,
       'elk.spacing.edgeEdge': 10,
       'elk.spacing.edgeNode': 10,
-      'elk.layered.spacing.edgeEdgeBetweenLayers': 5,
-      'elk.layered.spacing.edgeNodeBetweenLayers': 1
+      'elk.layered.spacing.edgeEdgeBetweenLayers': 15,
+      'elk.layered.spacing.edgeNodeBetweenLayers': 10
     };
 
     return {
