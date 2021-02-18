@@ -374,7 +374,7 @@ export default {
 
       // Get factor recommendations first
       if (item !== null) { // FIXME: Just show factor recommendations for a single factor regrounding for now.
-        const result = await getFactorGroundingRecommendations(this.project, this.projectMetadata.kb_id, item.key);
+        const result = await getFactorGroundingRecommendations(this.project, curGrounding, item.key);
         if (result.status === 200) {
           recommendations = result.data.recommendations;
         } else {
