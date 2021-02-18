@@ -413,28 +413,26 @@ class CAGRenderer extends SVGRenderer {
       .attr('width', nodeData.width)
       .attr('height', nodeData.height)
       .style('cursor', 'pointer')
-      .style('stroke-width', '2px')
-      .style('stroke', 'white')
       .style('fill', '#4E4F51');
 
     handles.append('text')
       .attr('x', DEFAULT_STYLE.nodeHandles.width * 0.2)
       .attr('y', nodeData.height * 0.625)
-      .style('pointer-events', 'none')
       .style('font-family', 'FontAwesome')
       .style('font-size', '12px')
       .style('stroke', 'none')
       .style('fill', 'white')
+      .style('pointer-events', 'none')
       .text('\uf061');
 
     handles.append('text')
       .attr('x', nodeData.width - DEFAULT_STYLE.nodeHandles.width * 0.85)
       .attr('y', nodeData.height * 0.625)
-      .style('pointer-events', 'none')
       .style('font-family', 'FontAwesome')
       .style('font-size', '12px')
       .style('stroke', 'none')
       .style('fill', 'white')
+      .style('pointer-events', 'none')
       .text('\uf061');
 
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
