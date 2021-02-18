@@ -2,7 +2,7 @@
 
 import ArrayUtil from '../array-util';
 import { groupEdges } from './data';
-import { COLLAPSED_NODE_CLASS } from './styles.js';
+const COLLAPSED_NODE_CLASS = 'cy-expand-collapse-collapsed-node';
 
 export const LAYOUTS = Object.freeze({
   // COSE: 'cose',
