@@ -492,35 +492,6 @@ class CAGRenderer extends SVGRenderer {
     );
   }
 
-  highlightLoop() {
-    const chart = this.chart;
-
-    const conceptsLoop = [
-      ['wm/concept/causal_factor/economic_and_commerce/economic_activity/livelihood', 'wm/concept/causal_factor/economic_and_commerce/economic_activity/market/transaction/food_purchase'],
-      ['wm/concept/causal_factor/economic_and_commerce/economic_activity/market/transaction/food_purchase', 'wm/concept/causal_factor/health_and_life/nutrition/malnutrition'],
-      ['wm/concept/causal_factor/health_and_life/nutrition/malnutrition', 'wm/concept/causal_factor/health_and_life/disease/human_disease'],
-      ['wm/concept/causal_factor/health_and_life/disease/human_disease', 'wm/concept/causal_factor/economic_and_commerce/economic_activity/livelihood']
-    ];
-
-    const edges = chart.selectAll('.edge').filter(edge => conceptsLoop.some(e => edge.source === e[0] && edge.target === e[1]));
-    const bgPaths = edges.select('.edge-path-bg').nodes();
-    const loopLength = d3.sum(bgPaths.map(n => n.getTotalLength()));
-
-    d3.selectAll(bgPaths)
-      .style('stroke-dashoffset', loopLength)
-      .style('stroke', d => calcEdgeColor(d.data))
-      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5) + 4)
-      .style('stroke-dasharray', 100)
-      .transition()
-      .duration(5000)
-      .ease(d3.easeLinear)
-      .style('stroke', DEFAULT_STYLE.edgeBg.stroke)
-      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5) + 2)
-      .style('stroke-dashoffset', 0)
-      .end()
-      .then(() => d3.selectAll(bgPaths).style('stroke-dasharray', 0));
-  }
-
   hideNeighbourhood() {
     const chart = this.chart;
     chart.selectAll('.node').style('opacity', 1);
