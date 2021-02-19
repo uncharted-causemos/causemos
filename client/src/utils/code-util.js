@@ -84,11 +84,6 @@ export const CODE_TABLE = {
     ..._field('topic', 'Concept', 'fa-sitemap'),
     ..._searchable('Concept', false)
   },
-  INTERVENTION: { // This is a subset of topic
-    ..._field('intervention', 'Intervention(*)', 'fa-sitemap', '*'),
-    ..._searchable('Intervention(*)', false)
-  },
-
 
   // Statement level
   TYPE: {

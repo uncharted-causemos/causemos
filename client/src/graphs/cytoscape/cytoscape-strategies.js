@@ -1,7 +1,6 @@
 import _ from 'lodash';
 import { nodeBlurScale, createLinearScale } from '@/utils/scales-util';
 import { DEFAULT_COLOR } from '@/utils/colors-util.js';
-import conceptUtil from '@/utils/concept-util.js';
 
 /// /////////////////////////////////////////////////////////////////////////////
 // A layout strategy consists of a sequence of "stages", each is capable of
@@ -39,12 +38,10 @@ export function colaLayout(direction) {
           node.data().style.width = size;
           node.data().style.height = size;
 
-          const isIntervention = conceptUtil.isInterventionNode(node.data().id);
-
           if (groundingScore >= 1.0) {
             node.data().style['background-image'] = null;
           } else {
-            let svg = `
+            const svg = `
               <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <filter id="blur">
                   <feGaussianBlur stdDeviation="${blurriness}" />
@@ -56,19 +53,6 @@ export function colaLayout(direction) {
               </svg>
             `;
 
-            if (isIntervention) {
-              const path = `"M0,${-halfSize}L${halfSize},0L0,${halfSize}L${-halfSize},0Z"`;
-              svg = `
-                <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                  <filter id="blur">
-                    <feGaussianBlur stdDeviation="${blurriness}" />
-                  </filter>
-                  <g transform="translate(${halfSize}, ${halfSize})">
-                  <path transform="translate(0, 0)" d=${path} stroke-width="3" fill="${fillColor}" filter="url(#blur)"/>
-                  </g>
-                </svg>
-              `;
-            }
             node.data().style['background-image'] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
             node.data().style['background-color'] = 'white';
 
@@ -127,12 +111,10 @@ export function coseBilkentLayout() {
           node.data().style.width = size;
           node.data().style.height = size;
 
-          const isIntervention = conceptUtil.isInterventionNode(node.data().id);
-
           if (groundingScore >= 1.0) {
             node.data().style['background-image'] = null;
           } else {
-            let svg = `
+            const svg = `
               <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
                 <filter id="blur">
                   <feGaussianBlur stdDeviation="${blurriness}" />
@@ -144,19 +126,6 @@ export function coseBilkentLayout() {
               </svg>
             `;
 
-            if (isIntervention) {
-              const path = `"M0,${-halfSize}L${halfSize},0L0,${halfSize}L${-halfSize},0Z"`;
-              svg = `
-                <svg width="${size}" height="${size}" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink">
-                  <filter id="blur">
-                    <feGaussianBlur stdDeviation="${blurriness}" />
-                  </filter>
-                  <g transform="translate(${halfSize}, ${halfSize})">
-                  <path transform="translate(0, 0)" d=${path} stroke-width="3" fill="${fillColor}" filter="url(#blur)"/>
-                  </g>
-                </svg>
-              `;
-            }
             node.data().style['background-image'] = 'data:image/svg+xml;charset=utf-8,' + encodeURIComponent(svg);
             node.data().style['background-color'] = 'white';
 

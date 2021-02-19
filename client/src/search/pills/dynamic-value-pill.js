@@ -29,7 +29,7 @@ export default class DynamicValuePill extends BasePill {
     super(config);
     this.relation = relation;
 
-    if (['topic', 'intervention', 'subjConcept', 'objConcept'].includes(config.field)) {
+    if (['topic', 'subjConcept', 'objConcept'].includes(config.field)) {
       this.valueState = ConceptValueState;
       this.branchConfig = lexUtil.dynamicSimpleSuggestionBuilder(msg, isMultiValue, suggestionFn, conceptMatch);
     } else {

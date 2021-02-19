@@ -58,11 +58,6 @@ export const WM_SEPT2019 = [
       }
     }
   }, {
-    selector: 'node[id ^= "wm/concept/causal_factor/intervention"]',
-    css: {
-      shape: 'diamond'
-    }
-  }, {
     selector: '.hidden',
     style: {
       opacity: '0.2'

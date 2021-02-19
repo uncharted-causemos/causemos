@@ -33,8 +33,6 @@ import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
-import ConceptUtil from '@/utils/concept-util';
-
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
@@ -109,11 +107,10 @@ class CAGRenderer extends SVGRenderer {
           .style('cursor', 'pointer')
           .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
-        // Circle = regular concepts, diamond = intervention concepts
         selection.append('path')
           .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width))
-          .attr('d', (d) => {
-            const symbol = ConceptUtil.isInterventionNode(d.concept) ? d3.symbolDiamond : d3.symbolCircle;
+          .attr('d', () => {
+            const symbol = d3.symbolCircle;
             const generator = d3.symbol()
               .type(symbol)
               .size(50);

@@ -43,12 +43,6 @@
         :label="'Labels'"
         @change="setShowLabels"
       />
-      <toggle-button
-        v-tooltip="nodeButtonTitles.intervention"
-        :value="layout.showInterventions"
-        :label="'Interventions'"
-        @change="setShowInterventions"
-      />
       <div
         v-if="showEdges"
         class="slider">
@@ -163,10 +157,6 @@ export default {
       type: Boolean,
       default: false
     },
-    showInterventions: {
-      type: Boolean,
-      default: true
-    },
     showNodeDepth: {
       type: Boolean,
       default: true
@@ -182,7 +172,6 @@ export default {
       collapseSelection: 'Collapse Selected Node',
       expand: 'Expand All Nodes',
       expandSelection: 'Expand Selected Node',
-      intervention: 'Show/hide Interventions',
       labels: 'Show/hide Node Labels',
       layout: 'Layout Options',
       edges: 'Show/hide Edges',
@@ -228,9 +217,6 @@ export default {
     },
     setShowLabels(e) {
       this.setLayout(Object.assign({}, this.layout, { showLabels: e }));
-    },
-    setShowInterventions(e) {
-      this.setLayout(Object.assign({}, this.layout, { showInterventions: e }));
     },
     setNodeDepth(e) {
       this.$emit('setNodeDepth', +e.target.value);
