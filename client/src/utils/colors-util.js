@@ -35,7 +35,6 @@ export const SELECTED_COLOR = '#56b3e9';
 export const SELECTED_COLOR_DARK = '#1673aa'; // For svg text
 export const SELECTED_COLOR_RGBA = 'rgb(86, 180, 233, .1)'; // For overlays
 export const BORDER_COLOR = '#ccc';
-export const TIME_SERIES_COLOR = '#cce5df'; // FIXME: remove, not used
 export const DEFAULT_COLOR = '#4C7079';
 export const FADED_COLOR = '#D6DBDF';
 export const MARKER_COLOR = '#d55c00';
@@ -68,7 +67,6 @@ export default {
   BORDER_COLOR,
   DEFAULT_COLOR,
   FADED_COLOR,
-  TIME_SERIES_COLOR,
   MARKER_COLOR,
   UNDEFINED_COLOR
 };
