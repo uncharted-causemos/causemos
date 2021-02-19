@@ -23,6 +23,11 @@ npm config set @uncharted:registry http://npm.uncharted.software
 npm login --registry=https://npm.uncharted.software --scope=@uncharted
 ```
 
+### Environment
+You need an  environment configuration file to run the application. Copy `server/template.env` to `server/.env` and fill in the variables.
+
+If running against Uncharted internal openstack, you can find a working environment file here: https://gitlab.uncharted.software/WM/wm-env/-/tree/master/dev
+
 
 ### Running 
 ```
@@ -65,9 +70,32 @@ docker run -p 3000:3000 --env-file <envfile> -t docker.uncharted.software/worldm
 Note docker interprets envfiles differently, the variables cannot be quoted!! So it is A=123 and not A="123"
 
 
-### Swarm Deployment
+### Swarm Testng (In Progress !!!)
+```
+# Start
+docker swarm init
+docker stack deploy --compose-file docker-compose-dev.yml world_modeler
+
+### Check status/info
+docker ps
+'OR'
+docker stack ps world_modeler
+
+### To end
+docker stack rm world_modeler
+```
+
+
+### Swarm Deployment (TODO)
 For deployment to docker-swarm (external) the procedure is similar but uses different sets of scripts to ensure no side-effects from local changes, it will also tag and version the git repository.
 Please see: https://gitlab.uncharted.software/WM/wm-playbooks/-/tree/master/causemos
 
 For configuration and environment changes, the config and compose files are kept in a separate repository along with other WM artifacts.
 Please see: https://gitlab.uncharted.software/WM/wm-env
+
+### Release (TODO)
+Make sure you can login into Uncharted registry
+```
+docker login -u <confluence-username> --password <confluence-password> https://docker.uncharted.software
+```
+
