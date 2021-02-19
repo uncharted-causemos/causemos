@@ -577,20 +577,22 @@ export default {
   },
   watch: {
     data() {
+      const layout = this.renderer.layout;
+
       // TODO: smart add node, instead of this
-      const nodesAdded = this.data.nodes.filter(node => !this.renderer.layout.nodes.some(layoutNode => node.id === layoutNode.data.id));
+      const nodesAdded = this.data.nodes.filter(node => !layout.nodes.some(layoutNode => node.id === layoutNode.data.id));
       if (nodesAdded.length > 0) {
         this.refresh();
         return;
       }
 
-      const edgesAdded = this.data.edges.filter(edge => !this.renderer.layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
+      const edgesAdded = this.data.edges.filter(edge => !layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
       edgesAdded.forEach(edge => {
-        const source = this.renderer.layout.nodes.filter(layoutNode => layoutNode.concept === edge.source)[0];
-        const target = this.renderer.layout.nodes.filter(layoutNode => layoutNode.concept === edge.target)[0];
+        const source = layout.nodes.filter(layoutNode => layoutNode.concept === edge.source)[0];
+        const target = layout.nodes.filter(layoutNode => layoutNode.concept === edge.target)[0];
 
         // lets add edges
-        this.renderer.layout.edges.push(Object.assign({}, {
+        layout.edges.push(Object.assign({}, {
           id: edge.source + ':' + edge.target,
           data: edge,
           points: this.renderer.getPathBetweenNodes(source, target),
@@ -602,8 +604,8 @@ export default {
       this.renderer.buildDefs();
 
       // don't forget to deal with deleted nodes/edges too
-      this.renderer.layout.nodes = this.renderer.layout.nodes.filter(layoutNode => this.data.nodes.some(node => node.id === layoutNode.data.id));
-      this.renderer.layout.edges = this.renderer.layout.edges.filter(layoutEdge => this.data.edges.some(edge => edge.id === layoutEdge.data.id));
+      layout.nodes = layout.nodes.filter(layoutNode => this.data.nodes.some(node => node.id === layoutNode.data.id));
+      layout.edges = layout.edges.filter(layoutEdge => this.data.edges.some(edge => edge.id === layoutEdge.data.id));
 
       this.selectedNode = null;
       this.renderer.hideNeighbourhood();
