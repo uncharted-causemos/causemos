@@ -14,7 +14,7 @@ const getCAGStatements = async (cagId, sourceNode, targetNode) => {
     bool: {
       filter: [
         {term: {model_id: cagId}}
-        ],
+      ],
       should: [
         {term: {source: sourceNode }},
         {term: {target: targetNode }} 
@@ -44,8 +44,8 @@ const getKBStatements = async (projectId, sourceNode, targetNode) => {
   const query = {
     bool: {
       should: [
-        {term:{'subj.concept': sourceNode }}, 
-        {term:{'obj.concept': targetNode }}
+        {term: {'subj.concept': sourceNode }}, 
+        {term: {'obj.concept': targetNode }}
       ],
       minimum_should_match: 1
     }
@@ -53,7 +53,7 @@ const getKBStatements = async (projectId, sourceNode, targetNode) => {
   const searchPayload = {
     index: projectId,
     size: SEARCH_LIMIT,
-    _source_includes: ['reference_ids'],
+    _source_includes: ['id'],
     body: { query }
   };
 
