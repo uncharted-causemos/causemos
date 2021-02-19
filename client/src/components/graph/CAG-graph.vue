@@ -382,6 +382,12 @@ class CAGRenderer extends SVGRenderer {
     this.chart.selectAll('.node-handles').selectAll('*').remove();
   }
 
+  getNodeCollider() {
+    const self = this;
+    // TODO: this won't work with hierarchies
+    return (p) => self.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
+  }
+
   enableNodeHandles(node) {
     const chart = this.chart;
     const svg = d3.select(this.svgEl);
@@ -436,7 +442,6 @@ class CAGRenderer extends SVGRenderer {
       .text('\uf061');
 
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
-    const nodeCollider = (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
     const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
@@ -464,7 +469,7 @@ class CAGRenderer extends SVGRenderer {
               return pathFn(self.getPathBetweenNodes(newEdgeSource, getLayoutNodeById(self.newEdgeTargetId)));
             } else {
               self.newEdgeTargetId = null;
-              return pathFn(self.simplifyPath(self.getPath(newEdgeStart, mousePoint, nodeCollider)));
+              return pathFn(self.simplifyPath(self.getPath(newEdgeStart, mousePoint, self.getNodeCollider())));
             }
           })
           .style('pointer-events', 'none')
@@ -481,13 +486,12 @@ class CAGRenderer extends SVGRenderer {
   }
 
   getPathBetweenNodes(source, target) {
-    const nodeCollider = (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
     const getNodeEntrance = (node, offset = 0) => ({ x: node.x + offset, y: node.y + 0.5 * node.height });
     const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
 
     return [].concat(
       [getNodeExit(source)],
-      this.simplifyPath(this.getPath(getNodeExit(source, 5), getNodeEntrance(target, -5), nodeCollider)),
+      this.simplifyPath(this.getPath(getNodeExit(source, 5), getNodeEntrance(target, -5), this.getNodeCollider())),
       [getNodeEntrance(target)]
     );
   }
