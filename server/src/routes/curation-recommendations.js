@@ -1,6 +1,5 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
-const filtersUtil = rootRequire('/util/filters-util');
 const router = express.Router();
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
 const curationRecommendationsService = rootRequire('/services/external/curation-recommendations-service');
