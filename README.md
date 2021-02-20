@@ -1,3 +1,6 @@
+![logo](client/src/assets/causemos-logo-colour.svg)
+
+
 ## Causemos
 World Modelers application for exploring and building models!!
 
@@ -29,7 +32,7 @@ If running against Uncharted internal openstack, you can find a working environm
 
 
 ### Additional dependencies
-Causemos internally depends on two additional services: a data/tile service for doing data-intensive work, and a recommendation service to aid curations. These services are specified in the environment file, if you want to run these locally please follow the instructions at their respective repos. 
+Causemos internally depends on two additional services: a data/tile service for doing data-intensive work, and a recommendation service to aid curations. These services are specified in the environment file, if you want to run these locally please follow the instructions at their respective repos.
 - wm-go: https://gitlab.uncharted.software/WM/wm-go
 - wm-curation-recommendation: https://gitlab.uncharted.software/WM/wm-curation-recommendation
 
