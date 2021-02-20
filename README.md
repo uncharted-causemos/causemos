@@ -28,6 +28,12 @@ You need an  environment configuration file to run the application. Copy `server
 If running against Uncharted internal openstack, you can find a working environment file here: https://gitlab.uncharted.software/WM/wm-env/-/tree/master/dev
 
 
+### Additional dependencies
+Causemos internally depends on two additional services: a data/tile service for doing data-intensive work, and a recommendation service to aid curations. These services are specified in the environment file, if you want to run these locally please follow the instructions at their respective repos. 
+- wm-go: https://gitlab.uncharted.software/WM/wm-go
+- wm-curation-recommendation: https://gitlab.uncharted.software/WM/wm-curation-recommendation
+
+
 ### Running locally
 ```
 # Start client - Defaults to localhost:8080
@@ -75,7 +81,7 @@ Note docker interprets envfiles differently, the variables cannot be quoted!! So
 
 
 ### Release and Deployment
-#### Release new docker image
+#### Release new docker image (In Progress !!!)
 Docker images can be release to Uncharted registry at http://10.65.4.8:8081/#browse/welcome
 
 To push to the registry, make sure you have logged in
@@ -108,4 +114,3 @@ docker stack ps world_modeler
 ### To end
 docker stack rm world_modeler
 ```
-
