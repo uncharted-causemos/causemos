@@ -207,7 +207,7 @@ class CAGRenderer extends SVGRenderer {
     // Node defs
     svg.select('defs')
       .selectAll('.node-blur')
-      .data(nodes)
+      .data(nodes || [])
       .enter()
       .append('filter')
       .classed('node-blur', true)
@@ -575,6 +575,11 @@ export default {
   watch: {
     data() {
       const layout = this.renderer.layout;
+
+      if (layout.nodes === undefined || layout.edges === undefined) {
+        this.refresh();
+        return;
+      }
 
       // TODO: smart add node, instead of this
       const nodesAdded = this.data.nodes.filter(node => !layout.nodes.some(layoutNode => node.id === layoutNode.data.id));
