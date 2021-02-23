@@ -579,6 +579,11 @@ export default {
     data() {
       const layout = this.renderer.layout;
 
+      if (layout.nodes === undefined || layout.edges === undefined) {
+        this.refresh();
+        return;
+      }
+
       // TODO: smart add node, instead of this
       const nodesAdded = this.data.nodes.filter(node => !layout.nodes.some(layoutNode => node.id === layoutNode.data.id));
       if (nodesAdded.length > 0) {
