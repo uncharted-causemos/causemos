@@ -114,8 +114,7 @@ export default function(
   const rectGroups = svgElement
     .selectAll('g.rects')
     .data(cleanData)
-    .enter()
-    .append('g')
+    .join('g')
     .attr('class', 'rects')
     .attr('transform', d => svgUtil.translate(xScale(d.column), yScale(d.row)));
 

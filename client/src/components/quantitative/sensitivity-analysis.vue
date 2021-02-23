@@ -16,6 +16,7 @@
         </p>
         <label>Analysis Type: </label>
         <select
+          :value="analysisType"
           @change="setAnalysisType">
           <option
             value="GLOBAL"
@@ -36,7 +37,14 @@
       />
       <svg
         ref="matrix-container"
+        :class="{'faded': matrixData === null}"
       />
+      <span
+        v-if="matrixData === null"
+        class="loading-message"
+      >
+        <i class="fa fa-spin fa-spinner" /> Analyzing sensitivity
+      </span>
     </div>
   </div>
 </template>
@@ -45,13 +53,9 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import renderSensitivityMatrix from '@/charts/matrix-renderer';
-import modelService from '@/services/model-service';
-import { mapGetters, mapActions } from 'vuex';
-import { conceptShortName } from '@/utils/concept-util';
 import csrUtil from '@/utils/csr-util';
 import SensitivityAnalysisLegend from './sensitivity-analysis-legend.vue';
 
-const MAX_TRIES = 40;
 const RESIZE_DELAY = 50;
 
 const AXIS_LABEL_MARGIN_PX = 90;
@@ -64,9 +68,13 @@ export default {
       type: Object,
       required: true
     },
-    scenarios: {
-      type: Array,
-      required: true
+    matrixData: {
+      type: Object,
+      default: null
+    },
+    analysisType: {
+      type: String,
+      default: 'GLOBAL'
     }
   },
   data: () => ({
@@ -77,15 +85,11 @@ export default {
     resize: _.debounce(function (width, height) {
       this.render(width, height);
     }, RESIZE_DELAY),
-    matrixData: { rows: [], columns: [], value: [] },
-    selectedRowOrColumn: { isRow: false, concept: null },
-    analysisType: 'GLOBAL'
+    selectedRowOrColumn: { isRow: false, concept: null }
   }),
   computed: {
-    ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId'
-    }),
     rowOrder() {
+      if (this.matrixData === null) return [];
       if (this.selectedRowOrColumn.concept === null || this.selectedRowOrColumn.isRow === true) {
         return csrUtil.getSortedOrder(this.matrixData.rows, this.matrixData.value);
       }
@@ -93,6 +97,7 @@ export default {
       return csrUtil.getSortedOrderBySelection(this.matrixData, isRow, concept);
     },
     columnOrder() {
+      if (this.matrixData === null) return [];
       if (this.selectedRowOrColumn.concept === null || this.selectedRowOrColumn.isRow === false) {
         return csrUtil.getSortedOrder(this.matrixData.columns, this.matrixData.value);
       }
@@ -101,12 +106,6 @@ export default {
     }
   },
   watch: {
-    scenarios() {
-      this.refresh();
-    },
-    selectedScenarioId() {
-      this.refresh();
-    },
     matrixData() {
       this.render();
     },
@@ -118,33 +117,14 @@ export default {
     }
   },
   mounted() {
-    this.refresh();
+    this.render();
   },
   methods: {
-    ...mapActions({
-      enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay'
-    }),
-    async refresh() {
-      if (this.scenarios.length === 0) return;
-      this.enableOverlay('Running sensitivity analysis');
-      const constraints = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId).parameter.constraints;
-      const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.analysisType, 'DYNAMIC', constraints);
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, MAX_TRIES);
-      this.disableOverlay();
-      const csrResults = csrUtil.resultsToCsrFormat(results.results[this.analysisType.toLowerCase()]);
-      this.matrixData = this.applyShortNameFilter(csrResults);
-    },
-    applyShortNameFilter(csrResults) {
-      csrResults.rows = csrResults.rows.map(conceptShortName);
-      csrResults.columns = csrResults.columns.map(conceptShortName);
-      return csrResults;
-    },
     setAnalysisType(e) {
-      this.analysisType = e.target.value;
-      this.refresh();
+      this.$emit('set-analysis-type', e.target.value);
     },
     render(width, height) {
+      if (this.matrixData === null) return;
       const svgWidth = width || this.$refs['matrix-container'].clientWidth;
       const svgHeight = height || this.$refs['matrix-container'].clientHeight;
       const options = {
@@ -155,11 +135,8 @@ export default {
         columnOrder: this.columnOrder,
         showRankLabels: true
       };
-
       const refSelection = d3.select(this.$refs['matrix-container']);
-
       refSelection.selectAll('*').remove();
-
       renderSensitivityMatrix(
         refSelection,
         options,
@@ -256,7 +233,22 @@ export default {
     svg {
       width: 100%;
       height: 100%;
+      transition: opacity 0.3s ease-out;
+
+      &.faded {
+        opacity: 0.5;
+        transition: opacity 1s ease;
+      }
     }
+  }
+
+  .loading-message {
+    font-size: 28px;
+    color: black;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
   }
 
   /deep/ .grid-lines path {

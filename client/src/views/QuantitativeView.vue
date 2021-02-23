@@ -5,6 +5,8 @@
         v-if="ready"
         :model-summary="modelSummary"
         :model-components="modelComponents"
+        :sensitivity-matrix-data="sensitivityMatrixData"
+        :sensitivity-analysis-type="sensitivityAnalysisType"
         :scenarios="scenarios"
         :selected-node="selectedNode"
         @background-click="onBackgroundClick"
@@ -13,6 +15,7 @@
         @show-model-parameters="showModelParameters"
         @edit-indicator="editIndicator"
         @save-indicator-edits="saveIndicatorEdits"
+        @set-sensitivity-analysis-type="setSensitivityAnalysisType"
         @refresh="refresh"
       >
         <action-bar
@@ -54,6 +57,8 @@ import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import TabPanel from '@/components/quantitative/tab-panel';
 import modelService from '@/services/model-service';
+import { conceptShortName } from '@/utils/concept-util';
+import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar';
 import EditIndicatorModal from '@/components/indicator/modal-edit-indicator';
 import ModalEditConstraints from '@/components/modals/modal-edit-constraints';
@@ -126,6 +131,10 @@ export default {
     modelComponents: null,
     scenarios: null,
 
+    sensitivityMatrixData: null,
+    sensitivityAnalysisType: 'GLOBAL',
+    sensitivityDataTimestamp: null,
+
     // Tracking draft scenario
     previousScenarioId: null,
     draftScenario: null
@@ -148,11 +157,10 @@ export default {
   },
   watch: {
     selectedScenarioId() {
-      if (_.isNil(this.scenarios)) return;
-      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-      if (scenario && scenario.is_valid === false) {
-        this.recalculateScenario(scenario);
-      }
+      this.fetchSensitivityAnalysisResults();
+    },
+    sensitivityAnalysisType() {
+      this.fetchSensitivityAnalysisResults();
     }
   },
   mounted() {
@@ -230,6 +238,7 @@ export default {
           this.recalculateScenario(scenario);
         }
       }
+      this.fetchSensitivityAnalysisResults();
     },
     revertDraftChanges() {
       this.setSelectedScenarioId(this.previousScenarioId);
@@ -438,6 +447,26 @@ export default {
     },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
+    },
+    async fetchSensitivityAnalysisResults() {
+      if (_.isNil(this.scenarios) || this.scenarios.length === 0) return;
+      this.sensitivityMatrixData = null;
+      const now = Date.now();
+      this.sensitivityDataTimestamp = now;
+      const constraints = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId).parameter.constraints;
+      const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
+      // If another sensitivity analysis started running before this one returns an ID,
+      //  then don't bother fetching/processing the results to avoid a race condition
+      if (this.sensitivityDataTimestamp !== now) return;
+      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId);
+      if (this.sensitivityDataTimestamp !== now) return;
+      const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
+      csrResults.rows = csrResults.rows.map(conceptShortName);
+      csrResults.columns = csrResults.columns.map(conceptShortName);
+      this.sensitivityMatrixData = csrResults;
+    },
+    setSensitivityAnalysisType(newValue) {
+      this.sensitivityAnalysisType = newValue;
     }
   }
 };
