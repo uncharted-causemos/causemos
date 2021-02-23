@@ -20,7 +20,7 @@ npm config set @uncharted:registry http://npm.uncharted.software
 npm login --registry=https://npm.uncharted.software --scope=@uncharted
 ```
 
-If you want to use vanilla Boostrap, make the following changes - note some colors and themes may need to be adjusted in this route.
+If you want to use vanilla Bootstrap, make the following changes - note some colors and themes may need to be adjusted if you go with this route.
 ```
 # Pull in dependencies
 yarn workspace client add bootstrap-sass@3.4.1
