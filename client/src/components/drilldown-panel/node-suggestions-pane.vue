@@ -243,7 +243,9 @@ export default {
     toggle(item) {
       // Recursive helpers
       const recursiveDown = (item, newState) => {
-        item.meta.checked = newState;
+        if (!item.meta.disabled) {
+          item.meta.checked = newState;
+        }
         if (!item.children) return;
         item.children.forEach(child => recursiveDown(child, newState));
       };
