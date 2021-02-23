@@ -153,14 +153,14 @@ export const getFactorConceptSuggestions = async (projectId, statementIds, facto
 /**
  * Get curation recommendation based on current curation-action
  */
-export const getFactorGroundingRecommendations = async (projectId, kbId, factorText) => {
+export const getFactorGroundingRecommendations = async (projectId, currentGrounding, factorText) => {
   const currentCAG = store.getters['app/currentCAG'];
   const payload = {
     project_id: projectId,
-    kb_id: kbId,
     factor: factorText,
     num_recommendations: 10,
-    cag_id: currentCAG
+    cag_id: currentCAG,
+    current_grounding: currentGrounding
   };
   const result = await (API.get('curation_recommendations/regrounding', { params: payload }));
   return result;
