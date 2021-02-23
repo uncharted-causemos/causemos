@@ -210,7 +210,7 @@ class CAGRenderer extends SVGRenderer {
     // Node defs
     svg.select('defs')
       .selectAll('.node-blur')
-      .data(nodes)
+      .data(nodes || [])
       .enter()
       .append('filter')
       .classed('node-blur', true)
