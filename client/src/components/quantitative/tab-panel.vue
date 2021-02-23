@@ -90,7 +90,9 @@
           <sensitivity-analysis
             v-if="activeTab === 'matrix'"
             :model-summary="modelSummary"
-            :scenarios="scenarios"
+            :matrix-data="sensitivityMatrixData"
+            :analysis-type="sensitivityAnalysisType"
+            @set-analysis-type="setSensitivityAnalysisType"
           />
         </main>
         <drilldown-panel
@@ -209,6 +211,14 @@ export default {
     },
     modelComponents: {
       type: Object,
+      required: true
+    },
+    sensitivityMatrixData: {
+      type: Object,
+      default: null
+    },
+    sensitivityAnalysisType: {
+      type: String,
       required: true
     },
     scenarios: {
@@ -465,6 +475,9 @@ export default {
     },
     editIndicator() {
       this.$emit('edit-indicator');
+    },
+    setSensitivityAnalysisType(analysisType) {
+      this.$emit('set-sensitivity-analysis-type', analysisType);
     }
   }
 };
