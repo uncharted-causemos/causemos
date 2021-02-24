@@ -1,6 +1,8 @@
 <template>
   <div class="data-explorer-container flex-col">
-    <modal-header @close="onCancel" />
+    <modal-header
+      :title="fullTitle"
+      @close="onCancel" />
     <search class="flex-grow-1 h-0" />
   </div>
 </template>
@@ -15,6 +17,12 @@ export default {
   components: {
     Search,
     ModalHeader
+  },
+  data: () => ({
+    fullTitle: 'back to Data Space'
+  }),
+  created() {
+    this.fullTitle = 'back to Data Space [' + this.$route.query.analysisName + ']';
   },
   methods: {
     onCancel() {
