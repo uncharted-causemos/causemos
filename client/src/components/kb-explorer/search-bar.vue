@@ -35,14 +35,12 @@ import filtersUtil from '@/utils/filters-util';
 import polarityUtil from '@/utils/polarity-util';
 import contradictionUtil from '@/utils/contradiction-util';
 import hedgingUtil from '@/utils/hedging-util';
-import conceptUtil from '@/utils/concept-util';
 
 import suggestionService from '@/services/suggestion-service';
 import ontologyFormatter from '@/filters/ontology-formatter';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
 const CONCEPTS_MSG = 'Select one or more ontological concepts';
-const INTERVENTION_MSG = 'Select one or more interventions';
 const AUTHOR_MSG = 'Select an author';
 const ORGANIZATION_MSG = 'Select an organization';
 
@@ -98,14 +96,6 @@ export default {
       true,
       BinaryRelationState
     );
-    const interventionPill = new DynamicValuePill(
-      CODE_TABLE.INTERVENTION,
-      suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts,
-        concepts => concepts.filter(d => conceptUtil.isInterventionNode(d))),
-      INTERVENTION_MSG,
-      true,
-      BinaryRelationState
-    );
     const edgePill = new EdgePill(CODE_TABLE.EDGE,
       suggestionService.getConceptSuggestionFunction(this.project, this.ontologyConcepts));
     const numEvidencePill = new NumEvidencePill(CODE_TABLE.NUM_EVIDENCES);
@@ -114,7 +104,6 @@ export default {
       topicPill,
       causePill,
       effectPill,
-      interventionPill,
       edgePill
     ].forEach(pill => {
       pill.setFormatter(ontologyFormatter);
@@ -163,7 +152,6 @@ export default {
       topicPill,
       causePill,
       effectPill,
-      interventionPill,
 
       new TextPill(CODE_TABLE.KEYWORD),
       new TextPill(CODE_TABLE.DOC_FILE_TYPE),

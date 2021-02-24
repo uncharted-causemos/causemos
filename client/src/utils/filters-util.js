@@ -1,6 +1,5 @@
 import _ from 'lodash';
-import { CODE_TABLE } from '@/utils/code-util';
-import ConceptUtil from '@/utils/concept-util';
+
 /**
  * Constructs search queries to pass through the API.
  *
@@ -86,14 +85,6 @@ function findPositiveFacetClause(filters, field) {
 function findNegativeFacetClause(filters, field) {
   return _.find(filters.clauses, clause => {
     return clause.field === field && clause.isNot === true;
-  });
-}
-
-function isInterventionQuery(filters) {
-  return filters.clauses.some(value => {
-    return value.field === CODE_TABLE.INTERVENTION_PATH.field ||
-      value.field === CODE_TABLE.INTERVENTION.field ||
-      (value.field === CODE_TABLE.TOPIC.field && value.values.some(v => ConceptUtil.isInterventionNode(v)));
   });
 }
 
@@ -196,6 +187,5 @@ export default {
   removeAllClausesByFacet,
   setClause,
   isEqual,
-  isInterventionQuery,
   isClauseEqual
 };

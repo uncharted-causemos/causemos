@@ -8,7 +8,6 @@ import cxtmenu from 'cytoscape-cxtmenu';
 import cola from 'cytoscape-cola';
 import expandCollapse from 'cytoscape-expand-collapse';
 
-import ConceptUtil from '@/utils/concept-util';
 import GraphRenderer from '@/graphs/graph-renderer';
 import CytoscapeData from '@/graphs/cytoscape/cytoscape-data';
 import { WM_SEPT2019 } from '@/graphs/cytoscape/cytoscape-styles';
@@ -258,15 +257,6 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
     this._calculate();
   }
 
-  _cacheInterventionGraph() {
-    const cy = this.cy;
-    const nodes = cy.nodes().filter(d => ConceptUtil.isInterventionNode(d.data().id));
-    const edges = cy.edges().filter(d => ConceptUtil.isInterventionNode(d.data().source) || ConceptUtil.isInterventionNode(d.data().target));
-
-    return { nodes, edges };
-  }
-
-
   /**
    * A strategy composed simulates an ETL progression and has the following steps
    * - @param extract {function | array}
@@ -282,8 +272,6 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
       cy.add(nodes);
       cy.add(edges);
     });
-
-    this.interventions = this._cacheInterventionGraph();
 
     this.queue = [];
     this.cache = {};
@@ -328,23 +316,6 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
       }
       cy.style().selector('node').update();
     });
-  }
-
-  /**
-   * Toggle intervention nodes visibility
-   */
-  setInterventionVisibility(v) {
-    const cy = this.cy;
-    if (!this.interventions) return;
-    const nodes = this.interventions.nodes;
-    const edges = this.interventions.edges;
-    if (v === true) {
-      cy.add(nodes);
-      cy.add(edges);
-    } else {
-      cy.remove(nodes);
-      cy.remove(edges);
-    }
   }
 
   /**
