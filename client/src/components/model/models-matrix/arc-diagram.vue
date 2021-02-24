@@ -13,8 +13,6 @@ import { mapActions } from 'vuex';
 import svgUtil from '@/utils/svg-util';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { SELECTED_COLOR } from '@/utils/colors-util';
-import conceptUtil from '@/utils/concept-util';
-
 
 const ABSENT_NODES_STYLES = {
   fontSize: '8px',
@@ -152,11 +150,10 @@ export default {
         .append('g')
         .attr('class', 'nodes');
 
-      // Circle = regular concepts, diamond = intervention concepts
       node.append('path')
         .attr('transform', d => svgUtil.translate(xCenter, yscale(d.concept)))
-        .attr('d', (d) => {
-          const symbol = conceptUtil.isInterventionNode(d.concept) ? d3.symbolDiamond : d3.symbolCircle;
+        .attr('d', () => {
+          const symbol = d3.symbolCircle;
           const generator = d3.symbol()
             .type(symbol)
             .size(150);

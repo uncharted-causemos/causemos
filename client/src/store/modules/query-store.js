@@ -47,7 +47,6 @@ const defaultLayout = Object.freeze({
   direction: 'x',
   showLabels: true,
   showEdges: true,
-  showInterventions: true,
   edgeOpacity: 0.4,
   minimumNodeDepth: 1
 });

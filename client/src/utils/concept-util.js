@@ -17,12 +17,7 @@ export function conceptSuffix(concept) {
   return concept.split('/').splice(3).join('/').replace(/_/g, ' ');
 }
 
-const isInterventionNode = (id) => {
-  return id.startsWith('wm/concept/causal_factor/intervention');
-};
-
 export default {
-  isInterventionNode,
   UNKNOWN,
   conceptShortName,
   conceptPrefix,

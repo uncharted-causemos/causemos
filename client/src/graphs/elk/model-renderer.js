@@ -9,7 +9,6 @@ import {
 } from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
-import ConceptUtil from '@/utils/concept-util';
 import { SELECTED_COLOR, EDGE_COLOR_PALETTE } from '@/utils/colors-util';
 import { calculateScenarioPercentageChange } from '@/utils/projection-util';
 import ontologyFormatter from '@/filters/ontology-formatter';
@@ -112,11 +111,10 @@ export default class ModelRenderer extends SVGRenderer {
           .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
           .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
 
-        // Circle = regular concepts, diamond = intervention concepts
         groupHeader.append('path')
           .attr('transform', translate(10, GRAPH_HEIGHT * 0.5 - 10))
-          .attr('d', (d) => {
-            const symbol = ConceptUtil.isInterventionNode(d.id) ? d3.symbolDiamond : d3.symbolCircle;
+          .attr('d', () => {
+            const symbol = d3.symbolCircle;
             const diamondGenerator = d3.symbol()
               .type(symbol)
               .size(50);
