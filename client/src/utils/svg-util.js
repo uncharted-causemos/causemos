@@ -2,7 +2,7 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 import moment from 'moment';
 
-import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
+import { SELECTED_COLOR_DARK, GRAPH_BACKGROUND_COLOR } from '@/utils/colors-util';
 import stringUtil from '@/utils/string-util';
 
 /* SVG Utility functions */
@@ -220,6 +220,19 @@ export const addCrosshairTooltip = spec => {
     .style('stroke-width', 2)
     .attr('r', 3);
 
+  // add a rect for the tooltip lable
+  //  note this is added before the text to maintain correct order
+  //  also note the rect is created with some initial size
+  tooltip
+    .append('rect')
+    .attr('class', 'line-chart-tooltip-text-bkgnd-rect')
+    .style('fill', GRAPH_BACKGROUND_COLOR)
+    .style('fill-opacity', '.8')
+    .attr('x', 0)
+    .attr('y', 0)
+    .attr('width', 10)
+    .attr('height', 10);
+
   tooltip.append('text')
     .attr('class', 'line-chart-tooltip-text')
     .attr('dy', '.35em')
@@ -272,8 +285,18 @@ export const addCrosshairTooltip = spec => {
       tooltip.style('display', null);
       tooltip.attr('transform', translate(xscale(data.timestamp), yscale(data.value)));
       tooltip.select('.x-hover-line').attr('y2', yMax - yscale(data.value));
-      tooltip.select('.line-chart-tooltip-text')
+      const text = tooltip.select('.line-chart-tooltip-text');
+      text
         .text(`${valueFormatter(data.value)} (${dateFormatter(data.timestamp, 'YYYY-MMM')})`);
+
+      const bbox = text.node().getBBox();
+      // adjust the rect beneath the text, to represent the bounding box
+      const textRect = tooltip.select('.line-chart-tooltip-text-bkgnd-rect');
+      textRect
+        .attr('x', bbox.x)
+        .attr('y', bbox.y)
+        .attr('width', bbox.width)
+        .attr('height', bbox.height);
     }
   };
   return self;
