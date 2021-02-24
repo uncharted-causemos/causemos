@@ -30,7 +30,6 @@ export const COLOR_SCHEME = Object.freeze({
 
 export const UNDEFINED_COLOR = '#000000';
 export const GRAPH_BACKGROUND_COLOR = '#FFFFFF';
-export const INTERVENTION_COLOR = '#4b0082';
 export const SELECTED_COLOR = '#56b3e9';
 export const SELECTED_COLOR_DARK = '#1673aa'; // For svg text
 export const SELECTED_COLOR_RGBA = 'rgb(86, 180, 233, .1)'; // For overlays
@@ -62,7 +61,6 @@ export function getColorScale(colorName) {
 
 export default {
   COLOR_SCHEME,
-  INTERVENTION_COLOR,
   SELECTED_COLOR,
   BORDER_COLOR,
   DEFAULT_COLOR,
