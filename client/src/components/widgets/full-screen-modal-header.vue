@@ -1,16 +1,14 @@
 <template>
   <div class="full-screen-modal-header-container">
-    <close-button
-      class="close-button"
-      @click="close"
-    />
-    <div class="title">
+    <div
+      class="navBack"
+      @click="close">
       <i
         v-if="icon !== null"
         class="fa fa-fw"
         :class="`fa-${icon}`"
       />
-      <span>{{ title }}</span>
+      <span>{{ navBackLabel }}</span>
     </div>
     <div class="centered">
       <slot />
@@ -20,19 +18,15 @@
 </template>
 
 <script>
-import CloseButton from '@/components/widgets/close-button';
 
 export default {
   name: 'FullScreenModalHeader',
-  components: {
-    CloseButton
-  },
   props: {
     icon: {
       type: String,
       default: null
     },
-    title: {
+    navBackLabel: {
       type: String,
       default: ''
     }
@@ -58,7 +52,7 @@ export default {
     margin: 0 15px;
 
     &:first-child {
-      margin-left: 0;
+      margin-left: 10;
     }
 
     &:last-child {
@@ -67,26 +61,18 @@ export default {
   }
 }
 
-.close-button {
-  right: auto;
-  top: auto;
-  position: relative;
-  height: 48px;
-  width: 48px;
-
-  &:hover {
-    color: #FFFFFF;
-  }
-}
-
-.title {
+.navBack {
   font-weight: 600;
   font-size: 16px;
   color: #FFFFFF;
-
+  cursor: pointer;
   i {
     margin-right: 5px;
   }
+}
+
+.navBack:hover {
+  text-decoration: underline;
 }
 
 .centered {
