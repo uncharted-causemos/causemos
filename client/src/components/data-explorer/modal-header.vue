@@ -1,7 +1,7 @@
 <template>
   <full-screen-modal-header
     icon="angle-left"
-    :title="title"
+    :nav-back-label="navBackLabel"
     @close="onClose"
   >
     <button
@@ -30,7 +30,7 @@ export default {
     FullScreenModalHeader
   },
   props: {
-    title: {
+    navBackLabel: {
       type: String,
       default: ''
     }

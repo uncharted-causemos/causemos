@@ -1,7 +1,7 @@
 <template>
   <div class="data-explorer-container flex-col">
     <modal-header
-      :title="fullTitle"
+      :nav-back-label="navBackLabel"
       @close="onCancel" />
     <search class="flex-grow-1 h-0" />
   </div>
@@ -19,7 +19,7 @@ export default {
     ModalHeader
   },
   computed: {
-    fullTitle() {
+    navBackLabel() {
       const name = this.$route.query.analysisName;
       return name ? `Data Space (${name})` : 'Data Space';
     }

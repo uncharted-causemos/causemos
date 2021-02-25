@@ -1,14 +1,14 @@
 <template>
   <div class="full-screen-modal-header-container">
     <div
-      class="title"
+      class="navBack"
       @click="close">
       <i
         v-if="icon !== null"
         class="fa fa-fw"
         :class="`fa-${icon}`"
       />
-      <span>{{ title }}</span>
+      <span>{{ navBackLabel }}</span>
     </div>
     <div class="centered">
       <slot />
@@ -26,7 +26,7 @@ export default {
       type: String,
       default: null
     },
-    title: {
+    navBackLabel: {
       type: String,
       default: ''
     }
@@ -61,7 +61,7 @@ export default {
   }
 }
 
-.title {
+.navBack {
   font-weight: 600;
   font-size: 16px;
   color: #FFFFFF;
@@ -71,7 +71,7 @@ export default {
   }
 }
 
-.title:hover {
+.navBack:hover {
   text-decoration: underline;
 }
 

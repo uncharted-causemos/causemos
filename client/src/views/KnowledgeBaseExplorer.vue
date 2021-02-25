@@ -1,7 +1,7 @@
 <template>
   <div class="knowledge-base-explorer-container">
     <modal-header
-      :title="fullTitle"
+      :nav-back-label="navBackLabel"
       @close="onCancel"
       @add-to-CAG="onAddToCAG"
     />
@@ -168,7 +168,7 @@ export default {
     showEvidenceOverlay: false,
     numberOfRelationsAdded: 0,
     graphData: {},
-    fullTitle: 'Knowledge Space'
+    navBackLabel: 'Knowledge Space'
   }),
   computed: {
     ...mapGetters({
@@ -246,7 +246,7 @@ export default {
     // NOTEL this might be simplified using async computed properties
     // https://github.com/foxbenjaminfox/vue-async-computed
     const currentCAG = await modelService.getComponents(this.cag);
-    this.fullTitle = 'Knowledge Space (' + currentCAG.name + ')';
+    this.navBackLabel = 'Knowledge Space (' + currentCAG.name + ')';
   },
   mounted() {
     this.refresh();
