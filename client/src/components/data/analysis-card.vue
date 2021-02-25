@@ -19,7 +19,7 @@
         @dblclick.stop=""
       />
       <span
-        v-tooltip="heading"
+        v-tooltip.top-start="'View details for ' + heading"
         class="text"
       >
         {{ heading }}
@@ -396,6 +396,11 @@ $fullscreenTransition: all .5s ease-in-out;
     white-space: nowrap;
     font-size: 1.6rem;
   }
+}
+
+.heading:hover {
+  color: $selected-dark;
+  text-decoration:underline;
 }
 
 .scenario {

@@ -185,7 +185,6 @@ const CODE_TABLE = codeUtil.CODE_TABLE;
 /**
  * Notes
  * - keyword is technically not a facet, it just uses the faceting UI
- * - intervention is a subset of topic
  */
 const STATEMENT_FACETS = [
   CODE_TABLE.BELIEF.field,

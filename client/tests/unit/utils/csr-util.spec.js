@@ -21,6 +21,37 @@ describe('csr-util', () => {
     });
   });
 
+  describe('getSortedOrderBySelection', () => {
+    it('can handle empty results', () => {
+      const output = csrUtil.getSortedOrderBySelection({
+        rows: [],
+        columns: [],
+        value: []
+      }, true, '');
+      expect(output).to.deep.equal([]);
+    });
+    it('correctly sorts a dense matrix', () => {
+      const matrixData = {
+        rows: ['flooding', 'rainfall', 'farming', 'flooding', 'rainfall', 'farming'],
+        columns: ['columnA', 'columnA', 'columnA', 'columnB', 'columnB', 'columnB'],
+        value: [0.5, 0.1, 0.3, 0.4, 0.2, 0.5]
+      };
+      const selectedColumn = 'columnB';
+      const output = csrUtil.getSortedOrderBySelection(matrixData, false, selectedColumn);
+      expect(output).to.deep.equal(['farming', 'flooding', 'rainfall']);
+    });
+    it('correctly sorts a sparse matrix', () => {
+      const matrixData = {
+        rows: ['drought', 'flooding', 'farming', 'rainfall', 'crop production'],
+        columns: ['columnA', 'columnA', 'columnA', 'columnB', 'columnB'],
+        value: [0.6, 0.7, 0.8, 0.2, 0.5]
+      };
+      const selectedColumn = 'columnB';
+      const output = csrUtil.getSortedOrderBySelection(matrixData, false, selectedColumn);
+      expect(output).to.deep.equal(['crop production', 'rainfall', 'farming', 'flooding', 'drought']);
+    });
+  });
+
   describe('resultsToCsrFormat', () => {
     it('can handle empty results', () => {
       const results = {};

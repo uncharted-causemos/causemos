@@ -109,9 +109,6 @@ export default {
       if (n.showedges !== o.showEdges) {
         this.graphRenderer.setEdgeVisibility(n.showEdges);
       }
-      if (n.showInterventions !== o.showInterventions) {
-        this.graphRenderer.setInterventionVisibility(n.showInterventions);
-      }
       if (n.edgeOpacity !== o.edgeOpacity) {
         this.graphRenderer.setEdgeOpacity(n.edgeOpacity);
       }
@@ -375,7 +372,6 @@ export default {
     applyToggles(layout) {
       this.graphRenderer.setLabelVisibility(layout.showLabels);
       this.graphRenderer.setEdgeVisibility(layout.showEdges);
-      this.graphRenderer.setInterventionVisibility(layout.showInterventions);
       this.graphRenderer.setEdgeOpacity(layout.edgeOpacity);
     },
     onNodeDepth(v) {

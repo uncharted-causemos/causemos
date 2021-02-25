@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import * as d3 from 'd3';
+
 /**
  * Implementation of the Algorithm GR described here: https://pdfs.semanticscholar.org/c7ed/d9acce96ca357876540e19664eb9d976637f.pdf
  * Code taken from the following github repository: https://github.com/nkronenfeld/konigsburg
@@ -143,21 +143,8 @@ function calculateNeighborhood(graph, node) {
   return { nodes: neighborNodes, edges: neighborEdges };
 }
 
-/**
- * Calculate regular and intervention nodes radius scale given a list of nodes
- * @param {array} nodes - array of nodes
- */
-
-function calculateNodeRadiusScales(nodes) {
-  const extent = [0, d3.max(nodes.map(node => node.count))];
-  const nodeRadiusScale = d3.scaleSqrt().domain(extent).range([5, 10]);
-  const interventionNodeRadiusScale = d3.scaleSqrt().domain(extent).range([100, 200]);
-  return { nodeRadiusScale, interventionNodeRadiusScale };
-}
-
 export default {
   calculateBestGraphOrder,
   calculateBestMultiGraphsOrder,
-  calculateNeighborhood,
-  calculateNodeRadiusScales
+  calculateNeighborhood
 };

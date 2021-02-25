@@ -100,22 +100,6 @@ export default {
       const nodeLegend = svg.append('g')
         .attr('class', 'legendNodeColor');
 
-      const line2Start = line1Start + (2 * FONT_SIZE);
-
-      // Interventions
-      nodeLegend.append('path')
-        .attr('transform', translate(rightColumnStart + (ICON_WIDTH / 2), line2Start - (FONT_SIZE / 2)))
-        .attr('d', d3.symbol().type(d3.symbolDiamond).size(6 * ICON_WIDTH))
-        .style('stroke', '#FFFFF')
-        .style('fill', '#FFFFF');
-
-      nodeLegend
-        .append('text')
-        .attr('x', rightColumnTextStart)
-        .attr('y', line2Start)
-        .attr('color', 'black')
-        .text('Interventions');
-
       if (!this.showCagEncodings) {
       // Grounding score
         const groundingScoreNode = nodeLegend.append('circle')

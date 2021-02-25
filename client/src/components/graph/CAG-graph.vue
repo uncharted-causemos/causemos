@@ -23,8 +23,7 @@ import { mapGetters } from 'vuex';
 import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
-// import { SVGRenderer, highlight, nodeDrag, panZoom, group } from 'svg-flowgraph';
-import { SVGRenderer, highlight, nodeDrag, panZoom } from 'svg-flowgraph';
+import { SVGRenderer, highlight, nodeDrag, panZoom, astar, shape } from 'svg-flowgraph';
 import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
@@ -34,8 +33,6 @@ import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
-import ConceptUtil from '@/utils/concept-util';
-
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
@@ -110,17 +107,17 @@ class CAGRenderer extends SVGRenderer {
           .style('cursor', 'pointer')
           .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
-        // Circle = regular concepts, diamond = intervention concepts
         selection.append('path')
           .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width))
-          .attr('d', (d) => {
-            const symbol = ConceptUtil.isInterventionNode(d.concept) ? d3.symbolDiamond : d3.symbolCircle;
+          .attr('d', () => {
+            const symbol = d3.symbolCircle;
             const generator = d3.symbol()
               .type(symbol)
               .size(50);
             return generator();
           })
           .style('stroke', 'none')
+          .style('pointer-events', 'none')
           .style('fill', '#111');
 
         selection
@@ -210,7 +207,7 @@ class CAGRenderer extends SVGRenderer {
     // Node defs
     svg.select('defs')
       .selectAll('.node-blur')
-      .data(nodes)
+      .data(nodes || [])
       .enter()
       .append('filter')
       .classed('node-blur', true)
@@ -356,7 +353,6 @@ class CAGRenderer extends SVGRenderer {
     const chart = this.chart;
     chart.selectAll('.new-edge').remove();
     this.newEdgeSource = null;
-    this.newEdgePoints = [];
     this.newEdgeTarget = null;
   }
 
@@ -381,6 +377,12 @@ class CAGRenderer extends SVGRenderer {
       .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
 
     this.chart.selectAll('.node-handles').selectAll('*').remove();
+  }
+
+  getNodeCollider() {
+    const self = this;
+    // TODO: this won't work with hierarchies
+    return (p) => self.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
   }
 
   enableNodeHandles(node) {
@@ -433,18 +435,16 @@ class CAGRenderer extends SVGRenderer {
       .style('font-size', '12px')
       .style('stroke', 'none')
       .style('fill', 'white')
-      .style('cursor', 'pointer')
+      .style('pointer-events', 'none')
       .text('\uf061');
 
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
+    const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
+    const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
 
     const drag = d3.drag()
       .on('start', (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
-        const newEdgeSource = getLayoutNodeById(evt.subject.id);
-        this.newEdgePoints = [
-          { x: newEdgeSource.x + newEdgeSource.width, y: newEdgeSource.y + 0.5 * newEdgeSource.height }
-        ];
       })
       .on('drag', function(evt) {
         chart.selectAll('.new-edge').remove();
@@ -452,29 +452,21 @@ class CAGRenderer extends SVGRenderer {
         chart.append('path')
           .classed('new-edge', true)
           .attr('d', () => {
-            const newEdgePoints = self.newEdgePoints;
-            const lastPoint = newEdgePoints[newEdgePoints.length - 1];
+            const newEdgeSource = getLayoutNodeById(evt.subject.id);
+            const newEdgeStart = getNodeExit(newEdgeSource);
             const mousePoint = { x: pointerCoords[0], y: pointerCoords[1] };
 
-            if (d3.select(evt.sourceEvent.target).classed('node-header')) {
+            if (d3.select(evt.sourceEvent.target).classed('node-header') || d3.select(evt.sourceEvent.target).classed('handle')) {
               self.newEdgeTargetId = d3.select(evt.sourceEvent.target).datum().id;
-              const newEdgeTarget = getLayoutNodeById(self.newEdgeTargetId);
 
-              const targetHandlePoint = { x: newEdgeTarget.x, y: newEdgeTarget.y + 0.5 * newEdgeTarget.height };
-
-              if (newEdgePoints.length > 2 && Math.hypot(lastPoint.x - targetHandlePoint.x, lastPoint.y - targetHandlePoint.y) < 25) {
-                newEdgePoints.splice(newEdgePoints.length - 1, 1);
+              if (self.newEdgeSourceId === self.newEdgeTargetId && distance(newEdgeStart, mousePoint) < 20) {
+                self.newEdgeTargetId = null;
+                return pathFn([]);
               }
-
-              return pathFn(newEdgePoints
-                .concat({ x: targetHandlePoint.x - 25, y: targetHandlePoint.y })
-                .concat(targetHandlePoint));
+              return pathFn(self.getPathBetweenNodes(newEdgeSource, getLayoutNodeById(self.newEdgeTargetId)));
             } else {
               self.newEdgeTargetId = null;
-              if (Math.hypot(lastPoint.x - mousePoint.x, lastPoint.y - mousePoint.y) > 25) {
-                newEdgePoints.push(mousePoint);
-              }
-              return pathFn(newEdgePoints.concat(mousePoint));
+              return pathFn(self.simplifyPath(self.getPath(newEdgeStart, mousePoint, self.getNodeCollider())));
             }
           })
           .style('pointer-events', 'none')
@@ -488,6 +480,17 @@ class CAGRenderer extends SVGRenderer {
         this.options.newEdgeFn(getLayoutNodeById(self.newEdgeSourceId), getLayoutNodeById(self.newEdgeTargetId));
       });
     handles.call(drag);
+  }
+
+  getPathBetweenNodes(source, target) {
+    const getNodeEntrance = (node, offset = 0) => ({ x: node.x + offset, y: node.y + 0.5 * node.height });
+    const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
+
+    return [].concat(
+      [getNodeExit(source)],
+      this.simplifyPath(this.getPath(getNodeExit(source, 5), getNodeEntrance(target, -5), this.getNodeCollider())),
+      [getNodeEntrance(target)]
+    );
   }
 
   hideNeighbourhood() {
@@ -571,7 +574,47 @@ export default {
   },
   watch: {
     data() {
-      this.refresh();
+      const layout = this.renderer.layout;
+
+      if (layout.nodes === undefined || layout.edges === undefined) {
+        this.refresh();
+        return;
+      }
+
+      // TODO: smart add node, instead of this
+      const nodesAdded = this.data.nodes.filter(node => !layout.nodes.some(layoutNode => node.id === layoutNode.data.id));
+      if (nodesAdded.length > 0) {
+        this.refresh();
+        return;
+      }
+
+      const edgesAdded = this.data.edges.filter(edge => !layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
+      edgesAdded.forEach(edge => {
+        const source = layout.nodes.filter(layoutNode => layoutNode.concept === edge.source)[0];
+        const target = layout.nodes.filter(layoutNode => layoutNode.concept === edge.target)[0];
+
+        // lets add edges
+        layout.edges.push(Object.assign({}, {
+          id: edge.source + ':' + edge.target,
+          data: edge,
+          points: this.renderer.getPathBetweenNodes(source, target),
+          source: edge.source,
+          target: edge.target
+        }));
+      });
+
+      this.renderer.buildDefs();
+
+      // don't forget to deal with deleted nodes/edges too
+      layout.nodes = layout.nodes.filter(layoutNode => this.data.nodes.some(node => node.id === layoutNode.data.id));
+      layout.edges = layout.edges.filter(layoutEdge => this.data.edges.some(edge => edge.id === layoutEdge.data.id));
+
+      this.selectedNode = null;
+      this.renderer.hideNeighbourhood();
+      this.renderer.enableDrag();
+
+      this.renderer.renderNodesDelta();
+      this.renderer.renderEdgesDelta();
     },
     showNewNode(newValue) {
       if (newValue) {
@@ -590,8 +633,7 @@ export default {
       el: this.$refs.container,
       adapter: new Adapter({ nodeWidth: 130, nodeHeight: 30, layout: layered }),
       renderMode: 'delta',
-      addons: [highlight, nodeDrag, panZoom],
-      // addons: [highlight, nodeDrag, panZoom, group],
+      addons: [highlight, nodeDrag, panZoom, astar, shape],
       useEdgeControl: true,
       newEdgeFn: (source, target) => {
         this.renderer.disableNodeHandles();
@@ -698,18 +740,6 @@ export default {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data, []);
       await this.renderer.render();
-
-      // this doesn't really work well on the CAG graph
-      // const conceptsDDSAT = [
-      //   'wm/concept/causal_factor/interventions/provide/agriculture_inputs/crop_production_equipment/soil_inputs/fertilizer',
-      //   'wm/concept/causal_factor/environmental/meteorologic/precipitation/rainfall',
-      //   'wm/concept/causal_factor/agriculture/crop_production'
-      // ];
-      // const conceptsGraph = this.data.nodes.map(n => n.concept);
-
-      // if (conceptsDDSAT.every(concept => conceptsGraph.includes(concept))) {
-      //   await this.renderer.group('DSSAT', conceptsDDSAT);
-      // }
 
       this.highlight();
       this.renderer.hideNeighbourhood();

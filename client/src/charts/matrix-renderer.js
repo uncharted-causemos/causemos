@@ -13,8 +13,23 @@ const fontColor = (r, g, b) => {
 //  value: [0.9, 0.1]
 // }
 // which represents an edge a -> b with value 0.9, and an edge a -> c with value 0.1
-export default function(svgElement, options, data, clampColourRange = false, log = false) {
-  const { axisLabelMargin, width, height, rowOrder, columnOrder, showRankLabels = false } = options;
+export default function(
+  svgElement,
+  options,
+  data,
+  clampColourRange = false,
+  log = false,
+  selectedRowOrColumn = { isRow: false, concept: null },
+  onRowOrColumnClicked = () => {}
+) {
+  const {
+    axisLabelMargin,
+    width,
+    height,
+    rowOrder,
+    columnOrder,
+    showRankLabels = false
+  } = options;
   const margin = {
     top: axisLabelMargin,
     bottom: 0,
@@ -53,6 +68,16 @@ export default function(svgElement, options, data, clampColourRange = false, log
     .attr('transform', svgUtil.translate(0, margin.top))
     .call(d3.axisTop(xScale));
 
+  const isColumnSelected = (columnConcept) => {
+    const { isRow, concept } = selectedRowOrColumn;
+    return isRow === false && concept === columnConcept;
+  };
+
+  xAxis
+    .selectAll('text')
+    .attr('class', dataPoint => isColumnSelected(dataPoint) ? 'selected' : '')
+    .on('click', (event, label) => onRowOrColumnClicked(false, label));
+
   // If there is more horizontal space than vertical space for each label
   if (xScale.bandwidth() < margin.top) {
     // Rotate so the labels are vertical and
@@ -67,10 +92,20 @@ export default function(svgElement, options, data, clampColourRange = false, log
   xAxis.selectAll('.tick line').remove();
   xAxis.select('.domain').remove();
 
+  const isRowSelected = (rowConcept) => {
+    const { isRow, concept } = selectedRowOrColumn;
+    return isRow === true && concept === rowConcept;
+  };
+
   const yAxis = svgElement
     .append('g')
     .attr('transform', svgUtil.translate(margin.left, 0))
     .call(d3.axisLeft(yScale));
+
+  yAxis
+    .selectAll('text')
+    .attr('class', dataPoint => isRowSelected(dataPoint) ? 'selected' : '')
+    .on('click', (event, label) => onRowOrColumnClicked(true, label));
 
   yAxis.selectAll('.tick line').remove();
   yAxis.select('.domain').remove();
@@ -79,8 +114,7 @@ export default function(svgElement, options, data, clampColourRange = false, log
   const rectGroups = svgElement
     .selectAll('g.rects')
     .data(cleanData)
-    .enter()
-    .append('g')
+    .join('g')
     .attr('class', 'rects')
     .attr('transform', d => svgUtil.translate(xScale(d.column), yScale(d.row)));
 
