@@ -124,7 +124,8 @@ $drilldown-width: 25vw;
   position: relative;
   display: flex;
   flex-direction: column;
-  filter: drop-shadow(0px 1px 2px rgba(0, 0, 0, 0.12));
+  box-shadow: 0px 5px 4px 2px rgba(0, 0, 0, 0.05),
+              0px 3px 2px 1px rgba(0, 0, 0, 0.05);
 
   &.slide-fade-enter,
   &.slide-fade-leave-to {
