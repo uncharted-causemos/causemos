@@ -448,6 +448,7 @@ export default {
   .body-main-content {
     flex: 1;
     min-width: 0;
+    isolation: isolate;
   }
 }
 
