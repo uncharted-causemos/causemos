@@ -168,7 +168,7 @@ export default {
     showEvidenceOverlay: false,
     numberOfRelationsAdded: 0,
     graphData: {},
-    fullTitle: 'back to Knowledge Space'
+    fullTitle: 'Knowledge Space'
   }),
   computed: {
     ...mapGetters({
@@ -243,10 +243,10 @@ export default {
   async created() {
     this.PANE_ID = PANE_ID;
 
-    // NOTEL this can be simplified using async computed properties
+    // NOTEL this might be simplified using async computed properties
     // https://github.com/foxbenjaminfox/vue-async-computed
     const currentCAG = await modelService.getComponents(this.cag);
-    this.fullTitle = 'back to Knowledge Space [' + currentCAG.name + ']';
+    this.fullTitle = 'Knowledge Space (' + currentCAG.name + ')';
   },
   mounted() {
     this.refresh();

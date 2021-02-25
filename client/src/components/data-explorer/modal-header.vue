@@ -1,5 +1,6 @@
 <template>
   <full-screen-modal-header
+    icon="angle-left"
     :title="title"
     @close="onClose"
   >

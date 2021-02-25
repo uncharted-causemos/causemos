@@ -1,10 +1,5 @@
 <template>
   <div class="full-screen-modal-header-container">
-    <!--
-    <close-button
-      class="close-button"
-    />
-    -->
     <div
       class="title"
       @click="close">
@@ -23,13 +18,9 @@
 </template>
 
 <script>
-// import CloseButton from '@/components/widgets/close-button';
 
 export default {
   name: 'FullScreenModalHeader',
-  components: {
-    // CloseButton
-  },
   props: {
     icon: {
       type: String,
@@ -67,18 +58,6 @@ export default {
     &:last-child {
       margin-right: 0;
     }
-  }
-}
-
-.close-button {
-  right: auto;
-  top: auto;
-  position: relative;
-  height: 48px;
-  width: 48px;
-
-  &:hover {
-    color: #FFFFFF;
   }
 }
 

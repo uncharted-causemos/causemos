@@ -18,11 +18,11 @@ export default {
     Search,
     ModalHeader
   },
-  data: () => ({
-    fullTitle: 'back to Data Space'
-  }),
-  created() {
-    this.fullTitle = 'back to Data Space [' + this.$route.query.analysisName + ']';
+  computed: {
+    fullTitle() {
+      const name = this.$route.query.analysisName;
+      return name ? `Data Space (${name})` : 'Data Space';
+    }
   },
   methods: {
     onCancel() {
