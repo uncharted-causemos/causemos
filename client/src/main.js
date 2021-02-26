@@ -25,9 +25,6 @@ import stringFormatter from './filters/string-formatter';
 
 
 Vue.config.productionTip = false;
-Vue.config.debug = true;
-Vue.config.devtools = true;
-
 
 // Register global filters (formatters) for the application, this makes
 // them available in the templates
