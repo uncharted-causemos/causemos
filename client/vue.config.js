@@ -15,6 +15,12 @@ module.exports = {
       }
     }
   },
+  configureWebpack: config => {
+    // tweak webpack configurations, noting this will be merged with the final webpack configs
+    if (process.env.NODE_ENV === 'development') {
+      config.devtool = 'inline-source-map';
+    }
+  },
   chainWebpack: config => {
     config.plugin('provide')
       .use(webpack.ProvidePlugin, [
