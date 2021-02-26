@@ -1,7 +1,7 @@
 <template>
   <full-screen-modal-header
-    :icon="'search'"
-    :title="'Search Data Cubes'"
+    icon="angle-left"
+    :nav-back-label="navBackLabel"
     @close="onClose"
   >
     <button
@@ -28,6 +28,12 @@ export default {
   name: 'DataExplorerModalHeader',
   components: {
     FullScreenModalHeader
+  },
+  props: {
+    navBackLabel: {
+      type: String,
+      default: ''
+    }
   },
   computed: {
     ...mapGetters({

@@ -182,11 +182,6 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.STATEMENT
   },
-  intervention: {
-    fields: ['wm.topic'],
-    type: FIELD_TYPES.NORMAL,
-    level: FIELD_LEVELS.STATEMENT
-  },
 
   // Placeholder for custom filter
   quality: {

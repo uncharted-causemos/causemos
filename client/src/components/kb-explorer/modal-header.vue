@@ -1,7 +1,7 @@
 <template>
   <full-screen-modal-header
-    :icon="'search'"
-    :title="'Search Knowledge Base'"
+    icon="angle-left"
+    :nav-back-label="navBackLabel"
     @close="onClose"
   >
     <button
@@ -37,6 +37,12 @@ export default {
   components: {
     fullScreenModalHeader,
     BookmarkControls
+  },
+  props: {
+    navBackLabel: {
+      type: String,
+      default: ''
+    }
   },
   computed: {
     ...mapGetters({

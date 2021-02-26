@@ -2,7 +2,7 @@
   <div class="create-data-cube-container">
     <full-screen-modal-header
       :icon="'cube'"
-      :title="'Preview New Custom Data Cube'"
+      :nav-back-label="'Preview New Custom Data Cube'"
       @close="navigateBack"
     />
     <div

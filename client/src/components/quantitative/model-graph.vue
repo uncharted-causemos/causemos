@@ -14,7 +14,6 @@ import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import { calculateNeighborhood } from '@/utils/graphs-util';
 import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
-// import { highlight, nodeDrag, panZoom, group } from 'svg-flowgraph';
 
 export default {
   name: 'ModelGraph',
@@ -107,36 +106,8 @@ export default {
     async refresh() {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data.graph);
-      /*
-      this.renderer.setData({
-        nodes: [
-          {
-            id: 'abc',
-            label: 'abc'
-          },
-          {
-            id: 'def',
-            label: 'def'
-          }
-        ],
-        edges: [
-          { id: 'abc-def', source: 'abc', target: 'def', polarity: 1, parameter: { weight: 0.2  } }
-        ]
-      });
-      */
       this.renderer.setScenarioData(this.scenarioData);
       await this.renderer.render();
-
-      // const conceptsDDSAT = [
-      //   'wm/concept/causal_factor/interventions/provide/agriculture_inputs/crop_production_equipment/soil_inputs/fertilizer',
-      //   'wm/concept/causal_factor/environmental/meteorologic/precipitation/rainfall',
-      //   'wm/concept/causal_factor/agriculture/crop_production'
-      // ];
-      // const conceptsGraph = this.data.graph.nodes.map(n => n.concept);
-
-      // if (conceptsDDSAT.every(concept => conceptsGraph.includes(concept))) {
-      //   await this.renderer.group('DSSAT', conceptsDDSAT);
-      // }
 
       this.renderer.hideNeighbourhood();
       this.renderer.enableDrag();

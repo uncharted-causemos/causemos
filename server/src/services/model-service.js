@@ -487,7 +487,6 @@ const buildEdgeParametersPayload = (edgeParameters) => {
  * TODO: Check if model validation check is required for Delphi or DySE:
  * Previous validation rules for Delphi engine were:
  * 1. check that there are no unknowns
- * 2. ensure that intervention-nodes do not have indicators attached
  *
  * September 3rd 2020 Tom Choi
  */

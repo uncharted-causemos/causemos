@@ -110,23 +110,6 @@ const normalPath = (edges, nodes, k) => {
   return neighborhoodNodes;
 };
 
-// const interventionPath = (cache, node, k) => {
-//   const neighborhoodNodes = [];
-//   const goalFn = (newNode, stack) => {
-//     if (statementUtil.isInterventionNode(newNode)) {
-//       neighborhoodNodes.push(stack);
-//       return true;
-//     }
-//     return false;
-//   };
-//   const terminateFn = (newNode, stack) => {
-//     if (stack.length > k) return true;
-//     return false;
-//   };
-//   _crawler(cache, node, [node], goalFn, terminateFn);
-//   return neighborhoodNodes;
-// };
-
 module.exports = {
   buildAdjacency,
   normalPath
