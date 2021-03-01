@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { expect } from 'chai';
-import indicatorRunFormatter from '@/filters/indicator-run-formatter';
+import indicatorRunFormatter from '@/formatters/indicator-run-formatter';
 
 describe('indicator-run-formatter', () => {
   it('correctly handles empty input objects', () => {

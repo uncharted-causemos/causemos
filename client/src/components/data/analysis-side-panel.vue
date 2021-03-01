@@ -21,7 +21,7 @@
             class="fa fa-fw"
             :class="`fa-${algebraicTransform !== null ? algebraicTransform.icon : 'calculator'}`"
           />
-          {{ algebraicTransform !== null ? algebraicTransform.name : 'Select Transform' | capitalLettersFormatter }}
+          {{ capitalLettersFormatter(algebraicTransform !== null ? algebraicTransform.name : 'Select Transform') }}
           <i class="fa fa-fw fa-angle-down" />
           <dropdown-control
             v-if="isOperationDropdownOpen"
@@ -80,6 +80,7 @@ import SidePanel from '@/components/side-panel/side-panel';
 import DropdownControl from '@/components/dropdown-control';
 import AlgebraicExpression from '@/components/data/algebraic-expression';
 import { SUPPORTED_TRANSFORMS } from '@/utils/data/algebraic-transform-util';
+import capitalLettersFormatter from '@/formatters/capitalLetters-formatter';
 
 export default {
   name: 'AnalysisSidePanel',
@@ -121,6 +122,7 @@ export default {
     ...mapActions({
       setAlgebraicTransform: 'dataAnalysis/setAlgebraicTransform'
     }),
+    capitalLettersFormatter,
     setActiveSidePanelTab(tab) {
       this.activeSidePanelTab = tab;
       if (tab === '') {

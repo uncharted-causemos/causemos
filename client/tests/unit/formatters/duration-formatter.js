@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import DurationFormatter from '@/filters/duration-formatter';
+import DurationFormatter from '@/formatters/duration-formatter';
 
 describe('duration-formatter', () => {
   it('humanized durations', () => {
