@@ -10,18 +10,8 @@ import { sync } from 'vuex-router-sync';
 import precisionFormatter from './filters/precision-formatter';
 import ontologyFormatter from './filters/ontology-formatter';
 import polarityFormatter from './filters/polarity-formatter';
-import listFormatter from './filters/list-formatter';
-import statementPolarityFormatter from './filters/statement-polarity-formatter';
 import numberFormatter from './filters/number-formatter';
-import capitalLettersFormatter from './filters/capitalLetters-formatter';
-import filterKeyFormatter from './filters/filter-key-formatter';
-import filterValueFormatter from './filters/filter-value-formatter';
 import dateFormatter from './filters/date-formatter';
-import locationFormatter from './filters/location-formatter';
-import contradictionCategoryFormatter from './filters/contradiction-category-formatter';
-import hedgingCategoryFormatter from './filters/hedging-category-formatter';
-import indicatorRunFormatter from './filters/indicator-run-formatter';
-import stringFormatter from './filters/string-formatter';
 
 
 Vue.config.productionTip = false;
@@ -31,18 +21,8 @@ Vue.config.productionTip = false;
 Vue.filter('precisionFormatter', precisionFormatter);
 Vue.filter('ontologyFormatter', ontologyFormatter);
 Vue.filter('polarityFormatter', polarityFormatter);
-Vue.filter('listFormatter', listFormatter);
-Vue.filter('statementPolarityFormatter', statementPolarityFormatter);
 Vue.filter('numberFormatter', numberFormatter);
-Vue.filter('capitalLettersFormatter', capitalLettersFormatter);
-Vue.filter('filterKeyFormatter', filterKeyFormatter);
-Vue.filter('filterValueFormatter', filterValueFormatter);
 Vue.filter('dateFormatter', dateFormatter);
-Vue.filter('locationFormatter', locationFormatter);
-Vue.filter('contradictionCategoryFormatter', contradictionCategoryFormatter);
-Vue.filter('hedgingCategoryFormatter', hedgingCategoryFormatter);
-Vue.filter('indicatorRunFormatter', indicatorRunFormatter);
-Vue.filter('stringFormatter', stringFormatter);
 
 Vue.use(Toasted);
 Vue.use(VTooltip);

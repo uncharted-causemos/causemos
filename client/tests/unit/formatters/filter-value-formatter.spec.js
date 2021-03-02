@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import FilterValueFormatter from '@/filters/filter-value-formatter';
+import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import CodeUtil from '@/utils/code-util';
 
 const FIELDS = CodeUtil.FIELDS;

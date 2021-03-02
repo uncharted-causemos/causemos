@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import FilterKeyFormatter from '@/filters/filter-key-formatter';
+import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import CodeUtil from '@/utils/code-util';
 
 describe('filter-key-formatter', () => {

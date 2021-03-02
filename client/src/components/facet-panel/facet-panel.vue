@@ -173,9 +173,9 @@ import SidePanel from '@/components/side-panel/side-panel';
 
 import ontologyFormatter from '@/filters/ontology-formatter';
 import polarityFormatter from '@/filters/polarity-formatter';
-import statementPolarityFormatter from '@/filters/statement-polarity-formatter';
-import contradictionCategoryFormatter from '@/filters/contradiction-category-formatter';
-import hedgingCategoryFormatter from '@/filters/hedging-category-formatter';
+import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
+import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
+import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
 import codeUtil from '@/utils/code-util';
 import facetUtil from '@/utils/facet-util';
 import filtersUtil from '@/utils/filters-util';

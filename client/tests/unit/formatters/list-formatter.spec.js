@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { expect } from 'chai';
-import ListFormatter from '@/filters/list-formatter';
+import ListFormatter from '@/formatters/list-formatter';
 
 describe('list-formatter', () => {
   it('formats empty array to n/a', () => {

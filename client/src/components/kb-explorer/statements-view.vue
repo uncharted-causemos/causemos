@@ -87,9 +87,9 @@
               v-for="statement of statements"
               :key="statement.id">
               <td v-if="visibleColumns[FIELDS.YEAR]">{{ statement.years.join(', ') }}</td>
-              <td v-if="visibleColumns[FIELDS.GEO_LOCATION_NAME]">{{ [statement.subj.geo_context, statement.obj.geo_context] | location-formatter }}</td>
+              <td v-if="visibleColumns[FIELDS.GEO_LOCATION_NAME]">{{ locationFormatter([statement.subj.geo_context, statement.obj.geo_context]) }}</td>
               <td v-if="visibleColumns[FIELDS.SUBJ_POLARITY]">{{ statement.subj.polarity | polarity-formatter }}</td>
-              <td v-if="visibleColumns[FIELDS.SUBJ_ADJECTIVES]">{{ statement.subj.adjectives | list-formatter }}</td>
+              <td v-if="visibleColumns[FIELDS.SUBJ_ADJECTIVES]">{{ listFormatter(statement.subj.adjectives) }}</td>
               <td v-if="visibleColumns[FIELDS.SUBJ]">{{ statement.subj.factor }}</td>
               <td
                 v-if="visibleColumns[FIELDS.SUBJ_CONCEPT]"
@@ -97,11 +97,11 @@
               <td v-if="visibleColumns[FIELDS.SUBJ_CONCEPT_SCORE]">{{ statement.subj.concept_score | precision-formatter }}</td>
 
               <td v-if="visibleColumns[FIELDS.TYPE]">{{ statement.type }}</td>
-              <td v-if="visibleColumns[FIELDS.STATEMENT_POLARITY]">{{ statement.wm.statement_polarity | statement-polarity-formatter }}</td>
+              <td v-if="visibleColumns[FIELDS.STATEMENT_POLARITY]">{{ statementPolarityFormatter(statement.wm.statement_polarity) }}</td>
               <td v-if="visibleColumns[FIELDS.BELIEF]">{{ statement.belief | precision-formatter }}</td>
 
               <td v-if="visibleColumns[FIELDS.OBJ_POLARITY]">{{ statement.obj.polarity | polarity-formatter }}</td>
-              <td v-if="visibleColumns[FIELDS.OBJ_ADJECTIVES]">{{ statement.obj.adjectives | list-formatter }}</td>
+              <td v-if="visibleColumns[FIELDS.OBJ_ADJECTIVES]">{{ listFormatter(statement.obj.adjectives) }}</td>
               <td v-if="visibleColumns[FIELDS.OBJ]">{{ statement.obj.factor }}</td>
               <td
                 v-if="visibleColumns[FIELDS.OBJ_CONCEPT]"
@@ -144,6 +144,9 @@ import MessageDisplay from '@/components/widgets/message-display';
 
 import codeUtil from '@/utils/code-util';
 import filtersUtil from '@/utils/filters-util';
+import locationFormatter from '@/formatters/location-formatter';
+import listFormatter from '@/formatters/list-formatter';
+import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 
 export default {
   name: 'StatementsView',
@@ -205,6 +208,9 @@ export default {
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay'
     }),
+    locationFormatter,
+    listFormatter,
+    statementPolarityFormatter,
     refresh() {
       this.enableOverlay('Refreshing...');
 
