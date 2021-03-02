@@ -1,10 +1,10 @@
 import _ from 'lodash';
 import CodeUtil from '@/utils/code-util';
-import polarityFormatter from '@/formatters/polarity-formatter';
+import polarityFormatter from '@/filters/polarity-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
 import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
-import ontologyFormatter from '@/formatters/ontology-formatter';
+import ontologyFormatter from '@/filters/ontology-formatter';
 
 const FIELDS = CodeUtil.FIELDS;
 const FIELDS_INVERSE = _.invert(CodeUtil.FIELDS);
