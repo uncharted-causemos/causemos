@@ -13,7 +13,7 @@
 </template>
 
 <script>
-import dateFormatter from '@/filters/date-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 
 const VALUE_MISSING_FALLBACK = '--';
 

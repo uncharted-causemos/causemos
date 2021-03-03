@@ -6,8 +6,8 @@
       <strong>Historical Data:</strong>
       <a
         @click.stop="editParameters"
-      >{{ historicalRange.start | date-formatter('MMM YYYY') }} -
-        {{ historicalRange.end | date-formatter('MMM YYYY') }}
+      >{{ dateFormatter(historicalRange.start, 'MMM YYYY') }} -
+        {{ dateFormatter(historicalRange.end, 'MMM YYYY') }}
       </a>
     </p>
     <p>
@@ -22,6 +22,8 @@
 </template>
 
 <script>
+import dateFormatter from '@/formatters/date-formatter';
+
 export default {
   name: 'QuantitativeConfigBar',
   props: {
@@ -42,6 +44,7 @@ export default {
     }
   },
   methods: {
+    dateFormatter,
     async editParameters() {
       this.$emit('edit-parameters');
     }

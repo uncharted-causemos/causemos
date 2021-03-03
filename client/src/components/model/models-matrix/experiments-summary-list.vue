@@ -12,7 +12,7 @@
       <div
         class="concept-label"
         :style="{ opacity: calculateOpacity(indicator.concept_name) }">
-        {{ indicator.concept_name | ontology-formatter }}
+        {{ ontologyFormatter(indicator.concept_name) }}
       </div>
       <div :style="{ opacity: calculateOpacity(indicator.concept_name) }">
         <summary-chart
@@ -40,6 +40,7 @@ import {
   DYSE_PROJECTION_DOMAIN
 } from '@/utils/projection-util';
 import { SELECTED_COLOR_RGBA } from '@/utils/colors-util';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 
 export default {
   name: 'ExperimentsSummaryList',
@@ -80,6 +81,7 @@ export default {
     ...mapActions({
       setSelectedExperimentId: 'app/setSelectedExperimentId'
     }),
+    ontologyFormatter,
     calculateDomain(indicator, experiments) {
       const indicatorDomain = calculateIndicatorDomain(indicator);
       const experimentsDomain = calculateExperimentsDomain(experiments.map(e => e.results));

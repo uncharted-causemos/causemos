@@ -6,28 +6,29 @@
       {{ miscMessage }}
     </div>
     <div v-if="!isVisible">
-      {{ documentsCount | number-formatter }} Documents
+      {{ numberFormatter(documentsCount) }} Documents
     </div>
     <div v-if="!isVisible">
-      {{ evidencesCount | number-formatter }} Evidence
+      {{ numberFormatter(evidencesCount) }} Evidence
     </div>
     <div>
-      {{ statementsCount | number-formatter }} Statements
+      {{ numberFormatter(statementsCount) }} Statements
     </div>
     <div v-if="isVisible">
-      {{ nodesCount | number-formatter }} Grounded Concepts
+      {{ numberFormatter(nodesCount) }} Grounded Concepts
     </div>
     <div v-if="isVisible">
-      {{ edgesCount | number-formatter }} {{ areEdgesDrawn ? '': '(Disabled) ' }} Relationships
+      {{ numberFormatter(edgesCount) }} {{ areEdgesDrawn ? '': '(Disabled) ' }} Relationships
     </div>
     <div v-if="isVisible && selectedNodesCount">
-      {{ selectedNodesCount | number-formatter }} Selected Nodes
+      {{ numberFormatter(selectedNodesCount) }} Selected Nodes
     </div>
   </div>
 </template>
 
 <script>
 import { EDGE_THRESHOLD } from '@/components/graph/cyto-graph';
+import numberFormatter from '@/formatters/number-formatter';
 
 export default {
   name: 'Counters',
@@ -72,6 +73,9 @@ export default {
     areEdgesDrawn() {
       return this.edgesCount <= EDGE_THRESHOLD;
     }
+  },
+  methods: {
+    numberFormatter
   }
 };
 </script>

@@ -41,7 +41,7 @@
         {{ project.corpus_id }}
       </div>
       <div class="col-sm-2">
-        {{ project.modified_at | date-formatter }}
+        {{ dateFormatter(project.modified_at) }}
       </div>
     </div>
     <div
@@ -93,6 +93,7 @@ import TextDisplay from '@/components/widgets/text-display';
 
 import messagesUtil from '@/utils/messages-util';
 import MessageDisplay from './widgets/message-display.vue';
+import dateFormatter from '@/formatters/date-formatter';
 
 /**
  * A card-styled widget to view project summary
@@ -127,6 +128,7 @@ export default {
     ...mapActions({
       clearLastQuery: 'query/clearLastQuery'
     }),
+    dateFormatter,
     toggleShowMore() {
       this.showMore = !this.showMore;
     },

@@ -7,7 +7,6 @@ const FIELDS = CodeUtil.FIELDS;
 describe('filter-value-formatter', () => {
   it('format simple type values', () => {
     expect(FilterValueFormatter('abc', FIELDS.TOPIC)).to.equal('abc');
-    expect(FilterValueFormatter(-1, FIELDS.POLARITY)).to.equal('Negative');
   });
 
   it('format object/arrays', () => {

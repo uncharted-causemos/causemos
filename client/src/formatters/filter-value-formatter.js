@@ -1,10 +1,9 @@
 import _ from 'lodash';
 import CodeUtil from '@/utils/code-util';
-import polarityFormatter from '@/filters/polarity-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
 import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
-import ontologyFormatter from '@/filters/ontology-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const FIELDS = CodeUtil.FIELDS;
 const FIELDS_INVERSE = _.invert(CodeUtil.FIELDS);
@@ -32,9 +31,7 @@ export default function (value, key) {
   if (entry.ranged) {
     return value[0] + ' to ' + value[1];
   } else {
-    if (entry.field === FIELDS.POLARITY) {
-      return polarityFormatter(value);
-    } else if (entry.field === FIELDS.STATEMENT_POLARITY) {
+    if (entry.field === FIELDS.STATEMENT_POLARITY) {
       return statementPolarityFormatter(value);
     } else if (entry.field === FIELDS.HEDGING_CATEGORY) {
       return hedgingCategoryFormatter(value);

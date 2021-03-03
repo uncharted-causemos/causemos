@@ -27,7 +27,7 @@ import { SVGRenderer, highlight, nodeDrag, panZoom, astar, shape } from 'svg-flo
 import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
-import ontologyFormatter from '@/filters/ontology-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';

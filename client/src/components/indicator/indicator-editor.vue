@@ -75,7 +75,7 @@ import _ from 'lodash';
 import LineChart from '@/components/widgets/charts/line-chart';
 import MessageDisplay from '@/components/widgets/message-display';
 
-import dateFormatter from '@/filters/date-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 import { DEFAULT_COLOR } from '@/utils/colors-util';
 import stringUtil from '@/utils/string-util';
 import aggregationsUtil from '@/utils/aggregations-util';

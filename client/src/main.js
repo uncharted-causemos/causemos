@@ -7,22 +7,10 @@ import router from './router';
 import store from './store';
 import { sync } from 'vuex-router-sync';
 
-import precisionFormatter from './filters/precision-formatter';
-import ontologyFormatter from './filters/ontology-formatter';
-import polarityFormatter from './filters/polarity-formatter';
-import numberFormatter from './filters/number-formatter';
-import dateFormatter from './filters/date-formatter';
-
-
 Vue.config.productionTip = false;
 
 // Register global filters (formatters) for the application, this makes
 // them available in the templates
-Vue.filter('precisionFormatter', precisionFormatter);
-Vue.filter('ontologyFormatter', ontologyFormatter);
-Vue.filter('polarityFormatter', polarityFormatter);
-Vue.filter('numberFormatter', numberFormatter);
-Vue.filter('dateFormatter', dateFormatter);
 
 Vue.use(Toasted);
 Vue.use(VTooltip);

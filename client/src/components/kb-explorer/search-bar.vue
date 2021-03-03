@@ -37,7 +37,7 @@ import contradictionUtil from '@/utils/contradiction-util';
 import hedgingUtil from '@/utils/hedging-util';
 
 import suggestionService from '@/services/suggestion-service';
-import ontologyFormatter from '@/filters/ontology-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
 const CONCEPTS_MSG = 'Select one or more ontological concepts';

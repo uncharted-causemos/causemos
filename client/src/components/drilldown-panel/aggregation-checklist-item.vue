@@ -39,7 +39,7 @@
         {{ itemData.name }}
       </span>
       <span :class="{ 'faded': !itemData.isSelectedAggregationLevel }">
-        {{ itemData.value | precision-formatter }}
+        {{ precisionFormatter(itemData.value) }}
       </span>
       <div
         v-if="itemData.isSelectedAggregationLevel"
@@ -52,6 +52,8 @@
 </template>
 
 <script>
+import precisionFormatter from '@/formatters/precision-formatter';
+
 const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
 
 export default {
@@ -106,6 +108,7 @@ export default {
     }
   },
   methods: {
+    precisionFormatter,
     toggleExpanded() {
       this.$emit('toggle-expanded');
     },
