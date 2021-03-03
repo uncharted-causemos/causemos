@@ -45,6 +45,8 @@ You need an  environment configuration file to run the application. Copy `server
 
 If running against Uncharted internal openstack, you can find a working environment file here: https://gitlab.uncharted.software/WM/wm-env/-/tree/master/dev
 
+### Debugging
+The default development config includes some flags to facilitate debugging. Interested users would need to install the Chrome Debugger Extension (https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome) if it is not already installed!
 
 ### Additional dependencies
 Causemos internally depends on two additional services: a data/tile service for doing data-intensive work, and a recommendation service to aid curations. These services are specified in the environment file, if you want to run these locally please follow the instructions at their respective repos.

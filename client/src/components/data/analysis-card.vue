@@ -76,7 +76,7 @@
           @click="toggleRunDropdown"
         >
           <div class="button-text">
-            {{ selectedRun ? selectedRun : { parameters: [] } | indicator-run-formatter }}
+            {{ indicatorRunFormatter(selectedRun ? selectedRun : { parameters: [] }) }}
           </div>
           <i
             v-if="isRunSelected"
@@ -98,7 +98,7 @@
               :class="{ 'dropdown-option-selected': selection && selection.runId === run.id }"
               @click="handleRunSelection(run.id)"
             >
-              {{ run | indicator-run-formatter }}
+              {{ indicatorRunFormatter(run) }}
             </div>
           </div>
         </dropdown-control>
@@ -149,6 +149,7 @@ import OptionsButton from '@/components/widgets/options-button';
 import Disclaimer from '@/components/widgets/disclaimer';
 import { DEFAULT_COLOR } from '@/utils/colors-util';
 import messagesUtil from '@/utils/messages-util';
+import indicatorRunFormatter from '@/formatters/indicator-run-formatter';
 
 const TIME_SLIDER_CHANGE_DELAY = 300;
 
@@ -183,6 +184,7 @@ export default {
       algebraicTransform: 'dataAnalysis/algebraicTransform',
       algebraicTransformInputIds: 'dataAnalysis/algebraicTransformInputIds'
     }),
+    indicatorRunFormatter,
     selection() {
       const { id, modelId, outputVariable, selection } = this.data;
       return { id, modelId, outputVariable, ...selection };

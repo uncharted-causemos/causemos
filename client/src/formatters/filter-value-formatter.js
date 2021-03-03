@@ -1,9 +1,9 @@
 import _ from 'lodash';
 import CodeUtil from '@/utils/code-util';
 import polarityFormatter from '@/filters/polarity-formatter';
-import statementPolarityFormatter from '@/filters/statement-polarity-formatter';
-import hedgingCategoryFormatter from '@/filters/hedging-category-formatter';
-import contradictionCategoryFormatter from '@/filters/contradiction-category-formatter';
+import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
+import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
+import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
 import ontologyFormatter from '@/filters/ontology-formatter';
 
 const FIELDS = CodeUtil.FIELDS;
@@ -19,7 +19,7 @@ const ONTOLOGY_FIELDS = [
  *   key = polarity and value = -1, will yield 'Opposite'
  *   key = score and value = [0.1, 0.3] will yield '0.1 to 0.3'
  *
- * Note this is a higher level filter that uses other basic filters.
+ * Note this is a higher level formatter that uses other basic formatters.
  *
  * @param {Object|String|Array} value - a filter value representation
  * @param {string} key - a field key

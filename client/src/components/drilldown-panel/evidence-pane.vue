@@ -83,7 +83,7 @@
             slot="title"
             class="polarities-grouping-title">
             <div class="grouping-title">
-              {{ value.key | statement-polarity-formatter }} {{ unusedStatementsNotice(value) }}
+              {{ statementPolarityFormatter(value.key) }} {{ unusedStatementsNotice(value) }}
             </div>
             <div
               v-if="+value.key === STATEMENT_POLARITY.UNKNOWN && showCurationActions"
@@ -178,6 +178,7 @@ import SmallIconButton from '@/components/widgets/small-icon-button';
 import { CORRECTIONS, CURATIONS, SIDE_PANEL } from '@/utils/messages-util';
 import MessageDisplay from '@/components/widgets/message-display';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
+import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 
 import { CORRECTION_TYPES } from '@/utils/correction-util';
 
@@ -297,6 +298,7 @@ export default {
     this.refresh();
   },
   methods: {
+    statementPolarityFormatter,
     initializeData() {
       this.activeCorrection = null;
       this.expandAll = null;

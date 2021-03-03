@@ -17,7 +17,7 @@
           <div class="bookmark-header">
             <div class="bookmark-title">
               <i :class="formattedViewIcon(bookmark.view)" />
-              {{ bookmark.title | string-formatter(25) }}
+              {{ stringFormatter(bookmark.title, 25) }}
             </div>
             <div @click.stop="openEditor(bookmark.id)">
               <i class="fa fa-ellipsis-h bookmark-header-btn" />
@@ -64,6 +64,7 @@ import { BOOKMARKS } from '@/utils/messages-util';
 import BookmarkEditor from '@/components/bookmark-panel/bookmark-editor';
 import CloseButton from '@/components/widgets/close-button';
 import MessageDisplay from '@/components/widgets/message-display';
+import stringFormatter from '@/formatters/string-formatter';
 
 export default {
   name: 'ListBookmarksPane',
@@ -93,6 +94,7 @@ export default {
       hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
       setCountBookmarks: 'bookmarkPanel/setCountBookmarks'
     }),
+    stringFormatter,
     refresh() {
       API.get('bookmarks', { params: { project_id: this.project } }).then(d => {
         const listBookmarks = _.orderBy(d.data, d => d.modified_at, ['desc']);
