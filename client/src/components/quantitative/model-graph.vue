@@ -9,7 +9,7 @@
 import _ from 'lodash';
 
 import { mapGetters } from 'vuex';
-import ModelRenderer from '@/graphs/elk/model-renderer';
+import ModelRenderer from '@/graphs/model-renderer';
 import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import { calculateNeighborhood } from '@/utils/graphs-util';
