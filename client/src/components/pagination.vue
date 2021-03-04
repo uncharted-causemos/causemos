@@ -5,7 +5,7 @@
       :disabled="pageFrom === 0"
       @click="prev()"
     >Previous</button>
-    <span class="pagination-label">{{ pageFrom+1 }} to {{ pageSizeCount }} of {{ total | number-formatter }} {{ label }}</span>
+    <span class="pagination-label">{{ pageFrom+1 }} to {{ pageSizeCount }} of {{ numberFormatter(total) }} {{ label }}</span>
     <button
       class="btn btn-sm btn-primary"
       :disabled="total < incrementedPageLimit"
@@ -17,6 +17,7 @@
 <script>
 
 import { mapActions, mapGetters } from 'vuex';
+import numberFormatter from '@/formatters/number-formatter';
 
 export default {
   name: 'Pagination',
@@ -52,6 +53,7 @@ export default {
     ...mapActions({
       setPagination: 'query/setPagination'
     }),
+    numberFormatter,
     prev() {
       this.setPagination({
         view: this.view,

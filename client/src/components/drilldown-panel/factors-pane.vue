@@ -6,7 +6,7 @@
       @close="documentModalData = null"
     />
     <div class="pane-summary">
-      {{ selectedItem.concept | ontology-formatter }} ({{ factorCount | number-formatter }})
+      {{ ontologyFormatter(selectedItem.concept) }} ({{ numberFormatter(factorCount) }})
       <i
         v-tooltip.top="selectedConceptExamples"
         class="fa fa-info-circle concept-examples-icon" />
@@ -157,6 +157,8 @@ import MessageDisplay from '@/components/widgets/message-display';
 import SmallTextButton from '@/components/widgets/small-text-button';
 import SmallIconButton from '@/components/widgets/small-icon-button';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
+import ontologyFormatter from '@/formatters/ontology-formatter';
+import numberFormatter from '@/formatters/number-formatter';
 
 import messagesUtil from '@/utils/messages-util';
 import { CORRECTION_TYPES } from '@/utils/correction-util';
@@ -242,6 +244,8 @@ export default {
     this.refresh();
   },
   methods: {
+    ontologyFormatter,
+    numberFormatter,
     initializeData() {
       this.currentItem = null;
       this.activeCorrection = null;

@@ -20,7 +20,7 @@
           <i class="fa fa-fw fa-plus-circle" />
           Add to CAG
         </button>
-        <span class="counter">{{ numselectedRelationships | number-formatter }} selected</span>
+        <span class="counter">{{ numberFormatter(numselectedRelationships) }} selected</span>
       </div>
     </div>
     <hr class="pane-separator">
@@ -35,12 +35,12 @@
           class="fa fa-lg fa-fw"
           :class="{ 'fa-check-square-o': relationship.meta.checked, 'fa-square-o': !relationship.meta.checked }"
           @click.stop="toggle(relationship)" />
-        <span @click="handleClick(relationship)"> {{ relationship.source | ontology-formatter }}
+        <span @click="handleClick(relationship)"> {{ ontologyFormatter(relationship.source) }}
           <i
             class="fa fa-fw  fa-long-arrow-right"
             :style="relationship.meta.style"
           />
-          {{ relationship.target | ontology-formatter }} </span>
+          {{ ontologyFormatter(relationship.target) }} </span>
       </div>
     </div>
   </div>
@@ -51,6 +51,8 @@ import _ from 'lodash';
 import { mapActions } from 'vuex';
 
 import { calcEdgeColor } from '@/utils/scales-util';
+import ontologyFormatter from '@/formatters/ontology-formatter';
+import numberFormatter from '@/formatters/number-formatter';
 
 export default {
   name: 'MultiRelationshipsPane',
@@ -96,6 +98,8 @@ export default {
     ...mapActions({
       setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges'
     }),
+    ontologyFormatter,
+    numberFormatter,
     refresh() {
       // Massage the structure to include checked states and styles
       let children = this.relationships.map(relationship => Object.assign({}, relationship, { meta: { checked: true, style: { color: calcEdgeColor(relationship), disabled: this.isEdgeinCAG({ source: relationship.source, target: relationship.target }) } } }));

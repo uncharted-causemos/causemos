@@ -1,7 +1,7 @@
 import { shallowMount } from '@vue/test-utils';
 import { expect } from 'chai';
 import Pagination from '@/components/pagination';
-import NumberFormatter from '@/filters/number-formatter';
+import NumberFormatter from '@/formatters/number-formatter';
 import { createWMEnvironment } from '../helper';
 
 const { router, store, localVue } = createWMEnvironment();

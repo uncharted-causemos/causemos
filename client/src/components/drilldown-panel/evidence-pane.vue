@@ -6,14 +6,14 @@
       @close="documentModalData = null"
     />
     <div class="pane-summary">
-      {{ selectedRelationship.source | ontology-formatter }}
+      {{ ontologyFormatter(selectedRelationship.source) }}
       <i
         class="fa fa-long-arrow-right fa-lg icon"
         :style="polarityColor"
-      /> &nbsp;{{ selectedRelationship.target | ontology-formatter }}
+      /> &nbsp;{{ ontologyFormatter(selectedRelationship.target) }}
     </div>
     <slot />
-    <div class="pane-summary">Evidence ({{ evidenceCount | number-formatter }})</div>
+    <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }})</div>
     <div class="pane-controls">
       <div
         v-if="showCurationActions"
@@ -179,6 +179,8 @@ import { CORRECTIONS, CURATIONS, SIDE_PANEL } from '@/utils/messages-util';
 import MessageDisplay from '@/components/widgets/message-display';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
+import numberFormatter from '@/formatters/number-formatter';
 
 import { CORRECTION_TYPES } from '@/utils/correction-util';
 
@@ -299,6 +301,8 @@ export default {
   },
   methods: {
     statementPolarityFormatter,
+    ontologyFormatter,
+    numberFormatter,
     initializeData() {
       this.activeCorrection = null;
       this.expandAll = null;

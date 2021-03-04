@@ -24,7 +24,7 @@
 
 <script>
 import Card from '@/components/widgets/card';
-import numberFormatter from '@/filters/number-formatter';
+import numberFormatter from '@/formatters/number-formatter';
 
 export default {
   name: 'OverviewCard',

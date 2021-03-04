@@ -5,7 +5,7 @@ import moment from 'moment';
 import initialize from '@/charts/initialize';
 import { timeseriesLine, confidenceArea, translate, showSvgTooltip, hideSvgTooltip } from '@/utils/svg-util';
 import { DEFAULT_COLOR, SELECTED_COLOR, MARKER_COLOR } from '@/utils/colors-util';
-import dateFormatter from '@/filters/date-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 import { expandExtentForDyseProjections } from '@/utils/projection-util';
 import { chartValueFormatter } from '@/utils/string-util';
 

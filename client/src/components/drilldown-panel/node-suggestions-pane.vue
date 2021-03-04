@@ -1,7 +1,7 @@
 <template>
   <div class="node-suggestions-container">
     <div class="pane-summary">
-      {{ selectedNode.concept | ontology-formatter }}
+      {{ ontologyFormatter(selectedNode.concept) }}
     </div>
     <div class="pane-controls">
       <div class=" bulk-actions">
@@ -46,10 +46,10 @@
             Top Drivers ( ? <i
               class="fa fa-fw  fa-long-arrow-right"
             />
-            {{ selectedNode.concept | ontology-formatter }} )
+            {{ ontologyFormatter(selectedNode.concept) }} )
           </span>
           <span v-else>
-            Top Impacts ({{ selectedNode.concept | ontology-formatter }} <i
+            Top Impacts ({{ ontologyFormatter(selectedNode.concept) }} <i
               class="fa fa-fw  fa-long-arrow-right"
             />
             ?)
@@ -72,7 +72,7 @@
                 @click.stop="toggle(relationship)" />
               <span
                 :style="relationship.meta.style"
-              >{{ filterRedundantConcept(relationshipGroup.key, relationship.meta) | ontology-formatter }}
+              >{{ ontologyFormatter(filterRedundantConcept(relationshipGroup.key, relationship.meta)) }}
               </span>
             </div>
             <button
@@ -102,6 +102,7 @@ import aggregationsUtil from '@/utils/aggregations-util';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { conceptShortName } from '@/utils/concept-util';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
@@ -171,6 +172,7 @@ export default {
     ...mapActions({
       setSearchClause: 'query/setSearchClause'
     }),
+    ontologyFormatter,
     refresh() {
       const topic = this.selectedNode.concept;
 

@@ -18,9 +18,9 @@
       v-for="(period, index) of fullscreenCardMetadata.period"
       :key="index"
     >
-      <em>{{ Number.parseInt(period.gte) | date-formatter('MMM YYYY') }}</em>
+      <em>{{ dateFormatter(Number.parseInt(period.gte), 'MMM YYYY') }}</em>
       -
-      <em>{{ Number.parseInt(period.lte) | date-formatter('MMM YYYY') }}</em>
+      <em>{{ dateFormatter(Number.parseInt(period.lte), 'MMM YYYY') }}</em>
     </p>
     <p>{{ fullscreenCardMetadata.description }}</p>
     <p><strong>Source: </strong>{{ fullscreenCardMetadata.source }}</p>
@@ -42,8 +42,9 @@
 </template>
 
 <script>
-import { getDatacubeById } from '@/services/datacube-service';
 import _ from 'lodash';
+import { getDatacubeById } from '@/services/datacube-service';
+import dateFormatter from '@/formatters/date-formatter';
 
 export default {
   name: 'DatacubeMetadataPane',
@@ -68,6 +69,7 @@ export default {
     this.fetchMetadata(this.fullscreenCardId);
   },
   methods: {
+    dateFormatter,
     async fetchMetadata(itemId) {
       if (itemId === null) return;
       this.isFetchingMetadata = true;

@@ -1,5 +1,5 @@
 import { expect } from 'chai';
-import DateFormatter from '@/filters/date-formatter';
+import DateFormatter from '@/formatters/date-formatter';
 
 const dateMillis = Date.UTC(2019, 7, 20);
 const formatted = '2019-08-20 00:00:00';

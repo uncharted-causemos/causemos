@@ -23,7 +23,7 @@
 <script>
 import { mapGetters } from 'vuex';
 import { getAnalysesByProjectId, createAnalysis, duplicateAnalysis, deleteAnalysis, updateAnalysis } from '@/services/analysis-service';
-import dateFormatter from '@/filters/date-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 import { ANALYSIS } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import StartScreen from '@/components/start-screen';

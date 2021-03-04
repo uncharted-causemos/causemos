@@ -46,7 +46,7 @@ import { mapGetters } from 'vuex';
 
 import Modal from '@/components/modals/modal';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
-import ontologyFormatter from '@/filters/ontology-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 
 export default {
   name: 'ModalEditConstraints',
