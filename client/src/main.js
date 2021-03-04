@@ -9,9 +9,6 @@ import { sync } from 'vuex-router-sync';
 
 Vue.config.productionTip = false;
 
-// Register global filters (formatters) for the application, this makes
-// them available in the templates
-
 Vue.use(Toasted);
 Vue.use(VTooltip);
 Vue.use(VueResize);
