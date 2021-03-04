@@ -151,7 +151,7 @@ import { mapActions, mapGetters } from 'vuex';
 
 import EmptyStateInstructions from '@/components/empty-state-instructions';
 import ActionBar from '@/components/qualitative/action-bar';
-import CAGGraph from '@/components/graph/CAG-graph';
+import CAGGraph from '@/components/qualitative/CAG-graph';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
