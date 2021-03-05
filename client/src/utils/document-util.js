@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import dateFormatter from '@/filters/date-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 
 export const DOC_FIELD = Object.freeze({
   AUTHOR: 'author',

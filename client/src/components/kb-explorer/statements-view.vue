@@ -93,20 +93,20 @@
               <td v-if="visibleColumns[FIELDS.SUBJ]">{{ statement.subj.factor }}</td>
               <td
                 v-if="visibleColumns[FIELDS.SUBJ_CONCEPT]"
-                class="highlight">{{ statement.subj.concept | ontology-formatter }}</td>
-              <td v-if="visibleColumns[FIELDS.SUBJ_CONCEPT_SCORE]">{{ statement.subj.concept_score | precision-formatter }}</td>
+                class="highlight">{{ ontologyFormatter(statement.subj.concept) }}</td>
+              <td v-if="visibleColumns[FIELDS.SUBJ_CONCEPT_SCORE]">{{ precisionFormatter(statement.subj.concept_score) }}</td>
 
               <td v-if="visibleColumns[FIELDS.TYPE]">{{ statement.type }}</td>
               <td v-if="visibleColumns[FIELDS.STATEMENT_POLARITY]">{{ statementPolarityFormatter(statement.wm.statement_polarity) }}</td>
-              <td v-if="visibleColumns[FIELDS.BELIEF]">{{ statement.belief | precision-formatter }}</td>
+              <td v-if="visibleColumns[FIELDS.BELIEF]">{{ precisionFormatter(statement.belief) }}</td>
 
               <td v-if="visibleColumns[FIELDS.OBJ_POLARITY]">{{ statement.obj.polarity | polarity-formatter }}</td>
               <td v-if="visibleColumns[FIELDS.OBJ_ADJECTIVES]">{{ listFormatter(statement.obj.adjectives) }}</td>
               <td v-if="visibleColumns[FIELDS.OBJ]">{{ statement.obj.factor }}</td>
               <td
                 v-if="visibleColumns[FIELDS.OBJ_CONCEPT]"
-                class="highlight">{{ statement.obj.concept | ontology-formatter }}</td>
-              <td v-if="visibleColumns[FIELDS.OBJ_CONCEPT_SCORE]">{{ statement.obj.concept_score | precision-formatter }}</td>
+                class="highlight">{{ ontologyFormatter(statement.obj.concept) }}</td>
+              <td v-if="visibleColumns[FIELDS.OBJ_CONCEPT_SCORE]">{{ precisionFormatter(statement.obj.concept_score) }}</td>
 
               <td v-if="visibleColumns[FIELDS.NUM_EVIDENCES]">{{ statement.wm.num_evidence }}</td>
               <td
@@ -147,6 +147,8 @@ import filtersUtil from '@/utils/filters-util';
 import locationFormatter from '@/formatters/location-formatter';
 import listFormatter from '@/formatters/list-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
+import precisionFormatter from '@/formatters/precision-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 
 export default {
   name: 'StatementsView',
@@ -211,6 +213,8 @@ export default {
     locationFormatter,
     listFormatter,
     statementPolarityFormatter,
+    precisionFormatter,
+    ontologyFormatter,
     refresh() {
       this.enableOverlay('Refreshing...');
 

@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import dateFormatter from '@/filters/date-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 
 const constructDisplayString = (evidenceItem) => {
   const {

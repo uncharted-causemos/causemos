@@ -171,8 +171,7 @@ import HistogramFacets from '@/components/facets/histogram-facets';
 import SidePanel from '@/components/side-panel/side-panel';
 // import KeywordFacets from '@/components/facets/keyword-facets';
 
-import ontologyFormatter from '@/filters/ontology-formatter';
-import polarityFormatter from '@/filters/polarity-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
 import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
@@ -226,7 +225,6 @@ export default {
   },
   data: () => ({
     ontologyFormatter: ontologyFormatter,
-    polarityFormatter: polarityFormatter,
     statementPolarityFormatter: statementPolarityFormatter,
     contradictionCategoryFormatter: contradictionCategoryFormatter,
     hedgingCategoryFormatter: hedgingCategoryFormatter,

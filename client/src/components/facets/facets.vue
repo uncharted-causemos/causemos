@@ -9,7 +9,7 @@ import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
 import Facet from '@uncharted.software/stories-facets';
-import numberFormatter from '@/filters/number-formatter';
+import numberFormatter from '@/formatters/number-formatter';
 import facetUtil from '@/utils/facet-util';
 import filtersUtil from '@/utils/filters-util';
 

@@ -63,7 +63,7 @@
                   />
                 </td>
                 <td>
-                  {{ item.modified_at| date-formatter }}
+                  {{ dateFormatter(item.modified_at) }}
                 </td>
               </tr>
             </tbody>
@@ -75,7 +75,7 @@
             :disabled="pageFrom === 0"
             @click="prev()"
           >Previous</button>
-          <span class="pagination-label">{{ pageFrom+1 }} to {{ pageSizeCount }} of {{ auditsCount | number-formatter }} audits </span>
+          <span class="pagination-label">{{ pageFrom+1 }} to {{ pageSizeCount }} of {{ numberFormatter(auditsCount) }} audits </span>
           <button
             class="btn btn-sm btn-primary"
             :disabled="auditsCount < incrementedPageSize"
@@ -94,6 +94,8 @@
 import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
 import AuditEntry from '@/components/audit/audit-entry';
+import numberFormatter from '@/formatters/number-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 
 export default {
   name: 'AuditTrail',
@@ -140,6 +142,8 @@ export default {
     ...mapActions({
       setPagination: 'query/setPagination'
     }),
+    numberFormatter,
+    dateFormatter,
     refresh() {
       API.get('audits', {
         params: { projectId: this.project, from: this.pageFrom, size: this.pageSize }

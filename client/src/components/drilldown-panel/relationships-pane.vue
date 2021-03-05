@@ -1,7 +1,7 @@
 <template>
   <div class="relationships-container">
     <div class="pane-summary">
-      {{ selectedNode.concept | ontology-formatter }} ({{ relationshipCount }})
+      {{ ontologyFormatter(selectedNode.concept) }} ({{ relationshipCount }})
     </div>
     <button
       v-if="showGetSuggestionsButton"
@@ -94,7 +94,7 @@
               <span
                 :style="relationship.meta.style"
                 @click="handleClick(relationship.meta)"
-              >{{ filterRedundantConcept(relationshipGroup.key, relationship.meta) | ontology-formatter }}
+              >{{ ontologyFormatter(filterRedundantConcept(relationshipGroup.key, relationship.meta)) }}
               </span>
               <small-icon-button
                 v-tooltip.top="isKbExplorer? 'Delete relationship from KB' : 'Remove relationship from CAG'"
@@ -137,7 +137,7 @@ import SmallIconButton from '@/components/widgets/small-icon-button';
 import aggregationsUtil from '@/utils/aggregations-util';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { calcEdgeColor } from '@/utils/scales-util';
-import ontologyFormatter from '../../filters/ontology-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',

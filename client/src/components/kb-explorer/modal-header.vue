@@ -16,9 +16,9 @@
     </button>
     <span>
       <span class="selected">
-        {{ selectedSubgraphEdges.length | number-formatter }} selected
+        {{ numberFormatter(selectedSubgraphEdges.length) }} selected
       </span>
-      of {{ filteredEdgesCount | number-formatter }}
+      of {{ numberFormatter(filteredEdgesCount) }}
       {{ areEdgesDrawn ? '': '(hidden) ' }} relationships
     </span>
     <bookmark-controls slot="trailing" />
@@ -31,6 +31,7 @@ import { EDGE_THRESHOLD } from '@/components/graph/cyto-graph';
 import { SUBGRAPH, ADD_TO_CAG_THRESHOLD } from '@/utils/messages-util';
 import fullScreenModalHeader from '../widgets/full-screen-modal-header.vue';
 import BookmarkControls from '@/components/bookmark-panel/bookmark-controls';
+import numberFormatter from '@/formatters/number-formatter';
 
 export default {
   name: 'KbExplorerModalHeader',
@@ -60,6 +61,7 @@ export default {
     }
   },
   methods: {
+    numberFormatter,
     addToCAG() {
       this.$emit('add-to-CAG');
     },

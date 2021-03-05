@@ -11,7 +11,7 @@ import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { SELECTED_COLOR, EDGE_COLOR_PALETTE } from '@/utils/colors-util';
 import { calculateScenarioPercentageChange } from '@/utils/projection-util';
-import ontologyFormatter from '@/filters/ontology-formatter';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { SVGRenderer } from 'svg-flowgraph';
 import { interpolatePath } from 'd3-interpolate-path';

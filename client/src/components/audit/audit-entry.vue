@@ -6,16 +6,9 @@
       :compare-value="COMPACT_POLARITY[compareValues.subj.polarity]"
     />
     <highlight-value
-      :display-value="displayValues.subj.concept | ontology-formatter"
-      :compare-value="compareValues.subj.concept | ontology-formatter"
+      :display-value="ontologyFormatter(displayValues.subj.concept)"
+      :compare-value="ontologyFormatter(compareValues.subj.concept)"
     />
-    <!--
-    <highlight-value
-      v-if="showGroundingScore"
-      :display-value="displayValues.subj.score | precision-formatter"
-      :compare-value="compareValues.subj.score | precision-formatter"
-    />
-    -->
     &nbsp;&gt;&nbsp;
     <highlight-value
       v-if="isPolarityUpdate"
@@ -23,22 +16,16 @@
       :compare-value="COMPACT_POLARITY[compareValues.obj.polarity]"
     />
     <highlight-value
-      :display-value="displayValues.obj.concept | ontology-formatter"
-      :compare-value="compareValues.obj.concept | ontology-formatter"
+      :display-value="ontologyFormatter(displayValues.obj.concept)"
+      :compare-value="ontologyFormatter(compareValues.obj.concept)"
     />
-    <!--
-    <highlight-value
-      v-if="showGroundingScore"
-      :display-value="displayValues.obj.score | precision-formatter"
-      :compare-value="compareValues.obj.score | precision-formatter"
-    />
-    -->
   </span>
 </template>
 
 <script>
 import { COMPACT_POLARITY } from '@/utils/polarity-util';
 import HighlightValue from '@/components/audit/highlight-value';
+import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const POLARITY_CORRECTION_TYPES = [
   'factor_polarity'
@@ -76,6 +63,9 @@ export default {
   },
   created() {
     this.COMPACT_POLARITY = COMPACT_POLARITY;
+  },
+  methods: {
+    ontologyFormatter
   }
 };
 </script>

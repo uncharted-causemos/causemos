@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { expect } from 'chai';
-import PrecisionFormatter from '@/filters/precision-formatter';
+import PrecisionFormatter from '@/formatters/precision-formatter';
 
 describe('precision-formatter', () => {
   const SCORE = 0.123456;

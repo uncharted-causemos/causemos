@@ -25,7 +25,7 @@ import StartScreen from '@/components/start-screen';
 import RenameModal from '@/components/action-bar/rename-modal';
 import EmptyStateInstructions from '@/components/empty-state-instructions';
 import { CAG } from '@/utils/messages-util';
-import dateFormatter from '@/filters/date-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 
 export default {

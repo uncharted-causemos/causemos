@@ -27,7 +27,7 @@
               <i
                 class="fa fa-check"
                 :style="suggestionStyle(suggestion.name)" />
-              <div class="suggestion-score"> {{ suggestion.score | precision-formatter }} </div>
+              <div class="suggestion-score"> {{ precisionFormatter(suggestion.score) }} </div>
               <concept-display :item="suggestion.name" />
             </div>
           </div>
@@ -130,6 +130,7 @@ import ConceptDisplay from '@/components/widgets/autocomplete/concept-display';
 import CloseButton from '@/components/widgets/close-button';
 import { UNKNOWN } from '@/utils/concept-util';
 import SmallTextButton from '@/components/widgets/small-text-button';
+import precisionFormatter from '@/formatters/precision-formatter';
 
 function _matchedConcepts(target, str) {
   return target.toLowerCase().replace(/_/g, ' ').includes(
@@ -192,6 +193,7 @@ export default {
     ...mapActions({
       setOntologyConcepts: 'app/setOntologyConcepts'
     }),
+    precisionFormatter,
     async searchConcept(searchTerm) {
       const suggestions = this.ontologyConcepts.filter(item => _matchedConcepts(item, searchTerm));
       return suggestions;

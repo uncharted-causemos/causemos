@@ -24,7 +24,7 @@
       </td>
       <td>{{ documentCount() }}</td>
       <td>{{ readers() }}</td>
-      <td>{{ kb.created_at | date-formatter }}</td>
+      <td>{{ dateFormatter(kb.created_at) }}</td>
     </tr>
     <tr
       v-if="showMore"
@@ -45,7 +45,8 @@
 
 <script>
 import _ from 'lodash';
-import numberFormatter from '@/filters/number-formatter';
+import numberFormatter from '@/formatters/number-formatter';
+import dateFormatter from '@/formatters/date-formatter';
 
 export default {
   name: 'KnowledgeBaseRow',
@@ -63,6 +64,7 @@ export default {
     showMore: false
   }),
   methods: {
+    dateFormatter,
     toggleShowMore() {
       this.showMore = !this.showMore;
     },
