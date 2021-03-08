@@ -228,6 +228,7 @@ export default {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken'
     }),
+    ontologyFormatter,
     initializeData() {
       this.expandAll = { value: true };
     },
