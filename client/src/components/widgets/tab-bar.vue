@@ -74,12 +74,12 @@ li {
 }
 
 li:hover {
-  background: $color-background-lvl-1;
+  background: $background-light-2;
   color: $color-text-base-dark;
 }
 
 li.active {
-  background: $color-background-lvl-1;
+  background: $background-light-2;
   color: $selected-dark;
 
   &::before {

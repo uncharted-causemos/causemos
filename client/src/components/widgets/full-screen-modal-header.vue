@@ -40,6 +40,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "~styles/variables";
 
 .full-screen-modal-header-container {
   background-color: #0e3480;
@@ -63,7 +64,7 @@ export default {
 
 .navBack {
   font-weight: 600;
-  font-size: 16px;
+  font-size: $font-size-large;
   color: #FFFFFF;
   cursor: pointer;
   i {

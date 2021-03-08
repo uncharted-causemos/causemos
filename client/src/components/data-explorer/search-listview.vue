@@ -150,7 +150,7 @@ export default {
 $selected-border: #255DCC;
 $selected-background: #EBF1FC;
 .search-listview-container {
-  background: $color-background-lvl-1;
+  background: $background-light-2;
   padding: 0 10px;
   table  {
     border-collapse: collapse;
@@ -169,7 +169,6 @@ $selected-background: #EBF1FC;
     }
 
     th {
-      background: $color-background-lvl-1;
       border: none;
     }
   }
@@ -177,7 +176,7 @@ $selected-background: #EBF1FC;
     background: $background-light-1;
   }
   tr th {
-    font-size: 12px;
+    font-size: $font-size-small;
     font-weight: normal;
   }
   .table-fixed-head {
@@ -220,7 +219,7 @@ $selected-background: #EBF1FC;
     pointer-events: none;
   }
   .text-bold {
-    font-size: 16px;
+    font-size: $font-size-large;
     font-weight: 600;
     margin-bottom: 5px;
     white-space: nowrap;

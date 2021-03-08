@@ -257,7 +257,7 @@ export default {
     font-family: FontAwesome;
 
     .more, .less{
-      font-size: 12px;
+      font-size: $font-size-small;
       margin-left: 15px;
     }
     .more:before {
@@ -276,7 +276,7 @@ export default {
   }
 
   .facet-label-count {
-    font-size: 16px;
+    font-size: $font-size-large;
     top: -4px;
     position: relative;
   }

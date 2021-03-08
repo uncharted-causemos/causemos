@@ -127,10 +127,7 @@ $large-width: 380px;
     margin: 0;
     margin-left: 8px;
     flex: 1;
-    color: $label-color;
-    text-transform: uppercase;
-    font-size: 1.5rem;
-    letter-spacing: .66px;
+    @include header-secondary;
   }
 }
 

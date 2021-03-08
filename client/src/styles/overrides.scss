@@ -1,13 +1,3 @@
-// Override default black colour defined in _variables.scss
-.btn-danger {
-  &, &:active {
-    color:  $color-text-base-light;
-  }
-}
-.btn-danger:hover {
-  color:  $color-text-base-light;
-}
-
 input {
   -webkit-appearance: none;
   appearance: none;

@@ -56,7 +56,7 @@ $padding: 10px;
   cursor: pointer;
   transform: translate3d(0, $hover-nudge-height, 0);
   transition: transform 0.15s ease-out;
-  background: $color-background-lvl-2;
+  background: $background-light-1;
 
   .content {
     transition: opacity 0.2s ease;

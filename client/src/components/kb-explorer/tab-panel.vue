@@ -226,7 +226,7 @@ export default {
 }
 
 .data-awareness-bar {
-  background-color: $color-background-lvl-1;
+  background-color: $background-light-2;
   display: flex;
 }
 </style>

@@ -55,7 +55,7 @@ export default {
   position: absolute;
   display: block;
   width: 200px;
-  background: $color-background-lvl-2;
+  background: $background-light-1;
   box-sizing: border-box;
   opacity: 1;
   z-index: 20;

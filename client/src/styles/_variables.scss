@@ -20,6 +20,17 @@ $content-full-height: calc(100vh - #{$navbar-outer-height});
 
 $label-color: #707070;
 
+$font-size-small: 1.2rem;
+$font-size-medium: 1.4rem;
+$font-size-large: 1.6rem;
+
+@mixin header-secondary() {
+  font-size: $font-size-medium;
+  text-transform: uppercase;
+  letter-spacing: .066rem;
+  color: $label-color;
+}
+
 // Color used for borders and separators
 $separator: #e5e5e5;
 
@@ -27,6 +38,8 @@ $separator: #e5e5e5;
 $background-light-1: #FFFFFF;
 $background-light-2: #F2F2F2;
 $background-light-3: #E6E6E6;
+
+$background-light-1-faded: #FAFAFA;
 
 // Box Shadows
 $shadow-level-1:

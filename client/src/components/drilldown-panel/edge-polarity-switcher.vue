@@ -89,7 +89,7 @@ export default {
 }
 
 .polarity-dropdown {
-  font-size: 14px;
+  font-size: $font-size-medium;
   font-weight: normal;
   cursor: default;
   position: absolute;

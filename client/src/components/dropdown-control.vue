@@ -27,7 +27,7 @@ export default {
 .dropdown-container {
   position: relative;
   display: block;
-  background: $color-background-lvl-2;
+  background: $background-light-1;
   box-sizing: border-box;
   opacity: 1;
   z-index: 51;
