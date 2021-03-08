@@ -104,4 +104,15 @@ router.get('/polarity', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+router.get('/empty-edge', asyncHandler(async (req, res) => {
+  const q = req.query;
+  const projectId = q.project_id;
+  const numRecommendations = q.num_recommendations;
+  const subjConcept = q.subj_concept;
+  const objConcept = q.obj_concept;
+
+  const result = await curationRecommendationsService.getEmptyEdgeRecommendations(projectId, subjConcept, objConcept, numRecommendations);
+  res.json(result);
+}));
+
 module.exports = router;

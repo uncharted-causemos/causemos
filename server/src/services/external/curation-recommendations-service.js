@@ -81,6 +81,31 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
   return result;
 };
 
+/**
+ * Get recommendation for an empty edge
+ *
+ * @param {string} projectId - project identifier
+ * @param {number} numRecommendations
+ */
+const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, numRecommendations) => {
+  Logger.info(`Polarity recommendation: Project=${projectId}`);
+  const payload = {
+    subj_concept: subjConcept,
+    obj_concept: objConcept,
+    num_recommendations: numRecommendations
+  };
+
+  const options = {
+    url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/empty-edge',
+    method: 'POST',
+    headers: headers,
+    json: payload
+  };
+  const result = await requestAsPromise(options);
+  result.recommendations = await _mapEmptyEdgeRecommendationsToStatements(projectId, result.recommendations)
+  return result
+};
+
 const _mapRegroundingRecommendationsToStatementIds = async (projectId, statementIds, recommendations) => {
   const statementDocs = await _getStatementsForRegroundingRecommendations(projectId, statementIds, recommendations);
   if (_.isEmpty(statementDocs)) return [];
@@ -211,8 +236,47 @@ const _buildFactorPairsToStatmentsMap = (statementDocs) => {
   return factorPairsToStatementsMap;
 };
 
+const _mapEmptyEdgeRecommendationsToStatements = async(projectId, recommendations) => {
+  const statementIds = recommendations.map(r => r.id)
+  const statementIdToScoreMap = {}
+  recommendations.forEach(r => statementIdToScoreMap[r.id] = r.score)
+
+  statements = await _getStatementsForEmptyEdgeRecommendations(projectId, statementIds)
+  statements = statements.map(s => {
+    return {
+      score: statementIdToScoreMap[s.id],
+      statement: s
+    }
+  })
+
+  return statements
+}
+
+const _getStatementsForEmptyEdgeRecommendations = async(projectId, statementIds) => {
+  const client = ES.client;
+  const response = await client.search({
+    index: projectId,
+    body: {
+      size: SEARCH_LIMIT,
+      _source: {
+        includes: statementIncludes
+      },
+      query: {
+        bool: {
+          filter: [
+            { terms: { id: statementIds } }
+          ]
+        }
+      }
+    }
+  });
+  const statementDocs = response.body.hits.hits;
+  return statementDocs.map(x => x._source);
+}
+
 module.exports = {
   getFactorRecommendations,
-  getPolarityRecommendations
+  getPolarityRecommendations,
+  getEmptyEdgeRecommendations
 };
 
