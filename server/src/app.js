@@ -34,6 +34,8 @@ const kbsRouter = rootRequire('/routes/knowledge-bases');
 const projectsRouter = rootRequire('/routes/projects');
 
 const sessionLogService = rootRequire('/services/session-log-service');
+const pipelineService = rootRequire('/services/external/pipeline-service');
+const asyncHandler = require('express-async-handler');
 
 // Proxy to serve carto tiles with Uncharted license key
 const mapProxyRouter = rootRequire('/routes/map-proxy');
@@ -130,7 +132,12 @@ app.use('/api/curation_recommendations', [
   curationRecommendationsRouter
 ]);
 
-// ES Migration start
+app.use('/api/model-run', asyncHandler(async (req, res) => {
+  pipelineService.startModelOutputPostProcessing(1, 2, 3);
+  res.status(200).json({});
+}));
+
+
 app.use('/api/projects', projectsRouter);
 app.use('/api/kbs', kbsRouter);
 
