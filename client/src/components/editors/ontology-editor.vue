@@ -283,7 +283,7 @@ export default {
     position: relative;
   }
   .empty-new-node-message {
-    color: $state-danger-text
+    color: $negative;
   }
   .padded-row {
     padding: 0 10px;

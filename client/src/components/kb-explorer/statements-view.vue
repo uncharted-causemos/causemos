@@ -242,37 +242,38 @@ export default {
 </script>
 <style lang="scss" scoped>
 @import "~styles/wm-theme/wm-theme";
+@import "~styles/variables";
 
 .statements-table-container {
   height: 100%;
-  padding: $padding-base-vertical;
+  padding: 8px;
 
   .pagination {
-    padding: $padding-base-vertical;
+    padding: 8px;
     span {
-      padding: $padding-base-horizontal;
+      padding: 16px;
     }
   }
 .table-container {
   overflow-y: scroll;
   font-size: $font-size-small;
-  padding-left: $padding-base-vertical;
-  padding-right: $padding-base-vertical;
+  padding-left: 8px;
+  padding-right: 8px;
 
   table.table {
     th {
       position: sticky;
       top: 0px;
       z-index: 10;
-      background: $color-background-lvl-2;
+      background: $background-light-1;
       text-align: center;
     }
 
     tbody tr td,
     thead tr th,
     thead {
-      border-left: 1px solid $color-border-light;
-      border-right: 1px solid $color-border-light;
+      border-left: 1px solid $separator;
+      border-right: 1px solid $separator;
     }
 
     td.highlight {

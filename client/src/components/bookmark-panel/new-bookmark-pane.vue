@@ -149,6 +149,7 @@ export default {
 
 <style lang="scss">
 @import "~styles/wm-theme/wm-theme";
+@import "~styles/variables";
 
 .new-bookmark-pane-container {
   .controls {

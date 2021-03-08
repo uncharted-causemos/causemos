@@ -195,9 +195,6 @@ export default {
       margin: 0;
       font-weight: normal;
     }
-    .btn-link {
-      color: $link-color;
-    }
   }
   .reverse-relation-container {
     padding: 5px 15px;

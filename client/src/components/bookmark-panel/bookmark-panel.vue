@@ -63,7 +63,7 @@ export default {
   z-index: 600;
   transition: all 0.5s ease;
   padding: 0 10px;
-  background: $color-background-lvl-2;
+  background: $background-light-1;
   box-shadow: 0 2px 2px rgba(0,0,0,.12), 0 4px 4px rgba(0,0,0,.24);
   overflow-y: auto;
   overflow-x: hidden;

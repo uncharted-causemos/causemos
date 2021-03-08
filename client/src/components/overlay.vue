@@ -39,7 +39,7 @@ export default {
   z-index: 9999;
 
   .message-container {
-    font-size: $font-size-h1;
+    font-size: 4rem;
     color: $color-text-second-light;
   }
 }

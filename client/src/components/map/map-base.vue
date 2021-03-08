@@ -127,15 +127,15 @@ export default {
   overflow-y: hidden;
   z-index: 5;
   .marker-tooltip {
-    background: $color-background-lvl-4;
-    border-color: $color-background-lvl-4;
+    background: #303036;
+    border-color: #303036;
     color: white;
   }
 
   .leaflet-tooltip-top.marker-tooltip::before {
     border-left-color: transparent;
     border-right-color: transparent;
-    border-top-color: $color-background-lvl-4;
+    border-top-color: #303036;
   }
 }
 </style>

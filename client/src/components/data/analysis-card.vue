@@ -396,7 +396,7 @@ $fullscreenTransition: all .5s ease-in-out;
     overflow: hidden;
     text-overflow: ellipsis;
     white-space: nowrap;
-    font-size: 1.6rem;
+    font-size: $font-size-large;
   }
 }
 
