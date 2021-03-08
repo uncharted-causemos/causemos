@@ -17,9 +17,10 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/wm-theme/wm-theme";
+@import "~styles/variables";
 
 .close-button {
-  font-size: 16px;
+  font-size: $font-size-large;
   width: 32px;
   height: 32px;
   display: flex;

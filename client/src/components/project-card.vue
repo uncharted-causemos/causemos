@@ -153,6 +153,7 @@ export default {
 
 <style scoped lang="scss">
 @import "~styles/variables";
+@import "~styles/wm-theme/wm-theme";
 
 .project-card-container {
   cursor: pointer;
@@ -201,5 +202,15 @@ export default {
 .number-col {
   text-align: right;
   padding-right: 30px;
+}
+
+// Override default black colour defined in _variables.scss
+.btn-danger {
+  &, &:active {
+    color:  $color-text-base-light;
+  }
+}
+.btn-danger:hover {
+  color:  $color-text-base-light;
 }
 </style>

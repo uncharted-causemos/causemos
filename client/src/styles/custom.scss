@@ -45,7 +45,7 @@ hr.pane-separator {
   }
   .btn-link {
     color: $link-color;
-    font-size: 12px;
+    font-size: $font-size-small;
     padding: 5px;
   }
 }
@@ -188,7 +188,7 @@ hr.pane-separator {
 }
 
 .error-msg {
-  color: $state-danger-text;
+  color: $negative;
 }
 
 .secondary-navbar {

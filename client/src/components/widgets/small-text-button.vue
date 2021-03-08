@@ -29,13 +29,14 @@ export default {
 
 
 <style lang="scss" scoped>
+@import "~styles/variables";
 button {
   background: #F0F0F0;
   color: #5A5A5A;
   border: none;
   padding: 1px 8px 3px; // Hack to center text
   border-radius: 2px;
-  font-size: 12px;
+  font-size: $font-size-small;
   height: 20px;
 
   &:hover {

@@ -154,9 +154,6 @@ export default {
 
 .new-project-container {
   max-width: 1000px;
-  .empty-new-project-message {
-    color: $state-danger-text
-  }
   .title {
     display: flex;
     h2 {

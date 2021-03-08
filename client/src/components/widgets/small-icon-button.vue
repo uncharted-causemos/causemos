@@ -37,13 +37,15 @@ export default {
 
 
 <style lang="scss" scoped>
+@import "~styles/variables";
+
 button {
   background: #F0F0F0;
   color: #5A5A5A;
   border: none;
   padding: 0;
   border-radius: 2px;
-  font-size: 12px;
+  font-size: $font-size-small;
   height: 20px;
   width: 20px;
   position: relative;

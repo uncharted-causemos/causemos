@@ -120,6 +120,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/wm-theme/wm-theme";
+@import "~styles/variables";
 
 .unknown-bulk-dropdown{
   position:absolute;
@@ -133,7 +134,7 @@ export default {
 }
 
 .selection-message {
-  color: $state-danger-text
+  color: $negative;
 }
 
 .alert {

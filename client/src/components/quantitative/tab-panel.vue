@@ -534,7 +534,7 @@ main {
   overflow-y: auto;
   .header {
     font-weight: bold;
-    font-size: 12px;
+    font-size: $font-size-small;
     min-height: 40px;
   }
   .labels-list-title{

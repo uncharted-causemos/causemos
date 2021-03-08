@@ -104,18 +104,15 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/wm-theme/wm-theme";
+@import "~styles/variables";
 
 .knowledge-base-row-container {
-  background: #fff;
+  background: $background-light-1;
   border-left: 4px solid transparent;
   cursor: pointer;
 
   &.active {
     border-left-color: #255DCC;
-  }
-
-  &:not(:first-child){
-    border-top: 2px solid $color-background-lvl-0;
   }
 
   input[type="radio"] {

@@ -323,7 +323,7 @@ export default {
         display: flex;
         flex-direction: column;
         .invalid-message {
-          color: $state-danger-text;
+          color: $negative;
         }
         textarea {
           width: 100%;
