@@ -212,11 +212,11 @@ router.get('/:projectId/facets', asyncHandler(async (req, res) => {
 }));
 
 
-/* GET Ontology examples */
-router.get('/:projectId/ontology-examples', asyncHandler(async (req, res) => {
+/* GET Ontology definitions */
+router.get('/:projectId/ontology-definitions', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
-  const examples = await projectService.getOntologyExamples(projectId);
-  res.json(examples);
+  const definitions = await projectService.getOntologyDefinitions(projectId);
+  res.json(definitions);
 }));
 
 /* POST update belief score */

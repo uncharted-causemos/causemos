@@ -462,10 +462,10 @@ const facets = async (projectId, filters, fields) => {
 };
 
 /**
- * Retrieves a map of concept => examples for a given project
+ * Retrieves a map of concept => definitions for a given project
  * @param {string} projectId - project identifier
  */
-const getOntologyExamples = async(projectId) => {
+const getOntologyDefinitions = async(projectId) => {
   const MAX_SIZE = 5000;
   const ontology = Adapter.get(RESOURCE.ONTOLOGY);
 
@@ -475,7 +475,7 @@ const getOntologyExamples = async(projectId) => {
 
   const result = {};
   ontologyConcepts.forEach(concept => {
-    result[concept.label] = concept.examples;
+    result[concept.label] = concept.definition;
   });
   return result;
 };
@@ -602,7 +602,7 @@ module.exports = {
 
   countStats,
   facets,
-  getOntologyExamples,
+  getOntologyDefinitions,
 
   getProjectStatementsScores,
   getProjectEdges,

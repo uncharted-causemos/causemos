@@ -1,6 +1,6 @@
 const _ = require('lodash');
 /**
- * @param {Object} result resulting extracted concept key to arrays of examples
+ * @param {Object} result resulting extracted concept key to concept definition
  * @param {Object} input  metadata input
  * @param {String} parent flattened parent concepts
  * @param {Number} depth  ontology hierarchy depth
@@ -14,6 +14,9 @@ const extractConceptDefinition = (result = {}, input, parent = '', depth = 0) =>
   } else {
     Object.keys(input).forEach(k => {
       const key = parent + k;
+      if (depth > 1) {
+        result[key] = '';
+      }
       input[k].forEach(obj => {
         extractConceptDefinition(result, obj, key + '/', depth + 1);
       });
