@@ -266,4 +266,15 @@ router.get('/:projectId/path-suggestions', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+/**
+ * GET Given a subject-concept and object-concept, grab the compositional constituents
+ */
+router.get('/:projectId/ontology-constituents', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const concept = req.query.concept;
+
+  const result = await projectService.ontologyConstitudents(projectId, concept);
+  res.json(result);
+}));
+
 module.exports = router;

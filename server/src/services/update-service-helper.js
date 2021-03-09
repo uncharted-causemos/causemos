@@ -38,11 +38,21 @@ const updateFactorGrounding = (statement, updateConfig) => {
   if (!_.isNil(subj) && statement.subj.concept === subj.oldValue) {
     statement.subj.concept = subj.newValue;
     statement.subj.concept_score = 1.0;
+    statement.subj.theme = subj.theme || '';
+    statement.subj.theme_property = subj.theme_property || '';
+    statement.subj.process = subj.process || '';
+    statement.subj.process_property = subj.process_property || '';
+
     updateCandidates(statement.subj, subj);
   }
   if (!_.isNil(obj) && statement.obj.concept === obj.oldValue) {
     statement.obj.concept = obj.newValue;
     statement.obj.concept_score = 1.0;
+    statement.obj.theme = obj.theme || '';
+    statement.obj.theme_property = obj.theme_property || '';
+    statement.obj.process = obj.process || '';
+    statement.obj.process_property = obj.process_property || '';
+
     updateCandidates(statement.obj, obj);
   }
 

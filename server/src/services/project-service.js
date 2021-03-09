@@ -587,6 +587,55 @@ const bustProjectGraphCache = async (projectId) => {
   set(_graphKey(projectId), promise);
 };
 
+
+/**
+ * Given a flattened concept, search the statements and return
+ * the compositional ontology's constitudents, if available
+ *
+ */
+const ontologyConstitudents = async (projectId, concept) => {
+  const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
+
+  // FIXME: Move to adapter
+  const result = await statement.client.search({
+    index: statement.index,
+    body: {
+      size: 1,
+      query: {
+        bool: {
+          should: [
+            {
+              term: {
+                'subj.candidates.name': concept
+              }
+            },
+            {
+              term: {
+                'obj.candidates.name': concept
+              }
+            }
+          ]
+        }
+      }
+    }
+  });
+
+  if (_.isEmpty(result.body.hits.hits)) {
+    return {};
+  }
+  const st = result.body.hits.hits[0]._source;
+  const candidate = st.subj.candidates.filter(d => d.name === concept).concat(
+    st.obj.candidates.filter(d => d.name === concept)
+  )[0];
+
+  return {
+    theme: candidate.theme,
+    theme_property: candidate.theme_property,
+    process: candidate.process,
+    process_property: candidate.process_property
+  };
+};
+
 module.exports = {
   listProjects,
   findProject,
@@ -609,5 +658,8 @@ module.exports = {
 
   searchFields,
   searchPath,
-  bustProjectGraphCache
+  bustProjectGraphCache,
+
+  // misc
+  ontologyConstitudents
 };
