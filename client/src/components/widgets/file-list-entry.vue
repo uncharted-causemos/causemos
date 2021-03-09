@@ -74,7 +74,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 
 .file-list-entry-container {
   position: relative;

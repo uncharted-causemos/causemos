@@ -55,11 +55,10 @@ export default {
 
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 
-$toggle-on: $color-btn-primary;
-$toggle-off: $color-btn-primary-disable;
+$toggle-on: #4E4E54;
+$toggle-off: $label-color;
 
 $toggle-size: 40px;
 

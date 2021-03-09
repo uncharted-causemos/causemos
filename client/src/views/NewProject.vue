@@ -150,7 +150,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 
 .new-project-container {
   max-width: 1000px;
