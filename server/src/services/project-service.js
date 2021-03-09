@@ -73,17 +73,17 @@ const createProject = async (kbId, name) => {
 
   Logger.info(`Processing ontology ${projectData.ontology}`);
   const processed = yaml.safeLoad(response);
-  const examples = {};
+  const definitions = {};
   processed.forEach(conceptObj => {
-    conceptUtil.extractConceptExamples(examples, conceptObj, '');
+    conceptUtil.extractConceptDefinition(definitions, conceptObj, '');
   });
 
-  const conceptsPayload = Object.keys(examples).map(key => {
+  const conceptsPayload = Object.keys(definitions).map(key => {
     return {
       project_id: projectId,
       id: uuid(),
       label: key,
-      examples: examples[key]
+      definition: definitions[key]
     };
   });
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
