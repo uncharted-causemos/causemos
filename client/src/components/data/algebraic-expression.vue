@@ -9,7 +9,7 @@
   >
     <div
       v-for="(term, index) in terms"
-      :Key="term.id">
+      :key="term.id">
       <i
         v-if="index !== 0"
         :key="'transform-icon' + index"
