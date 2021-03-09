@@ -305,7 +305,7 @@ export default {
   mounted() {
     this.recalculateCAG();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearThumbnailTimer();
   },
   methods: {

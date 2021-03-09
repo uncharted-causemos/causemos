@@ -732,7 +732,7 @@ export default {
 
     this.refresh();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.mouseTrap.reset();
   },
   methods: {
