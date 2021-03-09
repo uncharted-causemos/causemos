@@ -7,13 +7,15 @@
       class="header"
       :class="{ 'no-filters': activeFilters.length === 0 }"
     >
-      <span><i class="fa fa-filter filter-icon" />Filter regions where</span>
+      <span><i class="fa fa-filter filter-icon" />Filter regions where </span>
       <span
         v-for="(filter, index) of activeFilters"
         :key="index"
       >
         <span v-if="index > 0"> and </span>
-        <span class="badge badge-default">{{ filter.name }}: <b>{{ filter.min }}</b> to <b>{{ filter.max }}</b></span>
+        <badge class="region-filter">
+          <span>{{ filter.name }}: <strong>{{ filter.min }}</strong> to <strong>{{ filter.max }}</strong></span>
+        </badge>
       </span>
     </div>
     <div class="cards-container">
@@ -41,11 +43,13 @@ import DataAnalysisCard from '@/components/data/analysis-card';
 import html2canvas from 'html2canvas';
 import { updateAnalysis } from '@/services/analysis-service';
 import { chartValueFormatter } from '@/utils/string-util';
+import Badge from '../widgets/badge.vue';
 
 export default {
   name: 'Analysis',
   components: {
-    DataAnalysisCard
+    DataAnalysisCard,
+    Badge
   },
   props: {
     fullscreenCardId: {
@@ -123,7 +127,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 
 .analysis-container {
   padding: 10px;
@@ -146,16 +149,9 @@ export default {
       color: $selected;
     }
 
-    .badge {
-      font-weight: normal;
-      border-radius: 3px;
-      padding: 5px;
+    .region-filter {
       position: relative;
       bottom: 1px; // align baselines better
-
-      &:first-of-type {
-        margin-left: 5px;
-      }
     }
   }
 

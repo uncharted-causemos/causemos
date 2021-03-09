@@ -87,7 +87,6 @@ export default {
 
 <style lang='scss' scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 .search-container {
   min-height: 0px;
   .search-bar-box {

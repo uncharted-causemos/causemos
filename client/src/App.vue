@@ -94,7 +94,6 @@ $icon-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/bootstrap-sass/asse
 
 
 /* World Modeler style and overrides */
-@import "/styles/wm-theme/wm-theme";
 @import "/styles/wm-theme/wm-overrides";
 @import "/styles/wm";
 

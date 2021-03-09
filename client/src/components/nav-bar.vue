@@ -106,14 +106,18 @@ export default {
 
 <style scoped lang="scss">
 @import '~styles/variables';
-@import '~styles/wm-theme/custom-variables';
 
 .nav {
   min-height: $navbar-outer-height;
 }
 
 .navbar {
+  border: none;
   margin-bottom: 0px;
+}
+
+a {
+  font-weight: 600;
 }
 
 .nav-item.underlined {
