@@ -16,7 +16,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 
 .close-button {
@@ -27,11 +26,11 @@ export default {
   align-items: center;
   justify-content: center;
   border-radius: 3px;
-  color: $color-btn-default-hover;
+  color: #C1C1DE;
   cursor: pointer;
 
   &:hover {
-    color: $color-text-base-dark;
+    color: $text-color-dark;
   }
 
   position: absolute;

@@ -273,7 +273,6 @@ export default {
 <style lang="scss">
 @import '~@uncharted.software/lex/dist/lex.scss';
 @import '~styles/variables';
-@import '~styles/wm-theme/wm-theme';
 
 
 // Lex expands if there are pills, this is to insure things don't jump around
@@ -293,13 +292,13 @@ div.lex-assistant-box {
   }
 
   ul li {
-    color: $color-text-base-dark; // Override lex styles
+    color: $text-color-dark; // Override lex styles
     padding: 8px 12px; // Match dropdown-control
   }
 
   ul li.selectable.active {
     background-color: #EAEBEC; // Match dropdown-control
-    color: $color-text-base-dark; // Override lex styles
+    color: $text-color-dark; // Override lex styles
   }
 }
 

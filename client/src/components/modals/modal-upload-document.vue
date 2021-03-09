@@ -300,7 +300,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 
   /deep/ .modal-container {
 

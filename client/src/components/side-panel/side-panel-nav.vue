@@ -25,7 +25,7 @@
         />
         <span
           v-if="tab.badgeCount && tab.badgeCount > 0"
-          class="badge"
+          class="counter-badge"
         >
           {{ tab.badgeCount }}
         </span>
@@ -126,7 +126,16 @@ li {
       }
     }
 
-    .badge {
+    .counter-badge {
+      display: inline-block;
+      padding: 3px 7px;
+      font-size: $font-size-small;
+      font-weight: bold;
+      color: white;
+      line-height: 1;
+      vertical-align: middle;
+      background-color: #545353;
+      border-radius: 10px;
       position: absolute;
       left: $navbar-outer-height / 2;
       bottom: $navbar-outer-height / 2;

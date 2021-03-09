@@ -46,7 +46,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 
 $spaceBetweenTabs: 5px;
 
@@ -75,7 +74,7 @@ li {
 
 li:hover {
   background: $background-light-2;
-  color: $color-text-base-dark;
+  color: $text-color-dark;
 }
 
 li.active {

@@ -414,7 +414,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import '~styles/variables';
 
 .factors-container-content {
