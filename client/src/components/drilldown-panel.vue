@@ -113,7 +113,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 
 $drilldown-width: 25vw;
@@ -201,11 +200,11 @@ $drilldown-width: 25vw;
   align-items: center;
   justify-content: center;
   border-radius: 3px;
-  color: $color-btn-default-hover;
+  color: #C1C1DE;
   cursor: pointer;
 
   &:hover {
-    color: $color-text-base-dark;
+    color: $text-color-dark;
   }
 }
 

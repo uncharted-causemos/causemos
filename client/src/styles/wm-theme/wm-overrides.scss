@@ -1,103 +1,17 @@
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins/_vendor-prefixes.scss";
 @import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins/_forms.scss";
 
-//
-// Tables
-// --------------------------------------------------
-
-.table > tbody > tr.active > td {
-  color: $color-text-base-light;
-}
-
-// Pills
-// -------------------------
-.nav-pills {
-  > li {
-    > a {
-      &:hover,
-      &:focus {
-        color: $color-text-base-dark;
-      }
-    }
-  }
-}
-
 .form-control {
   border: 1px solid $color-border-light;
   box-shadow: none;
   &:focus {
-    border: 1px solid $color-btn-primary-hover;
+    border: 1px solid $label-color;
     outline: none;
     box-shadow: none;
     border-radius: 2px;
   }
   &::placeholder {
     color: $input-color-placeholder;
-  }
-}
-
-.has-success {
-  @include form-control-validation(
-    $color-text-base-dark,
-    $state-success-bg,
-    $state-success-bg
-  );
-  .form-control {
-    box-shadow: none;
-    &:focus {
-      border: 1px solid $state-success-bg;
-      outline: 1px solid $state-success-bg;
-      box-shadow: none;
-      border-radius: 2px;
-    }
-  }
-}
-.has-warning {
-  @include form-control-validation(
-    $color-text-base-dark,
-    $state-warning-bg,
-    $state-warning-bg
-  );
-  .form-control {
-    box-shadow: none;
-    &:focus {
-      border: 1px solid $state-warning-bg;
-      outline: 1px solid $state-warning-bg;
-      box-shadow: none;
-      border-radius: 2px;
-    }
-  }
-}
-.has-error {
-  @include form-control-validation(
-    $color-text-base-dark,
-    $state-danger-bg,
-    $state-danger-bg
-  );
-  .form-control {
-    box-shadow: none;
-    &:focus {
-      border: 1px solid $state-danger-bg;
-      outline: 1px solid $state-danger-bg;
-      box-shadow: none;
-      border-radius: 2px;
-    }
-  }
-}
-
-//
-// Badges
-// --------------------------------------------------
-
-.badge {
-  &.badge-default {
-    font-weight: normal;
-    background: #EDF4F7;
-    border: 1px solid #A2CCEB;
-    border-radius: 3px;
-    font-size: $font-size-small;
-    color: #2B495F;
-    padding: 2px 6px;
   }
 }
 
@@ -137,44 +51,14 @@
   &:hover,
   &:focus,
   &.focus {
-    background-color: $color-btn-primary-hover;
-    border-color: $color-btn-primary-hover;
+    background-color: #353554;
+    border-color: #353554;
     color: #fff;
   }
 }
 
 // Base styles
 // --------------------------------------------------
-
-.navbar {
-  border: none;
-  a {
-    font-weight: 600;
-  }
-}
-// logos
-.navbar-inverse .navbar-brand-logo:hover,
-.uncharted-dark .navbar-default .navbar-brand-logo:hover,
-.uncharted-dark .navbar-inverse .navbar-brand-logo:hover {
-  // red
-  background-image: $navbar-brand-logo-color;
-}
-.navbar-inverse .navbar-brand-logo,
-.uncharted-dark .navbar-default .navbar-brand-logo,
-.uncharted-dark .navbar-inverse .navbar-brand-logo {
-  // red
-  background-image: $navbar-brand-logo-color;
-}
-
-.navbar-default .navbar-brand-logo:hover {
-  // white
-  background-image: $navbar-brand-logo-white;
-}
-.navbar-default .navbar-brand-logo {
-  // grey
-  background-image: $navbar-brand-logo-muted;
-}
-
 .table,
 .alert,
 p {

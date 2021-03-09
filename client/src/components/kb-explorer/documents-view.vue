@@ -148,7 +148,6 @@ export default {
 
 
 <style scoped lang="scss">
-@import "~styles/wm-theme/wm-theme";
 
 .document-view-container {
   padding: 8px;

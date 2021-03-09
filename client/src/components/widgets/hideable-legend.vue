@@ -38,7 +38,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 
 $hover-nudge-height: 25px;
 $padding: 10px;
@@ -82,7 +81,7 @@ $padding: 10px;
 .legend-label {
   $font-size: 15px;
 
-  color: $color-text-disable-light;
+  color: $text-color-light;
   position: absolute;
   top: 2.5px;
   left: 50%;
