@@ -102,8 +102,8 @@ const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, nu
     json: payload
   };
   const result = await requestAsPromise(options);
-  result.recommendations = await _mapEmptyEdgeRecommendationsToStatements(projectId, result.recommendations)
-  return result
+  result.recommendations = await _mapEmptyEdgeRecommendationsToStatements(projectId, result.recommendations);
+  return result;
 };
 
 const _mapRegroundingRecommendationsToStatementIds = async (projectId, statementIds, recommendations) => {
@@ -237,20 +237,22 @@ const _buildFactorPairsToStatmentsMap = (statementDocs) => {
 };
 
 const _mapEmptyEdgeRecommendationsToStatements = async(projectId, recommendations) => {
-  const statementIds = recommendations.map(r => r.id)
-  const statementIdToScoreMap = {}
-  recommendations.forEach(r => statementIdToScoreMap[r.id] = r.score)
+  const statementIds = recommendations.map(r => r.id);
+  const statementIdToScoreMap = {};
+  recommendations.forEach(r => {
+    statementIdToScoreMap[r.id] = r.score;
+  });
 
-  statements = await _getStatementsForEmptyEdgeRecommendations(projectId, statementIds)
+  let statements = await _getStatementsForEmptyEdgeRecommendations(projectId, statementIds);
   statements = statements.map(s => {
     return {
       score: statementIdToScoreMap[s.id],
       statement: s
-    }
-  })
+    };
+  });
 
-  return statements
-}
+  return statements;
+};
 
 const _getStatementsForEmptyEdgeRecommendations = async(projectId, statementIds) => {
   const client = ES.client;
@@ -272,7 +274,7 @@ const _getStatementsForEmptyEdgeRecommendations = async(projectId, statementIds)
   });
   const statementDocs = response.body.hits.hits;
   return statementDocs.map(x => x._source);
-}
+};
 
 module.exports = {
   getFactorRecommendations,
