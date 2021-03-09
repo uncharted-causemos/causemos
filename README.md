@@ -30,7 +30,7 @@ yarn worksapce client remove @uncharted/uncharted-bootstrap
 $icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
 @import '~bootstrap-sass/assets/stylesheets/_bootstrap.scss';
 
-# In client/src/styles/wm-theme/_custom-variables.scss
+# In client/src/styles/custom.scss
 Remove the unchartd-bootstrap import
 ```
 

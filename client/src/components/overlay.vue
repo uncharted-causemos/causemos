@@ -22,7 +22,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import '~styles/variables';
 
 .overlay-container {
@@ -40,7 +39,7 @@ export default {
 
   .message-container {
     font-size: 4rem;
-    color: $color-text-second-light;
+    color: $text-color-light;
   }
 }
 </style>

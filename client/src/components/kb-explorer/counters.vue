@@ -81,12 +81,10 @@ export default {
 </script>
 
 <style scoped lang="scss">
-@import "~styles/wm-theme/wm-theme";
 
 .counters-container {
   padding: 5px;
   margin-left: 15px;
-  color: $color-text-second-dark;
   display: flex;
   align-items: center;
   div:not(:first-child)::before {

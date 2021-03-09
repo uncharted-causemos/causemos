@@ -199,7 +199,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/_variables";
 
 .title {
