@@ -28,7 +28,7 @@
         :options="availableAdmin2s"
       />
       <indicator-metadata-row
-        v-model="indicator.model"
+        v-model="indicatorModel"
         class="metadata-row--top-margin"
         :row-label="'Dataset/Model'"
         :options="[indicator.model]"
@@ -259,6 +259,9 @@ export default {
       return this.usableTimeseries.length > 0
         ? func(this.usableTimeseries.map(d => d.value))
         : 0.0;
+    },
+    indicatorModel() {
+      return this.indicator ? this.indicator.model : null;
     }
   },
   watch: {

@@ -7,7 +7,9 @@
       'display-only': isDisplayOnly
     }"
   >
-    <template v-for="(term, index) in terms">
+    <div
+      v-for="(term, index) in terms"
+      :Key="term.id">
       <i
         v-if="index !== 0"
         :key="'transform-icon' + index"
@@ -22,7 +24,7 @@
         :analysis-item-id="term.id"
         :is-display-only="isDisplayOnly"
       />
-    </template>
+    </div>
     <i
       v-if="terms.length > 0 && emptySlotCount > 0"
       class="fa fa-fw transform-icon faded"
