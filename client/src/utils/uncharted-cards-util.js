@@ -1,9 +1,9 @@
-
 import * as $ from 'jquery';
-import Vue from 'vue';
+import { defineComponent } from 'vue';
+
 import ToggleButtonComponent from '@/components/widgets/toggle-button';
 
-const ToggleButton = Vue.extend(ToggleButtonComponent);
+const ToggleButton = defineComponent(ToggleButtonComponent);
 // Find the uncharted reader content element under $parent and create and inject reader switch button
 // returns switch button object
 export const createReaderSwitchButton = ({ parentElement, onClick = () => {}, description = 'Show PDF Document', isOn = true }) => {

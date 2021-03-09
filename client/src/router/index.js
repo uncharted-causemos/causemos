@@ -1,5 +1,4 @@
-import Vue from 'vue';
-import Router from 'vue-router';
+import { createRouter, createWebHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 import ProjectOverview from '@/views/ProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
@@ -15,13 +14,11 @@ import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeStart from '@/views/QuantitativeStart.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
-import NotFound from '@/views/NotFound.vue';
+// import NotFound from '@/views/NotFound.vue';
 import qs from 'qs';
 import _ from 'lodash';
 import store from '@/store';
 
-
-Vue.use(Router);
 
 /* Borrowed from pantera */
 function formatter(item) {
@@ -45,7 +42,7 @@ async function loadAnalysisState(to, from, next) {
   next();
 }
 
-export default new Router({
+export default createRouter({
   parseQuery: (query) => {
     /**
     * Override depth from default 5 to 8
@@ -59,7 +56,8 @@ export default new Router({
     const result = qs.stringify(query);
     return result ? `?${result}` : '';
   },
-  base: process.env.BASE_URL,
+  // base: process.env.BASE_URL,
+  history: createWebHistory(process.env.BASE_URL),
   routes: [
     {
       path: '/',
@@ -137,11 +135,12 @@ export default new Router({
       path: '/:project/audit-trail',
       name: 'auditTrail',
       component: AuditTrail
-    },
-    /* 404, this has to go last */
-    {
-      path: '*',
-      component: NotFound
     }
+    /* 404, this has to go last */
+    // FIXME: Pattern
+    // {
+    //   path: '*',
+    //   component: NotFound
+    // }
   ]
 });

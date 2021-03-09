@@ -1,4 +1,4 @@
-import Vue from 'vue';
+// import Vue from 'vue';
 import Vuex from 'vuex';
 
 import QueryStore from './modules/query-store';
@@ -12,7 +12,7 @@ import DataSearchStore from './modules/data-search-store';
 import DataAnalysisStore from './modules/data-analysis-store';
 import BookmarkpanelStore from './modules/bookmarkpanel-store';
 
-Vue.use(Vuex);
+// Vue.use(Vuex);
 
 export default new Vuex.Store({
   namespaced: true,
