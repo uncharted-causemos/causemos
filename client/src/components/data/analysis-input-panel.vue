@@ -135,7 +135,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 .data-analysis-input-panel-container {
   overflow: auto;
 

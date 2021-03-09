@@ -353,7 +353,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 
 $fullscreenTransition: all .5s ease-in-out;
 

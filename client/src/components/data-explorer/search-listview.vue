@@ -146,7 +146,6 @@ export default {
 
 <style lang='scss' scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 $selected-border: #255DCC;
 $selected-background: #EBF1FC;
 .search-listview-container {

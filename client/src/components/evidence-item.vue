@@ -54,7 +54,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 
 .evidence-item-container {
   background: #fff;

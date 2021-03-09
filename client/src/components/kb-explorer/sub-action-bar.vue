@@ -115,7 +115,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 
 .action-bar {
   display: flex;

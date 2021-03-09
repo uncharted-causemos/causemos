@@ -254,7 +254,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 
 $un-color-surface-30: #B3B4B5;
