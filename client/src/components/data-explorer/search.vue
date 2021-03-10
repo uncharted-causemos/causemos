@@ -37,6 +37,16 @@ export default {
     SearchListview,
     TabBar
   },
+  beforeRouteUpdate(to, from, next) {
+    // Try to keep the search state so we can restore when navigating back from other pages
+    this.setLastQuery(this.filters);
+    next();
+  },
+  beforeRouteLeave(to, from, next) {
+    // Try to keep the search state so we can restore when navigating back from other pages
+    this.setLastQuery(this.filters);
+    next();
+  },
   data: () => ({
     tabs: [
       {
@@ -62,16 +72,6 @@ export default {
   beforeMount() {
     // Set selected datacubes for ones that are already in the analysis items.
     this.setSelectedDatacubes(this.analysisItems.map(item => item.id));
-  },
-  beforeRouteUpdate(to, from, next) {
-    // Try to keep the search state so we can restore when navigating back from other pages
-    this.setLastQuery(this.filters);
-    next();
-  },
-  beforeRouteLeave(to, from, next) {
-    // Try to keep the search state so we can restore when navigating back from other pages
-    this.setLastQuery(this.filters);
-    next();
   },
   methods: {
     ...mapActions({
