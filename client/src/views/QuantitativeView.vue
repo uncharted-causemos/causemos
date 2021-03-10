@@ -166,7 +166,7 @@ export default {
   mounted() {
     this.refresh();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.setSelectedScenarioId(null);
   },
   methods: {

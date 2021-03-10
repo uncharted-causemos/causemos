@@ -15,26 +15,26 @@ import QuantitativeStart from '@/views/QuantitativeStart.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 // import NotFound from '@/views/NotFound.vue';
-// import qs from 'qs';
-// import _ from 'lodash';
+import qs from 'qs';
+import _ from 'lodash';
 import store from '@/store';
 
 
 /* Borrowed from pantera */
-// function formatter(item) {
-//   if (_.isPlainObject(item)) {
-//     return _.mapValues(item, formatter);
-//   } else if (_.isArray(item)) {
-//     return _.map(item, formatter);
-//   } else if (item === 'true') {
-//     return true;
-//   } else if (item === 'false') {
-//     return false;
-//   } else if (!Number.isNaN(Number(item)) && !_.isNull(item)) {
-//     return Number(item);
-//   }
-//   return item;
-// }
+function formatter(item) {
+  if (_.isPlainObject(item)) {
+    return _.mapValues(item, formatter);
+  } else if (_.isArray(item)) {
+    return _.map(item, formatter);
+  } else if (item === 'true') {
+    return true;
+  } else if (item === 'false') {
+    return false;
+  } else if (!Number.isNaN(Number(item)) && !_.isNull(item)) {
+    return Number(item);
+  }
+  return item;
+}
 
 // Load analysis state for dataAnalysis store before route enter
 async function loadAnalysisState(to, from, next) {
@@ -46,10 +46,7 @@ const routes = [
   {
     path: '/',
     name: 'home',
-    component: Home,
-    beforeEnter: () => {
-      console.log('.....................');
-    }
+    component: Home
   },
   {
     path: '/newProject',
@@ -59,10 +56,7 @@ const routes = [
   {
     path: '/:project/overview',
     name: 'overview',
-    component: ProjectOverview,
-    beforeEnter: () => {
-      console.log('!!!!!!!!!!!!!!!1');
-    }
+    component: ProjectOverview
   },
   {
     path: '/:project/data',
@@ -136,19 +130,19 @@ const routes = [
 
 
 export default createRouter({
-  // parseQuery: (query) => {
-  //   /**
-  //   * Override depth from default 5 to 8
-  //   * Override arrayLimit from default 20 to 300 for filters like geo_context
-  //   * see: https://github.com/ljharb/qs#parsing-objects
-  //   */
-  //   const result = qs.parse(query, { depth: 8, arrayLimit: 300 });
-  //   return formatter(result);
-  // },
-  // stringifyQuery: (query) => {
-  //   const result = qs.stringify(query);
-  //   return result ? `?${result}` : '';
-  // },
+  parseQuery: (query) => {
+    /**
+    * Override depth from default 5 to 8
+    * Override arrayLimit from default 20 to 300 for filters like geo_context
+    * see: https://github.com/ljharb/qs#parsing-objects
+    */
+    const result = qs.parse(query, { depth: 8, arrayLimit: 300 });
+    return formatter(result);
+  },
+  stringifyQuery: (query) => {
+    const result = qs.stringify(query);
+    return result ? `?${result}` : '';
+  },
   history: createWebHistory(process.env.BASE_URL),
   routes: routes
 });

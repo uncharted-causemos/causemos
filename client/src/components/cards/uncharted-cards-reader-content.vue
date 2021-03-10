@@ -75,7 +75,7 @@ export default {
     this.refresh();
     this.renderSwitchButton();
   },
-  destroyed() {
+  unmounted() {
     this.destroySwitchButton();
   },
   methods: {

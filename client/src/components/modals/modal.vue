@@ -64,7 +64,7 @@ export default {
     this.mouseTrap = new Mousetrap(document);
     this.mouseTrap.bind('esc', this.close);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.mouseTrap) {
       this.mouseTrap.unbind('esc');
       this.mouseTrap = null;

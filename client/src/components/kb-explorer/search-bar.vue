@@ -244,7 +244,7 @@ export default {
     this.lexRef.render(this.$refs.lexContainer);
     this.setQuery();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.lexRef.reset();
   },
   methods: {
