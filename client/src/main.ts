@@ -3,10 +3,34 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import { sync } from 'vuex-router-sync';
-import VTooltip from 'v-tooltip';
+import VTooltip from 'v-tooltip'; // FIXME: not working
+import Toast, { useToast } from 'vue-toastification';
+import 'vue-toastification/dist/index.css';
+
+
 sync(store, router);
 
 const app = createApp(App).use(store).use(router).use(VTooltip);
+
+app.use(Toast);
+
+app.mixin({
+  methods: {
+    // toaster(message, type, close) {
+    toaster(message:string) {
+      const toast = useToast();
+      toast(message, { timeout: 2000 });
+    }
+  }
+});
+
+
+app.directive('focus', {
+  mounted(el) {
+    el.focus();
+  }
+});
+
 app.mount('#app');
 
 // import Vue from 'vue';

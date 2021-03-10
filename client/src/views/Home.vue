@@ -137,9 +137,6 @@ export default {
     refresh() {
       projectService.getProjects().then(projects => {
         this.projectsList = projects;
-        this.projectsList.forEach(project => {
-          this.$set(project, 'isOpen', false);
-        });
         // Sort by modified_at date with latest on top
         this.sortByMostRecentDate();
       });
@@ -163,9 +160,6 @@ export default {
     },
     gotoNewProject() {
       this.$router.push('newProject');
-    },
-    toggle(project) {
-      project.isOpen = !project.isOpen;
     },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;

@@ -26,9 +26,7 @@
       <h5 class="card-title">{{ title }}</h5>
       <h6 class="subtitle">{{ subtitle }}</h6>
       <options-button class="menu">
-        <div
-          slot="content"
-        >
+        <template #content>
           <p
             class="dropdown-option"
             @click="onRename"
@@ -41,7 +39,7 @@
             class="dropdown-option"
             @click="onDelete"
           >Delete</p>
-        </div>
+        </template>
       </options-button>
     </div>
   </card>
