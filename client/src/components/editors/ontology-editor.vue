@@ -1,8 +1,8 @@
 <template>
   <div class="ontology-editor-container">
     <dropdown-control>
-      <div
-        slot="content"
+      <template
+        #content
         class="dropdown">
 
         <div class="dropdown-title">
@@ -96,11 +96,11 @@
             </button>
           </div>
         </div>
-      </div>
+      </template>
 
-      <div
+      <template
         v-if="selectedOption === 'suggestions'"
-        slot="footer"
+        #footer
         class="ontology-options">
         <div class="ontology-footer-options-container">
           <small-text-button
@@ -113,7 +113,7 @@
             @click="selectOption('new')"
           />
         </div>
-      </div>
+      </template>
     </dropdown-control>
   </div>
 </template>

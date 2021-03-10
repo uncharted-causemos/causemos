@@ -66,9 +66,9 @@
           :override="override(value)"
           :style="unusedStatementsStyle(value)"
           class="polarities-grouping-container">
-          <div
+          <template
             v-if="showCurationActions"
-            slot="controls">
+            #controls>
             <i
               class="fa fa-lg fa-fw"
               :class="{
@@ -78,9 +78,9 @@
               }"
               @click="toggle(value)"
             />
-          </div>
-          <div
-            slot="title"
+          </template>
+          <template
+            #title
             class="polarities-grouping-title">
             <div class="grouping-title">
               {{ statementPolarityFormatter(value.key) }} {{ unusedStatementsNotice(value) }}
@@ -99,44 +99,45 @@
                 @close="activeCorrection = null" />
 
             </div>
-          </div>
-          <div
-            v-for="item of value.children"
-            slot="content"
-            :key="item.key"
-            class="evidence-polarities">
-            <evidence-group
-              :expand-all="expandAll"
-              :item="item"
-              :active-correction="activeCorrection"
-              :active-item="activeItem"
-              :show-curation-actions="showCurationActions"
-              @click-evidence="openDocumentModal"
-              @toggle="toggle"
-              @vet="confirmVet"
-              @discard-statements="confirmDiscardStatements"
-              @open-editor="openEditor($event.item, $event.type)" />
+          </template>
+          <template #content>
+            <div
+              v-for="item of value.children"
+              :key="item.key"
+              class="evidence-polarities">
+              <evidence-group
+                :expand-all="expandAll"
+                :item="item"
+                :active-correction="activeCorrection"
+                :active-item="activeItem"
+                :show-curation-actions="showCurationActions"
+                @click-evidence="openDocumentModal"
+                @toggle="toggle"
+                @vet="confirmVet"
+                @discard-statements="confirmDiscardStatements"
+                @open-editor="openEditor($event.item, $event.type)" />
 
-            <polarity-editor
-              v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.POLARITY"
-              :item="{subj_polarity: item.meta.subj_polarity, obj_polarity: item.meta.obj_polarity}"
-              @reverse-relation="confirmReverseRelation(item)"
-              @select="confirmUpdatePolarity(item, $event)"
-              @close="closeEditor" />
-            <ontology-editor
-              v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_SUBJ"
-              :concept="selectedRelationship.source"
-              :suggestions="suggestions"
-              @select="confirmUpdateGrounding(item, selectedRelationship.source, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
-              @close="closeEditor" />
+              <polarity-editor
+                v-if="activeCorrection === CORRECTION_TYPES.POLARITY"
+                :item="{subj_polarity: item.meta.subj_polarity, obj_polarity: item.meta.obj_polarity}"
+                @reverse-relation="confirmReverseRelation(item)"
+                @select="confirmUpdatePolarity(item, $event)"
+                @close="closeEditor" />
+              <ontology-editor
+                v-if="activeCorrection === CORRECTION_TYPES.ONTOLOGY_SUBJ"
+                :concept="selectedRelationship.source"
+                :suggestions="suggestions"
+                @select="confirmUpdateGrounding(item, selectedRelationship.source, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
+                @close="closeEditor" />
 
-            <ontology-editor
-              v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
-              :concept="selectedRelationship.target"
-              :suggestions="suggestions"
-              @select="confirmUpdateGrounding(item, selectedRelationship.target, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
-              @close="closeEditor" />
-          </div>
+              <ontology-editor
+                v-if="activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
+                :concept="selectedRelationship.target"
+                :suggestions="suggestions"
+                @select="confirmUpdateGrounding(item, selectedRelationship.target, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
+                @close="closeEditor" />
+            </div>
+          </template>
         </collapsible-item>
       </div>
     </div>
@@ -359,6 +360,7 @@ export default {
       recursiveUp(this.summaryData);
     },
     async openEditor(item, type) {
+      console.log('opening editor ', type);
       if (item === this.activeItem && type === this.activeCorrection) {
         this.activeItem = null;
         this.activeCorrection = null;

@@ -41,7 +41,7 @@
               </div>
               <div v-if="showSortingDropdown">
                 <dropdown-control class="dropdown">
-                  <div slot="content">
+                  <template #content>
                     <div
                       v-for="option in sortingOptions"
                       :key="option"
@@ -49,7 +49,7 @@
                       @click="sort(option)">
                       {{ option }}
                     </div>
-                  </div>
+                  </template>
                 </dropdown-control>
               </div>
             </div>
