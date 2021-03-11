@@ -141,7 +141,7 @@ export default createRouter({
   },
   stringifyQuery: (query) => {
     const result = qs.stringify(query);
-    return result ? `?${result}` : '';
+    return result ? `${result}` : '';
   },
   history: createWebHistory(process.env.BASE_URL),
   routes: routes
