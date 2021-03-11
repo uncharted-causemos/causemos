@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const ES = rootRequire('adapters/es/client');
-const { SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
 const Logger = rootRequire('/config/logger');
 const cache = rootRequire('/cache/node-lru-cache');
 
@@ -255,25 +255,14 @@ const _mapEmptyEdgeRecommendationsToStatements = async(projectId, recommendation
 };
 
 const _getStatementsForEmptyEdgeRecommendations = async(projectId, statementIds) => {
-  const client = ES.client;
-  const response = await client.search({
-    index: projectId,
-    body: {
-      size: SEARCH_LIMIT,
-      _source: {
-        includes: statementIncludes
-      },
-      query: {
-        bool: {
-          filter: [
-            { terms: { id: statementIds } }
-          ]
-        }
-      }
-    }
-  });
-  const statementDocs = response.body.hits.hits;
-  return statementDocs.map(x => x._source);
+  const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
+  const response = await statement.find({
+    clauses: [
+      { field: 'id', values: statementIds, isNot: false, operand: 'AND' }
+    ]
+  }, { size: SEARCH_LIMIT, includes: statementIncludes })
+  
+  return response
 };
 
 module.exports = {
