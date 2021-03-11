@@ -29,12 +29,12 @@ const dartRouter = rootRequire('/routes/dart');
 const bookmarksRouter = rootRequire('/routes/bookmarks');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
+const modelRunRouter = rootRequire('/routes/model-run');
 
 const kbsRouter = rootRequire('/routes/knowledge-bases');
 const projectsRouter = rootRequire('/routes/projects');
 
 const sessionLogService = rootRequire('/services/session-log-service');
-const pipelineService = rootRequire('/services/external/pipeline-service');
 const asyncHandler = require('express-async-handler');
 
 // Proxy to serve carto tiles with Uncharted license key
@@ -132,10 +132,9 @@ app.use('/api/curation_recommendations', [
   curationRecommendationsRouter
 ]);
 
-app.use('/api/model-run', asyncHandler(async (req, res) => {
-  pipelineService.startModelOutputPostProcessing(1, 2, 3);
-  res.status(200).json({});
-}));
+app.use('/api/model-run', [
+  modelRunRouter
+]);
 
 
 app.use('/api/projects', projectsRouter);
