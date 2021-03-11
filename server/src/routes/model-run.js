@@ -31,4 +31,19 @@ router.post('/', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * Get status of a submitted job
+ */
+router.get('/:ingestJobId', asyncHandler(async (req, res) => {
+  const ingestJobId = req.params.ingestJobId;
+
+  try {
+    const result = await pipelineService.getJobStatus(ingestJobId);
+    res.status(200).json(result.data || {});
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
 module.exports = router;
