@@ -104,7 +104,7 @@ router.get('/polarity', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
-router.get('/empty-edge', asyncHandler(async (req, res) => {
+router.get('/edge-regrounding', asyncHandler(async (req, res) => {
   const q = req.query;
   const projectId = q.project_id;
   const numRecommendations = q.num_recommendations;

@@ -96,7 +96,7 @@ const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, nu
   };
 
   const options = {
-    url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/empty-edge',
+    url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/edge-regrounding',
     method: 'POST',
     headers: headers,
     json: payload
