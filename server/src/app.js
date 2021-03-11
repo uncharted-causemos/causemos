@@ -35,7 +35,6 @@ const kbsRouter = rootRequire('/routes/knowledge-bases');
 const projectsRouter = rootRequire('/routes/projects');
 
 const sessionLogService = rootRequire('/services/session-log-service');
-const asyncHandler = require('express-async-handler');
 
 // Proxy to serve carto tiles with Uncharted license key
 const mapProxyRouter = rootRequire('/routes/map-proxy');
