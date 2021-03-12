@@ -260,9 +260,9 @@ const _getStatementsForEmptyEdgeRecommendations = async(projectId, statementIds)
     clauses: [
       { field: 'id', values: statementIds, isNot: false, operand: 'AND' }
     ]
-  }, { size: SEARCH_LIMIT, includes: statementIncludes })
-  
-  return response
+  }, { size: SEARCH_LIMIT, includes: statementIncludes });
+
+  return response;
 };
 
 module.exports = {
