@@ -56,7 +56,7 @@ export default {
     ...mapActions({
       setOntologyConcepts: 'app/setOntologyConcepts',
       setProjectMetadata: 'app/setProjectMetadata',
-      setConceptExamples: 'app/setConceptExamples'
+      setConceptDefinitions: 'app/setConceptDefinitions'
     }),
     refresh() {
       if (_.isEmpty(this.project)) {
@@ -68,8 +68,8 @@ export default {
         this.setProjectMetadata(project);
       });
 
-      projectService.getProjectOntologyExamples(this.project).then(data => {
-        this.setConceptExamples(data);
+      projectService.getProjectOntologyDefinitions(this.project).then(data => {
+        this.setConceptDefinitions(data);
         this.setOntologyConcepts(Object.keys(data));
       });
     }

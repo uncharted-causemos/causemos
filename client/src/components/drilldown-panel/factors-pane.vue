@@ -8,7 +8,7 @@
     <div class="pane-summary">
       {{ ontologyFormatter(selectedItem.concept) }} ({{ numberFormatter(factorCount) }})
       <i
-        v-tooltip.top="selectedConceptExamples"
+        v-tooltip.top="compositinDefinitions"
         class="fa fa-info-circle concept-examples-icon" />
     </div>
     <div class="pane-controls">
@@ -149,6 +149,7 @@
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations } from '@/services/curation-service';
+import projectService from '@/services/project-service';
 import ModalDocument from '@/components/modals/modal-document';
 import EvidenceItem from '@/components/evidence-item';
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
@@ -216,19 +217,24 @@ export default {
     showConfirmCurationModal: false,
     curationConfirmedCallback: () => null,
     messageNoData: SIDE_PANEL.FACTORS_NO_DATA,
-    suggestions: []
+    suggestions: [],
+    ontologyComposition: {}
   }),
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      conceptExamples: 'app/conceptExamples'
+      conceptDefinitions: 'app/conceptDefinitions'
     }),
     numSelectedItems: function() {
       return this.summaryData.children.filter(d => d.meta.checked === true).length;
     },
-    selectedConceptExamples() {
-      if (_.isEmpty(this.conceptExamples) || _.isEmpty(this.conceptExamples[this.selectedItem.concept])) return 'No examples available';
-      return this.conceptExamples[this.selectedItem.concept].join(', ');
+    compositinDefinitions() {
+      if (_.isEmpty(this.ontologyComposition)) return '';
+      const lookup = this.conceptDefinitions;
+      return lookup[this.ontologyComposition.theme] + ' ' +
+        lookup[this.ontologyComposition.theme_property] + ' ' +
+        lookup[this.ontologyComposition.process] + ' ' +
+        lookup[this.ontologyComposition.process_property];
     },
     factorCount() {
       return this.summaryData.children.length;
@@ -257,6 +263,9 @@ export default {
         children: groupByConceptFactor(this.statements, this.selectedItem.concept),
         meta: { checked: false, isSomeChildChecked: false }
       };
+      projectService.getProjectOntologyComposition(this.project, this.selectedItem.concept).then(d => {
+        this.ontologyComposition = d;
+      });
     },
     openDocumentModal(documentMeta) {
       this.documentModalData = documentMeta;
