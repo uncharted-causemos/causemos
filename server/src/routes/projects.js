@@ -273,7 +273,7 @@ router.get('/:projectId/ontology-constituents', asyncHandler(async (req, res) =>
   const projectId = req.params.projectId;
   const concept = req.query.concept;
 
-  const result = await projectService.ontologyConstitudents(projectId, concept);
+  const result = await projectService.ontologyComposition(projectId, concept);
   res.json(result);
 }));
 

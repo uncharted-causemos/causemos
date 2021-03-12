@@ -590,10 +590,9 @@ const bustProjectGraphCache = async (projectId) => {
 
 /**
  * Given a flattened concept, search the statements and return
- * the compositional ontology's constitudents, if available
- *
+ * the viable themes/process/properties in the compositional ontology.
  */
-const ontologyConstitudents = async (projectId, concept) => {
+const ontologyConstituents = async (projectId, concept) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
 
   // FIXME: Move to adapter
@@ -661,5 +660,5 @@ module.exports = {
   bustProjectGraphCache,
 
   // misc
-  ontologyConstitudents
+  ontologyConstituents
 };
