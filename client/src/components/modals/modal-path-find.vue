@@ -2,10 +2,10 @@
   <modal
     :use-green-header="true"
     @close="close()">
-    <h4 slot="header">
-      Path suggestions
-    </h4>
-    <div slot="body">
+    <template #header>
+      <h4> Path suggestions </h4>
+    </template>
+    <template #body>
       <p>
         There is no evidence to support the edge <strong>{{ conceptShortName(source) }}</strong>
         to <strong>{{ conceptShortName(target) }}</strong>. You can still use it, or select from the indirect paths listed below.
@@ -26,21 +26,21 @@
           <hr v-if="idx === 0">
         </div>
       </div>
-    </div>
-    <ul
-      slot="footer"
-      class="unstyled-list">
-      <button
-        type="button"
-        class="btn first-button"
-        @click.stop="close()">Cancel
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary btn-call-for-action"
-        @click.stop="addSuggestedPaths()">Add
-      </button>
-    </ul>
+    </template>
+    <template #footer>
+      <ul class="unstyled-list">
+        <button
+          type="button"
+          class="btn first-button"
+          @click.stop="close()">Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          @click.stop="addSuggestedPaths()">Add
+        </button>
+      </ul>
+    </template>
   </modal>
 </template>
 
