@@ -43,7 +43,7 @@
         @tab-click="onTabClick"
         @overlay-back="onDrilldownOverlayBack"
       >
-        <div slot="content">
+        <template #content>
           <evidence-pane
             v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
             :selected-relationship="selectedEdge"
@@ -77,8 +77,8 @@
             :should-confirm-curations="true"
             @show-factor-recommendations="onShowFactorRecommendations"
           />
-        </div>
-        <div slot="overlay-pane">
+        </template>
+        <template #overlay-pane>
           <node-suggestions-pane
             v-if="activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS && selectedNode !== null"
             :selected-node="selectedNode"
@@ -94,7 +94,7 @@
             :is-fetching-statements="isFetchingStatements"
             @close-overlay="onDrilldownOverlayBack"
           />
-        </div>
+        </template>
       </drilldown-panel>
     </main>
     <modal-import-cag

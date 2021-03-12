@@ -51,7 +51,7 @@
         v-if="!isFetchingStatements"
         :override="expandAll"
       >
-        <div slot="controls">
+        <template #controls>
           <i
             v-if="relationshipGroup.count > 0"
             class="fa fa-lg fa-fw"
@@ -66,9 +66,9 @@
             v-else
             class="fa fa-lg fa-fw fa-square-o disabled"
           />
-        </div>
-        <span
-          slot="title"
+        </template>
+        <template
+          #title
           class="relationships-title"
         >
           {{ relationshipGroup.key | getRelationshipGroupDisplayString }}
@@ -77,10 +77,10 @@
             class="fa fa-fw  fa-long-arrow-right"
           />
           {{ getRelationshipGroupEffect(relationshipGroup.key) }}) ({{ relationshipGroup.count }})
-        </span>
-        <div
+        </template>
+        <template
           v-if="relationshipGroup.children.length > 0"
-          slot="content">
+          #content>
           <div class="relationships-list">
             <div
               v-for="relationship in relationshipGroup.children"
@@ -106,14 +106,14 @@
               </small-icon-button>
             </div>
           </div>
-        </div>
-        <div
+        </template>
+        <template
           v-else
-          slot="content">
+          #content>
           <message-display
             class="empty-relationship"
             :message="'None'" />
-        </div>
+        </template>
       </collapsible-item>
     </div>
     <div
