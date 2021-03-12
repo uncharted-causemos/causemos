@@ -98,7 +98,7 @@ export default {
 };
 </script>
 <style lang="scss" scoped>
-  @import "~styles/wm-theme/wm-theme";
+  @import "~styles/variables";
 
   .card-container {
     height: 233px;
@@ -160,8 +160,8 @@ export default {
     }
 
     .subtitle {
-      font-size: 12px;
-      color: $color-btn-primary-disable;
+      font-size: $font-size-small;
+      color: $label-color;
       font-weight: normal;
     }
 

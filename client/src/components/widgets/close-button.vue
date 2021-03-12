@@ -16,21 +16,21 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
+@import "~styles/variables";
 
 .close-button {
-  font-size: 16px;
+  font-size: $font-size-large;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 3px;
-  color: $color-btn-default-hover;
+  color: #C1C1DE;
   cursor: pointer;
 
   &:hover {
-    color: $color-text-base-dark;
+    color: $text-color-dark;
   }
 
   position: absolute;

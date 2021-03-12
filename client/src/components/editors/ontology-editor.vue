@@ -245,7 +245,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 
 .ontology-editor-container {
@@ -283,7 +282,7 @@ export default {
     position: relative;
   }
   .empty-new-node-message {
-    color: $state-danger-text
+    color: $negative;
   }
   .padded-row {
     padding: 0 10px;

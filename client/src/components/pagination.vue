@@ -73,12 +73,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 
 .pagination-container {
-  padding: $padding-base-vertical;
+  padding: 8px;
   span {
-    padding: $padding-base-horizontal;
+    padding: 16px;
   }
 }
 </style>

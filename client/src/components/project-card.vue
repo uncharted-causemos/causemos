@@ -74,7 +74,7 @@
           <button
             v-tooltip.top-center="'Remove the project from the list'"
             type="button"
-            class="btn btn-danger"
+            class="remove-button"
             @click.stop="showWarningModal"
           ><i class="fa fa-trash" />
             Remove Project</button>
@@ -201,5 +201,14 @@ export default {
 .number-col {
   text-align: right;
   padding-right: 30px;
+}
+
+.remove-button {
+  background: #F44336;
+  color: white;
+  font-weight: 600;
+  border: none;
+  padding: 8px 16px;
+  user-select: none;
 }
 </style>

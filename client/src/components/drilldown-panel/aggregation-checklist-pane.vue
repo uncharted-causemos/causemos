@@ -254,7 +254,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
+@import "~styles/variables";
 
 $un-color-surface-30: #B3B4B5;
 
@@ -288,7 +288,7 @@ $tick-size: 8px;
   width: $tick-size;
   height: $tick-size;
   border: 2px solid $un-color-surface-30;
-  background-color: $color-background-lvl-2;
+  background-color: $background-light-1;
   border-radius: 50%;
   position: absolute;
   top: -1 * ($tick-size - $track-height) / 2;

@@ -113,7 +113,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 
 $drilldown-width: 25vw;
@@ -152,10 +151,7 @@ $drilldown-width: 25vw;
     h5 {
       margin: 0;
       flex: 1;
-      color: $label-color;
-      text-transform: uppercase;
-      font-size: 1.5rem;
-      letter-spacing: .66px;
+      @include header-secondary;
     }
   }
 
@@ -197,18 +193,18 @@ $drilldown-width: 25vw;
 }
 
 .navigation-button {
-  font-size: 16px;
+  font-size: $font-size-large;
   width: 32px;
   height: 32px;
   display: flex;
   align-items: center;
   justify-content: center;
   border-radius: 3px;
-  color: $color-btn-default-hover;
+  color: #C1C1DE;
   cursor: pointer;
 
   &:hover {
-    color: $color-text-base-dark;
+    color: $text-color-dark;
   }
 }
 
@@ -236,7 +232,7 @@ $drilldown-width: 25vw;
   left: 0;
   top: 0;
   bottom: 0;
-  background: $color-background-lvl-2;
+  background: $background-light-1;
   opacity: 0;
   transition: transform $layout-transition, opacity $layout-transition;
   transform: translateX(100%);

@@ -300,7 +300,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 
   /deep/ .modal-container {
 
@@ -323,7 +322,7 @@ export default {
         display: flex;
         flex-direction: column;
         .invalid-message {
-          color: $state-danger-text;
+          color: $negative;
         }
         textarea {
           width: 100%;

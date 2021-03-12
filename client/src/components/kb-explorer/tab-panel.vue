@@ -211,7 +211,6 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 .tab-panel-container {
   position: relative;
@@ -226,7 +225,7 @@ export default {
 }
 
 .data-awareness-bar {
-  background-color: $color-background-lvl-1;
+  background-color: $background-light-2;
   display: flex;
 }
 </style>

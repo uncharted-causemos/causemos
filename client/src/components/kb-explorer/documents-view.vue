@@ -148,10 +148,9 @@ export default {
 
 
 <style scoped lang="scss">
-@import "~styles/wm-theme/wm-theme";
 
 .document-view-container {
-  padding: $padding-base-vertical;
+  padding: 8px;
 }
 
 </style>

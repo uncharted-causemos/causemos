@@ -18,7 +18,6 @@ export default {
 
 <style lang="scss" scoped>
   @import "~styles/variables";
-  @import "~styles/wm-theme/wm-theme";
 
   .indicator-search-result-container {
     display: flex;

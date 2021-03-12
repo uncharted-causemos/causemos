@@ -135,7 +135,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/wm-theme/wm-theme";
 .data-analysis-input-panel-container {
   overflow: auto;
 
@@ -160,7 +159,7 @@ export default {
   }
 
   /deep/ .facet-label-count {
-    font-size: 16px;
+    font-size: $font-size-large;
     top: -4px;
     position: relative;
   }

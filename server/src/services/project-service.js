@@ -73,17 +73,17 @@ const createProject = async (kbId, name) => {
 
   Logger.info(`Processing ontology ${projectData.ontology}`);
   const processed = yaml.safeLoad(response);
-  const examples = {};
+  const definitions = {};
   processed.forEach(conceptObj => {
-    conceptUtil.extractConceptExamples(examples, conceptObj, '');
+    conceptUtil.extractConceptDefinition(definitions, conceptObj, '');
   });
 
-  const conceptsPayload = Object.keys(examples).map(key => {
+  const conceptsPayload = Object.keys(definitions).map(key => {
     return {
       project_id: projectId,
       id: uuid(),
       label: key,
-      examples: examples[key]
+      definition: definitions[key]
     };
   });
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
@@ -462,10 +462,10 @@ const facets = async (projectId, filters, fields) => {
 };
 
 /**
- * Retrieves a map of concept => examples for a given project
+ * Retrieves a map of concept => definitions for a given project
  * @param {string} projectId - project identifier
  */
-const getOntologyExamples = async(projectId) => {
+const getOntologyDefinitions = async(projectId) => {
   const MAX_SIZE = 5000;
   const ontology = Adapter.get(RESOURCE.ONTOLOGY);
 
@@ -475,7 +475,7 @@ const getOntologyExamples = async(projectId) => {
 
   const result = {};
   ontologyConcepts.forEach(concept => {
-    result[concept.label] = concept.examples;
+    result[concept.label] = concept.definition;
   });
   return result;
 };
@@ -587,6 +587,54 @@ const bustProjectGraphCache = async (projectId) => {
   set(_graphKey(projectId), promise);
 };
 
+
+/**
+ * Given a flattened concept, search the statements and return
+ * the viable themes/process/properties in the compositional ontology.
+ */
+const ontologyConstituents = async (projectId, concept) => {
+  const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
+
+  // FIXME: Move to adapter
+  const result = await statement.client.search({
+    index: statement.index,
+    body: {
+      size: 1,
+      query: {
+        bool: {
+          should: [
+            {
+              term: {
+                'subj.candidates.name': concept
+              }
+            },
+            {
+              term: {
+                'obj.candidates.name': concept
+              }
+            }
+          ]
+        }
+      }
+    }
+  });
+
+  if (_.isEmpty(result.body.hits.hits)) {
+    return {};
+  }
+  const st = result.body.hits.hits[0]._source;
+  const candidate = st.subj.candidates.filter(d => d.name === concept).concat(
+    st.obj.candidates.filter(d => d.name === concept)
+  )[0];
+
+  return {
+    theme: candidate.theme,
+    theme_property: candidate.theme_property,
+    process: candidate.process,
+    process_property: candidate.process_property
+  };
+};
+
 module.exports = {
   listProjects,
   findProject,
@@ -602,12 +650,15 @@ module.exports = {
 
   countStats,
   facets,
-  getOntologyExamples,
+  getOntologyDefinitions,
 
   getProjectStatementsScores,
   getProjectEdges,
 
   searchFields,
   searchPath,
-  bustProjectGraphCache
+  bustProjectGraphCache,
+
+  // misc
+  ontologyConstituents
 };

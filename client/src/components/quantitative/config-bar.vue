@@ -54,7 +54,6 @@ export default {
 
 <style lang="scss" scoped>
 
-@import "~styles/wm-theme/wm-theme";
 @import "~styles/variables";
 
 .config-bar-container {
