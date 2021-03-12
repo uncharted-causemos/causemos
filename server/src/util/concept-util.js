@@ -1,25 +1,24 @@
 const _ = require('lodash');
 /**
- * @param {Object} result resulting extracted concept key to arrays of examples
+ * @param {Object} result resulting extracted concept key to concept definition
  * @param {Object} input  metadata input
  * @param {String} parent flattened parent concepts
  * @param {Number} depth  ontology hierarchy depth
  *
  */
-const extractConceptExamples = (result = {}, input, parent = '', depth = 0) => {
+const extractConceptDefinition = (result = {}, input, parent = '', depth = 0) => {
   // leaf node
   if (input.name !== undefined) {
     const key = parent + input.name;
-    result[key] = input.examples || [];
+    result[key] = input.definition || '';
   } else {
     Object.keys(input).forEach(k => {
       const key = parent + k;
-      // Ignore root level ontologies
       if (depth > 1) {
-        result[key] = []; // non-leaf doesn't have any examples - Tom C, Sept 11 2020
+        result[key] = '';
       }
       input[k].forEach(obj => {
-        extractConceptExamples(result, obj, key + '/', depth + 1);
+        extractConceptDefinition(result, obj, key + '/', depth + 1);
       });
     });
   }
@@ -34,6 +33,6 @@ const getOntologyShortName = (name) => {
 };
 
 module.exports = {
-  extractConceptExamples,
+  extractConceptDefinition,
   getOntologyShortName
 };

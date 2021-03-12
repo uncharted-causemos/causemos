@@ -13,6 +13,7 @@ const {
 } = require('./update-service-helper');
 
 const indraService = rootRequire('/services/external/indra-service');
+const projectService = rootRequire('/services/project-service');
 const cache = rootRequire('/cache/node-lru-cache');
 
 /**
@@ -42,6 +43,26 @@ const _buildCurationLogs = async (projectId, audits) => {
 const updateStatements = async (projectId, updateConfig, statementIds) => {
   const updateType = updateConfig.updateType;
   Logger.info(`Update ${updateType} for ${statementIds.length} statements`);
+
+  // We need to maintain compositional concepts behind the scenes, while using flattened concepts in the UI
+  if (updateType === 'factor_grounding') {
+    if (updateConfig.subj && updateConfig.subj.newValue) {
+      const result = await projectService.ontologyConstitudents(projectId, updateConfig.subj.newValue);
+      updateConfig.subj.theme = result.theme;
+      updateConfig.subj.theme_property = result.theme_property;
+      updateConfig.subj.process = result.process;
+      updateConfig.subj.process_property = result.process_property;
+    }
+    if (updateConfig.obj && updateConfig.obj.newValue) {
+      const result = await projectService.ontologyConstitudents(projectId, updateConfig.obj.newValue);
+      updateConfig.obj.theme = result.theme;
+      updateConfig.obj.theme_property = result.theme_property;
+      updateConfig.obj.process = result.process;
+      updateConfig.obj.process_property = result.process_property;
+    }
+    Logger.info(`Injecting compositional ontology concepts for factor regrounding ${JSON.stringify(updateConfig)}`);
+  }
+
   await batchUpdate(projectId, _.clone(statementIds), updateFnGenerator(projectId, updateConfig));
 };
 

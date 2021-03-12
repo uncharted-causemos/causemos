@@ -212,11 +212,11 @@ router.get('/:projectId/facets', asyncHandler(async (req, res) => {
 }));
 
 
-/* GET Ontology examples */
-router.get('/:projectId/ontology-examples', asyncHandler(async (req, res) => {
+/* GET Ontology definitions */
+router.get('/:projectId/ontology-definitions', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
-  const examples = await projectService.getOntologyExamples(projectId);
-  res.json(examples);
+  const definitions = await projectService.getOntologyDefinitions(projectId);
+  res.json(definitions);
 }));
 
 /* POST update belief score */
@@ -263,6 +263,17 @@ router.get('/:projectId/path-suggestions', asyncHandler(async (req, res) => {
   const target = req.query.target;
   const hops = req.query.hops || 2;
   const result = await projectService.searchPath(projectId, source, target, hops);
+  res.json(result);
+}));
+
+/**
+ * GET Given a subject-concept and object-concept, grab the compositional constituents
+ */
+router.get('/:projectId/ontology-constituents', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const concept = req.query.concept;
+
+  const result = await projectService.ontologyComposition(projectId, concept);
   res.json(result);
 }));
 
