@@ -18,13 +18,14 @@
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
         @refresh="refresh"
       >
-        <action-bar
-          slot="action-bar"
-          :scenarios="scenarios"
-          @revert-draft-changes="revertDraftChanges"
-          @overwrite-scenario="overwriteScenario"
-          @save-new-scenario="saveNewScenario"
-        />
+        <template #action-bar>
+          <action-bar
+            :scenarios="scenarios"
+            @revert-draft-changes="revertDraftChanges"
+            @overwrite-scenario="overwriteScenario"
+            @save-new-scenario="saveNewScenario"
+          />
+        </template>
       </tab-panel>
     </div>
     <edit-indicator-modal
@@ -335,7 +336,7 @@ export default {
       this.selectedNode = null;
     },
     showIndicator(nodeData) {
-      Vue.set(this, 'selectedNode', nodeData);
+      this.selectedNode = nodeData;
     },
     editIndicator() {
       this.isEditIndicatorModalOpen = true;

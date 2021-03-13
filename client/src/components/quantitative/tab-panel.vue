@@ -101,34 +101,34 @@
           :tabs="drilldownTabs"
           :active-tab-id="activeDrilldownTab"
           @close="closeDrilldown"
-          @tab-click="onDrilldownTabClick"
-        >
-          <indicator-summary
-            v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
-            slot="content"
-            :node="selectedNode"
-            :model-summary="modelSummary"
-            @function-selected="onFunctionSelected"
-            @edit-indicator="editIndicator"
-            @remove-indicator="removeIndicator"
-          />
-          <evidence-pane
-            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-            slot="content"
-            :show-curation-actions="false"
-            :selected-relationship="selectedEdge"
-            :statements="selectedStatements"
-            :project="project"
-            :is-fetching-statements="isFetchingStatements"
-            :should-confirm-curations="true"
-            @edge-weight="setEdgeWeight">
-            <edge-polarity-switcher
+          @tab-click="onDrilldownTabClick">
+
+          <template #content>
+            <indicator-summary
+              v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
+              :node="selectedNode"
+              :model-summary="modelSummary"
+              @function-selected="onFunctionSelected"
+              @edit-indicator="editIndicator"
+              @remove-indicator="removeIndicator"
+            />
+            <evidence-pane
+              v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
+              :show-curation-actions="false"
               :selected-relationship="selectedEdge"
-              @edge-set-user-polarity="setEdgeUserPolarity" />
-            <edge-weight-slider
-              :selected-relationship="selectedEdge"
-              @edge-weight="setEdgeWeight" />
-          </evidence-pane>
+              :statements="selectedStatements"
+              :project="project"
+              :is-fetching-statements="isFetchingStatements"
+              :should-confirm-curations="true"
+              @edge-weight="setEdgeWeight">
+              <edge-polarity-switcher
+                :selected-relationship="selectedEdge"
+                @edge-set-user-polarity="setEdgeUserPolarity" />
+              <edge-weight-slider
+                :selected-relationship="selectedEdge"
+                @edge-weight="setEdgeWeight" />
+            </evidence-pane>
+          </template>
         </drilldown-panel>
       </div>
       <config-bar

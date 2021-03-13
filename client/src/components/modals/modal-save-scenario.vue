@@ -1,7 +1,5 @@
 <template>
-  <modal
-    @close="close"
-  >
+  <modal @close="close">
     <h4 slot="header">
       <i class="fa fa-fw fa-save" />
       Save Scenario As

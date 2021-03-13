@@ -22,19 +22,17 @@
             <i class="fa fa-fw fa-angle-down" />
             <dropdown-control
               v-if="isScendarioDropdownOpen"
-              class="scenario-dropdown"
-            >
-              <div slot="content">
+              class="scenario-dropdown">
+              <template #content>
                 <div
                   v-for="scenario of scenarios"
                   :key="scenario.id"
                   class="dropdown-option"
                   :class="{'selected': scenario.id === selectedScenarioId}"
-                  @click.stop="onClickScenario(scenario.id)"
-                >
+                  @click.stop="onClickScenario(scenario.id)">
                   {{ scenario.is_valid ? scenario.name : scenario.name + " (Stale - rerun scenario) " }}
                 </div>
-              </div>
+              </template>
             </dropdown-control>
           </button>
         </li>
