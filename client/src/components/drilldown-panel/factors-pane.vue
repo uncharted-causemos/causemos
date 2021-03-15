@@ -231,10 +231,18 @@ export default {
     compositinDefinitions() {
       if (_.isEmpty(this.ontologyComposition)) return '';
       const lookup = this.conceptDefinitions;
-      return lookup[this.ontologyComposition.theme] + ' ' +
-        lookup[this.ontologyComposition.theme_property] + ' ' +
-        lookup[this.ontologyComposition.process] + ' ' +
-        lookup[this.ontologyComposition.process_property];
+
+      // FIXME: Remove when ontology versions are consolidated upstream - Mar 15, 2021
+      const defn = (v) => {
+        const alternate = v.replace('wm_compositional', 'wm');
+        const text = (lookup[v] || lookup[alternate]) || ', ';
+        return text;
+      };
+
+      return defn(this.ontologyComposition.theme) +
+        defn(this.ontologyComposition.theme_property) +
+        defn(this.ontologyComposition.process) +
+        defn(this.ontologyComposition.process_property);
     },
     factorCount() {
       return this.summaryData.children.length;
