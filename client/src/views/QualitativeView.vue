@@ -107,8 +107,8 @@
       @confirm="onModalConfirm"
       @close="onModalClose"
     >
-      <div slot="title">Confirmation</div>
-      <div slot="message">
+      <template #title>Confirmation</template>
+      <template #message>
         <div v-if="selectedNode !== null">
           <div>
             Are you sure you want to remove
@@ -125,7 +125,7 @@
           <strong>{{ selectedEdge.source | shortName }}</strong> and
           <strong>{{ selectedEdge.target | shortName }}</strong> from this CAG?
         </div>
-      </div>
+      </template>
     </modal-confirmation>
 
     <modal-import-conflict
@@ -291,7 +291,7 @@ export default {
       }
     },
     currentCAG(n, o) {
-      if (_.isEqual(n, o)) return;
+      if (_.isEqual(n, o) || _.isNil(n)) return;
       this.clearThumbnailTimer();
       this.refresh();
       this.closeDrilldown();
