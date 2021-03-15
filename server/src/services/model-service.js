@@ -53,18 +53,30 @@ const findOne = async (modelId) => {
  */
 const _edge2statement = (edge, polarity) => {
   return {
-    id: 'fixme',
+    id: 'stub_statement',
     belief: 1.0,
-    evidence: [],
+    evidence: [
+      {
+        document_context: {},
+        evidence_context: {
+          obj_polarity: polarity,
+          obj_adjectives: [],
+          subj_polarity: 1,
+          subj_adjectives: []
+        }
+      }
+    ],
     subj: {
       factor: 'user',
       concept: edge.source,
+      concept_score: 1,
       adjectives: [],
       polarity: 1
     },
     obj: {
       factor: 'user',
       concept: edge.target,
+      concept_score: 1,
       adjectives: [],
       polarity
     }
