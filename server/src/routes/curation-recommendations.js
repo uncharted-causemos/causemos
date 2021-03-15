@@ -9,15 +9,15 @@ const curationRecommendationsService = rootRequire('/services/external/curation-
 const getCAGStatements = async (cagId, sourceNode, targetNode) => {
   let statementIds = [];
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-  const esClient = edgeAdapter.client
+  const esClient = edgeAdapter.client;
   const query = {
     bool: {
       filter: [
-        {term: {model_id: cagId}}
+        { term: { model_id: cagId } }
       ],
       should: [
-        {term: {source: sourceNode }},
-        {term: {target: targetNode }} 
+        { term: { source: sourceNode } },
+        { term: { target: targetNode } }
       ],
       minimum_should_match: 1
     }
@@ -40,12 +40,12 @@ const getCAGStatements = async (cagId, sourceNode, targetNode) => {
 // FIXME: This only grabs the first 10k, not practical to send the entire KB
 const getKBStatements = async (projectId, sourceNode, targetNode) => {
   const statementAdapter = Adapter.get(RESOURCE.STATEMENT, projectId);
-  const esClient = statementAdapter.client
+  const esClient = statementAdapter.client;
   const query = {
     bool: {
       should: [
-        {term: {'subj.concept': sourceNode }}, 
-        {term: {'obj.concept': targetNode }}
+        { term: { 'subj.concept': sourceNode } },
+        { term: { 'obj.concept': targetNode } }
       ],
       minimum_should_match: 1
     }
@@ -90,8 +90,8 @@ router.get('/polarity', asyncHandler(async (req, res) => {
   const polarity = q.polarity;
   const numRecommendations = q.num_recommendations;
   const cagId = q.cag_id;
-  const subjGrounding = q.subj_grounding
-  const objGrounding = q.obj_grounding
+  const subjGrounding = q.subj_grounding;
+  const objGrounding = q.obj_grounding;
 
   let statementIds = [];
   if (cagId) {
@@ -101,6 +101,17 @@ router.get('/polarity', asyncHandler(async (req, res) => {
   }
 
   const result = await curationRecommendationsService.getPolarityRecommendations(projectId, statementIds, subjFactor, objFactor, polarity, numRecommendations);
+  res.json(result);
+}));
+
+router.get('/edge-regrounding', asyncHandler(async (req, res) => {
+  const q = req.query;
+  const projectId = q.project_id;
+  const numRecommendations = q.num_recommendations;
+  const subjConcept = q.subj_concept;
+  const objConcept = q.obj_concept;
+
+  const result = await curationRecommendationsService.getEmptyEdgeRecommendations(projectId, subjConcept, objConcept, numRecommendations);
   res.json(result);
 }));
 
