@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const ES = rootRequire('adapters/es/client');
-const { SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
 const Logger = rootRequire('/config/logger');
 const cache = rootRequire('/cache/node-lru-cache');
 
@@ -78,6 +78,31 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
   };
   const result = await requestAsPromise(options);
   result.recommendations = await _mapPolarityRecommendationsToStatements(projectId, statementIds, polarity, result.recommendations);
+  return result;
+};
+
+/**
+ * Get recommendation for an empty edge
+ *
+ * @param {string} projectId - project identifier
+ * @param {number} numRecommendations
+ */
+const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, numRecommendations) => {
+  Logger.info(`Polarity recommendation: Project=${projectId}`);
+  const payload = {
+    subj_concept: subjConcept,
+    obj_concept: objConcept,
+    num_recommendations: numRecommendations
+  };
+
+  const options = {
+    url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/edge-regrounding',
+    method: 'POST',
+    headers: headers,
+    json: payload
+  };
+  const result = await requestAsPromise(options);
+  result.recommendations = await _mapEmptyEdgeRecommendationsToStatements(projectId, result.recommendations);
   return result;
 };
 
@@ -211,8 +236,38 @@ const _buildFactorPairsToStatmentsMap = (statementDocs) => {
   return factorPairsToStatementsMap;
 };
 
+const _mapEmptyEdgeRecommendationsToStatements = async(projectId, recommendations) => {
+  const statementIds = recommendations.map(r => r.id);
+  const statementIdToScoreMap = {};
+  recommendations.forEach(r => {
+    statementIdToScoreMap[r.id] = r.score;
+  });
+
+  let statements = await _getStatementsForEmptyEdgeRecommendations(projectId, statementIds);
+  statements = statements.map(s => {
+    return {
+      score: statementIdToScoreMap[s.id],
+      statement: s
+    };
+  });
+
+  return statements;
+};
+
+const _getStatementsForEmptyEdgeRecommendations = async(projectId, statementIds) => {
+  const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
+  const response = await statement.find({
+    clauses: [
+      { field: 'id', values: statementIds, isNot: false, operand: 'AND' }
+    ]
+  }, { size: SEARCH_LIMIT, includes: statementIncludes });
+
+  return response;
+};
+
 module.exports = {
   getFactorRecommendations,
-  getPolarityRecommendations
+  getPolarityRecommendations,
+  getEmptyEdgeRecommendations
 };
 
