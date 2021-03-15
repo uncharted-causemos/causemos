@@ -8,7 +8,7 @@ const projectService = rootRequire('/services/project-service');
  */
 async function runStartup() {
   Logger.info('=== Running server up jobs ===');
-  
+
   // List all of the projects
   Logger.info('Creating project metadata cache');
   const projects = await projectService.listProjects();
