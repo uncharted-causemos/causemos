@@ -228,7 +228,7 @@ export default {
     numSelectedItems: function() {
       return this.summaryData.children.filter(d => d.meta.checked === true).length;
     },
-    compositinDefinitions() {
+    compositionDefinitions() {
       if (_.isEmpty(this.ontologyComposition)) return '';
       const lookup = this.conceptDefinitions;
 
