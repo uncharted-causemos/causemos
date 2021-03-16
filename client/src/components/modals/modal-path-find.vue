@@ -38,6 +38,7 @@
       <button
         type="button"
         class="btn btn-primary btn-call-for-action"
+        :disabled="!hasSelection"
         @click.stop="addSuggestedPaths()">Add
       </button>
     </ul>
@@ -70,6 +71,11 @@ export default {
     suggestions: []
   }),
   computed: {
+    hasSelection() {
+      return this.suggestions.reduce((a, s) => {
+        return a || s.selected === true;
+      }, false);
+    },
     ...mapGetters({
       project: 'app/project'
     })
