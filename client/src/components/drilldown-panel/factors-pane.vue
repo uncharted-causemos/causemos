@@ -8,7 +8,7 @@
     <div class="pane-summary">
       {{ ontologyFormatter(selectedItem.concept) }} ({{ numberFormatter(factorCount) }})
       <i
-        v-tooltip.top="compositinDefinitions"
+        v-tooltip.top="compositionDefinitions"
         class="fa fa-info-circle concept-examples-icon" />
     </div>
     <div class="pane-controls">
