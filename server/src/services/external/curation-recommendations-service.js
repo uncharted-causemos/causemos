@@ -27,7 +27,7 @@ const statementIncludes = [
 
 // Note: Since we sometimes filter the results from the curation service based on the statementIds in the CAG,
 // we request a high number of recommendations, filter, and then return only numRecommendations requested by client
-const preFilteredNumRecommendations = 500
+const preFilteredNumRecommendations = 500;
 
 /**
  * Get recommendation for a factor-regrounding operation
@@ -53,7 +53,7 @@ const getFactorRecommendations = async (projectId, statementIds, factor, numReco
   const result = await requestAsPromise(options);
   result.recommendations = await _mapRegroundingRecommendationsToStatementIds(projectId, statementIds, result.recommendations);
   result.recommendations = result.recommendations.slice(0, numRecommendations);
-  return result
+  return result;
 };
 
 /**
@@ -84,7 +84,7 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
   const result = await requestAsPromise(options);
   result.recommendations = await _mapPolarityRecommendationsToStatements(projectId, statementIds, polarity, result.recommendations);
   result.recommendations = result.recommendations.slice(0, numRecommendations);
-  return result
+  return result;
 };
 
 /**
@@ -126,13 +126,13 @@ const _mapRegroundingRecommendationsToStatementIds = async (projectId, statement
   });
   recommendations.sort((r1, r2) => {
     if (r1.score > r2.score) {
-      return -1
+      return -1;
     }
     if (r1.score < r2.score) {
-      return 1
+      return 1;
     }
-    return 0
-  })
+    return 0;
+  });
   return recommendations;
 };
 
@@ -202,13 +202,13 @@ const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, 
   });
   recommendations.sort((r1, r2) => {
     if (r1.score > r2.score) {
-      return -1
+      return -1;
     }
     if (r1.score < r2.score) {
-      return 1
+      return 1;
     }
-    return 0
-  })
+    return 0;
+  });
   return recommendations;
 };
 
