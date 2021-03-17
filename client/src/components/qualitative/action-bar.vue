@@ -105,6 +105,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'add-concept'
+  ],
   data: () => ({
     showRenameModal: false,
     newCagName: '',

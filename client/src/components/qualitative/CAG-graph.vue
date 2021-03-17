@@ -561,6 +561,9 @@ export default {
       default: false
     }
   },
+  emits: [
+    'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click'
+  ],
   data: () => ({
     selectedNode: ''
   }),

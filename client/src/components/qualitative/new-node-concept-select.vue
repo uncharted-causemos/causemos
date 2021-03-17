@@ -49,6 +49,9 @@ export default {
       default: () => []
     }
   },
+  emits: [
+    'suggestion-selected'
+  ],
   data: () => ({
     userInput: '',
     suggestions: [],

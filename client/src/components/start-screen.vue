@@ -62,6 +62,9 @@ export default {
       default: true
     }
   },
+  emits: [
+    'open-recent'
+  ],
   data: () => ({
     searchText: ''
   }),
