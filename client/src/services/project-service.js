@@ -20,8 +20,15 @@ const getProject = async (projectId) => {
   return result.data;
 };
 
-const getProjectOntologyExamples = async (projectId) => {
-  const result = await API.get(`projects/${projectId}/ontology-examples`, {});
+const getProjectOntologyDefinitions = async (projectId) => {
+  const result = await API.get(`projects/${projectId}/ontology-definitions`, {});
+  return result.data;
+};
+
+// Take flattened concept the derive the original compositions
+// e.g. WM_FOO_BAR => { WM_FOO, WM_BAR }
+const getProjectOntologyComposition = async (projectId, concept) => {
+  const result = await API.get(`projects/${projectId}/ontology-composition`, { params: { concept: concept } });
   return result.data;
 };
 
@@ -104,7 +111,8 @@ export default {
   getKBs,
   getProjects,
   getProject,
-  getProjectOntologyExamples,
+  getProjectOntologyDefinitions,
+  getProjectOntologyComposition,
   getProjectFacetsPromise,
   createProject,
   deleteProject,

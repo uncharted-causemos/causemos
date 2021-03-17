@@ -9,7 +9,7 @@ export default {
     updateToken: '',
     ontologyConcepts: [],
     projectMetadata: {},
-    conceptExamples: {}
+    conceptDefinitions: {}
   },
   getters: {
     project: (state, getters, rootState /*, rootGetters */) => {
@@ -31,7 +31,7 @@ export default {
     updateToken: state => state.updateToken,
     ontologyConcepts: state => state.ontologyConcepts,
     projectMetadata: state => state.projectMetadata,
-    conceptExamples: state => state.conceptExamples
+    conceptDefinitions: state => state.conceptDefinitions
   },
   actions: {
     enableOverlay({ commit }, message) {
@@ -49,8 +49,8 @@ export default {
     setProjectMetadata({ commit }, metadata) {
       commit('setProjectMetadata', metadata);
     },
-    setConceptExamples: ({ commit }, examples) => {
-      commit('setConceptExamples', examples);
+    setConceptDefinitions: ({ commit }, examples) => {
+      commit('setConceptDefinitions', examples);
     }
   },
   mutations: {
@@ -70,8 +70,8 @@ export default {
     setProjectMetadata(state, metadata) {
       state.projectMetadata = metadata;
     },
-    setConceptExamples(state, examples) {
-      state.conceptExamples = examples;
+    setConceptDefinitions(state, definitions) {
+      state.conceptDefinitions = definitions;
     }
   }
 };
