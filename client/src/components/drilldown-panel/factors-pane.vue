@@ -252,6 +252,12 @@ export default {
     statements(n, o) {
       if (_.isEqual(n, o)) return;
       this.refresh();
+    },
+    selectedItem() {
+      if (!this.selectedItem) return;
+      projectService.getProjectOntologyComposition(this.project, this.selectedItem.concept).then(d => {
+        this.ontologyComposition = d;
+      });
     }
   },
   mounted() {
@@ -271,6 +277,7 @@ export default {
         children: groupByConceptFactor(this.statements, this.selectedItem.concept),
         meta: { checked: false, isSomeChildChecked: false }
       };
+
       projectService.getProjectOntologyComposition(this.project, this.selectedItem.concept).then(d => {
         this.ontologyComposition = d;
       });
