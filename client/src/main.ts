@@ -5,12 +5,16 @@ import store from './store';
 import { sync } from 'vuex-router-sync';
 import VTooltip from 'v-tooltip'; // FIXME: not working
 import Toast, { useToast } from 'vue-toastification';
+
+// @ts-ignore
+import Vue3Resize from 'vue3-resize';
+
 import 'vue-toastification/dist/index.css';
 
 
 sync(store, router);
 
-const app = createApp(App).use(store).use(router).use(VTooltip);
+const app = createApp(App).use(store).use(router).use(VTooltip).use(Vue3Resize);
 
 app.use(Toast);
 

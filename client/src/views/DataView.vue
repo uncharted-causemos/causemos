@@ -127,7 +127,7 @@ export default {
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
   },
-  destroyed() {
+  unmounted() {
     disableConcurrentTileRequestsCaching();
   },
   methods: {

@@ -12109,11 +12109,6 @@ vue-resize@^0.4.5:
   resolved "https://registry.yarnpkg.com/vue-resize/-/vue-resize-0.4.5.tgz#4777a23042e3c05620d9cbda01c0b3cc5e32dcea"
   integrity sha512-bhP7MlgJQ8TIkZJXAfDf78uJO+mEI3CaLABLjv0WNzr4CcGRGPIAItyWYnP6LsPA4Oq0WE+suidNs6dgpO4RHg==
 
-vue-resize@^0.5.0:
-  version "0.5.0"
-  resolved "https://registry.yarnpkg.com/vue-resize/-/vue-resize-0.5.0.tgz#f55bb2b721a0ebcdfad8f3c14dfd00e3fd0fd913"
-  integrity sha512-k5gOOwTIGSoWZb133Gx3IfSeiiAmve5GyWI7+pU8CvbNntpSAlrCYwZ26GB63NpxcLPK94+m0BDl5TxuZUI+Hw==
-
 vue-router@^4.0.0-0:
   version "4.0.4"
   resolved "https://registry.yarnpkg.com/vue-router/-/vue-router-4.0.4.tgz#ad9b4b7bbdad622407b4ff189b1646f48c1e9053"
@@ -12144,6 +12139,11 @@ vue-toastification@^2.0.0-rc.1:
   version "2.0.0-rc.1"
   resolved "https://registry.yarnpkg.com/vue-toastification/-/vue-toastification-2.0.0-rc.1.tgz#6a994c19635a493eec0ee290e84a966e07c709d2"
   integrity sha512-hjauv/FyesNZdwcr5m1SCyvu1JmlB+Ts5bTptDLDmsYYlj6Oqv8NYakiElpCF+Abwkn9J/AChh6FwkTL1HOb7Q==
+
+vue3-resize@^0.2.0:
+  version "0.2.0"
+  resolved "https://registry.yarnpkg.com/vue3-resize/-/vue3-resize-0.2.0.tgz#a1f06468cb7add911dfe3cb980984fa865ea1c8b"
+  integrity sha512-vZkbEv4PjMEWFV0igAxCvdSIH9hrIJjXyJ9XPTxH0cS/L2/VW1dLVORMWJKU0VXHpHiYKwskB62ju7aBQMVpOQ==
 
 vue@^3.0.0:
   version "3.0.7"

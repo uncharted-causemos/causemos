@@ -124,7 +124,7 @@ export default {
   created() {
     enableConcurrentTileRequestsCaching().then(() => { this.isTileCacheEnabled = true; });
   },
-  destroyed() {
+  unmounted() {
     disableConcurrentTileRequestsCaching();
   },
   methods: {
