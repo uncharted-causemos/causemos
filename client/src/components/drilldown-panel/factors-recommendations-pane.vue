@@ -169,10 +169,10 @@ export default {
 
             meta.polarity = sample.statement_polarity;
             meta.subj_polarity = sample.subj.polarity;
-            meta.subj_factor_highlight = this.recommendations.map(r => r.factor).includes(sample.subj.factor);
+            meta.subj_factor_highlight = this.recommendations.map(r => r.highlights).includes(sample.subj.factor);
             meta.subj = sample.subj;
             meta.obj_polarity = sample.obj.polarity;
-            meta.obj_factor_highlight = this.recommendations.map(r => r.factor).includes(sample.obj.factor);
+            meta.obj_factor_highlight = this.recommendations.map(r => r.highlights).includes(sample.obj.factor);
             meta.obj = sample.obj;
 
             meta.num_evidence = _.sumBy(s.dataArray, d => {

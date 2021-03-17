@@ -25,11 +25,15 @@ const statementIncludes = [
   'evidence.document_context.publisher_name'
 ];
 
+// Note: Since we sometimes filter the results from the curation service based on the statementIds in the CAG,
+// we request a high number of recommendations, filter, and then return only numRecommendations requested by client
+const preFilteredNumRecommendations = 500
+
 /**
  * Get recommendation for a factor-regrounding operation
  *
  * @param {string} projectId - project identifier
- * @arapm {array} statementIds - list of statement identifiers that compose the "visible-graph"
+ * @param {array} statementIds - list of statement identifiers that compose the "visible-graph"
  * @param {string} factor - factor text
  * @param {number} numRecommendations
  */
@@ -38,7 +42,7 @@ const getFactorRecommendations = async (projectId, statementIds, factor, numReco
   const payload = {
     knowledge_base_id: cache.get(projectId).kb_id,
     factor,
-    num_recommendations: numRecommendations
+    num_recommendations: preFilteredNumRecommendations
   };
   const options = {
     url: process.env.WM_CURATION_SERVICE_URL + '/recommendation/' + projectId + '/regrounding',
@@ -48,7 +52,8 @@ const getFactorRecommendations = async (projectId, statementIds, factor, numReco
   };
   const result = await requestAsPromise(options);
   result.recommendations = await _mapRegroundingRecommendationsToStatementIds(projectId, statementIds, result.recommendations);
-  return result;
+  result.recommendations = result.recommendations.slice(0, numRecommendations);
+  return result
 };
 
 /**
@@ -67,7 +72,7 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
     knowledge_base_id: cache.get(projectId).kb_id,
     subj_factor: subjFactor,
     obj_factor: objFactor,
-    num_recommendations: numRecommendations
+    num_recommendations: preFilteredNumRecommendations
   };
 
   const options = {
@@ -78,7 +83,8 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
   };
   const result = await requestAsPromise(options);
   result.recommendations = await _mapPolarityRecommendationsToStatements(projectId, statementIds, polarity, result.recommendations);
-  return result;
+  result.recommendations = result.recommendations.slice(0, numRecommendations);
+  return result
 };
 
 /**
@@ -114,10 +120,19 @@ const _mapRegroundingRecommendationsToStatementIds = async (projectId, statement
   recommendations = recommendations.map(r => {
     return {
       statements: factorToStatementsMap[r.factor],
-      factor: r.factor,
+      highlights: r.factor,
       score: r.score
     };
   });
+  recommendations.sort((r1, r2) => {
+    if (r1.score > r2.score) {
+      return -1
+    }
+    if (r1.score < r2.score) {
+      return 1
+    }
+    return 0
+  })
   return recommendations;
 };
 
@@ -185,6 +200,15 @@ const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, 
       score: r.score
     };
   });
+  recommendations.sort((r1, r2) => {
+    if (r1.score > r2.score) {
+      return -1
+    }
+    if (r1.score < r2.score) {
+      return 1
+    }
+    return 0
+  })
   return recommendations;
 };
 
