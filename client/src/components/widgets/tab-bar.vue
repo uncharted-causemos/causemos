@@ -36,6 +36,7 @@ export default {
       default: false
     }
   },
+  emits: ['tab-click'],
   methods: {
     onClick(tabId) {
       this.$emit('tab-click', tabId);
