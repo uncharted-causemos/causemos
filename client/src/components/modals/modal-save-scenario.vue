@@ -1,78 +1,72 @@
 <template>
   <modal @close="close">
-    <h4 slot="header">
-      <i class="fa fa-fw fa-save" />
-      Save Scenario As
-    </h4>
+    <template #header>
+      <h4>
+        <i class="fa fa-fw fa-save" /> Save Scenario As
+      </h4>
+    </template>
 
-    <div
-      slot="body"
-      class="modal-body"
-    >
-      <label class="one-line">
-        Scenario name*:
-        <input
-          v-model="newScenarioName"
-          type="text"
-          class="form-control"
-          :disabled="scenarioToOverwriteId !== null"
-        >
-      </label>
-      <label class="one-line">
-        Description:
-        <input
-          v-model="newScenarioDescription"
-          type="text"
-          class="form-control"
-          :disabled="scenarioToOverwriteId !== null"
-        >
-      </label>
+    <template #body>
+      <div class="modal-body">
+        <label class="one-line">
+          Scenario name*:
+          <input
+            v-model="newScenarioName"
+            type="text"
+            class="form-control"
+            :disabled="scenarioToOverwriteId !== null">
+        </label>
+        <label class="one-line">
+          Description:
+          <input
+            v-model="newScenarioDescription"
+            type="text"
+            class="form-control"
+            :disabled="scenarioToOverwriteId !== null">
+        </label>
 
-      <p
-        v-if="hasScenarios"
-        class="overwrite-description"
-      >
-        Or, select a scenario to overwrite:
-      </p>
+        <p
+          v-if="hasScenarios"
+          class="overwrite-description">
+          Or, select a scenario to overwrite:
+        </p>
 
-      <ul class="unstyled-list scenario-list">
-        <li
-          v-for="scenario of overwritableScenarios"
-          :key="scenario.id"
-        >
-          <label @click="toggleSelectedToOverwrite(scenario.id)">
-            <i
-              class="fa fa-lg fa-fw"
-              :class="{
-                'fa-check-square-o': scenario.id === scenarioToOverwriteId,
-                'fa-square-o': scenario.id !== scenarioToOverwriteId
-              }"
-            />
-            <b>{{ scenario.name }}</b> {{ scenario.description }}
-          </label>
-        </li>
+        <ul class="unstyled-list scenario-list">
+          <li
+            v-for="scenario of overwritableScenarios"
+            :key="scenario.id">
+            <label @click="toggleSelectedToOverwrite(scenario.id)">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{
+                  'fa-check-square-o': scenario.id === scenarioToOverwriteId,
+                  'fa-square-o': scenario.id !== scenarioToOverwriteId
+                }"
+              />
+              <b>{{ scenario.name }}</b> {{ scenario.description }}
+            </label>
+          </li>
+        </ul>
+      </div>
+    </template>
+
+    <template #footer>
+      <ul class="unstyled-list">
+        <button
+          type="button"
+          class="btn first-button"
+          @click.stop="close()">Cancel
+        </button>
+        <button
+          ref="confirm"
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          @click.stop="save()">
+          <i class="fa fa-fw fa-save" />
+          Save
+        </button>
       </ul>
-    </div>
-
-    <ul
-      slot="footer"
-      class="unstyled-list"
-    >
-      <button
-        type="button"
-        class="btn first-button"
-        @click.stop="close()">Cancel
-      </button>
-      <button
-        ref="confirm"
-        type="button"
-        class="btn btn-primary btn-call-for-action"
-        @click.stop="save()"
-      >
-        <i class="fa fa-fw fa-save" />
-        Save
-      </button>
-    </ul>
+    </template>
   </modal>
 </template>
 

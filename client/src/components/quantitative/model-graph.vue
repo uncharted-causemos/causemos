@@ -30,17 +30,21 @@ export default {
   computed: {
     ...mapGetters({
       selectedScenarioId: 'model/selectedScenarioId'
-    })
+    }),
+    scenarioProxy() {
+      // Need both scenarioData and selectedScenarioId to sync up
+      return { scenarioData: this.scenarioData, selectedScenarioId: this.selectedScenarioId };
+    }
   },
   watch: {
     data() {
       this.renderer.setData(this.data.graph);
       this.refresh();
     },
-    scenarioData() {
-      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
-    },
-    selectedScenarioId() {
+    scenarioProxy() {
+      // sanity check
+      const nodeScenarios = Object.values(this.scenarioData)[0].scenarios;
+      if (!_.some(nodeScenarios, d => d.id === this.selectedScenarioId)) return;
       this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
     }
   },

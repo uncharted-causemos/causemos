@@ -55,8 +55,8 @@
       v-if="isModalOpen"
       :scenarios="scenarios"
       @close="closeModal"
-      @overwrite-scenario="id => this.$emit('overwrite-scenario', id)"
-      @save-new-scenario="metadata => this.$emit('save-new-scenario', metadata)"
+      @overwrite-scenario="overwriteScenario"
+      @save-new-scenario="saveNewScenario"
     />
   </div>
 </template>
@@ -126,6 +126,12 @@ export default {
       if (scenarioId === this.selectedScenarioId) return;
       this.isScendarioDropdownOpen = false;
       this.setSelectedScenarioId(scenarioId);
+    },
+    overwriteScenario(id) {
+      this.$emit('overwrite-scenario', id);
+    },
+    saveNewScenario(metadata) {
+      this.$emit('save-new-scenario', metadata);
     }
   }
 };

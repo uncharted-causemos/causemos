@@ -54,7 +54,6 @@
 
 <script>
 import _ from 'lodash';
-import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import TabPanel from '@/components/quantitative/tab-panel';
 import modelService from '@/services/model-service';
@@ -246,7 +245,7 @@ export default {
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
 
       this.draftScenario = null;
-      Vue.set(this, 'scenarios', temp);
+      this.scenarios = temp;
     },
     async recalculateScenario(scenario) {
       this.enableOverlay(`Rerunning: ${scenario.name}`);
@@ -438,7 +437,7 @@ export default {
       // Cycle the scenarios to force reactive to trigger
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
       temp.push(this.draftScenario);
-      Vue.set(this, 'scenarios', temp);
+      this.scenarios = temp;
 
       // Switch to draft
       if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
