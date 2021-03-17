@@ -34,9 +34,7 @@
         :dropdown-below="true"
         :wider-dropdown-options="true"
       >
-        <div
-          slot="content"
-        >
+        <template #content>
           <div
             v-if="isFullscreen"
             class="dropdown-option"
@@ -60,7 +58,7 @@
             <i class="fa fa-fw fa-minus-circle" />
             Remove
           </div>
-        </div>
+        </template>
       </options-button>
     </div>
     <div

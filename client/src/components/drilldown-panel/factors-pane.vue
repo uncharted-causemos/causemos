@@ -134,13 +134,12 @@
       v-if="showConfirmCurationModal"
       :autofocus-confirm="false"
       @confirm="curationConfirmedCallback"
-      @close="closeConfirmCurationModal"
-    >
-      <div slot="title">Confirm Curation Action</div>
-      <div slot="message">
+      @close="closeConfirmCurationModal">
+      <template #title>Confirm Curation Action</template>
+      <template #message>
         <p>This action will affect the entire Knowledge Base and other CAGs that use it.</p>
         <p>Do you want to proceed?</p>
-      </div>
+      </template>
     </modal-confirmation>
   </div>
 </template>
