@@ -47,14 +47,14 @@ const updateStatements = async (projectId, updateConfig, statementIds) => {
   // We need to maintain compositional concepts behind the scenes, while using flattened concepts in the UI
   if (updateType === 'factor_grounding') {
     if (updateConfig.subj && updateConfig.subj.newValue) {
-      const result = await projectService.ontologyConstitudents(projectId, updateConfig.subj.newValue);
+      const result = await projectService.ontologyConstituents(projectId, updateConfig.subj.newValue);
       updateConfig.subj.theme = result.theme;
       updateConfig.subj.theme_property = result.theme_property;
       updateConfig.subj.process = result.process;
       updateConfig.subj.process_property = result.process_property;
     }
     if (updateConfig.obj && updateConfig.obj.newValue) {
-      const result = await projectService.ontologyConstitudents(projectId, updateConfig.obj.newValue);
+      const result = await projectService.ontologyConstituents(projectId, updateConfig.obj.newValue);
       updateConfig.obj.theme = result.theme;
       updateConfig.obj.theme_property = result.theme_property;
       updateConfig.obj.process = result.process;

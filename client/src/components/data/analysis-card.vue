@@ -182,7 +182,6 @@ export default {
       algebraicTransform: 'dataAnalysis/algebraicTransform',
       algebraicTransformInputIds: 'dataAnalysis/algebraicTransformInputIds'
     }),
-    indicatorRunFormatter,
     selection() {
       const { id, modelId, outputVariable, selection } = this.data;
       return { id, modelId, outputVariable, ...selection };
@@ -267,6 +266,7 @@ export default {
       updateAllTimeSelection: 'dataAnalysis/updateAllTimeSelection',
       toggleAlgebraicTransformInput: 'dataAnalysis/toggleAlgebraicTransformInput'
     }),
+    indicatorRunFormatter,
     async fetchDefaultRun(modelId) {
       // TODO: Fetch only the first run as a default by using limit and sort_by parameters. This requires backend api support.
       const data = await getModelRuns(modelId);
