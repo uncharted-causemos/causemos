@@ -106,7 +106,7 @@ export default {
     }
   },
   emits: [
-    'add-concept'
+    'add-concept', 'import-cag'
   ],
   data: () => ({
     showRenameModal: false,

@@ -41,6 +41,9 @@ export default {
       default: true
     }
   },
+  emit: [
+    'confirm', 'close'
+  ],
   mounted() {
     if (this.autofocusConfirm) this.$refs.confirm.focus();
   },

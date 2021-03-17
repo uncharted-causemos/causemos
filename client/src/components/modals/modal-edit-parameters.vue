@@ -107,6 +107,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'close', 'save'
+  ],
   data: () => ({
     selectedEngine: 'dyse',
     selectedStartDate: null,

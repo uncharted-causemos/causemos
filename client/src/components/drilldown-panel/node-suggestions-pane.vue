@@ -113,13 +113,13 @@ const MSG_EMPTY_SELECTION = 'There are no selected relationships';
 
 export default {
   name: 'NodeSuggestionsPane',
-  filters: {
-    getRelationshipGroupDisplayString(relationshipGroupKey) {
-      return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
-        ? 'Top 5 Drivers'
-        : 'Top 5 Impacts';
-    }
-  },
+  // filters: {
+  //   getRelationshipGroupDisplayString(relationshipGroupKey) {
+  //     return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
+  //       ? 'Top 5 Drivers'
+  //       : 'Top 5 Impacts';
+  //   }
+  // },
   props: {
     selectedNode: {
       type: Object,
@@ -138,6 +138,9 @@ export default {
       default: false
     }
   },
+  emits: [
+    'add-to-CAG'
+  ],
   data: () => ({
     summaryData: { children: [], meta: { checked: false, isSomeChildChecked: false } },
     hasError: false,

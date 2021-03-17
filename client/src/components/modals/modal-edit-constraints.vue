@@ -63,6 +63,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'run-projection', 'close'
+  ],
   data: () => ({
     constraints: []
   }),

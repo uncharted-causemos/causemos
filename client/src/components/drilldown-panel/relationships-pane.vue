@@ -71,7 +71,7 @@
           #title
           class="relationships-title"
         >
-          {{ relationshipGroup.key | getRelationshipGroupDisplayString }}
+          {{ getRelationshipGroupDisplayString(relationshipGroup.key) }}
           ({{ getRelationshipGroupCause(relationshipGroup.key) }}
           <i
             class="fa fa-fw  fa-long-arrow-right"
@@ -153,11 +153,6 @@ export default {
     SmallIconButton
   },
   filters: {
-    getRelationshipGroupDisplayString(relationshipGroupKey) {
-      return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
-        ? 'Drivers'
-        : 'Impacts';
-    }
   },
   props: {
     selectedNode: {
@@ -229,6 +224,11 @@ export default {
       setUpdateToken: 'app/setUpdateToken'
     }),
     ontologyFormatter,
+    getRelationshipGroupDisplayString(relationshipGroupKey) {
+      return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
+        ? 'Drivers'
+        : 'Impacts';
+    },
     initializeData() {
       this.expandAll = { value: true };
     },

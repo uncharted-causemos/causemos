@@ -44,8 +44,6 @@
 
 <script>
 
-import _ from 'lodash';
-import Vue from 'vue';
 import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal';
 import Card from '@/components/widgets/card';
@@ -57,6 +55,9 @@ export default {
     Modal,
     Card
   },
+  emits: [
+    'import-cag', 'close'
+  ],
   data: () => ({
     availableCAGs: []
   }),
@@ -84,7 +85,7 @@ export default {
       } else {
         cag.selected = false;
       }
-      Vue.set(this, 'availableCAGs', _.clone(this.availableCAGs));
+      // Vue.set(this, 'availableCAGs', _.clone(this.availableCAGs));
     },
     importCAG() {
       this.$emit('import-cag', this.selectedCAGIds);

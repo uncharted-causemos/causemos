@@ -67,6 +67,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'ad-paths', 'close'
+  ],
   data: () => ({
     suggestions: []
   }),
