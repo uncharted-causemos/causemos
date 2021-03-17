@@ -47,6 +47,9 @@ export default {
       default: () => ''
     }
   },
+  emits: [
+    'set-active'
+  ],
   computed: {
     allTabsAreClosed() {
       return this.tabs.find(tab => tab.name === this.currentTabName) === undefined;

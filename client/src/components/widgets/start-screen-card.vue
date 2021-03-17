@@ -74,6 +74,9 @@ export default {
       default: 'Card Subtitle'
     }
   },
+  emits: [
+    'click', 'rename', 'duplicate', 'delete'
+  ],
   computed: {
     hasImage() {
       return !_.isNil(this.previewImageSrc);
