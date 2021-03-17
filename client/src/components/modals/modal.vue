@@ -57,6 +57,7 @@ export default {
       default: false
     }
   },
+  emits: ['close'],
   created() {
     this.hasContext = false;
   },

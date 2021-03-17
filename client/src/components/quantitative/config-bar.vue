@@ -32,6 +32,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'edit-parameters'
+  ],
   computed: {
     historicalRange() {
       return this.modelSummary.parameter.indicator_time_series_range;

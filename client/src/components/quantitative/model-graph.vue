@@ -27,6 +27,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click'
+  ],
   computed: {
     ...mapGetters({
       selectedScenarioId: 'model/selectedScenarioId'

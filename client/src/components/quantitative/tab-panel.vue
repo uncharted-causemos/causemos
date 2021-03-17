@@ -230,6 +230,10 @@ export default {
       default: null
     }
   },
+  emits: [
+    'background-click', 'show-indicator', 'show-constraints', 'show-model-parameters',
+    'refresh', 'set-sensitivity-analysis-type', 'save-indicator-edits'
+  ],
   data: () => ({
     tabs: [
       {
