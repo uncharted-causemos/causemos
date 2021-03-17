@@ -63,7 +63,7 @@ export default {
     }
   },
   emits: [
-    'open-recent'
+    'open-recent', 'create', 'rename', 'duplicate', 'delete'
   ],
   data: () => ({
     searchText: ''
