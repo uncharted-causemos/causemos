@@ -235,14 +235,16 @@ export default {
       // FIXME: Remove when ontology versions are consolidated upstream - Mar 15, 2021
       const defn = (v) => {
         const alternate = v.replace('wm_compositional', 'wm');
-        const text = (lookup[v] || lookup[alternate]) || ', ';
+        const text = (lookup[v] || lookup[alternate]) || '';
         return text;
       };
 
-      return defn(this.ontologyComposition.theme) +
-        defn(this.ontologyComposition.theme_property) +
-        defn(this.ontologyComposition.process) +
-        defn(this.ontologyComposition.process_property);
+      return [
+        defn(this.ontologyComposition.theme),
+        defn(this.ontologyComposition.theme_property),
+        defn(this.ontologyComposition.process),
+        defn(this.ontologyComposition.process_property)
+      ].filter(d => d !== '').join(', ');
     },
     factorCount() {
       return this.summaryData.children.length;
