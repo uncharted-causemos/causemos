@@ -170,7 +170,7 @@ export default {
         if (evt.layerX > AXIS_LABEL_MARGIN_PX && evt.layerY > AXIS_LABEL_MARGIN_PX) {
           const tooltipText = self.getTooltipText(evt.layerX, evt.layerY, svgWidth, svgHeight);
           if (tooltipText !== null) {
-            showSvgTooltip(refSelection, tooltipText, [evt.layerX, evt.layerY], 0, true);
+            showSvgTooltip(refSelection, tooltipText, [evt.layerX, evt.layerY], Math.PI, true);
           } else {
             hideSvgTooltip(refSelection);
           }
