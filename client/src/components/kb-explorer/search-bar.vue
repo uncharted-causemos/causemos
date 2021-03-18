@@ -57,10 +57,6 @@ const QUALITY = [
 
 export default {
   name: 'SearchBar',
-  data: () => ({
-    lexRef: null,
-    pills: []
-  }),
   computed: {
     ...mapGetters({
       filters: 'query/filters',
@@ -73,6 +69,10 @@ export default {
       if (filtersUtil.isEqual(n, o)) return;
       this.setQuery();
     }
+  },
+  created() {
+    this.lexRef = null;
+    this.pills = [];
   },
   mounted() {
     const topicPill = new DynamicValuePill(

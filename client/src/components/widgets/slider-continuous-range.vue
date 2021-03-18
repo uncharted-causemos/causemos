@@ -59,6 +59,9 @@ export default {
       default: 2
     }
   },
+  emits: [
+    'input'
+  ],
   data: () => ({
     selectedRange: null
   }),
