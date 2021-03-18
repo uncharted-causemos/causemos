@@ -30,6 +30,7 @@
               <input
                 v-model="metadataLabels"
                 class="form-control form-control-sm"
+                placeholder="e.g. conflict, food security, planting season"
                 type="text">
             </div>
           </div>
@@ -101,7 +102,7 @@ export default {
 
       // TODO: save project to  doc_id mapping
       await dartService.uploadDocument(formData);
-      this.toaster(`Successfully uploaded ${this.inputFile.name}. Please see <page> to view reader status and to start knowledge reassembly`);
+      this.toaster(`Successfully uploaded ${this.inputFile.name}. Please see <page> to view reader status and to start knowledge reassembly`, 'success', false);
       this.loading = false;
       this.metadataGenre = '';
       this.metadataLabels = '';
