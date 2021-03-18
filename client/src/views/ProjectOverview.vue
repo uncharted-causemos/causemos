@@ -38,6 +38,12 @@
         @click="onClickCard(card.navigateTo)"
       />
     </div>
+    <div>
+      <br>
+      <button class="button"
+        @click="showDocumentModal=true">Add Documents</button>
+    </div>
+    <modal-upload-document v-if="showDocumentModal === true" />
   </div>
 </template>
 
@@ -47,17 +53,20 @@ import { mapGetters, mapActions } from 'vuex';
 import { getModelDatacubesCount, getIndicatorDatacubesCount } from '@/services/datacube-service';
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
+import ModalUploadDocument from '@/components/modals/modal-upload-document';
 
 export default {
   name: 'ProjectOverview',
   components: {
-    OverviewCard
+    OverviewCard,
+    ModalUploadDocument
   },
   data: () => ({
     relationshipCount: undefined,
     modelCount: undefined,
     modelOutputVariableCount: undefined,
-    indicatorCount: undefined
+    indicatorCount: undefined,
+    showDocumentModal: false
   }),
   computed: {
     ...mapGetters({

@@ -1,5 +1,5 @@
 const request = require('request');
-const requestAsPromise = rootRequire('/util/request-as-promise');
+// const requestAsPromise = rootRequire('/util/request-as-promise');
 const auth = rootRequire('/util/auth-util');
 const Logger = rootRequire('/config/logger');
 
@@ -48,10 +48,14 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
     formData: formData
   };
 
-  Logger.info(options);
+  // Stub
+  console.log(options);
+  Logger.info(JSON.stringify(options.formData.metadata));
+  return { id: 'xyz' };
 
-  const result = await requestAsPromise(options);
-  return result;
+  // FIXME: Waiting for DART service to go up - Mar 17, 2021
+  // const result = await requestAsPromise(options);
+  // return result;
 };
 
 
