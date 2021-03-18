@@ -19,7 +19,7 @@
         @tab-click="onTabClick"
         @close="exitFullscreenMode"
       >
-        <div slot="content">
+        <template #content>
           <datacube-metadata-pane
             v-if="activeDrilldownTab === 'metadata'"
             :fullscreen-card-id="fullscreenCardId"
@@ -34,7 +34,7 @@
             :raw-data="adminLevelData"
             @aggregation-level-change="(newVal) => { aggregationLevel = newVal }"
           />
-        </div>
+        </template>
       </drilldown-panel>
     </main>
   </div>

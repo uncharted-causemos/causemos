@@ -27,7 +27,7 @@
             v-if="isOperationDropdownOpen"
             class="analysis-operations-dropdown"
           >
-            <div slot="content">
+            <template #content>
               <div
                 v-for="option of transformOptions"
                 :key="option.name"
@@ -38,9 +38,9 @@
                   class="fa fa-fw"
                   :class="`fa-${option.icon}`"
                 />
-                {{ option.name | capitalLetters-formatter }}
+                {{ capitalLettersFormatter(option.name) }}
               </div>
-            </div>
+            </template>
           </dropdown-control>
         </button>
       </li>
