@@ -1,9 +1,9 @@
 <template>
   <modal @close="close()">
-    <div slot="header">
+    <template slot="header">
       <h4><i class="fa fa-upload" /> Upload Document</h4>
-    </div>
-    <div slot="body">
+    </template>
+    <template slot="body">
       <div>
         <form>
           <div class="form-group">
@@ -40,11 +40,11 @@
           </div>
         </form>
       </div>
-    </div>
-    <div slot="footer">
+    </template>
+    <template slot="footer">
       <button
         class="btn btn-light"
-        @click.stop="close()"> Cancel
+        @click.stop="close()"> Close
       </button>
       <button
         type="button"
@@ -53,7 +53,7 @@
         @click="onClickUpload">
         Upload
       </button>
-    </div>
+    </template>
   </modal>
 </template>
 
@@ -77,6 +77,9 @@ export default {
     metadataGenre: '',
     inputFile: null
   }),
+  emits: [
+    'close'
+  ],
   computed: {
     isValid: function() {
       return !_.isNil(this.inputFile);

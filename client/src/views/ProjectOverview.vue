@@ -40,10 +40,14 @@
     </div>
     <div>
       <br>
-      <button class="button"
-        @click="showDocumentModal=true">Add Documents</button>
+      <button
+        class="button"
+        @click="showDocumentModal=true">Add Documents
+      </button>
     </div>
-    <modal-upload-document v-if="showDocumentModal === true" />
+    <modal-upload-document
+      v-if="showDocumentModal === true"
+      @close="showDocumentModal = false" />
   </div>
 </template>
 
