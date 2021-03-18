@@ -79,28 +79,28 @@ export default {
 
     // filters is an object, if watching it either need to be deeply watched, or manually check object equivalence.
     filters: (state, getters, rootState /*, rootGetters */) => {
-      const filters = rootState.route.query.filters;
+      const filters = _.get(rootState.route, 'query.filters', {});
       return _.isEmpty(filters) ? FiltersUtil.newFilters() : filters;
     },
     view: (state, getters, rootState /* , rootGetters */) => {
-      const view = rootState.route.query.view || DEFAULT_VIEW;
+      const view = _.get(rootState.route, 'query.view', DEFAULT_VIEW);
       return view;
     },
     statements: (state, getters, rootState /* , rootGetters */) => {
-      return rootState.route.query.statements || defaultStatementsQuery;
+      return _.get(rootState.route, 'query.statements', defaultStatementsQuery);
     },
     documents: (state, getters, rootState /* , rootGetters */) => {
-      return rootState.route.query.documents || defaultDocumentsQuery;
+      return _.get(rootState.route, 'query.documents', defaultDocumentsQuery);
     },
     audits: (state, getters, rootState /* , rootGetters */) => {
-      return rootState.route.query.audits || defaultAuditsQuery;
+      return _.get(rootState.route, 'query.audits', defaultAuditsQuery);
     },
     layout: (state, getters, rootState /* , rootGetters */) => {
-      return rootState.route.query.layout || defaultLayout;
+      return _.get(rootState.route, 'query.layout', defaultLayout);
     },
     lastQuery: state => state.lastQuery,
     cag: (state, getters, rootState /* , rootGetters */) => {
-      return rootState.route.query.cag || null;
+      return _.get(rootState.route, 'query.cag', null);
     }
   },
   actions: {
