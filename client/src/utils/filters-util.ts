@@ -1,4 +1,5 @@
 import _ from 'lodash';
+import { Filters, Clause, ClauseValue, ClauseField, ClauseNegation, ClauseOperand } from '@/types/Filters';
 
 /**
  * Constructs search queries to pass through the API.
@@ -42,7 +43,7 @@ import _ from 'lodash';
  * @param {Filters} a - first filter
  * @param {Filters} b - second filters
  */
-function isEqual(a, b) {
+function isEqual(a: Filters, b: Filters) {
   if (isEmpty(a) && isEmpty(b)) return true;
   if (a.clauses.length !== b.clauses.length) return false;
 
@@ -66,7 +67,7 @@ function isEqual(a, b) {
  * @param {string} field - field name
  * @param {boolean} isNot
  */
-function isClauseEqual(a, b, field, isNot) {
+function isClauseEqual(a: Filters, b: Filters, field: ClauseField, isNot: ClauseNegation) {
   const aClause = _.find(a.clauses, clause => {
     return clause.field === field && clause.isNot === isNot;
   });
@@ -76,19 +77,19 @@ function isClauseEqual(a, b, field, isNot) {
   return _.isEqual(aClause, bClause);
 }
 
-function findPositiveFacetClause(filters, field) {
+function findPositiveFacetClause(filters: Filters, field: ClauseField) {
   return _.find(filters.clauses, clause => {
     return clause.field === field && clause.isNot === false;
   });
 }
 
-function findNegativeFacetClause(filters, field) {
+function findNegativeFacetClause(filters: Filters, field: ClauseField) {
   return _.find(filters.clauses, clause => {
     return clause.field === field && clause.isNot === true;
   });
 }
 
-function addSearchTerm(filters, field, term, operand, isNot) {
+function addSearchTerm(filters: Filters, field: ClauseField, term: ClauseValue, operand: ClauseOperand, isNot: ClauseNegation) {
   const existingClause = _.find(filters.clauses, clause => {
     return clause.field === field &&
       clause.operand === operand &&
@@ -108,7 +109,7 @@ function addSearchTerm(filters, field, term, operand, isNot) {
 }
 
 
-function removeSearchTerm(filters, field, term, operand, isNot) {
+function removeSearchTerm(filters: Filters, field: ClauseField, term: ClauseValue, operand: ClauseOperand, isNot: ClauseNegation) {
   const existingClause = _.find(filters.clauses, clause => {
     return clause.field === field &&
       clause.operand === operand &&
@@ -131,7 +132,7 @@ function removeSearchTerm(filters, field, term, operand, isNot) {
   }
 }
 
-function removeClause(filters, field, operand, isNot) {
+function removeClause(filters: Filters, field: ClauseField, operand: ClauseOperand, isNot: ClauseNegation) {
   _.remove(filters.clauses, clause => {
     return clause.field === field &&
       clause.operand === operand &&
@@ -139,14 +140,14 @@ function removeClause(filters, field, operand, isNot) {
   });
 }
 
-function removeAllClausesByFacet(filters, field) {
+function removeAllClausesByFacet(filters: Filters, field: ClauseField) {
   _.remove(filters.clauses, clause => {
     return clause.field === field;
   });
 }
 
 
-function setClause(filters, field, values, operand, isNot) {
+function setClause(filters: Filters, field: ClauseField, values: ClauseValue[], operand: ClauseOperand, isNot: ClauseNegation) {
   removeClause(filters, field, operand, isNot);
 
   if (!_.isEmpty(values)) {
@@ -159,18 +160,18 @@ function setClause(filters, field, values, operand, isNot) {
   }
 }
 
-function isEmpty(filters) {
+function isEmpty(filters: Filters): boolean {
   return _.isEmpty(filters) || _.isEmpty(filters.clauses);
 }
 
-function isEmptyClause(clause) {
+function isEmptyClause(clause: Clause): boolean {
   return _.isEmpty(clause) || _.isEmpty(clause.values);
 }
 
 /**
  * @returns {Filters}
  */
-function newFilters() {
+function newFilters(): Filters {
   return { clauses: [] };
 }
 
