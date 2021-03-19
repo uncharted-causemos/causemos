@@ -112,7 +112,7 @@
         <div v-if="selectedNode !== null">
           <div>
             Are you sure you want to remove
-            <strong>{{ selectedNode.concept | shortName }}</strong> from your CAG?
+            <strong>{{ shortName(selectedNode.concept) }}</strong> from your CAG?
           </div>
           <ul>
             <li>{{ countIncomingRelationships }} incoming relationship(s)</li>
@@ -122,8 +122,8 @@
         </div>
         <div v-if="selectedEdge !== null">
           <div>Are you sure you want to remove the relationship between</div>
-          <strong>{{ selectedEdge.source | shortName }}</strong> and
-          <strong>{{ selectedEdge.target | shortName }}</strong> from this CAG?
+          <strong>{{ shortName(selectedEdge.source) }}</strong> and
+          <strong>{{ shortName(selectedEdge.target) }}</strong> from this CAG?
         </div>
       </template>
     </modal-confirmation>
@@ -219,11 +219,6 @@ export default {
     ModalPathFind,
     QualitativeSidePanel
   },
-  filters: {
-    shortName: function (concept) {
-      return conceptShortName(concept + '');
-    }
-  },
   data: () => ({
     modelSummary: null,
     modelComponents: {},
@@ -312,6 +307,9 @@ export default {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken'
     }),
+    shortName(concept) {
+      return conceptShortName(concept + '');
+    },
     async refresh() {
       // Get CAG data
       this.modelSummary = await modelService.getSummary(this.currentCAG);

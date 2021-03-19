@@ -88,7 +88,7 @@
               :key="statement.id">
               <td v-if="visibleColumns[FIELDS.YEAR]">{{ statement.years.join(', ') }}</td>
               <td v-if="visibleColumns[FIELDS.GEO_LOCATION_NAME]">{{ locationFormatter([statement.subj.geo_context, statement.obj.geo_context]) }}</td>
-              <td v-if="visibleColumns[FIELDS.SUBJ_POLARITY]">{{ statement.subj.polarity | polarity-formatter }}</td>
+              <td v-if="visibleColumns[FIELDS.SUBJ_POLARITY]">{{ polarityFormatter(statement.subj.polarity) }}</td>
               <td v-if="visibleColumns[FIELDS.SUBJ_ADJECTIVES]">{{ listFormatter(statement.subj.adjectives) }}</td>
               <td v-if="visibleColumns[FIELDS.SUBJ]">{{ statement.subj.factor }}</td>
               <td
@@ -100,7 +100,7 @@
               <td v-if="visibleColumns[FIELDS.STATEMENT_POLARITY]">{{ statementPolarityFormatter(statement.wm.statement_polarity) }}</td>
               <td v-if="visibleColumns[FIELDS.BELIEF]">{{ precisionFormatter(statement.belief) }}</td>
 
-              <td v-if="visibleColumns[FIELDS.OBJ_POLARITY]">{{ statement.obj.polarity | polarity-formatter }}</td>
+              <td v-if="visibleColumns[FIELDS.OBJ_POLARITY]">{{ polarityFormatter(statement.obj.polarity) }}</td>
               <td v-if="visibleColumns[FIELDS.OBJ_ADJECTIVES]">{{ listFormatter(statement.obj.adjectives) }}</td>
               <td v-if="visibleColumns[FIELDS.OBJ]">{{ statement.obj.factor }}</td>
               <td
@@ -149,6 +149,7 @@ import listFormatter from '@/formatters/list-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import precisionFormatter from '@/formatters/precision-formatter';
 import ontologyFormatter from '@/formatters/ontology-formatter';
+import polarityFormatter from '@/formatters/polarity-formatter';
 
 export default {
   name: 'StatementsView',
@@ -215,6 +216,7 @@ export default {
     statementPolarityFormatter,
     precisionFormatter,
     ontologyFormatter,
+    polarityFormatter,
     refresh() {
       this.enableOverlay('Refreshing...');
 
