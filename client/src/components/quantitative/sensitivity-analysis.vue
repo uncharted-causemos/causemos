@@ -54,6 +54,8 @@ import _ from 'lodash';
 import * as d3 from 'd3';
 import renderSensitivityMatrix from '@/charts/matrix-renderer';
 import csrUtil from '@/utils/csr-util';
+import { showSvgTooltip, hideSvgTooltip } from '@/utils/svg-util';
+import ordinalNumberFormatter from '@/formatters/ordinal-number-formatter';
 import SensitivityAnalysisLegend from './sensitivity-analysis-legend.vue';
 
 const RESIZE_DELAY = 50;
@@ -103,6 +105,23 @@ export default {
       }
       const { isRow, concept } = this.selectedRowOrColumn;
       return csrUtil.getSortedOrderBySelection(this.matrixData, isRow, concept);
+    },
+    tooltipTexts() {
+      if (this.matrixData === null) return null;
+      const cleanData = this.matrixData.value.map((value, i) => {
+        return {
+          row: this.matrixData.rows[i],
+          column: this.matrixData.columns[i],
+          value
+        };
+      });
+      const rankedValues = cleanData.map(d => d.value).sort(d3.descending);
+      return cleanData.reduce((a, v) => {
+        if (a[v.row] === undefined) a[v.row] = {};
+        const cellRank = rankedValues.findIndex(rankedValue => rankedValue === v.value) + 1;
+        a[v.row][v.column] = `${v.row}'s impact on ${v.column}\nis the ${ordinalNumberFormatter(cellRank)} most impactful on the model.`;
+        return a;
+      }, {});
     }
   },
   watch: {
@@ -125,6 +144,7 @@ export default {
     },
     render(width, height) {
       if (this.matrixData === null) return;
+      const self = this;
       const svgWidth = width || this.$refs['matrix-container'].clientWidth;
       const svgHeight = height || this.$refs['matrix-container'].clientHeight;
       const options = {
@@ -146,6 +166,21 @@ export default {
         this.selectedRowOrColumn,
         this.onRowOrColumnClick
       );
+      refSelection.on('mousemove', (evt) => {
+        if (evt.layerX > AXIS_LABEL_MARGIN_PX && evt.layerY > AXIS_LABEL_MARGIN_PX) {
+          const tooltipText = self.getTooltipText(evt.layerX, evt.layerY, svgWidth, svgHeight);
+          if (tooltipText !== null) {
+            showSvgTooltip(refSelection, tooltipText, [evt.layerX, evt.layerY], Math.PI, true);
+          } else {
+            hideSvgTooltip(refSelection);
+          }
+        } else {
+          hideSvgTooltip(refSelection);
+        }
+      });
+      refSelection.on('mouseleave', () => {
+        hideSvgTooltip(refSelection);
+      });
     },
     handleResize({ width, height }) {
       this.resize(width, height);
@@ -155,6 +190,18 @@ export default {
       this.selectedRowOrColumn = _.isEqual(this.selectedRowOrColumn, newSelectedRowOrColumn)
         ? { isRow: false, concept: null } // De-select
         : newSelectedRowOrColumn;
+    },
+    getTooltipText(x, y, svgWidth, svgHeight) {
+      if (this.tooltipTexts === null) return null;
+      const rowSize = (svgHeight - AXIS_LABEL_MARGIN_PX) / this.rowOrder.length;
+      const columnSize = (svgWidth - AXIS_LABEL_MARGIN_PX) / this.columnOrder.length;
+      const rowIndex = Math.ceil((y - AXIS_LABEL_MARGIN_PX) / rowSize) - 1;
+      const columnIndex = Math.ceil((x - AXIS_LABEL_MARGIN_PX) / columnSize) - 1;
+      const rowName = rowIndex > -1 ? this.rowOrder[rowIndex] : null;
+      const columnName = columnIndex > -1 ? this.columnOrder[columnIndex] : null;
+      const tooltipText = this.tooltipTexts[rowName][columnName];
+
+      return tooltipText || null;
     }
   }
 };
