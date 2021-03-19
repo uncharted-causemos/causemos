@@ -14,7 +14,7 @@ import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
 import QuantitativeStart from '@/views/QuantitativeStart.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
-// import NotFound from '@/views/NotFound.vue';
+import NotFound from '@/views/NotFound.vue';
 import qs from 'qs';
 import _ from 'lodash';
 import store from '@/store';
@@ -119,13 +119,12 @@ const routes = [
     path: '/:project/audit-trail',
     name: 'auditTrail',
     component: AuditTrail
-  }
+  },
   /* 404, this has to go last */
-  // FIXME: Pattern
-  // {
-  //   path: '*',
-  //   component: NotFound
-  // }
+  {
+    path: '/:pathMatch(.*)*',
+    component: NotFound
+  }
 ];
 
 
