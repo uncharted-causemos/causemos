@@ -160,11 +160,13 @@ function setClause(filters: Filters, field: ClauseField, values: ClauseValue[], 
   }
 }
 
-function isEmpty(filters: Filters): boolean {
+function isEmpty(filters: Filters | undefined): boolean {
+  if (_.isNil(filters)) return true;
   return _.isEmpty(filters) || _.isEmpty(filters.clauses);
 }
 
-function isEmptyClause(clause: Clause): boolean {
+function isEmptyClause(clause: Clause | undefined): boolean {
+  if (_.isNil(clause)) return true;
   return _.isEmpty(clause) || _.isEmpty(clause.values);
 }
 
