@@ -11,7 +11,7 @@
             <hr>
           </div>
           <div class="row">
-            <form>
+            <form @submit.prevent>
               <div class="form-group">
                 <label>Name*</label>
                 <input
@@ -165,8 +165,9 @@ export default {
   .controls {
     display: flex;
     justify-content: flex-start;
+    margin-top: 20px;
+    margin-bottom: 20px;
     button {
-      margin-top: 20px;
       margin-right: 10px;
     }
   }
