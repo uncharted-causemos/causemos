@@ -115,7 +115,9 @@ export default {
 /deep/ .modal-header {
   position: relative;
   h3, h4 {
-    margin: 10px;
+    color: #5A5A5A;
+    text-transform: uppercase;
+    letter-spacing: 2px;
   }
   .close-button {
     top: 50%;
@@ -124,7 +126,9 @@ export default {
   }
 
   &.modal-header-green {
-    background: #E1FAEB;
+    h3, h4 {
+      color: #038537;
+    }
   }
 
   .green-icon {
@@ -132,8 +136,15 @@ export default {
   }
 }
 
+/deep/ .modal-body {
+  label {
+    font-weight: 300;
+  }
+}
+
 /deep/ .modal-header, .modal-body, .modal-footer {
-  padding: 10px;
+  padding: 0 10px 10px;
+  border: 0;
 }
 
 /*
