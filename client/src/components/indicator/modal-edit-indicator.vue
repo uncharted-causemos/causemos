@@ -311,10 +311,6 @@ export default {
   width: 80%;
 }
 
-/deep/ .modal-body {
-  padding: 20px;
-}
-
 .header {
   overflow: hidden;
   text-overflow: ellipsis;

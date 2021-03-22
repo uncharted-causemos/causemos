@@ -4,12 +4,19 @@
     :use-green-header="true"
     @close="search()"
   >
-    <h4 slot="header">
-      <i
-        class="fa fa-fw fa-check-circle green-icon"
-        aria-hidden="true" />
+
+    <div slot="header">
+      <h4>
+        <i
+          class="fa fa-fw fa-check-circle green-icon"
+          aria-hidden="true"
+        />
+        Success
+      </h4>
+    </div>
+    <div slot="body">
       {{ numberOfRelationsAdded }} causal relation{{ numberOfRelationsAdded === 1 ? ' was' : 's were' }} added to your CAG
-    </h4>
+    </div>
     <div slot="footer">
       <ul class="unstyled-list">
         <li class="first-button">
@@ -61,9 +68,5 @@ export default {
 
 .first-button {
   margin-right: 10px;
-}
-
-/deep/ .modal-body {
-  display: none;
 }
 </style>
