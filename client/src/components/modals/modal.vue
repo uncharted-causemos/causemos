@@ -42,6 +42,7 @@
 import Mousetrap from 'mousetrap';
 import CloseButton from '@/components/widgets/close-button';
 
+
 export default {
   name: 'Modal',
   components: {
@@ -116,8 +117,7 @@ export default {
   position: relative;
   h3, h4 {
     color: #5A5A5A;
-    text-transform: uppercase;
-    letter-spacing: 2px;
+    @include header-secondary;
   }
   .close-button {
     top: 50%;
