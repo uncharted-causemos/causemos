@@ -1,5 +1,6 @@
 <template>
   <modal
+    :use-green-header="true"
     :show-close-button="true"
     @close="close()">
     <template #header>
@@ -100,10 +101,6 @@ export default {
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-/deep/ .modal-header {
-  background-color: #E1FAEB;
-}
-
 .first-button {
   margin-right: 10px;
 }
@@ -119,7 +116,7 @@ export default {
     display: flex;
     flex-wrap: wrap;
     max-height: 400px;
-    overflow-y: scroll;
+    overflow-y: auto;
 
     .card-container {
       height: 220px;

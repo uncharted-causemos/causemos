@@ -8,8 +8,10 @@
         <i
           class="fa fa-fw fa-check-circle green-icon"
           aria-hidden="true" />
-        {{ numberOfRelationsAdded }} causal relation{{ numberOfRelationsAdded === 1 ? ' was' : 's were' }} added to your CAG
       </h4>
+    </template>
+    <template #body>
+      {{ numberOfRelationsAdded }} causal relation{{ numberOfRelationsAdded === 1 ? ' was' : 's were' }} added to your CAG
     </template>
     <template #footer>
       <ul class="unstyled-list">
@@ -62,9 +64,5 @@ export default {
 
 .first-button {
   margin-right: 10px;
-}
-
-/deep/ .modal-body {
-  display: none;
 }
 </style>

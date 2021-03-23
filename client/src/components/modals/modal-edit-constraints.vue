@@ -149,10 +149,6 @@ export default {
   width: 70vw;
 }
 
-/deep/ .modal-body {
-  padding: 10px 20px;
-}
-
 .first-button {
   margin-right: 10px;
 }

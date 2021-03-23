@@ -188,16 +188,17 @@ export default {
   width: 300px;
 }
 
-/deep/ .modal-body {
-  padding: 10px 20px;
+/deep/ .row {
+  margin: 0;
+  margin-top:20px;
+}
+
+/deep/ .col-sm-4 {
+  padding: 0;
 }
 
 .first-button {
   margin-right: 10px;
-}
-
-.row {
-  margin-top:20px;
 }
 
 
