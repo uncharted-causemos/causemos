@@ -359,7 +359,6 @@ export default {
       recursiveUp(this.summaryData);
     },
     async openEditor(item, type) {
-      console.log('opening editor ', type);
       if (item === this.activeItem && type === this.activeCorrection) {
         this.activeItem = null;
         this.activeCorrection = null;

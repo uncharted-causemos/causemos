@@ -113,13 +113,6 @@ const MSG_EMPTY_SELECTION = 'There are no selected relationships';
 
 export default {
   name: 'NodeSuggestionsPane',
-  // filters: {
-  //   getRelationshipGroupDisplayString(relationshipGroupKey) {
-  //     return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
-  //       ? 'Top 5 Drivers'
-  //       : 'Top 5 Impacts';
-  //   }
-  // },
   props: {
     selectedNode: {
       type: Object,

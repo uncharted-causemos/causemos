@@ -152,8 +152,6 @@ export default {
     SmallTextButton,
     SmallIconButton
   },
-  filters: {
-  },
   props: {
     selectedNode: {
       type: Object,
