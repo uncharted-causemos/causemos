@@ -43,27 +43,29 @@
         </div>
       </div>
       <div class="tab-content">
-        <div
-          v-if="activeTab === 'flow' && scenarioData && graphData"
-          class="model-graph-layout-container">
-          <model-graph
-            :data="graphData"
-            :scenario-data="scenarioData"
-            @background-click="onBackgroundClick"
-            @node-body-click="showConstraints"
-            @node-header-click="showIndicator"
-            @edge-click="showRelation"
+        <main>
+          <div
+            v-if="activeTab === 'flow' && scenarioData && graphData"
+            class="model-graph-layout-container">
+            <model-graph
+              :data="graphData"
+              :scenario-data="scenarioData"
+              @background-click="onBackgroundClick"
+              @node-body-click="showConstraints"
+              @node-header-click="showIndicator"
+              @edge-click="showRelation"
+            />
+            <color-legend
+              :show-cag-encodings="true" />
+          </div>
+          <sensitivity-analysis
+            v-if="activeTab === 'matrix'"
+            :model-summary="modelSummary"
+            :matrix-data="sensitivityMatrixData"
+            :analysis-type="sensitivityAnalysisType"
+            @set-analysis-type="setSensitivityAnalysisType"
           />
-          <color-legend
-            :show-cag-encodings="true" />
-        </div>
-        <sensitivity-analysis
-          v-if="activeTab === 'matrix'"
-          :model-summary="modelSummary"
-          :matrix-data="sensitivityMatrixData"
-          :analysis-type="sensitivityAnalysisType"
-          @set-analysis-type="setSensitivityAnalysisType"
-        />
+        </main>
         <drilldown-panel
           class="quantitative-drilldown"
           :is-open="isDrilldownOpen"
@@ -381,6 +383,12 @@ export default {
   z-index: 1;
   display: flex;
 }
+
+main {
+  min-width: 0;
+  flex: 1;
+}
+
 
 .quantitative-drilldown {
   margin: 10px 0;
