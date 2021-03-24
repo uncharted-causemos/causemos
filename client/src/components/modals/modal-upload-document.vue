@@ -1,9 +1,9 @@
 <template>
   <modal @close="close()">
-    <template slot="header">
+    <template #header>
       <h4><i class="fa fa-upload" /> Upload Document</h4>
     </template>
-    <template slot="body">
+    <template #body>
       <div>
         <form>
           <div class="form-group">
@@ -42,7 +42,7 @@
         </form>
       </div>
     </template>
-    <template slot="footer">
+    <template #footer>
       <button
         class="btn btn-light"
         @click.stop="close()"> Close
@@ -71,6 +71,9 @@ export default {
   components: {
     Modal
   },
+  emits: [
+    'close'
+  ],
   data: () => ({
     loading: false,
     sendStatus: 'Please upload a file.',
@@ -78,9 +81,6 @@ export default {
     metadataGenre: '',
     inputFile: null
   }),
-  emits: [
-    'close'
-  ],
   computed: {
     isValid: function() {
       return !_.isNil(this.inputFile);

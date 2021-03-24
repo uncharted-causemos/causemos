@@ -58,35 +58,6 @@
             <color-legend
               :show-cag-encodings="true" />
           </div>
-          <div
-            v-if="activeTab === 'table'"
-            class="tabular-layout">
-            <div>
-              <div class="header">
-                <h4 class="labels-list-title">Concepts</h4>
-              </div>
-              <labels-list
-                :data="labelsData"
-                :config="layoutConfig"
-                :highlights="listHighlights"
-                :hovered="hovered"
-                @select-node="handleSelectNode"
-                @hover-node="handleHoverNode"
-              />
-            </div>
-            <div>
-              <div class="header">&nbsp;</div>
-              <arc-diagram
-                :data="graphData"
-                :config="layoutConfigArcDiagram"
-                :highlights="highlights"
-                :hovered="hovered"
-                @select-node="handleSelectNode"
-                @select-edge="handleSelectEdge"
-                @hover-node="handleHoverNode"
-              />
-            </div>
-          </div>
           <sensitivity-analysis
             v-if="activeTab === 'matrix'"
             :model-summary="modelSummary"
@@ -101,34 +72,34 @@
           :tabs="drilldownTabs"
           :active-tab-id="activeDrilldownTab"
           @close="closeDrilldown"
-          @tab-click="onDrilldownTabClick"
-        >
-          <indicator-summary
-            v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
-            slot="content"
-            :node="selectedNode"
-            :model-summary="modelSummary"
-            @function-selected="onFunctionSelected"
-            @edit-indicator="editIndicator"
-            @remove-indicator="removeIndicator"
-          />
-          <evidence-pane
-            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-            slot="content"
-            :show-curation-actions="false"
-            :selected-relationship="selectedEdge"
-            :statements="selectedStatements"
-            :project="project"
-            :is-fetching-statements="isFetchingStatements"
-            :should-confirm-curations="true"
-            @edge-weight="setEdgeWeight">
-            <edge-polarity-switcher
+          @tab-click="onDrilldownTabClick">
+
+          <template #content>
+            <indicator-summary
+              v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
+              :node="selectedNode"
+              :model-summary="modelSummary"
+              @function-selected="onFunctionSelected"
+              @edit-indicator="editIndicator"
+              @remove-indicator="removeIndicator"
+            />
+            <evidence-pane
+              v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
+              :show-curation-actions="false"
               :selected-relationship="selectedEdge"
-              @edge-set-user-polarity="setEdgeUserPolarity" />
-            <edge-weight-slider
-              :selected-relationship="selectedEdge"
-              @edge-weight="setEdgeWeight" />
-          </evidence-pane>
+              :statements="selectedStatements"
+              :project="project"
+              :is-fetching-statements="isFetchingStatements"
+              :should-confirm-curations="true"
+              @edge-weight="setEdgeWeight">
+              <edge-polarity-switcher
+                :selected-relationship="selectedEdge"
+                @edge-set-user-polarity="setEdgeUserPolarity" />
+              <edge-weight-slider
+                :selected-relationship="selectedEdge"
+                @edge-weight="setEdgeWeight" />
+            </evidence-pane>
+          </template>
         </drilldown-panel>
       </div>
       <config-bar
@@ -139,22 +110,13 @@
   </div>
 </template>
 <script>
-import _ from 'lodash';
-import Vue from 'vue';
 import { mapGetters } from 'vuex';
 
 import QuantitativeModelOptions from '@/components/quantitative/quantitative-model-options';
 import ConfigBar from '@/components/quantitative/config-bar';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis';
 import ModelGraph from '@/components/quantitative/model-graph';
-import LabelsList from '@/components/model/models-matrix/labels-list';
-import ArcDiagram from '@/components/model/models-matrix/arc-diagram';
-
-import arcDiagramUtil from '@/utils/arc-diagram-util';
-import graphsUtil from '@/utils/graphs-util';
-
 import modelService from '@/services/model-service';
-
 import ColorLegend from '@/components/graph/color-legend';
 import TextAreaCard from '@/components/cards/text-area-card';
 import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
@@ -193,8 +155,6 @@ export default {
     ConfigBar,
     ModelGraph,
     SensitivityAnalysis,
-    LabelsList,
-    ArcDiagram,
     ColorLegend,
     TextAreaCard,
     TabBar,
@@ -230,15 +190,15 @@ export default {
       default: null
     }
   },
+  emits: [
+    'background-click', 'show-indicator', 'show-constraints', 'show-model-parameters',
+    'refresh', 'set-sensitivity-analysis-type', 'save-indicator-edits'
+  ],
   data: () => ({
     tabs: [
       {
         name: 'Causal Flow',
         id: 'flow'
-      },
-      {
-        name: 'Table',
-        id: 'table'
       },
       {
         name: 'Matrix',
@@ -256,10 +216,6 @@ export default {
     isFetchingStatements: false,
     selectedEdge: null,
 
-    labelsData: {},
-    highlights: {},
-    listHighlights: {},
-    hovered: '',
     savedComment: '',
     isCommentOpen: false
   }),
@@ -276,14 +232,6 @@ export default {
   },
   created() {
     this.PANE_ID = PANE_ID;
-    this.layoutConfig = {
-      itemHeight: 70,
-      margin: { top: 10, right: 20, bottom: 20, left: 30 }
-    };
-    this.layoutConfigArcDiagram = {
-      itemHeight: 70,
-      margin: { top: 12, right: 5, bottom: 10, left: 35 }
-    };
   },
   mounted() {
     this.savedComment = this.modelSummary.description;
@@ -293,11 +241,7 @@ export default {
     refresh() {
       // Get Model data
       const graph = { nodes: this.modelComponents.nodes, edges: this.modelComponents.edges };
-      const order = arcDiagramUtil.calculateBestGraphOrder(graph);
-      this.graphData = { model: this.currentCAG, graph, indicators: [], order };
-      this.labelsData = { model: this.currentCAG, order };
-
-      this.highlights = {};
+      this.graphData = { model: this.currentCAG, graph, indicators: [] };
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
@@ -315,76 +259,6 @@ export default {
         }
       });
     },
-    handleSelectNode(selection) {
-      let highlights = _.clone(this.highlights);
-
-      if (_.isNil(selection)) {
-        highlights = null;
-      } else {
-        const node = selection.concept;
-        const modelId = selection.modelId;
-
-        // Calculate neighborhood given a node
-        const neighorhood = graphsUtil.calculateNeighborhood(this.graphData.graph, node);
-
-        highlights = {
-          modelId,
-          selectedNode: node,
-          selectedEdge: null,
-          nodes: neighorhood.nodes,
-          edges: neighorhood.edges
-        };
-      }
-      Vue.set(this, 'highlights', highlights);
-
-      // Combined neighborhood for labels-list
-      if (!_.isNil(selection)) {
-        const node = selection.concept;
-        const combinedNeighborhoodList = [];
-        const arrayOfLabels = highlights.nodes.map(n => n.concept);
-        const modelId = selection.modelId;
-        combinedNeighborhoodList.push(arrayOfLabels);
-        const uniqueList = _.uniq(_.flatten(combinedNeighborhoodList));
-        Vue.set(this, 'listHighlights', { selectedNode: node, nodes: uniqueList, modelId });
-      } else {
-        Vue.set(this, 'listHighlights', null);
-      }
-    },
-    handleSelectEdge(selection) {
-      let highlights = _.clone(this.highlights);
-
-      if (_.isNil(selection)) {
-        highlights = null;
-      } else {
-        const edge = selection.edge;
-        const modelId = selection.modelId;
-
-        // If the edge is not present in the model, nodes shouldn't get highlighted
-        const edges = this.graphData.graph.edges;
-        const edgeIsPresent = edges.filter(e => e.source === edge.source && e.target === edge.target);
-        let neighborNodes = [];
-        if (!_.isEmpty(edgeIsPresent)) {
-          neighborNodes = [{ concept: edge.source }, { concept: edge.target }];
-        }
-        highlights = {
-          modelId,
-          selectedNode: null,
-          selectedEdge: edge,
-          nodes: neighborNodes,
-          edges: [edge]
-        };
-      }
-      Vue.set(this, 'highlights', highlights);
-
-      if (!_.isNil(selection)) {
-        const edge = selection.edge;
-        const list = [edge.source, edge.target];
-        const modelId = selection.modelId;
-        Vue.set(this, 'listHighlights', { selectedNode: null, nodes: list, modelId });
-      } else {
-        Vue.set(this, 'listHighlights', null);
-      }
-    },
     toggleComments() {
       this.isCommentOpen = !this.isCommentOpen;
     },
@@ -398,9 +272,6 @@ export default {
       this.$emit('background-click');
       this.closeDrilldown();
       this.selectedEdge = null;
-    },
-    handleHoverNode(selection) {
-      this.hovered = _.isNil(selection) ? '' : selection;
     },
     showIndicator(nodeData) {
       this.$emit('show-indicator', nodeData);
@@ -518,6 +389,7 @@ main {
   flex: 1;
 }
 
+
 .quantitative-drilldown {
   margin: 10px 0;
 }
@@ -526,23 +398,6 @@ main {
   width: 100%;
   height: 100%;
 }
-.tabular-layout {
-  padding: 5px;
-  display: flex;
-  height: 95vh;
-  overflow-y: auto;
-  .header {
-    font-weight: bold;
-    font-size: $font-size-small;
-    min-height: 40px;
-  }
-  .labels-list-title{
-    margin-top: 5px;
-    margin-left: 30px;
-  }
-
-}
-
 
 .augment-model {
   display: flex;

@@ -12,9 +12,8 @@
     </button>
     <dropdown-control
       v-if="showModelOptionsDropdown"
-      class="CAG-operations-dropdown"
-    >
-      <div slot="content">
+      class="CAG-operations-dropdown">
+      <template #content>
         <div
           class="dropdown-option"
           @click="onRenameCagClick"
@@ -33,7 +32,7 @@
         >
           Delete
         </div>
-      </div>
+      </template>
     </dropdown-control>
   </li>
 </template>

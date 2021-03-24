@@ -6,14 +6,14 @@
       @confirm="remove"
       @close="showModal = false"
     >
-      <div slot="title">Delete Project</div>
-      <div slot="message">
+      <template #title>Delete Project</template>
+      <template #message>
         <p>Are you sure you want to delete <strong>{{ project.name }}</strong> and all associated CAGs/Models/Scenarios?</p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
         />
-      </div>
+      </template>
     </modal-confirmation>
     <div
       class="row project-card-header"

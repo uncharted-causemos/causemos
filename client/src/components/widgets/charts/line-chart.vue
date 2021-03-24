@@ -99,6 +99,8 @@ export default {
     }
   },
   data: () => ({
+    // FIXME
+    // eslint-disable-next-line
     _selectedTimeSliceIndex: -1,
     // Declare this method in data instead of in methods so that one debounced function is created
     //  for each instance of line-chart, rather than shared between them statically. This avoids

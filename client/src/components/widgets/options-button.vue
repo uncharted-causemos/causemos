@@ -11,10 +11,9 @@
     <dropdown-control
       :class="{ visible: isMenuOpen, below: dropdownBelow, wider: widerDropdownOptions }"
     >
-      <slot
-        slot="content"
-        name="content"
-      />
+      <template #content>
+        <slot name="content" />
+      </template>
     </dropdown-control>
   </div>
 </template>

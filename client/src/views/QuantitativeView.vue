@@ -18,13 +18,14 @@
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
         @refresh="refresh"
       >
-        <action-bar
-          slot="action-bar"
-          :scenarios="scenarios"
-          @revert-draft-changes="revertDraftChanges"
-          @overwrite-scenario="overwriteScenario"
-          @save-new-scenario="saveNewScenario"
-        />
+        <template #action-bar>
+          <action-bar
+            :scenarios="scenarios"
+            @revert-draft-changes="revertDraftChanges"
+            @overwrite-scenario="overwriteScenario"
+            @save-new-scenario="saveNewScenario"
+          />
+        </template>
       </tab-panel>
     </div>
     <edit-indicator-modal
@@ -53,7 +54,6 @@
 
 <script>
 import _ from 'lodash';
-import Vue from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import TabPanel from '@/components/quantitative/tab-panel';
 import modelService from '@/services/model-service';
@@ -166,7 +166,7 @@ export default {
   mounted() {
     this.refresh();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.setSelectedScenarioId(null);
   },
   methods: {
@@ -245,7 +245,7 @@ export default {
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
 
       this.draftScenario = null;
-      Vue.set(this, 'scenarios', temp);
+      this.scenarios = temp;
     },
     async recalculateScenario(scenario) {
       this.enableOverlay(`Rerunning: ${scenario.name}`);
@@ -335,7 +335,7 @@ export default {
       this.selectedNode = null;
     },
     showIndicator(nodeData) {
-      Vue.set(this, 'selectedNode', nodeData);
+      this.selectedNode = nodeData;
     },
     editIndicator() {
       this.isEditIndicatorModalOpen = true;
@@ -437,7 +437,7 @@ export default {
       // Cycle the scenarios to force reactive to trigger
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
       temp.push(this.draftScenario);
-      Vue.set(this, 'scenarios', temp);
+      this.scenarios = temp;
 
       // Switch to draft
       if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {

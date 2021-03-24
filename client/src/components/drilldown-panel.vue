@@ -80,6 +80,9 @@ export default {
       default: false
     }
   },
+  emits: [
+    'close', 'tab-click', 'overlay-back'
+  ],
   data: () => ({
   }),
   computed: {

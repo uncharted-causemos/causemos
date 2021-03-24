@@ -33,10 +33,6 @@ const CONCEPTS_MSG = 'Select one or more ontological concepts';
 
 export default {
   name: 'SearchBar',
-  data: () => ({
-    lexRef: null,
-    pills: []
-  }),
   computed: {
     ...mapGetters({
       filters: 'dataSearch/filters',
@@ -48,6 +44,10 @@ export default {
       if (filtersUtil.isEqual(n, o)) return;
       this.setQuery();
     }
+  },
+  created() {
+    this.lexRef = null;
+    this.pills = [];
   },
   mounted() {
     // Defines a list of searchable fields for LEX

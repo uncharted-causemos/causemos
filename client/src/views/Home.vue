@@ -41,7 +41,7 @@
               </div>
               <div v-if="showSortingDropdown">
                 <dropdown-control class="dropdown">
-                  <div slot="content">
+                  <template #content>
                     <div
                       v-for="option in sortingOptions"
                       :key="option"
@@ -49,7 +49,7 @@
                       @click="sort(option)">
                       {{ option }}
                     </div>
-                  </div>
+                  </template>
                 </dropdown-control>
               </div>
             </div>
@@ -137,9 +137,6 @@ export default {
     refresh() {
       projectService.getProjects().then(projects => {
         this.projectsList = projects;
-        this.projectsList.forEach(project => {
-          this.$set(project, 'isOpen', false);
-        });
         // Sort by modified_at date with latest on top
         this.sortByMostRecentDate();
       });
@@ -163,9 +160,6 @@ export default {
     },
     gotoNewProject() {
       this.$router.push('newProject');
-    },
-    toggle(project) {
-      project.isOpen = !project.isOpen;
     },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;

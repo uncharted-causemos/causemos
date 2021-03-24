@@ -16,7 +16,7 @@
     <dropdown-control
       v-if="isPolarityDropdownOpen"
       class="polarity-dropdown">
-      <div slot="content">
+      <template #content>
         <div
           class="dropdown-option"
           @click="onSelectEdgeUserPolarity(STATEMENT_POLARITY.SAME)">
@@ -27,7 +27,7 @@
           @click="onSelectEdgeUserPolarity(STATEMENT_POLARITY.OPPOSITE)">
           <span class="polarity-opposite">Opposite</span>
         </div>
-      </div>
+      </template>
     </dropdown-control>
   </div>
 </template>

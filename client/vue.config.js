@@ -2,7 +2,6 @@ const webpack = require('webpack');
 const path = require('path');
 
 module.exports = {
-  publicPath: './',
   devServer: {
     proxy: {
       '/api': {

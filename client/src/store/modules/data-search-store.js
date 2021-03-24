@@ -32,7 +32,7 @@ export default {
     lastQuery: state => state.lastQuery,
     // filters is an object, if watching it either need to be deeply watched, or manually check object equivalence.
     filters: (state, getters, rootState /*, rootGetters */) => {
-      const filters = rootState.route.query.filters;
+      const filters = _.get(rootState.route, 'query.filters', {});
       return _.isEmpty(filters) ? FiltersUtil.newFilters() : filters;
     }
   },

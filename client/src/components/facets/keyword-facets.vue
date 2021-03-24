@@ -40,7 +40,7 @@ export default {
   mounted() {
     this.init();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.facetRef) this.facetRef.destroy();
     this.facetRef = null;
   },

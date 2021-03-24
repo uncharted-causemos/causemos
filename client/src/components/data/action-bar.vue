@@ -12,27 +12,23 @@
         </button>
         <dropdown-control
           v-if="showDropdown"
-          class="analysis-operations-dropdown"
-        >
-          <div slot="content">
+          class="analysis-operations-dropdown">
+          <template #content>
             <div
               class="dropdown-option"
-              @click="onRename"
-            >
+              @click="onRename">
               Rename
             </div>
             <div
-              class="dropdown-option disabled"
-            >
+              class="dropdown-option disabled">
               Duplicate
             </div>
             <div
               class="dropdown-option"
-              @click="onDelete"
-            >
+              @click="onDelete">
               Delete
             </div>
-          </div>
+          </template>
         </dropdown-control>
       </div>
 

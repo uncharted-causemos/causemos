@@ -11,7 +11,10 @@
 
 <script>
 export default {
-  name: 'CloseButton'
+  name: 'CloseButton',
+  emits: [
+    'click'
+  ]
 };
 </script>
 

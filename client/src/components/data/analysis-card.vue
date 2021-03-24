@@ -34,9 +34,7 @@
         :dropdown-below="true"
         :wider-dropdown-options="true"
       >
-        <div
-          slot="content"
-        >
+        <template #content>
           <div
             v-if="isFullscreen"
             class="dropdown-option"
@@ -60,7 +58,7 @@
             <i class="fa fa-fw fa-minus-circle" />
             Remove
           </div>
-        </div>
+        </template>
       </options-button>
     </div>
     <div
@@ -86,11 +84,8 @@
         </button>
         <dropdown-control
           v-if="isRunDropdownOpen"
-          class="dropdown-control"
-        >
-          <div
-            slot="content"
-          >
+          class="dropdown-control">
+          <template #content>
             <div
               v-for="run in runs"
               :key="run.id"
@@ -100,7 +95,7 @@
             >
               {{ indicatorRunFormatter(run) }}
             </div>
-          </div>
+          </template>
         </dropdown-control>
       </div>
     </div>

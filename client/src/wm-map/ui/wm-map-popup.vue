@@ -43,7 +43,7 @@ export default {
     this.map.on('mousemove', this.layerId, this.onMouseMove);
     this.map.on('mouseleave', this.layerId, this.onMouseLeave);
   },
-  destroyed() {
+  unmounted() {
     this.finish();
   },
   methods: {

@@ -2,17 +2,15 @@
   <modal
     class="modal-edit-indicator-container"
     :show-close-button="true"
-    @close="close"
-  >
-    <h4
-      slot="header"
-      class="header"
-    >
-      <!-- FIXME: our version of Font-Awesome doesn't include this icon -->
-      <i class="fa fa-fw fa-chart-line" />
-      Quantify Concept{{ headerSuffix }}
-    </h4>
-    <template slot="body">
+    @close="close">
+    <template #header>
+      <h4 class="header">
+        <!-- FIXME: our version of Font-Awesome doesn't include this icon -->
+        <i class="fa fa-fw fa-chart-line" />
+        Quantify Concept{{ headerSuffix }}
+      </h4>
+    </template>
+    <template #body>
       <!-- TODO: search indicator icon -->
       <!-- TODO: can we extract a standard search-bar component? I think we have a few in the app -->
       <div
@@ -31,7 +29,7 @@
           v-if="isAlternativeDropdownOpen"
           class="alternative-dropdown"
         >
-          <div slot="content">
+          <template #content>
             <indicator-search-header
               v-if="visibleAlternatives.length > 0"
             />
@@ -53,7 +51,7 @@
             >
               {{ alternative.output_name }}
             </indicator-search-result>
-          </div>
+          </template>
         </dropdown-control>
       </div>
       <indicator-editor
@@ -69,14 +67,14 @@
         :message="messageNoIndicator"
       />
     </template>
-    <div slot="footer">
+    <template #footer>
       <div
         class="btn btn-primary btn-call-for-action"
         @click="save"
       >
         Save
       </div>
-    </div>
+    </template>
   </modal>
 </template>
 

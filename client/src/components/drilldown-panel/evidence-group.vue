@@ -2,10 +2,9 @@
   <collapsible-item
     :override="expandAll"
     class="statements-container">
-    <div
-      slot="controls"
-      class="button-column"
-    >
+    <template
+      #controls
+      class="button-column">
       <i
         v-if="showCurationActions"
         class="fa fa-lg fa-fw"
@@ -24,11 +23,10 @@
         <i class="fa fa-long-arrow-right fa-lg" />
       </small-icon-button>
 
-    </div>
-    <div
-      slot="title"
-      class="title-slot-container"
-    >
+    </template>
+    <template
+      #title
+      class="title-slot-container">
       <div class="factor-title-group">
         <div
           v-tooltip.top="item.meta.subj.factor"
@@ -97,8 +95,8 @@
       >
         <i class="fa fa-trash fa-lg" />
       </small-icon-button>
-    </div>
-    <div slot="content">
+    </template>
+    <template #content>
       <div
         v-for="(statement, statIdx) of item.dataArray"
         :key="statIdx"
@@ -111,7 +109,7 @@
           @click-evidence="clickEvidence(evidence.document_context)"
         />
       </div>
-    </div>
+    </template>
   </collapsible-item>
 </template>
 

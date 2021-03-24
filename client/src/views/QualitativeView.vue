@@ -43,7 +43,7 @@
         @tab-click="onTabClick"
         @overlay-back="onDrilldownOverlayBack"
       >
-        <div slot="content">
+        <template #content>
           <evidence-pane
             v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
             :selected-relationship="selectedEdge"
@@ -77,8 +77,8 @@
             :should-confirm-curations="true"
             @show-factor-recommendations="onShowFactorRecommendations"
           />
-        </div>
-        <div slot="overlay-pane">
+        </template>
+        <template #overlay-pane>
           <node-suggestions-pane
             v-if="activeDrilldownTab === PANE_ID.NODE_SUGGESTIONS && selectedNode !== null"
             :selected-node="selectedNode"
@@ -94,7 +94,7 @@
             :is-fetching-statements="isFetchingStatements"
             @close-overlay="onDrilldownOverlayBack"
           />
-        </div>
+        </template>
       </drilldown-panel>
     </main>
     <modal-import-cag
@@ -107,12 +107,12 @@
       @confirm="onModalConfirm"
       @close="onModalClose"
     >
-      <div slot="title">Confirmation</div>
-      <div slot="message">
+      <template #title>Confirmation</template>
+      <template #message>
         <div v-if="selectedNode !== null">
           <div>
             Are you sure you want to remove
-            <strong>{{ selectedNode.concept | shortName }}</strong> from your CAG?
+            <strong>{{ shortName(selectedNode.concept) }}</strong> from your CAG?
           </div>
           <ul>
             <li>{{ countIncomingRelationships }} incoming relationship(s)</li>
@@ -122,10 +122,10 @@
         </div>
         <div v-if="selectedEdge !== null">
           <div>Are you sure you want to remove the relationship between</div>
-          <strong>{{ selectedEdge.source | shortName }}</strong> and
-          <strong>{{ selectedEdge.target | shortName }}</strong> from this CAG?
+          <strong>{{ shortName(selectedEdge.source) }}</strong> and
+          <strong>{{ shortName(selectedEdge.target) }}</strong> from this CAG?
         </div>
-      </div>
+      </template>
     </modal-confirmation>
 
     <modal-import-conflict
@@ -219,11 +219,6 @@ export default {
     ModalPathFind,
     QualitativeSidePanel
   },
-  filters: {
-    shortName: function (concept) {
-      return conceptShortName(concept + '');
-    }
-  },
   data: () => ({
     modelSummary: null,
     modelComponents: {},
@@ -291,7 +286,7 @@ export default {
       }
     },
     currentCAG(n, o) {
-      if (_.isEqual(n, o)) return;
+      if (_.isEqual(n, o) || _.isNil(n)) return;
       this.clearThumbnailTimer();
       this.refresh();
       this.closeDrilldown();
@@ -305,13 +300,16 @@ export default {
   mounted() {
     this.recalculateCAG();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.clearThumbnailTimer();
   },
   methods: {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken'
     }),
+    shortName(concept) {
+      return conceptShortName(concept + '');
+    },
     async refresh() {
       // Get CAG data
       this.modelSummary = await modelService.getSummary(this.currentCAG);

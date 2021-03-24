@@ -31,7 +31,7 @@
         @tab-click="onTabClick"
         @overlay-back="onDrilldownOverlayBack"
       >
-        <div slot="content">
+        <template #content>
           <evidence-pane
             v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
             :selected-relationship="selectedEdge"
@@ -62,8 +62,8 @@
             @add-to-CAG="onAddToCAG"
             @select-edge="onRelationshipClick"
           />
-        </div>
-        <div slot="overlay-pane">
+        </template>
+        <template #overlay-pane>
           <evidence-pane
             v-if="activeDrilldownTab === PANE_ID.EVIDENCE_OVERLAY && selectedEdge !== null"
             :selected-relationship="selectedEdge"
@@ -71,7 +71,7 @@
             :project="project"
             :is-fetching-statements="isFetchingStatements"
           />
-        </div>
+        </template>
       </drilldown-panel>
     </div>
     <modal-added-to-cag

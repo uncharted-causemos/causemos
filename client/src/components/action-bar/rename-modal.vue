@@ -4,8 +4,8 @@
     @confirm="onConfirm"
     @close="onCancel"
   >
-    <div slot="title">{{ modalTitle }}</div>
-    <div slot="message">
+    <template #title>{{ modalTitle }}</template>
+    <template #message>
       <input
         v-focus
         type="text"
@@ -15,7 +15,7 @@
         @input="newNameInput = $event.target.value"
         @keyup.enter="onConfirm"
       >
-    </div>
+    </template>
   </modal-confirmation>
 </template>
 

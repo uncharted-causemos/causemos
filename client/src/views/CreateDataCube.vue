@@ -14,7 +14,9 @@
           class="inputs"
           :class="{ 'overflow': algebraicTransformInputIds.length > 2 }"
         >
-          <template v-for="(inputId, index) of algebraicTransformInputIds">
+          <div
+            v-for="(inputId, index) of algebraicTransformInputIds"
+            :key="inputId">
             <i
               v-if="index !== 0"
               :key="index"
@@ -26,7 +28,7 @@
               :analysis-item-id="inputId"
               class="input-card"
             />
-          </template>
+          </div>
         </div>
         <div class="output">
           <output-preview-card
@@ -60,7 +62,7 @@
         :pane-title="'Metadata'"
         @close="setFocusedCardFullscreen(false)"
       >
-        <div slot="content">
+        <template #content>
           <input
             v-model="name"
             class="form-control"
@@ -84,7 +86,7 @@
             :disabled="false"
             :is-display-only="true"
           />
-        </div>
+        </template>
       </drilldown-panel>
     </div>
   </div>
@@ -122,7 +124,7 @@ export default {
   created() {
     enableConcurrentTileRequestsCaching().then(() => { this.isTileCacheEnabled = true; });
   },
-  destroyed() {
+  unmounted() {
     disableConcurrentTileRequestsCaching();
   },
   methods: {

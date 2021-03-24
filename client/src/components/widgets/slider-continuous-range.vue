@@ -59,6 +59,9 @@ export default {
       default: 2
     }
   },
+  emits: [
+    'update:modelValue'
+  ],
   data: () => ({
     selectedRange: null
   }),
@@ -219,7 +222,7 @@ export default {
         .attr('x', 0)
         .style('fill', '#777');
 
-      this.$emit('input', this.selectedRange);
+      this.$emit('update:modelValue', this.selectedRange);
     }
   }
 };

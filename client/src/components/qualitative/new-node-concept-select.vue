@@ -8,7 +8,7 @@
       @keydown="onKeyDown"
     >
     <dropdown-control class="suggestion-dropdown">
-      <div slot="content">
+      <template #content>
         <div
           v-for="(suggestion, index) in suggestions"
           :key="index"
@@ -25,7 +25,7 @@
         >
           {{ suggestion.shortName }}
         </div>
-      </div>
+      </template>
     </dropdown-control>
   </div>
 </template>
@@ -49,6 +49,9 @@ export default {
       default: () => []
     }
   },
+  emits: [
+    'suggestion-selected'
+  ],
   data: () => ({
     userInput: '',
     suggestions: [],

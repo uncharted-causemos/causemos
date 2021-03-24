@@ -34,6 +34,9 @@ export default {
   name: 'WmMap',
   mixins: [eventEmitter],
   props: { ...options },
+  emits: [
+    ...MAPBOX_EVENTS
+  ],
   data: () => ({
     ready: false,
     handleResize: () => null
@@ -71,7 +74,7 @@ export default {
   mounted() {
     this._loadMap();
   },
-  destroyed() {
+  umounted() {
     if (this.map) this.map.remove();
   },
   methods: {
@@ -108,15 +111,23 @@ export default {
     },
     bindMapEvents(events) {
       // Bind and forwards map events
-      Object.keys(this.$listeners).forEach(eventName => {
-        if (events.includes(eventName)) {
-          this.map.on(eventName, this.$_emitMapEvent);
+      Object.keys(this.$attrs).forEach(eventName => {
+        // FIXME: Vue3 https://v3.vuejs.org/guide/migration/listeners-removed.html
+        if (eventName.startsWith('on')) {
+          const cleanEventName = eventName.substring(2).toLowerCase();
+          if (events.includes(cleanEventName)) {
+            this.map.on(cleanEventName, this.$_emitMapEvent);
+          }
         }
       });
     },
     unbindEvents() {
-      Object.keys(this.$listeners).forEach(eventName => {
-        this.map.off(eventName, this.$_emitMapEvent);
+      Object.keys(this.$attrs).forEach(eventName => {
+        // FIXME: Vue3 https://v3.vuejs.org/guide/migration/listeners-removed.html
+        if (eventName.startsWith('on')) {
+          const cleanEventName = eventName.substring(2).toLowerCase();
+          this.map.off(cleanEventName, this.$_emitMapEvent);
+        }
       });
     }
   }
