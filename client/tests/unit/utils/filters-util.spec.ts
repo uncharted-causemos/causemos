@@ -1,9 +1,10 @@
 /* eslint-disable no-unused-expressions */
 import { expect } from 'chai';
 import FiltersUtil from '@/utils/filters-util';
+import { Filters } from '@/types/Filters';
 
 describe('filters-util', () => {
-  let FILTERS = {};
+  let FILTERS: Filters = { clauses: [] };
 
   beforeEach(() => {
     FILTERS = {
@@ -33,7 +34,7 @@ describe('filters-util', () => {
     expect(FILTERS.clauses.length).to.equal(2);
 
     const justAdded = FiltersUtil.findPositiveFacetClause(FILTERS, 'abc');
-    expect(justAdded.values.length).to.equal(2);
+    expect(justAdded && justAdded.values.length).to.equal(2);
   });
 
   it('remove field clause by term', () => {
@@ -88,19 +89,19 @@ describe('filters-util', () => {
   });
 
   it('check filters equivalence', () => {
-    const A = {
+    const A: Filters = {
       clauses: [
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
         { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] }
       ]
     };
-    const B = {
+    const B: Filters = {
       clauses: [
         { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] },
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] }
       ]
     };
-    const C = {
+    const C: Filters = {
       clauses: [
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
         { field: 'abc', isNot: true, operand: 'or', values: [7, 8, 9] }
@@ -112,26 +113,26 @@ describe('filters-util', () => {
   });
 
   it('check clause equivalence', () => {
-    const A = {
+    const A: Filters = {
       clauses: [
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
         { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] }
       ]
     };
-    const B = {
+    const B: Filters = {
       clauses: [
         { field: 'abc', isNot: true, operand: 'or', values: [1, 2, 3] },
         { field: 'xyz', isNot: false, operand: 'or', values: [2, 3, 4] }
       ]
     };
-    const C = {
+    const C: Filters = {
       clauses: [
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] },
         { field: 'abc', isNot: false, operand: 'or', values: [1, 2, 3] },
         { field: 'foo', isNot: false, operand: 'or', values: ['bar'] }
       ]
     };
-    const D = {
+    const D: Filters = {
       clauses: [
         { field: 'xyz', isNot: true, operand: 'or', values: [1, 2, 3] },
         { field: 'xyz', isNot: false, operand: 'or', values: [1, 2, 3] }

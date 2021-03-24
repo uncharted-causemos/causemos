@@ -32,14 +32,14 @@ const B = {
 describe('cag-util', () => {
   it('basic merge - new nodes/edges', () => {
     const result = _.cloneDeep(A);
-    cagUtil.mergeCAG(result, B);
+    cagUtil.mergeCAG(result, B, false);
     expect(result.nodes.length).to.equal(4);
     expect(result.edges.length).to.equal(2);
   });
 
   it('reference_ids merge', () => {
     const result = _.cloneDeep(A);
-    cagUtil.mergeCAG(result, A_PRIME);
+    cagUtil.mergeCAG(result, A_PRIME, false);
     expect(result.nodes.length).to.equal(2);
     expect(result.edges.length).to.equal(1);
     expect(result.edges[0].reference_ids.length).to.equal(2);
@@ -47,7 +47,7 @@ describe('cag-util', () => {
 
   it('self merge', () => {
     const result = _.cloneDeep(A);
-    cagUtil.mergeCAG(result, A);
+    cagUtil.mergeCAG(result, A, false);
     expect(result.nodes.length).to.equal(2);
     expect(result.edges.length).to.equal(1);
     expect(result.edges[0].reference_ids.length).to.equal(1);
