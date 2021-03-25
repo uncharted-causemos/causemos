@@ -10,7 +10,6 @@ interface ColumnState {
   group?: string
 }
 
-
 interface StatementViewState {
   columns: ColumnState[]
 }

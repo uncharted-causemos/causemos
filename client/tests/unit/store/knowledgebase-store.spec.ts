@@ -1,15 +1,12 @@
 /* eslint-disable no-unused-expressions */
 import { cloneDeep } from 'lodash';
-import { createLocalVue } from '@vue/test-utils';
 import { expect } from 'chai';
-import Vuex from 'vuex';
+import { createStore } from 'vuex';
 import storeConfig from '@/store/modules/knowledgebase-store';
 
 describe('knowledgebase-store', () => {
   it('filteredStatementCount', (done) => {
-    const localVue = createLocalVue();
-    localVue.use(Vuex);
-    const store = new Vuex.Store(cloneDeep(storeConfig));
+    const store = createStore(cloneDeep(storeConfig));
 
     expect(store.state.filteredStatementCount).to.equal(0);
 
