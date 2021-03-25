@@ -109,28 +109,14 @@ class CAGRenderer extends SVGRenderer {
           .style('cursor', 'pointer')
           .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
-        selection.append('path')
-          .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width))
-          .attr('d', () => {
-            const symbol = d3.symbolCircle;
-            const generator = d3.symbol()
-              .type(symbol)
-              .size(50);
-            return generator();
-          })
-          .style('stroke', 'none')
-          .style('pointer-events', 'none')
-          .style('fill', '#111');
-
         selection
           .append('text')
           .classed('node-label', true)
-          .attr('x', 25)
+          .attr('x', 10)
           .attr('y', 20)
-          .style('font-weight', '600')
           .style('pointer-events', 'none')
           .text(d => d.label)
-          .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
+          .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
       }
     });
   }
@@ -560,7 +546,6 @@ class CAGRenderer extends SVGRenderer {
       .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
   }
 }
-
 
 
 export default {
