@@ -36,6 +36,8 @@ import ColorLegend from '@/components/graph/color-legend';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
+const tweenEdgeAndNodes = false; // Flag to turn on/off path animation
+
 const DEFAULT_STYLE = {
   edge: {
     fill: 'none',
@@ -138,6 +140,7 @@ class CAGRenderer extends SVGRenderer {
   }
 
   renderNodeRemoved(selection) {
+    selection.selectAll('rect').style('fill', '#E88');
     selection
       .transition()
       .duration(1000)
@@ -267,30 +270,45 @@ class CAGRenderer extends SVGRenderer {
       .select('.edge-path')
       .style('stroke', d => calcEdgeColor(d.data))
       .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5))
-      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
-      .transition()
-      .duration(1000)
-      .attrTween('d', function (d) {
-        const currentPath = pathFn(d.points);
-        const previousPath = d3.select(this).attr('d') || currentPath;
-        const interPath = interpolatePath(previousPath, currentPath);
-        return (t) => {
-          return interPath(t);
-        };
-      });
+      .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash);
 
-    selection
-      .select('.edge-path-bg')
-      .transition()
-      .duration(1000)
-      .attrTween('d', function (d) {
-        const currentPath = pathFn(d.points);
-        const previousPath = d3.select(this).attr('d') || currentPath;
-        const interPath = interpolatePath(previousPath, currentPath);
-        return (t) => {
-          return interPath(t);
-        };
-      });
+    if (tweenEdgeAndNodes === true) {
+      selection
+        .select('.edge-path')
+        .transition()
+        .duration(1000)
+        .attrTween('d', function (d) {
+          const currentPath = pathFn(d.points);
+          const previousPath = d3.select(this).attr('d') || currentPath;
+          const interPath = interpolatePath(previousPath, currentPath);
+          return (t) => {
+            return interPath(t);
+          };
+        });
+      selection
+        .select('.edge-path-bg')
+        .transition()
+        .duration(1000)
+        .attrTween('d', function (d) {
+          const currentPath = pathFn(d.points);
+          const previousPath = d3.select(this).attr('d') || currentPath;
+          const interPath = interpolatePath(previousPath, currentPath);
+          return (t) => {
+            return interPath(t);
+          };
+        });
+    } else {
+      selection
+        .select('.edge-path')
+        .attr('d', d => {
+          return pathFn(d.points);
+        });
+      selection
+        .select('.edge-path-bg')
+        .attr('d', d => {
+          return pathFn(d.points);
+        });
+    }
   }
 
   renderEdgeRemoved(selection) {
