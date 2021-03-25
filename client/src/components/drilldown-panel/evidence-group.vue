@@ -150,6 +150,9 @@ export default {
       default: true
     }
   },
+  emits: [
+    'toggle', 'discard-statements', 'open-editor', 'vet', 'click-evidence'
+  ],
   computed: {
     subjCorrectionClass() {
       return this.hasActiveCorrection(this.item, CORRECTION_TYPES.ONTOLOGY_SUBJ) ? 'active' : '';
