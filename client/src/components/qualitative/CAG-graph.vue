@@ -23,7 +23,7 @@ import { mapGetters } from 'vuex';
 import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
-import { SVGRenderer, highlight, nodeDrag, panZoom, astar, shape } from 'svg-flowgraph';
+import { SVGRenderer, highlight, nodeDrag, panZoom, getAStarPath, simplifyPath } from 'svg-flowgraph';
 import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
@@ -470,7 +470,7 @@ class CAGRenderer extends SVGRenderer {
               return pathFn(self.getPathBetweenNodes(newEdgeSource, getLayoutNodeById(self.newEdgeTargetId)));
             } else {
               self.newEdgeTargetId = null;
-              return pathFn(self.simplifyPath(self.getPath(newEdgeStart, mousePoint, self.getNodeCollider())));
+              return pathFn(simplifyPath(getAStarPath(newEdgeStart, mousePoint, self.getNodeCollider())));
             }
           })
           .style('pointer-events', 'none')
@@ -492,7 +492,7 @@ class CAGRenderer extends SVGRenderer {
 
     return [].concat(
       [getNodeExit(source)],
-      this.simplifyPath(this.getPath(getNodeExit(source, 5), getNodeEntrance(target, -5), this.getNodeCollider())),
+      simplifyPath(getAStarPath(getNodeExit(source, 5), getNodeEntrance(target, -5), this.getNodeCollider())),
       [getNodeEntrance(target)]
     );
   }
@@ -617,7 +617,7 @@ export default {
 
       this.selectedNode = null;
       this.renderer.hideNeighbourhood();
-      this.renderer.enableDrag();
+      this.renderer.enableDrag(true);
 
       this.renderer.renderNodesDelta();
       this.renderer.renderEdgesDelta();
@@ -639,7 +639,7 @@ export default {
       el: this.$refs.container,
       adapter: new Adapter({ nodeWidth: 130, nodeHeight: 30, layout: layered }),
       renderMode: 'delta',
-      addons: [highlight, nodeDrag, panZoom, astar, shape],
+      addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
       newEdgeFn: (source, target) => {
         this.renderer.disableNodeHandles();
@@ -755,7 +755,7 @@ export default {
         d3.select('.node input[type=text]').node().focus();
       }
 
-      this.renderer.enableDrag();
+      this.renderer.enableDrag(true);
       this.$emit('refresh', null);
     },
     highlight() {
