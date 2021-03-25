@@ -115,7 +115,7 @@
 
 <script>
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
-import { CORRECTION_TYPES, CURATION_STATES } from '@/utils/correction-util';
+import { CORRECTION_TYPES, CURATION_STATES } from '@/services/curation-service';
 import EvidenceItem from '@/components/evidence-item';
 import SmallIconButton from '@/components/widgets/small-icon-button';
 import polarityUtil, { STATEMENT_POLARITY } from '@/utils/polarity-util';

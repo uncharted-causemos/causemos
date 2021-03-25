@@ -5,7 +5,7 @@ import {
 import BinaryRelationState from '@/search/binary-relation-state';
 
 import filtersUtil from '@/utils/filters-util';
-import lexUtil from '@/utils/lex-util';
+import lexUtil from '@/search/lex-util';
 
 
 export default class BasePill {

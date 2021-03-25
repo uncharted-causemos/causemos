@@ -1,7 +1,7 @@
 import _ from 'lodash';
 import { Lex, TransitionFactory, ValueState } from '@uncharted.software/lex/dist/lex';
 import BasePill from '@/search/pills/base-pill';
-import lexUtil from '@/utils/lex-util';
+import lexUtil from '@/search/lex-util';
 
 // HACK
 class ConceptValueState extends ValueState {
