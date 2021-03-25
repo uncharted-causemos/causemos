@@ -103,6 +103,7 @@ import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { calcEdgeColor } from '@/utils/scales-util';
 import { conceptShortName } from '@/utils/concept-util';
 import ontologyFormatter from '@/formatters/ontology-formatter';
+import filtersUtil from '@/utils/filters-util';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
@@ -272,14 +273,15 @@ export default {
         : relationship.target;
     },
     openKBExplorer(relationshipGroupKey) {
-      const selectedNode = this.selectedNode.concept;
+      const concept = this.selectedNode.concept;
+      const filters = filtersUtil.newFilters();
 
       if (relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE) {
-        this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs' } });
-        this.setSearchClause({ field: 'objConcept', operand: 'or', isNot: false, values: [selectedNode] });
+        filtersUtil.addSearchTerm(filters, 'objConcept', concept, 'or', false);
+        this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters } });
       } else {
-        this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs' } });
-        this.setSearchClause({ field: 'subjConcept', operand: 'or', isNot: false, values: [selectedNode] });
+        filtersUtil.addSearchTerm(filters, 'subjConcept', concept, 'or', false);
+        this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters } });
       }
     },
     isEdgeinCAG(edge) {
