@@ -165,6 +165,9 @@ export default {
       default: () => ([])
     }
   },
+  emits: [
+    'select', 'close'
+  ],
   data: () => ({
     selectedOption: 'suggestions',
     newNodeName: '',
