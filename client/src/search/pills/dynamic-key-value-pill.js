@@ -2,7 +2,7 @@ import { Lex, TransitionFactory, ValueStateValue } from '@uncharted.software/lex
 import BasePill from '@/search/pills/base-pill';
 import SingleRelationState from '@/search/single-relation-state';
 import MappedOptionState from '@/search/mapped-option-state';
-import lexUtil from '@/utils/lex-util';
+import lexUtil from '@/search/lex-util';
 
 /**
  * Used for key-value mappings that can change during the user session.
