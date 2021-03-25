@@ -376,9 +376,9 @@ class CAGRenderer extends SVGRenderer {
       .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width, DEFAULT_STYLE.nodeHandles.width));
 
     nodes.select('.node-label')
-      .attr('x', 25)
+      .attr('x', 10)
       .text(d => d.label)
-      .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
+      .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
 
     this.chart.selectAll('.node-handles').selectAll('*').remove();
   }
@@ -407,9 +407,9 @@ class CAGRenderer extends SVGRenderer {
       .attr('transform', svgUtil.translate(DEFAULT_STYLE.nodeHandles.width * 2, DEFAULT_STYLE.nodeHandles.width));
 
     node.select('.node-label')
-      .attr('x', 40)
+      .attr('x', 30)
       .text(d => d.label)
-      .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 60); });
+      .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 50); });
 
     handles.append('rect')
       .classed('handle', true)
