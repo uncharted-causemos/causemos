@@ -1,6 +1,6 @@
 /* eslint-disable no-unused-expressions */
 import { expect } from 'chai';
-import LexUtil from '@/utils/lex-util';
+import LexUtil from '@/search/lex-util';
 
 describe('lex-util', () => {
   it('convert to baseType', () => {
