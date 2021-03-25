@@ -74,7 +74,7 @@ export default {
   mounted() {
     this._loadMap();
   },
-  umounted() {
+  unmounted() {
     if (this.map) this.map.remove();
   },
   methods: {
@@ -90,7 +90,7 @@ export default {
         style,
         ...options
       });
-      this.bindMapEvents(MAPBOX_EVENTS);
+      this.bindMapEvents();
       this.map.on('load', () => {
         this.ready = true;
         // HACK: map will only take up part of its parent container leaving a section of white
@@ -109,25 +109,14 @@ export default {
     disableCamera() {
       this.cameraMoveEnabled = false;
     },
-    bindMapEvents(events) {
-      // Bind and forwards map events
-      Object.keys(this.$attrs).forEach(eventName => {
-        // FIXME: Vue3 https://v3.vuejs.org/guide/migration/listeners-removed.html
-        if (eventName.startsWith('on')) {
-          const cleanEventName = eventName.substring(2).toLowerCase();
-          if (events.includes(cleanEventName)) {
-            this.map.on(cleanEventName, this.$_emitMapEvent);
-          }
-        }
+    bindMapEvents() {
+      MAPBOX_EVENTS.forEach(eventName => {
+        this.map.on(eventName, this.$_emitMapEvent);
       });
     },
     unbindEvents() {
-      Object.keys(this.$attrs).forEach(eventName => {
-        // FIXME: Vue3 https://v3.vuejs.org/guide/migration/listeners-removed.html
-        if (eventName.startsWith('on')) {
-          const cleanEventName = eventName.substring(2).toLowerCase();
-          this.map.off(cleanEventName, this.$_emitMapEvent);
-        }
+      MAPBOX_EVENTS.forEach(eventName => {
+        this.map.off(eventName, this.$_emitMapEvent);
       });
     }
   }
