@@ -29,8 +29,8 @@ interface AnalysisItemState {
   datacubeId: string;
   modelId: string;
   outputVariable: string;
-  selection: RunOutputSelection | undefined;
-  filter: AnalysisItemFilter[] | undefined;
+  selection?: RunOutputSelection;
+  filter?: AnalysisItemFilter[];
 }
 interface AnalysisItem extends AnalysisItemState {
   model: string;
@@ -240,7 +240,7 @@ const actions = {
     const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
     commit('setAnalysisItems', items);
   },
-  setAlgebraicTransform({ state, commit }: Context, transform: { maxInputCount: number }) {
+  setAlgebraicTransform({ state, commit }: Context, transform: AlgebraciTransform) {
     if (transform === null) {
       commit('setAlgebraicTransformInputIds', []);
     } else if (transform.maxInputCount !== null) {
