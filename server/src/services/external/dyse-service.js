@@ -23,6 +23,7 @@ const createModel = async (payload) => {
     },
     json: payload
   };
+
   const result = await requestAsPromise(dyseOptions);
   if (result.status !== 'success') {
     throw new Error(JSON.stringify(result));
@@ -126,8 +127,27 @@ const updateEdgeParameter = async (modelId, edges) => {
   return result;
 };
 
+
+/**
+ * Retrieves model parameters and model status (if ready or not)
+ */
+const modelStatus = async (modelId) => {
+  const options = {
+    url: DYSE_URL + `/models/${modelId}`,
+    method: 'GET',
+    headers: {
+      Authorization: basicAuthToken,
+      Accept: 'application/json'
+    },
+    json: {}
+  };
+  const result = await requestAsPromise(options);
+  return result;
+};
+
 module.exports = {
   createModel,
+  modelStatus,
   createExperiment,
   findExperiment,
   updateNodeParameter,

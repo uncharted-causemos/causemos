@@ -19,6 +19,10 @@ const HISTORY_END_DATE = '2017-12-01';
 const PROJECTION_START_DATE = '2018-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
+
+const DYSE = 'dyse';
+const DELPHI = 'delphi';
+
 // const esLock = {};
 
 // FIXME: This is a bit confusing with the regsiter endpoint because they kind of operate along the
@@ -149,6 +153,18 @@ router.get('/', asyncHandler(async (req, res) => {
 router.get('/:modelId', asyncHandler(async (req, res) => {
   const model = await modelService.findOne(req.params.modelId);
   res.json(model);
+}));
+
+
+/* GET the status of a single model on the engine */
+router.get('/:modelId/engine-model-status', asyncHandler(async (req, res) => {
+  const modelId = req.params.modelId;
+  const engine = req.query.engine;
+  if (engine === DYSE) {
+    dyseService.modelStatus(modelId, engine);
+  } else if (engine === DELPHI) {
+    delphiService.modelStatus(modelId, engine);
+  }
 }));
 
 

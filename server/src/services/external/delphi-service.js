@@ -73,8 +73,25 @@ const findExperiment = async (modelId, experimentId) => {
   return result;
 };
 
+/**
+ * Retrieves model parameters and model status (if ready or not)
+ */
+const modelStatus = async (modelId) => {
+  const options = {
+    url: process.env.DELPHI_URL + `/delphi/models/${modelId}`,
+    method: 'GET',
+    headers: {
+      Accept: 'application/json'
+    },
+    json: {}
+  };
+  const result = await requestAsPromise(options);
+  return result;
+};
+
 module.exports = {
   createModel,
   createProjection,
-  findExperiment
+  findExperiment,
+  modelStatus
 };
