@@ -147,7 +147,7 @@
 <script>
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
-import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations } from '@/services/curation-service';
+import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations, CORRECTION_TYPES } from '@/services/curation-service';
 import projectService from '@/services/project-service';
 import ModalDocument from '@/components/modals/modal-document';
 import EvidenceItem from '@/components/evidence-item';
@@ -159,10 +159,7 @@ import SmallIconButton from '@/components/widgets/small-icon-button';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import ontologyFormatter from '@/formatters/ontology-formatter';
 import numberFormatter from '@/formatters/number-formatter';
-
 import messagesUtil from '@/utils/messages-util';
-import { CORRECTION_TYPES } from '@/utils/correction-util';
-
 const CORRECTIONS = messagesUtil.CORRECTIONS;
 const SIDE_PANEL = messagesUtil.SIDE_PANEL;
 const SERVICE_NOT_AVAILABLE = messagesUtil.SERVICE_NOT_AVAILABLE;

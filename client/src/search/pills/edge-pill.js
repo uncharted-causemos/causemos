@@ -1,7 +1,7 @@
 import { Lex, TransitionFactory, ValueState, ValueStateValue, LabelState } from '@uncharted.software/lex/dist/lex';
 import BasePill from '@/search/pills/base-pill';
 import edgeRelationState from '@/search/edge-relation-state';
-import lexUtil from '@/utils/lex-util';
+import lexUtil from '@/search/lex-util';
 import filtersUtil from '@/utils/filters-util';
 
 export default class EdgePill extends BasePill {

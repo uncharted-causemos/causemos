@@ -118,20 +118,20 @@
                 @open-editor="openEditor($event.item, $event.type)" />
 
               <polarity-editor
-                v-if="activeCorrection === CORRECTION_TYPES.POLARITY"
+                v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.POLARITY"
                 :item="{subj_polarity: item.meta.subj_polarity, obj_polarity: item.meta.obj_polarity}"
                 @reverse-relation="confirmReverseRelation(item)"
                 @select="confirmUpdatePolarity(item, $event)"
                 @close="closeEditor" />
               <ontology-editor
-                v-if="activeCorrection === CORRECTION_TYPES.ONTOLOGY_SUBJ"
+                v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_SUBJ"
                 :concept="selectedRelationship.source"
                 :suggestions="suggestions"
                 @select="confirmUpdateGrounding(item, selectedRelationship.source, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
                 @close="closeEditor" />
 
               <ontology-editor
-                v-if="activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
+                v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
                 :concept="selectedRelationship.target"
                 :suggestions="suggestions"
                 @select="confirmUpdateGrounding(item, selectedRelationship.target, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
@@ -166,7 +166,7 @@
 
 <script>
 import _ from 'lodash';
-import { getStatementConceptSuggestions, groupByPolarityAllFactors, discardStatements, vetStatements, reverseStatementsRelation, updateStatementsFactorGrounding, updateStatementsPolarity } from '@/services/curation-service';
+import { CORRECTION_TYPES, getStatementConceptSuggestions, groupByPolarityAllFactors, discardStatements, vetStatements, reverseStatementsRelation, updateStatementsFactorGrounding, updateStatementsPolarity } from '@/services/curation-service';
 import OntologyEditor from '@/components/editors/ontology-editor';
 import PolarityEditor from '@/components/editors/polarity-editor';
 import UnknownPolarityEditor from '@/components/editors/unknown-polarity-editor';
@@ -181,8 +181,6 @@ import ModalConfirmation from '@/components/modals/modal-confirmation';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import ontologyFormatter from '@/formatters/ontology-formatter';
 import numberFormatter from '@/formatters/number-formatter';
-
-import { CORRECTION_TYPES } from '@/utils/correction-util';
 
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 

@@ -29,6 +29,7 @@ const dartRouter = rootRequire('/routes/dart');
 const bookmarksRouter = rootRequire('/routes/bookmarks');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
+const modelRunRouter = rootRequire('/routes/model-run');
 
 const kbsRouter = rootRequire('/routes/knowledge-bases');
 const projectsRouter = rootRequire('/routes/projects');
@@ -130,7 +131,11 @@ app.use('/api/curation_recommendations', [
   curationRecommendationsRouter
 ]);
 
-// ES Migration start
+app.use('/api/model-run', [
+  modelRunRouter
+]);
+
+
 app.use('/api/projects', projectsRouter);
 app.use('/api/kbs', kbsRouter);
 
