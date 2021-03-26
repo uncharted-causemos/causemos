@@ -26,7 +26,7 @@
 import _ from 'lodash';
 
 import { WmMap, WmMapPopup, WmMapSelectbox, WmMapGeojson } from '@/wm-map';
-import { BASE_MAP_OPTIONS } from '@/utils/map-utils';
+import { BASE_MAP_OPTIONS } from '@/utils/map-util';
 
 /**
  * Mapbox layer style configuration

@@ -47,7 +47,7 @@ import ActionBar from '@/components/data/action-bar';
 import DataAnalysis from '@/components/data/analysis';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EmptyStateInstructions from '@/components/empty-state-instructions';
-import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-utils';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import AnalysisSidePanel from '@/components/data/analysis-side-panel';
 import AggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
