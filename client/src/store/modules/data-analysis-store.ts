@@ -39,13 +39,16 @@ interface AnalysisItem extends AnalysisItemState {
   outputDescription: string; 
 }
 
-
+interface AlgebraciTransform {
+  name?: string;
+  maxInputCount?: number; 
+}
 interface AnalysisState {
   currentAnalysisId: string;
   analysisItems: AnalysisItem[];
   timeSelectionSyncing: boolean;
   mapBounds: MapBounds;
-  algebraicTransform: any,
+  algebraicTransform: AlgebraciTransform,
   algebraicTransformInputIds: string[]
 }
 
@@ -90,14 +93,17 @@ const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariab
 
 /**
  * Return new analysis items where data portion of each item of given analysis item list is trimmed off
- * @param {AnalysisItem[]} analysisItems A list of analysis items
- * @returns {AnalysisItem[]}
  */
 const toAnalysisItemStates = (analysisItems: AnalysisItem[] = []) : AnalysisItemState[] => {
-  const stateFields = Object.values(ANALYSIS_ITEM_STATE_FIELDS);
   return analysisItems.map(item => {
-    const state = _.pickBy(item, (value, key) => stateFields.includes(key));
-    return state;
+    return {
+      id: item.id,
+      datacubeId: item.datacubeId,
+      modelId: item.modelId,
+      outputVariable: item.outputVariable,
+      selection: item.selection,
+      filter: item.filter,
+    }
   });
 };
 
@@ -144,7 +150,7 @@ const DEFAULT_STATE : AnalysisState = {
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
     [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
   ],
-  algebraicTransform: null,
+  algebraicTransform: {},
   algebraicTransformInputIds: []
 };
 
@@ -221,6 +227,7 @@ const actions = {
   },
   updateAllTimeSelection({ state, commit }: Context, timestamp: number) {
     const items = state.analysisItems.map(item => {
+      if (!item.selection) return item;
       item.selection = { ...item.selection, timestamp };
       return item;
     });
@@ -289,7 +296,7 @@ const mutations = {
     state.timeSelectionSyncing = bool;
     saveState(state);
   },
-  setAlgebraicTransform(state: AnalysisState, transform) {
+  setAlgebraicTransform(state: AnalysisState, transform: AlgebraciTransform) {
     state.algebraicTransform = transform;
   },
   setAlgebraicTransformInputIds(state: AnalysisState, inputIds: string[]) {
