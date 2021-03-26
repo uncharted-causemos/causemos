@@ -111,26 +111,13 @@ export default class ModelRenderer extends SVGRenderer {
           .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
           .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
 
-        groupHeader.append('path')
-          .attr('transform', translate(10, GRAPH_HEIGHT * 0.5 - 10))
-          .attr('d', () => {
-            const symbol = d3.symbolCircle;
-            const diamondGenerator = d3.symbol()
-              .type(symbol)
-              .size(50);
-            return diamondGenerator();
-          })
-          .style('stroke', 'none')
-          .style('fill', '#111');
-
         selection.append('text')
           .classed('node-label', true)
-          .attr('transform', translate(20, GRAPH_HEIGHT * 0.5 - 6))
+          .attr('transform', translate(10, GRAPH_HEIGHT * 0.5 - 6))
           .style('stroke', 'none')
           .style('fill', '#000')
-          .style('font-weight', '600')
           .text(d => ontologyFormatter(d.concept))
-          .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 30); });
+          .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 20); });
 
         selection.append('g')
           .classed('node-body-group', true)
