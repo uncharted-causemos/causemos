@@ -1,0 +1,306 @@
+import _ from 'lodash';
+import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
+import API from '@/api/api';
+import router from '@/router';
+import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
+
+type MapBounds = [[number, number], [number, number]];
+
+// FIXME: This is incomplete and we should move this to somewhere else since datacube type definition may be used in multiple places.  
+interface Datacube {
+  id: string;
+  model: string;
+  output_units: string;
+  source: string;
+  output_description: string;
+}
+
+interface AnalysisItemFilter {
+  range: { min: number; max: number; };
+  global: boolean
+}
+interface RunOutputSelection {
+  runId: string;
+  timestamp: number;
+}
+// Defines the preservable analysis item states
+interface AnalysisItemState {
+  id: string;
+  datacubeId: string;
+  modelId: string;
+  outputVariable: string;
+  selection: RunOutputSelection | undefined;
+  filter: AnalysisItemFilter[] | undefined;
+}
+interface AnalysisItem extends AnalysisItemState {
+  model: string;
+  source: string;
+  units: string;
+  outputDescription: string; 
+}
+
+
+interface AnalysisState {
+  currentAnalysisId: string;
+  analysisItems: AnalysisItem[];
+  timeSelectionSyncing: boolean;
+  mapBounds: MapBounds;
+  algebraicTransform: any,
+  algebraicTransformInputIds: string[]
+}
+
+interface Context {
+  state: AnalysisState;
+  commit: Function;
+}
+
+// List of analysis item state field name that needs to be preserved
+const ANALYSIS_ITEM_STATE_FIELDS = Object.freeze({
+  id: 'id',
+  datacubeId: 'datacubeId',
+  modelId: 'modelId',
+  outputVariable: 'outputVariable',
+  filter: 'filter',
+  selection: 'selection'
+});
+
+/**
+  * Create a new data analysis item
+  *
+  * @param {String} datacubeID
+  * @param {String} modelId
+  * @param {String} outputVariable
+  *
+  * @returns {AnalysisItem}
+  */
+const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariable: string, source: string, units: string, outputDescription: string, model: string) : AnalysisItem => {
+  return {
+    id: datacubeId,
+    datacubeId,
+    modelId,
+    outputVariable,
+    filter: undefined, 
+    selection: undefined,
+    model,
+    source,
+    units,
+    outputDescription,
+  }
+};
+
+/**
+ * Return new analysis items where data portion of each item of given analysis item list is trimmed off
+ * @param {AnalysisItem[]} analysisItems A list of analysis items
+ * @returns {AnalysisItem[]}
+ */
+const toAnalysisItemStates = (analysisItems: AnalysisItem[] = []) : AnalysisItemState[] => {
+  const stateFields = Object.values(ANALYSIS_ITEM_STATE_FIELDS);
+  return analysisItems.map(item => {
+    const state = _.pickBy(item, (value, key) => stateFields.includes(key));
+    return state;
+  });
+};
+
+const loadFromAnalysisItemsState = async (analysisItems: AnalysisItem[] = []): Promise<AnalysisItem[]> => {
+  const datacubeIds = analysisItems.filter(item => !!item.datacubeId).map(item => item.datacubeId);
+  if (datacubeIds.length === 0) return [];
+  const filter = { clauses: [{ field: 'id', operand: 'or', isNot: false, values: datacubeIds }] };
+  // TODO: Define datacube interface in somewhere
+  const { data } : { data: Datacube[]} = await API.get(`maas/datacubes?filters=${JSON.stringify(filter)}`);
+  return analysisItems.map(item => {
+    const datacube = data.find(d => d.id === item.datacubeId);
+    if (!datacube) return item;
+    const { model, output_units: units, source, output_description: outputDescription } = datacube;
+    return { ...item, model, source, units, outputDescription };
+  });
+};
+
+const saveState = _.debounce((state: AnalysisState) => {
+  // FIXME: Vue3 A bit hacky, might be a better way
+  const analysisID = router.currentRoute.value.params.analysisID;
+  if (!analysisID) return; // Current route doesn't support saving analysis state. Just return.
+  const { analysisItems, timeSelectionSyncing, mapBounds } = state;
+  saveAnalysisState(state.currentAnalysisId, {
+    analysisItems: toAnalysisItemStates(analysisItems),
+    timeSelectionSyncing,
+    mapBounds
+  });
+}, 500);
+
+const ensureAlgebraicInputsArePresent = (inputIds: string[], analysisItems: AnalysisItem[]) => {
+  // Return a new array of input IDs, after filtering out any IDs
+  //  that don't have a corresponding analysisItem anymore.
+  return inputIds.filter(inputId => {
+    return analysisItems.find(item => item.id === inputId) !== undefined;
+  });
+};
+
+// Default state for state that can be saved/loaded
+const DEFAULT_STATE : AnalysisState = {
+  currentAnalysisId: '',
+  analysisItems: [],
+  timeSelectionSyncing: false,
+  mapBounds: [ // Default bounds to Ethiopia
+    [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
+    [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+  ],
+  algebraicTransform: null,
+  algebraicTransformInputIds: []
+};
+
+const state = { ...DEFAULT_STATE };
+
+const getters = {
+  analysisItems: (state: AnalysisState) => state.analysisItems,
+  timeSelectionSyncing: (state: AnalysisState) => state.timeSelectionSyncing,
+  mapBounds: (state: AnalysisState) => state.mapBounds,
+  analysisId: (state: AnalysisState) => state.currentAnalysisId,
+  algebraicTransform: (state: AnalysisState) => state.algebraicTransform,
+  algebraicTransformInputIds: (state: AnalysisState) => state.algebraicTransformInputIds
+};
+
+const actions = {
+  async loadState({ state, commit }: Context, analysisID: string) {
+    // loadState is called as a route guard on the DataView and DataExplorer pages.
+    //  the analysisID is stored to avoid fetching its state if it has already been fetched,
+    //  and to avoid duplicating shared fetch/state logic.
+    if (!analysisID) return;
+    // if the store is already loaded with the state of the analysis of currentAnalysisId, return.
+    if (state.currentAnalysisId === analysisID) return;
+    const newState = await getAnalysisState(analysisID);
+    newState.analysisItems = await loadFromAnalysisItemsState(newState.analysisItems);
+    commit('loadState', { analysisID, payload: newState });
+  },
+  async updateAnalysisItems({ state, commit }: Context, datacubeIDs: string[]) {
+    const datacubes = [];
+    if (!_.isEmpty(datacubeIDs)) {
+      // Fetch datacubes metadata
+      const filter = { clauses: [{ field: 'id', operand: 'or', isNot: false, values: datacubeIDs }] };
+      const { data } = await API.get(`maas/datacubes?filters=${JSON.stringify(filter)}`);
+      datacubes.push(...data);
+    }
+    const analysisItems = datacubes.map(datacube => {
+      const { id, model, model_id: modelId, output_name: outputName, output_units: units, source, output_description: outputDescription } = datacube;
+      const analysisItem = state.analysisItems.find(item => item.id === id);
+      // Note: old data use model name as model Id and new data (supermaas) has dedicated modelId field
+      const mid = modelId || model;
+      return analysisItem !== undefined
+        ? analysisItem // Preserve existing item
+        : createNewAnalysisItem(id, mid, outputName, source, units, outputDescription, model);
+    });
+    // Remove any algebraic input IDs whose matching analysis item has also been removed
+    const newInputIds = ensureAlgebraicInputsArePresent(state.algebraicTransformInputIds, analysisItems);
+    commit('setAlgebraicTransformInputIds', newInputIds);
+    commit('setAnalysisItems', analysisItems);
+  },
+  setMapBounds({ commit }: Context, bounds: [[number, number], [number, number]]) {
+    commit('setMapBounds', bounds);
+  },
+  updateFilter({ state, commit }: Context, { analysisItemId, filter }: { analysisItemId: string; filter: AnalysisItemFilter[] }) {
+    const item = state.analysisItems.find(({ id }) => id === analysisItemId);
+    if (!item) return;
+    item.filter = Object.assign({}, item.filter, filter);
+    commit('setAnalysisItems', state.analysisItems);
+  },
+  removeFilter({ state, commit }: Context, analysisItemId: string) {
+    const item = state.analysisItems.find(({ id }) => id === analysisItemId);
+    if (!item) return;
+    item.filter = undefined;
+    commit('setAnalysisItems', state.analysisItems);
+  },
+  updateSelection({ state, commit }: Context, { analysisItemId, selection }: { analysisItemId: string; selection: RunOutputSelection }) {
+    if (!analysisItemId) return;
+    const base = {
+      runId: undefined,
+      timestamp: undefined
+    };
+    const item = state.analysisItems.find(item => analysisItemId === item.id);
+    if (!item) return;
+    item.selection = Object.assign(base, item.selection, selection);
+    commit('setAnalysisItems', state.analysisItems);
+  },
+  updateAllTimeSelection({ state, commit }: Context, timestamp: number) {
+    const items = state.analysisItems.map(item => {
+      item.selection = { ...item.selection, timestamp };
+      return item;
+    });
+    commit('setAnalysisItems', items);
+  },
+  setTimeSelectionSyncing({ commit }: Context, bool: boolean) {
+    commit('setTimeSelectionSyncing', bool);
+  },
+  removeAnalysisItems({ state, commit }: Context, analysisItemIds: string[] = []) {
+    const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
+    commit('setAnalysisItems', items);
+  },
+  setAlgebraicTransform({ state, commit }: Context, transform: { maxInputCount: number }) {
+    if (transform === null) {
+      commit('setAlgebraicTransformInputIds', []);
+    } else if (transform.maxInputCount !== null) {
+      // Deselect any data cubes beyond the number that the transform supports
+      const newInputs = state.algebraicTransformInputIds.slice(0, transform.maxInputCount);
+      commit('setAlgebraicTransformInputIds', newInputs);
+    }
+    commit('setAlgebraicTransform', transform);
+  },
+  toggleAlgebraicTransformInput({ state, commit }: Context, dataCubeId: string) {
+    let dataCubeWasSelected = false;
+    const newInputIds = state.algebraicTransformInputIds.filter(inputId => {
+      // Remove data cube if it's in the list of selected inputIds
+      if (inputId === dataCubeId) {
+        dataCubeWasSelected = true;
+        return false;
+      }
+      return true;
+    });
+    if (!dataCubeWasSelected) {
+      newInputIds.push(dataCubeId);
+    }
+    commit('setAlgebraicTransformInputIds', newInputIds);
+  },
+  removeAlgebraicTransformInput({ commit, state }: Context, id: string) {
+    const newInputIds = state.algebraicTransformInputIds.filter(inputId => inputId !== id);
+    commit('setAlgebraicTransformInputIds', newInputIds);
+  },
+  swapAlgebraicTransformInputs({ commit, state }: Context) {
+    if (state.algebraicTransformInputIds.length !== 2) return;
+    const newInputIds = [
+      state.algebraicTransformInputIds[1],
+      state.algebraicTransformInputIds[0]
+    ];
+    commit('setAlgebraicTransformInputIds', newInputIds);
+  }
+};
+
+const mutations = {
+  loadState(state: AnalysisState, { analysisID, payload }: { analysisID: string, payload: AnalysisState}) {
+    Object.assign(state, DEFAULT_STATE, payload);
+    state.currentAnalysisId = analysisID;
+  },
+  setAnalysisItems(state: AnalysisState, items = []) {
+    state.analysisItems = items;
+    saveState(state);
+  },
+  setMapBounds(state: AnalysisState, bounds: MapBounds) {
+    state.mapBounds = bounds;
+    saveState(state);
+  },
+  setTimeSelectionSyncing(state: AnalysisState, bool = false) {
+    state.timeSelectionSyncing = bool;
+    saveState(state);
+  },
+  setAlgebraicTransform(state: AnalysisState, transform) {
+    state.algebraicTransform = transform;
+  },
+  setAlgebraicTransformInputIds(state: AnalysisState, inputIds: string[]) {
+    state.algebraicTransformInputIds = inputIds;
+  }
+}
+
+export default {
+  namespaced: true,
+  state,
+  getters,
+  actions,
+  mutations,
+};
