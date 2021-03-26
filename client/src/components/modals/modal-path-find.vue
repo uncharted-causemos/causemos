@@ -68,7 +68,7 @@ export default {
     }
   },
   emits: [
-    'ad-paths', 'close'
+    'add-paths', 'close'
   ],
   data: () => ({
     suggestions: []

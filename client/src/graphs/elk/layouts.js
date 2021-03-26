@@ -6,7 +6,7 @@ export const layered = {
     const spacingOptions = {
       'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
       'elk.layered.layering.coffmanGraham.layerBound': layerBound,
-      'elk.layered.spacing.nodeNodeBetweenLayers': 20,
+      'elk.layered.spacing.nodeNodeBetweenLayers': 35, // space between vertical lanes
       'elk.spacing.nodeNode': 15,
       'elk.spacing.edgeEdge': 10,
       'elk.spacing.edgeNode': 10,

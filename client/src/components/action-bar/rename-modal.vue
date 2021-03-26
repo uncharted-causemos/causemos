@@ -37,6 +37,7 @@ export default {
       default: ''
     }
   },
+  emits: ['confirm', 'cancel'],
   data: () => ({
     newNameInput: ''
   }),

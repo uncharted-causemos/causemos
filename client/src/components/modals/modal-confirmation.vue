@@ -41,7 +41,7 @@ export default {
       default: true
     }
   },
-  emit: [
+  emits: [
     'confirm', 'close'
   ],
   mounted() {

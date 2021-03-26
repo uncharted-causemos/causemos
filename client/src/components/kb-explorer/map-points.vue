@@ -92,6 +92,7 @@ export default {
       required: true
     }
   },
+  emits: ['select-location'],
   data: () => ({
     pointLayer: null
   }),
