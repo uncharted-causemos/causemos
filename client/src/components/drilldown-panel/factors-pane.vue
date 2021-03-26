@@ -65,15 +65,15 @@
           :override="expandAll"
           class="factors-container-content"
         >
-          <div slot="controls">
+          <template #controls>
             <i
               class="fa fa-lg fa-fw"
               :class="{ 'fa-check-square-o': value.meta.checked, 'fa-square-o': !value.meta.checked }"
               @click="toggle(value)"
             />
-          </div>
-          <div
-            slot="title"
+          </template>
+          <template
+            #title
             class="title-slot-container"
           >
             <div
@@ -95,8 +95,8 @@
             >
               <i class="fa fa-trash fa-lg" />
             </small-icon-button>
-          </div>
-          <div slot="content">
+          </template>
+          <template #content>
             <div
               v-for="(statement, statementIdx) of value.dataArray"
               :key="statementIdx"
@@ -110,7 +110,7 @@
                 @click-evidence="openDocumentModal(evidence.document_context)"
               />
             </div>
-          </div>
+          </template>
         </collapsible-item>
 
         <ontology-editor
@@ -134,13 +134,12 @@
       v-if="showConfirmCurationModal"
       :autofocus-confirm="false"
       @confirm="curationConfirmedCallback"
-      @close="closeConfirmCurationModal"
-    >
-      <div slot="title">Confirm Curation Action</div>
-      <div slot="message">
+      @close="closeConfirmCurationModal">
+      <template #title>Confirm Curation Action</template>
+      <template #message>
         <p>This action will affect the entire Knowledge Base and other CAGs that use it.</p>
         <p>Do you want to proceed?</p>
-      </div>
+      </template>
     </modal-confirmation>
   </div>
 </template>
@@ -148,7 +147,7 @@
 <script>
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
-import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations } from '@/services/curation-service';
+import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations, CORRECTION_TYPES } from '@/services/curation-service';
 import projectService from '@/services/project-service';
 import ModalDocument from '@/components/modals/modal-document';
 import EvidenceItem from '@/components/evidence-item';
@@ -160,10 +159,7 @@ import SmallIconButton from '@/components/widgets/small-icon-button';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import ontologyFormatter from '@/formatters/ontology-formatter';
 import numberFormatter from '@/formatters/number-formatter';
-
 import messagesUtil from '@/utils/messages-util';
-import { CORRECTION_TYPES } from '@/utils/correction-util';
-
 const CORRECTIONS = messagesUtil.CORRECTIONS;
 const SIDE_PANEL = messagesUtil.SIDE_PANEL;
 const SERVICE_NOT_AVAILABLE = messagesUtil.SERVICE_NOT_AVAILABLE;

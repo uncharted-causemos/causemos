@@ -60,7 +60,7 @@ export default {
     }
     this.map = this.mapComponent.map;
   },
-  destroyed() {
+  unmounted() {
     if (this.map.getLayer(this.layerId)) this.map.removeLayer(this.layerId);
   }
 };

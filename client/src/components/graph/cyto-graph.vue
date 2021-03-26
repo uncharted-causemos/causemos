@@ -57,6 +57,9 @@ export default {
       default: () => ({})
     }
   },
+  emits: [
+    'clear-selection'
+  ],
   data: () => ({
     showEdges: false,
     showExpandControls: false,

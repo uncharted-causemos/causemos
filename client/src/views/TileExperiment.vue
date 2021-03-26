@@ -189,7 +189,7 @@ export default {
       };
     });
   },
-  destroyed() {
+  unmounted() {
     disableConcurrentTileRequestsCaching();
   },
   methods: {

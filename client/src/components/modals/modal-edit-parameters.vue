@@ -1,11 +1,9 @@
 <template>
-  <modal
-    @close="close()"
-  >
-    <h4 slot="header">
-      Model Parameters
-    </h4>
-    <div slot="body">
+  <modal @close="close()">
+    <template #header>
+      <h4> Model Parameters </h4>
+    </template>
+    <template #body>
       <div class="row">
         <div class="col-sm-4">
           <label>Historical Start:</label>
@@ -70,21 +68,21 @@
           </select>
         </div>
       </div>
-    </div>
-    <ul
-      slot="footer"
-      class="unstyled-list">
-      <button
-        type="button"
-        class="btn first-button"
-        @click.stop="close()">Cancel
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary btn-call-for-action"
-        @click.stop="save()">Save
-      </button>
-    </ul>
+    </template>
+    <template #footer>
+      <ul class="unstyled-list">
+        <button
+          type="button"
+          class="btn first-button"
+          @click.stop="close()">Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          @click.stop="save()">Save
+        </button>
+      </ul>
+    </template>
   </modal>
 </template>
 
@@ -109,6 +107,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'close', 'save'
+  ],
   data: () => ({
     selectedEngine: 'dyse',
     selectedStartDate: null,
@@ -187,16 +188,17 @@ export default {
   width: 300px;
 }
 
-/deep/ .modal-body {
-  padding: 10px 20px;
+/deep/ .row {
+  margin: 0;
+  margin-top:20px;
+}
+
+/deep/ .col-sm-4 {
+  padding: 0;
 }
 
 .first-button {
   margin-right: 10px;
-}
-
-.row {
-  margin-top:20px;
 }
 
 

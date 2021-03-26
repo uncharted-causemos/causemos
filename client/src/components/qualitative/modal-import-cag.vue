@@ -1,52 +1,50 @@
 <template>
   <modal
+    :use-green-header="true"
     :show-close-button="true"
-    @close="close()"
-  >
-    <h4 slot="header"> Import CAGs into workspace </h4>
-    <div
-      slot="body"
-      class="available-cags-container"
-    >
-      <card
-        v-for="cag in availableCAGs"
-        :key="cag.id"
-        :class="{ 'selected': cag.selected ? true : false }"
-        @click="toggleCAGSelection(cag)">
-        <div
-          class="preview">
-          <img :src="cag.thumbnail_source">
-        </div>
-        <h5>{{ cag.name }}</h5>
-      </card>
-    </div>
-    <ul
-      slot="footer"
-      class="unstyled-list"
-    >
-      <li class="first-button">
-        <button
-          type="button"
-          class="btn"
-          @click.stop="close()">Cancel
-        </button>
-      </li>
-      <li>
-        <button
-          type="button"
-          :disabled="selectedCAGIds.length === 0"
-          class="btn btn-primary btn-call-for-action"
-          @click.stop="importCAG()">Import CAG
-        </button>
-      </li>
-    </ul>
+    @close="close()">
+    <template #header>
+      <h4> Import CAGs into workspace </h4>
+    </template>
+    <template #body>
+      <div class="available-cags-container">
+        <card
+          v-for="cag in availableCAGs"
+          :key="cag.id"
+          :class="{ 'selected': cag.selected ? true : false }"
+          @click="toggleCAGSelection(cag)">
+          <div
+            class="preview">
+            <img :src="cag.thumbnail_source">
+          </div>
+          <h5>{{ cag.name }}</h5>
+        </card>
+      </div>
+    </template>
+    <template #footer>
+      <ul class="unstyled-list">
+        <li class="first-button">
+          <button
+            type="button"
+            class="btn"
+            @click.stop="close()">Cancel
+          </button>
+        </li>
+        <li>
+          <button
+            type="button"
+            :disabled="selectedCAGIds.length === 0"
+            class="btn btn-primary btn-call-for-action"
+            @click.stop="importCAG()">Import CAG
+          </button>
+        </li>
+      </ul>
+    </template>
   </modal>
 </template>
 
 <script>
 
-import _ from 'lodash';
-import Vue from 'vue';
 import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal';
 import Card from '@/components/widgets/card';
@@ -58,6 +56,9 @@ export default {
     Modal,
     Card
   },
+  emits: [
+    'import-cag', 'close'
+  ],
   data: () => ({
     availableCAGs: []
   }),
@@ -85,7 +86,7 @@ export default {
       } else {
         cag.selected = false;
       }
-      Vue.set(this, 'availableCAGs', _.clone(this.availableCAGs));
+      // Vue.set(this, 'availableCAGs', _.clone(this.availableCAGs));
     },
     importCAG() {
       this.$emit('import-cag', this.selectedCAGIds);
@@ -99,10 +100,6 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-
-/deep/ .modal-header {
-  background-color: #E1FAEB;
-}
 
 .first-button {
   margin-right: 10px;
@@ -119,7 +116,7 @@ export default {
     display: flex;
     flex-wrap: wrap;
     max-height: 400px;
-    overflow-y: scroll;
+    overflow-y: auto;
 
     .card-container {
       height: 220px;

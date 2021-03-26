@@ -1,30 +1,28 @@
 <template>
   <modal
     :use-green-header="true"
-    @close="close()"
-  >
-    <h4 slot="header">
-      <slot name="title" />
-    </h4>
-    <div slot="body">
+    @close="close()">
+    <template #header>
+      <h4><slot name="title" /></h4>
+    </template>
+    <template #body>
       <slot name="message" />
-    </div>
-    <ul
-      slot="footer"
-      class="unstyled-list"
-    >
-      <button
-        type="button"
-        class="btn first-button"
-        @click.stop="close()">Cancel
-      </button>
-      <button
-        ref="confirm"
-        type="button"
-        class="btn btn-primary btn-call-for-action"
-        @click.stop="confirm()">Confirm
-      </button>
-    </ul>
+    </template>
+    <template #footer>
+      <ul class="unstyled-list">
+        <button
+          type="button"
+          class="btn first-button"
+          @click.stop="close()">Cancel
+        </button>
+        <button
+          ref="confirm"
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          @click.stop="confirm()">Confirm
+        </button>
+      </ul>
+    </template>
   </modal>
 </template>
 
@@ -43,6 +41,9 @@ export default {
       default: true
     }
   },
+  emit: [
+    'confirm', 'close'
+  ],
   mounted() {
     if (this.autofocusConfirm) this.$refs.confirm.focus();
   },

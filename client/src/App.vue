@@ -19,7 +19,8 @@ import projectService from '@/services/project-service';
 import 'leaflet/dist/leaflet.css';
 
 /* Vue Resize helper */
-import 'vue-resize/dist/vue-resize.css';
+import 'vue3-resize/dist/vue3-resize.css';
+
 
 const viewsWithNoNavbar = [
   'kbExplorer',

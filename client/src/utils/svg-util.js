@@ -389,7 +389,7 @@ export const showSvgTooltip = (svgContainer, text, position, preferredAngle, fle
     .classed('svg-tooltip', true)
     .attr('transform', translate(...position))
     .style('pointer-events', 'none')
-    .style('opacity', '0.7');
+    .style('opacity', '1');
 
   // add arrow first so that it's behind background-rect and text
   const svgTooltipArrow = svgTooltip

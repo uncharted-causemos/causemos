@@ -561,6 +561,9 @@ export default {
       default: false
     }
   },
+  emits: [
+    'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click'
+  ],
   data: () => ({
     selectedNode: ''
   }),
@@ -732,7 +735,7 @@ export default {
 
     this.refresh();
   },
-  beforeDestroy() {
+  beforeUnmount() {
     this.mouseTrap.reset();
   },
   methods: {

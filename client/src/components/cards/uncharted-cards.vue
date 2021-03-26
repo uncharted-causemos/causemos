@@ -81,7 +81,7 @@ export default {
     this.registerCardsEvents();
     this.refresh();
   },
-  destroyed() {
+  unmounted() {
     this.destroyReaderSwitchButton();
     window.removeEventListener('resize', this.resize);
   },

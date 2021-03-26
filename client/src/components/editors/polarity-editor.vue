@@ -1,112 +1,112 @@
 <template>
   <div class="polarity-editor-container">
     <dropdown-control>
-      <div
-        slot="content"
-        class="dropdown">
-        <div class="dropdown-title">
-          <span>Edit Relationship</span>
-        </div>
-        <close-button @click="close()" />
-        <hr class="pane-separator">
-        <h6
-          class="option-group-header"
-          :style="statementPolarityColor(1)">Same</h6>
-        <div
-          class="dropdown-option"
-          @click.stop="select(1, 1)">
-          <i
-            class="fa fa-check"
-            :style="checkedOption(item, 1, 1)"
-          />
-          <i
-            :class="polarityClass(1)"
-            class="polarity-factor"
-          />
-          <i
-            id="statement-polarity-arrow"
-            class="fa fa-long-arrow-right"
-            :style="statementPolarityColor(1)"
-          />
-          <i
-            :class="polarityClass(1)"
-            class="polarity-factor"
-          />
-        </div>
-        <div
-          class="dropdown-option"
-          @click.stop="select(-1, -1)">
-          <i
-            class="fa fa-check"
-            :style="checkedOption(item, -1, -1)"
-          />
-          <i
-            :class="polarityClass(-1)"
-            class="polarity-factor"
-          />
-          <i
-            id="statement-polarity-arrow"
-            class="fa fa-long-arrow-right"
-            :style="statementPolarityColor(1)"
-          />
-          <i
-            :class="polarityClass(-1)"
-            class="polarity-factor"
-          />
-        </div>
-        <h6
-          :style="statementPolarityColor(-1)"
-          class="option-group-header">Opposite</h6>
-        <div
-          class="dropdown-option"
-          @click.stop="select(1, -1)">
-          <i
-            class="fa fa-check"
-            :style="checkedOption(item, 1, -1)"
-          />
-          <i
-            :class="polarityClass(1)"
-            class="polarity-factor"
-          />
-          <i
-            id="statement-polarity-arrow"
-            class="fa fa-long-arrow-right"
+      <template #content>
+        <div class="dropdown">
+          <div class="dropdown-title">
+            <span>Edit Relationship</span>
+          </div>
+          <close-button @click="close()" />
+          <hr class="pane-separator">
+          <h6
+            class="option-group-header"
+            :style="statementPolarityColor(1)">Same</h6>
+          <div
+            class="dropdown-option"
+            @click.stop="select(1, 1)">
+            <i
+              class="fa fa-check"
+              :style="checkedOption(item, 1, 1)"
+            />
+            <i
+              :class="polarityClass(1)"
+              class="polarity-factor"
+            />
+            <i
+              id="statement-polarity-arrow"
+              class="fa fa-long-arrow-right"
+              :style="statementPolarityColor(1)"
+            />
+            <i
+              :class="polarityClass(1)"
+              class="polarity-factor"
+            />
+          </div>
+          <div
+            class="dropdown-option"
+            @click.stop="select(-1, -1)">
+            <i
+              class="fa fa-check"
+              :style="checkedOption(item, -1, -1)"
+            />
+            <i
+              :class="polarityClass(-1)"
+              class="polarity-factor"
+            />
+            <i
+              id="statement-polarity-arrow"
+              class="fa fa-long-arrow-right"
+              :style="statementPolarityColor(1)"
+            />
+            <i
+              :class="polarityClass(-1)"
+              class="polarity-factor"
+            />
+          </div>
+          <h6
             :style="statementPolarityColor(-1)"
-          />
-          <i
-            :class="polarityClass(-1)"
-            class="polarity-factor"
-          />
+            class="option-group-header">Opposite</h6>
+          <div
+            class="dropdown-option"
+            @click.stop="select(1, -1)">
+            <i
+              class="fa fa-check"
+              :style="checkedOption(item, 1, -1)"
+            />
+            <i
+              :class="polarityClass(1)"
+              class="polarity-factor"
+            />
+            <i
+              id="statement-polarity-arrow"
+              class="fa fa-long-arrow-right"
+              :style="statementPolarityColor(-1)"
+            />
+            <i
+              :class="polarityClass(-1)"
+              class="polarity-factor"
+            />
+          </div>
+          <div
+            class="dropdown-option"
+            @click.stop="select(-1, 1)">
+            <i
+              class="fa fa-check"
+              :style="checkedOption(item, -1, 1)"
+            />
+            <i
+              :class="polarityClass(-1)"
+              class="polarity-factor"
+            />
+            <i
+              id="statement-polarity-arrow"
+              class="fa fa-long-arrow-right"
+              :style="statementPolarityColor(-1)"
+            />
+            <i
+              :class="polarityClass(1)"
+              class="polarity-factor"
+            />
+          </div>
+          <hr class="pane-separator">
+          <div class="reverse-relation-container">
+            <small-text-button
+              :label="'Reverse relation'"
+              @click="reverse()"
+            />
+          </div>
         </div>
-        <div
-          class="dropdown-option"
-          @click.stop="select(-1, 1)">
-          <i
-            class="fa fa-check"
-            :style="checkedOption(item, -1, 1)"
-          />
-          <i
-            :class="polarityClass(-1)"
-            class="polarity-factor"
-          />
-          <i
-            id="statement-polarity-arrow"
-            class="fa fa-long-arrow-right"
-            :style="statementPolarityColor(-1)"
-          />
-          <i
-            :class="polarityClass(1)"
-            class="polarity-factor"
-          />
-        </div>
-        <hr class="pane-separator">
-        <div class="reverse-relation-container">
-          <small-text-button
-            :label="'Reverse relation'"
-            @click="reverse()"
-          />
-        </div>
-      </div>
+      </template>
     </dropdown-control>
   </div>
 </template>
@@ -141,6 +141,9 @@ export default {
       })
     }
   },
+  emits: [
+    'reverse-relation', 'select', 'close'
+  ],
   methods: {
     reverse() {
       this.$emit('reverse-relation');

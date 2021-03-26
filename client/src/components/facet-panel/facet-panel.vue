@@ -303,7 +303,8 @@ export default {
           if (key === CODE_TABLE.DOC_STANCE.field || key === CODE_TABLE.DOC_SENTIMENT.field) {
             data = data.filter(d => d.key !== '');
           }
-          this.$set(this.baseData, key, data); // Needed for reactivity
+          // this.$set(this.baseData, key, data); // Needed for reactivity
+          this.baseData[key] = data;
         });
         this.groupBaseState[this.currentTab] = 1;
       });
@@ -324,7 +325,8 @@ export default {
           if (key === CODE_TABLE.DOC_STANCE.field || key === CODE_TABLE.DOC_SENTIMENT.field) {
             data = data.filter(d => d.key !== '');
           }
-          this.$set(this.facetData, key, data); // Needed for reactivity
+          // this.$set(this.facetData, key, data); // Needed for reactivity
+          this.facetData[key] = data;
         });
         this.groupFacetState[this.currentTab] = 1;
         this.disableOverlay(); // HACK: added this for the demo

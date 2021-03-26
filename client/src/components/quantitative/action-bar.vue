@@ -22,19 +22,17 @@
             <i class="fa fa-fw fa-angle-down" />
             <dropdown-control
               v-if="isScendarioDropdownOpen"
-              class="scenario-dropdown"
-            >
-              <div slot="content">
+              class="scenario-dropdown">
+              <template #content>
                 <div
                   v-for="scenario of scenarios"
                   :key="scenario.id"
                   class="dropdown-option"
                   :class="{'selected': scenario.id === selectedScenarioId}"
-                  @click.stop="onClickScenario(scenario.id)"
-                >
+                  @click.stop="onClickScenario(scenario.id)">
                   {{ scenario.is_valid ? scenario.name : scenario.name + " (Stale - rerun scenario) " }}
                 </div>
-              </div>
+              </template>
             </dropdown-control>
           </button>
         </li>
@@ -57,8 +55,8 @@
       v-if="isModalOpen"
       :scenarios="scenarios"
       @close="closeModal"
-      @overwrite-scenario="id => this.$emit('overwrite-scenario', id)"
-      @save-new-scenario="metadata => this.$emit('save-new-scenario', metadata)"
+      @overwrite-scenario="overwriteScenario"
+      @save-new-scenario="saveNewScenario"
     />
   </div>
 </template>
@@ -128,6 +126,12 @@ export default {
       if (scenarioId === this.selectedScenarioId) return;
       this.isScendarioDropdownOpen = false;
       this.setSelectedScenarioId(scenarioId);
+    },
+    overwriteScenario(id) {
+      this.$emit('overwrite-scenario', id);
+    },
+    saveNewScenario(metadata) {
+      this.$emit('save-new-scenario', metadata);
     }
   }
 };

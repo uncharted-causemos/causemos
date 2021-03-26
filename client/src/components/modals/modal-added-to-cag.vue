@@ -2,15 +2,18 @@
   <modal
     :show-close-button="true"
     :use-green-header="true"
-    @close="search()"
-  >
-    <h4 slot="header">
-      <i
-        class="fa fa-fw fa-check-circle green-icon"
-        aria-hidden="true" />
+    @close="search()">
+    <template #header>
+      <h4>
+        <i
+          class="fa fa-fw fa-check-circle green-icon"
+          aria-hidden="true" />
+      </h4>
+    </template>
+    <template #body>
       {{ numberOfRelationsAdded }} causal relation{{ numberOfRelationsAdded === 1 ? ' was' : 's were' }} added to your CAG
-    </h4>
-    <div slot="footer">
+    </template>
+    <template #footer>
       <ul class="unstyled-list">
         <li class="first-button">
           <button
@@ -27,7 +30,7 @@
           </button>
         </li>
       </ul>
-    </div>
+    </template>
   </modal>
 </template>
 
@@ -61,9 +64,5 @@ export default {
 
 .first-button {
   margin-right: 10px;
-}
-
-/deep/ .modal-body {
-  display: none;
 }
 </style>

@@ -39,6 +39,9 @@ export default {
       default: ''
     }
   },
+  emits: [
+    'saveText', 'close'
+  ],
   data: () => ({
     enteredText: null,
     hasUnsavedText: false

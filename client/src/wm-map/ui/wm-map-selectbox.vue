@@ -39,7 +39,7 @@ export default {
     // dragging behaviour.
     this.mapCanvas.addEventListener('mousedown', this.onMouseDown, true);
   },
-  destroyed() {
+  unmounted() {
     this.finish();
   },
   methods: {

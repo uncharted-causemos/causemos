@@ -4,7 +4,7 @@ import MappedOptionState from '@/search/mapped-option-state';
 
 import BasePill from '@/search/pills/base-pill';
 import filtersUtil from '@/utils/filters-util';
-import lexUtil from '@/utils/lex-util';
+import lexUtil from '@/search/lex-util';
 
 const NUM_EVIDENCE_START_LIST = ['1', '2', '3', '4', '5'];
 const NUM_EVIDENCE_END_LIST = ['1', '2', '3', '4', '5', '5+'];

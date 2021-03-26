@@ -53,7 +53,7 @@ export default {
     this.registerFacetsHandler();
     this.fetchRunParameterFacets(this.modelId);
   },
-  destroyed() {
+  umounted() {
     this.facets.destroy();
     this.facets = null;
     this.facetsBuilder = null;

@@ -42,6 +42,7 @@
 import Mousetrap from 'mousetrap';
 import CloseButton from '@/components/widgets/close-button';
 
+
 export default {
   name: 'Modal',
   components: {
@@ -57,6 +58,7 @@ export default {
       default: false
     }
   },
+  emits: ['close'],
   created() {
     this.hasContext = false;
   },
@@ -64,7 +66,7 @@ export default {
     this.mouseTrap = new Mousetrap(document);
     this.mouseTrap.bind('esc', this.close);
   },
-  beforeDestroy() {
+  beforeUnmount() {
     if (this.mouseTrap) {
       this.mouseTrap.unbind('esc');
       this.mouseTrap = null;
@@ -115,7 +117,8 @@ export default {
 /deep/ .modal-header {
   position: relative;
   h3, h4 {
-    margin: 10px;
+    color: #5A5A5A;
+    @include header-secondary;
   }
   .close-button {
     top: 50%;
@@ -124,7 +127,9 @@ export default {
   }
 
   &.modal-header-green {
-    background: #E1FAEB;
+    h3, h4 {
+      color: #038537;
+    }
   }
 
   .green-icon {
@@ -132,8 +137,15 @@ export default {
   }
 }
 
+/deep/ .modal-body {
+  label {
+    font-weight: 300;
+  }
+}
+
 /deep/ .modal-header, .modal-body, .modal-footer {
-  padding: 10px;
+  padding: 0 10px 10px;
+  border: 0;
 }
 
 /*

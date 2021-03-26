@@ -96,7 +96,8 @@ const loadFromAnalysisItemsState = async (analysisItems = []) => {
 };
 
 const saveState = _.debounce((state) => {
-  const analysisID = router.currentRoute.params.analysisID;
+  // FIXME: Vue3 A bit hacky, might be a better way
+  const analysisID = router.currentRoute.value.params.analysisID;
   if (!analysisID) return; // Current route doesn't support saving analysis state. Just return.
   const { analysisItems, timeSelectionSyncing, mapBounds } = state;
   saveAnalysisState(state.currentAnalysisId, {

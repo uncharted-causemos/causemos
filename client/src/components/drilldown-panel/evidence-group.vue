@@ -2,10 +2,9 @@
   <collapsible-item
     :override="expandAll"
     class="statements-container">
-    <div
-      slot="controls"
-      class="button-column"
-    >
+    <template
+      #controls
+      class="button-column">
       <i
         v-if="showCurationActions"
         class="fa fa-lg fa-fw"
@@ -24,11 +23,10 @@
         <i class="fa fa-long-arrow-right fa-lg" />
       </small-icon-button>
 
-    </div>
-    <div
-      slot="title"
-      class="title-slot-container"
-    >
+    </template>
+    <template
+      #title
+      class="title-slot-container">
       <div class="factor-title-group">
         <div
           v-tooltip.top="item.meta.subj.factor"
@@ -97,8 +95,8 @@
       >
         <i class="fa fa-trash fa-lg" />
       </small-icon-button>
-    </div>
-    <div slot="content">
+    </template>
+    <template #content>
       <div
         v-for="(statement, statIdx) of item.dataArray"
         :key="statIdx"
@@ -111,13 +109,13 @@
           @click-evidence="clickEvidence(evidence.document_context)"
         />
       </div>
-    </div>
+    </template>
   </collapsible-item>
 </template>
 
 <script>
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
-import { CORRECTION_TYPES, CURATION_STATES } from '@/utils/correction-util';
+import { CORRECTION_TYPES, CURATION_STATES } from '@/services/curation-service';
 import EvidenceItem from '@/components/evidence-item';
 import SmallIconButton from '@/components/widgets/small-icon-button';
 import polarityUtil, { STATEMENT_POLARITY } from '@/utils/polarity-util';
@@ -152,6 +150,9 @@ export default {
       default: true
     }
   },
+  emits: [
+    'toggle', 'discard-statements', 'open-editor', 'vet', 'click-evidence'
+  ],
   computed: {
     subjCorrectionClass() {
       return this.hasActiveCorrection(this.item, CORRECTION_TYPES.ONTOLOGY_SUBJ) ? 'active' : '';

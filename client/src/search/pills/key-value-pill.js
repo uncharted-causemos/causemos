@@ -4,7 +4,7 @@ import BinaryRelationState from '@/search/binary-relation-state';
 import MappedOptionState from '@/search/mapped-option-state';
 import BasePill from '@/search/pills/base-pill';
 
-import lexUtil from '@/utils/lex-util';
+import lexUtil from '@/search/lex-util';
 
 /**
  * Used for static suggestions in key-value format. For

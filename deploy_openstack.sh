@@ -49,6 +49,9 @@ CURRENT_DIR=$PWD
 CAUSEMOS=./_causemos
 
 
+# Get last commit
+COMMIT=`cd ${CURRENT_DIR}/${CAUSEMOS} && git rev-parse HEAD`
+
 ### Setup client
 echo "Setting up dependencies... this may take a few minutes"
 cd ${CURRENT_DIR}/${CAUSEMOS} && yarn workspace client install
@@ -129,5 +132,5 @@ fi
 
 echo "Log deploy time"
 ssh ${HOST} bash -s <<EOF
-  echo "$USER `date` ${PORT} ${branch}" >>  deploy.log
+  echo "$USER `date` ${PORT} ${branch} ($COMMIT)" >>  deploy.log
 EOF

@@ -1,5 +1,4 @@
-import Vue from 'vue';
-import Router from 'vue-router';
+import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 import ProjectOverview from '@/views/ProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
@@ -20,8 +19,6 @@ import qs from 'qs';
 import _ from 'lodash';
 import store from '@/store';
 
-
-Vue.use(Router);
 
 /* Borrowed from pantera */
 function formatter(item) {
@@ -45,7 +42,93 @@ async function loadAnalysisState(to, from, next) {
   next();
 }
 
-export default new Router({
+const routes = [
+  {
+    path: '/',
+    name: 'home',
+    component: Home
+  },
+  {
+    path: '/newProject',
+    name: 'newProject',
+    component: NewProject
+  },
+  {
+    path: '/:project/overview',
+    name: 'overview',
+    component: ProjectOverview
+  },
+  {
+    path: '/:project/data',
+    name: 'dataStart',
+    component: DataStart
+  },
+  {
+    path: '/:project/data/:analysisID',
+    name: 'data',
+    component: DataView,
+    beforeEnter: loadAnalysisState
+  },
+  {
+    path: '/:project/data/:analysisID/explorer',
+    name: 'dataExplorer',
+    component: DataExplorer,
+    beforeEnter: loadAnalysisState
+  },
+  {
+    path: '/:project/data/:analysisID/create-data-cube',
+    name: 'createDataCube',
+    component: CreateDataCube
+  },
+  {
+    path: '/tile-experiment',
+    name: 'tileExperiment',
+    component: TileExperiment
+  },
+  {
+    path: '/graph-experiment',
+    name: 'graphExperiment',
+    component: GraphExperiment
+  },
+  {
+    path: '/:project/qualitative',
+    name: 'qualitativeStart',
+    component: QualitativeStart
+  },
+  {
+    path: '/:project/qualitative/:currentCAG',
+    name: 'qualitative',
+    component: QualitativeView
+  },
+  {
+    path: '/:project/kb-explorer',
+    name: 'kbExplorer',
+    component: KnowledgeBaseExplorer
+  },
+  {
+    path: '/:project/quantitative',
+    name: 'quantitativeStart',
+    component: QuantitativeStart
+  },
+  {
+    path: '/:project/quantitative/:currentCAG',
+    name: 'quantitative',
+    component: QuantitativeView
+  },
+  {
+    path: '/:project/audit-trail',
+    name: 'auditTrail',
+    component: AuditTrail
+  },
+  /* 404, this has to go last */
+  {
+    path: '/:pathMatch(.*)*',
+    component: NotFound
+  }
+];
+
+
+export default createRouter({
   parseQuery: (query) => {
     /**
     * Override depth from default 5 to 8
@@ -57,91 +140,8 @@ export default new Router({
   },
   stringifyQuery: (query) => {
     const result = qs.stringify(query);
-    return result ? `?${result}` : '';
+    return result ? `${result}` : '';
   },
-  base: process.env.BASE_URL,
-  routes: [
-    {
-      path: '/',
-      name: 'home',
-      component: Home
-    },
-    {
-      path: '/newProject',
-      name: 'newProject',
-      component: NewProject
-    },
-    {
-      path: '/:project/overview',
-      name: 'overview',
-      component: ProjectOverview
-    },
-    {
-      path: '/:project/data',
-      name: 'dataStart',
-      component: DataStart
-    },
-    {
-      path: '/:project/data/:analysisID',
-      name: 'data',
-      component: DataView,
-      beforeEnter: loadAnalysisState
-    },
-    {
-      path: '/:project/data/:analysisID/explorer',
-      name: 'dataExplorer',
-      component: DataExplorer,
-      beforeEnter: loadAnalysisState
-    },
-    {
-      path: '/:project/data/:analysisID/create-data-cube',
-      name: 'createDataCube',
-      component: CreateDataCube
-    },
-    {
-      path: '/tile-experiment',
-      name: 'tileExperiment',
-      component: TileExperiment
-    },
-    {
-      path: '/graph-experiment',
-      name: 'graphExperiment',
-      component: GraphExperiment
-    },
-    {
-      path: '/:project/qualitative',
-      name: 'qualitativeStart',
-      component: QualitativeStart
-    },
-    {
-      path: '/:project/qualitative/:currentCAG',
-      name: 'qualitative',
-      component: QualitativeView
-    },
-    {
-      path: '/:project/kb-explorer',
-      name: 'kbExplorer',
-      component: KnowledgeBaseExplorer
-    },
-    {
-      path: '/:project/quantitative',
-      name: 'quantitativeStart',
-      component: QuantitativeStart
-    },
-    {
-      path: '/:project/quantitative/:currentCAG',
-      name: 'quantitative',
-      component: QuantitativeView
-    },
-    {
-      path: '/:project/audit-trail',
-      name: 'auditTrail',
-      component: AuditTrail
-    },
-    /* 404, this has to go last */
-    {
-      path: '*',
-      component: NotFound
-    }
-  ]
+  history: createWebHashHistory(process.env.BASE_URL),
+  routes: routes
 });

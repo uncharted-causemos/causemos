@@ -1,12 +1,9 @@
 <template>
-  <modal
-    @close="close()"
-  >
-    <h4 slot="header">
-      <div class="concept-circle" />
-      {{ formatted_concept_name() }}
-    </h4>
-    <div slot="body">
+  <modal @close="close()">
+    <template #header>
+      <h4> <div class="concept-circle" /> {{ formatted_concept_name() }} </h4>
+    </template>
+    <template #body>
       <h6 class="indicator-metadata">
         <i class="fa fa-fw fa-table" />
         {{ node.parameter.indicator_name }}
@@ -19,22 +16,21 @@
         <i class="fa fa-fw fa-info-circle" />
         To create a scenario, set some values by clicking on the chart. To remove a point, click on it again.
       </p>
-    </div>
-    <ul
-      slot="footer"
-      class="unstyled-list"
-    >
-      <button
-        type="button"
-        class="btn first-button"
-        @click.stop="close()">Cancel
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary btn-call-for-action"
-        @click.stop="run()">Run
-      </button>
-    </ul>
+    </template>
+    <template #footer>
+      <ul class="unstyled-list">
+        <button
+          type="button"
+          class="btn first-button"
+          @click.stop="close()">Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          @click.stop="run()">Run
+        </button>
+      </ul>
+    </template>
   </modal>
 </template>
 
@@ -67,6 +63,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'run-projection', 'close'
+  ],
   data: () => ({
     constraints: []
   }),
@@ -148,10 +147,6 @@ export default {
 
 /deep/ .modal-container {
   width: 70vw;
-}
-
-/deep/ .modal-body {
-  padding: 10px 20px;
 }
 
 .first-button {
