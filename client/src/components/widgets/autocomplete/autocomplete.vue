@@ -58,6 +58,7 @@ export default {
       default: () => false
     }
   },
+  emits: ['item-selected'],
   data: () => ({
     searchTerm: '',
     suggestions: [],
@@ -68,7 +69,7 @@ export default {
     document.addEventListener('click', this.handleClickOutside);
     this.onChange();
   },
-  destroyed() {
+  unmounted() {
     document.removeEventListener('click', this.handleClickOutside);
   },
   methods: {
