@@ -20,6 +20,8 @@
     "@uncharted.software/cards": "^1.0.0",
     "@uncharted.software/lex": "^1.0.0",
     "@uncharted.software/stories-facets": "^2.12.10",
+    "@uncharted.software/facets-core": "^3.1.0",
+    "@uncharted.software/facets-plugins": "^3.1.0",
     "@uncharted/uncharted-bootstrap": "^0.4.0",
     "axios": "^0.18.0",
     "babel-eslint": "^10.1.0",

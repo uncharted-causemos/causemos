@@ -13,7 +13,7 @@
         :label="CODE_TABLE.KEYWORD.searchDisplay"
       />
       -->
-      <histogram-facets
+      <facet3-numerical
         v-if="hasData(CODE_TABLE.BELIEF.field)"
         key="CODE_TABLE.BELIEF.field"
         :facet="CODE_TABLE.BELIEF.field"
@@ -21,7 +21,7 @@
         :base-data="baseData[CODE_TABLE.BELIEF.field]"
         :selected-data="facetData[CODE_TABLE.BELIEF.field]"
       />
-      <histogram-facets
+      <facet3-numerical
         v-if="hasData(CODE_TABLE.SCORE.field)"
         key="CODE_TABLE.SCORE.field"
         :facet="CODE_TABLE.SCORE.field"
@@ -39,7 +39,7 @@
         :base-data="baseData[CODE_TABLE.HEDGING_CATEGORY.field]"
         :selected-data="facetData[CODE_TABLE.HEDGING_CATEGORY.field]"
       />
-      <histogram-facets
+      <facet3-numerical
         v-if="hasData(CODE_TABLE.NUM_EVIDENCES.field)"
         key="CODE_TABLE.NUM_EVIDENCES.field"
         :facet="CODE_TABLE.NUM_EVIDENCES.field"
@@ -164,10 +164,11 @@
 
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
-
 import projectService from '@/services/project-service';
 import Facets from '@/components/facets/facets';
-import HistogramFacets from '@/components/facets/histogram-facets';
+
+import Facet3Numerical from '@/components/facets/facet3-numerical';
+
 import SidePanel from '@/components/side-panel/side-panel';
 // import KeywordFacets from '@/components/facets/keyword-facets';
 
@@ -220,11 +221,11 @@ export default {
   name: 'FacetPanel',
   components: {
     Facets,
-    HistogramFacets,
+    Facet3Numerical,
     SidePanel
   },
   data: () => ({
-    ontologyFormatter: ontologyFormatter,
+    HistogramFacetsontologyFormatter: ontologyFormatter,
     statementPolarityFormatter: statementPolarityFormatter,
     contradictionCategoryFormatter: contradictionCategoryFormatter,
     hedgingCategoryFormatter: hedgingCategoryFormatter,
@@ -240,6 +241,14 @@ export default {
     ],
     baseData: {},
     facetData: {},
+
+    testData: {
+      label: 'Array Data',
+      values: [
+        { ratio: 0.1 },
+        { ratio: 0.2 }
+      ]
+    },
 
     groupBaseState: {},
     groupFacetState: {},
