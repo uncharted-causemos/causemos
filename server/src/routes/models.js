@@ -249,9 +249,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   // 3. register model to engine
   let initialParameters;
   try {
-    if (engine === 'delphi') {
+    if (engine === DELPHI) {
       initialParameters = await delphiService.createModel(enginePayload);
-    } else if (engine === 'dyse') {
+    } else if (engine === DYSE) {
       initialParameters = await dyseService.createModel(enginePayload);
     }
   } catch (error) {
@@ -261,7 +261,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
 
   // FIXME: move into service
-  if (engine === 'dyse') {
+  // When the topology is changed the model is recreated, but we want to retain any prior custom
+  // parameterizations on nodes, edges if possible.
+  if (engine === DYSE) {
     const nodesUpdate = [];
     const edgesUpdate = [];
     const edgesOverride = [];
@@ -283,7 +285,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
     edgeParameters.forEach(edge => {
       const edgeInit = initialParameters.edges[`${edge.source}///${edge.target}`];
-      if (edge.parameter && edge.parameter.weight !== edgeInit.weight) {
+      if (edge.parameter && !_.isEqual(edge.parameter.weight, edgeInit.weight)) {
         edgesOverride.push({
           source: edge.source,
           target: edge.target,
@@ -357,9 +359,9 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   // 3. Create experiment (experiment) in modelling engine
   let result;
   try {
-    if (engine === 'delphi') {
+    if (engine === DELPHI) {
       result = await delphiService.createProjection(modelId, payload);
-    } else if (engine === 'dyse') {
+    } else if (engine === DYSE) {
       result = await dyseService.createExperiment(modelId, payload);
     } else {
       throw new Error('Unsupported engine type');
@@ -386,7 +388,7 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
 
   // 3. Create experiment (experiment) in modelling engine
   let result;
-  if (engine === 'dyse') {
+  if (engine === DYSE) {
     result = await dyseService.createExperiment(modelId, payload);
   } else {
     throw new Error(`sensitivity-analysis not implemented for ${engine}`);
@@ -404,7 +406,7 @@ router.post('/:modelId/goal-optimization', asyncHandler(async (req, res) => {
 
   // 3. Create experiment (experiment) in modelling engine
   let result;
-  if (engine === 'dyse') {
+  if (engine === DYSE) {
     result = await dyseService.createExperiment(modelId, payload);
   } else {
     throw new Error(`goal-optimization not implemented for ${engine}`);
@@ -417,10 +419,10 @@ router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   const engine = req.query.engine;
   const experimentId = req.query.experiment_id;
   let result;
-  if (engine === 'delphi') {
+  if (engine === DELPHI) {
     result = await delphiService.findExperiment(modelId, experimentId);
     modelService.postProcessDelphiExperiment(result);
-  } else if (engine === 'dyse') {
+  } else if (engine === DYSE) {
     result = await dyseService.findExperiment(modelId, experimentId);
   }
   res.json(result);
@@ -456,7 +458,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   // Register update with engine and retrieve new value
   let engineUpdateResult = null;
-  if (engine === 'dyse') {
+  if (engine === DYSE) {
     engineUpdateResult = await dyseService.updateNodeParameter(modelId, payload);
   } else {
     throw new Error(`updateNodeParameter not implemented for ${engine}`);
@@ -507,7 +509,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   const payload = modelService.buildEdgeParametersPayload([{ source, target, parameter }]);
 
-  if (engine === 'dyse') {
+  if (engine === DYSE) {
     await dyseService.updateEdgeParameter(modelId, payload);
   } else {
     throw new Error(`updateEdgeParameter not implemented for ${engine}`);
