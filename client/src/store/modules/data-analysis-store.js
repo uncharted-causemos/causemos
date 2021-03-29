@@ -2,7 +2,7 @@ import _ from 'lodash';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
 import API from '@/api/api';
 import router from '@/router';
-import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
+import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 /**
  * A filter object for the analysis item.

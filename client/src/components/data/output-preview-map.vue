@@ -34,7 +34,7 @@ import { mapActions, mapGetters } from 'vuex';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { getColors } from '@/utils/colors-util';
-import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, isLayerLoaded } from '@/utils/map-utils';
+import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, isLayerLoaded } from '@/utils/map-util';
 
 import { chartValueFormatter } from '@/utils/string-util';
 const DEFAULT_EXTENT = { min: 0, max: 1 };
