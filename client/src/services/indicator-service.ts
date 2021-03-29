@@ -1,6 +1,6 @@
 import API from '@/api/api';
 
-export const fetchIndicator = async (variable, model, unit) => {
+export const fetchIndicator = async (variable: string, model: string, unit: string) => {
   const params = {
     indicator: variable,
     model
