@@ -1,9 +1,12 @@
 import _ from 'lodash';
+import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import router from '@/router';
 import FiltersUtil from '@/utils/filters-util';
+import { Datacube } from '@/types/Datacubes';
+import { Filters } from '@/types/Filters';
 
-const updateQuery = (getters, { filters }) => {
-  const query = {
+const updateQuery = (getters: GetterTree<DataSearchState, any>, { filters }: { filters: Filters }) => {
+  const query: any = {
     filters: Object.assign(
       {},
       getters.filters,
@@ -13,60 +16,71 @@ const updateQuery = (getters, { filters }) => {
   return query;
 };
 
+interface DataSearchState {
+  selectedDatacubes: Datacube[],
+  ontologyConcepts: string[],
+  lastQuery: Filters | null,
+  searchResultsCount: number
+}
+
+const state: DataSearchState = {
+  selectedDatacubes: [],
+  ontologyConcepts: [],
+  lastQuery: null,
+  searchResultsCount: 0
+};
+const getters: GetterTree<DataSearchState, any> = {
+  query: (state, getters, rootState /*, rootGetters */) => {
+    return rootState.route.query;
+  },
+  // selected datacube IDs
+  selectedDatacubes: (state: DataSearchState) => state.selectedDatacubes,
+  searchResultsCount: (state: DataSearchState) => state.searchResultsCount,
+  ontologyConcepts: (state: DataSearchState) => state.ontologyConcepts,
+  lastQuery: (state: DataSearchState) => state.lastQuery,
+  // filters is an object, if watching it either need to be deeply watched, or manually check object equivalence.
+  filters: (state: DataSearchState, getters, rootState /*, rootGetters */) => {
+    const filters = _.get(rootState.route, 'query.filters', {});
+    return _.isEmpty(filters) ? FiltersUtil.newFilters() : filters;
+  }
+};
+const actions: ActionTree<DataSearchState, any> = {
+  setSelectedDatacubes({ commit }, datacubes) {
+    commit('setSelectedDatacubes', datacubes);
+  },
+  setSearchFilters({ getters }, filters) {
+    const query = updateQuery(getters, { filters });
+    router.push({ query }).catch(() => { });
+  },
+  setLastQuery({ commit, getters }, filters) {
+    const query = updateQuery(getters, { filters });
+    commit('setLastQuery', query);
+  },
+  setSearchResultsCount({ commit }, searchResultsCount) {
+    commit('setSearchResultsCount', searchResultsCount);
+  },
+  setOntologyConcepts({ commit }, concepts) {
+    commit('setOntologyConcepts', concepts);
+  }
+};
+const mutations: MutationTree<DataSearchState> = {
+  setSelectedDatacubes(state, datacubes: Datacube[]) {
+    state.selectedDatacubes = datacubes;
+  },
+  setLastQuery(state, query: Filters) {
+    state.lastQuery = query;
+  },
+  setSearchResultsCount(state, searchResultsCount: number) {
+    state.searchResultsCount = searchResultsCount;
+  },
+  setOntologyConcepts(state, concepts: string[]) {
+    state.ontologyConcepts = concepts;
+  }
+};
 export default {
   namespaced: true,
-  state: {
-    selectedDatacubes: [],
-    ontologyConcepts: [],
-    lastQuery: null,
-    searchResultsCount: 0
-  },
-  getters: {
-    query: (state, getters, rootState /*, rootGetters */) => {
-      return rootState.route.query;
-    },
-    // selected datacube IDs
-    selectedDatacubes: state => state.selectedDatacubes,
-    searchResultsCount: state => state.searchResultsCount,
-    ontologyConcepts: state => state.ontologyConcepts,
-    lastQuery: state => state.lastQuery,
-    // filters is an object, if watching it either need to be deeply watched, or manually check object equivalence.
-    filters: (state, getters, rootState /*, rootGetters */) => {
-      const filters = _.get(rootState.route, 'query.filters', {});
-      return _.isEmpty(filters) ? FiltersUtil.newFilters() : filters;
-    }
-  },
-  actions: {
-    setSelectedDatacubes({ commit }, datacubes) {
-      commit('setSelectedDatacubes', datacubes);
-    },
-    setSearchFilters({ getters }, filters) {
-      const query = updateQuery(getters, { filters });
-      router.push({ query }).catch(() => { });
-    },
-    setLastQuery({ commit, getters }, filters) {
-      const query = updateQuery(getters, { filters });
-      commit('setLastQuery', query);
-    },
-    setSearchResultsCount({ commit }, searchResultsCount) {
-      commit('setSearchResultsCount', searchResultsCount);
-    },
-    setOntologyConcepts({ commit }, concepts) {
-      commit('setOntologyConcepts', concepts);
-    }
-  },
-  mutations: {
-    setSelectedDatacubes(state, datacubes) {
-      state.selectedDatacubes = datacubes;
-    },
-    setLastQuery(state, query) {
-      state.lastQuery = query;
-    },
-    setSearchResultsCount(state, searchResultsCount) {
-      state.searchResultsCount = searchResultsCount;
-    },
-    setOntologyConcepts(state, concepts) {
-      state.ontologyConcepts = concepts;
-    }
-  }
+  state,
+  getters,
+  actions,
+  mutations
 };

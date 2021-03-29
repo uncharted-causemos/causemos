@@ -1,20 +1,14 @@
 import _ from 'lodash';
+import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
 import API from '@/api/api';
 import router from '@/router';
+import { Datacube } from '@/types/Datacubes';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
 
 type MapBounds = [[number, number], [number, number]];
 
-// FIXME: This is incomplete and we should move this to somewhere else since datacube type definition may be used in multiple places.  
-interface Datacube {
-  id: string;
-  model: string;
-  output_units: string;
-  source: string;
-  output_description: string;
-}
-
+// FIXME: This is incomplete and we should move this to somewhere else since datacube type definition may be used in multiple places.
 interface AnalysisItemFilter {
   range: { min: number; max: number; };
   global: boolean
@@ -36,12 +30,12 @@ interface AnalysisItem extends AnalysisItemState {
   model: string;
   source: string;
   units: string;
-  outputDescription: string; 
+  outputDescription: string;
 }
 
 interface AlgebraciTransform {
   name?: string;
-  maxInputCount?: number; 
+  maxInputCount?: number;
 }
 interface AnalysisState {
   currentAnalysisId: string;
@@ -51,21 +45,6 @@ interface AnalysisState {
   algebraicTransform: AlgebraciTransform,
   algebraicTransformInputIds: string[]
 }
-
-interface Context {
-  state: AnalysisState;
-  commit: Function;
-}
-
-// List of analysis item state field name that needs to be preserved
-const ANALYSIS_ITEM_STATE_FIELDS = Object.freeze({
-  id: 'id',
-  datacubeId: 'datacubeId',
-  modelId: 'modelId',
-  outputVariable: 'outputVariable',
-  filter: 'filter',
-  selection: 'selection'
-});
 
 /**
   * Create a new data analysis item
@@ -82,13 +61,13 @@ const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariab
     datacubeId,
     modelId,
     outputVariable,
-    filter: undefined, 
+    filter: undefined,
     selection: undefined,
     model,
     source,
     units,
-    outputDescription,
-  }
+    outputDescription
+  };
 };
 
 /**
@@ -102,8 +81,8 @@ const toAnalysisItemStates = (analysisItems: AnalysisItem[] = []) : AnalysisItem
       modelId: item.modelId,
       outputVariable: item.outputVariable,
       selection: item.selection,
-      filter: item.filter,
-    }
+      filter: item.filter
+    };
   });
 };
 
@@ -156,17 +135,17 @@ const DEFAULT_STATE : AnalysisState = {
 
 const state = { ...DEFAULT_STATE };
 
-const getters = {
-  analysisItems: (state: AnalysisState) => state.analysisItems,
-  timeSelectionSyncing: (state: AnalysisState) => state.timeSelectionSyncing,
-  mapBounds: (state: AnalysisState) => state.mapBounds,
-  analysisId: (state: AnalysisState) => state.currentAnalysisId,
-  algebraicTransform: (state: AnalysisState) => state.algebraicTransform,
-  algebraicTransformInputIds: (state: AnalysisState) => state.algebraicTransformInputIds
+const getters: GetterTree<AnalysisState, any> = {
+  analysisItems: state => state.analysisItems,
+  timeSelectionSyncing: state => state.timeSelectionSyncing,
+  mapBounds: state => state.mapBounds,
+  analysisId: state => state.currentAnalysisId,
+  algebraicTransform: state => state.algebraicTransform,
+  algebraicTransformInputIds: state => state.algebraicTransformInputIds
 };
 
-const actions = {
-  async loadState({ state, commit }: Context, analysisID: string) {
+const actions: ActionTree<AnalysisState, any> = {
+  async loadState({ state, commit }, analysisID: string) {
     // loadState is called as a route guard on the DataView and DataExplorer pages.
     //  the analysisID is stored to avoid fetching its state if it has already been fetched,
     //  and to avoid duplicating shared fetch/state logic.
@@ -177,7 +156,7 @@ const actions = {
     newState.analysisItems = await loadFromAnalysisItemsState(newState.analysisItems);
     commit('loadState', { analysisID, payload: newState });
   },
-  async updateAnalysisItems({ state, commit }: Context, datacubeIDs: string[]) {
+  async updateAnalysisItems({ state, commit }, datacubeIDs: string[]) {
     const datacubes = [];
     if (!_.isEmpty(datacubeIDs)) {
       // Fetch datacubes metadata
@@ -199,22 +178,22 @@ const actions = {
     commit('setAlgebraicTransformInputIds', newInputIds);
     commit('setAnalysisItems', analysisItems);
   },
-  setMapBounds({ commit }: Context, bounds: [[number, number], [number, number]]) {
+  setMapBounds({ commit }, bounds: [[number, number], [number, number]]) {
     commit('setMapBounds', bounds);
   },
-  updateFilter({ state, commit }: Context, { analysisItemId, filter }: { analysisItemId: string; filter: AnalysisItemFilter[] }) {
+  updateFilter({ state, commit }, { analysisItemId, filter }: { analysisItemId: string; filter: AnalysisItemFilter[] }) {
     const item = state.analysisItems.find(({ id }) => id === analysisItemId);
     if (!item) return;
     item.filter = Object.assign({}, item.filter, filter);
     commit('setAnalysisItems', state.analysisItems);
   },
-  removeFilter({ state, commit }: Context, analysisItemId: string) {
+  removeFilter({ state, commit }, analysisItemId: string) {
     const item = state.analysisItems.find(({ id }) => id === analysisItemId);
     if (!item) return;
     item.filter = undefined;
     commit('setAnalysisItems', state.analysisItems);
   },
-  updateSelection({ state, commit }: Context, { analysisItemId, selection }: { analysisItemId: string; selection: RunOutputSelection }) {
+  updateSelection({ state, commit }, { analysisItemId, selection }: { analysisItemId: string; selection: RunOutputSelection }) {
     if (!analysisItemId) return;
     const base = {
       runId: undefined,
@@ -225,7 +204,7 @@ const actions = {
     item.selection = Object.assign(base, item.selection, selection);
     commit('setAnalysisItems', state.analysisItems);
   },
-  updateAllTimeSelection({ state, commit }: Context, timestamp: number) {
+  updateAllTimeSelection({ state, commit }, timestamp: number) {
     const items = state.analysisItems.map(item => {
       if (!item.selection) return item;
       item.selection = { ...item.selection, timestamp };
@@ -233,14 +212,14 @@ const actions = {
     });
     commit('setAnalysisItems', items);
   },
-  setTimeSelectionSyncing({ commit }: Context, bool: boolean) {
+  setTimeSelectionSyncing({ commit }, bool: boolean) {
     commit('setTimeSelectionSyncing', bool);
   },
-  removeAnalysisItems({ state, commit }: Context, analysisItemIds: string[] = []) {
+  removeAnalysisItems({ state, commit }, analysisItemIds: string[] = []) {
     const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
     commit('setAnalysisItems', items);
   },
-  setAlgebraicTransform({ state, commit }: Context, transform: AlgebraciTransform) {
+  setAlgebraicTransform({ state, commit }, transform: AlgebraciTransform) {
     if (transform === null) {
       commit('setAlgebraicTransformInputIds', []);
     } else if (transform.maxInputCount !== null) {
@@ -250,7 +229,7 @@ const actions = {
     }
     commit('setAlgebraicTransform', transform);
   },
-  toggleAlgebraicTransformInput({ state, commit }: Context, dataCubeId: string) {
+  toggleAlgebraicTransformInput({ state, commit }, dataCubeId: string) {
     let dataCubeWasSelected = false;
     const newInputIds = state.algebraicTransformInputIds.filter(inputId => {
       // Remove data cube if it's in the list of selected inputIds
@@ -265,11 +244,11 @@ const actions = {
     }
     commit('setAlgebraicTransformInputIds', newInputIds);
   },
-  removeAlgebraicTransformInput({ commit, state }: Context, id: string) {
+  removeAlgebraicTransformInput({ commit, state }, id: string) {
     const newInputIds = state.algebraicTransformInputIds.filter(inputId => inputId !== id);
     commit('setAlgebraicTransformInputIds', newInputIds);
   },
-  swapAlgebraicTransformInputs({ commit, state }: Context) {
+  swapAlgebraicTransformInputs({ commit, state }) {
     if (state.algebraicTransformInputIds.length !== 2) return;
     const newInputIds = [
       state.algebraicTransformInputIds[1],
@@ -279,35 +258,35 @@ const actions = {
   }
 };
 
-const mutations = {
-  loadState(state: AnalysisState, { analysisID, payload }: { analysisID: string, payload: AnalysisState}) {
+const mutations: MutationTree<AnalysisState> = {
+  loadState(state, { analysisID, payload }: { analysisID: string, payload: AnalysisItem}) {
     Object.assign(state, DEFAULT_STATE, payload);
     state.currentAnalysisId = analysisID;
   },
-  setAnalysisItems(state: AnalysisState, items = []) {
+  setAnalysisItems(state, items = []) {
     state.analysisItems = items;
     saveState(state);
   },
-  setMapBounds(state: AnalysisState, bounds: MapBounds) {
+  setMapBounds(state, bounds: MapBounds) {
     state.mapBounds = bounds;
     saveState(state);
   },
-  setTimeSelectionSyncing(state: AnalysisState, bool = false) {
+  setTimeSelectionSyncing(state, bool = false) {
     state.timeSelectionSyncing = bool;
     saveState(state);
   },
-  setAlgebraicTransform(state: AnalysisState, transform: AlgebraciTransform) {
+  setAlgebraicTransform(state, transform: AlgebraciTransform) {
     state.algebraicTransform = transform;
   },
-  setAlgebraicTransformInputIds(state: AnalysisState, inputIds: string[]) {
+  setAlgebraicTransformInputIds(state, inputIds: string[]) {
     state.algebraicTransformInputIds = inputIds;
   }
-}
+};
 
 export default {
   namespaced: true,
   state,
   getters,
   actions,
-  mutations,
+  mutations
 };
