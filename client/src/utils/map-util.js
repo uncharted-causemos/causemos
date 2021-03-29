@@ -1,5 +1,12 @@
-
+import _ from 'lodash';
 import mapboxgl from 'mapbox-gl';
+
+export const ETHIOPIA_BOUNDING_BOX = {
+  TOP: 18,
+  LEFT: 31,
+  BOTTOM: 0,
+  RIGHT: 51
+};
 
 const ORIGINAL_WORKER_URL = mapboxgl.workerUrl;
 const ORIGINAL_WORKER_COUNT = mapboxgl.workerCount;
@@ -166,3 +173,32 @@ export function createHeatmapLayerStyle(property, dataDomain, colors, scaleFn = 
     filter: ['all', ['has', property]]
   };
 }
+
+/**
+ * Transfrom map data to map points data
+ * @param {Object[]} mapData.geoJSON - geoJSON object
+ * @param {number}   mapData.minCount - feature with lowest mentions
+ * @param {number}   mapData.maxCount - feature with highest mentions
+ * @param {Object}   options - options
+ * @param {number}   options.baseSize - base size of the circle
+ * @returns {Object[]}
+ */
+export function transformMapData(mapData = {}, options = {}) {
+  const { geoJSON, minCount, maxCount } = mapData;
+  if (_.isEmpty(geoJSON)) return {};
+
+  const baseSize = options.baseSize || 2000; // base size of circle (in meters)
+
+  const sizeFn = (count, min, max) => {
+    if (max === min) return baseSize;
+    const size = Math.sqrt((count / (max - min)) * baseSize);
+    return Math.max(size, 3); // keep the smallest radius to 3
+  };
+
+  const result = geoJSON.features.map(datum => {
+    datum.properties.radius = sizeFn(datum.properties.count, minCount, maxCount);
+    return datum;
+  });
+  return result;
+}
+

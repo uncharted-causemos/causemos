@@ -99,7 +99,7 @@ import AlgebraicExpression from '@/components/data/algebraic-expression';
 import OutputPreviewCard from '@/components/data/output-preview-card';
 import DrilldownPanel from '@/components/drilldown-panel';
 import { mapGetters } from 'vuex';
-import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-utils';
+import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 export default {
   name: 'CreateDataCube',
   components: {

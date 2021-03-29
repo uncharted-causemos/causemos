@@ -47,9 +47,8 @@ import _ from 'lodash';
 import { WmMap, WmMapVector } from '@/wm-map';
 import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
 import * as d3 from 'd3';
-import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
 import { getColors } from '@/utils/colors-util';
-import { BASE_MAP_OPTIONS, enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-utils';
+import { BASE_MAP_OPTIONS, enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 const FILTER_ANIMATION_FPS = 15;
 /**
