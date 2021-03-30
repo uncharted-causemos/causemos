@@ -44,13 +44,12 @@
 </template>
 
 
-<script lang="ts">
+<script>
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 
 import '@uncharted.software/facets-core';
 import '@uncharted.software/facets-plugins';
-import { FacetBarsData } from '@uncharted.software/facets-core/dist/types/facet-bars/FacetBars';
 
 import filtersUtil from '@/utils/filters-util';
 
@@ -87,11 +86,11 @@ export default {
     ...mapGetters({
       filters: 'query/filters'
     }),
-    max(): number {
+    max() {
       const values = this.baseData.map(b => b.value);
       return Math.max(...values);
     },
-    facetData(): FacetBarsData {
+    facetData() {
       const values = this.baseData.map((b) => {
         return {
           ratio: b.value / this.max,
@@ -104,7 +103,7 @@ export default {
         values
       };
     },
-    selection(): number[] {
+    selection() {
       const facetClause = filtersUtil.findPositiveFacetClause(this.filters, this.facet);
       if (facetClause) {
         const values = facetClause.values[0];
@@ -127,7 +126,7 @@ export default {
         return [0, this.baseData.length];
       }
     },
-    subSelection(): number[] {
+    subSelection() {
       return this.selectedData ? this.selectedData.map(s => s.value / this.max) : [];
     }
   },

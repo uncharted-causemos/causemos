@@ -54,13 +54,11 @@
   </facet-terms>
 </template>
 
-<script lang="ts">
+<script>
 import { mapActions, mapGetters } from 'vuex';
 import _ from 'lodash';
 
 import '@uncharted.software/facets-core';
-import { FacetTermsData } from '@uncharted.software/facets-core/dist/types/facet-terms/FacetTerms';
-
 import filtersUtil from '@/utils/filters-util';
 
 const FACET_DEFAULT_SIZE = 5;
@@ -107,7 +105,7 @@ export default {
     ...mapGetters({
       filters: 'query/filters'
     }),
-    facetData(): FacetTermsData {
+    facetData() {
       const values = [];
       for (let i = 0; i < this.numToDisplay; ++i) {
         const b = this.sortedJoinedData[i];
@@ -123,13 +121,13 @@ export default {
         values
       };
     },
-    facetMoreCount(): number {
+    facetMoreCount() {
       return this.baseData.length - this.numToDisplay;
     },
-    hasLess(): boolean {
+    hasLess() {
       return this.moreLevel > 0;
     },
-    hasMore(): boolean {
+    hasMore() {
       return this.moreLevel < 2 && this.facetMoreCount > 0;
     },
     keyIndexDict() {
@@ -138,11 +136,11 @@ export default {
         return a;
       }, {});
     },
-    max(): number {
+    max() {
       const values = this.baseData.map(b => b.value);
       return Math.max(...values);
     },
-    moreNumToDisplay(): number {
+    moreNumToDisplay() {
       switch (this.moreLevel) {
         case 0:
           return FACET_DEFAULT_SIZE;
@@ -153,7 +151,7 @@ export default {
           return this.baseData.length;
       }
     },
-    numToDisplay(): number {
+    numToDisplay() {
       return this.baseData.length < FACET_DEFAULT_SIZE
         ? this.baseData.length
         : this.moreNumToDisplay;
