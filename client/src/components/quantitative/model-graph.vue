@@ -117,7 +117,7 @@ export default {
       await this.renderer.render();
 
       this.renderer.hideNeighbourhood();
-      this.renderer.enableDrag();
+      this.renderer.enableDrag(true);
       this.renderer.enableSubInteractions();
       this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
     }

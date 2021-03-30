@@ -7677,11 +7677,6 @@ lcid@^2.0.0:
   dependencies:
     invert-kv "^2.0.0"
 
-leaflet@^1.3.4:
-  version "1.7.1"
-  resolved "https://registry.yarnpkg.com/leaflet/-/leaflet-1.7.1.tgz#10d684916edfe1bf41d688a3b97127c0322a2a19"
-  integrity sha512-/xwPEBidtg69Q3HlqPdU3DnrXQOvQU/CCHA1tcDQVzOwm91YMYaILjNp7L4Eaw5Z4sOYdbBz6koWyibppd8Zqw==
-
 levn@^0.3.0, levn@~0.3.0:
   version "0.3.0"
   resolved "https://registry.yarnpkg.com/levn/-/levn-0.3.0.tgz#3b09924edf9f083c0490fdd4c0bc4421e04764ee"
@@ -9372,11 +9367,6 @@ pkg-dir@^4.1.0:
   integrity sha512-HRDzbaKjC+AOWVXxAU/x54COGeIv9eb+6CkDSQoNTt4XyWoIJvuPsXizxu/Fr23EiekbtZwmh1IcIG/l/a10GQ==
   dependencies:
     find-up "^4.0.0"
-
-plotty@^0.4.1:
-  version "0.4.3"
-  resolved "https://registry.yarnpkg.com/plotty/-/plotty-0.4.3.tgz#900c6e1549e2805edf42f12a9b0a34eff2746eec"
-  integrity sha512-V15ZMJe1M6O39CctswMK7Rf5YNfAB0yA/VoQ2Er0ULmzi/iN2oChacjAn27l0V6GCUxbhylG4hl1YfClF+Rltg==
 
 pn@^1.1.0:
   version "1.1.0"
@@ -11351,10 +11341,10 @@ supports-color@^7.0.0, supports-color@^7.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-svg-flowgraph@^0.2.0:
-  version "0.2.0"
-  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.2.0.tgz#e992fd8deaeadfaa92c571c9f96810e2373ad1fb"
-  integrity sha512-4P9j0gaW0F0RYhSkgCqhRgVnKsJxKpAPH8fZoepWvKUT7sfYO0lIbp4Eb+eN8aV9Rr+w6KYrKip9eY06nO5zTA==
+svg-flowgraph@^0.3.0:
+  version "0.3.0"
+  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.3.0.tgz#f2b0b691866090415a96873bfdad00076c663acc"
+  integrity sha512-JZC6Z7ScbPWGe4coLEkdA4sxW4jbpkj5NI4aUr4AXwFLLc9T803x7I6gddyrDPzFZc7Gc1G0cM0kXfKf0K/3bA==
 
 svg-tags@^1.0.0:
   version "1.0.0"
