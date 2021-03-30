@@ -8,7 +8,6 @@ import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
 
 type MapBounds = [[number, number], [number, number]];
 
-// FIXME: This is incomplete and we should move this to somewhere else since datacube type definition may be used in multiple places.
 interface AnalysisItemFilter {
   range: { min: number; max: number; };
   global: boolean
