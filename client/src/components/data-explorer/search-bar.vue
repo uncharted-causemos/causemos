@@ -40,7 +40,7 @@ export default {
     })
   },
   watch: {
-    filter: function filterChanged(n, o) {
+    filters: function filterChanged(n, o) {
       if (filtersUtil.isEqual(n, o)) return;
       this.setQuery();
     }

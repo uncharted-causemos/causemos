@@ -19,14 +19,12 @@ const updateQuery = (getters: GetterTree<DataSearchState, any>, { filters }: { f
 interface DataSearchState {
   selectedDatacubes: Datacube[],
   ontologyConcepts: string[],
-  lastQuery: Filters | null,
   searchResultsCount: number
 }
 
 const state: DataSearchState = {
   selectedDatacubes: [],
   ontologyConcepts: [],
-  lastQuery: null,
   searchResultsCount: 0
 };
 const getters: GetterTree<DataSearchState, any> = {
@@ -37,7 +35,6 @@ const getters: GetterTree<DataSearchState, any> = {
   selectedDatacubes: (state: DataSearchState) => state.selectedDatacubes,
   searchResultsCount: (state: DataSearchState) => state.searchResultsCount,
   ontologyConcepts: (state: DataSearchState) => state.ontologyConcepts,
-  lastQuery: (state: DataSearchState) => state.lastQuery,
   // filters is an object, if watching it either need to be deeply watched, or manually check object equivalence.
   filters: (state: DataSearchState, getters, rootState /*, rootGetters */) => {
     const filters = _.get(rootState.route, 'query.filters', {});
@@ -52,10 +49,6 @@ const actions: ActionTree<DataSearchState, any> = {
     const query = updateQuery(getters, { filters });
     router.push({ query }).catch(() => { });
   },
-  setLastQuery({ commit, getters }, filters) {
-    const query = updateQuery(getters, { filters });
-    commit('setLastQuery', query);
-  },
   setSearchResultsCount({ commit }, searchResultsCount) {
     commit('setSearchResultsCount', searchResultsCount);
   },
@@ -66,9 +59,6 @@ const actions: ActionTree<DataSearchState, any> = {
 const mutations: MutationTree<DataSearchState> = {
   setSelectedDatacubes(state, datacubes: Datacube[]) {
     state.selectedDatacubes = datacubes;
-  },
-  setLastQuery(state, query: Filters) {
-    state.lastQuery = query;
   },
   setSearchResultsCount(state, searchResultsCount: number) {
     state.searchResultsCount = searchResultsCount;

@@ -25,6 +25,7 @@
 </template>
 
 <script>
+import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 import SearchBar from '@/components/data-explorer/search-bar';
 import SearchListview from '@/components/data-explorer/search-listview';
@@ -36,16 +37,6 @@ export default {
     SearchBar,
     SearchListview,
     TabBar
-  },
-  beforeRouteUpdate(to, from, next) {
-    // Try to keep the search state so we can restore when navigating back from other pages
-    this.setLastQuery(this.filters);
-    next();
-  },
-  beforeRouteLeave(to, from, next) {
-    // Try to keep the search state so we can restore when navigating back from other pages
-    this.setLastQuery(this.filters);
-    next();
   },
   data: () => ({
     tabs: [
@@ -68,6 +59,13 @@ export default {
   },
   created() {
     this.view = 'list';
+    // Noote: Since `beforeRouteUpdate` or beforeRouteLeave isn't triggering, use $Watch on route instead.
+    // Although this is an valid implementation. further investigation on `beforeRoute` hooks might be needed.
+    this.$watch(
+      () => this.$route.params,
+      () => this.syncStateFromRoute(),
+      { immediate: true }
+    );
   },
   beforeMount() {
     // Set selected datacubes for ones that are already in the analysis items.
@@ -75,11 +73,15 @@ export default {
   },
   methods: {
     ...mapActions({
-      setLastQuery: 'dataSearch/setLastQuery',
+      setSearchFilters: 'dataSearch/setSearchFilters',
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
     setActive(tabId) {
       this.setView(tabId);
+    },
+    syncStateFromRoute() {
+      const filters = _.get(this.$route, 'query.filters', {});
+      this.setSearchFilters(filters);
     }
   }
 };
