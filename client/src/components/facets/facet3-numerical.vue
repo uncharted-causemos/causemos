@@ -2,7 +2,7 @@
   <facet-bars
     :data.prop="facetData"
     :selection.prop="selection"
-    :subselection.prop="subselection"
+    :subselection.prop="subSelection"
     @facet-element-updated="updateSelection"
   >
     <div
@@ -61,6 +61,7 @@ import filtersUtil from '@/utils/filters-util';
  * - label: facet label
  * - facet: field key
  * - selectedData: Array of selected bins
+ * - baseData: Array of unfiltered bins
  */
 export default {
   name: 'Facet3Numerical',
@@ -91,11 +92,11 @@ export default {
       return Math.max(...values);
     },
     facetData(): FacetBarsData {
-      const values = this.baseData.map((f) => {
+      const values = this.baseData.map((b) => {
         return {
-          ratio: f.value / this.max,
-          label: f.key,
-          tooltip: `Value: ${f}`
+          ratio: b.value / this.max,
+          label: b.key,
+          tooltip: `${this.label}: ${b.key}\nCount: ${b.value}`
         };
       });
       return {
@@ -126,14 +127,13 @@ export default {
         return [0, this.baseData.length];
       }
     },
-    subselection(): number[] {
+    subSelection(): number[] {
       return this.selectedData ? this.selectedData.map(s => s.value / this.max) : [];
     }
   },
   methods: {
     ...mapActions({
-      setSearchClause: 'query/setSearchClause',
-      removeSearchTerm: 'query/removeSearchTerm'
+      setSearchClause: 'query/setSearchClause'
     }),
     updateSelection(event) {
       const facet = event.currentTarget;
