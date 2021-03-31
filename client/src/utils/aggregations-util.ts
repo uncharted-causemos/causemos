@@ -38,17 +38,34 @@ import _ from 'lodash';
  *   }
  * ]
  */
-const groupDataArray = (dataArray, configs) => {
+
+interface AggChild<T> {
+  key: string,
+  count: number,
+  dataArray: T[],
+  meta?: any,
+  children?: AggChild<T>[]
+}
+
+
+interface AggConfig<T> {
+  keyFn: (arg1: T) => string,
+  filterFn?: (arg1: T, arg2: number) => boolean,
+  metaFn?: (arg1: AggChild<T>, arg2: number) => any, // FIXME
+  sortFn?: (arg1: AggChild<T>) => number | string
+}
+
+
+const groupDataArray = <T>(dataArray: T[], configs: AggConfig<T>[]) => {
   const config = configs.splice(0, 1)[0];
 
   // Filter
   const filtered = config.filterFn ? dataArray.filter(config.filterFn) : dataArray;
 
   // Regular group by
-  const grouped = _.groupBy(filtered, config.keyFn);
+  const grouped = _.groupBy<T>(filtered, config.keyFn);
 
-  // Reformat output
-  const children = [];
+  const children:AggChild<T>[] = [];
   _.forEach(grouped, (v, k) => {
     children.push({
       key: k,
@@ -58,11 +75,11 @@ const groupDataArray = (dataArray, configs) => {
   });
 
   // Embed any additional meta infomration
-  if (config.metaFn) {
-    children.forEach((c, idx) => {
+  children.forEach((c, idx) => {
+    if (config.metaFn) {
       c.meta = config.metaFn(c, idx);
-    });
-  }
+    }
+  });
 
   // Recurse down configuration list, if applicable
   if (configs.length > 0) {
@@ -71,9 +88,9 @@ const groupDataArray = (dataArray, configs) => {
       delete c.dataArray; // FIXME: should make this optional to allow keeping intermediate results
     });
   }
-
   return config.sortFn ? _.sortBy(children, config.sortFn) : children;
 };
+
 
 /**
  * Less general variation on groupDataArray with a lighter-weight output structure
@@ -99,7 +116,7 @@ const groupDataArray = (dataArray, configs) => {
  *  ...
  * }
  */
-const groupRepeatedly = (dataArray, groupingFunctions) => {
+const groupRepeatedly = (dataArray: any, groupingFunctions: any) => {
   if (groupingFunctions.length === 0) return dataArray;
   const [groupingFunction, ...remainingFunctions] = groupingFunctions;
   const grouped = _.groupBy(dataArray, groupingFunction);
@@ -110,25 +127,25 @@ const groupRepeatedly = (dataArray, groupingFunctions) => {
   return grouped;
 };
 
-const getMostFrequentPolarityPair = (statements) => {
-  const groupedPolaritiesByFactor = _.groupBy(statements, s => {
-    return s.subj_polarity + '///' + s.obj_polarity;
-  });
-  const maxKey = _.maxBy(
-    _.map(groupedPolaritiesByFactor, (v, k) => ({ key: k, value: v })),
-    entry => {
-      return entry.value.length;
-    });
-  const polarityPair = maxKey.key.split('///');
-  const mostFrequentPolarityPair = {
-    subj_polarity: polarityPair[0],
-    obj_polarity: polarityPair[1]
-  };
-  return mostFrequentPolarityPair;
-};
+// const getMostFrequentPolarityPair = (statements) => {
+//   const groupedPolaritiesByFactor = _.groupBy(statements, s => {
+//     return s.subj_polarity + '///' + s.obj_polarity;
+//   });
+//   const maxKey = _.maxBy(
+//     _.map(groupedPolaritiesByFactor, (v, k) => ({ key: k, value: v })),
+//     entry => {
+//       return entry.value.length;
+//     });
+//   const polarityPair = maxKey.key.split('///');
+//   const mostFrequentPolarityPair = {
+//     subj_polarity: polarityPair[0],
+//     obj_polarity: polarityPair[1]
+//   };
+//   return mostFrequentPolarityPair;
+// };
 
 export default {
   groupDataArray,
-  groupRepeatedly,
-  getMostFrequentPolarityPair
+  groupRepeatedly
+  // getMostFrequentPolarityPair
 };
