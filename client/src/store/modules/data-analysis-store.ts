@@ -4,7 +4,7 @@ import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service
 import API from '@/api/api';
 import router from '@/router';
 import { Datacube } from '@/types/Datacubes';
-import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
+import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 type MapBounds = [[number, number], [number, number]];
 
