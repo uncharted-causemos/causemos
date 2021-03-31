@@ -57,10 +57,9 @@ import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION, modelOutputMaxPrecision } from '@/utils/model-output-util';
-import { ETHIOPIA_BOUNDING_BOX } from '@/utils/geo-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { getColors } from '@/utils/colors-util';
-import { BASE_MAP_OPTIONS, createHeatmapLayerStyle } from '@/utils/map-utils';
+import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
 
