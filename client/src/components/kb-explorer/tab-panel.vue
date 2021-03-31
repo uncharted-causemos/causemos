@@ -55,7 +55,7 @@ import CytoGraph from '@/components/graph/cyto-graph';
 import MapStyles from '@/utils/map-styles';
 import SubActionBar from '@/components/kb-explorer/sub-action-bar';
 import filtersUtil from '@/utils/filters-util';
-import geo from '@/utils/geo-util';
+import { transformMapData } from '@/utils/map-util';
 import TabBar from '../widgets/tab-bar.vue';
 
 export default {
@@ -165,7 +165,7 @@ export default {
     },
     setMapData() {
       this.setMapDataPromise = projectService.getProjectLocationsPromise(this.project, null).then(d => {
-        const transformedData = geo.transformMapData(d.data);
+        const transformedData = transformMapData(d.data);
         this.mapData = Object.assign({}, this.mapData, { type: 'FeatureCollection', features: transformedData });
       });
     },

@@ -16,7 +16,6 @@ import { mapActions, mapGetters } from 'vuex';
 import NavBar from '@/components/nav-bar';
 import Overlay from '@/components/overlay';
 import projectService from '@/services/project-service';
-import 'leaflet/dist/leaflet.css';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';

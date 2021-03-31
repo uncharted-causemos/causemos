@@ -12,6 +12,7 @@ const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodel
  * @param {string} docId
  */
 const getRawDoc = async (docId) => {
+  Logger.info(`Calling ${DART_SERVICE_URL}/cdrs/raw/${docId}`);
   const options = {
     url: `${DART_SERVICE_URL}/cdrs/raw/${docId}`,
     // url: `${process.env.DART_DOCUMENT_RETRIEVAL_URL}/${docId}`,
