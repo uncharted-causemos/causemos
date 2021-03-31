@@ -12,7 +12,6 @@ import DataAnalysisStore from './modules/data-analysis-store';
 import BookmarkpanelStore from './modules/bookmarkpanel-store';
 
 export default new Vuex.Store({
-  namespaced: true,
   modules: {
     query: QueryStore,
     statements: StatementsStore,
