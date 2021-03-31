@@ -1,5 +1,9 @@
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
+
+// Delphi model states
+// - training
+
 /**
  * Register model on Delphi: sending the id, statements and indicators
  * @param {object} payload
@@ -19,15 +23,30 @@ const createModel = async (payload) => {
   };
 
   const result = await requestAsPromise(delphiOptions);
-  if (result.status !== 'success') {
-    throw new Error(JSON.stringify(result));
-  }
+  // if (result.status !== 'success') {
+  //   throw new Error(JSON.stringify(result));
+  // }
+  return result;
+};
 
-  // FIXME: return relevant initial values
-  return {
-    nodes: {},
-    edges: {}
+/**
+ * Get current model status and parameterizations
+ */
+const modelStatus = async (modelId) => {
+  Logger.info(`checking delphi model status ${modelId}`);
+
+  // create to delphi
+  const delphiOptions = {
+    method: 'GET',
+    url: process.env.DELPHI_URL + '/delphi/models/' + modelId,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {}
   };
+  const result = await requestAsPromise(delphiOptions);
+  return result;
 };
 
 /**
@@ -73,25 +92,10 @@ const findExperiment = async (modelId, experimentId) => {
   return result;
 };
 
-/**
- * Retrieves model parameters and model status (if ready or not)
- */
-const modelStatus = async (modelId) => {
-  const options = {
-    url: process.env.DELPHI_URL + `/delphi/models/${modelId}`,
-    method: 'GET',
-    headers: {
-      Accept: 'application/json'
-    },
-    json: {}
-  };
-  const result = await requestAsPromise(options);
-  return result;
-};
 
 module.exports = {
   createModel,
+  modelStatus,
   createProjection,
-  findExperiment,
-  modelStatus
+  findExperiment
 };

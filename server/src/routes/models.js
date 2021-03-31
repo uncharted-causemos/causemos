@@ -61,7 +61,6 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
   // Set initial time series
   await indicatorService.setDefaultIndicators(modelId);
 
-
   res.status(200).send({ updateToken: moment().valueOf() });
 }));
 
@@ -153,18 +152,6 @@ router.get('/', asyncHandler(async (req, res) => {
 router.get('/:modelId', asyncHandler(async (req, res) => {
   const model = await modelService.findOne(req.params.modelId);
   res.json(model);
-}));
-
-
-/* GET the status of a single model on the engine */
-router.get('/:modelId/engine-model-status', asyncHandler(async (req, res) => {
-  const modelId = req.params.modelId;
-  const engine = req.query.engine;
-  if (engine === DYSE) {
-    dyseService.modelStatus(modelId, engine);
-  } else if (engine === DELPHI) {
-    delphiService.modelStatus(modelId, engine);
-  }
 }));
 
 
@@ -345,6 +332,19 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);
+}));
+
+router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const { engine } = req.body;
+
+  let modelStatus = {};
+  if (engine === DYSE) {
+    modelStatus = await dyseService.modelStatus(modelId);
+  } else {
+    modelStatus = await delphiService.modelStatus(modelId);
+  }
+  res.json(modelStatus);
 }));
 
 router.post('/:modelId/projection', asyncHandler(async (req, res) => {
