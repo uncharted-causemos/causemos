@@ -35,9 +35,9 @@
         :facet="CODE_TABLE.HEDGING_CATEGORY.field"
         :label="CODE_TABLE.HEDGING_CATEGORY.searchDisplay"
         :formatter-fn="hedgingCategoryFormatter"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.HEDGING_CATEGORY.field]"
         :selected-data="facetData[CODE_TABLE.HEDGING_CATEGORY.field]"
+        :rescale-after-select="true"
       />
       <facet3-numerical
         v-if="hasData(CODE_TABLE.NUM_EVIDENCES.field)"
@@ -55,6 +55,7 @@
         :label="CODE_TABLE.READERS.searchDisplay"
         :base-data="baseData[CODE_TABLE.READERS.field]"
         :selected-data="facetData[CODE_TABLE.READERS.field]"
+        :rescale-after-select="true"
       />
       <facet3-categorical
         v-if="hasData(CODE_TABLE.QUALITY.field)"
@@ -63,6 +64,7 @@
         :label="CODE_TABLE.QUALITY.searchDisplay"
         :base-data="baseData[CODE_TABLE.QUALITY.field]"
         :selected-data="facetData[CODE_TABLE.QUALITY.field]"
+        :rescale-after-select="true"
       />
     </div>
 
@@ -75,6 +77,7 @@
         :formatter-fn="statementPolarityFormatter"
         :base-data="baseData[CODE_TABLE.STATEMENT_POLARITY.field]"
         :selected-data="facetData[CODE_TABLE.STATEMENT_POLARITY.field]"
+        :rescale-after-select="true"
       />
       <facet3-categorical
         v-if="hasData(CODE_TABLE.SUBJ_CONCEPT.field)"
@@ -84,6 +87,7 @@
         :formatter-fn="ontologyFormatter"
         :base-data="baseData[CODE_TABLE.SUBJ_CONCEPT.field]"
         :selected-data="facetData[CODE_TABLE.SUBJ_CONCEPT.field]"
+        :rescale-after-select="true"
       />
       <facet3-categorical
         v-if="hasData(CODE_TABLE.OBJ_CONCEPT.field)"
@@ -93,6 +97,7 @@
         :formatter-fn="ontologyFormatter"
         :base-data="baseData[CODE_TABLE.OBJ_CONCEPT.field]"
         :selected-data="facetData[CODE_TABLE.OBJ_CONCEPT.field]"
+        :rescale-after-select="true"
       />
       <facet3-categorical
         v-if="hasData(CODE_TABLE.TOPIC.field)"
@@ -102,6 +107,7 @@
         :formatter-fn="ontologyFormatter"
         :base-data="baseData[CODE_TABLE.TOPIC.field]"
         :selected-data="facetData[CODE_TABLE.TOPIC.field]"
+        :rescale-after-select="true"
       />
     </div>
     <div v-if="currentTab === 'Documents'">
@@ -112,6 +118,7 @@
         :label="CODE_TABLE.DOC_LOCATION.searchDisplay"
         :base-data="baseData[CODE_TABLE.DOC_LOCATION.field]"
         :selected-data="facetData[CODE_TABLE.DOC_LOCATION.field]"
+        :rescale-after-select="true"
       />
       <facet3-categorical
         v-if="hasData(CODE_TABLE.DOC_ORGANIZATION.field)"
@@ -120,6 +127,7 @@
         :label="CODE_TABLE.DOC_ORGANIZATION.searchDisplay"
         :base-data="baseData[CODE_TABLE.DOC_ORGANIZATION.field]"
         :selected-data="facetData[CODE_TABLE.DOC_ORGANIZATION.field]"
+        :rescale-after-select="true"
       />
       <facet3-categorical
         v-if="hasData(CODE_TABLE.DOC_PUBLICATION_YEAR.field)"
@@ -128,6 +136,7 @@
         :label="CODE_TABLE.DOC_PUBLICATION_YEAR.searchDisplay"
         :base-data="baseData[CODE_TABLE.DOC_PUBLICATION_YEAR.field]"
         :selected-data="facetData[CODE_TABLE.DOC_PUBLICATION_YEAR.field]"
+        :rescale-after-select="true"
       />
       <facet3-categorical
         v-if="hasData(CODE_TABLE.DOC_STANCE.field)"
@@ -136,6 +145,7 @@
         :label="CODE_TABLE.DOC_STANCE.searchDisplay"
         :base-data="baseData[CODE_TABLE.DOC_STANCE.field]"
         :selected-data="facetData[CODE_TABLE.DOC_STANCE.field]"
+        :rescale-after-select="true"
       />
       <facet3-categorical
         v-if="hasData(CODE_TABLE.DOC_SENTIMENT.field)"
@@ -144,6 +154,7 @@
         :label="CODE_TABLE.DOC_SENTIMENT.searchDisplay"
         :base-data="baseData[CODE_TABLE.DOC_SENTIMENT.field]"
         :selected-data="facetData[CODE_TABLE.DOC_SENTIMENT.field]"
+        :rescale-after-select="true"
       />
     </div>
   </side-panel>

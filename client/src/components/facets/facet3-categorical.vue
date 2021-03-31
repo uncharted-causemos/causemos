@@ -94,6 +94,10 @@ export default {
     selectedData: {
       type: Array,
       default: () => []
+    },
+    rescaleAfterSelect: {
+      type: Boolean,
+      default: false
     }
   },
   data() {
@@ -113,7 +117,7 @@ export default {
         values.push({
           label: labelName,
           ratio: b.value / this.max,
-          value: `${b.selectedValue}\\${b.value}`
+          value: `${b.selectedValue}/${b.value}`
         });
       }
       return {
@@ -137,8 +141,13 @@ export default {
       }, {});
     },
     max() {
-      const values = this.baseData.map(b => b.value);
-      return Math.max(...values);
+      if (!this.rescaleAfterSelect) {
+        const values = this.baseData.map(b => b.value);
+        return Math.max(...values);
+      } else {
+        const values = this.selectedData.map(s => s.value);
+        return Math.max(...values);
+      }
     },
     moreNumToDisplay() {
       switch (this.moreLevel) {
@@ -177,12 +186,19 @@ export default {
         acc[s.key] = s.value;
         return acc;
       }, {});
-      baseClone.sort((a, b) => (b.value - a.value));
+
       baseClone.forEach(b => {
         if (selectDictionary[b.key]) {
           b.selectedValue = selectDictionary[b.key];
         }
       });
+
+      if (this.rescaleAfterSelect) {
+        baseClone.sort((a, b) => (b.selectedValue - a.selectedValue));
+      } else {
+        baseClone.sort((a, b) => (b.value - a.value));
+      }
+
       return baseClone;
     },
     subSelection() {
