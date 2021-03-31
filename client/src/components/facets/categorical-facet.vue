@@ -73,7 +73,7 @@ const FACET_DEFAULT_SIZE = 5;
  * - baseData: Array of unfiltered bins
  */
 export default {
-  name: 'Facet3Categorical',
+  name: 'CategoricalFacet',
   props: {
     baseData: {
       type: Array,

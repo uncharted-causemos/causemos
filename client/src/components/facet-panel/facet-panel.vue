@@ -6,7 +6,7 @@
     @set-active="setActive"
   >
     <div v-if="currentTab === 'Evidence quality'">
-      <facet3-numerical
+      <numerical-facet
         v-if="hasData(CODE_TABLE.BELIEF.field)"
         key="CODE_TABLE.BELIEF.field"
         :facet="CODE_TABLE.BELIEF.field"
@@ -14,7 +14,7 @@
         :base-data="baseData[CODE_TABLE.BELIEF.field]"
         :selected-data="facetData[CODE_TABLE.BELIEF.field]"
       />
-      <facet3-numerical
+      <numerical-facet
         v-if="hasData(CODE_TABLE.SCORE.field)"
         key="CODE_TABLE.SCORE.field"
         :facet="CODE_TABLE.SCORE.field"
@@ -22,7 +22,7 @@
         :base-data="baseData[CODE_TABLE.SCORE.field]"
         :selected-data="facetData[CODE_TABLE.SCORE.field]"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.HEDGING_CATEGORY.field)"
         key="CODE_TABLE.HEDGING_CATEGORY.field"
         :facet="CODE_TABLE.HEDGING_CATEGORY.field"
@@ -32,7 +32,7 @@
         :selected-data="facetData[CODE_TABLE.HEDGING_CATEGORY.field]"
         :rescale-after-select="true"
       />
-      <facet3-numerical
+      <numerical-facet
         v-if="hasData(CODE_TABLE.NUM_EVIDENCES.field)"
         key="CODE_TABLE.NUM_EVIDENCES.field"
         :facet="CODE_TABLE.NUM_EVIDENCES.field"
@@ -41,7 +41,7 @@
         :base-data="baseData[CODE_TABLE.NUM_EVIDENCES.field]"
         :selected-data="facetData[CODE_TABLE.NUM_EVIDENCES.field]"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.READERS.field)"
         key="CODE_TABLE.READERS.field"
         :facet="CODE_TABLE.READERS.field"
@@ -50,7 +50,7 @@
         :selected-data="facetData[CODE_TABLE.READERS.field]"
         :rescale-after-select="true"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.QUALITY.field)"
         key="CODE_TABLE.QUALITY.field"
         :facet="CODE_TABLE.QUALITY.field"
@@ -62,7 +62,7 @@
     </div>
 
     <div v-if="currentTab === 'Relationships'">
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.STATEMENT_POLARITY.field)"
         key="CODE_TABLE.STATEMENT_POLARITY.field"
         :facet="CODE_TABLE.STATEMENT_POLARITY.field"
@@ -72,7 +72,7 @@
         :selected-data="facetData[CODE_TABLE.STATEMENT_POLARITY.field]"
         :rescale-after-select="true"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.SUBJ_CONCEPT.field)"
         key="CODE_TABLE.SUBJ_CONCEPT.field"
         :facet="CODE_TABLE.SUBJ_CONCEPT.field"
@@ -82,7 +82,7 @@
         :selected-data="facetData[CODE_TABLE.SUBJ_CONCEPT.field]"
         :rescale-after-select="true"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.OBJ_CONCEPT.field)"
         key="CODE_TABLE.OBJ_CONCEPT.field"
         :facet="CODE_TABLE.OBJ_CONCEPT.field"
@@ -92,7 +92,7 @@
         :selected-data="facetData[CODE_TABLE.OBJ_CONCEPT.field]"
         :rescale-after-select="true"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.TOPIC.field)"
         key="CODE_TABLE.TOPIC.field"
         :facet="CODE_TABLE.TOPIC.field"
@@ -104,7 +104,7 @@
       />
     </div>
     <div v-if="currentTab === 'Documents'">
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_LOCATION.field)"
         key="CODE_TABLE.DOC_LOCATION.field"
         :facet="CODE_TABLE.DOC_LOCATION.field"
@@ -113,7 +113,7 @@
         :selected-data="facetData[CODE_TABLE.DOC_LOCATION.field]"
         :rescale-after-select="true"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_ORGANIZATION.field)"
         key="CODE_TABLE.DOC_ORGANIZATION.field"
         :facet="CODE_TABLE.DOC_ORGANIZATION.field"
@@ -122,7 +122,7 @@
         :selected-data="facetData[CODE_TABLE.DOC_ORGANIZATION.field]"
         :rescale-after-select="true"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_PUBLICATION_YEAR.field)"
         key="CODE_TABLE.DOC_PUBLICATION_YEAR.field"
         :facet="CODE_TABLE.DOC_PUBLICATION_YEAR.field"
@@ -131,7 +131,7 @@
         :selected-data="facetData[CODE_TABLE.DOC_PUBLICATION_YEAR.field]"
         :rescale-after-select="true"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_STANCE.field)"
         key="CODE_TABLE.DOC_STANCE.field"
         :facet="CODE_TABLE.DOC_STANCE.field"
@@ -140,7 +140,7 @@
         :selected-data="facetData[CODE_TABLE.DOC_STANCE.field]"
         :rescale-after-select="true"
       />
-      <facet3-categorical
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_SENTIMENT.field)"
         key="CODE_TABLE.DOC_SENTIMENT.field"
         :facet="CODE_TABLE.DOC_SENTIMENT.field"
@@ -159,8 +159,8 @@ import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 import projectService from '@/services/project-service';
 
-import Facet3Numerical from '@/components/facets/facet3-numerical';
-import Facet3Categorical from '@/components/facets/facet3-categorical';
+import CategoricalFacet from '@/components/facets/categorical-facet';
+import NumericalFacet from '@/components/facets/numerical-facet';
 
 import SidePanel from '@/components/side-panel/side-panel';
 
@@ -212,8 +212,8 @@ const FACET_GROUPS = {
 export default {
   name: 'FacetPanel',
   components: {
-    Facet3Numerical,
-    Facet3Categorical,
+    CategoricalFacet,
+    NumericalFacet,
     SidePanel
   },
   data: () => ({

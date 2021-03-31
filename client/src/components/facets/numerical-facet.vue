@@ -63,7 +63,7 @@ import filtersUtil from '@/utils/filters-util';
  * - baseData: Array of unfiltered bins
  */
 export default {
-  name: 'Facet3Numerical',
+  name: 'NumericalFacet',
   props: {
     label: {
       type: String,
