@@ -234,14 +234,6 @@ export default {
     baseData: {},
     facetData: {},
 
-    testData: {
-      label: 'Array Data',
-      values: [
-        { ratio: 0.1 },
-        { ratio: 0.2 }
-      ]
-    },
-
     groupBaseState: {},
     groupFacetState: {},
 
