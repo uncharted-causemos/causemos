@@ -14,3 +14,11 @@ export interface Clause {
 export interface Filters {
   clauses: Clause[]
 }
+
+// WM search options
+export interface FiltersOptions {
+  from?: number,
+  size?: number,
+  sort?: { [key: string]: string },
+  documents?: boolean // this is a hack to get around document-context issue: in some places we want them, in others we do not.
+}

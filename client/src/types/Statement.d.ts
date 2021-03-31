@@ -42,7 +42,8 @@ export interface Statement {
     readers_evidence_count: { [key: string]: number },
     state: number,
     statement_polarity: number
-  }
+  },
+  __factor: string // Hack for temporary aggregation-util key
 }
 
 

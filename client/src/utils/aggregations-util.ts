@@ -49,7 +49,7 @@ interface AggChild<T> {
 
 
 interface AggConfig<T> {
-  keyFn: (arg1: T) => string,
+  keyFn: (arg1: T) => string | number,
   filterFn?: (arg1: T, arg2: number) => boolean,
   metaFn?: (arg1: AggChild<T>, arg2: number) => any, // FIXME
   sortFn?: (arg1: AggChild<T>) => number | string

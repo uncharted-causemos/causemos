@@ -5,21 +5,20 @@ import aggregationsUtil from '@/utils/aggregations-util';
 import { Statement, ConceptMatchCandidate } from '@/types/Statement';
 
 // Emulates an enum
-export const CORRECTION_TYPES = Object.freeze({
-  POLARITY: 1,
-  ONTOLOGY_ALL: 2,
-  ONTOLOGY_SUBJ: 3,
-  ONTOLOGY_OBJ: 4,
-  POLARITY_UNKNOWN: 5
-});
+export enum CORRECTION_TYPES {
+  POLARITY = 1,
+  ONTOLOGY_ALL = 2,
+  ONTOLOGY_SUBJ = 3,
+  ONTOLOGY_OBJ = 4,
+  POLARITY_UNKNOWN = 5
+}
 
 // Emulates an enum
-export const CURATION_STATES = Object.freeze({
-  NON_EVALUATED: 0,
-  EDITED: 1,
-  VETTED: 2
-});
-
+export enum CURATION_STATES {
+  NON_EVALUATED = 0,
+  EDITED = 1,
+  VETTED = 2
+}
 
 type StatementsPromise = Promise<Statement[]>
 
@@ -69,7 +68,7 @@ export const groupByPolarityAllFactors = (statements: Array<Statement>) => {
       keyFn: (s) => s.wm.statement_polarity,
       sortFn: (s) => -s.count,
       metaFn: () => {
-        const meta = {};
+        const meta: { [key: string]: any } = {};
         meta.checked = false;
         meta.isSomeChildChecked = false;
         return meta;
@@ -84,7 +83,7 @@ export const groupByPolarityAllFactors = (statements: Array<Statement>) => {
       },
       metaFn: (s) => {
         const sample = s.dataArray[0];
-        const meta = {};
+        const meta: { [key: string]: any } = {};
         meta.checked = false;
         meta.state = sample.wm.state;
 
@@ -129,7 +128,7 @@ export const groupByConceptFactor = (statements: Array<Statement>, concept: stri
         return -s.meta.num_evidence;
       },
       metaFn: (s) => {
-        const meta = {};
+        const meta: { [key: string]: any } = {};
         meta.checked = false;
         meta.num_evidence = _.sumBy(s.dataArray, 'wm.num_evidence');
         return meta;
