@@ -1459,11 +1459,6 @@
     lodash "4.17.15"
     lodash-decorators "5.0.0"
 
-"@uncharted.software/stories-facets@^2.12.10":
-  version "2.12.18"
-  resolved "https://registry.yarnpkg.com/@uncharted.software/stories-facets/-/stories-facets-2.12.18.tgz#41b683a6e62eebabf145d0500d870bde6264ca43"
-  integrity sha512-OHgiJpzelaapspd5rC/y7CSYHMcpKXOXR4qs/9xFHWA7hNutbP4ubW5ATkg+jTYPHCbbDwciPIr+mk6EUZBc8w==
-
 "@uncharted/uncharted-bootstrap@^0.4.0":
   version "0.4.0"
   resolved "https://npm.uncharted.software/repository/uncharted/@uncharted/uncharted-bootstrap/-/uncharted-bootstrap-0.4.0.tgz#7e92780b699aba40c7fa538c2f267ffc5e6bc9fa"

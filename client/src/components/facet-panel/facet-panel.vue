@@ -6,13 +6,6 @@
     @set-active="setActive"
   >
     <div v-if="currentTab === 'Evidence quality'">
-      <!--
-      <keyword-facets
-        key="CODE_TABLE.KEYWORD.field"
-        :facet="CODE_TABLE.KEYWORD.field"
-        :label="CODE_TABLE.KEYWORD.searchDisplay"
-      />
-      -->
       <facet3-numerical
         v-if="hasData(CODE_TABLE.BELIEF.field)"
         key="CODE_TABLE.BELIEF.field"
@@ -170,7 +163,6 @@ import Facet3Numerical from '@/components/facets/facet3-numerical';
 import Facet3Categorical from '@/components/facets/facet3-categorical';
 
 import SidePanel from '@/components/side-panel/side-panel';
-// import KeywordFacets from '@/components/facets/keyword-facets';
 
 import ontologyFormatter from '@/formatters/ontology-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';

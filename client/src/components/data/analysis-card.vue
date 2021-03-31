@@ -100,13 +100,6 @@
       </div>
     </div>
     <div class="columns">
-      <data-analysis-input-panel
-        v-if="isFullscreen && data && data.modelId"
-        class="input-panel"
-        :model-id="data.modelId"
-        :output-variable="data.outputVariable"
-        @runsupdated="updateRuns"
-      />
       <data-analysis-map
         class="card-map"
         :class="{'full-width': !isFullscreen}"
@@ -137,7 +130,6 @@ import API from '@/api/api';
 import { mapActions, mapGetters } from 'vuex';
 import { getModelRuns } from '@/services/datacube-service';
 import DataAnalysisMap from '@/components/data/analysis-map';
-import DataAnalysisInputPanel from '@/components/data/analysis-input-panel';
 import DropdownControl from '@/components/dropdown-control';
 import LineChart from '@/components/widgets/charts/line-chart';
 import OptionsButton from '@/components/widgets/options-button';
@@ -155,7 +147,6 @@ export default {
     DataAnalysisMap,
     OptionsButton,
     Disclaimer,
-    DataAnalysisInputPanel,
     DropdownControl
   },
   props: {
