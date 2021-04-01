@@ -290,6 +290,19 @@ export default {
       this.clearThumbnailTimer();
       this.refresh();
       this.closeDrilldown();
+    },
+    modelComponents() {
+      if (this.selectedEdge !== null) {
+        // The selected edge may have been deleted, or its polarity may have changed,
+        //  so update selectedEdge to point to the updated version of the same edge.
+        const updatedSelectedEdge = this.modelComponents.edges
+          .find(newEdge => newEdge.id === this.selectedEdge.id);
+        if (updatedSelectedEdge === undefined) {
+          this.selectedEdge = null;
+          return;
+        }
+        this.selectedEdge = updatedSelectedEdge;
+      }
     }
   },
   created() {
