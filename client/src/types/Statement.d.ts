@@ -10,6 +10,13 @@ interface ConceptMatchCandidate {
   process_property?: string
 }
 
+interface DateObj {
+  date: string,
+  day: number,
+  month: number,
+  year: number
+}
+
 /* Statement related */
 export interface Factor {
   adjectives: Array<string>,
@@ -17,10 +24,18 @@ export interface Factor {
   concept: string,
   concept_score: number,
   factor: string,
-  geo_context: any, // FIXME
+  geo_context?: {
+    location: {
+      lat: number,
+      lon: number
+    },
+    name: string
+  },
   polarity: number,
-  time_context: any, // FIXME
-
+  time_context?: {
+    end: DateObj,
+    start: DateObj
+  },
   // Compositional
   theme?: string,
   theme_property?: string,
@@ -28,9 +43,39 @@ export interface Factor {
   process_property?: string
 }
 
+export interface DocumentContext {
+  doc_id: string,
+  author: string | null,
+  document_source: string | null,
+  file_type: string,
+  ner_analytics: {
+    loc: string[],
+    org: string[]
+  },
+  publication_date: DateObj,
+  publisher_name: string | null,
+  title: string | null
+}
+
+export interface EvidenceContext {
+  agents_text: string[],
+  contradiction_words: string[],
+  hedging_words: string[],
+  source_api: string,
+  source_hash: number,
+  text: string
+}
+
 export interface Statement {
-  subj: Factor,
+  belief: number,
+  evidence: {
+    document_context: DocumentContext,
+    evidence_context: EvidenceContext
+  } [],
+  id: string,
+  modified_at: number,
   obj: Factor,
+  subj: Factor,
   wm: {
     contradiction_category: number,
     edge: string,
@@ -45,7 +90,3 @@ export interface Statement {
   },
   __factor: string // Hack for temporary aggregation-util key
 }
-
-
-
-/* Basic graph */
