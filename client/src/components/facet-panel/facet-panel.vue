@@ -217,7 +217,7 @@ export default {
     SidePanel
   },
   data: () => ({
-    HistogramFacetsontologyFormatter: ontologyFormatter,
+    ontologyFormatter: ontologyFormatter,
     statementPolarityFormatter: statementPolarityFormatter,
     contradictionCategoryFormatter: contradictionCategoryFormatter,
     hedgingCategoryFormatter: hedgingCategoryFormatter,

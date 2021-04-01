@@ -3,12 +3,13 @@
     :data.prop="facetData"
     :selection.prop="selection"
     :subselection.prop="subSelection"
+    class="facet-font"
     @facet-element-updated="updateSelection"
   >
     <div
       slot="header-label"
     >
-      <span>{{ label.toUpperCase() }}</span>
+      <span class="facet-font">{{ label }}</span>
     </div>
 
     <facet-template
@@ -159,3 +160,9 @@ export default {
 };
 
 </script>
+
+<style scoped lang="scss">
+.facet-font {
+  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+</style>

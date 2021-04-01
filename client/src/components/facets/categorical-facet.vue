@@ -8,16 +8,22 @@
     <div
       slot="header-label"
     >
-      <span>{{ label.toUpperCase() }}</span>
+      <span class="facet-font">{{ label }}</span>
     </div>
 
     <facet-template target="facet-terms-value">
       <div
         slot="label"
-        class="facet-label-truncated"
+        class="facet-label-truncated facet-font"
         title="${label} - ${value}"
       >
         ${label}
+      </div>
+      <div
+        slot="value"
+        class="facet-font"
+      >
+        ${value}
       </div>
     </facet-template>
 
@@ -237,6 +243,9 @@ export default {
 
 
 <style scoped lang="scss">
+.facet-font {
+  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
 
 .facet-label-truncated {
   overflow-x: hidden;
@@ -247,7 +256,6 @@ export default {
 .facet-footer-container {
   min-height: 12px;
   padding: 6px 12px 5px;
-  font-family: "IBM Plex Sans", sans-serif;
   font-size: 12px;
   font-weight: 600;
   line-height: 16px;
