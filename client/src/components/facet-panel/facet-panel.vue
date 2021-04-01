@@ -6,14 +6,7 @@
     @set-active="setActive"
   >
     <div v-if="currentTab === 'Evidence quality'">
-      <!--
-      <keyword-facets
-        key="CODE_TABLE.KEYWORD.field"
-        :facet="CODE_TABLE.KEYWORD.field"
-        :label="CODE_TABLE.KEYWORD.searchDisplay"
-      />
-      -->
-      <histogram-facets
+      <numerical-facet
         v-if="hasData(CODE_TABLE.BELIEF.field)"
         key="CODE_TABLE.BELIEF.field"
         :facet="CODE_TABLE.BELIEF.field"
@@ -21,7 +14,7 @@
         :base-data="baseData[CODE_TABLE.BELIEF.field]"
         :selected-data="facetData[CODE_TABLE.BELIEF.field]"
       />
-      <histogram-facets
+      <numerical-facet
         v-if="hasData(CODE_TABLE.SCORE.field)"
         key="CODE_TABLE.SCORE.field"
         :facet="CODE_TABLE.SCORE.field"
@@ -29,17 +22,17 @@
         :base-data="baseData[CODE_TABLE.SCORE.field]"
         :selected-data="facetData[CODE_TABLE.SCORE.field]"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.HEDGING_CATEGORY.field)"
         key="CODE_TABLE.HEDGING_CATEGORY.field"
         :facet="CODE_TABLE.HEDGING_CATEGORY.field"
         :label="CODE_TABLE.HEDGING_CATEGORY.searchDisplay"
         :formatter-fn="hedgingCategoryFormatter"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.HEDGING_CATEGORY.field]"
         :selected-data="facetData[CODE_TABLE.HEDGING_CATEGORY.field]"
+        :rescale-after-select="true"
       />
-      <histogram-facets
+      <numerical-facet
         v-if="hasData(CODE_TABLE.NUM_EVIDENCES.field)"
         key="CODE_TABLE.NUM_EVIDENCES.field"
         :facet="CODE_TABLE.NUM_EVIDENCES.field"
@@ -48,113 +41,113 @@
         :base-data="baseData[CODE_TABLE.NUM_EVIDENCES.field]"
         :selected-data="facetData[CODE_TABLE.NUM_EVIDENCES.field]"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.READERS.field)"
         key="CODE_TABLE.READERS.field"
         :facet="CODE_TABLE.READERS.field"
         :label="CODE_TABLE.READERS.searchDisplay"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.READERS.field]"
         :selected-data="facetData[CODE_TABLE.READERS.field]"
+        :rescale-after-select="true"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.QUALITY.field)"
         key="CODE_TABLE.QUALITY.field"
         :facet="CODE_TABLE.QUALITY.field"
         :label="CODE_TABLE.QUALITY.searchDisplay"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.QUALITY.field]"
         :selected-data="facetData[CODE_TABLE.QUALITY.field]"
+        :rescale-after-select="true"
       />
     </div>
 
     <div v-if="currentTab === 'Relationships'">
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.STATEMENT_POLARITY.field)"
         key="CODE_TABLE.STATEMENT_POLARITY.field"
         :facet="CODE_TABLE.STATEMENT_POLARITY.field"
         :label="CODE_TABLE.STATEMENT_POLARITY.searchDisplay"
         :formatter-fn="statementPolarityFormatter"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.STATEMENT_POLARITY.field]"
         :selected-data="facetData[CODE_TABLE.STATEMENT_POLARITY.field]"
+        :rescale-after-select="true"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.SUBJ_CONCEPT.field)"
         key="CODE_TABLE.SUBJ_CONCEPT.field"
         :facet="CODE_TABLE.SUBJ_CONCEPT.field"
         :label="CODE_TABLE.SUBJ_CONCEPT.searchDisplay"
         :formatter-fn="ontologyFormatter"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.SUBJ_CONCEPT.field]"
         :selected-data="facetData[CODE_TABLE.SUBJ_CONCEPT.field]"
+        :rescale-after-select="true"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.OBJ_CONCEPT.field)"
         key="CODE_TABLE.OBJ_CONCEPT.field"
         :facet="CODE_TABLE.OBJ_CONCEPT.field"
         :label="CODE_TABLE.OBJ_CONCEPT.searchDisplay"
         :formatter-fn="ontologyFormatter"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.OBJ_CONCEPT.field]"
         :selected-data="facetData[CODE_TABLE.OBJ_CONCEPT.field]"
+        :rescale-after-select="true"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.TOPIC.field)"
         key="CODE_TABLE.TOPIC.field"
         :facet="CODE_TABLE.TOPIC.field"
         :label="CODE_TABLE.TOPIC.searchDisplay"
         :formatter-fn="ontologyFormatter"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.TOPIC.field]"
         :selected-data="facetData[CODE_TABLE.TOPIC.field]"
+        :rescale-after-select="true"
       />
     </div>
     <div v-if="currentTab === 'Documents'">
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_LOCATION.field)"
         key="CODE_TABLE.DOC_LOCATION.field"
         :facet="CODE_TABLE.DOC_LOCATION.field"
         :label="CODE_TABLE.DOC_LOCATION.searchDisplay"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.DOC_LOCATION.field]"
         :selected-data="facetData[CODE_TABLE.DOC_LOCATION.field]"
+        :rescale-after-select="true"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_ORGANIZATION.field)"
         key="CODE_TABLE.DOC_ORGANIZATION.field"
         :facet="CODE_TABLE.DOC_ORGANIZATION.field"
         :label="CODE_TABLE.DOC_ORGANIZATION.searchDisplay"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.DOC_ORGANIZATION.field]"
         :selected-data="facetData[CODE_TABLE.DOC_ORGANIZATION.field]"
+        :rescale-after-select="true"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_PUBLICATION_YEAR.field)"
         key="CODE_TABLE.DOC_PUBLICATION_YEAR.field"
         :facet="CODE_TABLE.DOC_PUBLICATION_YEAR.field"
         :label="CODE_TABLE.DOC_PUBLICATION_YEAR.searchDisplay"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.DOC_PUBLICATION_YEAR.field]"
         :selected-data="facetData[CODE_TABLE.DOC_PUBLICATION_YEAR.field]"
+        :rescale-after-select="true"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_STANCE.field)"
         key="CODE_TABLE.DOC_STANCE.field"
         :facet="CODE_TABLE.DOC_STANCE.field"
         :label="CODE_TABLE.DOC_STANCE.searchDisplay"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.DOC_STANCE.field]"
         :selected-data="facetData[CODE_TABLE.DOC_STANCE.field]"
+        :rescale-after-select="true"
       />
-      <facets
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_SENTIMENT.field)"
         key="CODE_TABLE.DOC_SENTIMENT.field"
         :facet="CODE_TABLE.DOC_SENTIMENT.field"
         :label="CODE_TABLE.DOC_SENTIMENT.searchDisplay"
-        :rescale-after-select="true"
         :base-data="baseData[CODE_TABLE.DOC_SENTIMENT.field]"
         :selected-data="facetData[CODE_TABLE.DOC_SENTIMENT.field]"
+        :rescale-after-select="true"
       />
     </div>
   </side-panel>
@@ -164,12 +157,12 @@
 
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
-
 import projectService from '@/services/project-service';
-import Facets from '@/components/facets/facets';
-import HistogramFacets from '@/components/facets/histogram-facets';
+
+import CategoricalFacet from '@/components/facets/categorical-facet';
+import NumericalFacet from '@/components/facets/numerical-facet';
+
 import SidePanel from '@/components/side-panel/side-panel';
-// import KeywordFacets from '@/components/facets/keyword-facets';
 
 import ontologyFormatter from '@/formatters/ontology-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
@@ -219,8 +212,8 @@ const FACET_GROUPS = {
 export default {
   name: 'FacetPanel',
   components: {
-    Facets,
-    HistogramFacets,
+    CategoricalFacet,
+    NumericalFacet,
     SidePanel
   },
   data: () => ({

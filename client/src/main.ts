@@ -15,7 +15,7 @@ import 'vue-toastification/dist/index.css';
 sync(store, router);
 
 const app = createApp(App).use(store).use(router).use(VTooltip).use(Vue3Resize);
-
+app.config.isCustomElement = (tag) => tag.startsWith('facet-');
 app.use(Toast);
 
 app.mixin({
