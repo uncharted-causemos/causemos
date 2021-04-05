@@ -609,6 +609,17 @@ export default {
         }));
       });
 
+      // FIXME: This block was added to update the data backing an edge without needing to refresh.
+      //  Ideally, svg-flowgraph should be able to update data and refresh without jiggling layout
+      //  positions and becoming an unresponsive loading screen for a few seconds.
+      const existingEdges = this.data.edges.filter(edge => layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
+      existingEdges.forEach(edge => {
+        // Update each edge in the existing layout with the most recent data from this.data
+        //  in case the statements list (and resulting polarity) has changed
+        const layoutEdge = layout.edges.find(layoutEdge => edge.id === layoutEdge.data.id);
+        layoutEdge.data = edge;
+      });
+
       this.renderer.buildDefs();
 
       // don't forget to deal with deleted nodes/edges too

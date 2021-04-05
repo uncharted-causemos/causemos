@@ -999,6 +999,25 @@
     pump "^3.0.0"
     secure-json-parse "^2.1.0"
 
+"@fortawesome/fontawesome-common-types@^0.2.35":
+  version "0.2.35"
+  resolved "https://registry.yarnpkg.com/@fortawesome/fontawesome-common-types/-/fontawesome-common-types-0.2.35.tgz#01dd3d054da07a00b764d78748df20daf2b317e9"
+  integrity sha512-IHUfxSEDS9dDGqYwIW7wTN6tn/O8E0n5PcAHz9cAaBoZw6UpG20IG/YM3NNLaGPwPqgjBAFjIURzqoQs3rrtuw==
+
+"@fortawesome/free-regular-svg-icons@^5.10.2":
+  version "5.15.3"
+  resolved "https://registry.yarnpkg.com/@fortawesome/free-regular-svg-icons/-/free-regular-svg-icons-5.15.3.tgz#1ec4f2410ff638db549c5c5484fc60b66407dbe6"
+  integrity sha512-q4/p8Xehy9qiVTdDWHL4Z+o5PCLRChePGZRTXkl+/Z7erDVL8VcZUuqzJjs6gUz6czss4VIPBRdCz6wP37/zMQ==
+  dependencies:
+    "@fortawesome/fontawesome-common-types" "^0.2.35"
+
+"@fortawesome/free-solid-svg-icons@^5.10.2":
+  version "5.15.3"
+  resolved "https://registry.yarnpkg.com/@fortawesome/free-solid-svg-icons/-/free-solid-svg-icons-5.15.3.tgz#52eebe354f60dc77e0bde934ffc5c75ffd04f9d8"
+  integrity sha512-XPeeu1IlGYqz4VWGRAT5ukNMd4VHUEEJ7ysZ7pSSgaEtNvSo+FLurybGJVmiqkQdK50OkSja2bfZXOeyMGRD8Q==
+  dependencies:
+    "@fortawesome/fontawesome-common-types" "^0.2.35"
+
 "@hapi/address@2.x.x":
   version "2.1.4"
   resolved "https://registry.yarnpkg.com/@hapi/address/-/address-2.1.4.tgz#5d67ed43f3fd41a69d4b9ff7b56e7c0d1d0a81e5"
@@ -1405,6 +1424,33 @@
   dependencies:
     lodash "^4.17.11"
 
+"@uncharted.software/css-options@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@uncharted.software/css-options/-/css-options-3.1.0.tgz#dbfc05ba0c43f2b3c4b72cf11506c4417f5fd48e"
+  integrity sha512-ZZ7D4bwewzweBKdA9iObQjx9khXoDXphTWKrvByZiWmC0zTenbwtjsZbzUZyCFzKJV10p/SDm/eQEbL/Z1oGEg==
+
+"@uncharted.software/facets-core@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@uncharted.software/facets-core/-/facets-core-3.1.0.tgz#ff9d744ca872a4a13d55b59e91f659d2b516f713"
+  integrity sha512-QSobPesOkPyVrtUbh5DPAk+eMBzTub4S56PWlI74JIbSJkH9lPOU/cN5b29YLtP8sQ5nS9a6dgwsk3T6AprMBw==
+  dependencies:
+    "@fortawesome/free-regular-svg-icons" "^5.10.2"
+    "@fortawesome/free-solid-svg-icons" "^5.10.2"
+    "@uncharted.software/css-options" "^3.1.0"
+    lit-element "^2.2.1"
+    lit-html "^1.1.2"
+
+"@uncharted.software/facets-plugins@^3.1.0":
+  version "3.1.0"
+  resolved "https://registry.yarnpkg.com/@uncharted.software/facets-plugins/-/facets-plugins-3.1.0.tgz#eed7a8f5f68e7825d24228fae9b71a51517b901a"
+  integrity sha512-lZ8ahgYZIyhhHA3sbD/DfIb5gCP+9dzEn29cTgUKeNP7QGCNH4G88IOvQbWYaIOWj9VNmiOHwfYSlJbY7CeWQw==
+  dependencies:
+    "@fortawesome/free-regular-svg-icons" "^5.10.2"
+    "@fortawesome/free-solid-svg-icons" "^5.10.2"
+    "@uncharted.software/facets-core" "^3.1.0"
+    lit-element "^2.2.1"
+    lit-html "^1.1.2"
+
 "@uncharted.software/lex@^1.0.0":
   version "1.0.0"
   resolved "https://registry.yarnpkg.com/@uncharted.software/lex/-/lex-1.0.0.tgz#22935ff1b095543795186a71841f67401951072e"
@@ -1412,11 +1458,6 @@
   dependencies:
     lodash "4.17.15"
     lodash-decorators "5.0.0"
-
-"@uncharted.software/stories-facets@^2.12.10":
-  version "2.12.18"
-  resolved "https://registry.yarnpkg.com/@uncharted.software/stories-facets/-/stories-facets-2.12.18.tgz#41b683a6e62eebabf145d0500d870bde6264ca43"
-  integrity sha512-OHgiJpzelaapspd5rC/y7CSYHMcpKXOXR4qs/9xFHWA7hNutbP4ubW5ATkg+jTYPHCbbDwciPIr+mk6EUZBc8w==
 
 "@uncharted/uncharted-bootstrap@^0.4.0":
   version "0.4.0"
@@ -7643,6 +7684,18 @@ lines-and-columns@^1.1.6:
   version "1.1.6"
   resolved "https://registry.yarnpkg.com/lines-and-columns/-/lines-and-columns-1.1.6.tgz#1c00c743b433cd0a4e80758f7b64a57440d9ff00"
   integrity sha1-HADHQ7QzzQpOgHWPe2SldEDZ/wA=
+
+lit-element@^2.2.1:
+  version "2.4.0"
+  resolved "https://registry.yarnpkg.com/lit-element/-/lit-element-2.4.0.tgz#b22607a037a8fc08f5a80736dddf7f3f5d401452"
+  integrity sha512-pBGLglxyhq/Prk2H91nA0KByq/hx/wssJBQFiYqXhGDvEnY31PRGYf1RglVzyLeRysu0IHm2K0P196uLLWmwFg==
+  dependencies:
+    lit-html "^1.1.1"
+
+lit-html@^1.1.1, lit-html@^1.1.2:
+  version "1.3.0"
+  resolved "https://registry.yarnpkg.com/lit-html/-/lit-html-1.3.0.tgz#c80f3cc5793a6dea6c07172be90a70ab20e56034"
+  integrity sha512-0Q1bwmaFH9O14vycPHw8C/IeHMk/uSDldVLIefu/kfbTBGIc44KGH6A8p1bDfxUfHdc8q6Ct7kQklWoHgr4t1Q==
 
 load-json-file@^1.0.0:
   version "1.1.0"

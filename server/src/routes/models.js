@@ -190,6 +190,46 @@ router.delete('/:modelId/', asyncHandler(async (req, res) => {
 
 
 /**
+ * GET register payload as a downlodable JSON
+ *
+ * FIXME: Overlap logic with register end point, should consolidate
+ */
+router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const modelStatements = await modelService.buildModelStatements(modelId);
+
+  // 1. Get list of node parameters and edge parameters associated to the model ID
+  const nodeParameters = await cagService.getAllComponents(modelId, RESOURCE.NODE_PARAMETER);
+  const edgeParameters = await cagService.getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
+
+  // Sanity check
+  const allNodeConcepts = nodeParameters.map(n => n.concept);
+  const allEdgeConcepts = edgeParameters.map(e => [e.source, e.target]).flat();
+  const extraNodes = _.difference(allNodeConcepts, allEdgeConcepts);
+
+  if (_.isEmpty(modelStatements) || extraNodes.length > 0) {
+    Logger.warn(`Bad model structure detected. Number of statements ${modelStatements.length}. Isolated nodes: ${extraNodes}`);
+    res.status(400).send('Unabled to initialize model. Ensure the model has no isolated nodes.');
+    return;
+  }
+
+  // 2. create payload for model creation in the modelling engine
+  const model = await modelService.findOne(modelId);
+  const timeSeriesStart = model.parameter.indicator_time_series_range.start;
+  const timeSeriesEnd = model.parameter.indicator_time_series_range.end;
+  const enginePayload = {
+    id: modelId,
+    statements: modelStatements,
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, timeSeriesStart, timeSeriesEnd)
+  };
+
+  res.setHeader('Content-disposition', `attachment; filename=${modelId}.json`);
+  res.setHeader('Content-type', 'application/octet-stream');
+  res.send(enginePayload);
+}));
+
+
+/**
  * POST register a model against a given modeling engine, this will return the initial
  * node and edge values
  */

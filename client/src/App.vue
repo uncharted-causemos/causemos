@@ -89,10 +89,6 @@ $uncharted-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/';
 $icon-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/bootstrap-sass/assets/fonts/bootstrap/';
 @import "~@uncharted/uncharted-bootstrap/scss/uncharted-bootstrap";
 
-/* Uncharted stories facet */
-@import '~@uncharted.software/stories-facets/dist/facets.min.css';
-
-
 /* World Modeler style and overrides */
 @import "/styles/wm-theme/wm-overrides";
 @import "/styles/wm";
