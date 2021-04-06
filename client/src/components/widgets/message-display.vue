@@ -95,8 +95,8 @@ export default {
   align-items: center;
  .fa {
    padding-right: 5px;
- }
-  /deep/ .highlight {
+  }
+  ::v-deep(.highlight) {
     font-weight: 800;
   }
 }

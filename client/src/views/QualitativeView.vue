@@ -774,7 +774,7 @@ export default {
   // Some panes have tabs in this space, some don't
   //  remove the padding that's baked into the tabs
   //  to always have a 10px gap exactly
-  /deep/ .tab-bar {
+  ::v-deep(.tab-bar) {
     padding-top: 0;
   }
 }

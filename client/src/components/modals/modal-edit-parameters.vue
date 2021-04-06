@@ -188,12 +188,12 @@ export default {
   width: 300px;
 }
 
-/deep/ .row {
+::v-deep(.row) {
   margin: 0;
   margin-top:20px;
 }
 
-/deep/ .col-sm-4 {
+::v-deep(.col-sm-4) {
   padding: 0;
 }
 
