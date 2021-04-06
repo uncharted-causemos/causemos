@@ -30,6 +30,8 @@ const createModel = async (payload) => {
     throw new Error(JSON.stringify(result));
   }
 
+  Logger.debug(JSON.stringify(result.relations, null, 2));
+
   // Transform result to node/edge initialization maps
   const nodes = result.conceptIndicators;
   const edges = result.relations.reduce((acc, edge) => {
