@@ -28,6 +28,7 @@ module.exports = {
   parserOptions: {
     parser: 'babel-eslint'
   },
+  plugins: ["@vue"],
   globals: {
     d3: true
   }
