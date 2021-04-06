@@ -125,7 +125,7 @@ const _mapRegroundingRecommendationsToStatementIds = async (projectId, statement
     };
   });
   recommendations.sort((r1, r2) => {
-    return r1.score - r2.score // Sort ascending
+    return r1.score - r2.score; // Sort ascending
   });
   return recommendations;
 };
@@ -195,7 +195,7 @@ const _mapPolarityRecommendationsToStatements = async (projectId, statementIds, 
     };
   });
   recommendations.sort((r1, r2) => {
-    return r1.score - r2.score // Sort ascending
+    return r1.score - r2.score; // Sort ascending
   });
   return recommendations;
 };
