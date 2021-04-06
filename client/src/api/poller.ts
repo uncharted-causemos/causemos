@@ -66,6 +66,10 @@ class Poller {
           } else {
             this.start();
           }
+        })
+        .catch((err: any) => {
+          this._stop();
+          this._failure(err);
         });
     }, this._interval);
   }
