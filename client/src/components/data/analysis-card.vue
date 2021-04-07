@@ -452,14 +452,14 @@ $fullscreenTransition: all .5s ease-in-out;
   flex: 1;
   height: 0;
   padding: 0;
-  /deep/ .x-axis .tick,
-  /deep/ .y-axis {
-    display: none
+  ::v-deep(.x-axis .tick),
+  ::v-deep(.y-axis) {
+    display: none;
   }
-  /deep/ .x-axis .tick:first-of-type,
-  /deep/ .x-axis .tick:last-of-type
+  ::v-deep(.x-axis .tick:first-of-type),
+  ::v-deep(.x-axis .tick:last-of-type)
   {
-    display: unset
+    display: unset;
   }
 }
 </style>

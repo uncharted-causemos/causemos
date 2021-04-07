@@ -298,16 +298,16 @@ export default {
     transform: translate(-50%, -50%);
   }
 
-  /deep/ .grid-lines path {
+  ::v-deep(.grid-lines path) {
     stroke-width: 0;
   }
 
-  /deep/ .grid-lines line {
+  ::v-deep(.grid-lines line) {
     stroke-width: 4px;
     stroke: $background-light-2;
   }
 
-  /deep/ .tick text {
+  ::v-deep(.tick text) {
     cursor: pointer;
 
     &:hover {

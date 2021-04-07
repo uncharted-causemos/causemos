@@ -131,7 +131,7 @@ $input-element-height: 37px;
     z-index: 52;
     background-color: white;
   }
-  /deep/ .autocomplete-result {
+  ::v-deep(.autocomplete-result) {
     list-style: none;
     text-align: left;
     word-break: break-all;

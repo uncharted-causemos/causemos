@@ -415,7 +415,7 @@ export default {
   width: 100%;
   z-index: 10;
 
-  /deep/ canvas {
+  ::v-deep(canvas) {
     width: 100%;
   }
 }

@@ -113,7 +113,7 @@ export default {
 
 <style lang="scss" scoped>
 .modal-document-container {
-  /deep/ .modal-container {
+  ::v-deep(.modal-container) {
     padding: 0;
     width: 800px;
 
@@ -128,7 +128,7 @@ export default {
   .uncharted-cards-reader-content-container {
     height: 80vh;
   }
-  /deep/ .uncharted-cards-reader-content .reader-content-header .close-button i {
+  ::v-deep(.uncharted-cards-reader-content .reader-content-header .close-button i) {
     padding-right: 12px;
   }
 }
