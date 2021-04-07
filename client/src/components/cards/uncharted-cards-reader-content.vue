@@ -124,12 +124,12 @@ export default {
 
 <style lang="scss" scoped>
   .uncharted-cards-reader-content-container {
-    &.no-reader-padding /deep/ .reader-content-body {
+    &.no-reader-padding ::v-deep(.reader-content-body) {
       padding-top: 0;
       padding-right: 0;
       padding-left: 0;
     }
-    /deep/ .uncharted-cards-reader-content {
+    ::v-deep(.uncharted-cards-reader-content) {
       .content {
         word-break: break-word;
       }

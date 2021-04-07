@@ -114,7 +114,7 @@ export default {
   transition: all .3s ease;
 }
 
-/deep/ .modal-header {
+::v-deep(.modal-header) {
   position: relative;
   h3, h4 {
     color: #5A5A5A;
@@ -137,13 +137,13 @@ export default {
   }
 }
 
-/deep/ .modal-body {
+::v-deep(.modal-body) {
   label {
     font-weight: 300;
   }
 }
 
-/deep/ .modal-header, .modal-body, .modal-footer {
+::v-deep(.modal-header, .modal-body, .modal-footer) {
   padding: 0 10px 10px;
   border: 0;
 }

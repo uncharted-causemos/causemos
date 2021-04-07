@@ -117,7 +117,7 @@ export default {
 
 <style lang="scss" scoped>
 
-  /deep/ .modal-container {
+  ::v-deep(.modal-container) {
 
     .modal-header {
       height: 50px;

@@ -352,16 +352,4 @@ export default {
   .facet-panel-container {
     margin-top: 5px;
   }
-
-  /deep/.facet-container:not(:first-child) {
-    // This needs to be /deep/, since some facet containers
-    // are wrapped in other <div> elements
-    border-top: 1px solid $separator;
-  }
-
-  // Override facet API styles
-  /deep/ .facets-group {
-    box-shadow: none;
-  }
-
 </style>

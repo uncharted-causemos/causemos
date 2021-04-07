@@ -140,7 +140,7 @@ $drilldown-width: 25vw;
     }
   }
 
-  /deep/ .tab-bar li.active {
+  ::v-deep(.tab-bar li.active) {
     background: $background-light-1;
     z-index: -1;
   }
@@ -158,7 +158,7 @@ $drilldown-width: 25vw;
     }
   }
 
-  /deep/ .pane-summary {
+  ::v-deep(.pane-summary) {
     padding-bottom: 5px;
     font-size: $font-size-large;
     font-weight: 600;
@@ -169,7 +169,7 @@ $drilldown-width: 25vw;
     }
   }
 
-  /deep/ .pane-loading-message {
+  ::v-deep(.pane-loading-message) {
     padding: 10px;
 
     .pane-loading-icon ~ span {
