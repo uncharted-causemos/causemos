@@ -130,12 +130,12 @@ export default {
   height: 100%;
   position: relative;
   overflow: hidden;
-  /deep/ .mapboxgl-popup-content {
+  ::v-deep(.mapboxgl-popup-content) {
     background: $color-background-lvl-4;
     border-color: $color-background-lvl-4;
     color: #FFFFFF;
   }
-  /deep/ .mapboxgl-popup-tip {
+  ::v-deep(.mapboxgl-popup-tip) {
     border-top-color: $color-background-lvl-4;
   }
 }

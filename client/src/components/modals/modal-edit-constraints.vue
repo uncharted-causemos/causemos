@@ -145,7 +145,7 @@ export default {
   margin-right: 5px;
 }
 
-/deep/ .modal-container {
+::v-deep(.modal-container) {
   width: 70vw;
 }
 

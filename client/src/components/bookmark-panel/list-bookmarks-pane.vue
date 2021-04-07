@@ -170,6 +170,7 @@ export default {
     }
       .bookmark-title {
         font-weight: bold;
+        color: #707070;
       }
       .bookmark-empty-description {
         color: #D6DBDF;

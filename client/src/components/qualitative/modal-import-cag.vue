@@ -105,12 +105,12 @@ export default {
   margin-right: 10px;
 }
 
-/deep/ .modal-container {
+::v-deep(.modal-container) {
   overflow: hidden;
   width: 960px;
 }
 
-/deep/ .modal-body {
+::v-deep(.modal-body) {
 
   .available-cags-container {
     display: flex;

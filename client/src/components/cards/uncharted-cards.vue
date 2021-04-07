@@ -156,21 +156,21 @@ export default {
 
 <style lang="scss" scoped>
   .uncharted-cards-container {
-    &.no-reader-padding /deep/ .reader-content-body {
+    &.no-reader-padding ::v-deep(.reader-content-body) {
       padding-top: 0;
       padding-right: 0;
       padding-left: 0;
     }
-    /deep/ .uncharted-cards-vertical-reader .marker {
+    ::v-deep(.uncharted-cards-vertical-reader) .marker {
       z-index: 10;
     }
-    /deep/ .uncharted-cards-reader-content .content {
+    ::v-deep(.uncharted-cards-reader-content .content) {
       word-break: break-word;
     }
-    /deep/ .uncharted-cards-reader-content .source-icon {
+    ::v-deep(.uncharted-cards-reader-content .source-icon) {
       display: none;
     }
-    /deep/ .uncharted-cards-reader-content .reader-content-header {
+    ::v-deep(.uncharted-cards-reader-content .reader-content-header) {
       // TODO: instead of overriding z-index value here, experiment with right z-index value and update it in the card component library
       z-index: 40;
       .close-button i  {

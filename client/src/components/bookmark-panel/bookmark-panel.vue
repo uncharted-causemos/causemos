@@ -73,7 +73,7 @@ export default {
   display: none;
 }
 
-/deep/ .pane-header {
+::v-deep(.pane-header) {
   display: flex;
   justify-content: space-between;
   align-items: center;

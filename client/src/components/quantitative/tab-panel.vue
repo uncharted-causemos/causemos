@@ -431,7 +431,7 @@ main {
   margin-top: 50px;
 }
 
-/deep/ .tab-bar li.active {
+::v-deep(.tab-bar li.active) {
   background: $background-light-2;
   box-shadow: 0px -8px 8px 4px rgba(0, 0, 0, 0.02);
   z-index: 2;
