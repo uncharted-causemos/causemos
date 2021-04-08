@@ -3,7 +3,7 @@ const options = [
   ['is', 'is']
 ].map(o => new ValueStateValue(o[0], {}, { displayKey: o[1] }));
 // Adapted from binary relations
-export default class singleRelationState extends RelationState {
+export default class SingleRelationState extends RelationState {
   /**
    * The "is" option.
    */

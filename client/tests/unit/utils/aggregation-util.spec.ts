@@ -73,8 +73,8 @@ describe('aggregation-util', () => {
 
   it('correctly groups a flat array of objects repeatedly', () => {
     const result = AggregationsUtil.groupRepeatedly(OBJECT_DATA, [
-      (dataPoint) => dataPoint.oddOrEven,
-      (dataPoint) => dataPoint.size
+      (dataPoint: any) => dataPoint.oddOrEven,
+      (dataPoint: any) => dataPoint.size
     ]);
     expect(result).to.deep.equal(LEAN_NESTED_RESULT);
   });

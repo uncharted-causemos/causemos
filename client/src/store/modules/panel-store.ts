@@ -2,8 +2,8 @@ import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 /* Used for drilldown-related states */
 interface PanelState {
-  isPanelOpen: boolean,
-  currentTab: string
+  isPanelOpen: boolean;
+  currentTab: string;
 }
 
 const state: PanelState = {

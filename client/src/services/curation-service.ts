@@ -2,42 +2,55 @@ import _ from 'lodash';
 import API from '@/api/api';
 import store from '@/store';
 import aggregationsUtil from '@/utils/aggregations-util';
+import { Statement, ConceptMatchCandidate } from '@/types/Statement';
 
 // Emulates an enum
-export const CORRECTION_TYPES = Object.freeze({
-  POLARITY: 1,
-  ONTOLOGY_ALL: 2,
-  ONTOLOGY_SUBJ: 3,
-  ONTOLOGY_OBJ: 4,
-  POLARITY_UNKNOWN: 5
-});
+export enum CORRECTION_TYPES {
+  POLARITY = 1,
+  ONTOLOGY_ALL = 2,
+  ONTOLOGY_SUBJ = 3,
+  ONTOLOGY_OBJ = 4,
+  POLARITY_UNKNOWN = 5
+}
 
 // Emulates an enum
-export const CURATION_STATES = Object.freeze({
-  NON_EVALUATED: 0,
-  EDITED: 1,
-  VETTED: 2
-});
+export enum CURATION_STATES {
+  NON_EVALUATED = 0,
+  EDITED = 1,
+  VETTED = 2
+}
+
+type StatementsPromise = Promise<Statement[]>
+
+interface ConceptChange {
+  oldValue: string,
+  newValue: string,
+}
+
+interface PolarityChange {
+  oldValue: number,
+  newValue: number
+}
 
 
 /**
  * Helpers
  */
-const statementsScores = async (projectId, statementIds) => {
+const statementsScores = async (projectId: string, statementIds: Array<string>): StatementsPromise => {
   const results = await API.post(`/projects/${projectId}/statements-scores`, { ids: statementIds });
   return results.data;
 };
 
-const processCandidates = (candidates, acc) => {
+const processCandidates = (candidates: Array<ConceptMatchCandidate>, acc: { [key: string]: number }) => {
   candidates.forEach(candidate => {
     const tmp = acc[candidate.name];
-    if (!tmp || tmp.score < candidate.score) {
+    if (!tmp || tmp < candidate.score) {
       acc[candidate.name] = candidate.score;
     }
   });
 };
 
-const topSuggestions = (acc, n) => {
+const topSuggestions = (acc: { [key: string]: number }, n: number) => {
   const entries = _.orderBy(Object.entries(acc), ([, v]) => -v).map(([name, score]) => {
     return { name, score };
   });
@@ -48,14 +61,14 @@ const topSuggestions = (acc, n) => {
 /**
  * Group by statement by polarity, then by subj+obj factor
  */
-export const groupByPolarityAllFactors = (statements) => {
+export const groupByPolarityAllFactors = (statements: Array<Statement>) => {
   const groups = aggregationsUtil.groupDataArray(statements, [
     // 1. Group by polarity
     {
       keyFn: (s) => s.wm.statement_polarity,
       sortFn: (s) => -s.count,
       metaFn: () => {
-        const meta = {};
+        const meta: { [key: string]: any } = {};
         meta.checked = false;
         meta.isSomeChildChecked = false;
         return meta;
@@ -70,7 +83,7 @@ export const groupByPolarityAllFactors = (statements) => {
       },
       metaFn: (s) => {
         const sample = s.dataArray[0];
-        const meta = {};
+        const meta: { [key: string]: any } = {};
         meta.checked = false;
         meta.state = sample.wm.state;
 
@@ -96,7 +109,7 @@ export const groupByPolarityAllFactors = (statements) => {
 /**
  * Group by any of subj.facor or obj.factor
  */
-export const groupByConceptFactor = (statements, concept) => { // eslint-disable-line
+export const groupByConceptFactor = (statements: Array<Statement>, concept: string) => { // eslint-disable-line
   // 1) Precompute a __factor attribute so we can do a group by without merging subj.factor and obj.factor.
   statements.forEach(statement => {
     if (statement.subj.concept === concept) {
@@ -115,7 +128,7 @@ export const groupByConceptFactor = (statements, concept) => { // eslint-disable
         return -s.meta.num_evidence;
       },
       metaFn: (s) => {
-        const meta = {};
+        const meta: { [key: string]: any } = {};
         meta.checked = false;
         meta.num_evidence = _.sumBy(s.dataArray, 'wm.num_evidence');
         return meta;
@@ -128,7 +141,7 @@ export const groupByConceptFactor = (statements, concept) => { // eslint-disable
 /**
  * Get suggestions based on statements and whether it is subject or object
  */
-export const getStatementConceptSuggestions = async (projectId, statementIds, correctionType) => {
+export const getStatementConceptSuggestions = async (projectId: string, statementIds: Array<string>, correctionType: number) => {
   const results = await statementsScores(projectId, statementIds);
 
   // Create unique top-X list
@@ -148,7 +161,7 @@ export const getStatementConceptSuggestions = async (projectId, statementIds, co
 /**
  * Get suggestions based on statements factors
  */
-export const getFactorConceptSuggestions = async (projectId, statementIds, factors) => {
+export const getFactorConceptSuggestions = async (projectId: string, statementIds: Array<string>, factors: Array<string>) => {
   const results = await statementsScores(projectId, statementIds);
 
   // Create unique top-X list
@@ -168,7 +181,7 @@ export const getFactorConceptSuggestions = async (projectId, statementIds, facto
 /**
  * Get curation recommendation based on current curation-action
  */
-export const getFactorGroundingRecommendations = async (projectId, currentGrounding, factorText) => {
+export const getFactorGroundingRecommendations = async (projectId: string, currentGrounding: string, factorText: string) => {
   const currentCAG = store.getters['app/currentCAG'];
   const payload = {
     project_id: projectId,
@@ -185,7 +198,7 @@ export const getFactorGroundingRecommendations = async (projectId, currentGround
 /**
  * Mark statements as deleted
  */
-export const discardStatements = async (projectId, statementIds) => {
+export const discardStatements = async (projectId: string, statementIds: Array<string>) => {
   const result = await API.put(`/projects/${projectId}`, {
     payload: {
       updateType: 'discard_statement'
@@ -208,7 +221,7 @@ export const discardStatements = async (projectId, statementIds) => {
 /**
  * Vet/acknolwedge that the statements are valid
  */
-export const vetStatements = async (projectId, statementIds) => {
+export const vetStatements = async (projectId: string, statementIds: Array<string>) => {
   const result = await API.put(`/projects/${projectId}`, {
     payload: {
       updateType: 'vet_statement'
@@ -227,7 +240,7 @@ export const vetStatements = async (projectId, statementIds) => {
 /**
  * Reverse subj/obj and their polarities
  */
-export const reverseStatementsRelation = async (projectId, statementIds) => {
+export const reverseStatementsRelation = async (projectId: string, statementIds: Array<string>) => {
   const result = await API.put(`/projects/${projectId}`, {
     payload: {
       updateType: 'reverse_relation'
@@ -248,6 +261,7 @@ export const reverseStatementsRelation = async (projectId, statementIds) => {
 };
 
 
+
 /**
  * Update factors's grounding concepts.
  * It is assumed that all statements here have the same subj/obj factor groundings.
@@ -259,7 +273,7 @@ export const reverseStatementsRelation = async (projectId, statementIds) => {
  * @param {string} obj.oldValue - current concept
  * @param {string} obj.newValue - new concept
  */
-export const updateStatementsFactorGrounding = async (projectId, statementIds, subj, obj) => {
+export const updateStatementsFactorGrounding = async (projectId: string, statementIds: Array<string>, subj: ConceptChange, obj: ConceptChange) => {
   const result = await API.put(`/projects/${projectId}`, {
     payload: {
       updateType: 'factor_grounding',
@@ -292,7 +306,7 @@ export const updateStatementsFactorGrounding = async (projectId, statementIds, s
  * @param {number} obj.oldValue - current concept
  * @param {number} obj.newValue - new concept
 */
-export const updateStatementsPolarity = async (projectId, statementIds, subj, obj) => {
+export const updateStatementsPolarity = async (projectId: string, statementIds: Array<string>, subj: PolarityChange, obj: PolarityChange) => {
   const result = await API.put(`/projects/${projectId}`, {
     payload: {
       updateType: 'factor_polarity',

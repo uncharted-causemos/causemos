@@ -1,16 +1,16 @@
 interface Field {
-  field: string,
-  display: string,
-  icon: string,
-  iconText: string,
+  field: string;
+  display: string;
+  icon: string;
+  iconText: string;
 
   // FIXME: lexType/baseType are kind of weird
-  baseType?: string,
-  lexType?: string,
+  baseType?: string;
+  lexType?: string;
 
-  searchable?: boolean,
-  ranged?: boolean,
-  searchDisplay?: string
+  searchable?: boolean;
+  ranged?: boolean;
+  searchDisplay?: string;
 }
 
 
@@ -39,7 +39,7 @@ const _searchable = (searchDisplay: string, ranged: boolean) => {
  * @param {string} field - field name
  * @param {string} display - human readable display
  */
-const _field = (field: string, display: string, icon: string = '', iconText: string = '') => {
+const _field = (field: string, display: string, icon = '', iconText = '') => {
   return { field, display, icon, iconText };
 };
 

@@ -21,7 +21,7 @@ app.use(Toast);
 app.mixin({
   methods: {
     // toaster(message, type, close) {
-    toaster(message:string) {
+    toaster(message: string) {
       const toast = useToast();
       toast(message, { timeout: 2000 });
     }

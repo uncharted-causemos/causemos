@@ -7,10 +7,8 @@ const Logger = rootRequire('/config/logger');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DART_SERVICE_USERNAME, process.env.DART_SERVICE_PASSWORD);
 
 const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
-
 const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
-
-const TIMEOUT = 5 * 1000;
+const TIMEOUT = 3 * 1000;
 
 /**
  * Returns the stream of the raw document of document with corresponding id

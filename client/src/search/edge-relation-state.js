@@ -3,7 +3,7 @@ const options = [
   ['from', 'from']
 ].map(o => new ValueStateValue(o[0], {}, { displayKey: o[1] }));
 // Adapted from binary relations
-export default class edgeRelationState extends RelationState {
+export default class EdgeRelationState extends RelationState {
   /**
    * The "from" option.
    */
