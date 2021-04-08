@@ -1,3 +1,4 @@
+const moment = require('moment');
 const request = require('request');
 // const requestAsPromise = rootRequire('/util/request-as-promise');
 const auth = rootRequire('/util/auth-util');
@@ -6,6 +7,8 @@ const Logger = rootRequire('/config/logger');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DART_SERVICE_USERNAME, process.env.DART_SERVICE_PASSWORD);
 
 const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
+
+const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
 
 const TIMEOUT = 5 * 1000;
 
@@ -58,6 +61,45 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
   return { id: 'xyz' };
 
   // FIXME: Waiting for DART service to go up - Mar 17, 2021
+  // const result = await requestAsPromise(options);
+  // return result;
+};
+
+
+const queryReadersStatus = async (timestamp) => {
+  // Format timestamp to yyyy-mm-dd hh:mm:ss
+  const t = moment.utc(timestamp).format('YYYY-MM-DD hh:mm:ss');
+
+  const options = {
+    url: `${DART_READER_URL}/query`,
+    method: 'POST',
+    headers: {
+      Authorization: basicAuthToken
+    },
+    json: {
+      metadata: {
+        timestamp: {
+          after: t
+        }
+      }
+    },
+    timeout: TIMEOUT
+  };
+
+  // Stub
+  console.log(options);
+  return {
+    records: [
+      {
+        identity: 'xyz',
+        version: '1.0',
+        document_id: 'doc1',
+        storage_key: 'aaa'
+      }
+    ]
+  };
+
+  // FIXME: Waiting for DART service to go up - Apr 8, 2021
   // const result = await requestAsPromise(options);
   // return result;
 };
@@ -144,7 +186,8 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
 
 module.exports = {
   getRawDoc,
-  uploadDocument
+  uploadDocument,
+  queryReadersStatus
   // sendFileForExtraction,
   // submitCdrExtractionToDart,
   // uploadToDart

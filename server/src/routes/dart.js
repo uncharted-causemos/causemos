@@ -22,13 +22,17 @@ router.get('/:docId/raw', asyncHandler(async (req, res, next) => {
   docStream.pipe(res);
 }));
 
-
 router.post('/corpus', upload.single('file'), [], asyncHandler(async (req, res) => {
   const metadata = req.body.metadata;
   const results = await dartService.uploadDocument(req.file, metadata);
   res.json(results);
 }));
 
+router.get('/readers-status', asyncHandler(async (req, res, next) => {
+  const timestamp = req.query.timestamp || 0;
+  const result = await dartService.queryReadersStatus(timestamp);
+  res.json(result);
+}));
 
 /**
  * POST send file from local machine to the DART server for processing.
