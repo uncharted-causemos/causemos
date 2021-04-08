@@ -37,7 +37,7 @@ const createModel = async (payload) => {
   const edges = result.relations.reduce((acc, edge) => {
     const key = `${edge.source}///${edge.target}`;
     acc[key] = {};
-    acc[key].weight = edge.weights.map(v => parseFloat(v));
+    acc[key].weight = edge.weights.map(v => Math.abs(parseFloat(v)));
     return acc;
   }, {});
   return { nodes, edges };
