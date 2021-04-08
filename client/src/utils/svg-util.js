@@ -32,7 +32,7 @@ export const createChart = (svg, w, h, viewport = {}) => {
 
 export const translate = (x, y) => { return `translate(${x}, ${y})`; };
 export const getTranslateFromSVGTransform = (transform) => {
-  for (var i = 0; i < transform.baseVal.length; i++) {
+  for (let i = 0; i < transform.baseVal.length; i++) {
     if (transform.baseVal[i].type === 2) { // translate
       return [transform.baseVal[i].matrix.e, transform.baseVal[i].matrix.f];
     }

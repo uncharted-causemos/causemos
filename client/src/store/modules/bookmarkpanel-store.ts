@@ -1,9 +1,9 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface BookmarkState {
-  isPanelOpen: boolean,
-  currentPane: string,
-  countBookmarks: number
+  isPanelOpen: boolean;
+  currentPane: string;
+  countBookmarks: number;
 }
 
 /**

@@ -58,7 +58,7 @@ export default function(
 
 
   const valueDomain = [d3.min(data.value), (clampColourRange ? d3.max(data.value) : 1)];
-  var valueScale = log ? d3.scaleSequentialLog() : d3.scaleSequential();
+  let valueScale = log ? d3.scaleSequentialLog() : d3.scaleSequential();
   valueScale = valueScale
     .domain(valueDomain)
     .interpolator(d3.interpolateGreys);

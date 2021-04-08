@@ -17,9 +17,9 @@ const updateQuery = (getters: GetterTree<DataSearchState, any>, { filters }: { f
 };
 
 interface DataSearchState {
-  selectedDatacubes: Datacube[],
-  ontologyConcepts: string[],
-  searchResultsCount: number
+  selectedDatacubes: Datacube[];
+  ontologyConcepts: string[];
+  searchResultsCount: number;
 }
 
 const state: DataSearchState = {

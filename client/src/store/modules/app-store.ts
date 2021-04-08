@@ -1,12 +1,12 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface AppState {
-  overlayActivated: boolean,
-  overlayMessage: string,
-  updateToken: string,
-  ontologyConcepts: Array<string>,
-  projectMetadata: any, // FIXME
-  conceptDefinitions: { [key: string]: string }
+  overlayActivated: boolean;
+  overlayMessage: string;
+  updateToken: string;
+  ontologyConcepts: Array<string>;
+  projectMetadata: any; // FIXME
+  conceptDefinitions: { [key: string]: string };
 }
 
 const state: AppState = {

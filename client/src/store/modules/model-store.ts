@@ -1,7 +1,7 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface ModelState {
-  selectedScenarioId: string | null
+  selectedScenarioId: string | null;
 }
 
 const state: ModelState = {
