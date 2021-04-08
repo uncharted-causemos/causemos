@@ -5,13 +5,13 @@ import CodeUtil from '@/utils/code-util';
 const FIELDS = CodeUtil.FIELDS;
 
 interface ColumnState {
-  id: string,
-  visible: boolean,
-  group?: string
+  id: string;
+  visible: boolean;
+  group?: string;
 }
 
 interface StatementViewState {
-  columns: ColumnState[]
+  columns: ColumnState[];
 }
 
 /**

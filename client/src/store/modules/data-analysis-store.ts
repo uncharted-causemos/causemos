@@ -9,8 +9,8 @@ import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 type MapBounds = [[number, number], [number, number]];
 
 interface AnalysisItemFilter {
-  range: { min: number; max: number; };
-  global: boolean
+  range: { min: number; max: number };
+  global: boolean;
 }
 interface RunOutputSelection {
   runId: string;
@@ -41,8 +41,8 @@ interface AnalysisState {
   analysisItems: AnalysisItem[];
   timeSelectionSyncing: boolean;
   mapBounds: MapBounds;
-  algebraicTransform: AlgebraciTransform,
-  algebraicTransformInputIds: string[]
+  algebraicTransform: AlgebraciTransform;
+  algebraicTransformInputIds: string[];
 }
 
 /**
@@ -54,7 +54,7 @@ interface AnalysisState {
   *
   * @returns {AnalysisItem}
   */
-const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariable: string, source: string, units: string, outputDescription: string, model: string) : AnalysisItem => {
+const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariable: string, source: string, units: string, outputDescription: string, model: string): AnalysisItem => {
   return {
     id: datacubeId,
     datacubeId,
@@ -72,7 +72,7 @@ const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariab
 /**
  * Return new analysis items where data portion of each item of given analysis item list is trimmed off
  */
-const toAnalysisItemStates = (analysisItems: AnalysisItem[] = []) : AnalysisItemState[] => {
+const toAnalysisItemStates = (analysisItems: AnalysisItem[] = []): AnalysisItemState[] => {
   return analysisItems.map(item => {
     return {
       id: item.id,
@@ -90,7 +90,7 @@ const loadFromAnalysisItemsState = async (analysisItems: AnalysisItem[] = []): P
   if (datacubeIds.length === 0) return [];
   const filter = { clauses: [{ field: 'id', operand: 'or', isNot: false, values: datacubeIds }] };
   // TODO: Define datacube interface in somewhere
-  const { data } : { data: Datacube[]} = await API.get(`maas/datacubes?filters=${JSON.stringify(filter)}`);
+  const { data }: { data: Datacube[]} = await API.get(`maas/datacubes?filters=${JSON.stringify(filter)}`);
   return analysisItems.map(item => {
     const datacube = data.find(d => d.id === item.datacubeId);
     if (!datacube) return item;
@@ -120,7 +120,7 @@ const ensureAlgebraicInputsArePresent = (inputIds: string[], analysisItems: Anal
 };
 
 // Default state for state that can be saved/loaded
-const DEFAULT_STATE : AnalysisState = {
+const DEFAULT_STATE: AnalysisState = {
   currentAnalysisId: '',
   analysisItems: [],
   timeSelectionSyncing: false,
@@ -258,7 +258,7 @@ const actions: ActionTree<AnalysisState, any> = {
 };
 
 const mutations: MutationTree<AnalysisState> = {
-  loadState(state, { analysisID, payload }: { analysisID: string, payload: AnalysisItem}) {
+  loadState(state, { analysisID, payload }: { analysisID: string; payload: AnalysisItem}) {
     Object.assign(state, DEFAULT_STATE, payload);
     state.currentAnalysisId = analysisID;
   },
