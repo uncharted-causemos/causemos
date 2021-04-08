@@ -97,6 +97,10 @@ export default {
     WmMapPopup,
     SliderContinuousRange
   },
+  emits: [
+    'on-map-load',
+    'aggregation-level-change'
+  ],
   props: {
     // A model ouput selection object
     selection: {
