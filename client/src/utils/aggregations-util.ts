@@ -40,19 +40,19 @@ import _ from 'lodash';
  */
 
 interface AggChild<T> {
-  key: string,
-  count: number,
-  dataArray: T[],
-  meta?: any,
-  children?: AggChild<T>[]
+  key: string;
+  count: number;
+  dataArray: T[];
+  meta?: any;
+  children?: AggChild<T>[];
 }
 
 
 interface AggConfig<T> {
-  keyFn: (arg1: T) => string | number,
-  filterFn?: (arg1: T, arg2: number) => boolean,
-  metaFn?: (arg1: AggChild<T>, arg2: number) => any, // FIXME
-  sortFn?: (arg1: AggChild<T>) => number | string
+  keyFn: (arg1: T) => string | number;
+  filterFn?: (arg1: T, arg2: number) => boolean;
+  metaFn?: (arg1: AggChild<T>, arg2: number) => any; // FIXME
+  sortFn?: (arg1: AggChild<T>) => number | string;
 }
 
 
@@ -65,7 +65,7 @@ const groupDataArray = <T>(dataArray: T[], configs: AggConfig<T>[]) => {
   // Regular group by
   const grouped = _.groupBy<T>(filtered, config.keyFn);
 
-  const children:AggChild<T>[] = [];
+  const children: AggChild<T>[] = [];
   _.forEach(grouped, (v, k) => {
     children.push({
       key: k,
