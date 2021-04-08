@@ -11,7 +11,7 @@ import modelService from '@/services/model-service';
  * @param {function(array<string>): array<string>} [postProcessFn] - optional processing on the fetched suggestions
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
-const getConceptSuggestionFunction = (projectId, ontology, postProcessFn) => {
+const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>, postProcessFn: Function) => {
   return _.debounce(async function(hint = '') {
     let result = ontology;
     if (!_.isEmpty(hint)) {
@@ -35,7 +35,7 @@ const getConceptSuggestionFunction = (projectId, ontology, postProcessFn) => {
  * @param {function(array<string>): array<string>} [postProcessFn] - optional processing on the fetched suggestions
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
-const getSuggestionFunction = (projectId, field, postProcessFn) => {
+const getSuggestionFunction = (projectId: string, field: string, postProcessFn: Function) => {
   return _.debounce(async function(hint = '') {
     let result = [];
     if (!_.isEmpty(hint)) {
@@ -49,7 +49,7 @@ const getSuggestionFunction = (projectId, field, postProcessFn) => {
 };
 
 // Find indirect paths between source/target
-const getPathSuggestions = async (projectId, source, target) => {
+const getPathSuggestions = async (projectId: string, source: string, target: string) => {
   const payload = { source, target };
   const result = await API.get(`projects/${projectId}/path-suggestions`, { params: payload });
   return result.data;
