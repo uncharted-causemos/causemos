@@ -32,10 +32,10 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 import { defineComponent } from 'vue';
 import Modal from '@/components/modals/modal.vue';
-import dartService from '@/services/dart-service';
+import { getReadersStatus } from '@/services/dart-service';
 
 export default defineComponent({
   name: 'ModalReadersStatus',
@@ -49,9 +49,8 @@ export default defineComponent({
     readersStatus: []
   }),
   mounted() {
-    dartService.getReadersStatus(0).then(data => {
+    getReadersStatus(0).then(data => {
       this.readersStatus = data;
-      console.log('aaaa', this.readersStatus);
     });
   },
   methods: {
