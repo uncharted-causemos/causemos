@@ -96,7 +96,10 @@ const getProjectEdges = async (projectId: string, filters: Filters) => {
 };
 
 // Given a list of source/target pair and filters, get corresponding statements
-interface Edge { source: string, target: string }
+interface Edge {
+  source: string;
+  target: string;
+}
 const getProjectStatementIdsByEdges = async (projectId: string, edges: Edge[], filters: Filters) => {
   const result = await API.post(`projects/${projectId}/edge-data`, { edges, filters: filters });
   return result.data;
