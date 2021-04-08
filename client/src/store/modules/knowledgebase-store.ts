@@ -1,11 +1,11 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface KBState {
-  filteredStatementCount: number,
-  stagingStatementsCount: number,
-  documentsCount: number,
-  evidencesCount: number,
-  curationCounter: number,
+  filteredStatementCount: number;
+  stagingStatementsCount: number;
+  documentsCount: number;
+  evidencesCount: number;
+  curationCounter: number;
   isUpdatingBeliefScores: boolean;
 }
 
