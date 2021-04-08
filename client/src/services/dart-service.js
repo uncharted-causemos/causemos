@@ -10,6 +10,12 @@ const uploadDocument = async (formData) => {
   return result.data;
 };
 
+const getReadersStatus = async (timestamp) => {
+  const result = await API.get('dart/readers-status', { params: { timestamp } });
+  return result.data.records;
+};
+
 export default {
-  uploadDocument
+  uploadDocument,
+  getReadersStatus
 };

@@ -66,9 +66,12 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
 };
 
 
+/**
+ * List out reader status after a given timestamp
+ */
 const queryReadersStatus = async (timestamp) => {
   // Format timestamp to yyyy-mm-dd hh:mm:ss
-  const t = moment.utc(timestamp).format('YYYY-MM-DD hh:mm:ss');
+  const t = moment.utc(+timestamp).format('YYYY-MM-DD hh:mm:ss');
 
   const options = {
     url: `${DART_READER_URL}/query`,
@@ -87,14 +90,20 @@ const queryReadersStatus = async (timestamp) => {
   };
 
   // Stub
-  console.log(options);
+  console.log(JSON.stringify(options));
   return {
     records: [
       {
-        identity: 'xyz',
+        identity: 'eidos',
         version: '1.0',
         document_id: 'doc1',
-        storage_key: 'aaa'
+        storage_key: 'aaa1'
+      },
+      {
+        identity: 'sofia',
+        version: '1.0',
+        document_id: 'doc1',
+        storage_key: 'aaa2'
       }
     ]
   };
