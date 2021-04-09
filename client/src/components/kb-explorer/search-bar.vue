@@ -15,7 +15,6 @@
 
 <script>
 import _ from 'lodash';
-import { h } from 'preact';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
 
@@ -30,11 +29,8 @@ import BinaryRelationState from '@/search/binary-relation-state';
 import SingleRelationState from '@/search/single-relation-state';
 
 import codeUtil from '@/utils/code-util';
-import readersUtil from '@/utils/readers-util';
 import filtersUtil from '@/utils/filters-util';
 import polarityUtil from '@/utils/polarity-util';
-import contradictionUtil from '@/utils/contradiction-util';
-import hedgingUtil from '@/utils/hedging-util';
 
 import suggestionService from '@/services/suggestion-service';
 import ontologyFormatter from '@/formatters/ontology-formatter';
@@ -123,12 +119,12 @@ export default {
       ),
       new KeyValuePill(
         CODE_TABLE.CONTRADICTION_CATEGORY,
-        contradictionUtil.CONTRADICTION_MAP,
+        codeUtil.CONTRADICTION_MAP,
         'Select one or more contradiction categories'
       ),
       new KeyValuePill(
         CODE_TABLE.HEDGING_CATEGORY,
-        hedgingUtil.HEDGING_MAP,
+        codeUtil.HEDGING_MAP,
         'Select one or more hedging categories'
       ),
 
@@ -145,7 +141,7 @@ export default {
       ),
       new ValuePill(
         CODE_TABLE.READERS,
-        readersUtil.READERS_NAMES,
+        codeUtil.READERS_NAMES,
         'Select one or more readers'
       ),
 
