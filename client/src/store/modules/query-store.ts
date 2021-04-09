@@ -8,7 +8,7 @@ import { Filters } from '@/types/Filters';
 /**
  * Builds a query object withy any of the options available
  */
-const updateQuery = (getters:GetterTree<QueryState, any>, updateObj: QueryUpdate) => {
+const updateQuery = (getters: GetterTree<QueryState, any>, updateObj: QueryUpdate) => {
   const _filters = updateObj.filters || getters.filters;
   const _layout = updateObj.layout || getters.layout;
   const _view = updateObj.view || getters.view;
@@ -61,25 +61,25 @@ const START_ZERO = {
 
 
 interface Pagination {
-  from: number,
-  size?: number,
-  sort?: { [key: string]: string }
+  from: number;
+  size?: number;
+  sort?: { [key: string]: string };
 }
 
 type View = 'documents' | 'statements' | 'audits';
 const DEFAULT_VIEW: View = 'documents';
 
 interface QueryUpdate {
-  filters?: Filters,
-  view?: View,
-  layout?: any, // FIXME
-  documents?: Pagination,
-  statements?: Pagination,
-  audits?: Pagination
+  filters?: Filters;
+  view?: View;
+  layout?: any; // FIXME
+  documents?: Pagination;
+  statements?: Pagination;
+  audits?: Pagination;
 }
 
 interface QueryState {
-  lastQuery: Filters
+  lastQuery: Filters;
 }
 
 /**
@@ -181,7 +181,7 @@ const actions: ActionTree<QueryState, any> = {
     const query = updateQuery(getters, { filters, ...START_ZERO });
     router.push({ query }).catch(() => {});
   },
-  setPagination({ getters }, paginationObj: { view: View, from: number, size: number }) {
+  setPagination({ getters }, paginationObj: { view: View; from: number; size: number }) {
     const viewQueryObj: QueryUpdate = {};
     viewQueryObj[paginationObj.view] = {
       from: paginationObj.from,
@@ -190,8 +190,8 @@ const actions: ActionTree<QueryState, any> = {
     const query = updateQuery(getters, viewQueryObj);
     router.push({ query }).catch(() => {});
   },
-  setOrderBy({ getters }, sortObj: { view: View, field: string, sortOrder: string }) {
-    const viewQueryObj:QueryUpdate = {};
+  setOrderBy({ getters }, sortObj: { view: View; field: string; sortOrder: string }) {
+    const viewQueryObj: QueryUpdate = {};
     viewQueryObj[sortObj.view] = {
       from: 0,
       sort: {

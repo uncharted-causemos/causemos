@@ -2,13 +2,13 @@
   <modal
     class="modal-document-container"
     @close="close()">
-    <div slot="body">
+    <template #body>
       <uncharted-cards-reader-content
         :data="readerContentData"
         :switch-button-data="switchButtonData"
         @click-close-icon="close"
       />
-    </div>
+    </template>
   </modal>
 </template>
 

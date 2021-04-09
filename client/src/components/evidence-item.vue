@@ -40,6 +40,9 @@ export default {
       default: ''
     }
   },
+  emits: [
+    'click-evidence'
+  ],
   computed: {
     metadataDisplayString() {
       return evidenceMetadataUtil.constructDisplayString(this.evidence);

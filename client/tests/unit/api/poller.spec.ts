@@ -14,7 +14,7 @@ describe('poller', () => {
         }
         return [false, r];
       })
-      .success(r => {
+      .success((r: any) => {
         expect(r).to.equal(2);
         done();
       })
@@ -58,7 +58,7 @@ describe('poller', () => {
         expect.fail();
         done();
       })
-      .failure((err) => {
+      .failure((err: any) => {
         try {
           expect(err.message).to.equal('Dummy error');
           done();

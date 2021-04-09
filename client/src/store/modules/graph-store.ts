@@ -1,22 +1,22 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface SelectedNode {
-  node: string | null
+  node: string | null;
 }
 
 interface SelectedEdge {
-  source: string | null,
-  target: string | null
+  source: string | null;
+  target: string | null;
 }
 
 interface GraphState {
-  selectedNode: SelectedNode | null,
-  selectedEdge: SelectedEdge | null,
-  selectedRelationships: Array<SelectedEdge>,
-  selectedNodesCount: number,
-  filteredNodesCount: number,
-  filteredEdgesCount: number,
-  selectedSubgraphEdges: Array<SelectedEdge>
+  selectedNode: SelectedNode | null;
+  selectedEdge: SelectedEdge | null;
+  selectedRelationships: Array<SelectedEdge>;
+  selectedNodesCount: number;
+  filteredNodesCount: number;
+  filteredEdgesCount: number;
+  selectedSubgraphEdges: Array<SelectedEdge>;
 }
 
 
