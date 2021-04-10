@@ -15,6 +15,7 @@ import QuantitativeStart from '@/views/QuantitativeStart.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
+import CompAnalysisExperiment from '@/views/CompAnalysisExperiment';
 import qs from 'qs';
 import _ from 'lodash';
 import store from '@/store';
@@ -84,6 +85,11 @@ const routes = [
     path: '/tile-experiment',
     name: 'tileExperiment',
     component: TileExperiment
+  },
+  {
+    path: '/comp-analysis-experiment',
+    name: 'compAnalysisExperiment',
+    component: CompAnalysisExperiment
   },
   {
     path: '/graph-experiment',
