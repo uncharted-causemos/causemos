@@ -122,8 +122,10 @@ export default {
     async saveBookmark() {
       if (this.hasError || _.isEmpty(this.title)) return;
       const url = this.$route.fullPath;
-      const el = document.getElementById('tabPanel'); // FIXME: this should change according to the view
-      const thumbnailSource = _.isNil(el) ? null : (await html2canvas(el, { scale: 0.5 })).toDataURL();
+      // FIXME: ideally this should change according to the view or be passed a target
+      // but for now uses a special class to target the capture area
+      const el = document.getElementsByClassName('bookmark-capture')[0];
+      const thumbnailSource = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
       API.post('bookmarks', { project_id: this.project, title: this.title, description: this.description, view: this.currentView, url, thumbnailSource })
         .then((result) => {
           const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_ADDITION : BOOKMARKS.ERRONEOUS_ADDITION;

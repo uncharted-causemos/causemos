@@ -18,7 +18,7 @@
         <CAG-graph
           v-else
           ref="cagGraph"
-          class="cagGraph"
+          class="cagGraph bookmark-capture"
           :data="modelComponents"
           :show-new-node="showNewNode"
           @refresh="captureThumbnail"

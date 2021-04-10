@@ -32,6 +32,14 @@ module.exports = {
     // e.g. @import '~styles/vars' instead of @import `../../../styles/vars`
     config.resolve.alias.set('styles', path.resolve('src/styles'));
 
+    //ignore facets as custom elements
+    config.module.rule('vue')
+    .use('vue-loader').tap(options => {
+      options.compilerOptions = {
+        isCustomElement: (tag) => tag.startsWith("facet-")
+      }
+      return options;
+    });
     if (process.env.NODE_ENV === 'test') {
       // Note: `TypeError: window.URL.createObjectURL is not a function` error
       // is thrown while webpack is loading one of our dependencies (mapbox-gl.js)
