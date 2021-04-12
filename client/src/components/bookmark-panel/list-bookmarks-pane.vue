@@ -147,11 +147,9 @@ export default {
       });
     },
     exportPPTX() {
-      console.log('export', this.$route.path, this);
       const Pptxgen = pptxgen;
       const pres = new Pptxgen();
       const baseURL = window.location.href.split('/#/')[0];
-      console.log(baseURL);
 
       this.listBookmarks.forEach((bm) => {
         const slide = pres.addSlide();
