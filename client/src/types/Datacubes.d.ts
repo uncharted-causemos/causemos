@@ -18,7 +18,7 @@ export interface Datacube {
   country: string[];
   admin1: string[];
   admin2: string[];
-  period: { gte: string; lte: string}[];
+  period: { gte: string; lte: string }[];
   variable?: string; // indicator variable
   _search_score?: number;
 }
