@@ -32,12 +32,12 @@ module.exports = {
     // e.g. @import '~styles/vars' instead of @import `../../../styles/vars`
     config.resolve.alias.set('styles', path.resolve('src/styles'));
 
-    //ignore facets as custom elements
+    // ignore facets as custom elements
     config.module.rule('vue')
       .use('vue-loader').tap(options => {
         options.compilerOptions = {
-          isCustomElement: (tag) => tag.startsWith("facet-");
-        }
+          isCustomElement: (tag) => tag.startsWith('facet-')
+        };
         return options;
       });
     if (process.env.NODE_ENV === 'test') {
