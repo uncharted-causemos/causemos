@@ -67,6 +67,7 @@ export default {
   overflow-y: auto;
   overflow-x: hidden;
   word-wrap: break-word;
+  color: #707070;
 }
 
 .bookmark-container.panel-hidden {
