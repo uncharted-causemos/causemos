@@ -349,9 +349,43 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
         throw new Error(JSON.stringify(r.items[0]));
       }
     }
+  } else if (engine === DELPHI) {
+    let r = null;
+    const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+    const updateNodes = [];
+    nodeParameters.forEach(node => {
+      updateNodes.push({
+        id: node.id,
+        parameter: {
+          initial_value: 0,
+          initial_value_parameter: {
+            func: 'last'
+          }
+        }
+      });
+    });
+    r = await nodeParameterAdapter.update(updateNodes, d => d.id, 'wait_for');
+    if (r.errors) {
+      throw new Error(JSON.stringify(r.items[0]));
+    }
+
+    const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+    const updateEdges = [];
+    edgeParameters.forEach(edge => {
+      updateEdges.push({
+        id: edge.id,
+        parameter: {
+          weight: initialParameters.edges[`${edge.source}///${edge.target}`].weight
+        }
+      });
+    });
+    r = await edgeParameterAdapter.update(updateEdges, d => d.id, 'wait_for');
+    if (r.errors) {
+      throw new Error(JSON.stringify(r.items[0]));
+    }
   }
 
-  // 4. Update sync status
+  // 4. Update model status
   const status = initialParameters.status === 'training' ? 1 : 2;
 
   const modelPayload = {

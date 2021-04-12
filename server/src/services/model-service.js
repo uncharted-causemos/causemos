@@ -261,48 +261,6 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeS
     }
   };
   return payload;
-
-  /*
-  if (engine === 'delphi') {
-    const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
-    const nodeParameters = await nodeParameterAdapter.find([{ field: 'model_id', value: modelId }], {
-      size: SEARCH_LIMIT
-    });
-    const conceptValues = [];
-    for (const np of nodeParameters) {
-      conceptValues.push({
-        concept: np.concept,
-        timeSeries: _.get(np, 'parameter.indicator_time_series') || []
-      });
-    }
-    const perturbations = delphiUtil.setDefaultPerturbations(parameters, conceptValues);
-
-    // TODO: Update when Delphi supports starttime in timestamp like DySE
-    const startTime = {
-      year: projectionStartDate.year(),
-      month: projectionStartDate.month() + 1 // moment starts month with 0 and delphi's month start with 1
-    };
-    payload = {
-      timeStepsInMonths: numTimeSteps,
-      startTime,
-      perturbations
-    };
-  } else if (engine === 'dyse') {
-    // TODO: May need to handle either different unit of time or get projectionEnd
-    const startTime = projectionStartDate.valueOf();
-    const endTime = projectionStartDate.add(numTimeSteps, 'M').valueOf();
-    const constraints = _.isEmpty(parameters) ? [] : parameters;
-    payload = {
-      experimentType: EXPERIMENT_TYPE.PROJECTION,
-      experimentParam: {
-        numTimesteps: numTimeSteps,
-        startTime,
-        endTime,
-        constraints
-      }
-    };
-  }
-  */
 };
 
 /**

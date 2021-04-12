@@ -23,10 +23,15 @@ const createModel = async (payload) => {
   };
 
   const result = await requestAsPromise(delphiOptions);
-  // if (result.status !== 'success') {
-  //   throw new Error(JSON.stringify(result));
-  // }
-  return result;
+  const nodes = result.conceptIndicators;
+  const edges = result.relations.reduce((acc, edge) => {
+    const key = `${edge.source}///${edge.target}`;
+    acc[key] = {};
+    // FIXME: Delphi returns distributions, for now just default [0.5, 0.5]
+    acc[key].weight = [0.5, 0.5];
+    return acc;
+  }, {});
+  return { nodes, edges, status: result.status };
 };
 
 /**
