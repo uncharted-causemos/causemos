@@ -33,11 +33,22 @@ export default {
     sourceMaxzoom: {
       type: Number,
       default: 22
+    },
+    /**
+     * Data that was aggregated for a layer, but came in after the fact - joined in to the feature-state instead of properties
+     */
+    aggregationData: {
+      type: [Object],
+      default: undefined
     }
   },
   watch: {
     source() {
       this._updateSource();
+      this._addLayer();
+    },
+    aggregationData() {
+      this._addLayer();
     }
   },
   mounted() {
@@ -66,6 +77,21 @@ export default {
       // Re-add the layers
       layerDefs.forEach(layer => this.map.addLayer(layer));
     },
+    _setFeatureStates(featureName, data, parentName = '') {
+      const id = [parentName, data.name].filter(x => x).join('-');
+      if (data.name !== undefined && data.name !== 'undefined') {
+        this.map.setFeatureState({
+          id,
+          source: this.sourceId,
+          sourceLayer: this.sourceLayer
+        }, {
+          [featureName]: data.value
+        });
+        if (data.children.length > 0) {
+          data.children.forEach(child => this._setFeatureStates(featureName, child, id));
+        }
+      }
+    },
     _addLayer() {
       this.$_removeLayer(this.layerId);
       this.map.addLayer({
@@ -74,6 +100,12 @@ export default {
         'source-layer': this.sourceLayer,
         ...this.layer
       });
+
+      if (this.aggregationData !== undefined) {
+        Object.keys(this.aggregationData).forEach(featureName => {
+          this._setFeatureStates(featureName, this.aggregationData[featureName].data);
+        });
+      }
     }
   }
 };
