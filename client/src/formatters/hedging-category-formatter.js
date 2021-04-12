@@ -1,4 +1,4 @@
-import HedgingUtil from '@/utils/hedging-util';
+import { HEDGING_MAP } from '@/utils/code-util';
 
 /**
  * HEDGING_MAP:
@@ -9,5 +9,5 @@ import HedgingUtil from '@/utils/hedging-util';
  */
 
 export default function(value) {
-  return HedgingUtil.HEDGING_MAP[value];
+  return HEDGING_MAP[value];
 }

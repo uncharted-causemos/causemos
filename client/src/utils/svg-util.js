@@ -373,7 +373,7 @@ export const hideSvgTooltip = (svgContainer) => {
  * @param {Number} preferredAngle - radians direction the tooltip will point (default -PI/2 = pointing down, tooltip above), can be adjusted if the tooltip doesn't fit
  * @param {Bool} flexPosition - allow the tooltip to adjust it's position based on if it fits within the bbox of it's container element
  */
-export const showSvgTooltip = (svgContainer, text, position, preferredAngle, flexPosition) => {
+export const showSvgTooltip = (svgContainer, text, position, preferredAngle = -Math.PI / 2, flexPosition) => {
   if (svgContainer === null || svgContainer.node() === null) { console.log('svgContainer is null\n'); return; }
 
   let angle = (_.isNumber(preferredAngle)) ? preferredAngle : -Math.PI / 2; // points down (tooltip above)

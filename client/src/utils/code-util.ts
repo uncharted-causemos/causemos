@@ -234,7 +234,38 @@ export const FIELDS = Object.keys(CODE_TABLE).reduce((acc: { [key: string]: stri
 }, {});
 
 
+export const CONTRADICTION = Object.freeze({
+  ALL_SUPPORTING: 0,
+  SOME_REFUTING: 1,
+  ALL_REFUTING: 2
+});
+
+export const CONTRADICTION_MAP = Object.freeze({
+  [CONTRADICTION.ALL_SUPPORTING]: 'None',
+  [CONTRADICTION.SOME_REFUTING]: 'Some',
+  [CONTRADICTION.ALL_REFUTING]: 'All'
+});
+
+export const HEDGING = Object.freeze({
+  NONE: 0,
+  SOME: 1,
+  ALL: 2
+});
+
+export const HEDGING_MAP = Object.freeze({
+  [HEDGING.NONE]: 'No hedging',
+  [HEDGING.SOME]: 'Some hedged evidence',
+  [HEDGING.ALL]: 'All hedged evidence'
+});
+
+export const READERS_NAMES = ['sofia', 'eidos', 'hume', 'cwms'];
+
 export default {
   CODE_TABLE,
-  FIELDS
+  FIELDS,
+  CONTRADICTION,
+  CONTRADICTION_MAP,
+  HEDGING,
+  HEDGING_MAP,
+  READERS_NAMES
 };
