@@ -230,7 +230,6 @@ export default {
         };
         this.refreshLayers();
       }
-
     }
   },
   created() {
@@ -330,10 +329,6 @@ export default {
         }, []);
         this.colorLayer.filter = ['all', ['has', this.valueProp], ...filter];
       } else {
-        const filter = this.filters.reduce((prev, cur) => {
-          if (cur.id !== this.valueProp && !cur.global) return prev;
-          return [...prev, ...createRangeFilter(cur.range, cur.id)];
-        }, []);
         this.refreshLayers();
         this.colorLayer.filter = ['all', true];
       }
