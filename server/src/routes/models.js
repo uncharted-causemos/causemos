@@ -376,7 +376,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
 router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
-  const { engine } = req.body;
+  const engine = req.query.engine;
 
   let modelStatus = {};
   if (engine === DYSE) {
