@@ -40,7 +40,7 @@ const createModel = async (payload) => {
     acc[key].weight = edge.weights.map(v => Math.abs(parseFloat(v)));
     return acc;
   }, {});
-  return { nodes, edges };
+  return { nodes, edges, status: result.status };
 };
 
 

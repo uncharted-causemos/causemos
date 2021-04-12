@@ -11,6 +11,12 @@ const { get, set } = rootRequire('/cache/node-lru-cache');
 const modelUtil = rootRequire('/util/model-util');
 
 
+// TODO
+// 0 - not ready
+// 1 - training
+// 2 - done
+
+
 // Get model with no thumbnail
 const _getModel = async (modelId) => {
   const connection = Adapter.get(RESOURCE.CAG);
@@ -136,6 +142,7 @@ const createCAG = async (modelFields, edges, nodes) => {
     is_stale: false,
     is_quantified: false,
     is_synced: false,
+    status: 0,
     created_at: now,
     modified_at: now
   }, keyFn);
@@ -281,6 +288,7 @@ const updateCAG = async(modelId, edges, nodes) => {
   const results = await CAGConnection.update({
     id: modelId,
     is_synced: false,
+    status: 0,
     modified_at: moment().valueOf()
   }, d => d.id);
   if (results.errors) {
@@ -309,6 +317,7 @@ const pruneCAG = async(modelId, edges, nodes) => {
   const results = await CAGConnection.update({
     id: modelId,
     is_synced: false,
+    status: 0,
     modified_at: moment().valueOf()
   }, d => d.id);
   if (results.errors) {
@@ -546,6 +555,7 @@ const recalculateCAG = async (modelId) => {
         id: cag.id,
         is_stale: false,
         is_synced: false,
+        status: 0,
         is_ambiguous: isAmbiguous,
         modified_at: timestamp
       }

@@ -33,7 +33,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
   Logger.info(`initializing model with id ${modelId}`);
 
   const model = await modelService.findOne(modelId);
-  if (model.is_synced === true && model.is_stale === false) {
+  if (model.status === 2 && model.is_stale === false) {
     Logger.info(`Model is alraedy initialized ${modelId}`);
     res.status(200).send({ updateToken: moment().valueOf() });
     return;
@@ -56,6 +56,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
   }
   modelFields.is_quantified = true;
   modelFields.is_synced = false;
+  modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
   // Set initial time series
@@ -119,6 +120,7 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
 
   // Reset sync flag
   modelFields.is_synced = false;
+  modelFields.status = 0;
 
   if (!_.isEmpty(parameter)) {
     modelFields.parameter = parameter;
@@ -350,9 +352,12 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
 
   // 4. Update sync status
+  const status = initialParameters.status === 'training' ? 1 : 2;
+
   const modelPayload = {
     id: modelId,
     is_synced: true,
+    status: status,
     parameter: {
       engine: engine
     },
@@ -384,6 +389,14 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   } else {
     modelStatus = await delphiService.modelStatus(modelId);
   }
+
+  // FIXME: Different engines have slightly different status codes
+  // Update model
+  console.log('');
+  console.log(modelStatus);
+  const v = modelStatus.status === 'training' ? 1 : 2;
+  await cagService.updateCAGMetadata(modelId, { status: v });
+
   res.json(modelStatus);
 }));
 
@@ -400,7 +413,7 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   let result;
   try {
     if (engine === DELPHI) {
-      result = await delphiService.createProjection(modelId, payload);
+      result = await delphiService.createExperiment(modelId, payload);
     } else if (engine === DYSE) {
       result = await dyseService.createExperiment(modelId, payload);
     } else {
@@ -461,7 +474,7 @@ router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   let result;
   if (engine === DELPHI) {
     result = await delphiService.findExperiment(modelId, experimentId);
-    modelService.postProcessDelphiExperiment(result);
+    // modelService.postProcessDelphiExperiment(result);
   } else if (engine === DYSE) {
     result = await dyseService.findExperiment(modelId, experimentId);
   }
@@ -521,7 +534,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update node-parameter');
   }
 
-  await cagService.updateCAGMetadata(modelId, { is_synced: false });
+  await cagService.updateCAGMetadata(modelId, { is_synced: false, status: 0 });
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);
@@ -563,7 +576,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update edge-parameter');
   }
 
-  await cagService.updateCAGMetadata(modelId, { is_synced: false });
+  await cagService.updateCAGMetadata(modelId, { is_synced: false, status: 0 });
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);

@@ -4,6 +4,11 @@ import { CODE_TABLE } from '@/utils/code-util';
 import { conceptShortName } from '@/utils/concept-util';
 import { startPolling } from '@/api/poller';
 
+const MODEL_STATUS = {
+  UNSYNCED: 0,
+  TRAINING: 1,
+  READy: 2
+};
 
 const getProjectModels = async (projectId) => {
   const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
@@ -23,6 +28,14 @@ const getSummary = async (modelId) => {
  */
 const getComponents = async (modelId) => {
   const result = await API.get(`cags/${modelId}/components`);
+  return result.data;
+};
+
+/**
+ * GET model status on the engine
+ */
+const checkAndUpdateRegisteredStatus = async (modelId, engine) => {
+  const result = await API.get(`models/${modelId}/registered-status`, { params: { engine: engine } });
   return result.data;
 };
 
@@ -179,20 +192,11 @@ const deleteScenario = async (scenario) => {
  *
  * @param {string} modelId - model/cag identifier
  */
-const DEFAULT_ENGINE = 'dyse';
+const DEFAULT_ENGINE = 'delphi';
 const initializeModel = async (modelId) => {
   const model = await getSummary(modelId);
   const engine = model.parameter.engine || DEFAULT_ENGINE;
   const errors = [];
-
-  // If necessary, sync up if we are in good state
-  if (model.is_stale === false && model.is_quantified === true && model.is_synced === false) {
-    try {
-      await syncModelWithEngine(modelId, engine);
-    } catch (error) {
-      errors.push(error.response.data);
-    }
-  }
 
   if (model.is_stale === true) {
     errors.push('Model is stale');
@@ -200,7 +204,27 @@ const initializeModel = async (modelId) => {
   if (model.is_quantified === false) {
     errors.push('Model is not quantified');
   }
-  return errors;
+  if (!_.isEmpty((errors))) {
+    return errors;
+  }
+
+  // Model is not synced with the engine, initiate registeration request
+  if (model.status === MODEL_STATUS.UNSYNCED) {
+    try {
+      await syncModelWithEngine(modelId, engine);
+    } catch (error) {
+      errors.push(error.response.data);
+    }
+    return errors;
+  }
+
+  // Model is still training, check and upate the status
+  if (model.status === MODEL_STATUS.TRAINING) {
+    console.log('handling training case');
+    const r = await checkAndUpdateRegisteredStatus(modelId, engine);
+    console.log('!!', r);
+  }
+  return [];
 };
 
 
@@ -433,6 +457,7 @@ const resetScenarioParameter = (scenario, modelSummary, nodeParameters) => {
 export default {
   getProjectModels,
   getSummary,
+  checkAndUpdateRegisteredStatus,
   getComponents,
   getEdgeStatements,
   getNodeStatements,

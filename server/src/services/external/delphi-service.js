@@ -49,17 +49,9 @@ const modelStatus = async (modelId) => {
   return result;
 };
 
-/**
- * Creates a projection experiment of each indicator with estimation bounds.
- *
- * @param {string} modelId - model identifier
- * @param {object} payload - payload sent in projection request
- *
- * returns experiment id and status
- */
-const createProjection = async (modelId, payload) => {
+const createExperiment = async (modelId, payload) => {
   const options = {
-    url: process.env.DELPHI_URL + `/delphi/models/${modelId}/projection`,
+    url: process.env.DELPHI_URL + `/delphi/models/${modelId}/experiments`,
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
@@ -79,7 +71,7 @@ const createProjection = async (modelId, payload) => {
  */
 const findExperiment = async (modelId, experimentId) => {
   const options = {
-    url: process.env.DELPHI_URL + `/delphi/models/${modelId}/experiment/${experimentId}`,
+    url: process.env.DELPHI_URL + `/delphi/models/${modelId}/experiments/${experimentId}`,
     method: 'GET',
     headers: {
       Accept: 'application/json'
@@ -95,7 +87,7 @@ const findExperiment = async (modelId, experimentId) => {
 
 module.exports = {
   createModel,
+  createExperiment,
   modelStatus,
-  createProjection,
   findExperiment
 };

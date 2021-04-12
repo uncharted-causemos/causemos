@@ -247,7 +247,22 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
 const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeSteps, parameters) => {
   const projectionStartDate = moment.utc(projectionStart);
 
-  let payload;
+  let payload = {};
+  const startTime = projectionStartDate.valueOf();
+  const endTime = projectionStartDate.add(numTimeSteps, 'M').valueOf();
+  const constraints = _.isEmpty(parameters) ? [] : parameters;
+  payload = {
+    experimentType: EXPERIMENT_TYPE.PROJECTION,
+    experimentParam: {
+      numTimesteps: numTimeSteps,
+      startTime,
+      endTime,
+      constraints
+    }
+  };
+  return payload;
+
+  /*
   if (engine === 'delphi') {
     const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
     const nodeParameters = await nodeParameterAdapter.find([{ field: 'model_id', value: modelId }], {
@@ -287,8 +302,7 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeS
       }
     };
   }
-
-  return payload;
+  */
 };
 
 /**
