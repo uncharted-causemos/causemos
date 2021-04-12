@@ -166,25 +166,29 @@ export default {
       };
     },
     vectorSource() {
-      const outputSpecs = this.analysisItems.map(({ id, modelId, model, outputVariable, selection }) => ({ id, modelId, model, outputVariable, ...selection }))
-        .filter(({ id, modelId, runId, outputVariable, timestamp }) => {
-          // some models (eb. chirps) has timestamp as 0 for some reason and 0 should be treated as valid value
-          // eg. {"timeseries":[{"timestamp":0,"value":-0.24032641113384878}]}
-          return id && modelId && runId && outputVariable && !_.isNil(timestamp);
-        })
-        .map(select => {
-          const modelName = select.model || '';
-          const maxPrecision = modelOutputMaxPrecision[modelName];
-          return {
-            model: select.modelId,
-            runId: select.runId,
-            feature: select.outputVariable,
-            date: moment(select.timestamp).toISOString(),
-            valueProp: select.id,
-            maxPrecision
-          };
-        });
-      return `${window.location.protocol}/${window.location.host}/api/maas/output/tiles/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
+      if (this.selectedLayer !== 4) {
+        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-boundaries-adm${this.selectedLayer}/{z}/{x}/{y}`;
+      } else {
+        const outputSpecs = this.analysisItems.map(({ id, modelId, model, outputVariable, selection }) => ({ id, modelId, model, outputVariable, ...selection }))
+          .filter(({ id, modelId, runId, outputVariable, timestamp }) => {
+            // some models (eb. chirps) has timestamp as 0 for some reason and 0 should be treated as valid value
+            // eg. {"timeseries":[{"timestamp":0,"value":-0.24032641113384878}]}
+            return id && modelId && runId && outputVariable && !_.isNil(timestamp);
+          })
+          .map(select => {
+            const modelName = select.model || '';
+            const maxPrecision = modelOutputMaxPrecision[modelName];
+            return {
+              model: select.modelId,
+              runId: select.runId,
+              feature: select.outputVariable,
+              date: moment(select.timestamp).toISOString(),
+              valueProp: select.id,
+              maxPrecision
+            };
+          });
+        return `${window.location.protocol}/${window.location.host}/api/maas/output/tiles/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
+      }
     },
     colorOption() {
       return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
@@ -344,7 +348,7 @@ export default {
     },
     _unsetHover(map) {
       if (!this.hoverId) return;
-      map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.vectorSourceLayer });
+      map.removeFeatureState({ source: this.vectorSourceId, id: this.hoverId, sourceLayer: this.vectorSourceLayer }, 'hover');
       this.hoverId = undefined;
     },
     onMouseMove(event) {
