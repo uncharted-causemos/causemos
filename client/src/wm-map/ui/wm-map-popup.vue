@@ -48,11 +48,17 @@ export default {
   },
   methods: {
     onMouseMove(event) {
-      this.map.getCanvas().style.cursor = this.cursor;
-      this.popup
-        .setLngLat(event.lngLat)
-        .setHTML(this.formatterFn(event.features[0]))
-        .addTo(this.map);
+      const formattedValue = this.formatterFn(event.features[0]);
+      if (formattedValue === null) {
+        this.map.getCanvas().style.cursor = '';
+        this.popup.remove();
+      } else {
+        this.map.getCanvas().style.cursor = this.cursor;
+        this.popup
+          .setLngLat(event.lngLat)
+          .setHTML(formattedValue)
+          .addTo(this.map);
+      }
     },
     onMouseLeave() {
       // reset cursor
