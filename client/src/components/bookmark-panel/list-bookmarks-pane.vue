@@ -151,6 +151,10 @@ export default {
       const pres = new Pptxgen();
       const baseURL = window.location.href.split('/#/')[0];
 
+      // some PPTX consts as powerpoint does everything in inches & has hard boundaries
+      const widthLimitImage = 10;
+      const heightLimitImage = 4.5;
+
       this.listBookmarks.forEach((bm) => {
         const slide = pres.addSlide();
         slide.addText(bm.title, {
@@ -165,11 +169,13 @@ export default {
           }
         });
 
-        const imageSize = this.getPngDimensionsForPPTX(bm.thumbnail_source);
+        const imageSize = this.getPngDimensionsForPPTX(bm.thumbnail_source, widthLimitImage, heightLimitImage);
         slide.addImage({
           data: bm.thumbnail_source,
-          x: (10 - imageSize.width) / 2,
-          y: 0.5,
+          // centering image code for x & y limited by consts for max content size
+          // plus base offsets needed to stay clear of other elements
+          x: (widthLimitImage - imageSize.width) / 2,
+          y: 0.5 + (heightLimitImage - imageSize.height) / 2,
           w: imageSize.width,
           h: imageSize.height
         });
@@ -187,22 +193,17 @@ export default {
         fileName: 'Causemos' + date.toUTCString()
       });
     },
-    getPngDimensionsForPPTX(base64png) {
-      const maxWidth = 10;
-      const maxHeight = 4.5;
+    getPngDimensionsForPPTX(base64png, widthLimit, heightLimit) {
       const header = atob(base64png.slice(22, 72)).slice(16, 24);
       const uint8 = Uint8Array.from(header, c => c.charCodeAt(0));
       const dataView = new DataView(uint8.buffer);
       const imageWidth = dataView.getInt32(0);
       const imageHeight = dataView.getInt32(4);
-      let scaledWidth;
-      let scaledHeight;
+      let scaledWidth = widthLimit;
+      let scaledHeight = imageHeight * scaledWidth / imageWidth;
 
-      scaledWidth = maxWidth;
-      scaledHeight = imageHeight * scaledWidth / imageWidth;
-
-      if (scaledHeight > maxHeight) {
-        scaledHeight = maxHeight;
+      if (scaledHeight > heightLimit) {
+        scaledHeight = heightLimit;
         scaledWidth = imageWidth * scaledHeight / imageHeight;
       }
 
