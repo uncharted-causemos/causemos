@@ -88,20 +88,21 @@ const createRangeFilter = ({ min, max }, prop) => {
   return [lowerBound, upperBound];
 };
 
-const baseLayer = (property) => {
+const baseLayer = (property, useFeatureState = false) => {
   return Object.freeze({
     type: 'fill',
     paint: {
-      'fill-antialias': false,
+      'fill-antialias': true,
       'fill-color': 'grey',
       'fill-opacity': [
         'case',
+        ['==', ['number', [(useFeatureState ? 'feature-state' : 'get'), property], -10000], -10000],
+        0.1,
         ['boolean', ['feature-state', 'hover'], false],
         0.4, // opacity to 0.4 on hover
         0.1 // default
       ]
-    },
-    filter: ['all', ['has', property]]
+    }
   });
 };
 
@@ -134,6 +135,7 @@ export default {
     hoverId: undefined,
     extent: undefined,
     range: undefined,
+    selectedLayer: undefined,
     aggregationData: undefined
   }),
   computed: {
@@ -259,10 +261,11 @@ export default {
       });
     },
     refreshLayers() {
-      this.baseLayer = baseLayer(this.valueProp);
+      if (this.extent === undefined) return;
+      this.baseLayer = baseLayer(this.valueProp, this.selectedLayer !== 4);
       const { min, max } = this.extent;
       const { color, scaleFn } = this.colorOption;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], getColors(color, 20), scaleFn);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, this.selectedLayer !== 4);
     },
     async updateStats() {
       const { runId, outputVariable, modelId } = this.selection || {};
