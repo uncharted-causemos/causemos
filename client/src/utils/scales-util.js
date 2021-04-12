@@ -12,7 +12,6 @@ export const COLOR_MAP = Object.freeze({
   GRAY: '#bdc3c7'
 });
 
-export const nodeOpacityScale = d3.scaleLog().domain([0.01, 1]).range([0.3, 1]);
 export const nodeBlurScale = d3.scaleLinear().domain([0, 1]).range([15, 0]);
 export const nodeColorScale = d3.scaleSequential(d3.interpolateGreys);
 
