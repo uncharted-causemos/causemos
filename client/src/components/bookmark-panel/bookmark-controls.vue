@@ -65,7 +65,9 @@ export default {
       project: 'app/project'
     }),
     allowNewBookmarks() {
-      return this.currentView === 'kbExplorer';
+      return this.currentView === 'kbExplorer' ||
+        this.currentView === 'qualitative' ||
+        this.currentView === 'quantitative';
     }
   },
   watch: {

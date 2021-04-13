@@ -2,6 +2,12 @@
   <div class="list-bookmarks-pane-container">
     <div class="pane-header">
       <h6>Saved Insights</h6>
+      <button
+        class="btn btn-primary"
+        @click="exportPPTX()"
+      >
+        Export
+      </button>
       <close-button @click="closeBookmarkPanel()" />
     </div>
     <div
@@ -16,7 +22,7 @@
           @click="selectBookmark(bookmark)">
           <div class="bookmark-header">
             <div class="bookmark-title">
-              <i :class="formattedViewIcon(bookmark.view)" />
+              <i class="fa fa-star"></i>
               {{ stringFormatter(bookmark.title, 25) }}
             </div>
             <div @click.stop="openEditor(bookmark.id)">
@@ -55,10 +61,10 @@
 
 <script>
 import _ from 'lodash';
+import pptxgen from 'pptxgenjs';
 import { mapGetters, mapActions } from 'vuex';
 import API from '@/api/api';
 
-import { VIEWS_LIST } from '@/utils/views-util';
 import { BOOKMARKS } from '@/utils/messages-util';
 
 import BookmarkEditor from '@/components/bookmark-panel/bookmark-editor';
@@ -102,12 +108,6 @@ export default {
         this.setCountBookmarks(listBookmarks.length);
       });
     },
-    formattedViewName(view) {
-      return VIEWS_LIST.find(item => item.id === view).name;
-    },
-    formattedViewIcon(view) {
-      return VIEWS_LIST.find(item => item.id === view).icon;
-    },
     openEditor(id) {
       if (id === this.activeBookmark) {
         this.activeBookmark = null;
@@ -145,6 +145,72 @@ export default {
           this.toaster(message, 'error', true);
         }
       });
+    },
+    exportPPTX() {
+      const Pptxgen = pptxgen;
+      const pres = new Pptxgen();
+      const baseURL = window.location.href.split('/#/')[0];
+
+      // some PPTX consts as powerpoint does everything in inches & has hard boundaries
+      const widthLimitImage = 10;
+      const heightLimitImage = 4.5;
+
+      this.listBookmarks.forEach((bm) => {
+        const slide = pres.addSlide();
+        slide.addText(bm.title, {
+          x: 0,
+          y: 0,
+          w: 10,
+          h: 0.5,
+          color: '363636',
+          align: pres.AlignH.center,
+          hyperlink: {
+            url: `${baseURL}/#${bm.url}`
+          }
+        });
+
+        const imageSize = this.getPngDimensionsForPPTX(bm.thumbnail_source, widthLimitImage, heightLimitImage);
+        slide.addImage({
+          data: bm.thumbnail_source,
+          // centering image code for x & y limited by consts for max content size
+          // plus base offsets needed to stay clear of other elements
+          x: (widthLimitImage - imageSize.width) / 2,
+          y: 0.5 + (heightLimitImage - imageSize.height) / 2,
+          w: imageSize.width,
+          h: imageSize.height
+        });
+        slide.addText(bm.description, {
+          x: 0,
+          y: 5,
+          w: 10,
+          h: 0.5,
+          color: '363636',
+          align: pres.AlignH.center
+        });
+      });
+      const date = new Date();
+      pres.writeFile({
+        fileName: 'Causemos' + date.toUTCString()
+      });
+    },
+    getPngDimensionsForPPTX(base64png, widthLimit, heightLimit) {
+      const header = atob(base64png.slice(22, 72)).slice(16, 24);
+      const uint8 = Uint8Array.from(header, c => c.charCodeAt(0));
+      const dataView = new DataView(uint8.buffer);
+      const imageWidth = dataView.getInt32(0);
+      const imageHeight = dataView.getInt32(4);
+      let scaledWidth = widthLimit;
+      let scaledHeight = imageHeight * scaledWidth / imageWidth;
+
+      if (scaledHeight > heightLimit) {
+        scaledHeight = heightLimit;
+        scaledWidth = imageWidth * scaledHeight / imageHeight;
+      }
+
+      return {
+        width: scaledWidth,
+        height: scaledHeight
+      };
     }
   }
 };
@@ -153,7 +219,12 @@ export default {
 <style lang="scss">
 @import "~styles/variables";
 .list-bookmarks-pane-container {
-
+  color: #707070;
+  .pane-header{
+    > button {
+      margin-right: 35px;
+    }
+  }
   .bookmark {
     cursor: pointer;
     padding: 5px 5px 10px;
@@ -170,7 +241,6 @@ export default {
     }
       .bookmark-title {
         font-weight: bold;
-        color: #707070;
       }
       .bookmark-empty-description {
         color: #D6DBDF;

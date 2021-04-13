@@ -10,7 +10,7 @@
       />
       <span>{{ navBackLabel }}</span>
     </div>
-    <div class="centered">
+    <div class="centered-slot">
       <slot />
     </div>
     <slot name="trailing" />
@@ -60,28 +60,28 @@ export default {
       margin-right: 0;
     }
   }
-}
 
-.navBack {
-  font-weight: 600;
-  font-size: $font-size-large;
-  color: #FFFFFF;
-  cursor: pointer;
-  i {
-    margin-right: 5px;
+  .centered-slot {
+    flex-grow: 1;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    color: #FFFFFF;
   }
-}
 
-.navBack:hover {
-  text-decoration: underline;
-}
+  .navBack {
+    font-weight: 600;
+    font-size: $font-size-large;
+    color: #FFFFFF;
+    cursor: pointer;
+    i {
+      margin-right: 5px;
+    }
+  }
 
-.centered {
-  flex-grow: 1;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: #FFFFFF;
+  .navBack:hover {
+    text-decoration: underline;
+  }
 }
 
 </style>
