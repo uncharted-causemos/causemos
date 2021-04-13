@@ -92,7 +92,7 @@ const baseLayer = (property, useFeatureState = false) => {
   return Object.freeze({
     type: 'fill',
     paint: {
-      'fill-antialias': true,
+      'fill-antialias': useFeatureState,
       'fill-color': 'grey',
       'fill-opacity': [
         'case',
