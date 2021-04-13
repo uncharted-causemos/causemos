@@ -57,7 +57,6 @@
           <label>Projection Engine:</label>
           <select
             v-model="selectedEngine"
-            disabled="disabled"
             class="form-control input-sm">
             <option
               v-for="engineOption in engineOptions"

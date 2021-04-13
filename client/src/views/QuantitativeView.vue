@@ -47,7 +47,7 @@
       v-if="isModelParametersOpen"
       :model-summary="modelSummary"
       @close="closeModelParameters"
-      @save="saveModelParameters"
+      @save="saveModelParameter"
     />
   </div>
 </template>
@@ -373,7 +373,7 @@ export default {
     showModelParameters() {
       this.isModelParametersOpen = true;
     },
-    async saveModelParameters(newParameter) {
+    async saveModelParameter(newParameter) {
       this.isModelParametersOpen = false;
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.refresh();
