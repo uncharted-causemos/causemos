@@ -370,8 +370,8 @@ export default {
       if (this.selectedLayer === 4) {
         return chartValueFormatter([this.extent.min, this.extent.max])(feature.properties[this.valueProp]);
       } else {
-        const fields = [0, 1, 2, 3].map(i => feature.properties['NAME_' + i]);
-        fields.push(chartValueFormatter([this.extent.min, this.extent.max])(feature.state[this.valueProp]));
+        const fields = [chartValueFormatter([this.extent.min, this.extent.max])(feature.state[this.valueProp])];
+        [0, 1, 2, 3].forEach(i => fields.push(feature.properties['NAME_' + i]));
         return fields.filter(field => !_.isNil(field)).join('<br />');
       }
     },
