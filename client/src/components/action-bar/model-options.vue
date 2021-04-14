@@ -32,6 +32,11 @@
         >
           Delete
         </div>
+        <div
+          class="dropdown-option"
+          @click="onDownload">
+          <a :href="downloadURL"> Download </a>
+        </div>
       </template>
     </dropdown-control>
   </li>
@@ -55,11 +60,12 @@ export default {
       type: String,
       default: 'untitled'
     },
-    viewAfterDeletion: {
+    viewAfterDeletjon: {
       type: String,
       default: 'qualitativeView'
     }
   },
+  emits: ['rename'],
   data: () => ({
     showModelOptionsDropdown: false
   }),
@@ -67,7 +73,10 @@ export default {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG'
-    })
+    }),
+    downloadURL() {
+      return `/api/models/${this.currentCAG}/register-payload`;
+    }
   },
   methods: {
     onShowModelOptionsDropdown() {
@@ -128,4 +137,8 @@ $width-name: 10vw;
   }
 }
 
+a {
+  text-decoration: inherit;
+  color: inherit;
+}
 </style>
