@@ -44,7 +44,7 @@
         :promote-id="idPropName"
         :layer-id="colorLayerId"
         :layer="colorLayer"
-        :aggregation-data="aggregationData"
+        @addLayer="onAddLayer"
       />
       <wm-map-vector
         v-if="vectorSource"
@@ -53,7 +53,6 @@
         :promote-id="idPropName"
         :layer-id="baseLayerId"
         :layer="baseLayer"
-        :aggregation-data="aggregationData"
       />
       <wm-map-popup
         v-if="showTooltip"
@@ -135,8 +134,7 @@ export default {
     hoverId: undefined,
     extent: undefined,
     range: undefined,
-    selectedLayer: undefined,
-    aggregationData: undefined
+    selectedLayer: undefined
   }),
   computed: {
     ...mapGetters({
@@ -220,14 +218,10 @@ export default {
       if (this.selectedLayer === 4) {
         this.vectorSourceLayer = 'maas';
         this.idPropName = { [this.vectorSourceLayer]: 'id' };
-        this.aggregationData = undefined;
         this.refreshLayers();
       } else {
         this.vectorSourceLayer = 'boundaries-adm' + this.selectedLayer;
         this.idPropName = { [this.vectorSourceLayer]: 'id' }; // NAME_' + this.selectedLayer };
-        this.aggregationData = {
-          [this.valueProp]: ADMIN_LEVEL_DATA
-        };
         this.refreshLayers();
       }
     }
@@ -288,6 +282,24 @@ export default {
         min: stats.min,
         max: stats.max
       };
+    },
+    setFeatureStates(map, featureName, data, parentName = '') {
+      const id = [parentName, data.name].filter(x => x).join('-');
+      if (data.name !== undefined && data.name !== 'undefined') {
+        map.setFeatureState({
+          id,
+          source: this.vectorSourceId,
+          sourceLayer: this.vectorSourceLayer
+        }, {
+          [featureName]: data.value
+        });
+        if (data.children.length > 0) {
+          data.children.forEach(child => this.setFeatureStates(map, featureName, child, id));
+        }
+      }
+    },
+    onAddLayer(event) {
+      this.setFeatureStates(event.map, this.valueProp, ADMIN_LEVEL_DATA.data);
     },
     onMapLoad(event) {
       const map = event.map;
