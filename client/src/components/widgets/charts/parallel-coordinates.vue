@@ -1,4 +1,15 @@
 <template>
+  <div style="padding-left: 1rem">
+    <div class="baseline-checkbox">
+      <label @click="toggleBaselineDefaultsVisibility()">
+        <i
+          class="fa fa-lg fa-fw"
+          :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
+        />
+        Baseline Defaults
+      </label>
+    </div>
+  </div>
   <div
     ref="pcChart"
     class="parallel-coordinates-container"
@@ -44,10 +55,6 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: null
     },
-    showBaselineDefaults: {
-      type: Boolean,
-      default: false
-    },
     applyDefaultSelection: {
       type: Boolean,
       default: false
@@ -64,7 +71,8 @@ export default defineComponent({
         // this.render(width, height);
       }, RESIZE_DELAY),
       initialWidth: 0,
-      initialHeight: 0
+      initialHeight: 0,
+      showBaselineDefaults: false
     };
   },
   watch: {
@@ -107,6 +115,9 @@ export default defineComponent({
       if (selectedLines && Array.isArray(selectedLines)) {
         this.$emit('select-scenario', { scenarios: selectedLines });
       }
+    },
+    toggleBaselineDefaultsVisibility() {
+      this.showBaselineDefaults = !this.showBaselineDefaults;
     }
   }
 });

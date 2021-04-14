@@ -72,7 +72,7 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { DimensionData, ScenarioData, ScenarioSelection } from '@/types/Datacubes';
+import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
 
 import { SCENARIOS_LIST, TIMESERIES_DATA } from '@/assets/scenario-data';
 
@@ -148,7 +148,7 @@ export default defineComponent({
     ];
     const ordinalDimensions = undefined;
     const baselineDefaultChecked = false;
-    const updateScenarioSelection = (e: { scenarios: Array<ScenarioSelection> }) => {
+    const updateScenarioSelection = (e: { scenarios: Array<ScenarioDef> }) => {
       if (e.scenarios.length === 0 ||
          (e.scenarios.length === 1 && e.scenarios[0] === undefined)) {
         console.log('no line is selected');

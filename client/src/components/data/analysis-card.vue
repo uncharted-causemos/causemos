@@ -110,50 +110,38 @@
       />
       -->
       <div style="display: flex; flex-direction: column">
-        <div style="padding-left: 1rem">
-          <button
-            type="button"
-            class="btn dropdown-btn"
-            @click="isDrilldownDropdownOpen = !isDrilldownDropdownOpen"
-          >
-            <div class="button-text">
-              Drilldown Filters
-              <i
-                class="fa fa-fw"
-                :class="{ 'fa-angle-down': !isDrilldownDropdownOpen, 'fa-angle-up': isDrilldownDropdownOpen }"
-              />
-            </div>
-          </button>
-          <dropdown-control
-            v-if="isDrilldownDropdownOpen"
-            class="dropdown-control"
-            style="position: absolute">
-            <template #content>
-              <div
-                v-for="filter in drilldownParameters"
-                :key="filter.id"
-                class="dropdown-option"
-              >
-                {{ filter.name }}
-              </div>
-            </template>
-          </dropdown-control>
-          <div class="baseline-checkbox">
-            <label @click="toggleBaselineDefaultsVisibility()">
-              <i
-                class="fa fa-lg fa-fw"
-                :class="{ 'fa-check-square-o': baselineDefaultChecked, 'fa-square-o': !baselineDefaultChecked }"
-              />
-              Baseline Defaults
-            </label>
+        <button
+          type="button"
+          class="btn dropdown-btn"
+          @click="isDrilldownDropdownOpen = !isDrilldownDropdownOpen"
+        >
+          <div class="button-text">
+            Drilldown Filters
+            <i
+              class="fa fa-fw"
+              :class="{ 'fa-angle-down': !isDrilldownDropdownOpen, 'fa-angle-up': isDrilldownDropdownOpen }"
+            />
           </div>
-        </div>
+        </button>
+        <dropdown-control
+          v-if="isDrilldownDropdownOpen"
+          class="dropdown-control"
+          style="position: absolute">
+          <template #content>
+            <div
+              v-for="filter in drilldownParameters"
+              :key="filter.id"
+              class="dropdown-option"
+            >
+              {{ filter.name }}
+            </div>
+          </template>
+        </dropdown-control>
         <parallel-coordinates-chart
           v-if="dimensionsData"
           :dimensions-data="dimensionsData"
           :selected-dimensions="selectedDimensions"
           :ordinal-dimensions="ordinalDimensions"
-          :show-baseline-defaults="baselineDefaultChecked"
           apply-default-selection="true"
           @select-scenario="updateScenarioSelection"
         />
@@ -231,8 +219,7 @@ export default {
     selectedDimensions: null,
     ordinalDimensions: null,
     drilldownParameters: [],
-    isDrilldownDropdownOpen: false,
-    baselineDefaultChecked: false
+    isDrilldownDropdownOpen: false
   }),
   computed: {
     ...mapGetters({
