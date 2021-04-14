@@ -22,7 +22,7 @@
         :selected-nodes-count="selectedNodesCount"
       />
     </div>
-    <div class="tab-content flex-grow-1 h-0">
+    <div class="tab-content flex-grow-1 h-0 bookmark-capture">
       <div class="tab-pane active h-100">
         <statements-view v-if="view === 'statements'" />
         <cyto-graph
