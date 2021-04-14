@@ -15,16 +15,11 @@
         :color-option="colorOption"
       />
       <div
-        v-if="selectedLayer!=4"
         class="layer-toggle-button"
         @click="nextLayer">
-        <i class="fa fa-globe" />
-      </div>
-      <div
-        v-if="selectedLayer==4"
-        class="layer-toggle-button"
-        @click="nextLayer">
-        <i class="fa fa-th-large" />
+        <i
+          :class="layerButtonClass"
+        />
       </div>
     </div>
     <wm-map
@@ -80,6 +75,15 @@ import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
 
 // Map filter animation fps rate (Use lower value if there's a performance issue)
 const FILTER_ANIMATION_FPS = 15;
+
+// selectedLayer cycles one by one through these layers
+const layers = Object.freeze([0, 1, 2, 3].map(i => ({
+  vectorSourceLayer: `boundaries-adm${i}`,
+  idPropName: { [`boundaries-adm${i}`]: 'id' }
+})).concat({
+  vectorSourceLayer: 'maas',
+  idPropName: { maas: 'id' }
+}));
 
 const createRangeFilter = ({ min, max }, prop) => {
   const lowerBound = ['>=', prop, Number(min)];
@@ -164,8 +168,8 @@ export default {
       };
     },
     vectorSource() {
-      if (this.selectedLayer !== 4) {
-        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-boundaries-adm${this.selectedLayer}/{z}/{x}/{y}`;
+      if (this.selectedLayer.vectorSourceLayer !== 'maas') {
+        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       } else {
         const outputSpecs = this.analysisItems.map(({ id, modelId, model, outputVariable, selection }) => ({ id, modelId, model, outputVariable, ...selection }))
           .filter(({ id, modelId, runId, outputVariable, timestamp }) => {
@@ -187,6 +191,12 @@ export default {
           });
         return `${window.location.protocol}/${window.location.host}/api/maas/output/tiles/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
       }
+    },
+    layerButtonClass() {
+      if (this.selectedLayer.vectorSourceLayer === 'maas') {
+        return 'fa fa-th-large';
+      }
+      return 'fa fa-globe';
     },
     colorOption() {
       return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
@@ -215,15 +225,8 @@ export default {
       deep: true
     },
     selectedLayer() {
-      if (this.selectedLayer === 4) {
-        this.vectorSourceLayer = 'maas';
-        this.idPropName = { [this.vectorSourceLayer]: 'id' };
-        this.refreshLayers();
-      } else {
-        this.vectorSourceLayer = 'boundaries-adm' + this.selectedLayer;
-        this.idPropName = { [this.vectorSourceLayer]: 'id' }; // NAME_' + this.selectedLayer };
-        this.refreshLayers();
-      }
+      Object.assign(this, this.selectedLayer);
+      this.refreshLayers();
     }
   },
   created() {
@@ -233,7 +236,7 @@ export default {
     };
 
     this.vectorSourceId = 'maas-vector-source';
-    this.selectedLayer = 1;
+    this.selectedLayer = layers[0];
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
@@ -252,17 +255,15 @@ export default {
       this.updateStats().then(() => {
         this.refreshLayers();
         this.updateLayerFilter();
-        if (this.selectedLayer === undefined) {
-          this.selectedLayer = 4;
-        }
       });
     },
     refreshLayers() {
-      if (this.extent === undefined) return;
-      this.baseLayer = baseLayer(this.valueProp, this.selectedLayer !== 4);
+      if (this.extent === undefined || this.colorOption === undefined) return;
+      const useFeatureState = this.selectedLayer.vectorSourceLayer !== 'maas';
+      this.baseLayer = baseLayer(this.valueProp, useFeatureState);
       const { min, max } = this.extent;
       const { color, scaleFn } = this.colorOption;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, this.selectedLayer !== 4);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, useFeatureState);
     },
     async updateStats() {
       const { runId, outputVariable, modelId } = this.selection || {};
@@ -334,7 +335,7 @@ export default {
     updateLayerFilter() {
       if (!this.colorLayer) return;
       // Merge filter for the current map and all globally applied filters together
-      if (this.selectedLayer === 4) {
+      if (this.selectedLayer.vectorSourceLayer === 'maas') {
         const filter = this.filters.reduce((prev, cur) => {
           if (cur.id !== this.valueProp && !cur.global) return prev;
           return [...prev, ...createRangeFilter(cur.range, cur.id)];
@@ -379,7 +380,7 @@ export default {
       if (_.isNil(feature)) return null;
       if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return null;
 
-      if (this.selectedLayer === 4) {
+      if (this.selectedLayer.vectorSourceLayer === 'maas') {
         return chartValueFormatter([this.extent.min, this.extent.max])(feature.properties[this.valueProp]);
       } else {
         const fields = [chartValueFormatter([this.extent.min, this.extent.max])(feature.state[this.valueProp])];
@@ -394,12 +395,18 @@ export default {
       });
     },
     nextLayer() {
-      if (this.selectedLayer >= 4) {
-        this.selectedLayer = 0;
+      // find current layer in layers and set it to the next one
+      const layerIndex = layers.map(layer => {
+        return this.selectedLayer.vectorSourceLayer === layer.vectorSourceLayer;
+      }).indexOf(true);
+
+      if (layerIndex >= layers.length - 1) {
+        this.selectedLayer = layers[0];
       } else {
-        this.selectedLayer = this.selectedLayer + 1;
+        this.selectedLayer = layers[layerIndex + 1];
       }
-      this.$emit('aggregation-level-change', this.selectedLayer);
+
+      this.$emit('aggregation-level-change', layerIndex);
     },
     updateFilterRange: _.throttle(function () {
       if (!this.range || !this.valueProp) return;
