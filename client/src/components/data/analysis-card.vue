@@ -109,7 +109,7 @@
         @runsupdated="updateRuns"
       />
       -->
-      <div style="display: flex; flex-direction: column">
+      <div style="display: flex; flex-direction: column; margin: 1rem;">
         <button
           type="button"
           class="btn dropdown-btn"

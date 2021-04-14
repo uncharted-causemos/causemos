@@ -63,18 +63,11 @@ export default defineComponent({
   emits: [
     'select-scenario'
   ],
-  data: () => {
-    return {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
-      // eslint-disable-next-line no-unused-vars
-      resize: _.debounce(({ width, height }) => {
-        // this.render(width, height);
-      }, RESIZE_DELAY),
-      initialWidth: 0,
-      initialHeight: 0,
-      showBaselineDefaults: false
-    };
-  },
+  data: () => ({
+    initialWidth: 0,
+    initialHeight: 0,
+    showBaselineDefaults: false
+  }),
   watch: {
     dimensionsData(): void {
       this.render();
@@ -90,6 +83,14 @@ export default defineComponent({
     this.render();
   },
   methods: {
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    // eslint-disable-next-line no-unused-vars
+    resizeDebounced: _.debounce(function(this: any, width, height) {
+      // this.render(width, height);
+    }, RESIZE_DELAY),
+    resize: function (size: {width: number; height: number}) {
+      this.resizeDebounced.bind(this)(size.width, size.height);
+    },
     render(width?: number, height?: number): void {
       if (this.dimensionsData === null) return;
       const svgWidth = width || this.initialWidth;

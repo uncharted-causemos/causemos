@@ -31,7 +31,6 @@
           :dimensions-data="dimensionsData"
           :selected-dimensions="selectedDimensions"
           :ordinal-dimensions="ordinalDimensions"
-          :show-baseline-defaults="baselineDefaultChecked"
           @select-scenario="updateScenarioSelection"
         />
       </div>
@@ -147,7 +146,6 @@ export default defineComponent({
       }
     ];
     const ordinalDimensions = undefined;
-    const baselineDefaultChecked = false;
     const updateScenarioSelection = (e: { scenarios: Array<ScenarioDef> }) => {
       if (e.scenarios.length === 0 ||
          (e.scenarios.length === 1 && e.scenarios[0] === undefined)) {
@@ -163,7 +161,6 @@ export default defineComponent({
       dimensionsData,
       selectedDimensions,
       ordinalDimensions,
-      baselineDefaultChecked,
       updateScenarioSelection
     };
   }
