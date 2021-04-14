@@ -58,6 +58,8 @@ export default defineComponent({
   ],
   data: () => {
     return {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      // eslint-disable-next-line no-unused-vars
       resize: _.debounce(({ width, height }) => {
         // this.render(width, height);
       }, RESIZE_DELAY),
