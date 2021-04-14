@@ -1,6 +1,6 @@
 const moment = require('moment');
 const request = require('request');
-// const requestAsPromise = rootRequire('/util/request-as-promise');
+const requestAsPromise = rootRequire('/util/request-as-promise');
 const auth = rootRequire('/util/auth-util');
 const Logger = rootRequire('/config/logger');
 
@@ -52,15 +52,8 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
     },
     formData: formData
   };
-
-  // Stub
-  console.log(options);
-  Logger.info(JSON.stringify(options.formData.metadata));
-  return { id: 'xyz' };
-
-  // FIXME: Waiting for DART service to go up - Mar 17, 2021
-  // const result = await requestAsPromise(options);
-  // return result;
+  const result = await requestAsPromise(options);
+  return result;
 };
 
 
@@ -70,45 +63,26 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
 const queryReadersStatus = async (timestamp) => {
   // Format timestamp to yyyy-mm-dd hh:mm:ss
   const t = moment.utc(+timestamp).format('YYYY-MM-DD hh:mm:ss');
+  const formData = {
+    metadata: JSON.stringify({
+      timestamp: {
+        after: t
+      }
+    })
+  };
 
   const options = {
     url: `${DART_READER_URL}/query`,
     method: 'POST',
     headers: {
-      Authorization: basicAuthToken
+      'Authorization': basicAuthToken,
+      'Content-type': 'application/json'
     },
-    json: {
-      metadata: {
-        timestamp: {
-          after: t
-        }
-      }
-    },
+    formData: formData,
     timeout: TIMEOUT
   };
-
-  // Stub
-  console.log(JSON.stringify(options));
-  return {
-    records: [
-      {
-        identity: 'eidos',
-        version: '1.0',
-        document_id: 'doc1',
-        storage_key: 'aaa1'
-      },
-      {
-        identity: 'sofia',
-        version: '1.0',
-        document_id: 'doc1',
-        storage_key: 'aaa2'
-      }
-    ]
-  };
-
-  // FIXME: Waiting for DART service to go up - Apr 8, 2021
-  // const result = await requestAsPromise(options);
-  // return result;
+  const result = await requestAsPromise(options);
+  return result;
 };
 
 
