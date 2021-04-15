@@ -38,6 +38,7 @@ import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal.vue';
 import projectService from '@/services/project-service';
 import { getReadersStatus } from '@/services/dart-service';
+import { ReaderOutputRecord } from '@/types/Dart';
 
 export default defineComponent({
   name: 'ModalReadersStatus',
@@ -53,11 +54,20 @@ export default defineComponent({
     })
   },
   data: () => ({
-    readersStatus: []
+    readersStatus: [] as ReaderOutputRecord[]
   }),
   mounted() {
     getReadersStatus(0).then(data => {
-      this.readersStatus = data;
+      if (data) {
+        this.readersStatus = data;
+      } else {
+        // FIXME: Just testing
+        const test: ReaderOutputRecord[] = [
+          { document_id: 'test_doc1', identity: 'eidos', version: '1', storage_key: 'abc2' },
+          { document_id: 'test_doc1', identity: 'hume', version: '1', storage_key: 'abc1' }
+        ];
+        this.readersStatus = test;
+      }
     });
   },
   methods: {
