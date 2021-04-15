@@ -17,6 +17,9 @@ interface BrushType {
 
 type D3ScaleFunc = (name: string) => D3Scale | undefined;
 
+type D3LineSelection = d3.Selection<SVGPathElement, ScenarioData, null, undefined>;
+type D3AxisSelection = d3.Selection<SVGGElement, DimensionData, SVGGElement, any>
+
 //
 // global properties
 //
@@ -133,7 +136,7 @@ const getNumberOfBrushes = (pcTypes: { [key: string]: string }) => {
 };
 
 // utility function to re-calculate the bbox for each axis tooltip and update the rect
-const updateHoverToolTipsRect = (renderedAxes: d3.Selection<SVGGElement, DimensionData, SVGGElement, any>) => {
+const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
   renderedAxes
     .each(function() {
       const rect = d3.select(this).select('.pc-hover-tooltip-text-bkgnd-rect');
@@ -438,7 +441,7 @@ export default function(
           d3.brushX()
             .extent([[0, -brushHeight], [axisRange[1], brushHeight]])
             .on('start', brushstart)
-            .on('brush', brushMove)
+            .on('brush', onDataBrush)
             .on('end', brushEnd)
         );
       } else {
@@ -712,19 +715,18 @@ export default function(
         }
 
         if (lineSelectionMap[lineData.id].selected) {
-          selectLine.bind(this as SVGPathElement, undefined /* event */, lineData, lineStrokeWidthNormal)();
+          const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+
+          selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthNormal);
           // save selected line
           selectedLines.push(lineData);
         }
       });
 
     // reset the cached brush ranges
-    updateSelectionTooltips.bind(this as SVGPathElement)();
+    const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+    updateSelectionTooltips(selectedLine);
     brushes.length = 0;
-  }
-
-  function brushMove(this: SVGGraphicsElement) {
-    onDataBrush.bind(this)();
   }
 
   function brushEnd(this: SVGGraphicsElement, event: PointerEvent | d3.D3BrushEvent<any>) {
@@ -775,8 +777,7 @@ export default function(
   }
 
   // update the tooltip text labels for the selected line
-  function updateSelectionTooltips(this: SVGPathElement) {
-    const selectedLine = d3.select<SVGPathElement, ScenarioData>(this);
+  function updateSelectionTooltips(selectedLine: D3LineSelection) {
     const selectedLineData = selectedLine.datum();
     // show tooltips
     // first update their text and position based on selected line data
@@ -845,8 +846,7 @@ export default function(
     updateSelectionToolTipsRect(svgElement);
   }
 
-  function selectLine(this: SVGPathElement, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
-    const selectedLine = d3.select<SVGPathElement, ScenarioData>(this);
+  function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
     const selectedLineData = selectedLine.datum();
 
     if (selectedLineData) {
@@ -876,15 +876,15 @@ export default function(
       // cancel any previous selection; turn every line into grey
       cancelPrevLineSelection(svgElement);
 
-      selectLine.bind(this as SVGPathElement)(event, d, lineStrokeWidthSelected);
+      const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+      selectLine(selectedLine, event, d, lineStrokeWidthSelected);
 
-      const selectedLine = d3.select(this);
       const selectedLineData = selectedLine.datum() as ScenarioData;
 
       // if we have valid selection (either by direct click on a line or through brushing)
       //  then update the tooltips
       if (selectedLineData) {
-        updateSelectionTooltips.bind(this as SVGPathElement, d)();
+        updateSelectionTooltips(selectedLine);
       }
 
       // notify external listeners
