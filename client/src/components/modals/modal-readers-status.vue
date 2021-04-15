@@ -25,7 +25,7 @@
         <button
           type="button"
           class="btn btn-primary btn-call-for-action"
-          @click.stop="add()">Add to Project
+          @click.stop="addToProject()">Add to Project
         </button>
       </ul>
     </template>
@@ -34,7 +34,9 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
+import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal.vue';
+import projectService from '@/services/project-service';
 import { getReadersStatus } from '@/services/dart-service';
 
 export default defineComponent({
@@ -45,6 +47,11 @@ export default defineComponent({
   emits: [
     'close'
   ],
+  computed: {
+    ...mapGetters({
+      project: 'app/project'
+    })
+  },
   data: () => ({
     readersStatus: []
   }),
@@ -54,6 +61,12 @@ export default defineComponent({
     });
   },
   methods: {
+    async addToProject() {
+      const test = [
+        { identity: 'abc', version: '1.0', document_id: 'd1', storage_key: '123456' }
+      ];
+      await projectService.createAssemblyRequest(this.project, test);
+    },
     close() {
       this.$emit('close');
     }
