@@ -179,7 +179,7 @@ const createScales = (
   axisRange: Array<number>,
   height: number) => {
   //
-  const x: {[key: string]: D3ScaleFunc} = {};
+  const xScaleMap: {[key: string]: D3ScaleFunc} = {};
 
   const defaultScales: {[key: string]: D3ScaleFunc} = {
     /*
@@ -248,7 +248,7 @@ const createScales = (
   // For each dimension, I build a linear scale. I store all in a x object
   for (const i in dimensions) {
     const name = dimensions[i].name;
-    x[name] = defaultScales[pcTypes[name]];
+    xScaleMap[name] = defaultScales[pcTypes[name]];
   }
 
   // Build the y scale -> it find the best position (vertically) for each x axis
@@ -256,7 +256,7 @@ const createScales = (
     .range([0, height])
     .domain(dimensions.map(d => d.name));
 
-  return { x, y };
+  return { xScaleMap, y };
 };
 
 export default function(
@@ -289,7 +289,12 @@ export default function(
   /// map of x axes by dimension name
   //
   const axisRange = [0, width];
-  const { x, y } = createScales(data, dimensions, ordinalDimensions, pcTypes, axisRange, height);
+  const { xScaleMap, y } = createScales(data, dimensions, ordinalDimensions, pcTypes, axisRange, height);
+
+  const getXScaleFromMap = (dimName: string) => {
+    const xScaleDim = xScaleMap[dimName];
+    return xScaleDim(dimName) as D3Scale;
+  };
 
   //
   // Color scale
@@ -323,7 +328,7 @@ export default function(
       .curve(d3.curveCatmullRom /* .tension(0.01) */);
     const fn = dimensions.map(function(p: DimensionData) {
       const dimName = p.name;
-      const scaleX = x[dimName](dimName) as D3Scale;
+      const scaleX = getXScaleFromMap(dimName);
       const val = d[dimName];
       let xPos = scaleX(val as any) as number;
       if (pcTypes[dimName] === 'string') {
@@ -373,7 +378,7 @@ export default function(
     .each(function(d) {
       // And I build the axis with the call function
       const dimName = d.name;
-      const scale = x[dimName](dimName) as D3Scale;
+      const scale = getXScaleFromMap(dimName);
       let xAxis;
       if (pcTypes[dimName] === 'number') {
         //
@@ -446,7 +451,7 @@ export default function(
         );
       } else {
         // special brushes for ordinal axes
-        const xScale = x[dimName](dimName) as D3Scale;
+        const xScale = getXScaleFromMap(dimName);
         const xScaleDomain = xScale.domain();
         const totalDashesAndGaps = (xScaleDomain.length * 2) - 1;
         const dashSize = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;
@@ -497,7 +502,7 @@ export default function(
       .attr('cx', function(d) {
         const axisDefault = d.default;
         const dimName = d.name;
-        const scaleX = x[dimName](dimName) as D3Scale;
+        const scaleX = getXScaleFromMap(dimName);
         let xPos: number = scaleX(axisDefault as any) as number;
         if (pcTypes[dimName] === 'string') {
           const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefault);
@@ -665,7 +670,7 @@ export default function(
           }
         }
         if (selection) {
-          const xScale = x[dimName](dimName) as D3Scale;
+          const xScale = getXScaleFromMap(dimName);
           let start;
           let end;
           const skip = false;
@@ -810,8 +815,7 @@ export default function(
           if (pcTypes[dimName] === 'number') {
             value = numberFormat(value as number);
           }
-          const xScaleDim = x[dimName];
-          const xScale = xScaleDim(dimName) as D3Scale;
+          const xScale = getXScaleFromMap(dimName);
           xPos = xScale(value as any) as number;
         }
 
@@ -841,8 +845,7 @@ export default function(
         renderedTextRect
           .attr('visibility', isTooltipVisible)
           .attr('x', function() {
-            const xScaleDim = x[dimName];
-            const xScale = xScaleDim(dimName) as D3Scale;
+            const xScale = getXScaleFromMap(dimName);
             return xScale(value as any) as number;
           });
       });
@@ -929,8 +932,7 @@ export default function(
           .text(value)
           .attr('visibility', 'visible')
           .attr('x', function() {
-            const xScaleDim = x[dimName];
-            const xScale = xScaleDim(dimName) as D3Scale;
+            const xScale = getXScaleFromMap(dimName);
             return xScale(value as any) as number;
           });
       });
@@ -943,8 +945,7 @@ export default function(
         renderedTextRect
           .attr('visibility', 'visible')
           .attr('x', function() {
-            const xScaleDim = x[dimName];
-            const xScale = xScaleDim(dimName) as D3Scale;
+            const xScale = getXScaleFromMap(dimName);
             return xScale(value as any) as number;
           });
       });
