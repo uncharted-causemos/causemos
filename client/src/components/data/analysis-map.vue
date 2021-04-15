@@ -384,7 +384,7 @@ export default {
         return chartValueFormatter([this.extent.min, this.extent.max])(feature.properties[this.valueProp]);
       } else {
         const fields = [chartValueFormatter([this.extent.min, this.extent.max])(feature.state[this.valueProp])];
-        [0, 1, 2, 3].forEach(i => fields.push(feature.properties['NAME_' + i]));
+        [3, 2, 1, 0].forEach(i => fields.push(feature.properties['NAME_' + i]));
         return fields.filter(field => !_.isNil(field)).join('<br />');
       }
     },
