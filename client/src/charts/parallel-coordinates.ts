@@ -648,7 +648,7 @@ export default function(
       .each(function() {
         const b = d3.select(this);
         const dimName = b.attr('id');
-        let selection: [number | string, number | string];
+        let selection: [number | string, number | string] | undefined;
         if (pcTypes[dimName] !== 'string') { // different axes types (e.g., ordinal) have different brushing techniques
           selection = d3.brushSelection(this) as [number, number];
         } else {
