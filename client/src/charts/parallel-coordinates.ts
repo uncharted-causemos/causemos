@@ -1,5 +1,6 @@
 
 import * as d3 from 'd3';
+import svgUtil from '@/utils/svg-util';
 
 import { D3Selection, D3Scale, D3ScaleLinear, D3ScalePoint } from '@/types/D3';
 import { DimensionData, ScenarioData } from '@/types/Datacubes';
@@ -307,7 +308,7 @@ export default function(
     .attr('height', options.height)
     .on('click', handleLineSelection)
     .append('g')
-    .attr('transform', 'translate(' + margin.left + ',' + margin.top + ')')
+    .attr('transform', svgUtil.translate(margin.left, margin.top))
     ;
 
   // The path function take a row of the csv as input,
@@ -364,7 +365,7 @@ export default function(
     .attr('class', 'axis')
     .attr('transform', function(d) {
       // I translate this element to its correct position on the y axis
-      return 'translate(0,' + y(d.name) + ')';
+      return svgUtil.translate(0, y(d.name));
     })
     .each(function(d) {
       // And I build the axis with the call function
@@ -413,10 +414,10 @@ export default function(
       }
       // shift the tick labels for the min/max values to be outside the axis line
       xAxis.selectAll('.tick:first-of-type text')
-        .attr('transform', 'translate(-' + axisTickLabelOffset + ',0)')
+        .attr('transform', svgUtil.translate(-axisTickLabelOffset, 0))
         .attr('font-size', axisTickLabelFontSize);
       xAxis.selectAll('.tick:last-of-type text')
-        .attr('transform', 'translate(' + axisTickLabelOffset + ',0)')
+        .attr('transform', svgUtil.translate(axisTickLabelOffset, 0))
         .attr('font-size', axisTickLabelFontSize);
       return xAxis;
     });
@@ -648,7 +649,7 @@ export default function(
       .each(function() {
         const b = d3.select(this);
         const dimName = b.attr('id');
-        let selection: [number | string, number | string];
+        let selection: [number | string, number | string] | undefined;
         if (pcTypes[dimName] !== 'string') { // different axes types (e.g., ordinal) have different brushing techniques
           selection = d3.brushSelection(this) as [number, number];
         } else {
@@ -660,7 +661,6 @@ export default function(
             selection = [s, e];
           }
         }
-        // @ts-ignore
         if (selection) {
           const xScale = x[dimName](dimName) as D3Scale;
           let start;
@@ -686,25 +686,32 @@ export default function(
     if (brushes.length === 0) {
       return;
     }
+
+    // check lines against brushes
+    const lineSelectionMap: { [key: string]: {selected: boolean; data: ScenarioData} } = {};
     svgElement.selectAll('.line')
       .data(data)
       .each(function(lineData) {
-        const isSelected: Array<boolean> = []; // must be true for each brush for the line to be selected
-        // evaluate this line against all brushes
-        brushes.forEach(b => {
-          let selected = false;
+        // initially each line is selected
+        lineSelectionMap[lineData.id] = { selected: true, data: lineData };
+
+        for (const b of brushes) {
+          // if line falls outside of this brush, then it is de-selected
           if (pcTypes[b.dimName] === 'number') {
-            if (lineData[b.dimName] >= b.start && lineData[b.dimName] <= b.end) {
-              selected = true;
+            if (lineData[b.dimName] < b.start || lineData[b.dimName] > b.end) {
+              lineSelectionMap[lineData.id].selected = false;
             }
-          } else {
-            if (lineData[b.dimName] === b.start || lineData[b.dimName] === b.end) {
-              selected = true;
+          } else if (pcTypes[b.dimName] === 'string') {
+            if (lineData[b.dimName] !== b.start && lineData[b.dimName] !== b.end) {
+              lineSelectionMap[lineData.id].selected = false;
             }
           }
-          isSelected.push(selected);
-        });
-        if (!isSelected.includes(false)) {
+          if (!lineSelectionMap[lineData.id].selected) {
+            break; // do not check remaining brushes
+          }
+        }
+
+        if (lineSelectionMap[lineData.id].selected) {
           selectLine.bind(this as SVGPathElement, undefined /* event */, lineData, lineStrokeWidthNormal)();
           // save selected line
           selectedLines.push(lineData);
