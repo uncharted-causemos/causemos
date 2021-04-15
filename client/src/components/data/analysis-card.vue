@@ -149,6 +149,11 @@ export default {
     Disclaimer,
     DropdownControl
   },
+  emits: [
+    'click',
+    'set-card-fullscreen',
+    'on-map-load'
+  ],
   props: {
     data: {
       type: Object,

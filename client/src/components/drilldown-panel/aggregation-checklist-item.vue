@@ -58,6 +58,10 @@ const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
 
 export default {
   name: 'AggregationChecklistItem',
+  emits: [
+    'toggle-expanded',
+    'toggle-checked'
+  ],
   props: {
     itemData: {
       type: Object,

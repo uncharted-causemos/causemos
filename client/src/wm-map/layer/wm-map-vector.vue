@@ -6,10 +6,14 @@
 
 import layerBase from './layerBase';
 import layerUtils from './layerUtils';
+import { eventEmitter } from '../mixins';
 
 export default {
   name: 'WmMapVector',
-  mixins: [layerBase, layerUtils],
+  mixins: [layerBase, layerUtils, eventEmitter],
+  emits: [
+    'add-layer'
+  ],
   props: {
     /**
      * Name of the layer within the vector source.
@@ -38,6 +42,9 @@ export default {
   watch: {
     source() {
       this._updateSource();
+    },
+    sourceLayer() {
+      this._addLayer();
     }
   },
   mounted() {
@@ -73,6 +80,11 @@ export default {
         'source': this.sourceId,
         'source-layer': this.sourceLayer,
         ...this.layer
+      });
+      this.$_emitEvent('add-layer', {
+        'id': this.layerId,
+        'source': this.sourceId,
+        'source-layer': this.sourceLayer
       });
     }
   }
