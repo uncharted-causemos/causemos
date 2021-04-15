@@ -82,7 +82,6 @@ export default {
         ...this.layer
       });
       this.$_emitEvent('add-layer', {
-        'map': this.map,
         'id': this.layerId,
         'source': this.sourceId,
         'source-layer': this.sourceLayer
