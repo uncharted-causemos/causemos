@@ -14,13 +14,12 @@
     ref="pcChart"
     class="parallel-coordinates-container"
   >
-    <resize-observer
-      @notify="resize"
-    />
     <svg
       ref="pcsvg"
       :class="{'faded': dimensionsData === null}"
     />
+    <resize-observer @notify="resize" />
+
     <span
       v-if="dimensionsData === null"
       class="loading-message"
@@ -64,40 +63,40 @@ export default defineComponent({
     'select-scenario'
   ],
   data: () => ({
-    initialWidth: 0,
-    initialHeight: 0,
     showBaselineDefaults: false
   }),
+  computed: {
+    getDefaultSize() {
+      const parentElement: HTMLElement = (this.$refs as any).pcChart.parentElement;
+      return { width: parentElement.clientWidth, height: parentElement.clientHeight };
+    }
+  },
   watch: {
     dimensionsData(): void {
-      this.render();
+      const sz = this.getDefaultSize;
+      this.render(sz.width, sz.height);
     },
     showBaselineDefaults(): void {
-      this.render();
+      const sz = this.getDefaultSize;
+      this.render(sz.width, sz.height);
     }
   },
   mounted(): void {
-    // set initial width/height
-    this.initialWidth = (this.$refs as any).pcChart.clientWidth;
-    this.initialHeight = (this.$refs as any).pcChart.clientHeight;
-    this.render();
+    const sz = this.getDefaultSize;
+    this.render(sz.width, sz.height);
   },
   methods: {
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
-    // eslint-disable-next-line no-unused-vars
     resizeDebounced: _.debounce(function(this: any, width, height) {
-      // this.render(width, height);
+      this.render(width, height);
     }, RESIZE_DELAY),
     resize: function (size: {width: number; height: number}) {
       this.resizeDebounced.bind(this)(size.width, size.height);
     },
-    render(width?: number, height?: number): void {
+    render(width: number, height: number): void {
       if (this.dimensionsData === null) return;
-      const svgWidth = width || this.initialWidth;
-      const svgHeight = height || this.initialHeight;
       const options: ParallelCoordinatesOptions = {
-        width: svgWidth,
-        height: svgHeight,
+        width,
+        height,
         showBaselineDefaults: this.showBaselineDefaults,
         applyDefaultSelection: this.applyDefaultSelection
       };
@@ -128,10 +127,9 @@ export default defineComponent({
   @import "~styles/variables";
 
   .parallel-coordinates-container {
-    height: 100%;
+    position: relative;
     width: 100%;
-    padding-left: 1rem;
-    padding-right: 1rem;
+    height: 100%;
 
     svg {
       transition: opacity 0.3s ease-out;
@@ -178,5 +176,15 @@ export default defineComponent({
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
+  }
+
+
+.baseline-checkbox {
+    display: inline-block;
+    label {
+      font-weight: normal;
+      cursor: pointer;
+      margin: 0;
+    }
   }
 </style>

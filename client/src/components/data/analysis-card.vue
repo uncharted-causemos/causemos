@@ -109,42 +109,46 @@
         @runsupdated="updateRuns"
       />
       -->
-      <div style="display: flex; flex-direction: column; margin: 1rem;">
-        <button
-          type="button"
-          class="btn dropdown-btn"
-          @click="isDrilldownDropdownOpen = !isDrilldownDropdownOpen"
-        >
-          <div class="button-text">
-            Drilldown Filters
-            <i
-              class="fa fa-fw"
-              :class="{ 'fa-angle-down': !isDrilldownDropdownOpen, 'fa-angle-up': isDrilldownDropdownOpen }"
-            />
-          </div>
-        </button>
-        <dropdown-control
-          v-if="isDrilldownDropdownOpen"
-          class="dropdown-control"
-          style="position: absolute">
-          <template #content>
-            <div
-              v-for="filter in drilldownParameters"
-              :key="filter.id"
-              class="dropdown-option"
-            >
-              {{ filter.name }}
+      <div style="margin: 1rem;">
+        <div>
+          <button
+            type="button"
+            class="btn dropdown-btn"
+            @click="isDrilldownDropdownOpen = !isDrilldownDropdownOpen"
+          >
+            <div class="button-text">
+              Drilldown Filters
+              <i
+                class="fa fa-fw"
+                :class="{ 'fa-angle-down': !isDrilldownDropdownOpen, 'fa-angle-up': isDrilldownDropdownOpen }"
+              />
             </div>
-          </template>
-        </dropdown-control>
-        <parallel-coordinates-chart
-          v-if="dimensionsData"
-          :dimensions-data="dimensionsData"
-          :selected-dimensions="selectedDimensions"
-          :ordinal-dimensions="ordinalDimensions"
-          apply-default-selection="true"
-          @select-scenario="updateScenarioSelection"
-        />
+          </button>
+          <dropdown-control
+            v-if="isDrilldownDropdownOpen"
+            class="dropdown-control"
+            style="position: absolute">
+            <template #content>
+              <div
+                v-for="filter in drilldownParameters"
+                :key="filter.id"
+                class="dropdown-option"
+              >
+                {{ filter.name }}
+              </div>
+            </template>
+          </dropdown-control>
+        </div>
+        <div class="scenario-selector">
+          <parallel-coordinates-chart
+            v-if="dimensionsData"
+            :dimensions-data="dimensionsData"
+            :selected-dimensions="selectedDimensions"
+            :ordinal-dimensions="ordinalDimensions"
+            apply-default-selection="true"
+            @select-scenario="updateScenarioSelection"
+          />
+        </div>
       </div>
       <data-analysis-map
         class="card-map"
@@ -614,6 +618,7 @@ $fullscreenTransition: all .5s ease-in-out;
   display: flex;
   min-height: 0;
   flex-basis: inherit;
+  // width: 100%;
 }
 
 .input-panel {
@@ -627,6 +632,11 @@ $fullscreenTransition: all .5s ease-in-out;
   &.full-width {
     width: 100%;
   }
+}
+
+.scenario-selector {
+  width: 375px;
+  height: 350px;
 }
 
 .line-chart {
@@ -643,13 +653,4 @@ $fullscreenTransition: all .5s ease-in-out;
     display: unset;
   }
 }
-
-.baseline-checkbox {
-    display: inline-block;
-    label {
-      font-weight: normal;
-      cursor: pointer;
-      margin: 0;
-    }
-  }
 </style>

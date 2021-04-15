@@ -213,6 +213,7 @@ header {
 .scenario-selector {
   width: 25%;
   margin-right: 10px;
+  height: 500px;
 }
 
 .timeseries-chart {
