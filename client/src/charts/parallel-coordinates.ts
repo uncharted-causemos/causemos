@@ -657,7 +657,7 @@ export default function(
           selection = d3.brushSelection(this) as [number, number];
         } else {
           // find any selection on this ordinal axis
-          const selectedBrush = b.select('.selected');
+          const selectedBrush = b.select('.selection');
           if (!selectedBrush.empty()) {
             const s = selectedBrush.attr('start');
             const e = selectedBrush.attr('end');
@@ -742,14 +742,12 @@ export default function(
       const rect = d3.select(this);
 
       // if currently selected? then toggle
-      const selected = !rect.classed('selected');
+      const selected = !rect.classed('selection');
 
       brushParentElement.selectAll('*')
-        .classed('selected', false)
         .classed('selection', false)
       ;
-      rect.classed('selected', selected); // to track that something is selected
-      rect.classed('selection', selected); // for visual styling
+      rect.classed('selection', selected);
     }
 
     selectedLines.length = 0; // reset before identifying selected lines
