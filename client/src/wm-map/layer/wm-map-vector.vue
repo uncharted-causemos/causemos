@@ -6,12 +6,13 @@
 
 import layerBase from './layerBase';
 import layerUtils from './layerUtils';
+import { eventEmitter } from '../mixins';
 
 export default {
   name: 'WmMapVector',
-  mixins: [layerBase, layerUtils],
+  mixins: [layerBase, layerUtils, eventEmitter],
   emits: [
-    'addLayer'
+    'add-layer'
   ],
   props: {
     /**
@@ -80,7 +81,7 @@ export default {
         'source-layer': this.sourceLayer,
         ...this.layer
       });
-      this.$emit('addLayer', {
+      this.$_emitEvent('add-layer', {
         'map': this.map,
         'id': this.layerId,
         'source': this.sourceId,

@@ -39,7 +39,7 @@
         :promote-id="idPropName"
         :layer-id="colorLayerId"
         :layer="colorLayer"
-        @addLayer="onAddLayer"
+        @add-layer="onAddLayer"
       />
       <wm-map-vector
         v-if="vectorSource"
