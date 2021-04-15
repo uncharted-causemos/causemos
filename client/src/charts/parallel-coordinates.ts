@@ -479,7 +479,7 @@ export default function(
           .attr('y', segmentsY)
           .attr('width', dashSize)
           .attr('height', segmentsHeight)
-          .on('click', brushEnd)
+          .on('click', onOrdinalAxisClick)
         ;
       }
     });
@@ -729,29 +729,35 @@ export default function(
     brushes.length = 0;
   }
 
-  function brushEnd(this: SVGGraphicsElement, event: PointerEvent | d3.D3BrushEvent<any>) {
-    // this may be coming because of a click on an ordinal axis,
+  function onOrdinalAxisClick(this: SVGGraphicsElement, event: PointerEvent) {
+    // this is coming from a click on an ordinal axis,
     //  so prevent the global svg click from deselecting lines
-    // eslint-disable-next-line no-prototype-builtins
-    const evt = event.hasOwnProperty('sourceEvent') ? (event as d3.D3BrushEvent<any>).sourceEvent : event;
-    evt.stopPropagation();
+    event.stopPropagation();
 
     const brushParentElement = d3.select(this.parentElement);
-    const dimName = brushParentElement.attr('id');
-    if (pcTypes[dimName] === 'string') {
-      const rect = d3.select(this);
+    const rect = d3.select(this);
 
-      // if currently selected? then toggle
-      const selected = !rect.classed('selection');
+    // if currently selected? then toggle
+    const selected = !rect.classed('selection');
 
-      brushParentElement.selectAll('*')
-        .classed('selection', false)
-      ;
-      rect.classed('selection', selected);
-    }
+    brushParentElement.selectAll('*')
+      .classed('selection', false)
+    ;
+    rect.classed('selection', selected);
 
     selectedLines.length = 0; // reset before identifying selected lines
-    onDataBrush.bind(this, event)();
+    onDataBrush.bind(this)();
+
+    // notify external listeners
+    onLinesSelection(selectedLines);
+  }
+
+  function brushEnd(this: SVGGraphicsElement, event: d3.D3BrushEvent<any>) {
+    // prevent the global svg click event from deselecting lines
+    event.sourceEvent.stopPropagation();
+
+    selectedLines.length = 0; // reset before identifying selected lines
+    onDataBrush.bind(this)();
 
     // notify external listeners
     onLinesSelection(selectedLines);
