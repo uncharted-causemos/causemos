@@ -108,31 +108,10 @@ const cancelPrevLineSelection = (svgElement: D3Selection) => {
     .attr('stroke-width', lineStrokeWidthNormal);
 
   // hide tooltips
-  d3.selectAll('.pc-selection-tooltip-text')
+  svgElement.selectAll('.pc-selection-tooltip-text')
     .attr('visibility', 'hidden');
-  d3.selectAll('.pc-selection-tooltip-text-bkgnd-rect')
+  svgElement.selectAll('.pc-selection-tooltip-text-bkgnd-rect')
     .attr('visibility', 'hidden');
-};
-
-// utility func to check for any existing brushes that filter any of the dimensions
-const getNumberOfBrushes = (pcTypes: { [key: string]: string }) => {
-  let brushesCount = 0;
-  d3.selectAll<SVGGraphicsElement, DimensionData>('.pc-brush')
-    .each(function() {
-      const b = d3.select(this);
-      const dimName = b.attr('id');
-      let validBrushSelection;
-      if (pcTypes[dimName] !== 'string') {
-        validBrushSelection = d3.brushSelection(this) !== null;
-      } else {
-        const selectedBrush = b.select('.selected');
-        validBrushSelection = !selectedBrush.empty();
-      }
-      if (validBrushSelection) {
-        brushesCount++;
-      }
-    });
-  return brushesCount;
 };
 
 // utility function to re-calculate the bbox for each axis tooltip and update the rect
@@ -653,7 +632,7 @@ export default function(
     cancelPrevLineSelection(svgElement);
 
     // examine all brushes at all axes and cache their range
-    d3.selectAll<SVGGraphicsElement, DimensionData>('.pc-brush')
+    svgElement.selectAll<SVGGraphicsElement, DimensionData>('.pc-brush')
       .each(function() {
         const b = d3.select(this);
         const dimName = b.attr('id');
@@ -696,30 +675,29 @@ export default function(
     }
 
     // check lines against brushes
-    const lineSelectionMap: { [key: string]: {selected: boolean; data: ScenarioData} } = {};
     svgElement.selectAll('.line')
       .data(data)
       .each(function(lineData) {
         // initially each line is selected
-        lineSelectionMap[lineData.id] = { selected: true, data: lineData };
+        let isSelected = true;
 
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
           if (pcTypes[b.dimName] === 'number') {
             if (lineData[b.dimName] < b.start || lineData[b.dimName] > b.end) {
-              lineSelectionMap[lineData.id].selected = false;
+              isSelected = false;
             }
           } else if (pcTypes[b.dimName] === 'string') {
             if (lineData[b.dimName] !== b.start && lineData[b.dimName] !== b.end) {
-              lineSelectionMap[lineData.id].selected = false;
+              isSelected = false;
             }
           }
-          if (!lineSelectionMap[lineData.id].selected) {
+          if (!isSelected) {
             break; // do not check remaining brushes
           }
         }
 
-        if (lineSelectionMap[lineData.id].selected) {
+        if (isSelected) {
           const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
 
           selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthNormal);
@@ -791,7 +769,7 @@ export default function(
     // show tooltips
     // first update their text and position based on selected line data
     // then make them visible
-    d3.selectAll<SVGTextElement, DimensionData>('.pc-selection-tooltip-text')
+    svgElement.selectAll<SVGTextElement, DimensionData>('.pc-selection-tooltip-text')
       .each(function(d) {
         const dimName = d.name;
         let isTooltipVisible = 'visible';
@@ -829,7 +807,7 @@ export default function(
         ;
       });
 
-    d3.selectAll<SVGRectElement, DimensionData>('.pc-selection-tooltip-text-bkgnd-rect')
+    svgElement.selectAll<SVGRectElement, DimensionData>('.pc-selection-tooltip-text-bkgnd-rect')
       .each(function(d) {
         const dimName = d.name;
         let isTooltipVisible = 'visible';
@@ -879,7 +857,23 @@ export default function(
     //  selecting a line outside that brush range will not remove the existing brush
     //  and the newly clicked line will be ignored because it is outside the brush
     //  i.e., prevent selection outside of the brushes
-    if (getNumberOfBrushes(pcTypes) === 0) {
+    let brushesCount = 0;
+    svgElement.selectAll<SVGGraphicsElement, DimensionData>('.pc-brush')
+      .each(function() {
+        const b = d3.select(this);
+        const dimName = b.attr('id');
+        let validBrushSelection;
+        if (pcTypes[dimName] !== 'string') {
+          validBrushSelection = d3.brushSelection(this) !== null;
+        } else {
+          const selectedBrush = b.select('.selection');
+          validBrushSelection = !selectedBrush.empty();
+        }
+        if (validBrushSelection) {
+          brushesCount++;
+        }
+      });
+    if (brushesCount === 0) {
       // cancel any previous selection; turn every line into grey
       cancelPrevLineSelection(svgElement);
 
@@ -920,7 +914,7 @@ export default function(
     // show tooltips
     // first update their text and position based on selected line data
     // then make them visible
-    d3.selectAll<SVGTextElement, DimensionData>('.pc-hover-tooltip-text')
+    svgElement.selectAll<SVGTextElement, DimensionData>('.pc-hover-tooltip-text')
       .each(function(d) {
         const dimName = d.name;
         let value = selectedLineData[dimName];
@@ -937,7 +931,7 @@ export default function(
           });
       });
 
-    d3.selectAll<SVGRectElement, DimensionData>('.pc-hover-tooltip-text-bkgnd-rect')
+    svgElement.selectAll<SVGRectElement, DimensionData>('.pc-hover-tooltip-text-bkgnd-rect')
       .each(function(d) {
         const dimName = d.name;
         const value = selectedLineData[dimName];
@@ -963,9 +957,9 @@ export default function(
       .style('opacity', lineOpacityHidden);
 
     // hide tooltips
-    d3.selectAll('.pc-hover-tooltip-text')
+    svgElement.selectAll('.pc-hover-tooltip-text')
       .attr('visibility', 'hidden');
-    d3.selectAll('.pc-hover-tooltip-text-bkgnd-rect')
+    svgElement.selectAll('.pc-hover-tooltip-text-bkgnd-rect')
       .attr('visibility', 'hidden');
   }
 }
