@@ -227,7 +227,7 @@ const createScales = (
         dataExtent.push('dummay-last');
         dataExtent.unshift('dummy-first');
       }
-      return d3.scalePoint() // scalePoint
+      return d3.scalePoint()
         .domain(dataExtent)
         .range(axisRange)
         // .padding(0.25) // a percet of the axis step() (i.e., segment)
