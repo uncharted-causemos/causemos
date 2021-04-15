@@ -154,6 +154,10 @@ export default {
       }
     }
   },
+  emits: [
+    'aggregation-level-change',
+    'toggle-checked'
+  ],
   data: () => ({
     statefulData: undefined
   }),

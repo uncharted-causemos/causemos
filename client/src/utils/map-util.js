@@ -131,8 +131,9 @@ export function isLayerLoaded(map, layerId) {
  * @param {Array} dataDomain - Data domain in the form of [min, max]
  * @param {Array} colors - Color scheme, list of colors
  * @param {Function} scaleFn - d3 scale function
+ * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear) {
+function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear, useFeatureState = false) {
   const scale = scaleFn()
     .domain(domain)
     .range([0, colors.length - 1]);
@@ -144,7 +145,7 @@ function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear) {
   return [
     'interpolate',
     ['linear'],
-    ['get', property],
+    [(useFeatureState ? 'feature-state' : 'get'), property],
     ...stops
   ];
 }
@@ -154,23 +155,37 @@ function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear) {
  *
  * @param {String} property - Name of the property for the geojson feature for applying color
  * @param {Array} dataDomain - Data domain in the form of [min, max]
+ * @param {Array} filterDomain - Filter domain in the form of [min, max]
  * @param {Array} colors - Color scheme, list of colors
  * @param {Function} scaleFn - d3 scale function
+ * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-export function createHeatmapLayerStyle(property, dataDomain, colors, scaleFn = d3.scaleLinear) {
+export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colors, scaleFn = d3.scaleLinear, useFeatureState = false) {
   return {
     type: 'fill',
     paint: {
       'fill-antialias': false,
-      'fill-color': interpolateColor(property, dataDomain, colors, scaleFn),
-      'fill-opacity': [
+      'fill-color': interpolateColor(property, dataDomain, colors, scaleFn, useFeatureState),
+      'fill-opacity': useFeatureState ? [
         'case',
+        ['==', null, ['feature-state', property]],
+        0.0,
+        ['<=', ['feature-state', property], filterDomain.min],
+        0.0,
+        ['>=', ['feature-state', property], filterDomain.max],
+        0.0,
         ['boolean', ['feature-state', 'hover'], false],
-        1, // opacity to 1 on hover
+        0.8, // opacity to 1 on hover
+        0.6 // default opacity
+      ] : [
+        'case',
+        ['==', ['number', ['get', property], -10000], -10000],
+        0.0,
+        ['boolean', ['feature-state', 'hover'], false],
+        0.8, // opacity to 1 on hover
         0.6 // default opacity
       ]
-    },
-    filter: ['all', ['has', property]]
+    }
   };
 }
 
