@@ -196,6 +196,8 @@ export default {
       baseClone.forEach(b => {
         if (selectDictionary[b.key]) {
           b.selectedValue = selectDictionary[b.key];
+        } else {
+          b.selectedValue = 0;
         }
       });
 
