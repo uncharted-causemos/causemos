@@ -26,11 +26,24 @@
     <div class="flex-row">
       <!-- if has multiple scenarios -->
       <div class="scenario-selector">
+        <div style="padding-left: 1rem">
+          <div class="baseline-checkbox">
+            <label @click="toggleBaselineDefaultsVisibility()">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
+              />
+              Baseline Defaults
+            </label>
+          </div>
+        </div>
         <parallel-coordinates-chart
           v-if="dimensionsData"
           :dimensions-data="dimensionsData"
           :selected-dimensions="selectedDimensions"
           :ordinal-dimensions="ordinalDimensions"
+          :initial-data-selection="initialScenarioSelection"
+          :show-baseline-defaults="showBaselineDefaults"
           @select-scenario="updateScenarioSelection"
         />
       </div>
@@ -71,9 +84,9 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
+import { ScenarioDef } from '@/types/Datacubes';
 
-import { SCENARIOS_LIST, TIMESERIES_DATA } from '@/assets/scenario-data';
+import { SCENARIOS_LIST, TIMESERIES_DATA, DIMENSIONS_LIST } from '@/assets/scenario-data';
 
 const COLORS = [
   '#44f',
@@ -107,7 +120,7 @@ export default defineComponent({
         //  or default to black if no matching scenario is found.
         const color =
           selectedScenarios.value.find(
-            scenario => scenario._SCENARIO_ID === timeseries._SCENARIO_ID
+            scenario => scenario.id === timeseries._SCENARIO_ID
           )?._SCENARIO_COLOR ?? '#000';
         return {
           ...timeseries,
@@ -116,36 +129,10 @@ export default defineComponent({
       })
     );
 
-    //
-    // parallel coordinatres dummy data
-    //
-    const dimensionsData: Array<ScenarioData> = [
-      { id: '0', input1: 40, input2: 40, output: 55 },
-      { id: '1', input1: 0, input2: 15, output: 10 },
-      { id: '2', input1: 20, input2: 44, output: 25 },
-      { id: '3', input1: 30, input2: 8, output: 70 }
-    ];
-    const selectedDimensions: Array<DimensionData> = [
-      {
-        name: 'input1',
-        type: 'input',
-        default: '10',
-        description: 'my first input var'
-      },
-      {
-        name: 'input2',
-        type: 'input',
-        default: '33',
-        description: 'my second input var'
-      },
-      {
-        name: 'output',
-        type: 'output',
-        default: '10',
-        description: 'my first output var'
-      }
-    ];
+    const dimensionsData = SCENARIOS_LIST;
+    const selectedDimensions = DIMENSIONS_LIST;
     const ordinalDimensions = undefined;
+    const initialScenarioSelection: Array<string> = [];
     const updateScenarioSelection = (e: { scenarios: Array<ScenarioDef> }) => {
       if (e.scenarios.length === 0 ||
          (e.scenarios.length === 1 && e.scenarios[0] === undefined)) {
@@ -161,8 +148,30 @@ export default defineComponent({
       dimensionsData,
       selectedDimensions,
       ordinalDimensions,
+      initialScenarioSelection,
       updateScenarioSelection
     };
+  },
+  data: () => ({
+    showBaselineDefaults: false
+  }),
+  methods: {
+    toggleBaselineDefaultsVisibility() {
+      this.showBaselineDefaults = !this.showBaselineDefaults;
+
+      const overrideCurrentScenarioSelection = false;
+      if (overrideCurrentScenarioSelection) {
+        this.initialScenarioSelection.length = 0;
+        if (this.showBaselineDefaults) {
+          // find any baseline scenarios and select by default
+          this.dimensionsData.forEach(scenario => {
+            if (scenario.baseline as string === 'true') {
+              this.initialScenarioSelection.push(scenario.id as string);
+            }
+          });
+        }
+      }
+    }
   }
 });
 </script>
@@ -214,6 +223,15 @@ header {
   width: 25%;
   margin-right: 10px;
   height: 500px;
+}
+
+.baseline-checkbox {
+  display: inline-block;
+  label {
+    font-weight: normal;
+    cursor: pointer;
+    margin: 0;
+  }
 }
 
 .timeseries-chart {

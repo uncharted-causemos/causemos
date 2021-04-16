@@ -66,6 +66,15 @@ const brushHeight = 8;
 
 const numberFormat = d3.format(',.2f');
 
+//
+// global variables
+//
+let xScaleMap: {[key: string]: D3ScaleFunc} = {};
+let renderedAxes: D3AxisSelection;
+let axisRange: Array<number> = [];
+let pcTypes: {[key: string]: string} = {};
+
+
 
 //
 // utility functions
@@ -235,10 +244,15 @@ const createScales = (
     .range([0, height])
     .domain(dimensions.map(d => d.name));
 
-  return { xScaleMap, y };
+  return { x: xScaleMap, y };
 };
 
-export default function(
+const getXScaleFromMap = (dimName: string) => {
+  const xScaleDim = xScaleMap[dimName];
+  return xScaleDim(dimName) as D3Scale;
+};
+
+function renderParallelCoordinates(
   svgElement: D3Selection,
   options: ParallelCoordinatesOptions,
   data: Array<ScenarioData>,
@@ -261,19 +275,15 @@ export default function(
   dimensions = filterDrilldownDimensionData(dimensions);
 
   // process data and detect data type for each dimension
-  const pcTypes = detectDimensionTypes(data[0]);
+  pcTypes = detectDimensionTypes(data[0]);
 
   //
   // scales
   /// map of x axes by dimension name
   //
-  const axisRange = [0, width];
-  const { xScaleMap, y } = createScales(data, dimensions, ordinalDimensions, pcTypes, axisRange, height);
-
-  const getXScaleFromMap = (dimName: string) => {
-    const xScaleDim = xScaleMap[dimName];
-    return xScaleDim(dimName) as D3Scale;
-  };
+  axisRange = [0, width];
+  const { x, y } = createScales(data, dimensions, ordinalDimensions, pcTypes, axisRange, height);
+  xScaleMap = x;
 
   //
   // Color scale
@@ -344,7 +354,7 @@ export default function(
   //
   // Draw the axes
   //
-  const renderedAxes = gElement.selectAll('axis')
+  renderedAxes = gElement.selectAll('axis')
   // For each dimension of the dataset I add a 'g' element:
     .data(dimensions)
     .enter()
@@ -471,26 +481,7 @@ export default function(
   //
   // baseline defaults
   //
-  if (options.showBaselineDefaults) {
-    renderedAxes
-      .filter(function(d) { return d.default !== undefined; })
-      .append('circle')
-      .style('stroke', baselineMarkerStroke)
-      .style('fill', baselineMarkerFill)
-      .attr('r', baselineMarkerSize)
-      .attr('cx', function(d) {
-        const axisDefault = d.default;
-        const dimName = d.name;
-        const scaleX = getXScaleFromMap(dimName);
-        let xPos: number = scaleX(axisDefault as any) as number;
-        if (pcTypes[dimName] === 'string') {
-          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefault);
-          xPos = min + (max - min) / 2;
-        }
-        return xPos;
-      })
-      .attr('cy', 0);
-  }
+  renderBaselineMarkers(!!options.showBaselineDefaults);
 
   //
   // axis labels
@@ -608,11 +599,10 @@ export default function(
   //
   // select default run, if requested
   //
-  if (options.applyDefaultSelection) {
-    const initialSelectedRunData = data[0];
+  if (options.initialDataSelection && options.initialDataSelection.length > 0) {
     svgElement.selectAll('.line')
       .data(data)
-      .filter(function(d) { return d.id === initialSelectedRunData.id; })
+      .filter(function(d) { return options.initialDataSelection?.includes(d.id as string) as boolean; })
       .each(function(d) {
         const lineElement = this as SVGPathElement;
         handleLineSelection.bind(lineElement)(undefined /* event */, d);
@@ -963,3 +953,38 @@ export default function(
       .attr('visibility', 'hidden');
   }
 }
+
+function renderBaselineMarkers(showBaselineDefaults: boolean) {
+  if (!renderedAxes) {
+    console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
+    return;
+  }
+
+  renderedAxes.selectAll('circle').remove();
+
+  if (showBaselineDefaults) {
+    renderedAxes
+      .filter(function(d) { return d.default !== undefined; })
+      .append('circle')
+      .style('stroke', baselineMarkerStroke)
+      .style('fill', baselineMarkerFill)
+      .attr('r', baselineMarkerSize)
+      .attr('cx', function(d) {
+        const axisDefault = d.default;
+        const dimName = d.name;
+        const scaleX = getXScaleFromMap(dimName);
+        let xPos: number = scaleX(axisDefault as any) as number;
+        if (pcTypes[dimName] === 'string') {
+          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefault);
+          xPos = min + (max - min) / 2;
+        }
+        return xPos;
+      })
+      .attr('cy', 0);
+  }
+}
+
+export {
+  renderParallelCoordinates,
+  renderBaselineMarkers
+};

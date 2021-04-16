@@ -1,25 +1,12 @@
 <template>
-  <div style="padding-left: 1rem">
-    <div class="baseline-checkbox">
-      <label @click="toggleBaselineDefaultsVisibility()">
-        <i
-          class="fa fa-lg fa-fw"
-          :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
-        />
-        Baseline Defaults
-      </label>
-    </div>
-  </div>
   <div
     ref="pcChart"
-    class="parallel-coordinates-container"
-  >
+    class="parallel-coordinates-container">
     <svg
       ref="pcsvg"
       :class="{'faded': dimensionsData === null}"
     />
     <resize-observer @notify="resize" />
-
     <span
       v-if="dimensionsData === null"
       class="loading-message"
@@ -32,7 +19,7 @@
 <script lang="ts">
 import * as d3 from 'd3';
 import _ from 'lodash';
-import renderParallelCoordinates from '@/charts/parallel-coordinates';
+import { renderParallelCoordinates, renderBaselineMarkers } from '@/charts/parallel-coordinates';
 import { defineComponent, PropType } from 'vue';
 import { DimensionData, ScenarioData } from '@/types/Datacubes';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
@@ -54,7 +41,11 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: null
     },
-    applyDefaultSelection: {
+    initialDataSelection: {
+      type: Array as PropType<string[]>,
+      default: undefined
+    },
+    showBaselineDefaults: {
       type: Boolean,
       default: false
     }
@@ -62,9 +53,6 @@ export default defineComponent({
   emits: [
     'select-scenario'
   ],
-  data: () => ({
-    showBaselineDefaults: false
-  }),
   computed: {
     getDefaultSize() {
       const parentElement: HTMLElement = (this.$refs as any).pcChart.parentElement;
@@ -77,8 +65,8 @@ export default defineComponent({
       this.render(sz.width, sz.height);
     },
     showBaselineDefaults(): void {
-      const sz = this.getDefaultSize;
-      this.render(sz.width, sz.height);
+      // do not re-render everything, just update markers visibility
+      renderBaselineMarkers(this.showBaselineDefaults);
     }
   },
   mounted(): void {
@@ -98,7 +86,7 @@ export default defineComponent({
         width,
         height,
         showBaselineDefaults: this.showBaselineDefaults,
-        applyDefaultSelection: this.applyDefaultSelection
+        initialDataSelection: this.initialDataSelection
       };
       const refSelection = d3.select((this.$refs as any).pcsvg);
       refSelection.selectAll('*').remove();
@@ -115,9 +103,6 @@ export default defineComponent({
       if (selectedLines && Array.isArray(selectedLines)) {
         this.$emit('select-scenario', { scenarios: selectedLines });
       }
-    },
-    toggleBaselineDefaultsVisibility() {
-      this.showBaselineDefaults = !this.showBaselineDefaults;
     }
   }
 });
@@ -176,15 +161,5 @@ export default defineComponent({
     top: 50%;
     left: 50%;
     transform: translate(-50%, -50%);
-  }
-
-
-.baseline-checkbox {
-    display: inline-block;
-    label {
-      font-weight: normal;
-      cursor: pointer;
-      margin: 0;
-    }
   }
 </style>
