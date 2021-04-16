@@ -164,12 +164,12 @@ span.faded {
 
 .histogram-bar {
   position: absolute;
-  bottom: 100%;
+  top: 100%;
   left: 0;
   width: 100%;
   height: 4px;
   // TODO: add support for a function parameter to determine colour
-  background: blue;
+  background: #8767C8;
 
   &.faded {
     background: #B3B4B5;
