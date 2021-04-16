@@ -1,12 +1,10 @@
 <template>
   <div>
-    <h5 class="aggregation-level-title">{{ aggregationLevelType }}: <strong>{{ aggregationLevelTitle }}</strong></h5>
-    <disclaimer
-      :message="'NOTE: The data displayed below is for example purposes only. ' +
-        'It is static and derived by averaging values from the GADM model. ' +
-        'In the future these aggregations would be shown for all supported models.'"
-    />
-    <div class="aggregation-level-range-container">
+    <h5>By {{ aggregationLevelTitle }}</h5>
+    <div
+      v-if="aggregationLevelCount > 1"
+      class="aggregation-level-range-container"
+    >
       <input
         type="range"
         class="aggregation-level-range"
@@ -24,6 +22,24 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <div class="flex-row">
+      <div class="select-all-buttons">
+        <small-text-button
+          :label="'Select All'"
+          @click="selectAll"
+        />
+        <small-text-button
+          :label="'Deselect All'"
+          @click="deselectAll"
+        />
+      </div>
+      <div
+        v-if="units !== null"
+        class="units"
+      >
+        {{units}}
+      </div>
+    </div>
     <div class="checklist-container">
       <aggregation-checklist-item
         v-for="(row, rowIndex) of visibleRows"
@@ -34,13 +50,16 @@
         @toggle-checked="toggleChecked(row.path)"
       />
     </div>
+    <div class="aggregation-description">
+      <slot name="aggregation-description" />
+    </div>
   </div>
 </template>
 
 <script>
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item';
-import Disclaimer from '../widgets/disclaimer.vue';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 const findNode = (tree, path) => {
   let currentNode = tree;
@@ -121,8 +140,9 @@ export default {
   name: 'AggregationChecklistPane',
   components: {
     AggregationChecklistItem,
-    Disclaimer
+    SmallTextButton
   },
+  emits: ['aggregation-level-change'],
   props: {
     aggregationLevelCount: {
       type: Number,
@@ -134,10 +154,6 @@ export default {
       validator: (value) => {
         return value >= 0;
       }
-    },
-    aggregationLevelType: {
-      type: String,
-      default: '[Aggregation Level Type]'
     },
     aggregationLevelTitle: {
       type: String,
@@ -152,6 +168,10 @@ export default {
           children: []
         };
       }
+    },
+    units: {
+      type: String,
+      default: null
     }
   },
   emits: [
@@ -220,7 +240,8 @@ export default {
       };
       // Recursively descend through children, repeating the process
       const childrenMetadata = [];
-      node.children.forEach((child, childIndex) => {
+      const children = node.children ?? [];
+      children.forEach((child, childIndex) => {
         childrenMetadata.push(this.refreshMetadata(child, [...pathToNode, childIndex]));
       });
       augmentedNode.children = childrenMetadata;
@@ -266,8 +287,9 @@ $track-height: 2px;
 $thumb-size: 16px;
 $tick-size: 8px;
 
-.aggregation-level-title {
-  text-align: center;
+h5 {
+  margin: 0;
+  margin-bottom: 5px;
 }
 
 .aggregation-level-range {
@@ -286,6 +308,7 @@ $tick-size: 8px;
 
 .aggregation-level-range-container {
   position: relative;
+  margin: 15px 0;
 }
 
 .aggregation-level-tick {
@@ -300,7 +323,26 @@ $tick-size: 8px;
 }
 
 .checklist-container {
-  margin-top: 20px;
+  margin-top: 5px;
+}
+
+.select-all-buttons {
+  margin: 0;
+  margin-top: 5px;
+  > *:first-child {
+    margin-right: 5px;
+  }
+}
+
+.units {
+  color: $text-color-medium;
+  font-weight: bold;
+}
+
+.flex-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
 }
 
 </style>
