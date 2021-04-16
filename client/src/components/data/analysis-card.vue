@@ -145,7 +145,7 @@
             :dimensions-data="dimensionsData"
             :selected-dimensions="selectedDimensions"
             :ordinal-dimensions="ordinalDimensions"
-            apply-default-selection="true"
+            :apply-default-selection="true"
             @select-scenario="updateScenarioSelection"
           />
         </div>
