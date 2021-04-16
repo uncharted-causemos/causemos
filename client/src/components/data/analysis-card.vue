@@ -217,9 +217,6 @@ export default {
       default: null
     }
   },
-  emits: [
-    'click'
-  ],
   data: () => ({
     runs: [],
     timeseries: [],
