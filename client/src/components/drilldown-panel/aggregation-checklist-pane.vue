@@ -142,7 +142,6 @@ export default {
     AggregationChecklistItem,
     SmallTextButton
   },
-  emits: ['aggregation-level-change'],
   props: {
     aggregationLevelCount: {
       type: Number,
