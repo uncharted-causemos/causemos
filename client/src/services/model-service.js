@@ -193,7 +193,7 @@ const deleteScenario = async (scenario) => {
  *
  * @param {string} modelId - model/cag identifier
  */
-const DEFAULT_ENGINE = 'delphi';
+const DEFAULT_ENGINE = 'dyse';
 const initializeModel = async (modelId) => {
   const model = await getSummary(modelId);
   const engine = model.parameter.engine || DEFAULT_ENGINE;
@@ -224,9 +224,7 @@ const initializeModel = async (modelId) => {
 
   // Model is still training, check and upate the status
   if (model.status === MODEL_STATUS.TRAINING) {
-    console.log('handling training case');
     const r = await checkAndUpdateRegisteredStatus(modelId, engine);
-    console.log('!!', r);
     if (r === MODEL_STATUS.TRAINING) {
       errors.push('Model training is in progress, please check back in a few minutes');
     }
