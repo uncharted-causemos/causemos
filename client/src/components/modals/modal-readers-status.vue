@@ -112,10 +112,14 @@ export default defineComponent({
   },
   methods: {
     async addToProject() {
-      const test = [
-        { identity: 'abc', version: '1.0', document_id: 'd1', storage_key: '123456' }
-      ];
-      await projectService.createAssemblyRequest(this.project, test);
+      const payload: ReaderOutputRecord[] = [];
+      this.readersStatus.forEach(record => {
+        if (record.eidos) payload.push(record.eidos);
+        if (record.hume) payload.push(record.hume);
+        if (record.cwms) payload.push(record.cwms);
+        if (record.sofia) payload.push(record.sofia);
+      });
+      await projectService.createAssemblyRequest(this.project, payload);
     },
     close() {
       this.$emit('close');
