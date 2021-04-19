@@ -8,7 +8,10 @@
     be dynamic later -->
     <!-- TODO: we'll need to store the admin level data for each card
     in this component and pass it down -->
-    <datacube-card :class="{ 'datacube-expanded': true }" />
+    <datacube-card
+      :class="{ 'datacube-expanded': true }"
+      :selected-admin-level="selectedAdminLevel"
+    />
     <drilldown-panel
         class="drilldown"
         :is-open="activeDrilldownTab !== null"
@@ -50,7 +53,7 @@ export default defineComponent({
   name: 'CompAnalysisExperiment',
   components: { DatacubeCard, DrilldownPanel, BreakdownPane },
   setup() {
-    const selectedAdminLevel = ref(1);
+    const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }

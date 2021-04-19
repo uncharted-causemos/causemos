@@ -130,6 +130,10 @@ export default {
     showTooltip: {
       type: Boolean,
       default: false
+    },
+    selectedAdminLevel: {
+      type: Number,
+      default: 0
     }
   },
   data: () => ({
@@ -208,6 +212,10 @@ export default {
       return this.filter && this.filter.global;
     },
     filterRange() {
+      // TODO: FIXME: HACKJOB: no filter likely because no analysisItems
+      if (this.filter === undefined) {
+        return this.extent;
+      }
       return this.filter && this.filter.range;
     }
   },
@@ -227,6 +235,9 @@ export default {
     selectedLayer() {
       Object.assign(this, this.selectedLayer);
       this.refreshLayers();
+    },
+    selectedAdminLevel() {
+      this.selectedLayer = layers[this.selectedAdminLevel];
     }
   },
   created() {
