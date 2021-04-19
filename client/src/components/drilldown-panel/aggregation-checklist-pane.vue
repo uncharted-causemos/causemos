@@ -272,6 +272,12 @@ export default {
       //  it can be queried here, something like
       //  return checkedNodes.find(pathToNode.join('-')) !== undefined;
       return true;
+    },
+    deselectAll() {
+      console.log('deselectAll');
+    },
+    selectAll() {
+      console.log('selectAll');
     }
   }
 };
