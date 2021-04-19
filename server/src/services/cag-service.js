@@ -141,7 +141,6 @@ const createCAG = async (modelFields, edges, nodes) => {
     ...modelFields,
     is_stale: false,
     is_quantified: false,
-    is_synced: false,
     status: 0,
     created_at: now,
     modified_at: now
@@ -287,7 +286,6 @@ const updateCAG = async(modelId, edges, nodes) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
-    is_synced: false,
     status: 0,
     modified_at: moment().valueOf()
   }, d => d.id);
@@ -316,7 +314,6 @@ const pruneCAG = async(modelId, edges, nodes) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
-    is_synced: false,
     status: 0,
     modified_at: moment().valueOf()
   }, d => d.id);
@@ -554,7 +551,6 @@ const recalculateCAG = async (modelId) => {
       {
         id: cag.id,
         is_stale: false,
-        is_synced: false,
         status: 0,
         is_ambiguous: isAmbiguous,
         modified_at: timestamp

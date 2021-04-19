@@ -21,7 +21,7 @@ router.put('/:mid/edge-polarity', asyncHandler(async (req, res) => {
     polarity
   } = req.body;
   await cagService.updateEdgeUserPolarity(modelId, edgeId, polarity);
-  await cagService.updateCAGMetadata(modelId, { is_synced: false });
+  await cagService.updateCAGMetadata(modelId, { status: 0 });
 
   res.status(200).send({ polarity, updateToken: editTime });
 }));
@@ -76,7 +76,7 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
   // Need to re-apply status code because create defaults to false
   await cagService.updateCAGMetadata(newId, {
     id: newId,
-    is_synced: false,
+    status: 0,
     is_stale: CAG.is_stale,
     is_quantified: CAG.is_quantified
   });

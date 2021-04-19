@@ -55,7 +55,6 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
     };
   }
   modelFields.is_quantified = true;
-  modelFields.is_synced = false;
   modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
@@ -119,7 +118,6 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
 
   // Reset sync flag
-  modelFields.is_synced = false;
   modelFields.status = 0;
 
   if (!_.isEmpty(parameter)) {
@@ -390,7 +388,6 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
   const modelPayload = {
     id: modelId,
-    is_synced: true,
     status: status,
     parameter: {
       engine: engine
@@ -568,7 +565,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update node-parameter');
   }
 
-  await cagService.updateCAGMetadata(modelId, { is_synced: false, status: 0 });
+  await cagService.updateCAGMetadata(modelId, { status: 0 });
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);
@@ -610,7 +607,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update edge-parameter');
   }
 
-  await cagService.updateCAGMetadata(modelId, { is_synced: false, status: 0 });
+  await cagService.updateCAGMetadata(modelId, { status: 0 });
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);

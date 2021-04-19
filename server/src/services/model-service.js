@@ -374,7 +374,7 @@ const clearNodeParameter = async (modelId, nodeId) => {
   // Update sync status
   const modelPayload = {
     id: modelId,
-    is_synced: false,
+    status: 0,
     modified_at: modifiedAt
   };
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
