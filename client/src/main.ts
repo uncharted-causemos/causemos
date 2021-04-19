@@ -4,7 +4,7 @@ import router from './router';
 import store from './store';
 import { sync } from 'vuex-router-sync';
 import VTooltip from 'v-tooltip'; // FIXME: not working
-import Toast, { useToast } from 'vue-toastification';
+import Toast, { useToast, TYPE } from 'vue-toastification';
 
 // @ts-ignore
 import Vue3Resize from 'vue3-resize';
@@ -20,9 +20,14 @@ app.use(Toast);
 app.mixin({
   methods: {
     // toaster(message, type, close) {
-    toaster(message: string) {
+    toaster(message: string, msgType: string, sticky: boolean) {
       const toast = useToast();
-      toast(message, { timeout: 2000 });
+      const t = msgType === 'error' ? TYPE.INFO : TYPE.SUCCESS;
+      const timeout = sticky === true ? false : 3000;
+      toast(message, {
+        timeout: timeout,
+        type: t
+      });
     }
   }
 });

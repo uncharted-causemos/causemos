@@ -157,10 +157,19 @@ export default {
   },
   watch: {
     selectedScenarioId() {
-      this.fetchSensitivityAnalysisResults();
+      if (this.currentEngine === 'dyse') {
+        this.fetchSensitivityAnalysisResults();
+      }
+      if (_.isNil(this.scenarios)) return;
+      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      if (scenario && scenario.is_valid === false) {
+        this.recalculateScenario(scenario);
+      }
     },
     sensitivityAnalysisType() {
-      this.fetchSensitivityAnalysisResults();
+      if (this.currentEngine === 'dyse') {
+        this.fetchSensitivityAnalysisResults();
+      }
     }
   },
   mounted() {
@@ -224,21 +233,28 @@ export default {
         await modelService.createScenario(scenario);
         scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
       }
-      this.scenarios = scenarios;
-      this.disableOverlay();
 
+      // Set selected scenario if necessary
       if (_.isNil(this.selectedScenarioId)) {
         const baselineScenarioId = scenarios.find(d => d.is_baseline).id;
         this.setSelectedScenarioId(baselineScenarioId);
-      } else {
-        // Fixme: This is awkward wiring, we need to force a scenario recalculation, but the
-        // watcher won't fire if there is not change to the selectedScenarioId.
-        const scenario = scenarios.find(d => d.id === this.selectedScenarioId);
-        if (scenario && scenario.is_valid === false) {
-          this.recalculateScenario(scenario);
-        }
       }
-      this.fetchSensitivityAnalysisResults();
+
+      // Check if scenario is still valid
+      // Fixme: This is awkward wiring, we need to force a scenario recalculation, but the
+      // watcher won't fire if there is not change to the selectedScenarioId.
+      const scenario = scenarios.find(d => d.id === this.selectedScenarioId);
+      if (scenario && scenario.is_valid === false) {
+        this.recalculateScenario(scenario);
+      } else {
+        this.scenarios = scenarios;
+        this.disableOverlay();
+      }
+
+      // Cache sensitivity in the background
+      if (this.currentEngine === 'dyse') {
+        this.fetchSensitivityAnalysisResults();
+      }
     },
     revertDraftChanges() {
       this.setSelectedScenarioId(this.previousScenarioId);

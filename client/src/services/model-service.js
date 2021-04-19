@@ -43,7 +43,8 @@ const checkAndUpdateRegisteredStatus = async (modelId, engine) => {
  * Synchronize model state with given modeling engine
  */
 const syncModelWithEngine = async (modelId, engine) => {
-  await API.post(`models/${modelId}/register`, { engine });
+  const result = await API.post(`models/${modelId}/register`, { engine });
+  return result.data;
 };
 
 /**
@@ -211,7 +212,10 @@ const initializeModel = async (modelId) => {
   // Model is not synced with the engine, initiate registeration request
   if (model.status === MODEL_STATUS.UNSYNCED) {
     try {
-      await syncModelWithEngine(modelId, engine);
+      const r = await syncModelWithEngine(modelId, engine);
+      if (r.status === MODEL_STATUS.TRAINING) {
+        errors.push('Model training is in progress, please check back in a few minutes');
+      }
     } catch (error) {
       errors.push(error.response.data);
     }
@@ -223,6 +227,10 @@ const initializeModel = async (modelId) => {
     console.log('handling training case');
     const r = await checkAndUpdateRegisteredStatus(modelId, engine);
     console.log('!!', r);
+    if (r === MODEL_STATUS.TRAINING) {
+      errors.push('Model training is in progress, please check back in a few minutes');
+    }
+    return errors;
   }
   return [];
 };

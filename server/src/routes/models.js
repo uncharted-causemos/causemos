@@ -408,7 +408,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
   Logger.info(`registered model to ${engine}`);
   // returns initial value, initial constraints/perturbations, and initial function used to calculate initial value
-  res.status(200).send({ updateToken: moment().valueOf() });
+  res.status(200).send({ updateToken: moment().valueOf(), status: status });
 
   releaseLock(modelId);
 }));
