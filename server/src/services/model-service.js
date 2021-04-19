@@ -2,6 +2,7 @@ const _ = require('lodash');
 const moment = require('moment');
 const delphiUtil = require('../util/delphi-util');
 const Logger = rootRequire('/config/logger');
+const uuid = require('uuid');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const modelUtil = rootRequire('/util/model-util');
@@ -421,6 +422,7 @@ const buildNodeParametersPayload = (nodeParameters, startTime, endTime) => {
     numLevels: NUM_LEVELS,
     minValue: 0,
     maxValue: 1,
+    name: 'dummy indicator ' + uuid(),
     values: []
   };
 

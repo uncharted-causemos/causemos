@@ -545,14 +545,16 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   if (engine === DYSE) {
     engineUpdateResult = await dyseService.updateNodeParameter(modelId, payload);
   } else {
-    throw new Error(`updateNodeParameter not implemented for ${engine}`);
+    Logger.warn(`Update node-parameter is undefined for ${engine}`);
   }
 
-  const initialValue = engineUpdateResult.conceptIndicators[nodeParameter.concept].initialValue;
-  Logger.info(`Setting ${nodeParameter.concept} to initialValue ${initialValue}`);
+  if (engine === DYSE) {
+    const initialValue = engineUpdateResult.conceptIndicators[nodeParameter.concept].initialValue;
+    Logger.info(`Setting ${nodeParameter.concept} to initialValue ${initialValue}`);
 
-  // Write raw data back to datastore
-  nodeParameter.parameter.initial_value = initialValue;
+    // Write raw data back to datastore
+    nodeParameter.parameter.initial_value = initialValue;
+  }
 
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const updateNodePayload = {
