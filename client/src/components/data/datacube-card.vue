@@ -25,8 +25,14 @@
     </header>
     <div class="flex-row">
       <!-- if has multiple scenarios -->
-      <div class="scenario-selector placeholder" v-if="scenarioCount > 0">
-        TODO: Scenario selector
+      <div class="scenario-selector">
+        <parallel-coordinates-chart
+          v-if="dimensionsData"
+          :dimensions-data="dimensionsData"
+          :selected-dimensions="selectedDimensions"
+          :ordinal-dimensions="ordinalDimensions"
+          @select-scenario="updateScenarioSelection"
+        />
       </div>
       <div class="column">
         <!-- TODO: extract button-group to its own component -->
@@ -64,6 +70,8 @@ import { defineComponent, computed, ref } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
+import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
+import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
 
 import { SCENARIOS_LIST, TIMESERIES_DATA } from '@/assets/scenario-data';
 
@@ -84,7 +92,7 @@ export default defineComponent({
     // TODO: probably we'll want this component to receive either a full datacube object
     //  or a datacube ID to fetch the full datacube object itself.
   },
-  components: { timeseriesChart, DatacubeScenarioHeader, Disclaimer },
+  components: { timeseriesChart, DatacubeScenarioHeader, Disclaimer, ParallelCoordinatesChart },
   setup() {
     const selectedScenarios = ref<{ [key: string]: number | string }[]>([]);
     // TODO: for now, assume all scenarios are selected
@@ -107,10 +115,53 @@ export default defineComponent({
         };
       })
     );
+
+    //
+    // parallel coordinatres dummy data
+    //
+    const dimensionsData: Array<ScenarioData> = [
+      { id: '0', input1: 40, input2: 40, output: 55 },
+      { id: '1', input1: 0, input2: 15, output: 10 },
+      { id: '2', input1: 20, input2: 44, output: 25 },
+      { id: '3', input1: 30, input2: 8, output: 70 }
+    ];
+    const selectedDimensions: Array<DimensionData> = [
+      {
+        name: 'input1',
+        type: 'input',
+        default: '10',
+        description: 'my first input var'
+      },
+      {
+        name: 'input2',
+        type: 'input',
+        default: '33',
+        description: 'my second input var'
+      },
+      {
+        name: 'output',
+        type: 'output',
+        default: '10',
+        description: 'my first output var'
+      }
+    ];
+    const ordinalDimensions = undefined;
+    const updateScenarioSelection = (e: { scenarios: Array<ScenarioDef> }) => {
+      if (e.scenarios.length === 0 ||
+         (e.scenarios.length === 1 && e.scenarios[0] === undefined)) {
+        console.log('no line is selected');
+      } else {
+        console.log('user selected: ' + e.scenarios.length);
+      }
+    };
     return {
       selectedScenarios,
       timeseriesData,
-      scenarioCount
+      scenarioCount,
+      dimensionsData,
+      selectedDimensions,
+      ordinalDimensions,
+      updateScenarioSelection
     };
   }
 });
@@ -162,6 +213,7 @@ header {
 .scenario-selector {
   width: 25%;
   margin-right: 10px;
+  height: 500px;
 }
 
 .timeseries-chart {

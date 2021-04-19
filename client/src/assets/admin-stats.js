@@ -454,57 +454,24 @@ export default {
   }
 };
 
-// Example data made up by hand
-
-// export default {
-//   maxDepth: 4,
-//   data: {
-//     name: 'Ethiopia',
-//     value: 19440,
-//     children: [
-//       {
-//         name: 'Tigray',
-//         value: 10400,
-//         children: [
-//           {
-//             name: 'Semien Mi\'irabaw',
-//             value: 9800,
-//             children: []
-//           },
-//           {
-//             name: 'Another Tigray Subregion',
-//             value: 600,
-//             children: [
-//               {
-//                 name: 'Tigray Subregion at L3',
-//                 value: 600,
-//                 children: []
-//               }
-//             ]
-//           }
-//         ]
-//       },
-//       {
-//         name: 'Afar',
-//         value: 1040,
-//         children: []
-//       },
-//       {
-//         name: 'Amhara',
-//         value: 8000,
-//         children: [
-//           {
-//             name: 'Amhara Subregion',
-//             value: 5500,
-//             children: []
-//           },
-//           {
-//             name: 'Another Amhara Subregion',
-//             value: 2500,
-//             children: []
-//           }
-//         ]
-//       }
-//     ]
-//   }
-// };
+export const AGGREGATED_PRODUCT_TYPE_DATA = {
+  name: 'product type',
+  data: {
+    name: 'All',
+    value: 19,
+    children: [
+      {
+        name: 'Canned',
+        value: 11
+      },
+      {
+        name: 'Fresh',
+        value: 5
+      },
+      {
+        name: 'Dried',
+        value: 3
+      }
+    ]
+  }
+};
