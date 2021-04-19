@@ -100,6 +100,56 @@
       </div>
     </div>
     <div class="columns">
+      <!--
+      <data-analysis-input-panel
+        v-if="isFullscreen && data && data.modelId"
+        class="input-panel"
+        :model-id="data.modelId"
+        :output-variable="data.outputVariable"
+        @runsupdated="updateRuns"
+      />
+      -->
+      <div style="margin: 1rem;">
+        <div>
+          <button
+            type="button"
+            class="btn dropdown-btn"
+            @click="isDrilldownDropdownOpen = !isDrilldownDropdownOpen"
+          >
+            <div class="button-text">
+              Drilldown Filters
+              <i
+                class="fa fa-fw"
+                :class="{ 'fa-angle-down': !isDrilldownDropdownOpen, 'fa-angle-up': isDrilldownDropdownOpen }"
+              />
+            </div>
+          </button>
+          <dropdown-control
+            v-if="isDrilldownDropdownOpen"
+            class="dropdown-control"
+            style="position: absolute">
+            <template #content>
+              <div
+                v-for="filter in drilldownParameters"
+                :key="filter.id"
+                class="dropdown-option"
+              >
+                {{ filter.name }}
+              </div>
+            </template>
+          </dropdown-control>
+        </div>
+        <div class="scenario-selector">
+          <parallel-coordinates-chart
+            v-if="dimensionsData"
+            :dimensions-data="dimensionsData"
+            :selected-dimensions="selectedDimensions"
+            :ordinal-dimensions="ordinalDimensions"
+            :apply-default-selection="true"
+            @select-scenario="updateScenarioSelection"
+          />
+        </div>
+      </div>
       <data-analysis-map
         class="card-map"
         :class="{'full-width': !isFullscreen}"
@@ -128,7 +178,7 @@
 import _ from 'lodash';
 import API from '@/api/api';
 import { mapActions, mapGetters } from 'vuex';
-import { getModelRuns } from '@/services/datacube-service';
+import { getModelRuns, getModelParameters } from '@/services/datacube-service';
 import DataAnalysisMap from '@/components/data/analysis-map';
 import DropdownControl from '@/components/dropdown-control';
 import LineChart from '@/components/widgets/charts/line-chart';
@@ -137,6 +187,7 @@ import Disclaimer from '@/components/widgets/disclaimer';
 import { DEFAULT_COLOR } from '@/utils/colors-util';
 import messagesUtil from '@/utils/messages-util';
 import indicatorRunFormatter from '@/formatters/indicator-run-formatter';
+import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 
 const TIME_SLIDER_CHANGE_DELAY = 300;
 
@@ -147,8 +198,15 @@ export default {
     DataAnalysisMap,
     OptionsButton,
     Disclaimer,
-    DropdownControl
+    // DataAnalysisInputPanel,
+    DropdownControl,
+    ParallelCoordinatesChart
   },
+  emits: [
+    'click',
+    'set-card-fullscreen',
+    'on-map-load'
+  ],
   props: {
     data: {
       type: Object,
@@ -162,7 +220,12 @@ export default {
   data: () => ({
     runs: [],
     timeseries: [],
-    isRunDropdownOpen: false
+    isRunDropdownOpen: false,
+    dimensionsData: null,
+    selectedDimensions: null,
+    ordinalDimensions: null,
+    drilldownParameters: [],
+    isDrilldownDropdownOpen: false
   }),
   computed: {
     ...mapGetters({
@@ -237,7 +300,114 @@ export default {
     this.lineChartSize = [230, 70];
   },
   async mounted() {
-    const { id, modelId } = this.data;
+    const { id, model, modelId, outputVariable, outputDescription } = this.data;
+
+    //
+    // initial effort to hook the PC to the data view to load real data cubes
+    //
+    const [runs, parameters] = (await Promise.all([
+      getModelRuns(modelId),
+      // getModelRunOutputs(modelId),
+      getModelParameters(modelId)
+    ]));
+    const fullOutputVarName = 'total_' + outputVariable;
+    const paramDefaults = {};
+    for (const p of parameters) {
+      paramDefaults[p.name] = p.default;
+    }
+    let baselineDefaultOutput;
+    // first,
+    //  for each run, add the output variable value and save run-id and model (id)
+    for (const run of runs) {
+      // const timeseries = (await API.get(`maas/output/${run.id}/timeseries`, {
+      //   params: {
+      //     model: modelId,
+      //     feature: outputVariable
+      //   }
+      // })).data.timeseries;
+
+      // const sum = timeseries.reduce((a, b) => a + b.value, 0);
+      // const avg = (sum / timeseries.length) || 0;
+      const avg = Math.random() * (100 - 0) + 0;
+
+      const outputVal = avg;
+
+      run.parameters.push({ name: 'id', value: run.id });
+      run.parameters.push({ name: 'model', value: run.model });
+      run.parameters.push({ name: fullOutputVarName, value: outputVal });
+
+      // find run that match the baseline defaults and save it
+      let found = true;
+      for (const runParam in run.parameters) {
+        if (paramDefaults[runParam.name] !== runParam.value) {
+          found = false;
+        }
+      }
+      run.baseline = found;
+      if (run.baseline) {
+        baselineDefaultOutput = outputVal;
+      }
+    }
+    // each original run is processed to actually reference to its parameters array
+    const allRunsParams = runs.map(run => run.parameters);
+    const allProcessedRunsParams = [];
+    allRunsParams.forEach(runParams => {
+      const run = runParams.reduce(
+        (obj, item) => Object.assign(obj, { [item.name]: item.value }), {}
+      );
+      allProcessedRunsParams.push(run);
+    });
+
+    // FIXME: TEMP
+    if (model === 'DSSAT') {
+      allProcessedRunsParams.forEach(r => {
+        if (r.rainfall_multiplier === '1' || r.rainfall_multiplier === '1.0') {
+          r.rainfall_multiplier = '1.0';
+        }
+      });
+      const indx = parameters.findIndex(p => p.name === 'rainfall_multiplier');
+      if (parameters[indx].default === '1' || parameters[indx].default === '1.0') {
+        parameters[indx].default = '1.0';
+      }
+      this.ordinalDimensions = ['rainfall_multiplier'];
+    }
+
+    this.dimensionsData = allProcessedRunsParams;
+
+    // second
+    // augment each param by its type (e.g., input, output, drilldown/filter)
+    // extract param names from the model parameters, noting this will exclude manually added attributes such as id and model
+    //
+    // mock code, assign types to parameters
+    // TODO: add min/max for numerical param
+    for (const param of parameters) {
+      // special case for some DSSAT parameters
+      if (model === 'DSSAT' &&
+         (
+           param.name === 'region' ||
+           param.name === 'crop' ||
+           param.name === 'season'
+         )) {
+        param.type = 'drilldown';
+      } else {
+        param.type = 'input';
+      }
+    }
+    // add the output variable since it is not usually added to the list of parameters
+    parameters.push({
+      name: fullOutputVarName,
+      description: outputDescription,
+      type: 'output',
+      default: baselineDefaultOutput
+    });
+
+    this.selectedDimensions = parameters;
+
+    // add drilldown params
+    this.drilldownParameters = parameters.filter(p => p.type === 'drilldown');
+    //
+    // end of PC real data association
+
     if (!this.selectedRunId) {
       const defaultRun = await this.fetchDefaultRun(modelId);
       this.updateSelection({
@@ -300,6 +470,22 @@ export default {
     }, TIME_SLIDER_CHANGE_DELAY),
     onClick(e) {
       this.$emit('click', e);
+    },
+    toggleBaselineDefaultsVisibility() {
+      this.baselineDefaultChecked = !this.baselineDefaultChecked;
+    },
+    updateScenarioSelection(e) {
+      let lineData;
+      if (e.scenarios.length > 1) {
+      // TEMP: only pick the last selected line
+        lineData = e.scenarios[e.scenarios.length - 1];
+      } else {
+        lineData = e.scenarios[0];
+      }
+      const runId = lineData ? lineData.id : undefined;
+      // const model = e.model;
+      // console.log('update selection for run id: ' + runId);
+      this.selectRun(runId);
     },
     onToggleSelected() {
       this.toggleAlgebraicTransformInput(this.data.id);
@@ -433,6 +619,8 @@ $fullscreenTransition: all .5s ease-in-out;
   flex: 3;
   display: flex;
   min-height: 0;
+  flex-basis: inherit;
+  // width: 100%;
 }
 
 .input-panel {
@@ -446,6 +634,11 @@ $fullscreenTransition: all .5s ease-in-out;
   &.full-width {
     width: 100%;
   }
+}
+
+.scenario-selector {
+  width: 375px;
+  height: 350px;
 }
 
 .line-chart {

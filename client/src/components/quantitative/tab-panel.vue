@@ -112,6 +112,7 @@
 <script>
 import { mapGetters } from 'vuex';
 
+import router from '@/router';
 import QuantitativeModelOptions from '@/components/quantitative/quantitative-model-options';
 import ConfigBar from '@/components/quantitative/config-bar';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis';
@@ -205,7 +206,6 @@ export default {
         id: 'matrix'
       }
     ],
-    activeTab: 'flow',
     graphData: {},
     scenarioData: null,
 
@@ -223,7 +223,12 @@ export default {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG'
-    })
+    }),
+    activeTab() {
+      // if we ever need more state than this
+      // add a query store for model
+      return this.$route.query?.activeTab || 'flow';
+    }
   },
   watch: {
     scenarios() {
@@ -247,8 +252,8 @@ export default {
       this.scenarioData = scenarioData;
       this.closeDrilldown();
     },
-    setActive (tabId) {
-      this.activeTab = tabId;
+    setActive (activeTab) {
+      router.push({ query: { activeTab } }).catch(() => {});
     },
     onAugmentCAG() {
       this.$router.push({
