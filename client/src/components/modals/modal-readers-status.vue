@@ -5,13 +5,33 @@
     </template>
     <template #body>
       <table class="table">
+        <tr>
+          <td>&nbsp;</td>
+          <td>Eidos</td>
+          <td>Hume</td>
+          <td>Sofia</td>
+          <td>CWMS</td>
+        </tr>
         <tr
           v-for="(item, idx) in readersStatus"
           :key="idx">
-          <td>{{ item.identity }}</td>
-          <td>{{ item.version }}</td>
-          <td>{{ item.document_id }}</td>
-          <td>{{ item.storage_key }}</td>
+          <td>{{ item.document_id}}</td>
+          <td>
+            <i v-if="item.eidos" class="fa fa-fw fa-check" />
+            <i v-if="!item.eidos" class="fa fa-fw fa-spinner" />
+          </td>
+          <td>
+            <i v-if="item.hume" class="fa fa-fw fa-check" />
+            <i v-if="!item.hume" class="fa fa-fw fa-spinner" />
+          </td>
+          <td>
+            <i v-if="item.sofia" class="fa fa-fw fa-check" />
+            <i v-if="!item.sofia" class="fa fa-fw fa-spinner" />
+          </td>
+          <td>
+            <i v-if="item.cwms" class="fa fa-fw fa-check" />
+            <i v-if="!item.cwms" class="fa fa-fw fa-spinner" />
+          </td>
         </tr>
       </table>
     </template>
@@ -33,12 +53,21 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { defineComponent } from 'vue';
 import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal.vue';
 import projectService from '@/services/project-service';
 import { getReadersStatus } from '@/services/dart-service';
 import { ReaderOutputRecord } from '@/types/Dart';
+
+interface GroupedRecord {
+  document_id: string;
+  eidos?: ReaderOutputRecord;
+  hume?: ReaderOutputRecord;
+  cwms?: ReaderOutputRecord;
+  sofia?: ReaderOutputRecord;
+}
 
 export default defineComponent({
   name: 'ModalReadersStatus',
@@ -54,20 +83,31 @@ export default defineComponent({
     })
   },
   data: () => ({
-    readersStatus: [] as ReaderOutputRecord[]
+    readersStatus: [] as GroupedRecord[]
   }),
   mounted() {
+    // FIXME: Hook in timestamp
     getReadersStatus(0).then(data => {
-      if (data) {
-        this.readersStatus = data;
-      } else {
-        // FIXME: Just testing
-        const test: ReaderOutputRecord[] = [
-          { document_id: 'test_doc1', identity: 'eidos', version: '1', storage_key: 'abc2' },
-          { document_id: 'test_doc1', identity: 'hume', version: '1', storage_key: 'abc1' }
-        ];
-        this.readersStatus = test;
-      }
+      const grouped = _.groupBy(data, d => d.document_id);
+      Object.keys(grouped).forEach(id => {
+        const record: GroupedRecord = { document_id: id };
+        grouped[id].forEach(reader => {
+          switch (reader.identity) {
+            case 'eidos':
+              record.eidos = reader;
+              break;
+            case 'hume':
+              record.hume = reader;
+              break;
+            case 'cwms':
+              record.cwms = reader;
+              break;
+            default:
+              record.sofia = reader;
+          }
+        });
+        this.readersStatus.push(record);
+      });
     });
   },
   methods: {
