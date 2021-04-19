@@ -50,7 +50,7 @@ class Poller {
   start() {
     // Start polling
     this._isRunning = true;
-    this._pollId = setTimeout(() => {
+    this._pollId = window.setTimeout(() => {
       this._numPolls++;
       if (this._numPolls > this._threshold) {
         this._stop();

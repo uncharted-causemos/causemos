@@ -1,10 +1,47 @@
 <template>
   <div class="list-bookmarks-pane-container">
+    <modal
+      v-if="exportActive"
+      :use-green-header="true"
+      :show-close-button="true"
+      @close="exportActive = false">
+       <template #header>
+          <h4>Export</h4>
+        </template>
+        <template #body>
+          Select a format to export to.
+        </template>
+        <template #footer>
+          <ul class="unstyled-list">
+            <button
+              class="btn first-button"
+              type="button"
+              @click.stop="exportActive = false"
+            >
+              Cancel
+            </button>
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click.stop="exportPPTX"
+            >
+              Powerpoint
+            </button>
+            <button
+              class="btn btn-primary"
+              type="button"
+              @click.stop="exportDOCX"
+            >
+              Word
+            </button>
+          </ul>
+        </template>
+    </modal>
     <div class="pane-header">
       <h6>Saved Insights</h6>
       <button
         class="btn btn-primary"
-        @click="exportPPTX()"
+        @click="openExport()"
       >
         Export
       </button>
@@ -62,8 +99,11 @@
 <script>
 import _ from 'lodash';
 import pptxgen from 'pptxgenjs';
+import { Packer, Document, SectionType, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
+import { saveAs } from 'file-saver';
 import { mapGetters, mapActions } from 'vuex';
 import API from '@/api/api';
+import Modal from '@/components/modals/modal';
 
 import { BOOKMARKS } from '@/utils/messages-util';
 
@@ -77,13 +117,15 @@ export default {
   components: {
     BookmarkEditor,
     CloseButton,
-    MessageDisplay
+    MessageDisplay,
+    Modal
   },
   data: () => ({
-    listBookmarks: [],
     activeBookmark: null,
-    selectedBookmark: null,
-    messageNoData: BOOKMARKS.NO_DATA
+    exportActive: false,
+    listBookmarks: [],
+    messageNoData: BOOKMARKS.NO_DATA,
+    selectedBookmark: null
   }),
   computed: {
     ...mapGetters({
@@ -146,10 +188,73 @@ export default {
         }
       });
     },
+    openExport() {
+      this.exportActive = true;
+    },
+    getFileName() {
+      const date = new Date();
+      return 'Causemos' + date.toUTCString();
+    },
+    baseURL() {
+      return window.location.href.split('/#/')[0];
+    },
+    exportDOCX() {
+      // 72dpi * 8.5 inches width, as word perplexing uses pixels
+      // same height as width so that we can attempt to be consistent with the layout.
+      const docxMaxImageSize = 612;
+
+      const sections = this.listBookmarks.map((bm) => {
+        const imageSize = this.scaleImage(bm.thumbnail_source, docxMaxImageSize, docxMaxImageSize);
+        return {
+          properties: {
+            type: SectionType.NEXT_PAGE
+          },
+          children: [
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              heading: HeadingLevel.HEADING_1,
+              text: `${bm.title}\n\n`
+            }),
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              children: [
+                new ImageRun({
+                  data: bm.thumbnail_source,
+                  transformation: {
+                    height: imageSize.height,
+                    width: imageSize.width
+                  }
+                }),
+                new ExternalHyperlink({
+                  child: new TextRun({
+                    break: 1,
+                    text: 'View Original',
+                    underline: {
+                      type: UnderlineType.SINGLE
+                    }
+                  }),
+                  link: `${this.baseURL()}/#${bm.url}`
+                })
+              ]
+            }),
+            new Paragraph({
+              alignment: AlignmentType.CENTER,
+              text: `\n\n${bm.description}`
+            })
+          ]
+        };
+      });
+
+      const doc = new Document({ sections });
+
+      Packer.toBlob(doc).then(blob => {
+        saveAs(blob, `${this.getFileName()}.docx`);
+      });
+      this.exportActive = false;
+    },
     exportPPTX() {
       const Pptxgen = pptxgen;
       const pres = new Pptxgen();
-      const baseURL = window.location.href.split('/#/')[0];
 
       // some PPTX consts as powerpoint does everything in inches & has hard boundaries
       const widthLimitImage = 10;
@@ -165,11 +270,11 @@ export default {
           color: '363636',
           align: pres.AlignH.center,
           hyperlink: {
-            url: `${baseURL}/#${bm.url}`
+            url: `${this.baseURL()}/#${bm.url}`
           }
         });
 
-        const imageSize = this.getPngDimensionsForPPTX(bm.thumbnail_source, widthLimitImage, heightLimitImage);
+        const imageSize = this.scaleImage(bm.thumbnail_source, widthLimitImage, heightLimitImage);
         slide.addImage({
           data: bm.thumbnail_source,
           // centering image code for x & y limited by consts for max content size
@@ -188,23 +293,27 @@ export default {
           align: pres.AlignH.center
         });
       });
-      const date = new Date();
       pres.writeFile({
-        fileName: 'Causemos' + date.toUTCString()
+        fileName: this.getFileName()
       });
+      this.exportActive = false;
     },
-    getPngDimensionsForPPTX(base64png, widthLimit, heightLimit) {
+    getPngDimensionsInPixels(base64png) {
       const header = atob(base64png.slice(22, 72)).slice(16, 24);
       const uint8 = Uint8Array.from(header, c => c.charCodeAt(0));
       const dataView = new DataView(uint8.buffer);
-      const imageWidth = dataView.getInt32(0);
-      const imageHeight = dataView.getInt32(4);
+      const width = dataView.getInt32(0);
+      const height = dataView.getInt32(4);
+      return { height, width };
+    },
+    scaleImage(base64png, widthLimit, heightLimit) {
+      const imageSize = this.getPngDimensionsInPixels(base64png);
       let scaledWidth = widthLimit;
-      let scaledHeight = imageHeight * scaledWidth / imageWidth;
+      let scaledHeight = imageSize.height * scaledWidth / imageSize.width;
 
       if (scaledHeight > heightLimit) {
         scaledHeight = heightLimit;
-        scaledWidth = imageWidth * scaledHeight / imageHeight;
+        scaledWidth = imageSize.width * scaledHeight / imageSize.height;
       }
 
       return {
