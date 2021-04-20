@@ -223,32 +223,6 @@ export default defineComponent({
     //
     // parallel coordinatres dummy data
     //
-    const dimensionsData: Array<ScenarioData> = [
-      { id: '0', input1: 40, input2: 40, output: 55 },
-      { id: '1', input1: 0, input2: 15, output: 10 },
-      { id: '2', input1: 20, input2: 44, output: 25 },
-      { id: '3', input1: 30, input2: 8, output: 70 }
-    ];
-    const selectedDimensions: Array<DimensionData> = [
-      {
-        name: 'input1',
-        type: 'input',
-        default: '10',
-        description: 'my first input var'
-      },
-      {
-        name: 'input2',
-        type: 'input',
-        default: '33',
-        description: 'my second input var'
-      },
-      {
-        name: 'output',
-        type: 'output',
-        default: '10',
-        description: 'my first output var'
-      }
-    ];
     const dimensionsData = SCENARIOS_LIST;
     const selectedDimensions = DIMENSIONS_LIST;
     const ordinalDimensions = undefined;
@@ -285,7 +259,7 @@ export default defineComponent({
       initialScenarioSelection,
       updateScenarioSelection,
       updateGeneratedScenarios,
-      potentialScenarioCount
+      potentialScenarioCount,
       adminLevelData: ADMIN_LEVEL_DATA
     };
   },
