@@ -67,7 +67,7 @@ const axisInputLabelFillColor = 'black';
 const axisOutputLabelFillColor = 'green';
 
 const axisTickLabelFontSize = '12';
-const axisTickLabelOffset = '20'; // FIXME: this should be dynamic based on the word size
+const axisTickLabelOffset = '10'; // FIXME: this should be dynamic based on the word size
 
 const brushHeight = 8;
 
@@ -90,7 +90,12 @@ const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 // exclude drilldown parameters from the input dimensions
 // @REVIEW this may better be done external to the PC component
 const filterDrilldownDimensionData = (dimensions: Array<DimensionData>) => {
-  return dimensions.filter(function(d) { return d.type !== 'drilldown'; });
+  return dimensions.filter(function(d) {
+    if (d.is_drilldown) {
+      return !d.is_drilldown;
+    }
+    return d.type !== 'drilldown';
+  });
 };
 
 // attempt to determine types of each dimension based on first row of data
@@ -443,6 +448,7 @@ function renderParallelCoordinates(
     //
     // special interaction to specify values of interest to generate new runs
     //
+    // FIXME: exclude the output variable from the ability to add markers to it
     renderedAxes
       .append('g')
       .attr('class', 'pc-marker-g')
@@ -653,7 +659,12 @@ function renderParallelCoordinates(
     .attr('x', width + axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
     .text(function(d) { return d.name; })
-    .style('fill', function(d) { return d.type === 'output' ? axisOutputLabelFillColor : axisInputLabelFillColor; })
+    .style('fill', function(d) {
+      if (d.is_output) {
+        return d.is_output ? axisOutputLabelFillColor : axisInputLabelFillColor;
+      }
+      return d.type === 'output' ? axisOutputLabelFillColor : axisInputLabelFillColor;
+    })
     .style('font-size', axisLabelFontSize)
     .style('font-weight', axisLabelFontWeight);
 
@@ -760,7 +771,12 @@ function renderParallelCoordinates(
   if (options.initialDataSelection && options.initialDataSelection.length > 0) {
     svgElement.selectAll('.line')
       .data(data)
-      .filter(function(d) { return options.initialDataSelection?.includes(d.id as string) as boolean; })
+      .filter(function(d) {
+        if (d.run_id) {
+          return options.initialDataSelection?.includes(d.run_id as string) as boolean;
+        }
+        return options.initialDataSelection?.includes(d.id as string) as boolean;
+      })
       .each(function(d) {
         const lineElement = this as SVGPathElement;
         handleLineSelection.bind(lineElement)(undefined /* event */, d);
