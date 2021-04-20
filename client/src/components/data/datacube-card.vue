@@ -122,10 +122,10 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ScenarioData, ScenarioDef } from '@/types/Datacubes';
+import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
 import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
-import { SCENARIOS_LIST, DIMENSIONS_LIST } from '@/assets/scenario-data';
+import { SCENARIOS_LIST } from '@/assets/scenario-data';
 import API from '@/api/api';
 import { Timeseries } from '@/types/Timeseries';
 
@@ -236,32 +236,7 @@ export default defineComponent({
       selectedScenarioMetadata.value = allMetadata;
       console.log('Fetched metadata for selected scenarios', allMetadata);
     }
-    //
-    // parallel coordinatres dummy data
-    //
-    const dimensionsData = SCENARIOS_LIST;
-    const selectedDimensions = DIMENSIONS_LIST;
-    const ordinalDimensions = undefined;
-    const initialScenarioSelection: Array<string> = [];
-    const potentialScenarioCount = ref(0);
-    let potentialScenarios: Array<ScenarioData> = [];
-    const updateScenarioSelection = (e: { scenarios: Array<ScenarioDef> }) => {
-      // TODO: emit 'set-selected-scenario-ids' with an array of selected scenario IDs
-      //  It's important we don't just emit the one scenario they just selected, since
-      //  the handler will replace the whole array.
-      if (
-        e.scenarios.length === 0 ||
-        (e.scenarios.length === 1 && e.scenarios[0] === undefined)
-      ) {
-        console.log('no line is selected');
-      } else {
-        console.log('user selected: ' + e.scenarios.length);
-      }
-    };
-    const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
-      potentialScenarios = e.scenarios;
-      potentialScenarioCount.value = potentialScenarios.length;
-    };
+
     watch(props.selectedScenarioIds, () => {
       fetchScenarioMetadata();
       fetchTimeseriesData();
@@ -272,13 +247,6 @@ export default defineComponent({
       selectedScenarios: SCENARIOS_LIST,
       selectedTimeseriesData,
       scenarioCount,
-      dimensionsData,
-      selectedDimensions,
-      ordinalDimensions,
-      initialScenarioSelection,
-      updateScenarioSelection,
-      updateGeneratedScenarios,
-      potentialScenarioCount,
       adminLevelData: ADMIN_LEVEL_DATA,
       colorFromIndex
     };
@@ -298,35 +266,143 @@ export default defineComponent({
   },
   data: () => ({
     showBaselineDefaults: false,
-    showNewRunsMode: false
+    showNewRunsMode: false,
+    dimensionsData: [] as Array<ScenarioData>,
+    selectedDimensions: [] as Array<DimensionData>,
+    initialScenarioSelection: [] as Array<string>,
+    allScenariosData: [] as Array<any>, // FIXME: this should use proper interfaces
+    modelParametersMap: {} as {[key: string]: DimensionData},
+    modelMetaData: {} as any,
+    ordinalDimensions: [] as Array<string>,
+    potentialScenarioCount: 0
   }),
+  async mounted() {
+    await this.fetchAllScenarioMetadata();
+    // each original run is processed to actually reference to its parameters array
+    const allRunsParams = this.allScenariosData.map(run => run.parameters);
+
+    const outputParam = this.modelMetaData.outputs[0];
+    const outputAggregations: any = {
+      '2d80c9f0-1e44-4a6c-91fe-2ebb26e39dea': 313639493,
+      '2ff53645-d481-4ff7-a067-e13f392f30a4': 115408980,
+      '25e0971b-c229-4c9a-a0f9-c121fce51309': 116547768,
+      '057d28d5-a7ed-472b-ae37-ba16571944ea': 146281019,
+      '967a0a69-552f-4861-ad7f-0c1bd8bab856': 204827768
+    };
+    const baselineRunID: string = this.allScenariosData.find(run => run.default_run).id;
+
+    const allProcessedRunsParams: Array<any> = [];
+    allRunsParams.forEach((runParams, runIndx) => {
+      const runParamsMapped = runParams.map((runParam: any) => {
+        const paramName = this.modelParametersMap[runParam.id].name;
+        return {
+          name: paramName,
+          value: runParam.value
+        };
+      });
+      const run = runParamsMapped.reduce(
+        (obj: any, item: any) => Object.assign(obj, { [item.name]: item.value }), {}
+      );
+
+      // explicitly add run-id as a parameter
+      run.run_id = this.allScenariosData[runIndx].id;
+
+      // explicitly add output for each run
+
+      run[outputParam.name] = outputAggregations[run.run_id];
+
+      allProcessedRunsParams.push(run);
+    });
+
+    const selectedParameters = Object.values(this.modelParametersMap);
+    // explicitly add output parameter
+    selectedParameters.push({
+      name: outputParam.name,
+      description: outputParam.description,
+      is_output: true,
+      type: '', // FIXME
+      default: outputAggregations[baselineRunID] // since this is the baseline run
+    });
+    // initially select the baseline
+    // this.initialScenarioSelection = [baselineRunID]; // REVIEW: uncomment to select baseline run by default
+    this.selectedDimensions = selectedParameters;
+    this.dimensionsData = allProcessedRunsParams;
+
+    // force 'rainfall_multiplier' to be ordinal
+    // FIXME: no support for baseline and for marker placement for ordinal axes, yet!
+    // this.ordinalDimensions = ['rainfall_multiplier'];
+
+    // TODO: use human-readable names for dimensions instead of the raw name
+    // TODO: add/refine interfaces to clean up the code
+  },
   methods: {
+    async fetchAllScenarioMetadata() {
+      await this.fetchAndBuildModelParameterMap();
+      const promises = this.allScenarioIds.map(scenarioId =>
+        API.get('fetch-demo-data', {
+          params: {
+            modelId: this.selectedModelId,
+            runId: scenarioId,
+            type: 'metadata'
+          }
+        })
+      );
+      const allMetadata = (await Promise.all(promises)).map(metadata =>
+        JSON.parse(metadata.data)
+      );
+      this.allScenariosData = allMetadata;
+      console.log('Fetched metadata for all scenarios', allMetadata);
+    },
+    async fetchAndBuildModelParameterMap() {
+      await API.get('fetch-demo-data', {
+        params: {
+          modelId: this.selectedModelId,
+          type: 'metadata'
+        }
+      }).then(result => {
+        this.modelMetaData = JSON.parse(result.data);
+        const modelParametes = this.modelMetaData.parameters;
+        modelParametes.forEach((p: any) => {
+          this.modelParametersMap[p.id] = p;
+        });
+        console.log('Fetched model parameters metadata', this.modelParametersMap);
+      });
+    },
     onMapLoad() {
       this.$emit('on-map-load');
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
-
-      const overrideCurrentScenarioSelection = false;
-      if (overrideCurrentScenarioSelection) {
-        this.initialScenarioSelection.length = 0;
-        if (this.showBaselineDefaults) {
-          // find any baseline scenarios and select by default
-          this.dimensionsData.forEach(scenario => {
-            if (scenario.baseline as string === 'true') {
-              this.initialScenarioSelection.push(scenario.id as string);
-            }
-          });
-        }
-      }
     },
     toggleNewRunsMode() {
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
+      // always force baselinedefault to be visible when the new-runs-mode is active
+      if (this.showNewRunsMode) {
+        this.showBaselineDefaults = true;
+      }
     },
     requestNewModelRuns() {
       // FIXME: cast to 'any' since typescript cannot see mixins yet!
       (this as any).toaster('New runs requested\nPlease check back later!');
+    },
+    updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
+      // TODO: emit 'set-selected-scenario-ids' with an array of selected scenario IDs
+      //  It's important we don't just emit the one scenario they just selected, since
+      //  the handler will replace the whole array.
+      if (
+        e.scenarios.length === 0 ||
+        (e.scenarios.length === 1 && e.scenarios[0] === undefined)
+      ) {
+        console.log('no line is selected');
+        this.$emit('set-selected-scenario-ids', []);
+      } else {
+        console.log('user selected: ' + e.scenarios.length);
+        this.$emit('set-selected-scenario-ids', e.scenarios.map(s => s.run_id));
+      }
+    },
+    updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
+      this.potentialScenarioCount = e.scenarios.length;
     }
   }
 });

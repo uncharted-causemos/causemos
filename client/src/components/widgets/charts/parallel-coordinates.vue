@@ -90,7 +90,7 @@ export default defineComponent({
       this.resizeDebounced.bind(this)(size.width, size.height);
     },
     render(width: number, height: number): void {
-      if (this.dimensionsData === null) return;
+      if (this.dimensionsData === null || this.dimensionsData.length === 0) return;
       const options: ParallelCoordinatesOptions = {
         width,
         height,
