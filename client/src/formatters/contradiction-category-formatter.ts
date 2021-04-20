@@ -6,6 +6,6 @@ import { CONTRADICTION_MAP } from '@/utils/code-util';
  * 2: 'All refuting'
  * @param {integer} value
  */
-export default function (value) {
+export default function (value: number) {
   return CONTRADICTION_MAP[value];
 }

@@ -3,6 +3,6 @@ import _ from 'lodash';
 
 const defaultFormatter = d3.format(',');
 
-export default function (value) {
+export default function (value: number) {
   return _.isFinite(value) ? defaultFormatter(value) : 0;
 }
