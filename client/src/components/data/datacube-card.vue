@@ -93,7 +93,15 @@
           class="timeseries-chart"
           :timeseries-data="timeseriesData"
         />
-        <div class="map placeholder">TODO: Map visualization</div>
+        <!-- <div class="map placeholder">TODO: Map visualization</div> -->
+
+        <data-analysis-map
+          class="card-map full-width"
+          :selection="selection"
+          :show-tooltip="false"
+          :selected-admin-level="selectedAdminLevel"
+          @on-map-load="onMapLoad"
+        />
       </div>
     </div>
   </div>
@@ -106,7 +114,8 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ScenarioData, ScenarioDef } from '@/types/Datacubes';
+import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
+import DataAnalysisMap from '@/components/data/analysis-map.vue';
 
 import { SCENARIOS_LIST, TIMESERIES_DATA, DIMENSIONS_LIST } from '@/assets/scenario-data';
 
@@ -119,15 +128,22 @@ const COLORS = [
 
 export default defineComponent({
   name: 'DatacubeCard',
+  emits: [
+    'on-map-load'
+  ],
   props: {
     isExpanded: {
       type: Boolean,
       default: true
+    },
+    selectedAdminLevel: {
+      type: Number,
+      default: 0
     }
     // TODO: probably we'll want this component to receive either a full datacube object
     //  or a datacube ID to fetch the full datacube object itself.
   },
-  components: { timeseriesChart, DatacubeScenarioHeader, Disclaimer, ParallelCoordinatesChart },
+  components: { timeseriesChart, DatacubeScenarioHeader, Disclaimer, ParallelCoordinatesChart, DataAnalysisMap },
   setup() {
     const selectedScenarios = ref<{ [key: string]: number | string }[]>([]);
     // TODO: for now, assume all scenarios are selected
@@ -182,11 +198,27 @@ export default defineComponent({
       potentialScenarioCount
     };
   },
+  computed: {
+    selection() {
+      // TODO: FIXME: yeah fix it would you
+        id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
+      return {
+        modelId: '2fe40c11-8862-4ab4-b528-c85dacdc615e',
+        outputVariable: 'production',
+        runId: '965c0e8c-1e66-4c16-b4d1-64d0607d6f69',
+        timestamp: 1430438400000
+      };
+  },
+    }
+      // return { id, modelId, outputVariable, ...selection };
   data: () => ({
     showBaselineDefaults: false,
     showNewRunsMode: false
   }),
   methods: {
+    onMapLoad() {
+      this.$emit('on-map-load');
+    },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
 
@@ -212,7 +244,10 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/variables';
+@import "~styles/variables";
+
+$fullscreenTransition: all .5s ease-in-out;
+
 .datacube-card-container {
   background: $background-light-1;
   box-shadow: $shadow-level-1;
@@ -284,5 +319,39 @@ header {
   text-align: center;
   padding: 10px;
   color: #bbb;
+}
+
+.card-map {
+  height: 100%;
+  width: 70%;
+
+  &.full-width {
+    width: 100%;
+  }
+}
+
+.data-analysis-card-container {
+  background: white;
+  padding: 5px 0;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 2px 4px rgba(39, 40, 51, 0.12);
+
+  .aggregation-message {
+    padding-bottom: 5px;
+    height: 0;
+    opacity: 0;
+    transition: $fullscreenTransition;
+
+    &.isVisible {
+      opacity: 1;
+      // Hardcode height to enable animation
+      height: 34px;
+    }
+
+    &:not(.isVisible) {
+      padding: 0;
+    }
+  }
 }
 </style>
