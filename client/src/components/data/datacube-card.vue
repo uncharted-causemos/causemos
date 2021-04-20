@@ -26,14 +26,23 @@
     <div class="flex-row">
       <!-- if has multiple scenarios -->
       <div class="scenario-selector">
-        <div style="padding-left: 1rem">
-          <div class="baseline-checkbox">
+        <div>
+          <div class="checkbox">
             <label @click="toggleBaselineDefaultsVisibility()">
               <i
                 class="fa fa-lg fa-fw"
                 :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
               />
               Baseline Defaults
+            </label>
+          </div>
+          <div class="checkbox">
+            <label @click="toggleNewRunsMode()">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-toggle-on': showNewRunsMode, 'fa-toggle-off': !showNewRunsMode }"
+              />
+              New Runs Mode
             </label>
           </div>
         </div>
@@ -44,8 +53,21 @@
           :ordinal-dimensions="ordinalDimensions"
           :initial-data-selection="initialScenarioSelection"
           :show-baseline-defaults="showBaselineDefaults"
+          :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
+          @generated-scenarios="updateGeneratedScenarios"
         />
+        <div v-if="showNewRunsMode">
+          <disclaimer
+            :message="
+              potentialScenarioCount +
+                ' scenario(s) can be generated'
+            "
+          />
+          <button class="search-button btn btn-primary btn-call-for-action">
+            Request
+          </button>
+        </div>
       </div>
       <div class="column">
         <!-- TODO: extract button-group to its own component -->
@@ -84,7 +106,7 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ScenarioDef } from '@/types/Datacubes';
+import { ScenarioData, ScenarioDef } from '@/types/Datacubes';
 
 import { SCENARIOS_LIST, TIMESERIES_DATA, DIMENSIONS_LIST } from '@/assets/scenario-data';
 
@@ -133,6 +155,8 @@ export default defineComponent({
     const selectedDimensions = DIMENSIONS_LIST;
     const ordinalDimensions = undefined;
     const initialScenarioSelection: Array<string> = [];
+    const potentialScenarioCount = ref(0);
+    let potentialScenarios: Array<ScenarioData> = [];
     const updateScenarioSelection = (e: { scenarios: Array<ScenarioDef> }) => {
       if (e.scenarios.length === 0 ||
          (e.scenarios.length === 1 && e.scenarios[0] === undefined)) {
@@ -140,6 +164,10 @@ export default defineComponent({
       } else {
         console.log('user selected: ' + e.scenarios.length);
       }
+    };
+    const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
+      potentialScenarios = e.scenarios;
+      potentialScenarioCount.value = potentialScenarios.length;
     };
     return {
       selectedScenarios,
@@ -149,11 +177,14 @@ export default defineComponent({
       selectedDimensions,
       ordinalDimensions,
       initialScenarioSelection,
-      updateScenarioSelection
+      updateScenarioSelection,
+      updateGeneratedScenarios,
+      potentialScenarioCount
     };
   },
   data: () => ({
-    showBaselineDefaults: false
+    showBaselineDefaults: false,
+    showNewRunsMode: false
   }),
   methods: {
     toggleBaselineDefaultsVisibility() {
@@ -171,6 +202,10 @@ export default defineComponent({
           });
         }
       }
+    },
+    toggleNewRunsMode() {
+      this.showNewRunsMode = !this.showNewRunsMode;
+      this.potentialScenarioCount = 0;
     }
   }
 });
@@ -222,10 +257,11 @@ header {
 .scenario-selector {
   width: 25%;
   margin-right: 10px;
-  height: 500px;
+  height: 400px;
 }
 
-.baseline-checkbox {
+.checkbox {
+  user-select: none; /* Standard syntax */
   display: inline-block;
   label {
     font-weight: normal;

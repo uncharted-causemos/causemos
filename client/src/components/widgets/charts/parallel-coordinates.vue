@@ -48,10 +48,15 @@ export default defineComponent({
     showBaselineDefaults: {
       type: Boolean,
       default: false
+    },
+    newRunsMode: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [
-    'select-scenario'
+    'select-scenario',
+    'generated-scenarios'
   ],
   computed: {
     getDefaultSize() {
@@ -67,6 +72,10 @@ export default defineComponent({
     showBaselineDefaults(): void {
       // do not re-render everything, just update markers visibility
       renderBaselineMarkers(this.showBaselineDefaults);
+    },
+    newRunsMode(): void {
+      const sz = this.getDefaultSize;
+      this.render(sz.width, sz.height);
     }
   },
   mounted(): void {
@@ -86,7 +95,8 @@ export default defineComponent({
         width,
         height,
         showBaselineDefaults: this.showBaselineDefaults,
-        initialDataSelection: this.initialDataSelection
+        initialDataSelection: this.initialDataSelection,
+        newRunsMode: this.newRunsMode
       };
       const refSelection = d3.select((this.$refs as any).pcsvg);
       refSelection.selectAll('*').remove();
@@ -96,12 +106,18 @@ export default defineComponent({
         this.dimensionsData,
         this.selectedDimensions,
         this.ordinalDimensions,
-        this.onLinesSelection
+        this.onLinesSelection,
+        this.onGeneratedRuns
       );
     },
     onLinesSelection(selectedLines?: Array<ScenarioData> /* array of selected lines on the PCs plot */): void {
       if (selectedLines && Array.isArray(selectedLines)) {
         this.$emit('select-scenario', { scenarios: selectedLines });
+      }
+    },
+    onGeneratedRuns(generatedLines?: Array<ScenarioData> /* array of generated lines on the PCs plot */): void {
+      if (generatedLines && Array.isArray(generatedLines)) {
+        this.$emit('generated-scenarios', { scenarios: generatedLines });
       }
     }
   }

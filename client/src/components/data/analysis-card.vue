@@ -676,6 +676,7 @@ $fullscreenTransition: all .5s ease-in-out;
 }
 
 .baseline-checkbox {
+  user-select: none; /* Standard syntax */
   display: inline-block;
   label {
     font-weight: normal;
