@@ -64,7 +64,11 @@
                 ' scenario(s) can be generated'
             "
           />
-          <button class="search-button btn btn-primary btn-call-for-action">
+          <button
+            class="search-button btn btn-primary btn-call-for-action"
+            :class="{ 'disabled': potentialScenarioCount === 0}"
+            @click="requestNewModelRuns()"
+          >
             Request
           </button>
         </div>
@@ -238,6 +242,10 @@ export default defineComponent({
     toggleNewRunsMode() {
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
+    },
+    requestNewModelRuns() {
+      // FIXME: cast to 'any' since typescript cannot see mixins yet!
+      (this as any).toaster('New runs requested\nPlease check back later!');
     }
   }
 });
