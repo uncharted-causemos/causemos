@@ -30,7 +30,7 @@ const dropOneInternalVowel = (text: string) => {
 
 // Slightly smarter formatter to produce human-readable indicator values
 const defaultValueFormatter = (v: number) => {
-  if (v === 0) return 0;
+  if (v === 0) return '0';
   return v.toPrecision(3);
 };
 export const chartValueFormatter = (...range: number[]) => {
@@ -40,7 +40,7 @@ export const chartValueFormatter = (...range: number[]) => {
 
   // Guard against skewed ranges. e.g. [0.103, 888888]
   if (range[0].toString().length < 7 && range[1].toString().length < 7) {
-    return (v: number) => v;
+    return (v: number) => v.toString();
   }
   return defaultValueFormatter;
 };

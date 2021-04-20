@@ -30,7 +30,7 @@ export default defineComponent({
     };
     let updateTimestampElements: ((timestamp: number | null) => void) | undefined;
     const resize = _.debounce(function({ width, height }) {
-      if (lineChart.value === null) return;
+      if (lineChart.value === null || props.timeseriesData.length === 0) return;
       const svg = d3.select<HTMLElement, null>(lineChart.value);
       if (svg === null) return;
       // Set new size
@@ -46,10 +46,28 @@ export default defineComponent({
         selectTimestamp
       );
     }, RESIZE_DELAY);
+    function selectLastTimestamp() {
+      const allTimestamps = props.timeseriesData
+        .map(timeseries => timeseries.points)
+        .flat()
+        .map(point => point.timestamp);
+      const lastTimestamp = _.max(allTimestamps);
+      selectTimestamp(lastTimestamp ?? 0);
+    }
     watch(selectedTimestamp, selectedTimestamp => {
       if (updateTimestampElements !== undefined) {
         updateTimestampElements(selectedTimestamp);
       }
+    });
+    watch(() => props.timeseriesData, () => {
+      // Underlying data has changed, so rerender chart
+      const parentElement = lineChart.value?.parentElement;
+      if (parentElement === null || parentElement === undefined) return;
+      resize({
+        width: parentElement.clientWidth,
+        height: parentElement.clientHeight
+      });
+      selectLastTimestamp();
     });
     onMounted(() => {
       const parentElement = lineChart.value?.parentElement;
@@ -58,12 +76,7 @@ export default defineComponent({
         width: parentElement.clientWidth,
         height: parentElement.clientHeight
       });
-      const allTimestamps = props.timeseriesData
-        .map(timeseries => timeseries.points)
-        .flat()
-        .map(point => point.timestamp);
-      const lastTimestamp = _.max(allTimestamps);
-      selectTimestamp(lastTimestamp ?? 0);
+      selectLastTimestamp();
     });
     return { resize, lineChart };
   }

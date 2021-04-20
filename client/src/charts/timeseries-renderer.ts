@@ -2,20 +2,28 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
+import { chartValueFormatter } from '@/utils/string-util';
+import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 
 const X_AXIS_HEIGHT = 20;
-const Y_AXIS_WIDTH = 20;
+const Y_AXIS_WIDTH = 40;
 const PADDING_TOP = 10;
-const PADDING_RIGHT = 20;
+const PADDING_RIGHT = 40;
 
-const X_AXIS_TICK_COUNT = 8;
-const Y_AXIS_TICK_COUNT = 4;
+const X_AXIS_TICK_COUNT = 4;
+const Y_AXIS_TICK_COUNT = 2;
 const X_AXIS_TICK_SIZE_PX = 2;
+// The type of value can't be more specific than `any`
+//  because under the hood d3.tickFormat requires d3.NumberType.
+// It correctly converts, but its TypeScript definitions don't
+//  seem to reflect that.
+const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM DD, YYYY');
 
 const DEFAULT_LINE_COLOR = '#000';
 const LABEL_BACKGROUND_COLOR = 'white';
+const LABEL_FONT_SIZE = '12px';
 const DASHED_LINE = {
   length: 4,
   gap: 2,
@@ -53,8 +61,10 @@ export default function(
     //  up the hierarchy.
     return () => {};
   }
+
+  const valueFormatter = chartValueFormatter(...yExtent);
   const [xScale, yScale] = calculateScales(width, height, xExtent, yExtent);
-  renderAxes(groupElement, xScale, yScale, width, height);
+  renderAxes(groupElement, xScale, yScale, valueFormatter, width, height);
   timeseriesList.forEach(timeSeries => {
     renderLine(groupElement, timeSeries, xScale, yScale);
   });
@@ -81,7 +91,8 @@ export default function(
     timestampElements,
     timeseriesList,
     xScale,
-    yScale
+    yScale,
+    valueFormatter
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -91,7 +102,8 @@ export default function(
       timestampElements,
       timeseriesList,
       xScale,
-      yScale
+      yScale,
+      valueFormatter
     );
   };
 }
@@ -144,18 +156,23 @@ function renderAxes(
   selection: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
+  // The type of value can't be more specific than `any`
+  //  because under the hood d3.tickFormat requires d3.NumberType.
+  // It correctly converts, but its TypeScript definitions don't
+  //  seem to reflect that.
+  valueFormatter: (value: any) => string,
   width: number,
   height: number
 ) {
   const xAxis = d3
     .axisBottom(xScale)
     .tickSize(X_AXIS_TICK_SIZE_PX)
-    .tickFormat(d => d.toString())
+    .tickFormat(DATE_FORMATTER)
     .ticks(X_AXIS_TICK_COUNT);
   const yAxis = d3
     .axisLeft(yScale)
     .tickSize(width - Y_AXIS_WIDTH - PADDING_RIGHT)
-    .tickFormat(d => d.toString())
+    .tickFormat(valueFormatter)
     .ticks(Y_AXIS_TICK_COUNT);
   selection
     .append('g')
@@ -244,6 +261,7 @@ function generateLabel(
     .append('text')
     .style('fill', color)
     .style('text-anchor', 'middle')
+    .style('font-size', LABEL_FONT_SIZE)
     .text(text);
   const { labelWidth, labelHeight } = calculateLabelDimensions(labelText);
   labelText.attr(
@@ -320,7 +338,8 @@ function updateTimestampElements(
   { selectedTimestampGroup, valueGroups }: TimestampElements,
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>
+  yScale: d3.ScaleLinear<number, number>,
+  valueFormatter: (value: any) => string
 ) {
   if (timestamp === null) {
     // Hide everything
@@ -336,7 +355,7 @@ function updateTimestampElements(
   // Display the newly selected timestamp
   const labelText = selectedTimestampGroup
     .select<SVGTextElement>('text')
-    .text(timestamp);
+    .text(DATE_FORMATTER(timestamp));
   // Resize background to match
   const { labelWidth } = calculateLabelDimensions(labelText);
   selectedTimestampGroup
@@ -366,7 +385,7 @@ function updateTimestampElements(
     // Display the run's value at this timestamp
     const labelText = valueGroup
       .select<SVGTextElement>('text')
-      .text(point.value);
+      .text(valueFormatter(point.value));
     // Resize background to match
     const { labelWidth } = calculateLabelDimensions(labelText);
     valueGroup.select('.label-background').attr('width', labelWidth);

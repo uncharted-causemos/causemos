@@ -16,6 +16,7 @@
         :outputVariable="'Crop production'"
         :outputVariableUnits="'tonnes'"
         :selectedScenarios="selectedScenarios"
+        :color-from-index="colorFromIndex"
         v-else
       />
       <button v-tooltip="'Collapse datacube'" class="btn btn-default">
@@ -90,12 +91,13 @@
             :outputVariable="'Crop production'"
             :outputVariableUnits="'tonnes'"
             :selectedScenarios="selectedScenarios"
+            :color-from-index="colorFromIndex"
           />
           <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
         </header>
         <timeseries-chart
           class="timeseries-chart"
-          :timeseries-data="timeseriesData"
+          :timeseries-data="selectedTimeseriesData"
         />
         <!-- <div class="map placeholder">TODO: Map visualization</div> -->
 
@@ -123,8 +125,9 @@ import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coord
 import { ScenarioData, ScenarioDef } from '@/types/Datacubes';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
 import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
-import { SCENARIOS_LIST, TIMESERIES_DATA, DIMENSIONS_LIST } from '@/assets/scenario-data';
+import { SCENARIOS_LIST, DIMENSIONS_LIST } from '@/assets/scenario-data';
 import API from '@/api/api';
+import { Timeseries } from '@/types/Timeseries';
 
 const COLORS = [
   '#44f',
@@ -132,6 +135,10 @@ const COLORS = [
   '#d4d'
   // TODO: choose better colours and add more of them
 ];
+
+function colorFromIndex(index: number) {
+  return COLORS[index % COLORS.length];
+}
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -166,31 +173,40 @@ export default defineComponent({
     DataAnalysisMap
   },
   setup(props) {
-    const selectedScenarios = ref<{ [key: string]: number | string }[]>([]);
-    // TODO: for now, assume all scenarios are selected
-    // Assign each selected scenario a colour
-    selectedScenarios.value = SCENARIOS_LIST.map((scenario, index) => {
-      return { ...scenario, _SCENARIO_COLOR: COLORS[index % COLORS.length] };
-    });
     const scenarioCount = computed(() => props.allScenarioIds.length);
 
-    // TODO: fetch timeseries data for each selected run, create a data
+    // Fetch timeseries data for each selected run, create a data
     //  structure that contains the colour for each run, and pass that to
     // timeseries chart
-    const timeseriesData = computed(() =>
-      TIMESERIES_DATA.map(timeseries => {
-        // Get the color of the selected scenario with a matching _SCENARIO_ID
-        //  or default to black if no matching scenario is found.
-        const color =
-          selectedScenarios.value.find(
-            scenario => scenario.id === timeseries._SCENARIO_ID
-          )?._SCENARIO_COLOR ?? '#000';
-        return {
-          ...timeseries,
-          color
-        };
-      })
-    );
+    // FIXME: this code contains a race condition if the selected model or
+    //  scenario IDs were to change quickly and the promise sets completed
+    //  out of order.
+    const selectedTimeseriesData = ref<Timeseries[]>([]);
+    async function fetchTimeseriesData() {
+      selectedTimeseriesData.value = [];
+      if (
+        props.selectedModelId === null ||
+        props.selectedScenarioIds.length === 0
+      ) {
+        return;
+      }
+      const promises = props.selectedScenarioIds.map(scenarioId =>
+        API.get('fetch-demo-data', {
+          params: {
+            modelId: props.selectedModelId,
+            runId: scenarioId,
+            type: 'timeseries'
+          }
+        })
+      );
+      const allTimeseriesData = (await Promise.all(promises)).map(response =>
+        JSON.parse(response.data)
+      );
+      selectedTimeseriesData.value = props.selectedScenarioIds.map((scenarioId, index) => {
+        const color = colorFromIndex(index);
+        return { color, points: allTimeseriesData[index] };
+      });
+    }
 
     // TODO: fetch model metadata to use in parallel coordinates
 
@@ -246,12 +262,15 @@ export default defineComponent({
       potentialScenarios = e.scenarios;
       potentialScenarioCount.value = potentialScenarios.length;
     };
-    watch(props.selectedScenarioIds, fetchScenarioMetadata, {
+    watch(props.selectedScenarioIds, () => {
+      fetchScenarioMetadata();
+      fetchTimeseriesData();
+    }, {
       immediate: true
     });
     return {
-      selectedScenarios,
-      timeseriesData,
+      selectedScenarios: SCENARIOS_LIST,
+      selectedTimeseriesData,
       scenarioCount,
       dimensionsData,
       selectedDimensions,
@@ -260,7 +279,8 @@ export default defineComponent({
       updateScenarioSelection,
       updateGeneratedScenarios,
       potentialScenarioCount,
-      adminLevelData: ADMIN_LEVEL_DATA
+      adminLevelData: ADMIN_LEVEL_DATA,
+      colorFromIndex
     };
   },
   computed: {
