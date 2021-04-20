@@ -114,7 +114,7 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
+import { ScenarioData, ScenarioDef } from '@/types/Datacubes';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
 
 import { SCENARIOS_LIST, TIMESERIES_DATA, DIMENSIONS_LIST } from '@/assets/scenario-data';
@@ -201,16 +201,16 @@ export default defineComponent({
   computed: {
     selection() {
       // TODO: FIXME: yeah fix it would you
-        id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
       return {
+        id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
         modelId: '2fe40c11-8862-4ab4-b528-c85dacdc615e',
         outputVariable: 'production',
         runId: '965c0e8c-1e66-4c16-b4d1-64d0607d6f69',
         timestamp: 1430438400000
       };
-  },
     }
-      // return { id, modelId, outputVariable, ...selection };
+    // return { id, modelId, outputVariable, ...selection };
+  },
   data: () => ({
     showBaselineDefaults: false,
     showNewRunsMode: false
