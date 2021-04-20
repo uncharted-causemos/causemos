@@ -6,9 +6,14 @@
     <main>
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
-    <!-- TODO: we'll need to store the admin level data for each card
-    in this component and pass it down -->
-    <datacube-card :class="{ 'datacube-expanded': true }" />
+    <datacube-card
+      :class="{ 'datacube-expanded': true }"
+      :selected-admin-level="selectedAdminLevel"
+      :selected-model-id="selectedModelId"
+      :all-scenario-ids="allScenarioIds"
+      :selected-scenario-ids="selectedScenarioIds"
+      @set-selected-scenario-ids="setSelectedScenarioIds"
+    />
     <drilldown-panel
         class="drilldown"
         :is-open="activeDrilldownTab !== null"
@@ -19,9 +24,9 @@
           <breakdown-pane
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
-            :admin-level-data="adminLevelData"
-            :available-admin-levels="availableAdminLevels"
             :type-breakdown-data="typeBreakdownData"
+            :selected-model-id="selectedModelId"
+            :selected-scenario-ids="selectedScenarioIds"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -33,7 +38,8 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import ADMIN_LEVEL_DATA, { AGGREGATED_PRODUCT_TYPE_DATA } from '@/assets/admin-stats.js';
+import { AGGREGATED_PRODUCT_TYPE_DATA } from '@/assets/admin-stats.js';
+import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
 import { defineComponent, ref } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 
@@ -50,29 +56,31 @@ export default defineComponent({
   name: 'CompAnalysisExperiment',
   components: { DatacubeCard, DrilldownPanel, BreakdownPane },
   setup() {
-    const selectedAdminLevel = ref(1);
+    const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
-    const availableAdminLevels = [
-      'Country',
-      'L1 admin region',
-      'L2 admin region',
-      'L3 admin region',
-      'L4 admin region',
-      'L5 admin region'
-    ].slice(0, ADMIN_LEVEL_DATA.maxDepth);
 
     const typeBreakdownData = [
       AGGREGATED_PRODUCT_TYPE_DATA
     ];
+
+    const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
+    // TODO: select baseline by default, not necessarily the first one
+    const selectedScenarioIds = ref([allScenarioIds[0]]);
+    function setSelectedScenarioIds(newIds: string[]) {
+      selectedScenarioIds.value = newIds;
+    }
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
-      adminLevelData: ADMIN_LEVEL_DATA.data,
       selectedAdminLevel,
       setSelectedAdminLevel,
-      availableAdminLevels,
+      selectedModelId: DSSAT_PRODUCTION_DATA.modelId,
+      allScenarioIds,
+      selectedScenarioIds,
+      setSelectedScenarioIds,
       typeBreakdownData
     };
   }

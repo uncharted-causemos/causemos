@@ -140,12 +140,24 @@
           </dropdown-control>
         </div>
         <div class="scenario-selector">
+          <div style="padding-left: 1rem">
+          <div class="baseline-checkbox">
+            <label @click="toggleBaselineDefaultsVisibility()">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
+              />
+              Baseline Defaults
+            </label>
+          </div>
+        </div>
           <parallel-coordinates-chart
             v-if="dimensionsData"
             :dimensions-data="dimensionsData"
             :selected-dimensions="selectedDimensions"
             :ordinal-dimensions="ordinalDimensions"
-            :apply-default-selection="true"
+            :initial-data-selection="initialScenarioSelection"
+            :show-baseline-defaults="showBaselineDefaults"
             @select-scenario="updateScenarioSelection"
           />
         </div>
@@ -224,6 +236,8 @@ export default {
     dimensionsData: null,
     selectedDimensions: null,
     ordinalDimensions: null,
+    initialScenarioSelection: null,
+    showBaselineDefaults: false,
     drilldownParameters: [],
     isDrilldownDropdownOpen: false
   }),
@@ -403,6 +417,8 @@ export default {
 
     this.selectedDimensions = parameters;
 
+    this.initialScenarioSelection = [runs[0].id]; // select first run by default
+
     // add drilldown params
     this.drilldownParameters = parameters.filter(p => p.type === 'drilldown');
     //
@@ -472,7 +488,25 @@ export default {
       this.$emit('click', e);
     },
     toggleBaselineDefaultsVisibility() {
-      this.baselineDefaultChecked = !this.baselineDefaultChecked;
+      this.showBaselineDefaults = !this.showBaselineDefaults;
+      /*
+      this.initialScenarioSelection.length = 0;
+      if (this.showBaselineDefaults) {
+        // find any baseline scenarios and select by default
+        this.dimensionsData.forEach(scenario => {
+          let isBaseline = true;
+          for (const dim of this.selectedDimensions) {
+            if (dim.default !== scenario[dim.name]) {
+              isBaseline = false;
+              return;
+            }
+          }
+          if (isBaseline) {
+            this.initialScenarioSelection.push(scenario.id);
+          }
+        });
+      }
+      */
     },
     updateScenarioSelection(e) {
       let lineData;
@@ -639,6 +673,16 @@ $fullscreenTransition: all .5s ease-in-out;
 .scenario-selector {
   width: 375px;
   height: 350px;
+}
+
+.baseline-checkbox {
+  user-select: none; /* Standard syntax */
+  display: inline-block;
+  label {
+    font-weight: normal;
+    cursor: pointer;
+    margin: 0;
+  }
 }
 
 .line-chart {

@@ -1,6 +1,8 @@
 // Dummy data to be used in a site visit demo on April 22, 2021
 //  and removed afterward.
 
+import { DimensionData, ScenarioData } from '@/types/Datacubes';
+
 const timeseries1 = [
   { value: 1, timestamp: 100 },
   { value: 2, timestamp: 200 },
@@ -71,23 +73,56 @@ export const TIMESERIES_DATA = [
   }
 ];
 
-export const SCENARIOS_LIST = [
+export const SCENARIOS_LIST: Array<ScenarioData> = [
   {
-    '_SCENARIO_ID': 'abc1',
+    'id': 'abc1',
     'rainfall multiplier': 75,
     'N rate delta': 110,
-    'crop': 'teff'
+    'crop': 'teff',
+    'production': 55,
+    'baseline': 'true'
   },
   {
-    '_SCENARIO_ID': 'abc2',
+    'id': 'abc2',
     'rainfall multiplier': 25,
     'N rate delta': 120,
-    'crop': 'corn'
+    'crop': 'corn',
+    'production': 25,
+    'baseline': 'false'
   },
   {
-    '_SCENARIO_ID': 'abc3',
+    'id': 'abc3',
     'rainfall multiplier': 15,
     'N rate delta': 140,
-    'crop': 'maize'
+    'crop': 'maize',
+    'production': 70,
+    'baseline': 'false'
+  }
+];
+
+export const DIMENSIONS_LIST: Array<DimensionData> = [
+  {
+    name: 'rainfall multiplier',
+    type: 'input',
+    default: 75,
+    description: 'my first input var'
+  },
+  {
+    name: 'N rate delta',
+    type: 'input',
+    default: 110,
+    description: 'my second input var'
+  },
+  {
+    name: 'crop',
+    type: 'drilldown',
+    default: 'teff',
+    description: 'my first drilldown var'
+  },
+  {
+    name: 'production',
+    type: 'output',
+    default: 55,
+    description: 'my first output var'
   }
 ];

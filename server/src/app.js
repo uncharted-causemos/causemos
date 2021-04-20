@@ -30,6 +30,8 @@ const bookmarksRouter = rootRequire('/routes/bookmarks');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
 const modelRunRouter = rootRequire('/routes/model-run');
+const fetchFileService = rootRequire('/services/external/fetch-file-service');
+const asyncHandler = require('express-async-handler');
 
 const kbsRouter = rootRequire('/routes/knowledge-bases');
 const projectsRouter = rootRequire('/routes/projects');
@@ -135,6 +137,19 @@ app.use('/api/model-run', [
   modelRunRouter
 ]);
 
+app.use('/api/fetch-demo-data', asyncHandler(async (req, res) => {
+  const modelId = req.query.modelId;
+  const runId = req.query.runId;
+  const type = req.query.type;
+
+  try {
+    const result = await fetchFileService.fetchDemoData(modelId, runId, type);
+    res.status(200).json(result || {});
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
 
 app.use('/api/projects', projectsRouter);
 app.use('/api/kbs', kbsRouter);
