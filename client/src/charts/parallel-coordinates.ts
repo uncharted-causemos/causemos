@@ -67,7 +67,7 @@ const axisInputLabelFillColor = 'black';
 const axisOutputLabelFillColor = 'green';
 
 const axisTickLabelFontSize = '12';
-const axisTickLabelOffset = '10'; // FIXME: this should be dynamic based on the word size
+const axisTickLabelOffset = '5'; // FIXME: this should be dynamic based on the word size
 
 const brushHeight = 8;
 
@@ -91,7 +91,7 @@ const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 // @REVIEW this may better be done external to the PC component
 const filterDrilldownDimensionData = (dimensions: Array<DimensionData>) => {
   return dimensions.filter(function(d) {
-    if (d.is_drilldown) {
+    if (d.is_drilldown !== undefined) {
       return !d.is_drilldown;
     }
     return d.type !== 'drilldown';
@@ -660,7 +660,7 @@ function renderParallelCoordinates(
     .attr('y', axisLabelOffsetY)
     .text(function(d) { return d.name; })
     .style('fill', function(d) {
-      if (d.is_output) {
+      if (d.is_output !== undefined) {
         return d.is_output ? axisOutputLabelFillColor : axisInputLabelFillColor;
       }
       return d.type === 'output' ? axisOutputLabelFillColor : axisInputLabelFillColor;
