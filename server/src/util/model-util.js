@@ -43,7 +43,14 @@ const projectionValueRange = (values) => {
   return { max, min };
 };
 
+const MODEL_STATUS = {
+  UNSYNCED: 0,
+  TRAINING: 1,
+  READY: 2
+};
+
 module.exports = {
   isEdgeAmbiguous,
-  projectionValueRange
+  projectionValueRange,
+  MODEL_STATUS
 };

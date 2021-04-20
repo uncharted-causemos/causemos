@@ -13,6 +13,7 @@ const indicatorService = rootRequire('/services/indicator-service');
 const modelService = rootRequire('/services/model-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
+const { MODEL_STATUS } = rootRequire('/util/model-util');
 
 const HISTORY_START_DATE = '2015-01-01';
 const HISTORY_END_DATE = '2017-12-01';
@@ -384,7 +385,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
 
   // 4. Update model status
-  const status = initialParameters.status === 'training' ? 1 : 2;
+  const status = initialParameters.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
 
   const modelPayload = {
     id: modelId,
@@ -423,9 +424,7 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
 
   // FIXME: Different engines have slightly different status codes
   // Update model
-  console.log('');
-  console.log(modelStatus);
-  const v = modelStatus.status === 'training' ? 1 : 2;
+  const v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
   await cagService.updateCAGMetadata(modelId, { status: v });
 
   res.json(modelStatus);
@@ -567,7 +566,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update node-parameter');
   }
 
-  await cagService.updateCAGMetadata(modelId, { status: 0 });
+  await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);
@@ -609,7 +608,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update edge-parameter');
   }
 
-  await cagService.updateCAGMetadata(modelId, { status: 0 });
+  await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);

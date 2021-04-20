@@ -7,7 +7,7 @@ import { startPolling } from '@/api/poller';
 const MODEL_STATUS = {
   UNSYNCED: 0,
   TRAINING: 1,
-  READy: 2
+  READY: 2
 };
 
 const getProjectModels = async (projectId) => {

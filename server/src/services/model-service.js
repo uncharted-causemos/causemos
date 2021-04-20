@@ -8,6 +8,7 @@ const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const modelUtil = rootRequire('/util/model-util');
 
 const DEFAULT_BATCH_SIZE = 1000;
+const MODEL_STATUS = modelUtil.MODEL_STATUS;
 
 
 // Type of experiment that can be performed in modeling Engine
@@ -375,7 +376,7 @@ const clearNodeParameter = async (modelId, nodeId) => {
   // Update sync status
   const modelPayload = {
     id: modelId,
-    status: 0,
+    status: MODEL_STATUS.UNSYNCED,
     modified_at: modifiedAt
   };
   const modelAdapter = Adapter.get(RESOURCE.MODEL);

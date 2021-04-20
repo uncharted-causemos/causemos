@@ -20,7 +20,7 @@ app.use(Toast);
 app.mixin({
   methods: {
     // toaster(message, type, close) {
-    toaster(message: string, msgType: string, sticky: boolean) {
+    toaster(message: string, msgType: string, sticky = false) {
       const toast = useToast();
       const t = msgType === 'error' ? TYPE.INFO : TYPE.SUCCESS;
       const timeout = sticky === true ? false : 3000;
