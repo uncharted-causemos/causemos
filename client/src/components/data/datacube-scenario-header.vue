@@ -10,7 +10,7 @@
         <label>{{ inputParameter }}</label>
         <span v-for="(scenario, index) of selectedScenarios" :key="index">
           {{ index > 0 ? ', ' : '' }}
-          <span :style="{ color: scenario._SCENARIO_COLOR }">
+          <span :style="{ color: colorFromIndex(index) }">
             {{ scenario[inputParameter] }}
           </span>
         </span>
@@ -23,7 +23,6 @@
 import { computed, defineComponent, PropType } from 'vue';
 
 interface ScenarioDescription {
-  _SCENARIO_COLOR: string;
   [key: string]: string | number;
 }
 
@@ -41,13 +40,15 @@ export default defineComponent({
     selectedScenarios: {
       type: Array as PropType<ScenarioDescription[]>,
       required: true
+    },
+    colorFromIndex: {
+      type: Function as PropType<(index: number) => string>,
+      default: () => '#000'
     }
   },
   setup(props) {
     const inputParameters = computed(() =>
-      Object.keys(props.selectedScenarios[0]).filter(
-        key => key !== '_SCENARIO_COLOR' && key !== '_SCENARIO_ID' && key !== 'id'
-      )
+      Object.keys(props.selectedScenarios[0]).filter(key => key !== 'id')
     );
     return { inputParameters };
   }
