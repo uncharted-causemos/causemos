@@ -46,7 +46,7 @@ export default defineComponent({
   setup(props) {
     const inputParameters = computed(() =>
       Object.keys(props.selectedScenarios[0]).filter(
-        key => key !== '_SCENARIO_COLOR' && key !== '_SCENARIO_ID'
+        key => key !== '_SCENARIO_COLOR' && key !== '_SCENARIO_ID' && key !== 'id'
       )
     );
     return { inputParameters };

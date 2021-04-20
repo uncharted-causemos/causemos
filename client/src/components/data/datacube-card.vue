@@ -26,13 +26,52 @@
     <div class="flex-row">
       <!-- if has multiple scenarios -->
       <div class="scenario-selector">
+        <div>
+          <div class="checkbox">
+            <label @click="toggleBaselineDefaultsVisibility()">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
+              />
+              Baseline Defaults
+            </label>
+          </div>
+          <div class="checkbox">
+            <label @click="toggleNewRunsMode()">
+              <i
+                class="fa fa-lg fa-fw"
+                :class="{ 'fa-toggle-on': showNewRunsMode, 'fa-toggle-off': !showNewRunsMode }"
+              />
+              New Runs Mode
+            </label>
+          </div>
+        </div>
         <parallel-coordinates-chart
           v-if="dimensionsData"
           :dimensions-data="dimensionsData"
           :selected-dimensions="selectedDimensions"
           :ordinal-dimensions="ordinalDimensions"
+          :initial-data-selection="initialScenarioSelection"
+          :show-baseline-defaults="showBaselineDefaults"
+          :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
+          @generated-scenarios="updateGeneratedScenarios"
         />
+        <div v-if="showNewRunsMode">
+          <disclaimer
+            :message="
+              potentialScenarioCount +
+                ' scenario(s) can be generated'
+            "
+          />
+          <button
+            class="search-button btn btn-primary btn-call-for-action"
+            :class="{ 'disabled': potentialScenarioCount === 0}"
+            @click="requestNewModelRuns()"
+          >
+            Request
+          </button>
+        </div>
       </div>
       <div class="column">
         <!-- TODO: extract button-group to its own component -->
@@ -81,10 +120,10 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
+import { ScenarioData, ScenarioDef } from '@/types/Datacubes';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
 import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
-import { SCENARIOS_LIST, TIMESERIES_DATA } from '@/assets/scenario-data';
+import { SCENARIOS_LIST, TIMESERIES_DATA, DIMENSIONS_LIST } from '@/assets/scenario-data';
 import API from '@/api/api';
 
 const COLORS = [
@@ -144,7 +183,7 @@ export default defineComponent({
         //  or default to black if no matching scenario is found.
         const color =
           selectedScenarios.value.find(
-            scenario => scenario._SCENARIO_ID === timeseries._SCENARIO_ID
+            scenario => scenario.id === timeseries._SCENARIO_ID
           )?._SCENARIO_COLOR ?? '#000';
         return {
           ...timeseries,
@@ -184,33 +223,12 @@ export default defineComponent({
     //
     // parallel coordinatres dummy data
     //
-    const dimensionsData: Array<ScenarioData> = [
-      { id: '0', input1: 40, input2: 40, output: 55 },
-      { id: '1', input1: 0, input2: 15, output: 10 },
-      { id: '2', input1: 20, input2: 44, output: 25 },
-      { id: '3', input1: 30, input2: 8, output: 70 }
-    ];
-    const selectedDimensions: Array<DimensionData> = [
-      {
-        name: 'input1',
-        type: 'input',
-        default: '10',
-        description: 'my first input var'
-      },
-      {
-        name: 'input2',
-        type: 'input',
-        default: '33',
-        description: 'my second input var'
-      },
-      {
-        name: 'output',
-        type: 'output',
-        default: '10',
-        description: 'my first output var'
-      }
-    ];
+    const dimensionsData = SCENARIOS_LIST;
+    const selectedDimensions = DIMENSIONS_LIST;
     const ordinalDimensions = undefined;
+    const initialScenarioSelection: Array<string> = [];
+    const potentialScenarioCount = ref(0);
+    let potentialScenarios: Array<ScenarioData> = [];
     const updateScenarioSelection = (e: { scenarios: Array<ScenarioDef> }) => {
       // TODO: emit 'set-selected-scenario-ids' with an array of selected scenario IDs
       //  It's important we don't just emit the one scenario they just selected, since
@@ -224,6 +242,10 @@ export default defineComponent({
         console.log('user selected: ' + e.scenarios.length);
       }
     };
+    const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
+      potentialScenarios = e.scenarios;
+      potentialScenarioCount.value = potentialScenarios.length;
+    };
     watch(props.selectedScenarioIds, fetchScenarioMetadata, {
       immediate: true
     });
@@ -234,7 +256,10 @@ export default defineComponent({
       dimensionsData,
       selectedDimensions,
       ordinalDimensions,
+      initialScenarioSelection,
       updateScenarioSelection,
+      updateGeneratedScenarios,
+      potentialScenarioCount,
       adminLevelData: ADMIN_LEVEL_DATA
     };
   },
@@ -248,12 +273,40 @@ export default defineComponent({
         runId: '965c0e8c-1e66-4c16-b4d1-64d0607d6f69',
         timestamp: 1430438400000
       };
-      // return { id, modelId, outputVariable, ...selection };
     }
+    // return { id, modelId, outputVariable, ...selection };
   },
+  data: () => ({
+    showBaselineDefaults: false,
+    showNewRunsMode: false
+  }),
   methods: {
     onMapLoad() {
       this.$emit('on-map-load');
+    },
+    toggleBaselineDefaultsVisibility() {
+      this.showBaselineDefaults = !this.showBaselineDefaults;
+
+      const overrideCurrentScenarioSelection = false;
+      if (overrideCurrentScenarioSelection) {
+        this.initialScenarioSelection.length = 0;
+        if (this.showBaselineDefaults) {
+          // find any baseline scenarios and select by default
+          this.dimensionsData.forEach(scenario => {
+            if (scenario.baseline as string === 'true') {
+              this.initialScenarioSelection.push(scenario.id as string);
+            }
+          });
+        }
+      }
+    },
+    toggleNewRunsMode() {
+      this.showNewRunsMode = !this.showNewRunsMode;
+      this.potentialScenarioCount = 0;
+    },
+    requestNewModelRuns() {
+      // FIXME: cast to 'any' since typescript cannot see mixins yet!
+      (this as any).toaster('New runs requested\nPlease check back later!');
     }
   }
 });
@@ -308,7 +361,17 @@ header {
 .scenario-selector {
   width: 25%;
   margin-right: 10px;
-  height: 500px;
+  height: 400px;
+}
+
+.checkbox {
+  user-select: none; /* Standard syntax */
+  display: inline-block;
+  label {
+    font-weight: normal;
+    cursor: pointer;
+    margin: 0;
+  }
 }
 
 .timeseries-chart {
