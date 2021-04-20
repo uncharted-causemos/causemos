@@ -60,6 +60,8 @@
         />
         <!-- <div class="map placeholder">TODO: Map visualization</div> -->
 
+        <!-- TODO: the map should accept a model ID and selectedScenarioID
+        and fetch its own data -->
         <data-analysis-map
           class="card-map full-width"
           :selection="selection"
@@ -73,7 +75,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref } from 'vue';
+import { defineComponent, computed, ref, PropType, watch } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -81,8 +83,9 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
-
+import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
 import { SCENARIOS_LIST, TIMESERIES_DATA } from '@/assets/scenario-data';
+import API from '@/api/api';
 
 const COLORS = [
   '#44f',
@@ -93,9 +96,7 @@ const COLORS = [
 
 export default defineComponent({
   name: 'DatacubeCard',
-  emits: [
-    'on-map-load'
-  ],
+  emits: ['on-map-load', 'set-selected-scenario-ids'],
   props: {
     isExpanded: {
       type: Boolean,
@@ -104,19 +105,39 @@ export default defineComponent({
     selectedAdminLevel: {
       type: Number,
       default: 0
+    },
+    selectedModelId: {
+      type: String,
+      default: null
+    },
+    allScenarioIds: {
+      type: Array as PropType<string[]>,
+      default: []
+    },
+    selectedScenarioIds: {
+      type: Array as PropType<string[]>,
+      default: []
     }
-    // TODO: probably we'll want this component to receive either a full datacube object
-    //  or a datacube ID to fetch the full datacube object itself.
   },
-  components: { timeseriesChart, DatacubeScenarioHeader, Disclaimer, ParallelCoordinatesChart, DataAnalysisMap },
-  setup() {
+  components: {
+    timeseriesChart,
+    DatacubeScenarioHeader,
+    Disclaimer,
+    ParallelCoordinatesChart,
+    DataAnalysisMap
+  },
+  setup(props) {
     const selectedScenarios = ref<{ [key: string]: number | string }[]>([]);
     // TODO: for now, assume all scenarios are selected
     // Assign each selected scenario a colour
     selectedScenarios.value = SCENARIOS_LIST.map((scenario, index) => {
       return { ...scenario, _SCENARIO_COLOR: COLORS[index % COLORS.length] };
     });
-    const scenarioCount = computed(() => SCENARIOS_LIST.length);
+    const scenarioCount = computed(() => props.allScenarioIds.length);
+
+    // TODO: fetch timeseries data for each selected run, create a data
+    //  structure that contains the colour for each run, and pass that to
+    // timeseries chart
     const timeseriesData = computed(() =>
       TIMESERIES_DATA.map(timeseries => {
         // Get the color of the selected scenario with a matching _SCENARIO_ID
@@ -132,6 +153,34 @@ export default defineComponent({
       })
     );
 
+    // TODO: fetch model metadata to use in parallel coordinates
+
+    // Fetch scenario metadata for each selected scenario
+    // TODO: add scenario metadata schema/interface
+    //  and replace `any` on the next line
+    const selectedScenarioMetadata = ref<any>([]);
+    async function fetchScenarioMetadata() {
+      if (
+        props.selectedModelId === null ||
+        props.selectedScenarioIds.length === 0
+      ) {
+        return [];
+      }
+      const promises = props.selectedScenarioIds.map(scenarioId =>
+        API.get('fetch-demo-data', {
+          params: {
+            modelId: props.selectedModelId,
+            runId: scenarioId,
+            type: 'metadata'
+          }
+        })
+      );
+      const allMetadata = (await Promise.all(promises)).map(metadata =>
+        JSON.parse(metadata.data)
+      );
+      selectedScenarioMetadata.value = allMetadata;
+      console.log('Fetched metadata for selected scenarios', allMetadata);
+    }
     //
     // parallel coordinatres dummy data
     //
@@ -163,13 +212,21 @@ export default defineComponent({
     ];
     const ordinalDimensions = undefined;
     const updateScenarioSelection = (e: { scenarios: Array<ScenarioDef> }) => {
-      if (e.scenarios.length === 0 ||
-         (e.scenarios.length === 1 && e.scenarios[0] === undefined)) {
+      // TODO: emit 'set-selected-scenario-ids' with an array of selected scenario IDs
+      //  It's important we don't just emit the one scenario they just selected, since
+      //  the handler will replace the whole array.
+      if (
+        e.scenarios.length === 0 ||
+        (e.scenarios.length === 1 && e.scenarios[0] === undefined)
+      ) {
         console.log('no line is selected');
       } else {
         console.log('user selected: ' + e.scenarios.length);
       }
     };
+    watch(props.selectedScenarioIds, fetchScenarioMetadata, {
+      immediate: true
+    });
     return {
       selectedScenarios,
       timeseriesData,
@@ -177,7 +234,8 @@ export default defineComponent({
       dimensionsData,
       selectedDimensions,
       ordinalDimensions,
-      updateScenarioSelection
+      updateScenarioSelection,
+      adminLevelData: ADMIN_LEVEL_DATA
     };
   },
   computed: {
@@ -202,9 +260,9 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
-$fullscreenTransition: all .5s ease-in-out;
+$fullscreenTransition: all 0.5s ease-in-out;
 
 .datacube-card-container {
   background: $background-light-1;
