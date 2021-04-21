@@ -342,9 +342,9 @@ export default defineComponent({
     this.dimensionsData = allProcessedRunsParams;
 
     // force 'rainfall_multiplier' to be ordinal
-    // FIXME: no support for baseline and for marker placement for ordinal axes, yet!
-    // this.ordinalDimensions = ['rainfall_multiplier'];
+    this.ordinalDimensions = ['rainfall_multiplier'];
 
+    // TODO: use each axis min/max based on the metadata
     // TODO: add/refine interfaces to clean up the code
   },
   methods: {
