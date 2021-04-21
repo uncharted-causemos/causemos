@@ -35,6 +35,7 @@ export interface DimensionData {
   is_drilldown?: boolean;
   is_output?: boolean;
   name: string;
+  display_name: string;
   description: string;
   default: string | number;
   choices?: Array<string>;
