@@ -41,7 +41,7 @@ const lineMarkerOpacityVisible = 0.5;
 
 const lineColor = '#296AE9ff';
 
-const highlightDuration = 10; // in milliseconds
+const highlightDuration = 50; // in milliseconds
 
 // this is a hack to make the axis data look larger than it actually is
 const enlargeAxesScaleToFitData = false;
