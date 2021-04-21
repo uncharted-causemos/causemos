@@ -78,15 +78,21 @@
       <div class="column">
         <!-- TODO: extract button-group to its own component -->
         <div class="button-group">
-          <button class="btn btn-default" disabled>
-            <!-- @click="TODO" -->
+          <button class="btn btn-default"
+                  :class="{'btn-primary':!isDescriptionView}"
+                  @click="isDescriptionView = false">
             Data</button
-          ><button class="btn btn-default">
-            <!-- @click="TODO" -->
+          ><button class="btn btn-default"
+                   :class="{'btn-primary':isDescriptionView}"
+                   @click="isDescriptionView = true">
             Descriptions
           </button>
         </div>
-        <header v-if="isExpanded">
+        <datacube-description
+          v-if="isDescriptionView"
+          :selected-model-id="selectedModelId"
+        />
+        <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
             class="scenario-header"
             :outputVariable="'Crop production'"
@@ -98,16 +104,14 @@
           <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
         </header>
         <timeseries-chart
+          v-if="!isDescriptionView"
           class="timeseries-chart"
           :timeseries-data="selectedTimeseriesData"
           :selected-timestamp="selectedTimestamp"
           @select-timestamp="emitTimestampSelection"
         />
-        <!-- <div class="map placeholder">TODO: Map visualization</div> -->
-
-        <!-- TODO: the map should accept a model ID and selectedScenarioID
-        and fetch its own data -->
         <data-analysis-map
+          v-if="!isDescriptionView"
           class="card-map full-width"
           :selection="selection"
           :show-tooltip="false"
@@ -123,6 +127,7 @@
 import { defineComponent, computed, ref, PropType, watch } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
+import DatacubeDescription from '@/components/data/datacube-description.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -176,6 +181,7 @@ export default defineComponent({
   components: {
     timeseriesChart,
     DatacubeScenarioHeader,
+    DatacubeDescription,
     Disclaimer,
     ParallelCoordinatesChart,
     DataAnalysisMap
@@ -287,7 +293,8 @@ export default defineComponent({
     modelParametersMap: {} as {[key: string]: DimensionData},
     modelMetaData: {} as any,
     ordinalDimensions: [] as Array<string>,
-    potentialScenarioCount: 0
+    potentialScenarioCount: 0,
+    isDescriptionView: true
   }),
   async mounted() {
     await this.fetchAllScenarioMetadata();
@@ -408,9 +415,11 @@ export default defineComponent({
       ) {
         console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
+        this.isDescriptionView = true;
       } else {
         console.log('user selected: ' + e.scenarios.length);
         this.$emit('set-selected-scenario-ids', e.scenarios.map(s => s.run_id));
+        this.isDescriptionView = false;
       }
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
