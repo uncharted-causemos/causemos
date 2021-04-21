@@ -28,7 +28,7 @@ interface MarkerInfo {
 //
 // global properties
 //
-const margin = { top: 30, right: 25, bottom: 35, left: 35 };
+const margin = { top: 40, right: 30, bottom: 35, left: 35 };
 
 const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
@@ -41,7 +41,7 @@ const lineMarkerOpacityVisible = 0.5;
 
 const lineColor = '#296AE9ff';
 
-const highlightDuration = 100; // in milliseconds
+const highlightDuration = 10; // in milliseconds
 
 // this is a hack to make the axis data look larger than it actually is
 const enlargeAxesScaleToFitData = false;
@@ -49,29 +49,32 @@ const enlargeAxesScaleToFitData = false;
 const tooltipRectPadding = 4;
 const lineHoverTooltipTextBackgroundColor = 'green';
 const lineSelectionTooltipTextBackgroundColor = 'yellow';
-// when brush selection on an axis is added, such range is shown on a tooltip that
-//  alwats placed at the far right of the axis with some specific offset
-const selectionTooltipXOffset = 30; // FIXME: this should be centered in the axis
 const selectionTooltipNormalYOffset = 30;
 
 const baselineMarkerSize = 5;
 const baselineMarkerFill = 'brown';
 const baselineMarkerStroke = 'white';
 
-const axisLabelOffsetX = 10;
-const axisLabelOffsetY = 5;
+const axisLabelOffsetX = 0;
+const axisLabelOffsetY = -15;
 const axisLabelFontSize = '12px';
 const axisLabelFontWeight = 'bold';
 const axisLabelTextAnchor = 'start';
 const axisInputLabelFillColor = 'black';
 const axisOutputLabelFillColor = 'green';
 
+const tooltipTextFontSize = '14px';
+
 const axisTickLabelFontSize = '12';
-const axisTickLabelOffset = '5'; // FIXME: this should be dynamic based on the word size
+const axisTickLabelOffset = 0; // FIXME: this should be dynamic based on the word size; ignore for now
 
 const brushHeight = 8;
 
-const numberFormat = d3.format(',.2f');
+const markerTooltipOffsetX = -10;
+const markerTooltipOffsetY = -20;
+
+const numberIntegerFormat = d3.format('~s');
+const numberFloatFormat = d3.format(',.2f');
 
 //
 // global variables
@@ -143,10 +146,18 @@ const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
       const text = d3.select(this).select('.pc-hover-tooltip-text');
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
+      // if xPos + text-rect-width is beyond the svg width, then adjust
+      let xPos = textBBox.x - tooltipRectPadding;
+      const width = textBBox.width + tooltipRectPadding * 2;
+      const offset = (xPos + width) - axisRange[1];
+      if (offset > 0) {
+        xPos -= offset;
+        text.attr('x', xPos + tooltipRectPadding);
+      }
       rect
-        .attr('x', textBBox.x - tooltipRectPadding)
+        .attr('x', xPos)
         .attr('y', textBBox.y - tooltipRectPadding)
-        .attr('width', textBBox.width + tooltipRectPadding * 2)
+        .attr('width', width)
         .attr('height', textBBox.height + tooltipRectPadding * 2);
       text.raise();
     });
@@ -274,7 +285,7 @@ function renderParallelCoordinates(
   onNewRuns: (selectedLines: Array<ScenarioData>) => void
 ) {
   // set graph configurations
-  const rightPaddingForAxesLabels = options.width / 4; // dedicte 25% of available width for dimension labels
+  const rightPaddingForAxesLabels = 0; // options.width / 4; // dedicte 25% of available width for dimension labels
 
   const width = options.width - margin.left - margin.right - rightPaddingForAxesLabels;
   const height = options.height - margin.top - margin.bottom;
@@ -331,7 +342,7 @@ function renderParallelCoordinates(
 
     // when drawing lines, exclude the last segment to the output variable
     //  if the drawn lines are for potentially new scenarios
-    const dimensionSet = options.newRunsMode ? dimensions.filter(d => d.type !== 'output') : dimensions;
+    const dimensionSet = options.newRunsMode ? dimensions.filter(function(d) { return d.is_output !== undefined ? !d.is_output : d.type !== 'output'; }) : dimensions;
 
     const fn = dimensionSet.map(function(p: DimensionData) {
       const dimName = p.name;
@@ -394,7 +405,12 @@ function renderParallelCoordinates(
         // numeric axes are built automatically utilizing d3 .call() function
         //
         const linearScale = scale as D3ScaleLinear;
-        const axisGenerator = d3.axisBottom(linearScale).tickValues(linearScale.ticks(0).concat(linearScale.domain()));
+        const ticks = linearScale.ticks(0).concat(linearScale.domain()); // no intermediate ticks; only the min/max
+        let d3FormatFunc = numberFloatFormat;
+        if (Number.isInteger(ticks[0]) && Number.isInteger(ticks[1])) {
+          d3FormatFunc = numberIntegerFormat;
+        }
+        const axisGenerator = d3.axisBottom(linearScale).tickValues(ticks).tickFormat(d3FormatFunc);
         xAxis = d3.select(this).call(axisGenerator);
       } else {
         //
@@ -440,7 +456,7 @@ function renderParallelCoordinates(
     });
 
   //
-  // brushing
+  // brushing (normal mode) or markers (new-runs mode)
   //
 
   // Add and store a brush for each axis.
@@ -448,8 +464,11 @@ function renderParallelCoordinates(
     //
     // special interaction to specify values of interest to generate new runs
     //
-    // FIXME: exclude the output variable from the ability to add markers to it
     renderedAxes
+      .filter(function(d) {
+        // exclude the output variable from the ability to add markers to it
+        return d.is_output !== undefined ? !d.is_output : d.type !== 'output';
+      })
       .append('g')
       .attr('class', 'pc-marker-g')
       .attr('id', function(d) { return d.name; })
@@ -460,8 +479,6 @@ function renderParallelCoordinates(
         // append a marker overlay (as hidden rect)
         const segmentsY = -brushHeight;
         const segmentsHeight = brushHeight * 2;
-        const markerTooltipOffsetX = -10;
-        const markerTooltipOffsetY = -5;
 
         gElement
           .append('rect')
@@ -479,7 +496,7 @@ function renderParallelCoordinates(
             const xLoc = d3.pointer(event)[0];
             const xScale = getXScaleFromMap(dimName);
             // Normally we go from data to pixels, but here we're doing pixels to data
-            const markerValue = (xScale as D3ScaleLinear).invert(xLoc);
+            const markerValue = numberFloatFormat((xScale as D3ScaleLinear).invert(xLoc));
 
             axisMarkersMap[dimName].push({
               value: markerValue,
@@ -493,9 +510,8 @@ function renderParallelCoordinates(
             dataSelection
               .enter().append('rect')
               .attr('class', 'pc-marker')
-              .attr('id', function(d) {
+              .attr('id', function() {
                 // Create an id for the marker for later removal
-                const markerValue = Math.floor(d.value as number);
                 return 'marker-' + markerValue;
               })
               .style('stroke', baselineMarkerStroke)
@@ -508,7 +524,7 @@ function renderParallelCoordinates(
                 //
                 // user just clicked on a specific marker, so for now it should be deleted
                 //
-                const markerValue = Math.floor(i.value as number);
+                const markerValue = i.value as number;
                 axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
                 gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
                   .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
@@ -521,24 +537,29 @@ function renderParallelCoordinates(
               })
               .call(d3.drag<SVGRectElement, MarkerInfo>()
                 .on('drag', function(event) {
-                  const newXPos = d3.pointer(event, this)[0];
-                  // TODO: limit the movement within the axis range
+                  let newXPos = d3.pointer(event, this)[0];
+                  // limit the movement within the axis range
+                  newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
+                  newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
                   d3.select(this)
                     .attr('x', newXPos);
-                  const mv = (xScale as D3ScaleLinear).invert(newXPos);
+                  const mv = numberFloatFormat((xScale as D3ScaleLinear).invert(newXPos));
                   gElement.selectAll('text')
-                    .text(Math.floor(mv as number))
+                    .text(mv)
                     .attr('x', newXPos + markerTooltipOffsetX)
                   ;
                 })
                 .on('end', function(event, d) {
-                  const newXPos = d3.pointer(event, this)[0];
+                  let newXPos = d3.pointer(event, this)[0];
+                  // limit the movement within the axis range
+                  newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
+                  newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
                   // update the underlying data
                   const md = axisMarkersMap[dimName].find(m => m.value === d.value);
                   if (md) {
                     md.xPos = newXPos;
-                    const mv = (xScale as D3ScaleLinear).invert(newXPos);
-                    md.value = Math.floor(mv as number);
+                    const mv = numberFloatFormat((xScale as D3ScaleLinear).invert(newXPos));
+                    md.value = mv;
                   }
                   d3.select(this)
                     .attr('x', newXPos);
@@ -552,18 +573,19 @@ function renderParallelCoordinates(
                 d3.select(this)
                   .style('fill', 'orange');
 
-                const markerValue = Math.floor(i.value as number);
+                const markerValue = numberFloatFormat(i.value as number);
 
                 // Specify where to put label of text
                 gElement.append('text')
                   .attr('x', i.xPos + markerTooltipOffsetX)
                   .attr('y', segmentsY + markerTooltipOffsetY)
-                  .attr('id', 't' + '-' + markerValue) // Create an id for text so we can select it later for removing on mouseout)
+                  .attr('id', 't' + '-' + Math.floor(+markerValue)) // Create an id for text so we can select it later for removing on mouseout)
                   .style('fill', 'black')
                   .style('font-size', axisLabelFontSize)
                   .text(function() {
                     return markerValue; // Value of the text
-                  });
+                  })
+                ;
               })
               .on('mouseout', function(d, i) {
                 // Use D3 to select element, change color back to normal
@@ -656,7 +678,7 @@ function renderParallelCoordinates(
     .append('text')
     .attr('class', 'pc-axis-name-text')
     .style('text-anchor', axisLabelTextAnchor)
-    .attr('x', width + axisLabelOffsetX)
+    .attr('x', axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
     .text(function(d) { return d.name; })
     .style('fill', function(d) {
@@ -717,7 +739,7 @@ function renderParallelCoordinates(
     .text('000')
     .style('fill', 'white')
     .attr('visibility', 'hidden')
-    .style('font-size', '16px');
+    .style('font-size', tooltipTextFontSize);
 
 
   // add background rect for each axis tooltip
@@ -749,7 +771,7 @@ function renderParallelCoordinates(
     .text('000')
     .style('fill', 'black')
     .attr('visibility', 'hidden')
-    .style('font-size', '16px');
+    .style('font-size', tooltipTextFontSize);
 
   // add background rect for each axis tooltip
   renderedAxes
@@ -877,6 +899,9 @@ function renderParallelCoordinates(
     // now filter all lines and exclude those the fall outside the range (start, end)
     cancelPrevLineSelection(svgElement);
 
+    // unfortunately, the use of numberFloatFormat adds comma which makes conversion of the resulted string back to number invalid
+    const numberFloatFormatNoComma = d3.format('.2f');
+
     // examine all brushes at all axes and cache their range
     svgElement.selectAll<SVGGraphicsElement, DimensionData>('.pc-brush')
       .each(function() {
@@ -900,8 +925,8 @@ function renderParallelCoordinates(
           let end;
           const skip = false;
           if (pcTypes[dimName] === 'number') {
-            start = (xScale as D3ScaleLinear).invert(selection[0] as number);
-            end = (xScale as D3ScaleLinear).invert(selection[1] as number);
+            start = numberFloatFormatNoComma((xScale as D3ScaleLinear).invert(selection[0] as number));
+            end = numberFloatFormatNoComma((xScale as D3ScaleLinear).invert(selection[1] as number));
           } else {
             start = selection[0];
             end = selection[1];
@@ -1000,10 +1025,18 @@ function renderParallelCoordinates(
         const text = d3.select(this).select('.pc-selection-tooltip-text');
         const textNode = text.node() as SVGGraphicsElement;
         const textBBox = textNode.getBBox();
+        // if xPos + text-rect-width is beyond the svg width, then adjust
+        let xPos = textBBox.x - tooltipRectPadding;
+        const width = textBBox.width + tooltipRectPadding * 2;
+        const offset = (xPos + width) - axisRange[1];
+        if (offset > 0) {
+          xPos -= offset;
+          text.attr('x', xPos + tooltipRectPadding);
+        }
         rect
-          .attr('x', textBBox.x - tooltipRectPadding)
+          .attr('x', xPos)
           .attr('y', textBBox.y - tooltipRectPadding)
-          .attr('width', textBBox.width + tooltipRectPadding * 2)
+          .attr('width', width)
           .attr('height', textBBox.height + tooltipRectPadding * 2);
         text.raise();
       });
@@ -1020,33 +1053,48 @@ function renderParallelCoordinates(
         const dimName = d.name;
         let isTooltipVisible = 'visible';
         let value: string | number = '';
+        let formattedValue: string | number = value;
         let xPos: number;
+        const xScale = getXScaleFromMap(dimName);
         // override the tooltip content if there is a brush applied to this dimension
         if (brushes.length > 0) {
           isTooltipVisible = 'hidden';
           const brushRange = brushes.find(b => b.dimName === dimName);
           if (brushRange) {
             if (pcTypes[dimName] === 'number') {
-              value = numberFormat(brushRange.start as number) + ' : ' + numberFormat(brushRange.end as number);
+              // note that since brush is a (moving) range then it will mostly have float range
+              // but we could check the axis domain to figure out a more accurate data type
+              const xScaleDomain = xScale.domain();
+              let d3FormatFunc = numberFloatFormat;
+              if (Number.isInteger(+xScaleDomain[0]) && Number.isInteger(+xScaleDomain[1])) {
+                d3FormatFunc = numberIntegerFormat;
+              }
+              value = d3FormatFunc(brushRange.start as number) + ' : ' + d3FormatFunc(brushRange.end as number);
             } else {
               value = brushRange.start + ' : ' + brushRange.end;
             }
             isTooltipVisible = 'visible';
+            formattedValue = value;
           }
-          xPos = selectionTooltipXOffset; // + axisRange[1]; // always at the far right
+          // always show the brush tooltip centered on the axis
+          const centerAxisXPos = (axisRange[1] - axisRange[0]) / 2;
+          // adjust center based on the brush width
+          const brushTooltipRectWidth = 100; // FIXME: this should be calculated based on the actual content
+          xPos = centerAxisXPos - brushTooltipRectWidth / 2;
         } else {
           value = selectedLineData[dimName];
+          formattedValue = selectedLineData[dimName];
           if (pcTypes[dimName] === 'number') {
-            value = numberFormat(value as number);
+            const numValue = +value as number;
+            formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
           }
-          const xScale = getXScaleFromMap(dimName);
           xPos = xScale(value as any) as number;
         }
 
         const yPos = selectionTooltipNormalYOffset;
         const renderedText = d3.select(this);
         renderedText
-          .text(value)
+          .text(formattedValue)
           .attr('visibility', isTooltipVisible)
           .attr('x', xPos)
           .attr('y', yPos)
@@ -1145,13 +1193,13 @@ function renderParallelCoordinates(
   function highlight(this: SVGPathElement) {
     const selectedLine = d3.select(this);
     const selectedLineData = selectedLine.datum() as ScenarioData;
-    // first every line turns grey (except any current selection)
+    // first every line turns transparent (except any current selection)
     svgElement.selectAll('.line')
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
       .style('opacity', lineOpacityHidden);
 
-    // Use D3 to select the line, change color and size
+    // Use D3 to highlight the line; change its opacity
     selectedLine
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
@@ -1165,13 +1213,15 @@ function renderParallelCoordinates(
     svgElement.selectAll<SVGTextElement, DimensionData>('.pc-hover-tooltip-text')
       .each(function(d) {
         const dimName = d.name;
-        let value = selectedLineData[dimName];
+        const value = selectedLineData[dimName];
+        let formattedValue = value;
         if (pcTypes[dimName] === 'number') {
-          value = numberFormat(value as number);
+          const numValue = +value as number;
+          formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
         const renderedText = d3.select(this);
         renderedText
-          .text(value)
+          .text(formattedValue)
           .attr('visibility', 'visible')
           .attr('x', function() {
             const xScale = getXScaleFromMap(dimName);
@@ -1226,6 +1276,7 @@ function renderBaselineMarkers(showBaselineDefaults: boolean) {
       .append('circle')
       .style('stroke', baselineMarkerStroke)
       .style('fill', baselineMarkerFill)
+      .attr('pointer-events', 'none')
       .attr('r', baselineMarkerSize)
       .attr('cx', function(d) {
         const axisDefault = d.default;
