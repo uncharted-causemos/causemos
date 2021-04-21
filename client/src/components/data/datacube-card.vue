@@ -87,38 +87,33 @@
             Descriptions
           </button>
         </div>
-        <div v-if="isDescriptionView">
-          <datacube-description
-            :selected-model-id="selectedModelId"
+        <datacube-description
+          v-if="isDescriptionView"
+          :selected-model-id="selectedModelId"
+        />
+        <header v-if="isExpanded && !isDescriptionView">
+          <datacube-scenario-header
+            class="scenario-header"
+            :outputVariable="'Crop production'"
+            :outputVariableUnits="'tonnes'"
+            :selectedScenarios="selectedScenarios"
+            :color-from-index="colorFromIndex"
           />
-        </div>
-        <div v-else>
-          <header v-if="isExpanded">
-            <datacube-scenario-header
-              class="scenario-header"
-              :outputVariable="'Crop production'"
-              :outputVariableUnits="'tonnes'"
-              :selectedScenarios="selectedScenarios"
-              :color-from-index="colorFromIndex"
-            />
-            <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
-          </header>
-          <timeseries-chart
-            class="timeseries-chart"
-            :timeseries-data="selectedTimeseriesData"
-          />
-          <!-- <div class="map placeholder">TODO: Map visualization</div> -->
-
-          <!-- TODO: the map should accept a model ID and selectedScenarioID
-          and fetch its own data -->
-          <data-analysis-map
-            class="card-map full-width"
-            :selection="selection"
-            :show-tooltip="false"
-            :selected-admin-level="selectedAdminLevel"
-            @on-map-load="onMapLoad"
-          />
-        </div>
+          <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
+        </header>
+        <timeseries-chart
+          v-if="!isDescriptionView"
+          class="timeseries-chart"
+          :timeseries-data="selectedTimeseriesData"
+        />
+        <data-analysis-map
+          v-if="!isDescriptionView"
+          class="card-map full-width"
+          :selection="selection"
+          :show-tooltip="false"
+          :selected-admin-level="selectedAdminLevel"
+          @on-map-load="onMapLoad"
+        />
       </div>
     </div>
   </div>
