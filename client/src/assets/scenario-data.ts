@@ -1,7 +1,7 @@
 // Dummy data to be used in a site visit demo on April 22, 2021
 //  and removed afterward.
 
-import { DimensionData, ScenarioData } from '@/types/Datacubes';
+import { ScenarioData } from '@/types/Datacubes';
 
 export const SCENARIOS_LIST: Array<ScenarioData> = [
   {
@@ -27,32 +27,5 @@ export const SCENARIOS_LIST: Array<ScenarioData> = [
     'crop': 'maize',
     'production': 70,
     'baseline': 'false'
-  }
-];
-
-export const DIMENSIONS_LIST: Array<DimensionData> = [
-  {
-    name: 'rainfall multiplier',
-    type: 'input',
-    default: 75,
-    description: 'my first input var'
-  },
-  {
-    name: 'N rate delta',
-    type: 'input',
-    default: 110,
-    description: 'my second input var'
-  },
-  {
-    name: 'crop',
-    type: 'drilldown',
-    default: 'teff',
-    description: 'my first drilldown var'
-  },
-  {
-    name: 'production',
-    type: 'output',
-    default: 55,
-    description: 'my first output var'
   }
 ];

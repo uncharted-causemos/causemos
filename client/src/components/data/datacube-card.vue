@@ -308,7 +308,6 @@ export default defineComponent({
       run.run_id = this.allScenariosData[runIndx].id;
 
       // explicitly add output for each run
-
       run[outputParam.name] = outputAggregations[run.run_id];
 
       allProcessedRunsParams.push(run);
@@ -318,6 +317,7 @@ export default defineComponent({
     // explicitly add output parameter
     selectedParameters.push({
       name: outputParam.name,
+      display_name: outputParam.display_name,
       description: outputParam.description,
       is_output: true,
       type: '', // FIXME
@@ -332,7 +332,6 @@ export default defineComponent({
     // FIXME: no support for baseline and for marker placement for ordinal axes, yet!
     // this.ordinalDimensions = ['rainfall_multiplier'];
 
-    // TODO: use human-readable names for dimensions instead of the raw name
     // TODO: add/refine interfaces to clean up the code
   },
   methods: {

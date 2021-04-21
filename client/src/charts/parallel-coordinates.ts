@@ -680,7 +680,7 @@ function renderParallelCoordinates(
     .style('text-anchor', axisLabelTextAnchor)
     .attr('x', axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
-    .text(function(d) { return d.name; })
+    .text(function(d) { return d.display_name; })
     .style('fill', function(d) {
       if (d.is_output !== undefined) {
         return d.is_output ? axisOutputLabelFillColor : axisInputLabelFillColor;
@@ -955,7 +955,7 @@ function renderParallelCoordinates(
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
           if (pcTypes[b.dimName] === 'number') {
-            if (lineData[b.dimName] < b.start || lineData[b.dimName] > b.end) {
+            if (+lineData[b.dimName] < +b.start || +lineData[b.dimName] > +b.end) {
               isSelected = false;
             }
           } else if (pcTypes[b.dimName] === 'string') {
