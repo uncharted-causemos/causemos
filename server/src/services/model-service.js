@@ -419,25 +419,25 @@ const clearNodeParameter = async (modelId, nodeId) => {
 const buildNodeParametersPayload = (nodeParameters, startTime, endTime) => {
   const r = {};
 
-  const NO_INDICATOR_DEFAULT = {
+  const NO_INDICATOR_DEFAULT = () => ({
     numLevels: NUM_LEVELS,
     minValue: 0,
     maxValue: 1,
     name: 'dummy indicator ' + uuid(),
     values: []
-  };
+  });
 
   nodeParameters.forEach(np => {
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func') || 'last';
 
     if (_.isEmpty(np.parameter)) {
-      r[np.concept] = NO_INDICATOR_DEFAULT;
+      r[np.concept] = NO_INDICATOR_DEFAULT();
     } else {
       const indicatorTimeSeries = _.get(np.parameter, 'indicator_time_series', []);
       const filteredTimeSeries = indicatorTimeSeries.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
 
       if (_.isEmpty(filteredTimeSeries)) {
-        r[np.concept] = NO_INDICATOR_DEFAULT;
+        r[np.concept] = NO_INDICATOR_DEFAULT();
       } else {
         const values = filteredTimeSeries.map(d => d.value);
         const { max, min } = modelUtil.projectionValueRange(values);
