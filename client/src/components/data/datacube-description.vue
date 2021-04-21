@@ -122,7 +122,6 @@ export default defineComponent({
       return stringUtil.isValidUrl(this.metadata.maintainer.website);
     },
     inputParameters(): Array<any> {
-      console.log(this.metadata.parameters);
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
     }
   }
