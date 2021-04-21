@@ -16,19 +16,25 @@ const RESIZE_DELAY = 15;
 
 export default defineComponent({
   name: 'TimeseriesChart',
+  emits: ['select-timestamp'],
   props: {
     timeseriesData: {
       type: Array as PropType<Timeseries[]>,
       required: true
+    },
+    selectedTimestamp: {
+      type: Number,
+      default: 0
     }
   },
-  setup(props) {
+  setup(props, { emit }) {
     const lineChart = ref<HTMLElement | null>(null);
-    const selectedTimestamp = ref(0);
-    const selectTimestamp = (newValue: number) => {
-      selectedTimestamp.value = newValue;
-    };
-    let updateTimestampElements: ((timestamp: number | null) => void) | undefined;
+    function selectTimestamp(newValue: number) {
+      emit('select-timestamp', newValue);
+    }
+    let updateTimestampElements:
+      | ((timestamp: number | null) => void)
+      | undefined;
     const resize = _.debounce(function({ width, height }) {
       if (lineChart.value === null || props.timeseriesData.length === 0) return;
       const svg = d3.select<HTMLElement, null>(lineChart.value);
@@ -42,7 +48,7 @@ export default defineComponent({
         props.timeseriesData,
         width,
         height,
-        selectedTimestamp.value,
+        props.selectedTimestamp,
         selectTimestamp
       );
     }, RESIZE_DELAY);
@@ -54,21 +60,27 @@ export default defineComponent({
       const lastTimestamp = _.max(allTimestamps);
       selectTimestamp(lastTimestamp ?? 0);
     }
-    watch(selectedTimestamp, selectedTimestamp => {
-      if (updateTimestampElements !== undefined) {
-        updateTimestampElements(selectedTimestamp);
+    watch(
+      () => props.selectedTimestamp,
+      selectedTimestamp => {
+        if (updateTimestampElements !== undefined) {
+          updateTimestampElements(selectedTimestamp);
+        }
       }
-    });
-    watch(() => props.timeseriesData, () => {
-      // Underlying data has changed, so rerender chart
-      const parentElement = lineChart.value?.parentElement;
-      if (parentElement === null || parentElement === undefined) return;
-      resize({
-        width: parentElement.clientWidth,
-        height: parentElement.clientHeight
-      });
-      selectLastTimestamp();
-    });
+    );
+    watch(
+      () => props.timeseriesData,
+      () => {
+        // Underlying data has changed, so rerender chart
+        const parentElement = lineChart.value?.parentElement;
+        if (parentElement === null || parentElement === undefined) return;
+        resize({
+          width: parentElement.clientWidth,
+          height: parentElement.clientHeight
+        });
+        selectLastTimestamp();
+      }
+    );
     onMounted(() => {
       const parentElement = lineChart.value?.parentElement;
       if (parentElement === null || parentElement === undefined) return;

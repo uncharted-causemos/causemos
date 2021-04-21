@@ -98,6 +98,8 @@
         <timeseries-chart
           class="timeseries-chart"
           :timeseries-data="selectedTimeseriesData"
+          :selected-timestamp="selectedTimestamp"
+          @select-timestamp="emitTimestampSelection"
         />
         <!-- <div class="map placeholder">TODO: Map visualization</div> -->
 
@@ -142,7 +144,7 @@ function colorFromIndex(index: number) {
 
 export default defineComponent({
   name: 'DatacubeCard',
-  emits: ['on-map-load', 'set-selected-scenario-ids'],
+  emits: ['on-map-load', 'set-selected-scenario-ids', 'select-timestamp'],
   props: {
     isExpanded: {
       type: Boolean,
@@ -163,6 +165,10 @@ export default defineComponent({
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    selectedTimestamp: {
+      type: Number,
+      default: 0
     }
   },
   components: {
@@ -172,7 +178,7 @@ export default defineComponent({
     ParallelCoordinatesChart,
     DataAnalysisMap
   },
-  setup(props) {
+  setup(props, { emit }) {
     const scenarioCount = computed(() => props.allScenarioIds.length);
 
     // Fetch timeseries data for each selected run, create a data
@@ -243,12 +249,17 @@ export default defineComponent({
     }, {
       immediate: true
     });
+
+    function emitTimestampSelection(newTimestamp: number) {
+      emit('select-timestamp', newTimestamp);
+    }
     return {
       selectedScenarios: SCENARIOS_LIST,
       selectedTimeseriesData,
       scenarioCount,
       adminLevelData: ADMIN_LEVEL_DATA,
-      colorFromIndex
+      colorFromIndex,
+      emitTimestampSelection
     };
   },
   computed: {
