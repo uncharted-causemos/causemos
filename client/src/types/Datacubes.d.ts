@@ -31,7 +31,9 @@ export interface ScenarioData {
 }
 
 export interface DimensionData {
-  type: string; // 'input', 'output', 'drilldown'
+  type: string;
+  is_drilldown?: boolean;
+  is_output?: boolean;
   name: string;
   description: string;
   default: string | number;
@@ -39,6 +41,7 @@ export interface DimensionData {
 }
 
 export interface ScenarioDef {
+  run_id: string;
   id: string;
   model: string;
 }
