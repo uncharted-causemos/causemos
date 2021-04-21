@@ -15,7 +15,8 @@
         class="scenario-header"
         :outputVariable="'Crop production'"
         :outputVariableUnits="'tonnes'"
-        :selectedScenarios="selectedScenarios"
+        :selected-model-id="selectedModelId"
+        :selected-scenario-ids="selectedScenarioIds"
         :color-from-index="colorFromIndex"
         v-else
       />
@@ -96,7 +97,8 @@
             class="scenario-header"
             :outputVariable="'Crop production'"
             :outputVariableUnits="'tonnes'"
-            :selectedScenarios="selectedScenarios"
+            :selected-model-id="selectedModelId"
+            :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />
           <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
@@ -105,6 +107,8 @@
           v-if="!isDescriptionView"
           class="timeseries-chart"
           :timeseries-data="selectedTimeseriesData"
+          :selected-timestamp="selectedTimestamp"
+          @select-timestamp="emitTimestampSelection"
         />
         <data-analysis-map
           v-if="!isDescriptionView"
@@ -147,7 +151,7 @@ function colorFromIndex(index: number) {
 
 export default defineComponent({
   name: 'DatacubeCard',
-  emits: ['on-map-load', 'set-selected-scenario-ids'],
+  emits: ['on-map-load', 'set-selected-scenario-ids', 'select-timestamp'],
   props: {
     isExpanded: {
       type: Boolean,
@@ -168,6 +172,10 @@ export default defineComponent({
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    selectedTimestamp: {
+      type: Number,
+      default: 0
     }
   },
   components: {
@@ -178,7 +186,7 @@ export default defineComponent({
     ParallelCoordinatesChart,
     DataAnalysisMap
   },
-  setup(props) {
+  setup(props, { emit }) {
     const scenarioCount = computed(() => props.allScenarioIds.length);
 
     // Fetch timeseries data for each selected run, create a data
@@ -243,18 +251,23 @@ export default defineComponent({
       console.log('Fetched metadata for selected scenarios', allMetadata);
     }
 
-    watch(props.selectedScenarioIds, () => {
+    watch(() => props.selectedScenarioIds, () => {
       fetchScenarioMetadata();
       fetchTimeseriesData();
     }, {
       immediate: true
     });
+
+    function emitTimestampSelection(newTimestamp: number) {
+      emit('select-timestamp', newTimestamp);
+    }
     return {
       selectedScenarios: SCENARIOS_LIST,
       selectedTimeseriesData,
       scenarioCount,
       adminLevelData: ADMIN_LEVEL_DATA,
-      colorFromIndex
+      colorFromIndex,
+      emitTimestampSelection
     };
   },
   computed: {

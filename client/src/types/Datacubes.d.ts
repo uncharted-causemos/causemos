@@ -1,4 +1,3 @@
-
 export interface Datacube {
   id: string;
   type: string;
@@ -24,6 +23,15 @@ export interface Datacube {
   _search_score?: number;
 }
 
+export interface RegionalData {
+  country?: { [timestamp: string]: { id: string; value: number }[] };
+  admin1?: { [timestamp: string]: { id: string; value: number }[] };
+  admin2?: { [timestamp: string]: { id: string; value: number }[] };
+  admin3?: { [timestamp: string]: { id: string; value: number }[] };
+  admin4?: { [timestamp: string]: { id: string; value: number }[] };
+  admin5?: { [timestamp: string]: { id: string; value: number }[] };
+  admin6?: { [timestamp: string]: { id: string; value: number }[] };
+}
 
 // any scenario data is represented as a map of {name, value}
 export interface ScenarioData {

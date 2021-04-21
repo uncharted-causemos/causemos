@@ -12,7 +12,9 @@
       :selected-model-id="selectedModelId"
       :all-scenario-ids="allScenarioIds"
       :selected-scenario-ids="selectedScenarioIds"
+      :selected-timestamp="selectedTimestamp"
       @set-selected-scenario-ids="setSelectedScenarioIds"
+      @select-timestamp="setSelectedTimestamp"
     />
     <drilldown-panel
         class="drilldown"
@@ -27,6 +29,7 @@
             :type-breakdown-data="typeBreakdownData"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
+            :selected-timestamp="selectedTimestamp"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -72,6 +75,11 @@ export default defineComponent({
       selectedScenarioIds.value = newIds;
     }
 
+    const selectedTimestamp = ref(0);
+    function setSelectedTimestamp(value: number) {
+      selectedTimestamp.value = value;
+    }
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -81,7 +89,9 @@ export default defineComponent({
       allScenarioIds,
       selectedScenarioIds,
       setSelectedScenarioIds,
-      typeBreakdownData
+      typeBreakdownData,
+      selectedTimestamp,
+      setSelectedTimestamp
     };
   }
 });
