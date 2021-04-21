@@ -140,6 +140,10 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 
+.run-header {
+  min-height: 70px;
+}
+
 h6 {
   font-size: $font-size-large;
   margin: 0;
