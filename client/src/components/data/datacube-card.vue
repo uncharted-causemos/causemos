@@ -15,7 +15,8 @@
         class="scenario-header"
         :outputVariable="'Crop production'"
         :outputVariableUnits="'tonnes'"
-        :selectedScenarios="selectedScenarios"
+        :selected-model-id="selectedModelId"
+        :selected-scenario-ids="selectedScenarioIds"
         :color-from-index="colorFromIndex"
         v-else
       />
@@ -90,7 +91,8 @@
             class="scenario-header"
             :outputVariable="'Crop production'"
             :outputVariableUnits="'tonnes'"
-            :selectedScenarios="selectedScenarios"
+            :selected-model-id="selectedModelId"
+            :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />
           <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
@@ -243,7 +245,7 @@ export default defineComponent({
       console.log('Fetched metadata for selected scenarios', allMetadata);
     }
 
-    watch(props.selectedScenarioIds, () => {
+    watch(() => props.selectedScenarioIds, () => {
       fetchScenarioMetadata();
       fetchTimeseriesData();
     }, {
