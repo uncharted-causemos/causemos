@@ -15,7 +15,8 @@
         class="scenario-header"
         :outputVariable="'Crop production'"
         :outputVariableUnits="'tonnes'"
-        :selectedScenarios="selectedScenarios"
+        :selected-model-id="selectedModelId"
+        :selected-scenario-ids="selectedScenarioIds"
         :color-from-index="colorFromIndex"
         v-else
       />
@@ -77,33 +78,40 @@
       <div class="column">
         <!-- TODO: extract button-group to its own component -->
         <div class="button-group">
-          <button class="btn btn-default" disabled>
-            <!-- @click="TODO" -->
+          <button class="btn btn-default"
+                  :class="{'btn-primary':!isDescriptionView}"
+                  @click="isDescriptionView = false">
             Data</button
-          ><button class="btn btn-default">
-            <!-- @click="TODO" -->
+          ><button class="btn btn-default"
+                   :class="{'btn-primary':isDescriptionView}"
+                   @click="isDescriptionView = true">
             Descriptions
           </button>
         </div>
-        <header v-if="isExpanded">
+        <datacube-description
+          v-if="isDescriptionView"
+          :selected-model-id="selectedModelId"
+        />
+        <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
             class="scenario-header"
             :outputVariable="'Crop production'"
             :outputVariableUnits="'tonnes'"
-            :selectedScenarios="selectedScenarios"
+            :selected-model-id="selectedModelId"
+            :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />
           <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
         </header>
         <timeseries-chart
+          v-if="!isDescriptionView"
           class="timeseries-chart"
           :timeseries-data="selectedTimeseriesData"
+          :selected-timestamp="selectedTimestamp"
+          @select-timestamp="emitTimestampSelection"
         />
-        <!-- <div class="map placeholder">TODO: Map visualization</div> -->
-
-        <!-- TODO: the map should accept a model ID and selectedScenarioID
-        and fetch its own data -->
         <data-analysis-map
+          v-if="!isDescriptionView"
           class="card-map full-width"
           :selection="selection"
           :show-tooltip="false"
@@ -119,6 +127,7 @@
 import { defineComponent, computed, ref, PropType, watch } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
+import DatacubeDescription from '@/components/data/datacube-description.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -142,7 +151,7 @@ function colorFromIndex(index: number) {
 
 export default defineComponent({
   name: 'DatacubeCard',
-  emits: ['on-map-load', 'set-selected-scenario-ids'],
+  emits: ['on-map-load', 'set-selected-scenario-ids', 'select-timestamp'],
   props: {
     isExpanded: {
       type: Boolean,
@@ -163,16 +172,21 @@ export default defineComponent({
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    selectedTimestamp: {
+      type: Number,
+      default: 0
     }
   },
   components: {
     timeseriesChart,
     DatacubeScenarioHeader,
+    DatacubeDescription,
     Disclaimer,
     ParallelCoordinatesChart,
     DataAnalysisMap
   },
-  setup(props) {
+  setup(props, { emit }) {
     const scenarioCount = computed(() => props.allScenarioIds.length);
 
     // Fetch timeseries data for each selected run, create a data
@@ -237,18 +251,23 @@ export default defineComponent({
       console.log('Fetched metadata for selected scenarios', allMetadata);
     }
 
-    watch(props.selectedScenarioIds, () => {
+    watch(() => props.selectedScenarioIds, () => {
       fetchScenarioMetadata();
       fetchTimeseriesData();
     }, {
       immediate: true
     });
+
+    function emitTimestampSelection(newTimestamp: number) {
+      emit('select-timestamp', newTimestamp);
+    }
     return {
       selectedScenarios: SCENARIOS_LIST,
       selectedTimeseriesData,
       scenarioCount,
       adminLevelData: ADMIN_LEVEL_DATA,
-      colorFromIndex
+      colorFromIndex,
+      emitTimestampSelection
     };
   },
   computed: {
@@ -274,7 +293,8 @@ export default defineComponent({
     modelParametersMap: {} as {[key: string]: DimensionData},
     modelMetaData: {} as any,
     ordinalDimensions: [] as Array<string>,
-    potentialScenarioCount: 0
+    potentialScenarioCount: 0,
+    isDescriptionView: true
   }),
   async mounted() {
     await this.fetchAllScenarioMetadata();
@@ -308,7 +328,6 @@ export default defineComponent({
       run.run_id = this.allScenariosData[runIndx].id;
 
       // explicitly add output for each run
-
       run[outputParam.name] = outputAggregations[run.run_id];
 
       allProcessedRunsParams.push(run);
@@ -318,6 +337,7 @@ export default defineComponent({
     // explicitly add output parameter
     selectedParameters.push({
       name: outputParam.name,
+      display_name: outputParam.display_name,
       description: outputParam.description,
       is_output: true,
       type: '', // FIXME
@@ -332,7 +352,6 @@ export default defineComponent({
     // FIXME: no support for baseline and for marker placement for ordinal axes, yet!
     // this.ordinalDimensions = ['rainfall_multiplier'];
 
-    // TODO: use human-readable names for dimensions instead of the raw name
     // TODO: add/refine interfaces to clean up the code
   },
   methods: {
@@ -396,9 +415,11 @@ export default defineComponent({
       ) {
         console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
+        this.isDescriptionView = true;
       } else {
         console.log('user selected: ' + e.scenarios.length);
         this.$emit('set-selected-scenario-ids', e.scenarios.map(s => s.run_id));
+        this.isDescriptionView = false;
       }
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
