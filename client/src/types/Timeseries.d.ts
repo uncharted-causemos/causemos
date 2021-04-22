@@ -5,5 +5,5 @@ export interface TimeseriesPoint {
 
 export interface Timeseries {
   color?: string;
-  points: [TimeseriesPoint];
+  points: TimeseriesPoint[];
 }

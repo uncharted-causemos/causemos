@@ -353,7 +353,7 @@ function renderParallelCoordinates(
         // ordinal axis, so instead of mapping to one position in this segment,
         // lets attempt to distribute the values randomly on the segment
         // first, get the segment range
-        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val);
+        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val.toString());
         xPos = getRandom(min, max);
       }
       const yPos = y(dimName);
@@ -480,129 +480,218 @@ function renderParallelCoordinates(
         const segmentsY = -brushHeight;
         const segmentsHeight = brushHeight * 2;
 
-        gElement
-          .append('rect')
-          .attr('class', 'overlay')
-          .attr('id', dimName)
-          .attr('pointer-events', 'all')
-          .attr('x', 0)
-          .attr('y', segmentsY)
-          .attr('width', axisRange[1])
-          .attr('height', segmentsHeight)
-          .on('click', function(event) {
-            //
-            // user just clicked on the axis overlay to add a marker
-            //
-            const xLoc = d3.pointer(event)[0];
-            const xScale = getXScaleFromMap(dimName);
-            // Normally we go from data to pixels, but here we're doing pixels to data
-            const markerValue = numberFloatFormat((xScale as D3ScaleLinear).invert(xLoc));
+        if (pcTypes[dimName] !== 'string') {
+          gElement
+            .append('rect')
+            .attr('class', 'overlay')
+            .attr('id', dimName)
+            .attr('pointer-events', 'all')
+            .attr('x', 0)
+            .attr('y', segmentsY)
+            .attr('width', axisRange[1])
+            .attr('height', segmentsHeight)
+            .on('click', function(event) {
+              //
+              // user just clicked on the axis overlay to add a marker
+              //
+              const xLoc = d3.pointer(event)[0];
+              const xScale = getXScaleFromMap(dimName);
+              // Normally we go from data to pixels, but here we're doing pixels to data
+              const markerValue = numberFloatFormat((xScale as D3ScaleLinear).invert(xLoc));
 
-            axisMarkersMap[dimName].push({
-              value: markerValue,
-              xPos: xLoc
-            }); // Push data to our array
+              axisMarkersMap[dimName].push({
+                value: markerValue,
+                xPos: xLoc
+              }); // Push data to our array
 
-            const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
-              .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
+              const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
+                .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
 
-            // add marker rect
-            dataSelection
-              .enter().append('rect')
-              .attr('class', 'pc-marker')
-              .attr('id', function() {
-                // Create an id for the marker for later removal
-                return 'marker-' + markerValue;
-              })
-              .style('stroke', baselineMarkerStroke)
-              .style('fill', baselineMarkerFill)
-              .attr('x', function(d) { return d.xPos; })
-              .attr('y', segmentsY)
-              .attr('width', baselineMarkerSize)
-              .attr('height', segmentsHeight)
-              .on('click', function(d, i) {
-                //
-                // user just clicked on a specific marker, so for now it should be deleted
-                //
-                const markerValue = i.value as number;
-                axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
-                gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
-                  .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
-                  .exit().remove()
-                ;
-                // remove all marker tooltips, if any
-                gElement.selectAll('text').remove();
-                // re-render all the new scenario lines
-                renderNewRunsLines();
-              })
-              .call(d3.drag<SVGRectElement, MarkerInfo>()
-                .on('drag', function(event) {
-                  let newXPos = d3.pointer(event, this)[0];
-                  // limit the movement within the axis range
-                  newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
-                  newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
-                  d3.select(this)
-                    .attr('x', newXPos);
-                  const mv = numberFloatFormat((xScale as D3ScaleLinear).invert(newXPos));
-                  gElement.selectAll('text')
-                    .text(mv)
-                    .attr('x', newXPos + markerTooltipOffsetX)
-                  ;
+              // add marker rect
+              dataSelection
+                .enter().append('rect')
+                .attr('class', 'pc-marker')
+                .attr('id', function() {
+                  // Create an id for the marker for later removal
+                  return 'marker-' + markerValue;
                 })
-                .on('end', function(event, d) {
-                  let newXPos = d3.pointer(event, this)[0];
-                  // limit the movement within the axis range
-                  newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
-                  newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
-                  // update the underlying data
-                  const md = axisMarkersMap[dimName].find(m => m.value === d.value);
-                  if (md) {
-                    md.xPos = newXPos;
-                    const mv = numberFloatFormat((xScale as D3ScaleLinear).invert(newXPos));
-                    md.value = mv;
-                  }
-                  d3.select(this)
-                    .attr('x', newXPos);
+                .style('stroke', baselineMarkerStroke)
+                .style('fill', baselineMarkerFill)
+                .attr('x', function(d) { return d.xPos; })
+                .attr('y', segmentsY)
+                .attr('width', baselineMarkerSize)
+                .attr('height', segmentsHeight)
+                .on('click', function(d, i) {
+                  //
+                  // user just clicked on a specific marker, so for now it should be deleted
+                  //
+                  const markerValue = i.value as number;
+                  axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
+                  gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
+                    .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
+                    .exit().remove()
+                  ;
                   // remove all marker tooltips, if any
                   gElement.selectAll('text').remove();
                   // re-render all the new scenario lines
                   renderNewRunsLines();
-                }))
-              .on('mouseover', function(d, i) {
-                // Use D3 to select element, change color and size
-                d3.select(this)
-                  .style('fill', 'orange');
-
-                const markerValue = numberFloatFormat(i.value as number);
-
-                // Specify where to put label of text
-                gElement.append('text')
-                  .attr('x', i.xPos + markerTooltipOffsetX)
-                  .attr('y', segmentsY + markerTooltipOffsetY)
-                  .attr('id', 't' + '-' + Math.floor(+markerValue)) // Create an id for text so we can select it later for removing on mouseout)
-                  .style('fill', 'black')
-                  .style('font-size', axisLabelFontSize)
-                  .text(function() {
-                    return markerValue; // Value of the text
+                })
+                .call(d3.drag<SVGRectElement, MarkerInfo>()
+                  .on('drag', function(event) {
+                    let newXPos = d3.pointer(event, this)[0];
+                    // limit the movement within the axis range
+                    newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
+                    newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
+                    d3.select(this)
+                      .attr('x', newXPos);
+                    const mv = numberFloatFormat((xScale as D3ScaleLinear).invert(newXPos));
+                    gElement.selectAll('text')
+                      .text(mv)
+                      .attr('x', newXPos + markerTooltipOffsetX)
+                    ;
                   })
-                ;
-              })
-              .on('mouseout', function(d, i) {
-                // Use D3 to select element, change color back to normal
-                d3.select(this)
-                  .style('fill', baselineMarkerFill);
+                  .on('end', function(event, d) {
+                    let newXPos = d3.pointer(event, this)[0];
+                    // limit the movement within the axis range
+                    newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
+                    newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
+                    // update the underlying data
+                    const md = axisMarkersMap[dimName].find(m => m.value === d.value);
+                    if (md) {
+                      md.xPos = newXPos;
+                      const mv = numberFloatFormat((xScale as D3ScaleLinear).invert(newXPos));
+                      md.value = mv;
+                    }
+                    d3.select(this)
+                      .attr('x', newXPos);
+                    // remove all marker tooltips, if any
+                    gElement.selectAll('text').remove();
+                    // re-render all the new scenario lines
+                    renderNewRunsLines();
+                  }))
+                .on('mouseover', function(d, i) {
+                  // Use D3 to select element, change color and size
+                  d3.select(this)
+                    .style('fill', 'orange');
 
-                const markerValue = Math.floor(i.value as number);
+                  const markerValue = numberFloatFormat(i.value as number);
 
-                // Select text by id and then remove
-                gElement.select('#t' + '-' + markerValue).remove(); // Remove text location
-              })
-            ;
+                  // Specify where to put label of text
+                  gElement.append('text')
+                    .attr('x', i.xPos + markerTooltipOffsetX)
+                    .attr('y', segmentsY + markerTooltipOffsetY)
+                    .attr('id', 't' + '-' + Math.floor(+markerValue)) // Create an id for text so we can select it later for removing on mouseout)
+                    .style('fill', 'black')
+                    .style('font-size', axisLabelFontSize)
+                    .text(function() {
+                      return markerValue; // Value of the text
+                    })
+                  ;
+                })
+                .on('mouseout', function(d, i) {
+                  // Use D3 to select element, change color back to normal
+                  d3.select(this)
+                    .style('fill', baselineMarkerFill);
 
-            // re-render all the new scenario lines, once a marker is added
-            renderNewRunsLines();
-          })
-        ;
+                  const markerValue = Math.floor(i.value as number);
+
+                  // Select text by id and then remove
+                  gElement.select('#t' + '-' + markerValue).remove(); // Remove text location
+                })
+              ;
+
+              // re-render all the new scenario lines, once a marker is added
+              renderNewRunsLines();
+            })
+          ;
+        } else {
+          //
+          // markers on ordinal axes
+          //
+          // special brushes for ordinal axes
+          const xScale = getXScaleFromMap(dimName);
+          const xScaleDomain = xScale.domain();
+          const totalDashesAndGaps = (xScaleDomain.length * 2) - 1;
+          const dashSize = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;
+          const segmentsData = [];
+          const segmentsY = -brushHeight;
+          const segmentsHeight = brushHeight * 2;
+          for (let segmentIndx = 0; segmentIndx < totalDashesAndGaps; segmentIndx++) {
+            if (segmentIndx % 2 === 0) { // only consider the solid segments
+              const min = segmentIndx * dashSize; // do not want sub-pixel to avoid floating point issues with d3.bisect
+              segmentsData.push({
+                x: min,
+                start: xScaleDomain[segmentIndx - (segmentIndx / 2)],
+                end: xScaleDomain[segmentIndx - (segmentIndx / 2)]
+              });
+            }
+          }
+          const gElement = d3.select(this);
+          gElement
+            .selectAll('rect')
+            .data(segmentsData)
+            .enter()
+            .append('rect')
+            .attr('class', 'overlay')
+            .attr('id', dimName)
+            .attr('start', function(d) { return d.start; })
+            .attr('end', function(d) { return d.end; })
+            .attr('pointer-events', 'all')
+            .attr('cursor', 'pointer')
+            .attr('x', function(d) { return d.x; })
+            .attr('y', segmentsY)
+            .attr('width', dashSize)
+            .attr('height', segmentsHeight)
+            .on('click', function(event: PointerEvent) {
+              // this is coming from a click on an ordinal axis,
+              //  so prevent the global svg click
+              event.stopPropagation();
+
+              const segmentData: any = d3.select(this).datum();
+              const markerValue: string = segmentData.start.toString();
+
+              // check if a marker already exists
+              const marker = axisMarkersMap[dimName].find(el => el.value === markerValue);
+
+              if (!marker) {
+                const scaleX = getXScaleFromMap(dimName);
+
+                const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), markerValue);
+                const xLoc = segmentData.x + ((max - min) / 2);
+
+                // Push data to our array
+                axisMarkersMap[dimName].push({
+                  value: markerValue,
+                  xPos: xLoc
+                });
+
+                const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
+                  .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
+
+                // add marker rect
+                dataSelection
+                  .enter().append('rect')
+                  .attr('class', 'pc-marker')
+                  .attr('id', function(d) { return 'marker_' + d.value; })
+                  .style('stroke', baselineMarkerStroke)
+                  .style('fill', baselineMarkerFill)
+                  .attr('pointer-events', 'none')
+                  .attr('x', function(d) { return d.xPos; })
+                  .attr('y', segmentsY)
+                  .attr('width', baselineMarkerSize)
+                  .attr('height', segmentsHeight);
+              } else {
+                gElement.selectAll<SVGRectElement, MarkerInfo>('.pc-marker')
+                  .filter(function(d) { return d.value === markerValue; })
+                  .remove();
+                axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
+              }
+
+              // re-render all the new scenario lines
+              renderNewRunsLines();
+            })
+          ;
+        }
       });
   } else {
     //
@@ -822,7 +911,8 @@ function renderParallelCoordinates(
       const dimDefault = dim.default;
       const dimData = [];
       // exclude output markers
-      if (dim.type !== 'output') {
+      const notOutputMarker = dim.is_output !== undefined ? !dim.is_output : dim.type !== 'output';
+      if (notOutputMarker) {
         const markers = axisMarkersMap[dimName];
         // do we have actual user-markers added on this dimension?
         if (markers && markers.length > 0) {
@@ -1284,7 +1374,8 @@ function renderBaselineMarkers(showBaselineDefaults: boolean) {
         const scaleX = getXScaleFromMap(dimName);
         let xPos: number = scaleX(axisDefault as any) as number;
         if (pcTypes[dimName] === 'string') {
-          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefault);
+          const axisDefaultStr = axisDefault.toString();
+          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
           xPos = min + (max - min) / 2;
         }
         return xPos;

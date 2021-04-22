@@ -71,7 +71,9 @@ import API from '@/api/api';
 import { RegionalData } from '@/types/Datacubes';
 
 function timestampFormatter(timestamp: number) {
-  return dateFormatter(timestamp, 'MMM YYYY');
+  // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
+  //  and be consistent.
+  return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
 }
 
 const ADMIN_LEVEL_TITLES = {

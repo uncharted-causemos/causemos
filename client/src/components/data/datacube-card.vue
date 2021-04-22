@@ -76,17 +76,53 @@
         </div>
       </div>
       <div class="column">
-        <!-- TODO: extract button-group to its own component -->
-        <div class="button-group">
-          <button class="btn btn-default"
-                  :class="{'btn-primary':!isDescriptionView}"
-                  @click="isDescriptionView = false">
-            Data</button
-          ><button class="btn btn-default"
-                   :class="{'btn-primary':isDescriptionView}"
-                   @click="isDescriptionView = true">
-            Descriptions
-          </button>
+        <div class="button-row">
+          <!-- TODO: extract button-group to its own component -->
+          <div class="button-group">
+            <button class="btn btn-default"
+                    :class="{'btn-primary':!isDescriptionView}"
+                    @click="isDescriptionView = false">
+              Data</button
+            ><button class="btn btn-default"
+                    :class="{'btn-primary':isDescriptionView}"
+                    @click="isDescriptionView = true">
+              Descriptions
+            </button>
+          </div>
+          <div
+            v-if="!isDescriptionView && selectedScenarioIds.length > 1"
+            class="relative-box"
+          >
+            Relative to:
+            <button
+              class="btn btn-default"
+              @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
+              :style="{ color: relativeTo === null ? 'black' : colorFromIndex(relativeTo) }"
+            >
+              {{relativeTo === null ? 'none' : `Run ${relativeTo}`}}</button
+            >
+            <dropdown-control
+              v-if="isRelativeDropdownOpen"
+              class="relative-dropdown">
+              <template #content>
+                <div
+                  class="dropdown-option"
+                  @click="relativeTo = null; isRelativeDropdownOpen = false;"
+                >
+                  none
+                </div>
+                <div
+                  v-for="(scenarioId, index) in selectedScenarioIds"
+                  class="dropdown-option"
+                  :style="{ color: colorFromIndex(index) }"
+                  :key="index"
+                  @click="relativeTo = index; isRelativeDropdownOpen = false;"
+                >
+                  Run {{index}}
+                </div>
+              </template>
+            </dropdown-control>
+          </div>
         </div>
         <datacube-description
           v-if="isDescriptionView"
@@ -106,7 +142,7 @@
         <timeseries-chart
           v-if="!isDescriptionView"
           class="timeseries-chart"
-          :timeseries-data="selectedTimeseriesData"
+          :timeseries-data="timeseriesDataForDisplay"
           :selected-timestamp="selectedTimestamp"
           @select-timestamp="emitTimestampSelection"
         />
@@ -128,6 +164,7 @@ import { defineComponent, computed, ref, PropType, watch } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
+import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -184,7 +221,8 @@ export default defineComponent({
     DatacubeDescription,
     Disclaimer,
     ParallelCoordinatesChart,
-    DataAnalysisMap
+    DataAnalysisMap,
+    DropdownControl
   },
   setup(props, { emit }) {
     const scenarioCount = computed(() => props.allScenarioIds.length);
@@ -221,6 +259,37 @@ export default defineComponent({
         return { color, points: allTimeseriesData[index] };
       });
     }
+
+    const relativeTo = ref<number | null>(null);
+    const timeseriesDataForDisplay = computed(() => {
+      if (selectedTimeseriesData.value.length === 0) return [];
+      if (relativeTo.value === null || props.selectedScenarioIds.length < 2) return selectedTimeseriesData.value;
+      // User wants to display data relative to one run
+      const baselineData = selectedTimeseriesData.value[relativeTo.value];
+      const returnValue: Timeseries[] = [];
+      selectedTimeseriesData.value.forEach((timeseries, index) => {
+        if (index === relativeTo.value) return;
+        // Adjust values
+        const { color, points } = timeseries;
+        const adjustedPoints = points.map(({ timestamp, value }) => {
+          const baselineValue = baselineData.points.find(
+            point => point.timestamp === timestamp
+          )?.value ?? 0;
+          return {
+            timestamp,
+            value: value - baselineValue
+          };
+        });
+        returnValue.push({
+          color,
+          points: adjustedPoints
+        });
+      });
+      return returnValue;
+    });
+    watch(() => props.selectedScenarioIds, () => {
+      relativeTo.value = null;
+    });
 
     // TODO: fetch model metadata to use in parallel coordinates
 
@@ -267,7 +336,9 @@ export default defineComponent({
       scenarioCount,
       adminLevelData: ADMIN_LEVEL_DATA,
       colorFromIndex,
-      emitTimestampSelection
+      emitTimestampSelection,
+      relativeTo,
+      timeseriesDataForDisplay
     };
   },
   computed: {
@@ -294,7 +365,8 @@ export default defineComponent({
     modelMetaData: {} as any,
     ordinalDimensions: [] as Array<string>,
     potentialScenarioCount: 0,
-    isDescriptionView: true
+    isDescriptionView: true,
+    isRelativeDropdownOpen: false
   }),
   async mounted() {
     await this.fetchAllScenarioMetadata();
@@ -349,9 +421,9 @@ export default defineComponent({
     this.dimensionsData = allProcessedRunsParams;
 
     // force 'rainfall_multiplier' to be ordinal
-    // FIXME: no support for baseline and for marker placement for ordinal axes, yet!
-    // this.ordinalDimensions = ['rainfall_multiplier'];
+    this.ordinalDimensions = ['rainfall_multiplier'];
 
+    // TODO: use each axis min/max based on the metadata
     // TODO: add/refine interfaces to clean up the code
   },
   methods: {
@@ -396,9 +468,12 @@ export default defineComponent({
     toggleNewRunsMode() {
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
-      // always force baselinedefault to be visible when the new-runs-mode is active
+
       if (this.showNewRunsMode) {
+        // always force baselinedefault to be visible when the new-runs-mode is active
         this.showBaselineDefaults = true;
+        // clear any selected scenario and show the model desc page
+        this.updateScenarioSelection({ scenarios: [] });
       }
     },
     requestNewModelRuns() {
@@ -481,6 +556,16 @@ header {
   height: 400px;
 }
 
+.relative-box {
+  position: relative;
+}
+
+.relative-dropdown {
+  position: absolute;
+  top: 100%;
+  right: 0;
+}
+
 .checkbox {
   user-select: none; /* Standard syntax */
   display: inline-block;
@@ -514,6 +599,11 @@ header {
   &.full-width {
     width: 100%;
   }
+}
+
+.button-row {
+  display: flex;
+  justify-content: space-between;
 }
 
 .data-analysis-card-container {
