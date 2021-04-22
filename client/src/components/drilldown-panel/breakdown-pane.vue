@@ -1,28 +1,5 @@
 <template>
   <div class="breakdown-pane-container">
-    <!-- TODO: dropdown to select what we're breaking down by -->
-    <!-- TODO: Fetch units from model metadata `outputs` property -->
-    <aggregation-checklist-pane
-      class="checklist-section"
-      v-for="type in typeBreakdownData"
-      :key="type.name"
-      :aggregation-level-count="1"
-      :aggregation-level="1"
-      :aggregation-level-title="type.name"
-      :raw-data="type.data"
-      :units="'tonnes'"
-    >
-      <template #aggregation-description>
-        <!-- TODO: highlighted value should be dynamically populated based
-        on the selected timestamp -->
-        <p class="aggregation-description">
-          Showing <strong>placeholder</strong> data.
-        </p>
-        <p class="aggregation-description">
-          Aggregated by <strong>averaging</strong>.
-        </p>
-      </template>
-    </aggregation-checklist-pane>
     <!-- TODO: eventually we'll add support for multiple
       selected scenario IDs -->
     <aggregation-checklist-pane
@@ -45,6 +22,29 @@
         </p>
         <p class="aggregation-description">
           Aggregated by <strong>sum</strong>.
+        </p>
+      </template>
+    </aggregation-checklist-pane>
+    <!-- TODO: dropdown to select what we're breaking down by -->
+    <!-- TODO: Fetch units from model metadata `outputs` property -->
+    <aggregation-checklist-pane
+      class="checklist-section"
+      v-for="type in typeBreakdownData"
+      :key="type.name"
+      :aggregation-level-count="1"
+      :aggregation-level="1"
+      :aggregation-level-title="type.name"
+      :raw-data="type.data"
+      :units="'tonnes'"
+    >
+      <template #aggregation-description>
+        <!-- TODO: highlighted value should be dynamically populated based
+        on the selected timestamp -->
+        <p class="aggregation-description">
+          Showing <strong>placeholder</strong> data.
+        </p>
+        <p class="aggregation-description">
+          Aggregated by <strong>averaging</strong>.
         </p>
       </template>
     </aggregation-checklist-pane>

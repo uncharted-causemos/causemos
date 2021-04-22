@@ -188,7 +188,7 @@ function colorFromIndex(index: number) {
 
 export default defineComponent({
   name: 'DatacubeCard',
-  emits: ['on-map-load', 'set-selected-scenario-ids', 'select-timestamp'],
+  emits: ['on-map-load', 'set-selected-scenario-ids', 'select-timestamp', 'set-drilldown-dimensions'],
   props: {
     isExpanded: {
       type: Boolean,
@@ -361,7 +361,8 @@ export default defineComponent({
     ordinalDimensions: [] as Array<string>,
     potentialScenarioCount: 0,
     isDescriptionView: true,
-    isRelativeDropdownOpen: false
+    isRelativeDropdownOpen: false,
+    drilldownDimensions: [] as Array<DimensionData>
   }),
   async mounted() {
     await this.fetchAllScenarioMetadata();
@@ -414,6 +415,9 @@ export default defineComponent({
     // this.initialScenarioSelection = [baselineRunID]; // REVIEW: uncomment to select baseline run by default
     this.selectedDimensions = selectedParameters;
     this.dimensionsData = allProcessedRunsParams;
+
+    this.drilldownDimensions = selectedParameters.filter(p => p.is_drilldown);
+    this.$emit('set-drilldown-dimensions', { drilldownDimensions: this.drilldownDimensions });
 
     // force 'rainfall_multiplier' to be ordinal
     this.ordinalDimensions = ['rainfall_multiplier'];

@@ -70,7 +70,7 @@ export default defineComponent({
       const modelMetadata = JSON.parse(result.data);
       const inputNamesMap: { [key: string]: string } = {};
       modelMetadata.parameters.forEach((parameter: any) => {
-        inputNamesMap[parameter.id] = parameter.name;
+        inputNamesMap[parameter.id] = parameter.display_name;
       });
       inputNames.value = inputNamesMap;
     }
