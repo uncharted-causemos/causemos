@@ -71,7 +71,6 @@ import { getColors } from '@/utils/colors-util';
 import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
-import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
 
 // Map filter animation fps rate (Use lower value if there's a performance issue)
 const FILTER_ANIMATION_FPS = 15;
@@ -134,6 +133,10 @@ export default {
     selectedAdminLevel: {
       type: Number,
       default: 0
+    },
+    selectedTimestamp: {
+      type: Number,
+      default: 0
     }
   },
   data: () => ({
@@ -142,6 +145,9 @@ export default {
     hoverId: undefined,
     extent: undefined,
     range: undefined,
+    featuresDrawn: undefined,
+    selectedData: undefined,
+    map: undefined,
     selectedLayer: undefined
   }),
   computed: {
@@ -238,6 +244,13 @@ export default {
     },
     selectedAdminLevel() {
       this.selectedLayer = layers[this.selectedAdminLevel];
+    },
+    selectedTimestamp() {
+      this.setFeatureStates();
+    },
+    selectedData() {
+      this.refreshLayers();
+      this.updateLayerFilter();
     }
   },
   created() {
@@ -247,7 +260,7 @@ export default {
     };
 
     this.vectorSourceId = 'maas-vector-source';
-    this.selectedLayer = layers[0];
+    this.selectedLayer = layers[this.selectedAdminLevel];
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
@@ -262,6 +275,9 @@ export default {
     }),
     refresh() {
       this.range = this.filterRange;
+
+      this.refreshData();
+
       // Intilaize min max boundary value
       this.updateStats().then(() => {
         this.refreshLayers();
@@ -295,26 +311,62 @@ export default {
         max: stats.max
       };
     },
-    setFeatureStates(map, featureName, data, parentName = '') {
-      const id = [parentName, data.name].filter(x => x).join('-');
-      if (data.name !== undefined && data.name !== 'undefined') {
-        map.setFeatureState({
-          id,
-          source: this.vectorSourceId,
-          sourceLayer: this.vectorSourceLayer
-        }, {
-          [featureName]: data.value
-        });
-        if (data.children.length > 0) {
-          data.children.forEach(child => this.setFeatureStates(map, featureName, child, id));
+    async refreshData() {
+      const { runId, modelId } = this.selection || {};
+
+      const promises = [];
+
+      promises.push(API.get('fetch-demo-data', {
+        params: {
+          modelId,
+          runId,
+          type: 'regional-data'
         }
+      }));
+
+      const allRegionalData = (await Promise.all(promises)).map(response => {
+        return JSON.parse(response.data);
+      });
+
+      this.selectedData = allRegionalData[0];
+      this.setFeatureStates();
+    },
+    setFeatureStates() {
+      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
+
+      if (this.featuresDrawn !== undefined) {
+        this.featuresDrawn.forEach(id => {
+          this.map.removeFeatureState({
+            id,
+            source: this.vectorSourceId,
+            sourceLayer: this.vectorSourceLayer
+          });
+        });
+      }
+
+      this.featuresDrawn = [];
+
+      if (this.selectedData !== undefined && this.selectedData[adminLevel] !== undefined && this.selectedData[adminLevel][this.selectedTimestamp] !== undefined) {
+        this.selectedData[adminLevel][this.selectedTimestamp].forEach(row => {
+          this.featuresDrawn.push(row.id.replaceAll('_', '-'));
+          this.map.setFeatureState({
+            id: row.id.replaceAll('_', '-'),
+            source: this.vectorSourceId,
+            sourceLayer: this.vectorSourceLayer
+          }, {
+            [this.valueProp]: row.value // > 29000 ? 29000 : row.value
+          });
+        });
       }
     },
     onAddLayer(event) {
-      this.setFeatureStates(event.map, this.valueProp, ADMIN_LEVEL_DATA.data);
+      if (this.selectedData !== undefined) {
+        this.setFeatureStates(event.map, this.valueProp, this.selectedData);
+      }
     },
     onMapLoad(event) {
       const map = event.map;
+      this.map = map;
       event.map.showTileBoundaries = false; // set to true for debugging
 
       // disable tilt and rotation of the map since theses are not working nicely with bound syncing

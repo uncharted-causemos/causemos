@@ -59,7 +59,7 @@ export default defineComponent({
   name: 'CompAnalysisExperiment',
   components: { DatacubeCard, DrilldownPanel, BreakdownPane },
   setup() {
-    const selectedAdminLevel = ref(0);
+    const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
