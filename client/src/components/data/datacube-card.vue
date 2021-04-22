@@ -468,9 +468,12 @@ export default defineComponent({
     toggleNewRunsMode() {
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
-      // always force baselinedefault to be visible when the new-runs-mode is active
+
       if (this.showNewRunsMode) {
+        // always force baselinedefault to be visible when the new-runs-mode is active
         this.showBaselineDefaults = true;
+        // clear any selected scenario and show the model desc page
+        this.updateScenarioSelection({ scenarios: [] });
       }
     },
     requestNewModelRuns() {
