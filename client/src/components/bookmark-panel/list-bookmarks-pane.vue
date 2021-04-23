@@ -47,7 +47,7 @@
               {{ stringFormatter(bookmark.title, 25) }}
             </div>
             <div class="bookmark-action" @click.stop="openEditor(bookmark.id)">
-              <i class="fa fa-edit bookmark-header-btn" />
+              <i class="fa fa-ellipsis-h bookmark-header-btn" />
               <bookmark-editor
                 v-if="activeBookmark === bookmark.id"
                 @delete="deleteBookmark(bookmark.id)"
