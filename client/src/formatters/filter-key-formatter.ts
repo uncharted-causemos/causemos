@@ -10,7 +10,7 @@ const FIELDS_INVERSE = _.invert(CodeUtil.FIELDS);
  *
  * @param {string} key - a field key
  */
-export default function (key) {
+export default function (key: string) {
   const entry = CodeUtil.CODE_TABLE[FIELDS_INVERSE[key]];
   if (!entry || !entry.display) return key;
   return entry.display;

@@ -6,9 +6,17 @@
     <main>
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
-    <!-- TODO: we'll need to store the admin level data for each card
-    in this component and pass it down -->
-    <datacube-card :class="{ 'datacube-expanded': true }" />
+    <datacube-card
+      :class="{ 'datacube-expanded': true }"
+      :selected-admin-level="selectedAdminLevel"
+      :selected-model-id="selectedModelId"
+      :all-scenario-ids="allScenarioIds"
+      :selected-scenario-ids="selectedScenarioIds"
+      :selected-timestamp="selectedTimestamp"
+      @set-selected-scenario-ids="setSelectedScenarioIds"
+      @select-timestamp="setSelectedTimestamp"
+      @set-drilldown-dimensions="setDrilldownDimensions"
+    />
     <drilldown-panel
         class="drilldown"
         :is-open="activeDrilldownTab !== null"
@@ -19,9 +27,10 @@
           <breakdown-pane
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
-            :admin-level-data="adminLevelData"
-            :available-admin-levels="availableAdminLevels"
             :type-breakdown-data="typeBreakdownData"
+            :selected-model-id="selectedModelId"
+            :selected-scenario-ids="selectedScenarioIds"
+            :selected-timestamp="selectedTimestamp"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -33,9 +42,10 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import ADMIN_LEVEL_DATA, { AGGREGATED_PRODUCT_TYPE_DATA } from '@/assets/admin-stats.js';
+import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
 import { defineComponent, ref } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
+import { DimensionData } from '@/types/Datacubes';
 
 const DRILLDOWN_TABS = [
   {
@@ -50,31 +60,66 @@ export default defineComponent({
   name: 'CompAnalysisExperiment',
   components: { DatacubeCard, DrilldownPanel, BreakdownPane },
   setup() {
-    const selectedAdminLevel = ref(1);
+    const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
-    const availableAdminLevels = [
-      'Country',
-      'L1 admin region',
-      'L2 admin region',
-      'L3 admin region',
-      'L4 admin region',
-      'L5 admin region'
-    ].slice(0, ADMIN_LEVEL_DATA.maxDepth);
 
-    const typeBreakdownData = [
-      AGGREGATED_PRODUCT_TYPE_DATA
-    ];
+    const typeBreakdownData: any[] = [];
+
+    const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
+    // TODO: select baseline by default, not necessarily the first one
+    const selectedScenarioIds = ref([allScenarioIds[0]]);
+    function setSelectedScenarioIds(newIds: string[]) {
+      selectedScenarioIds.value = newIds;
+    }
+
+    const selectedTimestamp = ref(0);
+    function setSelectedTimestamp(value: number) {
+      selectedTimestamp.value = value;
+    }
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
-      adminLevelData: ADMIN_LEVEL_DATA.data,
       selectedAdminLevel,
       setSelectedAdminLevel,
-      availableAdminLevels,
-      typeBreakdownData
+      selectedModelId: DSSAT_PRODUCTION_DATA.modelId,
+      allScenarioIds,
+      selectedScenarioIds,
+      setSelectedScenarioIds,
+      typeBreakdownData,
+      selectedTimestamp,
+      setSelectedTimestamp
     };
+  },
+  methods: {
+    setDrilldownDimensions(e: { drilldownDimensions: Array<DimensionData> }) {
+      // console.log(e);
+      const getRandom = (min: number, max: number) => {
+        return Math.random() * (max - min) + min;
+      };
+      this.typeBreakdownData.length = 0;
+      e.drilldownDimensions.forEach(dd => {
+        const drillDownChildren: Array<{name: string; value: number}> = [];
+        const choices = dd.choices as Array<string>;
+        choices.forEach((c) => {
+          drillDownChildren.push({
+            name: c,
+            value: getRandom(0, 5000) // FIXME: pickup the actual breakdown aggregation from data
+          });
+        });
+        const breakdown = {
+          name: dd.name,
+          data: {
+            name: 'ALL',
+            value: drillDownChildren.map(c => c.value).reduce((a, b) => a + b, 0), // sum all children values
+            children: drillDownChildren
+          }
+        };
+        this.typeBreakdownData.push(breakdown);
+      });
+    }
   }
 });
 </script>

@@ -20,21 +20,28 @@ type D3ScaleFunc = (name: string) => D3Scale | undefined;
 type D3LineSelection = d3.Selection<SVGPathElement, ScenarioData, null, undefined>;
 type D3AxisSelection = d3.Selection<SVGGElement, DimensionData, SVGGElement, any>
 
+interface MarkerInfo {
+  value: string | number;
+  xPos: number;
+}
+
 //
 // global properties
 //
-const margin = { top: 30, right: 25, bottom: 35, left: 35 };
+const margin = { top: 40, right: 30, bottom: 35, left: 35 };
 
 const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
 const lineStrokeWidthHover = 3;
+const lineStrokeWidthMarker = 1.5;
 
 const lineOpacityVisible = 1;
 const lineOpacityHidden = 0.1;
+const lineMarkerOpacityVisible = 0.5;
 
 const lineColor = '#296AE9ff';
 
-const highlightDuration = 100; // in milliseconds
+const highlightDuration = 50; // in milliseconds
 
 // this is a hack to make the axis data look larger than it actually is
 const enlargeAxesScaleToFitData = false;
@@ -42,29 +49,41 @@ const enlargeAxesScaleToFitData = false;
 const tooltipRectPadding = 4;
 const lineHoverTooltipTextBackgroundColor = 'green';
 const lineSelectionTooltipTextBackgroundColor = 'yellow';
-// when brush selection on an axis is added, such range is shown on a tooltip that
-//  alwats placed at the far right of the axis with some specific offset
-const selectionTooltipXOffset = 30; // FIXME: this should be centered in the axis
 const selectionTooltipNormalYOffset = 30;
 
 const baselineMarkerSize = 5;
 const baselineMarkerFill = 'brown';
 const baselineMarkerStroke = 'white';
 
-const axisLabelOffsetX = 10;
-const axisLabelOffsetY = 5;
+const axisLabelOffsetX = 0;
+const axisLabelOffsetY = -15;
 const axisLabelFontSize = '12px';
 const axisLabelFontWeight = 'bold';
 const axisLabelTextAnchor = 'start';
 const axisInputLabelFillColor = 'black';
 const axisOutputLabelFillColor = 'green';
 
+const tooltipTextFontSize = '14px';
+
 const axisTickLabelFontSize = '12';
-const axisTickLabelOffset = '20'; // FIXME: this should be dynamic based on the word size
+const axisTickLabelOffset = 0; // FIXME: this should be dynamic based on the word size; ignore for now
 
 const brushHeight = 8;
 
-const numberFormat = d3.format(',.2f');
+const markerTooltipOffsetX = -10;
+const markerTooltipOffsetY = -20;
+
+const numberIntegerFormat = d3.format('~s');
+const numberFloatFormat = d3.format(',.2f');
+
+//
+// global variables
+//
+let xScaleMap: {[key: string]: D3ScaleFunc} = {};
+let renderedAxes: D3AxisSelection;
+let axisRange: Array<number> = [];
+let pcTypes: {[key: string]: string} = {};
+const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 
 
 //
@@ -74,7 +93,12 @@ const numberFormat = d3.format(',.2f');
 // exclude drilldown parameters from the input dimensions
 // @REVIEW this may better be done external to the PC component
 const filterDrilldownDimensionData = (dimensions: Array<DimensionData>) => {
-  return dimensions.filter(function(d) { return d.type !== 'drilldown'; });
+  return dimensions.filter(function(d) {
+    if (d.is_drilldown !== undefined) {
+      return !d.is_drilldown;
+    }
+    return d.type !== 'drilldown';
+  });
 };
 
 // attempt to determine types of each dimension based on first row of data
@@ -122,10 +146,18 @@ const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
       const text = d3.select(this).select('.pc-hover-tooltip-text');
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
+      // if xPos + text-rect-width is beyond the svg width, then adjust
+      let xPos = textBBox.x - tooltipRectPadding;
+      const width = textBBox.width + tooltipRectPadding * 2;
+      const offset = (xPos + width) - axisRange[1];
+      if (offset > 0) {
+        xPos -= offset;
+        text.attr('x', xPos + tooltipRectPadding);
+      }
       rect
-        .attr('x', textBBox.x - tooltipRectPadding)
+        .attr('x', xPos)
         .attr('y', textBBox.y - tooltipRectPadding)
-        .attr('width', textBBox.width + tooltipRectPadding * 2)
+        .attr('width', width)
         .attr('height', textBBox.height + tooltipRectPadding * 2);
       text.raise();
     });
@@ -235,19 +267,25 @@ const createScales = (
     .range([0, height])
     .domain(dimensions.map(d => d.name));
 
-  return { xScaleMap, y };
+  return { x: xScaleMap, y };
 };
 
-export default function(
+const getXScaleFromMap = (dimName: string) => {
+  const xScaleDim = xScaleMap[dimName];
+  return xScaleDim(dimName) as D3Scale;
+};
+
+function renderParallelCoordinates(
   svgElement: D3Selection,
   options: ParallelCoordinatesOptions,
   data: Array<ScenarioData>,
   dimensions: Array<DimensionData>, // dimensions list, which may be used to control axis order
   ordinalDimensions: Array<string>, // list of dimensions that should be presented as ordinal axis regardless of their actual data type
-  onLinesSelection: (selectedLines: Array<ScenarioData>) => void
+  onLinesSelection: (selectedLines: Array<ScenarioData>) => void,
+  onNewRuns: (selectedLines: Array<ScenarioData>) => void
 ) {
   // set graph configurations
-  const rightPaddingForAxesLabels = options.width / 4; // dedicte 25% of available width for dimension labels
+  const rightPaddingForAxesLabels = 0; // options.width / 4; // dedicte 25% of available width for dimension labels
 
   const width = options.width - margin.left - margin.right - rightPaddingForAxesLabels;
   const height = options.height - margin.top - margin.bottom;
@@ -261,19 +299,15 @@ export default function(
   dimensions = filterDrilldownDimensionData(dimensions);
 
   // process data and detect data type for each dimension
-  const pcTypes = detectDimensionTypes(data[0]);
+  pcTypes = detectDimensionTypes(data[0]);
 
   //
   // scales
   /// map of x axes by dimension name
   //
-  const axisRange = [0, width];
-  const { xScaleMap, y } = createScales(data, dimensions, ordinalDimensions, pcTypes, axisRange, height);
-
-  const getXScaleFromMap = (dimName: string) => {
-    const xScaleDim = xScaleMap[dimName];
-    return xScaleDim(dimName) as D3Scale;
-  };
+  axisRange = [0, width];
+  const { x, y } = createScales(data, dimensions, ordinalDimensions, pcTypes, axisRange, height);
+  xScaleMap = x;
 
   //
   // Color scale
@@ -305,7 +339,12 @@ export default function(
     const line = d3.line()
       // curveMonotone curveCatmullRom curveLinear curveCardinal
       .curve(d3.curveCatmullRom /* .tension(0.01) */);
-    const fn = dimensions.map(function(p: DimensionData) {
+
+    // when drawing lines, exclude the last segment to the output variable
+    //  if the drawn lines are for potentially new scenarios
+    const dimensionSet = options.newRunsMode ? dimensions.filter(function(d) { return d.is_output !== undefined ? !d.is_output : d.type !== 'output'; }) : dimensions;
+
+    const fn = dimensionSet.map(function(p: DimensionData) {
       const dimName = p.name;
       const scaleX = getXScaleFromMap(dimName);
       const val = d[dimName];
@@ -314,7 +353,7 @@ export default function(
         // ordinal axis, so instead of mapping to one position in this segment,
         // lets attempt to distribute the values randomly on the segment
         // first, get the segment range
-        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val);
+        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val.toString());
         xPos = getRandom(min, max);
       }
       const yPos = y(dimName);
@@ -326,25 +365,27 @@ export default function(
   //
   // Draw the lines
   //
-  gElement
-    .selectAll<SVGPathElement, ScenarioData>('myPath')
-    .data(data)
-    .enter()
-    .append('path')
-    .attr('class', function () { return 'line '; })
-    .attr('d', path)
-    .style('fill', 'none')
-    .attr('stroke-width', lineStrokeWidthNormal)
-    .style('stroke', function() { return (color(/* d.dimName */)); })
-    .style('opacity', lineOpacityHidden)
-    .on('mouseover', highlight)
-    .on('mouseleave', doNotHighlight)
-    .on('click', handleLineSelection);
+  if (!options.newRunsMode) {
+    gElement
+      .selectAll<SVGPathElement, ScenarioData>('myPath')
+      .data(data)
+      .enter()
+      .append('path')
+      .attr('class', function () { return 'line '; })
+      .attr('d', path)
+      .style('fill', 'none')
+      .attr('stroke-width', lineStrokeWidthNormal)
+      .style('stroke', function() { return (color(/* d.dimName */)); })
+      .style('opacity', lineOpacityHidden)
+      .on('mouseover', highlight)
+      .on('mouseleave', doNotHighlight)
+      .on('click', handleLineSelection);
+  }
 
   //
   // Draw the axes
   //
-  const renderedAxes = gElement.selectAll('axis')
+  renderedAxes = gElement.selectAll('axis')
   // For each dimension of the dataset I add a 'g' element:
     .data(dimensions)
     .enter()
@@ -364,7 +405,12 @@ export default function(
         // numeric axes are built automatically utilizing d3 .call() function
         //
         const linearScale = scale as D3ScaleLinear;
-        const axisGenerator = d3.axisBottom(linearScale).tickValues(linearScale.ticks(0).concat(linearScale.domain()));
+        const ticks = linearScale.ticks(0).concat(linearScale.domain()); // no intermediate ticks; only the min/max
+        let d3FormatFunc = numberFloatFormat;
+        if (Number.isInteger(ticks[0]) && Number.isInteger(ticks[1])) {
+          d3FormatFunc = numberIntegerFormat;
+        }
+        const axisGenerator = d3.axisBottom(linearScale).tickValues(ticks).tickFormat(d3FormatFunc);
         xAxis = d3.select(this).call(axisGenerator);
       } else {
         //
@@ -410,87 +456,307 @@ export default function(
     });
 
   //
-  // brushing
+  // brushing (normal mode) or markers (new-runs mode)
   //
+
   // Add and store a brush for each axis.
-  renderedAxes
-    .append('g')
-    .attr('class', 'pc-brush')
-    .attr('id', function(d) { return d.name; })
-    .each(function(d) {
-      const dimName = d.name;
-      if (pcTypes[dimName] !== 'string') {
-        // a standard continuous brush
-        d3.select(this).call(
-          d3.brushX()
-            .extent([[0, -brushHeight], [axisRange[1], brushHeight]])
-            .on('start', brushstart)
-            .on('brush', onDataBrush)
-            .on('end', brushEnd)
-        );
-      } else {
-        // special brushes for ordinal axes
-        const xScale = getXScaleFromMap(dimName);
-        const xScaleDomain = xScale.domain();
-        const totalDashesAndGaps = (xScaleDomain.length * 2) - 1;
-        const dashSize = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;
-        const segmentsData = [];
+  if (options.newRunsMode) {
+    //
+    // special interaction to specify values of interest to generate new runs
+    //
+    renderedAxes
+      .filter(function(d) {
+        // exclude the output variable from the ability to add markers to it
+        return d.is_output !== undefined ? !d.is_output : d.type !== 'output';
+      })
+      .append('g')
+      .attr('class', 'pc-marker-g')
+      .attr('id', function(d) { return d.name; })
+      .each(function(d) {
+        const gElement = d3.select(this);
+        const dimName = d.name;
+        axisMarkersMap[dimName] = []; // each axis starts with an empty markers array
+        // append a marker overlay (as hidden rect)
         const segmentsY = -brushHeight;
         const segmentsHeight = brushHeight * 2;
-        for (let segmentIndx = 0; segmentIndx < totalDashesAndGaps; segmentIndx++) {
-          if (segmentIndx % 2 === 0) { // only consider the solid segments
-            const min = segmentIndx * dashSize; // do not want sub-pixel to avoid floating point issues with d3.bisect
-            segmentsData.push({
-              x: min,
-              start: xScaleDomain[segmentIndx - (segmentIndx / 2)],
-              end: xScaleDomain[segmentIndx - (segmentIndx / 2)]
-            });
+
+        if (pcTypes[dimName] !== 'string') {
+          gElement
+            .append('rect')
+            .attr('class', 'overlay')
+            .attr('id', dimName)
+            .attr('pointer-events', 'all')
+            .attr('x', 0)
+            .attr('y', segmentsY)
+            .attr('width', axisRange[1])
+            .attr('height', segmentsHeight)
+            .on('click', function(event) {
+              //
+              // user just clicked on the axis overlay to add a marker
+              //
+              const xLoc = d3.pointer(event)[0];
+              const xScale = getXScaleFromMap(dimName);
+              // Normally we go from data to pixels, but here we're doing pixels to data
+              const markerValue = numberFloatFormat((xScale as D3ScaleLinear).invert(xLoc));
+
+              axisMarkersMap[dimName].push({
+                value: markerValue,
+                xPos: xLoc
+              }); // Push data to our array
+
+              const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
+                .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
+
+              // add marker rect
+              dataSelection
+                .enter().append('rect')
+                .attr('class', 'pc-marker')
+                .attr('id', function() {
+                  // Create an id for the marker for later removal
+                  return 'marker-' + markerValue;
+                })
+                .style('stroke', baselineMarkerStroke)
+                .style('fill', baselineMarkerFill)
+                .attr('x', function(d) { return d.xPos; })
+                .attr('y', segmentsY)
+                .attr('width', baselineMarkerSize)
+                .attr('height', segmentsHeight)
+                .on('click', function(d, i) {
+                  //
+                  // user just clicked on a specific marker, so for now it should be deleted
+                  //
+                  const markerValue = i.value as number;
+                  axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
+                  gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
+                    .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
+                    .exit().remove()
+                  ;
+                  // remove all marker tooltips, if any
+                  gElement.selectAll('text').remove();
+                  // re-render all the new scenario lines
+                  renderNewRunsLines();
+                })
+                .call(d3.drag<SVGRectElement, MarkerInfo>()
+                  .on('drag', function(event) {
+                    let newXPos = d3.pointer(event, this)[0];
+                    // limit the movement within the axis range
+                    newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
+                    newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
+                    d3.select(this)
+                      .attr('x', newXPos);
+                    const mv = numberFloatFormat((xScale as D3ScaleLinear).invert(newXPos));
+                    gElement.selectAll('text')
+                      .text(mv)
+                      .attr('x', newXPos + markerTooltipOffsetX)
+                    ;
+                  })
+                  .on('end', function(event, d) {
+                    let newXPos = d3.pointer(event, this)[0];
+                    // limit the movement within the axis range
+                    newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
+                    newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
+                    // update the underlying data
+                    const md = axisMarkersMap[dimName].find(m => m.value === d.value);
+                    if (md) {
+                      md.xPos = newXPos;
+                      const mv = numberFloatFormat((xScale as D3ScaleLinear).invert(newXPos));
+                      md.value = mv;
+                    }
+                    d3.select(this)
+                      .attr('x', newXPos);
+                    // remove all marker tooltips, if any
+                    gElement.selectAll('text').remove();
+                    // re-render all the new scenario lines
+                    renderNewRunsLines();
+                  }))
+                .on('mouseover', function(d, i) {
+                  // Use D3 to select element, change color and size
+                  d3.select(this)
+                    .style('fill', 'orange');
+
+                  const markerValue = numberFloatFormat(i.value as number);
+
+                  // Specify where to put label of text
+                  gElement.append('text')
+                    .attr('x', i.xPos + markerTooltipOffsetX)
+                    .attr('y', segmentsY + markerTooltipOffsetY)
+                    .attr('id', 't' + '-' + Math.floor(+markerValue)) // Create an id for text so we can select it later for removing on mouseout)
+                    .style('fill', 'black')
+                    .style('font-size', axisLabelFontSize)
+                    .text(function() {
+                      return markerValue; // Value of the text
+                    })
+                  ;
+                })
+                .on('mouseout', function(d, i) {
+                  // Use D3 to select element, change color back to normal
+                  d3.select(this)
+                    .style('fill', baselineMarkerFill);
+
+                  const markerValue = Math.floor(i.value as number);
+
+                  // Select text by id and then remove
+                  gElement.select('#t' + '-' + markerValue).remove(); // Remove text location
+                })
+              ;
+
+              // re-render all the new scenario lines, once a marker is added
+              renderNewRunsLines();
+            })
+          ;
+        } else {
+          //
+          // markers on ordinal axes
+          //
+          // special brushes for ordinal axes
+          const xScale = getXScaleFromMap(dimName);
+          const xScaleDomain = xScale.domain();
+          const totalDashesAndGaps = (xScaleDomain.length * 2) - 1;
+          const dashSize = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;
+          const segmentsData = [];
+          const segmentsY = -brushHeight;
+          const segmentsHeight = brushHeight * 2;
+          for (let segmentIndx = 0; segmentIndx < totalDashesAndGaps; segmentIndx++) {
+            if (segmentIndx % 2 === 0) { // only consider the solid segments
+              const min = segmentIndx * dashSize; // do not want sub-pixel to avoid floating point issues with d3.bisect
+              segmentsData.push({
+                x: min,
+                start: xScaleDomain[segmentIndx - (segmentIndx / 2)],
+                end: xScaleDomain[segmentIndx - (segmentIndx / 2)]
+              });
+            }
           }
+          const gElement = d3.select(this);
+          gElement
+            .selectAll('rect')
+            .data(segmentsData)
+            .enter()
+            .append('rect')
+            .attr('class', 'overlay')
+            .attr('id', dimName)
+            .attr('start', function(d) { return d.start; })
+            .attr('end', function(d) { return d.end; })
+            .attr('pointer-events', 'all')
+            .attr('cursor', 'pointer')
+            .attr('x', function(d) { return d.x; })
+            .attr('y', segmentsY)
+            .attr('width', dashSize)
+            .attr('height', segmentsHeight)
+            .on('click', function(event: PointerEvent) {
+              // this is coming from a click on an ordinal axis,
+              //  so prevent the global svg click
+              event.stopPropagation();
+
+              const segmentData: any = d3.select(this).datum();
+              const markerValue: string = segmentData.start.toString();
+
+              // check if a marker already exists
+              const marker = axisMarkersMap[dimName].find(el => el.value === markerValue);
+
+              if (!marker) {
+                const scaleX = getXScaleFromMap(dimName);
+
+                const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), markerValue);
+                const xLoc = segmentData.x + ((max - min) / 2);
+
+                // Push data to our array
+                axisMarkersMap[dimName].push({
+                  value: markerValue,
+                  xPos: xLoc
+                });
+
+                const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
+                  .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
+
+                // add marker rect
+                dataSelection
+                  .enter().append('rect')
+                  .attr('class', 'pc-marker')
+                  .attr('id', function(d) { return 'marker_' + d.value; })
+                  .style('stroke', baselineMarkerStroke)
+                  .style('fill', baselineMarkerFill)
+                  .attr('pointer-events', 'none')
+                  .attr('x', function(d) { return d.xPos; })
+                  .attr('y', segmentsY)
+                  .attr('width', baselineMarkerSize)
+                  .attr('height', segmentsHeight);
+              } else {
+                gElement.selectAll<SVGRectElement, MarkerInfo>('.pc-marker')
+                  .filter(function(d) { return d.value === markerValue; })
+                  .remove();
+                axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
+              }
+
+              // re-render all the new scenario lines
+              renderNewRunsLines();
+            })
+          ;
         }
-        const gElement = d3.select(this);
-        gElement
-          .selectAll('rect')
-          .data(segmentsData)
-          .enter()
-          .append('rect')
-          .attr('class', 'overlay')
-          .attr('id', dimName)
-          .attr('start', function(d) { return d.start; })
-          .attr('end', function(d) { return d.end; })
-          .attr('pointer-events', 'all')
-          .attr('cursor', 'pointer')
-          .attr('x', function(d) { return d.x; })
-          .attr('y', segmentsY)
-          .attr('width', dashSize)
-          .attr('height', segmentsHeight)
-          .on('click', onOrdinalAxisClick)
-        ;
-      }
-    });
+      });
+  } else {
+    //
+    // normal brushing to focus on subset of the data
+    //
+    renderedAxes
+      .append('g')
+      .attr('class', 'pc-brush')
+      .attr('id', function(d) { return d.name; })
+      .each(function(d) {
+        const dimName = d.name;
+        if (pcTypes[dimName] !== 'string') {
+          // a standard continuous brush
+          d3.select(this).call(
+            d3.brushX()
+              .extent([[0, -brushHeight], [axisRange[1], brushHeight]])
+              .on('start', brushstart)
+              .on('brush', onDataBrush)
+              .on('end', brushEnd)
+          );
+        } else {
+          // special brushes for ordinal axes
+          const xScale = getXScaleFromMap(dimName);
+          const xScaleDomain = xScale.domain();
+          const totalDashesAndGaps = (xScaleDomain.length * 2) - 1;
+          const dashSize = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;
+          const segmentsData = [];
+          const segmentsY = -brushHeight;
+          const segmentsHeight = brushHeight * 2;
+          for (let segmentIndx = 0; segmentIndx < totalDashesAndGaps; segmentIndx++) {
+            if (segmentIndx % 2 === 0) { // only consider the solid segments
+              const min = segmentIndx * dashSize; // do not want sub-pixel to avoid floating point issues with d3.bisect
+              segmentsData.push({
+                x: min,
+                start: xScaleDomain[segmentIndx - (segmentIndx / 2)],
+                end: xScaleDomain[segmentIndx - (segmentIndx / 2)]
+              });
+            }
+          }
+          const gElement = d3.select(this);
+          gElement
+            .selectAll('rect')
+            .data(segmentsData)
+            .enter()
+            .append('rect')
+            .attr('class', 'overlay')
+            .attr('id', dimName)
+            .attr('start', function(d) { return d.start; })
+            .attr('end', function(d) { return d.end; })
+            .attr('pointer-events', 'all')
+            .attr('cursor', 'pointer')
+            .attr('x', function(d) { return d.x; })
+            .attr('y', segmentsY)
+            .attr('width', dashSize)
+            .attr('height', segmentsHeight)
+            .on('click', onOrdinalAxisClick)
+          ;
+        }
+      });
+  }
 
   //
   // baseline defaults
   //
-  if (options.showBaselineDefaults) {
-    renderedAxes
-      .filter(function(d) { return d.default !== undefined; })
-      .append('circle')
-      .style('stroke', baselineMarkerStroke)
-      .style('fill', baselineMarkerFill)
-      .attr('r', baselineMarkerSize)
-      .attr('cx', function(d) {
-        const axisDefault = d.default;
-        const dimName = d.name;
-        const scaleX = getXScaleFromMap(dimName);
-        let xPos: number = scaleX(axisDefault as any) as number;
-        if (pcTypes[dimName] === 'string') {
-          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefault);
-          xPos = min + (max - min) / 2;
-        }
-        return xPos;
-      })
-      .attr('cy', 0);
-  }
+  renderBaselineMarkers(!!options.showBaselineDefaults);
 
   //
   // axis labels
@@ -501,10 +767,15 @@ export default function(
     .append('text')
     .attr('class', 'pc-axis-name-text')
     .style('text-anchor', axisLabelTextAnchor)
-    .attr('x', width + axisLabelOffsetX)
+    .attr('x', axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
-    .text(function(d) { return d.name; })
-    .style('fill', function(d) { return d.type === 'output' ? axisOutputLabelFillColor : axisInputLabelFillColor; })
+    .text(function(d) { return d.display_name; })
+    .style('fill', function(d) {
+      if (d.is_output !== undefined) {
+        return d.is_output ? axisOutputLabelFillColor : axisInputLabelFillColor;
+      }
+      return d.type === 'output' ? axisOutputLabelFillColor : axisInputLabelFillColor;
+    })
     .style('font-size', axisLabelFontSize)
     .style('font-weight', axisLabelFontWeight);
 
@@ -557,7 +828,7 @@ export default function(
     .text('000')
     .style('fill', 'white')
     .attr('visibility', 'hidden')
-    .style('font-size', '16px');
+    .style('font-size', tooltipTextFontSize);
 
 
   // add background rect for each axis tooltip
@@ -589,7 +860,7 @@ export default function(
     .text('000')
     .style('fill', 'black')
     .attr('visibility', 'hidden')
-    .style('font-size', '16px');
+    .style('font-size', tooltipTextFontSize);
 
   // add background rect for each axis tooltip
   renderedAxes
@@ -608,11 +879,15 @@ export default function(
   //
   // select default run, if requested
   //
-  if (options.applyDefaultSelection) {
-    const initialSelectedRunData = data[0];
+  if (options.initialDataSelection && options.initialDataSelection.length > 0) {
     svgElement.selectAll('.line')
       .data(data)
-      .filter(function(d) { return d.id === initialSelectedRunData.id; })
+      .filter(function(d) {
+        if (d.run_id) {
+          return options.initialDataSelection?.includes(d.run_id as string) as boolean;
+        }
+        return options.initialDataSelection?.includes(d.id as string) as boolean;
+      })
       .each(function(d) {
         const lineElement = this as SVGPathElement;
         handleLineSelection.bind(lineElement)(undefined /* event */, d);
@@ -623,6 +898,89 @@ export default function(
   // additional context-sensitive utility functions
   // ////////////////////////////////////////////////
 
+  function renderNewRunsLines() {
+    //
+    // consider dimensions one by one
+    //
+    const allBrushesMap: {[key: string]: Array<string | number>} = {};
+    let someMarkersAdded = false;
+
+    // prepare a map of all markers where a baseline marker is added when no user-marker exists
+    dimensions.forEach(dim => {
+      const dimName = dim.name;
+      const dimDefault = dim.default;
+      const dimData = [];
+      // exclude output markers
+      const notOutputMarker = dim.is_output !== undefined ? !dim.is_output : dim.type !== 'output';
+      if (notOutputMarker) {
+        const markers = axisMarkersMap[dimName];
+        // do we have actual user-markers added on this dimension?
+        if (markers && markers.length > 0) {
+          markers.forEach(marker => {
+            dimData.push(marker.value);
+          });
+          someMarkersAdded = true;
+        } else {
+          // no markers were added for this dim,
+          //  so use the (baseline) default as the marker value
+          dimData.push(dimDefault);
+        }
+        allBrushesMap[dimName] = dimData;
+      }
+    });
+
+    // utility function that takes a map of markers per dimension and split them
+    function spreadKeys(master: {[key: string]: (string | number)[]}, objects: Array<any>): Array<ScenarioData> {
+      const masterKeys = Object.keys(master);
+      const nextKey = masterKeys.pop();
+      const nextValue = master[nextKey as string];
+      const newObjects = [];
+      for (const value of nextValue) {
+        for (const ob of objects) {
+          const newObject = Object.assign({ [nextKey as any]: value }, ob);
+          newObjects.push(newObject);
+        }
+      }
+
+      if (masterKeys.length === 0) {
+        return newObjects;
+      }
+
+      const masterClone = Object.assign({}, master);
+      delete masterClone[nextKey as string];
+      return spreadKeys(masterClone, newObjects);
+    }
+
+    // start a recursive call to split all markers and generate combinations using dimension names as keys
+    const newScenarioData: Array<ScenarioData> = spreadKeys(allBrushesMap, [{}]);
+
+    // remove existing lines
+    gElement.selectAll('.marker-line').remove();
+
+    if (!someMarkersAdded) {
+      // no markers are added, so notify external listeners and return
+      onNewRuns([]);
+      return;
+    }
+
+    // some markers were added, so notify external listeners and draw potential lines
+    onNewRuns(newScenarioData);
+
+    gElement
+      .selectAll<SVGPathElement, ScenarioData>('myPath')
+      .data(newScenarioData)
+      .enter()
+      .append('path')
+      .attr('class', 'marker-line')
+      .attr('d', path)
+      .style('fill', 'none')
+      .attr('stroke-width', lineStrokeWidthMarker)
+      .style('stroke', function() { return (color()); })
+      .style('opacity', lineMarkerOpacityVisible)
+      .style('stroke-dasharray', ('3, 3'))
+    ;
+  }
+
   function brushstart(event: d3.D3BrushEvent<any>) {
     event.sourceEvent.stopPropagation();
   }
@@ -630,6 +988,9 @@ export default function(
   function onDataBrush(this: SVGElement) {
     // now filter all lines and exclude those the fall outside the range (start, end)
     cancelPrevLineSelection(svgElement);
+
+    // unfortunately, the use of numberFloatFormat adds comma which makes conversion of the resulted string back to number invalid
+    const numberFloatFormatNoComma = d3.format('.2f');
 
     // examine all brushes at all axes and cache their range
     svgElement.selectAll<SVGGraphicsElement, DimensionData>('.pc-brush')
@@ -654,8 +1015,8 @@ export default function(
           let end;
           const skip = false;
           if (pcTypes[dimName] === 'number') {
-            start = (xScale as D3ScaleLinear).invert(selection[0] as number);
-            end = (xScale as D3ScaleLinear).invert(selection[1] as number);
+            start = numberFloatFormatNoComma((xScale as D3ScaleLinear).invert(selection[0] as number));
+            end = numberFloatFormatNoComma((xScale as D3ScaleLinear).invert(selection[1] as number));
           } else {
             start = selection[0];
             end = selection[1];
@@ -684,7 +1045,7 @@ export default function(
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
           if (pcTypes[b.dimName] === 'number') {
-            if (lineData[b.dimName] < b.start || lineData[b.dimName] > b.end) {
+            if (+lineData[b.dimName] < +b.start || +lineData[b.dimName] > +b.end) {
               isSelected = false;
             }
           } else if (pcTypes[b.dimName] === 'string') {
@@ -754,10 +1115,18 @@ export default function(
         const text = d3.select(this).select('.pc-selection-tooltip-text');
         const textNode = text.node() as SVGGraphicsElement;
         const textBBox = textNode.getBBox();
+        // if xPos + text-rect-width is beyond the svg width, then adjust
+        let xPos = textBBox.x - tooltipRectPadding;
+        const width = textBBox.width + tooltipRectPadding * 2;
+        const offset = (xPos + width) - axisRange[1];
+        if (offset > 0) {
+          xPos -= offset;
+          text.attr('x', xPos + tooltipRectPadding);
+        }
         rect
-          .attr('x', textBBox.x - tooltipRectPadding)
+          .attr('x', xPos)
           .attr('y', textBBox.y - tooltipRectPadding)
-          .attr('width', textBBox.width + tooltipRectPadding * 2)
+          .attr('width', width)
           .attr('height', textBBox.height + tooltipRectPadding * 2);
         text.raise();
       });
@@ -774,33 +1143,48 @@ export default function(
         const dimName = d.name;
         let isTooltipVisible = 'visible';
         let value: string | number = '';
+        let formattedValue: string | number = value;
         let xPos: number;
+        const xScale = getXScaleFromMap(dimName);
         // override the tooltip content if there is a brush applied to this dimension
         if (brushes.length > 0) {
           isTooltipVisible = 'hidden';
           const brushRange = brushes.find(b => b.dimName === dimName);
           if (brushRange) {
             if (pcTypes[dimName] === 'number') {
-              value = numberFormat(brushRange.start as number) + ' : ' + numberFormat(brushRange.end as number);
+              // note that since brush is a (moving) range then it will mostly have float range
+              // but we could check the axis domain to figure out a more accurate data type
+              const xScaleDomain = xScale.domain();
+              let d3FormatFunc = numberFloatFormat;
+              if (Number.isInteger(+xScaleDomain[0]) && Number.isInteger(+xScaleDomain[1])) {
+                d3FormatFunc = numberIntegerFormat;
+              }
+              value = d3FormatFunc(brushRange.start as number) + ' : ' + d3FormatFunc(brushRange.end as number);
             } else {
               value = brushRange.start + ' : ' + brushRange.end;
             }
             isTooltipVisible = 'visible';
+            formattedValue = value;
           }
-          xPos = selectionTooltipXOffset; // + axisRange[1]; // always at the far right
+          // always show the brush tooltip centered on the axis
+          const centerAxisXPos = (axisRange[1] - axisRange[0]) / 2;
+          // adjust center based on the brush width
+          const brushTooltipRectWidth = 100; // FIXME: this should be calculated based on the actual content
+          xPos = centerAxisXPos - brushTooltipRectWidth / 2;
         } else {
           value = selectedLineData[dimName];
+          formattedValue = selectedLineData[dimName];
           if (pcTypes[dimName] === 'number') {
-            value = numberFormat(value as number);
+            const numValue = +value as number;
+            formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
           }
-          const xScale = getXScaleFromMap(dimName);
           xPos = xScale(value as any) as number;
         }
 
         const yPos = selectionTooltipNormalYOffset;
         const renderedText = d3.select(this);
         renderedText
-          .text(value)
+          .text(formattedValue)
           .attr('visibility', isTooltipVisible)
           .attr('x', xPos)
           .attr('y', yPos)
@@ -889,7 +1273,9 @@ export default function(
       }
 
       // notify external listeners
-      onLinesSelection([selectedLineData]);
+      if (!options.newRunsMode) {
+        onLinesSelection([selectedLineData]);
+      }
     }
   }
 
@@ -897,13 +1283,13 @@ export default function(
   function highlight(this: SVGPathElement) {
     const selectedLine = d3.select(this);
     const selectedLineData = selectedLine.datum() as ScenarioData;
-    // first every line turns grey (except any current selection)
+    // first every line turns transparent (except any current selection)
     svgElement.selectAll('.line')
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
       .style('opacity', lineOpacityHidden);
 
-    // Use D3 to select the line, change color and size
+    // Use D3 to highlight the line; change its opacity
     selectedLine
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
@@ -917,13 +1303,15 @@ export default function(
     svgElement.selectAll<SVGTextElement, DimensionData>('.pc-hover-tooltip-text')
       .each(function(d) {
         const dimName = d.name;
-        let value = selectedLineData[dimName];
+        const value = selectedLineData[dimName];
+        let formattedValue = value;
         if (pcTypes[dimName] === 'number') {
-          value = numberFormat(value as number);
+          const numValue = +value as number;
+          formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
         const renderedText = d3.select(this);
         renderedText
-          .text(value)
+          .text(formattedValue)
           .attr('visibility', 'visible')
           .attr('x', function() {
             const xScale = getXScaleFromMap(dimName);
@@ -963,3 +1351,40 @@ export default function(
       .attr('visibility', 'hidden');
   }
 }
+
+function renderBaselineMarkers(showBaselineDefaults: boolean) {
+  if (!renderedAxes) {
+    console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
+    return;
+  }
+
+  renderedAxes.selectAll('circle').remove();
+
+  if (showBaselineDefaults) {
+    renderedAxes
+      .filter(function(d) { return d.default !== undefined; })
+      .append('circle')
+      .style('stroke', baselineMarkerStroke)
+      .style('fill', baselineMarkerFill)
+      .attr('pointer-events', 'none')
+      .attr('r', baselineMarkerSize)
+      .attr('cx', function(d) {
+        const axisDefault = d.default;
+        const dimName = d.name;
+        const scaleX = getXScaleFromMap(dimName);
+        let xPos: number = scaleX(axisDefault as any) as number;
+        if (pcTypes[dimName] === 'string') {
+          const axisDefaultStr = axisDefault.toString();
+          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
+          xPos = min + (max - min) / 2;
+        }
+        return xPos;
+      })
+      .attr('cy', 0);
+  }
+}
+
+export {
+  renderParallelCoordinates,
+  renderBaselineMarkers
+};
