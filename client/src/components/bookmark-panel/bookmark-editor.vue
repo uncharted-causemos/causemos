@@ -2,7 +2,7 @@
   <dropdown-control
     class="bookmark-editor-dropdown"
   >
-    <div slot="content">
+    <template #content>
       <div
         class="dropdown-option disabled"
         @click="editBookmark"
@@ -17,7 +17,7 @@
         <i class="fa fa-trash" />
         Delete
       </div>
-    </div>
+    </template>
   </dropdown-control>
 </template>
 
@@ -45,6 +45,6 @@ export default {
 .bookmark-editor-dropdown{
   position:absolute;
   right: 25px;
-  width: 20vh;
+  width: fit-content;
 }
 </style>
