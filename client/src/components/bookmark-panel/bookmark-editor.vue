@@ -44,7 +44,7 @@ export default {
 @import "~styles/variables";
 .bookmark-editor-dropdown{
   position:absolute;
-  right: 25px;
+  right: 16px;
   width: fit-content;
 }
 </style>
