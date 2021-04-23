@@ -148,7 +148,7 @@ export default {
         (this.view ? (' - ' + this.view) : '');
 
       const filterString = this.filters?.clauses?.reduce((a, c) => {
-        return a + `${a.length > 0 ? ' OR ' : ''} ` +
+        return a + `${a.length > 0 ? ' AND ' : ''} ` +
           `${FilterKeyFormatter(c.field)} ${c.isNot ? 'is not' : 'is'} ` +
           `${c.values.map(v => FilterValueFormatter(v)).join(', ')}`;
       }, '');
