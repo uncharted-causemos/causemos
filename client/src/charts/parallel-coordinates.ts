@@ -769,7 +769,12 @@ function renderParallelCoordinates(
     .style('text-anchor', axisLabelTextAnchor)
     .attr('x', axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
-    .text(function(d) { return d.display_name; })
+    .text(function(d) {
+      if (d.display_name !== undefined) {
+        return d.display_name;
+      }
+      return d.name;
+    })
     .style('fill', function(d) {
       if (d.is_output !== undefined) {
         return d.is_output ? axisOutputLabelFillColor : axisInputLabelFillColor;

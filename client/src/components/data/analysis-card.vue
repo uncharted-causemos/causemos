@@ -109,57 +109,54 @@
         @runsupdated="updateRuns"
       />
       -->
-      <div style="margin: 1rem;">
-        <div>
-          <button
-            type="button"
-            class="btn dropdown-btn"
-            @click="isDrilldownDropdownOpen = !isDrilldownDropdownOpen"
-          >
-            <div class="button-text">
-              Drilldown Filters
-              <i
-                class="fa fa-fw"
-                :class="{ 'fa-angle-down': !isDrilldownDropdownOpen, 'fa-angle-up': isDrilldownDropdownOpen }"
-              />
-            </div>
-          </button>
-          <dropdown-control
-            v-if="isDrilldownDropdownOpen"
-            class="dropdown-control"
-            style="position: absolute">
-            <template #content>
-              <div
-                v-for="filter in drilldownParameters"
-                :key="filter.id"
-                class="dropdown-option"
-              >
-                {{ filter.name }}
-              </div>
-            </template>
-          </dropdown-control>
-        </div>
+      <div>
         <div class="scenario-selector">
-          <div style="padding-left: 1rem">
-          <div class="baseline-checkbox">
-            <label @click="toggleBaselineDefaultsVisibility()">
-              <i
-                class="fa fa-lg fa-fw"
-                :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
-              />
-              Baseline Defaults
-            </label>
+          <div>
+            <div class="checkbox">
+              <label @click="toggleBaselineDefaultsVisibility()">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
+                />
+                Baseline Defaults
+              </label>
+            </div>
+            <div class="checkbox">
+              <label @click="toggleNewRunsMode()">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-toggle-on': showNewRunsMode, 'fa-toggle-off': !showNewRunsMode }"
+                />
+                New Runs Mode
+              </label>
+            </div>
           </div>
-        </div>
           <parallel-coordinates-chart
             v-if="dimensionsData"
             :dimensions-data="dimensionsData"
             :selected-dimensions="selectedDimensions"
             :ordinal-dimensions="ordinalDimensions"
             :initial-data-selection="initialScenarioSelection"
+            :new-runs-mode="showNewRunsMode"
             :show-baseline-defaults="showBaselineDefaults"
             @select-scenario="updateScenarioSelection"
+            @generated-scenarios="updateGeneratedScenarios"
           />
+          <div v-if="showNewRunsMode">
+              <disclaimer
+                :message="
+                  potentialScenarioCount +
+                    ' scenario(s) can be generated'
+                "
+              />
+              <button
+                class="search-button btn btn-primary btn-call-for-action"
+                :class="{ 'disabled': potentialScenarioCount === 0}"
+                @click="requestNewModelRuns()"
+              >
+                Request
+              </button>
+          </div>
         </div>
       </div>
       <data-analysis-map
@@ -238,8 +235,8 @@ export default {
     ordinalDimensions: null,
     initialScenarioSelection: null,
     showBaselineDefaults: false,
-    drilldownParameters: [],
-    isDrilldownDropdownOpen: false
+    showNewRunsMode: false,
+    potentialScenarioCount: 0
   }),
   computed: {
     ...mapGetters({
@@ -419,8 +416,6 @@ export default {
 
     this.initialScenarioSelection = [runs[0].id]; // select first run by default
 
-    // add drilldown params
-    this.drilldownParameters = parameters.filter(p => p.type === 'drilldown');
     //
     // end of PC real data association
 
@@ -487,26 +482,25 @@ export default {
     onClick(e) {
       this.$emit('click', e);
     },
+    toggleNewRunsMode() {
+      this.showNewRunsMode = !this.showNewRunsMode;
+      this.potentialScenarioCount = 0;
+
+      if (this.showNewRunsMode) {
+        // always force baselinedefault to be visible when the new-runs-mode is active
+        this.showBaselineDefaults = true;
+        // clear any selected scenario and show the model desc page
+        this.updateScenarioSelection({ scenarios: [] });
+      }
+    },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
-      /*
-      this.initialScenarioSelection.length = 0;
-      if (this.showBaselineDefaults) {
-        // find any baseline scenarios and select by default
-        this.dimensionsData.forEach(scenario => {
-          let isBaseline = true;
-          for (const dim of this.selectedDimensions) {
-            if (dim.default !== scenario[dim.name]) {
-              isBaseline = false;
-              return;
-            }
-          }
-          if (isBaseline) {
-            this.initialScenarioSelection.push(scenario.id);
-          }
-        });
-      }
-      */
+    },
+    updateGeneratedScenarios(e) {
+      this.potentialScenarioCount = e.scenarios.length;
+    },
+    requestNewModelRuns() {
+      this.toaster('New runs requested\nPlease check back later!');
     },
     updateScenarioSelection(e) {
       let lineData;
@@ -675,7 +669,7 @@ $fullscreenTransition: all .5s ease-in-out;
   height: 350px;
 }
 
-.baseline-checkbox {
+.checkbox {
   user-select: none; /* Standard syntax */
   display: inline-block;
   label {
