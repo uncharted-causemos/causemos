@@ -37,7 +37,8 @@ const lineStrokeWidthMarker = 1.5;
 
 const lineOpacityVisible = 1;
 const lineOpacityHidden = 0.1;
-const lineMarkerOpacityVisible = 0.5;
+
+const lineOpacityNewRunsModeContext = 0.04;
 
 const lineColor = '#296AE9ff';
 
@@ -365,18 +366,21 @@ function renderParallelCoordinates(
   //
   // Draw the lines
   //
+  const lines = gElement
+    .selectAll<SVGPathElement, ScenarioData>('myPath')
+    .data(data)
+    .enter()
+    .append('path')
+    .attr('class', function () { return 'line '; })
+    .attr('d', path)
+    .style('fill', 'none')
+    .attr('stroke-width', lineStrokeWidthNormal)
+    .style('stroke', function() { return (color(/* d.dimName */)); })
+    .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
+
   if (!options.newRunsMode) {
-    gElement
-      .selectAll<SVGPathElement, ScenarioData>('myPath')
-      .data(data)
-      .enter()
-      .append('path')
-      .attr('class', function () { return 'line '; })
-      .attr('d', path)
-      .style('fill', 'none')
-      .attr('stroke-width', lineStrokeWidthNormal)
-      .style('stroke', function() { return (color(/* d.dimName */)); })
-      .style('opacity', lineOpacityHidden)
+    // existing scenario lines are interactive only in the normal mode
+    lines
       .on('mouseover', highlight)
       .on('mouseleave', doNotHighlight)
       .on('click', handleLineSelection);
@@ -627,6 +631,32 @@ function renderParallelCoordinates(
             }
           }
           const gElement = d3.select(this);
+
+          const tickSize = 5;
+          const ticksData = [
+            { x1: 0, y1: 0, x2: 0, y2: tickSize }, // left tick
+            { x1: dashSize, y1: 0, x2: dashSize, y2: tickSize } // right tick
+          ];
+
+          // add two tick lines for each segment
+          gElement
+            .selectAll('g')
+            .data(segmentsData)
+            .enter()
+            .append('g')
+            .attr('transform', function(d) { return svgUtil.translate(d.x, 0); })
+            .selectAll('line')
+            .data(ticksData)
+            .enter()
+            .append('line')
+            .attr('pointer-events', 'none')
+            .attr('x1', function(d) { return d.x1; })
+            .attr('y1', function(d) { return d.y1; })
+            .attr('x2', function(d) { return d.x2; })
+            .attr('y2', function(d) { return d.y2; })
+            .attr('stroke', 'black')
+          ;
+
           gElement
             .selectAll('rect')
             .data(segmentsData)
@@ -732,6 +762,32 @@ function renderParallelCoordinates(
             }
           }
           const gElement = d3.select(this);
+
+          const tickSize = 5;
+          const ticksData = [
+            { x1: 0, y1: 0, x2: 0, y2: tickSize }, // left tick
+            { x1: dashSize, y1: 0, x2: dashSize, y2: tickSize } // right tick
+          ];
+
+          // add two tick lines for each segment
+          gElement
+            .selectAll('g')
+            .data(segmentsData)
+            .enter()
+            .append('g')
+            .attr('transform', function(d) { return svgUtil.translate(d.x, 0); })
+            .selectAll('line')
+            .data(ticksData)
+            .enter()
+            .append('line')
+            .attr('pointer-events', 'none')
+            .attr('x1', function(d) { return d.x1; })
+            .attr('y1', function(d) { return d.y1; })
+            .attr('x2', function(d) { return d.x2; })
+            .attr('y2', function(d) { return d.y2; })
+            .attr('stroke', 'black')
+          ;
+
           gElement
             .selectAll('rect')
             .data(segmentsData)
@@ -971,6 +1027,7 @@ function renderParallelCoordinates(
     // some markers were added, so notify external listeners and draw potential lines
     onNewRuns(newScenarioData);
 
+    // render all potential scenario-run lines
     gElement
       .selectAll<SVGPathElement, ScenarioData>('myPath')
       .data(newScenarioData)
@@ -981,7 +1038,7 @@ function renderParallelCoordinates(
       .style('fill', 'none')
       .attr('stroke-width', lineStrokeWidthMarker)
       .style('stroke', function() { return (color()); })
-      .style('opacity', lineMarkerOpacityVisible)
+      .style('opacity', lineOpacityVisible)
       .style('stroke-dasharray', ('3, 3'))
     ;
   }
@@ -1242,6 +1299,9 @@ function renderParallelCoordinates(
   // select the line clicked by the user
   // or deselect all lines when the svg element is clicked
   function handleLineSelection(this: SVGPathElement | HTMLElement, event: PointerEvent | undefined, d: ScenarioData) {
+    if (options.newRunsMode) {
+      return;
+    }
     // when the user have an active brush,
     //  selecting a line outside that brush range will not remove the existing brush
     //  and the newly clicked line will be ignored because it is outside the brush
@@ -1278,9 +1338,7 @@ function renderParallelCoordinates(
       }
 
       // notify external listeners
-      if (!options.newRunsMode) {
-        onLinesSelection([selectedLineData]);
-      }
+      onLinesSelection([selectedLineData]);
     }
   }
 
