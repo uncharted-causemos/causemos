@@ -153,7 +153,6 @@ export default {
           `${c.values.map(v => FilterValueFormatter(v)).join(', ')}`;
       }, '');
       this.description = `${filterString.length > 0 ? 'Filters: ' + filterString : ''} `;
-      console.log(this.filters, this.ontologyConcepts, this.projectMetadata, this.modelSummary);
     },
     async saveBookmark() {
       if (this.hasError || _.isEmpty(this.title)) return;

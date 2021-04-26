@@ -95,6 +95,7 @@ import CloseButton from '@/components/widgets/close-button';
 import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
 
+import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 export default {
@@ -188,11 +189,11 @@ export default {
     },
     getFileName() {
       const date = new Date();
-      const formattedDate = date.toLocaleString().replace(/[/]/g, '-').replace(',', '');
+      const formattedDate = dateFormatter(date, 'YYYY-MM-DD hh:mm:ss a');
       return `Causemos ${this.projectMetadata.name} ${formattedDate}`;
     },
-    baseURL() {
-      return window.location.href.split('/#/')[0];
+    slideURL(slideURL) {
+      return `${window.location.protocol}//${window.location.host}/#${slideURL}`;
     },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexing uses pixels
@@ -201,7 +202,7 @@ export default {
 
       const sections = this.listBookmarks.map((bm) => {
         const imageSize = this.scaleImage(bm.thumbnail_source, docxMaxImageSize, docxMaxImageSize);
-        const insightDate = new Date(bm.modified_at);
+        const insightDate = dateFormatter(bm.modified_at);
         return {
           footers: {
             default: new Footer({
@@ -261,7 +262,7 @@ export default {
                 }),
                 new TextRun({
                   size: 24,
-                  text: `Captured on: ${insightDate.toLocaleDateString()} - ${this.metadataSummary} - `
+                  text: `Captured on: ${insightDate} - ${this.metadataSummary} - `
                 }),
                 new ExternalHyperlink({
                   child: new TextRun({
@@ -271,7 +272,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: `${this.baseURL()}/#${bm.url} `
+                  link: this.slideURL(bm.url)
                 })
               ]
             })
@@ -307,9 +308,9 @@ export default {
 
       this.listBookmarks.forEach((bm) => {
         const imageSize = this.scaleImage(bm.thumbnail_source, widthLimitImage, heightLimitImage);
-        const insightDate = new Date(bm.modified_at);
+        const insightDate = dateFormatter(bm.modified_at);
         const slide = pres.addSlide();
-        const notes = `Title: ${bm.title}\nDescription: ${bm.description}\nCaptured on: ${insightDate.toLocaleDateString()}\n${this.metadataSummary}`;
+        const notes = `Title: ${bm.title}\nDescription: ${bm.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
 
         /*
           PPTXGEN BUG WORKAROUND - library level function slide.addNotes(notes) doesn't insert notes
@@ -337,7 +338,7 @@ export default {
             options: {
               bold: true,
               hyperlink: {
-                url: `${this.baseURL()}/#${bm.url}`
+                url: this.slideURL(bm.url)
               }
             }
           },
@@ -348,7 +349,7 @@ export default {
             }
           },
           {
-            text: `\n(Captured on: ${insightDate.toLocaleDateString()} - ${this.metadataSummary})`,
+            text: `\n(Captured on: ${insightDate} - ${this.metadataSummary})`,
             options: {
               break: false
             }
