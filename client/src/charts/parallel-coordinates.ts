@@ -59,10 +59,14 @@ const lineSelectionTooltipTextBackgroundColor = 'yellow';
 const selectionTooltipNormalYOffset = 30;
 const tooltipTextFontSize = '14px';
 
-// styling baseline defaults
+// baseline defaults
 const baselineMarkerSize = 5;
 const baselineMarkerFill = 'brown';
 const baselineMarkerStroke = 'white';
+
+// markers tooltip within new-runs mode
+const markerTooltipOffsetX = -10;
+const markerTooltipOffsetY = -20;
 
 // axis styling
 const axisLabelOffsetX = 0;
@@ -77,10 +81,6 @@ const axisTickLabelOffset = 0; // FIXME: this should be dynamic based on the wor
 
 // brushing
 const brushHeight = 8;
-
-// styling markers within new-runs mode
-const markerTooltipOffsetX = -10;
-const markerTooltipOffsetY = -20;
 
 const numberIntegerFormat = d3.format('~s');
 const numberFloatFormat = d3.format(',.2f');
@@ -247,7 +247,13 @@ function renderParallelCoordinates(
         // lets attempt to distribute the values randomly on the segment
         // with the goal of improving lines visibility and reducing overlap
         const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val.toString());
-        xPos = getRandom(min, max);
+        if (options.newRunsMode) {
+          // special case when rendering potential scenario lines in the new-runs mode
+          //  instead of distributing the lines over the segment for ordinal axes, use the segment center
+          xPos = min + (max - min) / 2;
+        } else {
+          xPos = getRandom(min, max);
+        }
       }
       const yPos = yScale(dimName);
       return [xPos, yPos];
@@ -825,6 +831,7 @@ function renderParallelCoordinates(
                   .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
 
                 // add marker rect
+                const markerWidth = baselineMarkerSize * 2;
                 dataSelection
                   .enter().append('rect')
                   .attr('class', 'pc-marker')
@@ -832,9 +839,9 @@ function renderParallelCoordinates(
                   .style('stroke', baselineMarkerStroke)
                   .style('fill', baselineMarkerFill)
                   .attr('pointer-events', 'none')
-                  .attr('x', function(d) { return d.xPos; })
+                  .attr('x', function(d) { return d.xPos - (markerWidth / 2); })
                   .attr('y', segmentsY)
-                  .attr('width', baselineMarkerSize)
+                  .attr('width', markerWidth)
                   .attr('height', segmentsHeight);
               } else {
                 gElement.selectAll<SVGRectElement, MarkerInfo>('.pc-marker')
