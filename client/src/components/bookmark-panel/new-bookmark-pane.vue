@@ -145,7 +145,7 @@ export default {
 
       this.title = (this.projectMetadata ? this.projectMetadata.name : '') +
         (this.modelSummary ? (' - ' + this.modelSummary.name) : '') +
-        (this.view ? (' - ' + this.view) : '');
+        (this.currentView ? (' - ' + this.currentView) : '');
 
       const filterString = this.filters?.clauses?.reduce((a, c) => {
         return a + `${a.length > 0 ? ' AND ' : ''} ` +
