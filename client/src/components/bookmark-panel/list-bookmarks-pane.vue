@@ -327,7 +327,7 @@ export default {
           // centering image code for x & y limited by consts for max content size
           // plus base offsets needed to stay clear of other elements
           x: (widthLimitImage - imageSize.width) / 2,
-          y: 0 + (heightLimitImage - imageSize.height) / 2,
+          y: (heightLimitImage - imageSize.height) / 2,
           w: imageSize.width,
           h: imageSize.height
         });
