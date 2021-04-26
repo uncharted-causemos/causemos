@@ -1,7 +1,7 @@
 // Dummy data to be used in a site visit demo on April 22, 2021
 //  and removed afterward.
 
-import { ScenarioData } from '@/types/Datacubes';
+import { ScenarioData } from '@/types/Common';
 
 export const SCENARIOS_LIST: Array<ScenarioData> = [
   {

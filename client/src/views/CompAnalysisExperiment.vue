@@ -15,7 +15,7 @@
       :selected-timestamp="selectedTimestamp"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
-      @set-drilldown-dimensions="setDrilldownDimensions"
+      @set-drilldown-data="setDrilldownData"
     />
     <drilldown-panel
         class="drilldown"
@@ -45,7 +45,9 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
 import { defineComponent, ref } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { DimensionData } from '@/types/Datacubes';
+import { BreakdownInfo } from '@/types/Common';
+import { DimensionInfo } from '@/types/Model';
+
 
 const DRILLDOWN_TABS = [
   {
@@ -65,7 +67,7 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData: any[] = [];
+    const typeBreakdownData: BreakdownInfo[] = [];
 
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
     // TODO: select baseline by default, not necessarily the first one
@@ -94,19 +96,22 @@ export default defineComponent({
     };
   },
   methods: {
-    setDrilldownDimensions(e: { drilldownDimensions: Array<DimensionData> }) {
-      // console.log(e);
+    setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
+      // TODO: inspect 'this.selectedScenarioIds' for drilldown data
+      this.typeBreakdownData.length = 0;
+      if (this.selectedScenarioIds.length === 0) {
+        return;
+      }
       const getRandom = (min: number, max: number) => {
         return Math.random() * (max - min) + min;
       };
-      this.typeBreakdownData.length = 0;
       e.drilldownDimensions.forEach(dd => {
         const drillDownChildren: Array<{name: string; value: number}> = [];
         const choices = dd.choices as Array<string>;
         choices.forEach((c) => {
           drillDownChildren.push({
             name: c,
-            value: getRandom(0, 5000) // FIXME: pickup the actual breakdown aggregation from data
+            value: getRandom(0, 5000) // FIXME: use random data for now. Later, pickup the actual breakdown aggregation from (selected scenarios) data
           });
         });
         const breakdown = {

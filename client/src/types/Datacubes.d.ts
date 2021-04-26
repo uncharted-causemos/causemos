@@ -1,3 +1,35 @@
+
+import { ModelGeography } from './Common';
+
+export interface Period {
+  gte: string;
+  lte: string;
+  resolution: string;
+}
+
+export interface CubeParameter {
+  id: string;
+  value: string;
+}
+
+// New Datacube metadata
+export interface Cube {
+  id: string;
+  description: string;
+  name: string;
+  created: string;
+  job_id: string;
+  model_id: string;
+  data_paths: string[];
+  pre_gen_output_paths: string[];
+  default_run: boolean;
+  tags: string[];
+  geography: ModelGeography;
+  periods: Period[];
+  parameters: CubeParameter[];
+}
+
+// OLD datacube metadata
 export interface Datacube {
   id: string;
   type: string;
@@ -31,22 +63,6 @@ export interface RegionalData {
   admin4?: { [timestamp: string]: { id: string; value: number }[] };
   admin5?: { [timestamp: string]: { id: string; value: number }[] };
   admin6?: { [timestamp: string]: { id: string; value: number }[] };
-}
-
-// any scenario data is represented as a map of {name, value}
-export interface ScenarioData {
-  [key: string]: string | number;
-}
-
-export interface DimensionData {
-  type: string;
-  is_drilldown?: boolean;
-  is_output?: boolean;
-  name: string;
-  display_name: string;
-  description: string;
-  default: string | number;
-  choices?: Array<string>;
 }
 
 export interface ScenarioDef {
