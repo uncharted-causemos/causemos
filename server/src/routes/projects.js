@@ -3,6 +3,7 @@ const moment = require('moment');
 const _ = require('lodash');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
+const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const { get } = rootRequire('/cache/node-lru-cache');
 const Logger = rootRequire('/config/logger');
@@ -35,6 +36,8 @@ router.post('/', asyncHandler(async (req, res) => {
   const baseId = req.body.baseId;
   const projectName = req.body.projectName;
   const result = await projectService.createProject(baseId, projectName);
+
+
   res.json(result);
 }));
 
@@ -275,6 +278,32 @@ router.get('/:projectId/ontology-composition', asyncHandler(async (req, res) => 
 
   const result = await projectService.ontologyComposition(projectId, concept);
   res.json(result);
+}));
+
+
+/**
+ * POST Log and submit a reassembly request
+ */
+router.post('/:projectId/assembly', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const payload = req.body;
+  console.log(projectId);
+  console.log(payload);
+
+  // FIXME: Just test INDRA plumbing
+  const options = {
+    url: 'http://wm.indra.bio/assembly/add_project_records',
+    method: 'POST',
+    json: {
+      project_id: projectId,
+      records: payload
+    }
+  };
+  const result = await requestAsPromise(options);
+  console.log('');
+  console.log(result);
+  console.log('');
+  res.json({});
 }));
 
 module.exports = router;
