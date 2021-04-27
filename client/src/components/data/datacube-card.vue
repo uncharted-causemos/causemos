@@ -150,8 +150,9 @@
           v-if="!isDescriptionView"
           class="card-map full-width"
           :selection="selection"
-          :show-tooltip="false"
+          :show-tooltip="true"
           :selected-admin-level="selectedAdminLevel"
+          :selected-timestamp="selectedTimestamp"
           @on-map-load="onMapLoad"
         />
       </div>
@@ -170,7 +171,6 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { DimensionData, ScenarioData, ScenarioDef } from '@/types/Datacubes';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
-import ADMIN_LEVEL_DATA from '@/assets/admin-stats.js';
 import { SCENARIOS_LIST } from '@/assets/scenario-data';
 import API from '@/api/api';
 import { Timeseries } from '@/types/Timeseries';
@@ -188,7 +188,7 @@ function colorFromIndex(index: number) {
 
 export default defineComponent({
   name: 'DatacubeCard',
-  emits: ['on-map-load', 'set-selected-scenario-ids', 'select-timestamp'],
+  emits: ['on-map-load', 'set-selected-scenario-ids', 'select-timestamp', 'set-drilldown-dimensions'],
   props: {
     isExpanded: {
       type: Boolean,
@@ -320,6 +320,14 @@ export default defineComponent({
       console.log('Fetched metadata for selected scenarios', allMetadata);
     }
 
+    const selection = {
+      modelId: props.selectedModelId,
+      runId: props.selectedScenarioIds[0],
+      id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
+      outputVariable: 'production',
+      timestamp: props.selectedTimestamp
+    };
+
     watch(() => props.selectedScenarioIds, () => {
       fetchScenarioMetadata();
       fetchTimeseriesData();
@@ -333,26 +341,13 @@ export default defineComponent({
     return {
       selectedScenarios: SCENARIOS_LIST,
       selectedTimeseriesData,
+      selection,
       scenarioCount,
-      adminLevelData: ADMIN_LEVEL_DATA,
       colorFromIndex,
       emitTimestampSelection,
       relativeTo,
       timeseriesDataForDisplay
     };
-  },
-  computed: {
-    selection() {
-      // TODO: FIXME: yeah fix it would you
-      return {
-        id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-        modelId: '2fe40c11-8862-4ab4-b528-c85dacdc615e',
-        outputVariable: 'production',
-        runId: '965c0e8c-1e66-4c16-b4d1-64d0607d6f69',
-        timestamp: 1430438400000
-      };
-    }
-    // return { id, modelId, outputVariable, ...selection };
   },
   data: () => ({
     showBaselineDefaults: false,
@@ -366,7 +361,8 @@ export default defineComponent({
     ordinalDimensions: [] as Array<string>,
     potentialScenarioCount: 0,
     isDescriptionView: true,
-    isRelativeDropdownOpen: false
+    isRelativeDropdownOpen: false,
+    drilldownDimensions: [] as Array<DimensionData>
   }),
   async mounted() {
     await this.fetchAllScenarioMetadata();
@@ -419,6 +415,9 @@ export default defineComponent({
     // this.initialScenarioSelection = [baselineRunID]; // REVIEW: uncomment to select baseline run by default
     this.selectedDimensions = selectedParameters;
     this.dimensionsData = allProcessedRunsParams;
+
+    this.drilldownDimensions = selectedParameters.filter(p => p.is_drilldown);
+    this.$emit('set-drilldown-dimensions', { drilldownDimensions: this.drilldownDimensions });
 
     // force 'rainfall_multiplier' to be ordinal
     this.ordinalDimensions = ['rainfall_multiplier'];

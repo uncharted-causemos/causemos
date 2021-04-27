@@ -15,6 +15,7 @@
       :selected-timestamp="selectedTimestamp"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
+      @set-drilldown-dimensions="setDrilldownDimensions"
     />
     <drilldown-panel
         class="drilldown"
@@ -41,10 +42,10 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { AGGREGATED_PRODUCT_TYPE_DATA } from '@/assets/admin-stats.js';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
 import { defineComponent, ref } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
+import { DimensionData } from '@/types/Datacubes';
 
 const DRILLDOWN_TABS = [
   {
@@ -59,14 +60,12 @@ export default defineComponent({
   name: 'CompAnalysisExperiment',
   components: { DatacubeCard, DrilldownPanel, BreakdownPane },
   setup() {
-    const selectedAdminLevel = ref(0);
+    const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData = [
-      AGGREGATED_PRODUCT_TYPE_DATA
-    ];
+    const typeBreakdownData: any[] = [];
 
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
     // TODO: select baseline by default, not necessarily the first one
@@ -93,6 +92,34 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp
     };
+  },
+  methods: {
+    setDrilldownDimensions(e: { drilldownDimensions: Array<DimensionData> }) {
+      // console.log(e);
+      const getRandom = (min: number, max: number) => {
+        return Math.random() * (max - min) + min;
+      };
+      this.typeBreakdownData.length = 0;
+      e.drilldownDimensions.forEach(dd => {
+        const drillDownChildren: Array<{name: string; value: number}> = [];
+        const choices = dd.choices as Array<string>;
+        choices.forEach((c) => {
+          drillDownChildren.push({
+            name: c,
+            value: getRandom(0, 5000) // FIXME: pickup the actual breakdown aggregation from data
+          });
+        });
+        const breakdown = {
+          name: dd.name,
+          data: {
+            name: 'ALL',
+            value: drillDownChildren.map(c => c.value).reduce((a, b) => a + b, 0), // sum all children values
+            children: drillDownChildren
+          }
+        };
+        this.typeBreakdownData.push(breakdown);
+      });
+    }
   }
 });
 </script>
