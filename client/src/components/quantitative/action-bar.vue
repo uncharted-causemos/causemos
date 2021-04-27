@@ -96,8 +96,9 @@ export default {
       if (this.isInDraftState) return null;
       const found = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId);
       if (found !== undefined) return found;
+
       console.error(
-        'Qualitative action bar: selected scenario not found.',
+        'Quantitative action bar: selected scenario not found.',
         `Selected scenario ID: ${this.selectedScenarioId}`,
         `Scenarios: ${this.scenarios}`
       );
