@@ -67,7 +67,7 @@ const routes = [
   {
     path: '/:project/data/:analysisID',
     name: 'data',
-    component: DataView,
+    component: CompAnalysisExperiment, // DataView,
     beforeEnter: loadAnalysisState
   },
   {
