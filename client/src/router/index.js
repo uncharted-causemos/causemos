@@ -87,11 +87,6 @@ const routes = [
     component: TileExperiment
   },
   {
-    path: '/comp-analysis-experiment',
-    name: 'compAnalysisExperiment',
-    component: CompAnalysisExperiment
-  },
-  {
     path: '/graph-experiment',
     name: 'graphExperiment',
     component: GraphExperiment
