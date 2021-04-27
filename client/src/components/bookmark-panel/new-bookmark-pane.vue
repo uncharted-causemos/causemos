@@ -30,6 +30,7 @@
           </div>
           <label>Description</label>
           <textarea
+            rows="10"
             v-model="description"
             class="form-control" />
         </div>
@@ -41,27 +42,39 @@
         class="btn btn-light"
         @click="closeBookmarkPanel"
       >
-        Cancel</button>
+        Cancel
+      </button>
+      <button
+        class="btn btn-primary"
+        @click="autofillBookmark"
+      >
+        Autofill
+      </button>
       <button
         type="button"
         class="btn btn-primary"
         :class="{ 'disabled': title.length === 0}"
         @click="saveBookmark"
-      >Save</button>
+      >
+        Save
+      </button>
     </div>
   </div>
 </template>
 
 <script>
+import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
-import html2canvas from 'html2canvas';
+
+import API from '@/api/api';
+import CloseButton from '@/components/widgets/close-button';
+import FilterValueFormatter from '@/formatters/filter-value-formatter';
+import FilterKeyFormatter from '@/formatters/filter-key-formatter';
+import modelService from '@/services/model-service';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { BOOKMARKS } from '@/utils/messages-util';
 
-import API from '@/api/api';
-
-import CloseButton from '@/components/widgets/close-button';
 
 const MSG_EMPTY_BOOKMARK_TITLE = 'Insight title cannot be blank';
 
@@ -81,8 +94,16 @@ export default {
     ...mapGetters({
       project: 'app/project',
       currentView: 'app/currentView',
+      currentCAG: 'app/currentCAG',
+      projectMetadata: 'app/projectMetadata',
+
       isPanelOpen: 'bookmarkPanel/isPanelOpen',
-      countBookmarks: 'bookmarkPanel/countBookmarks'
+      countBookmarks: 'bookmarkPanel/countBookmarks',
+
+      filters: 'dataSearch/filters',
+      ontologyConcepts: 'dataSearch/ontologyConcepts',
+
+      view: 'query/view'
     }),
     iconToDisplay() {
       const view = VIEWS_LIST.find(item => item.id === this.currentView);
@@ -118,6 +139,20 @@ export default {
       this.title = '';
       this.description = '';
       this.hasError = false;
+    },
+    async autofillBookmark() {
+      this.modelSummary = this.currentCAG ? await modelService.getSummary(this.currentCAG) : null;
+
+      this.title = (this.projectMetadata ? this.projectMetadata.name : '') +
+        (this.modelSummary ? (' - ' + this.modelSummary.name) : '') +
+        (this.currentView ? (' - ' + this.currentView) : '');
+
+      const filterString = this.filters?.clauses?.reduce((a, c) => {
+        return a + `${a.length > 0 ? ' AND ' : ''} ` +
+          `${FilterKeyFormatter(c.field)} ${c.isNot ? 'is not' : 'is'} ` +
+          `${c.values.map(v => FilterValueFormatter(v)).join(', ')}`;
+      }, '');
+      this.description = `${filterString.length > 0 ? 'Filters: ' + filterString : ''} `;
     },
     async saveBookmark() {
       if (this.hasError || _.isEmpty(this.title)) return;
@@ -157,7 +192,7 @@ export default {
     display: flex;
     justify-content: flex-end;
 
-    button:last-child {
+    button {
       margin-left: 10px;
     }
   }
