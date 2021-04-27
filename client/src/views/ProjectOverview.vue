@@ -44,10 +44,18 @@
         class="button"
         @click="showDocumentModal=true">Add Documents
       </button>
+      <button
+        class="button"
+        @click="showReadersModal=true">Readers Status
+      </button>
     </div>
     <modal-upload-document
       v-if="showDocumentModal === true"
       @close="showDocumentModal = false" />
+
+    <modal-readers-status
+      v-if="showReadersModal === true"
+      @close="showReadersModal = false" />
   </div>
 </template>
 
@@ -58,19 +66,22 @@ import { getModelDatacubesCount, getIndicatorDatacubesCount } from '@/services/d
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';
+import ModalReadersStatus from '@/components/modals/modal-readers-status';
 
 export default {
   name: 'ProjectOverview',
   components: {
     OverviewCard,
-    ModalUploadDocument
+    ModalUploadDocument,
+    ModalReadersStatus
   },
   data: () => ({
     relationshipCount: undefined,
     modelCount: undefined,
     modelOutputVariableCount: undefined,
     indicatorCount: undefined,
-    showDocumentModal: false
+    showDocumentModal: false,
+    showReadersModal: false
   }),
   computed: {
     ...mapGetters({

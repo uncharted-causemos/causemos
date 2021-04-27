@@ -122,9 +122,6 @@ export default {
     .modal-header {
       height: 50px;
     }
-    .modal-footer {
-      height: 50px;
-    }
     .modal-body {
       flex-grow: 1;
       overflow-y: auto;

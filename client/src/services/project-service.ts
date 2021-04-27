@@ -1,6 +1,7 @@
 import API from '@/api/api';
 import { startPolling } from '@/api/poller';
 import { Filters, FiltersOptions } from '@/types/Filters';
+import { ReaderOutputRecord } from '@/types/Dart';
 
 const KB_LIMIT = 200;
 const PROJECT_LIMIT = 500;
@@ -112,6 +113,11 @@ const getProjectLocationsPromise = async (projectId: string, filters: Filters) =
   return promise;
 };
 
+const createAssemblyRequest = async (projectId: string, payload: ReaderOutputRecord[]) => {
+  const result = await API.post(`projects/${projectId}/assembly`, payload);
+  return result.data;
+};
+
 export default {
   getKBs,
   getProjects,
@@ -128,6 +134,8 @@ export default {
   getProjectEdges,
   getProjectStatementIdsByEdges,
   getProjectLocationsPromise,
+
+  createAssemblyRequest,
 
   STATEMENT_LIMIT
 };

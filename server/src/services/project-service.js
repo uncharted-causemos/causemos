@@ -88,6 +88,27 @@ const createProject = async (kbId, name) => {
   });
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
   await ontologyAdapter.insert(conceptsPayload, d => d.id);
+
+  // FIXME: Just test INDRA plumbing
+  const indraOptions = {
+    url: 'http://wm.indra.bio/assembly/new_project',
+    method: 'POST',
+    json: {
+      project_id: result.index,
+      project_name: name,
+      corpus_id: projectData.corpus_id
+    }
+  };
+  try {
+    const result = await requestAsPromise(indraOptions);
+    console.log('');
+    console.log(result);
+    console.log('');
+  } catch (err) {
+    console.log(err);
+  }
+
+
   return result;
 };
 
