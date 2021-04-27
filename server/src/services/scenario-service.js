@@ -13,7 +13,8 @@ const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
  */
 const find = async(modelId, engine, options) => {
   const scenarioConnection = Adapter.get(RESOURCE.SCENARIO);
-  const scenarios = await scenarioConnection.find([{ field: 'model_id', value: modelId }, { field: 'engine', value: engine }], options);
+  // FIXME: hardwiring to dyse, should remove engine criterion
+  const scenarios = await scenarioConnection.find([{ field: 'model_id', value: modelId }, { field: 'engine', value: 'dyse' }], options);
   return scenarios;
 };
 
@@ -46,7 +47,8 @@ const create = async ({ result, parameter, name, description, modelId, engine, e
   if (isBaseline === true) {
     const baseCount = await scenarioConnection.count([
       { field: 'is_baseline', value: true },
-      { field: 'engine', value: engine },
+      // FIXME: hardwiring to dyse, should remove engine criterion
+      { field: 'engine', value: 'dyse' },
       { field: 'model_id', value: modelId }
     ]);
 

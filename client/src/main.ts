@@ -20,6 +20,7 @@ app.use(Toast);
 app.mixin({
   methods: {
     // toaster(message, type, close) {
+    // FIXME: Use TYPE
     toaster(message: string, msgType: string, sticky = false) {
       const toast = useToast();
       const t = msgType === 'error' ? TYPE.INFO : TYPE.SUCCESS;

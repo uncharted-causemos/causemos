@@ -235,21 +235,22 @@ export default {
       }
 
       // Set selected scenario if necessary
-      if (_.isNil(this.selectedScenarioId)) {
-        const baselineScenarioId = scenarios.find(d => d.is_baseline).id;
-        this.setSelectedScenarioId(baselineScenarioId);
+      let scenarioId = this.selectedScenarioId;
+      if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
+        scenarioId = scenarios.find(d => d.is_baseline).id;
       }
 
       // Check if scenario is still valid
       // Fixme: This is awkward wiring, we need to force a scenario recalculation, but the
       // watcher won't fire if there is not change to the selectedScenarioId.
-      const scenario = scenarios.find(d => d.id === this.selectedScenarioId);
+      const scenario = scenarios.find(d => d.id === scenarioId);
       if (scenario && scenario.is_valid === false) {
         this.recalculateScenario(scenario);
       } else {
         this.scenarios = scenarios;
         this.disableOverlay();
       }
+      this.setSelectedScenarioId(scenarioId);
 
       // Cache sensitivity in the background
       if (this.currentEngine === 'dyse') {
