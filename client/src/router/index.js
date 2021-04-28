@@ -4,7 +4,6 @@ import ProjectOverview from '@/views/ProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import DataStart from '@/views/DataStart.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
-import DataView from '@/views/DataView.vue';
 import CreateDataCube from '@/views/CreateDataCube.vue';
 import TileExperiment from '@/views/TileExperiment.vue';
 import GraphExperiment from '@/views/GraphExperiment.vue';
@@ -67,7 +66,7 @@ const routes = [
   {
     path: '/:project/data/:analysisID',
     name: 'data',
-    component: DataView,
+    component: CompAnalysisExperiment,
     beforeEnter: loadAnalysisState
   },
   {
@@ -85,11 +84,6 @@ const routes = [
     path: '/tile-experiment',
     name: 'tileExperiment',
     component: TileExperiment
-  },
-  {
-    path: '/comp-analysis-experiment',
-    name: 'compAnalysisExperiment',
-    component: CompAnalysisExperiment
   },
   {
     path: '/graph-experiment',
