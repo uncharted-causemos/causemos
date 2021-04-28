@@ -21,7 +21,8 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import { renderParallelCoordinates, renderBaselineMarkers } from '@/charts/parallel-coordinates';
 import { defineComponent, PropType } from 'vue';
-import { DimensionData, ScenarioData } from '@/types/Datacubes';
+import { ScenarioData } from '@/types/Common';
+import { DimensionInfo } from '@/types/Model';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 
 const RESIZE_DELAY = 50;
@@ -34,7 +35,7 @@ export default defineComponent({
       default: null
     },
     selectedDimensions: {
-      type: Array as PropType<DimensionData[]>,
+      type: Array as PropType<DimensionInfo[]>,
       default: null
     },
     ordinalDimensions: {
