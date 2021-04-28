@@ -13,11 +13,16 @@ const indicatorService = rootRequire('/services/indicator-service');
 const modelService = rootRequire('/services/model-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
+const { MODEL_STATUS } = rootRequire('/util/model-util');
 
 const HISTORY_START_DATE = '2015-01-01';
 const HISTORY_END_DATE = '2017-12-01';
 const PROJECTION_START_DATE = '2018-01-01';
 const DEFAULT_NUM_STEPS = 12;
+
+
+const DYSE = 'dyse';
+const DELPHI = 'delphi';
 
 // const esLock = {};
 
@@ -29,7 +34,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
   Logger.info(`initializing model with id ${modelId}`);
 
   const model = await modelService.findOne(modelId);
-  if (model.is_synced === true && model.is_stale === false) {
+  if (model.status === 2 && model.is_stale === false) {
     Logger.info(`Model is alraedy initialized ${modelId}`);
     res.status(200).send({ updateToken: moment().valueOf() });
     return;
@@ -51,12 +56,11 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
     };
   }
   modelFields.is_quantified = true;
-  modelFields.is_synced = false;
+  modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
   // Set initial time series
   await indicatorService.setDefaultIndicators(modelId);
-
 
   res.status(200).send({ updateToken: moment().valueOf() });
 }));
@@ -115,7 +119,7 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
 
   // Reset sync flag
-  modelFields.is_synced = false;
+  modelFields.status = 0;
 
   if (!_.isEmpty(parameter)) {
     modelFields.parameter = parameter;
@@ -273,9 +277,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   // 3. register model to engine
   let initialParameters;
   try {
-    if (engine === 'delphi') {
+    if (engine === DELPHI) {
       initialParameters = await delphiService.createModel(enginePayload);
-    } else if (engine === 'dyse') {
+    } else if (engine === DYSE) {
       initialParameters = await dyseService.createModel(enginePayload);
     }
   } catch (error) {
@@ -285,7 +289,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
 
   // FIXME: move into service
-  if (engine === 'dyse') {
+  // When the topology is changed the model is recreated, but we want to retain any prior custom
+  // parameterizations on nodes, edges if possible.
+  if (engine === DYSE) {
     const nodesUpdate = [];
     const edgesUpdate = [];
     const edgesOverride = [];
@@ -307,7 +313,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
     edgeParameters.forEach(edge => {
       const edgeInit = initialParameters.edges[`${edge.source}///${edge.target}`];
-      if (edge.parameter && edge.parameter.weight !== edgeInit.weight) {
+      if (edge.parameter && !_.isEqual(edge.parameter.weight, edgeInit.weight)) {
         edgesOverride.push({
           source: edge.source,
           target: edge.target,
@@ -342,12 +348,48 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
         throw new Error(JSON.stringify(r.items[0]));
       }
     }
+  } else if (engine === DELPHI) {
+    let r = null;
+    const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+    const updateNodes = [];
+    nodeParameters.forEach(node => {
+      updateNodes.push({
+        id: node.id,
+        parameter: {
+          initial_value: 0,
+          initial_value_parameter: {
+            func: 'last'
+          }
+        }
+      });
+    });
+    r = await nodeParameterAdapter.update(updateNodes, d => d.id, 'wait_for');
+    if (r.errors) {
+      throw new Error(JSON.stringify(r.items[0]));
+    }
+
+    const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+    const updateEdges = [];
+    edgeParameters.forEach(edge => {
+      updateEdges.push({
+        id: edge.id,
+        parameter: {
+          weight: initialParameters.edges[`${edge.source}///${edge.target}`].weight
+        }
+      });
+    });
+    r = await edgeParameterAdapter.update(updateEdges, d => d.id, 'wait_for');
+    if (r.errors) {
+      throw new Error(JSON.stringify(r.items[0]));
+    }
   }
 
-  // 4. Update sync status
+  // 4. Update model status
+  const status = initialParameters.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
+
   const modelPayload = {
     id: modelId,
-    is_synced: true,
+    status: status,
     parameter: {
       engine: engine
     },
@@ -364,9 +406,28 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
   Logger.info(`registered model to ${engine}`);
   // returns initial value, initial constraints/perturbations, and initial function used to calculate initial value
-  res.status(200).send({ updateToken: moment().valueOf() });
+  res.status(200).send({ updateToken: moment().valueOf(), status: status });
 
   releaseLock(modelId);
+}));
+
+router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
+  const { modelId } = req.params;
+  const engine = req.query.engine;
+
+  let modelStatus = {};
+  if (engine === DYSE) {
+    modelStatus = await dyseService.modelStatus(modelId);
+  } else {
+    modelStatus = await delphiService.modelStatus(modelId);
+  }
+
+  // FIXME: Different engines have slightly different status codes
+  // Update model
+  const v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
+  await cagService.updateCAGMetadata(modelId, { status: v });
+
+  res.json(modelStatus);
 }));
 
 router.post('/:modelId/projection', asyncHandler(async (req, res) => {
@@ -381,9 +442,9 @@ router.post('/:modelId/projection', asyncHandler(async (req, res) => {
   // 3. Create experiment (experiment) in modelling engine
   let result;
   try {
-    if (engine === 'delphi') {
-      result = await delphiService.createProjection(modelId, payload);
-    } else if (engine === 'dyse') {
+    if (engine === DELPHI) {
+      result = await delphiService.createExperiment(modelId, payload);
+    } else if (engine === DYSE) {
       result = await dyseService.createExperiment(modelId, payload);
     } else {
       throw new Error('Unsupported engine type');
@@ -410,7 +471,7 @@ router.post('/:modelId/sensitivity-analysis', asyncHandler(async (req, res) => {
 
   // 3. Create experiment (experiment) in modelling engine
   let result;
-  if (engine === 'dyse') {
+  if (engine === DYSE) {
     result = await dyseService.createExperiment(modelId, payload);
   } else {
     throw new Error(`sensitivity-analysis not implemented for ${engine}`);
@@ -428,7 +489,7 @@ router.post('/:modelId/goal-optimization', asyncHandler(async (req, res) => {
 
   // 3. Create experiment (experiment) in modelling engine
   let result;
-  if (engine === 'dyse') {
+  if (engine === DYSE) {
     result = await dyseService.createExperiment(modelId, payload);
   } else {
     throw new Error(`goal-optimization not implemented for ${engine}`);
@@ -441,10 +502,10 @@ router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   const engine = req.query.engine;
   const experimentId = req.query.experiment_id;
   let result;
-  if (engine === 'delphi') {
+  if (engine === DELPHI) {
     result = await delphiService.findExperiment(modelId, experimentId);
-    modelService.postProcessDelphiExperiment(result);
-  } else if (engine === 'dyse') {
+    // modelService.postProcessDelphiExperiment(result);
+  } else if (engine === DYSE) {
     result = await dyseService.findExperiment(modelId, experimentId);
   }
   res.json(result);
@@ -480,17 +541,19 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   // Register update with engine and retrieve new value
   let engineUpdateResult = null;
-  if (engine === 'dyse') {
+  if (engine === DYSE) {
     engineUpdateResult = await dyseService.updateNodeParameter(modelId, payload);
   } else {
-    throw new Error(`updateNodeParameter not implemented for ${engine}`);
+    Logger.warn(`Update node-parameter is undefined for ${engine}`);
   }
 
-  const initialValue = engineUpdateResult.conceptIndicators[nodeParameter.concept].initialValue;
-  Logger.info(`Setting ${nodeParameter.concept} to initialValue ${initialValue}`);
+  if (engine === DYSE) {
+    const initialValue = engineUpdateResult.conceptIndicators[nodeParameter.concept].initialValue;
+    Logger.info(`Setting ${nodeParameter.concept} to initialValue ${initialValue}`);
 
-  // Write raw data back to datastore
-  nodeParameter.parameter.initial_value = initialValue;
+    // Write raw data back to datastore
+    nodeParameter.parameter.initial_value = initialValue;
+  }
 
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const updateNodePayload = {
@@ -503,7 +566,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update node-parameter');
   }
 
-  await cagService.updateCAGMetadata(modelId, { is_synced: false });
+  await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);
@@ -531,7 +594,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   const payload = modelService.buildEdgeParametersPayload([{ source, target, parameter }]);
 
-  if (engine === 'dyse') {
+  if (engine === DYSE) {
     await dyseService.updateEdgeParameter(modelId, payload);
   } else {
     throw new Error(`updateEdgeParameter not implemented for ${engine}`);
@@ -545,7 +608,7 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update edge-parameter');
   }
 
-  await cagService.updateCAGMetadata(modelId, { is_synced: false });
+  await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);

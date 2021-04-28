@@ -147,7 +147,7 @@ export default class ModelRenderer extends SVGRenderer {
       .attr('d', d => lineFn(d.points))
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
       .style('stroke', DEFAULT_STYLE.edgeBg.stroke)
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight) + 2);
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight[0]) + 2);
 
     selection
       .append('path')
@@ -155,7 +155,7 @@ export default class ModelRenderer extends SVGRenderer {
       .attr('d', d => lineFn(d.points))
       .style('fill', DEFAULT_STYLE.edge.fill)
       .style('stroke', d => calcEdgeColor(d.data))
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight[0]))
       .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .attr('marker-end', d => {
         const source = d.data.source.replace(/\s/g, '');
@@ -175,7 +175,7 @@ export default class ModelRenderer extends SVGRenderer {
       .transition()
       .duration(1000)
       .style('stroke', d => calcEdgeColor(d.data))
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight[0]))
       .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .attrTween('d', function (d) {
         const currentPath = lineFn(d.points);
@@ -189,7 +189,7 @@ export default class ModelRenderer extends SVGRenderer {
       .selectAll('.edge-path-bg')
       .transition()
       .duration(1000)
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight) + 2)
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weight[0]) + 2)
       .attrTween('d', function (d) {
         const currentPath = lineFn(d.points);
         const previousPath = d3.select(this).attr('d') || currentPath;

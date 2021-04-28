@@ -47,7 +47,7 @@
       v-if="isModelParametersOpen"
       :model-summary="modelSummary"
       @close="closeModelParameters"
-      @save="saveModelParameters"
+      @save="saveModelParameter"
     />
   </div>
 </template>
@@ -157,10 +157,19 @@ export default {
   },
   watch: {
     selectedScenarioId() {
-      this.fetchSensitivityAnalysisResults();
+      if (this.currentEngine === 'dyse') {
+        this.fetchSensitivityAnalysisResults();
+      }
+      if (_.isNil(this.scenarios)) return;
+      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      if (scenario && scenario.is_valid === false) {
+        this.recalculateScenario(scenario);
+      }
     },
     sensitivityAnalysisType() {
-      this.fetchSensitivityAnalysisResults();
+      if (this.currentEngine === 'dyse') {
+        this.fetchSensitivityAnalysisResults();
+      }
     }
   },
   mounted() {
@@ -224,21 +233,29 @@ export default {
         await modelService.createScenario(scenario);
         scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
       }
-      this.scenarios = scenarios;
-      this.disableOverlay();
 
-      if (_.isNil(this.selectedScenarioId)) {
-        const baselineScenarioId = scenarios.find(d => d.is_baseline).id;
-        this.setSelectedScenarioId(baselineScenarioId);
-      } else {
-        // Fixme: This is awkward wiring, we need to force a scenario recalculation, but the
-        // watcher won't fire if there is not change to the selectedScenarioId.
-        const scenario = scenarios.find(d => d.id === this.selectedScenarioId);
-        if (scenario && scenario.is_valid === false) {
-          this.recalculateScenario(scenario);
-        }
+      // Set selected scenario if necessary
+      let scenarioId = this.selectedScenarioId;
+      if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
+        scenarioId = scenarios.find(d => d.is_baseline).id;
       }
-      this.fetchSensitivityAnalysisResults();
+
+      // Check if scenario is still valid
+      // Fixme: This is awkward wiring, we need to force a scenario recalculation, but the
+      // watcher won't fire if there is not change to the selectedScenarioId.
+      const scenario = scenarios.find(d => d.id === scenarioId);
+      if (scenario && scenario.is_valid === false) {
+        this.recalculateScenario(scenario);
+      } else {
+        this.scenarios = scenarios;
+        this.disableOverlay();
+      }
+      this.setSelectedScenarioId(scenarioId);
+
+      // Cache sensitivity in the background
+      if (this.currentEngine === 'dyse') {
+        this.fetchSensitivityAnalysisResults();
+      }
     },
     revertDraftChanges() {
       this.setSelectedScenarioId(this.previousScenarioId);
@@ -373,7 +390,7 @@ export default {
     showModelParameters() {
       this.isModelParametersOpen = true;
     },
-    async saveModelParameters(newParameter) {
+    async saveModelParameter(newParameter) {
       this.isModelParametersOpen = false;
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.refresh();

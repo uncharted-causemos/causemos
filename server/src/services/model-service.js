@@ -2,12 +2,13 @@ const _ = require('lodash');
 const moment = require('moment');
 const delphiUtil = require('../util/delphi-util');
 const Logger = rootRequire('/config/logger');
+const uuid = require('uuid');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const convertUtil = rootRequire('/util/convert-util');
 const modelUtil = rootRequire('/util/model-util');
 
 const DEFAULT_BATCH_SIZE = 1000;
+const MODEL_STATUS = modelUtil.MODEL_STATUS;
 
 
 // Type of experiment that can be performed in modeling Engine
@@ -54,18 +55,30 @@ const findOne = async (modelId) => {
  */
 const _edge2statement = (edge, polarity) => {
   return {
-    id: 'fixme',
+    id: 'stub_statement',
     belief: 1.0,
-    evidence: [],
+    evidence: [
+      {
+        document_context: {},
+        evidence_context: {
+          obj_polarity: polarity,
+          obj_adjectives: [],
+          subj_polarity: 1,
+          subj_adjectives: []
+        }
+      }
+    ],
     subj: {
       factor: 'user',
       concept: edge.source,
+      concept_score: 1,
       adjectives: [],
       polarity: 1
     },
     obj: {
       factor: 'user',
       concept: edge.target,
+      concept_score: 1,
       adjectives: [],
       polarity
     }
@@ -128,8 +141,7 @@ const buildModelStatements = async (modelId) => {
     // if an edge had a user_polarity set, filter statements by that.
     const statementsFiltered = statements.filter(s => _.isNil(statementEdgeUserPolarities[s.id].polarity) || ((s.subj.polarity * s.obj.polarity) === statementEdgeUserPolarities[s.id].polarity));
 
-    const converted = convertUtil.convertToIndra(statementsFiltered);
-    modelStatements = modelStatements.concat(converted);
+    modelStatements = modelStatements.concat(statementsFiltered);
   }
 
   // 3.2. edges that didn't survive the filtering based on user_polarity need to be a 'userEdge' basically
@@ -141,7 +153,7 @@ const buildModelStatements = async (modelId) => {
     }
   });
   if (dummyStatements.length > 0) {
-    modelStatements = modelStatements.concat(convertUtil.convertToIndra(dummyStatements));
+    modelStatements = modelStatements.concat(dummyStatements);
   }
 
   // 4. Create dummy statement(s) for edges with no statements
@@ -153,9 +165,8 @@ const buildModelStatements = async (modelId) => {
       ];
     } else { return _edge2statement(e, e.user_polarity); }
   }).flat();
-  const dummyConverted = convertUtil.convertToIndra(dummyStatements);
-  modelStatements = modelStatements.concat(dummyConverted);
 
+  modelStatements = modelStatements.concat(dummyStatements);
   return modelStatements;
 };
 
@@ -238,47 +249,19 @@ const setInitialParameters = async (modelParameters, nodeMap, edgeMap) => {
 const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeSteps, parameters) => {
   const projectionStartDate = moment.utc(projectionStart);
 
-  let payload;
-  if (engine === 'delphi') {
-    const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
-    const nodeParameters = await nodeParameterAdapter.find([{ field: 'model_id', value: modelId }], {
-      size: SEARCH_LIMIT
-    });
-    const conceptValues = [];
-    for (const np of nodeParameters) {
-      conceptValues.push({
-        concept: np.concept,
-        timeSeries: _.get(np, 'parameter.indicator_time_series') || []
-      });
-    }
-    const perturbations = delphiUtil.setDefaultPerturbations(parameters, conceptValues);
-
-    // TODO: Update when Delphi supports starttime in timestamp like DySE
-    const startTime = {
-      year: projectionStartDate.year(),
-      month: projectionStartDate.month() + 1 // moment starts month with 0 and delphi's month start with 1
-    };
-    payload = {
-      timeStepsInMonths: numTimeSteps,
+  let payload = {};
+  const startTime = projectionStartDate.valueOf();
+  const endTime = projectionStartDate.add(numTimeSteps, 'M').valueOf();
+  const constraints = _.isEmpty(parameters) ? [] : parameters;
+  payload = {
+    experimentType: EXPERIMENT_TYPE.PROJECTION,
+    experimentParam: {
+      numTimesteps: numTimeSteps,
       startTime,
-      perturbations
-    };
-  } else if (engine === 'dyse') {
-    // TODO: May need to handle either different unit of time or get projectionEnd
-    const startTime = projectionStartDate.valueOf();
-    const endTime = projectionStartDate.add(numTimeSteps, 'M').valueOf();
-    const constraints = _.isEmpty(parameters) ? [] : parameters;
-    payload = {
-      experimentType: EXPERIMENT_TYPE.PROJECTION,
-      experimentParam: {
-        numTimesteps: numTimeSteps,
-        startTime,
-        endTime,
-        constraints
-      }
-    };
-  }
-
+      endTime,
+      constraints
+    }
+  };
   return payload;
 };
 
@@ -393,7 +376,7 @@ const clearNodeParameter = async (modelId, nodeId) => {
   // Update sync status
   const modelPayload = {
     id: modelId,
-    is_synced: false,
+    status: MODEL_STATUS.UNSYNCED,
     modified_at: modifiedAt
   };
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
@@ -436,24 +419,25 @@ const clearNodeParameter = async (modelId, nodeId) => {
 const buildNodeParametersPayload = (nodeParameters, startTime, endTime) => {
   const r = {};
 
-  const NO_INDICATOR_DEFAULT = {
+  const NO_INDICATOR_DEFAULT = () => ({
     numLevels: NUM_LEVELS,
     minValue: 0,
     maxValue: 1,
+    name: 'dummy indicator ' + uuid(),
     values: []
-  };
+  });
 
   nodeParameters.forEach(np => {
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func') || 'last';
 
     if (_.isEmpty(np.parameter)) {
-      r[np.concept] = NO_INDICATOR_DEFAULT;
+      r[np.concept] = NO_INDICATOR_DEFAULT();
     } else {
       const indicatorTimeSeries = _.get(np.parameter, 'indicator_time_series', []);
       const filteredTimeSeries = indicatorTimeSeries.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
 
       if (_.isEmpty(filteredTimeSeries)) {
-        r[np.concept] = NO_INDICATOR_DEFAULT;
+        r[np.concept] = NO_INDICATOR_DEFAULT();
       } else {
         const values = filteredTimeSeries.map(d => d.value);
         const { max, min } = modelUtil.projectionValueRange(values);

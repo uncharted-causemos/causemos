@@ -6,8 +6,9 @@ const auth = rootRequire('/util/auth-util');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DYSE_USERNAME, process.env.DYSE_PASSWORD);
 
 const DYSE_URL = process.env.DYSE_URL + '/DySE';
+
 /**
- * Register model on Delphi: sending the id, statements and indicators
+ * Register model on DySE: sending the id, statements and indicators
  * @param {object} payload
  */
 const createModel = async (payload) => {
@@ -23,20 +24,43 @@ const createModel = async (payload) => {
     },
     json: payload
   };
+
   const result = await requestAsPromise(dyseOptions);
   if (result.status !== 'success') {
     throw new Error(JSON.stringify(result));
   }
 
+  Logger.debug(JSON.stringify(result.relations, null, 2));
+
   // Transform result to node/edge initialization maps
   const nodes = result.conceptIndicators;
-  const edges = result.relations.reduce((acc, r) => {
-    const key = `${r.source}///${r.target}`;
+  const edges = result.relations.reduce((acc, edge) => {
+    const key = `${edge.source}///${edge.target}`;
     acc[key] = {};
-    acc[key].weight = parseFloat(r.weight);
+    acc[key].weight = edge.weights.map(v => Math.abs(parseFloat(v)));
     return acc;
   }, {});
-  return { nodes, edges };
+  return { nodes, edges, status: result.status };
+};
+
+
+/**
+ * Get current model status and parameterizations
+ */
+const modelStatus = async (modelId) => {
+  Logger.info(`checking dyse model status ${modelId}`);
+
+  const dyseOptions = {
+    method: 'GET',
+    url: DYSE_URL + '/models/' + modelId,
+    headers: {
+      'Authorization': basicAuthToken,
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    }
+  };
+  const result = await requestAsPromise(dyseOptions);
+  return result;
 };
 
 /**
@@ -126,8 +150,10 @@ const updateEdgeParameter = async (modelId, edges) => {
   return result;
 };
 
+
 module.exports = {
   createModel,
+  modelStatus,
   createExperiment,
   findExperiment,
   updateNodeParameter,
