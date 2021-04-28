@@ -11,14 +11,16 @@ export interface ScenarioData {
   [key: string]: string | number;
 }
 
-export interface BreakdownInfo {
+// TODO: Refactor aggregation-checklist-pane to use flattened data
+//  type and remove these interfaces
+export interface LegacyBreakdownNode {
   name: string;
-  data: {
-      name: string;
-      value: number;
-      children: {
-          name: string;
-          value: number;
-      }[];
-  };
+  value: number;
+  children: LegacyBreakdownNode[];
+}
+
+export interface LegacyBreakdownDataStructure {
+  maxDepth?: number;
+  data: LegacyNode;
+  name?: string;
 }

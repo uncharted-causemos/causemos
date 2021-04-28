@@ -319,7 +319,7 @@ export default defineComponent({
         JSON.parse(metadata.data)
       );
       selectedScenarioMetadata.value = allMetadata;
-      console.log('Fetched metadata for selected scenarios', allMetadata);
+      // console.log('Fetched metadata for selected scenarios', allMetadata);
     }
 
     const selection = {
@@ -389,7 +389,7 @@ export default defineComponent({
         JSON.parse(metadata.data)
       );
       this.allScenariosData = allMetadata;
-      console.log('Fetched metadata for all scenarios', allMetadata);
+      // console.log('Fetched metadata for all scenarios', allMetadata);
     },
     async fetchAndBuildModelParameterMap() {
       await API.get('fetch-demo-data', {
@@ -401,11 +401,11 @@ export default defineComponent({
         // save model metadata
         this.modelMetaData = JSON.parse(result.data);
         // build model parameter map to simplify fetching each param using its ID
-        const modelParametes = this.modelMetaData.parameters;
-        modelParametes.forEach((p: ModelParameter) => {
+        const modelParameters = this.modelMetaData.parameters;
+        modelParameters.forEach((p: ModelParameter) => {
           this.modelParametersMap[p.id] = p;
         });
-        console.log('Fetched model parameters metadata', this.modelParametersMap);
+        // console.log('Fetched model parameters metadata', this.modelParametersMap);
       });
     },
     transformDataForParallelCoordinates() {
@@ -507,11 +507,11 @@ export default defineComponent({
         e.scenarios.length === 0 ||
         (e.scenarios.length === 1 && e.scenarios[0] === undefined)
       ) {
-        console.log('no line is selected');
+        // console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
         this.isDescriptionView = true;
       } else {
-        console.log('user selected: ' + e.scenarios.length);
+        // console.log('user selected: ' + e.scenarios.length);
         this.$emit('set-selected-scenario-ids', e.scenarios.map(s => s.run_id));
         this.isDescriptionView = false;
       }

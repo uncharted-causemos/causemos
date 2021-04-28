@@ -69,6 +69,8 @@ import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-c
 import dateFormatter from '@/formatters/date-formatter';
 import API from '@/api/api';
 import { RegionalData } from '@/types/Datacubes';
+import { LegacyBreakdownDataStructure, LegacyBreakdownNode } from '@/types/Common';
+
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -95,24 +97,11 @@ const levels: (keyof typeof ADMIN_LEVEL_TITLES)[] = [
   'admin5'
 ];
 
-// TODO: Refactor aggregation-checklist-pane to use flattened data
-//  type and remove these interfaces
-interface LegacyNode {
-  name: string;
-  value: number;
-  children: LegacyNode[];
-}
-
-interface LegacyAdminDataStructure {
-  maxDepth: number;
-  data: LegacyNode;
-}
-
 function convertToLegacyAdminDataStructure(
   flattened: RegionalData
-): LegacyAdminDataStructure {
+): LegacyBreakdownDataStructure {
   const maxDepth = Object.keys(flattened).length;
-  const result: LegacyNode[] = [];
+  const result: LegacyBreakdownNode[] = [];
   levels.forEach(level => {
     if (flattened[level] === undefined) return;
     const distinctRegions = _.groupBy(
@@ -133,7 +122,7 @@ function convertToLegacyAdminDataStructure(
         pointer = nextNode?.children;
         heritage = heritage.splice(1);
       }
-      const newNode: LegacyNode = {
+      const newNode: LegacyBreakdownNode = {
         name: heritage[0],
         value: aggregatedValue,
         children: []

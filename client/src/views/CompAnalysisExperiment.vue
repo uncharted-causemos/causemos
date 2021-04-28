@@ -45,9 +45,9 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
 import { defineComponent, ref } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { BreakdownInfo } from '@/types/Common';
+import { LegacyBreakdownDataStructure } from '@/types/Common';
 import { DimensionInfo } from '@/types/Model';
-
+import { getRandomNumber } from '../../tests/utils/random';
 
 const DRILLDOWN_TABS = [
   {
@@ -67,7 +67,7 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData: BreakdownInfo[] = [];
+    const typeBreakdownData: LegacyBreakdownDataStructure[] = [];
 
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
     // TODO: select baseline by default, not necessarily the first one
@@ -102,16 +102,13 @@ export default defineComponent({
       if (this.selectedScenarioIds.length === 0) {
         return;
       }
-      const getRandom = (min: number, max: number) => {
-        return Math.random() * (max - min) + min;
-      };
       e.drilldownDimensions.forEach(dd => {
         const drillDownChildren: Array<{name: string; value: number}> = [];
         const choices = dd.choices as Array<string>;
         choices.forEach((c) => {
           drillDownChildren.push({
             name: c,
-            value: getRandom(0, 5000) // FIXME: use random data for now. Later, pickup the actual breakdown aggregation from (selected scenarios) data
+            value: getRandomNumber(0, 5000) // FIXME: use random data for now. Later, pickup the actual breakdown aggregation from (selected scenarios) data
           });
         });
         const breakdown = {

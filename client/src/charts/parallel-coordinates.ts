@@ -2,6 +2,8 @@
 import * as d3 from 'd3';
 import svgUtil from '@/utils/svg-util';
 
+import { getRandomNumber } from '../../tests/utils/random';
+
 import { D3Selection, D3Scale, D3ScaleLinear, D3ScalePoint, D3GElementSelection } from '@/types/D3';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo } from '@/types/Model';
@@ -252,7 +254,7 @@ function renderParallelCoordinates(
           //  instead of distributing the lines over the segment for ordinal axes, use the segment center
           xPos = min + (max - min) / 2;
         } else {
-          xPos = getRandom(min, max);
+          xPos = getRandomNumber(min, max);
         }
       }
       const yPos = yScale(dimName);
@@ -295,9 +297,9 @@ function renderParallelCoordinates(
       const dimName = dim.name;
       const dimDefault = dim.default;
       const dimData = [];
-      // exclude output markers
-      const notOutputMarker = dim.is_output !== undefined ? !dim.is_output : dim.type !== 'output';
-      if (notOutputMarker) {
+      // exclude markers on the output axes
+      const notOutputAxis = dim.is_output !== undefined ? !dim.is_output : dim.type !== 'output';
+      if (notOutputAxis) {
         const markers = axisMarkersMap[dimName];
         // do we have actual user-markers added on this dimension?
         if (markers && markers.length > 0) {
@@ -315,6 +317,19 @@ function renderParallelCoordinates(
     });
 
     // utility function that takes a map of markers per dimension and split them
+    /**
+     Get all combinations of the keys of an object and split into multiple objects.
+
+     For example, convert the following;
+      { key1: [value1, value2], key2: [value3, value4] }
+
+      into the following 4 objects
+
+      { key1: value1, key2: value3 }
+      { key1: value1, key2: value4 }
+      { key1: value2, key2: value3 }
+      { key1: value2, key2: value4 }
+     */
     function spreadKeys(master: {[key: string]: (string | number)[]}, objects: Array<any>): Array<ScenarioData> {
       const masterKeys = Object.keys(master);
       const nextKey = masterKeys.pop();
@@ -367,7 +382,7 @@ function renderParallelCoordinates(
     ;
   }
 
-  function brushstart(event: d3.D3BrushEvent<any>) {
+  function brushStart(event: d3.D3BrushEvent<any>) {
     event.sourceEvent.stopPropagation();
   }
 
@@ -577,7 +592,7 @@ function renderParallelCoordinates(
 
   // Unhighlight
   function doNotHighlight() {
-    // reset all lines to full opacity except
+    // reset all lines to full opacity except for selected lines
     svgElement.selectAll('.line')
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
@@ -873,7 +888,7 @@ function renderParallelCoordinates(
           d3.select(this).call(
             d3.brushX()
               .extent([[0, -brushHeight], [axisRange[1], brushHeight]])
-              .on('start', brushstart)
+              .on('start', brushStart)
               .on('brush', onDataBrush)
               .on('end', brushEnd)
           );
@@ -1211,7 +1226,10 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         // always show the brush tooltip centered on the axis
         const centerAxisXPos = (axisRange[1] - axisRange[0]) / 2;
         // adjust center based on the brush width
-        const brushTooltipRectWidth = 100; // FIXME: this should be calculated based on the actual content
+        // FIXME: this should be calculated based on the actual content
+        //         Note that the function updateSelectionToolTipsRect() called at the end
+        //         will adjust the position to not go beyond the svg area
+        const brushTooltipRectWidth = 100;
         xPos = centerAxisXPos - brushTooltipRectWidth / 2;
       } else {
         value = selectedLineData ? selectedLineData[dimName] : 'undefined';
@@ -1377,10 +1395,6 @@ const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
         .attr('height', textBBox.height + tooltipRectPadding * 2);
       text.raise();
     });
-};
-
-const getRandom = (min: number, max: number) => {
-  return Math.random() * (max - min) + min;
 };
 
 // utility function to return the pixel positions for the start/end of a specific ordinal segment
