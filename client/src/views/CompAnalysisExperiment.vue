@@ -1,8 +1,10 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <button class="search-button btn btn-primary btn-call-for-action" disabled>
-      Search datacubes
-    </button>
+    <div class="comp-analysis-experiment-header">
+      <button class="search-button btn btn-primary btn-call-for-action" disabled>
+        Search datacubes
+      </button>
+    </div>
     <main>
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
@@ -16,7 +18,37 @@
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
-    />
+    >
+      <template v-slot:datacube-scenario-header>
+        <div class="datacube-header" v-if="isExpanded">
+          <h5>Production - DSSAT</h5>
+          <disclaimer
+            v-if="scenarioCount > 0"
+            :message="
+              scenarioCount +
+                ' scenarios. Click a vertical line to select or deselect it.'
+            "
+          />
+        </div>
+        <datacube-scenario-header
+          class="scenario-header"
+          :isExpanded="isExpanded"
+          :outputVariable="'Crop production'"
+          :outputVariableUnits="'tonnes'"
+          :selected-model-id="selectedModelId"
+          :selected-scenario-ids="selectedScenarioIds"
+          :color-from-index="colorFromIndex"
+          v-else
+        />
+      </template>
+
+      <template v-slot:datacube-description>
+        <datacube-description
+          :selected-model-id="selectedModelId"
+        />
+      </template>
+
+    </datacube-card>
     <drilldown-panel
         class="drilldown"
         :is-open="activeDrilldownTab !== null"
@@ -43,11 +75,15 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
 import { DimensionInfo } from '@/types/Model';
 import { getRandomNumber } from '../../tests/utils/random';
+import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
+import Disclaimer from '@/components/widgets/disclaimer.vue';
+import { colorFromIndex } from '@/utils/colors-util';
+import DatacubeDescription from '@/components/data/datacube-description.vue';
 
 const DRILLDOWN_TABS = [
   {
@@ -60,7 +96,14 @@ const DRILLDOWN_TABS = [
 
 export default defineComponent({
   name: 'CompAnalysisExperiment',
-  components: { DatacubeCard, DrilldownPanel, BreakdownPane },
+  components: {
+    DatacubeCard,
+    DrilldownPanel,
+    BreakdownPane,
+    DatacubeScenarioHeader,
+    Disclaimer,
+    DatacubeDescription
+  },
   setup() {
     const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
@@ -68,9 +111,9 @@ export default defineComponent({
     }
 
     const typeBreakdownData: LegacyBreakdownDataStructure[] = [];
+    const isExpanded = true;
 
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
-    // TODO: select baseline by default, not necessarily the first one
     const selectedScenarioIds = ref([allScenarioIds[0]]);
     function setSelectedScenarioIds(newIds: string[]) {
       selectedScenarioIds.value = newIds;
@@ -80,6 +123,8 @@ export default defineComponent({
     function setSelectedTimestamp(value: number) {
       selectedTimestamp.value = value;
     }
+
+    const scenarioCount = computed(() => allScenarioIds.length);
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -92,7 +137,10 @@ export default defineComponent({
       setSelectedScenarioIds,
       typeBreakdownData,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp,
+      isExpanded,
+      colorFromIndex,
+      scenarioCount
     };
   },
   methods: {
@@ -151,5 +199,15 @@ main {
 .search-button {
   align-self: center;
   margin: 10px 0;
+}
+
+.comp-analysis-experiment-header {
+  flex-direction: row;
+  margin: auto;
+}
+
+.datacube-header {
+  flex: 1;
+  min-height: 70px;
 }
 </style>

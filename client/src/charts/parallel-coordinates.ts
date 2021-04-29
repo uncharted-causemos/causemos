@@ -219,7 +219,7 @@ function renderParallelCoordinates(
       })
       .each(function(d) {
         const lineElement = this as SVGPathElement;
-        handleLineSelection.bind(lineElement)(undefined /* event */, d);
+        handleLineSelection.bind(lineElement)(undefined /* event */, d, false /* do not notify external listeners */);
       });
   }
 
@@ -490,7 +490,7 @@ function renderParallelCoordinates(
 
   // select the line clicked by the user
   // or deselect all lines when the svg element is clicked
-  function handleLineSelection(this: SVGPathElement | HTMLElement, event: PointerEvent | undefined, d: ScenarioData) {
+  function handleLineSelection(this: SVGPathElement | HTMLElement, event: PointerEvent | undefined, d: ScenarioData, notifyExternalListeners = true) {
     if (options.newRunsMode) {
       return;
     }
@@ -530,7 +530,9 @@ function renderParallelCoordinates(
       }
 
       // notify external listeners
-      onLinesSelection([selectedLineData]);
+      if (notifyExternalListeners) {
+        onLinesSelection([selectedLineData]);
+      }
     }
   }
 
