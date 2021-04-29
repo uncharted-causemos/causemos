@@ -463,7 +463,7 @@ const buildEdgeParametersPayload = (edgeParameters) => {
     r.push({
       source: edge.source,
       target: edge.target,
-      weight: edge.parameter.weight
+      weights: edge.parameter.weights
     });
   });
   return r;
