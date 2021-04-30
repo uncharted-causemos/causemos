@@ -93,10 +93,12 @@ export default defineComponent({
     })
   },
   data: () => ({
-    readersStatus: [] as GroupedRecord[]
+    readersStatus: [] as GroupedRecord[],
+    timestamp: 0 // Track the "next" extended_at
   }),
   mounted() {
     const t = this.projectMetadata.extended_at || (new Date()).getTime();
+    this.timestamp = (new Date()).getTime();
 
     getReadersStatus(t).then(data => {
       const grouped = _.groupBy(data, d => d.document_id);
@@ -130,7 +132,7 @@ export default defineComponent({
         if (record.cwms) payload.push(record.cwms);
         if (record.sofia) payload.push(record.sofia);
       });
-      await projectService.createAssemblyRequest(this.project, payload);
+      await projectService.createAssemblyRequest(this.project, payload, this.timestamp);
     },
     close() {
       this.$emit('close');

@@ -656,6 +656,37 @@ const ontologyComposition = async (projectId, concept) => {
   };
 };
 
+
+/**
+ * For incremental assembly
+ * - Create an entry with selected (document, reader)
+ * - Update project timestamp
+ */
+const addReaderOutput = async (projectId, records, timestamp) => {
+  const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
+  const project = Adapter.get(RESOURCE.PROJECT);
+
+  // create new records
+  const id = uuid();
+  await projectExtension.insert([
+    {
+      id,
+      created_at: (new Date()).getTime(),
+      project_id: projectId,
+      records: records
+    }
+  ], d => d.id);
+
+
+  // Update last updated time
+  await project.update([
+    {
+      id: projectId,
+      extended_at: +timestamp
+    }
+  ], d => d.id);
+};
+
 module.exports = {
   listProjects,
   findProject,
@@ -679,6 +710,9 @@ module.exports = {
   searchFields,
   searchPath,
   bustProjectGraphCache,
+
+  // incremental assembly
+  addReaderOutput,
 
   // misc
   ontologyComposition
