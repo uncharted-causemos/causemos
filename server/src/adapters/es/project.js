@@ -71,7 +71,8 @@ class Project extends Base {
         ontology: project.ontology,
         created_at: Date.now(),
         modified_at: Date.now(),
-        corpus_id: kb.corpus_id
+        corpus_id: kb.corpus_id,
+        extended_at: Date.now() // Last time additional documents were added to the project
       }
     });
 
