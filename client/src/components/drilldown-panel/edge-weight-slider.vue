@@ -27,7 +27,9 @@
 </template>
 
 <script lang="ts">
-export default {
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'EdgeWeightSlider',
   emits: ['set-edge-weights'],
   props: {
@@ -56,7 +58,7 @@ export default {
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
