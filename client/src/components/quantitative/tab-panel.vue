@@ -90,14 +90,13 @@
               :statements="selectedStatements"
               :project="project"
               :is-fetching-statements="isFetchingStatements"
-              :should-confirm-curations="true"
-              @edge-weight="setEdgeWeight">
+              :should-confirm-curations="true">
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity" />
               <edge-weight-slider
                 :selected-relationship="selectedEdge"
-                @edge-weight="setEdgeWeight" />
+                @set-edge-weights="setEdgeWeights" />
             </evidence-pane>
           </template>
         </drilldown-panel>
@@ -343,9 +342,9 @@ export default {
       this.closeDrilldown();
       this.$emit('refresh');
     },
-    async setEdgeWeight(edgeData) {
+    async setEdgeWeights(edgeData) {
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
-      this.selectedEdge.parameter.weight = edgeData.parameter.weight;
+      this.selectedEdge.parameter.weights = edgeData.parameter.weights;
       this.closeDrilldown();
       this.$emit('refresh');
     },
