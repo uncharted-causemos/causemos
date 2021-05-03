@@ -59,6 +59,18 @@ export function getColorScale(colorName) {
   return COLOR_SCALES[colorName];
 }
 
+
+const COLORS = [
+  '#44f',
+  '#4b6',
+  '#d4d'
+  // TODO: choose better colours and add more of them
+];
+
+export function colorFromIndex(index) {
+  return COLORS[index % COLORS.length];
+}
+
 export default {
   COLOR_SCHEME,
   SELECTED_COLOR,

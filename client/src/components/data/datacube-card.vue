@@ -1,25 +1,7 @@
 <template>
   <div class="datacube-card-container">
     <header>
-      <div class="datacube-header" v-if="isExpanded">
-        <h5>Production - DSSAT</h5>
-        <disclaimer
-          v-if="scenarioCount > 0"
-          :message="
-            scenarioCount +
-              ' scenarios. Click a vertical line to select or deselect it.'
-          "
-        />
-      </div>
-      <datacube-scenario-header
-        class="scenario-header"
-        :outputVariable="'Crop production'"
-        :outputVariableUnits="'tonnes'"
-        :selected-model-id="selectedModelId"
-        :selected-scenario-ids="selectedScenarioIds"
-        :color-from-index="colorFromIndex"
-        v-else
-      />
+      <slot name="datacube-scenario-header" />
       <button v-tooltip="'Collapse datacube'" class="btn btn-default">
         <!-- @click="TODO" -->
         <i class="fa fa-fw fa-compress" />
@@ -53,7 +35,7 @@
           :dimensions-data="dimensionsData"
           :selected-dimensions="selectedDimensions"
           :ordinal-dimensions="ordinalDimensions"
-          :initial-data-selection="initialScenarioSelection"
+          :initial-data-selection="selectedScenarioIds"
           :show-baseline-defaults="showBaselineDefaults"
           :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
@@ -124,10 +106,8 @@
             </dropdown-control>
           </div>
         </div>
-        <datacube-description
-          v-if="isDescriptionView"
-          :selected-model-id="selectedModelId"
-        />
+        <slot name="datacube-description" v-if="isDescriptionView" />
+        <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
         <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
             class="scenario-header"
@@ -164,7 +144,6 @@
 import { defineComponent, computed, ref, PropType, watch } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
-import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
@@ -176,21 +155,17 @@ import DataAnalysisMap from '@/components/data/analysis-map.vue';
 import { SCENARIOS_LIST } from '@/assets/scenario-data';
 import API from '@/api/api';
 import { Timeseries } from '@/types/Timeseries';
-
-const COLORS = [
-  '#44f',
-  '#4b6',
-  '#d4d'
-  // TODO: choose better colours and add more of them
-];
-
-function colorFromIndex(index: number) {
-  return COLORS[index % COLORS.length];
-}
+import { colorFromIndex } from '@/utils/colors-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
-  emits: ['on-map-load', 'set-selected-scenario-ids', 'select-timestamp', 'set-drilldown-data'],
+  emits: [
+    'on-map-load',
+    'set-selected-scenario-ids',
+    'select-timestamp',
+    'set-drilldown-data',
+    'check-model-metadata-validity'
+  ],
   props: {
     isExpanded: {
       type: Boolean,
@@ -220,15 +195,12 @@ export default defineComponent({
   components: {
     timeseriesChart,
     DatacubeScenarioHeader,
-    DatacubeDescription,
     Disclaimer,
     ParallelCoordinatesChart,
     DataAnalysisMap,
     DropdownControl
   },
   setup(props, { emit }) {
-    const scenarioCount = computed(() => props.allScenarioIds.length);
-
     // Fetch timeseries data for each selected run, create a data
     //  structure that contains the colour for each run, and pass that to
     // timeseries chart
@@ -289,9 +261,6 @@ export default defineComponent({
       });
       return returnValue;
     });
-    watch(() => props.selectedScenarioIds, () => {
-      relativeTo.value = null;
-    });
 
     // TODO: fetch model metadata to use in parallel coordinates
 
@@ -324,15 +293,19 @@ export default defineComponent({
 
     const selection = {
       modelId: props.selectedModelId,
-      runId: props.selectedScenarioIds[0],
+      runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
       id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
       outputVariable: 'production',
       timestamp: props.selectedTimestamp
     };
 
+    const isDescriptionView = ref<boolean>(true);
+
     watch(() => props.selectedScenarioIds, () => {
+      relativeTo.value = null;
       fetchScenarioMetadata();
       fetchTimeseriesData();
+      isDescriptionView.value = props.selectedScenarioIds.length === 0;
     }, {
       immediate: true
     });
@@ -344,11 +317,11 @@ export default defineComponent({
       selectedScenarios: SCENARIOS_LIST,
       selectedTimeseriesData,
       selection,
-      scenarioCount,
       colorFromIndex,
       emitTimestampSelection,
       relativeTo,
-      timeseriesDataForDisplay
+      timeseriesDataForDisplay,
+      isDescriptionView
     };
   },
   data: () => ({
@@ -356,13 +329,11 @@ export default defineComponent({
     showNewRunsMode: false,
     dimensionsData: [] as Array<ScenarioData>,
     selectedDimensions: [] as Array<DimensionInfo>,
-    initialScenarioSelection: [] as Array<string>,
     allScenariosData: [] as Array<Cube>,
     modelParametersMap: {} as {[key: string]: DimensionInfo},
     modelMetaData: {} as Model,
     ordinalDimensions: [] as Array<string>,
     potentialScenarioCount: 0,
-    isDescriptionView: true,
     isRelativeDropdownOpen: false,
     drilldownDimensions: [] as Array<DimensionInfo>
   }),
@@ -464,8 +435,6 @@ export default defineComponent({
         type: '', // FIXME
         default: outputAggregations[baselineRunID] // since this is the baseline run
       });
-      // initially select the baseline
-      // this.initialScenarioSelection = [baselineRunID]; // REVIEW: uncomment to select baseline run by default
       this.selectedDimensions = selectedParameters;
       this.dimensionsData = allProcessedRunsParams;
 
@@ -509,11 +478,9 @@ export default defineComponent({
       ) {
         // console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
-        this.isDescriptionView = true;
       } else {
         // console.log('user selected: ' + e.scenarios.length);
         this.$emit('set-selected-scenario-ids', e.scenarios.map(s => s.run_id));
-        this.isDescriptionView = false;
       }
       // we should emit to update the drilldown data everytime scenario selection changes
       this.$emit('set-drilldown-data', { drilldownDimensions: this.drilldownDimensions });
@@ -554,10 +521,6 @@ header {
     margin: 0;
     font-weight: normal;
   }
-}
-
-.datacube-header {
-  flex: 1;
 }
 
 .scenario-header {
