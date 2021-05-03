@@ -313,19 +313,19 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
     edgeParameters.forEach(edge => {
       const edgeInit = initialParameters.edges[`${edge.source}///${edge.target}`];
-      if (edge.parameter && !_.isEqual(edge.parameter.weight, edgeInit.weight)) {
+      if (edge.parameter && !_.isEqual(edge.parameter.weights, edgeInit.weights)) {
         edgesOverride.push({
           source: edge.source,
           target: edge.target,
           parameter: {
-            weight: edge.parameter.weight
+            weights: edge.parameter.weights
           }
         });
       } else {
         edgesUpdate.push({
           id: edge.id,
           parameter: {
-            weight: edgeInit.weight
+            weights: edgeInit.weights
           }
         });
       }
@@ -374,7 +374,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
       updateEdges.push({
         id: edge.id,
         parameter: {
-          weight: initialParameters.edges[`${edge.source}///${edge.target}`].weight
+          weights: initialParameters.edges[`${edge.source}///${edge.target}`].weights
         }
       });
     });

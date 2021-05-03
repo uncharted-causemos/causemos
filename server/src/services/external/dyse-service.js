@@ -37,7 +37,7 @@ const createModel = async (payload) => {
   const edges = result.relations.reduce((acc, edge) => {
     const key = `${edge.source}///${edge.target}`;
     acc[key] = {};
-    acc[key].weight = edge.weights.map(v => Math.abs(parseFloat(v)));
+    acc[key].weights = edge.weights.map(v => Math.abs(parseFloat(v)));
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
@@ -134,7 +134,7 @@ const updateNodeParameter = async (modelId, parameter) => {
  * Update edge weights
  *
  * @param {string} modelId - model identifier
- * @param {array} edges - [{ source, target, weight} ... ]
+ * @param {array} edges - [{ source, target, weights} ... ]
  */
 const updateEdgeParameter = async (modelId, edges) => {
   const options = {

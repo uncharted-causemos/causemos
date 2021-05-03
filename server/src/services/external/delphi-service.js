@@ -28,7 +28,7 @@ const createModel = async (payload) => {
     const key = `${edge.source}///${edge.target}`;
     acc[key] = {};
     // FIXME: Delphi returns distributions, for now just default [0.5, 0.5]
-    acc[key].weight = [0.5, 0.5];
+    acc[key].weights = [0.5, 0.5];
     return acc;
   }, {});
   return { nodes, edges, status: result.status };

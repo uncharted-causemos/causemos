@@ -1,20 +1,37 @@
 <template>
   <div class="edge-weight-slider-container">
-    Strength {{ selectedRelationship.parameter.weight }}
+    <h5>Weights</h5>
+    Level {{ selectedRelationship.parameter.weights[0] }}
     <input
       class="edge-weight-slider"
       type="range"
       min="0"
       max="1"
       step="0.1"
-      :value="selectedRelationship.parameter.weight"
-      @change="changeEdgeWeight">
+      ref="first-order-weight-slider"
+      :value="selectedRelationship.parameter.weights[0]"
+      @change="changeEdgeWeights"
+    />
+    Trend {{ selectedRelationship.parameter.weights[1] }}
+    <input
+      class="edge-weight-slider"
+      type="range"
+      min="0"
+      max="1"
+      step="0.1"
+      ref="second-order-weight-slider"
+      :value="selectedRelationship.parameter.weights[1]"
+      @change="changeEdgeWeights"
+    />
   </div>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'EdgeWeightSlider',
+  emits: ['set-edge-weights'],
   props: {
     selectedRelationship: {
       type: Object,
@@ -22,21 +39,31 @@ export default {
     }
   },
   methods: {
-    changeEdgeWeight(evt) {
-      this.$emit('edge-weight', {
+    changeEdgeWeights() {
+      const weights = [
+        parseFloat(
+          (this.$refs['first-order-weight-slider'] as HTMLInputElement).value
+        ),
+        parseFloat(
+          (this.$refs['second-order-weight-slider'] as HTMLInputElement).value
+        )
+      ];
+      this.$emit('set-edge-weights', {
         id: this.selectedRelationship.id,
         source: this.selectedRelationship.source,
         target: this.selectedRelationship.target,
         parameter: {
-          weight: parseFloat(evt.target.value)
+          weights
         }
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
+@import '~styles/variables';
+
 .edge-weight-slider-container {
   display: block;
   height: 100%;
@@ -45,5 +72,10 @@ export default {
     padding-top: 8px;
     padding-bottom: 24px;
   }
+}
+
+h5 {
+  font-size: $font-size-large;
+  font-weight: 600;
 }
 </style>
