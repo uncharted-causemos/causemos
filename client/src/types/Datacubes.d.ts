@@ -12,6 +12,25 @@ export interface CubeParameter {
   value: string;
 }
 
+export interface ModelRunParameter {
+  name: string;
+  value: string;
+}
+
+// Model run metadata
+export interface ModelRun {
+  id: string;
+  model_name: string;
+  model_id: string;
+  created_at: string;
+  flow_id: string;
+  data_paths: string[];
+  pre_gen_output_paths: string[];
+  is_default_run: boolean;
+  tags: string[];
+  parameters: ModelRunParameter[];
+}
+
 // New Datacube metadata
 export interface Cube {
   id: string;
