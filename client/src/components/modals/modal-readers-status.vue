@@ -133,6 +133,11 @@ export default defineComponent({
         if (record.sofia) payload.push(record.sofia);
       });
       await projectService.createAssemblyRequest(this.project, payload, this.timestamp);
+
+      // Update cached project metadata
+      this.projectMetadata.extended_at = this.timestamp;
+
+      this.close();
     },
     close() {
       this.$emit('close');
