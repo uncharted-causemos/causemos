@@ -31,10 +31,10 @@
           </div>
         </div>
         <parallel-coordinates-chart
-          v-if="dimensionsData"
-          :dimensions-data="dimensionsData"
-          :selected-dimensions="selectedDimensions"
-          :ordinal-dimensions="ordinalDimensions"
+          v-if="runParameterValues"
+          :dimensions-data="runParameterValues"
+          :selected-dimensions="dimensions"
+          :ordinal-dimensions="ordinalDimensionNames"
           :initial-data-selection="selectedScenarioIds"
           :show-baseline-defaults="showBaselineDefaults"
           :new-runs-mode="showNewRunsMode"
@@ -122,14 +122,14 @@
         <timeseries-chart
           v-if="!isDescriptionView"
           class="timeseries-chart"
-          :timeseries-data="timeseriesDataForDisplay"
+          :timeseries-data="selectedTimeseriesData"
           :selected-timestamp="selectedTimestamp"
           @select-timestamp="emitTimestampSelection"
         />
         <data-analysis-map
           v-if="!isDescriptionView"
           class="card-map full-width"
-          :selection="selection"
+          :selection="mapSelectionObject"
           :show-tooltip="true"
           :selected-admin-level="selectedAdminLevel"
           :selected-timestamp="selectedTimestamp"
@@ -141,20 +141,18 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, computed, ref, PropType, watch } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { Cube, ScenarioDef } from '@/types/Datacubes';
+import { ScenarioDef } from '@/types/Datacubes';
 import { ScenarioData } from '@/types/Common';
-import { Model, ModelParameter, DimensionInfo } from '@/types/Model';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
-import { SCENARIOS_LIST } from '@/assets/scenario-data';
-import API from '@/api/api';
-import { Timeseries } from '@/types/Timeseries';
+import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
 
 export default defineComponent({
@@ -176,8 +174,8 @@ export default defineComponent({
       default: 0
     },
     selectedModelId: {
-      type: String,
-      default: null
+      type: String as PropType<string>,
+      required: true
     },
     allScenarioIds: {
       type: Array as PropType<string[]>,
@@ -201,97 +199,30 @@ export default defineComponent({
     DropdownControl
   },
   setup(props, { emit }) {
-    // Fetch timeseries data for each selected run, create a data
-    //  structure that contains the colour for each run, and pass that to
-    // timeseries chart
-    // FIXME: this code contains a race condition if the selected model or
-    //  scenario IDs were to change quickly and the promise sets completed
-    //  out of order.
-    const selectedTimeseriesData = ref<Timeseries[]>([]);
-    async function fetchTimeseriesData() {
-      selectedTimeseriesData.value = [];
-      if (
-        props.selectedModelId === null ||
-        props.selectedScenarioIds.length === 0
-      ) {
-        return;
-      }
-      const promises = props.selectedScenarioIds.map(scenarioId =>
-        API.get('fetch-demo-data', {
-          params: {
-            modelId: props.selectedModelId,
-            runId: scenarioId,
-            type: 'timeseries'
-          }
-        })
-      );
-      const allTimeseriesData = (await Promise.all(promises)).map(response =>
-        JSON.parse(response.data)
-      );
-      selectedTimeseriesData.value = props.selectedScenarioIds.map((scenarioId, index) => {
-        const color = colorFromIndex(index);
-        return { color, points: allTimeseriesData[index] };
-      });
-    }
+    const {
+      selectedModelId,
+      selectedScenarioIds,
+      allScenarioIds
+    } = toRefs(props);
 
-    const relativeTo = ref<number | null>(null);
-    const timeseriesDataForDisplay = computed(() => {
-      if (selectedTimeseriesData.value.length === 0) return [];
-      if (relativeTo.value === null || props.selectedScenarioIds.length < 2) return selectedTimeseriesData.value;
-      // User wants to display data relative to one run
-      const baselineData = selectedTimeseriesData.value[relativeTo.value];
-      const returnValue: Timeseries[] = [];
-      selectedTimeseriesData.value.forEach((timeseries, index) => {
-        if (index === relativeTo.value) return;
-        // Adjust values
-        const { color, points } = timeseries;
-        const adjustedPoints = points.map(({ timestamp, value }) => {
-          const baselineValue = baselineData.points.find(
-            point => point.timestamp === timestamp
-          )?.value ?? 0;
-          return {
-            timestamp,
-            value: value - baselineValue
-          };
-        });
-        returnValue.push({
-          color,
-          points: adjustedPoints
-        });
-      });
-      return returnValue;
-    });
+    const {
+      timeseriesData: selectedTimeseriesData,
+      relativeTo
+    } = useTimeseriesData(
+      selectedModelId,
+      selectedScenarioIds,
+      colorFromIndex
+    );
 
-    // TODO: fetch model metadata to use in parallel coordinates
+    const {
+      dimensions,
+      ordinalDimensionNames,
+      drilldownDimensions,
+      runParameterValues
+    } = useParallelCoordinatesData(selectedModelId, allScenarioIds);
 
-    // Fetch scenario metadata for each selected scenario
-    // TODO: add scenario metadata schema/interface
-    //  and replace `any` on the next line
-    const selectedScenarioMetadata = ref<any>([]);
-    async function fetchScenarioMetadata() {
-      if (
-        props.selectedModelId === null ||
-        props.selectedScenarioIds.length === 0
-      ) {
-        return [];
-      }
-      const promises = props.selectedScenarioIds.map(scenarioId =>
-        API.get('fetch-demo-data', {
-          params: {
-            modelId: props.selectedModelId,
-            runId: scenarioId,
-            type: 'metadata'
-          }
-        })
-      );
-      const allMetadata = (await Promise.all(promises)).map(metadata =>
-        JSON.parse(metadata.data)
-      );
-      selectedScenarioMetadata.value = allMetadata;
-      // console.log('Fetched metadata for selected scenarios', allMetadata);
-    }
-
-    const selection = {
+    // FIXME: remove when data-analysis-map is rewritten
+    const mapSelectionObject = {
       modelId: props.selectedModelId,
       runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
       id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
@@ -303,8 +234,6 @@ export default defineComponent({
 
     watch(() => props.selectedScenarioIds, () => {
       relativeTo.value = null;
-      fetchScenarioMetadata();
-      fetchTimeseriesData();
       isDescriptionView.value = props.selectedScenarioIds.length === 0;
     }, {
       immediate: true
@@ -314,139 +243,25 @@ export default defineComponent({
       emit('select-timestamp', newTimestamp);
     }
     return {
-      selectedScenarios: SCENARIOS_LIST,
       selectedTimeseriesData,
-      selection,
+      mapSelectionObject,
       colorFromIndex,
       emitTimestampSelection,
       relativeTo,
-      timeseriesDataForDisplay,
+      dimensions,
+      ordinalDimensionNames,
+      drilldownDimensions,
+      runParameterValues,
       isDescriptionView
     };
   },
   data: () => ({
     showBaselineDefaults: false,
     showNewRunsMode: false,
-    dimensionsData: [] as Array<ScenarioData>,
-    selectedDimensions: [] as Array<DimensionInfo>,
-    allScenariosData: [] as Array<Cube>,
-    modelParametersMap: {} as {[key: string]: DimensionInfo},
-    modelMetaData: {} as Model,
-    ordinalDimensions: [] as Array<string>,
     potentialScenarioCount: 0,
-    isRelativeDropdownOpen: false,
-    drilldownDimensions: [] as Array<DimensionInfo>
+    isRelativeDropdownOpen: false
   }),
-  async mounted() {
-    // first build a map of model parameters to simplify fetching param-info for any given param ID
-    await this.fetchAndBuildModelParameterMap();
-    // then, fetch the data for all scenarios
-    await this.fetchAllScenarioData();
-
-    this.transformDataForParallelCoordinates();
-  },
   methods: {
-    async fetchAllScenarioData() {
-      const promises = this.allScenarioIds.map(scenarioId =>
-        API.get('fetch-demo-data', {
-          params: {
-            modelId: this.selectedModelId,
-            runId: scenarioId,
-            type: 'metadata'
-          }
-        })
-      );
-      const allMetadata = (await Promise.all(promises)).map(metadata =>
-        JSON.parse(metadata.data)
-      );
-      this.allScenariosData = allMetadata;
-      // console.log('Fetched metadata for all scenarios', allMetadata);
-    },
-    async fetchAndBuildModelParameterMap() {
-      await API.get('fetch-demo-data', {
-        params: {
-          modelId: this.selectedModelId,
-          type: 'metadata'
-        }
-      }).then(result => {
-        // save model metadata
-        this.modelMetaData = JSON.parse(result.data);
-        // build model parameter map to simplify fetching each param using its ID
-        const modelParameters = this.modelMetaData.parameters;
-        modelParameters.forEach((p: ModelParameter) => {
-          this.modelParametersMap[p.id] = p;
-        });
-        // console.log('Fetched model parameters metadata', this.modelParametersMap);
-      });
-    },
-    transformDataForParallelCoordinates() {
-      //
-      // the paralle coordinates expects data as a collection of name/value pairs
-      //  (see ScenarioData)
-      //  e.g., [
-      //    { dim1: value11, dim2: value12 },
-      //    { dim1: value21, dim2: value22 }
-      // ]
-
-      const outputParam = this.modelMetaData.outputs[0];
-
-      // each original run is processed to actually reference to its parameters array
-      const allRunsParams = this.allScenariosData.map(run => run.parameters);
-
-      // FIXME: need an endpoint to fetch such aggregations for all scenarios
-      const outputAggregations: {[key: string]: number} = {
-        '2d80c9f0-1e44-4a6c-91fe-2ebb26e39dea': 313639493,
-        '2ff53645-d481-4ff7-a067-e13f392f30a4': 115408980,
-        '25e0971b-c229-4c9a-a0f9-c121fce51309': 116547768,
-        '057d28d5-a7ed-472b-ae37-ba16571944ea': 146281019,
-        '967a0a69-552f-4861-ad7f-0c1bd8bab856': 204827768
-      };
-      const baselineRunID: string = this.allScenariosData.find(run => run.default_run)?.id as string;
-
-      const allProcessedRunsParams: Array<any> = [];
-      allRunsParams.forEach((runParams, runIndx) => {
-        const runParamsMapped = runParams.map((runParam: any) => {
-          const paramName = this.modelParametersMap[runParam.id].name;
-          return {
-            name: paramName,
-            value: runParam.value
-          };
-        });
-        const run = runParamsMapped.reduce(
-          (obj: any, item: any) => Object.assign(obj, { [item.name]: item.value }), {}
-        );
-
-        // explicitly add run-id as a parameter
-        run.run_id = this.allScenariosData[runIndx].id;
-
-        // explicitly add output for each run
-        run[outputParam.name] = outputAggregations[run.run_id];
-
-        allProcessedRunsParams.push(run);
-      });
-
-      const selectedParameters = Object.values(this.modelParametersMap);
-      // explicitly add output parameter
-      selectedParameters.push({
-        name: outputParam.name,
-        display_name: outputParam.display_name,
-        description: outputParam.description,
-        is_output: true,
-        type: '', // FIXME
-        default: outputAggregations[baselineRunID] // since this is the baseline run
-      });
-      this.selectedDimensions = selectedParameters;
-      this.dimensionsData = allProcessedRunsParams;
-
-      // track drilldown dimensions
-      this.drilldownDimensions = selectedParameters.filter(p => p.is_drilldown);
-
-      // force 'rainfall_multiplier' to be ordinal
-      this.ordinalDimensions = ['rainfall_multiplier'];
-
-      // TODO: use each axis min/max based on the metadata
-      // TODO: add/refine interfaces to clean up the code
-    },
     onMapLoad() {
       this.$emit('on-map-load');
     },
@@ -469,9 +284,6 @@ export default defineComponent({
       (this as any).toaster('New runs requested\nPlease check back later!');
     },
     updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
-      // TODO: emit 'set-selected-scenario-ids' with an array of selected scenario IDs
-      //  It's important we don't just emit the one scenario they just selected, since
-      //  the handler will replace the whole array.
       if (
         e.scenarios.length === 0 ||
         (e.scenarios.length === 1 && e.scenarios[0] === undefined)

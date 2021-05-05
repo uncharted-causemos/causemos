@@ -1,7 +1,7 @@
 <template>
   <div class="edge-weight-slider-container">
     <h5>Weights</h5>
-    Level {{ selectedRelationship.parameter.weights[0] }}
+    Driver level {{ selectedRelationship.parameter.weights[0] }}
     <input
       class="edge-weight-slider"
       type="range"
@@ -12,7 +12,7 @@
       :value="selectedRelationship.parameter.weights[0]"
       @change="changeEdgeWeights"
     />
-    Trend {{ selectedRelationship.parameter.weights[1] }}
+    Driver trend {{ selectedRelationship.parameter.weights[1] }}
     <input
       class="edge-weight-slider"
       type="range"
