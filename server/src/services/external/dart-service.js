@@ -62,7 +62,8 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
  */
 const queryReadersStatus = async (timestamp) => {
   // Format timestamp to yyyy-mm-dd hh:mm:ss
-  const t = moment.utc(+timestamp).format('YYYY-MM-DD hh:mm:ss');
+  const t = moment.utc(+timestamp).format('YYYY-MM-DD HH:mm:ss');
+
   const formData = {
     metadata: JSON.stringify({
       timestamp: {

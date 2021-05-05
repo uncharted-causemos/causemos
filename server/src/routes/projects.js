@@ -3,7 +3,7 @@ const moment = require('moment');
 const _ = require('lodash');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const requestAsPromise = rootRequire('/util/request-as-promise');
+// const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const { get } = rootRequire('/cache/node-lru-cache');
 const Logger = rootRequire('/config/logger');
@@ -282,27 +282,34 @@ router.get('/:projectId/ontology-composition', asyncHandler(async (req, res) => 
 
 
 /**
- * POST Log and submit a reassembly request
+ * POST Log reader status and submit a reassembly request
  */
 router.post('/:projectId/assembly', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
-  const payload = req.body;
-  console.log(projectId);
-  console.log(payload);
+  const records = req.body.records;
+  const timestamp = req.body.timestamp;
 
-  // FIXME: Just test INDRA plumbing
-  const options = {
-    url: 'http://wm.indra.bio/assembly/add_project_records',
-    method: 'POST',
-    json: {
-      project_id: projectId,
-      records: payload
-    }
-  };
-  const result = await requestAsPromise(options);
-  console.log('');
-  console.log(result);
-  console.log('');
+  console.log(projectId);
+  console.log(timestamp);
+  console.log(records);
+
+  await projectService.addReaderOutput(projectId, records, timestamp);
+
+  // FIXME: Send signal to kick start incremental knowledge ingestion process
+
+
+  // const options = {
+  //   url: 'http://wm.indra.bio/assembly/add_project_records',
+  //   method: 'POST',
+  //   json: {
+  //     project_id: projectId,
+  //     records: payload
+  //   }
+  // };
+  // const result = await requestAsPromise(options);
+  // console.log('');
+  // console.log(result);
+  // console.log('');
   res.json({});
 }));
 

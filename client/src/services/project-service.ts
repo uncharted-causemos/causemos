@@ -113,8 +113,8 @@ const getProjectLocationsPromise = async (projectId: string, filters: Filters) =
   return promise;
 };
 
-const createAssemblyRequest = async (projectId: string, payload: ReaderOutputRecord[]) => {
-  const result = await API.post(`projects/${projectId}/assembly`, payload);
+const createAssemblyRequest = async (projectId: string, payload: ReaderOutputRecord[], timestamp: number) => {
+  const result = await API.post(`projects/${projectId}/assembly`, { records: payload, timestamp });
   return result.data;
 };
 

@@ -45,6 +45,7 @@
         <button
           type="button"
           class="btn btn-primary btn-call-for-action"
+          :disabled="readersStatus.length == 0"
           @click.stop="addToProject()">Add to Project
         </button>
       </ul>
@@ -61,6 +62,13 @@ import projectService from '@/services/project-service';
 import { getReadersStatus } from '@/services/dart-service';
 import { ReaderOutputRecord } from '@/types/Dart';
 
+enum Readers {
+  EIDOS = 'eidos',
+  CWMS = 'cwms',
+  SOFIA = 'sofia',
+  HUME = 'hume'
+}
+
 interface GroupedRecord {
   document_id: string;
   eidos?: ReaderOutputRecord;
@@ -69,6 +77,7 @@ interface GroupedRecord {
   sofia?: ReaderOutputRecord;
 }
 
+// Displays reading team status on uploaded documents
 export default defineComponent({
   name: 'ModalReadersStatus',
   components: {
@@ -79,27 +88,31 @@ export default defineComponent({
   ],
   computed: {
     ...mapGetters({
-      project: 'app/project'
+      project: 'app/project',
+      projectMetadata: 'app/projectMetadata'
     })
   },
   data: () => ({
-    readersStatus: [] as GroupedRecord[]
+    readersStatus: [] as GroupedRecord[],
+    timestamp: 0 // Track the "next" extended_at
   }),
   mounted() {
-    // FIXME: Hook in timestamp
-    getReadersStatus(0).then(data => {
+    const t = this.projectMetadata.extended_at || (new Date()).getTime();
+    this.timestamp = (new Date()).getTime();
+
+    getReadersStatus(t).then(data => {
       const grouped = _.groupBy(data, d => d.document_id);
       Object.keys(grouped).forEach(id => {
         const record: GroupedRecord = { document_id: id };
         grouped[id].forEach(reader => {
           switch (reader.identity) {
-            case 'eidos':
+            case Readers.EIDOS:
               record.eidos = reader;
               break;
-            case 'hume':
+            case Readers.HUME:
               record.hume = reader;
               break;
-            case 'cwms':
+            case Readers.CWMS:
               record.cwms = reader;
               break;
             default:
@@ -119,7 +132,12 @@ export default defineComponent({
         if (record.cwms) payload.push(record.cwms);
         if (record.sofia) payload.push(record.sofia);
       });
-      await projectService.createAssemblyRequest(this.project, payload);
+      await projectService.createAssemblyRequest(this.project, payload, this.timestamp);
+
+      // Update cached project metadata
+      this.projectMetadata.extended_at = this.timestamp;
+
+      this.close();
     },
     close() {
       this.$emit('close');
@@ -129,6 +147,12 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+::v-deep(.modal-container) {
+  .modal-body {
+    height: 300px;
+    overflow-y: scroll;
+  }
+}
 </style>
 
 

@@ -18,6 +18,7 @@ const RESOURCE = Object.freeze({
   STATEMENT: 'statement',
   DOCUMENT: 'corpus',
   DOCUMENT_CONTEXT: 'document-context',
+  PROJECT_EXTENSION: 'project-extension',
 
   // Quantitative data
   NODE_PARAMETER: 'node-parameter',

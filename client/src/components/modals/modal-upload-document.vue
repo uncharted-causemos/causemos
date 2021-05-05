@@ -6,34 +6,13 @@
     <template #body>
       <div>
         <form>
-          <div class="form-group">
-            <div class="instruction-set">
-              <span> Instructions: </span><br>
-              <span> 1. Click 'Choose File' and then select an .html, .csv, .doc or .pdf file of size less than 100MB. </span><br>
-              <span> 2. Fill in relevant metadata information. </span><br>
-              <span> 3. Click 'Upload' to upload the file. </span>
-            </div>
-            <input
-              ref="files"
-              type="file"
-              accept=".html, .csv, .doc, .pdf"
-              class="form-control-file"
-              @change="updateInputFile">
-            <div class="form-group">
-              <div>Genre</div>
-              <input
-                v-model="metadataGenre"
-                class="form-control form-control-sm"
-                type="text">
-
-              <div>Tags, provide a list of comma-delimited keywords relating to the document</div>
-              <input
-                v-model="metadataLabels"
-                class="form-control form-control-sm"
-                placeholder="e.g. conflict, food security, planting season"
-                type="text">
-            </div>
-          </div>
+          <input
+            ref="files"
+            type="file"
+            accept=".html, .csv, .doc, .pdf"
+            class="form-control-file"
+            @change="updateInputFile">
+          <span class="instruction-set">.html, .csv, .doc, .pdf, or zip (max. 100MB) </span>
           <div
             v-if="loading"
             class="upload-file-label">
@@ -116,24 +95,31 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '~styles/variables';
 
-  ::v-deep(.modal-container) {
+::v-deep(.modal-container) {
 
-    .modal-header {
-      height: 50px;
-    }
-    .modal-body {
-      flex-grow: 1;
-      overflow-y: auto;
-      .instruction-set {
-        padding: 10px 0px;
-      }
-      .upload-file-label {
-        padding-bottom: 10px;
-      }
-    }
-    width: 50vw;
-    display: flex;
-    flex-direction: column;
+  .modal-header {
+    height: 50px;
   }
+  .modal-body {
+    flex-grow: 1;
+    overflow-y: auto;
+    .upload-file-label {
+      padding-bottom: 10px;
+    }
+  }
+  width: 50vw;
+  display: flex;
+  flex-direction: column;
+}
+
+form {
+  input {
+    display: inline-block;
+  }
+  span {
+    color: $label-color;
+  }
+}
 </style>
