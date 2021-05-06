@@ -29,7 +29,6 @@ const dartRouter = rootRequire('/routes/dart');
 const bookmarksRouter = rootRequire('/routes/bookmarks');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
-const modelRunRouter = rootRequire('/routes/model-run');
 const maasRouter = rootRequire('/routes/maas');
 const fetchFileService = rootRequire('/services/external/fetch-file-service');
 const asyncHandler = require('express-async-handler');
@@ -122,8 +121,8 @@ app.use('/api/audits', [
   auditsRouter
 ]);
 
-// Handle some /api/mass/* calls ourselves. The rest get handled below.
-app.use('/api/maas', [
+// Handle some /api/mass/model-runs calls ourselves. The rest get handled below.
+app.use('/api/maas/model-runs', [
   maasRouter
 ]);
 
@@ -137,10 +136,6 @@ app.use('/api/map', [
 
 app.use('/api/curation_recommendations', [
   curationRecommendationsRouter
-]);
-
-app.use('/api/model-run', [
-  modelRunRouter
 ]);
 
 app.use('/api/fetch-demo-data', asyncHandler(async (req, res) => {

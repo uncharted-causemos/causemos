@@ -26,7 +26,7 @@ const RESOURCE = Object.freeze({
   SCENARIO: 'scenario',
 
   // MAAS data
-  MODEL_RUNS: 'data-model-runs',
+  DATA_MODEL_RUN: 'data-model-run',
 
   // Misc
   AUDIT: 'audit',

@@ -17,7 +17,7 @@ export interface ModelRunParameter {
   value: string;
 }
 
-// Model run metadata
+// Model run metadata, this replaces Cube
 export interface ModelRun {
   id: string;
   model_name: string;
@@ -27,6 +27,7 @@ export interface ModelRun {
   data_paths: string[];
   pre_gen_output_paths: string[];
   is_default_run: boolean;
+  status: string,
   tags: string[];
   parameters: ModelRunParameter[];
 }
