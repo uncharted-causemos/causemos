@@ -35,7 +35,7 @@
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
           :ordinal-dimensions="ordinalDimensionNames"
-          :initial-data-selection="selectedScenarioIds"
+          :initial-data-selection="isDescriptionView ? [] : initialDataSelection"
           :show-baseline-defaults="showBaselineDefaults"
           :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
@@ -107,7 +107,6 @@
           </div>
         </div>
         <slot name="datacube-description" v-if="isDescriptionView" />
-        <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
         <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
             class="scenario-header"
@@ -119,22 +118,31 @@
           />
           <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
         </header>
-        <timeseries-chart
-          v-if="!isDescriptionView"
-          class="timeseries-chart"
-          :timeseries-data="selectedTimeseriesData"
-          :selected-timestamp="selectedTimestamp"
-          @select-timestamp="emitTimestampSelection"
-        />
-        <data-analysis-map
-          v-if="!isDescriptionView"
-          class="card-map full-width"
-          :selection="mapSelectionObject"
-          :show-tooltip="true"
-          :selected-admin-level="selectedAdminLevel"
-          :selected-timestamp="selectedTimestamp"
-          @on-map-load="onMapLoad"
-        />
+        <div class="bookmark-capture" style="display: flex; flex-direction: column; flex: 1;">
+          <div style="display: flex; flex-direction: row;">
+            <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
+            <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
+          </div>
+          <timeseries-chart
+            v-if="!isDescriptionView"
+            class="timeseries-chart"
+            :timeseries-data="selectedTimeseriesData"
+            :selected-timestamp="selectedTimestamp"
+            @select-timestamp="emitTimestampSelection"
+          />
+          <div style="display: flex; flex-direction: row;">
+            <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
+          </div>
+          <data-analysis-map
+            v-if="!isDescriptionView"
+            class="card-map full-width"
+            :selection="mapSelectionObject"
+            :show-tooltip="true"
+            :selected-admin-level="selectedAdminLevel"
+            :selected-timestamp="selectedTimestamp"
+            @on-map-load="onMapLoad"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -188,6 +196,18 @@ export default defineComponent({
     selectedTimestamp: {
       type: Number,
       default: 0
+    },
+    selectedTemporalAggregation: {
+      type: String as PropType<string>,
+      default: 'sum'
+    },
+    selectedTemporalResolution: {
+      type: String as PropType<string>,
+      default: 'month'
+    },
+    selectedSpatialAggregation: {
+      type: String as PropType<string>,
+      default: 'sum'
     }
   },
   components: {
@@ -202,7 +222,10 @@ export default defineComponent({
     const {
       selectedModelId,
       selectedScenarioIds,
-      allScenarioIds
+      allScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation
     } = toRefs(props);
 
     const {
@@ -211,7 +234,10 @@ export default defineComponent({
     } = useTimeseriesData(
       selectedModelId,
       selectedScenarioIds,
-      colorFromIndex
+      colorFromIndex,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation
     );
 
     const {
@@ -222,13 +248,25 @@ export default defineComponent({
     } = useParallelCoordinatesData(selectedModelId, allScenarioIds);
 
     // FIXME: remove when data-analysis-map is rewritten
-    const mapSelectionObject = {
+    const mapSelectionObject = ref({
       modelId: props.selectedModelId,
       runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
       id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
       outputVariable: 'production',
       timestamp: props.selectedTimestamp
-    };
+    });
+
+    watch(() => props.selectedTimestamp, () => {
+      mapSelectionObject.value = {
+        modelId: props.selectedModelId,
+        runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
+        id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
+        outputVariable: 'production',
+        timestamp: props.selectedTimestamp
+      };
+    }, {
+      immediate: true
+    });
 
     const isDescriptionView = ref<boolean>(true);
 
@@ -258,6 +296,7 @@ export default defineComponent({
   data: () => ({
     showBaselineDefaults: false,
     showNewRunsMode: false,
+    initialDataSelection: [] as Array<string>,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false
   }),

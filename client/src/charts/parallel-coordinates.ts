@@ -10,6 +10,8 @@ import { DimensionInfo } from '@/types/Model';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 
+// TODO: use each axis min/max based on the metadata
+
 //
 // custom data types
 //
@@ -209,6 +211,8 @@ function renderParallelCoordinates(
   // select default run, if requested
   //
   if (options.initialDataSelection && options.initialDataSelection.length > 0) {
+    // cancel any previous selection; turn every line into grey
+    // cancelPrevLineSelection(svgElement);
     svgElement.selectAll('.line')
       .data(data)
       .filter(function(d) {
@@ -220,6 +224,15 @@ function renderParallelCoordinates(
       .each(function(d) {
         const lineElement = this as SVGPathElement;
         handleLineSelection.bind(lineElement)(undefined /* event */, d, false /* do not notify external listeners */);
+
+        // const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+        // selectLine(selectedLine, undefined /* event */, d, lineStrokeWidthNormal);
+        // if we have valid selection (either by direct click on a line or through brushing)
+        //  then update the tooltips
+        // const selectedLineData = selectedLine.datum() as ScenarioData;
+        // if (selectedLineData) {
+        //  updateSelectionTooltips(svgElement, selectedLine);
+        // }
       });
   }
 

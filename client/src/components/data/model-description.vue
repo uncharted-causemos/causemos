@@ -7,7 +7,7 @@
               <th>Description</th>
           </tr>
       </thead>
-      <tbody v-if="metadata.parameters">
+      <tbody v-if="metadata && metadata.parameters">
         <tr v-for="param in inputParameters" :key="param.id">
           <td class="model-attribute-pair">
             <input
@@ -40,7 +40,7 @@
               <th>Output Knobs</th>
           </tr>
       </thead>
-      <tbody v-if="metadata.outputs">
+      <tbody v-if="metadata && metadata.outputs">
         <tr v-for="param in metadata.outputs" :key="param.id">
           <td class="model-attribute-pair">
             <input
@@ -74,6 +74,7 @@
 import API from '@/api/api';
 import { defineComponent, ref } from 'vue';
 import _ from 'lodash';
+import { Model, ModelParameter } from '@/types/Model';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -89,7 +90,7 @@ export default defineComponent({
     'check-model-metadata-validity'
   ],
   setup(props) {
-    const metadata = ref<any>({});
+    const metadata = ref<Model | null>(null);
     async function fetchMetadata() {
       const response = await API.get('fetch-demo-data', {
         params: {
@@ -106,7 +107,7 @@ export default defineComponent({
   },
   computed: {
     inputParameters(): Array<any> {
-      return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
+      return this.metadata ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
     }
   },
   mounted(): void {
@@ -123,7 +124,7 @@ export default defineComponent({
   },
   methods: {
     checkAndNotifyValidity() {
-      if (_.isEmpty(this.metadata)) {
+      if (this.metadata === null || _.isEmpty(this.metadata)) {
         return;
       }
       let isValid = true;
@@ -147,7 +148,7 @@ export default defineComponent({
 
 .model-table tbody tr td {
   border-width: 0px;
-  line-height: 25px;
+  line-height: 24px;
 }
 
 .model-attribute-pair {

@@ -67,6 +67,7 @@ export default {
     allowNewBookmarks() {
       return this.currentView === 'kbExplorer' ||
         this.currentView === 'qualitative' ||
+        this.currentView === 'modelPublishingExperiment' ||
         this.currentView === 'quantitative';
     }
   },
@@ -90,6 +91,7 @@ export default {
       this.setCurrentPane(pane);
     },
     refresh() {
+      // FIXME:
       API.get('bookmarks/counts', {
         params: { project_id: this.project }
       }).then(d => {

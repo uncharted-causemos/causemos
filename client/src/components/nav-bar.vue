@@ -76,7 +76,7 @@
       </ul>
 
       <!-- Bookmarking -->
-      <bookmark-controls v-if="currentView === 'qualitative' || currentView === 'quantitative'" />
+      <bookmark-controls v-if="currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
     </div>
   </nav>
 </template>

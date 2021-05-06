@@ -348,9 +348,9 @@ export default {
 
       if (this.selectedData !== undefined && this.selectedData[adminLevel] !== undefined && this.selectedData[adminLevel][this.selectedTimestamp] !== undefined) {
         this.selectedData[adminLevel][this.selectedTimestamp].forEach(row => {
-          this.featuresDrawn.push(row.id.replaceAll('_', '-'));
+          this.featuresDrawn.push(row.id.replaceAll('_', '__'));
           this.map.setFeatureState({
-            id: row.id.replaceAll('_', '-'),
+            id: row.id.replaceAll('_', '__'),
             source: this.vectorSourceId,
             sourceLayer: this.vectorSourceLayer
           }, {
