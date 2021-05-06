@@ -35,7 +35,7 @@
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
           :ordinal-dimensions="ordinalDimensionNames"
-          :initial-data-selection="selectedScenarioIds"
+          :initial-data-selection="isDescriptionView ? [] : initialDataSelection"
           :show-baseline-defaults="showBaselineDefaults"
           :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
@@ -107,34 +107,41 @@
           </div>
         </div>
         <slot name="datacube-description" v-if="isDescriptionView" />
-        <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
         <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
             class="scenario-header"
-            :outputVariable="'Crop production'"
+            :outputVariable="'production'"
             :outputVariableUnits="'tonnes'"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />
-          <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
         </header>
-        <timeseries-chart
-          v-if="!isDescriptionView"
-          class="timeseries-chart"
-          :timeseries-data="selectedTimeseriesData"
-          :selected-timestamp="selectedTimestamp"
-          @select-timestamp="emitTimestampSelection"
-        />
-        <data-analysis-map
-          v-if="!isDescriptionView"
-          class="card-map full-width"
-          :selection="mapSelectionObject"
-          :show-tooltip="true"
-          :selected-admin-level="selectedAdminLevel"
-          :selected-timestamp="selectedTimestamp"
-          @on-map-load="onMapLoad"
-        />
+        <div class="bookmark-capture" style="display: flex; flex-direction: column; flex: 1;">
+          <div style="display: flex; flex-direction: row;">
+            <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
+            <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
+          </div>
+          <timeseries-chart
+            v-if="!isDescriptionView"
+            class="timeseries-chart"
+            :timeseries-data="selectedTimeseriesData"
+            :selected-timestamp="selectedTimestamp"
+            @select-timestamp="emitTimestampSelection"
+          />
+          <div style="display: flex; flex-direction: row;">
+            <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
+          </div>
+          <data-analysis-map
+            v-if="!isDescriptionView"
+            class="card-map full-width"
+            :selection="mapSelectionObject"
+            :show-tooltip="true"
+            :selected-admin-level="selectedAdminLevel"
+            :selected-timestamp="selectedTimestamp"
+            @on-map-load="onMapLoad"
+          />
+        </div>
       </div>
     </div>
   </div>
@@ -148,12 +155,14 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ScenarioDef } from '@/types/Datacubes';
+import { ModelRunParameter, ScenarioDef } from '@/types/Datacubes';
 import { ScenarioData } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 import { colorFromIndex } from '@/utils/colors-util';
+import API from '@/api/api';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -188,6 +197,18 @@ export default defineComponent({
     selectedTimestamp: {
       type: Number,
       default: 0
+    },
+    selectedTemporalAggregation: {
+      type: String as PropType<string>,
+      default: 'sum'
+    },
+    selectedTemporalResolution: {
+      type: String as PropType<string>,
+      default: 'month'
+    },
+    selectedSpatialAggregation: {
+      type: String as PropType<string>,
+      default: 'sum'
     }
   },
   components: {
@@ -202,7 +223,9 @@ export default defineComponent({
     const {
       selectedModelId,
       selectedScenarioIds,
-      allScenarioIds
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation
     } = toRefs(props);
 
     const {
@@ -211,24 +234,42 @@ export default defineComponent({
     } = useTimeseriesData(
       selectedModelId,
       selectedScenarioIds,
-      colorFromIndex
+      colorFromIndex,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation
     );
+
+    const modelMetadata = useModelMetadata(selectedModelId);
+    // const modelMainOutputVariable = modelMetadata.value?.outputs[0];
 
     const {
       dimensions,
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues
-    } = useParallelCoordinatesData(selectedModelId, allScenarioIds);
+    } = useParallelCoordinatesData(selectedModelId);
 
     // FIXME: remove when data-analysis-map is rewritten
-    const mapSelectionObject = {
+    const mapSelectionObject = ref({
       modelId: props.selectedModelId,
       runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
       id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-      outputVariable: 'production',
+      outputVariable: 'prediction_cloglog',
       timestamp: props.selectedTimestamp
-    };
+    });
+
+    watch(() => props.selectedTimestamp, () => {
+      mapSelectionObject.value = {
+        modelId: props.selectedModelId,
+        runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
+        id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
+        outputVariable: 'prediction_cloglog',
+        timestamp: props.selectedTimestamp
+      };
+    }, {
+      immediate: true
+    });
 
     const isDescriptionView = ref<boolean>(true);
 
@@ -252,14 +293,18 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues,
-      isDescriptionView
+      isDescriptionView,
+      modelMetadata
+      // modelMainOutputVariable
     };
   },
   data: () => ({
     showBaselineDefaults: false,
     showNewRunsMode: false,
+    initialDataSelection: [] as Array<string>,
     potentialScenarioCount: 0,
-    isRelativeDropdownOpen: false
+    isRelativeDropdownOpen: false,
+    potentialScenarios: [] as Array<ScenarioData>
   }),
   methods: {
     onMapLoad() {
@@ -282,6 +327,19 @@ export default defineComponent({
     requestNewModelRuns() {
       // FIXME: cast to 'any' since typescript cannot see mixins yet!
       (this as any).toaster('New runs requested\nPlease check back later!');
+      const firstScenario = this.potentialScenarios[0]; // FIXME
+      const paramArray: ModelRunParameter[] = [];
+      Object.keys(firstScenario).forEach(key => {
+        paramArray.push({
+          name: key,
+          value: firstScenario[key].toString()
+        });
+      });
+      API.post('maas/model-runs', {
+        model_id: 'maxhop-v0.2', // FIXME
+        model_name: 'MaxHop',
+        parameters: paramArray
+      });
     },
     updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
       if (
@@ -299,6 +357,7 @@ export default defineComponent({
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
       this.potentialScenarioCount = e.scenarios.length;
+      this.potentialScenarios = e.scenarios;
     }
   }
 });

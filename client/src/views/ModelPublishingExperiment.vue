@@ -1,7 +1,11 @@
 <template>
   <div class="model-publishing-experiment-container">
     <div class="model-publishing-experiment-header">
-      <button class="accordion">
+      <button
+        class="accordion"
+        :class="{ 'active' : openPublishAccordion }"
+        @click="toggleAccordion($event)"
+      >
         Publish
         <i
           class="fa fa-fw"
@@ -10,15 +14,11 @@
       </button>
       <div class="accordion-panel">
         <model-publishing-checklist
+          v-if="openPublishAccordion"
           :publishingSteps="publishingSteps"
           :currentPublishingStep="currentPublishingStep"
           @navigate-to-publishing-step="showPublishingStep"
         />
-      </div>
-      <div
-        v-if="openNewBookmarkPane"
-        class="new-insight-popup">
-        <new-insight-popup @close-insight-popup="onCloseInsightPopup" />
       </div>
     </div>
     <main>
@@ -32,9 +32,12 @@
       :all-scenario-ids="allScenarioIds"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
+      :selected-temporal-aggregation="selectedTemporalAggregation"
+      :selected-temporal-resolution="selectedTemporalResolution"
+      :selected-spatial-aggregation="selectedSpatialAggregation"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
-      @set-drilldown-data="setDrilldownDimensions"
+      @set-drilldown-data="setDrilldownData"
       @check-model-metadata-validity="checkModelMetadataValidity"
     >
       <template v-slot:datacube-scenario-header>
@@ -49,14 +52,15 @@
         />
       </template>
       <template v-slot:temporal-aggregation-config>
-        <div class="temporal-aggregation">
+        <div class="aggregation">
           <button
             type="button"
             class="btn dropdown-btn"
+            :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
             @click="isTemporalAggregationDropdownOpen = !isTemporalAggregationDropdownOpen"
           >
             <div class="button-text">
-              Temporal aggregation: {{ selectedTemporalAggregation }}
+              Temporal aggregation: <span style="font-weight: bold">{{ selectedTemporalAggregation }}</span>
             </div>
             <i
               class="fa fa-fw fa-angle-down"
@@ -74,6 +78,70 @@
                 @click="handleTemporalAggregationSelection(tempAgg)"
               >
                 {{ tempAgg }}
+              </div>
+            </template>
+          </dropdown-control>
+        </div>
+      </template>
+      <template v-slot:temporal-resolution-config>
+        <div class="aggregation">
+          <button
+            type="button"
+            class="btn dropdown-btn"
+            :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
+            @click="isTemporalResolutionDropdownOpen = !isTemporalResolutionDropdownOpen"
+          >
+            <div class="button-text">
+              Temporal resolution: <span style="font-weight: bold">{{ selectedTemporalResolution }}</span>
+            </div>
+            <i
+              class="fa fa-fw fa-angle-down"
+            />
+          </button>
+          <dropdown-control
+            v-if="isTemporalResolutionDropdownOpen"
+            class="dropdown-control">
+            <template #content>
+              <div
+                v-for="tempRes in temporalResolutions"
+                :key="tempRes"
+                class="dropdown-option"
+                :class="{ 'dropdown-option-selected': selectedTemporalResolution === tempRes }"
+                @click="handleTemporalResolutionSelection(tempRes)"
+              >
+                {{ tempRes }}
+              </div>
+            </template>
+          </dropdown-control>
+        </div>
+      </template>
+      <template v-slot:spatial-aggregation-config>
+        <div class="aggregation">
+          <button
+            type="button"
+            class="btn dropdown-btn"
+            :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
+            @click="isSpatialAggregationDropdownOpen = !isSpatialAggregationDropdownOpen"
+          >
+            <div class="button-text">
+              Spatial aggregation: <span style="font-weight: bold">{{ selectedSpatialAggregation }}</span>
+            </div>
+            <i
+              class="fa fa-fw fa-angle-down"
+            />
+          </button>
+          <dropdown-control
+            v-if="isSpatialAggregationDropdownOpen"
+            class="dropdown-control">
+            <template #content>
+              <div
+                v-for="spatialAgg in spatialAggregations"
+                :key="spatialAgg"
+                class="dropdown-option"
+                :class="{ 'dropdown-option-selected': selectedSpatialAggregation === spatialAgg }"
+                @click="handleSpatialAggregationSelection(spatialAgg)"
+              >
+                {{ spatialAgg }}
               </div>
             </template>
           </dropdown-control>
@@ -112,9 +180,12 @@ import ModelPublishingChecklist from '@/components/widgets/model-publishing-chec
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { ModelPublishingStep } from '@/types/UseCase';
+import { ModelPublishingStepID } from '@/types/ModelPublishingTypes';
+import router from '@/router';
 import DropdownControl from '@/components/dropdown-control.vue';
-import NewInsightPopup from '@/components/bookmark-panel/new-insight-popup.vue';
 import { DimensionInfo } from '@/types/Model';
+import { getRandomNumber } from '../../tests/utils/random';
+import { mapGetters } from 'vuex';
 
 const DRILLDOWN_TABS = [
   {
@@ -134,19 +205,22 @@ export default defineComponent({
     DatacubeModelHeader,
     ModelPublishingChecklist,
     ModelDescription,
-    DropdownControl,
-    NewInsightPopup
+    DropdownControl
   },
-  emits: [
-    'check-model-metadata-validity'
-  ],
+  computed: {
+    ...mapGetters({
+      countBookmarks: 'bookmarkPanel/countBookmarks',
+      project: 'app/project'
+    })
+  },
   data: () => ({
-    publishingSteps: [] as ModelPublishingStep[],
-    currentPublishingStep: 0,
     temporalAggregations: [] as string[],
-    selectedTemporalAggregation: '',
     isTemporalAggregationDropdownOpen: false,
-    openNewBookmarkPane: false
+    temporalResolutions: [] as string[],
+    isTemporalResolutionDropdownOpen: false,
+    spatialAggregations: [] as string[],
+    isSpatialAggregationDropdownOpen: false,
+    initialBookmarkCount: -1
   }),
   setup() {
     const selectedAdminLevel = ref(2);
@@ -163,11 +237,30 @@ export default defineComponent({
     }
 
     const selectedTimestamp = ref(0);
-    function setSelectedTimestamp(value: number) {
-      selectedTimestamp.value = value;
-    }
 
     const openPublishAccordion = ref(false);
+
+    const publishingSteps = ref<ModelPublishingStep[]>([
+      {
+        id: ModelPublishingStepID.Enrich_Description,
+        text: 'Enrich your description',
+        completed: false
+      },
+      {
+        id: ModelPublishingStepID.Tweak_Visualization,
+        text: 'Tweak the visualization',
+        completed: false
+      },
+      {
+        id: ModelPublishingStepID.Capture_Insight,
+        text: 'Capture model insight',
+        completed: false
+      }
+    ]);
+    const currentPublishingStep = ref(ModelPublishingStepID.Enrich_Description);
+    const selectedTemporalAggregation = ref('');
+    const selectedTemporalResolution = ref('');
+    const selectedSpatialAggregation = ref('');
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -180,72 +273,133 @@ export default defineComponent({
       setSelectedScenarioIds,
       typeBreakdownData,
       selectedTimestamp,
-      setSelectedTimestamp,
-      openPublishAccordion
+      openPublishAccordion,
+      publishingSteps,
+      currentPublishingStep,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      selectedTemporalResolution
     };
   },
-  mounted(): void {
-    this.setupAccordion();
-    this.initPublishingSteps();
-    this.fetchAvailableAggregations();
+  watch: {
+    $route(/* to, from */) {
+      // react to route changes (either by clicking on a publishing step or on one of the insights)
+      const publishStepId = this.$route.query.step as any;
+      this.currentPublishingStep = publishStepId as ModelPublishingStepID;
 
-    // TODO: add support for saving multiple insight to track switching between them
-  },
-  methods: {
-    fetchAvailableAggregations() {
-      // TODO: add spatial aggregation
-      // TODO: add temporal resolution
-      // TODO: fetch actual available aggregations based on the pipeline support
-      // sum, avg, mean
-      // res: month, year
-      this.temporalAggregations.push('mean');
-      this.temporalAggregations.push('sum');
-      this.temporalAggregations.push('mean');
+      const timestamp = this.$route.query.timeStamp as any;
+      this.selectedTimestamp = timestamp;
+
+      const publishTemporalAggr = this.$route.query.temporalAggregation as any;
+      this.selectedTemporalAggregation = publishTemporalAggr;
+
+      const publishTemporalRes = this.$route.query.temporalResolution as any;
+      this.selectedTemporalResolution = publishTemporalRes;
+
+      const publishSpatialAggr = this.$route.query.spatialAggregation as any;
+      this.selectedSpatialAggregation = publishSpatialAggr;
+
+      if (this.allScenarioIds.length > 0) {
+        const selectedIds = this.currentPublishingStep !== ModelPublishingStepID.Enrich_Description ? [this.allScenarioIds[0]] : [];
+        this.setSelectedScenarioIds(selectedIds);
+      }
     },
-    initPublishingSteps() {
-      // add the checklist content here and the initial state of each
-      this.publishingSteps.push({
-        id: '0',
-        text: 'Enrich your description',
-        completed: false
-      });
-      this.publishingSteps.push({
-        id: '1',
-        text: 'Tweak the visualization',
-        completed: false
-      });
-      this.publishingSteps.push({
-        id: '2',
-        text: 'Capture model insight',
-        completed: false
-      });
-    },
-    updatePublishingStep(completed: boolean) {
-      this.publishingSteps[this.currentPublishingStep].completed = completed;
-    },
-    showPublishingStep(publishStepInfo: any) {
-      this.currentPublishingStep = publishStepInfo.publishStepIndex;
-      // FIXME: use enums instead of magic numbers
-      // BUG HERE: if step one is selected by default,
-      //  and temporal aggregation is changed (by clicking on the data tab) then step completed will be 1 instead of 2
-      if (this.currentPublishingStep === 2) {
-        this.openNewBookmarkPane = true;
-      } else {
-        if (this.allScenarioIds.length > 0) {
-          const selectedIds = this.currentPublishingStep !== 0 ? [this.allScenarioIds[0]] : [];
-          this.setSelectedScenarioIds(selectedIds);
+    countBookmarks: {
+      handler(/* newValue, oldValue */) {
+        if (this.initialBookmarkCount === -1) {
+          // save initial insights count
+          this.initialBookmarkCount = this.countBookmarks;
+        } else {
+          // initial insights count is valid and we have some update
+          // if the current insights count differ, then the user has saved some new insight(s)
+          if (this.initialBookmarkCount !== this.countBookmarks) {
+            // so mark this step as completed
+            this.currentPublishingStep = ModelPublishingStepID.Capture_Insight;
+            this.updatePublishingStep(true);
+          }
         }
       }
+    }
+  },
+  mounted(): void {
+    this.fetchAvailableAggregations();
+
+    // ensure the URL query params match initial publish step value
+    this.updateRouteParams();
+
+    // TODO: fix the issue of not selecting a default PC line when step 2 is active
+    // TODO: when new-runs-mode is active, clear the breakdown panel content
+
+    // TODO: add other viz options as per WG4 recent slides
+
+    // push to route
+    // const projectId = 'project-20c61e8e-31a9-46b4-aced-e84e2403380d';
+  },
+  methods: {
+    setSelectedTimestamp(value: number) {
+      this.selectedTimestamp = value;
+      this.updateRouteParams();
+    },
+    fetchAvailableAggregations() {
+      // TODO: fetch actual available aggregations based on the pipeline support
+
+      this.temporalResolutions.push('year');
+      this.temporalResolutions.push('month');
+
+      this.temporalAggregations.push('mean');
+      this.temporalAggregations.push('sum');
+
+      this.spatialAggregations.push('mean');
+      this.spatialAggregations.push('sum');
+    },
+    updatePublishingStep(completed: boolean) {
+      const currStep = this.publishingSteps.find(ps => ps.id === this.currentPublishingStep);
+      if (currStep) {
+        currStep.completed = completed;
+      }
+    },
+    showPublishingStep(publishStepInfo: {publishStep: ModelPublishingStep}) {
+      this.currentPublishingStep = publishStepInfo.publishStep.id;
+      this.openPublishAccordion = !this.openPublishAccordion;
+      this.updateRouteParams();
     },
     handleTemporalAggregationSelection(tempAgg: string) {
       this.selectedTemporalAggregation = tempAgg;
       this.isTemporalAggregationDropdownOpen = !this.isTemporalAggregationDropdownOpen;
-      this.updatePublishingStep(true);
+      this.checkStepForCompletenessAndUpdateRouteParams();
     },
-    setDrilldownDimensions(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      const getRandom = (min: number, max: number) => {
-        return Math.random() * (max - min) + min;
-      };
+    handleTemporalResolutionSelection(tempRes: string) {
+      this.selectedTemporalResolution = tempRes;
+      this.isTemporalResolutionDropdownOpen = !this.isTemporalResolutionDropdownOpen;
+      this.checkStepForCompletenessAndUpdateRouteParams();
+    },
+    handleSpatialAggregationSelection(spatialAgg: string) {
+      this.selectedSpatialAggregation = spatialAgg;
+      this.isSpatialAggregationDropdownOpen = !this.isSpatialAggregationDropdownOpen;
+      this.checkStepForCompletenessAndUpdateRouteParams();
+    },
+    checkStepForCompletenessAndUpdateRouteParams() {
+      // mark this step as complete
+      if (this.selectedSpatialAggregation !== '' &&
+          this.selectedTemporalAggregation !== '' &&
+          this.selectedTemporalResolution !== '') {
+        this.updatePublishingStep(true);
+      }
+      this.updateRouteParams();
+    },
+    updateRouteParams() {
+      // save the info in the query params so saved insights would pickup the latest value
+      router.push({
+        query: {
+          step: this.currentPublishingStep,
+          temporalAggregation: this.selectedTemporalAggregation,
+          temporalResolution: this.selectedTemporalResolution,
+          spatialAggregation: this.selectedSpatialAggregation,
+          timeStamp: this.selectedTimestamp
+        }
+      }).catch(() => {});
+    },
+    setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       this.typeBreakdownData.length = 0;
       e.drilldownDimensions.forEach(dd => {
         const drillDownChildren: Array<{name: string; value: number}> = [];
@@ -253,7 +407,7 @@ export default defineComponent({
         choices.forEach((c) => {
           drillDownChildren.push({
             name: c,
-            value: getRandom(0, 5000) // FIXME: pickup the actual breakdown aggregation from data
+            value: getRandomNumber(0, 5000) // FIXME: pickup the actual breakdown aggregation from data
           });
         });
         const breakdown = {
@@ -267,34 +421,18 @@ export default defineComponent({
         this.typeBreakdownData.push(breakdown);
       });
     },
-    checkModelMetadataValidity(info: any) {
+    checkModelMetadataValidity(info: { valid: boolean }) {
       this.updatePublishingStep(info.valid);
     },
-    onCloseInsightPopup(evnt: any) {
-      this.openNewBookmarkPane = false;
-      if (evnt.saved) {
-        // TODO: save insight
-        // mark this step as complete
-        this.updatePublishingStep(true);
-      }
-    },
-    setupAccordion() {
-      const acc = document.getElementsByClassName('accordion');
-      // eslint-disable-next-line @typescript-eslint/no-this-alias
-      const that = this;
-      for (let i = 0; i < acc.length; i++) {
-        acc[i].addEventListener('click', function(this: HTMLElement) {
-          that.openPublishAccordion = !that.openPublishAccordion;
-          this.classList.toggle('active');
-          const panel = this.nextElementSibling as HTMLElement;
-          if (panel) {
-            if (panel.style.display === 'block') {
-              panel.style.display = 'none';
-            } else {
-              panel.style.display = 'block';
-            }
-          }
-        });
+    toggleAccordion(event: any) {
+      this.openPublishAccordion = !this.openPublishAccordion;
+      const panel = event.target.nextElementSibling as HTMLElement;
+      if (panel) {
+        if (!this.openPublishAccordion) {
+          panel.style.display = 'none';
+        } else {
+          panel.style.display = 'block';
+        }
       }
     }
   }
@@ -311,10 +449,11 @@ export default defineComponent({
   overflow: hidden;
 }
 
-.temporal-aggregation {
-  flex: 1;
+.aggregation {
   min-width: 0;
   padding-top: 5px;
+  margin-left: 10px;
+  align-self: center;
 
   .dropdown-control {
     position: absolute;
@@ -329,6 +468,8 @@ export default defineComponent({
     display: flex;
     align-items: center;
     font-weight: normal;
+    padding: 4px 4px;
+    border:1px solid gray;
 
     .button-text {
       flex: 1;
@@ -373,6 +514,10 @@ main {
 .model-publishing-experiment-header {
   flex-direction: row;
   margin: auto;
+}
+
+.attribute-invalid {
+  border:1px solid red !important;
 }
 
 /* Style the buttons that are used to open and close the accordion panel */

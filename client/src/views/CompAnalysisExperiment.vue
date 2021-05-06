@@ -74,7 +74,7 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
+import MAXHOP from '@/assets/MAXHOP.js';
 import { computed, defineComponent, ref } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
@@ -84,6 +84,7 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
+import useScenarioData from '@/services/composables/useScenarioData';
 
 const DRILLDOWN_TABS = [
   {
@@ -113,8 +114,13 @@ export default defineComponent({
     const typeBreakdownData: LegacyBreakdownDataStructure[] = [];
     const isExpanded = true;
 
-    const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
-    const selectedScenarioIds = ref([allScenarioIds[0]]);
+    const modelId = ref(MAXHOP.modelId);
+
+    // FIXME: use endpoint to fetch IDs
+    const allModelRunData = useScenarioData(modelId);
+
+    const allScenarioIds = allModelRunData.value.map(run => run.id);
+    const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
       selectedScenarioIds.value = newIds;
     }
@@ -131,7 +137,7 @@ export default defineComponent({
       activeDrilldownTab: 'breakdown',
       selectedAdminLevel,
       setSelectedAdminLevel,
-      selectedModelId: DSSAT_PRODUCTION_DATA.modelId,
+      selectedModelId: modelId,
       allScenarioIds,
       selectedScenarioIds,
       setSelectedScenarioIds,

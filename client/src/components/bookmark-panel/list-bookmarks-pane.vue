@@ -166,10 +166,10 @@ export default {
       this.selectedBookmark = bookmark;
       // Restore the state
       const savedURL = bookmark.url;
-      const currentURL = this.$route.fullPath;
-      if (savedURL !== currentURL) {
-        this.$router.push(savedURL);
-      }
+      // const currentURL = this.$route.fullPath;
+      // if (savedURL !== currentURL) {
+      this.$router.push(savedURL);
+      // }
     },
     deleteBookmark(id) {
       API.delete(`bookmarks/${id}`).then(result => {

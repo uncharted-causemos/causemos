@@ -79,8 +79,10 @@ export default defineComponent({
       this.render(sz.width, sz.height);
     },
     initialDataSelection(): void {
-      const sz = this.getDefaultSize;
-      this.render(sz.width, sz.height);
+      if (!this.newRunsMode) {
+        const sz = this.getDefaultSize;
+        this.render(sz.width, sz.height);
+      }
     }
   },
   mounted(): void {

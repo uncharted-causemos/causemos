@@ -27,26 +27,9 @@ export interface ModelRun {
   data_paths: string[];
   pre_gen_output_paths: string[];
   is_default_run: boolean;
-  status: string,
+  status: string;
   tags: string[];
   parameters: ModelRunParameter[];
-}
-
-// New Datacube metadata
-export interface Cube {
-  id: string;
-  description: string;
-  name: string;
-  created: string;
-  job_id: string;
-  model_id: string;
-  data_paths: string[];
-  pre_gen_output_paths: string[];
-  default_run: boolean;
-  tags: string[];
-  geography: ModelGeography;
-  periods: Period[];
-  parameters: CubeParameter[];
 }
 
 // OLD datacube metadata

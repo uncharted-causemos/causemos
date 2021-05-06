@@ -21,6 +21,7 @@
 
 <script lang="ts">
 import API from '@/api/api';
+import _ from 'lodash';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
 
 interface ParameterValue {
@@ -95,8 +96,11 @@ export default defineComponent({
         })
       );
       const allMetadata = (await Promise.all(promises)).map(metadata =>
-        JSON.parse(metadata.data)
+        _.isEmpty(metadata.data) ? {} : JSON.parse(metadata.data)
       );
+      if (_.some(allMetadata, metadata => _.isEmpty(metadata))) {
+        return [];
+      }
       scenarioDescriptions.value = allMetadata.map(scenarioMetadata => {
         return scenarioMetadata.parameters;
       });

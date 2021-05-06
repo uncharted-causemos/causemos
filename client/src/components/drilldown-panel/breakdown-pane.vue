@@ -189,9 +189,13 @@ export default defineComponent({
           }
         })
       );
-      rawRegionalData.value = (await Promise.all(promises)).map(response =>
-        JSON.parse(response.data)
+      const allRegionalData = (await Promise.all(promises)).map(response =>
+        _.isEmpty(response.data) ? {} : JSON.parse(response.data)
       );
+      if (_.some(allRegionalData, response => _.isEmpty(response))) {
+        return;
+      }
+      rawRegionalData.value = allRegionalData;
     }
 
     const regionalData = computed(() => {

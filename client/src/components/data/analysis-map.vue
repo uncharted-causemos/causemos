@@ -185,7 +185,7 @@ export default {
           .filter(({ id, modelId, runId, outputVariable, timestamp }) => {
             // some models (eb. chirps) has timestamp as 0 for some reason and 0 should be treated as valid value
             // eg. {"timeseries":[{"timestamp":0,"value":-0.24032641113384878}]}
-            return id && modelId && runId && outputVariable && !_.isNil(timestamp);
+            return id && modelId && runId && outputVariable !== '' && !_.isNil(timestamp);
           })
           .map(select => {
             const modelName = select.model || '';
@@ -324,9 +324,12 @@ export default {
         }
       }));
 
-      const allRegionalData = (await Promise.all(promises)).map(response => {
-        return JSON.parse(response.data);
-      });
+      const allRegionalData = (await Promise.all(promises)).map(response =>
+        _.isEmpty(response.data) ? {} : JSON.parse(response.data)
+      );
+      if (_.some(allRegionalData, response => _.isEmpty(response))) {
+        return;
+      }
 
       this.selectedData = allRegionalData[0];
       this.setFeatureStates();
@@ -348,9 +351,9 @@ export default {
 
       if (this.selectedData !== undefined && this.selectedData[adminLevel] !== undefined && this.selectedData[adminLevel][this.selectedTimestamp] !== undefined) {
         this.selectedData[adminLevel][this.selectedTimestamp].forEach(row => {
-          this.featuresDrawn.push(row.id.replaceAll('_', '-'));
+          this.featuresDrawn.push(row.id.replaceAll('_', '__'));
           this.map.setFeatureState({
-            id: row.id.replaceAll('_', '-'),
+            id: row.id.replaceAll('_', '__'),
             source: this.vectorSourceId,
             sourceLayer: this.vectorSourceLayer
           }, {

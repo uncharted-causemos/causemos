@@ -1,4 +1,6 @@
 
+import ModelPublishingStepID from './ModelPublishingTypes';
+
 export interface SnapshotInsightDetails {
   name: string;
   description: string;
@@ -20,7 +22,7 @@ export interface UseCase {
 }
 
 export interface ModelPublishingStep {
-  id: string;
+  id: ModelPublishingStepID;
   completed: boolean;
   text: string;
 }
