@@ -44,7 +44,7 @@ export default function useTimeseriesData(
           params: {
             model_id: modelId.value,
             run_id: runId,
-            feature: 'prediction_cloglog', // "prediction_cloglog" // production
+            feature: 'Probability of presence of locust hoppers', // "Probability of presence of locust hoppers" // production
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg
