@@ -112,7 +112,7 @@
         <div v-if="selectedNode !== null">
           <div>
             Are you sure you want to remove
-            <strong>{{ shortName(selectedNode.concept) }}</strong> from your CAG?
+            <strong>{{ conceptLabel(selectedNode.concept) }}</strong> from your CAG?
           </div>
           <ul>
             <li>{{ countIncomingRelationships }} incoming relationship(s)</li>
@@ -122,8 +122,8 @@
         </div>
         <div v-if="selectedEdge !== null">
           <div>Are you sure you want to remove the relationship between</div>
-          <strong>{{ shortName(selectedEdge.source) }}</strong> and
-          <strong>{{ shortName(selectedEdge.target) }}</strong> from this CAG?
+          <strong>{{ conceptLabel(selectedEdge.source) }}</strong> and
+          <strong>{{ conceptLabel(selectedEdge.target) }}</strong> from this CAG?
         </div>
       </template>
     </modal-confirmation>
@@ -160,7 +160,7 @@ import FactorsPane from '@/components/drilldown-panel/factors-pane';
 import NodeSuggestionsPane from '@/components/drilldown-panel/node-suggestions-pane';
 import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-recommendations-pane';
 
-import { conceptShortName } from '@/utils/concept-util';
+import { conceptHumanName } from '@/utils/concept-util';
 import filtersUtil from '@/utils/filters-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import ModalPathFind from '@/components/modals/modal-path-find';
@@ -247,8 +247,12 @@ export default {
     ...mapGetters({
       currentCAG: 'app/currentCAG',
       project: 'app/project',
-      updateToken: 'app/updateToken'
+      updateToken: 'app/updateToken',
+      ontologySet: 'app/ontologySet'
     }),
+    // ontologySet() {
+    //   return new Set(this.ontologyConcepts.map(d => _.last(d.split('/'))));
+    // },
     showEmptyStateInstructions() {
       return _.isEmpty(this.modelComponents.nodes) &&
           _.isEmpty(this.modelComponents.edges) &&
@@ -320,8 +324,8 @@ export default {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken'
     }),
-    shortName(concept) {
-      return conceptShortName(concept + '');
+    conceptLabel(concept) {
+      return conceptHumanName(concept, this.ontologySet);
     },
     async refresh() {
       // Get CAG data
@@ -351,7 +355,7 @@ export default {
           this.setUpdateToken(data.updateToken);
         }
       } else {
-        this.toaster(conceptShortName(edge.source) + ' ' + conceptShortName(edge.target) + ' already exists in the CAG', 'error', false);
+        this.toaster(this.conceptLabel(edge.source) + ' ' + this.conceptLabel(edge.target) + ' already exists in the CAG', 'error', false);
       }
     },
     createNewNode() {
@@ -381,14 +385,14 @@ export default {
     },
     addNodeToGraph(suggestion) {
       if (this.isConceptInCag(suggestion.concept)) {
-        this.showConceptExistsToaster(suggestion.shortName);
+        this.showConceptExistsToaster(suggestion.label);
         return;
       }
       const graphData = _.clone(this.modelComponents);
       const node = {
         id: (new Date()).getTime().toString(),
         concept: suggestion.concept,
-        label: suggestion.shortName
+        label: suggestion.label
       };
       graphData.nodes.push(node);
       this.modelComponents = graphData;
@@ -718,7 +722,7 @@ export default {
       const newNodesPayload = newNodes.map(concept => {
         return {
           concept: concept,
-          label: conceptShortName(concept)
+          label: this.conceptLabel(concept)
         };
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges);

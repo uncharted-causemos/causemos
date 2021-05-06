@@ -7,8 +7,8 @@
     </template>
     <template #body>
       <p>
-        There is no evidence to support the edge <strong>{{ conceptShortName(source) }}</strong>
-        to <strong>{{ conceptShortName(target) }}</strong>. You can still use it, or select from the indirect paths listed below.
+        There is no evidence to support the edge <strong>{{ conceptHumanName(source, ontologySet) }}</strong>
+        to <strong>{{ conceptHumanName(target, ontologySet) }}</strong>. You can still use it, or select from the indirect paths listed below.
       </p>
       <div>
         <div v-if="suggestions.length === 0">
@@ -22,7 +22,7 @@
             class="fa fa-fw fa-check-square-o"
             :class="{'fa-square-o': path.selected === false, 'fa-check-square-o': path.selected === true}"
           />
-          {{ path.map(conceptShortName).join(" > ") }}
+          {{ path.map(d => conceptHumanName(d, ontologySet)).join(" > ") }}
           <hr v-if="idx === 0">
         </div>
       </div>
@@ -50,7 +50,7 @@ import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import Modal from '@/components/modals/modal';
 import suggestionService from '@/services/suggestion-service';
-import { conceptShortName } from '@/utils/concept-util';
+import { conceptHumanName } from '@/utils/concept-util';
 
 export default {
   name: 'ModalPathFind',
@@ -74,14 +74,15 @@ export default {
     suggestions: []
   }),
   computed: {
+    ...mapGetters({
+      project: 'app/project',
+      ontologySet: 'app/ontologySet'
+    }),
     hasSelection() {
       return this.suggestions.reduce((a, s) => {
         return a || s.selected === true;
       }, false);
-    },
-    ...mapGetters({
-      project: 'app/project'
-    })
+    }
   },
   mounted() {
     this.refresh();
@@ -120,7 +121,7 @@ export default {
       path.selected = !path.selected;
       this.suggestions = _.clone(this.suggestions);
     },
-    conceptShortName
+    conceptHumanName
   }
 };
 </script>

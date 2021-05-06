@@ -23,7 +23,7 @@
           @mouseenter="mouseEnter(index)"
           @mouseleave="mouseLeave(index)"
         >
-          {{ suggestion.shortName }}
+          {{ suggestion.label }}
         </div>
       </template>
     </dropdown-control>
@@ -35,6 +35,7 @@ import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import DropdownControl from '@/components/dropdown-control';
 import modelService from '@/services/model-service';
+import conceptUtil from '@/utils/concept-util';
 
 const CONCEPT_SUGGESTION_COUNT = 8;
 
@@ -61,6 +62,7 @@ export default {
   computed: {
     ...mapGetters({
       ontologyConcepts: 'app/ontologyConcepts',
+      ontologySet: 'app/ontologySet',
       project: 'app/project'
     })
   },
@@ -131,6 +133,10 @@ export default {
           this.project, this.userInput, this.ontologyConcepts);
         this.suggestions = allSuggestions.filter(this.conceptNotInCag)
           .slice(0, CONCEPT_SUGGESTION_COUNT);
+
+        this.suggestions.forEach(suggestion => {
+          suggestion.label = conceptUtil.conceptHumanName(suggestion.concept, this.ontologySet);
+        });
       }
     }, 500, { trailing: true, leading: false })
   }
@@ -161,7 +167,7 @@ export default {
 
 .suggestion-dropdown {
   top: 3px; /* Don't overlap border */
-  width: 20vw;
+  width: 25vw;
 }
 
 .dropdown-option {
