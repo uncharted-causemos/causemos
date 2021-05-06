@@ -25,6 +25,9 @@ const RESOURCE = Object.freeze({
   EDGE_PARAMETER: 'edge-parameter',
   SCENARIO: 'scenario',
 
+  // MAAS data
+  DATA_MODEL_RUN: 'data-model-run',
+
   // Misc
   AUDIT: 'audit',
   BOOKMARK: 'bookmark',
