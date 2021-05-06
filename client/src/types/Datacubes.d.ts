@@ -1,6 +1,4 @@
 
-import { ModelGeography } from './Common';
-
 export interface Period {
   gte: string;
   lte: string;

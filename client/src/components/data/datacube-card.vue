@@ -256,7 +256,7 @@ export default defineComponent({
       modelId: props.selectedModelId,
       runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
       id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-      outputVariable: 'prediction_cloglog',
+      outputVariable: 'Probability of presence of locust hoppers',
       timestamp: props.selectedTimestamp
     }]);
 
@@ -265,7 +265,7 @@ export default defineComponent({
         modelId: props.selectedModelId,
         runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
         id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-        outputVariable: 'prediction_cloglog',
+        outputVariable: 'Probability of presence of locust hoppers',
         timestamp: props.selectedTimestamp
       }];
     }, {
