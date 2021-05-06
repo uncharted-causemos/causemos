@@ -650,7 +650,7 @@ function renderParallelCoordinates(
           const getMarkerValueFromPos = (pos: number) => {
             const xScale = getXScaleFromMap(dimName);
             // Normally we go from data to pixels, but here we're doing pixels to data
-            return numberFloatFormat((xScale as D3ScaleLinear).invert(pos));
+            return (xScale as D3ScaleLinear).invert(pos).toFixed(2);
           };
           gElement
             .append('rect')
