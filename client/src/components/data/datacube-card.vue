@@ -135,7 +135,8 @@
           <data-analysis-map
             v-if="!isDescriptionView"
             class="card-map full-width"
-            :selection="mapSelectionObject"
+            :output-source-specs="outputSourceSpecs"
+            :selection="outputSourceSpecs"
             :show-tooltip="true"
             :selected-admin-level="selectedAdminLevel"
             :selected-timestamp="selectedTimestamp"
@@ -157,7 +158,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ModelRunParameter, ScenarioDef } from '@/types/Datacubes';
 import { ScenarioData } from '@/types/Common';
-import DataAnalysisMap from '@/components/data/analysis-map.vue';
+import DataAnalysisMap from '@/components/data/analysis-map-new.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -251,22 +252,22 @@ export default defineComponent({
     } = useParallelCoordinatesData(selectedModelId);
 
     // FIXME: remove when data-analysis-map is rewritten
-    const mapSelectionObject = ref({
+    const outputSourceSpecs = ref([{
       modelId: props.selectedModelId,
       runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
       id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
       outputVariable: 'prediction_cloglog',
       timestamp: props.selectedTimestamp
-    });
+    }]);
 
     watch(() => props.selectedTimestamp, () => {
-      mapSelectionObject.value = {
+      outputSourceSpecs.value = [{
         modelId: props.selectedModelId,
         runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
         id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
         outputVariable: 'prediction_cloglog',
         timestamp: props.selectedTimestamp
-      };
+      }];
     }, {
       immediate: true
     });
@@ -285,7 +286,7 @@ export default defineComponent({
     }
     return {
       selectedTimeseriesData,
-      mapSelectionObject,
+      outputSourceSpecs,
       colorFromIndex,
       emitTimestampSelection,
       relativeTo,
