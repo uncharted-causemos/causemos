@@ -160,7 +160,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ModelRunParameter, ScenarioDef } from '@/types/Datacubes';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
-import DataAnalysisMap from '@/components/data/analysis-map-new.vue';
+import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
