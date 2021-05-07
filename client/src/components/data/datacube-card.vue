@@ -140,7 +140,9 @@
             :output-selection=0
             :show-tooltip="true"
             :selected-admin-level="selectedAdminLevel"
+            :filters="mapFilters"
             @on-map-load="onMapLoad"
+            @slide-handle-change="onMapSlideChange"
           />
         </div>
       </div>
@@ -157,7 +159,7 @@ import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ModelRunParameter, ScenarioDef } from '@/types/Datacubes';
-import { ScenarioData } from '@/types/Common';
+import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-new.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
@@ -306,11 +308,15 @@ export default defineComponent({
     initialDataSelection: [] as Array<string>,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
-    potentialScenarios: [] as Array<ScenarioData>
+    potentialScenarios: [] as Array<ScenarioData>,
+    mapFilters: [] as Array<AnalysisMapFilter>
   }),
   methods: {
     onMapLoad() {
       this.$emit('on-map-load');
+    },
+    onMapSlideChange(data: AnalysisMapFilter) {
+      this.mapFilters = [data];
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;

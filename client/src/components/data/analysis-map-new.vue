@@ -65,7 +65,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
 
 // Map filter animation fps rate (Use lower value if there's a performance issue)
-const FILTER_ANIMATION_FPS = 15;
+const FILTER_ANIMATION_FPS = 5;
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -130,6 +130,10 @@ export default {
       type: Number,
       default: 0
     },
+    filters: {
+      type: Array,
+      default: () => []
+    },
     mapBounds: {
       type: Array,
       default: () => [ // Default bounds to Ethiopia
@@ -146,8 +150,7 @@ export default {
     range: undefined,
     featuresDrawn: undefined,
     map: undefined,
-    selectedLayer: undefined,
-    filters: []
+    selectedLayer: undefined
   }),
   computed: {
     selection() {
@@ -392,11 +395,7 @@ export default {
     },
     updateFilterRange: _.throttle(function () {
       if (!this.range || !this.valueProp) return;
-      console.log(this.range);
-      this.filters = [{
-        id: this.valueProp,
-        range: this.range
-      }];
+      this.$emit('slide-handle-change', { id: this.valueProp, range: this.range });
     }, 1000 / FILTER_ANIMATION_FPS)
   }
 };
