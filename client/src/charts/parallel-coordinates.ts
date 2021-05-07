@@ -9,6 +9,7 @@ import { ScenarioData } from '@/types/Common';
 import { DimensionInfo } from '@/types/Model';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
+import _ from 'lodash';
 
 // TODO: use each axis min/max based on the metadata
 
@@ -132,7 +133,8 @@ function renderParallelCoordinates(
   dimensions = filterDrilldownDimensionData(dimensions);
 
   // process data and detect data type for each dimension
-  pcTypes = detectDimensionTypes(data[0]);
+  const idealRow = _.maxBy(data, (d) => Object.keys(d).length);
+  pcTypes = detectDimensionTypes(idealRow ?? data[0]);
 
   //
   // scales

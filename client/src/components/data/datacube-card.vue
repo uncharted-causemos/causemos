@@ -35,7 +35,6 @@
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
           :ordinal-dimensions="ordinalDimensionNames"
-          :initial-data-selection="isDescriptionView ? [] : initialDataSelection"
           :show-baseline-defaults="showBaselineDefaults"
           :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
@@ -280,7 +279,7 @@ export default defineComponent({
         id: selectedScenarioIds.value[0],
         modelId: selectedModelId.value,
         runId: selectedScenarioIds.value[0], // we may not have a selected run at this point, so init map with the first run by default
-        outputVariable: 'Probability of presence of locust hoppers',
+        outputVariable: 'Hopper Presence Prediction',
         timestamp: selectedTimestamp.value,
         temporalResolution: selectedTemporalResolution.value,
         temporalAggregation: selectedTemporalAggregation.value,
@@ -344,7 +343,7 @@ export default defineComponent({
         });
       });
       API.post('maas/model-runs', {
-        model_id: 'maxhop-v0.2', // FIXME
+        model_id: this.selectedModelId,
         model_name: 'MaxHop',
         parameters: paramArray
       });

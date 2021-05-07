@@ -35,9 +35,11 @@ export default function useParallelCoordinatesData(
       const runStatus = allModelRunData.value[runIndex].status;
       const run: ScenarioData = {
         run_id,
-        status: runStatus ?? 'READY',
-        [outputParameterName]: OUTPUT_AGGREGATIONS[run_id] ?? getRandomNumber(0, 1)
+        status: runStatus ?? 'READY'
       };
+      if (runStatus === 'READY') {
+        run[outputParameterName] = OUTPUT_AGGREGATIONS[run_id] ?? getRandomNumber(0, 1);
+      }
       modelRun.parameters.forEach(({ name, value }) => {
         run[name ?? 'undefined'] = value;
       });
