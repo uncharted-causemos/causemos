@@ -42,11 +42,11 @@ const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
 const lineStrokeWidthHover = 3;
 const lineOpacityVisible = 1;
-const lineOpacityHidden = 0.1;
+const lineOpacityHidden = 0.25;
 
 // line styling in new-runs mode
 const lineStrokeWidthNewRunsMode = 1.5;
-const lineOpacityNewRunsModeContext = 0.04;
+const lineOpacityNewRunsModeContext = 0.05;
 
 // hover styling
 const highlightDuration = 50; // in milliseconds
@@ -252,9 +252,12 @@ function renderParallelCoordinates(
 
     // when drawing lines, exclude the last segment to the output variable
     //  if the drawn lines are for potentially new scenarios (i.e., within the new-runs mode)
-    const dimensionSet = options.newRunsMode ? dimensions.filter(function(d) { return d.is_output !== undefined ? !d.is_output : d.type !== 'output'; }) : dimensions;
+    const dimensionSet: Array<DimensionInfo> = options.newRunsMode ? dimensions.filter(function(d) { return d.is_output !== undefined ? !d.is_output : d.type !== 'output'; }) : dimensions;
 
-    const fn = dimensionSet.map(function(p: DimensionInfo) {
+    // some data lines are missing certain dimensions, e.g., in-progress lines would not have output value yet!
+    const dataDrivenDimensionSet = dimensionSet.filter(dim => d[dim.name] !== undefined);
+
+    const fn = dataDrivenDimensionSet.map(function(p: DimensionInfo) {
       const dimName = p.name;
       const scaleX = getXScaleFromMap(dimName);
       const val = d[dimName];
@@ -582,6 +585,9 @@ function renderParallelCoordinates(
         if (pcTypes[dimName] === 'number') {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
+        }
+        if (formattedValue === 'NaN') {
+          formattedValue = '';
         }
         const renderedText = d3.select(this);
         renderedText
