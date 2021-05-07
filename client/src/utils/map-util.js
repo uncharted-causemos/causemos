@@ -170,9 +170,9 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
         'case',
         ['==', null, ['feature-state', property]],
         0.0,
-        ['<=', ['feature-state', property], filterDomain.min],
+        ['<', ['feature-state', property], filterDomain.min],
         0.0,
-        ['>=', ['feature-state', property], filterDomain.max],
+        ['>', ['feature-state', property], filterDomain.max],
         0.0,
         ['boolean', ['feature-state', 'hover'], false],
         0.8, // opacity to 1 on hover
