@@ -5,11 +5,11 @@
     :current-tab-name="currentTab"
     @set-active="setActive"
   >
-    <div v-if="currentTab === 'Data Cube Facets'">
+    <div v-if="currentTab === 'Data Cube Facets'" class="facet-panel-list">
       <div v-for="facet in facets" :key="facet.label">
         <categorical-facet
           key="facet.label"
-          :facet="facet.label"
+          :facet="facet.id"
           :label="facet.label"
           :base-data="facet.values"
           :selected-data="facet.values"
@@ -44,6 +44,26 @@ const FACET_GROUPS = {
   'Data Cube Facets': []
 };
 
+const COLUMN_BLACKLIST = [
+  'id',
+  'model_id',
+  'label',
+  'type',
+  'model_description',
+  'output_description',
+  'output_units_description',
+  'parameter_descriptions'
+];
+
+const DISPLAY_NAMES = {
+  category: 'Category',
+  maintainer: 'Maintainer',
+  model: 'Output Variable',
+  output_name: 'Output Units',
+  output_units: 'Output Units',
+  parameters: 'Input Knobs',
+  source: 'Source'
+};
 
 export default {
   name: 'DataExplorerFacetsPanel',
@@ -84,7 +104,8 @@ export default {
     }),
     facets() {
       let keys = this.datacubes?.length > 0 ? Object.keys(this.datacubes[0]) : [];
-      keys = keys.filter((k) => ['id', 'model_id', 'label', 'type'].indexOf(k) < 0);
+      keys = keys.filter((k) => COLUMN_BLACKLIST.indexOf(k) < 0);
+      keys.sort();
       const columns = keys.reduce((a, k) => {
         a[k] = {
           label: k,
@@ -113,11 +134,11 @@ export default {
           };
         });
         return {
-          label: k,
+          id: k,
+          label: DISPLAY_NAMES[k] || k,
           values
         };
       }).filter((f) => f.values.length > 0);
-      console.table(facetList);
       return facetList;
     }
   },
@@ -225,5 +246,8 @@ export default {
   @import "~styles/variables";
   .facet-panel-container {
     margin-top: 5px;
+  }
+  .facet-panel-list {
+    padding-bottom: 10rem;
   }
 </style>

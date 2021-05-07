@@ -160,7 +160,7 @@ export default {
         case 0:
           return FACET_DEFAULT_SIZE;
         case 1:
-          return 20;
+          return this.baseData.length < 20 ? this.baseData.length : 20;
         case 2:
         default:
           return this.baseData.length;
