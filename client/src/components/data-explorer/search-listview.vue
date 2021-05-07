@@ -1,5 +1,6 @@
 <template>
   <div class="search-listview-container h-100">
+
     <div class="table-fixed-head h-100">
       <table>
         <thead>
@@ -38,7 +39,9 @@
               <div> {{ formatTimeStep(d) }} </div>
             </td>
             <td class="timeseries-col">
-              <div class="timeseries-container" />
+              <div class="timeseries-container">
+                <sparkline :data="formatTimeSeries(d)" />
+              </div>
             </td>
           </tr>
         </tbody>
@@ -49,54 +52,30 @@
 
 <script>
 
-import _ from 'lodash';
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
-import filtersUtil from '@/utils/filters-util';
-import { getDatacubes } from '@/services/datacube-service';
+import Sparkline from '@/components/widgets/charts/sparkline';
 
 const MAX_SELECTION = 6;
 export default {
   name: 'SearchListview',
   components: {
+    Sparkline
   },
-  data: () => ({
-    datacubes: []
-  }),
+  props: {
+    datacubes: Array
+  },
   computed: {
     ...mapGetters({
       selectedDatacubes: 'dataSearch/selectedDatacubes',
       filters: 'dataSearch/filters'
     })
   },
-  watch: {
-    filters(n, o) {
-      if (filtersUtil.isEqual(n, o)) return;
-      this.refresh();
-    }
-  },
-  mounted() {
-    this.refresh();
-  },
   methods: {
     ...mapActions({
-      enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay',
-      setSearchResultsCount: 'dataSearch/setSearchResultsCount',
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
-    async refresh() {
-      await this.fetchDatacubes();
-    },
-    async fetchDatacubes() {
-      this.enableOverlay();
-      const filters = _.cloneDeep(this.filters);
-      filtersUtil.setClause(filters, 'type', ['model'], 'or', false);
-      this.datacubes = await getDatacubes(filters);
-      this.datacubes.forEach(item => (item.isAvailable = true));
-      this.setSearchResultsCount(this.datacubes.length);
-      this.disableOverlay();
-    },
+
     isSelected(datacube) {
       return this.selectedDatacubes.find(dId => dId === datacube.id) !== undefined;
     },
@@ -125,6 +104,16 @@ export default {
     },
     formatTimeStep() {
       return 'monthly';
+    },
+    formatTimeSeries(cubeRow) {
+      const sparklineData = [{ series: [] }];
+      if (cubeRow.timeseries) {
+        sparklineData[0].series = cubeRow.timeseries;
+      } else {
+        // mock data, temporary
+        sparklineData[0].series = Array.from({ length: 10 }, () => Math.floor(Math.random() * 10));
+      }
+      return sparklineData;
     },
     formatPeriod({ period = [] }) {
       // Grab min and max date from the list of date ranges and format in start year - end year form.

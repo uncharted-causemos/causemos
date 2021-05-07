@@ -41,7 +41,7 @@ const createBookmark = async (projectId, title, description, view, url, thumbnai
  */
 const getAllBookmarks = async (projectId) => {
   const bookmarksConnection = Adapter.get(RESOURCE.BOOKMARK);
-  const results = await bookmarksConnection.find([{ field: 'project_id', value: projectId }], {});
+  const results = await bookmarksConnection.find([{ field: 'project_id', value: projectId }], { size: 50 });
   return results;
 };
 

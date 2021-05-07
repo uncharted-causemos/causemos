@@ -16,7 +16,7 @@
         />
         <div class="tab-content flex-grow-1 h-0">
           <div class="tab-pane active h-100">
-            <search-listview />
+            <search-listview :datacubes="datacubes"/>
           </div>
         </div>
       </div>
@@ -51,6 +51,9 @@ export default {
       // }
     ]
   }),
+  props: {
+    datacubes: Array
+  },
   computed: {
     ...mapGetters({
       filters: 'dataSearch/filters',

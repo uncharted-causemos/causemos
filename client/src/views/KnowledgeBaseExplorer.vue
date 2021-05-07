@@ -6,7 +6,7 @@
       @add-to-CAG="onAddToCAG"
     />
     <div class="body flex">
-      <facets-panel />
+      <knowledge-facets-panel />
 
       <!-- body -->
       <div class="body-main-content flex-col">
@@ -90,7 +90,7 @@ import { mapActions, mapGetters } from 'vuex';
 import ModalHeader from '../components/kb-explorer/modal-header.vue';
 import SearchBar from '@/components/kb-explorer/search-bar';
 import TabPanel from '@/components/kb-explorer/tab-panel';
-import FacetsPanel from '@/components/facets-panel/facets-panel';
+import KnowledgeFacetsPanel from '@/components/facets-panel/knowledge-facets-panel';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
 import MultiRelationshipsPane from '@/components/drilldown-panel/multi-relationships-pane';
@@ -146,7 +146,7 @@ export default {
   name: 'KnowledgeBaseExplorer',
   components: {
     SearchBar,
-    FacetsPanel,
+    KnowledgeFacetsPanel,
     TabPanel,
     DrilldownPanel,
     EvidencePane,
