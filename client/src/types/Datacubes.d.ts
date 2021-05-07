@@ -57,13 +57,13 @@ export interface Datacube {
 }
 
 export interface RegionalData {
-  country?: { [timestamp: string]: { id: string; value: number }[] };
-  admin1?: { [timestamp: string]: { id: string; value: number }[] };
-  admin2?: { [timestamp: string]: { id: string; value: number }[] };
-  admin3?: { [timestamp: string]: { id: string; value: number }[] };
-  admin4?: { [timestamp: string]: { id: string; value: number }[] };
-  admin5?: { [timestamp: string]: { id: string; value: number }[] };
-  admin6?: { [timestamp: string]: { id: string; value: number }[] };
+  country?: { id: string; value: number }[];
+  admin1?: { id: string; value: number }[];
+  admin2?: { id: string; value: number }[];
+  admin3?: { id: string; value: number }[];
+  admin4?: { id: string; value: number }[];
+  admin5?: { id: string; value: number }[];
+  admin6?: { id: string; value: number }[];
 }
 
 export interface ScenarioDef {

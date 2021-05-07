@@ -181,16 +181,20 @@ export default defineComponent({
         return;
       }
       const promises = props.selectedScenarioIds.map(scenarioId =>
-        API.get('fetch-demo-data', {
+        API.get('/maas/output/regional-data', {
           params: {
-            modelId: props.selectedModelId,
-            runId: scenarioId,
-            type: 'regional-data'
+            model_id: props.selectedModelId,
+            run_id: scenarioId,
+            feature: 'Hopper Presence Prediction',
+            resolution: 'month',
+            temporal_agg: 'mean',
+            spatial_agg: 'mean',
+            timestamp: props.selectedTimestamp
           }
         })
       );
       const allRegionalData = (await Promise.all(promises)).map(response =>
-        _.isEmpty(response.data) ? {} : JSON.parse(response.data)
+        _.isEmpty(response.data) ? {} : response.data
       );
       if (_.some(allRegionalData, response => _.isEmpty(response))) {
         return;
@@ -206,11 +210,7 @@ export default defineComponent({
           levels.forEach(level => {
             const dataForLevel = dataForOneScenario[level];
             if (dataForLevel === undefined) return;
-            const dataForTimestamp =
-              dataForLevel[props.selectedTimestamp.toString()] ?? [];
-            result[level] = {
-              [props.selectedTimestamp.toString()]: dataForTimestamp
-            };
+            result[level] = dataForLevel;
           });
           return result;
         }
