@@ -35,7 +35,6 @@
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
           :ordinal-dimensions="ordinalDimensionNames"
-          :initial-data-selection="isDescriptionView ? [] : initialDataSelection"
           :show-baseline-defaults="showBaselineDefaults"
           :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
@@ -264,7 +263,7 @@ export default defineComponent({
       modelId: props.selectedModelId,
       runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
       id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-      outputVariable: 'Probability of presence of locust hoppers',
+      outputVariable: 'Hopper Presence Prediction',
       timestamp: props.selectedTimestamp
     });
 
@@ -273,7 +272,7 @@ export default defineComponent({
         modelId: props.selectedModelId,
         runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
         id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-        outputVariable: 'Probability of presence of locust hoppers',
+        outputVariable: 'Hopper Presence Prediction',
         timestamp: props.selectedTimestamp
       };
     }, {
