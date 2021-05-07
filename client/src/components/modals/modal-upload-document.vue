@@ -9,10 +9,10 @@
           <input
             ref="files"
             type="file"
-            accept=".html, .csv, .doc, .pdf"
+            accept=".html, .csv, .doc, .pdf, .txt"
             class="form-control-file"
             @change="updateInputFile">
-          <span class="instruction-set">.html, .csv, .doc, .pdf, or zip (max. 100MB) </span>
+          <span class="instruction-set">.html, .csv, .doc, .pdf, .txt, or zip (max. 100MB) </span>
           <div
             v-if="loading"
             class="upload-file-label">
