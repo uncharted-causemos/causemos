@@ -27,8 +27,9 @@ const submitModelRun = async(metadata) => {
     json: metadata
   };
 
+  Logger.info(`Submitting execution request for id: ${metadata.id}`);
   const result = await requestAsPromise(pipelinePayload);
-  Logger.info('Model execution response', result);
+  Logger.info(`Model execution response ${result}`);
 
   // If API call succeeded, insert metadata into ES
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);

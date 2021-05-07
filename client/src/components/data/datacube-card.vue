@@ -157,7 +157,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ModelRunParameter, ScenarioDef } from '@/types/Datacubes';
+import { ScenarioDef } from '@/types/Datacubes';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
@@ -335,11 +335,11 @@ export default defineComponent({
       // FIXME: cast to 'any' since typescript cannot see mixins yet!
       (this as any).toaster('New runs requested\nPlease check back later!');
       const firstScenario = this.potentialScenarios[0]; // FIXME
-      const paramArray: ModelRunParameter[] = [];
+      const paramArray: any[] = [];
       Object.keys(firstScenario).forEach(key => {
         paramArray.push({
           name: key,
-          value: firstScenario[key].toString()
+          value: firstScenario[key]
         });
       });
       API.post('maas/model-runs', {
