@@ -339,7 +339,7 @@ export default defineComponent({
       Object.keys(firstScenario).forEach(key => {
         paramArray.push({
           name: key,
-          value: firstScenario[key]
+          value: +firstScenario[key]
         });
       });
       paramArray.push({
