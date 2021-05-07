@@ -110,7 +110,8 @@ export default {
   },
   emits: [
     'on-map-load',
-    'aggregation-level-change'
+    'aggregation-level-change',
+    'slide-handle-change'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -298,6 +299,11 @@ export default {
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
+
+      this.map.removeFeatureState({
+        source: this.vectorSourceId,
+        sourceLayer: this.vectorSourceLayer
+      });
 
       this.lookupData[adminLevel].forEach(row => {
         this.map.setFeatureState({
