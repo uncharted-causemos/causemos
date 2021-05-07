@@ -159,6 +159,18 @@ export default defineComponent({
     selectedTimestamp: {
       type: Number,
       default: 0
+    },
+    selectedTemporalResolution: {
+      type: String as PropType<string>,
+      default: 'month'
+    },
+    selectedTemporalAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
+    },
+    selectedSpatialAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
     }
   },
   emits: ['set-selected-admin-level'],
@@ -186,9 +198,9 @@ export default defineComponent({
             model_id: props.selectedModelId,
             run_id: scenarioId,
             feature: 'Hopper Presence Prediction',
-            resolution: 'month',
-            temporal_agg: 'mean',
-            spatial_agg: 'mean',
+            resolution: props.selectedTemporalResolution,
+            temporal_agg: props.selectedTemporalAggregation,
+            spatial_agg: props.selectedSpatialAggregation,
             timestamp: props.selectedTimestamp
           }
         })
