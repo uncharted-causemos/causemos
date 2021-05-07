@@ -109,9 +109,10 @@
         <slot name="datacube-description" v-if="isDescriptionView" />
         <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
+            v-if="mainModelOutput"
             class="scenario-header"
-            :outputVariable="'production'"
-            :outputVariableUnits="'tonnes'"
+            :outputVariable="mainModelOutput.display_name"
+            :outputVariableUnits="mainModelOutput.unit"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
@@ -148,7 +149,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, PropType, watch, toRefs, computed } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -160,9 +161,10 @@ import { ScenarioData } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-new.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import { colorFromIndex } from '@/utils/colors-util';
 import API from '@/api/api';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import { Model, ModelFeature } from '@/types/Model';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -241,15 +243,22 @@ export default defineComponent({
       selectedSpatialAggregation
     );
 
-    const modelMetadata = useModelMetadata(selectedModelId);
-    // const modelMainOutputVariable = modelMetadata.value?.outputs[0];
-
     const {
       dimensions,
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues
     } = useParallelCoordinatesData(selectedModelId);
+
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+
+    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+
+    watch(() => metadata.value, () => {
+      mainModelOutput.value = metadata.value?.outputs[0];
+    }, {
+      immediate: true
+    });
 
     const isDescriptionView = ref<boolean>(true);
 
@@ -288,8 +297,7 @@ export default defineComponent({
       drilldownDimensions,
       runParameterValues,
       isDescriptionView,
-      modelMetadata
-      // modelMainOutputVariable
+      mainModelOutput
     };
   },
   data: () => ({

@@ -21,7 +21,7 @@
     >
       <template v-slot:datacube-scenario-header>
         <div class="datacube-header" v-if="isExpanded">
-          <h5>Production - DSSAT</h5>
+          <h5 v-if="mainModelOutput">{{mainModelOutput.display_name}} | {{metadata.name}}</h5>
           <disclaimer
             v-if="scenarioCount > 0"
             :message="
@@ -75,16 +75,17 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import MAXHOP from '@/assets/MAXHOP.js';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
-import { DimensionInfo } from '@/types/Model';
+import { DimensionInfo, Model, ModelFeature } from '@/types/Model';
 import { getRandomNumber } from '../../tests/utils/random';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 
 const DRILLDOWN_TABS = [
   {
@@ -116,6 +117,16 @@ export default defineComponent({
 
     const modelId = ref(MAXHOP.modelId);
 
+    const metadata = useModelMetadata(modelId) as Ref<Model | null>;
+
+    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+
+    watch(() => metadata.value, () => {
+      mainModelOutput.value = metadata.value?.outputs[0];
+    }, {
+      immediate: true
+    });
+
     // FIXME: use endpoint to fetch IDs
     const allModelRunData = useScenarioData(modelId);
 
@@ -146,7 +157,9 @@ export default defineComponent({
       setSelectedTimestamp,
       isExpanded,
       colorFromIndex,
-      scenarioCount
+      scenarioCount,
+      metadata,
+      mainModelOutput
     };
   },
   methods: {
