@@ -344,7 +344,7 @@ export default defineComponent({
         });
       });
       API.post('maas/model-runs', {
-        model_id: 'maxhop-v0.2', // FIXME
+        model_id: this.selectedModelId,
         model_name: 'MaxHop',
         parameters: paramArray
       });
