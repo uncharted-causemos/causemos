@@ -8,13 +8,13 @@
         :max="extent.max"
         :color-option="colorOption"
       />
-      <!-- <div
+      <div
         class="layer-toggle-button"
-        @click="nextLayer">
+        @click="isGridMap = !isGridMap">
         <i
           :class="layerButtonClass"
         />
-      </div> -->
+      </div>
     </div>
     <wm-map
       v-bind="mapFixedOptions"
@@ -144,6 +144,7 @@ export default {
     }
   },
   data: () => ({
+    isGridMap: false,
     baseLayer: undefined,
     colorLayer: undefined,
     hoverId: undefined,
@@ -201,7 +202,7 @@ export default {
       }
     },
     layerButtonClass() {
-      if (this.selectedLayer.vectorSourceLayer === 'maas') {
+      if (this.isGridMap) {
         return 'fa fa-th-large';
       }
       return 'fa fa-globe';
@@ -239,8 +240,11 @@ export default {
       Object.assign(this, this.selectedLayer);
       this.refreshLayers();
     },
+    isGridMap() {
+      this.setSelectedLayer();
+    },
     selectedAdminLevel() {
-      this.selectedLayer = layers[this.selectedAdminLevel];
+      this.setSelectedLayer();
     }
   },
   created() {
@@ -383,19 +387,8 @@ export default {
         return fields.filter(field => !_.isNil(field)).join('<br />');
       }
     },
-    nextLayer() {
-      // find current layer in layers and set it to the next one
-      const layerIndex = layers.map(layer => {
-        return this.selectedLayer.vectorSourceLayer === layer.vectorSourceLayer;
-      }).indexOf(true);
-
-      if (layerIndex >= layers.length - 1) {
-        this.selectedLayer = layers[0];
-      } else {
-        this.selectedLayer = layers[layerIndex + 1];
-      }
-
-      this.$emit('aggregation-level-change', layerIndex);
+    setSelectedLayer() {
+      this.selectedLayer = this.isGridMap ? layers[4] : layers[this.selectedAdminLevel];
     },
     updateFilterRange: _.throttle(function () {
       if (!this.range || !this.valueProp) return;
