@@ -135,11 +135,13 @@
           <data-analysis-map
             v-if="!isDescriptionView"
             class="card-map full-width"
-            :selection="mapSelectionObject"
+            :output-source-specs="outputSourceSpecs"
+            :output-selection=0
             :show-tooltip="true"
             :selected-admin-level="selectedAdminLevel"
-            :selected-timestamp="selectedTimestamp"
+            :filters="mapFilters"
             @on-map-load="onMapLoad"
+            @slide-handle-change="onMapSlideChange"
           />
         </div>
       </div>
@@ -148,7 +150,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, PropType, watch, toRefs, Ref } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -156,8 +158,8 @@ import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ModelRunParameter, ScenarioDef } from '@/types/Datacubes';
-import { ScenarioData } from '@/types/Common';
-import DataAnalysisMap from '@/components/data/analysis-map.vue';
+import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
+import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
@@ -224,6 +226,7 @@ export default defineComponent({
     const {
       selectedModelId,
       selectedScenarioIds,
+      selectedTimestamp,
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation
@@ -258,27 +261,6 @@ export default defineComponent({
       immediate: true
     });
 
-    // FIXME: remove when data-analysis-map is rewritten
-    const mapSelectionObject = ref({
-      modelId: props.selectedModelId,
-      runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
-      id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-      outputVariable: 'Hopper Presence Prediction',
-      timestamp: props.selectedTimestamp
-    });
-
-    watch(() => props.selectedTimestamp, () => {
-      mapSelectionObject.value = {
-        modelId: props.selectedModelId,
-        runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
-        id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-        outputVariable: 'Hopper Presence Prediction',
-        timestamp: props.selectedTimestamp
-      };
-    }, {
-      immediate: true
-    });
-
     const isDescriptionView = ref<boolean>(true);
 
     watch(() => props.selectedScenarioIds, () => {
@@ -291,9 +273,23 @@ export default defineComponent({
     function emitTimestampSelection(newTimestamp: number) {
       emit('select-timestamp', newTimestamp);
     }
+
+    const outputSourceSpecs = computed(() => {
+      return [{
+        id: selectedScenarioIds.value[0],
+        modelId: selectedModelId.value,
+        runId: selectedScenarioIds.value[0], // we may not have a selected run at this point, so init map with the first run by default
+        outputVariable: 'Hopper Presence Prediction',
+        timestamp: selectedTimestamp.value,
+        temporalResolution: selectedTemporalResolution.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        spatialAggregation: selectedSpatialAggregation.value
+      }];
+    });
+
     return {
+      outputSourceSpecs,
       selectedTimeseriesData,
-      mapSelectionObject,
       colorFromIndex,
       emitTimestampSelection,
       relativeTo,
@@ -311,11 +307,15 @@ export default defineComponent({
     initialDataSelection: [] as Array<string>,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
-    potentialScenarios: [] as Array<ScenarioData>
+    potentialScenarios: [] as Array<ScenarioData>,
+    mapFilters: [] as Array<AnalysisMapFilter>
   }),
   methods: {
     onMapLoad() {
       this.$emit('on-map-load');
+    },
+    onMapSlideChange(data: AnalysisMapFilter) {
+      this.mapFilters = [data];
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
