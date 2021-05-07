@@ -64,8 +64,9 @@ export default function useParallelCoordinatesData(
       type: '', // FIXME
       default: defaultOutputValue
     };
+    const inputDimensions = metadata.value.parameters.filter(p => p.name !== 'country');
     // Append the output parameter to the list of input parameters
-    return [...metadata.value.parameters, outputDimension] as ModelParameter[];
+    return [...inputDimensions, outputDimension] as ModelParameter[];
   });
 
   // TODO: use each axis min/max based on the metadata
@@ -78,7 +79,7 @@ export default function useParallelCoordinatesData(
   // ]
 
   // HACK: force 'rainfall_multiplier' to be ordinal
-  const ordinalDimensionNames = ref(['rainfall_multiplier']);
+  const ordinalDimensionNames = ref([]);
 
   const drilldownDimensions = computed(() =>
     dimensions.value.filter(p => p.is_drilldown)

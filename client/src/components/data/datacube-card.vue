@@ -342,6 +342,10 @@ export default defineComponent({
           value: firstScenario[key]
         });
       });
+      paramArray.push({
+        name: 'country',
+        value: 'Ethiopia'
+      });
       API.post('maas/model-runs', {
         model_id: this.selectedModelId,
         model_name: 'MaxHop',
