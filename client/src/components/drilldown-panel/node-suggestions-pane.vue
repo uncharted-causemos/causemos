@@ -1,7 +1,7 @@
 <template>
   <div class="node-suggestions-container">
     <div class="pane-summary">
-      {{ ontologyFormatter(selectedNode.concept) }}
+      {{ conceptHumanName(selectedNode.concept, ontologySet) }}
     </div>
     <div class="pane-controls">
       <div class=" bulk-actions">
@@ -39,17 +39,16 @@
         class="suggestions-group"
       >
         <span
-          slot="title"
           class="suggestions-title"
         >
           <span v-if="relationshipGroup.key === 'cause'">
             Top Drivers ( ? <i
               class="fa fa-fw  fa-long-arrow-right"
             />
-            {{ ontologyFormatter(selectedNode.concept) }} )
+            {{ conceptHumanName(selectedNode.concept, ontologySet) }} )
           </span>
           <span v-else>
-            Top Impacts ({{ ontologyFormatter(selectedNode.concept) }} <i
+            Top Impacts ({{ conceptHumanName(selectedNode.concept, ontologySet) }} <i
               class="fa fa-fw  fa-long-arrow-right"
             />
             ?)
@@ -57,8 +56,7 @@
 
         </span>
         <div
-          v-if="relationshipGroup.children.length > 0"
-          slot="content">
+          v-if="relationshipGroup.children.length > 0">
           <div class="suggestions-list">
             <div
               v-for="relationship in relationshipGroup.children"
@@ -72,7 +70,7 @@
                 @click.stop="toggle(relationship)" />
               <span
                 :style="relationship.meta.style"
-              >{{ ontologyFormatter(filterRedundantConcept(relationshipGroup.key, relationship.meta)) }}
+              >{{ conceptHumanName(filterRedundantConcept(relationshipGroup.key, relationship.meta), ontologySet) }}
               </span>
             </div>
             <button
@@ -101,8 +99,7 @@ import { mapGetters, mapActions } from 'vuex';
 import aggregationsUtil from '@/utils/aggregations-util';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { calcEdgeColor } from '@/utils/scales-util';
-import { conceptShortName } from '@/utils/concept-util';
-import ontologyFormatter from '@/formatters/ontology-formatter';
+import { conceptHumanName } from '@/utils/concept-util';
 import filtersUtil from '@/utils/filters-util';
 
 const RELATIONSHIP_GROUP_KEY = {
@@ -143,7 +140,8 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      currentCAG: 'app/currentCAG'
+      currentCAG: 'app/currentCAG',
+      ontologySet: 'app/ontologySet'
     }),
     numselectedRelationships() {
       let cnt = 0;
@@ -169,7 +167,7 @@ export default {
     ...mapActions({
       setSearchClause: 'query/setSearchClause'
     }),
-    ontologyFormatter,
+    conceptHumanName,
     refresh() {
       const topic = this.selectedNode.concept;
 
@@ -311,7 +309,7 @@ export default {
             }
           });
           // Check existing nodes in the CAG. We don't need to check existing edges because we don't allow to add existing edges from the list.
-          const nodes = _.flatten(causeEdges.map(edge => [{ concept: edge.source, label: conceptShortName(edge.source) }, { concept: edge.target, label: conceptShortName(edge.target) }]));
+          const nodes = _.flatten(causeEdges.map(edge => [{ concept: edge.source, label: conceptHumanName(edge.source, this.ontologySet) }, { concept: edge.target, label: conceptHumanName(edge.target, this.ontologySet) }]));
           causeNodes = _.differenceWith(nodes, this.graphData.nodes, (selected, current) => {
             return selected.concept === current.concept;
           });
@@ -327,7 +325,7 @@ export default {
           });
 
           // Check existing nodes in the CAG
-          const nodes = _.flatten(effectEdges.map(edge => [{ concept: edge.source, label: conceptShortName(edge.source) }, { concept: edge.target, label: conceptShortName(edge.target) }]));
+          const nodes = _.flatten(effectEdges.map(edge => [{ concept: edge.source, label: conceptHumanName(edge.source, this.ontologySet) }, { concept: edge.target, label: conceptHumanName(edge.target, this.ontologySet) }]));
           effectNodes = _.differenceWith(nodes, this.graphData.nodes, (selected, current) => {
             return selected.concept === current.concept;
           });
