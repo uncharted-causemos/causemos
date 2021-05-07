@@ -136,10 +136,9 @@
             v-if="!isDescriptionView"
             class="card-map full-width"
             :output-source-specs="outputSourceSpecs"
-            :selection="outputSourceSpecs"
+            :output-selection=0
             :show-tooltip="true"
             :selected-admin-level="selectedAdminLevel"
-            :selected-timestamp="selectedTimestamp"
             @on-map-load="onMapLoad"
           />
         </div>
@@ -149,7 +148,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, PropType, watch, toRefs } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -224,6 +223,7 @@ export default defineComponent({
     const {
       selectedModelId,
       selectedScenarioIds,
+      selectedTimestamp,
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation
@@ -251,27 +251,6 @@ export default defineComponent({
       runParameterValues
     } = useParallelCoordinatesData(selectedModelId);
 
-    // FIXME: remove when data-analysis-map is rewritten
-    const outputSourceSpecs = ref([{
-      modelId: props.selectedModelId,
-      runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
-      id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-      outputVariable: 'Probability of presence of locust hoppers',
-      timestamp: props.selectedTimestamp
-    }]);
-
-    watch(() => props.selectedTimestamp, () => {
-      outputSourceSpecs.value = [{
-        modelId: props.selectedModelId,
-        runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
-        id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-        outputVariable: 'Probability of presence of locust hoppers',
-        timestamp: props.selectedTimestamp
-      }];
-    }, {
-      immediate: true
-    });
-
     const isDescriptionView = ref<boolean>(true);
 
     watch(() => props.selectedScenarioIds, () => {
@@ -284,9 +263,23 @@ export default defineComponent({
     function emitTimestampSelection(newTimestamp: number) {
       emit('select-timestamp', newTimestamp);
     }
+
+    const outputSourceSpecs = computed(() => {
+      return [{
+        id: selectedScenarioIds.value[0],
+        modelId: selectedModelId.value,
+        runId: selectedScenarioIds.value[0], // we may not have a selected run at this point, so init map with the first run by default
+        outputVariable: 'Probability of presence of locust hoppers',
+        timestamp: selectedTimestamp.value,
+        temporalResolution: selectedTemporalResolution.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        spatialAggregation: selectedSpatialAggregation.value
+      }];
+    });
+
     return {
-      selectedTimeseriesData,
       outputSourceSpecs,
+      selectedTimeseriesData,
       colorFromIndex,
       emitTimestampSelection,
       relativeTo,

@@ -24,7 +24,8 @@ const MAPBOX_EVENTS = [
   'moveend',
   'mousemove',
   'mouseout',
-  'render'
+  'render',
+  'sourcedata'
   // More events can be added in the future
 ];
 

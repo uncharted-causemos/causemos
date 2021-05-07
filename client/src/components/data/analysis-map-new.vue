@@ -1,12 +1,6 @@
 <template>
   <div class="analysis-map-container">
     <div class="value-filter">
-      <div
-        class="filter-toggle-button"
-        :class="{ active: !!isFilterGlobal }"
-        @click="toggleFilterGlobal">
-        <i class="fa fa-filter" />
-      </div>
       <slider-continuous-range
         v-if="extent"
         v-model="range"
@@ -130,11 +124,6 @@ export default {
       type: Number,
       default: () => 0
     },
-    // A model ouput selection object
-    selection: {
-      type: Object,
-      default: () => undefined
-    },
     showTooltip: {
       type: Boolean,
       default: false
@@ -153,6 +142,7 @@ export default {
     colorLayer: undefined,
     hoverId: undefined,
     extent: undefined,
+    lookupData: undefined,
     range: undefined,
     featuresDrawn: undefined,
     selectedData: undefined,
@@ -164,6 +154,9 @@ export default {
       mapBounds: 'dataAnalysis/mapBounds',
       analysisItems: 'dataAnalysis/analysisItems'
     }),
+    selection() {
+      return this.outputSourceSpecs[this.outputSelection];
+    },
     filters() {
       return this.analysisItems.filter(item => !!item.filter)
         .map(({ id, filter }) => ({ id, ...filter }));
@@ -190,7 +183,7 @@ export default {
       if (this.selectedLayer.vectorSourceLayer !== 'maas') {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       } else {
-        const outputSpecs = this.analysisItems.map(({ id, modelId, model, outputVariable, selection }) => ({ id, modelId, model, outputVariable, ...selection }))
+        const outputSpecs = this.outputSourceSpecs.map(({ id, modelId, outputVariable, timestamp }) => ({ id, modelId, outputVariable, timestamp }))
           .filter(({ id, modelId, runId, outputVariable, timestamp }) => {
             // some models (eb. chirps) has timestamp as 0 for some reason and 0 should be treated as valid value
             // eg. {"timeseries":[{"timestamp":0,"value":-0.24032641113384878}]}
@@ -285,10 +278,8 @@ export default {
     refresh() {
       this.range = this.filterRange;
 
-      this.refreshData();
-
-      // Intilaize min max boundary value
-      this.updateStats().then(() => {
+      // Intilaize min max boundary value and data
+      Promise.all([this.updateStats(), this.refreshData()]).then(() => {
         this.refreshLayers();
         this.updateLayerFilter();
       });
@@ -302,17 +293,19 @@ export default {
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, useFeatureState);
     },
     async updateStats() {
-      const { runId, outputVariable, modelId } = this.selection || {};
+      const { runId, outputVariable, modelId, temporalResolution, temporalAggregation, spatialAggregation } = this.selection || {};
       if (!runId || !outputVariable || !modelId) {
         return;
       }
-      // FIXME: This is old api call that accepts bounds and returns stats calculated based on geohash grids. Result won't quite match with current geotiled vector map ouput
-      // We need to update the api so we get the stats based on geotile gtrid. Ideally we need to get the stats for all available zoom (precision) levels in single request
-      const stats = (await API.get(`/maas/output/${runId}/stats`, {
+      // TODO: Move this api request to service layer
+      const stats = (await API.get('/maas/output/stats', {
         params: {
+          model_id: modelId,
+          run_id: runId,
           feature: outputVariable,
-          model: modelId,
-          ...this.formattedMapBounds
+          resolution: temporalResolution,
+          temporal_agg: temporalAggregation,
+          spatial_agg: spatialAggregation
         }
       })).data;
       this.extent = {
@@ -321,59 +314,71 @@ export default {
       };
     },
     async refreshData() {
-      const { runId, modelId } = this.selection || {};
-
-      const promises = [];
-
-      promises.push(API.get('fetch-demo-data', {
+      const { runId, outputVariable, modelId, temporalResolution, temporalAggregation, spatialAggregation, timestamp } = this.selection || {};
+      if (!runId || !outputVariable || !modelId || !timestamp) {
+        return;
+      }
+      // TODO: Move this api request to service layer
+      const data = (await API.get('/maas/output/regional-data', {
         params: {
-          modelId,
-          runId,
-          type: 'regional-data'
+          model_id: modelId,
+          run_id: runId,
+          feature: outputVariable,
+          resolution: temporalResolution,
+          temporal_agg: temporalAggregation,
+          spatial_agg: spatialAggregation,
+          timestamp
         }
-      }));
-
-      const allRegionalData = (await Promise.all(promises)).map(response => {
-        return JSON.parse(response.data);
-      });
-
-      this.selectedData = allRegionalData[0];
-      if (this.map) this.setFeatureStates();
+      })).data;
+      this.lookupData = data;
+      if (this.map) {
+        const source = this.map.getSource(this.selectedLayer.vectorSourceLayer);
+        if (source && this.map.isSourceLoaded(source)) this.setFeatureStates();
+      }
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
 
-      if (this.featuresDrawn !== undefined) {
-        this.featuresDrawn.forEach(id => {
-          this.map.removeFeatureState({
-            id,
-            source: this.vectorSourceId,
-            sourceLayer: this.vectorSourceLayer
-          });
-        });
-      }
+      // if (this.featuresDrawn !== undefined) {
+      //   this.featuresDrawn.forEach(id => {
+      //     this.map.removeFeatureState({
+      //       id,
+      //       source: this.vectorSourceId,
+      //       sourceLayer: this.vectorSourceLayer
+      //     });
+      //   });
+      // }
 
-      this.featuresDrawn = [];
+      // this.featuresDrawn = [];
 
-      if (this.selectedData !== undefined && this.selectedData[adminLevel] !== undefined && this.selectedData[adminLevel][this.selectedTimestamp] !== undefined) {
-        this.selectedData[adminLevel][this.selectedTimestamp].forEach(row => {
-          // HACK: replace "_" with "__" since ids from vector tile use "__".
-          // TODO: Update data pipeline so that data contains proper id that matches.
-          this.featuresDrawn.push(row.id.replaceAll('_', '__'));
-          this.map.setFeatureState({
-            id: row.id.replaceAll('_', '__'),
-            source: this.vectorSourceId,
-            sourceLayer: this.vectorSourceLayer
-          }, {
-            [this.valueProp]: row.value // > 29000 ? 29000 : row.value
-          });
+      this.lookupData[adminLevel].forEach(row => {
+        this.map.setFeatureState({
+          id: row.id.replaceAll('_', '__'),
+          source: this.vectorSourceId,
+          sourceLayer: this.vectorSourceLayer
+        }, {
+          [this.valueProp]: row.value // > 29000 ? 29000 : row.value
         });
-      }
+      });
+
+      // if (this.selectedData !== undefined && this.selectedData[adminLevel] !== undefined && this.selectedData[adminLevel][this.selectedTimestamp] !== undefined) {
+      //   this.selectedData[adminLevel][this.selectedTimestamp].forEach(row => {
+      //     // HACK: replace "_" with "__" since ids from vector tile use "__".
+      //     // TODO: Update data pipeline so that data contains proper id that matches.
+      //     this.featuresDrawn.push(row.id.replaceAll('_', '__'));
+      //     this.map.setFeatureState({
+      //       id: row.id.replaceAll('_', '__'),
+      //       source: this.vectorSourceId,
+      //       sourceLayer: this.vectorSourceLayer
+      //     }, {
+      //       [this.valueProp]: row.value // > 29000 ? 29000 : row.value
+      //     });
+      //   });
+      // }
     },
     onAddLayer() {
-      if (this.selectedData !== undefined) {
-        this.setFeatureStates();
-      }
+      if (!this.lookupData) return;
+      this.setFeatureStates();
     },
     onMapLoad(event) {
       const map = event.map;
@@ -461,12 +466,6 @@ export default {
         [3, 2, 1, 0].forEach(i => fields.push(feature.properties['NAME_' + i]));
         return fields.filter(field => !_.isNil(field)).join('<br />');
       }
-    },
-    toggleFilterGlobal() {
-      this.updateFilter({
-        analysisItemId: this.valueProp,
-        filter: { global: !this.isFilterGlobal }
-      });
     },
     nextLayer() {
       // find current layer in layers and set it to the next one
