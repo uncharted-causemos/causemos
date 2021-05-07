@@ -201,17 +201,17 @@ export default defineComponent({
       type: Number,
       default: 0
     },
-    selectedTemporalAggregation: {
-      type: String as PropType<string>,
-      default: 'sum'
-    },
     selectedTemporalResolution: {
       type: String as PropType<string>,
       default: 'month'
     },
+    selectedTemporalAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
+    },
     selectedSpatialAggregation: {
       type: String as PropType<string>,
-      default: 'sum'
+      default: 'mean'
     }
   },
   components: {
@@ -339,7 +339,7 @@ export default defineComponent({
       Object.keys(firstScenario).forEach(key => {
         paramArray.push({
           name: key,
-          value: firstScenario[key]
+          value: +firstScenario[key]
         });
       });
       paramArray.push({

@@ -15,6 +15,9 @@
       :all-scenario-ids="allScenarioIds"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
+      :selected-temporal-resolution="selectedTemporalResolution"
+      :selected-temporal-aggregation="selectedTemporalAggregation"
+      :selected-spatial-aggregation="selectedSpatialAggregation"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -63,6 +66,9 @@
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
+            :selected-temporal-resolution="selectedTemporalResolution"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
+            :selected-spatial-aggregation="selectedSpatialAggregation"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -146,6 +152,9 @@ export default defineComponent({
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
+      selectedTemporalResolution: 'month',
+      selectedTemporalAggregation: 'mean',
+      selectedSpatialAggregation: 'mean',
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId: modelId,
