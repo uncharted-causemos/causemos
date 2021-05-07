@@ -216,7 +216,6 @@ export default {
       return this.filter && this.filter.global;
     },
     filterRange() {
-      // TODO: FIXME: HACKJOB: no filter likely because no analysisItems
       if (this.filter === undefined) {
         return this.extent;
       }
@@ -340,7 +339,6 @@ export default {
         this.colorLayer.filter = ['all', ['has', this.valueProp], ...filter];
       } else {
         this.refreshLayers();
-        this.colorLayer.filter = ['all', true];
       }
     },
     _setLayerHover(map, feature) {
