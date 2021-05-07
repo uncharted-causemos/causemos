@@ -8,18 +8,17 @@
         :max="extent.max"
         :color-option="colorOption"
       />
-      <div
+      <!-- <div
         class="layer-toggle-button"
         @click="nextLayer">
         <i
           :class="layerButtonClass"
         />
-      </div>
+      </div> -->
     </div>
     <wm-map
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
-      @move="syncBounds"
       @load="onMapLoad"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
@@ -57,7 +56,6 @@
 
 import _ from 'lodash';
 import moment from 'moment';
-import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION, modelOutputMaxPrecision } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
@@ -132,52 +130,46 @@ export default {
       type: Number,
       default: 0
     },
-    selectedTimestamp: {
-      type: Number,
-      default: 0
+    mapBounds: {
+      type: Array,
+      default: () => [ // Default bounds to Ethiopia
+        [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
+        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+      ]
     }
   },
   data: () => ({
     baseLayer: undefined,
     colorLayer: undefined,
     hoverId: undefined,
-    extent: undefined,
     lookupData: undefined,
     range: undefined,
     featuresDrawn: undefined,
-    selectedData: undefined,
     map: undefined,
-    selectedLayer: undefined
+    selectedLayer: undefined,
+    filters: []
   }),
   computed: {
-    ...mapGetters({
-      mapBounds: 'dataAnalysis/mapBounds',
-      analysisItems: 'dataAnalysis/analysisItems'
-    }),
     selection() {
       return this.outputSourceSpecs[this.outputSelection];
     },
-    filters() {
-      return this.analysisItems.filter(item => !!item.filter)
-        .map(({ id, filter }) => ({ id, ...filter }));
+    stats() {
+      if (!this.lookupData) return;
+      const stats = {};
+      for (const [key, data] of Object.entries(this.lookupData)) {
+        const values = data.map(v => v.value);
+        stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+      }
+      return stats;
+    },
+    extent() {
+      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
+      if (!this.stats) return { min: 0, max: 1 };
+      return this.stats[adminLevel];
     },
     valueProp() {
       // Name of the value property of the feature to be rendered
       return (this.selection && this.selection.id) || '';
-    },
-    formattedMapBounds() {
-      // FIXME: This is not really relavant with new tile map. This be no longer be needed once stats api is updated.
-      // Default bounds to Ethiopia
-      const top = _.get(this.mapBounds, '_ne.lat', ETHIOPIA_BOUNDING_BOX.TOP);
-      const left = _.get(this.mapBounds, '_sw.lng', ETHIOPIA_BOUNDING_BOX.LEFT);
-      const bottom = _.get(this.mapBounds, '_sw.lat', ETHIOPIA_BOUNDING_BOX.BOTTOM);
-      const right = _.get(this.mapBounds, '_ne.lng', ETHIOPIA_BOUNDING_BOX.RIGHT);
-      return {
-        top,
-        left,
-        bottom,
-        right
-      };
     },
     vectorSource() {
       if (this.selectedLayer.vectorSourceLayer !== 'maas') {
@@ -246,13 +238,6 @@ export default {
     },
     selectedAdminLevel() {
       this.selectedLayer = layers[this.selectedAdminLevel];
-    },
-    selectedTimestamp() {
-      this.setFeatureStates();
-    },
-    selectedData() {
-      this.refreshLayers();
-      this.updateLayerFilter();
     }
   },
   created() {
@@ -271,15 +256,11 @@ export default {
     this.refresh();
   },
   methods: {
-    ...mapActions({
-      setMapBounds: 'dataAnalysis/setMapBounds',
-      updateFilter: 'dataAnalysis/updateFilter'
-    }),
     refresh() {
       this.range = this.filterRange;
 
       // Intilaize min max boundary value and data
-      Promise.all([this.updateStats(), this.refreshData()]).then(() => {
+      this.refreshData().then(() => {
         this.refreshLayers();
         this.updateLayerFilter();
       });
@@ -291,27 +272,6 @@ export default {
       const { min, max } = this.extent;
       const { color, scaleFn } = this.colorOption;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, useFeatureState);
-    },
-    async updateStats() {
-      const { runId, outputVariable, modelId, temporalResolution, temporalAggregation, spatialAggregation } = this.selection || {};
-      if (!runId || !outputVariable || !modelId) {
-        return;
-      }
-      // TODO: Move this api request to service layer
-      const stats = (await API.get('/maas/output/stats', {
-        params: {
-          model_id: modelId,
-          run_id: runId,
-          feature: outputVariable,
-          resolution: temporalResolution,
-          temporal_agg: temporalAggregation,
-          spatial_agg: spatialAggregation
-        }
-      })).data;
-      this.extent = {
-        min: stats.min,
-        max: stats.max
-      };
     },
     async refreshData() {
       const { runId, outputVariable, modelId, temporalResolution, temporalAggregation, spatialAggregation, timestamp } = this.selection || {};
@@ -331,25 +291,10 @@ export default {
         }
       })).data;
       this.lookupData = data;
-      if (this.map) {
-        const source = this.map.getSource(this.selectedLayer.vectorSourceLayer);
-        if (source && this.map.isSourceLoaded(source)) this.setFeatureStates();
-      }
+      if (this.map) this.setFeatureStates();
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
-
-      // if (this.featuresDrawn !== undefined) {
-      //   this.featuresDrawn.forEach(id => {
-      //     this.map.removeFeatureState({
-      //       id,
-      //       source: this.vectorSourceId,
-      //       sourceLayer: this.vectorSourceLayer
-      //     });
-      //   });
-      // }
-
-      // this.featuresDrawn = [];
 
       this.lookupData[adminLevel].forEach(row => {
         this.map.setFeatureState({
@@ -360,21 +305,6 @@ export default {
           [this.valueProp]: row.value // > 29000 ? 29000 : row.value
         });
       });
-
-      // if (this.selectedData !== undefined && this.selectedData[adminLevel] !== undefined && this.selectedData[adminLevel][this.selectedTimestamp] !== undefined) {
-      //   this.selectedData[adminLevel][this.selectedTimestamp].forEach(row => {
-      //     // HACK: replace "_" with "__" since ids from vector tile use "__".
-      //     // TODO: Update data pipeline so that data contains proper id that matches.
-      //     this.featuresDrawn.push(row.id.replaceAll('_', '__'));
-      //     this.map.setFeatureState({
-      //       id: row.id.replaceAll('_', '__'),
-      //       source: this.vectorSourceId,
-      //       sourceLayer: this.vectorSourceLayer
-      //     }, {
-      //       [this.valueProp]: row.value // > 29000 ? 29000 : row.value
-      //     });
-      //   });
-      // }
     },
     onAddLayer() {
       if (!this.lookupData) return;
@@ -389,27 +319,6 @@ export default {
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
       this.$emit('on-map-load');
-    },
-    syncBounds(event) {
-      // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
-      // We ignore move events from other maps which are being synced with the master map to avoid situation
-      // where they also trigger prop updates and fire events again to create infinite loop
-      const originalEvent = event.mapboxEvent.originalEvent;
-      if (!originalEvent) return;
-
-      const map = event.map;
-      const component = event.component;
-
-      // Disable camera movement until next tick so that the master map doesn't get updated by the props change
-      // Master map is being interacted by user so camera movement is already applied
-      component.disableCamera();
-
-      // get properties of the map and update vue props
-      this.setMapBounds(map.getBounds().toArray());
-
-      this.$nextTick(() => {
-        component.enableCamera();
-      });
     },
     updateLayerFilter() {
       if (!this.colorLayer) return;
@@ -483,10 +392,11 @@ export default {
     },
     updateFilterRange: _.throttle(function () {
       if (!this.range || !this.valueProp) return;
-      this.updateFilter({
-        analysisItemId: this.valueProp,
-        filter: { range: this.range }
-      });
+      console.log(this.range);
+      this.filters = [{
+        id: this.valueProp,
+        range: this.range
+      }];
     }, 1000 / FILTER_ANIMATION_FPS)
   }
 };
