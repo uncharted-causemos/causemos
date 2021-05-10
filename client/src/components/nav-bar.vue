@@ -20,6 +20,17 @@
               All Projects
             </span>
           </li>
+          <!-- @REVIEW: link to navigate to the model publishing view (since it must be attached to a project) -->
+          <li
+              v-if="project!== null"
+              class="nav-item"
+              :class="{underlined: currentView === 'modelPublishingExperiment'}">
+              <router-link
+                class="nav-link"
+                :to="{name: 'modelPublishingExperiment', params:{project}}"
+              > <i class="fa fa-cubes" />
+                Publish Model</router-link>
+          </li>
           <li
             v-if="project !== null"
             class="nav-item"
