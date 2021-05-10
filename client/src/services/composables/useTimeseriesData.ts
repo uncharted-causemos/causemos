@@ -44,7 +44,7 @@ export default function useTimeseriesData(
           params: {
             model_id: modelId.value,
             run_id: runId,
-            feature: 'production',
+            feature: modelId.value.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg

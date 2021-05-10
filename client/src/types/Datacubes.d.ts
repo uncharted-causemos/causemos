@@ -1,6 +1,4 @@
 
-import { ModelGeography } from './Common';
-
 export interface Period {
   gte: string;
   lte: string;
@@ -12,21 +10,26 @@ export interface CubeParameter {
   value: string;
 }
 
-// New Datacube metadata
-export interface Cube {
+export interface ModelRunParameter {
   id: string;
-  description: string;
   name: string;
-  created: string;
-  job_id: string;
+  value: string;
+}
+
+// Model run metadata, this replaces Cube
+export interface ModelRun {
+  id: string;
+  model_name: string;
   model_id: string;
+  created_at: string;
+  flow_id: string;
   data_paths: string[];
   pre_gen_output_paths: string[];
+  is_default_run: boolean;
   default_run: boolean;
+  status: string;
   tags: string[];
-  geography: ModelGeography;
-  periods: Period[];
-  parameters: CubeParameter[];
+  parameters: ModelRunParameter[];
 }
 
 // OLD datacube metadata
@@ -56,13 +59,13 @@ export interface Datacube {
 }
 
 export interface RegionalData {
-  country?: { [timestamp: string]: { id: string; value: number }[] };
-  admin1?: { [timestamp: string]: { id: string; value: number }[] };
-  admin2?: { [timestamp: string]: { id: string; value: number }[] };
-  admin3?: { [timestamp: string]: { id: string; value: number }[] };
-  admin4?: { [timestamp: string]: { id: string; value: number }[] };
-  admin5?: { [timestamp: string]: { id: string; value: number }[] };
-  admin6?: { [timestamp: string]: { id: string; value: number }[] };
+  country?: { id: string; value: number }[];
+  admin1?: { id: string; value: number }[];
+  admin2?: { id: string; value: number }[];
+  admin3?: { id: string; value: number }[];
+  admin4?: { id: string; value: number }[];
+  admin5?: { id: string; value: number }[];
+  admin6?: { id: string; value: number }[];
 }
 
 export interface ScenarioDef {

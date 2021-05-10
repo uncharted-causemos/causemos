@@ -22,9 +22,10 @@
 <script lang="ts">
 import API from '@/api/api';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
+import { ModelRun } from '@/types/Datacubes';
 
 interface ParameterValue {
-  id: string;
+  name: string;
   value: string;
 }
 
@@ -70,7 +71,7 @@ export default defineComponent({
       const modelMetadata = JSON.parse(result.data);
       const inputNamesMap: { [key: string]: string } = {};
       modelMetadata.parameters.forEach((parameter: any) => {
-        inputNamesMap[parameter.id] = parameter.display_name;
+        inputNamesMap[parameter.name] = parameter.display_name;
       });
       inputNames.value = inputNamesMap;
     }
@@ -85,21 +86,16 @@ export default defineComponent({
       ) {
         return [];
       }
-      const promises = props.selectedScenarioIds.map(scenarioId =>
-        API.get('fetch-demo-data', {
-          params: {
-            modelId: props.selectedModelId,
-            runId: scenarioId,
-            type: 'metadata'
-          }
-        })
-      );
-      const allMetadata = (await Promise.all(promises)).map(metadata =>
-        JSON.parse(metadata.data)
-      );
-      scenarioDescriptions.value = allMetadata.map(scenarioMetadata => {
-        return scenarioMetadata.parameters;
+      const allMetadata = await API.get('/maas/model-runs', {
+        params: {
+          modelId: props.selectedModelId
+        }
       });
+      scenarioDescriptions.value = allMetadata.data
+        .filter((run: ModelRun) => props.selectedScenarioIds.includes(run.id))
+        .map((scenarioMetadata: ModelRun) => {
+          return scenarioMetadata.parameters;
+        });
     }
 
     watch(() => props.selectedModelId, fetchInputNames, { immediate: true });
@@ -117,12 +113,12 @@ export default defineComponent({
       // CLEANUP: There may be a simpler way of stitching these
       //  data structures together that we should investigate
       //  after the upcoming site visit (April 2021)
-      return Object.keys(inputNames.value).map(inputId => {
+      return Object.keys(inputNames.value).map(inputName => {
         return {
-          name: inputNames.value[inputId],
+          name: inputName,
           values: scenarioDescriptions.value.map(parameterValues => {
             return (
-              parameterValues.find(parameter => parameter.id === inputId)
+              parameterValues.find(parameter => parameter.name === inputName)
                 ?.value ?? 'undefined'
             );
           })

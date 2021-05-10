@@ -1,12 +1,6 @@
 <template>
   <div class="analysis-map-container">
     <div class="value-filter">
-      <div
-        class="filter-toggle-button"
-        :class="{ active: !!isFilterGlobal }"
-        @click="toggleFilterGlobal">
-        <i class="fa fa-filter" />
-      </div>
       <slider-continuous-range
         v-if="extent"
         v-model="range"
@@ -14,18 +8,17 @@
         :max="extent.max"
         :color-option="colorOption"
       />
-      <div
+      <!-- <div
         class="layer-toggle-button"
         @click="nextLayer">
         <i
           :class="layerButtonClass"
         />
-      </div>
+      </div> -->
     </div>
     <wm-map
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
-      @move="syncBounds"
       @load="onMapLoad"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
@@ -63,7 +56,6 @@
 
 import _ from 'lodash';
 import moment from 'moment';
-import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION, modelOutputMaxPrecision } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
@@ -73,7 +65,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
 
 // Map filter animation fps rate (Use lower value if there's a performance issue)
-const FILTER_ANIMATION_FPS = 15;
+const FILTER_ANIMATION_FPS = 5;
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -118,13 +110,18 @@ export default {
   },
   emits: [
     'on-map-load',
-    'aggregation-level-change'
+    'aggregation-level-change',
+    'slide-handle-change'
   ],
   props: {
-    // A model ouput selection object
-    selection: {
-      type: Object,
-      default: () => undefined
+    // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
+    outputSourceSpecs: {
+      type: Array,
+      default: () => []
+    },
+    outputSelection: {
+      type: Number,
+      default: () => 0
     },
     showTooltip: {
       type: Boolean,
@@ -134,58 +131,59 @@ export default {
       type: Number,
       default: 0
     },
-    selectedTimestamp: {
-      type: Number,
-      default: 0
+    filters: {
+      type: Array,
+      default: () => []
+    },
+    mapBounds: {
+      type: Array,
+      default: () => [ // Default bounds to Ethiopia
+        [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
+        [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+      ]
     }
   },
   data: () => ({
     baseLayer: undefined,
     colorLayer: undefined,
     hoverId: undefined,
-    extent: undefined,
+    lookupData: undefined,
     range: undefined,
     featuresDrawn: undefined,
-    selectedData: undefined,
     map: undefined,
     selectedLayer: undefined
   }),
   computed: {
-    ...mapGetters({
-      mapBounds: 'dataAnalysis/mapBounds',
-      analysisItems: 'dataAnalysis/analysisItems'
-    }),
-    filters() {
-      return this.analysisItems.filter(item => !!item.filter)
-        .map(({ id, filter }) => ({ id, ...filter }));
+    selection() {
+      return this.outputSourceSpecs[this.outputSelection];
+    },
+    stats() {
+      if (!this.lookupData) return;
+      const stats = {};
+      for (const [key, data] of Object.entries(this.lookupData)) {
+        const values = data.map(v => v.value);
+        stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+      }
+      return stats;
+    },
+    extent() {
+      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
+      if (!this.stats) return { min: 0, max: 1 };
+      return this.stats[adminLevel];
     },
     valueProp() {
       // Name of the value property of the feature to be rendered
       return (this.selection && this.selection.id) || '';
     },
-    formattedMapBounds() {
-      // FIXME: This is not really relavant with new tile map. This be no longer be needed once stats api is updated.
-      // Default bounds to Ethiopia
-      const top = _.get(this.mapBounds, '_ne.lat', ETHIOPIA_BOUNDING_BOX.TOP);
-      const left = _.get(this.mapBounds, '_sw.lng', ETHIOPIA_BOUNDING_BOX.LEFT);
-      const bottom = _.get(this.mapBounds, '_sw.lat', ETHIOPIA_BOUNDING_BOX.BOTTOM);
-      const right = _.get(this.mapBounds, '_ne.lng', ETHIOPIA_BOUNDING_BOX.RIGHT);
-      return {
-        top,
-        left,
-        bottom,
-        right
-      };
-    },
     vectorSource() {
       if (this.selectedLayer.vectorSourceLayer !== 'maas') {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       } else {
-        const outputSpecs = this.analysisItems.map(({ id, modelId, model, outputVariable, selection }) => ({ id, modelId, model, outputVariable, ...selection }))
+        const outputSpecs = this.outputSourceSpecs.map(({ id, modelId, outputVariable, timestamp }) => ({ id, modelId, outputVariable, timestamp }))
           .filter(({ id, modelId, runId, outputVariable, timestamp }) => {
             // some models (eb. chirps) has timestamp as 0 for some reason and 0 should be treated as valid value
             // eg. {"timeseries":[{"timestamp":0,"value":-0.24032641113384878}]}
-            return id && modelId && runId && outputVariable !== '' && !_.isNil(timestamp);
+            return id && modelId && runId && outputVariable && !_.isNil(timestamp);
           })
           .map(select => {
             const modelName = select.model || '';
@@ -218,7 +216,6 @@ export default {
       return this.filter && this.filter.global;
     },
     filterRange() {
-      // TODO: FIXME: HACKJOB: no filter likely because no analysisItems
       if (this.filter === undefined) {
         return this.extent;
       }
@@ -244,13 +241,6 @@ export default {
     },
     selectedAdminLevel() {
       this.selectedLayer = layers[this.selectedAdminLevel];
-    },
-    selectedTimestamp() {
-      this.setFeatureStates();
-    },
-    selectedData() {
-      this.refreshLayers();
-      this.updateLayerFilter();
     }
   },
   created() {
@@ -269,17 +259,11 @@ export default {
     this.refresh();
   },
   methods: {
-    ...mapActions({
-      setMapBounds: 'dataAnalysis/setMapBounds',
-      updateFilter: 'dataAnalysis/updateFilter'
-    }),
     refresh() {
       this.range = this.filterRange;
 
-      this.refreshData();
-
-      // Intilaize min max boundary value
-      this.updateStats().then(() => {
+      // Intilaize min max boundary value and data
+      this.refreshData().then(() => {
         this.refreshLayers();
         this.updateLayerFilter();
       });
@@ -292,80 +276,47 @@ export default {
       const { color, scaleFn } = this.colorOption;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, useFeatureState);
     },
-    async updateStats() {
-      const { runId, outputVariable, modelId } = this.selection || {};
-      if (!runId || !outputVariable || !modelId) {
+    async refreshData() {
+      const { runId, outputVariable, modelId, temporalResolution, temporalAggregation, spatialAggregation, timestamp } = this.selection || {};
+      if (!runId || !outputVariable || !modelId || !timestamp) {
         return;
       }
-      // FIXME: This is old api call that accepts bounds and returns stats calculated based on geohash grids. Result won't quite match with current geotiled vector map ouput
-      // We need to update the api so we get the stats based on geotile gtrid. Ideally we need to get the stats for all available zoom (precision) levels in single request
-      const stats = (await API.get(`/maas/output/${runId}/stats`, {
+      // TODO: Move this api request to service layer
+      const data = (await API.get('/maas/output/regional-data', {
         params: {
+          model_id: modelId,
+          run_id: runId,
           feature: outputVariable,
-          model: modelId,
-          ...this.formattedMapBounds
+          resolution: temporalResolution !== '' ? temporalResolution : 'month',
+          temporal_agg: temporalAggregation !== '' ? temporalAggregation : 'mean',
+          spatial_agg: spatialAggregation !== '' ? spatialAggregation : 'mean',
+          timestamp
         }
       })).data;
-      this.extent = {
-        min: stats.min,
-        max: stats.max
-      };
-    },
-    async refreshData() {
-      const { runId, modelId } = this.selection || {};
-
-      const promises = [];
-
-      promises.push(API.get('fetch-demo-data', {
-        params: {
-          modelId,
-          runId,
-          type: 'regional-data'
-        }
-      }));
-
-      const allRegionalData = (await Promise.all(promises)).map(response =>
-        _.isEmpty(response.data) ? {} : JSON.parse(response.data)
-      );
-      if (_.some(allRegionalData, response => _.isEmpty(response))) {
-        return;
-      }
-
-      this.selectedData = allRegionalData[0];
-      this.setFeatureStates();
+      this.lookupData = data;
+      if (this.map) this.setFeatureStates();
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
 
-      if (this.featuresDrawn !== undefined) {
-        this.featuresDrawn.forEach(id => {
-          this.map.removeFeatureState({
-            id,
-            source: this.vectorSourceId,
-            sourceLayer: this.vectorSourceLayer
-          });
-        });
-      }
+      this.map.removeFeatureState({
+        source: this.vectorSourceId,
+        sourceLayer: this.vectorSourceLayer
+      });
 
-      this.featuresDrawn = [];
-
-      if (this.selectedData !== undefined && this.selectedData[adminLevel] !== undefined && this.selectedData[adminLevel][this.selectedTimestamp] !== undefined) {
-        this.selectedData[adminLevel][this.selectedTimestamp].forEach(row => {
-          this.featuresDrawn.push(row.id.replaceAll('_', '__'));
-          this.map.setFeatureState({
-            id: row.id.replaceAll('_', '__'),
-            source: this.vectorSourceId,
-            sourceLayer: this.vectorSourceLayer
-          }, {
-            [this.valueProp]: row.value // > 29000 ? 29000 : row.value
-          });
+      this.lookupData[adminLevel].forEach(row => {
+        this.map.setFeatureState({
+          id: row.id.replaceAll('_', '__'),
+          source: this.vectorSourceId,
+          sourceLayer: this.vectorSourceLayer
+        }, {
+          [this.valueProp]: row.value // > 29000 ? 29000 : row.value
         });
-      }
+      });
     },
-    onAddLayer(event) {
-      if (this.selectedData !== undefined) {
-        this.setFeatureStates(event.map, this.valueProp, this.selectedData);
-      }
+    onAddLayer() {
+      if (!this.lookupData) return;
+      this.setFeatureStates();
     },
     onMapLoad(event) {
       const map = event.map;
@@ -376,27 +327,6 @@ export default {
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
       this.$emit('on-map-load');
-    },
-    syncBounds(event) {
-      // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
-      // We ignore move events from other maps which are being synced with the master map to avoid situation
-      // where they also trigger prop updates and fire events again to create infinite loop
-      const originalEvent = event.mapboxEvent.originalEvent;
-      if (!originalEvent) return;
-
-      const map = event.map;
-      const component = event.component;
-
-      // Disable camera movement until next tick so that the master map doesn't get updated by the props change
-      // Master map is being interacted by user so camera movement is already applied
-      component.disableCamera();
-
-      // get properties of the map and update vue props
-      this.setMapBounds(map.getBounds().toArray());
-
-      this.$nextTick(() => {
-        component.enableCamera();
-      });
     },
     updateLayerFilter() {
       if (!this.colorLayer) return;
@@ -409,7 +339,6 @@ export default {
         this.colorLayer.filter = ['all', ['has', this.valueProp], ...filter];
       } else {
         this.refreshLayers();
-        this.colorLayer.filter = ['all', true];
       }
     },
     _setLayerHover(map, feature) {
@@ -454,12 +383,6 @@ export default {
         return fields.filter(field => !_.isNil(field)).join('<br />');
       }
     },
-    toggleFilterGlobal() {
-      this.updateFilter({
-        analysisItemId: this.valueProp,
-        filter: { global: !this.isFilterGlobal }
-      });
-    },
     nextLayer() {
       // find current layer in layers and set it to the next one
       const layerIndex = layers.map(layer => {
@@ -476,10 +399,7 @@ export default {
     },
     updateFilterRange: _.throttle(function () {
       if (!this.range || !this.valueProp) return;
-      this.updateFilter({
-        analysisItemId: this.valueProp,
-        filter: { range: this.range }
-      });
+      this.$emit('slide-handle-change', { id: this.valueProp, range: this.range });
     }, 1000 / FILTER_ANIMATION_FPS)
   }
 };

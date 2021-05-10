@@ -9,6 +9,9 @@ import { ScenarioData } from '@/types/Common';
 import { DimensionInfo } from '@/types/Model';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
+import _ from 'lodash';
+
+// TODO: use each axis min/max based on the metadata
 
 // TODO: use each axis min/max based on the metadata
 
@@ -41,11 +44,11 @@ const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
 const lineStrokeWidthHover = 3;
 const lineOpacityVisible = 1;
-const lineOpacityHidden = 0.1;
+const lineOpacityHidden = 0.25;
 
 // line styling in new-runs mode
 const lineStrokeWidthNewRunsMode = 1.5;
-const lineOpacityNewRunsModeContext = 0.04;
+const lineOpacityNewRunsModeContext = 0.05;
 
 // hover styling
 const highlightDuration = 50; // in milliseconds
@@ -132,7 +135,8 @@ function renderParallelCoordinates(
   dimensions = filterDrilldownDimensionData(dimensions);
 
   // process data and detect data type for each dimension
-  pcTypes = detectDimensionTypes(data[0]);
+  const idealRow = _.maxBy(data, (d) => Object.keys(d).length);
+  pcTypes = detectDimensionTypes(idealRow ?? data[0]);
 
   //
   // scales
@@ -250,9 +254,12 @@ function renderParallelCoordinates(
 
     // when drawing lines, exclude the last segment to the output variable
     //  if the drawn lines are for potentially new scenarios (i.e., within the new-runs mode)
-    const dimensionSet = options.newRunsMode ? dimensions.filter(function(d) { return d.is_output !== undefined ? !d.is_output : d.type !== 'output'; }) : dimensions;
+    const dimensionSet: Array<DimensionInfo> = options.newRunsMode ? dimensions.filter(function(d) { return d.is_output !== undefined ? !d.is_output : d.type !== 'output'; }) : dimensions;
 
-    const fn = dimensionSet.map(function(p: DimensionInfo) {
+    // some data lines are missing certain dimensions, e.g., in-progress lines would not have output value yet!
+    const dataDrivenDimensionSet = dimensionSet.filter(dim => d[dim.name] !== undefined);
+
+    const fn = dataDrivenDimensionSet.map(function(p: DimensionInfo) {
       const dimName = p.name;
       const scaleX = getXScaleFromMap(dimName);
       const val = d[dimName];
@@ -287,7 +294,9 @@ function renderParallelCoordinates(
       .style('fill', 'none')
       .attr('stroke-width', lineStrokeWidthNormal)
       .style('stroke', function() { return (colorFunc(/* d.dimName */)); })
-      .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
+      .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
+      .style('stroke-dasharray', function(d) { return d.status === 'READY' ? 0 : ('3, 3'); })
+    ;
 
     // scenario lines are only interactive in the normal mode
     if (!options.newRunsMode) {
@@ -579,6 +588,9 @@ function renderParallelCoordinates(
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
+        if (formattedValue === 'NaN') {
+          formattedValue = '';
+        }
         const renderedText = d3.select(this);
         renderedText
           .text(formattedValue)
@@ -648,7 +660,7 @@ function renderParallelCoordinates(
           const getMarkerValueFromPos = (pos: number) => {
             const xScale = getXScaleFromMap(dimName);
             // Normally we go from data to pixels, but here we're doing pixels to data
-            return numberFloatFormat((xScale as D3ScaleLinear).invert(pos));
+            return (xScale as D3ScaleLinear).invert(pos).toFixed(2);
           };
           gElement
             .append('rect')
