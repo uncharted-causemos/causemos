@@ -343,15 +343,23 @@ export default defineComponent({
           value: +firstScenario[key]
         });
       });
-      paramArray.push({
-        name: 'country',
-        value: 'Ethiopia'
-      });
-      API.post('maas/model-runs', {
-        model_id: this.selectedModelId,
-        model_name: 'MaxHop',
-        parameters: paramArray
-      });
+      if (this.selectedModelId.includes('maxhop')) {
+        // country is supposed to be a drilldown so it is not included in the param list
+        // but is still needed, so add it manually
+        // @REVIEW
+        paramArray.push({
+          name: 'country',
+          value: 'Ethiopia'
+        });
+        API.post('maas/model-runs', {
+          model_id: this.selectedModelId,
+          model_name: 'MaxHop',
+          parameters: paramArray
+        });
+      } else {
+        // FIXME: currently other models are not executable
+        console.warn('Current mode is not executable!');
+      }
     },
     updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
       if (
