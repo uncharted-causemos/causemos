@@ -22,27 +22,29 @@
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
     >
-      <template v-slot:datacube-scenario-header>
-        <div class="datacube-header" v-if="isExpanded">
-          <h5 v-if="mainModelOutput">{{mainModelOutput.display_name}} | {{metadata.name}}</h5>
-          <disclaimer
-            v-if="scenarioCount > 0"
-            :message="
-              scenarioCount +
-                ' scenarios. Click a vertical line to select or deselect it.'
-            "
+      <template v-slot:datacube-model-header>
+        <div class="datacube-header" v-if="mainModelOutput">
+          <div v-if="isExpanded">
+            <h5>{{mainModelOutput.display_name}} | {{metadata.name}}</h5>
+            <disclaimer
+              v-if="scenarioCount > 0"
+              :message="
+                scenarioCount +
+                  ' scenarios. Click a vertical line to select or deselect it.'
+              "
+            />
+          </div>
+          <datacube-scenario-header
+            class="scenario-header"
+            :isExpanded="isExpanded"
+            :outputVariable="mainModelOutput.display_name"
+            :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
+            :selected-model-id="selectedModelId"
+            :selected-scenario-ids="selectedScenarioIds"
+            :color-from-index="colorFromIndex"
+            v-else
           />
         </div>
-        <datacube-scenario-header
-          class="scenario-header"
-          :isExpanded="isExpanded"
-          :outputVariable="'Crop production'"
-          :outputVariableUnits="'tonnes'"
-          :selected-model-id="selectedModelId"
-          :selected-scenario-ids="selectedScenarioIds"
-          :color-from-index="colorFromIndex"
-          v-else
-        />
       </template>
 
       <template v-slot:datacube-description>

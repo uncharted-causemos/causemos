@@ -40,7 +40,7 @@
       @set-drilldown-data="setDrilldownData"
       @check-model-metadata-validity="checkModelMetadataValidity"
     >
-      <template v-slot:datacube-scenario-header>
+      <template v-slot:datacube-model-header>
         <datacube-model-header
           class="scenario-header"
           :selected-model-id="selectedModelId"

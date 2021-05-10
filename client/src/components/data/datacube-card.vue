@@ -1,7 +1,7 @@
 <template>
   <div class="datacube-card-container">
     <header>
-      <slot name="datacube-scenario-header" />
+      <slot name="datacube-model-header" />
       <button v-tooltip="'Collapse datacube'" class="btn btn-default">
         <!-- @click="TODO" -->
         <i class="fa fa-fw fa-compress" />
@@ -112,7 +112,7 @@
             v-if="mainModelOutput"
             class="scenario-header"
             :outputVariable="mainModelOutput.display_name"
-            :outputVariableUnits="mainModelOutput.units"
+            :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"

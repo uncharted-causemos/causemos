@@ -22,14 +22,9 @@
 <script lang="ts">
 import API from '@/api/api';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
-import { ModelRun } from '@/types/Datacubes';
+import { ModelRun, ModelRunParameter } from '@/types/Datacubes';
 
-interface ParameterValue {
-  name: string;
-  value: string;
-}
-
-type ScenarioDescription = ParameterValue[];
+type ScenarioDescription = ModelRunParameter[];
 
 export default defineComponent({
   name: 'DatacubeScenarioHeader',

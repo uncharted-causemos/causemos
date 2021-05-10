@@ -135,6 +135,9 @@ function renderParallelCoordinates(
   dimensions = filterDrilldownDimensionData(dimensions);
 
   // process data and detect data type for each dimension
+  //  some input rows may have more columns that others,
+  //  so pick a row with the max number of columns
+  //  in order to correctly build the data type map
   const idealRow = _.maxBy(data, (d) => Object.keys(d).length);
   pcTypes = detectDimensionTypes(idealRow ?? data[0]);
 
@@ -215,8 +218,6 @@ function renderParallelCoordinates(
   // select default run, if requested
   //
   if (options.initialDataSelection && options.initialDataSelection.length > 0) {
-    // cancel any previous selection; turn every line into grey
-    // cancelPrevLineSelection(svgElement);
     svgElement.selectAll('.line')
       .data(data)
       .filter(function(d) {
@@ -228,15 +229,6 @@ function renderParallelCoordinates(
       .each(function(d) {
         const lineElement = this as SVGPathElement;
         handleLineSelection.bind(lineElement)(undefined /* event */, d, false /* do not notify external listeners */);
-
-        // const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
-        // selectLine(selectedLine, undefined /* event */, d, lineStrokeWidthNormal);
-        // if we have valid selection (either by direct click on a line or through brushing)
-        //  then update the tooltips
-        // const selectedLineData = selectedLine.datum() as ScenarioData;
-        // if (selectedLineData) {
-        //  updateSelectionTooltips(svgElement, selectedLine);
-        // }
       });
   }
 
@@ -585,6 +577,7 @@ function renderParallelCoordinates(
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
+        // ignore tooltip for non-existing values (e.g., output value for active model runs that are not completed yet)
         if (formattedValue === 'NaN') {
           formattedValue = '';
         }
