@@ -12,12 +12,12 @@
         />
         <slot name="action-bar" />
         <div class="augment-model">
-          <button
-            v-tooltip.top-center="'Augment Model'"
-            type="button"
-            class="btn btn-call-for-action btn-arrow-left"
+          <arrow-button
+            :text="'Augment Model'"
+            :icon="'fa-book'"
+            :is-pointing-left="true"
             @click="onAugmentCAG"
-          > <i class="fa fa-fw fa-book" />Augment Model</button>
+          />
         </div>
 
         <div class="comment-btn">
@@ -126,6 +126,7 @@ import EvidencePane from '@/components/drilldown-panel/evidence-pane';
 import IndicatorSummary from '@/components/indicator/indicator-summary';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
+import ArrowButton from '../widgets/arrow-button.vue';
 
 
 const PANE_ID = {
@@ -162,7 +163,8 @@ export default {
     EdgePolaritySwitcher,
     EdgeWeightSlider,
     EvidencePane,
-    IndicatorSummary
+    IndicatorSummary,
+    ArrowButton
   },
   props: {
     modelSummary: {
