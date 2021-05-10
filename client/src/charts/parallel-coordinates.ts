@@ -412,9 +412,6 @@ function renderParallelCoordinates(
     // now filter all lines and exclude those the fall outside the range (start, end)
     cancelPrevLineSelection(svgElement);
 
-    // unfortunately, the use of numberFloatFormat adds comma which makes conversion of the resulted string back to number invalid
-    const numberFloatFormatNoComma = d3.format('.2f');
-
     // examine all brushes at all axes and cache their range
     svgElement.selectAll<SVGGraphicsElement, DimensionInfo>('.pc-brush')
       .each(function() {
@@ -438,8 +435,8 @@ function renderParallelCoordinates(
           let end;
           const skip = false;
           if (pcTypes[dimName] === 'number') {
-            start = numberFloatFormatNoComma((xScale as D3ScaleLinear).invert(selection[0] as number));
-            end = numberFloatFormatNoComma((xScale as D3ScaleLinear).invert(selection[1] as number));
+            start = (xScale as D3ScaleLinear).invert(selection[0] as number).toFixed(2);
+            end = (xScale as D3ScaleLinear).invert(selection[1] as number).toFixed(2);
           } else {
             start = selection[0];
             end = selection[1];

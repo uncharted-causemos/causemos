@@ -35,7 +35,7 @@
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
           :ordinal-dimensions="ordinalDimensionNames"
-          :initial-data-selection="isDescriptionView ? [] : initialDataSelection"
+          :initial-data-selection="isDescriptionView ? [] : selectedScenarioIds"
           :show-baseline-defaults="showBaselineDefaults"
           :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
@@ -112,7 +112,7 @@
             v-if="mainModelOutput"
             class="scenario-header"
             :outputVariable="mainModelOutput.display_name"
-            :outputVariableUnits="mainModelOutput.unit"
+            :outputVariableUnits="mainModelOutput.units"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
@@ -306,7 +306,6 @@ export default defineComponent({
   data: () => ({
     showBaselineDefaults: false,
     showNewRunsMode: false,
-    initialDataSelection: [] as Array<string>,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
     potentialScenarios: [] as Array<ScenarioData>,

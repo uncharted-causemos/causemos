@@ -20,7 +20,7 @@
               All Projects
             </span>
           </li>
-          <!-- @REVIEW: link to navigate to the model publishing view (since it must be attached to a project) -->
+          <!-- @REVIEW: link to navigate to the model publishing view (this view must be attached to a project for the insight panel to work) -->
           <li
               v-if="project!== null"
               class="nav-item"
