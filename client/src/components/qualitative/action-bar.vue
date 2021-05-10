@@ -37,15 +37,14 @@
 
       </ul>
 
-      <!-- Create a model. NOTE: This button is just navigational for now -->
       <div class="run-model">
-        <button
-          v-tooltip.top-center="'Run Model'"
-          type="button"
-          class="btn btn-call-for-action btn-arrow-right"
+        <arrow-button
           :disabled="isRunningModel || numEdges === 0"
+          :text="`Run${isRunningModel ? 'ning' : ''} Model`"
+          :isPointingLeft="false"
+          :icon="'fa-connectdevelop'"
           @click="onRunModel"
-        > <i class="fa fa-fw fa-connectdevelop" />Run{{ isRunningModel ? 'ning' : '' }} Model</button>
+        />
       </div>
       <div class="comment-btn">
         <button
@@ -88,12 +87,14 @@ import RenameModal from '@/components/action-bar/rename-modal';
 import ModelOptions from '@/components/action-bar/model-options';
 import TextAreaCard from '../cards/text-area-card';
 import { CAG, EXPORT_MESSAGES } from '@/utils/messages-util';
+import ArrowButton from '@/components/widgets/arrow-button.vue';
 export default {
   name: 'ActionBar',
   components: {
     RenameModal,
     ModelOptions,
-    TextAreaCard
+    TextAreaCard,
+    ArrowButton
   },
   props: {
     modelSummary: {
