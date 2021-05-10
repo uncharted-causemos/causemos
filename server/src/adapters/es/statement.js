@@ -172,7 +172,7 @@ class Statement {
   async evidenceCount (statementFilters) {
     const filterQuery = queryUtil.buildQuery(statementFilters);
     const readerFilter = findFilter(statementFilters, 'reader');
-    const ALL_READERS = ['hume', 'eidos', 'cwms', 'sofia'];
+    const ALL_READERS = ['hume', 'eidos', 'sofia'];
     const selectedReaders = _.get(readerFilter, 'values') || ALL_READERS;
     /**
      * FIXME: Fix this to use count the evidence instead of using precomputed value as
