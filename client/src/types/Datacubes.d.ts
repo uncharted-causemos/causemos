@@ -5,11 +5,6 @@ export interface Period {
   resolution: string;
 }
 
-export interface CubeParameter {
-  id: string;
-  value: string;
-}
-
 export interface ModelRunParameter {
   id: string;
   name: string;
@@ -25,6 +20,7 @@ export interface ModelRun {
   flow_id: string;
   data_paths: string[];
   pre_gen_output_paths: string[];
+  // REVIEW
   is_default_run: boolean;
   default_run: boolean;
   status: string;
@@ -53,7 +49,7 @@ export interface Datacube {
   country: string[];
   admin1: string[];
   admin2: string[];
-  period: { gte: string; lte: string }[];
+  period: Period[];
   variable?: string; // indicator variable
   _search_score?: number;
 }

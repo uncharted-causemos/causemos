@@ -230,10 +230,27 @@ export default defineComponent({
 
     const typeBreakdownData: any[] = [];
 
+    const currentPublishingStep = ref(ModelPublishingStepID.Enrich_Description);
+    const selectedTemporalAggregation = ref('');
+    const selectedTemporalResolution = ref('');
+    const selectedSpatialAggregation = ref('');
+
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
       selectedScenarioIds.value = newIds;
+      if (newIds.length > 0) {
+        if (currentPublishingStep.value === ModelPublishingStepID.Enrich_Description) {
+          // user attempted to select one or more scenarios but the model publishing step is not correct
+          // this would be the case of the user selected a scenario on the PC plot while the model publishing step is still assuming description view
+          currentPublishingStep.value = ModelPublishingStepID.Tweak_Visualization;
+        }
+      } else {
+        // if no scenario selection is made, ensure we are back to the first step
+        if (currentPublishingStep.value !== ModelPublishingStepID.Enrich_Description) {
+          currentPublishingStep.value = ModelPublishingStepID.Enrich_Description;
+        }
+      }
     }
 
     const selectedTimestamp = ref(0);
@@ -257,10 +274,6 @@ export default defineComponent({
         completed: false
       }
     ]);
-    const currentPublishingStep = ref(ModelPublishingStepID.Enrich_Description);
-    const selectedTemporalAggregation = ref('');
-    const selectedTemporalResolution = ref('');
-    const selectedSpatialAggregation = ref('');
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
