@@ -345,7 +345,7 @@ export const calculateTicks = (xextent, tickInterval) => {
  * @param {Object} targetWidth - maximum width of rendered text
  * @param {Object} disemvowel - remove vowels inside words to assist in shortening, optional, default true
  */
-export const truncateTextToWidth = (svgTextEl, targetWidth, disemvowel = true) => {
+export const truncateTextToWidth = (svgTextEl, targetWidth, disemvowel = false) => {
   const d3elem = d3.select(svgTextEl);
   let numberOfCharacters = d3elem.text().length;
   if (disemvowel) {
