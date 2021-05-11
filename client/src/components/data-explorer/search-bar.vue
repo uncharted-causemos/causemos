@@ -16,7 +16,7 @@
 <script>
 import _ from 'lodash';
 import API from '@/api/api';
-import { h } from 'preact';
+import { h } from 'preact'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
 
@@ -26,6 +26,7 @@ import DynamicValuePill from '@/search/pills/dynamic-value-pill';
 import SingleRelationState from '@/search/single-relation-state';
 
 import codeUtil from '@/utils/code-util';
+import datacubeUtil from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
@@ -33,6 +34,12 @@ const CONCEPTS_MSG = 'Select one or more ontological concepts';
 
 export default {
   name: 'SearchBar',
+  props: {
+    datacubes: {
+      type: Array,
+      default: () => []
+    }
+  },
   computed: {
     ...mapGetters({
       filters: 'dataSearch/filters',
@@ -50,11 +57,17 @@ export default {
     this.pills = [];
   },
   mounted() {
+    // Generates lex pills from datacubes
+    let keys = Object.keys(this.datacubes[0]);
+    keys = keys.filter((k) => datacubeUtil.COLUMN_BLACKLIST.indexOf(k) < 0);
+    keys.sort();
+    const datacubePills = keys.map(k => new TextPill({ field: k, display: k, icon: '', iconText: '', searchDisplay: datacubeUtil.DISPLAY_NAMES[k] }));
+
     // Defines a list of searchable fields for LEX
     this.pills = [
       // TODO: Will add when there's support for location
       // new ValuePill(CODE_TABLE.GEO_LOCATION_NAME, GeoUtil.GEO_LOCATION_NAMES, 'Select one or more geospatial context'),
-
+      ...datacubePills,
       new DynamicValuePill(CODE_TABLE.DC_CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
       new RangePill(CODE_TABLE.DC_PERIOD),
       new TextPill(CODE_TABLE.DC_SEARCH)
@@ -71,7 +84,7 @@ export default {
           );
         };
       })(this),
-      suggestionLimit: 5,
+      suggestionLimit: 50,
       icon: v => {
         if (_.isNil(v)) return '<i class="fa fa-search"></i>';
         const pill = this.pills.find(

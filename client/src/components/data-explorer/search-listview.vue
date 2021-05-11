@@ -63,7 +63,10 @@ export default {
     Sparkline
   },
   props: {
-    datacubes: Array
+    datacubes: {
+      type: Array,
+      default: () => []
+    }
   },
   computed: {
     ...mapGetters({

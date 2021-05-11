@@ -3,7 +3,7 @@
     <modal-header
       :nav-back-label="navBackLabel"
       @close="onCancel" />
-    <div class="flex h-100">
+    <div class="flex h-100" v-if="datacubes.length > 0">
       <div class="flex h-100">
         <data-explorer-facets-panel :datacubes="datacubes"/>
       </div>

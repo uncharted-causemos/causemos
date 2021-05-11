@@ -5,7 +5,7 @@
     </div>
     <div class="search-panel flex-grow-1 flex-col h-100">
       <div class="search-bar-box">
-        <search-bar />
+        <search-bar :datacubes="datacubes" />
       </div>
       <div class="tab-panel flex-grow-1 h-0 flex-col">
         <tab-bar
@@ -52,7 +52,10 @@ export default {
     ]
   }),
   props: {
-    datacubes: Array
+    datacubes: {
+      type: Array,
+      default: () => []
+    }
   },
   computed: {
     ...mapGetters({
