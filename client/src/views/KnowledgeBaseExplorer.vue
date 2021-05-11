@@ -11,9 +11,7 @@
       <!-- body -->
       <div class="body-main-content flex-col">
         <!-- searchbar -->
-        <search-bar
-          v-if="ontologyConcepts.length > 0"
-          class="search" />
+        <search-bar class="search" />
 
         <div class="flex-grow-1 min-width-0">
           <tab-panel />
@@ -98,7 +96,7 @@ import RelationshipsPane from '@/components/drilldown-panel/relationships-pane';
 import FactorsPane from '@/components/drilldown-panel/factors-pane';
 import ModalAddedToCag from '@/components/modals/modal-added-to-cag';
 import filtersUtil from '@/utils/filters-util';
-import { conceptShortName } from '@/utils/concept-util';
+import { conceptHumanName } from '@/utils/concept-util';
 import projectService from '@/services/project-service';
 import modelService from '@/services/model-service';
 import * as curationService from '@/services/curation-service';
@@ -175,7 +173,7 @@ export default {
       filters: 'query/filters',
       project: 'app/project',
       updateToken: 'app/updateToken',
-      ontologyConcepts: 'app/ontologyConcepts',
+      ontologySet: 'app/ontologySet',
       layout: 'query/layout',
       selectedSubgraphEdges: 'graph/selectedSubgraphEdges',
       cag: 'query/cag',
@@ -295,7 +293,7 @@ export default {
         this.filters);
 
       const formattedNodes = nodesToAdd.map(node => {
-        return { concept: node.id, label: conceptShortName(node.id) };
+        return { concept: node.id, label: conceptHumanName(node.id, this.ontologySet) };
       });
 
       const formattedEdges = selectedEdges.map(selectedEdge => {

@@ -648,7 +648,7 @@ export default {
   mounted() {
     this.renderer = new CAGRenderer({
       el: this.$refs.container,
-      adapter: new Adapter({ nodeWidth: 130, nodeHeight: 30, layout: layered }),
+      adapter: new Adapter({ nodeWidth: 180, nodeHeight: 30, layout: layered }),
       renderMode: 'delta',
       addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
