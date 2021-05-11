@@ -148,7 +148,6 @@ import locationFormatter from '@/formatters/location-formatter';
 import listFormatter from '@/formatters/list-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import precisionFormatter from '@/formatters/precision-formatter';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import polarityFormatter from '@/formatters/polarity-formatter';
 
 export default {
@@ -215,7 +214,6 @@ export default {
     listFormatter,
     statementPolarityFormatter,
     precisionFormatter,
-    ontologyFormatter,
     polarityFormatter,
     refresh() {
       this.enableOverlay('Refreshing...');
