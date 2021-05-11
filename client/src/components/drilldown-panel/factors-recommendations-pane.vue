@@ -83,7 +83,6 @@ import SmallTextButton from '@/components/widgets/small-text-button';
 import EvidenceGroup from '@/components/drilldown-panel/evidence-group';
 import aggregationsUtil from '@/utils/aggregations-util';
 import messagesUtil from '@/utils/messages-util';
-import { conceptHumanName } from '@/utils/concept-util';
 
 const CORRECTIONS = messagesUtil.CORRECTIONS;
 
@@ -118,8 +117,7 @@ export default {
   computed: {
     ...mapGetters({
       currentCAG: 'app/currentCAG',
-      project: 'app/project',
-      ontologySet: 'app/ontologySet'
+      project: 'app/project'
     }),
     numSelectedItems() {
       let cnt = 0;
@@ -129,7 +127,7 @@ export default {
       return cnt;
     },
     shortConceptName() {
-      return conceptHumanName(this.correction.newGrounding, this.ontologySet);
+      return this.ontologyFormatter(this.correction.newGrounding);
     }
   },
   watch: {

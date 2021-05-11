@@ -96,7 +96,6 @@ import RelationshipsPane from '@/components/drilldown-panel/relationships-pane';
 import FactorsPane from '@/components/drilldown-panel/factors-pane';
 import ModalAddedToCag from '@/components/modals/modal-added-to-cag';
 import filtersUtil from '@/utils/filters-util';
-import { conceptHumanName } from '@/utils/concept-util';
 import projectService from '@/services/project-service';
 import modelService from '@/services/model-service';
 import * as curationService from '@/services/curation-service';
@@ -173,7 +172,6 @@ export default {
       filters: 'query/filters',
       project: 'app/project',
       updateToken: 'app/updateToken',
-      ontologySet: 'app/ontologySet',
       layout: 'query/layout',
       selectedSubgraphEdges: 'graph/selectedSubgraphEdges',
       cag: 'query/cag',
@@ -293,7 +291,7 @@ export default {
         this.filters);
 
       const formattedNodes = nodesToAdd.map(node => {
-        return { concept: node.id, label: conceptHumanName(node.id, this.ontologySet) };
+        return { concept: node.id, label: this.ontologyFormatter(node.id) };
       });
 
       const formattedEdges = selectedEdges.map(selectedEdge => {

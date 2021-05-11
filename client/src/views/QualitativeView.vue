@@ -112,7 +112,7 @@
         <div v-if="selectedNode !== null">
           <div>
             Are you sure you want to remove
-            <strong>{{ conceptLabel(selectedNode.concept) }}</strong> from your CAG?
+            <strong>{{ ontologyFormatter(selectedNode.concept) }}</strong> from your CAG?
           </div>
           <ul>
             <li>{{ countIncomingRelationships }} incoming relationship(s)</li>
@@ -122,8 +122,8 @@
         </div>
         <div v-if="selectedEdge !== null">
           <div>Are you sure you want to remove the relationship between</div>
-          <strong>{{ conceptLabel(selectedEdge.source) }}</strong> and
-          <strong>{{ conceptLabel(selectedEdge.target) }}</strong> from this CAG?
+          <strong>{{ ontologyFormatter(selectedEdge.source) }}</strong> and
+          <strong>{{ ontologyFormatter(selectedEdge.target) }}</strong> from this CAG?
         </div>
       </template>
     </modal-confirmation>
@@ -160,7 +160,6 @@ import FactorsPane from '@/components/drilldown-panel/factors-pane';
 import NodeSuggestionsPane from '@/components/drilldown-panel/node-suggestions-pane';
 import FactorsRecommendationsPane from '@/components/drilldown-panel/factors-recommendations-pane';
 
-import { conceptHumanName } from '@/utils/concept-util';
 import filtersUtil from '@/utils/filters-util';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import ModalPathFind from '@/components/modals/modal-path-find';
@@ -247,12 +246,8 @@ export default {
     ...mapGetters({
       currentCAG: 'app/currentCAG',
       project: 'app/project',
-      updateToken: 'app/updateToken',
-      ontologySet: 'app/ontologySet'
+      updateToken: 'app/updateToken'
     }),
-    // ontologySet() {
-    //   return new Set(this.ontologyConcepts.map(d => _.last(d.split('/'))));
-    // },
     showEmptyStateInstructions() {
       return _.isEmpty(this.modelComponents.nodes) &&
           _.isEmpty(this.modelComponents.edges) &&
@@ -324,9 +319,6 @@ export default {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken'
     }),
-    conceptLabel(concept) {
-      return conceptHumanName(concept, this.ontologySet);
-    },
     async refresh() {
       // Get CAG data
       this.modelSummary = await modelService.getSummary(this.currentCAG);
@@ -355,7 +347,7 @@ export default {
           this.setUpdateToken(data.updateToken);
         }
       } else {
-        this.toaster(this.conceptLabel(edge.source) + ' ' + this.conceptLabel(edge.target) + ' already exists in the CAG', 'error', false);
+        this.toaster(this.ontologyFormatter(edge.source) + ' ' + this.ontologyFormatter(edge.target) + ' already exists in the CAG', 'error', false);
       }
     },
     createNewNode() {
@@ -722,7 +714,7 @@ export default {
       const newNodesPayload = newNodes.map(concept => {
         return {
           concept: concept,
-          label: this.conceptLabel(concept)
+          label: this.ontologyFormatter(concept)
         };
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges);

@@ -35,7 +35,6 @@ import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import DropdownControl from '@/components/dropdown-control';
 import modelService from '@/services/model-service';
-import conceptUtil from '@/utils/concept-util';
 
 const CONCEPT_SUGGESTION_COUNT = 8;
 
@@ -62,7 +61,6 @@ export default {
   computed: {
     ...mapGetters({
       ontologyConcepts: 'app/ontologyConcepts',
-      ontologySet: 'app/ontologySet',
       project: 'app/project'
     })
   },
@@ -135,7 +133,7 @@ export default {
           .slice(0, CONCEPT_SUGGESTION_COUNT);
 
         this.suggestions.forEach(suggestion => {
-          suggestion.label = conceptUtil.conceptHumanName(suggestion.concept, this.ontologySet);
+          suggestion.label = this.ontologyFormatter(suggestion.concept);
         });
       }
     }, 500, { trailing: true, leading: false })

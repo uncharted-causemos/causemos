@@ -7,7 +7,7 @@
       <h4>
         <i
           class="fa fa-fw fa-check-circle green-icon"
-          aria-hidden="true" />
+          aria-hidden="true" /> Add to CAG
       </h4>
     </template>
     <template #body>
