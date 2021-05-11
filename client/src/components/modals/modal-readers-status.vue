@@ -10,7 +10,6 @@
           <td>Eidos</td>
           <td>Hume</td>
           <td>Sofia</td>
-          <td>CWMS</td>
         </tr>
         <tr
           v-for="(item, idx) in readersStatus"
@@ -27,10 +26,6 @@
           <td>
             <i v-if="item.sofia" class="fa fa-fw fa-check" />
             <i v-if="!item.sofia" class="fa fa-fw fa-spinner" />
-          </td>
-          <td>
-            <i v-if="item.cwms" class="fa fa-fw fa-check" />
-            <i v-if="!item.cwms" class="fa fa-fw fa-spinner" />
           </td>
         </tr>
       </table>
@@ -64,7 +59,6 @@ import { ReaderOutputRecord } from '@/types/Dart';
 
 enum Readers {
   EIDOS = 'eidos',
-  CWMS = 'cwms',
   SOFIA = 'sofia',
   HUME = 'hume'
 }
@@ -73,7 +67,6 @@ interface GroupedRecord {
   document_id: string;
   eidos?: ReaderOutputRecord;
   hume?: ReaderOutputRecord;
-  cwms?: ReaderOutputRecord;
   sofia?: ReaderOutputRecord;
 }
 
@@ -112,9 +105,6 @@ export default defineComponent({
             case Readers.HUME:
               record.hume = reader;
               break;
-            case Readers.CWMS:
-              record.cwms = reader;
-              break;
             default:
               record.sofia = reader;
           }
@@ -129,7 +119,6 @@ export default defineComponent({
       this.readersStatus.forEach(record => {
         if (record.eidos) payload.push(record.eidos);
         if (record.hume) payload.push(record.hume);
-        if (record.cwms) payload.push(record.cwms);
         if (record.sofia) payload.push(record.sofia);
       });
       await projectService.createAssemblyRequest(this.project, payload, this.timestamp);

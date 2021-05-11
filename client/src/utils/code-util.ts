@@ -258,7 +258,7 @@ export const HEDGING_MAP = Object.freeze({
   [HEDGING.ALL]: 'All hedged evidence'
 });
 
-export const READERS_NAMES = ['sofia', 'eidos', 'hume', 'cwms'];
+export const READERS_NAMES = ['sofia', 'eidos', 'hume'];
 
 export default {
   CODE_TABLE,
