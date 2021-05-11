@@ -144,7 +144,6 @@ export default {
     },
     render(width, height) {
       if (this.matrixData === null) return;
-      const self = this;
       const svgWidth = width || this.$refs['matrix-container'].clientWidth;
       const svgHeight = height || this.$refs['matrix-container'].clientHeight;
       const options = {
@@ -168,7 +167,7 @@ export default {
       );
       refSelection.on('mousemove', (evt) => {
         if (evt.layerX > AXIS_LABEL_MARGIN_PX && evt.layerY > AXIS_LABEL_MARGIN_PX) {
-          const tooltipText = self.getTooltipText(evt.layerX, evt.layerY, svgWidth, svgHeight);
+          const tooltipText = this.getTooltipText(evt.layerX, evt.layerY, svgWidth, svgHeight);
           if (tooltipText !== null) {
             showSvgTooltip(refSelection, tooltipText, [evt.layerX, evt.layerY], Math.PI, true);
           } else {

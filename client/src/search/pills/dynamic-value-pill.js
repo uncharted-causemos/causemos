@@ -5,11 +5,11 @@ import lexUtil from '@/search/lex-util';
 
 // HACK
 class ConceptValueState extends ValueState {
-  unformatUnboxedValue (displayKey, context = []) { // eslint-disable-line no-unused-vars
+  unformatUnboxedValue (displayKey, context = []) { // eslint-disable-line @typescript-eslint/no-unused-vars
     return displayKey;
   }
 
-  formatUnboxedValue (key, context = []) { // eslint-disable-line no-unused-vars
+  formatUnboxedValue (key, context = []) { // eslint-disable-line @typescript-eslint/no-unused-vars
     return _.last(key.split('/'));
   }
 }

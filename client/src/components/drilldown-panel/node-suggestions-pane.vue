@@ -39,7 +39,6 @@
         class="suggestions-group"
       >
         <span
-          slot="title"
           class="suggestions-title"
         >
           <span v-if="relationshipGroup.key === 'cause'">
@@ -56,9 +55,7 @@
           </span>
 
         </span>
-        <div
-          v-if="relationshipGroup.children.length > 0"
-          slot="content">
+        <div v-if="relationshipGroup.children.length > 0">
           <div class="suggestions-list">
             <div
               v-for="relationship in relationshipGroup.children"

@@ -3,7 +3,7 @@
     class="unknown-bulk-dropdown"
     :class="{ 'confirmation-mode': showConfirmationMode, 'non-confirmation-mode': !showConfirmationMode}"
   >
-    <div slot="content">
+    <template #content>
       <span class="dropdown-title">Fix unknown polarities</span><br>
       <div
         class="dropdown-option"
@@ -27,10 +27,10 @@
         to
         <i class="fa fa-arrow-up" />
       </div>
-    </div>
-    <div
+    </template>
+    <template
       v-if="showConfirmationMode"
-      slot="footer">
+      #footer>
       <div
         class="alert alert-info"
         role="alert">
@@ -59,7 +59,7 @@
           @click.stop.prevent="confirmUpdate(selected)"
         >Confirm</button>
       </div>
-    </div>
+    </template>
   </dropdown-control>
 </template>
 
