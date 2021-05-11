@@ -83,7 +83,7 @@ export default {
     }),
     facets() {
       let keys = Object.keys(this.datacubes[0]);
-      keys = keys.filter((k) => datacubeUtil.COLUMN_BLACKLIST.indexOf(k) < 0);
+      keys = keys.filter((k) => datacubeUtil.DISPLAY_NAMES[k] !== undefined);
       keys.sort();
       const columns = keys.reduce((a, k) => {
         a[k] = {

@@ -57,9 +57,9 @@ export default {
     this.pills = [];
   },
   mounted() {
-    // Generates lex pills from datacubes
+    // Generates lex pills from select datacube columns
     let keys = Object.keys(this.datacubes[0]);
-    keys = keys.filter((k) => datacubeUtil.COLUMN_BLACKLIST.indexOf(k) < 0);
+    keys = keys.filter((k) => datacubeUtil.DISPLAY_NAMES[k] !== undefined);
     keys.sort();
     const datacubePills = keys.map(k => new TextPill({ field: k, display: k, icon: '', iconText: '', searchDisplay: datacubeUtil.DISPLAY_NAMES[k] }));
 
@@ -67,10 +67,10 @@ export default {
     this.pills = [
       // TODO: Will add when there's support for location
       // new ValuePill(CODE_TABLE.GEO_LOCATION_NAME, GeoUtil.GEO_LOCATION_NAMES, 'Select one or more geospatial context'),
-      ...datacubePills,
+      new TextPill(CODE_TABLE.DC_SEARCH),
       new DynamicValuePill(CODE_TABLE.DC_CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
       new RangePill(CODE_TABLE.DC_PERIOD),
-      new TextPill(CODE_TABLE.DC_SEARCH)
+      ...datacubePills
     ];
 
     const language = Lex.from('field', ValueState, {
