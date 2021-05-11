@@ -16,7 +16,6 @@
 <script>
 import _ from 'lodash';
 import API from '@/api/api';
-import { h } from 'preact';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
 

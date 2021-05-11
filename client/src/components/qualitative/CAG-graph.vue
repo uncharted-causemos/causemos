@@ -384,9 +384,8 @@ class CAGRenderer extends SVGRenderer {
   }
 
   getNodeCollider() {
-    const self = this;
     // TODO: this won't work with hierarchies
-    return (p) => self.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
+    return (p) => this.layout.nodes.some(n => p.x > n.x && p.x < n.x + n.width && p.y > n.y && p.y < n.y + n.height);
   }
 
   enableNodeHandles(node) {
@@ -394,7 +393,6 @@ class CAGRenderer extends SVGRenderer {
     const svg = d3.select(this.svgEl);
     const nodeData = node.datum();
     const handles = node.select('.node-handles').append('g');
-    const self = this;
 
     node.select('.node-header')
       .attr('width', (d) => d.width - DEFAULT_STYLE.nodeHandles.width * 2)
@@ -450,7 +448,7 @@ class CAGRenderer extends SVGRenderer {
       .on('start', (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
       })
-      .on('drag', function(evt) {
+      .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
         const pointerCoords = d3.zoomTransform(svg.node()).invert(d3.pointer(evt, svg.node()));
         chart.append('path')
@@ -461,16 +459,16 @@ class CAGRenderer extends SVGRenderer {
             const mousePoint = { x: pointerCoords[0], y: pointerCoords[1] };
 
             if (d3.select(evt.sourceEvent.target).classed('node-header') || d3.select(evt.sourceEvent.target).classed('handle')) {
-              self.newEdgeTargetId = d3.select(evt.sourceEvent.target).datum().id;
+              this.newEdgeTargetId = d3.select(evt.sourceEvent.target).datum().id;
 
-              if (self.newEdgeSourceId === self.newEdgeTargetId && distance(newEdgeStart, mousePoint) < 20) {
-                self.newEdgeTargetId = null;
+              if (this.newEdgeSourceId === this.newEdgeTargetId && distance(newEdgeStart, mousePoint) < 20) {
+                this.newEdgeTargetId = null;
                 return pathFn([]);
               }
-              return pathFn(self.getPathBetweenNodes(newEdgeSource, getLayoutNodeById(self.newEdgeTargetId)));
+              return pathFn(this.getPathBetweenNodes(newEdgeSource, getLayoutNodeById(this.newEdgeTargetId)));
             } else {
-              self.newEdgeTargetId = null;
-              return pathFn(simplifyPath(getAStarPath(newEdgeStart, mousePoint, self.getNodeCollider())));
+              this.newEdgeTargetId = null;
+              return pathFn(simplifyPath(getAStarPath(newEdgeStart, mousePoint, this.getNodeCollider())));
             }
           })
           .style('pointer-events', 'none')
@@ -481,7 +479,7 @@ class CAGRenderer extends SVGRenderer {
           .style('fill', 'none');
       })
       .on('end', () => {
-        this.options.newEdgeFn(getLayoutNodeById(self.newEdgeSourceId), getLayoutNodeById(self.newEdgeTargetId));
+        this.options.newEdgeFn(getLayoutNodeById(this.newEdgeSourceId), getLayoutNodeById(this.newEdgeTargetId));
       });
     handles.call(drag);
   }

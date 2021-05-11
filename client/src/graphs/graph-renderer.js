@@ -43,7 +43,7 @@ export default class GraphRenderer {
   }
 
 
-  initialize(element) { // eslint-disable-line no-unused-vars
+  initialize(element) { // eslint-disable-line @typescript-eslint/no-unused-vars
     throw new Error('Needs impl');
   }
 
