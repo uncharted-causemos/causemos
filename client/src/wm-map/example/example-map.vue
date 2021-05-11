@@ -48,9 +48,9 @@
         <wm-map-selectbox @select-box="onSelectBox" />
         <template
           v-for="data in mapData"
+          :key="data.sourceId"
         >
           <wm-map-geojson
-            :key="data.sourceId + 'base'"
             :source-id="data.sourceId"
             :source="data.source"
             :layer-id="data.sourceId + '-base'"
@@ -58,7 +58,6 @@
           />
           <!-- Highlight layer shares same source data as data layer. Omit :source -->
           <wm-map-geojson
-            :key="data.sourceId + 'highlights'"
             :source-id="data.sourceId"
             :layer-id="data.sourceId + '-highlights'"
             :layer="data.layers.highlights"

@@ -6,7 +6,6 @@ import { sync } from 'vuex-router-sync';
 import VTooltip from 'v-tooltip'; // FIXME: not working
 import Toast, { useToast, TYPE } from 'vue-toastification';
 
-// @ts-ignore
 import Vue3Resize from 'vue3-resize';
 
 import 'vue-toastification/dist/index.css';

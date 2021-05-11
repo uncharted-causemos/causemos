@@ -62,7 +62,7 @@ export function colaLayout(direction) {
       });
       return cy.nodes();
     },
-    layout: (selection, cache, cy) => { // eslint-disable-line no-unused-vars
+    layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
       return {
         name: 'cola',
         flow: {
@@ -77,7 +77,7 @@ export function colaLayout(direction) {
         maxSimulationTime: 300
       };
     },
-    postLayout(selection, cache, cy) { // eslint-disable-line no-unused-vars
+    postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
       cy.edges().style({ display: null });
     }
   };
@@ -135,7 +135,7 @@ export function coseBilkentLayout() {
       });
       return cy.nodes();
     },
-    layout: (selection, cache, cy) => { // eslint-disable-line no-unused-vars
+    layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
       return {
         name: 'cose-bilkent',
         animate: true,
@@ -145,7 +145,7 @@ export function coseBilkentLayout() {
         nodeDimensionsIncludeLabels: true
       };
     },
-    postLayout(selection, cache, cy) { // eslint-disable-line no-unused-vars
+    postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
       cy.batch(() => {
         cache.edges.restore();
         // cache.edges.style({ display: 'none' });
@@ -184,14 +184,14 @@ export function circularBFSLayout(hideEdgesAfterRender = false) {
         const orderedNodes = _.sortBy(cy.nodes(), node => node.data().id);
         return cy.collection(orderedNodes);
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line no-unused-vars
+      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
         return {
           name: 'breadthfirst',
           circle: true,
           spacingFactor: 4.5
         };
       },
-      postLayout(selection, cache, cy) { // eslint-disable-line no-unused-vars
+      postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
         // Figure out approximate center
         let x = 0;
         let y = 0;
@@ -268,12 +268,12 @@ export function centralityLayout() {
         });
         return cy.elements();
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line no-unused-vars
+      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
         return {
           name: 'random'
         };
       },
-      postLayout(selection, cache, cy) { // eslint-disable-line no-unused-vars
+      postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
       }
     },
     {
@@ -282,12 +282,12 @@ export function centralityLayout() {
         const nodesToRemove = cy.elements('node[ccn <= 0.7] ');
         return nodesToRemove;
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line no-unused-vars
+      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
         return {
           name: 'cola'
         };
       },
-      postLayout(selection, cache, cy) { // eslint-disable-line no-unused-vars
+      postLayout(selection, cache, cy) { // eslint-disable-line @typescript-eslint/no-unused-vars
         selection.positions(ele => {
           return ele.addClass('hidden');
         });
@@ -306,7 +306,7 @@ export function testLayout() {
       extract: (cache, cy) => {
         return cy.nodes().filter(d => d.data().groundingScore > DC_GOAL);
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line no-unused-vars
+      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
         return {
           name: 'circle',
           animate: true,
@@ -319,7 +319,7 @@ export function testLayout() {
       extract: (cache, cy) => {
         return cy.nodes().filter(d => d.data().groundingScore <= DC_GOAL);
       },
-      layout: (selection, cache, cy) => { // eslint-disable-line no-unused-vars
+      layout: (selection, cache, cy) => { // eslint-disable-line @typescript-eslint/no-unused-vars
         return {
           name: 'circle',
           animate: true,

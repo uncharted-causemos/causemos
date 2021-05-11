@@ -1339,8 +1339,7 @@ const filterDrilldownDimensionData = (dimensions: Array<DimensionInfo>) => {
 
 // attempt to determine types of each dimension based on first row of data
 const toType = (v: string | number) => {
-  // @ts-ignore
-  return ({}).toString.call(v).match(/\s([a-zA-Z]+)/)[1].toLowerCase();
+  return (({}).toString.call(v).match(/\s([a-zA-Z]+)/) ?? [])[1].toLowerCase();
 };
 const toTypeCoerceNumbers = (v: string | number) => {
   // if the following condition is === instead of == then all numeric dimensions will be detected as ordinal

@@ -419,7 +419,6 @@ export default {
         // Return early to avoid `invalid height` errors.
         return;
       }
-      const self = this;
 
       const series = this.seriesData;
 
@@ -454,12 +453,12 @@ export default {
 
       // Selection of a time point
       const bisectDate = d3.bisector(d => d.timestamp).left;
-      this.chart.select('.event-overlay').on('click', function (evt) {
+      this.chart.select('.event-overlay').on('click', (evt) => {
         if (!series.length) {
           return;
         }
         if (series.length === 1) {
-          self.select(series[0]);
+          this.select(series[0]);
           return;
         }
         const xPos = xscale.invert(d3.pointer(evt)[0]);
@@ -468,7 +467,7 @@ export default {
         const nextElement = series[elementIndex];
         const d = xPos - prevElement.timestamp > nextElement.timestamp - xPos ? nextElement : prevElement;
 
-        self.select(d);
+        this.select(d);
       });
       // Select last time slice by default or preset selected timeseries index
       const selectedTimeSlice = _.isNil(this.selectedTimeSliceIndex) ? _.last(series) : series[this.selectedTimeSliceIndex];
