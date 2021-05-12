@@ -157,7 +157,6 @@ import MessageDisplay from '@/components/widgets/message-display';
 import SmallTextButton from '@/components/widgets/small-text-button';
 import SmallIconButton from '@/components/widgets/small-icon-button';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import numberFormatter from '@/formatters/number-formatter';
 import messagesUtil from '@/utils/messages-util';
 const CORRECTIONS = messagesUtil.CORRECTIONS;
@@ -262,7 +261,6 @@ export default {
     this.refresh();
   },
   methods: {
-    ontologyFormatter,
     numberFormatter,
     initializeData() {
       this.currentItem = null;

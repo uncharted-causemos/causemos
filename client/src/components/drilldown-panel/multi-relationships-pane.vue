@@ -51,7 +51,6 @@ import _ from 'lodash';
 import { mapActions } from 'vuex';
 
 import { calcEdgeColor } from '@/utils/scales-util';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import numberFormatter from '@/formatters/number-formatter';
 
 export default {
@@ -98,7 +97,6 @@ export default {
     ...mapActions({
       setSelectedSubgraphEdges: 'graph/setSelectedSubgraphEdges'
     }),
-    ontologyFormatter,
     numberFormatter,
     refresh() {
       // Massage the structure to include checked states and styles

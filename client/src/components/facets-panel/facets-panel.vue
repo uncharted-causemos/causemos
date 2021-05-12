@@ -164,7 +164,6 @@ import NumericalFacet from '@/components/facets/numerical-facet';
 
 import SidePanel from '@/components/side-panel/side-panel';
 
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
 import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
@@ -217,7 +216,6 @@ export default {
     SidePanel
   },
   data: () => ({
-    ontologyFormatter: ontologyFormatter,
     statementPolarityFormatter: statementPolarityFormatter,
     contradictionCategoryFormatter: contradictionCategoryFormatter,
     hedgingCategoryFormatter: hedgingCategoryFormatter,
