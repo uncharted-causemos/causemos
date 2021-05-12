@@ -16,7 +16,6 @@
 <script>
 import _ from 'lodash';
 import API from '@/api/api';
-import { h } from 'preact'; // eslint-disable-line @typescript-eslint/no-unused-vars
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
 
