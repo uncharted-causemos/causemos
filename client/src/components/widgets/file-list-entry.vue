@@ -16,9 +16,7 @@
       <dropdown-control
         v-if="isMenuOpen"
       >
-        <div
-          slot="content"
-        >
+        <template #content>
           <p
             class="dropdown-option"
             @click="onAppend"
@@ -27,7 +25,7 @@
             class="dropdown-option"
             @click="onDelete"
           ><i class="fa fa-fw fa-trash" />Delete</p>
-        </div>
+        </template>
       </dropdown-control>
     </div>
   </div>

@@ -234,20 +234,21 @@ export default class ModelRenderer extends SVGRenderer {
 
   renderHistoricalAndProjections(selectedScenarioId) {
     const chart = this.chart;
-    const self = this;
 
-    chart.selectAll('.node-ui').each(function(node) {
-      if (node.nodes) return; // node has children
+    chart.selectAll('.node-ui').each((datum, index, nodes) => {
+      if (datum.nodes) return; // node has children
 
-      const nodeWidth = node.width;
-      const nodeHeight = node.height;
+      const node = nodes[index];
+
+      const nodeWidth = datum.width;
+      const nodeHeight = datum.height;
       const graphHeight = 32;
       const xAxisLeftPadding = 14;
-      const nodeBodyGroup = d3.select(this).select('.node-body-group');
-      const nodeHeaderGroup = d3.select(this).select('.node-header-group');
+      const nodeBodyGroup = d3.select(node).select('.node-body-group');
+      const nodeHeaderGroup = d3.select(node).select('.node-header-group');
 
       // Create historical/projection chart
-      const nodeScenarioData = self.scenarioData[node.concept];
+      const nodeScenarioData = this.scenarioData[datum.concept];
 
       nodeBodyGroup.select('.historic-graph').remove();
       nodeBodyGroup.select('.indicator-label').remove();

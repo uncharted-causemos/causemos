@@ -34,7 +34,6 @@ const DASHED_LINE = {
 
 const SELECTED_TIMESTAMP_WIDTH = 2;
 const SELECTABLE_TIMESTAMP_OPACITY = 0.5;
-const LABEL_PADDING = 2;
 
 // A collection of elements that are used to dynamically show details about the selected
 //  timestamp
@@ -247,8 +246,8 @@ function calculateLabelDimensions(
 ) {
   const textBBox = labelText.node()?.getBBox() ?? { width: 0, height: 0 };
   return {
-    labelWidth: textBBox.width + LABEL_PADDING * 2,
-    labelHeight: textBBox.height + LABEL_PADDING * 2
+    labelWidth: textBBox.width,
+    labelHeight: textBBox.height
   };
 }
 
@@ -269,7 +268,7 @@ function generateLabel(
   labelText.attr(
     'transform',
     // Nudge upwards to accomodate for the weird text bounding box sizing
-    translate(0, labelHeight - 8)
+    translate(0, labelHeight - 3)
   );
   // Background for the label
   labelGroup
@@ -327,7 +326,7 @@ function generateSelectedTimestampElements(
       .attr('y2', 0);
     const label = generateLabel(gElement, color, '[value]');
     const height = label.node()?.getBBox().height ?? 0;
-    label.attr('transform', translate(0, -height / 2));
+    label.attr('transform', translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2));
     label.select('text').style('text-anchor', 'start');
     label.select('rect').attr('transform', translate(0, 0));
     return gElement;

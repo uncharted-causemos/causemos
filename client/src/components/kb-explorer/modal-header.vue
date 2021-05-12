@@ -21,7 +21,9 @@
       of {{ numberFormatter(filteredEdgesCount) }}
       {{ areEdgesDrawn ? '': '(hidden) ' }} relationships
     </span>
-    <bookmark-controls slot="trailing" />
+    <template #trailing>
+      <bookmark-controls />
+    </template>
   </full-screen-modal-header>
 </template>
 

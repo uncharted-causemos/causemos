@@ -5,32 +5,27 @@
     :subselection.prop="subSelection"
     @facet-element-updated="updateSelection"
   >
-    <div
-      slot="header-label"
-    >
+    <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+    <div slot="header-label">
       <span class="facet-font">{{ label }}</span>
     </div>
 
     <facet-template target="facet-terms-value">
-      <div
-        slot="label"
+      <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+      <div slot="label"
         class="facet-label-truncated facet-font"
         title="${label} - ${value}"
       >
         ${label}
       </div>
-      <div
-        slot="value"
-        class="facet-font"
-      >
+      <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+      <div slot="value" class="facet-font">
         ${value}
       </div>
     </facet-template>
 
-    <div
-      slot="footer"
-      class="facet-footer-container"
-    >
+    <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+    <div slot="footer" class="facet-footer-container">
       <div
         class="facet-footer-more"
       >

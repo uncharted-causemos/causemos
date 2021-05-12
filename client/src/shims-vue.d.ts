@@ -4,3 +4,6 @@ declare module '*.vue' {
   const component: DefineComponent<{}, {}, any>
   export default component
 }
+
+// This is required because the `vue3-resize` module doesn't contain types
+declare module 'vue3-resize';

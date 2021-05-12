@@ -1,4 +1,9 @@
+// This file is loaded by `@vue/cli-shared-utils/lib/module.js` via CommonJS require,
+//  so we need to use `require` instead of `import` here as well
+// https://stackoverflow.com/a/62613282
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const webpack = require('webpack');
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const path = require('path');
 
 module.exports = {

@@ -6,9 +6,8 @@
     class="facet-font"
     @facet-element-updated="updateSelection"
   >
-    <div
-      slot="header-label"
-    >
+    <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+    <div slot="header-label">
       <span class="facet-font">{{ label }}</span>
     </div>
 
@@ -18,14 +17,14 @@
       title="${tooltip}"
     />
 
-    <div
-      v-else
-      slot="content"
-    />
 
-    <div
+    <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+    <div v-else slot="content" />
+
+
+    <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+    <div slot="footer"
       v-if="facetData.values.length > 0"
-      slot="footer"
       class="facet-footer-container"
     >
       <facet-plugin-zoom-bar
@@ -34,11 +33,9 @@
         round-caps="true"
       />
     </div>
-    <div
-      v-else
-      slot="footer"
-      class="facet-footer-container"
-    >
+
+    <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
+    <div v-else slot="footer" class="facet-footer-container">
       No Data Available
     </div>
   </facet-bars>
