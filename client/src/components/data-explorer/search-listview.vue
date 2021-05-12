@@ -113,8 +113,8 @@ export default {
       if (cubeRow.timeseries) {
         sparklineData[0].series = cubeRow.timeseries;
       } else {
-        // mock data, temporary
-        sparklineData[0].series = Array.from({ length: 10 }, () => Math.floor(Math.random() * 10));
+        // empty case
+        sparklineData[0].series = [0];
       }
       return sparklineData;
     },
