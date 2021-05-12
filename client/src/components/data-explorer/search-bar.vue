@@ -65,26 +65,25 @@ export default {
 
     // Defines a list of searchable fields for LEX
     this.pills = [
-      // TODO: Will add when there's support for location
-      // new ValuePill(CODE_TABLE.GEO_LOCATION_NAME, GeoUtil.GEO_LOCATION_NAMES, 'Select one or more geospatial context'),
       new TextPill(CODE_TABLE.DC_SEARCH),
       new DynamicValuePill(CODE_TABLE.DC_CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
       new RangePill(CODE_TABLE.DC_PERIOD),
+      // TODO: Will add when there's support for location
+      // new ValuePill(CODE_TABLE.GEO_LOCATION_NAME, GeoUtil.GEO_LOCATION_NAMES, 'Select one or more geospatial context'),
       ...datacubePills
     ];
 
+    const filteredPills = _.reject(this.pills, (pill) => _.find(this.filters.clauses, { field: pill.searchKey }));
+    const suggestions = filteredPills.map(pill =>
+      pill.makeOption()
+    );
+
     const language = Lex.from('field', ValueState, {
-      name: 'Choose a field to search',
-      fetchSuggestions: (function(self) {
-        return function() {
-          // This limits the lex bar so that it can only have one unique kind of pill, i.e. only one concept, one temporal field, one location
-          const filteredPills = _.reject(self.pills, (pill) => _.find(self.filters.clauses, { field: pill.searchKey }));
-          return _.sortBy(filteredPills, p => p.searchDisplay).map(pill =>
-            pill.makeOption()
-          );
-        };
-      })(this),
-      suggestionLimit: 50,
+      name: 'Choose a field to search or search all with keyword',
+      suggestions,
+      suggestionLimit: suggestions.length,
+      autoAdvanceDefault: true,
+      defaultValue: filteredPills[0].makeOption(),
       icon: v => {
         if (_.isNil(v)) return '<i class="fa fa-search"></i>';
         const pill = this.pills.find(
