@@ -11,7 +11,10 @@
       <!-- body -->
       <div class="body-main-content flex-col">
         <!-- searchbar -->
-        <search-bar class="search" />
+
+        <search-bar
+          v-if="ontologyConcepts.length > 0"
+          class="search" />
 
         <div class="flex-grow-1 min-width-0">
           <tab-panel />
@@ -172,6 +175,7 @@ export default {
       filters: 'query/filters',
       project: 'app/project',
       updateToken: 'app/updateToken',
+      ontologyConcepts: 'app/ontologyConcepts',
       layout: 'query/layout',
       selectedSubgraphEdges: 'graph/selectedSubgraphEdges',
       cag: 'query/cag',
