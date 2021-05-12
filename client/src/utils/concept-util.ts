@@ -41,7 +41,7 @@ export function conceptHumanName(name: string, set: Set<string>) {
       }
     }
     if (found === false) {
-      console.error('Cannot process', token);
+      console.debug('Cannot translate', token);
       return token;
     }
   }
