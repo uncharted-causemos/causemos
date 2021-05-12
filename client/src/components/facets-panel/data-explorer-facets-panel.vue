@@ -10,8 +10,8 @@
           key="facet.label"
           :facet="facet.id"
           :label="facet.label"
-          :base-data="facet.values"
-          :selected-data="facet.values"
+          :base-data="facet.baseData"
+          :selected-data="facet.filteredData"
           :rescale-after-select="true"
         />
       </div>
@@ -73,6 +73,10 @@ export default {
     datacubes: {
       type: Array,
       default: () => []
+    },
+    filteredDatacubes: {
+      type: Array,
+      default: () => []
     }
   },
   computed: {
@@ -88,7 +92,8 @@ export default {
       const columns = keys.reduce((a, k) => {
         a[k] = {
           label: k,
-          data: {} // { label: count, } dictionary
+          data: {}, // { label: count, } dictionary
+          filteredData: {} //  { label: count, } dictionary
         };
         return a;
       }, []);
@@ -104,20 +109,42 @@ export default {
         });
       });
 
+      if (this.filteredDatacubes) {
+        this.filteredDatacubes.forEach((c) => {
+          keys.forEach((k) => {
+            if (Array.isArray(c[k])) {
+              c[k].forEach((l) => {
+                columns[k].filteredData[l] = columns[k].filteredData[l] ? columns[k].filteredData[l] + 1 : 1;
+              });
+            } else if (typeof c[k] === 'string') {
+              columns[k].filteredData[c[k]] = columns[k].filteredData[c[k]] ? columns[k].filteredData[c[k]] + 1 : 1;
+            }
+          });
+        });
+      }
+
+      // mux the filtered data and base data into facets.
       const facetList = keys.map((k) => {
         const categoryKeys = Object.keys(columns[k].data);
-        const values = categoryKeys.map((ck) => {
+        const baseData = categoryKeys.map((ck) => {
           return {
             key: ck,
             value: columns[k].data[ck]
           };
         });
+        const filteredData = categoryKeys.map((ck) => {
+          return {
+            key: ck,
+            value: columns[k].filteredData[ck] || 0
+          };
+        });
         return {
           id: k,
           label: datacubeUtil.DISPLAY_NAMES[k] || k,
-          values
+          baseData,
+          filteredData
         };
-      }).filter((f) => f.values.length > 0);
+      }).filter((f) => f.baseData.length > 0);
       return facetList;
     }
   },

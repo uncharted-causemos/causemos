@@ -16,7 +16,7 @@
         />
         <div class="tab-content flex-grow-1 h-0">
           <div class="tab-pane active h-100">
-            <search-listview :datacubes="datacubes"/>
+            <search-listview :datacubes="filteredDatacubes"/>
           </div>
         </div>
       </div>
@@ -53,6 +53,10 @@ export default {
   }),
   props: {
     datacubes: {
+      type: Array,
+      default: () => []
+    },
+    filteredDatacubes: {
       type: Array,
       default: () => []
     }

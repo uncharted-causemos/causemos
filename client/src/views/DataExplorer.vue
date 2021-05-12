@@ -5,9 +5,15 @@
       @close="onCancel" />
     <div class="flex h-100" v-if="datacubes.length > 0">
       <div class="flex h-100">
-        <data-explorer-facets-panel :datacubes="datacubes"/>
+        <data-explorer-facets-panel
+          :datacubes="datacubes"
+          :filteredDatacubes="filteredDatacubes"
+        />
       </div>
-      <search class="flex-grow-1 h-100" :datacubes="datacubes"/>
+      <search class="flex-grow-1 h-100"
+        :datacubes="datacubes"
+        :filteredDatacubes="filteredDatacubes"
+      />
     </div>
   </div>
 </template>
@@ -31,7 +37,8 @@ export default {
     ModalHeader
   },
   data: () => ({
-    datacubes: []
+    datacubes: [],
+    filteredDatacubes: []
   }),
   computed: {
     ...mapGetters({
@@ -61,15 +68,25 @@ export default {
       this.$router.push({ name: 'data' });
     },
     async refresh() {
-      await this.fetchDatacubes();
+      await this.fetchAllDatacubes();
     },
-    async fetchDatacubes() {
+
+    // retrieves filtered and unfiltered datacube lists
+    async fetchAllDatacubes() {
       this.enableOverlay();
+
+      // get the filtered data
       const filters = _.cloneDeep(this.filters);
       filtersUtil.setClause(filters, 'type', ['model'], 'or', false);
-      this.datacubes = await getDatacubes(filters);
+      this.filteredDatacubes = await getDatacubes(filters);
+      this.filteredDatacubes.forEach(item => (item.isAvailable = true));
+
+      // get all data
+      const defaultFilters = { clauses: [] };
+      filtersUtil.setClause(defaultFilters, 'type', ['model'], 'or', false);
+      this.datacubes = await getDatacubes(defaultFilters);
       this.datacubes.forEach(item => (item.isAvailable = true));
-      this.setSearchResultsCount(this.datacubes.length);
+      this.setSearchResultsCount(this.filteredDatacubes.length);
       this.disableOverlay();
     }
   }
