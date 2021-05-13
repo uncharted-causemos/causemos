@@ -1,3 +1,118 @@
+@import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins/_vendor-prefixes.scss";
+@import "~bootstrap-sass/assets/stylesheets/bootstrap/mixins/_forms.scss";
+
+/*
+  This file contains styles to override or reset the appearance
+  of native elements (like removing margins from <hr>) and elements
+  imported from custom stylesheets (like setting the colours used
+  in the toaster-message library we're using).
+  
+  These styles are applied globally.
+
+  If you only want to adjust some instances of an element, or if your
+  element will have non-default behaviour, consider making a new
+  component in `@/components/widgets/` with scoped styles instead.
+*/
+
+.form-control {
+  border: 1px solid $color-border-light;
+  box-shadow: none;
+  &:focus {
+    border: 1px solid $label-color;
+    outline: none;
+    box-shadow: none;
+    border-radius: 2px;
+  }
+  &::placeholder {
+    color: $input-color-placeholder;
+  }
+}
+
+//
+// Buttons
+// --------------------------------------------------
+
+.btn-default {
+  &,
+  &:active,
+  &.active {
+    &:focus,
+    &.focus {
+      outline: 2px solid;
+      outline-color: darken($color-btn-default-hover, 10%);
+    }
+  }
+  &:hover,
+  &:focus,
+  &.focus {
+    background-color: $color-btn-default-hover;
+    border-color: $color-btn-default-hover;
+  }
+}
+
+.btn-primary {
+  letter-spacing: 0.02em;
+  &,
+  &:active,
+  &.active {
+    &:focus,
+    &.focus {
+      outline: 2px solid;
+      outline-color: darken($color-btn-default-hover, 10%);
+    }
+  }
+  &:hover,
+  &:focus,
+  &.focus {
+    background-color: #353554;
+    border-color: #353554;
+    color: #fff;
+  }
+}
+
+// Base styles
+// --------------------------------------------------
+.table,
+.alert,
+p {
+  a {
+    text-decoration: underline;
+  }
+}
+
+table,
+.table {
+  // Cells
+  > thead,
+  > tbody,
+  > tfoot {
+    > tr {
+      > th,
+      > td {
+        border-left: 0;
+        border-right: 0;
+      }
+    }
+  }
+  > thead {
+    > tr {
+      > th,
+      > td {
+        background-color: white;
+      }
+    }
+  }
+  // Bottom align for column headings
+  > thead > tr > th {
+    vertical-align: bottom;
+    border-bottom: 2px solid $table-border-color;
+  }
+}
+
+hr {
+  margin: 0;
+}
+
 input {
   -webkit-appearance: none;
   appearance: none;
@@ -28,4 +143,119 @@ input::-webkit-slider-runnable-track {
   width: 100px;
   height: 8px;
   border-radius: 8px;
+}
+
+.fa-check-square-o::before {
+  // HACK: reduce the visible shift when you
+  //  check a checkbox
+  margin-left: 2px;
+}
+
+.btn-call-for-action, .btn-call-for-action:active {
+  background: $call-for-action-gradient;
+}
+
+
+// Overrides style for closing button in vue-toasted
+.toasted.toasted-primary.error {
+  a {
+    font-size: inherit;
+    color: #EEE;
+  }
+}
+
+// Tooltip style https://akryum.github.io/v-tooltip/#/
+.tooltip {
+  display: block !important;
+  z-index: 10000;
+
+  .tooltip-inner {
+    background: black;
+    color: white;
+    border-radius: 4px;
+    padding: 5px 10px;
+    white-space: pre-line;
+  }
+
+  .tooltip-arrow {
+    width: 0;
+    height: 0;
+    border-style: solid;
+    position: absolute;
+    margin: 5px;
+    border-color: black;
+    z-index: 1;
+  }
+
+  &[x-placement^="top"] {
+    margin-bottom: 5px;
+
+    .tooltip-arrow {
+      border-width: 5px 5px 0 5px;
+      border-left-color: transparent !important;
+      border-right-color: transparent !important;
+      border-bottom-color: transparent !important;
+      bottom: -5px;
+      left: calc(50% - 5px);
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
+
+  &[x-placement^="bottom"] {
+    margin-top: 5px;
+
+    .tooltip-arrow {
+      border-width: 0 5px 5px 5px;
+      border-left-color: transparent !important;
+      border-right-color: transparent !important;
+      border-top-color: transparent !important;
+      top: -5px;
+      left: calc(50% - 5px);
+      margin-top: 0;
+      margin-bottom: 0;
+    }
+  }
+
+  &[x-placement^="right"] {
+    margin-left: 5px;
+
+    .tooltip-arrow {
+      border-width: 5px 5px 5px 0;
+      border-left-color: transparent !important;
+      border-top-color: transparent !important;
+      border-bottom-color: transparent !important;
+      left: -5px;
+      top: calc(50% - 5px);
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+
+  &[x-placement^="left"] {
+    margin-right: 5px;
+
+    .tooltip-arrow {
+      border-width: 5px 0 5px 5px;
+      border-top-color: transparent !important;
+      border-right-color: transparent !important;
+      border-bottom-color: transparent !important;
+      right: -5px;
+      top: calc(50% - 5px);
+      margin-left: 0;
+      margin-right: 0;
+    }
+  }
+
+  &[aria-hidden='true'] {
+    visibility: hidden;
+    opacity: 0;
+    transition: opacity .15s, visibility .15s;
+  }
+
+  &[aria-hidden='false'] {
+    visibility: visible;
+    opacity: 1;
+    transition: opacity .15s;
+  }
 }

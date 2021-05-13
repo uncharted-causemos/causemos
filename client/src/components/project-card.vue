@@ -26,9 +26,7 @@
           type="button"
           class="btn btn-link"
           @click="open(project.id)">
-          <text-display
-            :text="project.name"
-            :max="40" />
+          <span class="overflow-ellipsis project-name">{{project.name}}</span>
         </button>
       </div>
       <div class="col-sm-2 number-col">
@@ -89,7 +87,6 @@
 import { mapActions } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation';
-import TextDisplay from '@/components/widgets/text-display';
 
 import messagesUtil from '@/utils/messages-util';
 import MessageDisplay from './widgets/message-display.vue';
@@ -101,7 +98,6 @@ import dateFormatter from '@/formatters/date-formatter';
 export default {
   name: 'ProjectCard',
   components: {
-    TextDisplay,
     ModalConfirmation,
     MessageDisplay
   },
@@ -163,7 +159,7 @@ export default {
 }
 
 .project-card-container:hover {
-  border: 1px solid $selected;
+  border-color: $selected;
   cursor: pointer;
 }
 
@@ -187,6 +183,13 @@ export default {
       margin-left: 10px;
     }
   }
+}
+
+.project-name {
+  max-width: 40ch;
+  display: inline-block;
+  text-align: left;
+  text-decoration: underline;
 }
 
 .project-card-footer {

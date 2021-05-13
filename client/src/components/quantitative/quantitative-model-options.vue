@@ -1,22 +1,18 @@
 <template>
-  <div>
-    <nav class="secondary-navbar action-bar">
-      <ul class="nav navbar-nav">
-        <!-- CAG rename/delete/duplicate dropdown -->
-        <model-options
-          :cag-name="cagNameToDisplay"
-          :view-after-deletion="'quantitativeStart'"
-          @rename="openRenameModal"
-        />
-      </ul>
-    </nav>
+  <ul class="unstyled-list model-options-container">
+    <!-- CAG rename/delete/duplicate dropdown -->
+    <model-options
+      :cag-name="cagNameToDisplay"
+      :view-after-deletion="'quantitativeStart'"
+      @rename="openRenameModal"
+    />
     <rename-modal
       v-if="showRenameModal"
       :current-name="cagNameToDisplay"
       @confirm="onRenameModalConfirm"
       @cancel="closeRenameModal"
     />
-  </div>
+  </ul>
 </template>
 
 <script>
@@ -78,11 +74,8 @@ export default {
 
 <style lang="scss" scoped>
 
-.action-bar {
-  background-color: transparent;
-  .nav-item {
-    margin-left: 5px;
-  }
+.model-options-container {
+  margin-left: 5px;
 }
 
 </style>

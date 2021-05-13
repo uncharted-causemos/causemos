@@ -239,7 +239,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/_variables';
+@import '~styles/variables';
 
 .aggregation-description {
   color: $text-color-medium;
