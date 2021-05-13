@@ -27,14 +27,7 @@ import { mapActions, mapGetters } from 'vuex';
 import CategoricalFacet from '@/components/facets/categorical-facet';
 
 import SidePanel from '@/components/side-panel/side-panel';
-
-import ontologyFormatter from '@/formatters/ontology-formatter';
-import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
-import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
-import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
 import codeUtil from '@/utils/code-util';
-import datacubeUtil from '@/utils/datacube-util';
-import facetUtil from '@/utils/facet-util';
 import filtersUtil from '@/utils/filters-util';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
@@ -48,24 +41,9 @@ export default {
     SidePanel
   },
   data: () => ({
-    ontologyFormatter: ontologyFormatter,
-    statementPolarityFormatter: statementPolarityFormatter,
-    contradictionCategoryFormatter: contradictionCategoryFormatter,
-    hedgingCategoryFormatter: hedgingCategoryFormatter,
-
-    // special type label formatters
-    numEvidencesLabelFormatter: facetUtil.numEvidencesLabelFormatter,
-    monthLabelFormatter: facetUtil.monthLabelFormatter,
-
     facetTabs: [
       { name: 'Data Cube Facets', icon: 'fa fa-file-text' }
     ],
-    baseData: {},
-    facetData: {},
-
-    groupBaseState: {},
-    groupFacetState: {},
-
     currentTab: 'Data Cube Facets',
     CODE_TABLE: CODE_TABLE
   }),
@@ -87,7 +65,7 @@ export default {
     }),
     facets() {
       let keys = Object.keys(this.datacubes[0]);
-      keys = keys.filter((k) => datacubeUtil.DISPLAY_NAMES[k] !== undefined);
+      keys = keys.filter((k) => codeUtil.DATACUBE_DISPLAY_NAMES[k] !== undefined);
       keys.sort();
       const columns = keys.reduce((a, k) => {
         a[k] = {
@@ -140,7 +118,7 @@ export default {
         });
         return {
           id: k,
-          label: datacubeUtil.DISPLAY_NAMES[k] || k,
+          label: codeUtil.DATACUBE_DISPLAY_NAMES[k] || k,
           baseData,
           filteredData
         };

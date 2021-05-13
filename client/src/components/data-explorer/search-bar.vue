@@ -25,7 +25,6 @@ import DynamicValuePill from '@/search/pills/dynamic-value-pill';
 import SingleRelationState from '@/search/single-relation-state';
 
 import codeUtil from '@/utils/code-util';
-import datacubeUtil from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
@@ -58,9 +57,15 @@ export default {
   mounted() {
     // Generates lex pills from select datacube columns
     let keys = Object.keys(this.datacubes[0]);
-    keys = keys.filter((k) => datacubeUtil.DISPLAY_NAMES[k] !== undefined);
+    keys = keys.filter((k) => codeUtil.DATACUBE_DISPLAY_NAMES[k] !== undefined);
     keys.sort();
-    const datacubePills = keys.map(k => new TextPill({ field: k, display: k, icon: '', iconText: '', searchDisplay: datacubeUtil.DISPLAY_NAMES[k] }));
+    const datacubePills = keys.map(k => new TextPill({
+      field: k,
+      display: k,
+      icon: '',
+      iconText: '',
+      searchDisplay: codeUtil.DATACUBE_DISPLAY_NAMES[k]
+    }));
 
     // Defines a list of searchable fields for LEX
     this.pills = [
