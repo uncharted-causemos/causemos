@@ -1,6 +1,7 @@
 <template>
   <div class="document-view-container h-100 flex flex-col">
     <uncharted-cards
+      v-if="displayCards === displayOptions.SHOWCARDS"
       ref="cards"
       class="flex-grow-1 h-0"
       :data="cardsData"
@@ -31,6 +32,11 @@ const isPdf = (card) => {
 };
 
 const READER_TRANSITION_DURATION = 300;
+const displayOptions = {
+  SHOWCARDS: 'cards',
+  SHOWTABLE: 'table'
+};
+
 export default {
   name: 'DocumentsView',
   components: {
@@ -38,6 +44,14 @@ export default {
     Pagination
   },
   props: {
+    displayOptions: {
+      type: Object,
+      default: displayOptions
+    },
+    displayCards: {
+      type: String,
+      default: displayOptions.SHOWCARDS
+    }
   },
   data: () => ({
     cardsConfig: {
