@@ -124,19 +124,18 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/custom";
 
 .wm-map {
   height: 100%;
   position: relative;
   overflow: hidden;
   ::v-deep(.mapboxgl-popup-content) {
-    background: $color-background-lvl-4;
-    border-color: $color-background-lvl-4;
+    background: black;
+    border-color: black;
     color: #FFFFFF;
   }
   ::v-deep(.mapboxgl-popup-tip) {
-    border-top-color: $color-background-lvl-4;
+    border-top-color: black;
   }
 }
 </style>

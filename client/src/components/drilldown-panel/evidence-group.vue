@@ -24,13 +24,11 @@
       </small-icon-button>
 
     </template>
-    <template
-      #title
-      class="title-slot-container">
+    <template #title>
       <div class="factor-title-group">
         <div
           v-tooltip.top="item.meta.subj.factor"
-          class="row-content-ellipsis">
+          class="overflow-ellipsis">
           <i
             :class="polarityClass(item.meta.subj_polarity)"
             class="polarity-factor"
@@ -39,7 +37,7 @@
         </div>
         <div
           v-tooltip.top="item.meta.obj.factor"
-          class="row-content-ellipsis lower-row">
+          class="overflow-ellipsis lower-row">
           <i
             :class="polarityClass(item.meta.obj_polarity)"
             class="polarity-factor"
@@ -49,7 +47,7 @@
       </div>
       <div
         v-if="showCurationActions"
-        class="button-column"
+        class="button-column right-margin"
       >
         <small-icon-button
           v-tooltip.top="'Select a different cause concept'"
@@ -70,6 +68,7 @@
         </small-icon-button>
       </div>
       <small-icon-button
+        class="right-margin"
         v-if="showCurationActions && item.meta.state !== CURATION_STATES.VETTED && item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN"
         v-tooltip.top="'Vet evidence'"
         :use-white-bg="true"
@@ -82,12 +81,13 @@
         v-if="showCurationActions && item.meta.state === CURATION_STATES.VETTED && item.meta.polarity !== STATEMENT_POLARITY.UNKNOWN"
         v-tooltip.top="'Vetted evidence'"
         :use-white-bg="true"
-        class="vetted"
+        class="vetted right-margin"
       >
         <i class="fa fa-check-circle fa-lg" />
       </small-icon-button>
 
       <small-icon-button
+        class="right-margin"
         v-if="showCurationActions"
         v-tooltip.top="'Discard'"
         :use-white-bg="true"
@@ -99,12 +99,10 @@
     <template #content>
       <div
         v-for="(statement, statIdx) of item.dataArray"
-        :key="statIdx"
-        class="statement-item">
+        :key="statIdx">
         <evidence-item
           v-for="(evidence, sentIdx) of statement.evidence"
           :key="sentIdx"
-          class="evidence-sentence"
           :evidence="evidence"
           @click-evidence="clickEvidence(evidence.document_context)"
         />
@@ -249,6 +247,7 @@ button.polarity-correction {
 
 .factor-title-group {
   flex: 1;
+  margin-right: 5px;
 }
 
 .factor-title-group, .button-column {
@@ -261,19 +260,27 @@ button.polarity-correction {
   margin-top: 4px;
 }
 
+.button-column button.active:not(:hover) {
+  // When a factor regrounding button is clicked, it turns
+  // black until the dialog is closed
+  color: #000;
+}
+
 .title-slot-container {
   align-items: center;
-
-  &:not(:hover) button.active {
-    // When a factor regrounding button is clicked, it turns
-    // black until the dialog is closed
-    color: #000;
-  }
 }
 
 .highlights {
   font-weight: 800;
   background-color: #B6D8FC;
+}
+
+.right-margin {
+  margin-right: 3px;
+
+  &:last-child {
+    margin-right: 2px;
+  }
 }
 
 

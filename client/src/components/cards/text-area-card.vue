@@ -77,7 +77,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/_variables.scss";
+@import "~styles/variables.scss";
 .text-area-card-container {
   width: 25%;
   z-index: 9998;

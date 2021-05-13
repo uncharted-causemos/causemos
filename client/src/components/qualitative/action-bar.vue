@@ -1,81 +1,78 @@
 <template>
-  <div>
-    <nav class="secondary-navbar action-bar">
-      <ul class="nav navbar-nav">
-        <!-- CAG rename/delete/duplicate dropdown -->
-        <model-options
-          :cag-name="cagNameToDisplay"
-          :view-after-deletion="'qualitativeStart'"
-          @rename="openRenameModal"
-        />
+  <nav class="action-bar-container">
+    <ul class="unstyled-list">
+      <!-- CAG rename/delete/duplicate dropdown -->
+      <model-options
+        :cag-name="cagNameToDisplay"
+        :view-after-deletion="'qualitativeStart'"
+        @rename="openRenameModal"
+      />
 
-        <!-- Actions -->
-        <li class="nav-item">
-          <button
-            v-tooltip.top-center="'Search Knowledge Base'"
-            type="button"
-            class="btn btn-primary btn-call-for-action"
-            @click="openKBExplorer"
-          > <i class="fa fa-fw fa-search" />Search Knowledge Base</button>
-        </li>
-        <li class="nav-item">
-          <button
-            v-tooltip.top-center="'Add a new concept'"
-            type="button"
-            class="btn btn-primary"
-            @click="addConcept"
-          ><i class="fa fa-fw fa-plus" />Add Concept</button>
-        </li>
-        <li class="nav-item">
-          <button
-            v-tooltip.top-center="'Import existing CAG'"
-            type="button"
-            class="btn btn-primary"
-            @click="importCAG"
-          ><i class="fa fa-fw fa-connectdevelop" />Import CAG</button>
-        </li>
-
-      </ul>
-
-      <div class="run-model">
-        <arrow-button
-          :disabled="isRunningModel || numEdges === 0"
-          :text="`Run${isRunningModel ? 'ning' : ''} Model`"
-          :isPointingLeft="false"
-          :icon="'fa-connectdevelop'"
-          @click="onRunModel"
-        />
-      </div>
-      <div class="comment-btn">
+      <!-- Actions -->
+      <li class="nav-item">
         <button
-          v-tooltip.top-center="'Comments'"
+          v-tooltip.top-center="'Search Knowledge Base'"
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          @click="openKBExplorer"
+        > <i class="fa fa-fw fa-search" />Search Knowledge Base</button>
+      </li>
+      <li class="nav-item">
+        <button
+          v-tooltip.top-center="'Add a new concept'"
           type="button"
           class="btn btn-primary"
-          @click="toggleComments"
-        >
-          <i
-            class="fa fa-fw"
-            :class="{'fa-commenting': comment !== '', 'fa-commenting-o': comment === ''}"
-          />
-        </button>
-        <text-area-card
-          v-if="isCommentOpen"
-          class="comment-box"
-          :title="'Comments'"
-          :initial-text="comment"
-          @close="isCommentOpen = false"
-          @saveText="updateComments"
-        />
-      </div>
-    </nav>
+          @click="addConcept"
+        ><i class="fa fa-fw fa-plus" />Add Concept</button>
+      </li>
+      <li class="nav-item">
+        <button
+          v-tooltip.top-center="'Import existing CAG'"
+          type="button"
+          class="btn btn-primary"
+          @click="importCAG"
+        ><i class="fa fa-fw fa-connectdevelop" />Import CAG</button>
+      </li>
 
+    </ul>
+
+    <div class="run-model">
+      <arrow-button
+        :disabled="isRunningModel || numEdges === 0"
+        :text="`Run${isRunningModel ? 'ning' : ''} Model`"
+        :isPointingLeft="false"
+        :icon="'fa-connectdevelop'"
+        @click="onRunModel"
+      />
+    </div>
+    <div class="comment-btn">
+      <button
+        v-tooltip.top-center="'Comments'"
+        type="button"
+        class="btn btn-primary"
+        @click="toggleComments"
+      >
+        <i
+          class="fa fa-fw"
+          :class="{'fa-commenting': comment !== '', 'fa-commenting-o': comment === ''}"
+        />
+      </button>
+      <text-area-card
+        v-if="isCommentOpen"
+        class="comment-box"
+        :title="'Comments'"
+        :initial-text="comment"
+        @close="isCommentOpen = false"
+        @saveText="updateComments"
+      />
+    </div>
     <rename-modal
       v-if="showRenameModal"
       :current-name="cagNameToDisplay"
       @confirm="onRenameModalConfirm"
       @cancel="closeRenameModal"
     />
-  </div>
+  </nav>
 </template>
 
 <script>
@@ -199,9 +196,11 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/custom";
 
-.action-bar {
+.action-bar-container {
+  height: $navbar-outer-height;
+  display: flex;
+  align-items: center;
   background: $background-light-3;
   .run-model {
     margin-right: 20px;

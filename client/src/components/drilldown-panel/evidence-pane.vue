@@ -14,11 +14,11 @@
     </div>
     <slot />
     <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }})</div>
-    <div class="pane-controls">
-      <div
-        v-if="showCurationActions"
-        class="bulk-actions"
-      >
+    <collapsible-list-header
+      @expand-all="expandAll={value: true}"
+      @collapse-all="expandAll={value: false}"
+    >
+      <template v-if="showCurationActions">
         <i
           class="fa fa-lg fa-fw"
           :class="{
@@ -42,19 +42,8 @@
         >
           <i class="fa fa-check-circle fa-lg" />
         </small-icon-button>
-      </div>
-      <div class="expand-collapse">
-        <small-text-button
-          :label="'Expand All'"
-          @click="expandAll={value: true}"
-        />
-        <small-text-button
-          :label="'Collapse All'"
-          @click="expandAll={value: false}"
-        />
-      </div>
-    </div>
-    <hr class="pane-separator">
+      </template>
+    </collapsible-list-header>
     <div v-if="evidenceCount > 0">
       <div
         v-for="value in summaryData.children"
@@ -170,10 +159,10 @@ import { CORRECTION_TYPES, getStatementConceptSuggestions, groupByPolarityAllFac
 import OntologyEditor from '@/components/editors/ontology-editor';
 import PolarityEditor from '@/components/editors/polarity-editor';
 import UnknownPolarityEditor from '@/components/editors/unknown-polarity-editor';
+import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header';
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
 import EvidenceGroup from '@/components/drilldown-panel/evidence-group';
 import ModalDocument from '@/components/modals/modal-document';
-import SmallTextButton from '@/components/widgets/small-text-button';
 import SmallIconButton from '@/components/widgets/small-icon-button';
 import { CORRECTIONS, CURATIONS, SIDE_PANEL } from '@/utils/messages-util';
 import MessageDisplay from '@/components/widgets/message-display';
@@ -189,12 +178,12 @@ export default {
   components: {
     ModalDocument,
     CollapsibleItem,
+    CollapsibleListHeader,
     PolarityEditor,
     OntologyEditor,
     UnknownPolarityEditor,
     EvidenceGroup,
     MessageDisplay,
-    SmallTextButton,
     SmallIconButton,
     ModalConfirmation
   },
