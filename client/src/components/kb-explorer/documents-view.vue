@@ -9,7 +9,16 @@
       @card-click="onCardClick"
       @card-navigate="updateReaderContent"
     />
+    <uncharted-cards-tableview
+      v-if="displayCards === displayOptions.SHOWTABLE"
+      ref="cardsTableview"
+      :data="cardsData"
+      :config="cardsConfig"
+      @card-click="onCarrdClick"
+      @card-navigate="updateReaderContent"
+    />
     <pagination
+      v-if:="displayCards === displayOptions.SHOWCARDS"
       :label="'documents'"
       :total="documentsCount"
     />
@@ -25,6 +34,7 @@ import filtersUtil from '@/utils/filters-util';
 import { toCardsData, toCardData } from '@/utils/document-util';
 import Pagination from '@/components/pagination';
 import UnchartedCards from '@/components/cards/uncharted-cards';
+import UnchartedCardsTableview from '@/components/cards/uncharted-cards-tableview';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 
 const isPdf = (card) => {
@@ -41,7 +51,8 @@ export default {
   name: 'DocumentsView',
   components: {
     UnchartedCards,
-    Pagination
+    Pagination,
+    UnchartedCardsTableview
   },
   props: {
     displayOptions: {
@@ -50,7 +61,7 @@ export default {
     },
     displayCards: {
       type: String,
-      default: displayOptions.SHOWCARDS
+      default: displayOptions.SHOWTABLE
     }
   },
   data: () => ({
