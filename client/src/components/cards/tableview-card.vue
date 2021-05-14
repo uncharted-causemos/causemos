@@ -2,16 +2,20 @@
   <div class="tableview-card-container">
     <div class="row tableview-row">
       <div class="col-sm-3 number-col">
-        {{ card.title }}
+        <div v-if="checkString(card.title)">{{ card.title }}</div>
+        <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-3 number-col">
-        {{ card['metadata'].Publication }}
+        <div v-if="checkString(card['metadata'].Publication)">{{ card['metadata'].Publication }}</div>
+        <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-3 number-col">
-        {{ card.subtitle[0] }}
+        <div v-if="checkString(card.subtitle[0])">{{ card.subtitle[0] }}</div>
+        <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-3 number-col">
-        {{ card.summary }}
+        <div v-if="checkString(card.summary)">{{ card.summary }}</div>
+        <i v-else class="fa fa-minus"/>
       </div>
     </div>
   </div>
@@ -24,6 +28,11 @@ export default {
     card: {
       type: Object,
       default: () => {}
+    }
+  },
+  methods: {
+    checkString(item) {
+      return item && item.length > 0;
     }
   }
 };
