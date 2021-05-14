@@ -260,6 +260,15 @@ export const HEDGING_MAP = Object.freeze({
 
 export const READERS_NAMES = ['sofia', 'eidos', 'hume'];
 
+export const DATACUBE_DISPLAY_NAMES = {
+  category: 'Category',
+  model: 'Output Variable',
+  output_name: 'Output Name',
+  output_units: 'Output Units',
+  parameters: 'Input Knobs',
+  source: 'Source'
+};
+
 export default {
   CODE_TABLE,
   FIELDS,
@@ -267,5 +276,6 @@ export default {
   CONTRADICTION_MAP,
   HEDGING,
   HEDGING_MAP,
-  READERS_NAMES
+  READERS_NAMES,
+  DATACUBE_DISPLAY_NAMES
 };
