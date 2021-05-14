@@ -66,6 +66,7 @@
 <script>
 import * as _ from 'lodash';
 import TableviewCard from '@/components/cards/tableview-card';
+import DropdownControl from '@/components/dropdown-control';
 
 const SORTING_OPTIONS = {
   MOST_RECENT: 'Most recent',
@@ -75,7 +76,8 @@ const SORTING_OPTIONS = {
 export default {
   name: 'UnchartedCardsTableview',
   components: {
-    TableviewCard
+    TableviewCard,
+    DropdownControl
   },
   props: {
     data: {
