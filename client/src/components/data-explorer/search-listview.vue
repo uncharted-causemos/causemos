@@ -213,10 +213,10 @@ $selected-background: #EBF1FC;
     font-size: $font-size-large;
     font-weight: 600;
     margin-bottom: 5px;
-    white-space: nowrap;
   }
   .output-col {
     padding-left: 50px;
+    width: 33%;
     .checkbox {
       margin: 0;
       top: 19px;
