@@ -84,13 +84,12 @@ $fa-font-path: '~font-awesome/fonts';
 @import '~font-awesome/scss/font-awesome';
 
 
-/* Uncharted Booststrap */
+/* Uncharted Bootstrap */
 $uncharted-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/';
 $icon-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/bootstrap-sass/assets/fonts/bootstrap/';
 @import "~@uncharted/uncharted-bootstrap/scss/uncharted-bootstrap";
 
-/* World Modeler style and overrides */
-@import "/styles/wm-theme/wm-overrides";
+/* Sass entrypoint */
 @import "/styles/wm";
 
 </style>

@@ -6,17 +6,16 @@
         class="dropdown">
 
         <div class="dropdown-title">
-          <span>Select a Different Concept
+          <h5>Select a Different Concept
             <span v-if="selectedOption === 'pick'">
               - Search All Concepts
             </span>
             <span v-if="selectedOption === 'new'">
               - Add New Concept
             </span>
-          </span>
+          </h5>
         </div>
         <close-button @click="close()" />
-        <hr class="pane-separator">
         <div v-if="selectedOption === 'suggestions'">
           <div
             v-for="(suggestion, idx) in suggestions"
@@ -31,7 +30,6 @@
               <concept-display :item="suggestion.name" />
             </div>
           </div>
-          <hr class="separator">
         </div>
 
         <div v-if="selectedOption === 'pick'">
@@ -50,11 +48,10 @@
 
         <div v-if="selectedOption === 'new'">
           <div>
-            <button
-              type="button"
-              class="btn btn-link"
-              @click="backToSuggestions">&larr; Back
-            </button>
+            <small-text-button
+              :label="'Back'"
+              @click="backToSuggestions"
+            />
           </div>
           <div class="padded-row">
             <label>New concept name</label>
@@ -255,28 +252,14 @@ export default {
   top: 0%;
   right: 93%;
   width: 30vw;
-  .dropdown {
-    i {
-      padding: 5px;
-    }
-    .fa-window-close {
-      cursor: pointer;
-    }
-    .dropdown-title {
-      display: flex;
-      justify-content: space-between;
-    }
-    .separator {
-      margin: 5px 0;
-    }
+
+  .dropdown-title h5 {
+    @include header-secondary;
+    font-size: $font-size-medium;
   }
 
   .suggestion-score {
     margin-right: 5px;
-  }
-
-  .btn-link {
-      color: $link-color;
   }
   .ontology-options {
     display:inline-block;
@@ -298,7 +281,8 @@ export default {
     margin: 10px 10px 5px 10px;
   }
   .ontology-footer-options-container {
-    margin: 5px 15px;
+    margin: 10px;
+    margin-top: 20px;
     button {
       margin-right: 8px;
     }

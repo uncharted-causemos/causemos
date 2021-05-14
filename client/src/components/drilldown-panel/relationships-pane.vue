@@ -11,39 +11,29 @@
       <i class="fa fa-fw fa-plus" />
       Get Suggestions
     </button>
-    <div class="pane-controls">
-      <div class="bulk-actions">
+    <collapsible-list-header
+      @expand-all="expandAll={value: true}"
+      @collapse-all="expandAll={value: false}"
+    >
+      <i
+        class="fa fa-lg fa-fw"
+        :class="{
+          'fa-check-square-o': summaryData.meta.checked,
+          'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
+          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+        }"
+        @click="toggle(summaryData)"
+      />
+      <small-icon-button
+        v-tooltip.top="isKbExplorer ? 'Delete relationships from KB in bulk' : 'Remove relationships from CAG in bulk'"
+        :disabled="numselectedNodes === 0"
+        @click="removeRelationships()"
+      >
         <i
           class="fa fa-lg fa-fw"
-          :class="{
-            'fa-check-square-o': summaryData.meta.checked,
-            'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
-            'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
-          }"
-          @click="toggle(summaryData)"
-        />
-        <small-icon-button
-          v-tooltip.top="isKbExplorer ? 'Delete relationships from KB in bulk' : 'Remove relationships from CAG in bulk'"
-          :disabled="numselectedNodes === 0"
-          @click="removeRelationships()"
-        >
-          <i
-            class="fa fa-lg fa-fw"
-            :class="{'fa-minus-circle': !isKbExplorer, 'fa-trash': isKbExplorer }" />
-        </small-icon-button>
-      </div>
-      <div class="expand-collapse">
-        <small-text-button
-          :label="'Expand All'"
-          @click="expandAll={value: true}"
-        />
-        <small-text-button
-          :label="'Collapse All'"
-          @click="expandAll={value: false}"
-        />
-      </div>
-    </div>
-    <hr class="pane-separator">
+          :class="{'fa-minus-circle': !isKbExplorer, 'fa-trash': isKbExplorer }" />
+      </small-icon-button>
+    </collapsible-list-header>
     <div
       v-for="relationshipGroup in summaryData.children"
       :key="relationshipGroup.key">
@@ -130,8 +120,8 @@ import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
+import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';
 import MessageDisplay from '@/components/widgets/message-display';
-import SmallTextButton from '@/components/widgets/small-text-button';
 import SmallIconButton from '@/components/widgets/small-icon-button';
 
 import aggregationsUtil from '@/utils/aggregations-util';
@@ -148,8 +138,8 @@ export default {
   components: {
     CollapsibleItem,
     MessageDisplay,
-    SmallTextButton,
-    SmallIconButton
+    SmallIconButton,
+    CollapsibleListHeader
   },
   props: {
     selectedNode: {

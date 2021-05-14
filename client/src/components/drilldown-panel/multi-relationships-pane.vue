@@ -1,29 +1,26 @@
 <template>
   <div class="multi-relationships-container">
-    <div class="pane-controls">
-      <div class="bulk-actions">
-        <i
-          class="fa fa-lg fa-fw"
-          :class="{
-            'fa-check-square-o': summaryData.meta.checked,
-            'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
-            'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
-          }"
-          @click="toggle(summaryData)"
-        />
-        <button
-          v-tooltip.top-center="'Add to CAG'"
-          type="button"
-          class="btn btn-sm btn-primary btn-call-for-action"
-          @click="addToCAG"
-        >
-          <i class="fa fa-fw fa-plus-circle" />
-          Add to CAG
-        </button>
-        <span class="counter">{{ numberFormatter(numselectedRelationships) }} selected</span>
-      </div>
+    <div class="bulk-actions">
+      <i
+        class="fa fa-lg fa-fw"
+        :class="{
+          'fa-check-square-o': summaryData.meta.checked,
+          'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
+          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+        }"
+        @click="toggle(summaryData)"
+      />
+      <button
+        v-tooltip.top-center="'Add to CAG'"
+        type="button"
+        class="btn btn-sm btn-primary btn-call-for-action"
+        @click="addToCAG"
+      >
+        <i class="fa fa-fw fa-plus-circle" />
+        Add to CAG
+      </button>
+      <span class="counter">{{ numberFormatter(numselectedRelationships) }} selected</span>
     </div>
-    <hr class="pane-separator">
     <div class="relationships-list">
       <div
         v-for="(relationship, idx) in summaryData.children"
@@ -182,7 +179,12 @@ export default {
   padding: 2px 0;
 }
 
-.pane-controls {
-  padding-top: 8px;
+.bulk-actions {
+  padding: 5px 0;
+  border-bottom: 1px solid $separator;
+
+  & > * {
+    margin-right: 5px;
+  }
 }
 </style>

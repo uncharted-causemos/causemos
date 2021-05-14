@@ -8,9 +8,6 @@
             <h2>Define New Project</h2>
           </div>
           <div class="row">
-            <hr>
-          </div>
-          <div class="row">
             <form @submit.prevent>
               <div class="form-group">
                 <label>Name*</label>
@@ -150,6 +147,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables';
 
 .new-project-container {
   max-width: 1000px;
@@ -182,9 +180,6 @@ export default {
   select {
     width: 30%;
   }
-  hr {
-    margin: 5px;
-  }
 }
 
 table {
@@ -201,6 +196,10 @@ table {
       padding: 12px;
     }
   }
+}
+
+.error-msg {
+  color: $negative;
 }
 
 </style>
