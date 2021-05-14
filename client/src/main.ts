@@ -31,7 +31,7 @@ app.mixin({
       });
     },
     ontologyFormatter(concept: string) {
-      // This is a bit hacky here, but we concept formatters all over the place
+      // This is a bit hacky here, but we use concept formatters all over the place
       // and it is a bit of a pain to inject this across every single component.
       return conceptHumanName(concept, store.getters['app/ontologySet']);
     }
