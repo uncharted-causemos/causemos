@@ -50,7 +50,12 @@
             </div>
           </div>
           <div class="cards-list-elements">
-            <h1>TABLE VIEW!</h1>
+            <div
+              v-for="card in sortedData"
+              :key="card.id">
+              <tableview-card
+                :card="card"/>
+            </div>
           </div>
         </div>
       </div>
@@ -59,8 +64,19 @@
 </template>
 
 <script>
+import * as _ from 'lodash';
+import TableviewCard from '@/components/cards/tableview-card';
+
+const SORTING_OPTIONS = {
+  MOST_RECENT: 'Most recent',
+  EARLIEST: 'Earliest'
+};
+
 export default {
   name: 'UnchartedCardsTableview',
+  components: {
+    TableviewCard
+  },
   props: {
     data: {
       type: Array,
@@ -73,9 +89,29 @@ export default {
   },
   data: () => ({
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Earliest'],
-    selectedSortingOption: 'Most recent'
-  })
+    sortingOptions: [SORTING_OPTIONS.MOST_RECENT, SORTING_OPTIONS.EARLIEST],
+    selectedSortingOption: SORTING_OPTIONS.MOST_RECENT
+  }),
+  computed: {
+    sortedData() {
+      if (this.selectedSortingOption === SORTING_OPTIONS.MOST_RECENT) {
+        return _.orderBy(this.data, ['metadata.Publication'], ['desc']);
+      } else if (this.selectedSortingOption === SORTING_OPTIONS.EARLIEST) {
+        return _.orderBy(this.data, ['metadata.Publication'], ['asc']);
+      } else {
+        return this.data;
+      }
+    }
+  },
+  methods: {
+    sort(option) {
+      this.selectedSortingOption = option;
+      this.showSortingDropdown = false;
+    },
+    toggleSortingDropdown() {
+      this.showSortingDropdown = !this.showSortingDropdown;
+    }
+  }
 };
 </script>
 
@@ -101,6 +137,7 @@ export default {
       padding: 10px;
     }
     .cards-list-elements {
+      height: 400px;
       flex: 1;
       overflow-y: auto;
       overflow-x: hidden;
