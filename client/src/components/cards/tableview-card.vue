@@ -33,6 +33,16 @@ export default {
   methods: {
     checkString(item) {
       return item && item.length > 0;
+    },
+    openReader(targetCard) {
+      if (!targetCard.isExpanded) {
+        this.cards.openReader(targetCard);
+      }
+    },
+    registerCardsEvents() {
+      this.cards.on('card:click', card => {
+        this.$emit('card-click', card);
+      });
     }
   }
 };
