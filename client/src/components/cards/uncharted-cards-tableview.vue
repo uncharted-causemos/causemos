@@ -1,6 +1,6 @@
 <template>
   <div class="container-fluid">
-    <div class="row">
+    <div class="row container-row">
       <div class="col-md-1" />
       <div class="col-md-10 page-content">
         <div class="row">
@@ -120,9 +120,24 @@ export default {
 
   .container-fluid {
     width: 100%;
+    height: 100%;
+  }
+
+  .container-row {
+    width: 100%;
+    height: 100%;
+    padding-bottom: 80px;
+  }
+
+  .page-content {
+    width: 100%;
+    height: 100%;
   }
 
   .cards-list {
+    box-sizing: border-box;
+    height: 100%;
+    width: 100%;
     flex: 1;
     overflow: hidden;
     display: flex;
@@ -137,9 +152,11 @@ export default {
       padding: 10px;
     }
     .cards-list-elements {
-      height: 400px;
+      box-sizing: border-box;
+      height: 100%;
+      width: 100%;
       flex: 1;
-      overflow-y: auto;
+      overflow-y: scroll;
       overflow-x: hidden;
     }
   }
