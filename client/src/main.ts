@@ -5,6 +5,7 @@ import store from './store';
 import { sync } from 'vuex-router-sync';
 import VTooltip from 'v-tooltip'; // FIXME: not working
 import Toast, { useToast, TYPE } from 'vue-toastification';
+import { conceptHumanName } from '@/utils/concept-util';
 
 import Vue3Resize from 'vue3-resize';
 
@@ -28,6 +29,11 @@ app.mixin({
         timeout: timeout,
         type: t
       });
+    },
+    ontologyFormatter(concept: string) {
+      // This is a bit hacky here, but we use concept formatters all over the place
+      // and it is a bit of a pain to inject this across every single component.
+      return conceptHumanName(concept, store.getters['app/ontologySet']);
     }
   }
 });

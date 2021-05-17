@@ -23,7 +23,7 @@
           @mouseenter="mouseEnter(index)"
           @mouseleave="mouseLeave(index)"
         >
-          {{ suggestion.shortName }}
+          {{ suggestion.label }}
         </div>
       </template>
     </dropdown-control>
@@ -131,6 +131,10 @@ export default {
           this.project, this.userInput, this.ontologyConcepts);
         this.suggestions = allSuggestions.filter(this.conceptNotInCag)
           .slice(0, CONCEPT_SUGGESTION_COUNT);
+
+        this.suggestions.forEach(suggestion => {
+          suggestion.label = this.ontologyFormatter(suggestion.concept);
+        });
       }
     }, 500, { trailing: true, leading: false })
   }
@@ -161,7 +165,7 @@ export default {
 
 .suggestion-dropdown {
   top: 3px; /* Don't overlap border */
-  width: 20vw;
+  width: 25vw;
 }
 
 .dropdown-option {

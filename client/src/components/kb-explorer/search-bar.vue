@@ -33,7 +33,6 @@ import filtersUtil from '@/utils/filters-util';
 import polarityUtil from '@/utils/polarity-util';
 
 import suggestionService from '@/services/suggestion-service';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
 const CONCEPTS_MSG = 'Select one or more ontological concepts';
@@ -102,7 +101,7 @@ export default {
       effectPill,
       edgePill
     ].forEach(pill => {
-      pill.setFormatter(ontologyFormatter);
+      pill.setFormatter(this.ontologyFormatter);
     });
 
     // Defines a list of searchable fields for LEX

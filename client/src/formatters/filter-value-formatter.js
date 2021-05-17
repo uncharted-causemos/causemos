@@ -3,14 +3,13 @@ import CodeUtil from '@/utils/code-util';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import hedgingCategoryFormatter from '@/formatters/hedging-category-formatter';
 import contradictionCategoryFormatter from '@/formatters/contradiction-category-formatter';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const FIELDS = CodeUtil.FIELDS;
 const FIELDS_INVERSE = _.invert(CodeUtil.FIELDS);
 
-const ONTOLOGY_FIELDS = [
-  FIELDS.TOPIC, FIELDS.SUBJ_CONCEPT, FIELDS.OBJ_CONCEPT
-];
+// const ONTOLOGY_FIELDS = [
+//   FIELDS.TOPIC, FIELDS.SUBJ_CONCEPT, FIELDS.OBJ_CONCEPT
+// ];
 
 /**
  * Transform a filter value to human-readable format for the UI.
@@ -37,8 +36,6 @@ export default function (value, key) {
       return hedgingCategoryFormatter(value);
     } else if (entry.field === FIELDS.CONTRADICTION_CATEGORY) {
       return contradictionCategoryFormatter(value);
-    } else if (ONTOLOGY_FIELDS.includes(entry.field)) {
-      return ontologyFormatter(value);
     }
   }
 

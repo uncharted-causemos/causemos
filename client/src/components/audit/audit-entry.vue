@@ -25,7 +25,6 @@
 <script>
 import { COMPACT_POLARITY } from '@/utils/polarity-util';
 import HighlightValue from '@/components/audit/highlight-value';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const POLARITY_CORRECTION_TYPES = [
   'factor_polarity'
@@ -63,9 +62,6 @@ export default {
   },
   created() {
     this.COMPACT_POLARITY = COMPACT_POLARITY;
-  },
-  methods: {
-    ontologyFormatter
   }
 };
 </script>

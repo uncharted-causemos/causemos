@@ -27,7 +27,6 @@ import { SVGRenderer, highlight, nodeDrag, panZoom, getAStarPath, simplifyPath }
 import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
@@ -92,7 +91,7 @@ class CAGRenderer extends SVGRenderer {
           .style('stroke', 'none')
           .style('fill', '#888')
           .style('font-weight', '600')
-          .text(d => ontologyFormatter(d.concept))
+          .text(d => d.label)
           .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
       } else {
         selection.append('g').classed('node-handles', true);

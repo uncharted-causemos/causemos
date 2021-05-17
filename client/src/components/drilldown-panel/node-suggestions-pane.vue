@@ -95,8 +95,6 @@ import { mapGetters, mapActions } from 'vuex';
 import aggregationsUtil from '@/utils/aggregations-util';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { calcEdgeColor } from '@/utils/scales-util';
-import { conceptShortName } from '@/utils/concept-util';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import filtersUtil from '@/utils/filters-util';
 
 const RELATIONSHIP_GROUP_KEY = {
@@ -163,7 +161,6 @@ export default {
     ...mapActions({
       setSearchClause: 'query/setSearchClause'
     }),
-    ontologyFormatter,
     refresh() {
       const topic = this.selectedNode.concept;
 
@@ -305,7 +302,7 @@ export default {
             }
           });
           // Check existing nodes in the CAG. We don't need to check existing edges because we don't allow to add existing edges from the list.
-          const nodes = _.flatten(causeEdges.map(edge => [{ concept: edge.source, label: conceptShortName(edge.source) }, { concept: edge.target, label: conceptShortName(edge.target) }]));
+          const nodes = _.flatten(causeEdges.map(edge => [{ concept: edge.source, label: this.ontologyFormatter(edge.source) }, { concept: edge.target, label: this.ontologyFormatter(edge.target) }]));
           causeNodes = _.differenceWith(nodes, this.graphData.nodes, (selected, current) => {
             return selected.concept === current.concept;
           });
@@ -321,7 +318,7 @@ export default {
           });
 
           // Check existing nodes in the CAG
-          const nodes = _.flatten(effectEdges.map(edge => [{ concept: edge.source, label: conceptShortName(edge.source) }, { concept: edge.target, label: conceptShortName(edge.target) }]));
+          const nodes = _.flatten(effectEdges.map(edge => [{ concept: edge.source, label: this.ontologyFormatter(edge.source) }, { concept: edge.target, label: this.ontologyFormatter(edge.target) }]));
           effectNodes = _.differenceWith(nodes, this.graphData.nodes, (selected, current) => {
             return selected.concept === current.concept;
           });
