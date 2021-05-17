@@ -66,6 +66,17 @@
       <!-- Help button -->
       <ul
         class="nav navbar-nav navbar-right help-holder">
+        <!-- @REVIEW: link to navigate to the model publishing view (this view must be attached to a project for the insight panel to work) -->
+        <li
+            v-if="project!== null"
+            class="nav-item"
+            :class="{underlined: currentView === 'modelPublishingExperiment'}">
+            <router-link
+              class="nav-link"
+              :to="{name: 'modelPublishingExperiment', params:{project}}"
+            > <i class="fa fa-cubes" />
+              Publish Model</router-link>
+        </li>
         <li class="nav-item nav-item--help">
           <a
             href="https://docs.google.com/presentation/d/1DvixJx4bTkaaIC1mvN26Mf-ykfPzS1NWEmOMMyDWI3E/edit?usp=sharing"
@@ -76,7 +87,7 @@
       </ul>
 
       <!-- Bookmarking -->
-      <bookmark-controls v-if="currentView === 'qualitative' || currentView === 'quantitative'" />
+      <bookmark-controls v-if="currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
     </div>
   </nav>
 </template>

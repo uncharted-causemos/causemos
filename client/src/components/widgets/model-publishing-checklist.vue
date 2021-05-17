@@ -5,11 +5,11 @@
       <div class="checklist-items-container">
         <span class="checklist-header">This is your checklist</span>
         <div
-          v-for="(step, indx) in publishingSteps"
+          v-for="step in publishingSteps"
           :key="step.id"
           class="checklist-item"
-          :class="{'step-selected': indx === currentPublishingStep}"
-          @click="navToPublishingStep(step, indx)">
+          :class="{'step-selected': step.id === currentPublishingStep}"
+          @click="navToPublishingStep(step)">
             <i
               class="step-icon-common fa fa-lg fa-border"
               :class="{
@@ -35,6 +35,7 @@
 </template>
 
 <script lang="ts">
+import { ModelPublishingStepID } from '@/types/ModelPublishingTypes';
 import { ModelPublishingStep } from '@/types/UseCase';
 import { defineComponent, PropType } from 'vue';
 
@@ -46,7 +47,8 @@ export default defineComponent({
       default: []
     },
     currentPublishingStep: {
-      default: 0
+      // type: Number,
+      default: ModelPublishingStepID.Enrich_Description
     }
   },
   emits: [
@@ -62,8 +64,8 @@ export default defineComponent({
   mounted(): void {
   },
   methods: {
-    navToPublishingStep(step: ModelPublishingStep, indx: number) {
-      this.$emit('navigate-to-publishing-step', { publishStepIndex: indx });
+    navToPublishingStep(step: ModelPublishingStep) {
+      this.$emit('navigate-to-publishing-step', { publishStep: step });
     },
     publishModel() {
       (this as any).toaster('Publishing model ...');

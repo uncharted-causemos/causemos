@@ -52,14 +52,6 @@ export default defineComponent({
         selectTimestamp
       );
     }, RESIZE_DELAY);
-    function selectLastTimestamp() {
-      const allTimestamps = props.timeseriesData
-        .map(timeseries => timeseries.points)
-        .flat()
-        .map(point => point.timestamp);
-      const lastTimestamp = _.max(allTimestamps);
-      selectTimestamp(lastTimestamp ?? 0);
-    }
     watch(
       () => props.selectedTimestamp,
       selectedTimestamp => {
@@ -78,7 +70,6 @@ export default defineComponent({
           width: parentElement.clientWidth,
           height: parentElement.clientHeight
         });
-        selectLastTimestamp();
       }
     );
     onMounted(() => {
@@ -88,7 +79,6 @@ export default defineComponent({
         width: parentElement.clientWidth,
         height: parentElement.clientHeight
       });
-      selectLastTimestamp();
     });
     return { resize, lineChart };
   }

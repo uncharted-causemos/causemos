@@ -87,7 +87,7 @@ const routes = [
     component: TileExperiment
   },
   {
-    path: '/model-publishing-experiment',
+    path: '/:project/model-publishing-experiment',
     name: 'modelPublishingExperiment',
     component: ModelPublishingExperiment
   },

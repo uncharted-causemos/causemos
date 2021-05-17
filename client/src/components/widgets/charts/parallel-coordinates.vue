@@ -59,6 +59,9 @@ export default defineComponent({
     'select-scenario',
     'generated-scenarios'
   ],
+  data: () => ({
+    lastSelectedLines: [] as Array<ScenarioData>
+  }),
   computed: {
     getDefaultSize() {
       const parentElement: HTMLElement = (this.$refs as any).pcChart.parentElement;
@@ -79,8 +82,13 @@ export default defineComponent({
       this.render(sz.width, sz.height);
     },
     initialDataSelection(): void {
-      const sz = this.getDefaultSize;
-      this.render(sz.width, sz.height);
+      if (!this.newRunsMode) {
+        // do not make initial line selection override existing user selections
+        if (this.lastSelectedLines.length === 0) {
+          const sz = this.getDefaultSize;
+          this.render(sz.width, sz.height);
+        }
+      }
     }
   },
   mounted(): void {
@@ -117,6 +125,7 @@ export default defineComponent({
     },
     onLinesSelection(selectedLines?: Array<ScenarioData> /* array of selected lines on the PCs plot */): void {
       if (selectedLines && Array.isArray(selectedLines)) {
+        this.lastSelectedLines = selectedLines;
         this.$emit('select-scenario', { scenarios: selectedLines });
       }
     },

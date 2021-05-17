@@ -67,6 +67,7 @@ export default {
     allowNewBookmarks() {
       return this.currentView === 'kbExplorer' ||
         this.currentView === 'qualitative' ||
+        this.currentView === 'modelPublishingExperiment' ||
         this.currentView === 'quantitative';
     }
   },
@@ -90,6 +91,8 @@ export default {
       this.setCurrentPane(pane);
     },
     refresh() {
+      // FIXME: currently, the insight feature is dependent on an active "project"
+      //        but this needs to be revised since insight saved during model publishing won't have a project association
       API.get('bookmarks/counts', {
         params: { project_id: this.project }
       }).then(d => {

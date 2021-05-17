@@ -15,31 +15,36 @@
       :all-scenario-ids="allScenarioIds"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
+      :selected-temporal-resolution="selectedTemporalResolution"
+      :selected-temporal-aggregation="selectedTemporalAggregation"
+      :selected-spatial-aggregation="selectedSpatialAggregation"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
     >
-      <template v-slot:datacube-scenario-header>
-        <div class="datacube-header" v-if="isExpanded">
-          <h5>Production - DSSAT</h5>
-          <disclaimer
-            v-if="scenarioCount > 0"
-            :message="
-              scenarioCount +
-                ' scenarios. Click a vertical line to select or deselect it.'
-            "
+      <template v-slot:datacube-model-header>
+        <div class="datacube-header" v-if="mainModelOutput">
+          <div v-if="isExpanded">
+            <h5>{{mainModelOutput.display_name}} | {{metadata.name}}</h5>
+            <disclaimer
+              v-if="scenarioCount > 0"
+              :message="
+                scenarioCount +
+                  ' scenarios. Click a vertical line to select or deselect it.'
+              "
+            />
+          </div>
+          <datacube-scenario-header
+            class="scenario-header"
+            :isExpanded="isExpanded"
+            :outputVariable="mainModelOutput.display_name"
+            :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
+            :selected-model-id="selectedModelId"
+            :selected-scenario-ids="selectedScenarioIds"
+            :color-from-index="colorFromIndex"
+            v-else
           />
         </div>
-        <datacube-scenario-header
-          class="scenario-header"
-          :isExpanded="isExpanded"
-          :outputVariable="'Crop production'"
-          :outputVariableUnits="'tonnes'"
-          :selected-model-id="selectedModelId"
-          :selected-scenario-ids="selectedScenarioIds"
-          :color-from-index="colorFromIndex"
-          v-else
-        />
       </template>
 
       <template v-slot:datacube-description>
@@ -63,6 +68,9 @@
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
+            :selected-temporal-resolution="selectedTemporalResolution"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
+            :selected-spatial-aggregation="selectedSpatialAggregation"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -74,16 +82,18 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
-import { computed, defineComponent, ref } from 'vue';
+import MAXHOP from '@/assets/MAXHOP.js';
+import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
-import { DimensionInfo } from '@/types/Model';
+import { DimensionInfo, Model, ModelFeature } from '@/types/Model';
 import { getRandomNumber } from '../../tests/utils/random';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
+import useScenarioData from '@/services/composables/useScenarioData';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 
 const DRILLDOWN_TABS = [
   {
@@ -113,8 +123,23 @@ export default defineComponent({
     const typeBreakdownData: LegacyBreakdownDataStructure[] = [];
     const isExpanded = true;
 
-    const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
-    const selectedScenarioIds = ref([allScenarioIds[0]]);
+    const modelId = ref(MAXHOP.modelId);
+
+    const metadata = useModelMetadata(modelId) as Ref<Model | null>;
+
+    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+
+    watch(() => metadata.value, () => {
+      mainModelOutput.value = metadata.value?.outputs[0];
+    }, {
+      immediate: true
+    });
+
+    // FIXME: use endpoint to fetch IDs
+    const allModelRunData = useScenarioData(modelId);
+
+    const allScenarioIds = allModelRunData.value.map(run => run.id);
+    const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
       selectedScenarioIds.value = newIds;
     }
@@ -129,9 +154,12 @@ export default defineComponent({
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
+      selectedTemporalResolution: 'month',
+      selectedTemporalAggregation: 'mean',
+      selectedSpatialAggregation: 'mean',
       selectedAdminLevel,
       setSelectedAdminLevel,
-      selectedModelId: DSSAT_PRODUCTION_DATA.modelId,
+      selectedModelId: modelId,
       allScenarioIds,
       selectedScenarioIds,
       setSelectedScenarioIds,
@@ -140,7 +168,9 @@ export default defineComponent({
       setSelectedTimestamp,
       isExpanded,
       colorFromIndex,
-      scenarioCount
+      scenarioCount,
+      metadata,
+      mainModelOutput
     };
   },
   methods: {

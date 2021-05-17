@@ -159,6 +159,18 @@ export default defineComponent({
     selectedTimestamp: {
       type: Number,
       default: 0
+    },
+    selectedTemporalResolution: {
+      type: String as PropType<string>,
+      default: 'month'
+    },
+    selectedTemporalAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
+    },
+    selectedSpatialAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
     }
   },
   emits: ['set-selected-admin-level'],
@@ -181,17 +193,33 @@ export default defineComponent({
         return;
       }
       const promises = props.selectedScenarioIds.map(scenarioId =>
-        API.get('fetch-demo-data', {
-          params: {
-            modelId: props.selectedModelId,
-            runId: scenarioId,
-            type: 'regional-data'
-          }
-        })
+        props.selectedModelId.includes('maxhop')
+          ? API.get('/maas/output/regional-data', {
+            params: {
+              model_id: props.selectedModelId,
+              run_id: scenarioId,
+              feature: props.selectedModelId.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
+              resolution: props.selectedTemporalResolution,
+              temporal_agg: props.selectedTemporalAggregation,
+              spatial_agg: props.selectedSpatialAggregation,
+              timestamp: props.selectedTimestamp
+            }
+          })
+          : API.get('fetch-demo-data', {
+            params: {
+              modelId: props.selectedModelId,
+              runId: scenarioId,
+              type: 'regional-data'
+            }
+          })
       );
-      rawRegionalData.value = (await Promise.all(promises)).map(response =>
-        JSON.parse(response.data)
+      const allRegionalData = (await Promise.all(promises)).map(response =>
+        _.isEmpty(response.data) ? {} : response.data
       );
+      if (_.some(allRegionalData, response => _.isEmpty(response))) {
+        return;
+      }
+      rawRegionalData.value = allRegionalData;
     }
 
     const regionalData = computed(() => {
@@ -202,11 +230,7 @@ export default defineComponent({
           levels.forEach(level => {
             const dataForLevel = dataForOneScenario[level];
             if (dataForLevel === undefined) return;
-            const dataForTimestamp =
-              dataForLevel[props.selectedTimestamp.toString()] ?? [];
-            result[level] = {
-              [props.selectedTimestamp.toString()]: dataForTimestamp
-            };
+            result[level] = dataForLevel;
           });
           return result;
         }
