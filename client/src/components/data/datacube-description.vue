@@ -46,7 +46,7 @@
       <div class="metadata-row" v-if="metadata.maintainer.website"><strong>Source: </strong>
         <a
           v-if="isSourceValidUrl"
-          :href="source"
+          :href="metadata.source"
           target="_blank"
           rel="noopener noreferrer"
         >{{ metadata.maintainer.website }}</a>
@@ -119,7 +119,7 @@ export default defineComponent({
   },
   computed: {
     isSourceValidUrl(): boolean {
-      return stringUtil.isValidUrl(this.metadata.maintainer.website);
+      return stringUtil.isValidUrl(this.metadata.source);
     },
     inputParameters(): Array<any> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);

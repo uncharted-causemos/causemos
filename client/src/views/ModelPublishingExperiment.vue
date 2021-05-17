@@ -297,24 +297,27 @@ export default defineComponent({
   watch: {
     $route(/* to, from */) {
       // react to route changes (either by clicking on a publishing step or on one of the insights)
-      const publishStepId = this.$route.query.step as any;
-      this.currentPublishingStep = publishStepId as ModelPublishingStepID;
+      // NOTE:  this is only valid when the route is focused on the 'modelPublishingExperiment'
+      if (this.$route.name === 'modelPublishingExperiment') {
+        const publishStepId = this.$route.query.step as any;
+        this.currentPublishingStep = publishStepId as ModelPublishingStepID;
 
-      const timestamp = this.$route.query.timeStamp as any;
-      this.selectedTimestamp = timestamp;
+        const timestamp = this.$route.query.timeStamp as any;
+        this.selectedTimestamp = timestamp;
 
-      const publishTemporalAggr = this.$route.query.temporalAggregation as any;
-      this.selectedTemporalAggregation = publishTemporalAggr;
+        const publishTemporalAggr = this.$route.query.temporalAggregation as any;
+        this.selectedTemporalAggregation = publishTemporalAggr;
 
-      const publishTemporalRes = this.$route.query.temporalResolution as any;
-      this.selectedTemporalResolution = publishTemporalRes;
+        const publishTemporalRes = this.$route.query.temporalResolution as any;
+        this.selectedTemporalResolution = publishTemporalRes;
 
-      const publishSpatialAggr = this.$route.query.spatialAggregation as any;
-      this.selectedSpatialAggregation = publishSpatialAggr;
+        const publishSpatialAggr = this.$route.query.spatialAggregation as any;
+        this.selectedSpatialAggregation = publishSpatialAggr;
 
-      if (this.allScenarioIds.length > 0) {
-        const selectedIds = this.currentPublishingStep !== ModelPublishingStepID.Enrich_Description ? [this.allScenarioIds[0]] : [];
-        this.setSelectedScenarioIds(selectedIds);
+        if (this.allScenarioIds.length > 0) {
+          const selectedIds = this.currentPublishingStep !== ModelPublishingStepID.Enrich_Description ? [this.allScenarioIds[0]] : [];
+          this.setSelectedScenarioIds(selectedIds);
+        }
       }
     },
     countBookmarks: {
