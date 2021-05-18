@@ -32,6 +32,7 @@
         </div>
         <parallel-coordinates-chart
           v-if="runParameterValues"
+          class="pc-chart"
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
           :ordinal-dimensions="ordinalDimensionNames"
@@ -400,6 +401,7 @@ $fullscreenTransition: all 0.5s ease-in-out;
 .flex-row {
   display: flex;
   flex: 1;
+  min-height: 0;
 }
 
 header {
@@ -428,7 +430,13 @@ header {
 .scenario-selector {
   width: 25%;
   margin-right: 10px;
-  height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-chart {
+  flex: 1;
+  min-height: 0;
 }
 
 .relative-box {

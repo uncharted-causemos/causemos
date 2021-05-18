@@ -61,9 +61,9 @@ export default function useTimeseriesData(
       }
       // Assign a colour to each timeseries and store it in the
       //  `timeseriesData` ref
-      timeseriesData.value = modelRunIds.value.map((modelRunId, index) => {
+      timeseriesData.value = fetchResults.map((points, index) => {
         const color = colorFromIndex(index);
-        return { color, points: fetchResults[index] };
+        return { color, points };
       });
     }
     onInvalidate(() => {
