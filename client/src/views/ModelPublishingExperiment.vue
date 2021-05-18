@@ -238,6 +238,11 @@ export default defineComponent({
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
+      let isChanged = newIds.length !== selectedScenarioIds.value.length;
+      newIds.forEach((id, index) => {
+        isChanged = isChanged || (id !== selectedScenarioIds.value[index]);
+      });
+      if (!isChanged) return;
       selectedScenarioIds.value = newIds;
       if (newIds.length > 0) {
         if (currentPublishingStep.value === ModelPublishingStepID.Enrich_Description) {
@@ -303,7 +308,7 @@ export default defineComponent({
         this.currentPublishingStep = publishStepId as ModelPublishingStepID;
 
         const timestamp = this.$route.query.timeStamp as any;
-        this.selectedTimestamp = timestamp;
+        this.setSelectedTimestamp(timestamp);
 
         const publishTemporalAggr = this.$route.query.temporalAggregation as any;
         this.selectedTemporalAggregation = publishTemporalAggr;
@@ -353,6 +358,7 @@ export default defineComponent({
   },
   methods: {
     setSelectedTimestamp(value: number) {
+      if (this.selectedTimestamp === value) return;
       this.selectedTimestamp = value;
       this.updateRouteParams();
     },

@@ -10,7 +10,14 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import renderTimeseries from '@/charts/timeseries-renderer';
 import { Timeseries } from '@/types/Timeseries';
-import { defineComponent, PropType, onMounted, ref, watch } from 'vue';
+import {
+  defineComponent,
+  PropType,
+  onMounted,
+  ref,
+  watch,
+  nextTick
+} from 'vue';
 
 const RESIZE_DELAY = 15;
 
@@ -52,6 +59,14 @@ export default defineComponent({
         selectTimestamp
       );
     }, RESIZE_DELAY);
+    function selectLastTimestamp() {
+      const allTimestamps = props.timeseriesData
+        .map(timeseries => timeseries.points)
+        .flat()
+        .map(point => point.timestamp);
+      const lastTimestamp = _.max(allTimestamps);
+      selectTimestamp(lastTimestamp ?? 0);
+    }
     watch(
       () => props.selectedTimestamp,
       selectedTimestamp => {
@@ -70,6 +85,18 @@ export default defineComponent({
           width: parentElement.clientWidth,
           height: parentElement.clientHeight
         });
+        // HACK: this is a workaround to fix a reactivity issue
+        //  that may be a vue reactivity bug. If the timestamp is
+        //  selected this frame, the new selection will be bubbled
+        //  up to CompAnalysisExperiment, but the drilldown panel
+        //  (and the breakdown pane it contains) won't be reactively
+        //  updated. Another workaround is to add
+        //  :timestamp="selectedTimestamp"
+        //  to the <breakdown-pane>'s prop list in
+        //  CompAnalysisExperiment.
+        nextTick(() => {
+          selectLastTimestamp();
+        });
       }
     );
     onMounted(() => {
@@ -79,6 +106,7 @@ export default defineComponent({
         width: parentElement.clientWidth,
         height: parentElement.clientHeight
       });
+      selectLastTimestamp();
     });
     return { resize, lineChart };
   }
