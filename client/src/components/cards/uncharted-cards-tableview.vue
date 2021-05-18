@@ -25,24 +25,30 @@
                       v-for="option in sortingOptions"
                       :key="option"
                       class="dropdown-option"
-                      @click="sort(option)">
+                      @click="sortRows(option)">
                      {{ option }}
                     </div>
                   </template>
                 </dropdown-control>
               </div>
             </div>
+            <pagination
+              :label="'documents'"
+              :total="documentsCount"
+            />
           </div>
         </div>
         <div class="row cards-list">
           <div class="row cards-list-header">
+            <div class="col-sm-1">
+            </div>
             <div class="col-sm-3">
               Title
             </div>
-            <div class="col-sm-3 number-col">
+            <div class="col-sm-2">
               Publication Date
             </div>
-            <div class="col-sm-3 number-col">
+            <div class="col-sm-3">
               Author
             </div>
             <div class="col-sm-3">
@@ -54,6 +60,7 @@
               v-for="card in sortedData"
               :key="card.id">
               <tableview-card
+                @rowcard-click="onRowCardClick"
                 :card="card"/>
             </div>
           </div>
@@ -67,6 +74,8 @@
 import * as _ from 'lodash';
 import TableviewCard from '@/components/cards/tableview-card';
 import DropdownControl from '@/components/dropdown-control';
+import Pagination from '@/components/pagination';
+import { mapGetters } from 'vuex';
 
 const SORTING_OPTIONS = {
   MOST_RECENT: 'Most recent',
@@ -77,16 +86,13 @@ export default {
   name: 'UnchartedCardsTableview',
   components: {
     TableviewCard,
-    DropdownControl
+    DropdownControl,
+    Pagination
   },
   props: {
     data: {
       type: Array,
       default: () => []
-    },
-    config: {
-      type: Object,
-      default: () => ({})
     }
   },
   data: () => ({
@@ -95,6 +101,21 @@ export default {
     selectedSortingOption: SORTING_OPTIONS.MOST_RECENT
   }),
   computed: {
+    ...mapGetters({
+      filters: 'query/filters',
+      documentsQuery: 'query/documents',
+      project: 'app/project',
+      documentsCount: 'kb/documentsCount'
+    }),
+    pageFrom() {
+      return this.documentsQuery.from;
+    },
+    pageSize() {
+      return this.documentsQuery.size;
+    },
+    sort() {
+      return this.documentsQuery.sort;
+    },
     sortedData() {
       if (this.selectedSortingOption === SORTING_OPTIONS.MOST_RECENT) {
         return _.orderBy(this.data, ['metadata.Publication'], ['desc']);
@@ -106,12 +127,15 @@ export default {
     }
   },
   methods: {
-    sort(option) {
+    sortRows(option) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
     },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
+    },
+    onRowCardClick(targetData) {
+      console.log(`FROM ROWCLICK: ${JSON.stringify(targetData)}`);
     }
   }
 };
