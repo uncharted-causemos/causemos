@@ -294,7 +294,7 @@ export default class ModelRenderer extends SVGRenderer {
           nodeHeaderGroup.style('stroke', colour);
         }
       }
-      d3.select(this).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
+      d3.select(nodes[index]).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
 
       const runOptions = {
         selectedScenarioId,
