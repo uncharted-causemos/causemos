@@ -55,13 +55,6 @@ export default {
   data: () => ({
     expanded: false
   }),
-  watch: {
-    // A bit of a hack here, using object {value: true|false} in order to make watcher fire on consecutive true or false values
-    override() {
-      if (_.isNil(this.override)) return;
-      this.expanded = this.override.value;
-    }
-  },
   mounted() {
     if (_.isNil(this.override) && !this.defaultExpand) return;
     if (!_.isNil(this.override)) {
