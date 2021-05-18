@@ -127,7 +127,6 @@ import SmallIconButton from '@/components/widgets/small-icon-button';
 import aggregationsUtil from '@/utils/aggregations-util';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { calcEdgeColor } from '@/utils/scales-util';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 
 const RELATIONSHIP_GROUP_KEY = {
   CAUSE: 'cause',
@@ -211,7 +210,6 @@ export default {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken'
     }),
-    ontologyFormatter,
     getRelationshipGroupDisplayString(relationshipGroupKey) {
       return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
         ? 'Drivers'
@@ -373,12 +371,12 @@ export default {
     getRelationshipGroupCause(relationshipGroupKey) {
       return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE
         ? '?'
-        : ontologyFormatter(this.selectedNode.concept);
+        : this.ontologyFormatter(this.selectedNode.concept);
     },
     getRelationshipGroupEffect(relationshipGroupKey) {
       return relationshipGroupKey === RELATIONSHIP_GROUP_KEY.EFFECT
         ? '?'
-        : ontologyFormatter(this.selectedNode.concept);
+        : this.ontologyFormatter(this.selectedNode.concept);
     },
     showRelationshipSuggestions() {
       this.$emit('show-relationship-suggestions');

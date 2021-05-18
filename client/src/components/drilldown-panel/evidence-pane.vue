@@ -168,7 +168,6 @@ import { CORRECTIONS, CURATIONS, SIDE_PANEL } from '@/utils/messages-util';
 import MessageDisplay from '@/components/widgets/message-display';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import numberFormatter from '@/formatters/number-formatter';
 
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
@@ -288,7 +287,6 @@ export default {
   },
   methods: {
     statementPolarityFormatter,
-    ontologyFormatter,
     numberFormatter,
     initializeData() {
       this.activeCorrection = null;

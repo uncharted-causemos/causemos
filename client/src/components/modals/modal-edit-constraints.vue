@@ -42,7 +42,6 @@ import { mapGetters } from 'vuex';
 
 import Modal from '@/components/modals/modal';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 
 export default {
   name: 'ModalEditConstraints',
@@ -88,7 +87,7 @@ export default {
   },
   methods: {
     formatted_concept_name() {
-      return ontologyFormatter(this.node.concept);
+      return this.ontologyFormatter(this.node.concept);
     },
     render() {
       const selectedScenario = this.scenarios.scenarios.find(s => s.id === this.selectedScenarioId);

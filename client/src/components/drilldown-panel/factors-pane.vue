@@ -143,7 +143,6 @@ import OntologyEditor from '@/components/editors/ontology-editor';
 import MessageDisplay from '@/components/widgets/message-display';
 import SmallIconButton from '@/components/widgets/small-icon-button';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import numberFormatter from '@/formatters/number-formatter';
 import messagesUtil from '@/utils/messages-util';
 import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';
@@ -249,7 +248,6 @@ export default {
     this.refresh();
   },
   methods: {
-    ontologyFormatter,
     numberFormatter,
     initializeData() {
       this.currentItem = null;

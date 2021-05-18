@@ -72,7 +72,6 @@ import MessageDisplay from '@/components/widgets/message-display';
 import EvidenceGroup from '@/components/drilldown-panel/evidence-group';
 import aggregationsUtil from '@/utils/aggregations-util';
 import messagesUtil from '@/utils/messages-util';
-import { conceptShortName } from '@/utils/concept-util';
 import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';
 
 const CORRECTIONS = messagesUtil.CORRECTIONS;
@@ -118,7 +117,7 @@ export default {
       return cnt;
     },
     shortConceptName() {
-      return conceptShortName(this.correction.newGrounding);
+      return this.ontologyFormatter(this.correction.newGrounding);
     }
   },
   watch: {
