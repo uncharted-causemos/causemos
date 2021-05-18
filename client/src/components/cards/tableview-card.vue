@@ -1,11 +1,17 @@
 <template>
-  <div class="tableview-card-container">
+  <div class="tableview-card-container"
+    @click="showDocument">
     <div class="row tableview-row">
+      <div class="col-sm-1 number-col">
+        <small-icon-button>
+          <i class="fa fa-book fa-lg" />
+        </small-icon-button>
+      </div>
       <div class="col-sm-3 number-col">
         <div v-if="checkString(card.title)">{{ card.title }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
-      <div class="col-sm-3 number-col">
+      <div class="col-sm-2 number-col">
         <div v-if="checkString(card['metadata'].Publication)">{{ card['metadata'].Publication }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
@@ -30,7 +36,13 @@ export default {
       default: () => {}
     }
   },
+  emits: ['rowcard-click'],
   methods: {
+    showDocument(e) {
+      console.log(JSON.stringify(e));
+      console.log(JSON.stringify(this.card));
+      this.$emit('rowcard-click', { event: e, card: this.card });
+    },
     checkString(item) {
       return item && item.length > 0;
     },
