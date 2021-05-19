@@ -194,7 +194,7 @@ export default {
   },
   emits: [
     'background-click', 'show-indicator', 'show-constraints', 'show-model-parameters',
-    'refresh', 'set-sensitivity-analysis-type', 'save-indicator-edits'
+    'refresh', 'set-sensitivity-analysis-type', 'save-indicator-edits', 'edit-indicator'
   ],
   data: () => ({
     tabs: [
