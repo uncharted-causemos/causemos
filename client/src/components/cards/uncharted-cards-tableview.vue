@@ -12,7 +12,12 @@
           <hr>
         </div>
         <div class="row">
-          <div class="controls">
+          <pagination
+            class="col-md-8"
+            :label="'documents'"
+            :total="documentsCount"
+          />
+          <div class="controls col-md-2">
             <div class="sorting">
               <div>
                 <button
@@ -37,10 +42,6 @@
                 </dropdown-control>
               </div>
             </div>
-            <pagination
-              :label="'documents'"
-              :total="documentsCount"
-            />
           </div>
         </div>
         <div class="row cards-list">
