@@ -37,7 +37,11 @@ const createModel = async (payload) => {
   const edges = result.relations.reduce((acc, edge) => {
     const key = `${edge.source}///${edge.target}`;
     acc[key] = {};
-    acc[key].weights = edge.weights.map(v => Math.abs(parseFloat(v)));
+    // FIXME: getting weird weights from Jataware translation layer, as far as we are concerned
+    // weights should be positive.
+    if (parseFloat(edge.weights[0]) !== 0) {
+      acc[key].weights = edge.weights.map(v => Math.abs(parseFloat(v)));
+    }
     return acc;
   }, {});
   return { nodes, edges, status: result.status };
