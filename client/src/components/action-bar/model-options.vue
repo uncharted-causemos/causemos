@@ -65,7 +65,7 @@ export default defineComponent({
     const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     return {
-      useToaster,
+      toaster: useToaster(),
       showModelOptionsDropdown,
       project,
       currentCAG,
@@ -88,13 +88,12 @@ export default defineComponent({
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
     },
     onRenameCagClick() {
-      console.log(this.downloadURL);
       this.$emit('rename');
       this.showModelOptionsDropdown = false;
     },
     onDeleteCAG() {
       modelService.removeModel(this.currentCAG).then(() => {
-        this.useToaster(CAG.SUCCESSFUL_DELETION, 'success', false);
+        this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
         // Back to splash page
         this.$router.push({
           name: this.viewAfterDeletion,
@@ -103,12 +102,12 @@ export default defineComponent({
           }
         });
       }).catch(() => {
-        this.useToaster(CAG.ERRONEOUS_DELETION, 'error', true);
+        this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
       });
     },
     onDuplicate() {
       modelService.duplicateModel(this.currentCAG).then(() => {
-        this.useToaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
+        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
         // Back to splash page
         this.$router.push({
           name: this.viewAfterDeletion,
@@ -117,7 +116,7 @@ export default defineComponent({
           }
         });
       }).catch(() => {
-        this.useToaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
+        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
       });
     }
   }
