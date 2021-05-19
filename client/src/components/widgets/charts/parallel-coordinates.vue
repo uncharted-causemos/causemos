@@ -76,7 +76,7 @@ export default defineComponent({
     initialDataSelection(): void {
       if (!this.newRunsMode) {
         // do not make initial line selection override existing user selections
-        if (this.lastSelectedLines.length === 0) {
+        if (this.lastSelectedLines.length === 0 || this.initialDataSelection.length === 0) {
           this.render(undefined);
         }
       }
@@ -125,6 +125,9 @@ export default defineComponent({
         this.onLinesSelection,
         this.onGeneratedRuns
       );
+    },
+    resetLineSelection() {
+      this.lastSelectedLines = [];
     },
     onLinesSelection(selectedLines?: Array<ScenarioData> /* array of selected lines on the PCs plot */): void {
       if (selectedLines && Array.isArray(selectedLines)) {

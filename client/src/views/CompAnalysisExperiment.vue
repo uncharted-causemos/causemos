@@ -65,6 +65,7 @@
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
+            :metadata="metadata"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"

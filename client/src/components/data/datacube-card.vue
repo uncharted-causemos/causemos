@@ -235,10 +235,13 @@ export default defineComponent({
       allScenarioIds
     } = toRefs(props);
 
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+
     const {
       timeseriesData: selectedTimeseriesData,
       relativeTo
     } = useTimeseriesData(
+      metadata,
       selectedModelId,
       selectedScenarioIds,
       colorFromIndex,
@@ -252,9 +255,7 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues
-    } = useParallelCoordinatesData(selectedModelId, allScenarioIds);
-
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+    } = useParallelCoordinatesData(metadata, selectedModelId, allScenarioIds);
 
     const mainModelOutput = ref<ModelFeature | undefined>(undefined);
 
@@ -282,7 +283,7 @@ export default defineComponent({
         id: selectedScenarioIds.value[0],
         modelId: selectedModelId.value,
         runId: selectedScenarioIds.value[0], // we may not have a selected run at this point, so init map with the first run by default
-        outputVariable: selectedModelId.value.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
+        outputVariable: metadata.value?.outputs[0].name,
         timestamp: selectedTimestamp.value,
         temporalResolution: selectedTemporalResolution.value,
         temporalAggregation: selectedTemporalAggregation.value,
@@ -301,7 +302,8 @@ export default defineComponent({
       drilldownDimensions,
       runParameterValues,
       isDescriptionView,
-      mainModelOutput
+      mainModelOutput,
+      metadata
     };
   },
   data: () => ({
@@ -336,25 +338,31 @@ export default defineComponent({
     requestNewModelRuns() {
       // FIXME: cast to 'any' since typescript cannot see mixins yet!
       (this as any).toaster('New runs requested\nPlease check back later!');
-      const firstScenario = this.potentialScenarios[0]; // FIXME
+
+      // FIXME: only submitting ONE sceanrio is supported at this time
+      const firstScenario = this.potentialScenarios[0];
       const paramArray: any[] = [];
       Object.keys(firstScenario).forEach(key => {
+        // exclude output variable values since they will be undefined for potential runs
+        if (key !== this.mainModelOutput?.name) {
+          paramArray.push({
+            name: key,
+            value: firstScenario[key]
+          });
+        }
+      });
+      const drilldownParams = this.dimensions.filter(d => d.is_drilldown);
+      drilldownParams.forEach(p => {
         paramArray.push({
-          name: key,
-          value: +firstScenario[key]
+          name: p.name,
+          value: p.default
         });
       });
+      // FIXME: only max-hop model is executable at this time
       if (this.selectedModelId.includes('maxhop')) {
-        // country is supposed to be a drilldown so it is not included in the param list
-        // but is still needed, so add it manually
-        // @REVIEW
-        paramArray.push({
-          name: 'country',
-          value: 'Ethiopia'
-        });
         API.post('maas/model-runs', {
           model_id: this.selectedModelId,
-          model_name: 'MaxHop',
+          model_name: this.metadata?.name,
           parameters: paramArray
         });
       } else {

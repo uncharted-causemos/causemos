@@ -104,6 +104,10 @@ const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
 
+const isOrdinalAxis = (name: string) => {
+  return pcTypes[name].startsWith('str');
+};
+
 
 function renderParallelCoordinates(
   // root svg selection element
@@ -134,12 +138,18 @@ function renderParallelCoordinates(
   //
   dimensions = filterDrilldownDimensionData(dimensions);
 
+  const detectTypeFromData = false;
   // process data and detect data type for each dimension
   //  some input rows may have more columns that others,
   //  so pick a row with the max number of columns
   //  in order to correctly build the data type map
-  const idealRow = _.maxBy(data, (d) => Object.keys(d).length);
-  pcTypes = detectDimensionTypes(idealRow ?? data[0]);
+  if (detectTypeFromData) {
+    const idealRow = _.maxBy(data, (d) => Object.keys(d).length);
+    pcTypes = detectDimensionTypes(idealRow ?? data[0]);
+  } else {
+    pcTypes = dimensions.reduce(
+      (obj, item) => Object.assign(obj, { [item.name]: item.type }), {});
+  }
 
   //
   // scales
@@ -236,6 +246,17 @@ function renderParallelCoordinates(
   // additional context-sensitive utility functions
   // ////////////////////////////////////////////////
 
+
+  function getValueInCorrectType(dimName: string, value: string) {
+    if (pcTypes[dimName] === 'int') {
+      return parseInt(value);
+    } else if (pcTypes[dimName] === 'float') {
+      return parseFloat(value);
+    } else {
+      return value;
+    }
+  }
+
   // The path function take a row of input (e.g., csv values),
   //  and return x and y coordinates of the line to draw for this raw.
   // NOTE: for ordinal axes, lines would map to any part of the line segment based on the input value
@@ -246,7 +267,7 @@ function renderParallelCoordinates(
 
     // when drawing lines, exclude the last segment to the output variable
     //  if the drawn lines are for potentially new scenarios (i.e., within the new-runs mode)
-    const dimensionSet: Array<DimensionInfo> = options.newRunsMode ? dimensions.filter(function(d) { return d.is_output !== undefined ? !d.is_output : d.type !== 'output'; }) : dimensions;
+    const dimensionSet: Array<DimensionInfo> = options.newRunsMode ? dimensions.filter(function(d) { return !isOutputDimension(dimensions, d.name); }) : dimensions;
 
     // some data lines are missing certain dimensions, e.g., in-progress lines would not have output value yet!
     const dataDrivenDimensionSet = dimensionSet.filter(dim => d[dim.name] !== undefined);
@@ -256,7 +277,7 @@ function renderParallelCoordinates(
       const scaleX = getXScaleFromMap(dimName);
       const val = d[dimName];
       let xPos = scaleX(val as any) as number;
-      if (pcTypes[dimName] === 'string') {
+      if (isOrdinalAxis(dimName)) {
         // ordinal axis, so instead of mapping to one position in this segment,
         // lets attempt to distribute the values randomly on the segment
         // with the goal of improving lines visibility and reducing overlap
@@ -309,10 +330,10 @@ function renderParallelCoordinates(
     // prepare a map of all markers where a baseline marker is added when no user-marker exists
     dimensions.forEach(dim => {
       const dimName = dim.name;
-      const dimDefault = dim.default;
+      const dimDefault: string = dim.default;
       const dimData = [];
       // exclude markers on the output axes
-      const notOutputAxis = dim.is_output !== undefined ? !dim.is_output : dim.type !== 'output';
+      const notOutputAxis = !isOutputDimension(dimensions, dim.name);
       if (notOutputAxis) {
         const markers = axisMarkersMap[dimName];
         // do we have actual user-markers added on this dimension?
@@ -324,7 +345,7 @@ function renderParallelCoordinates(
         } else {
           // no markers were added for this dim,
           //  so use the (baseline) default as the marker value
-          dimData.push(dimDefault);
+          dimData.push(getValueInCorrectType(dimName, dimDefault));
         }
         allBrushesMap[dimName] = dimData;
       }
@@ -410,7 +431,7 @@ function renderParallelCoordinates(
         const b = d3.select(this);
         const dimName = b.attr('id');
         let selection: [number | string, number | string] | undefined;
-        if (pcTypes[dimName] !== 'string') { // different axes types (e.g., ordinal) have different brushing techniques
+        if (!isOrdinalAxis(dimName)) { // different axes types (e.g., ordinal) have different brushing techniques
           selection = d3.brushSelection(this) as [number, number];
         } else {
           // find any selection on this ordinal axis
@@ -426,7 +447,7 @@ function renderParallelCoordinates(
           let start;
           let end;
           const skip = false;
-          if (pcTypes[dimName] === 'number') {
+          if (!isOrdinalAxis(dimName)) {
             start = (xScale as D3ScaleLinear).invert(selection[0] as number).toFixed(2);
             end = (xScale as D3ScaleLinear).invert(selection[1] as number).toFixed(2);
           } else {
@@ -456,11 +477,11 @@ function renderParallelCoordinates(
 
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
-          if (pcTypes[b.dimName] === 'number') {
+          if (!isOrdinalAxis(b.dimName)) {
             if (+lineData[b.dimName] < +b.start || +lineData[b.dimName] > +b.end) {
               isSelected = false;
             }
-          } else if (pcTypes[b.dimName] === 'string') {
+          } else {
             if (lineData[b.dimName] !== b.start && lineData[b.dimName] !== b.end) {
               isSelected = false;
             }
@@ -515,7 +536,7 @@ function renderParallelCoordinates(
         const b = d3.select(this);
         const dimName = b.attr('id');
         let validBrushSelection;
-        if (pcTypes[dimName] !== 'string') {
+        if (!isOrdinalAxis(dimName)) {
           validBrushSelection = d3.brushSelection(this) !== null;
         } else {
           const selectedBrush = b.select('.selection');
@@ -573,7 +594,7 @@ function renderParallelCoordinates(
         const dimName = d.name;
         const value = selectedLineData[dimName];
         let formattedValue = value;
-        if (pcTypes[dimName] === 'number') {
+        if (!isOrdinalAxis(dimName)) {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
@@ -630,7 +651,7 @@ function renderParallelCoordinates(
     renderedAxes
       .filter(function(d) {
         // exclude the output variable from the ability to add markers to it
-        return d.is_output !== undefined ? !d.is_output : d.type !== 'output';
+        return !isOutputDimension(dimensions, d.name);
       })
       .append('g')
       .attr('class', 'pc-marker-g')
@@ -643,7 +664,7 @@ function renderParallelCoordinates(
         const segmentsY = -brushHeight;
         const segmentsHeight = brushHeight * 2;
 
-        if (pcTypes[dimName] !== 'string') {
+        if (!isOrdinalAxis(dimName)) {
           //
           // markers on numerical axes
           //
@@ -668,8 +689,9 @@ function renderParallelCoordinates(
               const xLoc = d3.pointer(event)[0];
               const markerValue = getMarkerValueFromPos(xLoc);
 
+              // make sure to place marker using correct data type
               axisMarkersMap[dimName].push({
-                value: markerValue,
+                value: getValueInCorrectType(dimName, markerValue),
                 xPos: xLoc
               }); // Push data to our array
 
@@ -725,7 +747,7 @@ function renderParallelCoordinates(
                       .attr('x', newXPos);
                     const mv = getMarkerValueFromPos(newXPos);
                     gElement.selectAll('text')
-                      .text(mv)
+                      .text(getValueInCorrectType(dimName, mv))
                       .attr('x', newXPos + markerTooltipOffsetX)
                     ;
                   })
@@ -739,7 +761,7 @@ function renderParallelCoordinates(
                     if (md) {
                       md.xPos = newXPos;
                       const mv = getMarkerValueFromPos(newXPos);
-                      md.value = mv;
+                      md.value = getValueInCorrectType(dimName, mv);
                     }
                     d3.select(this)
                       .attr('x', newXPos);
@@ -758,7 +780,8 @@ function renderParallelCoordinates(
                   d3.select(this)
                     .style('fill', 'orange');
 
-                  const markerValue = numberFloatFormat(i.value as number);
+                  // const markerValue = numberFloatFormat(i.value as number);
+                  const markerValue = i.value;
 
                   // Specify where to put label of text
                   gElement.append('text')
@@ -900,7 +923,7 @@ function renderParallelCoordinates(
       .attr('id', function(d) { return d.name; })
       .each(function(d) {
         const dimName = d.name;
-        if (pcTypes[dimName] !== 'string') {
+        if (!isOrdinalAxis(dimName)) {
           // a standard continuous brush
           d3.select(this).call(
             d3.brushX()
@@ -983,6 +1006,10 @@ function renderParallelCoordinates(
   }
 } // end of renderParallelCoordinates()
 
+function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
+  // FIXME: only the last dimension is the output dimension
+  return dimensions[dimensions.length - 1].name === dimName;
+}
 
 function renderBaselineMarkers(showBaselineDefaults: boolean) {
   if (!renderedAxes) {
@@ -1005,7 +1032,7 @@ function renderBaselineMarkers(showBaselineDefaults: boolean) {
         const dimName = d.name;
         const scaleX = getXScaleFromMap(dimName);
         let xPos: number = scaleX(axisDefault as any) as number;
-        if (pcTypes[dimName] === 'string') {
+        if (isOrdinalAxis(dimName)) {
           const axisDefaultStr = axisDefault.toString();
           const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
           xPos = min + (max - min) / 2;
@@ -1032,7 +1059,7 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
       const dimName = d.name;
       const scale = getXScaleFromMap(dimName);
       let xAxis;
-      if (pcTypes[dimName] === 'number') {
+      if (!isOrdinalAxis(dimName)) {
         //
         // numeric axes are built automatically utilizing d3 .call() function
         //
@@ -1104,10 +1131,7 @@ function renderAxesLabels(dimensions: Array<DimensionInfo>) {
       return d.name;
     })
     .style('fill', function(d) {
-      if (d.is_output !== undefined) {
-        return d.is_output ? axisOutputLabelFillColor : axisInputLabelFillColor;
-      }
-      return d.type === 'output' ? axisOutputLabelFillColor : axisInputLabelFillColor;
+      return isOutputDimension(dimensions, d.name) ? axisOutputLabelFillColor : axisInputLabelFillColor;
     })
     .style('font-size', axisLabelFontSize)
     .style('font-weight', axisLabelFontWeight);
@@ -1225,7 +1249,8 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         isTooltipVisible = 'hidden';
         const brushRange = brushes.find(b => b.dimName === dimName);
         if (brushRange) {
-          if (pcTypes[dimName] === 'number') {
+          /*
+          if (!isOrdinalAxis(dimName)) {
             // note that since brush is a (moving) range then it will mostly have float range
             // but we could check the axis domain to figure out a more accurate data type
             const xScaleDomain = xScale.domain();
@@ -1237,6 +1262,9 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
           } else {
             value = brushRange.start + ' : ' + brushRange.end;
           }
+          */
+          value = brushRange.start + ' : ' + brushRange.end;
+
           isTooltipVisible = 'visible';
           formattedValue = value;
         }
@@ -1251,7 +1279,7 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
       } else {
         value = selectedLineData ? selectedLineData[dimName] : 'undefined';
         formattedValue = value;
-        if (pcTypes[dimName] === 'number') {
+        if (!isOrdinalAxis(dimName)) {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
@@ -1345,10 +1373,7 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
 // @REVIEW this may better be done external to the PC component
 const filterDrilldownDimensionData = (dimensions: Array<DimensionInfo>) => {
   return dimensions.filter(function(d) {
-    if (d.is_drilldown !== undefined) {
-      return !d.is_drilldown;
-    }
-    return d.type !== 'drilldown';
+    return !d.is_drilldown;
   });
 };
 
@@ -1462,6 +1487,60 @@ const createScales = (
   //
   const xScaleMap: {[key: string]: D3ScaleFunc} = {};
 
+  // each axis will provide min/max values that should be used as the scale domain
+  //  alternatively, scan the all the data entries to find the min/max
+  const useAxisRangeFromData = true;
+
+  const numberFunc = function(name: string) {
+    let dataExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
+    const outputVarName = dimensions[dimensions.length - 1].name;
+    if (useAxisRangeFromData && outputVarName !== name) {
+      // this is only valid for input variables
+      const min = dimensions.find(d => d.name === name).min;
+      const max = dimensions.find(d => d.name === name).max;
+      dataExtent = [min, max];
+    } else {
+      dataExtent = d3.extent(data.map(point => +point[name]));
+    }
+    if (dataExtent[0] === undefined || dataExtent[0] === undefined) {
+      console.error('Unable to derive extent from data', data);
+      return undefined;
+    }
+    // extend the domain of each axis to ensure a nice scale rendering
+    if (enlargeAxesScaleToFitData) {
+      const scaleDomainDiff = dataExtent[1] - dataExtent[0];
+      const scaleDomainUnit = scaleDomainDiff / 10;
+      const leftValue = dataExtent[0] - scaleDomainUnit;
+      const rightValue = dataExtent[1] + scaleDomainUnit;
+      dataExtent[0] = leftValue;
+      dataExtent[1] = rightValue;
+    }
+    return d3.scaleLinear()
+      .domain(dataExtent)
+      .range(axisRange);
+  };
+
+  const stringFunc = function(name: string) {
+    let dataExtent: string[] = [];
+    if (useAxisRangeFromData) {
+      // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
+      dataExtent = dimensions.find(d => d.name === name).choices;
+    } else {
+      dataExtent = data.map(function(p) { return p[name]; }) as Array<string>; // note this will return an array of values for all runs
+    }
+
+    // extend the domain of each axis to ensure a nice scale rendering
+    if (enlargeAxesScaleToFitData) {
+      dataExtent.push('dummay-last');
+      dataExtent.unshift('dummy-first');
+    }
+    return d3.scalePoint()
+      .domain(dataExtent)
+      .range(axisRange)
+      // .padding(0.25) // a percet of the axis step() (i.e., segment)
+    ;
+  };
+
   const defaultScales: {[key: string]: D3ScaleFunc} = {
     /*
     // we may need to suppprt additional data types such as date/time later
@@ -1473,50 +1552,11 @@ const createScales = (
         .range(axisRange);
     },
     */
-    number: function(name: string) {
-      const dataExtent = d3.extent(data.map(point => +point[name]));
-      if (dataExtent[0] === undefined || dataExtent[0] === undefined) {
-        console.error('Unable to derive extent from data', data);
-        return undefined;
-      }
-      // extend the domain of each axis to ensure a nice scale rendering
-      if (enlargeAxesScaleToFitData) {
-        const scaleDomainDiff = dataExtent[1] - dataExtent[0];
-        const scaleDomainUnit = scaleDomainDiff / 10;
-        const leftValue = dataExtent[0] - scaleDomainUnit;
-        const rightValue = dataExtent[1] + scaleDomainUnit;
-        dataExtent[0] = leftValue;
-        dataExtent[1] = rightValue;
-      }
-      return d3.scaleLinear()
-        .domain(dataExtent)
-        .range(axisRange);
-    },
-    string: function(name: string) {
-      let dataExtent = data.map(function(p) { return p[name]; }) as Array<string>; // note this will return an array of values for all runs
-      // this is only needed because of transforming specific dimensions to be ordinal
-      //  TEMP: the goal here is to re-order the items in the list,
-      //        and this is specific for rainfall_multiplier
-      if (name === 'rainfall_multiplier') {
-        if (ordinalDimensions && Array.isArray(ordinalDimensions) && ordinalDimensions.includes(name)) {
-          dataExtent = dataExtent.filter(function(item, pos) {
-            return dataExtent.indexOf(item) === pos;
-          });
-          dataExtent = dataExtent.reverse();
-        }
-      }
-
-      // extend the domain of each axis to ensure a nice scale rendering
-      if (enlargeAxesScaleToFitData) {
-        dataExtent.push('dummay-last');
-        dataExtent.unshift('dummy-first');
-      }
-      return d3.scalePoint()
-        .domain(dataExtent)
-        .range(axisRange)
-        // .padding(0.25) // a percet of the axis step() (i.e., segment)
-      ;
-    }
+    number: numberFunc,
+    int: numberFunc,
+    float: numberFunc,
+    string: stringFunc,
+    str: stringFunc
   };
 
   // force some dimensions to be ordinal, if requested
