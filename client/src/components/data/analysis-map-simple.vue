@@ -310,7 +310,7 @@ export default {
 
       this.lookupData[adminLevel].forEach(row => {
         this.map.setFeatureState({
-          id: row.id.replaceAll('_', '__'),
+          id: row.id, // .replaceAll('_', '__')
           source: this.vectorSourceId,
           sourceLayer: this.vectorSourceLayer
         }, {
