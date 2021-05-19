@@ -11,11 +11,8 @@
     />
     <uncharted-cards-tableview
       v-if="displayCards === displayOptions.SHOWTABLE"
-      ref="cards"
+      ref="rowcards"
       :data="cardsData"
-      :config="cardsConfig"
-      @card-click="onCardClick"
-      @card-navigate="updateReaderContent"
     />
     <pagination
       v-if:="displayCards === displayOptions.SHOWCARDS"
@@ -164,7 +161,6 @@ export default {
       this.$refs.cards.updateReaderContent(targetCard, content, { switchButton: false });
     },
     onCardClick(targetCard) {
-      console.log(JSON.stringify(targetCard));
       this.$refs.cards.openReader(targetCard);
       this.updateReaderContent(targetCard);
     }
