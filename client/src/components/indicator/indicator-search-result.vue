@@ -25,6 +25,7 @@ export default {
       required: true
     }
   },
+  emits: ['onSelected'],
   computed: {
     name() {
       return this.indicatorData.output_name || VALUE_MISSING_FALLBACK;
