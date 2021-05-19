@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import { nodeBlurScale, createLinearScale } from '@/utils/scales-util';
-import { DEFAULT_COLOR } from '@/utils/colors-util.js';
+import { DEFAULT_COLOR } from '@/utils/colors-util';
 
 /// /////////////////////////////////////////////////////////////////////////////
 // A layout strategy consists of a sequence of "stages", each is capable of
