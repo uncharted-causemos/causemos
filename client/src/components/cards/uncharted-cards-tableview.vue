@@ -1,5 +1,10 @@
 <template>
   <div class="container-fluid">
+    <modal-document
+      v-if="!!documentModalData"
+      :document-data="documentModalData"
+      @close="documentModalData = null"
+    />
     <div class="row container-row">
       <div class="col-md-1" />
       <div class="col-md-10 page-content">
@@ -75,6 +80,7 @@ import * as _ from 'lodash';
 import TableviewCard from '@/components/cards/tableview-card';
 import DropdownControl from '@/components/dropdown-control';
 import Pagination from '@/components/pagination';
+import ModalDocument from '@/components/modals/modal-document';
 import { mapGetters } from 'vuex';
 
 const SORTING_OPTIONS = {
@@ -87,15 +93,21 @@ export default {
   components: {
     TableviewCard,
     DropdownControl,
-    Pagination
+    Pagination,
+    ModalDocument
   },
   props: {
     data: {
       type: Array,
       default: () => []
+    },
+    config: {
+      type: Object,
+      default: () => ({})
     }
   },
   data: () => ({
+    documentModalData: null,
     showSortingDropdown: false,
     sortingOptions: [SORTING_OPTIONS.MOST_RECENT, SORTING_OPTIONS.EARLIEST],
     selectedSortingOption: SORTING_OPTIONS.MOST_RECENT
@@ -127,6 +139,16 @@ export default {
     }
   },
   methods: {
+    formatMeta(data) {
+      if (data) {
+        const metaDocument = {
+          doc_id: data.id,
+          title: data.title
+        };
+        return metaDocument;
+      }
+      return null;
+    },
     sortRows(option) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
@@ -135,7 +157,7 @@ export default {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
     onRowCardClick(targetData) {
-      console.log(`FROM ROWCLICK: ${JSON.stringify(targetData)}`);
+      this.documentModalData = this.formatMeta(_.find(this.data, (item) => item.id === targetData.card.id));
     }
   }
 };
