@@ -1,4 +1,3 @@
-
 import {
   quantize,
   interpolateRgb,
@@ -10,14 +9,14 @@ import {
  * @readonly
  * @enum {string}
  */
-export const COLOR = Object.freeze({
+export const COLOR: { [key: string]: string } = Object.freeze({
   WM_GREEN: 'WM_GREEN',
   WM_RED: 'WM_RED',
   WM_BLUE: 'WM_BLUE',
   TURBO: 'TURBO'
 });
 
-const COLOR_SCALES = Object.freeze({
+const COLOR_SCALES: { [key: string]: (v: number) => string } = Object.freeze({
   WM_GREEN: interpolateRgb('#f7fcb9', '#31a354'), // sequential color band Source: http://colorbrewer2.org/#type=sequential&scheme=YlGn&n=3;
   WM_RED: interpolateRgb('#fee8c8', '#e34a33'),
   WM_BLUE: interpolateRgb('#f7fbff', '#3182bd'),
@@ -45,7 +44,7 @@ export const EDGE_COLOR_PALETTE = ['#d55e00', '#6b6859', '#0072b2']; // https://
  * Get n uniformly spaced colors for given color name
  * @param {COLOR} colorName - color name
  */
-export function getColors(colorName, n = 256) {
+export function getColors(colorName: string, n = 256) {
   return quantize(getColorScale(colorName), n);
 }
 
@@ -53,7 +52,7 @@ export function getColors(colorName, n = 256) {
  * Return [0, 1] color scale function for given color
  * @param {COLOR} colorName - color name
  */
-export function getColorScale(colorName) {
+export function getColorScale(colorName: string) {
   const scale = COLOR_SCALES[colorName];
   if (!scale) throw new Error(`${colorName} is not supported color`);
   return COLOR_SCALES[colorName];
@@ -67,7 +66,7 @@ const COLORS = [
   // TODO: choose better colours and add more of them
 ];
 
-export function colorFromIndex(index) {
+export function colorFromIndex(index: number) {
   return COLORS[index % COLORS.length];
 }
 

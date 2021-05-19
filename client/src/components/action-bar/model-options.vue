@@ -42,53 +42,59 @@
   </li>
 </template>
 
-<script>
+<script lang="ts">
 
-import DropdownControl from '@/components/dropdown-control';
+import { useStore } from 'vuex';
+import { defineComponent, ref, computed } from 'vue';
+import DropdownControl from '@/components/dropdown-control.vue';
 
 import { CAG } from '@/utils/messages-util';
 import modelService from '@/services/model-service';
-import { mapGetters } from 'vuex';
+import useToaster from '@/services/composables/useToaster';
 
-export default {
+export default defineComponent({
   name: 'ModelOptions',
   components: {
     DropdownControl
+  },
+  setup() {
+    const store = useStore();
+    const showModelOptionsDropdown = ref(false);
+
+    const project = computed(() => store.getters['app/project']);
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
+
+    return {
+      useToaster,
+      showModelOptionsDropdown,
+      project,
+      currentCAG,
+      downloadURL: computed(() => `/api/models/${currentCAG.value}/register-payload`)
+    };
   },
   props: {
     cagName: {
       type: String,
       default: 'untitled'
     },
-    viewAfterDeletjon: {
+    viewAfterDeletion: {
       type: String,
       default: 'qualitativeView'
     }
   },
   emits: ['rename'],
-  data: () => ({
-    showModelOptionsDropdown: false
-  }),
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-      currentCAG: 'app/currentCAG'
-    }),
-    downloadURL() {
-      return `/api/models/${this.currentCAG}/register-payload`;
-    }
-  },
   methods: {
     onShowModelOptionsDropdown() {
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
     },
     onRenameCagClick() {
+      console.log(this.downloadURL);
       this.$emit('rename');
       this.showModelOptionsDropdown = false;
     },
     onDeleteCAG() {
       modelService.removeModel(this.currentCAG).then(() => {
-        this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
+        this.useToaster(CAG.SUCCESSFUL_DELETION, 'success', false);
         // Back to splash page
         this.$router.push({
           name: this.viewAfterDeletion,
@@ -97,12 +103,12 @@ export default {
           }
         });
       }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
+        this.useToaster(CAG.ERRONEOUS_DELETION, 'error', true);
       });
     },
     onDuplicate() {
       modelService.duplicateModel(this.currentCAG).then(() => {
-        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
+        this.useToaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
         // Back to splash page
         this.$router.push({
           name: this.viewAfterDeletion,
@@ -111,11 +117,11 @@ export default {
           }
         });
       }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
+        this.useToaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
