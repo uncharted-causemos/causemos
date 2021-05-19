@@ -15,7 +15,7 @@
           v-tooltip.right="{
             content: 'No evidence found',
             show: !suggestion.hasEvidence && (index === focusedSuggestionIndex || index === mouseOverIndex),
-            trigger: 'manual',
+            triggers: ['manual'],
           }"
           class="dropdown-option"
           :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"

@@ -3,13 +3,14 @@ import App from './App.vue';
 import router from './router';
 import store from './store';
 import { sync } from 'vuex-router-sync';
-import VTooltip from 'v-tooltip'; // FIXME: not working
+import VTooltip from 'v-tooltip';
 import Toast, { useToast, TYPE } from 'vue-toastification';
 import { conceptHumanName } from '@/utils/concept-util';
 
 import Vue3Resize from 'vue3-resize';
 
 import 'vue-toastification/dist/index.css';
+import 'v-tooltip/dist/v-tooltip.css';
 
 
 sync(store, router);
