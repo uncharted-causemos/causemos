@@ -54,6 +54,21 @@ router.post('/:runId/post-process', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Inform of model execution failure
+ */
+router.post('/:runId/run-failed', asyncHandler(async (req, res) => {
+  const metadata = req.body;
+
+  try {
+    const result = await maasService.markModelRunFailed(metadata);
+    res.status(200).json(result || {});
+  } catch (err) {
+    console.log(err);
+    res.status(500).send('Internal request returned: ' + err.message);
+  }
+}));
+
+/**
  * Get status of a submitted job
  */
 router.get('/:runId/post-process', asyncHandler(async (req, res) => {
