@@ -69,8 +69,10 @@ import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-c
 import dateFormatter from '@/formatters/date-formatter';
 import API from '@/api/api';
 import { RegionalData } from '@/types/Datacubes';
-import { LegacyBreakdownDataStructure, LegacyBreakdownNode } from '@/types/Common';
-
+import {
+  LegacyBreakdownDataStructure,
+  LegacyBreakdownNode
+} from '@/types/Common';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -159,6 +161,18 @@ export default defineComponent({
     selectedTimestamp: {
       type: Number,
       default: 0
+    },
+    selectedTemporalResolution: {
+      type: String as PropType<string>,
+      default: 'month'
+    },
+    selectedTemporalAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
+    },
+    selectedSpatialAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
     }
   },
   emits: ['set-selected-admin-level'],
@@ -181,37 +195,42 @@ export default defineComponent({
         return;
       }
       const promises = props.selectedScenarioIds.map(scenarioId =>
-        API.get('fetch-demo-data', {
-          params: {
-            modelId: props.selectedModelId,
-            runId: scenarioId,
-            type: 'regional-data'
-          }
-        })
+        props.selectedModelId.includes('maxhop')
+          ? API.get('/maas/output/regional-data', {
+            params: {
+              model_id: props.selectedModelId,
+              run_id: scenarioId,
+              feature: props.selectedModelId.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
+              resolution: props.selectedTemporalResolution,
+              temporal_agg: props.selectedTemporalAggregation,
+              spatial_agg: props.selectedSpatialAggregation,
+              timestamp: props.selectedTimestamp
+            }
+          })
+          : API.get('fetch-demo-data', {
+            params: {
+              modelId: props.selectedModelId,
+              runId: scenarioId,
+              type: 'regional-data'
+            }
+          })
       );
-      rawRegionalData.value = (await Promise.all(promises)).map(response =>
-        JSON.parse(response.data)
-      );
+      // HACK: the temporary 'fetch-demo-data' endpoint's response needs to be JSON.parse()'d
+      //  but the new '/maas/output/regional-data' endpoint works without.
+      //  This conditional logic should be removed along with the temporary endpoint
+      const allRegionalData = (await Promise.all(promises)).map(response => {
+        const data = props.selectedModelId.includes('maxhop') ? response.data : JSON.parse(response.data);
+        return _.isEmpty(data) ? {} : data;
+      });
+      if (_.some(allRegionalData, response => _.isEmpty(response))) {
+        return;
+      }
+      rawRegionalData.value = allRegionalData;
     }
 
     const regionalData = computed(() => {
       if (rawRegionalData.value.length === 0) return [];
-      const filteredByTimestamp = rawRegionalData.value.map(
-        dataForOneScenario => {
-          const result: RegionalData = {};
-          levels.forEach(level => {
-            const dataForLevel = dataForOneScenario[level];
-            if (dataForLevel === undefined) return;
-            const dataForTimestamp =
-              dataForLevel[props.selectedTimestamp.toString()] ?? [];
-            result[level] = {
-              [props.selectedTimestamp.toString()]: dataForTimestamp
-            };
-          });
-          return result;
-        }
-      );
-      return filteredByTimestamp.map(convertToLegacyAdminDataStructure);
+      return rawRegionalData.value.map(convertToLegacyAdminDataStructure);
     });
 
     // availableAdminLevels is an array of strings, each of which
@@ -224,7 +243,11 @@ export default defineComponent({
     });
 
     watch(
-      () => [props.selectedModelId, props.selectedScenarioIds],
+      () => [
+        props.selectedModelId,
+        props.selectedScenarioIds,
+        props.selectedTimestamp
+      ],
       fetchRegionalData,
       { immediate: true }
     );
@@ -239,7 +262,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-@import '~styles/_variables';
+@import '~styles/variables';
 
 .aggregation-description {
   color: $text-color-medium;

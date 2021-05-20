@@ -4,7 +4,6 @@
       <h6>New Insight</h6>
       <close-button @click="closeInsightPopup()" />
     </div>
-    <hr class="pane-separator">
     <div class="pane-content">
       <form>
         <div class="form-group">
@@ -126,6 +125,15 @@ export default {
     font-size: $font-size-large;
     padding: 10px 0;
   }
+}
+
+.error-msg {
+  color: $negative;
+}
+
+h6 {
+  @include header-secondary;
+  font-size: $font-size-medium;
 }
 
 </style>

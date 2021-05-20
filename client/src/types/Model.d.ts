@@ -30,7 +30,7 @@ export interface ModelParameter extends ModelAttribute {
   default: string;
   tags: string[];
   choices?: string[];
-
+  is_output?: boolean;
 }
 
 export interface ModelFeature extends ModelAttribute {

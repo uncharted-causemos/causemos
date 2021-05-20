@@ -5,5 +5,6 @@ declare module '*.vue' {
   export default component
 }
 
-// This is required because the `vue3-resize` module doesn't contain types
+// This is required because the `vue3-resize` & `v-tooltip` modules don't contain types
 declare module 'vue3-resize';
+declare module 'v-tooltip';

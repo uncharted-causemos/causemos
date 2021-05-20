@@ -3,11 +3,8 @@
     <dropdown-control>
       <template #content>
         <div class="dropdown">
-          <div class="dropdown-title">
-            <span>Edit Relationship</span>
-          </div>
+          <h5 class="dropdown-title">Edit Relationship</h5>
           <close-button @click="close()" />
-          <hr class="pane-separator">
           <h6
             class="option-group-header"
             :style="statementPolarityColor(1)">Same</h6>
@@ -98,7 +95,6 @@
               class="polarity-factor"
             />
           </div>
-          <hr class="pane-separator">
           <div class="reverse-relation-container">
             <small-text-button
               :label="'Reverse relation'"
@@ -200,7 +196,17 @@ export default {
     }
   }
   .reverse-relation-container {
-    padding: 5px 15px;
+    margin: 10px;
+    margin-top: 20px;
+    button {
+      margin-right: 8px;
+    }
   }
+}
+
+.dropdown-title {
+  @include header-secondary;
+  font-size: $font-size-medium;
+  margin: 0;
 }
 </style>

@@ -111,6 +111,7 @@ export default {
       required: true
     }
   },
+  emits: ['close', 'save'],
   data: () => ({
     // Contains metadata for the currently selected indicator
     selectedIndicator: null,

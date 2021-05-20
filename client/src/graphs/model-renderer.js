@@ -11,7 +11,6 @@ import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { SELECTED_COLOR, EDGE_COLOR_PALETTE } from '@/utils/colors-util';
 import { calculateScenarioPercentageChange } from '@/utils/projection-util';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { SVGRenderer } from 'svg-flowgraph';
 import { interpolatePath } from 'd3-interpolate-path';
@@ -79,7 +78,7 @@ export default class ModelRenderer extends SVGRenderer {
           .style('stroke', 'none')
           .style('fill', '#888')
           .style('font-weight', '600')
-          .text(d => ontologyFormatter(d.concept))
+          .text(d => d.label)
           .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 30); });
       } else {
         selection.append('rect')
@@ -116,7 +115,7 @@ export default class ModelRenderer extends SVGRenderer {
           .attr('transform', translate(10, GRAPH_HEIGHT * 0.5 - 6))
           .style('stroke', 'none')
           .style('fill', '#000')
-          .text(d => ontologyFormatter(d.concept))
+          .text(d => d.label)
           .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 20); });
 
         selection.append('g')
@@ -294,7 +293,7 @@ export default class ModelRenderer extends SVGRenderer {
           nodeHeaderGroup.style('stroke', colour);
         }
       }
-      d3.select(this).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
+      d3.select(nodes[index]).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
 
       const runOptions = {
         selectedScenarioId,

@@ -1,7 +1,7 @@
 <template>
   <div class="datacube-card-container">
     <header>
-      <slot name="datacube-scenario-header" />
+      <slot name="datacube-model-header" />
       <button v-tooltip="'Collapse datacube'" class="btn btn-default">
         <!-- @click="TODO" -->
         <i class="fa fa-fw fa-compress" />
@@ -32,10 +32,11 @@
         </div>
         <parallel-coordinates-chart
           v-if="runParameterValues"
+          class="pc-chart"
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
           :ordinal-dimensions="ordinalDimensionNames"
-          :initial-data-selection="selectedScenarioIds"
+          :initial-data-selection="isDescriptionView ? [] : selectedScenarioIds"
           :show-baseline-defaults="showBaselineDefaults"
           :new-runs-mode="showNewRunsMode"
           @select-scenario="updateScenarioSelection"
@@ -107,41 +108,51 @@
           </div>
         </div>
         <slot name="datacube-description" v-if="isDescriptionView" />
-        <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
         <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
+            v-if="mainModelOutput"
             class="scenario-header"
-            :outputVariable="'Crop production'"
-            :outputVariableUnits="'tonnes'"
+            :outputVariable="mainModelOutput.display_name"
+            :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />
-          <!-- button group (add 'crop production' node to CAG, quantify 'crop production', etc.) -->
         </header>
-        <timeseries-chart
-          v-if="!isDescriptionView"
-          class="timeseries-chart"
-          :timeseries-data="selectedTimeseriesData"
-          :selected-timestamp="selectedTimestamp"
-          @select-timestamp="emitTimestampSelection"
-        />
-        <data-analysis-map
-          v-if="!isDescriptionView"
-          class="card-map full-width"
-          :selection="mapSelectionObject"
-          :show-tooltip="true"
-          :selected-admin-level="selectedAdminLevel"
-          :selected-timestamp="selectedTimestamp"
-          @on-map-load="onMapLoad"
-        />
+        <div class="bookmark-capture" style="display: flex; flex-direction: column; flex: 1;">
+          <div style="display: flex; flex-direction: row;">
+            <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
+            <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
+          </div>
+          <timeseries-chart
+            v-if="!isDescriptionView"
+            class="timeseries-chart"
+            :timeseries-data="selectedTimeseriesData"
+            :selected-timestamp="selectedTimestamp"
+            @select-timestamp="emitTimestampSelection"
+          />
+          <div style="display: flex; flex-direction: row;">
+            <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
+          </div>
+          <data-analysis-map
+            v-if="!isDescriptionView"
+            class="card-map full-width"
+            :output-source-specs="outputSourceSpecs"
+            :output-selection=0
+            :show-tooltip="true"
+            :selected-admin-level="selectedAdminLevel"
+            :filters="mapFilters"
+            @on-map-load="onMapLoad"
+            @slide-handle-change="onMapSlideChange"
+          />
+        </div>
       </div>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, ref, PropType, watch, toRefs } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -149,11 +160,14 @@ import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ScenarioDef } from '@/types/Datacubes';
-import { ScenarioData } from '@/types/Common';
-import DataAnalysisMap from '@/components/data/analysis-map.vue';
+import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
+import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
+import API from '@/api/api';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import { Model, ModelFeature } from '@/types/Model';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -188,6 +202,18 @@ export default defineComponent({
     selectedTimestamp: {
       type: Number,
       default: 0
+    },
+    selectedTemporalResolution: {
+      type: String as PropType<string>,
+      default: 'month'
+    },
+    selectedTemporalAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
+    },
+    selectedSpatialAggregation: {
+      type: String as PropType<string>,
+      default: 'mean'
     }
   },
   components: {
@@ -202,6 +228,10 @@ export default defineComponent({
     const {
       selectedModelId,
       selectedScenarioIds,
+      selectedTimestamp,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
       allScenarioIds
     } = toRefs(props);
 
@@ -211,7 +241,10 @@ export default defineComponent({
     } = useTimeseriesData(
       selectedModelId,
       selectedScenarioIds,
-      colorFromIndex
+      colorFromIndex,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation
     );
 
     const {
@@ -221,14 +254,15 @@ export default defineComponent({
       runParameterValues
     } = useParallelCoordinatesData(selectedModelId, allScenarioIds);
 
-    // FIXME: remove when data-analysis-map is rewritten
-    const mapSelectionObject = {
-      modelId: props.selectedModelId,
-      runId: props.allScenarioIds[0], // we may not have a selected run at this point, so init map with the first run by default
-      id: '8f7bb630-c1d0-45d4-b21d-bb99f56af650',
-      outputVariable: 'production',
-      timestamp: props.selectedTimestamp
-    };
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+
+    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+
+    watch(() => metadata.value, () => {
+      mainModelOutput.value = metadata.value?.outputs[0];
+    }, {
+      immediate: true
+    });
 
     const isDescriptionView = ref<boolean>(true);
 
@@ -242,9 +276,23 @@ export default defineComponent({
     function emitTimestampSelection(newTimestamp: number) {
       emit('select-timestamp', newTimestamp);
     }
+
+    const outputSourceSpecs = computed(() => {
+      return [{
+        id: selectedScenarioIds.value[0],
+        modelId: selectedModelId.value,
+        runId: selectedScenarioIds.value[0], // we may not have a selected run at this point, so init map with the first run by default
+        outputVariable: selectedModelId.value.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
+        timestamp: selectedTimestamp.value,
+        temporalResolution: selectedTemporalResolution.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        spatialAggregation: selectedSpatialAggregation.value
+      }];
+    });
+
     return {
+      outputSourceSpecs,
       selectedTimeseriesData,
-      mapSelectionObject,
       colorFromIndex,
       emitTimestampSelection,
       relativeTo,
@@ -252,18 +300,24 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues,
-      isDescriptionView
+      isDescriptionView,
+      mainModelOutput
     };
   },
   data: () => ({
     showBaselineDefaults: false,
     showNewRunsMode: false,
     potentialScenarioCount: 0,
-    isRelativeDropdownOpen: false
+    isRelativeDropdownOpen: false,
+    potentialScenarios: [] as Array<ScenarioData>,
+    mapFilters: [] as Array<AnalysisMapFilter>
   }),
   methods: {
     onMapLoad() {
       this.$emit('on-map-load');
+    },
+    onMapSlideChange(data: AnalysisMapFilter) {
+      this.mapFilters = [data];
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
@@ -282,6 +336,31 @@ export default defineComponent({
     requestNewModelRuns() {
       // FIXME: cast to 'any' since typescript cannot see mixins yet!
       (this as any).toaster('New runs requested\nPlease check back later!');
+      const firstScenario = this.potentialScenarios[0]; // FIXME
+      const paramArray: any[] = [];
+      Object.keys(firstScenario).forEach(key => {
+        paramArray.push({
+          name: key,
+          value: +firstScenario[key]
+        });
+      });
+      if (this.selectedModelId.includes('maxhop')) {
+        // country is supposed to be a drilldown so it is not included in the param list
+        // but is still needed, so add it manually
+        // @REVIEW
+        paramArray.push({
+          name: 'country',
+          value: 'Ethiopia'
+        });
+        API.post('maas/model-runs', {
+          model_id: this.selectedModelId,
+          model_name: 'MaxHop',
+          parameters: paramArray
+        });
+      } else {
+        // FIXME: currently other models are not executable
+        console.warn('Current mode is not executable!');
+      }
     },
     updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
       if (
@@ -299,6 +378,7 @@ export default defineComponent({
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
       this.potentialScenarioCount = e.scenarios.length;
+      this.potentialScenarios = e.scenarios;
     }
   }
 });
@@ -321,6 +401,7 @@ $fullscreenTransition: all 0.5s ease-in-out;
 .flex-row {
   display: flex;
   flex: 1;
+  min-height: 0;
 }
 
 header {
@@ -349,7 +430,13 @@ header {
 .scenario-selector {
   width: 25%;
   margin-right: 10px;
-  height: 400px;
+  display: flex;
+  flex-direction: column;
+}
+
+.pc-chart {
+  flex: 1;
+  min-height: 0;
 }
 
 .relative-box {

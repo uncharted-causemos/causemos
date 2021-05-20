@@ -1,5 +1,5 @@
 import _ from 'lodash';
-import { SELECTED_COLOR, GRAPH_BACKGROUND_COLOR } from '@/utils/colors-util.js';
+import { SELECTED_COLOR, GRAPH_BACKGROUND_COLOR } from '@/utils/colors-util';
 /* A listing of WM graph styles compatible with cytoscape 3.8+ */
 
 /* Styles applied to the Events view graph */

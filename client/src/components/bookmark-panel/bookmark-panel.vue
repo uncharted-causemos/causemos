@@ -57,7 +57,7 @@ export default {
   flex-direction: column;
   top: $navbar-outer-height;
   right: 0;
-  width: 20vw;
+  width: 25vw;
   height: calc(100vh - #{$navbar-outer-height});
   z-index: 600;
   transition: all 0.5s ease;

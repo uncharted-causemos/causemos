@@ -5,7 +5,7 @@
     </div>
     <div class="search-panel flex-grow-1 flex-col h-100">
       <div class="search-bar-box">
-        <search-bar />
+        <search-bar :datacubes="datacubes" />
       </div>
       <div class="tab-panel flex-grow-1 h-0 flex-col">
         <tab-bar
@@ -16,7 +16,7 @@
         />
         <div class="tab-content flex-grow-1 h-0">
           <div class="tab-pane active h-100">
-            <search-listview />
+            <search-listview :datacubes="filteredDatacubes"/>
           </div>
         </div>
       </div>
@@ -51,6 +51,16 @@ export default {
       // }
     ]
   }),
+  props: {
+    datacubes: {
+      type: Array,
+      default: () => []
+    },
+    filteredDatacubes: {
+      type: Array,
+      default: () => []
+    }
+  },
   computed: {
     ...mapGetters({
       filters: 'dataSearch/filters',

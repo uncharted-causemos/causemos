@@ -144,6 +144,7 @@ export default {
       required: true
     }
   },
+  emits: ['parameter-change'],
   data: () => ({
     selectedUnit: null,
     selectedCountry: null,

@@ -11,7 +11,10 @@ import { computed, Ref, ref, watchEffect } from 'vue';
 export default function useTimeseriesData(
   modelId: Ref<string>,
   modelRunIds: Ref<string[]>,
-  colorFromIndex: (index: number) => string
+  colorFromIndex: (index: number) => string,
+  selectedTemporalResolution: Ref<string>,
+  selectedTemporalAggregation: Ref<string>,
+  selectedSpatialAggregation: Ref<string>
 ) {
   const timeseriesData = ref<Timeseries[]>([]);
 
@@ -24,17 +27,32 @@ export default function useTimeseriesData(
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
+      let temporalRes = 'month';
+      if (selectedTemporalResolution.value !== '') {
+        temporalRes = selectedTemporalResolution.value;
+      }
+      let temporalAgg = 'sum';
+      if (selectedTemporalAggregation.value !== '') {
+        temporalAgg = selectedTemporalAggregation.value;
+      }
+      let spatialAgg = 'sum';
+      if (selectedSpatialAggregation.value !== '') {
+        spatialAgg = selectedSpatialAggregation.value;
+      }
       const promises = modelRunIds.value.map(runId =>
-        API.get('fetch-demo-data', {
+        API.get('maas/output/timeseries', {
           params: {
-            modelId: modelId.value,
-            runId,
-            type: 'timeseries'
+            model_id: modelId.value,
+            run_id: runId,
+            feature: modelId.value.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
+            resolution: temporalRes,
+            temporal_agg: temporalAgg,
+            spatial_agg: spatialAgg
           }
         })
       );
       const fetchResults = (await Promise.all(promises)).map(response =>
-        JSON.parse(response.data)
+        Array.isArray(response.data) ? response.data : JSON.parse(response.data)
       );
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
@@ -43,9 +61,9 @@ export default function useTimeseriesData(
       }
       // Assign a colour to each timeseries and store it in the
       //  `timeseriesData` ref
-      timeseriesData.value = modelRunIds.value.map((modelRunId, index) => {
+      timeseriesData.value = fetchResults.map((points, index) => {
         const color = colorFromIndex(index);
-        return { color, points: fetchResults[index] };
+        return { color, points };
       });
     }
     onInvalidate(() => {

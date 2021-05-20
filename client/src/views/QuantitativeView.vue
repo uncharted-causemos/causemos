@@ -57,7 +57,6 @@ import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 import TabPanel from '@/components/quantitative/tab-panel';
 import modelService from '@/services/model-service';
-import { conceptShortName } from '@/utils/concept-util';
 import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar';
 import EditIndicatorModal from '@/components/indicator/modal-edit-indicator';
@@ -478,8 +477,8 @@ export default {
       const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId);
       if (this.sensitivityDataTimestamp !== now) return;
       const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
-      csrResults.rows = csrResults.rows.map(conceptShortName);
-      csrResults.columns = csrResults.columns.map(conceptShortName);
+      csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
+      csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
       this.sensitivityMatrixData = csrResults;
     },
     setSensitivityAnalysisType(newValue) {

@@ -1,6 +1,6 @@
 <template>
   <div>
-    <nav class="secondary-navbar action-bar">
+    <nav class="action-bar-container">
       <!-- Analysis rename/delete/duplicate dropdown -->
       <div class="nav-item">
         <button
@@ -201,11 +201,13 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-@import "~styles/custom";
 
 $width-name: 10vw;
 
-.action-bar {
+.action-bar-container {
+  height: $navbar-outer-height;
+  display: flex;
+  align-items: center;
   background-color: $background-light-3;
   padding: 0 10px;
   position: relative;

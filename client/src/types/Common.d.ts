@@ -24,3 +24,11 @@ export interface LegacyBreakdownDataStructure {
   data: LegacyNode;
   name?: string;
 }
+export interface AnalysisMapFilter {
+  id: string;
+  range: AnalysisMapRange;
+}
+export interface AnalysisMapRange {
+  min: number;
+  max: number;
+}

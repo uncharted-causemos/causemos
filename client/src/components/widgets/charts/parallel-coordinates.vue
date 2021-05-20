@@ -59,42 +59,53 @@ export default defineComponent({
     'select-scenario',
     'generated-scenarios'
   ],
-  computed: {
-    getDefaultSize() {
-      const parentElement: HTMLElement = (this.$refs as any).pcChart.parentElement;
-      return { width: parentElement.clientWidth, height: parentElement.clientHeight };
-    }
-  },
+  data: () => ({
+    lastSelectedLines: [] as Array<ScenarioData>
+  }),
   watch: {
     dimensionsData(): void {
-      const sz = this.getDefaultSize;
-      this.render(sz.width, sz.height);
+      this.render(undefined);
     },
     showBaselineDefaults(): void {
       // do not re-render everything, just update markers visibility
       renderBaselineMarkers(this.showBaselineDefaults);
     },
     newRunsMode(): void {
-      const sz = this.getDefaultSize;
-      this.render(sz.width, sz.height);
+      this.render(undefined);
     },
     initialDataSelection(): void {
-      const sz = this.getDefaultSize;
-      this.render(sz.width, sz.height);
+      if (!this.newRunsMode) {
+        // do not make initial line selection override existing user selections
+        if (this.lastSelectedLines.length === 0) {
+          this.render(undefined);
+        }
+      }
     }
   },
   mounted(): void {
-    const sz = this.getDefaultSize;
-    this.render(sz.width, sz.height);
+    this.render(undefined);
   },
   methods: {
     resizeDebounced: _.debounce(function(this: any, width, height) {
-      this.render(width, height);
+      this.render({ width, height });
     }, RESIZE_DELAY),
-    resize: function (size: {width: number; height: number}) {
+    resize(size: {width: number; height: number}) {
       this.resizeDebounced.bind(this)(size.width, size.height);
     },
-    render(width: number, height: number): void {
+    render(size: {width: number; height: number} | undefined): void {
+      let width = 0;
+      let height = 0;
+      if (size === undefined) {
+        // Try to get the size from the parent element
+        const parent = (this.$refs.pcsvg as HTMLElement | undefined)?.parentElement;
+        if (parent === undefined || parent === null) return;
+        const { clientWidth, clientHeight } = parent;
+        width = clientWidth;
+        height = clientHeight;
+      } else {
+        width = size.width;
+        height = size.height;
+      }
       if (this.dimensionsData === null || this.dimensionsData.length === 0) return;
       const options: ParallelCoordinatesOptions = {
         width,
@@ -117,6 +128,7 @@ export default defineComponent({
     },
     onLinesSelection(selectedLines?: Array<ScenarioData> /* array of selected lines on the PCs plot */): void {
       if (selectedLines && Array.isArray(selectedLines)) {
+        this.lastSelectedLines = selectedLines;
         this.$emit('select-scenario', { scenarios: selectedLines });
       }
     },
@@ -134,8 +146,6 @@ export default defineComponent({
 
   .parallel-coordinates-container {
     position: relative;
-    width: 100%;
-    height: 100%;
 
     svg {
       transition: opacity 0.3s ease-out;

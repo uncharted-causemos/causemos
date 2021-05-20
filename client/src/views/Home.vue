@@ -18,9 +18,7 @@
             @click="gotoNewProject"
           >New Project</button>
         </div>
-        <div class="row">
-          <hr>
-        </div>
+        <hr>
         <div class="row">
           <div class="controls">
             <input
@@ -193,7 +191,7 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/_variables";
+@import "~styles/variables";
 
 .title {
   display: flex;

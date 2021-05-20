@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Cube } from '@/types/Datacubes';
+import { ModelRun } from '@/types/Datacubes';
 import { ref, Ref, watchEffect } from 'vue';
 
 /**
@@ -8,39 +8,66 @@ import { ref, Ref, watchEffect } from 'vue';
  */
 export default function useScenarioData(
   modelId: Ref<string>,
-  modelRunIds: Ref<string[]>
+  modelRunIds?: Ref<string[]>
 ) {
-  const runData = ref<Cube[]>([]);
+  const runData = ref<ModelRun[]>([]);
 
-  watchEffect(onInvalidate => {
-    runData.value = [];
-    if (modelRunIds.value.length === 0) return;
-    let isCancelled = false;
-    async function fetchRunData() {
-      const promises = modelRunIds.value.map(runId =>
-        API.get('fetch-demo-data', {
+  if (modelId.value.includes('maxhop')) {
+    watchEffect(onInvalidate => {
+      runData.value = [];
+      let isCancelled = false;
+      async function fetchRunData() {
+        const allMetadata = await API.get('/maas/model-runs', {
           params: {
-            modelId: modelId.value,
-            runId,
-            type: 'metadata'
+            modelId: modelId.value
           }
-        })
-      );
-      const allMetadata = (await Promise.all(promises)).map(metadata =>
-        JSON.parse(metadata.data)
-      );
-      if (isCancelled) {
-        // Dependencies have changed since the fetch started, so ignore the
-        //  fetch results to avoid a race condition.
-        return;
+        });
+        if (isCancelled) {
+          // Dependencies have changed since the fetch started, so ignore the
+          //  fetch results to avoid a race condition.
+          return;
+        }
+        runData.value = allMetadata.data;
       }
-      runData.value = allMetadata;
-    }
-    onInvalidate(() => {
-      isCancelled = true;
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      fetchRunData();
     });
-    fetchRunData();
-  });
+  } else {
+    watchEffect(onInvalidate => {
+      runData.value = [];
+      if (!modelRunIds || modelRunIds.value.length === 0) return;
+      let isCancelled = false;
+      async function fetchRunData() {
+        if (!modelRunIds) {
+          return;
+        }
+        const promises = modelRunIds.value.map(runId =>
+          API.get('fetch-demo-data', {
+            params: {
+              modelId: modelId.value,
+              runId,
+              type: 'metadata'
+            }
+          })
+        );
+        const allMetadata = (await Promise.all(promises)).map(metadata =>
+          JSON.parse(metadata.data)
+        );
+        if (isCancelled) {
+          // Dependencies have changed since the fetch started, so ignore the
+          //  fetch results to avoid a race condition.
+          return;
+        }
+        runData.value = allMetadata;
+      }
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      fetchRunData();
+    });
+  }
 
   return runData;
 }

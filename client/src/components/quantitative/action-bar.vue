@@ -1,55 +1,53 @@
 <template>
   <div class="action-bar-container">
-    <nav class="secondary-navbar action-bar">
-      <ul class="nav navbar-nav">
-        <li class="nav-item">
-          Scenario:
-          <button
-            v-if="isInDraftState"
-            class="btn btn-primary scenario-button"
-            @click="openModal"
-          >
-            <i class="fa fa-fw fa-save" />
-            Save As
-          </button>
-          <button
-            v-else
-            class="btn btn-primary scenario-button"
-            @click="toggleScenarioDropdownOpen"
-          >
-            <i class="fa fa-fw fa-sign-in" />
-            {{ selectedScenario.name }}
-            <i class="fa fa-fw fa-angle-down" />
-            <dropdown-control
-              v-if="isScendarioDropdownOpen"
-              class="scenario-dropdown">
-              <template #content>
-                <div
-                  v-for="scenario of scenarios"
-                  :key="scenario.id"
-                  class="dropdown-option"
-                  :class="{'selected': scenario.id === selectedScenarioId}"
-                  @click.stop="onClickScenario(scenario.id)">
-                  {{ scenario.is_valid ? scenario.name : scenario.name + " (Stale - rerun scenario) " }}
-                </div>
-              </template>
-            </dropdown-control>
-          </button>
-        </li>
-        <li
+    <ul class="unstyled-list">
+      <li class="nav-item">
+        Scenario:
+        <button
           v-if="isInDraftState"
-          class="nav-item"
+          class="btn btn-primary scenario-button"
+          @click="openModal"
         >
-          <button
-            v-tooltip="'Revert all unsaved changes'"
-            class="btn btn-default"
-            @click="revertDraftChanges"
-          >
-            <i class="fa fa-fw fa-refresh" />
-          </button>
-        </li>
-      </ul>
-    </nav>
+          <i class="fa fa-fw fa-save" />
+          Save As
+        </button>
+        <button
+          v-else
+          class="btn btn-primary scenario-button"
+          @click="toggleScenarioDropdownOpen"
+        >
+          <i class="fa fa-fw fa-sign-in" />
+          {{ selectedScenario.name }}
+          <i class="fa fa-fw fa-angle-down" />
+          <dropdown-control
+            v-if="isScendarioDropdownOpen"
+            class="scenario-dropdown">
+            <template #content>
+              <div
+                v-for="scenario of scenarios"
+                :key="scenario.id"
+                class="dropdown-option"
+                :class="{'selected': scenario.id === selectedScenarioId}"
+                @click.stop="onClickScenario(scenario.id)">
+                {{ scenario.is_valid ? scenario.name : scenario.name + " (Stale - rerun scenario) " }}
+              </div>
+            </template>
+          </dropdown-control>
+        </button>
+      </li>
+      <li
+        v-if="isInDraftState"
+        class="nav-item"
+      >
+        <button
+          v-tooltip="'Revert all unsaved changes'"
+          class="btn btn-default"
+          @click="revertDraftChanges"
+        >
+          <i class="fa fa-fw fa-refresh" />
+        </button>
+      </li>
+    </ul>
 
     <save-scenario-modal
       v-if="isModalOpen"
@@ -139,8 +137,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-@import '@/styles/_variables';
-  .action-bar {
+@import '@/styles/variables';
+  .action-bar-container {
     margin-left: 20px;
   }
 

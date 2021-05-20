@@ -63,6 +63,8 @@ export default {
   color: #5A5A5A;
   cursor: pointer;
   padding: 4px 8px;
+  border-bottom: 1px solid #e5e5e5;
+  margin: 2px;
 
   &:hover {
     color: #000;

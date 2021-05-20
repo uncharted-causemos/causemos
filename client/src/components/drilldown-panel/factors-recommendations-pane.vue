@@ -9,45 +9,35 @@
       :message="`Because you corrected ${correction.factor} to ${shortConceptName}, you may need to do it for these too ...`"
       :message-type="`warning`"
       :highlights="[correction.factor, shortConceptName]" />
-    <div class="pane-controls">
-      <div class=" bulk-actions">
-        <i
-          class="fa fa-lg fa-fw"
-          :class="{
-            'fa-check-square-o': summaryData.meta.checked,
-            'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
-            'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
-          }"
-          @click="toggle(summaryData)"
-        />
-        <button
-          v-tooltip.top-center="'Fix factors in bulk'"
-          type="button"
-          class="btn btn-sm btn-primary btn-call-for-action"
-          @click="updateGrounding"
-        >
-          Fix it
-        </button>
-        <button
-          type="button"
-          class="btn btn-sm btn-link"
-          @click="closePane()"
-        >
-          No thanks
-        </button>
-      </div>
-      <div class="expand-collapse">
-        <small-text-button
-          :label="'Expand All'"
-          @click="expandAll={value: true}"
-        />
-        <small-text-button
-          :label="'Collapse All'"
-          @click="expandAll={value: false}"
-        />
-      </div>
-    </div>
-    <hr class="pane-separator">
+    <collapsible-list-header
+      @expand-all="expandAll={value: true}"
+      @collapse-all="expandAll={value: false}"
+    >
+      <i
+        class="fa fa-lg fa-fw"
+        :class="{
+          'fa-check-square-o': summaryData.meta.checked,
+          'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
+          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+        }"
+        @click="toggle(summaryData)"
+      />
+      <button
+        v-tooltip.top-center="'Fix factors in bulk'"
+        type="button"
+        class="btn btn-sm btn-primary btn-call-for-action"
+        @click="updateGrounding"
+      >
+        Fix it
+      </button>
+      <button
+        type="button"
+        class="btn btn-sm btn-link"
+        @click="closePane()"
+      >
+        No thanks
+      </button>
+    </collapsible-list-header>
     <div class="factors-recommendation-content">
       <div
         v-for="value in summaryData.children"
@@ -79,11 +69,10 @@ import { mapGetters } from 'vuex';
 import { updateStatementsFactorGrounding } from '@/services/curation-service';
 import ModalDocument from '@/components/modals/modal-document';
 import MessageDisplay from '@/components/widgets/message-display';
-import SmallTextButton from '@/components/widgets/small-text-button';
 import EvidenceGroup from '@/components/drilldown-panel/evidence-group';
 import aggregationsUtil from '@/utils/aggregations-util';
 import messagesUtil from '@/utils/messages-util';
-import { conceptShortName } from '@/utils/concept-util';
+import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';
 
 const CORRECTIONS = messagesUtil.CORRECTIONS;
 
@@ -93,7 +82,7 @@ export default {
     ModalDocument,
     MessageDisplay,
     EvidenceGroup,
-    SmallTextButton
+    CollapsibleListHeader
   },
   props: {
     correction: {
@@ -128,7 +117,7 @@ export default {
       return cnt;
     },
     shortConceptName() {
-      return conceptShortName(this.correction.newGrounding);
+      return this.ontologyFormatter(this.correction.newGrounding);
     }
   },
   watch: {

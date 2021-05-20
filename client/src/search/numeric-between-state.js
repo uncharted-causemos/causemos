@@ -17,6 +17,8 @@ export default class NumericBetweenState extends RelationState {
     config.options = function () {
       return options;
     };
+    config.autoAdvanceDefault = true;
+    config.defaultValue = options[0];
     super(config);
   }
 }

@@ -3,30 +3,46 @@
     <div
       v-for="attr in modelAttributes"
       :key="attr.name"
-      class="model-attribute-pair">
+      class="model-attribute-pair"
+      :style="[attr.type === 'textarea' ? 'width: 100%' : '' ]"
+      >
         <label style="font-weight: normal;">{{ attr.name }} </label>
         <input
+          v-if="attr.type === 'text'"
           v-model="attr.value"
           v-on:change="updateAttributeValue(attr)"
           type="text"
-          placeholder=""
           :class="{ 'disabled': !attr.tweakable }"
           style="border-width: 1px;"
-          v-bind:style="{ minWidth: attr.minValueWidth + 'px' }"
         >
+        <textarea
+          v-if="attr.type === 'textarea'"
+          v-model="attr.value"
+          v-on:change="updateAttributeValue(attr)"
+          rows="2"
+          :class="{ 'disabled': !attr.tweakable }"
+        />
+        <select name="cars" id="cars"
+          v-if="attr.type === 'select'"
+        >
+          <option
+            v-for="selectValue in attr.value"
+            :key="selectValue" >{{selectValue}}</option>
+        </select>
     </div>
   </div>
 </template>
 
 <script lang="ts">
 import API from '@/api/api';
+import { Model } from '@/types/Model';
 import { defineComponent, ref, watch } from 'vue';
 
 interface ModelAttribute {
   name: string;
-  value: string;
+  value: string | string[];
   tweakable: boolean;
-  minValueWidth?: number;
+  type?: string;
 }
 
 export default defineComponent({
@@ -40,8 +56,6 @@ export default defineComponent({
   setup(props) {
     const modelAttributes = ref<ModelAttribute[]>([]);
 
-    const minimumInputTextWidth = 60; // pixels
-
     // FIXME: to really support proper data handling, do not fetch data locally at every component
     //         instead, fetch at parent and pass to children as needed, so updating one will update the others
     async function fetchModelInfo() {
@@ -53,7 +67,7 @@ export default defineComponent({
           type: 'metadata'
         }
       });
-      const modelMetadata = JSON.parse(result.data); // FIXME: this should use the Model data type
+      const modelMetadata: Model = JSON.parse(result.data); // FIXME: this should use the Model data type
 
       // fill in the model attribute
       // TODO: how spacing and label names are used
@@ -61,27 +75,25 @@ export default defineComponent({
         name: 'Model family',
         value: modelMetadata.name,
         tweakable: false,
-        minValueWidth: minimumInputTextWidth
+        type: 'text'
       });
       modelAttributes.value.push({
         name: 'Model instance',
         value: modelMetadata.version,
         tweakable: false,
-        minValueWidth: minimumInputTextWidth
+        type: 'text'
       });
-      // TODO: this should be a dropdown
       modelAttributes.value.push({
         name: 'Default output variable',
-        value: modelMetadata.outputs[0].display_name,
+        value: modelMetadata.outputs.map(o => o.display_name),
         tweakable: true,
-        minValueWidth: minimumInputTextWidth
+        type: 'select'
       });
-      // TODO: make the desc in a new line
       modelAttributes.value.push({
         name: 'Model description',
         value: modelMetadata.description,
         tweakable: true,
-        minValueWidth: minimumInputTextWidth * 4
+        type: 'textarea'
       });
     }
 
@@ -104,7 +116,8 @@ export default defineComponent({
 @import '~styles/variables';
 
 .model-header {
-  padding: 10px 0;
+  padding-bottom: 5px;
+  padding-top: 0px;
   display: flex;
   flex-direction: row;
   flex: 1;
@@ -114,7 +127,13 @@ export default defineComponent({
 .model-attribute-pair {
   display: flex;
   flex-direction: column;
-  padding: 5px 10px;
+  padding-right: 8px;
+  padding-bottom: 4px;
+  font-size: smaller;
+
+  label {
+    margin-bottom: 0;
+  }
 }
 
 .disabled {

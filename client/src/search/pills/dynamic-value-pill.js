@@ -3,16 +3,6 @@ import { Lex, TransitionFactory, ValueState } from '@uncharted.software/lex/dist
 import BasePill from '@/search/pills/base-pill';
 import lexUtil from '@/search/lex-util';
 
-// HACK
-class ConceptValueState extends ValueState {
-  unformatUnboxedValue (displayKey, context = []) { // eslint-disable-line @typescript-eslint/no-unused-vars
-    return displayKey;
-  }
-
-  formatUnboxedValue (key, context = []) { // eslint-disable-line @typescript-eslint/no-unused-vars
-    return _.last(key.split('/'));
-  }
-}
 
 const conceptMatch = (target, str) => {
   return _.last(target.split('/')).toLowerCase().replace(/_/g, ' ').includes(
@@ -28,6 +18,20 @@ export default class DynamicValuePill extends BasePill {
   constructor(config, suggestionFn, msg, isMultiValue, relation) {
     super(config);
     this.relation = relation;
+
+    const getFormatterFn = () => this.displayFormatter;
+
+    // HACK
+    class ConceptValueState extends ValueState {
+      unformatUnboxedValue (displayKey, context = []) { // eslint-disable-line @typescript-eslint/no-unused-vars
+        return displayKey;
+      }
+
+      formatUnboxedValue (key, context = []) { // eslint-disable-line @typescript-eslint/no-unused-vars
+        return getFormatterFn()(key);
+      }
+    }
+
 
     if (['topic', 'subjConcept', 'objConcept'].includes(config.field)) {
       this.valueState = ConceptValueState;

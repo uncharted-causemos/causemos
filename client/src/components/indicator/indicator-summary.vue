@@ -153,6 +153,9 @@ export default {
       required: true
     }
   },
+  emits: [
+    'function-selected', 'remove-indicator', 'edit-indicator'
+  ],
   data: () => ({
     messageNoIndicator: SIDE_PANEL.INDICATORS_PANE_NO_INDICATOR,
     outputDescription: null,

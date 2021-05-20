@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface AppState {
@@ -5,6 +6,7 @@ interface AppState {
   overlayMessage: string;
   updateToken: string;
   ontologyConcepts: Array<string>;
+  ontologySet: Set<string>;
   projectMetadata: any; // FIXME
   conceptDefinitions: { [key: string]: string };
 }
@@ -14,6 +16,7 @@ const state: AppState = {
   overlayMessage: 'Loading...',
   updateToken: '',
   ontologyConcepts: [],
+  ontologySet: new Set<string>(),
   projectMetadata: {},
   conceptDefinitions: {}
 };
@@ -34,6 +37,7 @@ const getters: GetterTree<AppState, any> = {
   overlayMessage: state => state.overlayMessage,
   updateToken: state => state.updateToken,
   ontologyConcepts: state => state.ontologyConcepts,
+  ontologySet: state => state.ontologySet,
   projectMetadata: state => state.projectMetadata,
   conceptDefinitions: state => state.conceptDefinitions
 };
@@ -72,8 +76,11 @@ const mutations: MutationTree<AppState> = {
   setUpdateToken(state, updateToken) {
     state.updateToken = updateToken;
   },
-  setOntologyConcepts(state, concepts) {
+  setOntologyConcepts(state, concepts: string[]) {
     state.ontologyConcepts = concepts;
+
+    const shortform = concepts.map(d => _.last(d.split('/')) || '');
+    state.ontologySet = new Set<string>(shortform);
   },
   setProjectMetadata(state, metadata) {
     state.projectMetadata = metadata;

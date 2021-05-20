@@ -11,44 +11,35 @@
         v-tooltip.top="compositionDefinitions"
         class="fa fa-info-circle concept-examples-icon" />
     </div>
-    <div class="pane-controls">
-      <div class="bulk-actions">
-        <i
-          class="fa fa-lg fa-fw"
-          :class="{
-            'fa-check-square-o': summaryData.meta.checked,
-            'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
-            'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
-          }"
-          @click="toggle(summaryData)"
-        />
-        <small-icon-button
-          v-tooltip.top="'Select a different concept in bulk'"
-          :disabled="numSelectedItems === 0"
-          :has-dropdown="true"
-          @click.stop="openEditor(null, CORRECTION_TYPES.ONTOLOGY_ALL)"
-        >
-          <i class="fa fa-sitemap fa-lg" />
-        </small-icon-button>
-        <small-icon-button
-          v-tooltip.top="'Discard factors in bulk'"
-          :disabled="numSelectedItems === 0"
-          @click.stop="confirmDiscardStatements(null)"
-        >
-          <i class="fa fa-trash fa-lg" />
-        </small-icon-button>
-      </div>
-      <div class="expand-collapse">
-        <small-text-button
-          :label="'Expand All'"
-          @click="expandAll={value: true}"
-        />
-        <small-text-button
-          :label="'Collapse All'"
-          @click="expandAll={value: false}"
-        />
-      </div>
-    </div>
+    <collapsible-list-header
+      @expand-all="expandAll={value: true}"
+      @collapse-all="expandAll={value: false}"
+    >
+      <i
+        class="fa fa-lg fa-fw"
+        :class="{
+          'fa-check-square-o': summaryData.meta.checked,
+          'fa-square-o': !summaryData.meta.checked && !summaryData.isSomeChildChecked,
+          'fa-minus-square-o': !summaryData.meta.checked && summaryData.meta.isSomeChildChecked
+        }"
+        @click="toggle(summaryData)"
+      />
+      <small-icon-button
+        v-tooltip.top="'Select a different concept in bulk'"
+        :disabled="numSelectedItems === 0"
+        :has-dropdown="true"
+        @click.stop="openEditor(null, CORRECTION_TYPES.ONTOLOGY_ALL)"
+      >
+        <i class="fa fa-sitemap fa-lg" />
+      </small-icon-button>
+      <small-icon-button
+        v-tooltip.top="'Discard factors in bulk'"
+        :disabled="numSelectedItems === 0"
+        @click.stop="confirmDiscardStatements(null)"
+      >
+        <i class="fa fa-trash fa-lg" />
+      </small-icon-button>
+    </collapsible-list-header>
 
     <ontology-editor
       v-if="currentItem === null && activeCorrection === CORRECTION_TYPES.ONTOLOGY_ALL"
@@ -56,7 +47,6 @@
       :suggestions="suggestions"
       @select="confirmUpdateGrounding(null, selectedItem.concept, $event)"
       @close="closeEditor" />
-    <hr class="pane-separator">
     <div v-if="factorCount > 0">
       <div
         v-for="value in summaryData.children"
@@ -72,16 +62,14 @@
               @click="toggle(value)"
             />
           </template>
-          <template
-            #title
-            class="title-slot-container"
-          >
+          <template #title>
             <div
               v-tooltip.top="value.key"
-              class="factor-title row-content-ellipsis">
+              class="factor-title overflow-ellipsis">
               {{ value.key }}
             </div>
             <small-icon-button
+              class="small-icon-button"
               v-tooltip.top="'Select a different concept'"
               :use-white-bg="true"
               @click.stop="openEditor(value, CORRECTION_TYPES.ONTOLOGY_ALL)"
@@ -89,6 +77,7 @@
               <i class="fa fa-sitemap fa-lg" />
             </small-icon-button>
             <small-icon-button
+              class="small-icon-button"
               v-tooltip.top="'Discard factor'"
               :use-white-bg="true"
               @click.stop="confirmDiscardStatements(value)"
@@ -99,12 +88,10 @@
           <template #content>
             <div
               v-for="(statement, statementIdx) of value.dataArray"
-              :key="statementIdx"
-              class="statement-item">
+              :key="statementIdx">
               <evidence-item
                 v-for="(evidence, sentIdx) of statement.evidence"
                 :key="sentIdx"
-                class="evidence-sentence"
                 :evidence="evidence"
                 :resource-type="statement.subj.concept === selectedItem.concept ? 'subj' : 'obj'"
                 @click-evidence="openDocumentModal(evidence.document_context)"
@@ -154,12 +141,11 @@ import EvidenceItem from '@/components/evidence-item';
 import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
 import OntologyEditor from '@/components/editors/ontology-editor';
 import MessageDisplay from '@/components/widgets/message-display';
-import SmallTextButton from '@/components/widgets/small-text-button';
 import SmallIconButton from '@/components/widgets/small-icon-button';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
-import ontologyFormatter from '@/formatters/ontology-formatter';
 import numberFormatter from '@/formatters/number-formatter';
 import messagesUtil from '@/utils/messages-util';
+import CollapsibleListHeader from '@/components/drilldown-panel/collapsible-list-header.vue';
 const CORRECTIONS = messagesUtil.CORRECTIONS;
 const SIDE_PANEL = messagesUtil.SIDE_PANEL;
 const SERVICE_NOT_AVAILABLE = messagesUtil.SERVICE_NOT_AVAILABLE;
@@ -172,9 +158,9 @@ export default {
     ModalDocument,
     OntologyEditor,
     MessageDisplay,
-    SmallTextButton,
     SmallIconButton,
-    ModalConfirmation
+    ModalConfirmation,
+    CollapsibleListHeader
   },
   props: {
     selectedItem: {
@@ -262,7 +248,6 @@ export default {
     this.refresh();
   },
   methods: {
-    ontologyFormatter,
     numberFormatter,
     initializeData() {
       this.currentItem = null;
@@ -480,10 +465,15 @@ export default {
 .factor-title {
   flex: 1;
   min-width: 0;
+  margin-right: 5px;
 }
 
-hr.pane-separator {
-  // Match other panes' spacing
-  margin-bottom: 7px;
+.small-icon-button {
+  margin-right: 3px;
+
+  &:last-child {
+    margin-right: 2px;
+  }
 }
+
 </style>

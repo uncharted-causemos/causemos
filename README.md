@@ -29,9 +29,6 @@ yarn worksapce client remove @uncharted/uncharted-bootstrap
 # In client/src/app.vue, replace "Uncharted Bootstrap section with"
 $icon-font-path: "~bootstrap-sass/assets/fonts/bootstrap/";
 @import '~bootstrap-sass/assets/stylesheets/_bootstrap.scss';
-
-# In client/src/styles/custom.scss
-Remove the unchartd-bootstrap import
 ```
 
 When all set, install the rest of the dependencies
