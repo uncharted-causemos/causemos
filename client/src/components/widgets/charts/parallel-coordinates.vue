@@ -126,9 +126,6 @@ export default defineComponent({
         this.onGeneratedRuns
       );
     },
-    resetLineSelection() {
-      this.lastSelectedLines = [];
-    },
     onLinesSelection(selectedLines?: Array<ScenarioData> /* array of selected lines on the PCs plot */): void {
       if (selectedLines && Array.isArray(selectedLines)) {
         this.lastSelectedLines = selectedLines;

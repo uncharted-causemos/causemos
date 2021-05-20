@@ -23,7 +23,7 @@ export default function useParallelCoordinatesData(
     if (allModelRunData.value.length === 0 || metadata.value === null) {
       return [];
     }
-    const allRunIDs = allScenarioIds.value.length !== 0 ? allScenarioIds.value : allModelRunData.value.map(r => r.id);
+    const allRunIDs = allScenarioIds.value.length !== 0 ? allScenarioIds.value : allModelRunData.value.filter(r => r.status === 'READY').map(r => r.id);
     let isCancelled = false;
 
     const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
@@ -94,12 +94,6 @@ export default function useParallelCoordinatesData(
       return [];
     }
 
-    // FIXME: special case for max-hop where 'country' is supposed to be a drilldown param
-    const countryParam = metadata.value.parameters.find(p => p.name === 'country');
-    if (countryParam) {
-      countryParam.is_drilldown = true;
-    }
-
     // Restructure the output parameter
     const outputDimension = metadata.value.outputs[0];
     const inputDimensions = metadata.value.parameters;
@@ -114,6 +108,7 @@ export default function useParallelCoordinatesData(
   //    { dim1: value21, dim2: value22 }
   // ]
 
+  // @HACK: this is not needed, but left in case quick testing of the ordinal capability is needed
   const ordinalDimensionNames = ref([]);
 
   const drilldownDimensions = computed(() =>
