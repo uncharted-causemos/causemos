@@ -27,12 +27,8 @@ import { mapActions, mapGetters } from 'vuex';
 import CategoricalFacet from '@/components/facets/categorical-facet';
 
 import SidePanel from '@/components/side-panel/side-panel';
-import codeUtil from '@/utils/code-util';
+import datacubeUtil from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
-
-const CODE_TABLE = codeUtil.CODE_TABLE;
-
-
 
 export default {
   name: 'DataExplorerFacetsPanel',
@@ -44,8 +40,7 @@ export default {
     facetTabs: [
       { name: 'Data Cube Facets', icon: 'fa fa-file-text' }
     ],
-    currentTab: 'Data Cube Facets',
-    CODE_TABLE: CODE_TABLE
+    currentTab: 'Data Cube Facets'
   }),
   props: {
     datacubes: {
@@ -64,9 +59,7 @@ export default {
       project: 'app/project'
     }),
     facets() {
-      let keys = Object.keys(this.datacubes[0]);
-      keys = keys.filter((k) => codeUtil.DATACUBE_DISPLAY_NAMES[k] !== undefined);
-      keys.sort();
+      const keys = datacubeUtil.datacubeKeys(this.datacubes[0]);
       const columns = keys.reduce((a, k) => {
         a[k] = {
           label: k,
@@ -118,7 +111,7 @@ export default {
         });
         return {
           id: k,
-          label: codeUtil.DATACUBE_DISPLAY_NAMES[k] || k,
+          label: datacubeUtil.DC_DISPLAY_NAMES[k] || k,
           baseData,
           filteredData
         };

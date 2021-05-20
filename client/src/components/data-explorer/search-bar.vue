@@ -24,10 +24,10 @@ import RangePill from '@/search/pills/range-pill';
 import DynamicValuePill from '@/search/pills/dynamic-value-pill';
 import SingleRelationState from '@/search/single-relation-state';
 
-import codeUtil from '@/utils/code-util';
+import datacubeUtil from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
-const CODE_TABLE = codeUtil.CODE_TABLE;
+const DC_CODE_TABLE = datacubeUtil.DC_CODE_TABLE;
 const CONCEPTS_MSG = 'Select one or more ontological concepts';
 
 export default {
@@ -56,22 +56,20 @@ export default {
   },
   mounted() {
     // Generates lex pills from select datacube columns
-    let keys = Object.keys(this.datacubes[0]);
-    keys = keys.filter((k) => codeUtil.DATACUBE_DISPLAY_NAMES[k] !== undefined);
-    keys.sort();
+    const keys = datacubeUtil.datacubeKeys(this.datacubes[0]);
     const datacubePills = keys.map(k => new TextPill({
       field: k,
       display: k,
       icon: '',
       iconText: '',
-      searchDisplay: codeUtil.DATACUBE_DISPLAY_NAMES[k]
+      searchDisplay: datacubeUtil.DC_DISPLAY_NAMES[k]
     }));
 
     // Defines a list of searchable fields for LEX
     this.pills = [
-      new TextPill(CODE_TABLE.DC_SEARCH),
-      new DynamicValuePill(CODE_TABLE.DC_CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
-      new RangePill(CODE_TABLE.DC_PERIOD),
+      new TextPill(DC_CODE_TABLE.DC_SEARCH),
+      new DynamicValuePill(DC_CODE_TABLE.DC_CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
+      new RangePill(DC_CODE_TABLE.DC_PERIOD),
       // TODO: Will add when there's support for location
       // new ValuePill(CODE_TABLE.GEO_LOCATION_NAME, GeoUtil.GEO_LOCATION_NAMES, 'Select one or more geospatial context'),
       ...datacubePills
