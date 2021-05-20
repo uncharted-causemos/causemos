@@ -42,42 +42,47 @@
   </li>
 </template>
 
-<script>
+<script lang="ts">
 
-import DropdownControl from '@/components/dropdown-control';
+import { useStore } from 'vuex';
+import { defineComponent, ref, computed } from 'vue';
+import DropdownControl from '@/components/dropdown-control.vue';
 
 import { CAG } from '@/utils/messages-util';
 import modelService from '@/services/model-service';
-import { mapGetters } from 'vuex';
+import useToaster from '@/services/composables/useToaster';
 
-export default {
+export default defineComponent({
   name: 'ModelOptions',
   components: {
     DropdownControl
+  },
+  setup() {
+    const store = useStore();
+    const showModelOptionsDropdown = ref(false);
+
+    const project = computed(() => store.getters['app/project']);
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
+
+    return {
+      toaster: useToaster(),
+      showModelOptionsDropdown,
+      project,
+      currentCAG,
+      downloadURL: computed(() => `/api/models/${currentCAG.value}/register-payload`)
+    };
   },
   props: {
     cagName: {
       type: String,
       default: 'untitled'
     },
-    viewAfterDeletjon: {
+    viewAfterDeletion: {
       type: String,
       default: 'qualitativeView'
     }
   },
   emits: ['rename'],
-  data: () => ({
-    showModelOptionsDropdown: false
-  }),
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-      currentCAG: 'app/currentCAG'
-    }),
-    downloadURL() {
-      return `/api/models/${this.currentCAG}/register-payload`;
-    }
-  },
   methods: {
     onShowModelOptionsDropdown() {
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
@@ -115,7 +120,7 @@ export default {
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

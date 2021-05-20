@@ -1,7 +1,7 @@
 
 import { EDGE_COLOR_PALETTE } from '@/utils/colors-util';
 
-export const polarityClass = (polarity) => {
+export const polarityClass = (polarity: number) => {
   if (polarity === 1) {
     return 'fa fa-arrow-up';
   } else if (polarity === -1) {
@@ -11,7 +11,7 @@ export const polarityClass = (polarity) => {
   }
 };
 
-export const statementPolarityColor = (polarity) => {
+export const statementPolarityColor = (polarity: number) => {
   if (polarity === 1) {
     return {
       color: EDGE_COLOR_PALETTE[2]
