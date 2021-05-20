@@ -1,23 +1,8 @@
-import useModelMetadata from './useModelMetadata';
 import useScenarioData from './useScenarioData';
 import { Model, ModelParameter } from '../../types/Model';
-import { computed, ref, Ref } from 'vue';
+import { computed, ref, Ref, watchEffect } from 'vue';
 import { ScenarioData } from '../../types/Common';
-import { getRandomNumber } from '../../../tests/utils/random';
-
-// FIXME: need an endpoint to fetch such aggregations for all scenarios
-const OUTPUT_AGGREGATIONS: { [key: string]: number } = {
-  // example maxhop
-  '28ba629b-8e7c-4ff4-9485-7a7be3ed75ba': 0.1570271866,
-  'e39a3296-5fa0-4f63-8b5e-81be2e182455': 0.0700502704,
-  '8b886e51-38c9-46bf-95fa-8c41b6e85b57': 0.3211381196,
-  // DSSAT
-  '2d80c9f0-1e44-4a6c-91fe-2ebb26e39dea': 313639493,
-  '2ff53645-d481-4ff7-a067-e13f392f30a4': 115408980,
-  '25e0971b-c229-4c9a-a0f9-c121fce51309': 116547768,
-  '057d28d5-a7ed-472b-ae37-ba16571944ea': 146281019,
-  '967a0a69-552f-4861-ad7f-0c1bd8bab856': 204827768
-};
+import API from '@/api/api';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -25,68 +10,96 @@ const OUTPUT_AGGREGATIONS: { [key: string]: number } = {
  * transforms it into several structures that the PC chart accepts.
  */
 export default function useParallelCoordinatesData(
+  metadata: Ref<Model | null>,
   modelId: Ref<string>,
-  allScenarioIds?: Ref<string[]>
+  allScenarioIds: Ref<string[]> // FIXME: this is only needed for DSSAT
 ) {
   const allModelRunData = useScenarioData(modelId, allScenarioIds);
-  const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
-  const runParameterValues = computed(() => {
+  const runParameterValues = ref<ScenarioData[]>([]);
+
+  watchEffect(onInvalidate => {
+    runParameterValues.value = [];
     if (allModelRunData.value.length === 0 || metadata.value === null) {
       return [];
     }
-    const outputParameterName =
-      metadata.value.outputs[0].name ?? 'Undefined output parameter';
+    const allRunIDs = allScenarioIds.value.length !== 0 ? allScenarioIds.value : allModelRunData.value.filter(r => r.status === 'READY').map(r => r.id);
+    let isCancelled = false;
+
+    const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
     const parameterMetadata = metadata.value.parameters;
-    return allModelRunData.value.map((modelRun, runIndex) => {
-      const run_id = allModelRunData.value[runIndex].id;
-      const runStatus = allModelRunData.value[runIndex].status;
-      const run: ScenarioData = {
-        run_id,
-        status: runStatus ?? 'READY'
-      };
-      if (run.status === 'READY') {
-        run[outputParameterName] = OUTPUT_AGGREGATIONS[run_id] ?? getRandomNumber(0, 1);
+
+    // fetch all time series data to find the aggregated value for the output variable for each run
+    // NOTE: output variables use the following aggregation functions by default
+    const fetchAllTimeSeriesData = async function() {
+      const promises = allRunIDs.map(runId =>
+        API.get('maas/output/timeseries', {
+          params: {
+            model_id: modelId.value,
+            run_id: runId,
+            feature: outputParameterName,
+            resolution: 'month',
+            temporal_agg: 'mean',
+            spatial_agg: 'mean'
+          }
+        })
+      );
+      const timeseries = (await Promise.all(promises)).map(response =>
+        Array.isArray(response.data) ? response.data : JSON.parse(response.data)
+      );
+      if (isCancelled) {
+        // Dependencies have changed since the fetch started, so ignore the
+        //  fetch results to avoid a race condition.
+        return;
       }
-      if (modelId.value.includes('maxhop')) {
-        modelRun.parameters.forEach(({ name, value }) => {
-          run[name ?? 'undefined'] = value;
-        });
-      } else {
-        modelRun.parameters.forEach(({ id, value }) => {
-          const parameterName = parameterMetadata.find(
-            parameter => parameter.id === id
-          )?.name;
-          run[parameterName ?? 'undefined'] = value;
-        });
-      }
-      return run;
+      runParameterValues.value = allModelRunData.value.map((modelRun, runIndex) => {
+        const run_id = allModelRunData.value[runIndex].id;
+        const runStatus = allModelRunData.value[runIndex].status;
+        const run: ScenarioData = {
+          run_id,
+          status: runStatus ?? 'READY'
+        };
+        if (run.status === 'READY') {
+          // calculate the output value for this run by aggregating all timestamp values
+          const allValuesPerRun: Array<number> = timeseries[runIndex].map((t: any) => t.value);
+          const sum = allValuesPerRun.reduce((a, b) => a + b, 0);
+          const avg = (sum / timeseries.length) || 0;
+          const runOutputValue = avg;
+          run[outputParameterName] = runOutputValue;
+        }
+        if (modelId.value.includes('maxhop')) {
+          modelRun.parameters.forEach(({ name, value }) => {
+            run[name ?? 'undefined'] = value;
+          });
+        } else {
+          // FIXME: this would go away when DSSAT is either removed or properly use metadata
+          modelRun.parameters.forEach(({ id, value }) => {
+            const parameterName = parameterMetadata.find(
+              parameter => parameter.id === id
+            )?.name;
+            run[parameterName ?? 'undefined'] = value;
+          });
+        }
+        return run;
+      });
+    };
+    onInvalidate(() => {
+      isCancelled = true;
     });
+    fetchAllTimeSeriesData();
   });
 
   const dimensions = computed(() => {
     if (metadata.value === null) {
       return [];
     }
+
     // Restructure the output parameter
-    const { name, display_name, description } = metadata.value.outputs[0];
-    const baselineRunID = allModelRunData.value.find(run => modelId.value.includes('maxhop') ? run.is_default_run : run.default_run)
-      ?.id;
-    const defaultOutputValue = OUTPUT_AGGREGATIONS[baselineRunID ?? 0];
-    const outputDimension = {
-      name,
-      display_name,
-      description,
-      is_output: true,
-      type: '', // FIXME
-      default: defaultOutputValue
-    };
-    const inputDimensions = modelId.value.includes('maxhop') ? metadata.value.parameters.filter(p => p.name !== 'country') : metadata.value.parameters;
+    const outputDimension = metadata.value.outputs[0];
+    const inputDimensions = metadata.value.parameters;
     // Append the output parameter to the list of input parameters
     return [...inputDimensions, outputDimension] as ModelParameter[];
   });
-
-  // TODO: use each axis min/max based on the metadata
 
   // The parallel coordinates component expects data as a collection of name/value pairs
   //  (see ScenarioData)
@@ -95,8 +108,8 @@ export default function useParallelCoordinatesData(
   //    { dim1: value21, dim2: value22 }
   // ]
 
-  // HACK: force 'rainfall_multiplier' to be ordinal
-  const ordinalDimensionNames = ref(modelId.value.includes('maxhop') ? [] : ['rainfall_multiplier']);
+  // @HACK: this is not needed, but left in case quick testing of the ordinal capability is needed
+  const ordinalDimensionNames = ref([]);
 
   const drilldownDimensions = computed(() =>
     dimensions.value.filter(p => p.is_drilldown)

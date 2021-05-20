@@ -73,6 +73,7 @@ import {
   LegacyBreakdownDataStructure,
   LegacyBreakdownNode
 } from '@/types/Common';
+import { Model } from '@/types/Model';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -146,6 +147,10 @@ export default defineComponent({
       type: Number,
       required: true
     },
+    metadata: {
+      type: Object as PropType<Model>,
+      default: null
+    },
     selectedModelId: {
       type: String,
       default: null
@@ -194,13 +199,14 @@ export default defineComponent({
       ) {
         return;
       }
+      // FIXME: the reference to model by name below will be removed once all models use the same API/endpoint
       const promises = props.selectedScenarioIds.map(scenarioId =>
         props.selectedModelId.includes('maxhop')
           ? API.get('/maas/output/regional-data', {
             params: {
               model_id: props.selectedModelId,
               run_id: scenarioId,
-              feature: props.selectedModelId.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
+              feature: props.metadata.outputs[0].name,
               resolution: props.selectedTemporalResolution,
               temporal_agg: props.selectedTemporalAggregation,
               spatial_agg: props.selectedSpatialAggregation,
