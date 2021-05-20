@@ -3,9 +3,9 @@
     @click="showDocument">
     <div class="row tableview-row">
       <div class="col-sm-1 number-col">
-        <small-icon-button>
+        <div>
           <i class="fa fa-book fa-lg" />
-        </small-icon-button>
+        </div>
       </div>
       <div class="col-sm-3 number-col">
         <div v-if="checkString(card.title)">{{ card.title }}</div>
@@ -39,22 +39,10 @@ export default {
   emits: ['rowcard-click'],
   methods: {
     showDocument(e) {
-      console.log(JSON.stringify(e));
-      console.log(JSON.stringify(this.card));
       this.$emit('rowcard-click', { event: e, card: this.card });
     },
     checkString(item) {
       return item && item.length > 0;
-    },
-    openReader(targetCard) {
-      if (!targetCard.isExpanded) {
-        this.cards.openReader(targetCard);
-      }
-    },
-    registerCardsEvents() {
-      this.cards.on('card:click', card => {
-        this.$emit('card-click', card);
-      });
     }
   }
 };
