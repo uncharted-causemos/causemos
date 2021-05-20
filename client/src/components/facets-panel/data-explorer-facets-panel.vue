@@ -111,7 +111,7 @@ export default {
         });
         return {
           id: k,
-          label: datacubeUtil.DC_DISPLAY_NAMES[k] || k,
+          label: datacubeUtil.DISPLAY_NAMES[k] || k,
           baseData,
           filteredData
         };

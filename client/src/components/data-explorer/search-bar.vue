@@ -27,7 +27,7 @@ import SingleRelationState from '@/search/single-relation-state';
 import datacubeUtil from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
 
-const DC_CODE_TABLE = datacubeUtil.DC_CODE_TABLE;
+const CODE_TABLE = datacubeUtil.CODE_TABLE;
 const CONCEPTS_MSG = 'Select one or more ontological concepts';
 
 export default {
@@ -62,14 +62,14 @@ export default {
       display: k,
       icon: '',
       iconText: '',
-      searchDisplay: datacubeUtil.DC_DISPLAY_NAMES[k]
+      searchDisplay: datacubeUtil.DISPLAY_NAMES[k]
     }));
 
     // Defines a list of searchable fields for LEX
     this.pills = [
-      new TextPill(DC_CODE_TABLE.DC_SEARCH),
-      new DynamicValuePill(DC_CODE_TABLE.DC_CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
-      new RangePill(DC_CODE_TABLE.DC_PERIOD),
+      new TextPill(CODE_TABLE.SEARCH),
+      new DynamicValuePill(CODE_TABLE.CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
+      new RangePill(CODE_TABLE.PERIOD),
       // TODO: Will add when there's support for location
       // new ValuePill(CODE_TABLE.GEO_LOCATION_NAME, GeoUtil.GEO_LOCATION_NAMES, 'Select one or more geospatial context'),
       ...datacubePills
