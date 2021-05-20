@@ -158,7 +158,7 @@ export default {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
     onRowCardClick(targetData) {
-      this.documentModalData = this.formatMeta(_.find(this.data, (item) => item.id === targetData.card.id));
+      this.documentModalData = this.formatMeta(targetData.card);
     }
   }
 };
