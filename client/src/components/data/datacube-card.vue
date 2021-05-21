@@ -200,7 +200,8 @@ export default defineComponent({
     'select-timestamp',
     'set-drilldown-data',
     'check-model-metadata-validity',
-    'refetch-data'
+    'refetch-data',
+    'new-runs-mode'
   ],
   props: {
     isExpanded: {
@@ -353,6 +354,7 @@ export default defineComponent({
       this.showBaselineDefaults = !this.showBaselineDefaults;
     },
     toggleNewRunsMode() {
+      this.toggleBaselineDefaultsVisibility();
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
 
@@ -362,6 +364,7 @@ export default defineComponent({
         // clear any selected scenario and show the model desc page
         this.updateScenarioSelection({ scenarios: [] });
       }
+      this.$emit('new-runs-mode', { newRunsMode: this.showNewRunsMode });
     },
     requestNewModelRuns() {
       this.showNewRunsModal = true;

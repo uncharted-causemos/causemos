@@ -22,6 +22,7 @@
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
       @refetch-data="fetchData"
+      @new-runs-mode="newRunsMode=!newRunsMode"
     >
       <template v-slot:datacube-model-header>
         <div class="datacube-header" v-if="mainModelOutput">
@@ -85,7 +86,7 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import MAXHOP from '@/assets/MAXHOP.js';
-import { defineComponent, Ref, ref, watch } from 'vue';
+import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
 import { DimensionInfo, Model, ModelFeature } from '@/types/Model';
@@ -96,7 +97,6 @@ import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-// import { ModelRun } from '@/types/Datacubes';
 
 const DRILLDOWN_TABS = [
   {
@@ -148,27 +148,25 @@ export default defineComponent({
       selectedTimestamp.value = value;
     }
 
-    const allScenarioIds = ref([]) as Ref<string[]>;
-    const scenarioCount = ref(0);
+    const newRunsMode = ref(false);
 
-    const fetchTimeStamp = ref(0);
+    const modelRunsFetchedAt = ref(0);
 
-    const allModelRunData = useScenarioData(modelId, fetchTimeStamp);
+    const allModelRunData = useScenarioData(modelId, modelRunsFetchedAt);
 
-    const timeInterval = 5000;
+    const timeInterval = 10000;
 
     function fetchData() {
-      fetchTimeStamp.value = Date.now();
+      if (!newRunsMode.value) {
+        modelRunsFetchedAt.value = Date.now();
+      }
     }
 
-    setInterval(fetchData, timeInterval);
+    // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
+    const timerRef = setInterval(fetchData, timeInterval);
 
-    watch(() => allModelRunData.value, () => {
-      allScenarioIds.value = allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : [];
-      scenarioCount.value = allModelRunData.value.length;
-    }, {
-      immediate: true
-    });
+    const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
+    const scenarioCount = computed(() => allModelRunData.value.length);
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -191,10 +189,13 @@ export default defineComponent({
       allModelRunData,
       allScenarioIds,
       scenarioCount,
-      fetchData
+      fetchData,
+      newRunsMode,
+      timerRef
     };
   },
-  mounted(): void {
+  unmounted(): void {
+    clearInterval(this.timerRef);
   },
   methods: {
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {

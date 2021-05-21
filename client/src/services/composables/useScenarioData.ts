@@ -8,14 +8,14 @@ import { ref, Ref, watchEffect } from 'vue';
  */
 export default function useScenarioData(
   modelId: Ref<string>,
-  fetchTimestamp: Ref<number>,
+  modelRunsFetchedAt: Ref<number>,
   modelRunIds?: Ref<string[]>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
 
   if (modelId.value.includes('maxhop')) {
     watchEffect(onInvalidate => {
-      console.log('refetching data at: ' + new Date(fetchTimestamp.value).toTimeString());
+      console.log('refetching data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
       runData.value = [];
       let isCancelled = false;
       async function fetchRunData() {

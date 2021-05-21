@@ -243,11 +243,11 @@ export default defineComponent({
 
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
 
-    const fetchTimeStamp = ref(0);
+    const modelRunsFetchedAt = ref(0);
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
     // so no external status need to be tracked
-    const allModelRunData = useScenarioData(selectedModelId, fetchTimeStamp, ref(allScenarioIds));
+    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt, ref(allScenarioIds));
 
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {

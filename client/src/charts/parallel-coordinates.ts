@@ -165,7 +165,6 @@ function renderParallelCoordinates(
   //
   // Color scale
   //
-  /// currently support single color
   colorFunc = (status = 'READY') => {
     switch (status) {
       case 'READY':
