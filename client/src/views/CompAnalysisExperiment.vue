@@ -12,7 +12,7 @@
       :class="{ 'datacube-expanded': true }"
       :selected-admin-level="selectedAdminLevel"
       :selected-model-id="selectedModelId"
-      :all-scenario-ids="allScenarioIds"
+      :all-model-run-data="allModelRunData"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
       :selected-temporal-resolution="selectedTemporalResolution"
@@ -21,6 +21,7 @@
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
+      @refetch-data="fetchData"
     >
       <template v-slot:datacube-model-header>
         <div class="datacube-header" v-if="mainModelOutput">
@@ -84,7 +85,7 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import MAXHOP from '@/assets/MAXHOP.js';
-import { computed, defineComponent, Ref, ref, watch } from 'vue';
+import { defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
 import { DimensionInfo, Model, ModelFeature } from '@/types/Model';
@@ -95,6 +96,7 @@ import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+// import { ModelRun } from '@/types/Datacubes';
 
 const DRILLDOWN_TABS = [
   {
@@ -136,10 +138,6 @@ export default defineComponent({
       immediate: true
     });
 
-    // FIXME: use endpoint to fetch IDs
-    const allModelRunData = useScenarioData(modelId);
-
-    const allScenarioIds = allModelRunData.value.map(run => run.id);
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
       selectedScenarioIds.value = newIds;
@@ -150,7 +148,27 @@ export default defineComponent({
       selectedTimestamp.value = value;
     }
 
-    const scenarioCount = computed(() => allScenarioIds.length);
+    const allScenarioIds = ref([]) as Ref<string[]>;
+    const scenarioCount = ref(0);
+
+    const fetchTimeStamp = ref(0);
+
+    const allModelRunData = useScenarioData(modelId, fetchTimeStamp);
+
+    const timeInterval = 5000;
+
+    function fetchData() {
+      fetchTimeStamp.value = Date.now();
+    }
+
+    setInterval(fetchData, timeInterval);
+
+    watch(() => allModelRunData.value, () => {
+      allScenarioIds.value = allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : [];
+      scenarioCount.value = allModelRunData.value.length;
+    }, {
+      immediate: true
+    });
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -161,7 +179,6 @@ export default defineComponent({
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId: modelId,
-      allScenarioIds,
       selectedScenarioIds,
       setSelectedScenarioIds,
       typeBreakdownData,
@@ -169,10 +186,15 @@ export default defineComponent({
       setSelectedTimestamp,
       isExpanded,
       colorFromIndex,
-      scenarioCount,
       metadata,
-      mainModelOutput
+      mainModelOutput,
+      allModelRunData,
+      allScenarioIds,
+      scenarioCount,
+      fetchData
     };
+  },
+  mounted(): void {
   },
   methods: {
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {

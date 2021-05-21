@@ -42,19 +42,21 @@ const margin = { top: 40, right: 30, bottom: 35, left: 35 };
 // line styling in normal mode
 const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
-const lineStrokeWidthHover = 3;
+const lineStrokeWidthHover = 2.5;
 const lineOpacityVisible = 1;
 const lineOpacityHidden = 0.25;
 
 // line styling in new-runs mode
-const lineStrokeWidthNewRunsMode = 1.5;
-const lineOpacityNewRunsModeContext = 0.05;
+const lineOpacityNewRunsModeContext = 0.1;
 
 // hover styling
 const highlightDuration = 50; // in milliseconds
 
-const lineColors = ['#296AE9ff'];
-let colorFunc: () => string = () => '#ff000000';
+const lineColorsReady = '#296AE9ff';
+const lineColorsSubmitted = '#296AE9ff';
+const lineColorsFailed = '#ff2962ff';
+const lineColorsUnknown = '#000000ff';
+let colorFunc: (status?: string) => string = () => lineColorsUnknown;
 
 // this is a hack to make the axis data look larger than it actually is
 const enlargeAxesScaleToFitData = false;
@@ -164,7 +166,18 @@ function renderParallelCoordinates(
   // Color scale
   //
   /// currently support single color
-  colorFunc = () => { return lineColors[0]; };
+  colorFunc = (status = 'READY') => {
+    switch (status) {
+      case 'READY':
+        return lineColorsReady;
+      case 'SUBMITTED':
+        return lineColorsSubmitted;
+      case 'FAILED':
+        return lineColorsFailed;
+      default:
+        return lineColorsUnknown;
+    }
+  };
   /// later: support a color scale
   // const color = d3.scaleOrdinal() // scaleLinear
   // .domain(axisDomain)
@@ -306,7 +319,7 @@ function renderParallelCoordinates(
       .attr('d', pathDefinitionFunc)
       .style('fill', 'none')
       .attr('stroke-width', lineStrokeWidthNormal)
-      .style('stroke', function() { return (colorFunc(/* d.dimName */)); })
+      .style('stroke', function(d) { return colorFunc(d.status as string); })
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
       .style('stroke-dasharray', function(d) { return d.status === 'READY' ? 0 : ('3, 3'); })
     ;
@@ -315,7 +328,11 @@ function renderParallelCoordinates(
     if (!options.newRunsMode) {
       lines
         .on('mouseover', highlight)
-        .on('mouseleave', doNotHighlight)
+        .on('mouseleave', doNotHighlight);
+
+      // also, in the normal mode, only lines with status READY are clickable
+      lines
+        .filter(function(d) { return d.status === 'READY'; })
         .on('click', handleLineSelection);
     }
   }
@@ -410,10 +427,34 @@ function renderParallelCoordinates(
       .attr('class', 'marker-line')
       .attr('d', pathDefinitionFunc)
       .style('fill', 'none')
-      .attr('stroke-width', lineStrokeWidthNewRunsMode)
+      .attr('stroke-width', lineStrokeWidthHover)
       .style('stroke', function() { return (colorFunc()); })
       .style('opacity', lineOpacityVisible)
       .style('stroke-dasharray', ('3, 3'))
+      .on('mouseover', highlight)
+      .on('mouseleave', doNotHighlight)
+      .on('click', function() {
+        const currLineData = d3.select(this).datum();
+        _.remove(newScenarioData, (lineData) => _.isEqual(lineData, currLineData));
+        gElement
+          .selectAll<SVGPathElement, ScenarioData>('.marker-line')
+          .data<ScenarioData>(newScenarioData, d => {
+            // this key func is needed to ensure proper matching between each datum and the selected DOM element
+            let id = '';
+            Object.keys(d).forEach(key => {
+              id += key + d[key];
+            });
+            return id;
+          })
+          .exit().remove()
+        ;
+        // hide tooltips
+        doNotHighlight();
+        // some marker-line is removed, so notify external listeners
+        onNewRuns(newScenarioData);
+      })
+      .append('title')
+      .text('Remove')
     ;
   }
 
@@ -576,13 +617,13 @@ function renderParallelCoordinates(
     svgElement.selectAll('.line')
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
-      .style('opacity', lineOpacityHidden);
+      .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
 
     // Use D3 to highlight the line; change its opacity
     selectedLine
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
-      .style('stroke', colorFunc(/* selectedLineData.dimName */))
+      .style('stroke', colorFunc(selectedLineData.status as string))
       .attr('stroke-width', lineStrokeWidthHover)
       .style('opacity', lineOpacityVisible);
 
@@ -631,11 +672,13 @@ function renderParallelCoordinates(
   // Unhighlight
   function doNotHighlight() {
     // reset all lines to full opacity except for selected lines
-    svgElement.selectAll('.line')
+    svgElement.selectAll<SVGPathElement, ScenarioData>('.line')
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
-      .style('stroke', function () { return (colorFunc()); })
-      .style('opacity', lineOpacityHidden);
+      .style('stroke', function (d: ScenarioData) {
+        return (colorFunc(d.status as string));
+      })
+      .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
 
     // hide tooltips
     svgElement.selectAll('.pc-hover-tooltip-text')

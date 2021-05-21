@@ -1,8 +1,8 @@
-import useScenarioData from './useScenarioData';
 import { Model, ModelParameter } from '../../types/Model';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import API from '@/api/api';
+import { ModelRun } from '@/types/Datacubes';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -12,10 +12,8 @@ import API from '@/api/api';
 export default function useParallelCoordinatesData(
   metadata: Ref<Model | null>,
   modelId: Ref<string>,
-  allScenarioIds: Ref<string[]> // FIXME: this is only needed for DSSAT
+  allModelRunData: Ref<ModelRun[]>
 ) {
-  const allModelRunData = useScenarioData(modelId, allScenarioIds);
-
   const runParameterValues = ref<ScenarioData[]>([]);
 
   watchEffect(onInvalidate => {
@@ -23,7 +21,8 @@ export default function useParallelCoordinatesData(
     if (allModelRunData.value.length === 0 || metadata.value === null) {
       return [];
     }
-    const allRunIDs = allScenarioIds.value.length !== 0 ? allScenarioIds.value : allModelRunData.value.filter(r => r.status === 'READY').map(r => r.id);
+
+    const allRunIDs = allModelRunData.value.filter(r => r.status === 'READY').map(r => r.id);
     let isCancelled = false;
 
     const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
@@ -52,6 +51,7 @@ export default function useParallelCoordinatesData(
         //  fetch results to avoid a race condition.
         return;
       }
+      let timeSeriesArrCounter = 0;
       runParameterValues.value = allModelRunData.value.map((modelRun, runIndex) => {
         const run_id = allModelRunData.value[runIndex].id;
         const runStatus = allModelRunData.value[runIndex].status;
@@ -61,7 +61,7 @@ export default function useParallelCoordinatesData(
         };
         if (run.status === 'READY') {
           // calculate the output value for this run by aggregating all timestamp values
-          const allValuesPerRun: Array<number> = timeseries[runIndex].map((t: any) => t.value);
+          const allValuesPerRun: Array<number> = timeseries[timeSeriesArrCounter++].map((t: any) => t.value);
           const sum = allValuesPerRun.reduce((a, b) => a + b, 0);
           const avg = (sum / timeseries.length) || 0;
           const runOutputValue = avg;
