@@ -1,7 +1,8 @@
 import _ from 'lodash';
 import dateFormatter from '@/formatters/date-formatter';
+import { Evidence } from '@/types/Statement';
 
-const constructDisplayString = (evidenceItem) => {
+const constructDisplayString = (evidenceItem: Evidence) => {
   const {
     author,
     publisher_name: publisherName,
@@ -16,14 +17,13 @@ const constructDisplayString = (evidenceItem) => {
   } else if (!_.isNil(publisherName) && publisherName.length > 0) {
     by = publisherName;
   }
-  // Display date if provided
-  // NOTE: Publication date month is 1-indexed, but date formatter expects it to be 0-indexed
-  let cleanedPublicationDate;
-  if (!_.isNil(publicationDate) && _.isNumber(publicationDate.month)) {
-    cleanedPublicationDate = _.cloneDeep(publicationDate);
-    cleanedPublicationDate.month--;
+
+  if (!publicationDate) {
+    return by;
   }
-  const date = dateFormatter(cleanedPublicationDate, 'MMM DD, YYYY');
+
+  // Display date if provided
+  const date = dateFormatter(publicationDate.date, 'MMM DD, YYYY');
   if (date.length === 0 || date === 'Invalid date') {
     return by;
   }
