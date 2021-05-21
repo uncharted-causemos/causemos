@@ -1,3 +1,15 @@
+// Project metadata
+export interface Project {
+  id: string;
+  kb_id: string;
+  name: string;
+  ontology: string | null;
+  corpus_id: string | null;
+  extended_at: number;
+  modified_at: number;
+  created_at: number;
+  stat: { [key: string]: string | number };
+}
 
 export interface ModelGeography {
   country: string[];

@@ -18,13 +18,14 @@
   </div>
 </template>
 
-<script>
-import EvidenceHighlights from '@/components/evidence-highlights';
-import SmallIconButton from '@/components/widgets/small-icon-button';
-
+<script lang="ts">
+import { defineComponent, PropType } from 'vue';
+import EvidenceHighlights from '@/components/evidence-highlights.vue';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import evidenceMetadataUtil from '@/utils/evidence-metadata-util';
+import { Evidence } from '@/types/Statement';
 
-export default {
+export default defineComponent({
   name: 'EvidenceItem',
   components: {
     EvidenceHighlights,
@@ -32,7 +33,7 @@ export default {
   },
   props: {
     evidence: {
-      type: Object,
+      type: Object as PropType<Evidence>,
       default: () => ({})
     },
     resourceType: {
@@ -44,16 +45,16 @@ export default {
     'click-evidence'
   ],
   computed: {
-    metadataDisplayString() {
+    metadataDisplayString(): string {
       return evidenceMetadataUtil.constructDisplayString(this.evidence);
     }
   },
   methods: {
-    onClick(evidence) {
+    onClick(evidence: Evidence) {
       this.$emit('click-evidence', evidence);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
