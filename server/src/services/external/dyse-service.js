@@ -5,7 +5,9 @@ const auth = rootRequire('/util/auth-util');
 
 const basicAuthToken = auth.getBasicAuthToken(process.env.DYSE_USERNAME, process.env.DYSE_PASSWORD);
 
-const DYSE_URL = process.env.DYSE_URL + '/DySE';
+// const DYSE_URL = process.env.DYSE_URL + '/DySE';
+// FIXME: temp reroute - May 21
+const DYSE_URL = 'https://dyse.worldmodelers.com:5001/DySE';
 
 /**
  * Register model on DySE: sending the id, statements and indicators
