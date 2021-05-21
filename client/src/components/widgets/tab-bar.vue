@@ -19,8 +19,10 @@
   </ul>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'TabBar',
   props: {
     tabs: {
@@ -38,11 +40,11 @@ export default {
   },
   emits: ['tab-click'],
   methods: {
-    onClick(tabId) {
+    onClick(tabId: string) {
       this.$emit('tab-click', tabId);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

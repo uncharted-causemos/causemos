@@ -33,9 +33,10 @@
 </template>
 
 
-<script>
+<script lang="ts">
 import moment from 'moment';
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 
 const DEFAULT_MONTHS = {
   0: 'Jan',
@@ -55,7 +56,7 @@ const DEFAULT_MONTHS = {
 const MIN_YEAR = 1990;
 const MAX_YEAR = 2021;
 
-export default {
+export default defineComponent({
   name: 'DateDropdown',
   props: {
     data: {
@@ -84,11 +85,11 @@ export default {
   },
   methods: {
     update() {
-      const timestamp = moment.utc({ Y: this.selectedYear, M: this.selectedMonth }).valueOf();
+      const timestamp = moment.utc({ y: this.selectedYear, M: this.selectedMonth }).valueOf();
       this.$emit('updated', timestamp);
     }
   }
-};
+});
 </script>
 
 <style scoped>
