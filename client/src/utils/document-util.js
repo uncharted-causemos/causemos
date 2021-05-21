@@ -4,7 +4,7 @@ import dateFormatter from '@/formatters/date-formatter';
 export const DOC_FIELD = Object.freeze({
   AUTHOR: 'author',
   CATEGORY: 'category',
-  DOC_ID: 'doc_id',
+  DOC_ID: 'id',
   DOC_TITLE: 'doc_title',
   FILE_NAME: 'file_name',
   FILE_TYPE: 'file_type', // require
