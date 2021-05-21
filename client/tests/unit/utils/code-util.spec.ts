@@ -16,7 +16,7 @@ describe('code-util', () => {
   });
 
   it('field should be unique', () => {
-    const dupeCounter = {};
+    const dupeCounter: { [key: string]: number } = {};
     entries.forEach(entry => {
       // Should not duplicate
       const isDuped = {}.hasOwnProperty.call(dupeCounter, entry.field);
