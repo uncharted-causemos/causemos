@@ -19,9 +19,10 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 
 /**
  * A collapsible wrapper component that allows the injection of two external
@@ -40,7 +41,7 @@ import _ from 'lodash';
  *   </collapsible-item>
  *
 */
-export default {
+export default defineComponent({
   name: 'CollapsibleItem',
   props: {
     override: {
@@ -74,7 +75,7 @@ export default {
       this.expanded = !this.expanded;
     }
   }
-};
+});
 </script>
 
 <style lang="scss">
