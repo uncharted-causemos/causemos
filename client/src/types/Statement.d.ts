@@ -11,10 +11,10 @@ interface ConceptMatchCandidate {
 }
 
 interface DateObj {
-  date: string;
+  date: number | string;
   day: number;
   month: number;
-  year: numbe;
+  year: number;
 }
 
 /* Statement related */
@@ -47,12 +47,12 @@ export interface DocumentContext {
   doc_id: string;
   author: string | null;
   document_source: string | null;
-  file_type: string;
+  file_type: string | null;
   ner_analytics: {
     loc: string[];
     org: string[];
   };
-  publication_date: DateObj;
+  publication_date: DateObj | null;
   publisher_name: string | null;
   title: string | null;
 }
@@ -66,12 +66,14 @@ export interface EvidenceContext {
   text: string;
 }
 
+export interface Evidence {
+  document_context: DocumentContext;
+  evidence_context: EvidenceContext;
+}
+
 export interface Statement {
   belief: number;
-  evidence: {
-    document_context: DocumentContext;
-    evidence_context: EvidenceContext;
-  } [];
+  evidence: Evidence[];
   id: string;
   modified_at: number;
   obj: Factor;

@@ -18,10 +18,11 @@
   </div>
 </template>
 
-<script>
-import DropdownControl from '@/components/dropdown-control';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import DropdownControl from '@/components/dropdown-control.vue';
 
-export default {
+export default defineComponent({
   name: 'OptionsButton',
   components: {
     DropdownControl
@@ -44,7 +45,7 @@ export default {
       this.isMenuOpen = !this.isMenuOpen;
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

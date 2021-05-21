@@ -92,12 +92,13 @@
   </nav>
 </template>
 
-<script>
+<script lang="ts">
 import { mapGetters } from 'vuex';
+import { defineComponent } from 'vue';
 
-import BookmarkControls from '@/components/bookmark-panel/bookmark-controls';
+import BookmarkControls from '@/components/bookmark-panel/bookmark-controls.vue';
 
-export default {
+export default defineComponent({
   name: 'NavBar',
   components: {
     BookmarkControls
@@ -111,7 +112,7 @@ export default {
       lastQuery: 'query/lastQuery'
     })
   }
-};
+});
 </script>
 
 
