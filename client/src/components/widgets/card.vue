@@ -8,9 +8,10 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 
-export default {
+export default defineComponent({
   name: 'Card',
   props: {
     isHoverable: {
@@ -26,7 +27,7 @@ export default {
       this.$emit('click');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
