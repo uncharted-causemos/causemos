@@ -3,6 +3,7 @@ import API from '@/api/api';
 import { CODE_TABLE } from '@/utils/code-util';
 import { conceptShortName } from '@/utils/concept-util';
 import { startPolling } from '@/api/poller';
+import { Scenario, ScenarioConstraint, NodeParameter, EdgeParameter } from '@/types/CAG';
 
 const MODEL_STATUS = {
   UNSYNCED: 0,
@@ -10,7 +11,7 @@ const MODEL_STATUS = {
   READY: 2
 };
 
-const getProjectModels = async (projectId) => {
+const getProjectModels = async (projectId: string) => {
   const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
   return result.data;
 };
@@ -18,7 +19,7 @@ const getProjectModels = async (projectId) => {
 /**
  * Get basic model information without underyling data
  */
-const getSummary = async (modelId) => {
+const getSummary = async (modelId: string) => {
   const result = await API.get(`models/${modelId}`);
   return result.data;
 };
@@ -26,7 +27,7 @@ const getSummary = async (modelId) => {
 /**
  * Get model data
  */
-const getComponents = async (modelId) => {
+const getComponents = async (modelId: string) => {
   const result = await API.get(`cags/${modelId}/components`);
   return result.data;
 };
@@ -34,7 +35,7 @@ const getComponents = async (modelId) => {
 /**
  * GET model status on the engine
  */
-const checkAndUpdateRegisteredStatus = async (modelId, engine) => {
+const checkAndUpdateRegisteredStatus = async (modelId: string, engine: string) => {
   const result = await API.get(`models/${modelId}/registered-status`, { params: { engine: engine } });
   return result.data;
 };
@@ -42,7 +43,7 @@ const checkAndUpdateRegisteredStatus = async (modelId, engine) => {
 /**
  * Synchronize model state with given modeling engine
  */
-const syncModelWithEngine = async (modelId, engine) => {
+const syncModelWithEngine = async (modelId: string, engine: string) => {
   const result = await API.post(`models/${modelId}/register`, { engine });
   return result.data;
 };
@@ -50,7 +51,7 @@ const syncModelWithEngine = async (modelId, engine) => {
 /**
  * Get model's scenarios, including baseline scenario
  */
-const getScenarios = async (modelId, engine) => {
+const getScenarios = async (modelId: string, engine: string) => {
   const result = await API.get('scenarios', {
     params: { model_id: modelId, engine: engine }
   });
@@ -60,7 +61,7 @@ const getScenarios = async (modelId, engine) => {
 /**
  * Update graph node
  */
-const updateNodeParameter = async (modelId, nodeParameter) => {
+const updateNodeParameter = async (modelId: string, nodeParameter: NodeParameter) => {
   const result = await API.post(`models/${modelId}/node-parameter`, nodeParameter);
   return result.data;
 };
@@ -68,28 +69,28 @@ const updateNodeParameter = async (modelId, nodeParameter) => {
 /**
  * Update graph edge
  */
-const updateEdgeParameter = async (modelId, edgeParameter) => {
+const updateEdgeParameter = async (modelId: string, edgeParameter: EdgeParameter) => {
   const result = await API.post(`models/${modelId}/edge-parameter`, edgeParameter);
   return result.data;
 };
 
-const updateModelMetadata = async (modelId, fields) => {
+const updateModelMetadata = async (modelId: string, fields: { [key: string]: any }) => {
   const result = await API.put(`models/${modelId}/model-metadata`, fields);
   return result.data;
 };
 
-const updateModelParameter = async (modelId, modelParameter) => {
+const updateModelParameter = async (modelId: string, modelParameter: NodeParameter) => {
   const result = await API.put(`models/${modelId}/model-parameter`, modelParameter);
   return result.data;
 };
 
 
-const updateEdgePolarity = async (modelId, edgeId, polarity) => {
+const updateEdgePolarity = async (modelId: string, edgeId: string, polarity: number) => {
   const result = await API.put(`cags/${modelId}/edge-polarity`, { edge_id: edgeId, polarity });
   return result.data;
 };
 
-const recalculate = async (modelId) => {
+const recalculate = async (modelId: string) => {
   await API.post(`cags/${modelId}/recalculate`);
 };
 
@@ -103,17 +104,17 @@ const removeComponents = async (modelId, nodes, edges) => {
   return result.data;
 };
 
-const removeModel = async (modelId) => {
+const removeModel = async (modelId: string) => {
   const result = await API.delete(`models/${modelId}`);
   return result.data;
 };
 
-const duplicateModel = async (modelId) => {
+const duplicateModel = async (modelId: string) => {
   const result = await API.post(`cags/${modelId}`);
   return result.data;
 };
 
-const newModel = async (projectId, name = 'untitled') => {
+const newModel = async (projectId: string, name = 'untitled') => {
   const result = await API.post('models', {
     project_id: projectId,
     name: name,
@@ -124,7 +125,7 @@ const newModel = async (projectId, name = 'untitled') => {
 };
 
 // This sets the default indicators for each node in the model
-const quantifyModelNodes = async (modelId) => {
+const quantifyModelNodes = async (modelId: string) => {
   const result = await API.post(`models/${modelId}`);
   return result.data;
 };
@@ -136,7 +137,7 @@ const quantifyModelNodes = async (modelId) => {
  * @param {string} source - source concept
  * @param {string} target - target concept
  */
-const getEdgeStatements = async (modelId, source, target) => {
+const getEdgeStatements = async (modelId: string, source: string, target: string) => {
   const result = await API.get(`cags/${modelId}/edge-statements`, {
     params: {
       source: source,
@@ -146,7 +147,7 @@ const getEdgeStatements = async (modelId, source, target) => {
   return result.data;
 };
 
-const getNodeStatements = async (modelId, concept) => {
+const getNodeStatements = async (modelId: string, concept: string) => {
   const result = await API.get(`cags/${modelId}/node-statements`, {
     params: {
       concept: concept
@@ -172,16 +173,16 @@ const getNodeStatements = async (modelId, concept) => {
  * @param {string} scenario.experimentId - the identifier used ty the engine
  * @param {array} result - array of projections, one per node in the model graph
  */
-const createScenario = async (scenario) => {
+const createScenario = async (scenario: Scenario) => {
   const result = await API.post('scenarios', scenario);
   return result.data;
 };
-const updateScenario = async (scenario) => {
+const updateScenario = async (scenario: Scenario) => {
   const result = await API.put(`scenarios/${scenario.id}`, scenario);
   return result.data;
 };
-const deleteScenario = async (scenario) => {
-  const result = await API.delete(`scenarios/${scenario.id}`, scenario);
+const deleteScenario = async (scenario: Scenario) => {
+  const result = await API.delete(`scenarios/${scenario.id}`);
   return result.data;
 };
 
@@ -194,7 +195,7 @@ const deleteScenario = async (scenario) => {
  * @param {string} modelId - model/cag identifier
  */
 const DEFAULT_ENGINE = 'dyse';
-const initializeModel = async (modelId) => {
+const initializeModel = async (modelId: string) => {
   const model = await getSummary(modelId);
   const engine = model.parameter.engine || DEFAULT_ENGINE;
   const errors = [];
@@ -241,7 +242,10 @@ const initializeModel = async (modelId) => {
  * @param {array} constraints - [ {step, value}, { step, value} ...]
  * @param {number} steps - number of steps to project
  */
-const runProjectionExperiment = async (modelId, steps, constraints) => {
+const runProjectionExperiment = async (
+  modelId: string,
+  steps: number,
+  constraints: ScenarioConstraint[]) => {
   const model = await getSummary(modelId);
   const result = await API.post(`models/${modelId}/projection`, {
     engine: model.parameter.engine,
@@ -260,7 +264,7 @@ const runProjectionExperiment = async (modelId, steps, constraints) => {
  * @param {string} experimentId - eperiment id/hash
  * @param {number} threshold - optional, number of times to poll
  */
-const getExperimentResult = async (modelId, experimentId, threshold = 10) => {
+const getExperimentResult = async (modelId: string, experimentId: string, threshold = 10) => {
   const model = await getSummary(modelId);
   const taskFn = async () => {
     const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: model.parameter.engine, experiment_id: experimentId } });
@@ -376,12 +380,13 @@ const _markConceptHasEvidence = (hasEvidence) =>
 
 /**
  * Find suggested terms for the specified string, looking in the provided field
+ * FIXME: Not model related, move out
  *
  * @param {string} projectId
  * @param {string} field - field which should be searched
  * @param {string} queryString - string to use to get suggestions
  */
-const getSuggestions = async (projectId, field, queryString) => {
+const getSuggestions = async (projectId: string, field: string, queryString: string) => {
   const { data } = await API.get(`projects/${projectId}/suggestions`, { params: { field, q: queryString } });
   return data;
 };
