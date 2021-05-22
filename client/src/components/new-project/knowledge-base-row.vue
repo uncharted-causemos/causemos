@@ -43,12 +43,13 @@
   </tbody>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 import numberFormatter from '@/formatters/number-formatter';
 import dateFormatter from '@/formatters/date-formatter';
 
-export default {
+export default defineComponent({
   name: 'KnowledgeBaseRow',
   props: {
     kb: {
@@ -86,7 +87,7 @@ export default {
       return _.isNil(readers)
         ? '--'
         : '[' +
-          readers.reduce((acc, reader) => acc + ', ' + reader) +
+          readers.reduce((acc: string, reader: string) => acc + ', ' + reader) +
         ']';
     },
     description() {
@@ -99,7 +100,7 @@ export default {
       return _.get(this.kb, 'corpus_parameter.assembly.grounding_threshold', '--');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

@@ -21,10 +21,11 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import dateFormatter from '@/formatters/date-formatter';
 
-export default {
+export default defineComponent({
   name: 'QuantitativeConfigBar',
   props: {
     modelSummary: {
@@ -36,13 +37,13 @@ export default {
     'edit-parameters'
   ],
   computed: {
-    historicalRange() {
+    historicalRange(): { start: number; end: number } {
       return this.modelSummary.parameter.indicator_time_series_range;
     },
-    projectionSteps() {
+    projectionSteps(): number {
       return this.modelSummary.parameter.num_steps;
     },
-    currentEngine() {
+    currentEngine(): string {
       return this.modelSummary.parameter.engine;
     }
   },
@@ -52,7 +53,7 @@ export default {
       this.$emit('edit-parameters');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
