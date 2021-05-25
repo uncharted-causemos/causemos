@@ -30,6 +30,7 @@ const bookmarksRouter = rootRequire('/routes/bookmarks');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
 const maasRouter = rootRequire('/routes/maas');
+const datacubeRouter = rootRequire('/routes/datacubes');
 const fetchFileService = rootRequire('/services/external/fetch-file-service');
 const asyncHandler = require('express-async-handler');
 
@@ -124,6 +125,10 @@ app.use('/api/audits', [
 // Handle some /api/mass/model-runs calls ourselves. The rest get handled below.
 app.use('/api/maas/model-runs', [
   maasRouter
+]);
+
+app.use('/api/maas/datacubes', [
+  datacubeRouter
 ]);
 
 // Forward /api/maas/* to WM_GO_URL/maas/*

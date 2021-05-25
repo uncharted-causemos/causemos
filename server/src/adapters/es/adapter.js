@@ -27,6 +27,7 @@ const RESOURCE = Object.freeze({
 
   // MAAS data
   DATA_MODEL_RUN: 'data-model-run',
+  DATA_DATACUBE: 'data-datacube',
 
   // Misc
   AUDIT: 'audit',
