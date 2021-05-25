@@ -469,7 +469,8 @@ export default defineComponent({
     },
     toggleAccordion(event: any) {
       this.openPublishAccordion = !this.openPublishAccordion;
-      const panel = event.target.nextElementSibling as HTMLElement;
+      const target = event.target.nodeName === 'I' ? event.target.parentElement : event.target;
+      const panel = target.nextElementSibling as HTMLElement;
       if (panel) {
         if (!this.openPublishAccordion) {
           panel.style.display = 'none';

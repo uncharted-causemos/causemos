@@ -603,7 +603,7 @@ function renderParallelCoordinates(
 
       // notify external listeners
       if (notifyExternalListeners) {
-        onLinesSelection([selectedLineData]);
+        onLinesSelection(selectedLineData ? [selectedLineData] : []);
       }
     }
   }

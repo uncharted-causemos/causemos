@@ -1,10 +1,5 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <div class="comp-analysis-experiment-header">
-      <button class="search-button btn btn-primary btn-call-for-action" disabled>
-        Search datacubes
-      </button>
-    </div>
     <main>
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
