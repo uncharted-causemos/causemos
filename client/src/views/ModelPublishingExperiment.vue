@@ -29,7 +29,7 @@
       :isExpanded="false"
       :selected-admin-level="selectedAdminLevel"
       :selected-model-id="selectedModelId"
-      :all-scenario-ids="allScenarioIds"
+      :all-model-run-data="allModelRunData"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
       :selected-temporal-aggregation="selectedTemporalAggregation"
@@ -188,6 +188,7 @@ import { DimensionInfo, Model } from '@/types/Model';
 import { getRandomNumber } from '../../tests/utils/random';
 import { mapGetters } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import useScenarioData from '@/services/composables/useScenarioData';
 
 const DRILLDOWN_TABS = [
   {
@@ -241,6 +242,13 @@ export default defineComponent({
     const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
 
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
+
+    const modelRunsFetchedAt = ref(0);
+
+    // NOTE: data is only fetched one time for DSSAT since it is not executable
+    // so no external status need to be tracked
+    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt, ref(allScenarioIds));
+
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
       let isChanged = newIds.length !== selectedScenarioIds.value.length;
@@ -292,6 +300,7 @@ export default defineComponent({
       setSelectedAdminLevel,
       selectedModelId,
       allScenarioIds,
+      allModelRunData,
       selectedScenarioIds,
       setSelectedScenarioIds,
       typeBreakdownData,

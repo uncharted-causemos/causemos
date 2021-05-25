@@ -7,6 +7,16 @@
         <i class="fa fa-fw fa-compress" />
       </button>
     </header>
+    <modal-new-scenario-runs
+      v-if="showNewRunsModal === true"
+      :metadata="metadata"
+      :potential-scenarios="potentialScenarios"
+      @close="onNewScenarioRunsModalClose" />
+    <modal-check-runs-execution-status
+      v-if="showModelRunsExecutionStatus === true"
+      :metadata="metadata"
+      :potential-scenarios="runParameterValues"
+      @close="showModelRunsExecutionStatus = false" />
     <div class="flex-row">
       <!-- if has multiple scenarios -->
       <div class="scenario-selector">
@@ -54,7 +64,18 @@
             :class="{ 'disabled': potentialScenarioCount === 0}"
             @click="requestNewModelRuns()"
           >
-            Request
+            Review
+          </button>
+        </div>
+        <div v-else>
+          <disclaimer
+            :message="'check execution status'"
+          />
+          <button
+            class="search-button btn btn-primary btn-call-for-action"
+            @click="showModelExecutionStatus()"
+          >
+            Check execution status
           </button>
         </div>
       </div>
@@ -159,15 +180,17 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ScenarioDef } from '@/types/Datacubes';
+import { ModelRun, ScenarioDef } from '@/types/Datacubes';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
-import API from '@/api/api';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model, ModelFeature } from '@/types/Model';
+import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
+import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
+import _ from 'lodash';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -176,7 +199,9 @@ export default defineComponent({
     'set-selected-scenario-ids',
     'select-timestamp',
     'set-drilldown-data',
-    'check-model-metadata-validity'
+    'check-model-metadata-validity',
+    'refetch-data',
+    'new-runs-mode'
   ],
   props: {
     isExpanded: {
@@ -191,8 +216,8 @@ export default defineComponent({
       type: String as PropType<string>,
       required: true
     },
-    allScenarioIds: {
-      type: Array as PropType<string[]>,
+    allModelRunData: {
+      type: Array as PropType<ModelRun[]>,
       default: []
     },
     selectedScenarioIds: {
@@ -222,17 +247,19 @@ export default defineComponent({
     Disclaimer,
     ParallelCoordinatesChart,
     DataAnalysisMap,
-    DropdownControl
+    DropdownControl,
+    ModalNewScenarioRuns,
+    ModalCheckRunsExecutionStatus
   },
   setup(props, { emit }) {
     const {
       selectedModelId,
       selectedScenarioIds,
+      allModelRunData,
       selectedTimestamp,
       selectedTemporalResolution,
       selectedTemporalAggregation,
-      selectedSpatialAggregation,
-      allScenarioIds
+      selectedSpatialAggregation
     } = toRefs(props);
 
     const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
@@ -255,7 +282,7 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues
-    } = useParallelCoordinatesData(metadata, selectedModelId, allScenarioIds);
+    } = useParallelCoordinatesData(metadata, selectedModelId, allModelRunData);
 
     const mainModelOutput = ref<ModelFeature | undefined>(undefined);
 
@@ -312,7 +339,9 @@ export default defineComponent({
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
     potentialScenarios: [] as Array<ScenarioData>,
-    mapFilters: [] as Array<AnalysisMapFilter>
+    mapFilters: [] as Array<AnalysisMapFilter>,
+    showNewRunsModal: false,
+    showModelRunsExecutionStatus: false
   }),
   methods: {
     onMapLoad() {
@@ -325,6 +354,9 @@ export default defineComponent({
       this.showBaselineDefaults = !this.showBaselineDefaults;
     },
     toggleNewRunsMode() {
+      // reset visibility of baselinedefault when toggling the new-runs-mode
+      this.showBaselineDefaults = false;
+
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
 
@@ -334,41 +366,23 @@ export default defineComponent({
         // clear any selected scenario and show the model desc page
         this.updateScenarioSelection({ scenarios: [] });
       }
+      this.$emit('new-runs-mode', { newRunsMode: this.showNewRunsMode });
     },
     requestNewModelRuns() {
-      // FIXME: cast to 'any' since typescript cannot see mixins yet!
-      (this as any).toaster('New runs requested\nPlease check back later!');
-
-      // FIXME: only submitting ONE sceanrio is supported at this time
-      const firstScenario = this.potentialScenarios[0];
-      const paramArray: any[] = [];
-      Object.keys(firstScenario).forEach(key => {
-        // exclude output variable values since they will be undefined for potential runs
-        if (key !== this.mainModelOutput?.name) {
-          paramArray.push({
-            name: key,
-            value: firstScenario[key]
-          });
-        }
-      });
-      const drilldownParams = this.dimensions.filter(d => d.is_drilldown);
-      drilldownParams.forEach(p => {
-        paramArray.push({
-          name: p.name,
-          value: p.default
-        });
-      });
-      // FIXME: only max-hop model is executable at this time
-      if (this.selectedModelId.includes('maxhop')) {
-        API.post('maas/model-runs', {
-          model_id: this.selectedModelId,
-          model_name: this.metadata?.name,
-          parameters: paramArray
-        });
-      } else {
-        // FIXME: currently other models are not executable
-        console.warn('Current mode is not executable!');
+      this.showNewRunsModal = true;
+    },
+    onNewScenarioRunsModalClose (status: any) {
+      this.showNewRunsModal = false;
+      if (status.cancel === false) {
+        // execution has just started for some new runs so start the hot-reload cycle
+        // first, exit new-runs-mode
+        this.toggleNewRunsMode();
+        // then, re-fetch data from server (wait some time to give the server a chance to update)
+        _.delay(() => this.$emit('refetch-data'), 2000);
       }
+    },
+    showModelExecutionStatus() {
+      this.showModelRunsExecutionStatus = true;
     },
     updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
       if (
