@@ -6,11 +6,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 /**
  * Simple overlay for loading things
 */
-export default {
+export default defineComponent({
   name: 'Overlay',
   props: {
     message: {
@@ -18,7 +19,7 @@ export default {
       default: 'Loading...'
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

@@ -5,7 +5,9 @@ const auth = rootRequire('/util/auth-util');
 
 const basicAuthToken = auth.getBasicAuthToken(process.env.DYSE_USERNAME, process.env.DYSE_PASSWORD);
 
-const DYSE_URL = process.env.DYSE_URL + '/DySE';
+// const DYSE_URL = process.env.DYSE_URL + '/DySE';
+// FIXME: temp reroute - May 21
+const DYSE_URL = 'https://dyse.worldmodelers.com:5001/DySE';
 
 /**
  * Register model on DySE: sending the id, statements and indicators
@@ -36,8 +38,15 @@ const createModel = async (payload) => {
   const nodes = result.conceptIndicators;
   const edges = result.relations.reduce((acc, edge) => {
     const key = `${edge.source}///${edge.target}`;
-    acc[key] = {};
-    acc[key].weights = edge.weights.map(v => Math.abs(parseFloat(v)));
+    if (!acc[key]) {
+      acc[key] = {};
+    }
+    const w = edge.weights.map(parseFloat);
+    // FIXME: getting weird weights from Jataware translation layer, as far as we are concerned
+    // weights should be positive.
+    if (w[0] !== 0) {
+      acc[key].weights = w.map(v => Math.abs(v));
+    }
     return acc;
   }, {});
   return { nodes, edges, status: result.status };

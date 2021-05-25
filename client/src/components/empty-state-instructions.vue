@@ -20,16 +20,17 @@
   </figure>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapGetters } from 'vuex';
-export default {
+export default defineComponent({
   name: 'EmptyStateInstructions',
   computed: {
     ...mapGetters({
       currentView: 'app/currentView'
     })
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

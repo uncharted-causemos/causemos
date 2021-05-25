@@ -12,7 +12,7 @@
       :class="{ 'datacube-expanded': true }"
       :selected-admin-level="selectedAdminLevel"
       :selected-model-id="selectedModelId"
-      :all-scenario-ids="allScenarioIds"
+      :all-model-run-data="allModelRunData"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
       :selected-temporal-resolution="selectedTemporalResolution"
@@ -21,6 +21,8 @@
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
+      @refetch-data="fetchData"
+      @new-runs-mode="newRunsMode=!newRunsMode"
     >
       <template v-slot:datacube-model-header>
         <div class="datacube-header" v-if="mainModelOutput">
@@ -65,6 +67,7 @@
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
+            :metadata="metadata"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
@@ -135,10 +138,6 @@ export default defineComponent({
       immediate: true
     });
 
-    // FIXME: use endpoint to fetch IDs
-    const allModelRunData = useScenarioData(modelId);
-
-    const allScenarioIds = allModelRunData.value.map(run => run.id);
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
       selectedScenarioIds.value = newIds;
@@ -149,7 +148,25 @@ export default defineComponent({
       selectedTimestamp.value = value;
     }
 
-    const scenarioCount = computed(() => allScenarioIds.length);
+    const newRunsMode = ref(false);
+
+    const modelRunsFetchedAt = ref(0);
+
+    const allModelRunData = useScenarioData(modelId, modelRunsFetchedAt);
+
+    const timeInterval = 10000;
+
+    function fetchData() {
+      if (!newRunsMode.value) {
+        modelRunsFetchedAt.value = Date.now();
+      }
+    }
+
+    // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
+    const timerHandler = setInterval(fetchData, timeInterval);
+
+    const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
+    const scenarioCount = computed(() => allModelRunData.value.length);
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -160,7 +177,6 @@ export default defineComponent({
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId: modelId,
-      allScenarioIds,
       selectedScenarioIds,
       setSelectedScenarioIds,
       typeBreakdownData,
@@ -168,10 +184,18 @@ export default defineComponent({
       setSelectedTimestamp,
       isExpanded,
       colorFromIndex,
-      scenarioCount,
       metadata,
-      mainModelOutput
+      mainModelOutput,
+      allModelRunData,
+      allScenarioIds,
+      scenarioCount,
+      fetchData,
+      newRunsMode,
+      timerHandler
     };
+  },
+  unmounted(): void {
+    clearInterval(this.timerHandler);
   },
   methods: {
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {

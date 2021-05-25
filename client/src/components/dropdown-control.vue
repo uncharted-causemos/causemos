@@ -5,7 +5,7 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
 /**
  * A menu dropdown wrapper for corrections that allows the injection of one external
@@ -15,9 +15,10 @@
  *
 */
 
-export default {
+import { defineComponent } from 'vue';
+export default defineComponent({
   name: 'DropdownControl'
-};
+});
 </script>
 
 <style lang="scss">

@@ -65,7 +65,7 @@ export default {
     async fetchReaderContent() {
       if (!this.documentData) return;
       this.readerContentData = Object.assign(toCardData(this.documentData), { content: 'Loading...' });
-      const docId = this.documentData[DOC_FIELD.DOC_ID];
+      const docId = this.documentData[DOC_FIELD.DOC_ID] || this.documentData.doc_id;
 
       const url = `documents/${docId}`;
       const { data } = await API.get(url);

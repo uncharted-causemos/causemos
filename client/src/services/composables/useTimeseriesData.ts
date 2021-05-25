@@ -1,4 +1,5 @@
 import API from '@/api/api';
+import { Model } from '@/types/Model';
 import { Timeseries } from '@/types/Timeseries';
 import { computed, Ref, ref, watchEffect } from 'vue';
 
@@ -9,6 +10,7 @@ import { computed, Ref, ref, watchEffect } from 'vue';
  * list of Timeseries objects.
  */
 export default function useTimeseriesData(
+  metadata: Ref<Model | null>,
   modelId: Ref<string>,
   modelRunIds: Ref<string[]>,
   colorFromIndex: (index: number) => string,
@@ -44,7 +46,7 @@ export default function useTimeseriesData(
           params: {
             model_id: modelId.value,
             run_id: runId,
-            feature: modelId.value.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
+            feature: metadata.value?.outputs[0].name,
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg

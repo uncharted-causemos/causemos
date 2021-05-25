@@ -22,11 +22,12 @@
   </card>
 </template>
 
-<script>
-import Card from '@/components/widgets/card';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import Card from '@/components/widgets/card.vue';
 import numberFormatter from '@/formatters/number-formatter';
 
-export default {
+export default defineComponent({
   name: 'OverviewCard',
   components: {
     Card
@@ -50,13 +51,13 @@ export default {
     onClick() {
       this.$emit('click');
     },
-    displayValue(value) {
+    displayValue(value: number) {
       return value === undefined
         ? '...'
         : numberFormatter(value);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

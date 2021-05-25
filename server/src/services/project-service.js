@@ -19,6 +19,8 @@ const { set, del, get } = rootRequire('/cache/node-lru-cache');
 
 const MAX_NUMBER_PROJECTS = 100;
 
+const INCREMENTAL_ASSEMBLY_FLOW_ID = '90a09440-e504-4db9-ad89-9db370933c8b';
+
 /**
  * Returns projects summary
  */
@@ -685,6 +687,59 @@ const addReaderOutput = async (projectId, records, timestamp) => {
       extended_at: +timestamp
     }
   ], d => d.id);
+
+  return id;
+};
+
+/**
+ * Trigger a Prefect flow to:
+ *  - Take the reader output records associated with this projectExtensionId
+ *  - Send them to INDRA for reassembly
+ *  - Transform and insert/update the resulting statements into the project
+ *  - associated with this projectExtensionId
+ *
+ * @param {String} projectExtensionId - ID for a doc in the project-extension ES index
+ */
+const requestAssembly = async (projectExtensionId) => {
+  Logger.info(`Requesting new incremental assembly for extension "${projectExtensionId}" `);
+  if (!projectExtensionId) {
+    Logger.error('Required ID for incremental assembly request was not provided.');
+    return;
+  }
+
+  const runName = `requestAssembly-${projectExtensionId}`;
+  const flowParameters = {
+    PROJECT_EXTENSION_ID: projectExtensionId
+  };
+
+  // We need the two JSON.stringify below to go from
+  // JSON object -> JSON string -> escaped JSON string
+  const graphQLQuery = `
+    mutation {
+      create_flow_run(input: {
+        version_group_id: "${INCREMENTAL_ASSEMBLY_FLOW_ID}",
+        flow_run_name: "${runName}",
+        parameters: ${JSON.stringify(JSON.stringify(flowParameters))}
+      }) {
+        id
+      }
+    }
+  `;
+
+  const pipelinePayload = {
+    method: 'POST',
+    url: process.env.WM_PIPELINE_URL,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {
+      query: graphQLQuery
+    }
+  };
+
+  const result = await requestAsPromise(pipelinePayload);
+  return result;
 };
 
 module.exports = {
@@ -713,6 +768,7 @@ module.exports = {
 
   // incremental assembly
   addReaderOutput,
+  requestAssembly,
 
   // misc
   ontologyComposition

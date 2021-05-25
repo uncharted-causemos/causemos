@@ -19,11 +19,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import codeUtil from '@/utils/code-util';
 
-export default {
+export default defineComponent({
   name: 'StatementsColumnsSelector',
   computed: {
     ...mapGetters({
@@ -34,7 +35,7 @@ export default {
     ...mapActions({
       toggleColumn: 'statements/toggleColumn'
     }),
-    getDisplayName(field) {
+    getDisplayName(field: string) {
       const config = Object.values(codeUtil.CODE_TABLE).find(d => {
         return d.field === field;
       });
@@ -44,7 +45,7 @@ export default {
       return '???';
     }
   }
-};
+});
 </script>
 
 <style lang="scss">

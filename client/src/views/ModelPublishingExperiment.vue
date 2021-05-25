@@ -29,7 +29,7 @@
       :isExpanded="false"
       :selected-admin-level="selectedAdminLevel"
       :selected-model-id="selectedModelId"
-      :all-scenario-ids="allScenarioIds"
+      :all-model-run-data="allModelRunData"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
       :selected-temporal-aggregation="selectedTemporalAggregation"
@@ -159,6 +159,7 @@
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
+            :metadata="metadata"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
@@ -174,7 +175,7 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
-import { defineComponent, ref } from 'vue';
+import { defineComponent, Ref, ref } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
@@ -183,9 +184,11 @@ import { ModelPublishingStep } from '@/types/UseCase';
 import { ModelPublishingStepID } from '@/types/ModelPublishingTypes';
 import router from '@/router';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { DimensionInfo } from '@/types/Model';
+import { DimensionInfo, Model } from '@/types/Model';
 import { getRandomNumber } from '../../tests/utils/random';
 import { mapGetters } from 'vuex';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import useScenarioData from '@/services/composables/useScenarioData';
 
 const DRILLDOWN_TABS = [
   {
@@ -235,7 +238,17 @@ export default defineComponent({
     const selectedTemporalResolution = ref('');
     const selectedSpatialAggregation = ref('');
 
+    const selectedModelId = ref(DSSAT_PRODUCTION_DATA.modelId);
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
+
+    const modelRunsFetchedAt = ref(0);
+
+    // NOTE: data is only fetched one time for DSSAT since it is not executable
+    // so no external status need to be tracked
+    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt, ref(allScenarioIds));
+
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
       let isChanged = newIds.length !== selectedScenarioIds.value.length;
@@ -285,8 +298,9 @@ export default defineComponent({
       activeDrilldownTab: 'breakdown',
       selectedAdminLevel,
       setSelectedAdminLevel,
-      selectedModelId: DSSAT_PRODUCTION_DATA.modelId,
+      selectedModelId,
       allScenarioIds,
+      allModelRunData,
       selectedScenarioIds,
       setSelectedScenarioIds,
       typeBreakdownData,
@@ -296,7 +310,8 @@ export default defineComponent({
       currentPublishingStep,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      selectedTemporalResolution
+      selectedTemporalResolution,
+      metadata
     };
   },
   watch: {
@@ -320,7 +335,13 @@ export default defineComponent({
         this.selectedSpatialAggregation = publishSpatialAggr;
 
         if (this.allScenarioIds.length > 0) {
-          const selectedIds = this.currentPublishingStep !== ModelPublishingStepID.Enrich_Description ? [this.allScenarioIds[0]] : [];
+          let selectedIds = this.selectedScenarioIds;
+          if (this.currentPublishingStep === ModelPublishingStepID.Enrich_Description) {
+            selectedIds = [];
+          } else {
+            // we should have at least one valid scenario selected. If not, then select the first one
+            selectedIds = selectedIds.length > 0 ? selectedIds : [this.allScenarioIds[0]];
+          }
           this.setSelectedScenarioIds(selectedIds);
         }
       }
