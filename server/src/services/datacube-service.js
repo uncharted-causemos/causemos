@@ -1,4 +1,3 @@
-const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 
 
