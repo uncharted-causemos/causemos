@@ -471,9 +471,13 @@ export default {
 
       this.closeEditConstraints();
       this.refresh();
+      this.openEditConstraints();
     },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
+    },
+    openEditConstraints() {
+      this.isEditConstraintsOpen = true;
     },
     async fetchSensitivityAnalysisResults() {
       if (_.isNil(this.scenarios) || this.scenarios.length === 0) return;
