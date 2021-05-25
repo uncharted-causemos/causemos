@@ -155,17 +155,22 @@
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
-          <data-analysis-map
+          <div
             v-if="!isDescriptionView"
-            class="card-map full-width"
-            :output-source-specs="outputSourceSpecs"
-            :output-selection=0
-            :show-tooltip="true"
-            :selected-admin-level="selectedAdminLevel"
-            :filters="mapFilters"
-            @on-map-load="onMapLoad"
-            @slide-handle-change="onMapSlideChange"
-          />
+            class="card-map-container full-width">
+            <data-analysis-map
+              v-for="(selectedScenario, indx) in selectedScenarioIds"
+              :key="selectedScenario"
+              class="card-map"
+              :output-source-specs="outputSourceSpecs[indx]"
+              :output-selection=0
+              :show-tooltip="true"
+              :selected-admin-level="selectedAdminLevel"
+              :filters="mapFilters"
+              @on-map-load="onMapLoad"
+              @slide-handle-change="onMapSlideChange"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -306,16 +311,18 @@ export default defineComponent({
     }
 
     const outputSourceSpecs = computed(() => {
-      return [{
-        id: selectedScenarioIds.value[0],
-        modelId: selectedModelId.value,
-        runId: selectedScenarioIds.value[0], // we may not have a selected run at this point, so init map with the first run by default
-        outputVariable: metadata.value?.outputs[0].name,
-        timestamp: selectedTimestamp.value,
-        temporalResolution: selectedTemporalResolution.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        spatialAggregation: selectedSpatialAggregation.value
-      }];
+      return selectedScenarioIds.value.map(selectedScenarioId => {
+        return [{
+          id: selectedScenarioId,
+          modelId: selectedModelId.value,
+          runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
+          outputVariable: metadata.value?.outputs[0].name,
+          timestamp: selectedTimestamp.value,
+          temporalResolution: selectedTemporalResolution.value,
+          temporalAggregation: selectedTemporalAggregation.value,
+          spatialAggregation: selectedSpatialAggregation.value
+        }];
+      });
     });
 
     return {
@@ -497,13 +504,34 @@ header {
   color: #bbb;
 }
 
-.card-map {
+.card-map-container {
   height: 100%;
   width: 70%;
+
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  overflow-y: scroll;
+
+  :last-child {
+    flex-grow: initial;
+  }
+
+  :first-child {
+    flex-grow: 1;
+  }
 
   &.full-width {
     width: 100%;
   }
+}
+
+.card-map {
+  flex-grow: 1;
+  width: auto;
+  height: inherit;
+  margin: 5px;
+  min-width: 48%;
 }
 
 .button-row {

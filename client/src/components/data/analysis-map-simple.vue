@@ -361,11 +361,14 @@ export default {
     onMouseMove(event) {
       const { map, mapboxEvent } = event;
 
-      if (!this.showTooltip || _.isNil(map.getLayer(this.baseLayerId))) return;
+      if (!this.showTooltip ||
+        _.isNil(map.getLayer(this.baseLayerId)) ||
+        _.isNil(map.getLayer(this.colorLayerId))) return;
 
       this._unsetHover(map);
 
-      const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: [this.baseLayerId, this.colorLayerId] });
+      const supportedLayers = [this.baseLayerId, this.colorLayerId];
+      const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: supportedLayers });
       features.forEach(feature => {
         this._setLayerHover(map, feature);
       });
