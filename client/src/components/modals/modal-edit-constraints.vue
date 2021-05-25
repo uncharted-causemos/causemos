@@ -20,6 +20,12 @@
     <template #footer>
       <ul class="unstyled-list">
         <button
+          v-if="hasConstraints"
+          type="button"
+          class="btn first-button"
+          @click="clearConstraints()">Clear Constraints
+        </button>
+        <button
           type="button"
           class="btn first-button"
           @click.stop="close()">Cancel
@@ -60,10 +66,14 @@ export default {
     projectionSteps: {
       type: Number,
       required: true
+    },
+    updateCount: {
+      type: Number,
+      default: 0
     }
   },
   emits: [
-    'run-projection', 'close'
+    'run-projection', 'close', 'clear-constraints'
   ],
   data: () => ({
     constraints: []
@@ -72,6 +82,9 @@ export default {
     ...mapGetters({
       selectedScenarioId: 'model/selectedScenarioId'
     }),
+    hasConstraints() {
+      return this.constraints.length > 0;
+    },
     indicatorUnit() {
       const unit = _.get(this.node, 'parameter.indicator_time_series_parameter.unit', 'unknown');
       return `unit: ${unit}`;
@@ -86,6 +99,9 @@ export default {
     this.render();
   },
   methods: {
+    clearConstraints() {
+      this.$emit('clear-constraints', { concept: this.node.concept });
+    },
     formatted_concept_name() {
       return this.ontologyFormatter(this.node.concept);
     },
