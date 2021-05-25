@@ -40,6 +40,7 @@
       :node="selectedNode"
       :scenarios="scenariosForSelectedNode"
       :projection-steps="projectionSteps"
+      @clear-constraints="clearConstraints"
       @close="closeEditConstraints"
       @run-projection="runProjection"
     />
@@ -460,6 +461,16 @@ export default {
         this.previousScenarioId = this.selectedScenarioId;
       }
       this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
+    },
+    clearConstraints({ concept }) {
+      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+
+      if (_.get(scenario, 'parameter.constraints')) {
+        _.remove(scenario.parameter.constraints, d => d.concept === concept);
+      }
+
+      this.closeEditConstraints();
+      this.refresh();
     },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
