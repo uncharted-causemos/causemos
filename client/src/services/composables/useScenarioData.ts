@@ -50,7 +50,6 @@ export default function useScenarioData(
           });
         }
         if (newDataIsDifferent) {
-          // this.toaster('New runs requested\nPlease check back later!');
           runData.value = newData;
         }
       }
