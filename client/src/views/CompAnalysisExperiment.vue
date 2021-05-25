@@ -187,16 +187,20 @@ export default defineComponent({
     $route(/* to, from */) {
       // NOTE:  this is only valid when the route is focused on the 'data' space
       if (this.$route.name === 'data') {
-        const timestamp = this.$route.query.timeStamp as any;
-        this.setSelectedTimestamp(timestamp);
+        const timestamp = this.$route.query.timestamp as any;
+        if (timestamp !== undefined) {
+          this.setSelectedTimestamp(timestamp);
+        }
 
         if (this.allScenarioIds.length > 0) {
           // FIXME: only support saving insights with at most a single valid scenario id
           const selectedScenarioID = this.$route.query.selectedScenarioID as any;
-          // we should have at least one valid scenario selected. If not, cancel scenario selection
-          const selectedIds = selectedScenarioID !== '' ? [selectedScenarioID] : [];
-          if (this.selectedScenarioIds.includes(selectedScenarioID) === false) {
-            this.setSelectedScenarioIds(selectedIds);
+          if (selectedScenarioID !== undefined) {
+            // we should have at least one valid scenario selected. If not, cancel scenario selection
+            const selectedIds = selectedScenarioID !== '' ? [selectedScenarioID] : [];
+            if (this.selectedScenarioIds.includes(selectedScenarioID) === false) {
+              this.setSelectedScenarioIds(selectedIds);
+            }
           }
         }
       }
@@ -223,7 +227,7 @@ export default defineComponent({
       // save the info in the query params so saved insights would pickup the latest value
       router.push({
         query: {
-          timeStamp: this.selectedTimestamp,
+          timestamp: this.selectedTimestamp,
           selectedScenarioID: this.selectedScenarioIds.length > 0 ? this.selectedScenarioIds[0] : ''
         }
       }).catch(() => {});
