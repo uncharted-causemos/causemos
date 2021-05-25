@@ -163,7 +163,7 @@ export default defineComponent({
     }
 
     // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
-    const timerRef = setInterval(fetchData, timeInterval);
+    const timerHandler = setInterval(fetchData, timeInterval);
 
     const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
     const scenarioCount = computed(() => allModelRunData.value.length);
@@ -191,11 +191,11 @@ export default defineComponent({
       scenarioCount,
       fetchData,
       newRunsMode,
-      timerRef
+      timerHandler
     };
   },
   unmounted(): void {
-    clearInterval(this.timerRef);
+    clearInterval(this.timerHandler);
   },
   methods: {
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {

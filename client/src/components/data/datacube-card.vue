@@ -354,7 +354,9 @@ export default defineComponent({
       this.showBaselineDefaults = !this.showBaselineDefaults;
     },
     toggleNewRunsMode() {
-      this.toggleBaselineDefaultsVisibility();
+      // reset visibility of baselinedefault when toggling the new-runs-mode
+      this.showBaselineDefaults = false;
+
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
 
