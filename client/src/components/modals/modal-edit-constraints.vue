@@ -66,10 +66,6 @@ export default {
     projectionSteps: {
       type: Number,
       required: true
-    },
-    updateCount: {
-      type: Number,
-      default: 0
     }
   },
   emits: [
