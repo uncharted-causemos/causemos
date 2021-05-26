@@ -69,5 +69,4 @@ describe('model-service', () => {
     expect(range[0]).to.be.approximately(3.8, 0.001);
     expect(range[1]).to.be.approximately(4.4, 0.001);
   });
-
 });
