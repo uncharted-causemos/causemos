@@ -11,23 +11,6 @@ export interface ModelRunParameter {
   value: string;
 }
 
-// Model run metadata, this replaces Cube
-export interface ModelRun {
-  id: string;
-  model_name: string;
-  model_id: string;
-  created_at: string;
-  flow_id: string;
-  data_paths: string[];
-  pre_gen_output_paths: string[];
-  // REVIEW
-  is_default_run: boolean;
-  default_run: boolean;
-  status: string;
-  tags: string[];
-  parameters: ModelRunParameter[];
-}
-
 // OLD datacube metadata
 export interface Datacube {
   id: string;

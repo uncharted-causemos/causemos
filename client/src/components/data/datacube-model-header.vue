@@ -35,7 +35,7 @@
 
 <script lang="ts">
 import API from '@/api/api';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 import { defineComponent, ref, watch } from 'vue';
 
 interface ModelAttribute {
@@ -77,12 +77,14 @@ export default defineComponent({
         tweakable: false,
         type: 'text'
       });
+      /*
       modelAttributes.value.push({
         name: 'Model instance',
         value: modelMetadata.version,
         tweakable: false,
         type: 'text'
       });
+      */
       modelAttributes.value.push({
         name: 'Default output variable',
         value: modelMetadata.outputs.map(o => o.display_name),

@@ -84,7 +84,7 @@ import MAXHOP from '@/assets/MAXHOP.js';
 import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
-import { DimensionInfo, Model, ModelFeature } from '@/types/Model';
+import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '../../tests/utils/random';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
@@ -127,7 +127,7 @@ export default defineComponent({
 
     const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
-    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     watch(() => metadata.value, () => {
       mainModelOutput.value = metadata.value?.outputs[0];

@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 
 /**

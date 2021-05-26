@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { ModelRun } from '@/types/Datacubes';
+import { ModelRun } from '@/types/ModelRun';
 import { ref, Ref, watchEffect } from 'vue';
 
 /**

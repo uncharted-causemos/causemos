@@ -1,5 +1,5 @@
 
-import ModelPublishingStepID from './ModelPublishingTypes';
+import ModelPublishingStepID from './Enums';
 
 export interface SnapshotInsightDetails {
   name: string;

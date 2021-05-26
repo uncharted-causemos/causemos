@@ -73,7 +73,7 @@ import {
   LegacyBreakdownDataStructure,
   LegacyBreakdownNode
 } from '@/types/Common';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
