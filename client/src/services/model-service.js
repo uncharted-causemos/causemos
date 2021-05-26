@@ -460,6 +460,148 @@ const resetScenarioParameter = (scenario, modelSummary, nodeParameters) => {
 };
 
 
+/**
+ * Merge cagB into cagA. Note this will modify cagA in-place.
+ *
+ * @param {object} cagA - CAG with edges/nodes
+ * @param {object} cagB - CAG with edges/nodes
+ * @param {boolean} overwriteParameterization
+ */
+export const mergeCAG = (cagA, cagB, overwriteParameterization) => {
+  // Merge nodes from cagA
+  cagB.nodes.forEach(node => {
+    const targetNode = cagA.nodes.find(d => d.concept === node.concept);
+    if (_.isNil(targetNode)) {
+      cagA.nodes.push({
+        concept: node.concept,
+        label: node.label,
+        parameter: node.parameter
+      });
+    } else {
+      if (overwriteParameterization === true) {
+        targetNode.parameter = node.parameter;
+      }
+    }
+  });
+
+  // Merge edges from cagB
+  cagB.edges.forEach(edge => {
+    let targetEdge = null;
+    targetEdge = cagA.edges.find(d => d.source === edge.source && d.target === edge.target);
+
+    if (!_.isNil(targetEdge)) {
+      targetEdge.reference_ids = _.uniq(targetEdge.reference_ids.concat(edge.reference_ids));
+      if (overwriteParameterization === true) {
+        targetEdge.parameter = edge.parameter;
+      }
+
+      const targetHasUserPolarity = !_.isNil(targetEdge.user_polarity);
+      const sourceHasUserPolarity = !_.isNil(edge.user_polarity);
+      if (targetHasUserPolarity) {
+        if (sourceHasUserPolarity && edge.user_polarity !== targetEdge.user_polarity) {
+          // if there is a user_polarity conflict, reset the field as blank so the user must re-review the edge
+          targetEdge.user_polarity = null;
+        }
+      } else if (!targetHasUserPolarity && sourceHasUserPolarity) {
+        // if there isn't a conflict, just copy the user_polarity value over
+        targetEdge.user_polarity = edge.user_polarity;
+      }
+    } else {
+      cagA.edges.push({
+        source: edge.source,
+        target: edge.target,
+        reference_ids: edge.reference_ids,
+        user_polarity: edge.user_polarity,
+        parameter: edge.parameter
+      });
+    }
+  });
+};
+
+
+/**
+ * A quick check to see if there are conflicting node-parameter information.
+ * Short circuit returning true if a conflict can be found.
+ *
+ * @param {object} currentCAG
+ * @param {array} array of cag objects
+ */
+export const hasMergeConflictNodes = (currentCAG, importCAGs) => {
+  for (let i = 0; i < currentCAG.nodes.length; i++) {
+    const node = currentCAG.nodes[i];
+    for (let j = 0; j < importCAGs.length; j++) {
+      const importCAG = importCAGs[j];
+      const importNode = importCAG.nodes.find(n => n.concept === node.concept);
+
+      // If encounter the same concept, check if the parameterzation is the same
+      if (importNode && !_.isEqual(importNode.parameter, node.parameter)) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+/**
+ * A quick check to see if there are conflicting edge-parameter information.
+ * Short circuit returning true if a conflict can be found.
+ *
+ * @param {object} currentCAG
+ * @param {array} array of cag objects
+ */
+export const hasMergeConflictEdges = (currentCAG, importCAGs) => {
+  for (let i = 0; i < currentCAG.edges.length; i++) {
+    const edge = currentCAG.edges[i];
+    for (let j = 0; j < importCAGs.length; j++) {
+      const importCAG = importCAGs[j];
+      const importEdge = importCAG.edges.find(e => e.source === edge.source && e.target === edge.target);
+
+      // If encounter the same concept, check if the parameterization is the same
+      if (importEdge && (!_.isEqual(importEdge.parameter, edge.parameter) || !_.isEqual(importEdge.polarity, edge.polarity))) {
+        return true;
+      }
+    }
+  }
+  return false;
+};
+
+export const ENGINE_OPTIONS = [
+  { key: 'dyse', value: 'DySE', maxSteps: 72 },
+  { key: 'delphi', value: 'Delphi', maxSteps: 36 }
+];
+
+export const calculateScenarioPercentageChange = (experiment, initValue) => {
+  // We just calculate the percent change when: 1) when initial and last value are the same sign; and 2) initial value is not 0
+  // We will be asking users about utility of this percent change
+
+  // When dealing with dyse, we can calculate the percentage using:
+  // 1. the intial value, which is in turn based on time series data
+  // 2. the clamp that the user set at t0, which is by default the initial value if the user hasn't set a clamp at t0
+  // We've opted to use option 2
+  const lastValue = _.last(experiment.values).value;
+  if ((initValue * lastValue > 0)) {
+    return ((lastValue - initValue) / Math.abs(initValue)) * 100; // %Delta = (C-P)/|P
+  } else {
+    return 0.0;
+  }
+};
+
+
+// Dyse projections previously could not exlend above/below historic min/max, this code fixs that by placing the historic data into the middle third of the levels, adding space
+// above and below historic min/max so that Dyse CAN project above/below the historic min/max.
+// the padding above and below is equal to the range between min and max.  There's some tweaking to make it work with numLevels.
+
+export const expandExtentForDyseProjections = (yExtent, numLevels) => {
+  const scalingFactor = ((yExtent[1] - yExtent[0]) / ((1 / 3.0) * (numLevels - 1)));
+  const averageExtent = 0.5 * (yExtent[0] + yExtent[1]);
+  const dyseOffset = 0.25 * ((numLevels + 1) % 2);
+
+  return [
+    -scalingFactor * Math.floor(0.5 * numLevels) + averageExtent + dyseOffset,
+    scalingFactor * (Math.ceil(0.5 * numLevels) - 1) + averageExtent + dyseOffset
+  ];
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -495,5 +637,13 @@ export default {
   buildNodeChartData,
 
   getSuggestions,
-  getConceptSuggestions
+  getConceptSuggestions,
+
+  mergeCAG,
+  hasMergeConflictNodes,
+  hasMergeConflictEdges,
+
+  calculateScenarioPercentageChange,
+  expandExtentForDyseProjections,
+  ENGINE_OPTIONS
 };
