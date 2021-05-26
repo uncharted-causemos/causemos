@@ -143,7 +143,7 @@ const getJobStatus = async (runId) => {
   Logger.info(`Get job status for run ${runId}`);
 
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const result = await connection.findOne([{ field: 'id', value: runId }]);
+  const result = await connection.findOne([{ field: 'id', value: runId }], {});
   const flowId = _.get(result, 'flow_id');
   if (!flowId) {
     Logger.error(`No model run found for ${runId}`);
