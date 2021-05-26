@@ -1,4 +1,4 @@
-import {ModelRunStatus} from "@/types/Enums";
+import { ModelRunStatus } from '@/types/Enums';
 
 export interface ModelRunParameter {
   name: string;

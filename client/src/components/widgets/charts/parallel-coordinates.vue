@@ -22,7 +22,7 @@ import _ from 'lodash';
 import { renderParallelCoordinates, renderBaselineMarkers } from '@/charts/parallel-coordinates';
 import { defineComponent, PropType } from 'vue';
 import { ScenarioData } from '@/types/Common';
-import { DimensionInfo } from '@/types/Model';
+import { DimensionInfo } from '@/types/Datacube';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 
 const RESIZE_DELAY = 50;

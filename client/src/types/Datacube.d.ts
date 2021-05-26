@@ -1,12 +1,12 @@
 
-import {DatacubeGeography, DatacubePeriod} from './Common';
+import { DatacubeGeography, DatacubePeriod } from './Common';
 import {
   DatacubeAttributeVariableType,
   DatacubeStatus,
   DatacubeType,
   ModelParameterDataType,
   TemporalResolution
-} from "@/types/Enums";
+} from '@/types/Enums';
 
 export interface DatacubeMaintainer {
   name: string;
@@ -66,7 +66,7 @@ export interface Datacube {
   tags: string[];
   geography: DatacubeGeography;
   period: DatacubePeriod;
-  outputs: ModelFeature[];
+  outputs: DatacubeFeature[];
   status: DatacubeStatus;
   _search: string;
 }

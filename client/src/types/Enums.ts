@@ -40,3 +40,9 @@ export enum TemporalResolution {
   Daily = 'daily',
   Other = 'other'
 }
+
+export enum ModelPublishingStepID {
+  Enrich_Description,
+  Tweak_Visualization,
+  Capture_Insight
+}

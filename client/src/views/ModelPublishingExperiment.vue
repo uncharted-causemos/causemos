@@ -181,10 +181,10 @@ import ModelPublishingChecklist from '@/components/widgets/model-publishing-chec
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { ModelPublishingStep } from '@/types/UseCase';
-import { ModelPublishingStepID } from '@/types/ModelPublishingTypes';
+import { ModelPublishingStepID } from '@/types/Enums';
 import router from '@/router';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { DimensionInfo, Model } from '@/types/Model';
+import { DimensionInfo, Model } from '@/types/Datacube';
 import { getRandomNumber } from '../../tests/utils/random';
 import { mapGetters } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
