@@ -63,11 +63,11 @@
           </div>
           <div class="cards-list-elements">
             <div
-              v-for="card in sortedData"
-              :key="card.id">
+              v-for="documentMeta in sortedDocuments"
+              :key="documentMeta.id">
               <documents-list-item
                 @rowcard-click="onRowCardClick"
-                :card="card"/>
+                :documentMeta="documentMeta"/>
             </div>
           </div>
         </div>
@@ -98,13 +98,9 @@ export default {
     ModalDocument
   },
   props: {
-    data: {
+    documentData: {
       type: Array,
       default: () => []
-    },
-    config: {
-      type: Object,
-      default: () => ({})
     }
   },
   data: () => ({
@@ -129,13 +125,13 @@ export default {
     sort() {
       return this.documentsQuery.sort;
     },
-    sortedData() {
+    sortedDocuments() {
       if (this.selectedSortingOption === SORTING_OPTIONS.MOST_RECENT) {
-        return _.orderBy(this.data, ['metadata.Publication'], ['desc']);
+        return _.orderBy(this.documentData, ['publication_date.date'], ['desc']);
       } else if (this.selectedSortingOption === SORTING_OPTIONS.EARLIEST) {
-        return _.orderBy(this.data, ['metadata.Publication'], ['asc']);
+        return _.orderBy(this.documentData, ['publication_date.date'], ['asc']);
       } else {
-        return this.data;
+        return this.documentData;
       }
     }
   },
