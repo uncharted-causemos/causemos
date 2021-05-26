@@ -165,6 +165,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation';
 import ModalPathFind from '@/components/modals/modal-path-find';
 import ModalImportCag from '@/components/qualitative/modal-import-cag';
 import ModalImportConflict from '@/components/qualitative/modal-import-conflict';
+import cagUtil from '@/utils/cag-util';
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
@@ -622,8 +623,8 @@ export default {
       }
 
       // Check to see if there are conflicting indicators
-      const hasNodeConflict = modelService.hasMergeConflictNodes(current, this.cagsToImport);
-      const hasEdgeConflict = modelService.hasMergeConflictEdges(current, this.cagsToImport);
+      const hasNodeConflict = cagUtil.hasMergeConflictNodes(current, this.cagsToImport);
+      const hasEdgeConflict = cagUtil.hasMergeConflictEdges(current, this.cagsToImport);
       if (hasNodeConflict === true || hasEdgeConflict === true) {
         this.showModalConflict = true;
       } else {
@@ -637,7 +638,7 @@ export default {
       // FIXME: Might want to move this server side, not very efficient if merge a lot of graphs
       const current = await modelService.getComponents(this.currentCAG);
       for (let i = 0; i < this.cagsToImport.length; i++) {
-        modelService.mergeCAG(current, this.cagsToImport[i], overwriteParameterisation);
+        cagUtil.mergeCAG(current, this.cagsToImport[i], overwriteParameterisation);
       }
 
       // Strip off uneeded edge properties

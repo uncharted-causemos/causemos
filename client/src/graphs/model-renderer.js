@@ -10,7 +10,7 @@ import {
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { SELECTED_COLOR, EDGE_COLOR_PALETTE } from '@/utils/colors-util';
-import modelService from '@/services/model-service';
+import { calculateScenarioPercentageChange } from '@/utils/projection-util';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { SVGRenderer } from 'svg-flowgraph';
 import { interpolatePath } from 'd3-interpolate-path';
@@ -271,7 +271,7 @@ export default class ModelRenderer extends SVGRenderer {
 
       // Adjust node appearence based on result
       if (!_.isEmpty(selectedScenario.result)) {
-        const percentageChange = modelService.calculateScenarioPercentageChange(selectedScenario.result, _.first(selectedScenario.result.values).value);
+        const percentageChange = calculateScenarioPercentageChange(selectedScenario.result, _.first(selectedScenario.result.values).value);
         const absoluteChange = _.last(selectedScenario.result.values).value - _.first(selectedScenario.result.values).value;
 
         // if first value is 0.0 then percentageChange is 0.0, so check absolute change as well
