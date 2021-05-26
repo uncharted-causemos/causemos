@@ -48,10 +48,12 @@ export default defineComponent({
           (this.$refs['second-order-weight-slider'] as HTMLInputElement).value
         )
       ];
+      const edge = this.selectedRelationship;
       this.$emit('set-edge-weights', {
-        id: this.selectedRelationship.id,
-        source: this.selectedRelationship.source,
-        target: this.selectedRelationship.target,
+        id: edge.id,
+        source: edge.source,
+        target: edge.target,
+        polarity: edge.polarity,
         parameter: {
           weights
         }
