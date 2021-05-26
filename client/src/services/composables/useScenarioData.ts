@@ -16,7 +16,6 @@ export default function useScenarioData(
   if (modelId.value.includes('maxhop')) {
     watchEffect(onInvalidate => {
       console.log('refetching data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
-      runData.value = [];
       let isCancelled = false;
       async function fetchRunData() {
         const allMetadata = await API.get('/maas/model-runs', {
@@ -29,7 +28,30 @@ export default function useScenarioData(
           //  fetch results to avoid a race condition.
           return;
         }
-        runData.value = allMetadata.data;
+        //
+        // only reset if new data is different from existing data
+        //
+        const existingData = runData.value;
+        const newData: Array<ModelRun> = allMetadata.data;
+        let newDataIsDifferent = false;
+        if (existingData.length !== newData.length) {
+          newDataIsDifferent = true;
+        } else {
+          // we need to compare run status
+          const runStatusMap: {[key: string]: string} = {};
+          existingData.forEach(r => {
+            runStatusMap[r.id] = r.status;
+          });
+          newData.forEach(r => {
+            // if this is a new run, or if the exists but its status has changed, then we have new data
+            if (!runStatusMap[r.id] || runStatusMap[r.id] !== r.status) {
+              newDataIsDifferent = true;
+            }
+          });
+        }
+        if (newDataIsDifferent) {
+          runData.value = newData;
+        }
       }
       onInvalidate(() => {
         isCancelled = true;

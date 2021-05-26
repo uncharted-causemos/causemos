@@ -1,10 +1,5 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <div class="comp-analysis-experiment-header">
-      <button class="search-button btn btn-primary btn-call-for-action" disabled>
-        Search datacubes
-      </button>
-    </div>
     <main>
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
@@ -97,6 +92,8 @@ import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import router from '@/router';
+import _ from 'lodash';
 
 const DRILLDOWN_TABS = [
   {
@@ -139,14 +136,8 @@ export default defineComponent({
     });
 
     const selectedScenarioIds = ref([] as string[]);
-    function setSelectedScenarioIds(newIds: string[]) {
-      selectedScenarioIds.value = newIds;
-    }
 
     const selectedTimestamp = ref(0);
-    function setSelectedTimestamp(value: number) {
-      selectedTimestamp.value = value;
-    }
 
     const newRunsMode = ref(false);
 
@@ -178,10 +169,8 @@ export default defineComponent({
       setSelectedAdminLevel,
       selectedModelId: modelId,
       selectedScenarioIds,
-      setSelectedScenarioIds,
       typeBreakdownData,
       selectedTimestamp,
-      setSelectedTimestamp,
       isExpanded,
       colorFromIndex,
       metadata,
@@ -194,10 +183,55 @@ export default defineComponent({
       timerHandler
     };
   },
+  watch: {
+    $route(/* to, from */) {
+      // NOTE:  this is only valid when the route is focused on the 'data' space
+      if (this.$route.name === 'data') {
+        const timestamp = this.$route.query.timestamp as any;
+        if (timestamp !== undefined) {
+          this.setSelectedTimestamp(timestamp);
+        }
+
+        if (this.allScenarioIds.length > 0) {
+          // FIXME: only support saving insights with at most a single valid scenario id
+          const selectedScenarioID = this.$route.query.selectedScenarioID as any;
+          if (selectedScenarioID !== undefined) {
+            // we should have at least one valid scenario selected. If not, cancel scenario selection
+            const selectedIds = selectedScenarioID !== '' ? [selectedScenarioID] : [];
+            if (this.selectedScenarioIds.includes(selectedScenarioID) === false) {
+              this.setSelectedScenarioIds(selectedIds);
+            }
+          }
+        }
+      }
+    }
+  },
+  mounted(): void {
+    this.updateRouteParams();
+  },
   unmounted(): void {
     clearInterval(this.timerHandler);
   },
   methods: {
+    setSelectedTimestamp(value: number) {
+      if (this.selectedTimestamp === value) return;
+      this.selectedTimestamp = value;
+      this.updateRouteParams();
+    },
+    setSelectedScenarioIds(newIds: string[]) {
+      if (_.isEqual(this.selectedScenarioIds, newIds)) return;
+      this.selectedScenarioIds = newIds;
+      this.updateRouteParams();
+    },
+    updateRouteParams() {
+      // save the info in the query params so saved insights would pickup the latest value
+      router.push({
+        query: {
+          timestamp: this.selectedTimestamp,
+          selectedScenarioID: this.selectedScenarioIds.length > 0 ? this.selectedScenarioIds[0] : ''
+        }
+      }).catch(() => {});
+    },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       // TODO: inspect 'this.selectedScenarioIds' for drilldown data
       this.typeBreakdownData.length = 0;

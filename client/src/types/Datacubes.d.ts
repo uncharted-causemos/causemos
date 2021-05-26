@@ -63,9 +63,3 @@ export interface RegionalData {
   admin5?: { id: string; value: number }[];
   admin6?: { id: string; value: number }[];
 }
-
-export interface ScenarioDef {
-  run_id: string;
-  id: string;
-  model: string;
-}

@@ -84,13 +84,14 @@
           <!-- TODO: extract button-group to its own component -->
           <div class="button-group">
             <button class="btn btn-default"
-                    :class="{'btn-primary':!isDescriptionView}"
-                    @click="isDescriptionView = false">
-              Data</button
-            ><button class="btn btn-default"
                     :class="{'btn-primary':isDescriptionView}"
                     @click="isDescriptionView = true">
               Descriptions
+            </button>
+            <button class="btn btn-default"
+                    :class="{'btn-primary':!isDescriptionView}"
+                    @click="isDescriptionView = false">
+              Data
             </button>
           </div>
           <div
@@ -146,7 +147,7 @@
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView"
+            v-if="!isDescriptionView && selectedTimeseriesData.length  > 0 && selectedTimeseriesData[0].points.length > 1"
             class="timeseries-chart"
             :timeseries-data="selectedTimeseriesData"
             :selected-timestamp="selectedTimestamp"
@@ -180,7 +181,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ModelRun, ScenarioDef } from '@/types/Datacubes';
+import { ModelRun } from '@/types/Datacubes';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
@@ -305,6 +306,17 @@ export default defineComponent({
       emit('select-timestamp', newTimestamp);
     }
 
+    watch(
+      () => selectedTimeseriesData.value,
+      () => {
+        const allTimestamps = selectedTimeseriesData.value
+          .map(timeseries => timeseries.points)
+          .flat()
+          .map(point => point.timestamp);
+        const lastTimestamp = _.max(allTimestamps);
+        emitTimestampSelection(lastTimestamp ?? 0);
+      });
+
     const outputSourceSpecs = computed(() => {
       return [{
         id: selectedScenarioIds.value[0],
@@ -384,16 +396,17 @@ export default defineComponent({
     showModelExecutionStatus() {
       this.showModelRunsExecutionStatus = true;
     },
-    updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
+    updateScenarioSelection(e: { scenarios: Array<ScenarioData> }) {
+      const selectedScenarios = e.scenarios.filter(s => s.status === 'READY');
       if (
-        e.scenarios.length === 0 ||
-        (e.scenarios.length === 1 && e.scenarios[0] === undefined)
+        selectedScenarios.length === 0 ||
+        (selectedScenarios.length === 1 && selectedScenarios[0] === undefined)
       ) {
         // console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
       } else {
         // console.log('user selected: ' + e.scenarios.length);
-        this.$emit('set-selected-scenario-ids', e.scenarios.map(s => s.run_id));
+        this.$emit('set-selected-scenario-ids', selectedScenarios.map(s => s.run_id));
       }
       // we should emit to update the drilldown data everytime scenario selection changes
       this.$emit('set-drilldown-data', { drilldownDimensions: this.drilldownDimensions });
