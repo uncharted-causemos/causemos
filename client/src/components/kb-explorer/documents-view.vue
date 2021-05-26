@@ -12,7 +12,7 @@
     <documents-list-tableview
       v-if="displayCards === displayOptions.SHOWTABLE"
       ref="rowcards"
-      :data="cardsData"
+      :documentData="documentData"
     />
     <pagination
       v-if:="displayCards === displayOptions.SHOWCARDS"
@@ -69,7 +69,8 @@ export default {
       'card.displayBackCardByDefault': true,
       'verticalReader.height': 680
     },
-    cardsData: []
+    cardsData: [],
+    documentData: []
   }),
   computed: {
     ...mapGetters({
@@ -119,6 +120,8 @@ export default {
         sort: this.sort
       };
       API.get(url, { params }).then(d => {
+        this.documentData = d.data;
+        console.log(`DOCS: ${this.documentData.length}`);
         this.cardsData = toCardsData(d.data);
         this.disableOverlay();
       });
