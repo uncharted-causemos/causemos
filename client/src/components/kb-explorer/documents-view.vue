@@ -1,23 +1,7 @@
 <template>
   <div class="document-view-container h-100 flex flex-col">
-    <uncharted-cards
-      v-if="displayCards === displayOptions.SHOWCARDS"
-      ref="cards"
-      class="flex-grow-1 h-0"
-      :data="cardsData"
-      :config="cardsConfig"
-      @card-click="onCardClick"
-      @card-navigate="updateReaderContent"
-    />
     <documents-list-tableview
-      v-if="displayCards === displayOptions.SHOWTABLE"
-      ref="rowcards"
       :documentData="documentData"
-    />
-    <pagination
-      v-if:="displayCards === displayOptions.SHOWCARDS"
-      :label="'documents'"
-      :total="documentsCount"
     />
   </div>
 </template>
@@ -29,8 +13,6 @@ import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
 import filtersUtil from '@/utils/filters-util';
 import { toCardsData, toCardData } from '@/utils/document-util';
-import Pagination from '@/components/pagination';
-import UnchartedCards from '@/components/cards/uncharted-cards';
 import DocumentsListTableview from '@/components/kb-explorer/documents-list-tableview';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 
@@ -47,8 +29,6 @@ const displayOptions = {
 export default {
   name: 'DocumentsView',
   components: {
-    UnchartedCards,
-    Pagination,
     DocumentsListTableview
   },
   props: {
