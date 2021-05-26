@@ -203,6 +203,7 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
   const nodeParameters = await cagService.getAllComponents(modelId, RESOURCE.NODE_PARAMETER);
   const edgeParameters = await cagService.getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
 
+
   // Sanity check
   const allNodeConcepts = nodeParameters.map(n => n.concept);
   const allEdgeConcepts = edgeParameters.map(e => [e.source, e.target]).flat();
@@ -249,8 +250,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
   // 1. Get list of node parameters and edge parameters associated to the model ID
   const nodeParameters = await cagService.getAllComponents(modelId, RESOURCE.NODE_PARAMETER);
-  const edgeParameters = await cagService.getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
+  // const edgeParameters = await cagService.getAllComponents(modelId, RESOURCE.EDGE_PARAMETER);
 
+  const edgeParameters = (await cagService.getComponents(modelId)).edges;
 
   // Sanity check
   const allNodeConcepts = nodeParameters.map(n => n.concept);
@@ -313,14 +315,18 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
 
     edgeParameters.forEach(edge => {
       const edgeInit = initialParameters.edges[`${edge.source}///${edge.target}`];
+
       if (edge.parameter && !_.isEqual(edge.parameter.weights, edgeInit.weights)) {
-        edgesOverride.push({
-          source: edge.source,
-          target: edge.target,
-          parameter: {
-            weights: edge.parameter.weights
-          }
-        });
+        if (edge.polarity !== 0) {
+          edgesOverride.push({
+            source: edge.source,
+            target: edge.target,
+            polarity: edge.polarity,
+            parameter: {
+              weights: edge.parameter.weights
+            }
+          });
+        }
       } else {
         edgesUpdate.push({
           id: edge.id,
@@ -579,7 +585,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
  */
 router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
-  const { id, source, target, parameter } = req.body;
+  const { id, source, target, polarity, parameter } = req.body;
 
   if (setLock(modelId) === false) {
     Logger.info(`Conflict while updateing model ${modelId} edge-parameter. Another transaction in progress`);
@@ -592,14 +598,13 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
   const modelParameter = model.parameter;
   const engine = modelParameter.engine;
 
-  const payload = modelService.buildEdgeParametersPayload([{ source, target, parameter }]);
+  const payload = modelService.buildEdgeParametersPayload([{ source, target, polarity, parameter }]);
 
   if (engine === DYSE) {
     await dyseService.updateEdgeParameter(modelId, payload);
   } else {
     throw new Error(`updateEdgeParameter not implemented for ${engine}`);
   }
-
 
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const r = await edgeParameterAdapter.update([{ id, source, target, parameter }], d => d.id, 'wait_for');
