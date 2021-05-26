@@ -8,19 +8,20 @@
         </div>
       </div>
       <div class="col-sm-3 number-col">
-        <div v-if="checkString(card.title)">{{ card.title }}</div>
+        <div class="row-field" v-if="checkString(documentMeta.title)">{{ documentMeta.title }}</div>
+        <div class="row-field" v-else-if="checkString(documentMeta.file_name)">{{ documentMeta.file_name }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-2 number-col">
-        <div v-if="checkString(card['metadata'].Publication)">{{ card['metadata'].Publication }}</div>
+        <div class="row-field" v-if="checkDate(documentMeta.publication_date)">{{ getFormattedDate(documentMeta.publication_date.date) }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-3 number-col">
-        <div v-if="checkString(card.subtitle[0])">{{ card.subtitle[0] }}</div>
+        <div class="row-field" v-if="checkString(documentMeta.author)">{{ documentMeta.author }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-3 number-col">
-        <div v-if="checkString(card.summary)">{{ card.summary }}</div>
+        <div class="row-field" v-if="checkString(documentMeta.publisher_name)">{{ documentMeta.publisher_name }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
     </div>
@@ -28,10 +29,12 @@
 </template>
 
 <script>
+import _ from 'lodash';
+
 export default {
   name: 'tableview-card',
   props: {
-    card: {
+    documentMeta: {
       type: Object,
       default: () => {}
     }
@@ -43,6 +46,14 @@ export default {
     },
     checkString(item) {
       return item && item.length > 0;
+    },
+    checkDate(item) {
+      console.log(`DAte: ${item}`);
+      return item && item.date && !_.isNaN(item.date);
+    },
+    getFormattedDate(item) {
+      console.log(`DAte: ${item}`);
+      return new Date(item).toDateString();
     }
   }
 };
@@ -72,5 +83,10 @@ export default {
     background: #fcfcfc;
     padding: 10px;
     margin: 0;
+  }
+
+  .row-field {
+    overflow-wrap: break-word;
+    word-wrap: break-word;
   }
 </style>
