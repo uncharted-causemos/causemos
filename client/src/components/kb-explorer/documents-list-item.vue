@@ -1,5 +1,5 @@
 <template>
-  <div class="tableview-card-container"
+  <div class="tableview-document-container"
     @click="showDocument">
     <div class="row tableview-row">
       <div class="col-sm-1 number-col">
@@ -32,27 +32,25 @@
 import _ from 'lodash';
 
 export default {
-  name: 'tableview-card',
+  name: 'tableview-document',
   props: {
     documentMeta: {
       type: Object,
       default: () => {}
     }
   },
-  emits: ['rowcard-click'],
+  emits: ['document-click'],
   methods: {
     showDocument(e) {
-      this.$emit('rowcard-click', { event: e, card: this.card });
+      this.$emit('document-click', { event: e, docmeta: this.documentMeta });
     },
     checkString(item) {
       return item && item.length > 0;
     },
     checkDate(item) {
-      console.log(`DAte: ${item}`);
       return item && item.date && !_.isNaN(item.date);
     },
     getFormattedDate(item) {
-      console.log(`DAte: ${item}`);
       return new Date(item).toDateString();
     }
   }
@@ -62,7 +60,7 @@ export default {
 <style scoped lang="scss">
   @import '~styles/variables';
 
-  .tableview-card-container {
+  .tableview-document-container {
     cursor: pointer;
     background: #fcfcfc;
     border: 1px solid #dedede;
@@ -70,7 +68,7 @@ export default {
     padding: 10px;
   }
 
-  .tableview-card-container:hover {
+  .tableview-document-container:hover {
     border: 1px solid $selected;
     cursor: pointer;
   }
