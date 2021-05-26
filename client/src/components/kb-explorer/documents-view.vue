@@ -9,7 +9,7 @@
       @card-click="onCardClick"
       @card-navigate="updateReaderContent"
     />
-    <uncharted-cards-tableview
+    <documents-list-tableview
       v-if="displayCards === displayOptions.SHOWTABLE"
       ref="rowcards"
       :data="cardsData"
@@ -31,7 +31,7 @@ import filtersUtil from '@/utils/filters-util';
 import { toCardsData, toCardData } from '@/utils/document-util';
 import Pagination from '@/components/pagination';
 import UnchartedCards from '@/components/cards/uncharted-cards';
-import UnchartedCardsTableview from '@/components/cards/uncharted-cards-tableview';
+import DocumentsListTableview from '@/components/kb-explorer/documents-list-tableview';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 
 const isPdf = (card) => {
@@ -49,7 +49,7 @@ export default {
   components: {
     UnchartedCards,
     Pagination,
-    UnchartedCardsTableview
+    DocumentsListTableview
   },
   props: {
     displayOptions: {
