@@ -8,7 +8,7 @@
         </div>
       </div>
       <div class="col-sm-3 number-col">
-        <div class="row-field" v-if="checkString(documentMeta.title)">{{ documentMeta.title }}</div>
+        <div class="row-field" v-if="checkString(documentMeta.doc_title)">{{ documentMeta.doc_title }}</div>
         <div class="row-field" v-else-if="checkString(documentMeta.file_name)">{{ documentMeta.file_name }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
