@@ -44,8 +44,8 @@
             </div>
           </div>
         </div>
-        <div class="row cards-list">
-          <div class="row cards-list-header">
+        <div class="row document-list">
+          <div class="row document-list-header">
             <div class="col-sm-1">
             </div>
             <div class="col-sm-3">
@@ -61,12 +61,12 @@
               Organization
             </div>
           </div>
-          <div class="cards-list-elements">
+          <div class="document-list-elements">
             <div
               v-for="documentMeta in sortedDocuments"
               :key="documentMeta.id">
               <documents-list-item
-                @rowcard-click="onRowCardClick"
+                @document-click="onDocumentClick"
                 :documentMeta="documentMeta"/>
             </div>
           </div>
@@ -153,8 +153,8 @@ export default {
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    onRowCardClick(targetData) {
-      this.documentModalData = this.formatMeta(targetData.card);
+    onDocumentClick(targetData) {
+      this.documentModalData = this.formatMeta(targetData.docmeta);
     }
   }
 };
@@ -179,7 +179,7 @@ export default {
     height: 100%;
   }
 
-  .cards-list {
+  .document-list {
     box-sizing: border-box;
     height: 100%;
     width: 100%;
@@ -188,7 +188,7 @@ export default {
     display: flex;
     flex-direction: column;
     margin-bottom: 20px;
-    .cards-list-header {
+    .document-list-header {
       box-sizing: border-box;
       border: 1px solid #bbb;
       margin: 1px 0;
@@ -196,7 +196,7 @@ export default {
       font-weight: bold;
       padding: 10px;
     }
-    .cards-list-elements {
+    .document-list-elements {
       box-sizing: border-box;
       height: 100%;
       width: 100%;
