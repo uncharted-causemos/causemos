@@ -32,7 +32,7 @@
 import _ from 'lodash';
 
 export default {
-  name: 'tableview-document',
+  name: 'DocumentsListItem',
   props: {
     documentMeta: {
       type: Object,
