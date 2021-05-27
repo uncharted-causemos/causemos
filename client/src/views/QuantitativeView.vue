@@ -9,6 +9,7 @@
         :sensitivity-analysis-type="sensitivityAnalysisType"
         :scenarios="scenarios"
         :selected-node="selectedNode"
+        :current-engine="currentEngine"
         @background-click="onBackgroundClick"
         @show-indicator="showIndicator"
         @show-constraints="showConstraints"
