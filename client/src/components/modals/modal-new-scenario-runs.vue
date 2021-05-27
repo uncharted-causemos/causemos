@@ -59,7 +59,7 @@
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
 

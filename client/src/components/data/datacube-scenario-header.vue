@@ -22,7 +22,7 @@
 <script lang="ts">
 import API from '@/api/api';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
-import { ModelRun, ModelRunParameter } from '@/types/Datacubes';
+import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
 
 type ScenarioDescription = ModelRunParameter[];
 

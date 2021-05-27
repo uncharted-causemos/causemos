@@ -181,14 +181,14 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ModelRun } from '@/types/Datacubes';
+import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import { Model, ModelFeature } from '@/types/Model';
+import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import _ from 'lodash';
@@ -285,7 +285,7 @@ export default defineComponent({
       runParameterValues
     } = useParallelCoordinatesData(metadata, selectedModelId, allModelRunData);
 
-    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     watch(() => metadata.value, () => {
       mainModelOutput.value = metadata.value?.outputs[0];

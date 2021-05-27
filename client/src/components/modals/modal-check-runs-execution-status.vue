@@ -55,7 +55,7 @@
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 
 // TODO: add table header with interactivity to rank/re-order
