@@ -6,7 +6,7 @@ import initialize from '@/charts/initialize';
 import { timeseriesLine, confidenceArea, translate, showSvgTooltip, hideSvgTooltip } from '@/utils/svg-util';
 import { DEFAULT_COLOR, SELECTED_COLOR, MARKER_COLOR } from '@/utils/colors-util';
 import dateFormatter from '@/formatters/date-formatter';
-import { expandExtentForDyseProjections } from '@/utils/projection-util';
+import modelService from '@/services/model-service';
 import { chartValueFormatter } from '@/utils/string-util';
 
 const CONFIDENCE_BAND_OPACITY = 0.2;
@@ -78,7 +78,7 @@ function render(chart, data, runOptions) {
   }
 
   // FIXME: this is clearly not going to work for Delphi
-  yExtent = expandExtentForDyseProjections(yExtent, DEFAULT_NUM_LEVELS);
+  yExtent = modelService.expandExtentForDyseProjections(yExtent, DEFAULT_NUM_LEVELS);
 
   const formatter = chartValueFormatter(...yExtent);
   const xscale = d3.scaleLinear().domain(xExtent).range([0, width]);
