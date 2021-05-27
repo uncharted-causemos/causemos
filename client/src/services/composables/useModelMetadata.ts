@@ -15,7 +15,7 @@ export default function useModelMetadata(
     metadata.value = null;
     let isCancelled = false;
     async function fetchMetadata() {
-      const response = await API.get(`maas/datacubes/${modelId.value}`, {
+      const response = await API.get(`maas/new-datacubes/${modelId.value}`, {
         params: {
         }
       });
