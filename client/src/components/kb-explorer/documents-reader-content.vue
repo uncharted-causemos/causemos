@@ -26,7 +26,7 @@ const DEFAULT_READER_CONTENT_CONFIG = {
 
 // Vue wrapper for uncharted cards component
 export default {
-  name: 'UnchartedCardsReaderContent',
+  name: 'DocumentsReaderContent',
   props: {
     data: {
       type: Object,
