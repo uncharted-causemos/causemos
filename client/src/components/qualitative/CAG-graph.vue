@@ -227,7 +227,7 @@ class CAGRenderer extends SVGRenderer {
       .classed('edge-path-bg', true)
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
       .style('stroke', DEFAULT_STYLE.edgeBg.stroke)
-      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5) + 2)
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 2)
       .attr('d', d => pathFn(d.points));
 
     selection
@@ -235,7 +235,7 @@ class CAGRenderer extends SVGRenderer {
       .classed('edge-path', true)
       .style('fill', DEFAULT_STYLE.edge.fill)
       .attr('d', d => pathFn(d.points))
-      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
       .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .style('stroke', d => calcEdgeColor(d.data))
       .attr('marker-end', d => {
@@ -254,7 +254,7 @@ class CAGRenderer extends SVGRenderer {
     selection
       .select('.edge-path')
       .style('stroke', d => calcEdgeColor(d.data))
-      .style('stroke-width', scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, 0.5))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
       .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash);
 
     if (tweenEdgeAndNodes === true) {
