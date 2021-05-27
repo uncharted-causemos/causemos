@@ -91,8 +91,8 @@ import _ from 'lodash';
 
 import Modal from '@/components/modals/modal';
 import DateDropdown from '@/components/widgets/date-dropdown';
-import { ENGINE_OPTIONS } from '@/utils/projection-util';
 import { DATE_SELECTION } from '@/utils/messages-util';
+import modelService from '@/services/model-service';
 
 export default {
   name: 'ModalEditParameters',
@@ -115,7 +115,7 @@ export default {
     selectedEndDate: null,
     selectedNumSteps: 0,
     selectedProjectionStartDate: null,
-    engineOptions: ENGINE_OPTIONS,
+    engineOptions: modelService.ENGINE_OPTIONS,
     hasErrorStartDate: false,
     hasErrorEndDate: false,
     hasErrorProjectionStartDate: false

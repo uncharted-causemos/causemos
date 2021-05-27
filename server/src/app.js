@@ -127,7 +127,7 @@ app.use('/api/maas/model-runs', [
   maasRouter
 ]);
 
-app.use('/api/maas/datacubes', [
+app.use('/api/maas/new-datacubes', [
   datacubeRouter
 ]);
 
