@@ -3,6 +3,26 @@
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 
+
+/**
+ * Let INDRA know we have a new project
+ */
+const sendNewProject = async (id, name, corpusId) => {
+  Logger.info(`Sending  project ${id} to INDRA`);
+  const options = {
+    url: process.env.INDRA_URL + '/assembly/new_project',
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    json: {
+      project_id: id,
+      project_name: name,
+      corpus_id: corpusId
+    }
+  };
+  const indraResult = await requestAsPromise(options);
+  return indraResult;
+};
+
 /**
  * Send user corrections to Indra to update underlying rules/scores
  *
@@ -11,7 +31,7 @@ const Logger = rootRequire('/config/logger');
 const sendFeedback = async (curationLogs) => {
   Logger.info(`Sending  ${curationLogs.length} feedback to INDRA`);
   const options = {
-    url: process.env.INDRA_CURATION_URL + '/submit_curations',
+    url: process.env.INDRA_URL + '/assembly/submit_curations',
     method: 'POST',
     headers: {
       'content-type': 'application/json'
@@ -52,24 +72,24 @@ const recalculateBeliefScore = async (corpusId, projectId) => {
  * @param {string} conceptName - name of new concept
  * @param {array} examples - array of string examples
  */
-const createNewConcept = async (conceptName, examples) => {
-  const indraPayload = {
-    entry: conceptName,
-    examples: examples
-  };
-
-  const options = {
-    url: process.env.INDRA_CURATION_URL + '/add_ontology_entry',
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json'
-    },
-    json: indraPayload
-  };
-
-  const indraResult = await requestAsPromise(options);
-  return indraResult;
-};
+// const createNewConcept = async (conceptName, examples) => {
+//   const indraPayload = {
+//     entry: conceptName,
+//     examples: examples
+//   };
+//
+//   const options = {
+//     url: process.env.INDRA_CURATION_URL + '/add_ontology_entry',
+//     method: 'POST',
+//     headers: {
+//       'content-type': 'application/json'
+//     },
+//     json: indraPayload
+//   };
+//
+//   const indraResult = await requestAsPromise(options);
+//   return indraResult;
+// };
 
 /**
  * Update ontological groundings, this assumes that some
@@ -80,98 +100,98 @@ const createNewConcept = async (conceptName, examples) => {
  *
  * FIXME: This can take about 70-80 seconds
  */
-const updateGroundings = async () => {
-  const indraPayload = {
-    corpus_id: '1'
-  };
-
-  const options = { // eslint-disable-line no-unused-vars
-    url: process.env.INDRA_CURATION_URL + '/update_groundings',
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json'
-    },
-    timeout: 300 * 1000,
-    json: indraPayload
-  };
-  const indraResult = await requestAsPromise(options);
-  return indraResult;
-};
+// const updateGroundings = async () => {
+//   const indraPayload = {
+//     corpus_id: '1'
+//   };
+//
+//   const options = { // eslint-disable-line no-unused-vars
+//     url: process.env.INDRA_CURATION_URL + '/update_groundings',
+//     method: 'POST',
+//     headers: {
+//       'content-type': 'application/json'
+//     },
+//     timeout: 300 * 1000,
+//     json: indraPayload
+//   };
+//   const indraResult = await requestAsPromise(options);
+//   return indraResult;
+// };
 
 /**
  * Reset all customizations to the ontology
  */
-const resetOntology = async () => {
-  const options = { // eslint-disable-line no-unused-vars
-    url: `${process.env.INDRA_CURATION_URL}/reset_ontology`,
-    method: 'POST',
-    headers: {
-      'content-type': 'apllication/json'
-    }
-  };
-  const indraResult = await requestAsPromise(options);
-  return indraResult;
-};
+// const resetOntology = async () => {
+//   const options = { // eslint-disable-line no-unused-vars
+//     url: `${process.env.INDRA_CURATION_URL}/reset_ontology`,
+//     method: 'POST',
+//     headers: {
+//       'content-type': 'apllication/json'
+//     }
+//   };
+//   const indraResult = await requestAsPromise(options);
+//   return indraResult;
+// };
 
 /**
  * Reset all submitted curations so far
  */
-const resetCuration = async () => {
-  const options = { // eslint-disable-line no-unused-vars
-    url: `${process.env.INDRA_CURATION_URL}/reset_ontology`,
-    method: 'POST',
-    headers: {
-      'content-type': 'apllication/json'
-    }
-  };
-  const indraResult = await requestAsPromise(options);
-  return indraResult;
-};
+// const resetCuration = async () => {
+//   const options = { // eslint-disable-line no-unused-vars
+//     url: `${process.env.INDRA_CURATION_URL}/reset_ontology`,
+//     method: 'POST',
+//     headers: {
+//       'content-type': 'apllication/json'
+//     }
+//   };
+//   const indraResult = await requestAsPromise(options);
+//   return indraResult;
+// };
 
 
-const createNewIndraStatements = async (text, reader) => {
-  // external reader configurables (in yargs-wrapper.js)
-  const indraServiceUrl = process.env.INDRA_ASSEMBLY_URL;
-  const eidosServiceUrl = process.env.EIDOS_URL;
-
-  const readerProcesserUrl = `${indraServiceUrl}/${reader}/process_text`;
-
-  const options = {
-    url: readerProcesserUrl,
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json'
-    },
-    json: {
-      text: text
-    }
-  };
-
-  if (reader === 'eidos') {
-    options.json.webservice = eidosServiceUrl;
-  } else if (reader === 'sofia') {
-    options.json.auth = [
-      process.env.SOFIA_USERNAME,
-      process.env.SOFIA_PASSWORD
-    ];
-  }
-
-  // 2) Send POST request to INDRA API to get corresponding INDRA statement for the new piece of evidence
-  // if response is empty send error (could not create new statement with specified text)
-  const indraResult = await requestAsPromise(options);
-  const statements = indraResult.statements;
-  if (statements.length === 0) {
-    throw new Error('Could not create new statement with specified text');
-  }
-  return statements;
-};
+// const createNewIndraStatements = async (text, reader) => {
+//   // external reader configurables (in yargs-wrapper.js)
+//   const indraServiceUrl = process.env.INDRA_ASSEMBLY_URL;
+//   const eidosServiceUrl = process.env.EIDOS_URL;
+//
+//   const readerProcesserUrl = `${indraServiceUrl}/${reader}/process_text`;
+//
+//   const options = {
+//     url: readerProcesserUrl,
+//     method: 'POST',
+//     headers: {
+//       'content-type': 'application/json'
+//     },
+//     json: {
+//       text: text
+//     }
+//   };
+//
+//   if (reader === 'eidos') {
+//     options.json.webservice = eidosServiceUrl;
+//   } else if (reader === 'sofia') {
+//     options.json.auth = [
+//       process.env.SOFIA_USERNAME,
+//       process.env.SOFIA_PASSWORD
+//     ];
+//   }
+//
+//   // 2) Send POST request to INDRA API to get corresponding INDRA statement for the new piece of evidence
+//   // if response is empty send error (could not create new statement with specified text)
+//   const indraResult = await requestAsPromise(options);
+//   const statements = indraResult.statements;
+//   if (statements.length === 0) {
+//     throw new Error('Could not create new statement with specified text');
+//   }
+//   return statements;
+// };
 
 module.exports = {
+  sendNewProject,
   sendFeedback,
-  recalculateBeliefScore,
-  createNewConcept,
-  createNewIndraStatements,
-  updateGroundings,
-  resetOntology,
-  resetCuration
+  recalculateBeliefScore
+  // createNewConcept,
+  // updateGroundings,
+  // resetOntology,
+  // resetCuration
 };
