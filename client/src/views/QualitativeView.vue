@@ -7,9 +7,6 @@
       @import-cag="showModalImportCAG=true"
     />
     <main>
-      <qualitative-side-panel
-        @belief-scores-updated="refresh"
-      />
       <div
         class="graph-container"
         @dblclick="onBackgroundDblClick"
@@ -168,7 +165,6 @@ import ModalImportConflict from '@/components/qualitative/modal-import-conflict'
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
-import QualitativeSidePanel from '../components/qualitative/qualitative-side-panel.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -214,8 +210,7 @@ export default {
     ModalConfirmation,
     ModalImportCag,
     ModalImportConflict,
-    ModalPathFind,
-    QualitativeSidePanel
+    ModalPathFind
   },
   data: () => ({
     modelSummary: null,
