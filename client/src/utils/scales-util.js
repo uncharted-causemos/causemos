@@ -67,7 +67,6 @@ export function calcEdgeColor(edge) {
  */
 export function scaleByWeight(baseWidth, edgeParameter) {
   const w = _.get(edgeParameter, 'parameter.weights', [0.5, 0.5]);
-  console.log('w is', w, edgeParameter);
   return 2 + baseWidth * (w[0] * 0.7 + w[1] * 0.3);
 }
 
