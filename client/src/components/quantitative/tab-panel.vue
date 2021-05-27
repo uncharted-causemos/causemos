@@ -91,11 +91,13 @@
               :statements="selectedStatements"
               :project="project"
               :is-fetching-statements="isFetchingStatements"
-              :should-confirm-curations="true">
+              :should-confirm-curations="true"
+              :current-engine="currentEngine">
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity" />
               <edge-weight-slider
+                v-if="showComponent"
                 :selected-relationship="selectedEdge"
                 @set-edge-weights="setEdgeWeights" />
             </evidence-pane>
@@ -247,11 +249,13 @@ export default {
       return this.$route.query?.activeTab || 'flow';
     },
     validTabs() {
-      const model = _.get(this.modelSummary, 'parameter.engine');
-      if (model && model === PROJECTION_ENGINES.DELPHI) {
+      if (this.currentEngine === PROJECTION_ENGINES.DELPHI) {
         return _.filter(this.tabs, (aTab) => aTab.id !== TABS.MATRIX);
       }
       return this.tabs;
+    },
+    showComponent() {
+      return this.currentEngine !== PROJECTION_ENGINES.DELPHI;
     }
   },
   watch: {
