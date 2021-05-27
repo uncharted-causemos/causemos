@@ -116,7 +116,7 @@ function convertToLegacyAdminDataStructure(
         distinctRegions[regionName],
         (entry: any) => entry.value
       );
-      let heritage = regionName.split('_');
+      let heritage = regionName.split('__');
       let pointer = result;
       // Find where in the tree this region should be inserted
       while (heritage.length > 1) {
