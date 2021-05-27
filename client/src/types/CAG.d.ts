@@ -5,7 +5,7 @@ export interface ScenarioConstraint {
 
 export interface ScenarioParameter {
   projection_start: number;
-  num_steps: 12;
+  num_steps: number;
   indicator_time_series_range: {
     start: number;
     end: number;
@@ -32,7 +32,7 @@ export interface Scenario {
   engine: string;
   is_valid: boolean;
   is_baseline: boolean;
-  parameter: ScenarioParameter | {} | null;
+  parameter: ScenarioParameter | null;
   result: ScenarioResult[] | null;
   experiment_id: string | null;
 }
@@ -57,4 +57,31 @@ export interface EdgeParameter {
     weights: number[];
   };
   user_polarity: number;
+}
+
+export interface CAGModelParameter {
+  num_steps: number;
+  indicator_time_series_range: {
+    start: number;
+    end: number;
+  };
+  projection_start: number;
+  engine: string;
+}
+
+export interface CAGModelSummary {
+  id: string;
+  project_id: string;
+  name: string;
+  parameter: CAGModelParameter;
+
+  is_stale: boolean;
+  is_ambiguous: boolean;
+  is_quantified: boolean;
+  status: number;
+
+  created_at: number;
+  modified_at: number;
+
+  thumbnailSource: string | null;
 }

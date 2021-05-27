@@ -3,7 +3,13 @@ import API from '@/api/api';
 import { CODE_TABLE } from '@/utils/code-util';
 import { conceptShortName } from '@/utils/concept-util';
 import { startPolling } from '@/api/poller';
-import { Scenario, ScenarioConstraint, NodeParameter, EdgeParameter } from '@/types/CAG';
+import {
+  Scenario,
+  ScenarioConstraint,
+  NodeParameter,
+  EdgeParameter,
+  CAGModelSummary
+} from '@/types/CAG';
 
 const MODEL_STATUS = {
   UNSYNCED: 0,
@@ -285,18 +291,18 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
  * @param {array} node-parameter components
  * @param {array} scenarios - array of scenario objects
  */
-const buildNodeChartData = (modelSummary, nodes, scenarios) => {
+const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[], scenarios: Scenario[]) => {
   const result = {};
   const modelParameter = modelSummary.parameter;
 
-  const getScenarioConstraints = (scenario, concept) => {
+  const getScenarioConstraints = (scenario: Scenario, concept: string) => {
     if (_.isEmpty(scenario.parameter)) return [];
 
     const constraints = scenario.parameter.constraints.find(d => d.concept === concept);
     return _.isNil(constraints) ? [] : constraints.values;
   };
 
-  const getScenarioResult = (scenario, concept) => {
+  const getScenarioResult = (scenario: Scenario, concept: string) => {
     const result = scenario.result.find(d => d.concept === concept);
 
     // Scenario may be stale/invalid
@@ -354,10 +360,10 @@ const buildNodeChartData = (modelSummary, nodes, scenarios) => {
  * @param {string} queryString - string to use to get suggestions
  * @param {array} ontology - array of all the concepts in the ontology
  */
-const getConceptSuggestions = async (projectId, queryString, ontology) => {
+const getConceptSuggestions = async (projectId: string, queryString: string, ontology: string[]) => {
   const subjPromise = getSuggestions(projectId, CODE_TABLE.SUBJ_CONCEPT.field, queryString);
   const objPromise = getSuggestions(projectId, CODE_TABLE.OBJ_CONCEPT.field, queryString);
-  const results = await Promise.all([subjPromise, objPromise]);
+  const results: [string[], string[]] = await Promise.all([subjPromise, objPromise]);
 
   const evidenceSuggestions = _.union(results[0], results[1])
     .map(_markConceptHasEvidence(true));
@@ -368,12 +374,12 @@ const getConceptSuggestions = async (projectId, queryString, ontology) => {
   return suggestions;
 };
 
-const _markConceptHasEvidence = (hasEvidence) =>
-  function(concept) {
+const _markConceptHasEvidence = (hasEvidence: boolean) =>
+  function(concept: string) {
     return {
       concept,
       hasEvidence,
-      shortName: conceptShortName(concept)
+      shortName: conceptShortName(concept) || ''
     };
   };
 
@@ -402,9 +408,9 @@ const getSuggestions = async (projectId: string, field: string, queryString: str
  * @returns {string} - the experiment ID that can be polled for the results
  */
 const runSensitivityAnalysis = async (
-  modelSummary,
-  analysisType,
-  analysisMode,
+  modelSummary: CAGModelSummary,
+  analysisType: string,
+  analysisMode: string,
   constraints
 ) => {
   const { id: modelId } = modelSummary;
@@ -441,9 +447,11 @@ const runSensitivityAnalysis = async (
  * @param {object} modelSummary - model info
  * @param {array} nodeParameter - model's nodes
  */
-const resetScenarioParameter = (scenario, modelSummary, nodeParameters) => {
+const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummary, nodeParameters: NodeParameter[]) => {
   const modelParameter = modelSummary.parameter;
   const concepts = nodeParameters.map(n => n.concept);
+
+  if (!scenario.parameter) return scenario;
 
   // Remove constraints if the concept is no longer in the model
   _.remove(scenario.parameter.constraints, constraint => {
