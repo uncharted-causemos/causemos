@@ -6,14 +6,11 @@ import { getRandomNumber } from '../../tests/utils/random';
 
 import { D3Selection, D3Scale, D3ScaleLinear, D3ScalePoint, D3GElementSelection } from '@/types/D3';
 import { ScenarioData } from '@/types/Common';
-import { DimensionInfo } from '@/types/Model';
+import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
-
-// TODO: use each axis min/max based on the metadata
-
-// TODO: use each axis min/max based on the metadata
+import { ModelRunStatus } from '@/types/Enums';
 
 //
 // custom data types
@@ -138,7 +135,7 @@ function renderParallelCoordinates(
   //
   // exclude drilldown/filter axes from being rendered in the PCs
   //
-  dimensions = filterDrilldownDimensionData(dimensions);
+  dimensions = filterDrilldownDimensionData(dimensions as ModelParameter[]);
 
   const detectTypeFromData = false;
   // process data and detect data type for each dimension
@@ -165,13 +162,13 @@ function renderParallelCoordinates(
   //
   // Color scale
   //
-  colorFunc = (status = 'READY') => {
+  colorFunc = (status = ModelRunStatus.Ready) => {
     switch (status) {
-      case 'READY':
+      case ModelRunStatus.Ready:
         return lineColorsReady;
-      case 'SUBMITTED':
+      case ModelRunStatus.Submitted:
         return lineColorsSubmitted;
-      case 'FAILED':
+      case ModelRunStatus.ExecutionFailed:
         return lineColorsFailed;
       default:
         return lineColorsUnknown;
@@ -320,7 +317,7 @@ function renderParallelCoordinates(
       .attr('stroke-width', lineStrokeWidthNormal)
       .style('stroke', function(d) { return colorFunc(d.status as string); })
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
-      .style('stroke-dasharray', function(d) { return d.status === 'READY' ? 0 : ('3, 3'); })
+      .style('stroke-dasharray', function(d) { return d.status === ModelRunStatus.Ready ? 0 : ('3, 3'); })
     ;
 
     // scenario lines are only interactive in the normal mode
@@ -331,7 +328,7 @@ function renderParallelCoordinates(
 
       // also, in the normal mode, only lines with status READY are clickable
       lines
-        .filter(function(d) { return d.status === 'READY'; })
+        .filter(function(d) { return d.status === ModelRunStatus.Ready; })
         .on('click', handleLineSelection);
     }
   }
@@ -346,7 +343,7 @@ function renderParallelCoordinates(
     // prepare a map of all markers where a baseline marker is added when no user-marker exists
     dimensions.forEach(dim => {
       const dimName = dim.name;
-      const dimDefault: string = dim.default;
+      const dimDefault: string = (dim as ModelParameter).default;
       const dimData = [];
       // exclude markers on the output axes
       const notOutputAxis = !isOutputDimension(dimensions, dim.name);
@@ -603,7 +600,7 @@ function renderParallelCoordinates(
 
       // notify external listeners
       if (notifyExternalListeners) {
-        onLinesSelection([selectedLineData]);
+        onLinesSelection(selectedLineData ? [selectedLineData] : []);
       }
     }
   }
@@ -1063,14 +1060,14 @@ function renderBaselineMarkers(showBaselineDefaults: boolean) {
 
   if (showBaselineDefaults) {
     renderedAxes
-      .filter(function(d) { return d.default !== undefined; })
+      .filter(function(d) { return (d as ModelParameter).default !== undefined; })
       .append('circle')
       .style('stroke', baselineMarkerStroke)
       .style('fill', baselineMarkerFill)
       .attr('pointer-events', 'none')
       .attr('r', baselineMarkerSize)
       .attr('cx', function(d) {
-        const axisDefault = d.default;
+        const axisDefault = (d as ModelParameter).default;
         const dimName = d.name;
         const scaleX = getXScaleFromMap(dimName);
         let xPos: number = scaleX(axisDefault as any) as number;
@@ -1413,7 +1410,7 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
 
 // exclude drilldown parameters from the input dimensions
 // @REVIEW this may better be done external to the PC component
-const filterDrilldownDimensionData = (dimensions: Array<DimensionInfo>) => {
+const filterDrilldownDimensionData = (dimensions: Array<ModelParameter>) => {
   return dimensions.filter(function(d) {
     return !d.is_drilldown;
   });
@@ -1538,9 +1535,9 @@ const createScales = (
     const outputVarName = dimensions[dimensions.length - 1].name;
     if (useAxisRangeFromData && outputVarName !== name) {
       // this is only valid for input variables
-      const min = dimensions.find(d => d.name === name).min;
-      const max = dimensions.find(d => d.name === name).max;
-      dataExtent = [min, max];
+      const min = dimensions.find(d => d.name === name)?.min;
+      const max = dimensions.find(d => d.name === name)?.max;
+      dataExtent = [min ?? 0, max ?? 0];
     } else {
       dataExtent = d3.extent(data.map(point => +point[name]));
     }
@@ -1566,7 +1563,7 @@ const createScales = (
     let dataExtent: string[] = [];
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dimensions.find(d => d.name === name).choices;
+      dataExtent = dimensions.find(d => d.name === name)?.choices ?? [''];
     } else {
       dataExtent = data.map(function(p) { return p[name]; }) as Array<string>; // note this will return an array of values for all runs
     }

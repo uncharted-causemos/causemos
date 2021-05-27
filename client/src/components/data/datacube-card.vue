@@ -8,18 +8,18 @@
       </button>
     </header>
     <modal-new-scenario-runs
-      v-if="showNewRunsModal === true"
+      v-if="isModel && showNewRunsModal === true"
       :metadata="metadata"
       :potential-scenarios="potentialScenarios"
       @close="onNewScenarioRunsModalClose" />
     <modal-check-runs-execution-status
-      v-if="showModelRunsExecutionStatus === true"
+      v-if="isModel & showModelRunsExecutionStatus === true"
       :metadata="metadata"
       :potential-scenarios="runParameterValues"
       @close="showModelRunsExecutionStatus = false" />
     <div class="flex-row">
       <!-- if has multiple scenarios -->
-      <div class="scenario-selector">
+      <div v-if="isModel" class="scenario-selector">
         <div>
           <div class="checkbox">
             <label @click="toggleBaselineDefaultsVisibility()">
@@ -84,13 +84,14 @@
           <!-- TODO: extract button-group to its own component -->
           <div class="button-group">
             <button class="btn btn-default"
-                    :class="{'btn-primary':!isDescriptionView}"
-                    @click="isDescriptionView = false">
-              Data</button
-            ><button class="btn btn-default"
                     :class="{'btn-primary':isDescriptionView}"
                     @click="isDescriptionView = true">
               Descriptions
+            </button>
+            <button class="btn btn-default"
+                    :class="{'btn-primary':!isDescriptionView}"
+                    @click="isDescriptionView = false">
+              Data
             </button>
           </div>
           <div
@@ -146,7 +147,7 @@
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView"
+            v-if="!isDescriptionView && selectedTimeseriesData.length  > 0 && selectedTimeseriesData[0].points.length > 1"
             class="timeseries-chart"
             :timeseries-data="selectedTimeseriesData"
             :selected-timestamp="selectedTimestamp"
@@ -185,17 +186,18 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ModelRun, ScenarioDef } from '@/types/Datacubes';
+import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import { Model, ModelFeature } from '@/types/Model';
+import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import _ from 'lodash';
+import { ModelRunStatus } from '@/types/Enums';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -287,9 +289,9 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues
-    } = useParallelCoordinatesData(metadata, selectedModelId, allModelRunData);
+    } = useParallelCoordinatesData(metadata, allModelRunData);
 
-    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     watch(() => metadata.value, () => {
       mainModelOutput.value = metadata.value?.outputs[0];
@@ -309,6 +311,21 @@ export default defineComponent({
     function emitTimestampSelection(newTimestamp: number) {
       emit('select-timestamp', newTimestamp);
     }
+
+    watch(
+      () => selectedTimeseriesData.value,
+      () => {
+        const allTimestamps = selectedTimeseriesData.value
+          .map(timeseries => timeseries.points)
+          .flat()
+          .map(point => point.timestamp);
+        const lastTimestamp = _.max(allTimestamps);
+        emitTimestampSelection(lastTimestamp ?? 0);
+      });
+
+    const isModel = computed(() => {
+      return metadata.value?.type === 'model';
+    });
 
     const outputSourceSpecs = computed(() => {
       return selectedScenarioIds.value.map(selectedScenarioId => {
@@ -337,7 +354,8 @@ export default defineComponent({
       runParameterValues,
       isDescriptionView,
       mainModelOutput,
-      metadata
+      metadata,
+      isModel
     };
   },
   data: () => ({
@@ -391,16 +409,14 @@ export default defineComponent({
     showModelExecutionStatus() {
       this.showModelRunsExecutionStatus = true;
     },
-    updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
-      if (
-        e.scenarios.length === 0 ||
-        (e.scenarios.length === 1 && e.scenarios[0] === undefined)
-      ) {
+    updateScenarioSelection(e: { scenarios: Array<ScenarioData> }) {
+      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
+      if (selectedScenarios.length === 0) {
         // console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
       } else {
         // console.log('user selected: ' + e.scenarios.length);
-        this.$emit('set-selected-scenario-ids', e.scenarios.map(s => s.run_id));
+        this.$emit('set-selected-scenario-ids', selectedScenarios.map(s => s.run_id));
       }
       // we should emit to update the drilldown data everytime scenario selection changes
       this.$emit('set-drilldown-data', { drilldownDimensions: this.drilldownDimensions });

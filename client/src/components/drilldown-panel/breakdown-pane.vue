@@ -73,7 +73,7 @@ import {
   LegacyBreakdownDataStructure,
   LegacyBreakdownNode
 } from '@/types/Common';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -201,31 +201,23 @@ export default defineComponent({
       }
       // FIXME: the reference to model by name below will be removed once all models use the same API/endpoint
       const promises = props.selectedScenarioIds.map(scenarioId =>
-        props.selectedModelId.includes('maxhop')
-          ? API.get('/maas/output/regional-data', {
-            params: {
-              model_id: props.selectedModelId,
-              run_id: scenarioId,
-              feature: props.metadata.outputs[0].name,
-              resolution: props.selectedTemporalResolution,
-              temporal_agg: props.selectedTemporalAggregation,
-              spatial_agg: props.selectedSpatialAggregation,
-              timestamp: props.selectedTimestamp
-            }
-          })
-          : API.get('fetch-demo-data', {
-            params: {
-              modelId: props.selectedModelId,
-              runId: scenarioId,
-              type: 'regional-data'
-            }
-          })
+        API.get('/maas/output/regional-data', {
+          params: {
+            model_id: props.selectedModelId,
+            run_id: scenarioId,
+            feature: props.metadata.outputs[0].name,
+            resolution: props.selectedTemporalResolution,
+            temporal_agg: props.selectedTemporalAggregation,
+            spatial_agg: props.selectedSpatialAggregation,
+            timestamp: props.selectedTimestamp
+          }
+        })
       );
       // HACK: the temporary 'fetch-demo-data' endpoint's response needs to be JSON.parse()'d
       //  but the new '/maas/output/regional-data' endpoint works without.
       //  This conditional logic should be removed along with the temporary endpoint
       const allRegionalData = (await Promise.all(promises)).map(response => {
-        const data = props.selectedModelId.includes('maxhop') ? response.data : JSON.parse(response.data);
+        const data = response.data;
         return _.isEmpty(data) ? {} : data;
       });
       if (_.some(allRegionalData, response => _.isEmpty(response))) {

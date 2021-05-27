@@ -1,10 +1,5 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <div class="comp-analysis-experiment-header">
-      <button class="search-button btn btn-primary btn-call-for-action" disabled>
-        Search datacubes
-      </button>
-    </div>
     <main>
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
@@ -89,7 +84,7 @@ import MAXHOP from '@/assets/MAXHOP.js';
 import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
-import { DimensionInfo, Model, ModelFeature } from '@/types/Model';
+import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '../../tests/utils/random';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
@@ -97,6 +92,9 @@ import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import router from '@/router';
+import _ from 'lodash';
+import { ModelRunStatus } from '@/types/Enums';
 
 const DRILLDOWN_TABS = [
   {
@@ -130,23 +128,11 @@ export default defineComponent({
 
     const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
-    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
-
-    watch(() => metadata.value, () => {
-      mainModelOutput.value = metadata.value?.outputs[0];
-    }, {
-      immediate: true
-    });
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
-    function setSelectedScenarioIds(newIds: string[]) {
-      selectedScenarioIds.value = newIds;
-    }
 
     const selectedTimestamp = ref(0);
-    function setSelectedTimestamp(value: number) {
-      selectedTimestamp.value = value;
-    }
 
     const newRunsMode = ref(false);
 
@@ -157,7 +143,7 @@ export default defineComponent({
     const timeInterval = 10000;
 
     function fetchData() {
-      if (!newRunsMode.value) {
+      if (!newRunsMode.value && metadata.value?.type === 'model') {
         modelRunsFetchedAt.value = Date.now();
       }
     }
@@ -167,6 +153,17 @@ export default defineComponent({
 
     const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
     const scenarioCount = computed(() => allModelRunData.value.length);
+
+    watch(() => metadata.value, () => {
+      mainModelOutput.value = metadata.value?.outputs[0];
+
+      if (metadata.value?.type === 'indicator') {
+        const validScenarioIds = allModelRunData.value.filter(run => run.status === ModelRunStatus.Ready).map(run => run.id);
+        selectedScenarioIds.value = validScenarioIds;
+      }
+    }, {
+      immediate: true
+    });
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -178,10 +175,8 @@ export default defineComponent({
       setSelectedAdminLevel,
       selectedModelId: modelId,
       selectedScenarioIds,
-      setSelectedScenarioIds,
       typeBreakdownData,
       selectedTimestamp,
-      setSelectedTimestamp,
       isExpanded,
       colorFromIndex,
       metadata,
@@ -194,10 +189,54 @@ export default defineComponent({
       timerHandler
     };
   },
+  watch: {
+    $route(/* to, from */) {
+      // NOTE:  this is only valid when the route is focused on the 'data' space
+      if (this.$route.name === 'data') {
+        const timestamp = this.$route.query.timestamp as any;
+        if (timestamp !== undefined) {
+          this.setSelectedTimestamp(timestamp);
+        }
+
+        if (this.allScenarioIds.length > 0) {
+          // FIXME: only support saving insights with at most a single valid scenario id
+          const selectedScenarioID = this.$route.query.selectedScenarioID as any;
+          if (selectedScenarioID !== undefined) {
+            // we should have at least one valid scenario selected. If not, cancel scenario selection
+            const selectedIds = selectedScenarioID !== '' ? [selectedScenarioID] : [];
+            this.setSelectedScenarioIds(selectedIds);
+          }
+        }
+      }
+    }
+  },
+  mounted(): void {
+    this.updateRouteParams();
+  },
   unmounted(): void {
     clearInterval(this.timerHandler);
   },
   methods: {
+    setSelectedTimestamp(value: number) {
+      if (this.selectedTimestamp === value) return;
+      this.selectedTimestamp = value;
+      this.updateRouteParams();
+    },
+    setSelectedScenarioIds(newIds: string[]) {
+      if (_.isEqual(this.selectedScenarioIds, newIds)) return;
+      this.selectedScenarioIds = newIds;
+      this.updateRouteParams();
+    },
+    updateRouteParams() {
+      // save the info in the query params so saved insights would pickup the latest value
+      // FIXME: only support saving insights with at most a single valid scenario id
+      router.push({
+        query: {
+          timestamp: this.selectedTimestamp,
+          selectedScenarioID: this.selectedScenarioIds.length === 1 ? this.selectedScenarioIds[0] : undefined
+        }
+      }).catch(() => {});
+    },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       // TODO: inspect 'this.selectedScenarioIds' for drilldown data
       this.typeBreakdownData.length = 0;

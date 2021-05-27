@@ -11,11 +11,16 @@ export interface Project {
   stat: { [key: string]: string | number };
 }
 
-export interface ModelGeography {
+export interface DatacubeGeography {
   country: string[];
   admin1: string[];
   admin2: string[];
   admin3: string[];
+}
+
+export interface DatacubePeriod {
+  gte: number;
+  lte: number;
 }
 
 // any scenario data is represented as a map of {name, value}

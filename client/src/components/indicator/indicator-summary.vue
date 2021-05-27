@@ -205,18 +205,24 @@ export default {
       if (_.isEmpty(this.indicator)) return [];
       const timeseries = this.indicator.indicator_time_series;
       const func = this.selectedFunction;
-      return [
+      const linesToRender = [
         {
           name: '',
           color: DEFAULT_COLOR,
           series: timeseries
-        },
-        {
+        }
+      ];
+      // Delphi determines the initial value via sampling, not with aggregation functions,
+      //  so don't draw the initial value line if delphi is selected
+      const currentEngine = this.modelSummary.parameter.engine;
+      if (currentEngine !== 'delphi') {
+        linesToRender.push({
           name: func,
           color: MARKER_COLOR,
           series: timeseries.map(d => ({ timestamp: d.timestamp, value: this.initialValue }))
-        }
-      ];
+        });
+      }
+      return linesToRender;
     },
     historicalRange() {
       return this.modelSummary.parameter.indicator_time_series_range;
@@ -345,8 +351,7 @@ export default {
   }
 
   .line-chart {
-    flex: 1;
-    max-height: 30vh;
+    height: 30vh;
   }
 
   .metadata-row {

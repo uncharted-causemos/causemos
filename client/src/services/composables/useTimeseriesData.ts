@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Model } from '@/types/Model';
+import { Datacube } from '@/types/Datacube';
 import { Timeseries } from '@/types/Timeseries';
 import { computed, Ref, ref, watchEffect } from 'vue';
 
@@ -10,7 +10,7 @@ import { computed, Ref, ref, watchEffect } from 'vue';
  * list of Timeseries objects.
  */
 export default function useTimeseriesData(
-  metadata: Ref<Model | null>,
+  metadata: Ref<Datacube | null>,
   modelId: Ref<string>,
   modelRunIds: Ref<string[]>,
   colorFromIndex: (index: number) => string,

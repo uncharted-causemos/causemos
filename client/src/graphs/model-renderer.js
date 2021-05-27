@@ -10,7 +10,7 @@ import {
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 import { SELECTED_COLOR, EDGE_COLOR_PALETTE } from '@/utils/colors-util';
-import { calculateScenarioPercentageChange } from '@/utils/projection-util';
+import modelService from '@/services/model-service';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { SVGRenderer } from 'svg-flowgraph';
 import { interpolatePath } from 'd3-interpolate-path';
@@ -146,7 +146,7 @@ export default class ModelRenderer extends SVGRenderer {
       .attr('d', d => lineFn(d.points))
       .style('fill', DEFAULT_STYLE.edgeBg.fill)
       .style('stroke', DEFAULT_STYLE.edgeBg.stroke)
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weights[0]) + 2);
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 2);
 
     selection
       .append('path')
@@ -154,7 +154,7 @@ export default class ModelRenderer extends SVGRenderer {
       .attr('d', d => lineFn(d.points))
       .style('fill', DEFAULT_STYLE.edge.fill)
       .style('stroke', d => calcEdgeColor(d.data))
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weights[0]))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
       .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .attr('marker-end', d => {
         const source = d.data.source.replace(/\s/g, '');
@@ -174,7 +174,7 @@ export default class ModelRenderer extends SVGRenderer {
       .transition()
       .duration(1000)
       .style('stroke', d => calcEdgeColor(d.data))
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weights[0]))
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data))
       .style('stroke-dasharray', d => hasBackingEvidence(d.data) ? null : DEFAULT_STYLE.edge.strokeDash)
       .attrTween('d', function (d) {
         const currentPath = lineFn(d.points);
@@ -188,7 +188,7 @@ export default class ModelRenderer extends SVGRenderer {
       .selectAll('.edge-path-bg')
       .transition()
       .duration(1000)
-      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data.parameter.weights[0]) + 2)
+      .style('stroke-width', d => scaleByWeight(DEFAULT_STYLE.edge.strokeWidth, d.data) + 2)
       .attrTween('d', function (d) {
         const currentPath = lineFn(d.points);
         const previousPath = d3.select(this).attr('d') || currentPath;
@@ -231,7 +231,7 @@ export default class ModelRenderer extends SVGRenderer {
       .text(d => controlStyles[d.data.polarity].text);
   }
 
-  renderHistoricalAndProjections(selectedScenarioId) {
+  renderHistoricalAndProjections(selectedScenarioId, currentEngine) {
     const chart = this.chart;
 
     chart.selectAll('.node-ui').each((datum, index, nodes) => {
@@ -271,7 +271,7 @@ export default class ModelRenderer extends SVGRenderer {
 
       // Adjust node appearence based on result
       if (!_.isEmpty(selectedScenario.result)) {
-        const percentageChange = calculateScenarioPercentageChange(selectedScenario.result, _.first(selectedScenario.result.values).value);
+        const percentageChange = modelService.calculateScenarioPercentageChange(selectedScenario.result, _.first(selectedScenario.result.values).value);
         const absoluteChange = _.last(selectedScenario.result.values).value - _.first(selectedScenario.result.values).value;
 
         // if first value is 0.0 then percentageChange is 0.0, so check absolute change as well
@@ -297,7 +297,9 @@ export default class ModelRenderer extends SVGRenderer {
 
       const runOptions = {
         selectedScenarioId,
-        miniGraph: true
+        miniGraph: true,
+        // Delphi determines the initial value via sampling, not with aggregation functions
+        shouldDrawInitialValue: currentEngine !== 'delphi'
       };
       const renderOptions = {
         margin: {

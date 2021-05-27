@@ -44,6 +44,8 @@ export default {
   methods: {
     refresh() {
       const svg = d3.select(this.$refs.container).select('svg');
+      // Clear any previous renders
+      svg.selectAll('*').remove();
       const rightColumnStart = CHART_SIZE + LABEL_SIZE + COLUMN_GAP_SIZE;
       const rightColumnTextStart = rightColumnStart + ICON_WIDTH + (COLUMN_GAP_SIZE / 2);
       // Total width depends on which labels are shown

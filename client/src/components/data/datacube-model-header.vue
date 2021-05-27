@@ -35,7 +35,7 @@
 
 <script lang="ts">
 import API from '@/api/api';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 import { defineComponent, ref, watch } from 'vue';
 
 interface ModelAttribute {
@@ -61,13 +61,11 @@ export default defineComponent({
     async function fetchModelInfo() {
       if (props.selectedModelId === null) return;
 
-      const result = await API.get('fetch-demo-data', {
+      const result = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
         params: {
-          modelId: props.selectedModelId,
-          type: 'metadata'
         }
       });
-      const modelMetadata: Model = JSON.parse(result.data); // FIXME: this should use the Model data type
+      const modelMetadata: Model = result.data;
 
       // fill in the model attribute
       // TODO: how spacing and label names are used
@@ -77,12 +75,14 @@ export default defineComponent({
         tweakable: false,
         type: 'text'
       });
+      /*
       modelAttributes.value.push({
         name: 'Model instance',
         value: modelMetadata.version,
         tweakable: false,
         type: 'text'
       });
+      */
       modelAttributes.value.push({
         name: 'Default output variable',
         value: modelMetadata.outputs.map(o => o.display_name),

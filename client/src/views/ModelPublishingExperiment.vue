@@ -181,10 +181,10 @@ import ModelPublishingChecklist from '@/components/widgets/model-publishing-chec
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { ModelPublishingStep } from '@/types/UseCase';
-import { ModelPublishingStepID } from '@/types/ModelPublishingTypes';
+import { ModelPublishingStepID } from '@/types/Enums';
 import router from '@/router';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { DimensionInfo, Model } from '@/types/Model';
+import { DimensionInfo, Model } from '@/types/Datacube';
 import { getRandomNumber } from '../../tests/utils/random';
 import { mapGetters } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -247,7 +247,7 @@ export default defineComponent({
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
     // so no external status need to be tracked
-    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt, ref(allScenarioIds));
+    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {
@@ -469,7 +469,8 @@ export default defineComponent({
     },
     toggleAccordion(event: any) {
       this.openPublishAccordion = !this.openPublishAccordion;
-      const panel = event.target.nextElementSibling as HTMLElement;
+      const target = event.target.nodeName === 'I' ? event.target.parentElement : event.target;
+      const panel = target.nextElementSibling as HTMLElement;
       if (panel) {
         if (!this.openPublishAccordion) {
           panel.style.display = 'none';

@@ -23,7 +23,7 @@
           <td>
             <div
               class="run-status"
-              :style="{color: run['status'] === 'FAILED' ? 'red' : 'blue'}"
+              :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
               >
               <i
                 v-if="run['status'] === 'SUBMITTED'"
@@ -55,8 +55,9 @@
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 import _ from 'lodash';
+import { ModelRunStatus } from '@/types/Enums';
 
 // TODO: add table header with interactivity to rank/re-order
 
@@ -81,10 +82,10 @@ export default defineComponent({
   },
   computed: {
     potentialRunsParameters(): Array<any> {
-      return Object.keys(this.potentialRuns[0]);
+      return this.potentialRuns.length > 0 ? Object.keys(this.potentialRuns[0]) : [];
     },
     potentialRuns(): Array<any> {
-      const runs = this.potentialScenarios.filter(r => r.status !== 'READY');
+      const runs = this.potentialScenarios.filter(r => r.status !== ModelRunStatus.Ready);
       const drilldownParamNames = this.metadata.parameters.filter((p: any) => p.is_drilldown).map(p => p.name);
       const newArray = _.map(runs, function (row) {
         return _.omit(row, ['run_id', ...drilldownParamNames]);
@@ -93,6 +94,7 @@ export default defineComponent({
     }
   },
   data: () => ({
+    ModelRunStatus
   }),
   mounted() {
   },

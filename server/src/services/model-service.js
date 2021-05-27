@@ -460,9 +460,12 @@ const buildNodeParametersPayload = (nodeParameters, startTime, endTime) => {
 const buildEdgeParametersPayload = (edgeParameters) => {
   const r = [];
   edgeParameters.forEach(edge => {
+    if (edge.polarity === 0) return; // Engine logic tends to be undefined if we update an ambiguous edge (DySE)
+
     r.push({
       source: edge.source,
       target: edge.target,
+      polarity: edge.polarity,
       weights: edge.parameter.weights
     });
   });
