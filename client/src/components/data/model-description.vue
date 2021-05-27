@@ -74,7 +74,7 @@
 import API from '@/api/api';
 import { defineComponent, ref } from 'vue';
 import _ from 'lodash';
-import { Model, ModelParameter } from '@/types/Model';
+import { Model, ModelParameter } from '@/types/Datacube';
 
 export default defineComponent({
   name: 'DatacubeDescription',

@@ -1,8 +1,8 @@
-import useScenarioData from './useScenarioData';
-import { Model, ModelParameter } from '../../types/Model';
+import { Model, ModelParameter } from '../../types/Datacube';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import API from '@/api/api';
+import { ModelRun } from '@/types/ModelRun';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -12,10 +12,8 @@ import API from '@/api/api';
 export default function useParallelCoordinatesData(
   metadata: Ref<Model | null>,
   modelId: Ref<string>,
-  allScenarioIds: Ref<string[]> // FIXME: this is only needed for DSSAT
+  allModelRunData: Ref<ModelRun[]>
 ) {
-  const allModelRunData = useScenarioData(modelId, allScenarioIds);
-
   const runParameterValues = ref<ScenarioData[]>([]);
 
   watchEffect(onInvalidate => {
@@ -23,11 +21,11 @@ export default function useParallelCoordinatesData(
     if (allModelRunData.value.length === 0 || metadata.value === null) {
       return [];
     }
-    const allRunIDs = allScenarioIds.value.length !== 0 ? allScenarioIds.value : allModelRunData.value.filter(r => r.status === 'READY').map(r => r.id);
+
+    const allRunIDs = allModelRunData.value.filter(r => r.status === 'READY').map(r => r.id);
     let isCancelled = false;
 
     const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
-    const parameterMetadata = metadata.value.parameters;
 
     // fetch all time series data to find the aggregated value for the output variable for each run
     // NOTE: output variables use the following aggregation functions by default
@@ -52,6 +50,7 @@ export default function useParallelCoordinatesData(
         //  fetch results to avoid a race condition.
         return;
       }
+      let timeSeriesArrCounter = 0;
       runParameterValues.value = allModelRunData.value.map((modelRun, runIndex) => {
         const run_id = allModelRunData.value[runIndex].id;
         const runStatus = allModelRunData.value[runIndex].status;
@@ -61,25 +60,15 @@ export default function useParallelCoordinatesData(
         };
         if (run.status === 'READY') {
           // calculate the output value for this run by aggregating all timestamp values
-          const allValuesPerRun: Array<number> = timeseries[runIndex].map((t: any) => t.value);
+          const allValuesPerRun: Array<number> = timeseries[timeSeriesArrCounter++].map((t: any) => t.value);
           const sum = allValuesPerRun.reduce((a, b) => a + b, 0);
           const avg = (sum / timeseries.length) || 0;
           const runOutputValue = avg;
           run[outputParameterName] = runOutputValue;
         }
-        if (modelId.value.includes('maxhop')) {
-          modelRun.parameters.forEach(({ name, value }) => {
-            run[name ?? 'undefined'] = value;
-          });
-        } else {
-          // FIXME: this would go away when DSSAT is either removed or properly use metadata
-          modelRun.parameters.forEach(({ id, value }) => {
-            const parameterName = parameterMetadata.find(
-              parameter => parameter.id === id
-            )?.name;
-            run[parameterName ?? 'undefined'] = value;
-          });
-        }
+        modelRun.parameters.forEach(({ name, value }) => {
+          run[name ?? 'undefined'] = value;
+        });
         return run;
       });
     };

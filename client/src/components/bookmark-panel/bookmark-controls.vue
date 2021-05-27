@@ -66,9 +66,11 @@ export default {
     }),
     allowNewBookmarks() {
       return this.currentView === 'kbExplorer' ||
+        this.currentView === 'data' ||
         this.currentView === 'qualitative' ||
-        this.currentView === 'modelPublishingExperiment' ||
-        this.currentView === 'quantitative';
+        this.currentView === 'quantitative' ||
+        this.currentView === 'modelPublishingExperiment'
+      ;
     }
   },
   watch: {

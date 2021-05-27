@@ -1,10 +1,5 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <div class="comp-analysis-experiment-header">
-      <button class="search-button btn btn-primary btn-call-for-action" disabled>
-        Search datacubes
-      </button>
-    </div>
     <main>
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
@@ -12,7 +7,7 @@
       :class="{ 'datacube-expanded': true }"
       :selected-admin-level="selectedAdminLevel"
       :selected-model-id="selectedModelId"
-      :all-scenario-ids="allScenarioIds"
+      :all-model-run-data="allModelRunData"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
       :selected-temporal-resolution="selectedTemporalResolution"
@@ -21,6 +16,8 @@
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
+      @refetch-data="fetchData"
+      @new-runs-mode="newRunsMode=!newRunsMode"
     >
       <template v-slot:datacube-model-header>
         <div class="datacube-header" v-if="mainModelOutput">
@@ -87,7 +84,7 @@ import MAXHOP from '@/assets/MAXHOP.js';
 import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
-import { DimensionInfo, Model, ModelFeature } from '@/types/Model';
+import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '../../tests/utils/random';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
@@ -95,6 +92,8 @@ import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import router from '@/router';
+import _ from 'lodash';
 
 const DRILLDOWN_TABS = [
   {
@@ -128,7 +127,7 @@ export default defineComponent({
 
     const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
-    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     watch(() => metadata.value, () => {
       mainModelOutput.value = metadata.value?.outputs[0];
@@ -136,21 +135,29 @@ export default defineComponent({
       immediate: true
     });
 
-    // FIXME: use endpoint to fetch IDs
-    const allModelRunData = useScenarioData(modelId);
-
-    const allScenarioIds = allModelRunData.value.map(run => run.id);
     const selectedScenarioIds = ref([] as string[]);
-    function setSelectedScenarioIds(newIds: string[]) {
-      selectedScenarioIds.value = newIds;
-    }
 
     const selectedTimestamp = ref(0);
-    function setSelectedTimestamp(value: number) {
-      selectedTimestamp.value = value;
+
+    const newRunsMode = ref(false);
+
+    const modelRunsFetchedAt = ref(0);
+
+    const allModelRunData = useScenarioData(modelId, modelRunsFetchedAt);
+
+    const timeInterval = 10000;
+
+    function fetchData() {
+      if (!newRunsMode.value) {
+        modelRunsFetchedAt.value = Date.now();
+      }
     }
 
-    const scenarioCount = computed(() => allScenarioIds.length);
+    // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
+    const timerHandler = setInterval(fetchData, timeInterval);
+
+    const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
+    const scenarioCount = computed(() => allModelRunData.value.length);
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -161,20 +168,70 @@ export default defineComponent({
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId: modelId,
-      allScenarioIds,
       selectedScenarioIds,
-      setSelectedScenarioIds,
       typeBreakdownData,
       selectedTimestamp,
-      setSelectedTimestamp,
       isExpanded,
       colorFromIndex,
-      scenarioCount,
       metadata,
-      mainModelOutput
+      mainModelOutput,
+      allModelRunData,
+      allScenarioIds,
+      scenarioCount,
+      fetchData,
+      newRunsMode,
+      timerHandler
     };
   },
+  watch: {
+    $route(/* to, from */) {
+      // NOTE:  this is only valid when the route is focused on the 'data' space
+      if (this.$route.name === 'data') {
+        const timestamp = this.$route.query.timestamp as any;
+        if (timestamp !== undefined) {
+          this.setSelectedTimestamp(timestamp);
+        }
+
+        if (this.allScenarioIds.length > 0) {
+          // FIXME: only support saving insights with at most a single valid scenario id
+          const selectedScenarioID = this.$route.query.selectedScenarioID as any;
+          if (selectedScenarioID !== undefined) {
+            // we should have at least one valid scenario selected. If not, cancel scenario selection
+            const selectedIds = selectedScenarioID !== '' ? [selectedScenarioID] : [];
+            if (this.selectedScenarioIds.includes(selectedScenarioID) === false) {
+              this.setSelectedScenarioIds(selectedIds);
+            }
+          }
+        }
+      }
+    }
+  },
+  mounted(): void {
+    this.updateRouteParams();
+  },
+  unmounted(): void {
+    clearInterval(this.timerHandler);
+  },
   methods: {
+    setSelectedTimestamp(value: number) {
+      if (this.selectedTimestamp === value) return;
+      this.selectedTimestamp = value;
+      this.updateRouteParams();
+    },
+    setSelectedScenarioIds(newIds: string[]) {
+      if (_.isEqual(this.selectedScenarioIds, newIds)) return;
+      this.selectedScenarioIds = newIds;
+      this.updateRouteParams();
+    },
+    updateRouteParams() {
+      // save the info in the query params so saved insights would pickup the latest value
+      router.push({
+        query: {
+          timestamp: this.selectedTimestamp,
+          selectedScenarioID: this.selectedScenarioIds.length > 0 ? this.selectedScenarioIds[0] : ''
+        }
+      }).catch(() => {});
+    },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       // TODO: inspect 'this.selectedScenarioIds' for drilldown data
       this.typeBreakdownData.length = 0;

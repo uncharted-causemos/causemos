@@ -60,6 +60,7 @@ export default defineComponent({
       );
     }, RESIZE_DELAY);
     function selectLastTimestamp() {
+      // HACK: this code has been hoisted to datacube-card and should be removed
       const allTimestamps = props.timeseriesData
         .map(timeseries => timeseries.points)
         .flat()
