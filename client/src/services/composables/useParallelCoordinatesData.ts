@@ -1,8 +1,8 @@
 import { Model, ModelParameter } from '../../types/Datacube';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { ScenarioData } from '../../types/Common';
-import API from '@/api/api';
 import { ModelRun } from '@/types/ModelRun';
+import { ModelRunStatus } from '@/types/Enums';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -11,7 +11,6 @@ import { ModelRun } from '@/types/ModelRun';
  */
 export default function useParallelCoordinatesData(
   metadata: Ref<Model | null>,
-  modelId: Ref<string>,
   allModelRunData: Ref<ModelRun[]>
 ) {
   const runParameterValues = ref<ScenarioData[]>([]);
@@ -21,50 +20,27 @@ export default function useParallelCoordinatesData(
     if (allModelRunData.value.length === 0 || metadata.value === null) {
       return [];
     }
-
-    const allRunIDs = allModelRunData.value.filter(r => r.status === 'READY').map(r => r.id);
     let isCancelled = false;
 
     const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
 
-    // fetch all time series data to find the aggregated value for the output variable for each run
-    // NOTE: output variables use the following aggregation functions by default
-    const fetchAllTimeSeriesData = async function() {
-      const promises = allRunIDs.map(runId =>
-        API.get('maas/output/timeseries', {
-          params: {
-            model_id: modelId.value,
-            run_id: runId,
-            feature: outputParameterName,
-            resolution: 'month',
-            temporal_agg: 'mean',
-            spatial_agg: 'mean'
-          }
-        })
-      );
-      const timeseries = (await Promise.all(promises)).map(response =>
-        Array.isArray(response.data) ? response.data : JSON.parse(response.data)
-      );
+    const processModelRunsToParallelCoordinatesData = async function() {
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
         return;
       }
-      let timeSeriesArrCounter = 0;
       runParameterValues.value = allModelRunData.value.map((modelRun, runIndex) => {
         const run_id = allModelRunData.value[runIndex].id;
         const runStatus = allModelRunData.value[runIndex].status;
         const run: ScenarioData = {
           run_id,
-          status: runStatus ?? 'READY'
+          status: runStatus ?? ModelRunStatus.Ready
         };
-        if (run.status === 'READY') {
-          // calculate the output value for this run by aggregating all timestamp values
-          const allValuesPerRun: Array<number> = timeseries[timeSeriesArrCounter++].map((t: any) => t.value);
-          const sum = allValuesPerRun.reduce((a, b) => a + b, 0);
-          const avg = (sum / timeseries.length) || 0;
-          const runOutputValue = avg;
-          run[outputParameterName] = runOutputValue;
+        if (run.status === ModelRunStatus.Ready) {
+          // FIXME: assume the first feature is the primary one by default
+          const output_agg_values = allModelRunData.value[runIndex].output_agg_values[0].value;
+          run[outputParameterName] = output_agg_values;
         }
         modelRun.parameters.forEach(({ name, value }) => {
           run[name ?? 'undefined'] = value;
@@ -75,7 +51,7 @@ export default function useParallelCoordinatesData(
     onInvalidate(() => {
       isCancelled = true;
     });
-    fetchAllTimeSeriesData();
+    processModelRunsToParallelCoordinatesData();
   });
 
   const dimensions = computed(() => {

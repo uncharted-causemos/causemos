@@ -61,13 +61,11 @@ export default defineComponent({
     async function fetchModelInfo() {
       if (props.selectedModelId === null) return;
 
-      const result = await API.get('fetch-demo-data', {
+      const result = await API.get(`/maas/datacubes/${props.selectedModelId}`, {
         params: {
-          modelId: props.selectedModelId,
-          type: 'metadata'
         }
       });
-      const modelMetadata: Model = JSON.parse(result.data); // FIXME: this should use the Model data type
+      const modelMetadata: Model = result.data;
 
       // fill in the model attribute
       // TODO: how spacing and label names are used

@@ -247,7 +247,7 @@ export default defineComponent({
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
     // so no external status need to be tracked
-    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt, ref(allScenarioIds));
+    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
     const selectedScenarioIds = ref([] as string[]);
     function setSelectedScenarioIds(newIds: string[]) {

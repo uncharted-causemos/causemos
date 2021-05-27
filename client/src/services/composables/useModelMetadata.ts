@@ -15,10 +15,8 @@ export default function useModelMetadata(
     metadata.value = null;
     let isCancelled = false;
     async function fetchMetadata() {
-      const response = await API.get('fetch-demo-data', {
+      const response = await API.get(`maas/datacubes/${modelId.value}`, {
         params: {
-          modelId: modelId.value,
-          type: 'metadata'
         }
       });
       if (isCancelled) {
@@ -26,7 +24,7 @@ export default function useModelMetadata(
         //  fetch results to avoid a race condition.
         return;
       }
-      metadata.value = JSON.parse(response.data);
+      metadata.value = response.data;
     }
     onInvalidate(() => {
       isCancelled = true;
