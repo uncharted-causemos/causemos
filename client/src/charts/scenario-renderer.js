@@ -218,15 +218,17 @@ function render(chart, data, runOptions) {
   //   .style('stroke', 'none')
   //   .style('fill', '#CCC');
 
-  // Initial value line
-  historicG.append('line')
-    .attr('x1', xscale(historyRange.start))
-    .attr('y1', yscale(data.initial_value))
-    .attr('x2', xscale(historyRange.end))
-    .attr('y2', yscale(data.initial_value))
-    .style('stroke-width', 1.0)
-    .style('stroke', MARKER_COLOR)
-    .style('opacity', 0.5);
+  if (runOptions.shouldDrawInitialValue) {
+    // Initial value line
+    historicG.append('line')
+      .attr('x1', xscale(historyRange.start))
+      .attr('y1', yscale(data.initial_value))
+      .attr('x2', xscale(historyRange.end))
+      .attr('y2', yscale(data.initial_value))
+      .style('stroke-width', 1.0)
+      .style('stroke', MARKER_COLOR)
+      .style('opacity', 0.5);
+  }
 
   // Render scenario projections - stale scenarios may appear weird due to different time ranges
   renderScenarioProjections(svgGroup, data.scenarios, runOptions, xscale, yscale, formatter, constraints);

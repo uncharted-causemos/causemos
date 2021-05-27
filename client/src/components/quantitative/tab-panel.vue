@@ -50,6 +50,7 @@
             <model-graph
               :data="graphData"
               :scenario-data="scenarioData"
+              :current-engine="currentEngine"
               @background-click="onBackgroundClick"
               @node-body-click="showConstraints"
               @node-header-click="showIndicator"
@@ -167,6 +168,10 @@ export default {
     ArrowButton
   },
   props: {
+    currentEngine: {
+      type: String,
+      default: null
+    },
     modelSummary: {
       type: Object,
       required: true

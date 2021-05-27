@@ -18,6 +18,10 @@ import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
 export default {
   name: 'ModelGraph',
   props: {
+    currentEngine: {
+      type: String,
+      default: null
+    },
     data: {
       type: Object,
       default: () => ({})
@@ -119,7 +123,7 @@ export default {
       this.renderer.hideNeighbourhood();
       this.renderer.enableDrag(true);
       this.renderer.enableSubInteractions();
-      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
+      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId, this.currentEngine);
     }
   }
 };
