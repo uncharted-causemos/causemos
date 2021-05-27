@@ -12,7 +12,6 @@ import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
 import filtersUtil from '@/utils/filters-util';
-import { toCardsData, toCardData } from '@/utils/document-util';
 import DocumentsListTableview from '@/components/kb-explorer/documents-list-tableview';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 
@@ -21,35 +20,13 @@ const isPdf = (card) => {
 };
 
 const READER_TRANSITION_DURATION = 300;
-const displayOptions = {
-  SHOWCARDS: 'cards',
-  SHOWTABLE: 'table'
-};
 
 export default {
   name: 'DocumentsView',
   components: {
     DocumentsListTableview
   },
-  props: {
-    displayOptions: {
-      type: Object,
-      default: displayOptions
-    },
-    displayCards: {
-      type: String,
-      default: displayOptions.SHOWTABLE
-    }
-  },
   data: () => ({
-    cardsConfig: {
-      'card.width': 210,
-      'card.height': 200,
-      'card.disableFlipping': true,
-      'card.displayBackCardByDefault': true,
-      'verticalReader.height': 680
-    },
-    cardsData: [],
     documentData: []
   }),
   computed: {
@@ -88,9 +65,9 @@ export default {
       disableOverlay: 'app/disableOverlay'
     }),
     refresh() {
-      this.refreshcardsData();
+      this.refreshData();
     },
-    refreshcardsData() {
+    refreshData() {
       this.enableOverlay('Refreshing...');
       const url = `projects/${this.project}/documents/`;
       const params = {
@@ -101,8 +78,6 @@ export default {
       };
       API.get(url, { params }).then(d => {
         this.documentData = d.data;
-        console.log(`DOCS: ${this.documentData.length}`);
-        this.cardsData = toCardsData(d.data);
         this.disableOverlay();
       });
     },
@@ -119,7 +94,7 @@ export default {
       const docId = targetCard.data.id;
       const url = `documents/${docId}`;
       const { data } = await API.get(url);
-      const { content } = data ? toCardData(data) : { content: '' };
+      const { content } = !_.isNull(data) ? data : { content: '' };
       return content;
     },
     async fetchReaderContent(targetCard) {
