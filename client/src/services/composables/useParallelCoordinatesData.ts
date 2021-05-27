@@ -1,5 +1,5 @@
 import { Model, ModelParameter } from '../../types/Datacube';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { computed, ref, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { ModelRunStatus } from '@/types/Enums';
@@ -13,45 +13,28 @@ export default function useParallelCoordinatesData(
   metadata: Ref<Model | null>,
   allModelRunData: Ref<ModelRun[]>
 ) {
-  const runParameterValues = ref<ScenarioData[]>([]);
-
-  watchEffect(onInvalidate => {
-    runParameterValues.value = [];
+  const runParameterValues = computed(() => {
     if (allModelRunData.value.length === 0 || metadata.value === null) {
       return [];
     }
-    let isCancelled = false;
-
     const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
-
-    const processModelRunsToParallelCoordinatesData = async function() {
-      if (isCancelled) {
-        // Dependencies have changed since the fetch started, so ignore the
-        //  fetch results to avoid a race condition.
-        return;
+    return allModelRunData.value.map((modelRun, runIndex) => {
+      const run_id = allModelRunData.value[runIndex].id;
+      const runStatus = allModelRunData.value[runIndex].status;
+      const run: ScenarioData = {
+        run_id,
+        status: runStatus ?? ModelRunStatus.Ready
+      };
+      if (run.status === ModelRunStatus.Ready) {
+        // FIXME: assume the first feature is the primary one by default
+        const output_agg_values = allModelRunData.value[runIndex].output_agg_values[0].value;
+        run[outputParameterName] = output_agg_values;
       }
-      runParameterValues.value = allModelRunData.value.map((modelRun, runIndex) => {
-        const run_id = allModelRunData.value[runIndex].id;
-        const runStatus = allModelRunData.value[runIndex].status;
-        const run: ScenarioData = {
-          run_id,
-          status: runStatus ?? ModelRunStatus.Ready
-        };
-        if (run.status === ModelRunStatus.Ready) {
-          // FIXME: assume the first feature is the primary one by default
-          const output_agg_values = allModelRunData.value[runIndex].output_agg_values[0].value;
-          run[outputParameterName] = output_agg_values;
-        }
-        modelRun.parameters.forEach(({ name, value }) => {
-          run[name ?? 'undefined'] = value;
-        });
-        return run;
+      modelRun.parameters.forEach(({ name, value }) => {
+        run[name ?? 'undefined'] = value;
       });
-    };
-    onInvalidate(() => {
-      isCancelled = true;
+      return run;
     });
-    processModelRunsToParallelCoordinatesData();
   });
 
   const dimensions = computed(() => {

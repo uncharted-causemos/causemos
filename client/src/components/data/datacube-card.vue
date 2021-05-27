@@ -7,18 +7,16 @@
         <i class="fa fa-fw fa-compress" />
       </button>
     </header>
-    <div v-if="isModel">
-      <modal-new-scenario-runs
-        v-if="showNewRunsModal === true"
-        :metadata="metadata"
-        :potential-scenarios="potentialScenarios"
-        @close="onNewScenarioRunsModalClose" />
-      <modal-check-runs-execution-status
-        v-if="showModelRunsExecutionStatus === true"
-        :metadata="metadata"
-        :potential-scenarios="runParameterValues"
-        @close="showModelRunsExecutionStatus = false" />
-    </div>
+    <modal-new-scenario-runs
+      v-if="isModel && showNewRunsModal === true"
+      :metadata="metadata"
+      :potential-scenarios="potentialScenarios"
+      @close="onNewScenarioRunsModalClose" />
+    <modal-check-runs-execution-status
+      v-if="isModel & showModelRunsExecutionStatus === true"
+      :metadata="metadata"
+      :potential-scenarios="runParameterValues"
+      @close="showModelRunsExecutionStatus = false" />
     <div class="flex-row">
       <!-- if has multiple scenarios -->
       <div v-if="isModel" class="scenario-selector">
