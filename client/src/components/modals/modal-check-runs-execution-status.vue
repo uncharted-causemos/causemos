@@ -82,7 +82,7 @@ export default defineComponent({
   },
   computed: {
     potentialRunsParameters(): Array<any> {
-      return Object.keys(this.potentialRuns[0]);
+      return this.potentialRuns.length > 0 ? Object.keys(this.potentialRuns[0]) : [];
     },
     potentialRuns(): Array<any> {
       const runs = this.potentialScenarios.filter(r => r.status !== ModelRunStatus.Ready);
