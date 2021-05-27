@@ -11,12 +11,8 @@
         <div class="row">
           <hr>
         </div>
-        <div class="row">
-          <pagination
-            class="col-md-8"
-            :label="'documents'"
-            :total="documentsCount"
-          />
+        <div class="row"
+          v-if="showSortingOptions">
           <div class="controls col-md-2">
             <div class="sorting">
               <div>
@@ -70,6 +66,11 @@
                 :documentMeta="documentMeta"/>
             </div>
           </div>
+          <pagination
+            class="col-md-8"
+            :label="'documents'"
+            :total="documentsCount"
+          />
         </div>
       </div>
     </div>
@@ -101,6 +102,10 @@ export default {
     documentData: {
       type: Array,
       default: () => []
+    },
+    showSortingOptions: {
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({
