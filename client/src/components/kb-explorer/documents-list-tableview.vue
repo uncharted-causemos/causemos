@@ -91,7 +91,7 @@ const SORTING_OPTIONS = {
 };
 
 export default {
-  name: 'UnchartedCardsTableview',
+  name: 'DocumentsListTableview',
   components: {
     DocumentsListItem,
     DropdownControl,
