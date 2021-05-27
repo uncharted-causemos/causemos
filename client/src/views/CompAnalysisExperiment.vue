@@ -94,6 +94,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
+import { ModelRunStatus } from '@/types/Enums';
 
 const DRILLDOWN_TABS = [
   {
@@ -129,12 +130,6 @@ export default defineComponent({
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
-    watch(() => metadata.value, () => {
-      mainModelOutput.value = metadata.value?.outputs[0];
-    }, {
-      immediate: true
-    });
-
     const selectedScenarioIds = ref([] as string[]);
 
     const selectedTimestamp = ref(0);
@@ -148,7 +143,7 @@ export default defineComponent({
     const timeInterval = 10000;
 
     function fetchData() {
-      if (!newRunsMode.value) {
+      if (!newRunsMode.value && metadata.value?.type === 'model') {
         modelRunsFetchedAt.value = Date.now();
       }
     }
@@ -158,6 +153,17 @@ export default defineComponent({
 
     const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
     const scenarioCount = computed(() => allModelRunData.value.length);
+
+    watch(() => metadata.value, () => {
+      mainModelOutput.value = metadata.value?.outputs[0];
+
+      if (metadata.value?.type === 'indicator') {
+        const validScenarioIds = allModelRunData.value.filter(run => run.status === ModelRunStatus.Ready).map(run => run.id);
+        selectedScenarioIds.value = validScenarioIds;
+      }
+    }, {
+      immediate: true
+    });
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -198,9 +204,7 @@ export default defineComponent({
           if (selectedScenarioID !== undefined) {
             // we should have at least one valid scenario selected. If not, cancel scenario selection
             const selectedIds = selectedScenarioID !== '' ? [selectedScenarioID] : [];
-            if (this.selectedScenarioIds.includes(selectedScenarioID) === false) {
-              this.setSelectedScenarioIds(selectedIds);
-            }
+            this.setSelectedScenarioIds(selectedIds);
           }
         }
       }
@@ -225,10 +229,11 @@ export default defineComponent({
     },
     updateRouteParams() {
       // save the info in the query params so saved insights would pickup the latest value
+      // FIXME: only support saving insights with at most a single valid scenario id
       router.push({
         query: {
           timestamp: this.selectedTimestamp,
-          selectedScenarioID: this.selectedScenarioIds.length > 0 ? this.selectedScenarioIds[0] : ''
+          selectedScenarioID: this.selectedScenarioIds.length === 1 ? this.selectedScenarioIds[0] : undefined
         }
       }).catch(() => {});
     },

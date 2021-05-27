@@ -3,7 +3,7 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
-      <uncharted-cards-reader-content
+      <documents-reader-content
         :data="readerContentData"
         :switch-button-data="switchButtonData"
         @click-close-icon="close"
@@ -18,7 +18,7 @@ import { mapGetters } from 'vuex';
 import API from '@/api/api';
 import { toCardData, DOC_FIELD } from '@/utils/document-util';
 import Modal from '@/components/modals/modal';
-import UnchartedCardsReaderContent from '@/components/cards/uncharted-cards-reader-content';
+import DocumentsReaderContent from '@/components/kb-explorer/documents-reader-content';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 
 const CONTENT_WIDTH = 800;
@@ -31,7 +31,7 @@ const isPdf = (data) => {
 export default {
   name: 'ModalDocument',
   components: {
-    UnchartedCardsReaderContent,
+    DocumentsReaderContent,
     Modal
   },
   props: {

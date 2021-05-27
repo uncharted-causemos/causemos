@@ -1,16 +1,7 @@
 <template>
   <div class="document-view-container h-100 flex flex-col">
-    <uncharted-cards
-      ref="cards"
-      class="flex-grow-1 h-0"
-      :data="cardsData"
-      :config="cardsConfig"
-      @card-click="onCardClick"
-      @card-navigate="updateReaderContent"
-    />
-    <pagination
-      :label="'documents'"
-      :total="documentsCount"
+    <documents-list-tableview
+      :documentData="documentData"
     />
   </div>
 </template>
@@ -21,9 +12,7 @@ import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
 import filtersUtil from '@/utils/filters-util';
-import { toCardsData, toCardData } from '@/utils/document-util';
-import Pagination from '@/components/pagination';
-import UnchartedCards from '@/components/cards/uncharted-cards';
+import DocumentsListTableview from '@/components/kb-explorer/documents-list-tableview';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 
 const isPdf = (card) => {
@@ -31,23 +20,14 @@ const isPdf = (card) => {
 };
 
 const READER_TRANSITION_DURATION = 300;
+
 export default {
   name: 'DocumentsView',
   components: {
-    UnchartedCards,
-    Pagination
-  },
-  props: {
+    DocumentsListTableview
   },
   data: () => ({
-    cardsConfig: {
-      'card.width': 210,
-      'card.height': 200,
-      'card.disableFlipping': true,
-      'card.displayBackCardByDefault': true,
-      'verticalReader.height': 680
-    },
-    cardsData: []
+    documentData: []
   }),
   computed: {
     ...mapGetters({
@@ -85,9 +65,9 @@ export default {
       disableOverlay: 'app/disableOverlay'
     }),
     refresh() {
-      this.refreshcardsData();
+      this.refreshData();
     },
-    refreshcardsData() {
+    refreshData() {
       this.enableOverlay('Refreshing...');
       const url = `projects/${this.project}/documents/`;
       const params = {
@@ -97,7 +77,7 @@ export default {
         sort: this.sort
       };
       API.get(url, { params }).then(d => {
-        this.cardsData = toCardsData(d.data);
+        this.documentData = d.data;
         this.disableOverlay();
       });
     },
@@ -114,7 +94,7 @@ export default {
       const docId = targetCard.data.id;
       const url = `documents/${docId}`;
       const { data } = await API.get(url);
-      const { content } = data ? toCardData(data) : { content: '' };
+      const { content } = !_.isNull(data) ? data : { content: '' };
       return content;
     },
     async fetchReaderContent(targetCard) {
