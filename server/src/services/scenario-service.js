@@ -8,12 +8,13 @@ const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 /**
  *  Find scenarios by model and engine
  * @param {string} modelId
- * @param {string} engine // FIXME: not used
+ * @param {string} engine
  * @param {object} options - additiona options for ES search
  */
 const find = async(modelId, engine, options) => {
   const scenarioConnection = Adapter.get(RESOURCE.SCENARIO);
-  const scenarios = await scenarioConnection.find([{ field: 'model_id', value: modelId }], options);
+  // FIXME: hardwiring to dyse, should remove engine criterion
+  const scenarios = await scenarioConnection.find([{ field: 'model_id', value: modelId }, { field: 'engine', value: 'dyse' }], options);
   return scenarios;
 };
 
