@@ -61,7 +61,7 @@ export default defineComponent({
     async function fetchModelInfo() {
       if (props.selectedModelId === null) return;
 
-      const result = await API.get(`/maas/datacubes/${props.selectedModelId}`, {
+      const result = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
         params: {
         }
       });

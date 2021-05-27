@@ -104,7 +104,7 @@ export default defineComponent({
   setup(props) {
     const metadata = ref<any>({});
     async function fetchMetadata() {
-      const response = await API.get(`/maas/datacubes/${props.selectedModelId}`, {
+      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
         params: {
         }
       });
