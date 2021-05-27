@@ -104,13 +104,11 @@ export default defineComponent({
   setup(props) {
     const metadata = ref<any>({});
     async function fetchMetadata() {
-      const response = await API.get('fetch-demo-data', {
+      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
         params: {
-          modelId: props.selectedModelId,
-          type: 'metadata'
         }
       });
-      metadata.value = JSON.parse(response.data);
+      metadata.value = response.data;
     }
     fetchMetadata();
     return {

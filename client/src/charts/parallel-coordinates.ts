@@ -10,10 +10,7 @@ import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
-
-// TODO: use each axis min/max based on the metadata
-
-// TODO: use each axis min/max based on the metadata
+import { ModelRunStatus } from '@/types/Enums';
 
 //
 // custom data types
@@ -165,13 +162,13 @@ function renderParallelCoordinates(
   //
   // Color scale
   //
-  colorFunc = (status = 'READY') => {
+  colorFunc = (status = ModelRunStatus.Ready) => {
     switch (status) {
-      case 'READY':
+      case ModelRunStatus.Ready:
         return lineColorsReady;
-      case 'SUBMITTED':
+      case ModelRunStatus.Submitted:
         return lineColorsSubmitted;
-      case 'FAILED':
+      case ModelRunStatus.ExecutionFailed:
         return lineColorsFailed;
       default:
         return lineColorsUnknown;
@@ -320,7 +317,7 @@ function renderParallelCoordinates(
       .attr('stroke-width', lineStrokeWidthNormal)
       .style('stroke', function(d) { return colorFunc(d.status as string); })
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
-      .style('stroke-dasharray', function(d) { return d.status === 'READY' ? 0 : ('3, 3'); })
+      .style('stroke-dasharray', function(d) { return d.status === ModelRunStatus.Ready ? 0 : ('3, 3'); })
     ;
 
     // scenario lines are only interactive in the normal mode
@@ -331,7 +328,7 @@ function renderParallelCoordinates(
 
       // also, in the normal mode, only lines with status READY are clickable
       lines
-        .filter(function(d) { return d.status === 'READY'; })
+        .filter(function(d) { return d.status === ModelRunStatus.Ready; })
         .on('click', handleLineSelection);
     }
   }

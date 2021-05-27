@@ -8,18 +8,18 @@
       </button>
     </header>
     <modal-new-scenario-runs
-      v-if="showNewRunsModal === true"
+      v-if="isModel && showNewRunsModal === true"
       :metadata="metadata"
       :potential-scenarios="potentialScenarios"
       @close="onNewScenarioRunsModalClose" />
     <modal-check-runs-execution-status
-      v-if="showModelRunsExecutionStatus === true"
+      v-if="isModel & showModelRunsExecutionStatus === true"
       :metadata="metadata"
       :potential-scenarios="runParameterValues"
       @close="showModelRunsExecutionStatus = false" />
     <div class="flex-row">
       <!-- if has multiple scenarios -->
-      <div class="scenario-selector">
+      <div v-if="isModel" class="scenario-selector">
         <div>
           <div class="checkbox">
             <label @click="toggleBaselineDefaultsVisibility()">
@@ -192,6 +192,7 @@ import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import _ from 'lodash';
+import { ModelRunStatus } from '@/types/Enums';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -283,7 +284,7 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues
-    } = useParallelCoordinatesData(metadata, selectedModelId, allModelRunData);
+    } = useParallelCoordinatesData(metadata, allModelRunData);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -317,6 +318,10 @@ export default defineComponent({
         emitTimestampSelection(lastTimestamp ?? 0);
       });
 
+    const isModel = computed(() => {
+      return metadata.value?.type === 'model';
+    });
+
     const outputSourceSpecs = computed(() => {
       return [{
         id: selectedScenarioIds.value[0],
@@ -342,7 +347,8 @@ export default defineComponent({
       runParameterValues,
       isDescriptionView,
       mainModelOutput,
-      metadata
+      metadata,
+      isModel
     };
   },
   data: () => ({
@@ -397,11 +403,8 @@ export default defineComponent({
       this.showModelRunsExecutionStatus = true;
     },
     updateScenarioSelection(e: { scenarios: Array<ScenarioData> }) {
-      const selectedScenarios = e.scenarios.filter(s => s.status === 'READY');
-      if (
-        selectedScenarios.length === 0 ||
-        (selectedScenarios.length === 1 && selectedScenarios[0] === undefined)
-      ) {
+      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
+      if (selectedScenarios.length === 0) {
         // console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
       } else {
