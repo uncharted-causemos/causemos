@@ -10,7 +10,7 @@
       />
       <div
         class="layer-toggle-button"
-        @click="isGridMap = !isGridMap">
+        @click="clickLayerToggle">
         <i
           :class="layerButtonClass"
         />
@@ -112,7 +112,8 @@ export default {
     'on-map-load',
     'aggregation-level-change',
     'slide-handle-change',
-    'sync-bounds'
+    'sync-bounds',
+    'click-layer-toggle'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -136,6 +137,10 @@ export default {
       type: Array,
       default: () => []
     },
+    isGridMap: {
+      type: Boolean,
+      default: () => false
+    },
     mapBounds: {
       type: Array,
       default: () => [ // Default bounds to Ethiopia
@@ -145,7 +150,6 @@ export default {
     }
   },
   data: () => ({
-    isGridMap: false,
     baseLayer: undefined,
     colorLayer: undefined,
     hoverId: undefined,
@@ -363,6 +367,9 @@ export default {
       this.$nextTick(() => {
         component.enableCamera();
       });
+    },
+    clickLayerToggle() {
+      this.$emit('click-layer-toggle', { isGridMap: this.isGridMap });
     },
     updateLayerFilter() {
       if (!this.colorLayer) return;

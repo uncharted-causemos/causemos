@@ -172,7 +172,9 @@
               :selected-admin-level="selectedAdminLevel"
               :filters="mapFilters"
               :map-bounds="mapBounds"
+              :is-grid-map="isGridMap"
               @sync-bounds="onSyncMapBounds"
+              @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
               @slide-handle-change="onMapSlideChange"
             />
@@ -377,7 +379,8 @@ export default defineComponent({
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
     ],
-    mapReady: false
+    mapReady: false,
+    isGridMap: false
   }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
@@ -391,6 +394,9 @@ export default defineComponent({
     },
     onSyncMapBounds(mapBounds: Array<Array<number>>) {
       this.mapBounds = mapBounds;
+    },
+    onClickMapLayerToggle(data: { isGridMap: boolean }) {
+      this.isGridMap = !data.isGridMap;
     },
     onMapSlideChange(data: AnalysisMapFilter) {
       this.mapFilters = [data];
