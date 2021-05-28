@@ -108,7 +108,7 @@ export default defineComponent({
   emits: [
     'select', 'close'
   ],
-  setup(props) {
+  setup() {
     const store = useStore();
     const selectedOption = ref('suggestions');
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
