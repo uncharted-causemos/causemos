@@ -97,15 +97,6 @@ const toAnalysisItemStates = (analysisItems: AnalysisItem[] = []): AnalysisItemS
   });
 };
 
-const toAnalysisItemStatesNew = (analysisItems: AnalysisItemNew[] = []): AnalysisItemNew[] => {
-  return analysisItems.map(item => {
-    return {
-      id: item.id,
-      datacubeId: item.datacubeId
-    };
-  });
-};
-
 const loadFromAnalysisItemsState = async (analysisItems: AnalysisItem[] = []): Promise<AnalysisItem[]> => {
   const datacubeIds = analysisItems.filter(item => !!item.datacubeId).map(item => item.datacubeId);
   if (datacubeIds.length === 0) return [];
@@ -138,7 +129,7 @@ const saveStateNew = _.debounce((state: AnalysisState) => {
   if (!analysisID) return; // Current route doesn't support saving analysis state. Just return.
   const { analysisItems, timeSelectionSyncing, mapBounds } = state;
   saveAnalysisState(state.currentAnalysisId, {
-    analysisItems: toAnalysisItemStatesNew(analysisItems),
+    analysisItems: analysisItems,
     timeSelectionSyncing,
     mapBounds
   });
