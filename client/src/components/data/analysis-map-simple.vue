@@ -20,6 +20,7 @@
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
       @load="onMapLoad"
+      @move="syncBounds"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
     >
@@ -110,7 +111,8 @@ export default {
   emits: [
     'on-map-load',
     'aggregation-level-change',
-    'slide-handle-change'
+    'slide-handle-change',
+    'sync-bounds'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -341,6 +343,26 @@ export default {
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
       this.$emit('on-map-load');
+    },
+    syncBounds(event) {
+      // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
+      // We ignore move events from other maps which are being synced with the master map to avoid situation
+      // where they also trigger prop updates and fire events again to create infinite loop
+      const originalEvent = event.mapboxEvent.originalEvent;
+      if (!originalEvent) return;
+
+      const map = event.map;
+      const component = event.component;
+
+      // Disable camera movement until next tick so that the master map doesn't get updated by the props change
+      // Master map is being interacted by user so camera movement is already applied
+      component.disableCamera();
+
+      this.$emit('sync-bounds', map.getBounds().toArray());
+
+      this.$nextTick(() => {
+        component.enableCamera();
+      });
     },
     updateLayerFilter() {
       if (!this.colorLayer) return;

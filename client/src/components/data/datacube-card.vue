@@ -168,6 +168,8 @@
               :show-tooltip="true"
               :selected-admin-level="selectedAdminLevel"
               :filters="mapFilters"
+              :map-bounds="mapBounds"
+              @sync-bounds="onSyncMapBounds"
               @on-map-load="onMapLoad"
               @slide-handle-change="onMapSlideChange"
             />
@@ -198,6 +200,7 @@ import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vu
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
+import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -366,11 +369,18 @@ export default defineComponent({
     potentialScenarios: [] as Array<ScenarioData>,
     mapFilters: [] as Array<AnalysisMapFilter>,
     showNewRunsModal: false,
-    showModelRunsExecutionStatus: false
+    showModelRunsExecutionStatus: false,
+    mapBounds: [ // Default bounds to Ethiopia
+      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
+      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+    ]
   }),
   methods: {
     onMapLoad() {
       this.$emit('on-map-load');
+    },
+    onSyncMapBounds(mapBounds: Array<Array<number>>) {
+      this.mapBounds = mapBounds;
     },
     onMapSlideChange(data: AnalysisMapFilter) {
       this.mapFilters = [data];
