@@ -6,7 +6,7 @@
         <quantitative-model-options />
         <tab-bar
           class="tab-bar"
-          :tabs="tabs"
+          :tabs="validTabs"
           :active-tab-id="activeTab"
           @tab-click="setActive"
         />
@@ -96,6 +96,7 @@
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity" />
               <edge-weight-slider
+                v-if="showComponent"
                 :selected-relationship="selectedEdge"
                 @set-edge-weights="setEdgeWeights" />
             </evidence-pane>
@@ -129,7 +130,6 @@ import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
 
-
 const PANE_ID = {
   INDICATOR: 'indicator',
   EVIDENCE: 'evidence'
@@ -148,6 +148,16 @@ const EDGE_DRILLDOWN_TABS = [
     id: PANE_ID.EVIDENCE
   }
 ];
+
+const PROJECTION_ENGINES = {
+  DELPHI: 'delphi',
+  DYSE: 'dyse'
+};
+
+const TABS = {
+  MATRIX: 'matrix',
+  FLOW: 'flow'
+};
 
 
 export default {
@@ -205,11 +215,11 @@ export default {
     tabs: [
       {
         name: 'Causal Flow',
-        id: 'flow'
+        id: TABS.FLOW
       },
       {
         name: 'Matrix',
-        id: 'matrix'
+        id: TABS.MATRIX
       }
     ],
     graphData: {},
@@ -234,6 +244,15 @@ export default {
       // if we ever need more state than this
       // add a query store for model
       return this.$route.query?.activeTab || 'flow';
+    },
+    validTabs() {
+      if (this.currentEngine === PROJECTION_ENGINES.DELPHI) {
+        return this.tabs.filter((aTab) => aTab.id !== TABS.MATRIX);
+      }
+      return this.tabs;
+    },
+    showComponent() {
+      return this.currentEngine !== PROJECTION_ENGINES.DELPHI;
     }
   },
   watch: {
