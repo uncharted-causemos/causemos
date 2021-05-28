@@ -113,8 +113,6 @@ export default defineComponent({
     const selectedOption = ref('suggestions');
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
 
-    console.log('!!', props.suggestions.length);
-
     const croppedOntologyConcepts = computed(() => {
       let croppedOntologyConcepts = ontologyConcepts.value.filter((concept: string) => concept !== UNKNOWN);
       croppedOntologyConcepts = croppedOntologyConcepts.map((concept: string) => {
