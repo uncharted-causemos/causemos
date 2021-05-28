@@ -32,9 +32,9 @@ export interface Scenario {
   engine: string;
   is_valid: boolean;
   is_baseline: boolean;
-  parameter: ScenarioParameter | null;
-  result: ScenarioResult[] | null;
-  experiment_id: string | null;
+  parameter?: ScenarioParameter;
+  result?: ScenarioResult[];
+  experiment_id?: string;
 }
 
 export interface NodeParameter {
@@ -56,7 +56,7 @@ export interface EdgeParameter {
   parameter?: {
     weights: number[];
   };
-  user_polarity: number | null;
+  user_polarity: number | null; // FIXME: need better ways to handle special case nulls
   polarity?: number;
 }
 
@@ -84,7 +84,7 @@ export interface CAGModelSummary {
   created_at: number;
   modified_at: number;
 
-  thumbnailSource: string | null;
+  thumbnailSource?: string;
 }
 
 export interface CAGGraph {
