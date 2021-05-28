@@ -8,7 +8,9 @@ import {
   ScenarioConstraint,
   NodeParameter,
   EdgeParameter,
-  CAGModelSummary
+  CAGModelSummary,
+  CAGGraph,
+  ScenarioResult
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
@@ -100,12 +102,12 @@ const recalculate = async (modelId: string) => {
   await API.post(`cags/${modelId}/recalculate`);
 };
 
-const addComponents = async (modelId, nodes, edges) => {
+const addComponents = async (modelId: string, nodes: NodeParameter[], edges: EdgeParameter[]) => {
   const result = await API.put(`cags/${modelId}/components`, { operation: 'update', nodes, edges });
   return result.data;
 };
 
-const removeComponents = async (modelId, nodes, edges) => {
+const removeComponents = async (modelId: string, nodes: NodeParameter[], edges: EdgeParameter[]) => {
   const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', nodes, edges });
   return result.data;
 };
@@ -292,17 +294,19 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
  * @param {array} scenarios - array of scenario objects
  */
 const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[], scenarios: Scenario[]) => {
-  const result = {};
+  const result: any = {};
   const modelParameter = modelSummary.parameter;
 
   const getScenarioConstraints = (scenario: Scenario, concept: string) => {
-    if (_.isEmpty(scenario.parameter)) return [];
+    if (_.isEmpty(scenario.parameter) || _.isNil(scenario.parameter)) return [];
 
     const constraints = scenario.parameter.constraints.find(d => d.concept === concept);
     return _.isNil(constraints) ? [] : constraints.values;
   };
 
   const getScenarioResult = (scenario: Scenario, concept: string) => {
+    if (!scenario.result) return {};
+
     const result = scenario.result.find(d => d.concept === concept);
 
     // Scenario may be stale/invalid
@@ -316,8 +320,9 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
     };
   };
 
+  // FIXME: types
   nodes.forEach(nodeData => {
-    const graphData = {};
+    const graphData: any = {};
 
     // 1. indicator and model information
     const indicatorData = nodeData.parameter || {};
@@ -336,7 +341,7 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     // 2. grab relevant data for this node from each scenario, if applicable
     scenarios.forEach(scenario => {
-      const scenarioData = {};
+      const scenarioData: any = {};
       scenarioData.id = scenario.id;
       scenarioData.is_baseline = scenario.is_baseline;
       scenarioData.is_valid = scenario.is_valid;
@@ -411,7 +416,7 @@ const runSensitivityAnalysis = async (
   modelSummary: CAGModelSummary,
   analysisType: string,
   analysisMode: string,
-  constraints
+  constraints: ScenarioConstraint[]
 ) => {
   const { id: modelId } = modelSummary;
   const { engine, num_steps: numTimeSteps, projection_start: experimentStart } = modelSummary.parameter;
@@ -480,7 +485,7 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
  * @param {object} cagB - CAG with edges/nodes
  * @param {boolean} overwriteParameterization
  */
-export const mergeCAG = (cagA, cagB, overwriteParameterization) => {
+export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterization: boolean) => {
   // Merge nodes from cagA
   cagB.nodes.forEach(node => {
     const targetNode = cagA.nodes.find(d => d.concept === node.concept);
@@ -539,7 +544,7 @@ export const mergeCAG = (cagA, cagB, overwriteParameterization) => {
  * @param {object} currentCAG
  * @param {array} array of cag objects
  */
-export const hasMergeConflictNodes = (currentCAG, importCAGs) => {
+export const hasMergeConflictNodes = (currentCAG: CAGGraph, importCAGs: CAGGraph[]) => {
   for (let i = 0; i < currentCAG.nodes.length; i++) {
     const node = currentCAG.nodes[i];
     for (let j = 0; j < importCAGs.length; j++) {
@@ -562,7 +567,7 @@ export const hasMergeConflictNodes = (currentCAG, importCAGs) => {
  * @param {object} currentCAG
  * @param {array} array of cag objects
  */
-export const hasMergeConflictEdges = (currentCAG, importCAGs) => {
+export const hasMergeConflictEdges = (currentCAG: CAGGraph, importCAGs: CAGGraph[]) => {
   for (let i = 0; i < currentCAG.edges.length; i++) {
     const edge = currentCAG.edges[i];
     for (let j = 0; j < importCAGs.length; j++) {
@@ -583,7 +588,7 @@ export const ENGINE_OPTIONS = [
   { key: 'delphi', value: 'Delphi', maxSteps: 36 }
 ];
 
-export const calculateScenarioPercentageChange = (experiment, initValue) => {
+export const calculateScenarioPercentageChange = (experiment: ScenarioResult, initValue: number) => {
   // We just calculate the percent change when: 1) when initial and last value are the same sign; and 2) initial value is not 0
   // We will be asking users about utility of this percent change
 
@@ -591,7 +596,9 @@ export const calculateScenarioPercentageChange = (experiment, initValue) => {
   // 1. the intial value, which is in turn based on time series data
   // 2. the clamp that the user set at t0, which is by default the initial value if the user hasn't set a clamp at t0
   // We've opted to use option 2
-  const lastValue = _.last(experiment.values).value;
+  const last = _.last(experiment.values);
+  const lastValue = last ? last.value : 0;
+
   if ((initValue * lastValue > 0)) {
     return ((lastValue - initValue) / Math.abs(initValue)) * 100; // %Delta = (C-P)/|P
   } else {
@@ -604,7 +611,7 @@ export const calculateScenarioPercentageChange = (experiment, initValue) => {
 // above and below historic min/max so that Dyse CAN project above/below the historic min/max.
 // the padding above and below is equal to the range between min and max.  There's some tweaking to make it work with numLevels.
 
-export const expandExtentForDyseProjections = (yExtent, numLevels) => {
+export const expandExtentForDyseProjections = (yExtent: [number, number], numLevels: number) => {
   const scalingFactor = ((yExtent[1] - yExtent[0]) / ((1 / 3.0) * (numLevels - 1)));
   const averageExtent = 0.5 * (yExtent[0] + yExtent[1]);
   const dyseOffset = 0.25 * ((numLevels + 1) % 2);

@@ -15,7 +15,7 @@ export interface ScenarioParameter {
 
 
 export interface ScenarioResult {
-  conept: string;
+  concept: string;
   values: { timestamp: number; value: number } [];
   confidenceInterval: {
     upper: { timestamp: number; value: number } [];
@@ -38,25 +38,26 @@ export interface Scenario {
 }
 
 export interface NodeParameter {
-  id: string;
+  id?: string;
   concept: string;
   label: string;
-  model_id: string;
-  modified_at: number;
+  model_id?: string;
+  modified_at?: number;
   parameter: any; // FIXME maybe this can be specified
 }
 
 export interface EdgeParameter {
-  id: string;
+  id?: string;
   source: string;
   target: string;
-  model_id: string;
+  model_id?: string;
   reference_ids: string[];
-  modified_at: number;
+  modified_at?: number;
   parameter: {
     weights: number[];
   };
-  user_polarity: number;
+  user_polarity: number | null;
+  polarity?: number;
 }
 
 export interface CAGModelParameter {
@@ -84,4 +85,9 @@ export interface CAGModelSummary {
   modified_at: number;
 
   thumbnailSource: string | null;
+}
+
+export interface CAGGraph {
+  nodes: NodeParameter[];
+  edges: EdgeParameter[];
 }
