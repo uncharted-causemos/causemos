@@ -163,6 +163,9 @@
               v-for="(spec, indx) in outputSourceSpecs"
               :key="spec.id"
               class="card-map"
+              :class="[
+                `card-count-${outputSourceSpecs.length}`
+              ]"
               :output-source-specs="outputSourceSpecs"
               :output-selection=indx
               :show-tooltip="true"
@@ -544,15 +547,6 @@ header {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  overflow-y: scroll;
-
-  :last-child {
-    flex-grow: initial;
-  }
-
-  :first-child {
-    flex-grow: 1;
-  }
 
   &.full-width {
     width: 100%;
@@ -563,8 +557,22 @@ header {
   flex-grow: 1;
   width: auto;
   height: inherit;
-  margin: 5px;
-  min-width: 48%;
+  padding: 5px;
+  &.card-count-1 {
+    flex-grow: 1
+  }
+  &.card-count-3,
+  &.card-count-4 {
+    height: 50%;
+    width: 50%;
+    max-width: 50%;
+  }
+  &.card-count-5,
+  &.card-count-6 {
+    height: 50%;
+    width: calc(100% / 3);
+    max-width: calc(100% / 3);
+  }
 }
 
 .button-row {
