@@ -12,7 +12,7 @@
             accept=".html, .csv, .doc, .pdf, .txt"
             class="form-control-file"
             @change="updateInputFile">
-          <span class="instruction-set">.html, .csv, .doc, .pdf, .txt, or zip (max. 100MB) </span>
+          <p class="instruction-set">.html, .csv, .doc, .pdf, or .txt (max. 100MB) </p>
           <div
             v-if="loading"
             class="upload-file-label">
@@ -116,10 +116,11 @@ export default {
 
 form {
   input {
-    display: inline-block;
+    width: 100%;
   }
-  span {
-    color: $label-color;
-  }
+}
+
+.instruction-set {
+  color: $label-color;
 }
 </style>
