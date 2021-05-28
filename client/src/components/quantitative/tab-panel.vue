@@ -91,8 +91,7 @@
               :statements="selectedStatements"
               :project="project"
               :is-fetching-statements="isFetchingStatements"
-              :should-confirm-curations="true"
-              :current-engine="currentEngine">
+              :should-confirm-curations="true">
               <edge-polarity-switcher
                 :selected-relationship="selectedEdge"
                 @edge-set-user-polarity="setEdgeUserPolarity" />
