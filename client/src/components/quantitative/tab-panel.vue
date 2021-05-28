@@ -112,7 +112,6 @@
 </template>
 <script>
 import { mapGetters } from 'vuex';
-import _ from 'lodash';
 
 import router from '@/router';
 import QuantitativeModelOptions from '@/components/quantitative/quantitative-model-options';
@@ -248,7 +247,7 @@ export default {
     },
     validTabs() {
       if (this.currentEngine === PROJECTION_ENGINES.DELPHI) {
-        return _.filter(this.tabs, (aTab) => aTab.id !== TABS.MATRIX);
+        return this.tabs.filter((aTab) => aTab.id !== TABS.MATRIX);
       }
       return this.tabs;
     },
