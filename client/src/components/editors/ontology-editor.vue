@@ -45,54 +45,6 @@
             :placeholder-message="'Search concepts...'"
             @item-selected="select" />
         </div>
-
-        <div v-if="selectedOption === 'new'">
-          <div>
-            <small-text-button
-              :label="'Back'"
-              @click="backToSuggestions"
-            />
-          </div>
-          <div class="padded-row">
-            <label>New concept name</label>
-            <input
-              v-model="newNodeName"
-              v-focus
-              type="text"
-              class="form-control"
-              placeholder="Enter name">
-            <div
-              v-if="showErrorMessage"
-              class="empty-new-node-message"
-            >
-              {{ errorMessage }}
-            </div>
-          </div>
-          <div class="padded-row">
-            <label>Add examples (optional)</label>
-            <input
-              v-model="examples"
-              type="text"
-              class="form-control"
-              placeholder="Separate examples with commas">
-          </div>
-          <div>
-            <label class="padded-row">Select parent of new concept</label>
-            <auto-complete
-              :search-fn="searchConcept"
-              :display-type="'ConceptDisplay'"
-              :placeholder-message="'Search for an existing concept'"
-              @item-selected="setParentGrounding" />
-          </div>
-          <div>
-            <button
-              type="button"
-              class="btn btn-primary"
-              @click="createNewConcept()">
-              Create
-            </button>
-          </div>
-        </div>
       </template>
 
       <template
@@ -104,46 +56,37 @@
             :label="'Search All Concepts'"
             @click="selectOption('pick')"
           />
-          <small-text-button
-            :label="'Add New Concept'"
-            :disabled="true"
-            @click="selectOption('new')"
-          />
         </div>
       </template>
     </dropdown-control>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
-import { mapGetters, mapActions } from 'vuex';
+import { useStore } from 'vuex';
+import { defineComponent, ref, computed } from 'vue';
 
-import API from '@/api/api';
-
-import DropdownControl from '@/components/dropdown-control';
-import AutoComplete from '@/components/widgets/autocomplete/autocomplete';
-import ConceptDisplay from '@/components/widgets/autocomplete/concept-display';
-import CloseButton from '@/components/widgets/close-button';
+import DropdownControl from '@/components/dropdown-control.vue';
+import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
+import ConceptDisplay from '@/components/widgets/autocomplete/concept-display.vue';
+import CloseButton from '@/components/widgets/close-button.vue';
 import { UNKNOWN } from '@/utils/concept-util';
-import SmallTextButton from '@/components/widgets/small-text-button';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import precisionFormatter from '@/formatters/precision-formatter';
 
-function _matchedConcepts(target, str) {
+function _matchedConcepts(target: string, str: string) {
   return target.toLowerCase().replace(/_/g, ' ').includes(
     str.toLowerCase().replace(/_/g, ' ')
   );
 }
-
-const ERROR_NAME_REQUIRED = 'Please enter a name for the new node';
-const ERROR_PARENT_REQUIRED = 'Please select the new node\'s parent';
 
 /**
  * Concept picker, pick from either:
  * - An item from a list of concept suggestions that is scored
  * - An item from all ontological concepts
  */
-export default {
+export default defineComponent({
   name: 'OntologyEditor',
   components: {
     AutoComplete,
@@ -165,40 +108,35 @@ export default {
   emits: [
     'select', 'close'
   ],
-  data: () => ({
-    selectedOption: 'suggestions',
-    newNodeName: '',
-    errorMessage: '',
-    examples: ''
-  }),
-  computed: {
-    ...mapGetters({
-      ontologyConcepts: 'app/ontologyConcepts'
-      // collection: 'app/collection' // FIXME: required for add-ontology-concept
-    }),
-    showErrorMessage() {
-      return !_.isEmpty(this.errorMessage);
-    },
-    croppedOntologyConcepts: function() {
-      let croppedOntologyConcepts = this.ontologyConcepts.filter(concept => concept !== UNKNOWN);
-      croppedOntologyConcepts = croppedOntologyConcepts.map(concept => {
-        let splitted = concept.split('/');
-        splitted = splitted.slice(0, splitted.length - 1).join('/');
-        return splitted;
+  setup(props) {
+    const store = useStore();
+    const selectedOption = ref('suggestions');
+    const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
+
+    console.log('!!', props.suggestions.length);
+
+    const croppedOntologyConcepts = computed(() => {
+      let croppedOntologyConcepts = ontologyConcepts.value.filter((concept: string) => concept !== UNKNOWN);
+      croppedOntologyConcepts = croppedOntologyConcepts.map((concept: string) => {
+        const splitted = concept.split('/');
+        return splitted.slice(0, splitted.length - 1).join('/');
       });
       return _.uniq(croppedOntologyConcepts);
-    }
+    });
+
+    return {
+      selectedOption,
+      ontologyConcepts,
+      croppedOntologyConcepts
+    };
   },
   methods: {
-    ...mapActions({
-      setOntologyConcepts: 'app/setOntologyConcepts'
-    }),
     precisionFormatter,
-    async searchConcept(searchTerm) {
-      const suggestions = this.ontologyConcepts.filter(item => _matchedConcepts(item, searchTerm));
+    async searchConcept(searchTerm: string) {
+      const suggestions = this.ontologyConcepts.filter((item: string) => _matchedConcepts(item, searchTerm));
       return suggestions;
     },
-    select(suggestion) {
+    select(suggestion: string) {
       if (!_.isEmpty(suggestion) && (this.concept !== suggestion)) {
         this.$emit('select', suggestion);
       }
@@ -206,7 +144,7 @@ export default {
     close() {
       this.$emit('close');
     },
-    suggestionStyle(concept) {
+    suggestionStyle(concept: string) {
       if (this.concept === concept) {
         return {
           opacity: 1
@@ -217,31 +155,14 @@ export default {
         };
       }
     },
-    selectOption(option) {
+    selectOption(option: string) {
       this.selectedOption = option;
     },
     backToSuggestions() {
       this.selectedOption = 'suggestions';
-    },
-    setParentGrounding(parentGrounding) {
-      this.parentGrounding = parentGrounding;
-    },
-    createNewConcept() {
-      if (_.isEmpty(this.newNodeName)) {
-        this.errorMessage = ERROR_NAME_REQUIRED;
-      } else if (_.isEmpty(this.parentGrounding)) {
-        this.errorMessage = ERROR_PARENT_REQUIRED;
-      } else {
-        this.errorMessage = '';
-        const newOntologyNode = this.parentGrounding + '/' + this.newNodeName;
-        const examplesArray = this.examples.split(',');
-        API.post(`collections/${this.collection}/new-ontology-concept`, { name: newOntologyNode, examples: examplesArray }).then(() => {
-          this.toaster(`Created ${newOntologyNode}`, 'success', false);
-        });
-      }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
