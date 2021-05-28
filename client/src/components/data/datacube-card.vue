@@ -157,14 +157,14 @@
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
           <div
-            v-if="!isDescriptionView"
+            v-if="mapReady && !isDescriptionView"
             class="card-map-container full-width">
             <data-analysis-map
-              v-for="(selectedScenario, indx) in selectedScenarioIds"
-              :key="selectedScenario"
+              v-for="(spec, indx) in outputSourceSpecs"
+              :key="spec.id"
               class="card-map"
-              :output-source-specs="outputSourceSpecs[indx]"
-              :output-selection=0
+              :output-source-specs="outputSourceSpecs"
+              :output-selection=indx
               :show-tooltip="true"
               :selected-admin-level="selectedAdminLevel"
               :filters="mapFilters"
@@ -182,6 +182,7 @@
 
 <script lang="ts">
 import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
+import _ from 'lodash';
 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -198,9 +199,8 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
-import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -332,7 +332,7 @@ export default defineComponent({
 
     const outputSourceSpecs = computed(() => {
       return selectedScenarioIds.value.map(selectedScenarioId => {
-        return [{
+        return {
           id: selectedScenarioId,
           modelId: selectedModelId.value,
           runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
@@ -341,7 +341,7 @@ export default defineComponent({
           temporalResolution: selectedTemporalResolution.value,
           temporalAggregation: selectedTemporalAggregation.value,
           spatialAggregation: selectedSpatialAggregation.value
-        }];
+        };
       });
     });
 
@@ -373,8 +373,15 @@ export default defineComponent({
     mapBounds: [ // Default bounds to Ethiopia
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-    ]
+    ],
+    mapReady: false
   }),
+  created() {
+    enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
+  },
+  unmounted() {
+    disableConcurrentTileRequestsCaching();
+  },
   methods: {
     onMapLoad() {
       this.$emit('on-map-load');
