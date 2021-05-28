@@ -32,6 +32,11 @@ interface AnalysisItem extends AnalysisItemState {
   outputDescription: string;
 }
 
+interface AnalysisItemNew {
+  id: string;
+  datacubeId: string;
+}
+
 interface AlgebraciTransform {
   name?: string;
   maxInputCount?: number;
@@ -69,6 +74,13 @@ const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariab
   };
 };
 
+const createNewAnalysisItemNew = (datacubeId: string): AnalysisItemNew => {
+  return {
+    id: datacubeId,
+    datacubeId
+  };
+};
+
 /**
  * Return new analysis items where data portion of each item of given analysis item list is trimmed off
  */
@@ -81,6 +93,15 @@ const toAnalysisItemStates = (analysisItems: AnalysisItem[] = []): AnalysisItemS
       outputVariable: item.outputVariable,
       selection: item.selection,
       filter: item.filter
+    };
+  });
+};
+
+const toAnalysisItemStatesNew = (analysisItems: AnalysisItemNew[] = []): AnalysisItemNew[] => {
+  return analysisItems.map(item => {
+    return {
+      id: item.id,
+      datacubeId: item.datacubeId
     };
   });
 };
@@ -106,6 +127,18 @@ const saveState = _.debounce((state: AnalysisState) => {
   const { analysisItems, timeSelectionSyncing, mapBounds } = state;
   saveAnalysisState(state.currentAnalysisId, {
     analysisItems: toAnalysisItemStates(analysisItems),
+    timeSelectionSyncing,
+    mapBounds
+  });
+}, 500);
+
+const saveStateNew = _.debounce((state: AnalysisState) => {
+  // FIXME: Vue3 A bit hacky, might be a better way
+  const analysisID = state.currentAnalysisId; // router.currentRoute.value.params.analysisID;
+  if (!analysisID) return; // Current route doesn't support saving analysis state. Just return.
+  const { analysisItems, timeSelectionSyncing, mapBounds } = state;
+  saveAnalysisState(state.currentAnalysisId, {
+    analysisItems: toAnalysisItemStatesNew(analysisItems),
     timeSelectionSyncing,
     mapBounds
   });
@@ -155,6 +188,16 @@ const actions: ActionTree<AnalysisState, any> = {
     newState.analysisItems = await loadFromAnalysisItemsState(newState.analysisItems);
     commit('loadState', { analysisID, payload: newState });
   },
+  async loadStateNew({ state, commit }, analysisID: string) {
+    // loadState is called as a route guard on the DataView and DataExplorer pages.
+    //  the analysisID is stored to avoid fetching its state if it has already been fetched,
+    //  and to avoid duplicating shared fetch/state logic.
+    if (!analysisID) return;
+    // if the store is already loaded with the state of the analysis of currentAnalysisId, return.
+    if (state.currentAnalysisId === analysisID) return;
+    const newState = await getAnalysisState(analysisID);
+    commit('loadStateNew', { analysisID, payload: newState });
+  },
   async updateAnalysisItems({ state, commit }, datacubeIDs: string[]) {
     const datacubes = [];
     if (!_.isEmpty(datacubeIDs)) {
@@ -176,6 +219,16 @@ const actions: ActionTree<AnalysisState, any> = {
     const newInputIds = ensureAlgebraicInputsArePresent(state.algebraicTransformInputIds, analysisItems);
     commit('setAlgebraicTransformInputIds', newInputIds);
     commit('setAnalysisItems', analysisItems);
+  },
+  async updateAnalysisItemsNew({ state, commit }, { currentAnalysisId, datacubeIDs }: { currentAnalysisId: string; datacubeIDs: string[] }) {
+    state.currentAnalysisId = currentAnalysisId;
+    const analysisItems = datacubeIDs.map(datacubeId => {
+      const analysisItem = state.analysisItems.find(item => item.id === datacubeId);
+      return analysisItem !== undefined
+        ? analysisItem // Preserve existing item
+        : createNewAnalysisItemNew(datacubeId);
+    });
+    commit('setAnalysisItemsNew', analysisItems);
   },
   setMapBounds({ commit }, bounds: [[number, number], [number, number]]) {
     commit('setMapBounds', bounds);
@@ -262,9 +315,17 @@ const mutations: MutationTree<AnalysisState> = {
     Object.assign(state, DEFAULT_STATE, payload);
     state.currentAnalysisId = analysisID;
   },
+  loadStateNew(state, { analysisID, payload }: { analysisID: string; payload: AnalysisItemNew}) {
+    Object.assign(state, DEFAULT_STATE, payload);
+    state.currentAnalysisId = analysisID;
+  },
   setAnalysisItems(state, items = []) {
     state.analysisItems = items;
     saveState(state);
+  },
+  setAnalysisItemsNew(state, items = []) {
+    state.analysisItems = items;
+    saveStateNew(state);
   },
   setMapBounds(state, bounds: MapBounds) {
     state.mapBounds = bounds;

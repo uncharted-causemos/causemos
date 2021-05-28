@@ -192,7 +192,7 @@ import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import _ from 'lodash';
-import { ModelRunStatus } from '@/types/Enums';
+import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -319,7 +319,7 @@ export default defineComponent({
       });
 
     const isModel = computed(() => {
-      return metadata.value?.type === 'model';
+      return metadata.value?.type === DatacubeType.Model;
     });
 
     const outputSourceSpecs = computed(() => {
