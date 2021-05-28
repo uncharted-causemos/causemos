@@ -121,7 +121,7 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData: LegacyBreakdownDataStructure[] = [];
+    const typeBreakdownData = ref([]) as Ref<LegacyBreakdownDataStructure[]>;
     const isExpanded = true;
 
     const modelId = ref(MAXHOP.modelId);
