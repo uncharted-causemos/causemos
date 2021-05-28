@@ -112,6 +112,7 @@
 </template>
 <script>
 import { mapGetters } from 'vuex';
+import _ from 'lodash';
 
 import router from '@/router';
 import QuantitativeModelOptions from '@/components/quantitative/quantitative-model-options';
@@ -129,8 +130,6 @@ import IndicatorSummary from '@/components/indicator/indicator-summary';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
-import _ from 'lodash';
-
 
 const PANE_ID = {
   INDICATOR: 'indicator',
