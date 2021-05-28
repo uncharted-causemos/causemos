@@ -74,7 +74,7 @@
 import _ from 'lodash';
 
 import { defineComponent, PropType } from 'vue';
-import Modal from '@/modals/modal.vue';
+import Modal from '@/components/modals/modal.vue';
 import { Scenario } from '@/types/CAG';
 
 export default defineComponent({
