@@ -258,8 +258,6 @@ export default defineComponent({
   },
   computed: {
     visibleTypeBreakdownData(): LegacyBreakdownDataStructure[] {
-      // FIXME: the line below isn't called when the typeBreakdownData changes
-      console.log('type Breakdown Data', this.typeBreakdownData);
       // HACK: Filter out any breakdown parameters that duplicate
       //  an admin level, since they will already be shown in the
       //  standard admin level breakdown above.
@@ -271,15 +269,9 @@ export default defineComponent({
         const isAdminLevelDuplicate =
           breakdownParameter.name &&
           (levels as string[]).includes(breakdownParameter.name);
-        console.log(breakdownParameter.name, 'is duplicate?', isAdminLevelDuplicate);
+        // console.log(breakdownParameter.name, 'is duplicate?', isAdminLevelDuplicate);
         return !isAdminLevelDuplicate;
       });
-    }
-  },
-  watch: {
-    typeBreakdownData(n, o) {
-      // FIXME: the line below isn't called when the typeBreakdownData changes
-      console.log('typeBreakdownData changed', n, o);
     }
   }
 });
