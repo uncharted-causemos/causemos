@@ -43,7 +43,7 @@ export interface NodeParameter {
   label: string;
   model_id?: string;
   modified_at?: number;
-  parameter: any; // FIXME maybe this can be specified
+  parameter?: any; // FIXME maybe this can be specified
 }
 
 export interface EdgeParameter {
@@ -53,7 +53,7 @@ export interface EdgeParameter {
   model_id?: string;
   reference_ids: string[];
   modified_at?: number;
-  parameter: {
+  parameter?: {
     weights: number[];
   };
   user_polarity: number | null;
