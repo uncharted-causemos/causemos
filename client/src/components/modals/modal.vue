@@ -35,15 +35,16 @@
   </transition>
 </template>
 
-<script>
+<script lang="ts">
 /**
  * Simple modal wrapper
 */
+import { defineComponent, ref } from 'vue';
 import Mousetrap from 'mousetrap';
-import CloseButton from '@/components/widgets/close-button';
+import CloseButton from '@/components/widgets/close-button.vue';
 
 
-export default {
+export default defineComponent({
   name: 'Modal',
   components: {
     CloseButton
@@ -58,18 +59,21 @@ export default {
       default: false
     }
   },
-  emits: ['close'],
-  created() {
-    this.hasContext = false;
+  setup() {
+    const hasContext = ref(false);
+    const mouseTrap = new Mousetrap(document.body);
+    return {
+      hasContext,
+      mouseTrap
+    };
   },
+  emits: ['close'],
   mounted() {
-    this.mouseTrap = new Mousetrap(document);
     this.mouseTrap.bind('esc', this.close);
   },
   beforeUnmount() {
     if (this.mouseTrap) {
       this.mouseTrap.unbind('esc');
-      this.mouseTrap = null;
     }
   },
   methods: {
@@ -81,7 +85,7 @@ export default {
       this.$emit('close', null);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
