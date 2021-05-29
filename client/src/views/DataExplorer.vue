@@ -20,7 +20,7 @@
 
 <script>
 import _ from 'lodash';
-import { getDatacubes } from '@/services/datacube-service';
+import { getDatacubes } from '@/services/new-datacube-service';
 import { mapActions, mapGetters } from 'vuex';
 
 import DataExplorerFacetsPanel from '@/components/facets-panel/data-explorer-facets-panel';
@@ -45,8 +45,11 @@ export default {
       filters: 'dataSearch/filters'
     }),
     navBackLabel() {
-      const name = this.$route.query.analysisName;
-      return name ? `Data Space (${name})` : 'Data Space';
+      if (this.$route.query && this.$route.query.analysisName) {
+        return `Data Space ${this.$route.query.analysisName}`;
+      } else {
+        return 'Data Space';
+      }
     }
   },
   watch: {

@@ -4,6 +4,7 @@
     :selection.prop="selection"
     :subselection.prop="subSelection"
     @facet-element-updated="updateSelection"
+    action-buttons="0"
   >
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
     <div slot="header-label">

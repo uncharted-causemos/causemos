@@ -71,7 +71,7 @@ export default {
       //  but also mark the state with the current analysisId so that immediate state updates by the route are ignored
       await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [MAXHOP.modelId] });
       this.$router.push({
-        name: 'data',
+        name: 'dataExplorer',
         params: {
           collection: this.project,
           analysisID: analysis.id
