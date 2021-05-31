@@ -165,7 +165,7 @@ export default defineComponent({
     },
     selectedTimestamp: {
       type: Number,
-      default: 0
+      default: undefined
     },
     selectedTemporalResolution: {
       type: String as PropType<string>,
@@ -195,7 +195,8 @@ export default defineComponent({
       rawRegionalData.value = [];
       if (
         props.selectedModelId === null ||
-        props.selectedScenarioIds.length === 0
+        props.selectedScenarioIds.length === 0 ||
+        props.selectedTimestamp === null
       ) {
         return;
       }

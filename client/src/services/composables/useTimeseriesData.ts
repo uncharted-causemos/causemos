@@ -22,7 +22,7 @@ export default function useTimeseriesData(
 
   watchEffect(onInvalidate => {
     timeseriesData.value = [];
-    if (modelRunIds.value.length === 0) {
+    if (modelRunIds.value.length === 0 || metadata.value === null) {
       // Don't have the information needed to fetch the data
       return;
     }

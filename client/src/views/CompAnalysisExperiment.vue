@@ -138,7 +138,7 @@ export default defineComponent({
 
     const selectedScenarioIds = ref([] as string[]);
 
-    const selectedTimestamp = ref(0);
+    const selectedTimestamp = ref(null) as Ref<number | null>;
 
     const newRunsMode = ref(false);
 
