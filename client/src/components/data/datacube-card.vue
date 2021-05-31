@@ -400,7 +400,7 @@ export default defineComponent({
       this.isGridMap = !data.isGridMap;
     },
     onMapSlideChange(data: AnalysisMapFilter) {
-      this.mapFilters = [data];
+      this.mapFilters = [...this.mapFilters.filter(d => d.id !== data.id), data];
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
