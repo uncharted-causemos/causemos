@@ -27,7 +27,6 @@ import dateFormatter from '@/formatters/date-formatter';
 import { ANALYSIS } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import StartScreen from '@/components/start-screen';
-import MAXHOP from '@/assets/MAXHOP.js';
 
 const toCardData = analysis => ({
   analysisId: analysis.id,
@@ -66,10 +65,7 @@ export default {
         title: `untitled at ${dateFormatter(Date.now())}`,
         projectId: this.project
       });
-      // save the "selected" datacube (model or indicator) id in the store as an analysis item
-      // @HACK: this function not only saves the analysisItem
-      //  but also mark the state with the current analysisId so that immediate state updates by the route are ignored
-      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [MAXHOP.modelId] });
+      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [] });
       this.$router.push({
         name: 'dataExplorer',
         params: {

@@ -2,7 +2,7 @@
   <div class="data-explorer-container">
     <modal-header
       :nav-back-label="navBackLabel"
-      @close="onCancel" />
+    />
     <div class="flex h-100" v-if="datacubes.length > 0">
       <div class="flex h-100">
         <data-explorer-facets-panel
@@ -20,12 +20,13 @@
 
 <script>
 import _ from 'lodash';
-import { getDatacubes } from '@/services/new-datacube-service';
 import { mapActions, mapGetters } from 'vuex';
 
 import DataExplorerFacetsPanel from '@/components/facets-panel/data-explorer-facets-panel';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '@/components/data-explorer/search';
+
+import { getDatacubes } from '@/services/new-datacube-service';
 
 import filtersUtil from '@/utils/filters-util';
 
@@ -67,9 +68,7 @@ export default {
       disableOverlay: 'app/disableOverlay',
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'
     }),
-    onCancel() {
-      this.$router.push({ name: 'data' });
-    },
+
     async refresh() {
       await this.fetchAllDatacubes();
     },

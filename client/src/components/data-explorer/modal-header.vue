@@ -23,6 +23,10 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
+
+import { deleteAnalysis } from '@/services/analysis-service';
+import { ANALYSIS } from '@/utils/messages-util';
+
 import FullScreenModalHeader from '../widgets/full-screen-modal-header';
 
 export default {
@@ -39,6 +43,7 @@ export default {
   computed: {
     ...mapGetters({
       analysisId: 'dataAnalysis/analysisId',
+      project: 'app/project',
       selectedDatacubes: 'dataSearch/selectedDatacubes',
       searchResultsCount: 'dataSearch/searchResultsCount'
     })
@@ -56,10 +61,29 @@ export default {
           analysisID: this.analysisId
         }
       });
-      this.onClose();
     },
-    onClose() {
+
+    async onClose() {
+      this.clear();
+      await new Promise((resolve) => {
+        setTimeout(() => { resolve(); }, 500);
+      });
+      this.$router.push({
+        name: 'dataStart',
+        params: {
+          project: this.project
+        }
+      });
       this.$emit('close');
+    },
+
+    async clear() {
+      try {
+        await deleteAnalysis(this.analysisId);
+        this.toaster(ANALYSIS.SUCCESSFUL_DELETION_UNINITIALIZED, 'success', false);
+      } catch (e) {
+        this.toaster(ANALYSIS.ERRONEOUS_DELETION_UNINITIALIZED, 'error', true);
+      }
     }
   }
 };
