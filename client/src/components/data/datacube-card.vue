@@ -166,6 +166,7 @@
               :class="[
                 `card-count-${outputSourceSpecs.length}`
               ]"
+              :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
               :output-selection=indx
               :show-tooltip="true"
@@ -563,9 +564,10 @@ header {
   flex-grow: 1;
   width: auto;
   height: inherit;
-  padding: 5px;
+  border: 1px solid;
   &.card-count-1 {
-    flex-grow: 1
+    flex-grow: 1;
+    border: none;
   }
   &.card-count-3,
   &.card-count-4 {
