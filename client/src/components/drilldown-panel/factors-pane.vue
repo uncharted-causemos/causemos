@@ -204,7 +204,6 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      projectMetadata: 'app/projectMetadata',
       conceptDefinitions: 'app/conceptDefinitions'
     }),
     numSelectedItems: function() {

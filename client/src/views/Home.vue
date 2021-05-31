@@ -86,14 +86,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { mapActions } from 'vuex';
 import projectService from '@/services/project-service';
-import ProjectCard from '@/components/project-card';
-import DropdownControl from '@/components/dropdown-control';
-import MessageDisplay from '@/components/widgets/message-display';
+import ProjectCard from '@/components/project-card.vue';
+import DropdownControl from '@/components/dropdown-control.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
+import { Project, KnowledgeBase } from '@/types/Common';
 
-export default {
+export default defineComponent({
   name: 'Home',
   components: {
     ProjectCard,
@@ -102,7 +104,7 @@ export default {
   },
   data: () => ({
     search: '',
-    projectsList: [],
+    projectsList: [] as Project[],
     newCollectionName: '',
     showSortingDropdown: false,
     sortingOptions: ['Most recent', 'Earliest'],
@@ -110,7 +112,7 @@ export default {
     newKnowledgeBase: false
   }),
   computed: {
-    filteredProjects() {
+    filteredProjects(): Project[] {
       return this.projectsList.filter(project => {
         return project.name.toLowerCase().includes(this.search.toLowerCase());
       });
@@ -124,8 +126,7 @@ export default {
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay'
     }),
-    deleteProject(project) {
-      this.showModal = false;
+    deleteProject(project: Project) {
       this.enableOverlay(`Deleting project '${project.name}'`);
       projectService.deleteProject(project.id).then(() => {
         this.disableOverlay();
@@ -144,8 +145,8 @@ export default {
 
       // Poll the knowledge-base indices for new indices
       projectService.getKBs().then(kbs => {
-        kbs.forEach(knowledgeBase => {
-          const match = JSON.parse(storage.getItem(knowledgeBase.id));
+        kbs.forEach((knowledgeBase: KnowledgeBase) => {
+          const match = JSON.parse(storage.getItem(knowledgeBase.id) as string);
           if (!match) {
             storage.setItem(knowledgeBase.id, JSON.stringify(knowledgeBase));
             this.newKnowledgeBase = true;
@@ -172,7 +173,7 @@ export default {
         return a.modified_at - b.modified_at;
       });
     },
-    sort(option) {
+    sort(option: string) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
       switch (option) {
@@ -187,7 +188,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
