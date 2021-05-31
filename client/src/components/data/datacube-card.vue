@@ -296,9 +296,15 @@ export default defineComponent({
 
     const isDescriptionView = ref<boolean>(true);
 
+    const isModel = computed(() => {
+      return metadata.value?.type === DatacubeType.Model;
+    });
+
     watch(() => props.selectedScenarioIds, () => {
       relativeTo.value = null;
-      isDescriptionView.value = props.selectedScenarioIds.length === 0;
+      if (isModel.value) {
+        isDescriptionView.value = props.selectedScenarioIds.length === 0;
+      }
     }, {
       immediate: true
     });
@@ -317,10 +323,6 @@ export default defineComponent({
         const lastTimestamp = _.max(allTimestamps);
         emitTimestampSelection(lastTimestamp ?? 0);
       });
-
-    const isModel = computed(() => {
-      return metadata.value?.type === DatacubeType.Model;
-    });
 
     const outputSourceSpecs = computed(() => {
       return [{
