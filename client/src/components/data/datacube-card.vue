@@ -164,7 +164,7 @@
               :key="spec.id"
               class="card-map"
               :class="[
-                `card-count-${outputSourceSpecs.length}`
+                `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
               ]"
               :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
@@ -567,6 +567,7 @@ header {
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
+  overflow-y: scroll;
 
   &.full-width {
     width: 100%;
@@ -577,10 +578,16 @@ header {
   flex-grow: 1;
   width: auto;
   height: inherit;
-  border: 1px solid;
+  padding: 3px;
+  ::v-deep(.wm-map) {
+    border-style: solid;
+    border-color: inherit;
+  }
   &.card-count-1 {
     flex-grow: 1;
-    border: none;
+    ::v-deep(.wm-map) {
+      border: none;
+    }
   }
   &.card-count-3,
   &.card-count-4 {
@@ -588,8 +595,7 @@ header {
     width: 50%;
     max-width: 50%;
   }
-  &.card-count-5,
-  &.card-count-6 {
+  &.card-count-n {
     height: 50%;
     width: calc(100% / 3);
     max-width: calc(100% / 3);
