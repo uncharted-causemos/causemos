@@ -47,6 +47,7 @@ export default {
       default: ''
     }
   },
+  emits: ['add-to-CAG', 'close'],
   computed: {
     ...mapGetters({
       selectedSubgraphEdges: 'graph/selectedSubgraphEdges',

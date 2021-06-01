@@ -40,6 +40,7 @@ export default {
       default: ''
     }
   },
+  emits: ['close'],
   computed: {
     ...mapGetters({
       analysisId: 'dataAnalysis/analysisId',

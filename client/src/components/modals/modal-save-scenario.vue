@@ -86,6 +86,7 @@ export default {
       default: () => []
     }
   },
+  emits: ['close', 'overwrite-scenario', 'save-new-scenario'],
   data: () => ({
     scenarioToOverwriteId: null,
     newScenarioName: '',
