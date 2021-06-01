@@ -34,11 +34,12 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 
-import Modal from '@/components/modals/modal';
+import { defineComponent } from 'vue';
+import Modal from '@/components/modals/modal.vue';
 
-export default {
+export default defineComponent({
   name: 'ModalAddedToCag',
   components: {
     Modal
@@ -57,7 +58,7 @@ export default {
       this.$emit('close', null);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

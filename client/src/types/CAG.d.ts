@@ -37,6 +37,33 @@ export interface Scenario {
   experiment_id?: string;
 }
 
+
+export interface NodeScenarioData {
+  initial_value: number;
+  indicator_name?: string;
+  indicator_time_series?: { timestamp: number; value: number }[];
+  indicator_time_series_range: {
+    start: number;
+    end: number;
+  };
+  projection_start: number;
+  scenarios: {
+    id: string;
+    is_baseline: string;
+    is_valid: boolean;
+    name: string;
+    parameter?: ScenarioParameter;
+    constraints?: { step: number; value: number }[];
+    result?: {
+      values: { timestamp: number; value: number } [];
+      confidenceInterval: {
+        upper: { timestamp: number; value: number } [];
+        lower: { timestamp: number; value: number } [];
+      };
+    };
+  }[];
+}
+
 export interface NodeParameter {
   id?: string;
   concept: string;

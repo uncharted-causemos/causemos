@@ -8,3 +8,5 @@ declare module '*.vue' {
 // This is required because the `vue3-resize` & `v-tooltip` modules don't contain types
 declare module 'vue3-resize';
 declare module 'v-tooltip';
+
+declare module 'vsup';
