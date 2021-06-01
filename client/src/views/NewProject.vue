@@ -72,27 +72,30 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
 import { mapActions } from 'vuex';
+import { defineComponent } from 'vue';
 import projectService from '@/services/project-service';
 
-import KnowledgeBaseRow from '@/components/new-project/knowledge-base-row';
+import KnowledgeBaseRow from '@/components/new-project/knowledge-base-row.vue';
+import { KnowledgeBase } from '@/types/Common';
 
 const MSG_EMPTY_PROJECT_NAME = 'Project name cannot be blank';
 
-export default {
+export default defineComponent({
   name: 'NewProjectView',
   components: {
     KnowledgeBaseRow
   },
   data: () => ({
-    kbList: [],
+    kbList: [] as KnowledgeBase[],
     projectName: '',
     projectDescrption: '',
     hasError: false,
     baseKB: '',
-    isProcessing: false
+    isProcessing: false,
+    errorMsg: '' as string | null
   }),
   watch: {
     projectName(n) {
@@ -133,17 +136,17 @@ export default {
       this.$router.push({ name: 'home' });
     },
     refresh() {
-      projectService.getKBs().then(kbs => {
+      projectService.getKBs().then((kbs: KnowledgeBase[]) => {
         // ISO-8601 dates can be sorted lexicographically
         this.kbList = _.sortBy(kbs, 'created_at').reverse();
         this.baseKB = this.kbList[0].id;
       });
     },
-    selectKB(kbId) {
+    selectKB(kbId: string) {
       this.baseKB = kbId;
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

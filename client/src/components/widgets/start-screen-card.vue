@@ -45,12 +45,13 @@
   </card>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
-import Card from '@/components/widgets/card';
-import OptionsButton from '@/components/widgets/options-button';
+import { defineComponent } from 'vue';
+import Card from '@/components/widgets/card.vue';
+import OptionsButton from '@/components/widgets/options-button.vue';
 
-export default {
+export default defineComponent({
   name: 'StartScreenCard',
   components: {
     Card,
@@ -78,7 +79,7 @@ export default {
     'click', 'rename', 'duplicate', 'delete'
   ],
   computed: {
-    hasImage() {
+    hasImage(): boolean {
       return !_.isNil(this.previewImageSrc);
     }
   },
@@ -96,7 +97,7 @@ export default {
       this.$emit('delete');
     }
   }
-};
+});
 </script>
 <style lang="scss" scoped>
   @import "~styles/variables";

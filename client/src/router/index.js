@@ -43,6 +43,13 @@ async function loadAnalysisState(to, from, next) {
   next();
 }
 
+// Load analysis state for dataAnalysis store before route enter
+// NOTE: this is specific to the new data space (and the new data explorer)
+async function loadAnalysisStateNew(to, from, next) {
+  await store.dispatch('dataAnalysis/loadStateNew', to.params.analysisID);
+  next();
+}
+
 const routes = [
   {
     path: '/',
@@ -68,7 +75,7 @@ const routes = [
     path: '/:project/data/:analysisID',
     name: 'data',
     component: CompAnalysisExperiment,
-    beforeEnter: loadAnalysisState
+    beforeEnter: loadAnalysisStateNew
   },
   {
     path: '/:project/data/:analysisID/explorer',

@@ -188,8 +188,6 @@
 
 <script lang="ts">
 import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
-import _ from 'lodash';
-
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -205,7 +203,8 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { ModelRunStatus } from '@/types/Enums';
+import _ from 'lodash';
+import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 export default defineComponent({
@@ -310,9 +309,15 @@ export default defineComponent({
 
     const isDescriptionView = ref<boolean>(true);
 
+    const isModel = computed(() => {
+      return metadata.value?.type === DatacubeType.Model;
+    });
+
     watch(() => props.selectedScenarioIds, () => {
       relativeTo.value = null;
-      isDescriptionView.value = props.selectedScenarioIds.length === 0;
+      if (isModel.value) {
+        isDescriptionView.value = props.selectedScenarioIds.length === 0;
+      }
     }, {
       immediate: true
     });
@@ -329,12 +334,10 @@ export default defineComponent({
           .flat()
           .map(point => point.timestamp);
         const lastTimestamp = _.max(allTimestamps);
-        emitTimestampSelection(lastTimestamp ?? 0);
+        if (lastTimestamp !== undefined) {
+          emitTimestampSelection(lastTimestamp);
+        }
       });
-
-    const isModel = computed(() => {
-      return metadata.value?.type === 'model';
-    });
 
     const outputSourceSpecs = computed(() => {
       return selectedScenarioIds.value.map(selectedScenarioId => {
