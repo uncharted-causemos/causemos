@@ -29,7 +29,7 @@
     <!-- TODO: Fetch units from model metadata `outputs` property -->
     <aggregation-checklist-pane
       class="checklist-section"
-      v-for="type in typeBreakdownData"
+      v-for="type in visibleTypeBreakdownData"
       :key="type.name"
       :aggregation-level-count="1"
       :aggregation-level="1"
@@ -160,7 +160,7 @@ export default defineComponent({
       default: null
     },
     typeBreakdownData: {
-      type: Array,
+      type: Array as PropType<LegacyBreakdownDataStructure[]>,
       default: () => []
     },
     selectedTimestamp: {
@@ -255,6 +255,24 @@ export default defineComponent({
       regionalData,
       timestampFormatter
     };
+  },
+  computed: {
+    visibleTypeBreakdownData(): LegacyBreakdownDataStructure[] {
+      // HACK: Filter out any breakdown parameters that duplicate
+      //  an admin level, since they will already be shown in the
+      //  standard admin level breakdown above.
+      // Eventually we will need to disallow models from including
+      //  admin regions as parameters, but this will require some
+      //  thought since some models (e.g. MaxHop) require the user
+      //  to request data for a specific admin region.
+      return this.typeBreakdownData.filter(breakdownParameter => {
+        const isAdminLevelDuplicate =
+          breakdownParameter.name &&
+          (levels as string[]).includes(breakdownParameter.name);
+        // console.log(breakdownParameter.name, 'is duplicate?', isAdminLevelDuplicate);
+        return !isAdminLevelDuplicate;
+      });
+    }
   }
 });
 </script>

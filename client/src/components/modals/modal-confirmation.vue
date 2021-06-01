@@ -26,11 +26,12 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 
-import Modal from '@/components/modals/modal';
+import { defineComponent } from 'vue';
+import Modal from '@/components/modals/modal.vue';
 
-export default {
+export default defineComponent({
   name: 'ModalConfirm',
   components: {
     Modal
@@ -45,7 +46,10 @@ export default {
     'confirm', 'close'
   ],
   mounted() {
-    if (this.autofocusConfirm) this.$refs.confirm.focus();
+    if (this.autofocusConfirm) {
+      const el = this.$refs.confirm as HTMLButtonElement;
+      el.focus();
+    }
   },
   methods: {
     close() {
@@ -55,7 +59,7 @@ export default {
       this.$emit('confirm', null);
     }
   }
-};
+});
 </script>
 
 <style scoped lang="scss">

@@ -80,7 +80,6 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import MAXHOP from '@/assets/MAXHOP.js';
 import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
@@ -94,7 +93,8 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
-import { ModelRunStatus } from '@/types/Enums';
+import { DatacubeType } from '@/types/Enums';
+import { useStore } from 'vuex';
 
 const DRILLDOWN_TABS = [
   {
@@ -121,10 +121,16 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData: LegacyBreakdownDataStructure[] = [];
+    const typeBreakdownData = ref([]) as Ref<LegacyBreakdownDataStructure[]>;
     const isExpanded = true;
 
-    const modelId = ref(MAXHOP.modelId);
+    const store = useStore();
+    const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
+    // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
+    const datacubeId = analysisItem.value[0].id;
+
+    const modelId = ref(datacubeId);
+    const selectedModelId = ref(datacubeId);
 
     const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
@@ -143,7 +149,7 @@ export default defineComponent({
     const timeInterval = 10000;
 
     function fetchData() {
-      if (!newRunsMode.value && metadata.value?.type === 'model') {
+      if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
         modelRunsFetchedAt.value = Date.now();
       }
     }
@@ -157,9 +163,8 @@ export default defineComponent({
     watch(() => metadata.value, () => {
       mainModelOutput.value = metadata.value?.outputs[0];
 
-      if (metadata.value?.type === 'indicator') {
-        const validScenarioIds = allModelRunData.value.filter(run => run.status === ModelRunStatus.Ready).map(run => run.id);
-        selectedScenarioIds.value = validScenarioIds;
+      if (metadata.value?.type === DatacubeType.Indicator) {
+        selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       }
     }, {
       immediate: true
@@ -173,7 +178,7 @@ export default defineComponent({
       selectedSpatialAggregation: 'mean',
       selectedAdminLevel,
       setSelectedAdminLevel,
-      selectedModelId: modelId,
+      selectedModelId,
       selectedScenarioIds,
       typeBreakdownData,
       selectedTimestamp,
