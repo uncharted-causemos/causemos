@@ -321,7 +321,9 @@ export default defineComponent({
           .flat()
           .map(point => point.timestamp);
         const lastTimestamp = _.max(allTimestamps);
-        emitTimestampSelection(lastTimestamp ?? 0);
+        if (lastTimestamp !== undefined) {
+          emitTimestampSelection(lastTimestamp);
+        }
       });
 
     const outputSourceSpecs = computed(() => {

@@ -271,7 +271,7 @@ export default defineComponent({
       }
     }
 
-    const selectedTimestamp = ref(0);
+    const selectedTimestamp = ref<number | null>(null);
 
     const openPublishAccordion = ref(false);
 
