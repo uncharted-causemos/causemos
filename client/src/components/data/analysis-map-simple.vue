@@ -161,7 +161,15 @@ export default {
   }),
   computed: {
     outputSourceSpecsValidated() {
-      return this.outputSourceSpecs.filter(spec => {
+      return this.outputSourceSpecs.map(spec => {
+        // Set default resolution and aggregation
+        return {
+          ...spec,
+          temporalResolution: spec.temporalResolution || 'month',
+          temporalAggregation: spec.temporalAggregation || 'mean',
+          spatialAggregation: spec.spatialAggregation || 'mean'
+        };
+      }).filter(spec => {
         const { modelId, runId, outputVariable, timestamp, id, temporalResolution, temporalAggregation, spatialAggregation } = spec || {};
         return modelId && runId && outputVariable && timestamp && id && temporalResolution && temporalAggregation && spatialAggregation;
       });
