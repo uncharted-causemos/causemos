@@ -38,7 +38,7 @@ export default defineComponent({
     const newCagName = ref('');
 
     const currentCAG = computed(() => store.getters['app/currentCAG']);
-    const cagNameToDisplay = computed(() => !_.isEmpty(newCagName) ? newCagName : cagName);
+    const cagNameToDisplay = computed(() => !_.isEmpty(newCagName.value) ? newCagName.value : cagName.value);
 
     return {
       showRenameModal,
