@@ -72,7 +72,8 @@ export default {
         keys.forEach((k) => {
           if (Array.isArray(c[k])) {
             c[k].forEach((l) => {
-              columns[k].data[l] = columns[k].data[l] ? columns[k].data[l] + 1 : 1;
+              const category = typeof l === 'object' ? l.name : l;
+              columns[k].data[category] = columns[k].data[category] ? columns[k].data[category] + 1 : 1;
             });
           } else if (typeof c[k] === 'string') {
             columns[k].data[c[k]] = columns[k].data[c[k]] ? columns[k].data[c[k]] + 1 : 1;
@@ -85,7 +86,8 @@ export default {
           keys.forEach((k) => {
             if (Array.isArray(c[k])) {
               c[k].forEach((l) => {
-                columns[k].filteredData[l] = columns[k].filteredData[l] ? columns[k].filteredData[l] + 1 : 1;
+                const category = typeof l === 'object' ? l.name : l;
+                columns[k].filteredData[category] = columns[k].filteredData[category] ? columns[k].filteredData[category] + 1 : 1;
               });
             } else if (typeof c[k] === 'string') {
               columns[k].filteredData[c[k]] = columns[k].filteredData[c[k]] ? columns[k].filteredData[c[k]] + 1 : 1;

@@ -94,7 +94,9 @@ export const ANALYSIS = {
   SUCCESSFUL_RENAME: 'Analysis successfully renamed',
   ERRONEOUS_RENAME: 'There was an error in renaming the Analysis. Try again',
   SUCCESSFUL_DUPLICATE: 'Analysis succesfully duplicated',
-  ERRONEOUS_DUPLICATE: 'There was an error in duplicating the Analysis. Try again'
+  ERRONEOUS_DUPLICATE: 'There was an error in duplicating the Analysis. Try again',
+  SUCCESSFUL_DELETION_UNINITIALIZED: 'Uninitialized analysis successfully deleted',
+  ERRONEOUS_DELETION_UNINITIALIZED: 'There was an error in deleting the uninitialized analysis.'
 };
 
 export const SUBGRAPH = {

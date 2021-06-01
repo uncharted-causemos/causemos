@@ -88,6 +88,7 @@ export default defineComponent({
       default: () => []
     }
   },
+  emits: ['close', 'overwrite-scenario', 'save-new-scenario'],
   data: () => ({
     scenarioToOverwriteId: null as string | null,
     newScenarioName: '',

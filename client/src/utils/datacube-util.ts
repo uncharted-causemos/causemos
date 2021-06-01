@@ -27,8 +27,11 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   model: 'Output Variable',
   output_name: 'Output Name',
   output_units: 'Output Units',
+  outputs: 'Output Variables',
   parameters: 'Input Knobs',
-  source: 'Source'
+  source: 'Source',
+  tags: 'Tags',
+  type: 'Types'
 };
 
 export const datacubeKeys = (datacubeRow: Record<string, any>): string[] => {
