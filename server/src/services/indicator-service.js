@@ -41,62 +41,6 @@ const _setIndicatorProperties = async (parameter) => {
   };
 };
 
-
-/**
- * @param {array} concepts - list of concept names
- *
- * Returns a list of pre-matched indicators
- */
-const conceptSearch = async (concepts) => {
-  Logger.info(`Searching for indicators by concept using wm-go:  ${JSON.stringify(concepts)}`);
-
-  const filters = {
-    clauses: [
-      {
-        field: 'concepts.name',
-        operand: 'or',
-        isNot: false,
-        values: concepts
-      },
-      {
-        field: 'type',
-        operand: 'or',
-        isNot: false,
-        values: ['indicator']
-      }
-    ]
-  };
-
-  const options = {
-    method: 'GET',
-    url: process.env.WM_GO_URL + `/maas/datacubes?filters=${encodeURI(JSON.stringify(filters))}`
-  };
-
-  const response = await requestAsPromise(options);
-  const rawResult = JSON.parse(response);
-
-  const result = {};
-  concepts.forEach(concept => {
-    const bestIndicator =
-      _(rawResult.map(indicator => {
-        // Find the indicator with the highest 'score' value for this concept
-        const foundConcept = _.find(indicator.concepts, con => con.name === concept);
-        const score = foundConcept === undefined ? 0 : foundConcept.score;
-        return {
-          ...indicator,
-          _match_score: score
-        };
-      })).sortBy('_match_score').last();
-
-    if (bestIndicator && bestIndicator._match_score > 0) {
-      result[concept] = bestIndicator;
-    }
-  });
-
-  return result;
-};
-
-
 /**
  * @param {string} variable - indicator name
  * @param {string} model - dataset/model name
