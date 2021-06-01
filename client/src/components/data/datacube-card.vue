@@ -177,7 +177,7 @@
               @sync-bounds="onSyncMapBounds"
               @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
-              @slide-handle-change="onMapSlideChange"
+              @slide-handle-change="updateMapFilters"
             />
           </div>
         </div>
@@ -350,9 +350,23 @@ export default defineComponent({
         };
       });
     });
+    const mapFilters = ref<AnalysisMapFilter[]>([]);
+    const updateMapFilters = (data: AnalysisMapFilter) => {
+      mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
+    };
+    watch(
+      () => outputSourceSpecs.value,
+      () => {
+        mapFilters.value = mapFilters.value.filter(filter => {
+          return outputSourceSpecs.value.find(spec => filter.id === spec.id);
+        });
+      }
+    );
 
     return {
       outputSourceSpecs,
+      updateMapFilters,
+      mapFilters,
       selectedTimeseriesData,
       colorFromIndex,
       emitTimestampSelection,
@@ -373,7 +387,6 @@ export default defineComponent({
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
     potentialScenarios: [] as Array<ScenarioData>,
-    mapFilters: [] as Array<AnalysisMapFilter>,
     showNewRunsModal: false,
     showModelRunsExecutionStatus: false,
     mapBounds: [ // Default bounds to Ethiopia
@@ -398,9 +411,6 @@ export default defineComponent({
     },
     onClickMapLayerToggle(data: { isGridMap: boolean }) {
       this.isGridMap = !data.isGridMap;
-    },
-    onMapSlideChange(data: AnalysisMapFilter) {
-      this.mapFilters = [...this.mapFilters.filter(d => d.id !== data.id), data];
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
