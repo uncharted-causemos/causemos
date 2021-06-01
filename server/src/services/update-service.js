@@ -164,7 +164,6 @@ const updateFnGenerator = (projectId, updateConfig) => {
     });
     // build and send feedbackToIndra
     const curationLogs = await _buildCurationLogs(projectId, audits);
-    Logger.debug(JSON.stringify(curationLogs, null, 2));
 
     indraService.sendFeedback(curationLogs).catch(function handleError(err) {
       Logger.warn(`Sending feedback to INDRA failed bactchId=${batchId} ` + err);

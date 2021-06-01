@@ -3,6 +3,7 @@
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 
+const INDRA_URL = process.env.INDRA_URL || 'http://wm.indra.bio';
 
 /**
  * Let INDRA know we have a new project
@@ -10,7 +11,7 @@ const Logger = rootRequire('/config/logger');
 const sendNewProject = async (id, name, corpusId) => {
   Logger.info(`Sending  project ${id} to INDRA`);
   const options = {
-    url: process.env.INDRA_URL + '/assembly/new_project',
+    url: INDRA_URL + '/assembly/new_project',
     method: 'POST',
     headers: { 'content-type': 'application/json' },
     json: {
@@ -29,9 +30,11 @@ const sendNewProject = async (id, name, corpusId) => {
  * @param {object} curationLogs - list of curation logs
  */
 const sendFeedback = async (curationLogs) => {
-  Logger.info(`Sending  ${curationLogs.length} feedback to INDRA`);
+  Logger.info(`Sending  ${Object.keys(curationLogs.curations).length} feedback to INDRA`);
+  Logger.debug(JSON.stringify(curationLogs, null, 2));
+
   const options = {
-    url: process.env.INDRA_URL + '/assembly/submit_curations',
+    url: INDRA_URL + '/assembly/submit_curations',
     method: 'POST',
     headers: {
       'content-type': 'application/json'
@@ -46,25 +49,25 @@ const sendFeedback = async (curationLogs) => {
   return indraResult;
 };
 
-const recalculateBeliefScore = async (corpusId, projectId) => {
-  Logger.info('Fetching belief scores from Indra');
-  const payload = {
-    corpus_id: corpusId,
-    project_id: projectId
-  };
-
-  const options = {
-    url: process.env.INDRA_CURATION_URL + '/update_beliefs',
-    method: 'POST',
-    headers: {
-      'content-type': 'application/json'
-    },
-    json: payload
-  };
-  // Fetch scores and build bulk payload
-  const result = (await requestAsPromise(options));
-  return result;
-};
+// const recalculateBeliefScore = async (corpusId, projectId) => {
+//   Logger.info('Fetching belief scores from Indra');
+//   const payload = {
+//     corpus_id: corpusId,
+//     project_id: projectId
+//   };
+//
+//   const options = {
+//     url: process.env.INDRA_CURATION_URL + '/update_beliefs',
+//     method: 'POST',
+//     headers: {
+//       'content-type': 'application/json'
+//     },
+//     json: payload
+//   };
+//   // Fetch scores and build bulk payload
+//   const result = (await requestAsPromise(options));
+//   return result;
+// };
 
 /**
  * Create a new concept on Indra.
@@ -188,8 +191,8 @@ const recalculateBeliefScore = async (corpusId, projectId) => {
 
 module.exports = {
   sendNewProject,
-  sendFeedback,
-  recalculateBeliefScore
+  sendFeedback
+  // recalculateBeliefScore
   // createNewConcept,
   // updateGroundings,
   // resetOntology,
