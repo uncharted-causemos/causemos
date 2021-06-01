@@ -30,11 +30,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
-import ConceptDisplay from '@/components/widgets/autocomplete/concept-display';
+import { defineComponent } from 'vue';
+import ConceptDisplay from '@/components/widgets/autocomplete/concept-display.vue';
 
-export default {
+export default defineComponent({
   name: 'AutoComplete',
   components: {
     ConceptDisplay
@@ -95,18 +96,18 @@ export default {
       this.$emit('item-selected', this.searchTerm);
       this.showSuggestions = false;
     },
-    setSearchTerm(suggestion) {
+    setSearchTerm(suggestion: string) {
       this.searchTerm = suggestion;
       this.$emit('item-selected', this.searchTerm);
       this.showSuggestions = false;
     },
-    handleClickOutside(evt) {
+    handleClickOutside(evt: Event) {
       if (!this.$el.contains(evt.target)) {
         this.selectedIndex = -1;
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

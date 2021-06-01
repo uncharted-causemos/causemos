@@ -36,10 +36,18 @@
   </div>
 </template>
 
-<script>
-import StartScreenCard from '@/components/widgets/start-screen-card';
+<script lang="ts">
+import { defineComponent, PropType } from 'vue';
+import StartScreenCard from '@/components/widgets/start-screen-card.vue';
 
-export default {
+interface Card {
+  id: string;
+  previewImageSrc: string;
+  title: string;
+  subtitle: string;
+}
+
+export default defineComponent({
   name: 'StartScreen',
   components: {
     StartScreenCard
@@ -54,7 +62,7 @@ export default {
       default: 'Open'
     },
     recentCards: {
-      type: Array,
+      type: Array as PropType<Card[]>,
       default: () => []
     },
     showCreateSection: {
@@ -69,7 +77,7 @@ export default {
     searchText: ''
   }),
   computed: {
-    filteredRecentCards() {
+    filteredRecentCards(): Card[] {
       if (this.searchText.length === 0) return this.recentCards;
       return this.recentCards.filter(card => {
         const searchText = this.searchText.toLowerCase();
@@ -85,20 +93,20 @@ export default {
     onCreate() {
       this.$emit('create');
     },
-    onOpenRecent(recentCard) {
+    onOpenRecent(recentCard: Card) {
       this.$emit('open-recent', recentCard);
     },
-    onRename(recentCard) {
+    onRename(recentCard: Card) {
       this.$emit('rename', recentCard);
     },
-    onDuplicate(recentCard) {
+    onDuplicate(recentCard: Card) {
       this.$emit('duplicate', recentCard);
     },
-    onDelete(recentCard) {
+    onDelete(recentCard: Card) {
       this.$emit('delete', recentCard);
     }
   }
-};
+});
 </script>
 
 <style lang="scss">

@@ -34,16 +34,19 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 
 import _ from 'lodash';
 import * as d3 from 'd3';
-import { mapGetters } from 'vuex';
+import { defineComponent, ref, computed, PropType } from 'vue';
+import { useStore } from 'vuex';
 
-import Modal from '@/components/modals/modal';
+import Modal from '@/components/modals/modal.vue';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
+import { NodeScenarioData } from '@/types/CAG';
 
-export default {
+export default defineComponent({
   name: 'ModalEditConstraints',
   components: {
     Modal
@@ -53,8 +56,8 @@ export default {
       type: Object,
       required: true
     },
-    scenarios: {
-      type: Object,
+    nodeScenarios: {
+      type: Object as PropType<NodeScenarioData>,
       required: true
     },
     projectionSteps: {
@@ -65,17 +68,21 @@ export default {
   emits: [
     'run-projection', 'close'
   ],
-  data: () => ({
-    constraints: []
-  }),
-  computed: {
-    ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId'
-    }),
-    indicatorUnit() {
-      const unit = _.get(this.node, 'parameter.indicator_time_series_parameter.unit', 'unknown');
-      return `unit: ${unit}`;
-    }
+  setup(props) {
+    const store = useStore();
+    const constraints = ref([] as any);
+    const selectedScenarioId = computed(() => store.getters['model/selectedScenarioId']);
+
+    const indicatorUnit = computed(() => {
+      return _.get(props.node, 'parameter.indicator_time_series_parameter.unit', 'unknown');
+    });
+
+    return {
+      ontologyFormatter: useOntologyFormatter(),
+      constraints,
+      selectedScenarioId,
+      indicatorUnit
+    };
   },
   watch: {
     selectedScenarioId() {
@@ -90,11 +97,14 @@ export default {
       return this.ontologyFormatter(this.node.concept);
     },
     render() {
-      const selectedScenario = this.scenarios.scenarios.find(s => s.id === this.selectedScenarioId);
-      this.constraints = _.cloneDeep(selectedScenario.constraints);
+      const selectedScenario = this.nodeScenarios.scenarios.find(s => s.id === this.selectedScenarioId);
+      if (!selectedScenario) return;
+      this.constraints = _.cloneDeep(selectedScenario.constraints || []);
 
-      const svgWidth = this.$refs['graph-container'].clientWidth;
-      const svgHeight = this.$refs['graph-container'].clientHeight;
+      const svgEl = this.$refs['graph-container'] as SVGSVGElement;
+
+      const svgWidth = svgEl.clientWidth;
+      const svgHeight = svgEl.clientHeight;
       const renderOptions = {
         margin: {
           top: 0, bottom: 25, left: 45, right: 20
@@ -106,13 +116,13 @@ export default {
       const runOptions = {
         selectedScenarioId: this.selectedScenarioId,
         miniGraph: false,
-        updateCallback: (newConstraints) => {
+        updateCallback: (newConstraints: any) => {
           this.constraints = newConstraints;
         }
       };
 
-      const svg = d3.select(this.$refs['graph-container']);
-      renderHistoricalProjectionsChart(svg, this.scenarios, renderOptions, runOptions);
+      const svg = d3.select(svgEl);
+      renderHistoricalProjectionsChart(svg, this.nodeScenarios, renderOptions, runOptions);
     },
     close() {
       this.$emit('close', null);
@@ -121,7 +131,7 @@ export default {
       this.$emit('run-projection', { concept: this.node.concept, constraints: this.constraints });
     }
   }
-};
+});
 </script>
 
 <style scoped lang="scss">

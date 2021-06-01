@@ -93,7 +93,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
-import { DatacubeType, ModelRunStatus } from '@/types/Enums';
+import { DatacubeType } from '@/types/Enums';
 import { useStore } from 'vuex';
 
 const DRILLDOWN_TABS = [
@@ -138,7 +138,7 @@ export default defineComponent({
 
     const selectedScenarioIds = ref([] as string[]);
 
-    const selectedTimestamp = ref(0);
+    const selectedTimestamp = ref(null) as Ref<number | null>;
 
     const newRunsMode = ref(false);
 
@@ -164,8 +164,7 @@ export default defineComponent({
       mainModelOutput.value = metadata.value?.outputs[0];
 
       if (metadata.value?.type === DatacubeType.Indicator) {
-        const validScenarioIds = allModelRunData.value.filter(run => run.status === ModelRunStatus.Ready).map(run => run.id);
-        selectedScenarioIds.value = validScenarioIds;
+        selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       }
     }, {
       immediate: true

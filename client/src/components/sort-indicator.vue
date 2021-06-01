@@ -18,12 +18,13 @@
   </span>
 </template>
 
-<script>
+<script lang="ts">
 
 import _ from 'lodash';
-import { mapActions, mapGetters } from 'vuex';
+import { defineComponent, computed, ref } from 'vue';
+import { useStore } from 'vuex';
 
-export default {
+export default defineComponent({
   name: 'SortIndicator',
   props: {
     field: {
@@ -31,17 +32,23 @@ export default {
       default: null
     }
   },
-  data: () => ({
-    currentSort: null
-  }),
-  computed: {
-    ...mapGetters({
-      view: 'query/view',
-      statementsQuery: 'query/statements'
-    }),
-    sort() {
-      return this.statementsQuery.sort;
-    }
+  setup(props) {
+    const store = useStore();
+    const sort = computed(() => {
+      return store.getters['query/statements'].sort;
+    });
+    const view = computed(() => store.getters['query/view']);
+    const currentSort = ref(null);
+
+    return {
+      sort,
+      view,
+      currentSort,
+
+      changeSort: (order: string) => {
+        store.dispatch('query/setOrderBy', { view: view.value, field: props.field, sortOrder: order });
+      }
+    };
   },
   watch: {
     sort() {
@@ -52,19 +59,13 @@ export default {
     this.refresh();
   },
   methods: {
-    ...mapActions({
-      setOrderBy: 'query/setOrderBy'
-    }),
     refresh() {
       if (_.isEmpty(this.sort) || !this.sort[this.field]) {
         this.currentSort = null;
       } else {
         this.currentSort = this.sort[this.field];
       }
-    },
-    changeSort(order) {
-      this.setOrderBy({ view: this.view, field: this.field, sortOrder: order });
     }
   }
-};
+});
 </script>

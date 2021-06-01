@@ -531,9 +531,11 @@ function renderParallelCoordinates(
         if (isSelected) {
           const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
 
-          selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthNormal);
-          // save selected line
-          selectedLines.push(lineData);
+          if (lineData.status === ModelRunStatus.Ready) {
+            selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthNormal);
+            // save selected line
+            selectedLines.push(lineData);
+          }
         }
       });
 

@@ -111,15 +111,17 @@
   </collapsible-item>
 </template>
 
-<script>
-import CollapsibleItem from '@/components/drilldown-panel/collapsible-item';
+<script lang="ts">
+import { defineComponent, PropType } from 'vue';
+import CollapsibleItem from '@/components/drilldown-panel/collapsible-item.vue';
+import EvidenceItem from '@/components/evidence-item.vue';
+import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { CORRECTION_TYPES, CURATION_STATES } from '@/services/curation-service';
-import EvidenceItem from '@/components/evidence-item';
-import SmallIconButton from '@/components/widgets/small-icon-button';
 import polarityUtil, { STATEMENT_POLARITY } from '@/utils/polarity-util';
+import { StatementGroup, DocumentContext } from '@/types/Statement';
 
 /* A subcomponent to display evidence detail for evidence-pane */
-export default {
+export default defineComponent({
   name: 'EvidenceGroup',
   components: {
     CollapsibleItem,
@@ -128,7 +130,7 @@ export default {
   },
   props: {
     item: {
-      type: Object,
+      type: Object as PropType<StatementGroup>,
       default: () => ({})
     },
     expandAll: {
@@ -151,52 +153,54 @@ export default {
   emits: [
     'toggle', 'discard-statements', 'open-editor', 'vet', 'click-evidence'
   ],
+  setup() {
+    return {
+      CORRECTION_TYPES,
+      CURATION_STATES,
+      STATEMENT_POLARITY
+    };
+  },
   computed: {
-    subjCorrectionClass() {
+    subjCorrectionClass(): string {
       return this.hasActiveCorrection(this.item, CORRECTION_TYPES.ONTOLOGY_SUBJ) ? 'active' : '';
     },
-    objCorrectionClass() {
+    objCorrectionClass(): string {
       return this.hasActiveCorrection(this.item, CORRECTION_TYPES.ONTOLOGY_OBJ) ? 'active' : '';
     },
-    polarityCorrectionClass() {
+    polarityCorrectionClass(): string {
       return this.hasActiveCorrection(this.item, CORRECTION_TYPES.POLARITY) ? 'active' : '';
     }
   },
-  created() {
-    this.CORRECTION_TYPES = CORRECTION_TYPES;
-    this.CURATION_STATES = CURATION_STATES;
-    this.STATEMENT_POLARITY = STATEMENT_POLARITY;
-  },
   methods: {
     // Proxied actions
-    toggle(item) {
+    toggle(item: StatementGroup) {
       this.$emit('toggle', item);
     },
-    discardStatements(v) {
-      this.$emit('discard-statements', v);
+    discardStatements(item: StatementGroup) {
+      this.$emit('discard-statements', item);
     },
-    openEditor(item, type) {
+    openEditor(item: StatementGroup, type: CORRECTION_TYPES) {
       this.$emit('open-editor', { item, type });
     },
-    vet(item) {
+    vet(item: StatementGroup) {
       this.$emit('vet', item);
     },
-    clickEvidence(documentMeta) {
-      this.$emit('click-evidence', documentMeta);
+    clickEvidence(documentContext: DocumentContext) {
+      this.$emit('click-evidence', documentContext);
     },
 
     // States
-    polarityClass(polarity) {
+    polarityClass(polarity: number) {
       return polarityUtil.polarityClass(polarity);
     },
-    statementPolarityColor(statementPolarity) {
+    statementPolarityColor(statementPolarity: number) {
       return polarityUtil.statementPolarityColor(statementPolarity);
     },
-    hasActiveCorrection(item, correctionType) {
+    hasActiveCorrection(item: StatementGroup, correctionType: CORRECTION_TYPES) {
       return this.activeCorrection === correctionType && this.activeItem === item;
     }
   }
-};
+});
 
 
 </script>

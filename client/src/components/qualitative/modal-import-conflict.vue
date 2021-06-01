@@ -26,11 +26,12 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 
-import Modal from '@/components/modals/modal';
+import { defineComponent } from 'vue';
+import Modal from '@/components/modals/modal.vue';
 
-export default {
+export default defineComponent({
   name: 'ModalConfirm',
   components: {
     Modal
@@ -46,7 +47,7 @@ export default {
       this.$emit('retain', null);
     }
   }
-};
+});
 </script>
 
 <style scoped lang="scss">

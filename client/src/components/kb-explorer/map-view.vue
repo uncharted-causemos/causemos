@@ -10,15 +10,16 @@
 
 </template>
 
-<script>
+<script lang="ts">
 
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 
 import filtersUtil from '@/utils/filters-util';
-import MapPoints from '@/components/kb-explorer/map-points';
+import MapPoints from '@/components/kb-explorer/map-points.vue';
 
-export default {
+export default defineComponent({
   name: 'MapView',
   components: {
     MapPoints
@@ -29,32 +30,34 @@ export default {
       default: () => null
     }
   },
+  setup() {
+    return {
+      layerId: 'point-layer',
+      layerSourceId: 'point-data'
+    };
+  },
   computed: {
     ...mapGetters({
       filters: 'query/filters'
     })
   },
-  created() {
-    this.layerId = 'point-layer';
-    this.layerSourceId = 'point-data';
-  },
   methods: {
     ...mapActions({
       setSearchClause: 'query/setSearchClause'
     }),
-    popupValueFormatter(feature) {
+    popupValueFormatter(feature: any) { // FIXME: MapboxGL types?
       const value = _.isNil(feature) ? 0 : feature.properties.count;
       return `Name: ${feature.properties.name} <br> Occurrences: ${value}`;
     },
-    handleSelectedLocation(selections) {
+    handleSelectedLocation(selections: string[]) {
       const geoLocationFacet = filtersUtil.findPositiveFacetClause(this.filters, 'factorLocationName');
       const clearSelection = _.isEmpty(selections);
       if (clearSelection && geoLocationFacet) {
         this.setSearchClause({ field: 'factorLocationName', values: [] });
       } else if (!clearSelection) {
-        let values = [];
+        let values: string[] = [];
         if (geoLocationFacet) {
-          values = _.clone(geoLocationFacet.values);
+          values = _.clone(geoLocationFacet.values as string[]);
         }
 
         // Single value is toggle, everything else is additive
@@ -67,5 +70,5 @@ export default {
       }
     }
   }
-};
+});
 </script>
