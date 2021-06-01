@@ -70,33 +70,35 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
 
-import Modal from './modal';
+import { defineComponent, PropType } from 'vue';
+import Modal from '@/components/modals/modal.vue';
+import { Scenario } from '@/types/CAG';
 
-export default {
+export default defineComponent({
   name: 'SaveScenarioModal',
   components: {
     Modal
   },
   props: {
     scenarios: {
-      type: Array,
+      type: Array as PropType<Scenario[]>,
       default: () => []
     }
   },
   data: () => ({
-    scenarioToOverwriteId: null,
+    scenarioToOverwriteId: null as string | null,
     newScenarioName: '',
     newScenarioDescription: ''
   }),
   computed: {
-    hasScenarios() {
+    hasScenarios(): boolean {
       const nonBaselineScenarios = this.scenarios.filter(s => !s.is_baseline && s.id);
       return !_.isEmpty(nonBaselineScenarios);
     },
-    overwritableScenarios() {
+    overwritableScenarios(): Scenario[] {
       return this.scenarios.filter(scenario => !scenario.is_baseline && scenario.id);
     }
   },
@@ -115,7 +117,7 @@ export default {
       }
       this.close();
     },
-    toggleSelectedToOverwrite(scenarioId) {
+    toggleSelectedToOverwrite(scenarioId: string) {
       if (this.scenarioToOverwriteId === scenarioId) {
         this.scenarioToOverwriteId = null;
       } else {
@@ -123,7 +125,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

@@ -4,11 +4,12 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 import stringUtil from '@/utils/string-util';
 
-export default {
+export default defineComponent({
   name: 'EvidenceHighlights',
   props: {
     evidence: {
@@ -31,6 +32,8 @@ export default {
   methods: {
     refresh() {
       const evidenceContext = this.evidence.evidence_context;
+      const divEl = this.$refs.highlight as HTMLDivElement;
+
       if (!_.isEmpty(evidenceContext) && !_.isEmpty(evidenceContext.text)) {
         let text = evidenceContext.text;
         text = stringUtil.cleanTextFragment(text);
@@ -43,7 +46,7 @@ export default {
             selectedIdx = 1;
           }
 
-          evidenceContext.agents_text.forEach((word, idx) => {
+          evidenceContext.agents_text.forEach((word: string, idx: number) => {
             let classNames = 'highlight';
             if (selectedIdx === idx) {
               classNames += ' selected-highlight';
@@ -55,7 +58,7 @@ export default {
         }
 
         if (!_.isEmpty(evidenceContext.hedging_words)) {
-          evidenceContext.hedging_words.forEach(word => {
+          evidenceContext.hedging_words.forEach((word: string) => {
             const token = word;
             const hElement = `<span class='highlight hedging-highlight'>${token}</span>`;
             text = text.replace(token, hElement);
@@ -63,19 +66,19 @@ export default {
         }
 
         if (!_.isEmpty(evidenceContext.negation_words)) {
-          evidenceContext.negation_words.forEach(word => {
+          evidenceContext.negation_words.forEach((word: string) => {
             const token = word;
             const hElement = `<span class='highlight negation-highlight'>${token}</span>`;
             text = text.replace(token, hElement);
           });
         }
-        this.$refs.highlight.innerHTML = text;
+        divEl.innerHTML = text;
       } else {
-        this.$refs.highlight.innerHTML = this.text;
+        divEl.innerHTML = '';
       }
     }
   }
-};
+});
 </script>
 
 <style lang='scss' scoped>

@@ -108,11 +108,18 @@
 </template>
 
 
-<script>
-import DropdownControl from '@/components/dropdown-control';
-import CloseButton from '@/components/widgets/close-button';
+<script lang="ts">
+
+import { defineComponent } from 'vue';
+import DropdownControl from '@/components/dropdown-control.vue';
+import CloseButton from '@/components/widgets/close-button.vue';
 import polarityUtil from '@/utils/polarity-util';
-import SmallTextButton from '@/components/widgets/small-text-button';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
+
+interface PolarityItem {
+  subj_polarity: number;
+  obj_polarity: number;
+}
 
 /**
  * Polarities picker, pick among 4 different polarity settings:
@@ -121,7 +128,7 @@ import SmallTextButton from '@/components/widgets/small-text-button';
  * - positive/negative
  * - negative/positive
  */
-export default {
+export default defineComponent({
   name: 'PolarityEditor',
   components: {
     DropdownControl,
@@ -144,7 +151,7 @@ export default {
     reverse() {
       this.$emit('reverse-relation');
     },
-    select(subjPolarity, objPolarity) {
+    select(subjPolarity: number, objPolarity: number) {
       if ((this.item.subj_polarity !== subjPolarity) || (this.item.obj_polarity !== objPolarity)) {
         this.$emit('select', { subjPolarity, objPolarity });
       }
@@ -152,13 +159,13 @@ export default {
     close() {
       this.$emit('close');
     },
-    statementPolarityColor(statementPolarity) {
+    statementPolarityColor(statementPolarity: number) {
       return polarityUtil.statementPolarityColor(statementPolarity);
     },
-    polarityClass(polarity) {
+    polarityClass(polarity: number) {
       return polarityUtil.polarityClass(polarity);
     },
-    checkedOption(item, subjPolarity, objPolarity) {
+    checkedOption(item: PolarityItem, subjPolarity: number, objPolarity: number) {
       if (item.subj_polarity === subjPolarity && item.obj_polarity === objPolarity) {
         return {
           opacity: 1
@@ -170,7 +177,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

@@ -11,6 +11,16 @@ export interface Project {
   stat: { [key: string]: string | number };
 }
 
+export interface KnowledgeBase {
+  id: string;
+  name: string;
+  ontology: string;
+  created_at: number;
+  corpus_id: string;
+  corpus_index: string;
+  corpus_parameter: any;
+}
+
 export interface DatacubeGeography {
   country: string[];
   admin1: string[];

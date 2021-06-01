@@ -92,3 +92,12 @@ export interface Statement {
   };
   __factor: string; // Hack for temporary aggregation-util key
 }
+
+interface StatementGroup {
+  key: string;
+  count: number;
+  dataArray: Statement[];
+  meta?: any;
+  children?: StatementGroup[];
+}
+

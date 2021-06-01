@@ -39,7 +39,7 @@
     <modal-edit-constraints
       v-if="isEditConstraintsOpen"
       :node="selectedNode"
-      :scenarios="scenariosForSelectedNode"
+      :node-scenarios="scenariosForSelectedNode"
       :projection-steps="projectionSteps"
       @close="closeEditConstraints"
       @run-projection="runProjection"
