@@ -33,7 +33,8 @@ const RESOURCE = Object.freeze({
   AUDIT: 'audit',
   BOOKMARK: 'bookmark',
   ONTOLOGY: 'ontology',
-  SESSION_LOG: 'session-log'
+  SESSION_LOG: 'session-log',
+  INDICATOR_METADATA: 'indicator-metadata'
 });
 
 class Adapter {

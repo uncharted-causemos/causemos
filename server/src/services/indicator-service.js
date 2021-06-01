@@ -16,7 +16,7 @@ const DEFAULT_SIZE = 10000;
  * Extend the object passed in with the time series data and other associated data
  * for the given indicator_name
  */
-const _setIndicatorProperties = async(parameter) => {
+const _setIndicatorProperties = async (parameter) => {
   if (_.isNil(parameter.indicator_id)) throw new Error('No indicator_id specified in parameter object');
   const indicatorMatch = await getIndicatorData(parameter.indicator_id, parameter.indicator_source);
   if (_.isEmpty(indicatorMatch)) {
@@ -180,6 +180,42 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
+const getOntologyCandidates = async (concepts) => {
+  const ontologyCandidates = {};
+  const indicatorMetadataAdaptor = Adapter.get(RESOURCE.INDICATOR_METADATA)
+  const esClient = indicatorMetadataAdaptor.client;
+  for (const concept of concepts) {
+    const query = {
+      terms: {
+        ontology_components: [concept]
+      }
+    };
+    const searchPayload = {
+      index: RESOURCE.INDICATOR_METADATA,
+      size: DEFAULT_SIZE,
+      body: {
+        query,
+        sort: [
+          {
+            "_score": {
+              "order": "desc"
+            }
+          }
+        ]
+      }
+    };
+    const response = await esClient.search(searchPayload);
+    foundIndicatorMetadata = response.body.hits.hits;
+    if (foundIndicatorMetadata.length > 0) {
+      ontologyCandidates[concept] = {
+        ...foundIndicatorMetadata[0]._source,
+        _match_score: foundIndicatorMetadata[0]._score
+      };
+    }
+  };
+  return ontologyCandidates;
+};
+
 /**
  * Attempt to set or reset default indicators for concepts
  * @param {string} modelId - model id
@@ -191,7 +227,7 @@ const setDefaultIndicators = async (modelId) => {
   const filteredNodeParameters = nodeParameters.filter(n => !_.isNil(n.concept));
 
   const concepts = filteredNodeParameters.map(n => n.concept);
-  const conceptCandidates = await conceptSearch(concepts);
+  const ontologyCandidates = await getOntologyCandidates(concepts);
 
   // All of these indicators are set by the same action, so they should
   // all have the same modified_at time
@@ -199,9 +235,9 @@ const setDefaultIndicators = async (modelId) => {
 
   // Set default candidates
   const conceptMatches = {};
-  const matchedKeys = Object.keys(conceptCandidates);
+  const matchedKeys = Object.keys(ontologyCandidates);
   matchedKeys.forEach(conceptKey => {
-    const topMatch = conceptCandidates[conceptKey];
+    const topMatch = ontologyCandidates[conceptKey];
     conceptMatches[conceptKey] = {
       modified_at: editTime,
       parameter: {
