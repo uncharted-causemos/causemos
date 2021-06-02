@@ -19,27 +19,44 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
+import { defineComponent, ref } from 'vue';
 
-import StartScreen from '@/components/start-screen';
-import RenameModal from '@/components/action-bar/rename-modal';
+import StartScreen from '@/components/start-screen.vue';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import { CAG } from '@/utils/messages-util';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
+import useToaster from '@/services/composables/useToaster';
 
-export default {
+interface RecentCard {
+  id: string;
+  previewImageSrc: string | null;
+  title: string;
+  subtitle: string;
+}
+
+export default defineComponent({
   name: 'QualitativeStart',
   components: {
     StartScreen,
     RenameModal
   },
-  data: () => ({
-    cardToRename: {},
-    recentCards: [],
-    showRenameModal: false
-  }),
+  setup() {
+    const recentCards = ref([] as RecentCard[]);
+    const cardToRename = ref({} as RecentCard);
+    const showRenameModal = ref(false);
+
+    return {
+      recentCards,
+      cardToRename,
+      showRenameModal,
+
+      toaster: useToaster()
+    };
+  },
   computed: {
     ...mapGetters({
       project: 'app/project',
@@ -63,7 +80,7 @@ export default {
       const result = await modelService.getProjectModels(this.project);
       this.recentCards = result.models.map(cag => ({
         id: cag.id,
-        previewImageSrc: cag.thumbnail_source || null,
+        previewImageSrc: cag.thumbnail_source ? cag.thumbnail_source : null,
         title: cag.name,
         subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY')
       }));
@@ -79,7 +96,7 @@ export default {
         });
       });
     },
-    onRecent(recentCard) {
+    onRecent(recentCard: RecentCard) {
       this.$router.push({
         name: 'qualitative',
         params: {
@@ -88,11 +105,11 @@ export default {
         }
       });
     },
-    onRename(recentCard) {
+    onRename(recentCard: RecentCard) {
       this.showRenameModal = true;
       this.cardToRename = recentCard;
     },
-    onRenameModalConfirm(newCagNameInput) {
+    onRenameModalConfirm(newCagNameInput: string) {
       if (newCagNameInput !== null && newCagNameInput !== this.cardToRename.title) {
         modelService.updateModelMetadata(this.cardToRename.id, { name: newCagNameInput }).then(r => {
           this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
@@ -104,7 +121,7 @@ export default {
     onRenameModalClose() {
       this.showRenameModal = false;
     },
-    onDuplicate(recentCard) {
+    onDuplicate(recentCard: RecentCard) {
       modelService.duplicateModel(recentCard.id).then(result => {
         this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
         this.setUpdateToken(result.updateToken);
@@ -112,7 +129,7 @@ export default {
         this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
       });
     },
-    onDelete(recentCard) {
+    onDelete(recentCard: RecentCard) {
       modelService.removeModel(recentCard.id).then(result => {
         this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
         this.setUpdateToken(result.updateToken);
@@ -121,7 +138,7 @@ export default {
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss">
