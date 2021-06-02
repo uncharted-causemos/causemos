@@ -156,17 +156,30 @@
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
-          <data-analysis-map
-            v-if="!isDescriptionView"
-            class="card-map full-width"
-            :output-source-specs="outputSourceSpecs"
-            :output-selection=0
-            :show-tooltip="true"
-            :selected-admin-level="selectedAdminLevel"
-            :filters="mapFilters"
-            @on-map-load="onMapLoad"
-            @slide-handle-change="onMapSlideChange"
-          />
+          <div
+            v-if="mapReady && !isDescriptionView"
+            class="card-map-container full-width">
+            <data-analysis-map
+              v-for="(spec, indx) in outputSourceSpecs"
+              :key="spec.id"
+              class="card-map"
+              :class="[
+                `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+              ]"
+              :style="{ borderColor: colorFromIndex(indx) }"
+              :output-source-specs="outputSourceSpecs"
+              :output-selection=indx
+              :show-tooltip="true"
+              :selected-admin-level="selectedAdminLevel"
+              :filters="mapFilters"
+              :map-bounds="mapBounds"
+              :is-grid-map="isGridMap"
+              @sync-bounds="onSyncMapBounds"
+              @click-layer-toggle="onClickMapLayerToggle"
+              @on-map-load="onMapLoad"
+              @slide-handle-change="updateMapFilters"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -175,7 +188,6 @@
 
 <script lang="ts">
 import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
-
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -193,6 +205,7 @@ import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vu
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import _ from 'lodash';
 import { DatacubeType, ModelRunStatus } from '@/types/Enums';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -321,24 +334,42 @@ export default defineComponent({
           .flat()
           .map(point => point.timestamp);
         const lastTimestamp = _.max(allTimestamps);
-        emitTimestampSelection(lastTimestamp ?? 0);
+        if (lastTimestamp !== undefined) {
+          emitTimestampSelection(lastTimestamp);
+        }
       });
 
     const outputSourceSpecs = computed(() => {
-      return [{
-        id: selectedScenarioIds.value[0],
-        modelId: selectedModelId.value,
-        runId: selectedScenarioIds.value[0], // we may not have a selected run at this point, so init map with the first run by default
-        outputVariable: metadata.value?.outputs[0].name,
-        timestamp: selectedTimestamp.value,
-        temporalResolution: selectedTemporalResolution.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        spatialAggregation: selectedSpatialAggregation.value
-      }];
+      return selectedScenarioIds.value.map(selectedScenarioId => {
+        return {
+          id: selectedScenarioId,
+          modelId: selectedModelId.value,
+          runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
+          outputVariable: metadata.value?.outputs[0].name,
+          timestamp: selectedTimestamp.value,
+          temporalResolution: selectedTemporalResolution.value,
+          temporalAggregation: selectedTemporalAggregation.value,
+          spatialAggregation: selectedSpatialAggregation.value
+        };
+      });
     });
+    const mapFilters = ref<AnalysisMapFilter[]>([]);
+    const updateMapFilters = (data: AnalysisMapFilter) => {
+      mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
+    };
+    watch(
+      () => outputSourceSpecs.value,
+      () => {
+        mapFilters.value = mapFilters.value.filter(filter => {
+          return outputSourceSpecs.value.find(spec => filter.id === spec.id);
+        });
+      }
+    );
 
     return {
       outputSourceSpecs,
+      updateMapFilters,
+      mapFilters,
       selectedTimeseriesData,
       colorFromIndex,
       emitTimestampSelection,
@@ -359,16 +390,30 @@ export default defineComponent({
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
     potentialScenarios: [] as Array<ScenarioData>,
-    mapFilters: [] as Array<AnalysisMapFilter>,
     showNewRunsModal: false,
-    showModelRunsExecutionStatus: false
+    showModelRunsExecutionStatus: false,
+    mapBounds: [ // Default bounds to Ethiopia
+      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
+      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+    ],
+    mapReady: false,
+    isGridMap: false
   }),
+  created() {
+    enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
+  },
+  unmounted() {
+    disableConcurrentTileRequestsCaching();
+  },
   methods: {
     onMapLoad() {
       this.$emit('on-map-load');
     },
-    onMapSlideChange(data: AnalysisMapFilter) {
-      this.mapFilters = [data];
+    onSyncMapBounds(mapBounds: Array<Array<number>>) {
+      this.mapBounds = mapBounds;
+    },
+    onClickMapLayerToggle(data: { isGridMap: boolean }) {
+      this.isGridMap = !data.isGridMap;
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
@@ -515,12 +560,45 @@ header {
   color: #bbb;
 }
 
-.card-map {
+.card-map-container {
   height: 100%;
   width: 70%;
 
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  overflow-y: scroll;
+
   &.full-width {
     width: 100%;
+  }
+}
+
+.card-map {
+  flex-grow: 1;
+  width: auto;
+  height: inherit;
+  padding: 3px;
+  ::v-deep(.wm-map) {
+    border-style: solid;
+    border-color: inherit;
+  }
+  &.card-count-1 {
+    flex-grow: 1;
+    ::v-deep(.wm-map) {
+      border: none;
+    }
+  }
+  &.card-count-3,
+  &.card-count-4 {
+    height: 50%;
+    width: 50%;
+    max-width: 50%;
+  }
+  &.card-count-n {
+    height: 50%;
+    width: calc(100% / 3);
+    max-width: calc(100% / 3);
   }
 }
 

@@ -157,19 +157,18 @@ export default {
   },
   watch: {
     selectedScenarioId() {
-      if (this.currentEngine === 'dyse') {
-        this.fetchSensitivityAnalysisResults();
-      }
       if (_.isNil(this.scenarios)) return;
+      this.fetchSensitivityAnalysisResults();
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       if (scenario && scenario.is_valid === false) {
         this.recalculateScenario(scenario);
       }
     },
     sensitivityAnalysisType() {
-      if (this.currentEngine === 'dyse') {
-        this.fetchSensitivityAnalysisResults();
-      }
+      this.fetchSensitivityAnalysisResults();
+    },
+    scenarios() {
+      this.fetchSensitivityAnalysisResults();
     }
   },
   mounted() {
@@ -466,7 +465,7 @@ export default {
       this.isEditConstraintsOpen = false;
     },
     async fetchSensitivityAnalysisResults() {
-      if (_.isNil(this.scenarios) || this.scenarios.length === 0) return;
+      if (this.currentEngine !== 'dyse' || _.isNil(this.scenarios) || this.scenarios.length === 0) return;
       this.sensitivityMatrixData = null;
       const now = Date.now();
       this.sensitivityDataTimestamp = now;

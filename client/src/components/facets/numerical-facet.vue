@@ -15,6 +15,7 @@
       v-if="facetData.values.length > 0"
       target="facet-bars-value"
       title="${tooltip}"
+      class="facet-pointer"
     />
 
 
@@ -161,5 +162,8 @@ export default {
 <style scoped lang="scss">
 .facet-font {
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+.facet-pointer {
+  cursor: pointer;
 }
 </style>

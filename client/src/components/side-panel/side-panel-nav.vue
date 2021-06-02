@@ -34,12 +34,16 @@
   </ul>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+
+import { defineComponent, PropType } from 'vue';
+import { SidePanelTab } from '@/types/Common';
+
+export default defineComponent({
   name: 'SidePanelNav',
   props: {
     tabs: {
-      type: Array,
+      type: Array as PropType<SidePanelTab[]>,
       default: () => []
     },
     currentTabName: {
@@ -51,22 +55,22 @@ export default {
     'set-active'
   ],
   computed: {
-    allTabsAreClosed() {
+    allTabsAreClosed(): boolean {
       return this.tabs.find(tab => tab.name === this.currentTabName) === undefined;
     }
   },
   methods: {
-    toggleActive(tabName) {
+    toggleActive(tabName: string) {
       // If the tab is currently selected, pass '' to signify it should be
       //  unselected. Otherwise, pass the tab's name to select it
       this.$emit('set-active', tabName === this.currentTabName ? '' : tabName);
     },
-    getImgUrl(imgSrc) {
+    getImgUrl(imgSrc: string) {
       const assetFolder = require.context('@/assets/');
       return assetFolder('./' + imgSrc);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

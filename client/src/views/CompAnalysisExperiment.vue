@@ -84,7 +84,7 @@ import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { LegacyBreakdownDataStructure } from '@/types/Common';
 import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
-import { getRandomNumber } from '../../tests/utils/random';
+import { getRandomNumber } from '@/utils/random';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
@@ -138,7 +138,7 @@ export default defineComponent({
 
     const selectedScenarioIds = ref([] as string[]);
 
-    const selectedTimestamp = ref(0);
+    const selectedTimestamp = ref(null) as Ref<number | null>;
 
     const newRunsMode = ref(false);
 

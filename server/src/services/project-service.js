@@ -4,6 +4,7 @@ const uuid = require('uuid');
 
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
+const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const queryUtil = rootRequire('adapters/es/query-util');
@@ -91,25 +92,11 @@ const createProject = async (kbId, name) => {
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
   await ontologyAdapter.insert(conceptsPayload, d => d.id);
 
-  // FIXME: Just test INDRA plumbing
-  const indraOptions = {
-    url: 'http://wm.indra.bio/assembly/new_project',
-    method: 'POST',
-    json: {
-      project_id: result.index,
-      project_name: name,
-      corpus_id: projectData.corpus_id
-    }
-  };
   try {
-    const result = await requestAsPromise(indraOptions);
-    console.log('');
-    console.log(result);
-    console.log('');
+    await indraService.sendNewProject(result.index, name, projectData.corpus_id);
   } catch (err) {
     console.log(err);
   }
-
 
   return result;
 };

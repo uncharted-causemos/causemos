@@ -33,6 +33,7 @@ export default defineComponent({
       default: ''
     }
   },
+  emits: ['close'],
   methods: {
     close() {
       this.$emit('close');

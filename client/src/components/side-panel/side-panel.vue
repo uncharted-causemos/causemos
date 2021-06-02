@@ -27,10 +27,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, PropType } from 'vue';
 import SidePanelNav from '@/components/side-panel/side-panel-nav.vue';
+import { SidePanelTab } from '@/types/Common';
 
-export default {
+
+export default defineComponent({
   name: 'SidePanel',
   components: {
     SidePanelNav
@@ -54,7 +57,7 @@ export default {
      * }
      */
     tabs: {
-      type: Array,
+      type: Array as PropType<SidePanelTab[]>,
       default: () => []
     },
     currentTabName: {
@@ -78,7 +81,7 @@ export default {
       return false;
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

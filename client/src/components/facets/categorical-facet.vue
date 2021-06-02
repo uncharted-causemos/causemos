@@ -4,13 +4,14 @@
     :selection.prop="selection"
     :subselection.prop="subSelection"
     @facet-element-updated="updateSelection"
+    action-buttons="0"
   >
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
     <div slot="header-label">
       <span class="facet-font">{{ label }}</span>
     </div>
 
-    <facet-template target="facet-terms-value">
+    <facet-template target="facet-terms-value" class="facet-pointer">
       <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
       <div slot="label"
         class="facet-label-truncated facet-font"
@@ -240,6 +241,9 @@ export default {
 
 
 <style scoped lang="scss">
+.facet-pointer {
+  cursor: pointer;
+}
 .facet-font {
   font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
 }

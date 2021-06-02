@@ -48,6 +48,7 @@ export default defineComponent({
       default: ''
     }
   },
+  emits: ['add-to-CAG', 'close'],
   setup() {
     const store = useStore();
 

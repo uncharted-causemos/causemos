@@ -185,7 +185,7 @@ import { ModelPublishingStepID } from '@/types/Enums';
 import router from '@/router';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { DimensionInfo, Model } from '@/types/Datacube';
-import { getRandomNumber } from '../../tests/utils/random';
+import { getRandomNumber } from '@/utils/random';
 import { mapGetters } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
@@ -271,7 +271,7 @@ export default defineComponent({
       }
     }
 
-    const selectedTimestamp = ref(0);
+    const selectedTimestamp = ref<number | null>(null);
 
     const openPublishAccordion = ref(false);
 
