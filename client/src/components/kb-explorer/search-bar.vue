@@ -39,6 +39,7 @@ const CONCEPTS_MSG = 'Select one or more ontological concepts';
 const AUTHOR_MSG = 'Select an author';
 const ORGANIZATION_MSG = 'Select an organization';
 const GEO_LOCATION_MSG = 'Select a location';
+const DOC_LOCATION_MSG = 'Select a location';
 
 const QUALITY = [
   'Not Evaluated',
@@ -163,7 +164,11 @@ export default {
         GEO_LOCATION_MSG,
         false,
         SingleRelationState),
-      new TextPill(CODE_TABLE.DOC_LOCATION),
+      new DynamicValuePill(CODE_TABLE.DOC_LOCATION,
+        suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_LOCATION.field),
+        DOC_LOCATION_MSG,
+        false,
+        SingleRelationState),
       new DynamicValuePill(CODE_TABLE.DOC_ORGANIZATION,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_ORGANIZATION.field),
         ORGANIZATION_MSG,
