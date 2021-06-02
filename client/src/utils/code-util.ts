@@ -85,8 +85,8 @@ export const CODE_TABLE: FieldMap = {
     ...searchable('Pieces of Evidence', true)
   },
   GEO_LOCATION_NAME: {
-    ...field('factorLocationName', 'Geospatial Context', 'fa-globe'),
-    ...searchable('Geospatial Context', false)
+    ...field('factorLocationName', 'Evidence Locations', 'fa-globe'),
+    ...searchable('Evidence Locations', false)
   },
   YEAR: {
     ...field('factorYear', 'Temporal - Year'),
@@ -150,8 +150,8 @@ export const CODE_TABLE: FieldMap = {
     ...searchable('Author', false)
   },
   DOC_LOCATION: {
-    ...field('docLocation', 'Location'),
-    ...searchable('Location', false)
+    ...field('docLocation', 'Document Locations'),
+    ...searchable('Document Locations', false)
   },
   DOC_ORGANIZATION: {
     ...field('docOrganization', 'Organization'),
