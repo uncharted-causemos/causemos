@@ -124,53 +124,57 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
-const getOntologyCandidates = async (concepts) => {
+const getOntologyCandidates = async (modelId, concepts) => {
   const ontologyCandidates = {};
   const indicatorMetadataAdapter = Adapter.get(RESOURCE.INDICATOR_METADATA);
   const esClient = indicatorMetadataAdapter.client;
 
-  // what to make sure we use compositional concepts as well
+  const modelAdapter = Adapter.get(RESOURCE.MODEL);
+  const modelEsClient = modelAdapter.client;
+  const modelData = await modelEsClient.search({ index: RESOURCE.MODEL, size: DEFAULT_SIZE, body: { query: { term: { id: modelId } } } });
+
+  // to make sure we use compositional concepts as well
   const projectMetadataAdapter = Adapter.get(RESOURCE.PROJECT);
   const projectMetadataEsClient = projectMetadataAdapter.client;
-  const projectMetaData = await projectMetadataEsClient.search({ index: RESOURCE.PROJECT, size: DEFAULT_SIZE, body: {} });
-  const projectMetaDataHits = projectMetaData.body.hits.hits;
+  const projectMetaData = await projectMetadataEsClient.search({
+    index: RESOURCE.PROJECT, size: DEFAULT_SIZE, body: {
+      query: { term: { id: modelData.body.hits.hits[0]._source.project_id } }
+    }
+  });
+  const project = projectMetaData.body.hits.hits[0];
 
   for (const concept of concepts) {
-    let compositionalConcepts = new Array(projectMetaDataHits.length);
-    // get compositional concepts
-    for (let i = 0; i < projectMetaDataHits.length; i++) {
-      let project = projectMetaDataHits[i];
-      const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, project._source.id);
-      const query = {
-        bool: {
-          should: [
-            {
-              term: {
-                'subj.candidates.name': concept
-              }
-            },
-            {
-              term: {
-                'obj.candidates.name': concept
-              }
+    let compositionalConcepts = [];
+    const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, project._source.id);
+    let query = {
+      bool: {
+        should: [
+          {
+            term: {
+              'subj.candidates.name': concept
             }
-          ]
-        }
-      };
-      const projectData = await projectDataAdapter.client.search({ index: projectDataAdapter.index, body: { query } });
-      if (_.isEmpty(projectData.body.hits.hits)) {
-        compositionalConcepts[i] = [];
-      } else {
-        // grab the subj/obj candidate names, and flatten them all into one array
-        compositionalConcepts[i] = projectData.body.hits.hits.map(
-          pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(
-            pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm'))
-          )).flat(1);
+          },
+          {
+            term: {
+              'obj.candidates.name': concept
+            }
+          }
+        ]
       }
+    };
+    const projectData = await projectDataAdapter.client.search({ index: projectDataAdapter.index, body: { query } });
+    if (_.isEmpty(projectData.body.hits.hits)) {
+      compositionalConcepts = [concept];
+    } else {
+      // grab the subj/obj candidate names, and flatten them all into one array
+      compositionalConcepts = projectData.body.hits.hits.map(
+        pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(
+          pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm'))
+        )).flat(1);
     }
     // make sure array contains unique values
-    compositionalConcepts = [... new Set(compositionalConcepts.flat(1))];
-    const query = {
+    compositionalConcepts = [... new Set(compositionalConcepts)];
+    query = {
       bool: {
         should: [
           {
@@ -179,7 +183,7 @@ const getOntologyCandidates = async (concepts) => {
             }
           }
         ],
-        minimum_should_match: 1
+        minimum_should_match: 2
       }
     };
     const searchPayload = {
@@ -219,7 +223,7 @@ const setDefaultIndicators = async (modelId) => {
   const filteredNodeParameters = nodeParameters.filter(n => !_.isNil(n.concept));
 
   const concepts = filteredNodeParameters.map(n => n.concept);
-  const ontologyCandidates = await getOntologyCandidates(concepts);
+  const ontologyCandidates = await getOntologyCandidates(modelId, concepts);
 
   // All of these indicators are set by the same action, so they should
   // all have the same modified_at time
