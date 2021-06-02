@@ -35,7 +35,7 @@
             class="scenario-header"
             :isExpanded="isExpanded"
             :outputVariable="mainModelOutput.display_name"
-            :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
+            :outputVariableUnits="unit"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
@@ -69,6 +69,7 @@
             :selected-temporal-resolution="selectedTemporalResolution"
             :selected-temporal-aggregation="selectedTemporalAggregation"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :unit="unit"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -82,7 +83,6 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { LegacyBreakdownDataStructure } from '@/types/Common';
 import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
@@ -95,6 +95,7 @@ import router from '@/router';
 import _ from 'lodash';
 import { DatacubeType } from '@/types/Enums';
 import { useStore } from 'vuex';
+import { NamedBreakdownData } from '@/types/Datacubes';
 
 const DRILLDOWN_TABS = [
   {
@@ -121,7 +122,7 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData = ref([]) as Ref<LegacyBreakdownDataStructure[]>;
+    const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
     const store = useStore();
@@ -159,6 +160,13 @@ export default defineComponent({
 
     const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
     const scenarioCount = computed(() => allModelRunData.value.length);
+    const unit = computed(() =>
+      mainModelOutput.value &&
+      mainModelOutput.value.unit &&
+      mainModelOutput.value.unit !== ''
+        ? mainModelOutput.value.unit
+        : null
+    );
 
     watch(() => metadata.value, () => {
       mainModelOutput.value = metadata.value?.outputs[0];
@@ -191,7 +199,8 @@ export default defineComponent({
       scenarioCount,
       fetchData,
       newRunsMode,
-      timerHandler
+      timerHandler,
+      unit
     };
   },
   watch: {
@@ -244,28 +253,25 @@ export default defineComponent({
     },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       // TODO: inspect 'this.selectedScenarioIds' for drilldown data
-      this.typeBreakdownData.length = 0;
-      if (this.selectedScenarioIds.length === 0) {
-        return;
-      }
-      e.drilldownDimensions.forEach(dd => {
-        const drillDownChildren: Array<{name: string; value: number}> = [];
-        const choices = dd.choices as Array<string>;
-        choices.forEach((c) => {
-          drillDownChildren.push({
-            name: c,
-            value: getRandomNumber(0, 5000) // FIXME: use random data for now. Later, pickup the actual breakdown aggregation from (selected scenarios) data
-          });
-        });
-        const breakdown = {
-          name: dd.name,
+      this.typeBreakdownData = [];
+      if (this.selectedScenarioIds.length === 0) return;
+      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
+        const choices = dimension.choices as Array<string>;
+        const drilldownChildren = choices.map(choice => ({
+          // Breakdown data IDs are written as the hierarchical path delimited by '__'
+          id: 'All__' + choice,
+          // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
+          //  from (selected scenarios) data
+          value: getRandomNumber(0, 5000)
+        }));
+        const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
+        return {
+          name: dimension.name,
           data: {
-            name: 'ALL',
-            value: drillDownChildren.map(c => c.value).reduce((a, b) => a + b, 0), // sum all children values
-            children: drillDownChildren
+            Total: [{ id: 'All', value: sumTotal }],
+            [dimension.name]: drilldownChildren
           }
         };
-        this.typeBreakdownData.push(breakdown);
       });
     }
   }

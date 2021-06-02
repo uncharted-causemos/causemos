@@ -8,8 +8,9 @@
       :aggregation-level-count="availableAdminLevelTitles.length"
       :aggregation-level="selectedAdminLevel"
       :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
-      :raw-data="regionalData[0].data"
-      :units="'tonnes'"
+      :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
+      :raw-data="regionalData[0]"
+      :units="unit"
       @aggregation-level-change="setSelectedAdminLevel"
     >
       <template #aggregation-description>
@@ -21,12 +22,17 @@
           >.
         </p>
         <p class="aggregation-description">
-          Aggregated by <strong>sum</strong>.
+          Aggregated by
+          <strong>{{
+            selectedSpatialAggregation === ''
+              ? 'mean'
+              : selectedSpatialAggregation
+          }}</strong
+          >.
         </p>
       </template>
     </aggregation-checklist-pane>
     <!-- TODO: dropdown to select what we're breaking down by -->
-    <!-- TODO: Fetch units from model metadata `outputs` property -->
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="type in visibleTypeBreakdownData"
@@ -34,8 +40,9 @@
       :aggregation-level-count="1"
       :aggregation-level="1"
       :aggregation-level-title="type.name"
+      :ordered-aggregation-level-keys="['Total', type.name]"
       :raw-data="type.data"
-      :units="'tonnes'"
+      :units="unit"
     >
       <template #aggregation-description>
         <!-- TODO: highlighted value should be dynamically populated based
@@ -44,7 +51,7 @@
           Showing <strong>placeholder</strong> data.
         </p>
         <p class="aggregation-description">
-          Aggregated by <strong>averaging</strong>.
+          Aggregated by <strong>sum</strong>.
         </p>
       </template>
     </aggregation-checklist-pane>
@@ -64,79 +71,25 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, PropType, ref, watch } from 'vue';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs,
+  watchEffect
+} from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import API from '@/api/api';
-import { RegionalData } from '@/types/Datacubes';
-import {
-  LegacyBreakdownDataStructure,
-  LegacyBreakdownNode
-} from '@/types/Common';
+import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { Model } from '@/types/Datacube';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
   //  and be consistent.
   return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
-}
-
-const ADMIN_LEVEL_TITLES = {
-  country: 'Country',
-  admin1: 'L1 admin region',
-  admin2: 'L2 admin region',
-  admin3: 'L3 admin region',
-  admin4: 'L4 admin region',
-  admin5: 'L5 admin region'
-};
-
-// Ordered list of the admin region levels
-const levels: (keyof typeof ADMIN_LEVEL_TITLES)[] = [
-  'country',
-  'admin1',
-  'admin2',
-  'admin3',
-  'admin4',
-  'admin5'
-];
-
-function convertToLegacyAdminDataStructure(
-  flattened: RegionalData
-): LegacyBreakdownDataStructure {
-  const maxDepth = Object.keys(flattened).length;
-  const result: LegacyBreakdownNode[] = [];
-  levels.forEach(level => {
-    if (flattened[level] === undefined) return;
-    const distinctRegions = _.groupBy(
-      Object.values(flattened[level] as any).flat(),
-      (timestamp: { id: string }) => timestamp.id
-    );
-    Object.keys(distinctRegions).map(regionName => {
-      const aggregatedValue = _.sumBy(
-        distinctRegions[regionName],
-        (entry: any) => entry.value
-      );
-      let heritage = regionName.split('__');
-      let pointer = result;
-      // Find where in the tree this region should be inserted
-      while (heritage.length > 1) {
-        const nextNode = pointer.find(node => node.name === heritage[0]);
-        if (nextNode === undefined) return;
-        pointer = nextNode?.children;
-        heritage = heritage.splice(1);
-      }
-      const newNode: LegacyBreakdownNode = {
-        name: heritage[0],
-        value: aggregatedValue,
-        children: []
-      };
-      pointer.push(newNode);
-    });
-  });
-  return {
-    maxDepth,
-    data: result[0]
-  };
 }
 
 export default defineComponent({
@@ -160,7 +113,7 @@ export default defineComponent({
       default: null
     },
     typeBreakdownData: {
-      type: Array as PropType<LegacyBreakdownDataStructure[]>,
+      type: Array as PropType<NamedBreakdownData[]>,
       default: () => []
     },
     selectedTimestamp: {
@@ -178,10 +131,23 @@ export default defineComponent({
     selectedSpatialAggregation: {
       type: String as PropType<string>,
       default: 'mean'
+    },
+    unit: {
+      type: String as PropType<string>,
+      default: null
     }
   },
   emits: ['set-selected-admin-level'],
   setup(props, { emit }) {
+    const {
+      selectedModelId,
+      selectedScenarioIds,
+      selectedTimestamp,
+      metadata,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation
+    } = toRefs(props);
     function setSelectedAdminLevel(level: number) {
       emit('set-selected-admin-level', level);
     }
@@ -190,33 +156,33 @@ export default defineComponent({
     // FIXME: this code contains a race condition if the selected model or
     //  scenario IDs were to change quickly and the promise sets completed
     //  out of order.
-    const rawRegionalData = ref<RegionalData[]>([]);
-    async function fetchRegionalData() {
-      rawRegionalData.value = [];
+    const regionalData = ref<BreakdownData[]>([]);
+    watchEffect(async () => {
+      regionalData.value = [];
       if (
-        props.selectedModelId === null ||
-        props.selectedScenarioIds.length === 0 ||
-        props.selectedTimestamp === null
+        selectedModelId.value === null ||
+        selectedScenarioIds.value.length === 0 ||
+        selectedTimestamp.value === null
       ) {
         return;
       }
-      // FIXME: the reference to model by name below will be removed once all models use the same API/endpoint
-      const promises = props.selectedScenarioIds.map(scenarioId =>
+      const spatialAggregation =
+        selectedSpatialAggregation.value === ''
+          ? 'mean'
+          : selectedSpatialAggregation.value;
+      const promises = selectedScenarioIds.value.map(scenarioId =>
         API.get('/maas/output/regional-data', {
           params: {
-            model_id: props.selectedModelId,
+            model_id: selectedModelId.value,
             run_id: scenarioId,
-            feature: props.metadata.outputs[0].name,
-            resolution: props.selectedTemporalResolution,
-            temporal_agg: props.selectedTemporalAggregation,
-            spatial_agg: props.selectedSpatialAggregation,
-            timestamp: props.selectedTimestamp
+            feature: metadata.value.outputs[0].name,
+            resolution: selectedTemporalResolution.value,
+            temporal_agg: selectedTemporalAggregation.value,
+            spatial_agg: spatialAggregation,
+            timestamp: selectedTimestamp.value
           }
         })
       );
-      // HACK: the temporary 'fetch-demo-data' endpoint's response needs to be JSON.parse()'d
-      //  but the new '/maas/output/regional-data' endpoint works without.
-      //  This conditional logic should be removed along with the temporary endpoint
       const allRegionalData = (await Promise.all(promises)).map(response => {
         const data = response.data;
         return _.isEmpty(data) ? {} : data;
@@ -224,41 +190,27 @@ export default defineComponent({
       if (_.some(allRegionalData, response => _.isEmpty(response))) {
         return;
       }
-      rawRegionalData.value = allRegionalData;
-    }
-
-    const regionalData = computed(() => {
-      if (rawRegionalData.value.length === 0) return [];
-      return rawRegionalData.value.map(convertToLegacyAdminDataStructure);
+      regionalData.value = allRegionalData;
     });
 
-    // availableAdminLevels is an array of strings, each of which
-    //  must be a key in the ADMIN_LEVEL_TITLES map
     const availableAdminLevelTitles = computed(() => {
       if (regionalData.value.length === 0) return [];
-      return levels
-        .slice(0, regionalData.value[0].maxDepth)
-        .map(adminLevel => ADMIN_LEVEL_TITLES[adminLevel]);
+      const adminLevelCount = Object.keys(regionalData.value[0]).length;
+      return ADMIN_LEVEL_KEYS.slice(0, adminLevelCount).map(
+        adminLevel => ADMIN_LEVEL_TITLES[adminLevel]
+      );
     });
 
-    watch(
-      () => [
-        props.selectedModelId,
-        props.selectedScenarioIds,
-        props.selectedTimestamp
-      ],
-      fetchRegionalData,
-      { immediate: true }
-    );
     return {
       setSelectedAdminLevel,
       availableAdminLevelTitles,
       regionalData,
-      timestampFormatter
+      timestampFormatter,
+      ADMIN_LEVEL_KEYS
     };
   },
   computed: {
-    visibleTypeBreakdownData(): LegacyBreakdownDataStructure[] {
+    visibleTypeBreakdownData(): NamedBreakdownData[] {
       // HACK: Filter out any breakdown parameters that duplicate
       //  an admin level, since they will already be shown in the
       //  standard admin level breakdown above.
@@ -267,10 +219,9 @@ export default defineComponent({
       //  thought since some models (e.g. MaxHop) require the user
       //  to request data for a specific admin region.
       return this.typeBreakdownData.filter(breakdownParameter => {
-        const isAdminLevelDuplicate =
-          breakdownParameter.name &&
-          (levels as string[]).includes(breakdownParameter.name);
-        // console.log(breakdownParameter.name, 'is duplicate?', isAdminLevelDuplicate);
+        const isAdminLevelDuplicate = (ADMIN_LEVEL_KEYS as string[]).includes(
+          breakdownParameter.name
+        );
         return !isAdminLevelDuplicate;
       });
     }

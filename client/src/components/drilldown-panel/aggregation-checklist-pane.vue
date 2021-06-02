@@ -12,32 +12,23 @@
         :min="0"
         :max="aggregationLevelCount - 1"
         @input="onRangeValueChanged"
-      >
+      />
       <div
         v-for="tickIndex in aggregationLevelCount"
         :key="tickIndex"
         class="aggregation-level-tick"
-        :class="{ 'hidden': (tickIndex - 1) === aggregationLevel }"
+        :class="{ hidden: tickIndex - 1 === aggregationLevel }"
         :style="tickStyle(tickIndex)"
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
     <div class="flex-row">
       <div class="select-all-buttons">
-        <small-text-button
-          :label="'Select All'"
-          @click="selectAll"
-        />
-        <small-text-button
-          :label="'Deselect All'"
-          @click="deselectAll"
-        />
+        <small-text-button :label="'Select All'" @click="selectAll" />
+        <small-text-button :label="'Deselect All'" @click="deselectAll" />
       </div>
-      <div
-        v-if="units !== null"
-        class="units"
-      >
-        {{units}}
+      <div v-if="units !== null" class="units">
+        {{ units }}
       </div>
     </div>
     <div class="checklist-container">
@@ -56,73 +47,101 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
-import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item';
+import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
+import { BreakdownData } from '@/types/Datacubes';
+import {
+  defineComponent,
+  PropType,
+  toRefs,
+  watchEffect,
+  ref,
+  computed
+} from '@vue/runtime-core';
 
-const findNode = (tree, path) => {
-  let currentNode = tree;
-  for (const nodeIndex of path) {
-    currentNode = currentNode.children[nodeIndex];
-  }
-  return currentNode;
-};
+interface StatefulDataNode {
+  name: string;
+  children: StatefulDataNode[];
+  value: number;
+  path: string[];
+  isExpanded: boolean;
+  isChecked: boolean;
+}
 
-const findMaxVisibleBarValue = (node, levelsUntilSelectedDepth) => {
-  if (levelsUntilSelectedDepth === 0) return node.value;
-  let maxValue = Number.MIN_VALUE;
-  node.children.forEach(child => {
-    maxValue = Math.max(maxValue, findMaxVisibleBarValue(child, levelsUntilSelectedDepth - 1));
-  });
-  return maxValue;
-};
+interface ChecklistRowData {
+  name: string;
+  value: number;
+  isExpanded: boolean;
+  isChecked: boolean;
+  path: string[];
+  isSelectedAggregationLevel: boolean;
+  showExpandToggle: boolean;
+  indentationCount: number;
+  hiddenAncestorNames: string[];
+}
 
 /**
- * Recursively traverses the metadata tree to collect the nodes that should be visible
- * in the list. It converts them into .
+ * Recursively traverses the state tree to collect the nodes that should be visible
+ * in the list. It converts them into a list of ChecklistRowData objects augmented
+ * with all the necessary metadata for easy looping in the template.
  *
  * @param {Object}  metadataNode The current node to examine. Originally the root of the tree.
- * @param {Array}   hiddenAncestors List of names for entries at the 'parent' level to store and later, display.
+ * @param {Array}   hiddenAncestorNames List of names for entries at the 'parent' level to store and later, display.
  * @param {Number}  selectedLevel The currently selected aggregation level.
  *
  * @return {Array} An array of objects with all info necessary to render the associated list item.
  */
-const extractVisibleRows = (metadataNode, hiddenAncestors, selectedLevel) => {
-  const depthLevel = metadataNode.path.length;
+const extractVisibleRows = (
+  metadataNode: StatefulDataNode,
+  hiddenAncestorNames: string[],
+  selectedLevel: number
+): ChecklistRowData[] => {
+  const depthLevel = metadataNode.path.length - 1; // 0-indexed
   // Parents of selected level keep track of their ancestors' names
-  const _hiddenAncestors = depthLevel >= selectedLevel
-    ? []
-    : _.clone(hiddenAncestors);
+  const _hiddenAncestorNames =
+    depthLevel >= selectedLevel ? [] : _.clone(hiddenAncestorNames);
   const isHiddenAncestor = depthLevel < selectedLevel - 1;
   if (isHiddenAncestor) {
-    _hiddenAncestors.push(metadataNode.name);
+    _hiddenAncestorNames.push(metadataNode.name);
   }
   // Recursively concatenate the node's visible descendants into an array
   const children = metadataNode.children.reduce((accumulator, child) => {
     return [
       ...accumulator,
-      ...extractVisibleRows(child, _hiddenAncestors, selectedLevel)
+      ...extractVisibleRows(child, _hiddenAncestorNames, selectedLevel)
     ];
-  }, []);
+  }, [] as ChecklistRowData[]);
   const visibleChildren = metadataNode.isExpanded ? children : [];
-  const hasChildrenAtSelectedLevel = depthLevel === selectedLevel - 1 && children.length > 0;
-  const isNodeVisible = depthLevel >= selectedLevel || hasChildrenAtSelectedLevel;
+  const hasChildrenAtSelectedLevel =
+    depthLevel === selectedLevel - 1 && children.length > 0;
+  const isNodeVisible =
+    depthLevel >= selectedLevel || hasChildrenAtSelectedLevel;
   if (!isNodeVisible) return visibleChildren;
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
-    checklistRowDataFromNode(metadataNode, depthLevel, _hiddenAncestors, selectedLevel),
+    checklistRowDataFromNode(
+      metadataNode,
+      depthLevel,
+      _hiddenAncestorNames,
+      selectedLevel
+    ),
     ...visibleChildren
   ];
 };
 
-const checklistRowDataFromNode = (node, depthLevel, hiddenAncestors, selectedLevel) => {
+const checklistRowDataFromNode = (
+  node: StatefulDataNode,
+  depthLevel: number,
+  hiddenAncestorNames: string[],
+  selectedLevel: number
+): ChecklistRowData => {
   const { name, value, children, isExpanded, isChecked, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
   const showExpandToggle = children.length > 0;
-  const indentationCount = depthLevel > selectedLevel
-    ? (depthLevel - selectedLevel) + 1
-    : 0;
+  const indentationCount =
+    depthLevel > selectedLevel ? depthLevel - selectedLevel + 1 : 0;
   return {
     name,
     value,
@@ -131,12 +150,12 @@ const checklistRowDataFromNode = (node, depthLevel, hiddenAncestors, selectedLev
     isExpanded,
     isChecked,
     indentationCount,
-    hiddenAncestors,
+    hiddenAncestorNames,
     path
   };
 };
 
-export default {
+export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
     AggregationChecklistItem,
@@ -147,10 +166,14 @@ export default {
       type: Number,
       default: 1
     },
+    orderedAggregationLevelKeys: {
+      type: Array as PropType<string[]>,
+      default: []
+    },
     aggregationLevel: {
       type: Number,
       default: 0,
-      validator: (value) => {
+      validator: (value: number) => {
         return value >= 0;
       }
     },
@@ -159,13 +182,9 @@ export default {
       default: '[Aggregation Level Title]'
     },
     rawData: {
-      type: Object,
+      type: Object as PropType<BreakdownData>,
       default: () => {
-        return {
-          name: '[Undefined Data]',
-          value: 0,
-          children: []
-        };
+        return {} as BreakdownData;
       }
     },
     units: {
@@ -173,95 +192,138 @@ export default {
       default: null
     }
   },
-  emits: [
-    'aggregation-level-change',
-    'toggle-checked'
-  ],
-  data: () => ({
-    statefulData: undefined
-  }),
-  computed: {
-    visibleRows() {
-      if (_.isNil(this.statefulData)) return [];
-      return extractVisibleRows(this.statefulData, [], this.aggregationLevel);
-    },
-    maxVisibleBarValue() {
-      if (_.isNil(this.statefulData)) return 0;
-      return findMaxVisibleBarValue(this.statefulData, this.aggregationLevel);
-    }
-  },
-  watch: {
-    rawData(n, o) {
-      if (_.isEqual(n, o)) return;
-      this.refresh();
-    },
-    aggregationLevel(n, o) {
-      if (_.isEqual(n, o)) return;
-      this.expandToSelectedLevel();
-    }
-  },
-  mounted() {
-    this.refresh();
+  emits: ['aggregation-level-change', 'toggle-checked'],
+  setup(props) {
+    const { rawData, aggregationLevel, orderedAggregationLevelKeys } = toRefs(props);
+    const statefulData = ref<StatefulDataNode | null>(null);
+    watchEffect(() => {
+      // Whenever the raw data changes, construct a hierarchical data structure
+      //  out of it, augmented with 'expanded' and 'checked' properties to keep
+      //  track of the state of the component.
+      const newStatefulData = { children: [] as StatefulDataNode[] };
+
+      orderedAggregationLevelKeys.value.forEach(adminLevelKey => {
+        const regions = rawData.value[adminLevelKey];
+        if (regions === undefined) return;
+        regions.forEach(({ id, value }) => {
+          // Create stateful node
+          const path = id.split('__');
+          const node: StatefulDataNode = {
+            name: path[path.length - 1],
+            value: value,
+            path,
+            isExpanded: false,
+            // TODO: isChecked functionality still needs to be implemented
+            isChecked: true,
+            children: []
+          };
+          // Find where in the tree this region should be inserted
+          let _path = id.split('__');
+          let pointer = newStatefulData.children;
+          while (_path.length > 1) {
+            const nextNode = pointer.find(node => node.name === _path[0]);
+            if (nextNode === undefined) return;
+            pointer = nextNode?.children;
+            _path = _path.splice(1);
+          }
+          // Insert node into its place in the tree
+          pointer.push(node);
+        });
+      });
+      statefulData.value = newStatefulData.children[0];
+    });
+
+    // Ensure all entries with an aggregation level before the
+    //  currently selected one are expanded whenever statefulData
+    //  is reinitialized or aggregationLevel is changed
+    watchEffect(() => {
+      if (statefulData.value === null) return;
+      const computeExpanded = (
+        metadataNode: StatefulDataNode,
+        depthLevel: number
+      ) => {
+        metadataNode.isExpanded = depthLevel < aggregationLevel.value;
+        metadataNode.children.forEach(child => {
+          computeExpanded(child, depthLevel + 1);
+        });
+      };
+      computeExpanded(statefulData.value, 0);
+    });
+
+    const findMaxVisibleBarValue = (
+      node: StatefulDataNode,
+      levelsUntilSelectedDepth: number
+    ) => {
+      if (levelsUntilSelectedDepth === 0) return node.value;
+      let maxValue = Number.MIN_VALUE;
+      node.children.forEach(child => {
+        maxValue = Math.max(
+          maxValue,
+          findMaxVisibleBarValue(child, levelsUntilSelectedDepth - 1)
+        );
+      });
+      return maxValue;
+    };
+
+    const maxVisibleBarValue = computed(() => {
+      if (_.isNil(statefulData.value)) return 0;
+      return findMaxVisibleBarValue(statefulData.value, aggregationLevel.value);
+    });
+
+    const visibleRows = computed(() => {
+      if (_.isNil(statefulData.value)) return [];
+      return extractVisibleRows(statefulData.value, [], aggregationLevel.value);
+    });
+
+    return {
+      statefulData,
+      maxVisibleBarValue,
+      visibleRows
+    };
   },
   methods: {
-    onRangeValueChanged(event) {
+    onRangeValueChanged(event: any) {
       this.changeAggregationLevel(event.target.valueAsNumber);
     },
-    changeAggregationLevel(newLevel) {
+    changeAggregationLevel(newLevel: number) {
       this.$emit('aggregation-level-change', newLevel);
     },
-    tickStyle(tickIndex) {
+    tickStyle(tickIndex: number) {
       const TICK_WIDTH = 8; // px
       // Tick indices are in 1..aggregationLevelCount.
       // Adjust both to be 0-indexed
       const cleanedIndex = tickIndex - 1;
       const cleanedCount = this.aggregationLevelCount - 1;
       // Space out each tick horizontally
-      const percentage = (cleanedIndex / cleanedCount);
+      const percentage = cleanedIndex / cleanedCount;
       // Adjust each tick to the left so that the last one isn't overflowing
       const errorCorrect = percentage * TICK_WIDTH;
       return { left: `calc(${percentage * 100}% - ${errorCorrect}px)` };
     },
-    refresh() {
-      // Construct a tree matching the raw data, augmented with
-      // - 'expanded' and 'checked' states, and
-      // - the path of indices to access that node
-      this.statefulData = this.refreshMetadata(this.rawData, []);
-      this.expandToSelectedLevel();
-    },
-    refreshMetadata(node, pathToNode) {
-      const augmentedNode = {
-        name: node.name,
-        value: node.value,
-        path: pathToNode,
+    toggleExpanded(path: string[]) {
+      if (this.statefulData === null) return;
+      // Nest top level elements under a dummy parent node
+      //  so that each entry in `path` describes one step
+      //  in the traversal.
+      const temp = {
+        name: '',
+        path: [],
+        value: 0,
         isExpanded: false,
-        isChecked: this.isNodeChecked()
+        isChecked: false,
+        children: [this.statefulData]
       };
-      // Recursively descend through children, repeating the process
-      const childrenMetadata = [];
-      const children = node.children ?? [];
-      children.forEach((child, childIndex) => {
-        childrenMetadata.push(this.refreshMetadata(child, [...pathToNode, childIndex]));
-      });
-      augmentedNode.children = childrenMetadata;
-      return augmentedNode;
+      // Traverse the tree to find the node in question
+      let currentNode: StatefulDataNode | undefined = temp;
+      for (const regionName of path) {
+        currentNode = currentNode.children.find(
+          child => child.name === regionName
+        );
+        if (currentNode === undefined) return;
+      }
+      currentNode.isExpanded = !currentNode.isExpanded;
     },
-    expandToSelectedLevel() {
-      // By default, all entries with an aggregation
-      //  level before the currently selected one are expanded
-      const computeExpanded = (metadataNode, depthLevel) => {
-        metadataNode.isExpanded = depthLevel < this.aggregationLevel;
-        metadataNode.children.forEach(child => {
-          computeExpanded(child, depthLevel + 1);
-        });
-      };
-      computeExpanded(this.statefulData, 0);
-    },
-    toggleExpanded(path) {
-      const node = findNode(this.statefulData, path);
-      node.isExpanded = !node.isExpanded;
-    },
-    toggleChecked(path) {
+    toggleChecked(path: string[]) {
       // TODO: this may need to be updated depending on how we choose to store
       //  and share the checked state of nodes (see isNodeChecked below)
       this.$emit('toggle-checked', path);
@@ -280,13 +342,13 @@ export default {
       console.log('selectAll');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 
-$un-color-surface-30: #B3B4B5;
+$un-color-surface-30: #b3b4b5;
 
 $track-height: 2px;
 $thumb-size: 16px;
@@ -308,7 +370,6 @@ h5 {
   &::-webkit-slider-thumb {
     margin-top: -1 * ($thumb-size - $track-height) / 2;
   }
-
 }
 
 .aggregation-level-range-container {
@@ -349,5 +410,4 @@ h5 {
   justify-content: space-between;
   align-items: flex-end;
 }
-
 </style>

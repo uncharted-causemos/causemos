@@ -73,7 +73,7 @@ export default {
         isExpanded: false,
         isChecked: false,
         indentationCount: 0,
-        hiddenAncestors: []
+        hiddenAncestorNames: []
       })
     },
     maxVisibleBarValue: {
@@ -83,7 +83,7 @@ export default {
   },
   computed: {
     ancestorPrefix() {
-      const hA = this.itemData.hiddenAncestors;
+      const hA = this.itemData.hiddenAncestorNames;
       let prefix = '';
       if (hA.length === 0) return prefix;
       if (hA.length > 1) {
@@ -98,7 +98,7 @@ export default {
       return prefix + '/';
     },
     ancestorTooltip() {
-      const hA = this.itemData.hiddenAncestors;
+      const hA = this.itemData.hiddenAncestorNames;
       let tooltip = '';
       hA.forEach(ancestor => {
         tooltip += `${ancestor} / `;
