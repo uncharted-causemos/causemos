@@ -197,7 +197,7 @@ const getOntologyCandidates = async (concepts) => {
       }
     };
     const response = await esClient.search(searchPayload);
-    foundIndicatorMetadata = response.body.hits.hits;
+    const foundIndicatorMetadata = response.body.hits.hits;
     if (!_.isEmpty(foundIndicatorMetadata)) {
       ontologyCandidates[concept] = {
         ...foundIndicatorMetadata[0]._source,
