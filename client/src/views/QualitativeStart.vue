@@ -80,7 +80,7 @@ export default defineComponent({
       const result = await modelService.getProjectModels(this.project);
       this.recentCards = result.models.map(cag => ({
         id: cag.id,
-        previewImageSrc: cag.thumbnail_source ? cag.thumbnail_source : null,
+        previewImageSrc: cag.thumbnail_source ?? null,
         title: cag.name,
         subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY')
       }));
