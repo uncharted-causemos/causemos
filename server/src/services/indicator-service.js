@@ -178,13 +178,8 @@ const getOntologyCandidates = async (modelId, concepts) => {
         )).flat(1);
     }
     // make sure array contains unique values
-<<<<<<< HEAD
     compositionalConcepts = [... new Set(compositionalConcepts)];
     query = {
-=======
-    compositionalConcepts = [...new Set(compositionalConcepts.flat(1))];
-    const query = {
->>>>>>> 750dbfd5a862450df76266ad6b7893483a1cde1b
       bool: {
         should: [
           {
