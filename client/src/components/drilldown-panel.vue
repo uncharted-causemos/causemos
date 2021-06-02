@@ -46,11 +46,17 @@
   </transition>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent, PropType } from 'vue';
 import CloseButton from './widgets/close-button.vue';
 import TabBar from './widgets/tab-bar.vue';
 
-export default {
+interface DrilldownPanelTab {
+  id: string;
+  name: string;
+}
+
+export default defineComponent({
   name: 'DrilldownPanel',
   components: {
     TabBar,
@@ -64,7 +70,7 @@ export default {
       default: null
     },
     tabs: {
-      type: Array,
+      type: Array as PropType<DrilldownPanelTab[]>,
       default: () => []
     },
     activeTabId: {
@@ -86,7 +92,7 @@ export default {
   data: () => ({
   }),
   computed: {
-    paneTitle() {
+    paneTitle(): string {
       const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
       return activeTab === undefined ? '[Panel Title]' : activeTab.name;
     }
@@ -97,22 +103,14 @@ export default {
     onClose() {
       this.$emit('close');
     },
-    getClassObject(icon) {
-      // This hacky way of binding the :class to a dynamic icon
-      //  is to get around the Vue constraint that interpolation
-      //  is no longer allowed inside the class attribute
-      const classObject = {};
-      classObject[icon] = true;
-      return classObject;
-    },
-    onTabClick(tabID) {
+    onTabClick(tabID: string) {
       this.$emit('tab-click', tabID);
     },
     onOverlayBack() {
       this.$emit('overlay-back');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

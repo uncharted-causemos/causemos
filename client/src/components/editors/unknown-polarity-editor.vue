@@ -80,6 +80,7 @@ export default {
       default: false
     }
   },
+  emits: ['close', 'confirmUpdate', 'cancelUpdate'],
   data: () => ({
     selected: '',
     noSelectionMessage: false,

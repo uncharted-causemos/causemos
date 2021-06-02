@@ -11,6 +11,16 @@ export interface Project {
   stat: { [key: string]: string | number };
 }
 
+// Side panel
+export interface SidePanelTab {
+  name: string;
+  icon?: string;
+  imgSrc?: string;
+  isGreyscale?: string;
+  badgeCount?: string;
+}
+
+
 export interface KnowledgeBase {
   id: string;
   name: string;

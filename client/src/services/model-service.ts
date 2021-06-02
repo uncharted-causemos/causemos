@@ -19,7 +19,7 @@ const MODEL_STATUS = {
   READY: 2
 };
 
-const getProjectModels = async (projectId: string) => {
+const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
   const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
   return result.data;
 };

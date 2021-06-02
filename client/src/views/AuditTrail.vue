@@ -89,43 +89,45 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, useStore } from 'vuex';
+import { defineComponent, ref, computed } from 'vue';
 import API from '@/api/api';
-import AuditEntry from '@/components/audit/audit-entry';
+import AuditEntry from '@/components/audit/audit-entry.vue';
 import numberFormatter from '@/formatters/number-formatter';
 import dateFormatter from '@/formatters/date-formatter';
 
-export default {
+export default defineComponent({
   name: 'AuditTrail',
   components: {
     AuditEntry
   },
-  data: () => ({
-    auditTrailData: [],
-    auditsCount: 0
-  }),
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-      auditsQuery: 'query/audits'
-    }),
-    pageFrom() {
-      return this.auditsQuery.from;
-    },
-    pageSize() {
-      return this.auditsQuery.size;
-    },
-    incrementedPageSize() {
-      return this.pageFrom + this.pageSize;
-    },
-    pageSizeCount() {
-      return Math.min(this.auditsCount, this.incrementedPageSize);
-    },
-    downloadLink() {
-      return '/api/audits/download?projectId=' + this.project;
-    }
+  setup() {
+    const auditsCount = ref(0);
+    const auditTrailData = ref([]);
+    const store = useStore();
+    const project = computed(() => store.getters['app/project']);
+    const auditsQuery = computed(() => store.getters['query/audits']);
+
+    const pageFrom = computed(() => auditsQuery.value.from);
+    const pageSize = computed(() => auditsQuery.value.size);
+    const incrementedPageSize = computed(() => pageFrom.value + pageSize.value);
+    const pageSizeCount = computed(() => Math.min(auditsCount.value, incrementedPageSize.value));
+    const downloadLink = computed(() => '/api/audits/download?projectId=' + project.value);
+
+    return {
+      project,
+      auditsQuery,
+      pageFrom,
+      pageSize,
+      incrementedPageSize,
+      pageSizeCount,
+      downloadLink,
+
+      auditsCount,
+      auditTrailData
+    };
   },
   watch: {
     pageFrom() {
@@ -172,5 +174,5 @@ export default {
       });
     }
   }
-};
+});
 </script>

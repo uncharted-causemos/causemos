@@ -10,7 +10,7 @@
       />
       <div
         class="layer-toggle-button"
-        @click="isGridMap = !isGridMap">
+        @click="clickLayerToggle">
         <i
           :class="layerButtonClass"
         />
@@ -20,6 +20,7 @@
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
       @load="onMapLoad"
+      @move="syncBounds"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
     >
@@ -55,9 +56,8 @@
 <script>
 
 import _ from 'lodash';
-import moment from 'moment';
 import API from '@/api/api';
-import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION, modelOutputMaxPrecision } from '@/utils/model-output-util';
+import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { getColors } from '@/utils/colors-util';
 import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
@@ -111,7 +111,9 @@ export default {
   emits: [
     'on-map-load',
     'aggregation-level-change',
-    'slide-handle-change'
+    'slide-handle-change',
+    'sync-bounds',
+    'click-layer-toggle'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -135,6 +137,10 @@ export default {
       type: Array,
       default: () => []
     },
+    isGridMap: {
+      type: Boolean,
+      default: () => false
+    },
     mapBounds: {
       type: Array,
       default: () => [ // Default bounds to Ethiopia
@@ -144,7 +150,6 @@ export default {
     }
   },
   data: () => ({
-    isGridMap: false,
     baseLayer: undefined,
     colorLayer: undefined,
     hoverId: undefined,
@@ -155,8 +160,22 @@ export default {
     selectedLayer: undefined
   }),
   computed: {
+    outputSourceSpecsValidated() {
+      return this.outputSourceSpecs.map(spec => {
+        // Set default resolution and aggregation
+        return {
+          ...spec,
+          temporalResolution: spec.temporalResolution || 'month',
+          temporalAggregation: spec.temporalAggregation || 'mean',
+          spatialAggregation: spec.spatialAggregation || 'mean'
+        };
+      }).filter(spec => {
+        const { modelId, runId, outputVariable, timestamp, id, temporalResolution, temporalAggregation, spatialAggregation } = spec || {};
+        return modelId && runId && outputVariable && timestamp && id && temporalResolution && temporalAggregation && spatialAggregation;
+      });
+    },
     selection() {
-      return this.outputSourceSpecs[this.outputSelection];
+      return this.outputSourceSpecsValidated[this.outputSelection];
     },
     stats() {
       if (!this.lookupData) return;
@@ -170,6 +189,10 @@ export default {
     extent() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
       if (!this.stats) return { min: 0, max: 1 };
+      const extent = this.stats[adminLevel];
+      if (extent.min === extent.max) {
+        extent.min = 0;
+      }
       return this.stats[adminLevel];
     },
     valueProp() {
@@ -180,25 +203,24 @@ export default {
       if (this.selectedLayer.vectorSourceLayer !== 'maas') {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       } else {
-        const outputSpecs = this.outputSourceSpecs.map(({ id, modelId, outputVariable, timestamp }) => ({ id, modelId, outputVariable, timestamp }))
-          .filter(({ id, modelId, runId, outputVariable, timestamp }) => {
-            // some models (eb. chirps) has timestamp as 0 for some reason and 0 should be treated as valid value
-            // eg. {"timeseries":[{"timestamp":0,"value":-0.24032641113384878}]}
-            return id && modelId && runId && outputVariable && !_.isNil(timestamp);
+        const outputSpecs = this.outputSourceSpecsValidated
+          .filter(spec => {
+            const { runId, outputVariable, modelId, timestamp } = spec || {};
+            return modelId && runId && outputVariable && timestamp;
           })
-          .map(select => {
-            const modelName = select.model || '';
-            const maxPrecision = modelOutputMaxPrecision[modelName];
+          .map(spec => {
             return {
-              model: select.modelId,
-              runId: select.runId,
-              feature: select.outputVariable,
-              date: moment(select.timestamp).toISOString(),
-              valueProp: select.id,
-              maxPrecision
+              modelId: spec.modelId,
+              runId: spec.runId,
+              feature: spec.outputVariable,
+              timestamp: spec.timestamp,
+              valueProp: spec.id,
+              resolution: spec.temporalResolution,
+              temporalAgg: spec.temporalAggregation,
+              spatialAgg: spec.spatialAggregation
             };
           });
-        return `${window.location.protocol}/${window.location.host}/api/maas/output/tiles/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
+        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/grid-output/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
       }
     },
     layerButtonClass() {
@@ -281,24 +303,26 @@ export default {
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, useFeatureState);
     },
     async refreshData() {
-      const { runId, outputVariable, modelId, temporalResolution, temporalAggregation, spatialAggregation, timestamp } = this.selection || {};
-      if (!runId || !outputVariable || !modelId || !timestamp) {
-        return;
-      }
+      if (!this.selection) return;
+      const { runId, outputVariable, modelId, temporalResolution, temporalAggregation, spatialAggregation, timestamp } = this.selection;
       // TODO: Move this api request to service layer
-      const data = (await API.get('/maas/output/regional-data', {
-        params: {
-          model_id: modelId,
-          run_id: runId,
-          feature: outputVariable,
-          resolution: temporalResolution !== '' ? temporalResolution : 'month',
-          temporal_agg: temporalAggregation !== '' ? temporalAggregation : 'mean',
-          spatial_agg: spatialAggregation !== '' ? spatialAggregation : 'mean',
-          timestamp
-        }
-      })).data;
-      this.lookupData = data;
-      if (this.map) this.setFeatureStates();
+      try {
+        const data = (await API.get('/maas/output/regional-data', {
+          params: {
+            model_id: modelId,
+            run_id: runId,
+            feature: outputVariable,
+            resolution: temporalResolution,
+            temporal_agg: temporalAggregation,
+            spatial_agg: spatialAggregation,
+            timestamp
+          }
+        })).data;
+        this.lookupData = data;
+        if (this.map) this.setFeatureStates();
+      } catch (e) {
+        // failed fetching data with given params
+      }
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
@@ -310,7 +334,7 @@ export default {
 
       this.lookupData[adminLevel].forEach(row => {
         this.map.setFeatureState({
-          id: row.id, // .replaceAll('_', '__')
+          id: row.id,
           source: this.vectorSourceId,
           sourceLayer: this.vectorSourceLayer
         }, {
@@ -331,6 +355,29 @@ export default {
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
       this.$emit('on-map-load');
+    },
+    syncBounds(event) {
+      // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
+      // We ignore move events from other maps which are being synced with the master map to avoid situation
+      // where they also trigger prop updates and fire events again to create infinite loop
+      const originalEvent = event.mapboxEvent.originalEvent;
+      if (!originalEvent) return;
+
+      const map = event.map;
+      const component = event.component;
+
+      // Disable camera movement until next tick so that the master map doesn't get updated by the props change
+      // Master map is being interacted by user so camera movement is already applied
+      component.disableCamera();
+
+      this.$emit('sync-bounds', map.getBounds().toArray());
+
+      this.$nextTick(() => {
+        component.enableCamera();
+      });
+    },
+    clickLayerToggle() {
+      this.$emit('click-layer-toggle', { isGridMap: this.isGridMap });
     },
     updateLayerFilter() {
       if (!this.colorLayer) return;
@@ -361,11 +408,14 @@ export default {
     onMouseMove(event) {
       const { map, mapboxEvent } = event;
 
-      if (!this.showTooltip || _.isNil(map.getLayer(this.baseLayerId))) return;
+      if (!this.showTooltip ||
+        _.isNil(map.getLayer(this.baseLayerId)) ||
+        _.isNil(map.getLayer(this.colorLayerId))) return;
 
       this._unsetHover(map);
 
-      const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: [this.baseLayerId, this.colorLayerId] });
+      const supportedLayers = [this.baseLayerId, this.colorLayerId];
+      const features = map.queryRenderedFeatures(mapboxEvent.point, { layers: supportedLayers });
       features.forEach(feature => {
         this._setLayerHover(map, feature);
       });
@@ -380,9 +430,9 @@ export default {
       if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return null;
 
       if (this.selectedLayer.vectorSourceLayer === 'maas') {
-        return chartValueFormatter([this.extent.min, this.extent.max])(feature.properties[this.valueProp]);
+        return chartValueFormatter(this.extent.min, this.extent.max)(feature.properties[this.valueProp]);
       } else {
-        const fields = [chartValueFormatter([this.extent.min, this.extent.max])(feature.state[this.valueProp])];
+        const fields = [chartValueFormatter(this.extent.min, this.extent.max)(feature.state[this.valueProp])];
         [3, 2, 1, 0].forEach(i => fields.push(feature.properties['NAME_' + i]));
         return fields.filter(field => !_.isNil(field)).join('<br />');
       }

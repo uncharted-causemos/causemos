@@ -18,11 +18,11 @@
             :key="d.id"
             class="tr-item"
             :class="{ selected: isSelected(d), deactive: !d.isAvailable }"
-            @click="toggleSelection(d)">
+            @click="updateSelection(d)">
             <td class="output-col">
               <i
-                class="fa fa-lg fa-fw checkbox"
-                :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d) }"
+                class="fa fa-lg fa-fw radio"
+                :class="{ 'fa-circle': isSelected(d), 'fa-circle-o': !isSelected(d) }"
               />
               <div class="text-bold">{{ formatOutputVariables(d) }}</div>
               <div>{{ d.source }}</div>
@@ -56,7 +56,6 @@ import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
 
-const MAX_SELECTION = 6;
 export default {
   name: 'SearchListview',
   components: {
@@ -82,22 +81,17 @@ export default {
     isSelected(datacube) {
       return this.selectedDatacubes.find(dId => dId === datacube.id) !== undefined;
     },
-    toggleSelection(datacube) {
-      const canBeAdded = this.selectedDatacubes.length < MAX_SELECTION;
-      const selected = this.isSelected(datacube)
-        ? this.selectedDatacubes.filter(dId => dId !== datacube.id) // Remove already selected one
-        : canBeAdded ? [...this.selectedDatacubes, datacube.id] : this.selectedDatacubes; // Add if the limit hasn't been reached
-      this.setSelectedDatacubes(selected);
+    updateSelection(datacube) {
+      this.setSelectedDatacubes([datacube.id]);
     },
     formatOutputVariables(datacube) {
-      // Replace _ with space and capitalize the first letters. eg. cropland_model -> Cropland Model
-      const modelName = datacube.model.split('_').map(s => (s.charAt(0).toUpperCase() + s.slice(1))).join(' ');
-      const outputName = datacube.output_name.replace(/_/g, ' ');
+      const modelName = datacube.name;
+      const outputName = datacube.outputs[0].name;
       return `${modelName}/${outputName}`;
     },
     formatParameters({ parameters }) {
       const params = parameters || [];
-      return params.map(p => p.replace(/_/g, ' ')).join(', ');
+      return params.map(p => p.name).join(', ');
     },
     formatRegion({ country = [] }) {
       return (country && country.length) ? country[0] : '';
@@ -119,16 +113,11 @@ export default {
       return sparklineData;
     },
     formatPeriod({ period = [] }) {
-      // Grab min and max date from the list of date ranges and format in start year - end year form.
-      if (!period || period.length === 0) {
+      if (!period) {
         return '';
       }
-      let min = Number(period[0].gte);
-      let max = Number(period[0].lte);
-      period.forEach(t => {
-        min = t.gte < min ? t.gte : min;
-        max = t.lte > max ? t.lte : max;
-      });
+      const min = Number(period.gte);
+      const max = Number(period.lte);
       const years = [min, max].map(t => moment(t).format('YYYY'));
       return period.length ? `${years[0]} - ${years[1]}` : '';
     }
@@ -217,7 +206,7 @@ $selected-background: #EBF1FC;
   .output-col {
     padding-left: 50px;
     width: 33%;
-    .checkbox {
+    .radio {
       margin: 0;
       top: 19px;
       left: -35px;
