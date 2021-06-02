@@ -163,6 +163,7 @@
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
+            :selected-spatial-aggregation="selectedSpatialAggregation"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -189,6 +190,7 @@ import { getRandomNumber } from '@/utils/random';
 import { mapGetters } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
+import { NamedBreakdownData } from '@/types/Datacubes';
 
 const DRILLDOWN_TABS = [
   {
@@ -231,7 +233,7 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData: any[] = [];
+    const typeBreakdownData: NamedBreakdownData[] = [];
 
     const currentPublishingStep = ref(ModelPublishingStepID.Enrich_Description);
     const selectedTemporalAggregation = ref('');
@@ -443,25 +445,23 @@ export default defineComponent({
       }).catch(() => {});
     },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      this.typeBreakdownData.length = 0;
-      e.drilldownDimensions.forEach(dd => {
-        const drillDownChildren: Array<{name: string; value: number}> = [];
-        const choices = dd.choices as Array<string>;
-        choices.forEach((c) => {
-          drillDownChildren.push({
-            name: c,
-            value: getRandomNumber(0, 5000) // FIXME: pickup the actual breakdown aggregation from data
-          });
-        });
-        const breakdown = {
-          name: dd.name,
+      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
+        const choices = dimension.choices as Array<string>;
+        const drilldownChildren = choices.map(choice => ({
+          // Breakdown data IDs are written as the hierarchical path delimited by '__'
+          id: 'All__' + choice,
+          // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
+          //  from (selected scenarios) data
+          value: getRandomNumber(0, 5000)
+        }));
+        const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
+        return {
+          name: dimension.name,
           data: {
-            name: 'ALL',
-            value: drillDownChildren.map(c => c.value).reduce((a, b) => a + b, 0), // sum all children values
-            children: drillDownChildren
+            Total: [{ id: 'All', value: sumTotal }],
+            [dimension.name]: drilldownChildren
           }
         };
-        this.typeBreakdownData.push(breakdown);
       });
     },
     checkModelMetadataValidity(info: { valid: boolean }) {

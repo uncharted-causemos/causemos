@@ -35,14 +35,3 @@ export interface ModelRun {
     post_processing: ModelRunRuntimeStage;
   };
 }
-
-
-export interface RegionalData {
-  country?: { id: string; value: number }[];
-  admin1?: { id: string; value: number }[];
-  admin2?: { id: string; value: number }[];
-  admin3?: { id: string; value: number }[];
-  admin4?: { id: string; value: number }[];
-  admin5?: { id: string; value: number }[];
-  admin6?: { id: string; value: number }[];
-}

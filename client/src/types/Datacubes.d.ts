@@ -1,4 +1,3 @@
-
 export interface Period {
   gte: string;
   lte: string;
@@ -37,12 +36,11 @@ export interface Datacube {
   _search_score?: number;
 }
 
-export interface RegionalData {
-  country?: { id: string; value: number }[];
-  admin1?: { id: string; value: number }[];
-  admin2?: { id: string; value: number }[];
-  admin3?: { id: string; value: number }[];
-  admin4?: { id: string; value: number }[];
-  admin5?: { id: string; value: number }[];
-  admin6?: { id: string; value: number }[];
+export interface BreakdownData {
+  [key: string]: { id: string; value: number }[];
+}
+
+export interface NamedBreakdownData {
+  name: string;
+  data: BreakdownData;
 }
