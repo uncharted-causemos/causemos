@@ -176,7 +176,7 @@ export default {
   .container-row {
     width: 100%;
     height: 100%;
-    padding-bottom: 80px;
+    padding-bottom: 10px;
   }
 
   .page-content {
