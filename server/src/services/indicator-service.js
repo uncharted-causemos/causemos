@@ -162,7 +162,10 @@ const getOntologyCandidates = async (concepts) => {
         compositionalConcepts[i] = [];
       } else {
         // grab the subj/obj candidate names, and flatten them all into one array
-        compositionalConcepts[i] = projectData.body.hits.hits.map(pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')))).flat(1);
+        compositionalConcepts[i] = projectData.body.hits.hits.map(
+          pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(
+            pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm'))
+          )).flat(1);
       }
     }
     // make sure array contains unique values
@@ -176,7 +179,7 @@ const getOntologyCandidates = async (concepts) => {
             }
           }
         ],
-        minimum_should_match: 2
+        minimum_should_match: 1
       }
     };
     const searchPayload = {
