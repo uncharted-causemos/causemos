@@ -162,7 +162,12 @@ const getOntologyCandidates = async (modelId, concepts) => {
         ]
       }
     };
-    const projectData = await projectDataAdapter.client.search({ index: projectDataAdapter.index, body: { query } });
+    const projectData = await projectDataAdapter.client.search({
+      index: projectDataAdapter.index,
+      body: {
+        size: 1, query
+      }
+    });
     if (_.isEmpty(projectData.body.hits.hits)) {
       compositionalConcepts = [concept];
     } else {
@@ -173,8 +178,13 @@ const getOntologyCandidates = async (modelId, concepts) => {
         )).flat(1);
     }
     // make sure array contains unique values
+<<<<<<< HEAD
     compositionalConcepts = [... new Set(compositionalConcepts)];
     query = {
+=======
+    compositionalConcepts = [...new Set(compositionalConcepts.flat(1))];
+    const query = {
+>>>>>>> 750dbfd5a862450df76266ad6b7893483a1cde1b
       bool: {
         should: [
           {
@@ -193,8 +203,8 @@ const getOntologyCandidates = async (modelId, concepts) => {
         query,
         sort: [
           {
-            "_score": {
-              "order": "desc"
+            _score: {
+              order: 'desc'
             }
           }
         ]
@@ -208,7 +218,7 @@ const getOntologyCandidates = async (modelId, concepts) => {
         _match_score: foundIndicatorMetadata[0]._score
       };
     }
-  };
+  }
   return ontologyCandidates;
 };
 
