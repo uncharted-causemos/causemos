@@ -139,7 +139,7 @@ const getOntologyCandidates = async (concepts) => {
     let compositionalConcepts = new Array(projectMetaDataHits.length);
     // get compositional concepts
     for (let i = 0; i < projectMetaDataHits.length; i++) {
-      let project = projectMetaDataHits[i];
+      const project = projectMetaDataHits[i];
       const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, project._source.id);
       const query = {
         bool: {
@@ -157,7 +157,10 @@ const getOntologyCandidates = async (concepts) => {
           ]
         }
       };
-      const projectData = await projectDataAdapter.client.search({ index: projectDataAdapter.index, body: { query } });
+      const projectData = await projectDataAdapter.client.search({
+        index: projectDataAdapter.index,
+        body: { size: 1, query }
+      });
       if (_.isEmpty(projectData.body.hits.hits)) {
         compositionalConcepts[i] = [];
       } else {
@@ -169,7 +172,7 @@ const getOntologyCandidates = async (concepts) => {
       }
     }
     // make sure array contains unique values
-    compositionalConcepts = [... new Set(compositionalConcepts.flat(1))];
+    compositionalConcepts = [...new Set(compositionalConcepts.flat(1))];
     const query = {
       bool: {
         should: [
@@ -189,8 +192,8 @@ const getOntologyCandidates = async (concepts) => {
         query,
         sort: [
           {
-            "_score": {
-              "order": "desc"
+            _score: {
+              order: 'desc'
             }
           }
         ]
@@ -204,7 +207,7 @@ const getOntologyCandidates = async (concepts) => {
         _match_score: foundIndicatorMetadata[0]._score
       };
     }
-  };
+  }
   return ontologyCandidates;
 };
 
