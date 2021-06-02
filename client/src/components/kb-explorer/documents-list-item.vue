@@ -74,7 +74,7 @@ export default {
   }
   .tableview-row {
     background: #fcfcfc;
-    padding: 10px;
+    padding: 0;
     margin: 0;
   }
 
