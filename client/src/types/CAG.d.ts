@@ -111,7 +111,7 @@ export interface CAGModelSummary {
   created_at: number;
   modified_at: number;
 
-  thumbnailSource?: string;
+  thumbnail_source?: string;
 }
 
 export interface CAGGraph {
