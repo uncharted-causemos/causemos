@@ -2,12 +2,7 @@
   <div class="tableview-document-container"
     @click="showDocument">
     <div class="row tableview-row">
-      <div class="col-sm-1 number-col">
-        <div>
-          <i class="fa fa-book fa-lg" />
-        </div>
-      </div>
-      <div class="col-sm-3 number-col">
+      <div class="col-sm-4 number-col">
         <div class="row-field" v-if="checkString(documentMeta.doc_title)">{{ documentMeta.doc_title }}</div>
         <div class="row-field" v-else-if="checkString(documentMeta.file_name)">{{ documentMeta.file_name }}</div>
         <i v-else class="fa fa-minus"/>
