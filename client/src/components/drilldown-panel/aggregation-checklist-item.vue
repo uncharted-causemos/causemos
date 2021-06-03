@@ -65,7 +65,7 @@
           />
         </div>
         <span
-          :class="{ faded: !itemData.isSelectedAggregationLevel }"
+          :class="{ faded: !itemData.isSelectedAggregationLevel, 'multiple-row-label': true }"
           :style="textColorStyle(index)"
         >
           {{ precisionFormatter(value) ?? 'missing' }}
@@ -213,6 +213,14 @@ export default defineComponent({
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.multiple-row-label {
+  // Have to hardcode the label width so that all histogram
+  //  bars flex to fill the same amount of space, regardless
+  //  of label value
+  width: 8ch;
+  text-align: right;
 }
 
 .value-on-same-line {
