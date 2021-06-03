@@ -37,7 +37,7 @@ export default function useTimeseriesData(
       if (selectedTemporalAggregation.value !== '') {
         temporalAgg = selectedTemporalAggregation.value;
       }
-      let spatialAgg = 'sum';
+      let spatialAgg = 'mean';
       if (selectedSpatialAggregation.value !== '') {
         spatialAgg = selectedSpatialAggregation.value;
       }

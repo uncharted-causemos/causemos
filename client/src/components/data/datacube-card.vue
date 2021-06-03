@@ -578,7 +578,6 @@ header {
   flex-grow: 1;
   width: auto;
   height: inherit;
-  padding: 3px;
   ::v-deep(.wm-map) {
     border-style: solid;
     border-color: inherit;

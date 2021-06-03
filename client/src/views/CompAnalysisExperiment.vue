@@ -19,7 +19,7 @@
       @refetch-data="fetchData"
       @new-runs-mode="newRunsMode=!newRunsMode"
     >
-      <template v-slot:datacube-model-header>
+      <template #datacube-model-header>
         <div class="datacube-header" v-if="mainModelOutput">
           <div v-if="isExpanded">
             <h5>{{mainModelOutput.display_name}} | {{metadata.name}}</h5>
@@ -44,7 +44,17 @@
         </div>
       </template>
 
-      <template v-slot:datacube-description>
+      <template #spatial-aggregation-config>
+        <dropdown-button
+          class="spatial-aggregation"
+          :inner-button-label="'Spatial Aggregation'"
+          :items="['mean', 'sum']"
+          :selected-item="selectedSpatialAggregation"
+          @item-selected="item => selectedSpatialAggregation = item"
+        />
+      </template>
+
+      <template #datacube-description>
         <datacube-description
           :selected-model-id="selectedModelId"
         />
@@ -89,6 +99,7 @@ import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.v
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
@@ -114,7 +125,8 @@ export default defineComponent({
     BreakdownPane,
     DatacubeScenarioHeader,
     Disclaimer,
-    DatacubeDescription
+    DatacubeDescription,
+    DropdownButton
   },
   setup() {
     const selectedAdminLevel = ref(2);
@@ -183,7 +195,7 @@ export default defineComponent({
       activeDrilldownTab: 'breakdown',
       selectedTemporalResolution: 'month',
       selectedTemporalAggregation: 'mean',
-      selectedSpatialAggregation: 'mean',
+      selectedSpatialAggregation: ref('mean'),
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId,
@@ -313,5 +325,9 @@ main {
 .datacube-header {
   flex: 1;
   min-height: 70px;
+}
+
+.spatial-aggregation {
+  margin: 5px 0;
 }
 </style>
