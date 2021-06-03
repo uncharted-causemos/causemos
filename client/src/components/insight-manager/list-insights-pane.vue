@@ -1,53 +1,62 @@
 <template>
   <div class="list-insights-pane-container">
-    <div class="pane-header">
-      <h6>Saved Insights</h6>
-      <button
-        type="button"
-        class="btn btn-primary"
-        @click="toggleExportMenu"
-      >
-        <span class="lbl">Export</span>
-        <i
-          class="fa fa-fw"
-          :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
+    <full-screen-modal-header
+      icon="angle-left"
+      nav-back-label="Exit Saved Insights"
+      @close="closeInsightPanel"
+    >
+      <template #trailing>
+        <insight-control-menu />
+      </template>
+    </full-screen-modal-header>
+    <div class="pane-wrapper">
+      <div
+        v-if="listInsights.length > 0"
+        class="pane-content">
+        <insight-card
+          v-for="insight in listInsights"
+          :key="insight.id"
+          :active-insight="activeInsight"
+          :insight="insight"
+          @delete-insight="deleteInsight(insight.id)"
+          @open-editor="openEditor(insight.id)"
+          @select-insight="selectInsight(insight)"
         />
-      </button>
-      <dropdown-control v-if="exportActive" class="below">
-        <template #content>
-          <div
-            class="dropdown-option"
-            @click="exportPPTX"
-          >
-            Powerpoint
-          </div>
-          <div
-            class="dropdown-option"
-            @click="exportDOCX"
-          >
-            Word
-          </div>
-        </template>
-      </dropdown-control>
+      </div>
+      <message-display
+        v-else
+        :message="messageNoData"
+      />
+      <div class="pane-footer">
+        <button
+          type="button"
+          class="btn btn-primary"
+          @click="toggleExportMenu"
+        >
+          <span class="lbl">Export</span>
+          <i
+            class="fa fa-fw"
+            :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
+          />
+        </button>
+        <dropdown-control v-if="exportActive" class="below">
+          <template #content>
+            <div
+              class="dropdown-option"
+              @click="exportPPTX"
+            >
+              Powerpoint
+            </div>
+            <div
+              class="dropdown-option"
+              @click="exportDOCX"
+            >
+              Word
+            </div>
+          </template>
+        </dropdown-control>
+      </div>
     </div>
-    <div
-      v-if="listInsights.length > 0"
-      class="pane-content">
-    <Insight-Card
-      v-for="insight in listInsights"
-      :key="insight.id"
-      :active-insight="activeInsight"
-      :insight="insight"
-      @delete-insight="deleteInsight(insight.id)"
-      @open-editor="openEditor(insight.id)"
-      @select-insight="selectInsight(insight)"
-     />
-
-    </div>
-    <message-display
-      v-else
-      :message="messageNoData"
-    />
   </div>
 </template>
 
@@ -64,6 +73,8 @@ import { BOOKMARKS } from '@/utils/messages-util';
 import InsightCard from '@/components/insight-manager/insight-card';
 import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
+import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
+import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
@@ -71,8 +82,10 @@ import stringFormatter from '@/formatters/string-formatter';
 export default {
   name: 'ListInsightsPane',
   components: {
-    InsightCard,
     DropdownControl,
+    FullScreenModalHeader,
+    InsightCard,
+    InsightControlMenu,
     MessageDisplay
   },
   data: () => ({
@@ -371,26 +384,29 @@ export default {
 @import "~styles/variables";
 .list-insights-pane-container {
   color: #707070;
-  .pane-content {
-    display: flex;
-    flex-direction: row;
-    flex-wrap: wrap;
-  }
-  .selected {
-    border: 3px solid $selected;
-  }
-  .pane-header {
-    .dropdown-container {
-      position: absolute;
-      right: 46px;
-      padding: 0;
-      width: auto;
-      height: fit-content;
-      // Clip children overflowing the border-radius at the corners
-      overflow: hidden;
+  .pane-wrapper{
+    padding: 1em;
+    .pane-content {
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
+    }
+    .selected {
+      border: 3px solid $selected;
+    }
+    .pane-footer {
+      .dropdown-container {
+        position: absolute;
+        right: 46px;
+        padding: 0;
+        width: auto;
+        height: fit-content;
+        // Clip children overflowing the border-radius at the corners
+        overflow: hidden;
 
-      &.below {
-        top: 48px;
+        &.below {
+          top: 48px;
+        }
       }
     }
   }

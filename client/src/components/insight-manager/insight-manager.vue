@@ -9,7 +9,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters } from 'vuex';
 import NewInsightPane from '@/components/insight-manager/new-insight-pane';
 import ListInsightsPane from '@/components/insight-manager/list-insights-pane';
 
@@ -20,12 +20,6 @@ export default {
     NewInsightPane,
     ListInsightsPane
   },
-  props: {
-    allowNewInsights: {
-      type: Boolean,
-      default: true
-    }
-  },
   computed: {
     ...mapGetters({
       isPanelOpen: 'insightPanel/isPanelOpen',
@@ -34,16 +28,6 @@ export default {
     isOpen() {
       return this.isPanelOpen === true;
     }
-  },
-  mounted() {
-    if (!this.allowNewInsights && this.currentPane === 'new-insight') {
-      this.setCurrentPane('list-insights');
-    }
-  },
-  methods: {
-    ...mapActions({
-      setCurrentPane: 'insightPanel/setCurrentPane'
-    })
   }
 };
 </script>
@@ -55,13 +39,13 @@ export default {
   position: absolute;
   display: flex;
   flex-direction: column;
-  top: $navbar-outer-height;
+  top: 0;
   right: 0;
   width: 100%;
-  height: calc(100vh - #{$navbar-outer-height});
+  height: 100vh;
   z-index: 600;
   transition: all 0.5s ease;
-  padding: 0 10px;
+  padding: 0;
   background: $background-light-1;
   box-shadow: 0 2px 2px rgba(0,0,0,.12), 0 4px 4px rgba(0,0,0,.24);
   overflow-y: auto;

@@ -1,8 +1,14 @@
 <template>
   <div class="new-insight-pane-container">
-    <div class="pane-header">
-      <h6>New Insight</h6>
-    </div>
+    <full-screen-modal-header
+      icon="angle-left"
+      nav-back-label="Exit New Insight"
+      @close="closeInsightPanel"
+    >
+      <template #trailing>
+        <insight-control-menu />
+      </template>
+    </full-screen-modal-header>
     <div class="pane-content" v-if="imagePreview !== null">
       <div
         v-if="hasError === true"
@@ -78,6 +84,8 @@ import API from '@/api/api';
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import modelService from '@/services/model-service';
+import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
+import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { BOOKMARKS } from '@/utils/messages-util';
 
@@ -87,6 +95,10 @@ const MSG_EMPTY_BOOKMARK_TITLE = 'Insight title cannot be blank';
 
 export default {
   name: 'NewInsightPane',
+  components: {
+    FullScreenModalHeader,
+    InsightControlMenu
+  },
   data: () => ({
     title: '',
     description: '',
@@ -215,6 +227,7 @@ export default {
   height: 100%;
 
   .pane-content {
+    padding: 1em;
     flex: 1 1 auto;
     display: flex;
     flex-direction: row;
@@ -261,7 +274,7 @@ export default {
     flex: 0 1 auto;
     display: flex;
     justify-content: flex-end;
-    padding: 1em 0;
+    padding: 0 1em 1em;
     button {
       margin-left: 1em;
     }
