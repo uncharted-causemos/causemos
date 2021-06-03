@@ -1,7 +1,5 @@
 <template>
   <div class="breakdown-pane-container">
-    <!-- TODO: eventually we'll add support for multiple
-      selected scenario IDs -->
     <aggregation-checklist-pane
       v-if="regionalData.length !== 0"
       class="checklist-section"
@@ -9,7 +7,7 @@
       :aggregation-level="selectedAdminLevel"
       :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
-      :raw-data="regionalData[0]"
+      :raw-data="regionalData"
       :units="unit"
       @aggregation-level-change="setSelectedAdminLevel"
     >
@@ -33,7 +31,7 @@
       </template>
     </aggregation-checklist-pane>
     <!-- TODO: dropdown to select what we're breaking down by -->
-    <aggregation-checklist-pane
+    <!-- <aggregation-checklist-pane
       class="checklist-section"
       v-for="type in visibleTypeBreakdownData"
       :key="type.name"
@@ -45,8 +43,8 @@
       :units="unit"
     >
       <template #aggregation-description>
-        <!-- TODO: highlighted value should be dynamically populated based
-        on the selected timestamp -->
+        TODO: highlighted value should be dynamically populated based
+        on the selected timestamp
         <p class="aggregation-description">
           Showing <strong>placeholder</strong> data.
         </p>
@@ -54,7 +52,7 @@
           Aggregated by <strong>sum</strong>.
         </p>
       </template>
-    </aggregation-checklist-pane>
+    </aggregation-checklist-pane> -->
     <!-- <aggregation-checklist-pane
       :aggregation-level-count="aggregationLevels.length"
       :aggregation-level="selectedAdminLevel"
