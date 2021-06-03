@@ -7,7 +7,7 @@
           v-tooltip.top-center="'See insights list'"
           class="btn bookmark-btn"
           :class="{ 'bookmark-panel-open': isPanelOpen && currentPane === 'list-bookmarks' }"
-          @click="openBookmarkPane('list-bookmarks')"
+          @click="toggleBookmarkPane('list-bookmarks')"
         >
           <i
             class="fa fa-fw fa-star fa-lg"
@@ -27,7 +27,7 @@
           v-tooltip.top-center="'Save insight'"
           class="btn bookmark-btn"
           :class="{ 'bookmark-panel-open': isPanelOpen && currentPane ==='new-bookmark' }"
-          @click="openBookmarkPane('new-bookmark')"
+          @click="toggleBookmarkPane('new-bookmark')"
         >
           <i
             class="fa fa-fw fa-lg"
@@ -84,13 +84,26 @@ export default {
   },
   methods: {
     ...mapActions({
+      currentPane: 'bookmarkPanel/currentPane',
+      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
+      isPanelOpen: 'bookmarkPanel/isPanelOpen',
       showBookmarkPanel: 'bookmarkPanel/showBookmarkPanel',
-      setCurrentPane: 'bookmarkPanel/setCurrentPane',
-      setCountBookmarks: 'bookmarkPanel/setCountBookmarks'
+      setCountBookmarks: 'bookmarkPanel/setCountBookmarks',
+      setCurrentPane: 'bookmarkPanel/setCurrentPane'
     }),
-    openBookmarkPane(pane) {
-      this.showBookmarkPanel();
-      this.setCurrentPane(pane);
+    toggleBookmarkPane(pane) {
+      const paneState = this.isPanelOpen;
+      if (paneState) {
+        if (this.currentPane === pane) {
+          this.hideBookmarkPanel();
+          this.setCurrentPane('');
+        } else {
+          this.setCurrentPane(pane);
+        }
+      } else {
+        this.showBookmarkPanel();
+        this.setCurrentPane(pane);
+      }
     },
     refresh() {
       // FIXME: currently, the insight feature is dependent on an active "project"
@@ -126,13 +139,17 @@ export default {
   }
 }
 
-.btn-primary:active,
-.btn:focus,
 .bookmark-panel-open,
 .bookmark-panel-open:hover {
   background-color: $selected;
   color: #FFF;
 }
+
+.btn-primary:active,
+.btn:focus {
+  color: #FFF;
+}
+
 
 .open {
   color: #f0e442;

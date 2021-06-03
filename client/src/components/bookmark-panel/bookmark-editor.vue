@@ -21,10 +21,11 @@
   </dropdown-control>
 </template>
 
-<script>
-import DropdownControl from '@/components/dropdown-control';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import DropdownControl from '@/components/dropdown-control.vue';
 
-export default {
+export default defineComponent({
   name: 'BookmarkEditor',
   components: {
     DropdownControl
@@ -37,14 +38,14 @@ export default {
       this.$emit('delete');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
 .bookmark-editor-dropdown{
-  position:absolute;
-  right: 16px;
+  position: absolute;
+  right: 0px;
+  bottom: 32px;
   width: fit-content;
 }
 </style>

@@ -57,7 +57,7 @@ export default {
   flex-direction: column;
   top: $navbar-outer-height;
   right: 0;
-  width: 25vw;
+  width: 100%;
   height: calc(100vh - #{$navbar-outer-height});
   z-index: 600;
   transition: all 0.5s ease;
@@ -68,6 +68,7 @@ export default {
   overflow-x: hidden;
   word-wrap: break-word;
   color: #707070;
+  background-color: $background-light-3;
 }
 
 .bookmark-container.panel-hidden {

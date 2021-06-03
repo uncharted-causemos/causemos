@@ -29,49 +29,20 @@
           </div>
         </template>
       </dropdown-control>
-      <close-button @click="closeBookmarkPanel()" />
     </div>
     <div
       v-if="listBookmarks.length > 0"
       class="pane-content">
-      <div
-        v-for="bookmark in listBookmarks"
-        :key="bookmark.id">
-        <div
-          class="bookmark"
-          :class="{ 'selected': selectedBookmark === bookmark, '': selectedBookmark !== bookmark }"
-          @click="selectBookmark(bookmark)">
-          <div class="bookmark-header">
-            <div class="bookmark-title">
-              <i class="fa fa-star"></i>
-              {{ stringFormatter(bookmark.title, 25) }}
-            </div>
-            <div class="bookmark-action" @click.stop="openEditor(bookmark.id)">
-              <i class="fa fa-ellipsis-h bookmark-header-btn" />
-              <bookmark-editor
-                v-if="activeBookmark === bookmark.id"
-                @delete="deleteBookmark(bookmark.id)"
-              />
-            </div>
-          </div>
-          <div
-            class="bookmark-content">
-            <div class="bookmark-thumbnail">
-              <img
-                :src="bookmark.thumbnail_source"
-                class="thumbnail">
-            </div>
-            <div
-              v-if="bookmark.description.length > 0"
-              class="bookmark-description">
-              {{ bookmark.description }}
-            </div>
-            <div
-              v-else
-              class="bookmark-empty-description">No description provided</div>
-          </div>
-        </div>
-      </div>
+    <Bookmark-Card
+      v-for="bookmark in listBookmarks"
+      :key="bookmark.id"
+      :active-bookmark="activeBookmark"
+      :bookmark="bookmark"
+      @delete-bookmark="deleteBookmark(bookmark.id)"
+      @open-editor="openEditor(bookmark.id)"
+      @select-bookmark="selectBookmark(bookmark)"
+     />
+
     </div>
     <message-display
       v-else
@@ -90,8 +61,7 @@ import API from '@/api/api';
 
 import { BOOKMARKS } from '@/utils/messages-util';
 
-import BookmarkEditor from '@/components/bookmark-panel/bookmark-editor';
-import CloseButton from '@/components/widgets/close-button';
+import BookmarkCard from '@/components/bookmark-panel/bookmark-card';
 import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
 
@@ -101,8 +71,7 @@ import stringFormatter from '@/formatters/string-formatter';
 export default {
   name: 'ListBookmarksPane',
   components: {
-    BookmarkEditor,
-    CloseButton,
+    BookmarkCard,
     DropdownControl,
     MessageDisplay
   },
@@ -135,6 +104,7 @@ export default {
       hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
       setCountBookmarks: 'bookmarkPanel/setCountBookmarks'
     }),
+    dateFormatter,
     stringFormatter,
     refresh() {
       API.get('bookmarks', { params: { project_id: this.project } }).then(d => {
@@ -170,6 +140,7 @@ export default {
       if (savedURL !== currentURL) {
         this.$router.push(savedURL);
       }
+      this.closeBookmarkPanel();
     },
     deleteBookmark(id) {
       API.delete(`bookmarks/${id}`).then(result => {
@@ -400,42 +371,10 @@ export default {
 @import "~styles/variables";
 .list-bookmarks-pane-container {
   color: #707070;
-  .pane-header{
-    > button {
-      margin-right: 35px;
-    }
-  }
-  .bookmark {
-    cursor: pointer;
-    padding: 5px 5px 10px;
-    border-bottom: 1px solid #e5e5e5;
-    .bookmark-header {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      .bookmark-header-btn {
-        cursor: pointer;
-        padding: 5px;
-        color: gray;
-      }
-      .bookmark-action {
-        flex: 0 1 auto;
-      }
-      .bookmark-title {
-        flex: 1 1 auto;
-        font-weight: bold;
-      }
-    }
-      .bookmark-empty-description {
-        color: #D6DBDF;
-      }
-      .bookmark-thumbnail {
-        .thumbnail {
-          width:  100%;
-          min-height: 100px;
-        }
-      }
-
+  .pane-content {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
   }
   .selected {
     border: 3px solid $selected;
