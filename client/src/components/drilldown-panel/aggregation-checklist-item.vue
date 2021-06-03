@@ -39,7 +39,7 @@
         v-if="itemData.isSelectedAggregationLevel"
         class="histogram-bar"
         :class="{ faded: !itemData.isChecked }"
-        :style="histogramBarStyle(itemData.values[0])"
+        :style="histogramBarStyle(itemData.values[0], 0)"
       />
     </div>
     <div
@@ -61,11 +61,13 @@
             v-if="itemData.isSelectedAggregationLevel"
             class="histogram-bar"
             :class="{ faded: !itemData.isChecked }"
-            :style="histogramBarStyle(value)"
+            :style="histogramBarStyle(value, index)"
           />
-          <!-- TODO: pass index as well for colorization -->
         </div>
-        <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
+        <span
+          :class="{ faded: !itemData.isSelectedAggregationLevel }"
+          :style="textColorStyle(index)"
+        >
           {{ precisionFormatter(value) ?? 'missing' }}
         </span>
       </div>
@@ -75,6 +77,7 @@
 
 <script lang="ts">
 import precisionFormatter from '@/formatters/precision-formatter';
+import { colorFromIndex } from '@/utils/colors-util';
 import { defineComponent, PropType } from '@vue/runtime-core';
 
 const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
@@ -149,11 +152,16 @@ export default defineComponent({
     toggleChecked() {
       this.$emit('toggle-checked');
     },
-    histogramBarStyle(value: number | null) {
+    histogramBarStyle(value: number | null, index: number) {
       const percentage = value !== null
         ? (value / this.maxVisibleBarValue) * 100
         : 0;
-      return { width: `${percentage}%` };
+      return { width: `${percentage}%`, background: colorFromIndex(index) };
+    },
+    textColorStyle(index: number) {
+      return {
+        color: colorFromIndex(index)
+      };
     }
   }
 });
@@ -209,7 +217,7 @@ export default defineComponent({
 }
 
 span.faded {
-  color: #b3b4b5;
+  opacity: 50%;
 }
 
 .histogram-bar {
@@ -218,7 +226,6 @@ span.faded {
   left: 0;
   width: 100%;
   height: 4px;
-  // TODO: add support for a function parameter to determine colour
   background: #8767c8;
 
   &.faded {
