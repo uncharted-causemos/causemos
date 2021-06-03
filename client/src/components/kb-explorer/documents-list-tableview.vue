@@ -7,7 +7,7 @@
     />
     <div class="row container-row">
       <div class="col-md-1" />
-      <div class="col-md-10 page-content">
+      <div class="col-md-12 page-content">
         <div class="row">
           <hr>
         </div>
@@ -171,23 +171,25 @@ export default {
   .container-fluid {
     width: 100%;
     height: 100%;
+    padding-right: 0;
   }
 
   .container-row {
     width: 100%;
     height: 100%;
-    padding-bottom: 80px;
+    padding-bottom: 10px;
   }
 
   .page-content {
     width: 100%;
     height: 100%;
+    padding-right: 0;
   }
 
   .document-list {
     box-sizing: border-box;
     height: 100%;
-    width: 100%;
+    width: 102%;
     flex: 1;
     overflow: hidden;
     display: flex;

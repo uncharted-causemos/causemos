@@ -2,26 +2,21 @@
   <div class="tableview-document-container"
     @click="showDocument">
     <div class="row tableview-row">
-      <div class="col-sm-1 number-col">
-        <div>
-          <i class="fa fa-book fa-lg" />
-        </div>
-      </div>
-      <div class="col-sm-3 number-col">
-        <div class="row-field" v-if="checkString(documentMeta.doc_title)">{{ documentMeta.doc_title }}</div>
-        <div class="row-field" v-else-if="checkString(documentMeta.file_name)">{{ documentMeta.file_name }}</div>
-        <i v-else class="fa fa-minus"/>
+      <div class="col-sm-4 number-col">
+          <div v-tooltip="documentMeta.doc_title" class="row-field" v-if="checkString(documentMeta.doc_title)">{{ documentMeta.doc_title }}</div>
+          <div v-tooltip="documentMeta.file_name" class="row-field" v-else-if="checkString(documentMeta.file_name)">{{ documentMeta.file_name }}</div>
+          <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-2 number-col">
         <div class="row-field" v-if="checkDate(documentMeta.publication_date)">{{ getFormattedDate(documentMeta.publication_date.date) }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-3 number-col">
-        <div class="row-field" v-if="checkString(documentMeta.author)">{{ documentMeta.author }}</div>
+        <div v-tooltip="documentMeta.author" class="row-field" v-if="checkString(documentMeta.author)">{{ documentMeta.author }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-3 number-col">
-        <div class="row-field" v-if="checkString(documentMeta.publisher_name)">{{ documentMeta.publisher_name }}</div>
+        <div v-tooltip="documentMeta.publisher_name" class="row-field" v-if="checkString(documentMeta.publisher_name)">{{ documentMeta.publisher_name }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
     </div>
@@ -79,12 +74,16 @@ export default {
   }
   .tableview-row {
     background: #fcfcfc;
-    padding: 10px;
+    padding: 0;
     margin: 0;
   }
 
   .row-field {
-    overflow-wrap: break-word;
-    word-wrap: break-word;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    //&:hover {
+    //  background-color: pink;
+    //}
   }
 </style>
