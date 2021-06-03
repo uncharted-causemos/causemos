@@ -1,26 +1,26 @@
 <template>
   <card
-    class="bookmark"
-    @click="selectBookmark()"
+    class="insight"
+    @click="selectInsight()"
   >
-    <div class="bookmark-content">
-      <div class="bookmark-thumbnail">
+    <div class="insight-content">
+      <div class="insight-thumbnail">
         <img
-          :src="bookmark.thumbnail_source"
+          :src="insight.thumbnail_source"
           class="thumbnail">
       </div>
-      <div class="bookmark-title">
-        <h5>{{ bookmark.title }}</h5>
+      <div class="insight-title">
+        <h5>{{ insight.title }}</h5>
       </div>
-      <div class="bookmark-footer">
-        <div class="bookmark-date">
-          {{ dateFormatter(bookmark.modified_at, 'MMM DD, YYYY') }}
+      <div class="insight-footer">
+        <div class="insight-date">
+          {{ dateFormatter(insight.modified_at, 'MMM DD, YYYY') }}
         </div>
-        <div class="bookmark-action" @click.stop="openEditor()">
-          <i class="fa fa-ellipsis-h bookmark-header-btn" />
-          <bookmark-editor
-            v-if="activeBookmark === bookmark.id"
-            @delete="deleteBookmark()"
+        <div class="insight-action" @click.stop="openEditor()">
+          <i class="fa fa-ellipsis-h insight-header-btn" />
+          <insight-editor
+            v-if="activeInsight === insight.id"
+            @delete="deleteInsight()"
           />
       </div>
     </div>
@@ -31,39 +31,39 @@
 <script lang="ts">
 import { defineComponent } from 'vue';
 
-import BookmarkEditor from '@/components/bookmark-panel/bookmark-editor.vue';
+import InsightEditor from '@/components/insight-manager/insight-editor.vue';
 import Card from '@/components/widgets/card.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 export default defineComponent({
-  name: 'BookmarkCard',
+  name: 'InsightCard',
   components: {
-    BookmarkEditor,
+    InsightEditor,
     Card
   },
   props: {
-    activeBookmark: {
+    activeInsight: {
       type: String,
       default: ''
     },
-    bookmark: {
+    insight: {
       type: Object,
       default: null
     }
   },
-  emits: ['delete-bookmark', 'open-editor', 'select-bookmark'],
+  emits: ['delete-insight', 'open-editor', 'select-insight'],
   methods: {
     dateFormatter,
     stringFormatter,
-    deleteBookmark() {
-      this.$emit('delete-bookmark');
+    deleteInsight() {
+      this.$emit('delete-insight');
     },
     openEditor() {
       this.$emit('open-editor');
     },
-    selectBookmark() {
-      this.$emit('select-bookmark');
+    selectInsight() {
+      this.$emit('select-insight');
     }
   }
 });
@@ -71,46 +71,46 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.bookmark {
+.insight {
   cursor: pointer;
   padding: 5px 5px 10px;
   border: 1px solid #e5e5e5;
   max-width: 300px;
   margin: 0px 1em 1em 0px;
-  .bookmark-content {
+  .insight-content {
     display: flex;
     flex-direction: column;
     height: 100%;
-    .bookmark-title {
+    .insight-title {
       flex: 1 1 auto;
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
       width: 100%;
     }
-    .bookmark-footer {
+    .insight-footer {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      .bookmark-header-btn {
+      .insight-header-btn {
         cursor: pointer;
         padding: 5px;
         color: gray;
       }
-      .bookmark-action {
+      .insight-action {
         flex: 0 1 auto;
       }
     }
-    .bookmark-description {
+    .insight-description {
       flex: 1 1 auto;
       align-self: stretch;
     }
-    .bookmark-empty-description {
+    .insight-empty-description {
       flex: 1 1 auto;
       align-self: stretch;
       color: #D6DBDF;
     }
-    .bookmark-thumbnail {
+    .insight-thumbnail {
       .thumbnail {
         width:  100%;
       }

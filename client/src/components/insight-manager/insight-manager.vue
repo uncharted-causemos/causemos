@@ -1,48 +1,48 @@
 <template>
   <div
-    class="bookmark-container"
+    class="insight-container"
     :class="{'panel-hidden': !isOpen}"
   >
-    <new-bookmark-pane v-if="currentPane === 'new-bookmark'" />
-    <list-bookmarks-pane v-if="currentPane === 'list-bookmarks'" />
+    <new-insight-pane v-if="currentPane === 'new-insight'" />
+    <list-insights-pane v-if="currentPane === 'list-insights'" />
   </div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import NewBookmarkPane from '@/components/bookmark-panel/new-bookmark-pane';
-import ListBookmarksPane from '@/components/bookmark-panel/list-bookmarks-pane';
+import NewInsightPane from '@/components/insight-manager/new-insight-pane';
+import ListInsightsPane from '@/components/insight-manager/list-insights-pane';
 
 
 export default {
-  name: 'BookmarkPanel',
+  name: 'InsightManager',
   components: {
-    NewBookmarkPane,
-    ListBookmarksPane
+    NewInsightPane,
+    ListInsightsPane
   },
   props: {
-    allowNewBookmarks: {
+    allowNewInsights: {
       type: Boolean,
       default: true
     }
   },
   computed: {
     ...mapGetters({
-      isPanelOpen: 'bookmarkPanel/isPanelOpen',
-      currentPane: 'bookmarkPanel/currentPane'
+      isPanelOpen: 'insightPanel/isPanelOpen',
+      currentPane: 'insightPanel/currentPane'
     }),
     isOpen() {
       return this.isPanelOpen === true;
     }
   },
   mounted() {
-    if (!this.allowNewBookmarks && this.currentPane === 'new-bookmark') {
-      this.setCurrentPane('list-bookmarks');
+    if (!this.allowNewInsights && this.currentPane === 'new-insight') {
+      this.setCurrentPane('list-insights');
     }
   },
   methods: {
     ...mapActions({
-      setCurrentPane: 'bookmarkPanel/setCurrentPane'
+      setCurrentPane: 'insightPanel/setCurrentPane'
     })
   }
 };
@@ -51,7 +51,7 @@ export default {
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.bookmark-container {
+.insight-container {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -71,7 +71,7 @@ export default {
   background-color: $background-light-3;
 }
 
-.bookmark-container.panel-hidden {
+.insight-container.panel-hidden {
   display: none;
 }
 

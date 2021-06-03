@@ -1,5 +1,5 @@
 <template>
-  <div class="list-bookmarks-pane-container">
+  <div class="list-insights-pane-container">
     <div class="pane-header">
       <h6>Saved Insights</h6>
       <button
@@ -31,16 +31,16 @@
       </dropdown-control>
     </div>
     <div
-      v-if="listBookmarks.length > 0"
+      v-if="listInsights.length > 0"
       class="pane-content">
-    <Bookmark-Card
-      v-for="bookmark in listBookmarks"
-      :key="bookmark.id"
-      :active-bookmark="activeBookmark"
-      :bookmark="bookmark"
-      @delete-bookmark="deleteBookmark(bookmark.id)"
-      @open-editor="openEditor(bookmark.id)"
-      @select-bookmark="selectBookmark(bookmark)"
+    <Insight-Card
+      v-for="insight in listInsights"
+      :key="insight.id"
+      :active-insight="activeInsight"
+      :insight="insight"
+      @delete-insight="deleteInsight(insight.id)"
+      @open-editor="openEditor(insight.id)"
+      @select-insight="selectInsight(insight)"
      />
 
     </div>
@@ -61,7 +61,7 @@ import API from '@/api/api';
 
 import { BOOKMARKS } from '@/utils/messages-util';
 
-import BookmarkCard from '@/components/bookmark-panel/bookmark-card';
+import InsightCard from '@/components/insight-manager/insight-card';
 import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
 
@@ -69,25 +69,25 @@ import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 export default {
-  name: 'ListBookmarksPane',
+  name: 'ListInsightsPane',
   components: {
-    BookmarkCard,
+    InsightCard,
     DropdownControl,
     MessageDisplay
   },
   data: () => ({
-    activeBookmark: null,
+    activeInsight: null,
     exportActive: false,
-    listBookmarks: [],
+    listInsights: [],
     messageNoData: BOOKMARKS.NO_DATA,
-    selectedBookmark: null
+    selectedInsight: null
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       projectMetadata: 'app/projectMetadata',
       currentView: 'app/currentView',
-      countBookmarks: 'bookmarkPanel/countBookmarks'
+      countInsights: 'insightPanel/countInsights'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -101,54 +101,54 @@ export default {
   },
   methods: {
     ...mapActions({
-      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
-      setCountBookmarks: 'bookmarkPanel/setCountBookmarks'
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
+      setCountInsights: 'insightPanel/setCountInsights'
     }),
     dateFormatter,
     stringFormatter,
     refresh() {
       API.get('bookmarks', { params: { project_id: this.project } }).then(d => {
-        const listBookmarks = _.orderBy(d.data, d => d.modified_at, ['desc']);
-        this.listBookmarks = listBookmarks;
-        this.setCountBookmarks(listBookmarks.length);
+        const listInsights = _.orderBy(d.data, d => d.modified_at, ['desc']);
+        this.listInsights = listInsights;
+        this.setCountInsights(listInsights.length);
       });
     },
     openEditor(id) {
-      if (id === this.activeBookmark) {
-        this.activeBookmark = null;
+      if (id === this.activeInsight) {
+        this.activeInsight = null;
         return;
       }
-      this.activeBookmark = id;
+      this.activeInsight = id;
     },
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
     },
-    closeBookmarkPanel() {
-      this.hideBookmarkPanel();
-      this.activeBookmark = null;
-      this.selectedBookmark = null;
+    closeInsightPanel() {
+      this.hideInsightPanel();
+      this.activeInsight = null;
+      this.selectedInsight = null;
     },
-    selectBookmark(bookmark) {
-      if (bookmark === this.selectedBookmark) {
-        this.selectedBookmark = null;
+    selectInsight(insight) {
+      if (insight === this.selectedInsight) {
+        this.selectedInsight = null;
         return;
       }
-      this.selectedBookmark = bookmark;
+      this.selectedInsight = insight;
       // Restore the state
-      const savedURL = bookmark.url;
+      const savedURL = insight.url;
       const currentURL = this.$route.fullPath;
       if (savedURL !== currentURL) {
         this.$router.push(savedURL);
       }
-      this.closeBookmarkPanel();
+      this.closeInsightPanel();
     },
-    deleteBookmark(id) {
+    deleteInsight(id) {
       API.delete(`bookmarks/${id}`).then(result => {
         const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_REMOVAL : BOOKMARKS.ERRONEOUS_REMOVAL;
         if (message === BOOKMARKS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
-          const count = this.countBookmarks - 1;
-          this.setCountBookmarks(count);
+          const count = this.countInsights - 1;
+          this.setCountInsights(count);
           this.refresh();
         } else {
           this.toaster(message, 'error', true);
@@ -171,7 +171,7 @@ export default {
       // same height as width so that we can attempt to be consistent with the layout.
       const docxMaxImageSize = 612;
 
-      const sections = this.listBookmarks.map((bm) => {
+      const sections = this.listInsights.map((bm) => {
         const imageSize = this.scaleImage(bm.thumbnail_source, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(bm.modified_at);
         return {
@@ -277,7 +277,7 @@ export default {
         slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right }
       });
 
-      this.listBookmarks.forEach((bm) => {
+      this.listInsights.forEach((bm) => {
         const imageSize = this.scaleImage(bm.thumbnail_source, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(bm.modified_at);
         const slide = pres.addSlide();
@@ -369,7 +369,7 @@ export default {
 
 <style lang="scss">
 @import "~styles/variables";
-.list-bookmarks-pane-container {
+.list-insights-pane-container {
   color: #707070;
   .pane-content {
     display: flex;

@@ -1,5 +1,5 @@
 <template>
-  <div class="new-bookmark-pane-container">
+  <div class="new-insight-pane-container">
     <div class="pane-header">
       <h6>New Insight</h6>
     </div>
@@ -22,7 +22,7 @@
               type="text"
               class="form-control"
               placeholder="Untitled insight"
-              @keyup.enter.stop="saveBookmark"
+              @keyup.enter.stop="saveInsight"
             >
             <label>Description</label>
             <textarea
@@ -47,13 +47,13 @@
       <button
         type="button"
         class="btn btn-light"
-        @click="closeBookmarkPanel"
+        @click="closeInsightPanel"
       >
         Cancel
       </button>
       <button
         class="btn btn-primary"
-        @click="autofillBookmark"
+        @click="autofillInsight"
       >
         Autofill
       </button>
@@ -61,7 +61,7 @@
         type="button"
         class="btn btn-primary"
         :class="{ 'disabled': title.length === 0}"
-        @click="saveBookmark"
+        @click="saveInsight"
       >
         Save
       </button>
@@ -86,7 +86,7 @@ const MSG_EMPTY_BOOKMARK_TITLE = 'Insight title cannot be blank';
 
 
 export default {
-  name: 'NewBookmarkPane',
+  name: 'NewInsightPane',
   data: () => ({
     title: '',
     description: '',
@@ -101,9 +101,9 @@ export default {
       currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
 
-      currentPane: 'bookmarkPanel/currentPane',
-      isPanelOpen: 'bookmarkPanel/isPanelOpen',
-      countBookmarks: 'bookmarkPanel/countBookmarks',
+      currentPane: 'insightPanel/currentPane',
+      isPanelOpen: 'insightPanel/isPanelOpen',
+      countInsights: 'insightPanel/countInsights',
 
       filters: 'dataSearch/filters',
       ontologyConcepts: 'dataSearch/ontologyConcepts',
@@ -134,19 +134,19 @@ export default {
       }
     },
     currentPane() {
-      if (this.currentPane !== 'new-bookmark') {
-        this.initBookmark();
+      if (this.currentPane !== 'new-insight') {
+        this.initInsight();
       }
     }
   },
   methods: {
     ...mapActions({
-      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
-      setCountBookmarks: 'bookmarkPanel/setCountBookmarks',
-      setCurrentPane: 'bookmarkPanel/setCurrentPane'
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
+      setCountInsights: 'insightPanel/setCountInsights',
+      setCurrentPane: 'insightPanel/setCurrentPane'
     }),
-    closeBookmarkPanel() {
-      this.hideBookmarkPanel();
+    closeInsightPanel() {
+      this.hideInsightPanel();
       this.setCurrentPane('');
     },
     formattedFilterString() {
@@ -157,12 +157,12 @@ export default {
       }, '');
       return `${filterString.length > 0 ? 'Filters: ' + filterString : ''} `;
     },
-    initBookmark() {
+    initInsight() {
       this.title = '';
       this.description = '';
       this.hasError = false;
     },
-    async autofillBookmark() {
+    async autofillInsight() {
       this.modelSummary = this.currentCAG ? await modelService.getSummary(this.currentCAG) : null;
 
       this.title = (this.projectMetadata ? this.projectMetadata.name : '') +
@@ -171,7 +171,7 @@ export default {
 
       this.description = this.formattedFilterString();
     },
-    async saveBookmark() {
+    async saveInsight() {
       if (this.hasError || _.isEmpty(this.title)) return;
       const url = this.$route.fullPath;
       API.post('bookmarks', {
@@ -185,17 +185,17 @@ export default {
         const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_ADDITION : BOOKMARKS.ERRONEOUS_ADDITION;
         if (message === BOOKMARKS.SUCCESSFUL_ADDITION) {
           this.toaster(message, 'success', false);
-          const count = this.countBookmarks + 1;
-          this.setCountBookmarks(count);
+          const count = this.countInsights + 1;
+          this.setCountInsights(count);
         } else {
           this.toaster(message, 'error', true);
         }
-        this.hideBookmarkPanel();
-        this.initBookmark();
+        this.hideInsightPanel();
+        this.initInsight();
       });
     },
     async takeSnapshot() {
-      const el = document.getElementsByClassName('bookmark-capture')[0];
+      const el = document.getElementsByClassName('insight-capture')[0];
       const image = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
       return image;
     }
@@ -209,7 +209,7 @@ export default {
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.new-bookmark-pane-container {
+.new-insight-pane-container {
   display: flex;
   flex-direction: column;
   height: 100%;

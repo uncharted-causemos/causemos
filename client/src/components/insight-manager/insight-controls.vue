@@ -1,45 +1,45 @@
 <template>
   <div>
     <ul
-      class="bookmark-controls-container nav navbar-nav navbar-right">
+      class="insight-controls-container nav navbar-nav navbar-right">
       <li class="nav-item">
         <button
           v-tooltip.top-center="'See insights list'"
-          class="btn bookmark-btn"
-          :class="{ 'bookmark-panel-open': isPanelOpen && currentPane === 'list-bookmarks' }"
-          @click="toggleBookmarkPane('list-bookmarks')"
+          class="btn insight-btn"
+          :class="{ 'insight-manager-open': isPanelOpen && currentPane === 'list-insights' }"
+          @click="toggleInsightPane('list-insights')"
         >
           <i
             class="fa fa-fw fa-star fa-lg"
           />
           Insights:
-          <span class="bookmark-counter">{{ countBookmarks }}</span>
+          <span class="insight-counter">{{ countInsights }}</span>
           <i
             class="fa fa-fw fa-caret-down"
           />
         </button>
       </li>
       <li
-        v-if="allowNewBookmarks"
+        v-if="allowNewInsights"
         class="nav-item"
       >
         <button
           v-tooltip.top-center="'Save insight'"
-          class="btn bookmark-btn"
-          :class="{ 'bookmark-panel-open': isPanelOpen && currentPane ==='new-bookmark' }"
-          @click="toggleBookmarkPane('new-bookmark')"
+          class="btn insight-btn"
+          :class="{ 'insight-manager-open': isPanelOpen && currentPane ==='new-insight' }"
+          @click="toggleInsightPane('new-insight')"
         >
           <i
             class="fa fa-fw fa-lg"
             :class="{
-              'fa-star-o': currentPane !== 'new-bookmark',
-              'fa-star open': currentPane === 'new-bookmark'
+              'fa-star-o': currentPane !== 'new-insight',
+              'fa-star open': currentPane === 'new-insight'
             }"
           />
         </button>
       </li>
     </ul>
-    <bookmark-panel :allow-new-bookmarks="allowNewBookmarks" />
+    <insight-manager :allow-new-insights="allowNewInsights" />
   </div>
 </template>
 
@@ -47,24 +47,24 @@
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
-import BookmarkPanel from '@/components/bookmark-panel/bookmark-panel';
+import InsightManager from '@/components/insight-manager/insight-manager';
 
 import API from '@/api/api';
 
 export default {
-  name: 'BookmarkControls',
+  name: 'InsightControls',
   components: {
-    BookmarkPanel
+    InsightManager
   },
   computed: {
     ...mapGetters({
-      countBookmarks: 'bookmarkPanel/countBookmarks',
-      currentPane: 'bookmarkPanel/currentPane',
-      isPanelOpen: 'bookmarkPanel/isPanelOpen',
+      countInsights: 'insightPanel/countInsights',
+      currentPane: 'insightPanel/currentPane',
+      isPanelOpen: 'insightPanel/isPanelOpen',
       currentView: 'app/currentView',
       project: 'app/project'
     }),
-    allowNewBookmarks() {
+    allowNewInsights() {
       return this.currentView === 'kbExplorer' ||
         this.currentView === 'data' ||
         this.currentView === 'qualitative' ||
@@ -84,24 +84,24 @@ export default {
   },
   methods: {
     ...mapActions({
-      currentPane: 'bookmarkPanel/currentPane',
-      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
-      isPanelOpen: 'bookmarkPanel/isPanelOpen',
-      showBookmarkPanel: 'bookmarkPanel/showBookmarkPanel',
-      setCountBookmarks: 'bookmarkPanel/setCountBookmarks',
-      setCurrentPane: 'bookmarkPanel/setCurrentPane'
+      currentPane: 'insightPanel/currentPane',
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
+      isPanelOpen: 'insightPanel/isPanelOpen',
+      showInsightPanel: 'insightPanel/showInsightPanel',
+      setCountInsights: 'insightPanel/setCountInsights',
+      setCurrentPane: 'insightPanel/setCurrentPane'
     }),
-    toggleBookmarkPane(pane) {
+    toggleInsightPane(pane) {
       const paneState = this.isPanelOpen;
       if (paneState) {
         if (this.currentPane === pane) {
-          this.hideBookmarkPanel();
+          this.hideInsightPanel();
           this.setCurrentPane('');
         } else {
           this.setCurrentPane(pane);
         }
       } else {
-        this.showBookmarkPanel();
+        this.showInsightPanel();
         this.setCurrentPane(pane);
       }
     },
@@ -111,7 +111,7 @@ export default {
       API.get('bookmarks/counts', {
         params: { project_id: this.project }
       }).then(d => {
-        this.setCountBookmarks(d.data);
+        this.setCountInsights(d.data);
       });
     }
   }
@@ -121,16 +121,16 @@ export default {
 <style lang="scss" scoped>
 @import '~styles/variables';
 
-.bookmark-controls-container {
+.insight-controls-container {
   margin: 0;
 }
 
-.bookmark-btn {
+.insight-btn {
   height: $navbar-outer-height;
   background-color: transparent;
   border: transparent;
   color: rgba(255, 255, 255, 0.71);
-  .bookmark-counter {
+  .insight-counter {
     padding: 5px;
   }
 
@@ -139,8 +139,8 @@ export default {
   }
 }
 
-.bookmark-panel-open,
-.bookmark-panel-open:hover {
+.insight-manager-open,
+.insight-manager-open:hover {
   background-color: $selected;
   color: #FFF;
 }

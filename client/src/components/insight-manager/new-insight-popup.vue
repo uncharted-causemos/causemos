@@ -84,7 +84,7 @@ export default {
     }
   },
   methods: {
-    initBookmark() {
+    initInsight() {
       this.title = '';
       this.description = '';
       this.hasError = false;

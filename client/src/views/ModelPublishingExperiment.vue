@@ -214,7 +214,7 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      countBookmarks: 'bookmarkPanel/countBookmarks',
+      countInsights: 'insightPanel/countInsights',
       project: 'app/project'
     })
   },
@@ -225,7 +225,7 @@ export default defineComponent({
     isTemporalResolutionDropdownOpen: false,
     spatialAggregations: [] as string[],
     isSpatialAggregationDropdownOpen: false,
-    initialBookmarkCount: -1
+    initialInsightCount: -1
   }),
   setup() {
     const selectedAdminLevel = ref(2);
@@ -348,15 +348,15 @@ export default defineComponent({
         }
       }
     },
-    countBookmarks: {
+    countInsights: {
       handler(/* newValue, oldValue */) {
-        if (this.initialBookmarkCount === -1) {
+        if (this.initialInsightCount === -1) {
           // save initial insights count
-          this.initialBookmarkCount = this.countBookmarks;
+          this.initialInsightCount = this.countInsights;
         } else {
           // initial insights count is valid and we have some update
           // if the current insights count differ, then the user has saved some new insight(s)
-          if (this.initialBookmarkCount !== this.countBookmarks) {
+          if (this.initialInsightCount !== this.countInsights) {
             // so mark this step as completed
             this.currentPublishingStep = ModelPublishingStepID.Capture_Insight;
             this.updatePublishingStep(true);
