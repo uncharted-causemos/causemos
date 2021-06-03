@@ -3,17 +3,18 @@
     <div class="pane-header">
       <h6>New Insight</h6>
     </div>
-    <div class="pane-content">
+    <div class="pane-content" v-if="imagePreview !== null">
+      <div
+        v-if="hasError === true"
+        class="error-msg">
+        {{ errorMsg }}
+      </div>
       <div class="fields">
-        <div class="title">
-          <i
-            :class="iconToDisplay"
-          />
-          {{ viewName }}
+        <div class="preview">
+          <img :src="imagePreview">
         </div>
-        <img :src="imagePreview">
-        <form>
-          <div class="form-group">
+        <div class="form-group">
+          <form>
             <label> Title* </label>
             <input
               v-model="title"
@@ -23,21 +24,22 @@
               placeholder="Untitled insight"
               @keyup.enter.stop="saveBookmark"
             >
-            <div
-              v-if="hasError === true"
-              class="error-msg">
-              {{ errorMsg }}
-            </div>
             <label>Description</label>
             <textarea
               rows="10"
               v-model="description"
               class="form-control" />
-          </div>
-        </form>
+          </form>
+        </div>
       </div>
       <div class="metadata">
         <h5>Metadata</h5>
+        <div class="title">
+          <i
+            :class="iconToDisplay"
+          />
+          {{ viewName }}
+        </div>
         <div>{{ formattedFilterString() }}</div>
       </div>
     </div>
@@ -204,7 +206,7 @@ export default {
 };
 </script>
 
-<style lang="scss">
+<style lang="scss" scoped>
 @import "~styles/variables";
 
 .new-bookmark-pane-container {
@@ -218,26 +220,40 @@ export default {
     flex-direction: row;
     .fields {
       flex: 1 1 auto;
-      .title {
-        font-size: $font-size-large;
-        padding: 10px 0;
-      }
-      img {
-        max-height: 500px;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      .preview {
+        height: calc(58vh - #{$navbar-outer-height});;
         margin: 0 0 1em;
+        overflow: hidden;
+        img {
+          max-height: 100%;
+        }
       }
-      textarea {
-        height: 20vh;
-        width: 100%;
-        box-sizing: border-box;
-        resize: none;
-        outline: none;
+      .form-group {
+        height: calc(30vh - #{$navbar-outer-height});
+        form {
+          display: flex;
+          flex-direction: column;
+          width: 100%;
+          textarea {
+            flex: 1 1 auto;
+            resize: none;
+            outline: none;
+            box-sizing: border-box;
+          }
+        }
       }
     }
     .metadata {
       margin: 0 0 0 1em;
-      flex: 0 1 200px;
+      flex: 0 1 400px;
       border: 1px solid black;
+      background-color: $background-light-1;
+      .title {
+        font-size: $font-size-large;
+      }
     }
   }
 
