@@ -64,7 +64,7 @@ import {
 interface StatefulDataNode {
   name: string;
   children: StatefulDataNode[];
-  values: number[];
+  values: (number | null)[];
   path: string[];
   isExpanded: boolean;
   isChecked: boolean;
@@ -72,7 +72,7 @@ interface StatefulDataNode {
 
 interface ChecklistRowData {
   name: string;
-  values: number[];
+  values: (number | null)[];
   isExpanded: boolean;
   isChecked: boolean;
   path: string[];
@@ -206,12 +206,24 @@ export default defineComponent({
 
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
         // Get the list of values at this aggregation level for each selected
-        //  model run, flatten them into one array
+        //  model run
+        const modelRunsAtThisLevel = rawData.value.map(
+          modelRun => modelRun[aggregationLevelKey] ?? []
+        );
+        // Flatten values into one array and inject the index of the model run
+        //  that each value belongs to
         const valuesAtThisLevel = _.flatten(
-          rawData.value.map(modelRun => modelRun[aggregationLevelKey] ?? [])
+          modelRunsAtThisLevel.map((modelRun, modelRunIndex) => {
+            return modelRun.map(({ id, value }) => ({
+              id,
+              value,
+              modelRunIndex
+            }));
+          })
         );
         if (valuesAtThisLevel.length === 0) return;
-        valuesAtThisLevel.forEach(({ id, value }) => {
+        const modelRunCount = modelRunsAtThisLevel.length;
+        valuesAtThisLevel.forEach(({ id, value, modelRunIndex }) => {
           const path = id.split('__');
           const name = path[path.length - 1];
           // Find where in the tree this region should be inserted
@@ -219,20 +231,30 @@ export default defineComponent({
           let pointer = newStatefulData.children;
           while (_path.length > 1) {
             const nextNode = pointer.find(node => node.name === _path[0]);
-            if (nextNode === undefined) return;
-            pointer = nextNode?.children;
+            if (nextNode === undefined) {
+              throw new Error(
+                `Invalid path: ${path.toString()}. Node with name "${
+                  _path[0]
+                }" not found.`
+              );
+            }
+            pointer = nextNode.children;
             _path = _path.splice(1);
           }
           // Check if a previous model run already added this node
           const existingNode = pointer.find(node => node.name === name);
           if (existingNode !== undefined) {
             // Node exists, so add this model run's value to the node's list
-            existingNode.values.push(value);
+            existingNode.values[modelRunIndex] = value;
           } else {
+            // Initialize values for every model run to null
+            const values = new Array(modelRunCount).fill(null);
+            // Set this model run's value
+            values[modelRunIndex] = value;
             // Create stateful node and insert it into its place in the tree
             pointer.push({
               name,
-              values: [value], // Initialize values list with this run's value
+              values,
               path,
               isExpanded: false,
               // TODO: isChecked functionality still needs to be implemented

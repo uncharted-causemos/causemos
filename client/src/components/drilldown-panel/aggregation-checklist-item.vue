@@ -33,7 +33,7 @@
         {{ itemData.name }}
       </span>
       <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
-        {{ precisionFormatter(itemData.values[0]) }}
+        {{ precisionFormatter(itemData.values[0]) ?? 'missing' }}
       </span>
       <div
         v-if="itemData.isSelectedAggregationLevel"
@@ -66,7 +66,7 @@
           <!-- TODO: pass index as well for colorization -->
         </div>
         <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
-          {{ precisionFormatter(value) }}
+          {{ precisionFormatter(value) ?? 'missing' }}
         </span>
       </div>
     </div>
@@ -81,7 +81,7 @@ const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
 
 interface AggregationChecklistItemPropType {
   name: string;
-  values: number[];
+  values: (number|null)[];
   isSelectedAggregationLevel: boolean;
   showExpandToggle: boolean;
   isExpanded: boolean;
@@ -149,8 +149,10 @@ export default defineComponent({
     toggleChecked() {
       this.$emit('toggle-checked');
     },
-    histogramBarStyle(value: number) {
-      const percentage = (value / this.maxVisibleBarValue) * 100;
+    histogramBarStyle(value: number | null) {
+      const percentage = value !== null
+        ? (value / this.maxVisibleBarValue) * 100
+        : 0;
       return { width: `${percentage}%` };
     }
   }
