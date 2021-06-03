@@ -60,9 +60,9 @@ export function getColorScale(colorName: string) {
 
 
 const COLORS = [
+  '#8767C8',
   '#1b9e77',
   '#d95f02',
-  '#7570b3',
   '#e7298a',
   '#66a61e'
 ];
