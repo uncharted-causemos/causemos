@@ -16,7 +16,7 @@ const DEFAULT_SIZE = 10000;
  * Extend the object passed in with the time series data and other associated data
  * for the given indicator_name
  */
-const _setIndicatorProperties = async(parameter) => {
+const _setIndicatorProperties = async (parameter) => {
   if (_.isNil(parameter.indicator_id)) throw new Error('No indicator_id specified in parameter object');
   const indicatorMatch = await getIndicatorData(parameter.indicator_id, parameter.indicator_source);
   if (_.isEmpty(indicatorMatch)) {
@@ -40,62 +40,6 @@ const _setIndicatorProperties = async(parameter) => {
     admin2: admin2LevelData.key
   };
 };
-
-
-/**
- * @param {array} concepts - list of concept names
- *
- * Returns a list of pre-matched indicators
- */
-const conceptSearch = async (concepts) => {
-  Logger.info(`Searching for indicators by concept using wm-go:  ${JSON.stringify(concepts)}`);
-
-  const filters = {
-    clauses: [
-      {
-        field: 'concepts.name',
-        operand: 'or',
-        isNot: false,
-        values: concepts
-      },
-      {
-        field: 'type',
-        operand: 'or',
-        isNot: false,
-        values: ['indicator']
-      }
-    ]
-  };
-
-  const options = {
-    method: 'GET',
-    url: process.env.WM_GO_URL + `/maas/datacubes?filters=${encodeURI(JSON.stringify(filters))}`
-  };
-
-  const response = await requestAsPromise(options);
-  const rawResult = JSON.parse(response);
-
-  const result = {};
-  concepts.forEach(concept => {
-    const bestIndicator =
-      _(rawResult.map(indicator => {
-        // Find the indicator with the highest 'score' value for this concept
-        const foundConcept = _.find(indicator.concepts, con => con.name === concept);
-        const score = foundConcept === undefined ? 0 : foundConcept.score;
-        return {
-          ...indicator,
-          _match_score: score
-        };
-      })).sortBy('_match_score').last();
-
-    if (bestIndicator && bestIndicator._match_score > 0) {
-      result[concept] = bestIndicator;
-    }
-  });
-
-  return result;
-};
-
 
 /**
  * @param {string} variable - indicator name
@@ -180,6 +124,88 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
+const getOntologyCandidates = async (modelId, concepts) => {
+  const ontologyCandidates = {};
+  const indicatorMetadataAdapter = Adapter.get(RESOURCE.INDICATOR_METADATA);
+  const esClient = indicatorMetadataAdapter.client;
+
+  const modelAdapter = Adapter.get(RESOURCE.MODEL);
+  const modelData = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
+
+  for (const concept of concepts) {
+    let compositionalConcepts = [];
+    const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, modelData.project_id);
+    let query = {
+      bool: {
+        should: [
+          {
+            term: {
+              'subj.candidates.name': concept
+            }
+          },
+          {
+            term: {
+              'obj.candidates.name': concept
+            }
+          }
+        ]
+      }
+    };
+    const projectData = await projectDataAdapter.client.search({
+      index: projectDataAdapter.index,
+      body: {
+        size: 1, query
+      }
+    });
+    if (_.isEmpty(projectData.body.hits.hits)) {
+      compositionalConcepts = [concept];
+    } else {
+      // grab the subj/obj candidate names, and flatten them all into one array
+      compositionalConcepts = projectData.body.hits.hits.map(
+        pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(
+          pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm'))
+        )).flat(1);
+    }
+    // make sure array contains unique values
+    compositionalConcepts = [...new Set(compositionalConcepts)];
+    query = {
+      bool: {
+        should: [
+          {
+            terms: {
+              ontology_components: compositionalConcepts
+            }
+          }
+        ],
+        minimum_should_match: 1
+      }
+    };
+    const searchPayload = {
+      index: RESOURCE.INDICATOR_METADATA,
+      size: DEFAULT_SIZE,
+      body: {
+        query,
+        sort: [
+          {
+            _score: {
+              order: 'desc'
+            }
+          }
+        ]
+      }
+    };
+    const response = await esClient.search(searchPayload);
+    const foundIndicatorMetadata = response.body.hits.hits;
+    if (!_.isEmpty(foundIndicatorMetadata)) {
+      ontologyCandidates[concept] = {
+        ...foundIndicatorMetadata[0]._source,
+        _match_score: foundIndicatorMetadata[0]._score
+      };
+    }
+  }
+  return ontologyCandidates;
+};
+
 /**
  * Attempt to set or reset default indicators for concepts
  * @param {string} modelId - model id
@@ -191,7 +217,7 @@ const setDefaultIndicators = async (modelId) => {
   const filteredNodeParameters = nodeParameters.filter(n => !_.isNil(n.concept));
 
   const concepts = filteredNodeParameters.map(n => n.concept);
-  const conceptCandidates = await conceptSearch(concepts);
+  const ontologyCandidates = await getOntologyCandidates(modelId, concepts);
 
   // All of these indicators are set by the same action, so they should
   // all have the same modified_at time
@@ -199,9 +225,9 @@ const setDefaultIndicators = async (modelId) => {
 
   // Set default candidates
   const conceptMatches = {};
-  const matchedKeys = Object.keys(conceptCandidates);
+  const matchedKeys = Object.keys(ontologyCandidates);
   matchedKeys.forEach(conceptKey => {
-    const topMatch = conceptCandidates[conceptKey];
+    const topMatch = ontologyCandidates[conceptKey];
     conceptMatches[conceptKey] = {
       modified_at: editTime,
       parameter: {
