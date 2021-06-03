@@ -130,22 +130,11 @@ const getOntologyCandidates = async (modelId, concepts) => {
   const esClient = indicatorMetadataAdapter.client;
 
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
-  const modelEsClient = modelAdapter.client;
-  const modelData = await modelEsClient.search({ index: RESOURCE.MODEL, size: DEFAULT_SIZE, body: { query: { term: { id: modelId } } } });
-
-  // to make sure we use compositional concepts as well
-  const projectMetadataAdapter = Adapter.get(RESOURCE.PROJECT);
-  const projectMetadataEsClient = projectMetadataAdapter.client;
-  const projectMetaData = await projectMetadataEsClient.search({
-    index: RESOURCE.PROJECT, size: DEFAULT_SIZE, body: {
-      query: { term: { id: modelData.body.hits.hits[0]._source.project_id } }
-    }
-  });
-  const project = projectMetaData.body.hits.hits[0];
+  const modelData = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
 
   for (const concept of concepts) {
     let compositionalConcepts = [];
-    const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, project._source.id);
+    const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, modelData.project_id);
     let query = {
       bool: {
         should: [
@@ -178,7 +167,7 @@ const getOntologyCandidates = async (modelId, concepts) => {
         )).flat(1);
     }
     // make sure array contains unique values
-    compositionalConcepts = [... new Set(compositionalConcepts)];
+    compositionalConcepts = [...new Set(compositionalConcepts)];
     query = {
       bool: {
         should: [
@@ -188,7 +177,7 @@ const getOntologyCandidates = async (modelId, concepts) => {
             }
           }
         ],
-        minimum_should_match: 2
+        minimum_should_match: 1
       }
     };
     const searchPayload = {
