@@ -6,7 +6,7 @@
   >
     <i
       v-if="itemData.isSelectedAggregationLevel"
-      class="fa fa-lg fa-fw unit-width agg-item-checkbox"
+      class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
       :class="{
         'fa-check-square-o': itemData.isChecked,
         'fa-square-o': !itemData.isChecked
@@ -16,7 +16,7 @@
     <div v-for="i in itemData.indentationCount" :key="i" class="indentation" />
     <i
       v-if="itemData.showExpandToggle"
-      class="unit-width fa fa-fw"
+      class="icon-centered unit-width fa fa-fw"
       :class="{
         'fa-angle-down': itemData.isExpanded,
         'fa-angle-right': !itemData.isExpanded
@@ -170,7 +170,6 @@ export default defineComponent({
 <style lang="scss" scoped>
 .aggregation-checklist-item-container {
   display: flex;
-  align-items: center;
   padding-bottom: 4px;
   margin-bottom: 7px;
 
@@ -181,6 +180,10 @@ export default defineComponent({
 
 .agg-item-checkbox {
   cursor: pointer;
+}
+
+.icon-centered {
+  margin-top: 2px;
 }
 
 .unit-width {
