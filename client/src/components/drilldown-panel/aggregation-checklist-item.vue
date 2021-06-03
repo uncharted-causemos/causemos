@@ -1,7 +1,7 @@
 <template>
   <div
     class="aggregation-checklist-item-container"
-    :class="{ 'canToggleExpanded': itemData.showExpandToggle }"
+    :class="{ canToggleExpanded: itemData.showExpandToggle }"
     @click="toggleExpanded"
   >
     <i
@@ -9,15 +9,11 @@
       class="fa fa-lg fa-fw unit-width agg-item-checkbox"
       :class="{
         'fa-check-square-o': itemData.isChecked,
-        'fa-square-o': !itemData.isChecked,
+        'fa-square-o': !itemData.isChecked
       }"
       @click.stop="toggleChecked"
     />
-    <div
-      v-for="i in itemData.indentationCount"
-      :key="i"
-      class="indentation"
-    />
+    <div v-for="i in itemData.indentationCount" :key="i" class="indentation" />
     <i
       v-if="itemData.showExpandToggle"
       class="unit-width fa fa-fw"
@@ -26,48 +22,83 @@
         'fa-angle-right': !itemData.isExpanded
       }"
     />
+    <div v-else class="unit-width" />
     <div
-      v-else
-      class="unit-width"
-    />
-    <div
+      v-if="itemData.values.length === 1"
       v-tooltip.top-start="ancestorTooltip"
-      class="content"
+      class="content--single-row"
     >
       <span class="title">
         <span class="faded">{{ ancestorPrefix }}</span>
         {{ itemData.name }}
       </span>
-      <span :class="{ 'faded': !itemData.isSelectedAggregationLevel }">
-        {{ precisionFormatter(itemData.value) }}
+      <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
+        {{ precisionFormatter(itemData.values[0]) }}
       </span>
       <div
         v-if="itemData.isSelectedAggregationLevel"
         class="histogram-bar"
-        :class="{ 'faded': !itemData.isChecked }"
-        :style="histogramBarStyle"
+        :class="{ faded: !itemData.isChecked }"
+        :style="histogramBarStyle(itemData.values[0])"
       />
+    </div>
+    <div
+      v-else
+      v-tooltip.top-start="ancestorTooltip"
+      class="content--multiple-rows"
+    >
+      <span class="title">
+        <span class="faded">{{ ancestorPrefix }}</span>
+        {{ itemData.name }}
+      </span>
+      <div
+        v-for="(value, index) in itemData.values"
+        :key="index"
+        class="value-on-same-line"
+      >
+        <div class="histogram-bar-wrapper">
+          <div
+            v-if="itemData.isSelectedAggregationLevel"
+            class="histogram-bar"
+            :class="{ faded: !itemData.isChecked }"
+            :style="histogramBarStyle(value)"
+          />
+          <!-- TODO: pass index as well for colorization -->
+        </div>
+        <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
+          {{ precisionFormatter(value) }}
+        </span>
+      </div>
     </div>
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import precisionFormatter from '@/formatters/precision-formatter';
+import { defineComponent, PropType } from '@vue/runtime-core';
 
 const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
 
-export default {
+interface AggregationChecklistItemPropType {
+  name: string;
+  values: number[];
+  isSelectedAggregationLevel: boolean;
+  showExpandToggle: boolean;
+  isExpanded: boolean;
+  isChecked: boolean;
+  indentationCount: number;
+  hiddenAncestorNames: string[];
+}
+
+export default defineComponent({
   name: 'AggregationChecklistItem',
-  emits: [
-    'toggle-expanded',
-    'toggle-checked'
-  ],
+  emits: ['toggle-expanded', 'toggle-checked'],
   props: {
     itemData: {
-      type: Object,
+      type: Object as PropType<AggregationChecklistItemPropType>,
       default: () => ({
         name: '[Aggregation Checklist Item]',
-        value: 0,
+        values: [0],
         isSelectedAggregationLevel: false,
         showExpandToggle: false,
         isExpanded: false,
@@ -104,11 +135,10 @@ export default {
         tooltip += `${ancestor} / `;
       });
       tooltip += this.itemData.name;
-      return { content: tooltip, classes: 'agg-checklist-item-ancestor-tooltip' };
-    },
-    histogramBarStyle() {
-      const percentage = this.itemData.value / this.maxVisibleBarValue * 100;
-      return { width: `${percentage}%` };
+      return {
+        content: tooltip,
+        classes: 'agg-checklist-item-ancestor-tooltip'
+      };
     }
   },
   methods: {
@@ -118,13 +148,16 @@ export default {
     },
     toggleChecked() {
       this.$emit('toggle-checked');
+    },
+    histogramBarStyle(value: number) {
+      const percentage = (value / this.maxVisibleBarValue) * 100;
+      return { width: `${percentage}%` };
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
-
 .aggregation-checklist-item-container {
   display: flex;
   align-items: center;
@@ -148,11 +181,12 @@ export default {
   width: 8px;
 }
 
-.unit-width, .indentation {
+.unit-width,
+.indentation {
   margin-right: 10px;
 }
 
-.content {
+.content--single-row {
   flex: 1;
   display: flex;
   position: relative;
@@ -162,8 +196,18 @@ export default {
   }
 }
 
+.content--multiple-rows {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.value-on-same-line {
+  display: flex;
+}
+
 span.faded {
-  color: #B3B4B5;
+  color: #b3b4b5;
 }
 
 .histogram-bar {
@@ -173,11 +217,19 @@ span.faded {
   width: 100%;
   height: 4px;
   // TODO: add support for a function parameter to determine colour
-  background: #8767C8;
+  background: #8767c8;
 
   &.faded {
-    background: #B3B4B5;
+    background: #b3b4b5;
   }
 }
 
+.histogram-bar-wrapper {
+  flex: 1;
+  position: relative;
+  .histogram-bar {
+    top: 50%;
+    transform: translateY(-50%);
+  }
+}
 </style>
