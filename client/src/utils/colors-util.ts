@@ -60,10 +60,11 @@ export function getColorScale(colorName: string) {
 
 
 const COLORS = [
-  '#44f',
-  '#4b6',
-  '#d4d'
-  // TODO: choose better colours and add more of them
+  '#1b9e77',
+  '#d95f02',
+  '#7570b3',
+  '#e7298a',
+  '#66a61e'
 ];
 
 export function colorFromIndex(index: number) {
