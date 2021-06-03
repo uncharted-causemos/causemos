@@ -79,7 +79,8 @@ export default {
   }
 
   .row-field {
-    overflow-wrap: break-word;
-    word-wrap: break-word;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
   }
 </style>
