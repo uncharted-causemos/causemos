@@ -3,6 +3,7 @@
     <button
       type="button"
       class="btn dropdown-btn"
+      :class="{ 'attribute-invalid': selectedItem === '' }"
       @click="isDropdownOpen = !isDropdownOpen"
     >
       <span>
@@ -91,5 +92,8 @@ export default defineComponent({
   font-weight: normal;
   padding: 5px;
   border: 1px solid gray;
+}
+.attribute-invalid {
+  border:1px solid red !important;
 }
 </style>
