@@ -8,6 +8,7 @@
       v-if="showNewNode"
       ref="newNode"
       :concepts-in-cag="conceptsInCag"
+      :placement="{ x: newNodeX, y: newNodeY }"
       @suggestion-selected="onSuggestionSelected"
     />
     <color-legend
@@ -562,10 +563,13 @@ export default {
     }
   },
   emits: [
+    'delete', 'refresh',
     'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click'
   ],
   data: () => ({
-    selectedNode: ''
+    selectedNode: '',
+    newNodeX: 0,
+    newNodeY: 0
   }),
   computed: {
     ...mapGetters({
@@ -577,58 +581,7 @@ export default {
   },
   watch: {
     data() {
-      const layout = this.renderer.layout;
-
-      if (layout.nodes === undefined || layout.edges === undefined) {
-        this.refresh();
-        return;
-      }
-
-      // TODO: smart add node, instead of this
-      const nodesAdded = this.data.nodes.filter(node => !layout.nodes.some(layoutNode => node.id === layoutNode.data.id));
-      if (nodesAdded.length > 0) {
-        this.refresh();
-        return;
-      }
-
-      const edgesAdded = this.data.edges.filter(edge => !layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
-      edgesAdded.forEach(edge => {
-        const source = layout.nodes.filter(layoutNode => layoutNode.concept === edge.source)[0];
-        const target = layout.nodes.filter(layoutNode => layoutNode.concept === edge.target)[0];
-
-        // lets add edges
-        layout.edges.push(Object.assign({}, {
-          id: edge.source + ':' + edge.target,
-          data: edge,
-          points: this.renderer.getPathBetweenNodes(source, target),
-          source: edge.source,
-          target: edge.target
-        }));
-      });
-
-      // FIXME: This block was added to update the data backing an edge without needing to refresh.
-      //  Ideally, svg-flowgraph should be able to update data and refresh without jiggling layout
-      //  positions and becoming an unresponsive loading screen for a few seconds.
-      const existingEdges = this.data.edges.filter(edge => layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
-      existingEdges.forEach(edge => {
-        // Update each edge in the existing layout with the most recent data from this.data
-        //  in case the statements list (and resulting polarity) has changed
-        const layoutEdge = layout.edges.find(layoutEdge => edge.id === layoutEdge.data.id);
-        layoutEdge.data = edge;
-      });
-
-      this.renderer.buildDefs();
-
-      // don't forget to deal with deleted nodes/edges too
-      layout.nodes = layout.nodes.filter(layoutNode => this.data.nodes.some(node => node.id === layoutNode.data.id));
-      layout.edges = layout.edges.filter(layoutEdge => this.data.edges.some(edge => edge.id === layoutEdge.data.id));
-
-      this.selectedNode = null;
-      this.renderer.hideNeighbourhood();
-      this.renderer.enableDrag(true);
-
-      this.renderer.renderNodesDelta();
-      this.renderer.renderEdgesDelta();
+      this.refresh();
     },
     showNewNode(newValue) {
       if (newValue) {
@@ -636,6 +589,9 @@ export default {
           // Wait a tick for NewNodeConceptSelect to be shown, then focus it
           this.focusNewNodeInput();
         });
+      } else {
+        this.newNodeX = 20;
+        this.newNodeY = 20;
       }
     }
   },
@@ -649,6 +605,7 @@ export default {
       renderMode: 'delta',
       addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
+      useStableLayout: true,
       newEdgeFn: (source, target) => {
         this.renderer.disableNodeHandles();
         this.renderer.resetDragState();
@@ -669,7 +626,9 @@ export default {
       this.deselectNodeAndEdge();
     });
 
-    this.renderer.setCallback('backgroundDblClick', () => {
+    this.renderer.setCallback('backgroundDblClick', (evt) => {
+      this.newNodeX = evt.offsetX;
+      this.newNodeY = evt.offsetY;
       this.$emit('background-dbl-click');
     });
 
@@ -752,7 +711,7 @@ export default {
   methods: {
     async refresh() {
       if (_.isEmpty(this.data)) return;
-      this.renderer.setData(this.data, []);
+      this.renderer.setData(this.data);
       await this.renderer.render();
 
       this.highlight();

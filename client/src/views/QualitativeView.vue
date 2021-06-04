@@ -7,10 +7,7 @@
       @import-cag="showModalImportCAG=true"
     />
     <main>
-      <div
-        class="graph-container"
-        @dblclick="onBackgroundDblClick"
-      >
+      <div class="graph-container">
         <empty-state-instructions v-if="showEmptyStateInstructions" />
         <CAG-graph
           v-else
