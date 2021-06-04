@@ -171,7 +171,7 @@ export default defineComponent({
 .aggregation-checklist-item-container {
   display: flex;
   padding-bottom: 4px;
-  margin-bottom: 7px;
+  margin-bottom: 2px;
 
   &.canToggleExpanded {
     cursor: pointer;
