@@ -9,12 +9,21 @@
         <insight-control-menu />
       </template>
     </full-screen-modal-header>
+    <div class="search">
+      <input
+        v-model="search"
+        v-focus
+        type="text"
+        class="form-control"
+        placeholder="Search insights"
+      >
+    </div>
     <div class="pane-wrapper">
       <div
         v-if="listInsights.length > 0"
         class="pane-content">
         <insight-card
-          v-for="insight in listInsights"
+          v-for="insight in searchedInsights"
           :key="insight.id"
           :active-insight="activeInsight"
           :insight="insight"
@@ -24,38 +33,39 @@
         />
       </div>
       <message-display
+        class="pane-content"
         v-else
         :message="messageNoData"
       />
-      <div class="pane-footer">
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="toggleExportMenu"
-        >
-          <span class="lbl">Export</span>
-          <i
-            class="fa fa-fw"
-            :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
-          />
-        </button>
-        <dropdown-control v-if="exportActive" class="below">
-          <template #content>
-            <div
-              class="dropdown-option"
-              @click="exportPPTX"
-            >
-              Powerpoint
-            </div>
-            <div
-              class="dropdown-option"
-              @click="exportDOCX"
-            >
-              Word
-            </div>
-          </template>
-        </dropdown-control>
-      </div>
+    </div>
+    <div class="pane-footer">
+      <button
+        type="button"
+        class="btn btn-primary"
+        @click="toggleExportMenu"
+      >
+        <span class="lbl">Export</span>
+        <i
+          class="fa fa-fw"
+          :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
+        />
+      </button>
+      <dropdown-control v-if="exportActive" class="below">
+        <template #content>
+          <div
+            class="dropdown-option"
+            @click="exportPPTX"
+          >
+            Powerpoint
+          </div>
+          <div
+            class="dropdown-option"
+            @click="exportDOCX"
+          >
+            Word
+          </div>
+        </template>
+      </dropdown-control>
     </div>
   </div>
 </template>
@@ -93,6 +103,7 @@ export default {
     exportActive: false,
     listInsights: [],
     messageNoData: BOOKMARKS.NO_DATA,
+    search: '',
     selectedInsight: null
   }),
   computed: {
@@ -107,6 +118,17 @@ export default {
       const projectModifiedDate = new Date(this.projectMetadata.modified_at);
       return `Project: ${this.projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
         `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
+    },
+    searchedInsights() {
+      if (this.search.length > 0) {
+        const result = this.listInsights.filter((insight) => {
+          return insight.title.toLowerCase().includes(this.search.toLowerCase());
+        });
+        console.log(result);
+        return result;
+      } else {
+        return this.listInsights;
+      }
     }
   },
   mounted() {
@@ -383,30 +405,43 @@ export default {
 <style lang="scss">
 @import "~styles/variables";
 .list-insights-pane-container {
-  color: #707070;
-  .pane-wrapper{
-    padding: 1em;
+  display: flex;
+  flex-direction: column;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-content: stretch;
+  align-items: stretch;
+  height: 100vh;
+  .search {
+    padding: 1rem;
+  }
+  .pane-wrapper {
+    flex: 1 1 auto;
+    display: flex;
+    flex-direction: column;
+    padding: 1rem;
+    overflow: auto;
     .pane-content {
       display: flex;
       flex-direction: row;
       flex-wrap: wrap;
     }
-    .selected {
-      border: 3px solid $selected;
-    }
-    .pane-footer {
-      .dropdown-container {
-        position: absolute;
-        right: 46px;
-        padding: 0;
-        width: auto;
-        height: fit-content;
-        // Clip children overflowing the border-radius at the corners
-        overflow: hidden;
+  }
+  .pane-footer {
+    flex: 0 1 auto;
+    padding: 1rem;
+    text-align: right;
+    .dropdown-container {
+      position: absolute;
+      right: 1rem;
+      padding: 0;
+      width: auto;
+      height: fit-content;
+      // Clip children overflowing the border-radius at the corners
+      overflow: hidden;
 
-        &.below {
-          top: 48px;
-        }
+      &.below {
+        bottom: 48px;
       }
     }
   }

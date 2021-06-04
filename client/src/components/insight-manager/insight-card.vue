@@ -76,7 +76,7 @@ export default defineComponent({
   padding: 5px 5px 10px;
   border: 1px solid #e5e5e5;
   max-width: 300px;
-  margin: 0px 1em 1em 0px;
+  margin: 0px 1rem 1rem 0px;
   .insight-content {
     display: flex;
     flex-direction: column;

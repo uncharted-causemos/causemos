@@ -1,76 +1,72 @@
 <template>
   <div class="new-insight-pane-container">
-    <full-screen-modal-header
-      icon="angle-left"
-      nav-back-label="Exit New Insight"
-      @close="closeInsightPanel"
-    >
-      <template #trailing>
-        <insight-control-menu />
-      </template>
+    <full-screen-modal-header>
+      <h5>New Insight</h5>
     </full-screen-modal-header>
-    <div class="pane-content" v-if="imagePreview !== null">
-      <div
-        v-if="hasError === true"
-        class="error-msg">
-        {{ errorMsg }}
-      </div>
-      <div class="fields">
-        <div class="preview">
-          <img :src="imagePreview">
+    <div class="pane-wrapper">
+      <div class="pane-row" v-if="imagePreview !== null">
+        <div
+          v-if="hasError === true"
+          class="error-msg">
+          {{ errorMsg }}
         </div>
-        <div class="form-group">
-          <form>
-            <label> Title* </label>
-            <input
-              v-model="title"
-              v-focus
-              type="text"
-              class="form-control"
-              placeholder="Untitled insight"
-              @keyup.enter.stop="saveInsight"
+        <div class="fields">
+          <div class="preview">
+            <img :src="imagePreview">
+          </div>
+          <div class="form-group">
+            <form>
+              <label> Title* </label>
+              <input
+                v-model="title"
+                v-focus
+                type="text"
+                class="form-control"
+                placeholder="Untitled insight"
+                @keyup.enter.stop="saveInsight"
+              >
+              <label>Description</label>
+              <textarea
+                rows="5"
+                v-model="description"
+                class="form-control" />
+            </form>
+          </div>
+          <div class="controls">
+            <button
+              type="button"
+              class="btn btn-light"
+              @click="closeInsightPanel"
             >
-            <label>Description</label>
-            <textarea
-              rows="10"
-              v-model="description"
-              class="form-control" />
-          </form>
+              Cancel
+            </button>
+            <button
+              class="btn btn-primary"
+              @click="autofillInsight"
+            >
+              Autofill
+            </button>
+            <button
+              type="button"
+              class="btn btn-primary"
+              :class="{ 'disabled': title.length === 0}"
+              @click="saveInsight"
+            >
+              Save
+            </button>
+          </div>
+        </div>
+        <div class="metadata">
+          <h5>Metadata</h5>
+          <div class="title">
+            <i
+              :class="iconToDisplay"
+            />
+            {{ viewName }}
+          </div>
+          <div>{{ formattedFilterString() }}</div>
         </div>
       </div>
-      <div class="metadata">
-        <h5>Metadata</h5>
-        <div class="title">
-          <i
-            :class="iconToDisplay"
-          />
-          {{ viewName }}
-        </div>
-        <div>{{ formattedFilterString() }}</div>
-      </div>
-    </div>
-    <div class="controls">
-      <button
-        type="button"
-        class="btn btn-light"
-        @click="closeInsightPanel"
-      >
-        Cancel
-      </button>
-      <button
-        class="btn btn-primary"
-        @click="autofillInsight"
-      >
-        Autofill
-      </button>
-      <button
-        type="button"
-        class="btn btn-primary"
-        :class="{ 'disabled': title.length === 0}"
-        @click="saveInsight"
-      >
-        Save
-      </button>
     </div>
   </div>
 </template>
@@ -85,7 +81,6 @@ import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import modelService from '@/services/model-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
-import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { BOOKMARKS } from '@/utils/messages-util';
 
@@ -96,8 +91,7 @@ const MSG_EMPTY_BOOKMARK_TITLE = 'Insight title cannot be blank';
 export default {
   name: 'NewInsightPane',
   components: {
-    FullScreenModalHeader,
-    InsightControlMenu
+    FullScreenModalHeader
   },
   data: () => ({
     title: '',
@@ -224,61 +218,74 @@ export default {
 .new-insight-pane-container {
   display: flex;
   flex-direction: column;
-  height: 100%;
+  flex-wrap: nowrap;
+  justify-content: center;
+  align-content: stretch;
+  align-items: stretch;
+  height: 100vh;
 
-  .pane-content {
-    padding: 1em;
+  .pane-wrapper {
     flex: 1 1 auto;
     display: flex;
-    flex-direction: row;
-    .fields {
+    flex-direction: column;
+    padding: 1rem;
+    overflow: auto;
+    .pane-row {
+      padding: 1rem;
       flex: 1 1 auto;
       display: flex;
-      flex-direction: column;
-      overflow: hidden;
-      .preview {
-        height: calc(58vh - #{$navbar-outer-height});;
-        margin: 0 0 1em;
+      flex-direction: row;
+      .fields {
+        flex: 0 1 auto;
+        display: flex;
+        flex-direction: column;
         overflow: hidden;
-        img {
-          max-height: 100%;
+        .preview {
+          flex: 0 0 auto;
+          margin: 0 0 1rem;
+          overflow: hidden;
+          img {
+            max-height: 100%;
+            max-width: 100%;
+          }
         }
-      }
-      .form-group {
-        height: calc(30vh - #{$navbar-outer-height});
-        form {
+        .form-group {
+          flex: 1 1 auto;
+          form {
+            display: flex;
+            flex-direction: column;
+            width: 100%;
+            textarea {
+              flex: 1 1 auto;
+              resize: none;
+              outline: none;
+              box-sizing: border-box;
+            }
+          }
+        }
+        .controls {
+          flex: 0 1 auto;
           display: flex;
-          flex-direction: column;
-          width: 100%;
-          textarea {
-            flex: 1 1 auto;
-            resize: none;
-            outline: none;
-            box-sizing: border-box;
+          justify-content: flex-end;
+          padding: 1rem;
+          button {
+            margin-left: 1rem;
           }
         }
       }
-    }
-    .metadata {
-      margin: 0 0 0 1em;
-      flex: 0 1 400px;
-      border: 1px solid black;
-      background-color: $background-light-1;
-      .title {
-        font-size: $font-size-large;
+      .metadata {
+        margin: 0 0 0 1rem;
+        flex: 1 1 400px;
+        border: 1px solid black;
+        background-color: $background-light-1;
+        .title {
+          font-size: $font-size-large;
+        }
       }
     }
   }
 
-  .controls {
-    flex: 0 1 auto;
-    display: flex;
-    justify-content: flex-end;
-    padding: 0 1em 1em;
-    button {
-      margin-left: 1em;
-    }
-  }
+
 }
 
 .error-msg {
