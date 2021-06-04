@@ -264,25 +264,28 @@ export default defineComponent({
       }).catch(() => {});
     },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      // TODO: inspect 'this.selectedScenarioIds' for drilldown data
       this.typeBreakdownData = [];
       if (this.selectedScenarioIds.length === 0) return;
       this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
-        const choices = dimension.choices as Array<string>;
-        const drilldownChildren = choices.map(choice => ({
-          // Breakdown data IDs are written as the hierarchical path delimited by '__'
-          id: 'All__' + choice,
-          // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
-          //  from (selected scenarios) data
-          value: getRandomNumber(0, 5000)
-        }));
-        const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
-        return {
-          name: dimension.name,
-          data: {
+        const choices = dimension.choices ?? [];
+        const dataForEachRun = this.selectedScenarioIds.map(() => {
+          // Generate random breakdown data for each run
+          const drilldownChildren = choices.map(choice => ({
+            // Breakdown data IDs are written as the hierarchical path delimited by '__'
+            id: 'All__' + choice,
+            // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
+            //  from (selected scenarios) data
+            value: getRandomNumber(0, 5000)
+          }));
+          const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
+          return {
             Total: [{ id: 'All', value: sumTotal }],
             [dimension.name]: drilldownChildren
-          }
+          };
+        });
+        return {
+          name: dimension.name,
+          data: dataForEachRun
         };
       });
     }

@@ -31,7 +31,7 @@
       </template>
     </aggregation-checklist-pane>
     <!-- TODO: dropdown to select what we're breaking down by -->
-    <!-- <aggregation-checklist-pane
+    <aggregation-checklist-pane
       class="checklist-section"
       v-for="type in visibleTypeBreakdownData"
       :key="type.name"
@@ -43,8 +43,8 @@
       :units="unit"
     >
       <template #aggregation-description>
-        TODO: highlighted value should be dynamically populated based
-        on the selected timestamp
+        <!-- TODO: highlighted value should be dynamically populated based
+        on the selected timestamp -->
         <p class="aggregation-description">
           Showing <strong>placeholder</strong> data.
         </p>
@@ -52,7 +52,7 @@
           Aggregated by <strong>sum</strong>.
         </p>
       </template>
-    </aggregation-checklist-pane> -->
+    </aggregation-checklist-pane>
     <!-- <aggregation-checklist-pane
       :aggregation-level-count="aggregationLevels.length"
       :aggregation-level="selectedAdminLevel"
