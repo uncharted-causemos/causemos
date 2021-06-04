@@ -64,7 +64,7 @@ import {
 interface StatefulDataNode {
   name: string;
   children: StatefulDataNode[];
-  value: number;
+  values: (number | null)[];
   path: string[];
   isExpanded: boolean;
   isChecked: boolean;
@@ -72,7 +72,7 @@ interface StatefulDataNode {
 
 interface ChecklistRowData {
   name: string;
-  value: number;
+  values: (number | null)[];
   isExpanded: boolean;
   isChecked: boolean;
   path: string[];
@@ -137,14 +137,14 @@ const checklistRowDataFromNode = (
   hiddenAncestorNames: string[],
   selectedLevel: number
 ): ChecklistRowData => {
-  const { name, value, children, isExpanded, isChecked, path } = node;
+  const { name, values, children, isExpanded, isChecked, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
   const showExpandToggle = children.length > 0;
   const indentationCount =
     depthLevel > selectedLevel ? depthLevel - selectedLevel + 1 : 0;
   return {
     name,
-    value,
+    values,
     isSelectedAggregationLevel,
     showExpandToggle,
     isExpanded,
@@ -182,9 +182,9 @@ export default defineComponent({
       default: '[Aggregation Level Title]'
     },
     rawData: {
-      type: Object as PropType<BreakdownData>,
+      type: Object as PropType<BreakdownData[]>,
       default: () => {
-        return {} as BreakdownData;
+        return [] as BreakdownData[];
       }
     },
     units: {
@@ -194,7 +194,9 @@ export default defineComponent({
   },
   emits: ['aggregation-level-change', 'toggle-checked'],
   setup(props) {
-    const { rawData, aggregationLevel, orderedAggregationLevelKeys } = toRefs(props);
+    const { rawData, aggregationLevel, orderedAggregationLevelKeys } = toRefs(
+      props
+    );
     const statefulData = ref<StatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
@@ -202,32 +204,64 @@ export default defineComponent({
       //  track of the state of the component.
       const newStatefulData = { children: [] as StatefulDataNode[] };
 
-      orderedAggregationLevelKeys.value.forEach(adminLevelKey => {
-        const regions = rawData.value[adminLevelKey];
-        if (regions === undefined) return;
-        regions.forEach(({ id, value }) => {
-          // Create stateful node
+      orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
+        // Get the list of values at this aggregation level for each selected
+        //  model run
+        const modelRunsAtThisLevel = rawData.value.map(
+          modelRun => modelRun[aggregationLevelKey] ?? []
+        );
+        // Flatten values into one array and inject the index of the model run
+        //  that each value belongs to
+        const valuesAtThisLevel = _.flatten(
+          modelRunsAtThisLevel.map((modelRun, modelRunIndex) => {
+            return modelRun.map(({ id, value }) => ({
+              id,
+              value,
+              modelRunIndex
+            }));
+          })
+        );
+        if (valuesAtThisLevel.length === 0) return;
+        const modelRunCount = modelRunsAtThisLevel.length;
+        valuesAtThisLevel.forEach(({ id, value, modelRunIndex }) => {
           const path = id.split('__');
-          const node: StatefulDataNode = {
-            name: path[path.length - 1],
-            value: value,
-            path,
-            isExpanded: false,
-            // TODO: isChecked functionality still needs to be implemented
-            isChecked: true,
-            children: []
-          };
+          const name = path[path.length - 1];
           // Find where in the tree this region should be inserted
           let _path = id.split('__');
           let pointer = newStatefulData.children;
           while (_path.length > 1) {
             const nextNode = pointer.find(node => node.name === _path[0]);
-            if (nextNode === undefined) return;
-            pointer = nextNode?.children;
+            if (nextNode === undefined) {
+              throw new Error(
+                `Invalid path: ${path.toString()}. Node with name "${
+                  _path[0]
+                }" not found.`
+              );
+            }
+            pointer = nextNode.children;
             _path = _path.splice(1);
           }
-          // Insert node into its place in the tree
-          pointer.push(node);
+          // Check if a previous model run already added this node
+          const existingNode = pointer.find(node => node.name === name);
+          if (existingNode !== undefined) {
+            // Node exists, so add this model run's value to the node's list
+            existingNode.values[modelRunIndex] = value;
+          } else {
+            // Initialize values for every model run to null
+            const values = new Array(modelRunCount).fill(null);
+            // Set this model run's value
+            values[modelRunIndex] = value;
+            // Create stateful node and insert it into its place in the tree
+            pointer.push({
+              name,
+              values,
+              path,
+              isExpanded: false,
+              // TODO: isChecked functionality still needs to be implemented
+              isChecked: true,
+              children: []
+            });
+          }
         });
       });
       statefulData.value = newStatefulData.children[0];
@@ -254,7 +288,9 @@ export default defineComponent({
       node: StatefulDataNode,
       levelsUntilSelectedDepth: number
     ) => {
-      if (levelsUntilSelectedDepth === 0) return node.value;
+      if (levelsUntilSelectedDepth === 0) {
+        return _.max(node.values) ?? Number.MIN_VALUE;
+      }
       let maxValue = Number.MIN_VALUE;
       node.children.forEach(child => {
         maxValue = Math.max(
@@ -308,7 +344,7 @@ export default defineComponent({
       const temp = {
         name: '',
         path: [],
-        value: 0,
+        values: [0],
         isExpanded: false,
         isChecked: false,
         children: [this.statefulData]
