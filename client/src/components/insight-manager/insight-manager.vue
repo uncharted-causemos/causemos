@@ -3,22 +3,22 @@
     class="insight-container"
     :class="{'panel-hidden': !isOpen}"
   >
-    <new-insight-pane v-if="currentPane === 'new-insight'" />
-    <list-insights-pane v-if="currentPane === 'list-insights'" />
+    <new-insight-modal v-if="currentPane === 'new-insight'" />
+    <list-insights-modal v-if="currentPane === 'list-insights'" />
   </div>
 </template>
 
 <script>
 import { mapGetters } from 'vuex';
-import NewInsightPane from '@/components/insight-manager/new-insight-pane';
-import ListInsightsPane from '@/components/insight-manager/list-insights-pane';
+import NewInsightModal from '@/components/insight-manager/new-insight-modal';
+import ListInsightsModal from '@/components/insight-manager/list-insights-modal';
 
 
 export default {
   name: 'InsightManager',
   components: {
-    NewInsightPane,
-    ListInsightsPane
+    NewInsightModal,
+    ListInsightsModal
   },
   computed: {
     ...mapGetters({

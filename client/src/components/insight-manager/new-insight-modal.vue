@@ -1,5 +1,5 @@
 <template>
-  <div class="new-insight-pane-container">
+  <div class="new-insight-modal-container">
     <full-screen-modal-header>
       <h5>New Insight</h5>
     </full-screen-modal-header>
@@ -56,16 +56,43 @@
             </button>
           </div>
         </div>
-        <div class="metadata">
-          <h5>Metadata</h5>
-          <div class="title">
-            <i
-              :class="iconToDisplay"
-            />
-            {{ viewName }}
-          </div>
-          <div>{{ formattedFilterString() }}</div>
-        </div>
+
+        <drilldown-panel
+          class="metadata-drilldown-panel"
+          is-open
+          :tabs="drilldownTabs"
+          :activeTabId="drilldownTabs[0].id"
+          only-display-icons
+        >
+          <template #content>
+            <div>
+              <ul>
+                <li>
+                  <i :class="iconToDisplay" /> {{ viewName }}
+                </li>
+                <li>
+                  <b>Project Name:</b> {{ projectMetadata.name }}
+                </li>
+                <li>
+                  <b>Ontology:</b> {{ projectMetadata.ontology }}
+                </li>
+                <li>
+                  <b>Created:</b> {{ projectMetadata.created_at }}
+                </li>
+                <li>
+                  <b>Modifed:</b> {{ projectMetadata.modified_at }}
+                </li>
+                <li>
+                  <b>Corpus:</b> {{ projectMetadata.corpus_id }}
+                </li>
+                <li v-if="formattedFilterString.length > 0">
+                  <b>Filters:</b> {{ formattedFilterString }}
+                </li>
+              </ul>
+            </div>
+          </template>
+        </drilldown-panel>
+
       </div>
     </div>
   </div>
@@ -77,28 +104,39 @@ import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
 import API from '@/api/api';
+import DrilldownPanel from '@/components/drilldown-panel';
+import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import modelService from '@/services/model-service';
-import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { BOOKMARKS } from '@/utils/messages-util';
 
 
 const MSG_EMPTY_BOOKMARK_TITLE = 'Insight title cannot be blank';
 
+const METDATA_DRILLDOWN_TABS = [
+  {
+    name: 'Metadata',
+    id: 'metadata',
+    icon: 'fa-info-circle'
+  }
+];
 
 export default {
-  name: 'NewInsightPane',
+  name: 'NewInsightModal',
   components: {
+    DrilldownPanel,
     FullScreenModalHeader
   },
   data: () => ({
-    title: '',
     description: '',
-    hasError: false,
+    drilldownTabs: METDATA_DRILLDOWN_TABS,
     errorMsg: MSG_EMPTY_BOOKMARK_TITLE,
-    imagePreview: null
+    hasError: false,
+    imagePreview: null,
+    metadata: '',
+    title: ''
   }),
   computed: {
     ...mapGetters({
@@ -127,6 +165,14 @@ export default {
       return _.isNil(view)
         ? ''
         : view.name;
+    },
+    formattedFilterString() {
+      const filterString = this.filters?.clauses?.reduce((a, c) => {
+        return a + `${a.length > 0 ? ' AND ' : ''} ` +
+          `${FilterKeyFormatter(c.field)} ${c.isNot ? 'is not' : 'is'} ` +
+          `${c.values.map(v => FilterValueFormatter(v)).join(', ')}`;
+      }, '');
+      return `${filterString.length > 0 ? filterString : ''}`;
     }
   },
   watch: {
@@ -155,14 +201,6 @@ export default {
       this.hideInsightPanel();
       this.setCurrentPane('');
     },
-    formattedFilterString() {
-      const filterString = this.filters?.clauses?.reduce((a, c) => {
-        return a + `${a.length > 0 ? ' AND ' : ''} ` +
-          `${FilterKeyFormatter(c.field)} ${c.isNot ? 'is not' : 'is'} ` +
-          `${c.values.map(v => FilterValueFormatter(v)).join(', ')}`;
-      }, '');
-      return `${filterString.length > 0 ? 'Filters: ' + filterString : ''} `;
-    },
     initInsight() {
       this.title = '';
       this.description = '';
@@ -175,7 +213,7 @@ export default {
         (this.modelSummary ? (' - ' + this.modelSummary.name) : '') +
         (this.currentView ? (' - ' + this.currentView) : '');
 
-      this.description = this.formattedFilterString();
+      this.description = this.formattedFilterString.length > 0 && `Filters: ${this.formattedFilterString} `;
     },
     async saveInsight() {
       if (this.hasError || _.isEmpty(this.title)) return;
@@ -215,7 +253,7 @@ export default {
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.new-insight-pane-container {
+.new-insight-modal-container {
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
@@ -223,15 +261,16 @@ export default {
   align-content: stretch;
   align-items: stretch;
   height: 100vh;
+  overflow: hidden;
 
   .pane-wrapper {
     flex: 1 1 auto;
     display: flex;
     flex-direction: column;
-    padding: 1rem;
-    overflow: auto;
+    overflow-x: hidden;
+    overflow-y: auto;
+    padding: 1em 0 0;
     .pane-row {
-      padding: 1rem;
       flex: 1 1 auto;
       display: flex;
       flex-direction: row;
@@ -240,6 +279,7 @@ export default {
         display: flex;
         flex-direction: column;
         overflow: hidden;
+        padding: 1rem;
         .preview {
           flex: 0 0 auto;
           margin: 0 0 1rem;
@@ -271,15 +311,6 @@ export default {
           button {
             margin-left: 1rem;
           }
-        }
-      }
-      .metadata {
-        margin: 0 0 0 1rem;
-        flex: 1 1 400px;
-        border: 1px solid black;
-        background-color: $background-light-1;
-        .title {
-          font-size: $font-size-large;
         }
       }
     }

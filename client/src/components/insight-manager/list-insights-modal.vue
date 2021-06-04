@@ -1,5 +1,5 @@
 <template>
-  <div class="list-insights-pane-container">
+  <div class="list-insights-modal-container">
     <full-screen-modal-header
       icon="angle-left"
       nav-back-label="Exit Saved Insights"
@@ -90,7 +90,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 export default {
-  name: 'ListInsightsPane',
+  name: 'ListInsightsModal',
   components: {
     DropdownControl,
     FullScreenModalHeader,
@@ -124,7 +124,6 @@ export default {
         const result = this.listInsights.filter((insight) => {
           return insight.title.toLowerCase().includes(this.search.toLowerCase());
         });
-        console.log(result);
         return result;
       } else {
         return this.listInsights;
@@ -404,7 +403,7 @@ export default {
 
 <style lang="scss">
 @import "~styles/variables";
-.list-insights-pane-container {
+.list-insights-modal-container {
   display: flex;
   flex-direction: column;
   flex-wrap: nowrap;
