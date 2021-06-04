@@ -54,6 +54,7 @@
       <template #temporal-aggregation-config>
         <dropdown-button
           class="dropdown-config"
+          :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
           :inner-button-label="'Temporal Aggregation'"
           :items="temporalAggregations"
           :selected-item="selectedTemporalAggregation"
@@ -63,6 +64,7 @@
       <template #temporal-resolution-config>
         <dropdown-button
           class="dropdown-config"
+          :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
           :inner-button-label="'Temporal Resolution'"
           :items="temporalResolutions"
           :selected-item="selectedTemporalResolution"
@@ -72,6 +74,7 @@
       <template #spatial-aggregation-config>
         <dropdown-button
           class="dropdown-config"
+          :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
           :inner-button-label="'Spatial Aggregation'"
           :items="spatialAggregations"
           :selected-item="selectedSpatialAggregation"
@@ -433,6 +436,10 @@ export default defineComponent({
   margin-bottom: 5px;
   margin-top: 5px;
   margin-right: 5px;
+}
+
+::v-deep(.attribute-invalid button) {
+  border:1px solid red !important;
 }
 
 .new-insight-popup {
