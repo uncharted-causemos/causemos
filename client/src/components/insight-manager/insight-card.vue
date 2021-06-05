@@ -1,10 +1,10 @@
 <template>
-  <card
-    class="insight"
-    @click="selectInsight()"
-  >
+  <card class="insight">
     <div class="insight-content">
-      <div class="insight-thumbnail">
+      <div
+        class="insight-thumbnail"
+        @click="selectInsight()"
+      >
         <img
           :src="insight.thumbnail_source"
           class="thumbnail">
@@ -13,6 +13,14 @@
         <h5>{{ insight.title }}</h5>
       </div>
       <div class="insight-footer">
+        <div class="insight-checkbox" @click="updateCuration()">
+          <label>
+            <i
+              class="fa fa-lg fa-fw"
+              :class="{ 'fa-check-square-o': curated, 'fa-square-o': !curated }"
+            />
+          </label>
+        </div>
         <div class="insight-date">
           {{ dateFormatter(insight.modified_at, 'MMM DD, YYYY') }}
         </div>
@@ -22,8 +30,8 @@
             v-if="activeInsight === insight.id"
             @delete="deleteInsight()"
           />
+        </div>
       </div>
-    </div>
     </div>
   </card>
 </template>
@@ -50,9 +58,13 @@ export default defineComponent({
     insight: {
       type: Object,
       default: null
+    },
+    curated: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['delete-insight', 'open-editor', 'select-insight'],
+  emits: ['delete-insight', 'open-editor', 'select-insight', 'update-curation'],
   methods: {
     dateFormatter,
     stringFormatter,
@@ -64,6 +76,9 @@ export default defineComponent({
     },
     selectInsight() {
       this.$emit('select-insight');
+    },
+    updateCuration() {
+      this.$emit('update-curation');
     }
   }
 });
@@ -90,25 +105,20 @@ export default defineComponent({
     }
     .insight-footer {
       display: flex;
-      justify-content: space-between;
+      justify-content: flex-start;
       align-items: center;
-      .insight-header-btn {
-        cursor: pointer;
-        padding: 5px;
-        color: gray;
-      }
-      .insight-action {
+      .insight-checkbox {
         flex: 0 1 auto;
       }
-    }
-    .insight-description {
-      flex: 1 1 auto;
-      align-self: stretch;
-    }
-    .insight-empty-description {
-      flex: 1 1 auto;
-      align-self: stretch;
-      color: #D6DBDF;
+      .insight-action {
+        flex: 1 1 auto;
+        text-align: right;
+        .insight-header-btn {
+          cursor: pointer;
+          padding: 5px;
+          color: gray;
+        }
+      }
     }
     .insight-thumbnail {
       .thumbnail {
