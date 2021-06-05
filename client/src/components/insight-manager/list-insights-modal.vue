@@ -423,7 +423,6 @@ export default {
       } else {
         this.curatedInsights.push(id);
       }
-      console.log(id, this.curatedInsights);
     }
   }
 };

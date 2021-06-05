@@ -90,7 +90,6 @@ export default {
       this.hasError = false;
     },
     saveInsight() {
-      console.log('insight saved!');
       this.$emit('close-insight-popup', { saved: true });
     },
     closeInsightPopup() {
