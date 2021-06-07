@@ -27,7 +27,7 @@
               <div class="form-group">
                 <label>Description</label>
                 <textarea
-                  v-model="projectDescrption"
+                  v-model="projectDescription"
                   rows="5"
                   class="form-control" />
               </div>
@@ -91,7 +91,7 @@ export default defineComponent({
   data: () => ({
     kbList: [] as KnowledgeBase[],
     projectName: '',
-    projectDescrption: '',
+    projectDescription: '',
     hasError: false,
     baseKB: '',
     isProcessing: false,
@@ -126,7 +126,7 @@ export default defineComponent({
       this.isProcessing = true;
       this.enableOverlay('Preparing project ' + this.projectName);
 
-      const id = await projectService.createProject(this.baseKB, this.projectName, this.projectDescrption);
+      const id = await projectService.createProject(this.baseKB, this.projectName, this.projectDescription);
 
       this.isProcessing = false;
       this.disableOverlay();
