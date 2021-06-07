@@ -306,7 +306,7 @@ export default defineComponent({
           computeExpanded(child, depthLevel + 1);
         });
       };
-      // Start with -1 because the an aggregationLevel of 0 corresponds
+      // Start with -1 because an aggregationLevel of 0 corresponds
       //  to a depthLevel of 1
       computeExpanded(statefulData.value, -1);
     });
