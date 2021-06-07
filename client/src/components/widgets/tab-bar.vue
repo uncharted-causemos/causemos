@@ -1,7 +1,5 @@
 <template>
-  <ul
-    class="unstyled-list"
-  >
+  <ul>
     <li
       v-for="tab in tabs"
       :key="tab.id"
@@ -52,10 +50,14 @@ export default defineComponent({
 
 $spaceBetweenTabs: 5px;
 
+
+
 ul {
   height: $navbar-outer-height;
   display: flex;
-  padding-top: 3px;
+  list-style: none;
+  margin: 0;
+  padding: 3px 0 0;
 }
 
 li {
