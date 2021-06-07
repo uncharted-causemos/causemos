@@ -72,14 +72,10 @@
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
-            :metadata="metadata"
-            :selected-model-id="selectedModelId"
-            :selected-scenario-ids="selectedScenarioIds"
-            :selected-timestamp="selectedTimestamp"
-            :selected-temporal-resolution="selectedTemporalResolution"
-            :selected-temporal-aggregation="selectedTemporalAggregation"
-            :selected-spatial-aggregation="selectedSpatialAggregation"
+            :regional-data="regionalData"
             :unit="unit"
+            :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-timestamp="selectedTimestamp"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -101,6 +97,7 @@ import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
@@ -190,12 +187,26 @@ export default defineComponent({
       immediate: true
     });
 
+    const selectedSpatialAggregation = ref('mean');
+    const selectedTemporalAggregation = ref('mean');
+    const selectedTemporalResolution = ref('month');
+
+    const regionalData = useRegionalData(
+      selectedModelId,
+      selectedScenarioIds,
+      selectedTimestamp,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      metadata
+    );
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
-      selectedTemporalResolution: 'month',
-      selectedTemporalAggregation: 'mean',
-      selectedSpatialAggregation: ref('mean'),
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId,
@@ -212,7 +223,8 @@ export default defineComponent({
       fetchData,
       newRunsMode,
       timerHandler,
-      unit
+      unit,
+      regionalData
     };
   },
   watch: {
