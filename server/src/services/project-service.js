@@ -48,10 +48,11 @@ const findProject = async (projectId) => {
  *
  * @param {string} kbId - the index to clone from
  * @param {string} name - the human-friendly new index name
+ * @param {string} description - description of the project
  */
-const createProject = async (kbId, name) => {
+const createProject = async (kbId, name, description) => {
   const projectAdapter = Adapter.get(RESOURCE.PROJECT);
-  const result = await projectAdapter.clone(kbId, name);
+  const result = await projectAdapter.clone(kbId, name, description);
   const projectId = result.index;
 
   // Ontology
