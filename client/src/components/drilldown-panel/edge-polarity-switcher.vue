@@ -42,6 +42,7 @@ export default defineComponent({
   components: {
     DropdownControl
   },
+  emits: ['edge-set-user-polarity'],
   props: {
     selectedRelationship: {
       type: Object,
