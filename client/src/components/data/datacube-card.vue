@@ -141,7 +141,7 @@
             :color-from-index="colorFromIndex"
           />
         </header>
-        <div class="bookmark-capture" style="display: flex; flex-direction: column; flex: 1;">
+        <div class="insight-capture" style="display: flex; flex-direction: column; flex: 1;">
           <div style="display: flex; flex-direction: row;">
             <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
