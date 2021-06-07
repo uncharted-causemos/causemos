@@ -5,11 +5,6 @@
     </full-screen-modal-header>
     <div class="pane-wrapper">
       <div class="pane-row" v-if="imagePreview !== null">
-        <div
-          v-if="hasError === true"
-          class="error-msg">
-          {{ errorMsg }}
-        </div>
         <div class="fields">
           <div class="preview">
             <img :src="imagePreview">
@@ -25,6 +20,11 @@
                 placeholder="Untitled insight"
                 @keyup.enter.stop="saveInsight"
               >
+              <div
+                v-if="hasError === true"
+                class="error-msg">
+                {{ errorMsg }}
+              </div>
               <label>Description</label>
               <textarea
                 rows="5"

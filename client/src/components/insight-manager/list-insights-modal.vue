@@ -433,9 +433,7 @@ export default {
 .list-insights-modal-container {
   display: flex;
   flex-direction: column;
-  flex-wrap: nowrap;
   justify-content: center;
-  align-content: stretch;
   align-items: stretch;
   height: 100vh;
   .search {
