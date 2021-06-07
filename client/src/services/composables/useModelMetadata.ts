@@ -1,6 +1,6 @@
-import API from '@/api/api';
 import { Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
+import { getDatacubeById } from '@/services/new-datacube-service';
 
 /**
  * Takes a modelId then fetches and returns the metadata associated
@@ -15,10 +15,7 @@ export default function useModelMetadata(
     metadata.value = null;
     let isCancelled = false;
     async function fetchMetadata() {
-      const response = await API.get(`maas/new-datacubes/${modelId.value}`, {
-        params: {
-        }
-      });
+      const response = await getDatacubeById(modelId.value);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.

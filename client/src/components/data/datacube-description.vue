@@ -59,9 +59,9 @@
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
 import { defineComponent, ref } from 'vue';
 import stringUtil from '@/utils/string-util';
+import { getDatacubeById } from '@/services/new-datacube-service';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -76,10 +76,7 @@ export default defineComponent({
   setup(props) {
     const metadata = ref<any>({});
     async function fetchMetadata() {
-      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
+      const response = await getDatacubeById(props.selectedModelId);
       metadata.value = response.data;
     }
     fetchMetadata();

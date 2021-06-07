@@ -34,9 +34,9 @@
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
 import { Model } from '@/types/Datacube';
 import { defineComponent, ref, watch } from 'vue';
+import { getDatacubeById } from '@/services/new-datacube-service';
 
 interface ModelAttribute {
   name: string;
@@ -61,10 +61,7 @@ export default defineComponent({
     async function fetchModelInfo() {
       if (props.selectedModelId === null) return;
 
-      const result = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
+      const result = await getDatacubeById(props.selectedModelId);
       const modelMetadata: Model = result.data;
 
       // fill in the model attribute

@@ -23,6 +23,7 @@
 import API from '@/api/api';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
 import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
+import { getDatacubeById } from '@/services/new-datacube-service';
 
 type ScenarioDescription = ModelRunParameter[];
 
@@ -57,10 +58,7 @@ export default defineComponent({
       inputNames.value = {};
       if (props.selectedModelId === null) return;
 
-      const result = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
+      const result = await getDatacubeById(props.selectedModelId);
       const modelMetadata = result.data;
       const inputNamesMap: { [key: string]: string } = {};
       if (modelMetadata.parameters) {
