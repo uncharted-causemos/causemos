@@ -1,7 +1,5 @@
 <template>
   <div class="breakdown-pane-container">
-    <!-- TODO: eventually we'll add support for multiple
-      selected scenario IDs -->
     <aggregation-checklist-pane
       v-if="regionalData.length !== 0"
       class="checklist-section"
@@ -9,7 +7,7 @@
       :aggregation-level="selectedAdminLevel"
       :aggregation-level-title="availableAdminLevelTitles[selectedAdminLevel]"
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
-      :raw-data="regionalData[0]"
+      :raw-data="regionalData"
       :units="unit"
       @aggregation-level-change="setSelectedAdminLevel"
     >

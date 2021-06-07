@@ -40,7 +40,7 @@ yarn install
 ### Environment
 You need an  environment configuration file to run the application. Copy `server/template.env` to `server/.env` and fill in the variables.
 
-If running against Uncharted internal openstack, you can find a working environment file here: https://gitlab.uncharted.software/WM/wm-env/-/tree/master/dev
+If running against Uncharted internal openstack, you can find a working environment file here: https://gitlab.uncharted.software/WM/wm-env/-/tree/main/dev
 
 ### Debugging
 The default development config includes some flags to facilitate debugging. Interested users would need to install the Chrome Debugger Extension (https://marketplace.visualstudio.com/items?itemName=msjsdiag.debugger-for-chrome) if it is not already installed!
@@ -109,7 +109,7 @@ docker login -u <confluence-username> --password <confluence-password> https://d
 #### Release new configuration
 For configuration and stack changes, for example adding new variables to the envfile or adding a new sevice, the following procedures apply.
 
-We keep the "prod" docker-compose file in a separate repo: https://gitlab.uncharted.software/WM/wm-playbooks/-/tree/master/causemos
+We keep the "prod" docker-compose file in a separate repo: https://gitlab.uncharted.software/WM/wm-playbooks/-/tree/main/causemos
 
 We keep the "prod" environment files in a separate repo: https://gitlab.uncharted.software/WM/wm-env
 

@@ -12,6 +12,8 @@ import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
 
+import { colorFromIndex } from '@/utils/colors-util';
+
 //
 // custom data types
 //
@@ -49,11 +51,11 @@ const lineOpacityNewRunsModeContext = 0.1;
 // hover styling
 const highlightDuration = 50; // in milliseconds
 
+const lineColorsDraft = '#296AE9ff';
 const lineColorsReady = '#296AE9ff';
 const lineColorsSubmitted = '#296AE9ff';
 const lineColorsFailed = '#ff2962ff';
 const lineColorsUnknown = '#000000ff';
-let colorFunc: (status?: string) => string = () => lineColorsUnknown;
 
 // this is a hack to make the axis data look larger than it actually is
 const enlargeAxesScaleToFitData = false;
@@ -160,28 +162,6 @@ function renderParallelCoordinates(
   yScale = y;
 
   //
-  // Color scale
-  //
-  colorFunc = (status = ModelRunStatus.Ready) => {
-    switch (status) {
-      case ModelRunStatus.Ready:
-        return lineColorsReady;
-      case ModelRunStatus.Submitted:
-        return lineColorsSubmitted;
-      case ModelRunStatus.ExecutionFailed:
-        return lineColorsFailed;
-      default:
-        return lineColorsUnknown;
-    }
-  };
-  /// later: support a color scale
-  // const color = d3.scaleOrdinal() // scaleLinear
-  // .domain(axisDomain)
-  // .range([lineColor])
-  // .interpolate(d3.interpolateLab)
-  // ;
-
-  //
   // create the initial graphics element under the root svg selection
   //
   const gElement = svgElement
@@ -234,20 +214,23 @@ function renderParallelCoordinates(
   renderSelectionTooltips();
 
   //
-  // select default run, if requested
+  // apply initial data selection, if requested
   //
   if (options.initialDataSelection && options.initialDataSelection.length > 0) {
+    // cancel any previous selection; turn every line into grey
+    cancelPrevLineSelection(svgElement);
+    let selectionIndex = 0;
+
     svgElement.selectAll('.line')
       .data(data)
       .filter(function(d) {
-        if (d.run_id) {
-          return options.initialDataSelection?.includes(d.run_id as string) as boolean;
-        }
-        return options.initialDataSelection?.includes(d.id as string) as boolean;
+        return options.initialDataSelection?.includes(d.run_id as string) as boolean;
       })
       .each(function(d) {
-        const lineElement = this as SVGPathElement;
-        handleLineSelection.bind(lineElement)(undefined /* event */, d, false /* do not notify external listeners */);
+        const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+        selectedLine.attr('selection-index', selectionIndex++);
+
+        selectLine(selectedLine, undefined /* event */, d, lineStrokeWidthSelected);
       });
   }
 
@@ -315,7 +298,7 @@ function renderParallelCoordinates(
       .attr('d', pathDefinitionFunc)
       .style('fill', 'none')
       .attr('stroke-width', lineStrokeWidthNormal)
-      .style('stroke', function(d) { return colorFunc(d.status as string); })
+      .style('stroke', colorFunc)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
       .style('stroke-dasharray', function(d) { return d.status === ModelRunStatus.Ready ? 0 : ('3, 3'); })
     ;
@@ -411,8 +394,15 @@ function renderParallelCoordinates(
       return;
     }
 
+    // add initial status for all potential model runs as 'draft or not-submitted'
+    newScenarioData.forEach(ns => {
+      ns.status = ModelRunStatus.Draft;
+    });
+
+
     // some markers were added, so notify external listeners and draw potential lines
     onNewRuns(newScenarioData);
+
 
     // render all potential scenario-run lines
     gElement
@@ -424,7 +414,7 @@ function renderParallelCoordinates(
       .attr('d', pathDefinitionFunc)
       .style('fill', 'none')
       .attr('stroke-width', lineStrokeWidthHover)
-      .style('stroke', function() { return (colorFunc()); })
+      .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible)
       .style('stroke-dasharray', ('3, 3'))
       .on('mouseover', highlight)
@@ -505,6 +495,8 @@ function renderParallelCoordinates(
       return;
     }
 
+    let selectionIndex = 0;
+
     // check lines against brushes
     svgElement.selectAll('.line')
       .data(data)
@@ -532,6 +524,9 @@ function renderParallelCoordinates(
           const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
 
           if (lineData.status === ModelRunStatus.Ready) {
+            // set an incremental index for this line as part of the selected line collection
+            selectedLine.attr('selection-index', selectionIndex++);
+
             selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthNormal);
             // save selected line
             selectedLines.push(lineData);
@@ -590,6 +585,7 @@ function renderParallelCoordinates(
       cancelPrevLineSelection(svgElement);
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+
       selectLine(selectedLine, event, d, lineStrokeWidthSelected);
 
       const selectedLineData = selectedLine.datum() as ScenarioData;
@@ -621,7 +617,7 @@ function renderParallelCoordinates(
     selectedLine
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
-      .style('stroke', colorFunc(selectedLineData.status as string))
+      .style('stroke', colorFunc)
       .attr('stroke-width', lineStrokeWidthHover)
       .style('opacity', lineOpacityVisible);
 
@@ -673,9 +669,7 @@ function renderParallelCoordinates(
     svgElement.selectAll<SVGPathElement, ScenarioData>('.line')
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
-      .style('stroke', function (d: ScenarioData) {
-        return (colorFunc(d.status as string));
-      })
+      .style('stroke', colorFunc)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
 
     // hide tooltips
@@ -1047,6 +1041,31 @@ function renderParallelCoordinates(
   }
 } // end of renderParallelCoordinates()
 
+//
+// Color scale
+//
+function colorFunc(this: SVGPathElement) {
+  const svgElementSelection = d3.select<SVGPathElement, ScenarioData>(this);
+  const status = svgElementSelection ? svgElementSelection.datum().status as string : ModelRunStatus.Ready;
+  switch (status) {
+    case ModelRunStatus.Ready:
+      if (svgElementSelection.classed('selected')) {
+        const selectionIndexStr: string | null = svgElementSelection.attr('selection-index');
+        const selectionIndex = selectionIndexStr ? parseInt(selectionIndexStr) : 0;
+        return colorFromIndex(selectionIndex);
+      }
+      return lineColorsReady; // ready but not selected
+    case ModelRunStatus.Submitted:
+      return lineColorsSubmitted;
+    case ModelRunStatus.ExecutionFailed:
+      return lineColorsFailed;
+    case ModelRunStatus.Draft:
+      return lineColorsDraft;
+    default:
+      return lineColorsUnknown;
+  }
+}
+
 function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
   // FIXME: only the last dimension is the output dimension
   return dimensions[dimensions.length - 1].name === dimName;
@@ -1394,7 +1413,7 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
     selectedLine
       .classed('selected', true)
       .transition().duration(highlightDuration)
-      .style('stroke', colorFunc(/* selectedLineData.dimName */))
+      .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible)
       .attr('stroke-width', lineWidth);
 
@@ -1445,7 +1464,8 @@ const cancelPrevLineSelection = (svgElement: D3Selection) => {
     .classed('selected', false)
     .transition().duration(highlightDuration)
     .style('opacity', lineOpacityHidden)
-    .attr('stroke-width', lineStrokeWidthNormal);
+    .attr('stroke-width', lineStrokeWidthNormal)
+    .attr('selection-index', 0);
 
   // hide tooltips
   svgElement.selectAll('.pc-selection-tooltip-text')
