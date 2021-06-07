@@ -179,8 +179,6 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
         0.6 // default opacity
       ] : [
         'case',
-        ['==', ['number', ['get', property], -10000], -10000],
-        0.0,
         ['boolean', ['feature-state', 'hover'], false],
         0.8, // opacity to 1 on hover
         0.6 // default opacity

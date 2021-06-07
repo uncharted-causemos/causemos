@@ -174,6 +174,7 @@
               :filters="mapFilters"
               :map-bounds="mapBounds"
               :is-grid-map="isGridMap"
+              :region-data="lookupData"
               @sync-bounds="onSyncMapBounds"
               @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
@@ -197,6 +198,7 @@ import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import outputService from '@/services/output-service';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -345,11 +347,11 @@ export default defineComponent({
           id: selectedScenarioId,
           modelId: selectedModelId.value,
           runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
-          outputVariable: metadata.value?.outputs[0].name,
+          outputVariable: metadata.value?.outputs[0].name || '',
           timestamp: selectedTimestamp.value,
-          temporalResolution: selectedTemporalResolution.value,
-          temporalAggregation: selectedTemporalAggregation.value,
-          spatialAggregation: selectedSpatialAggregation.value
+          temporalResolution: selectedTemporalResolution.value || 'month',
+          temporalAggregation: selectedTemporalAggregation.value || 'mean',
+          spatialAggregation: selectedSpatialAggregation.value || 'mean'
         };
       });
     });
@@ -357,11 +359,15 @@ export default defineComponent({
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
     };
+    const lookupData = ref<any>(null);
     watch(
       () => outputSourceSpecs.value,
       () => {
         mapFilters.value = mapFilters.value.filter(filter => {
           return outputSourceSpecs.value.find(spec => filter.id === spec.id);
+        });
+        outputService.getRegionAggregations(outputSourceSpecs.value).then(result => {
+          lookupData.value = result;
         });
       }
     );
@@ -381,7 +387,8 @@ export default defineComponent({
       isDescriptionView,
       mainModelOutput,
       metadata,
-      isModel
+      isModel,
+      lookupData
     };
   },
   data: () => ({
