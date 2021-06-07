@@ -51,101 +51,35 @@
           :selected-model-id="selectedModelId"
         />
       </template>
-      <template v-slot:temporal-aggregation-config>
-        <div class="aggregation">
-          <button
-            type="button"
-            class="btn dropdown-btn"
-            :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
-            @click="isTemporalAggregationDropdownOpen = !isTemporalAggregationDropdownOpen"
-          >
-            <div class="button-text">
-              Temporal aggregation: <span style="font-weight: bold">{{ selectedTemporalAggregation }}</span>
-            </div>
-            <i
-              class="fa fa-fw fa-angle-down"
-            />
-          </button>
-          <dropdown-control
-            v-if="isTemporalAggregationDropdownOpen"
-            class="dropdown-control">
-            <template #content>
-              <div
-                v-for="tempAgg in temporalAggregations"
-                :key="tempAgg"
-                class="dropdown-option"
-                :class="{ 'dropdown-option-selected': selectedTemporalAggregation === tempAgg }"
-                @click="handleTemporalAggregationSelection(tempAgg)"
-              >
-                {{ tempAgg }}
-              </div>
-            </template>
-          </dropdown-control>
-        </div>
+      <template #temporal-aggregation-config>
+        <dropdown-button
+          class="dropdown-config"
+          :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
+          :inner-button-label="'Temporal Aggregation'"
+          :items="temporalAggregations"
+          :selected-item="selectedTemporalAggregation"
+          @item-selected="handleTemporalAggregationSelection"
+        />
       </template>
-      <template v-slot:temporal-resolution-config>
-        <div class="aggregation">
-          <button
-            type="button"
-            class="btn dropdown-btn"
-            :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
-            @click="isTemporalResolutionDropdownOpen = !isTemporalResolutionDropdownOpen"
-          >
-            <div class="button-text">
-              Temporal resolution: <span style="font-weight: bold">{{ selectedTemporalResolution }}</span>
-            </div>
-            <i
-              class="fa fa-fw fa-angle-down"
-            />
-          </button>
-          <dropdown-control
-            v-if="isTemporalResolutionDropdownOpen"
-            class="dropdown-control">
-            <template #content>
-              <div
-                v-for="tempRes in temporalResolutions"
-                :key="tempRes"
-                class="dropdown-option"
-                :class="{ 'dropdown-option-selected': selectedTemporalResolution === tempRes }"
-                @click="handleTemporalResolutionSelection(tempRes)"
-              >
-                {{ tempRes }}
-              </div>
-            </template>
-          </dropdown-control>
-        </div>
+      <template #temporal-resolution-config>
+        <dropdown-button
+          class="dropdown-config"
+          :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
+          :inner-button-label="'Temporal Resolution'"
+          :items="temporalResolutions"
+          :selected-item="selectedTemporalResolution"
+          @item-selected="handleTemporalResolutionSelection"
+        />
       </template>
-      <template v-slot:spatial-aggregation-config>
-        <div class="aggregation">
-          <button
-            type="button"
-            class="btn dropdown-btn"
-            :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
-            @click="isSpatialAggregationDropdownOpen = !isSpatialAggregationDropdownOpen"
-          >
-            <div class="button-text">
-              Spatial aggregation: <span style="font-weight: bold">{{ selectedSpatialAggregation }}</span>
-            </div>
-            <i
-              class="fa fa-fw fa-angle-down"
-            />
-          </button>
-          <dropdown-control
-            v-if="isSpatialAggregationDropdownOpen"
-            class="dropdown-control">
-            <template #content>
-              <div
-                v-for="spatialAgg in spatialAggregations"
-                :key="spatialAgg"
-                class="dropdown-option"
-                :class="{ 'dropdown-option-selected': selectedSpatialAggregation === spatialAgg }"
-                @click="handleSpatialAggregationSelection(spatialAgg)"
-              >
-                {{ spatialAgg }}
-              </div>
-            </template>
-          </dropdown-control>
-        </div>
+      <template #spatial-aggregation-config>
+        <dropdown-button
+          class="dropdown-config"
+          :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
+          :inner-button-label="'Spatial Aggregation'"
+          :items="spatialAggregations"
+          :selected-item="selectedSpatialAggregation"
+          @item-selected="handleSpatialAggregationSelection"
+        />
       </template>
     </datacube-card>
     <drilldown-panel
@@ -184,13 +118,13 @@ import ModelDescription from '@/components/data/model-description.vue';
 import { ModelPublishingStep } from '@/types/UseCase';
 import { ModelPublishingStepID } from '@/types/Enums';
 import router from '@/router';
-import DropdownControl from '@/components/dropdown-control.vue';
 import { DimensionInfo, Model } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import { mapGetters } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 const DRILLDOWN_TABS = [
   {
@@ -210,7 +144,7 @@ export default defineComponent({
     DatacubeModelHeader,
     ModelPublishingChecklist,
     ModelDescription,
-    DropdownControl
+    DropdownButton
   },
   computed: {
     ...mapGetters({
@@ -220,11 +154,8 @@ export default defineComponent({
   },
   data: () => ({
     temporalAggregations: [] as string[],
-    isTemporalAggregationDropdownOpen: false,
     temporalResolutions: [] as string[],
-    isTemporalResolutionDropdownOpen: false,
     spatialAggregations: [] as string[],
-    isSpatialAggregationDropdownOpen: false,
     initialBookmarkCount: -1
   }),
   setup() {
@@ -246,6 +177,20 @@ export default defineComponent({
     const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
 
     const modelRunsFetchedAt = ref(0);
+
+    const updateRouteParams = () => {
+      // save the info in the query params so saved insights would pickup the latest value
+      router.push({
+        query: {
+          step: currentPublishingStep.value,
+          temporalAggregation: selectedTemporalAggregation.value,
+          temporalResolution: selectedTemporalResolution.value,
+          spatialAggregation: selectedSpatialAggregation.value,
+          timeStamp: selectedTimestamp.value,
+          selectedScenarioID: selectedScenarioIds.value.length === 1 ? selectedScenarioIds.value[0] : undefined
+        }
+      }).catch(() => {});
+    };
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
     // so no external status need to be tracked
@@ -271,6 +216,7 @@ export default defineComponent({
           currentPublishingStep.value = ModelPublishingStepID.Enrich_Description;
         }
       }
+      updateRouteParams();
     }
 
     const selectedTimestamp = ref<number | null>(null);
@@ -313,7 +259,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedTemporalResolution,
-      metadata
+      metadata,
+      updateRouteParams
     };
   },
   watch: {
@@ -322,27 +269,39 @@ export default defineComponent({
       // NOTE:  this is only valid when the route is focused on the 'modelPublishingExperiment'
       if (this.$route.name === 'modelPublishingExperiment') {
         const publishStepId = this.$route.query.step as any;
-        this.currentPublishingStep = publishStepId as ModelPublishingStepID;
+        if (publishStepId !== undefined) {
+          this.currentPublishingStep = publishStepId as ModelPublishingStepID;
+        }
 
         const timestamp = this.$route.query.timeStamp as any;
-        this.setSelectedTimestamp(timestamp);
+        if (timestamp !== undefined) {
+          this.setSelectedTimestamp(timestamp);
+        }
 
         const publishTemporalAggr = this.$route.query.temporalAggregation as any;
-        this.selectedTemporalAggregation = publishTemporalAggr;
+        if (publishTemporalAggr !== undefined) {
+          this.selectedTemporalAggregation = publishTemporalAggr;
+        }
 
         const publishTemporalRes = this.$route.query.temporalResolution as any;
-        this.selectedTemporalResolution = publishTemporalRes;
+        if (publishTemporalRes !== undefined) {
+          this.selectedTemporalResolution = publishTemporalRes;
+        }
 
         const publishSpatialAggr = this.$route.query.spatialAggregation as any;
-        this.selectedSpatialAggregation = publishSpatialAggr;
+        if (publishSpatialAggr !== undefined) {
+          this.selectedSpatialAggregation = publishSpatialAggr;
+        }
 
         if (this.allScenarioIds.length > 0) {
           let selectedIds = this.selectedScenarioIds;
           if (this.currentPublishingStep === ModelPublishingStepID.Enrich_Description) {
             selectedIds = [];
           } else {
+            // FIXME: only support saving insights with at most a single valid scenario id
+            const selectedScenarioID = this.$route.query.selectedScenarioID as any;
             // we should have at least one valid scenario selected. If not, then select the first one
-            selectedIds = selectedIds.length > 0 ? selectedIds : [this.allScenarioIds[0]];
+            selectedIds = selectedScenarioID !== undefined && selectedScenarioID !== '' ? [selectedScenarioID] : [this.allScenarioIds[0]];
           }
           this.setSelectedScenarioIds(selectedIds);
         }
@@ -371,13 +330,8 @@ export default defineComponent({
     // ensure the URL query params match initial publish step value
     this.updateRouteParams();
 
-    // TODO: fix the issue of not selecting a default PC line when step 2 is active
     // TODO: when new-runs-mode is active, clear the breakdown panel content
-
     // TODO: add other viz options as per WG4 recent slides
-
-    // push to route
-    // const projectId = 'project-20c61e8e-31a9-46b4-aced-e84e2403380d';
   },
   methods: {
     setSelectedTimestamp(value: number) {
@@ -410,17 +364,14 @@ export default defineComponent({
     },
     handleTemporalAggregationSelection(tempAgg: string) {
       this.selectedTemporalAggregation = tempAgg;
-      this.isTemporalAggregationDropdownOpen = !this.isTemporalAggregationDropdownOpen;
       this.checkStepForCompletenessAndUpdateRouteParams();
     },
     handleTemporalResolutionSelection(tempRes: string) {
       this.selectedTemporalResolution = tempRes;
-      this.isTemporalResolutionDropdownOpen = !this.isTemporalResolutionDropdownOpen;
       this.checkStepForCompletenessAndUpdateRouteParams();
     },
     handleSpatialAggregationSelection(spatialAgg: string) {
       this.selectedSpatialAggregation = spatialAgg;
-      this.isSpatialAggregationDropdownOpen = !this.isSpatialAggregationDropdownOpen;
       this.checkStepForCompletenessAndUpdateRouteParams();
     },
     checkStepForCompletenessAndUpdateRouteParams() {
@@ -432,35 +383,27 @@ export default defineComponent({
       }
       this.updateRouteParams();
     },
-    updateRouteParams() {
-      // save the info in the query params so saved insights would pickup the latest value
-      router.push({
-        query: {
-          step: this.currentPublishingStep,
-          temporalAggregation: this.selectedTemporalAggregation,
-          temporalResolution: this.selectedTemporalResolution,
-          spatialAggregation: this.selectedSpatialAggregation,
-          timeStamp: this.selectedTimestamp
-        }
-      }).catch(() => {});
-    },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
-        const choices = dimension.choices as Array<string>;
-        const drilldownChildren = choices.map(choice => ({
-          // Breakdown data IDs are written as the hierarchical path delimited by '__'
-          id: 'All__' + choice,
-          // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
-          //  from (selected scenarios) data
-          value: getRandomNumber(0, 5000)
-        }));
-        const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
-        return {
-          name: dimension.name,
-          data: {
+        const choices = dimension.choices ?? [];
+        const dataForEachRun = this.selectedScenarioIds.map(() => {
+          // Generate random breakdown data for each run
+          const drilldownChildren = choices.map(choice => ({
+            // Breakdown data IDs are written as the hierarchical path delimited by '__'
+            id: 'All__' + choice,
+            // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
+            //  from (selected scenarios) data
+            value: getRandomNumber(0, 5000)
+          }));
+          const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
+          return {
             Total: [{ id: 'All', value: sumTotal }],
             [dimension.name]: drilldownChildren
-          }
+          };
+        });
+        return {
+          name: dimension.name,
+          data: dataForEachRun
         };
       });
     },
@@ -493,34 +436,14 @@ export default defineComponent({
   overflow: hidden;
 }
 
-.aggregation {
-  min-width: 0;
-  padding-top: 5px;
-  margin-left: 10px;
-  align-self: center;
+.dropdown-config {
+  margin-bottom: 5px;
+  margin-top: 5px;
+  margin-right: 5px;
+}
 
-  .dropdown-control {
-    position: absolute;
-    max-height: 400px;
-    overflow-y: auto;
-  }
-  .dropdown-option-selected {
-    color: $selected-dark;
-  }
-  .dropdown-btn {
-    max-width: 100%;
-    display: flex;
-    align-items: center;
-    font-weight: normal;
-    padding: 4px 4px;
-    border:1px solid gray;
-
-    .button-text {
-      flex: 1;
-      text-overflow: ellipsis;
-      overflow: hidden;
-    }
-  }
+::v-deep(.attribute-invalid button) {
+  border:1px solid red !important;
 }
 
 .new-insight-popup {
@@ -558,10 +481,6 @@ main {
 .model-publishing-experiment-header {
   flex-direction: row;
   margin: auto;
-}
-
-.attribute-invalid {
-  border:1px solid red !important;
 }
 
 /* Style the buttons that are used to open and close the accordion panel */
