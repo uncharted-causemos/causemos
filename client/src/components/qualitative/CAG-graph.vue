@@ -120,6 +120,28 @@ class CAGRenderer extends SVGRenderer {
     });
   }
 
+  // Override render function
+  async render() {
+    await super.render();
+
+
+    const edges = this.layout.edges;
+
+    for (const edge of edges) {
+      console.log('edge: ' + edge.data);
+      console.log('edge polarity: ' + edge.data.polarity);
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        d3.select(this.svgEl).select('.foreground-layer')
+          .append('text')
+          .attr('x', 150)
+          .attr('y', 150)
+          .text('ambigous edge!!!');
+        break;
+      }
+    }
+  }
+
   renderNodeUpdated() {
     // not sure anything is needed here, function is requird though
   }
@@ -757,6 +779,8 @@ export default {
 
       this.highlight();
       this.renderer.hideNeighbourhood();
+
+
 
       // if there is a new node with an input textbox, focus input there
       if (d3.select('.node input[type=text]').node()) {
