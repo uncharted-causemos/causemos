@@ -316,6 +316,11 @@ export default {
       const { color, scaleFn } = this.colorOption;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, useFeatureState);
     },
+    refreshScale() {
+      const { min, max } = this.extent;
+      const { color, scaleFn } = this.colorOption;
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, false);
+    },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
 
@@ -441,7 +446,7 @@ export default {
     }, 1000 / FILTER_ANIMATION_FPS),
     throttledReevaluateColourScale: _.throttle(
       function() { this.reevaluateColourScale(); },
-      300,
+      100,
       { trailing: true, leading: true }
     ),
     // Dynamically calculate min max stats for grid map
@@ -464,7 +469,7 @@ export default {
         const max = Math.max(...values);
         this.gridStats = { min, max };
       }
-      this.refreshLayers();
+      this.refreshScale();
       this.updateLayerFilter();
     }
   }
