@@ -137,7 +137,12 @@ class CAGRenderer extends SVGRenderer {
           .attr('x', 150)
           .attr('y', 150)
           .text('ambigous edge!!!');
-        break;
+        console.log('renderer: ' + this);
+        const highlightOptions = {
+          color: 'red',
+          duration: 2000
+        };
+        this.highlight({ nodes: null, edges: edge }, highlightOptions);
       }
     }
   }
