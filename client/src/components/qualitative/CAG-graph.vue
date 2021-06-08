@@ -67,58 +67,32 @@ const DEFAULT_STYLE = {
 };
 
 const FADED_OPACITY = 0.2;
-const GRAPH_HEIGHT = 40;
+// const GRAPH_HEIGHT = 40;
 const THRESHOLD_TIME = 1;
 
 class CAGRenderer extends SVGRenderer {
   renderNodeAdded(nodeSelection) {
-    nodeSelection.each(function() {
-      const selection = d3.select(this);
+    nodeSelection.append('g').classed('node-handles', true);
+    nodeSelection.append('rect')
+      .classed('node-header', true)
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
+      .attr('width', d => d.width)
+      .attr('height', d => d.height)
+      .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+      .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth)
+      .style('cursor', 'pointer')
+      .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
-      // container node
-      if (selection.datum().nodes) {
-        selection.append('rect')
-          .attr('x', 0)
-          .attr('y', 0)
-          .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
-          .attr('width', d => d.width)
-          .attr('height', d => d.height)
-          .style('fill', '#FAFAFA')
-          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke);
-
-        selection.append('text')
-          .classed('node-label', true)
-          .attr('transform', svgUtil.translate(20, GRAPH_HEIGHT * 0.5 - 6))
-          .style('stroke', 'none')
-          .style('fill', '#888')
-          .style('font-weight', '600')
-          .text(d => d.label)
-          .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
-      } else {
-        selection.append('g').classed('node-handles', true);
-
-        selection.append('rect')
-          .classed('node-header', true)
-          .attr('x', 0)
-          .attr('y', 0)
-          .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
-          .attr('width', d => d.width)
-          .attr('height', d => d.height)
-          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-          .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth)
-          .style('cursor', 'pointer')
-          .style('fill', DEFAULT_STYLE.nodeHeader.fill);
-
-        selection
-          .append('text')
-          .classed('node-label', true)
-          .attr('x', 10)
-          .attr('y', 20)
-          .style('pointer-events', 'none')
-          .text(d => d.label)
-          .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
-      }
-    });
+    nodeSelection
+      .append('text')
+      .classed('node-label', true)
+      .attr('x', 10)
+      .attr('y', 20)
+      .style('pointer-events', 'none')
+      .text(d => d.label)
+      .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
   }
 
   renderNodeUpdated() {
@@ -131,7 +105,9 @@ class CAGRenderer extends SVGRenderer {
       .transition()
       .duration(1000)
       .style('opacity', 0)
-      .remove();
+      .on('end', function() {
+        d3.select(this.parentNode).remove();
+      });
   }
 
   buildDefs() {
