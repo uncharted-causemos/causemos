@@ -2,6 +2,8 @@ import API from '@/api/api';
 import { OutputSpec, RegionalAggregation, RegionAgg, RegionLevel } from '@/types/runoutput';
 
 export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
+  // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
+  //       Meanwhile just ignore the error.
   try {
     const { data } = await API.get('/maas/output/regional-data', {
       params: {
