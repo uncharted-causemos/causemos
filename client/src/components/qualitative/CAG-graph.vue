@@ -120,16 +120,17 @@ class CAGRenderer extends SVGRenderer {
     });
   }
 
-  // Override render function
+  // Override render function to check for ambigous edges and highlight them
   async render() {
     await super.render();
 
+    const graph = this.layout;
+    const highlightOptions = {
+      color: 'red',
+      duration: 6000
+    };
 
-    const edges = this.layout.edges;
-
-    for (const edge of edges) {
-      console.log('edge: ' + edge.data);
-      console.log('edge polarity: ' + edge.data.polarity);
+    for (const edge of graph.edges) {
       const polarity = edge.data.polarity;
       if (polarity !== 1 && polarity !== -1) {
         d3.select(this.svgEl).select('.foreground-layer')
@@ -137,12 +138,13 @@ class CAGRenderer extends SVGRenderer {
           .attr('x', 150)
           .attr('y', 150)
           .text('ambigous edge!!!');
-        console.log('renderer: ' + this);
-        const highlightOptions = {
-          color: 'red',
-          duration: 2000
+
+        const subGraph = {
+          nodes: graph.nodes,
+          edges: edge
         };
-        this.highlight({ nodes: null, edges: edge }, highlightOptions);
+
+        this.highlight(subGraph, highlightOptions);
       }
     }
   }
