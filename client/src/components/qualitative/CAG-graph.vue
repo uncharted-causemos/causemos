@@ -122,32 +122,29 @@ class CAGRenderer extends SVGRenderer {
 
   // Override render function to check for ambigous edges and highlight them
   async render() {
+    console.log('rendering...');
     await super.render();
-
     const graph = this.layout;
     const highlightOptions = {
       color: 'red',
       duration: 6000
     };
 
+    const ambigEdges = [];
+
     for (const edge of graph.edges) {
       const polarity = edge.data.polarity;
       if (polarity !== 1 && polarity !== -1) {
         d3.select(this.svgEl).select('.foreground-layer')
           .append('text')
-          .attr('x', 150)
-          .attr('y', 150)
-          .text('ambigous edge!!!');
-
-        const subGraph = {
-          nodes: graph.nodes,
-          edges: edge
-        };
-
-        this.highlight(subGraph, highlightOptions);
+          .attr('x', 10)
+          .attr('y', 15)
+          .text('Warning: ambigous endges detected in graph'); // obviously not very pretty, will change soon
+        ambigEdges.push(edge);
       }
     }
-  }
+    this.highlight({ nodes: graph.nodes, edges: ambigEdges }, highlightOptions); // when a node is first added it grabs the overidden highlight from below
+  } // ask about this, defiitely missing something to do with JS inheritance and Vue.
 
   renderNodeUpdated() {
     // not sure anything is needed here, function is requird though
@@ -780,6 +777,7 @@ export default {
   },
   methods: {
     async refresh() {
+      console.log('refreshing...');
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data, []);
       await this.renderer.render();
@@ -802,6 +800,8 @@ export default {
         duration: 4000,
         color: SELECTED_COLOR
       };
+
+      console.log('the stupid highlight has been called');
 
       // Check if the subgraph was added less than 1 min ago
       const thresholdTime = moment().subtract(THRESHOLD_TIME, 'minutes').valueOf();
