@@ -139,6 +139,10 @@ export default {
       type: Number,
       default: () => 0
     },
+    relativeTo: {
+      type: Number,
+      default: () => 0
+    },
     showTooltip: {
       type: Boolean,
       default: false
@@ -164,7 +168,7 @@ export default {
     },
     regionData: {
       type: Object,
-      default: () => null
+      default: () => undefined
     }
   },
   data: () => ({
@@ -175,7 +179,7 @@ export default {
     featuresDrawn: undefined,
     map: undefined,
     selectedLayer: undefined,
-    gridStats: { min: 0, max: 1 }
+    gridStats: undefined
   }),
   computed: {
     outputSourceSpecsValidated() {
@@ -426,8 +430,8 @@ export default {
       this._unsetHover(event.map);
     },
     popupValueFormatter(feature) {
-      if (_.isNil(feature)) return null;
-      if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return null;
+      if (_.isNil(feature)) return;
+      if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return;
 
       if (this.selectedLayer.vectorSourceLayer === 'maas') {
         return chartValueFormatter(this.extent.min, this.extent.max)(feature.properties[this.valueProp]);
