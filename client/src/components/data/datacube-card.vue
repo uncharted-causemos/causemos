@@ -174,7 +174,7 @@
               :filters="mapFilters"
               :map-bounds="mapBounds"
               :is-grid-map="isGridMap"
-              :region-data="lookupData"
+              :region-data="mapRegionData"
               @sync-bounds="onSyncMapBounds"
               @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
@@ -188,6 +188,7 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -198,16 +199,16 @@ import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
-import outputService from '@/services/output-service';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import _ from 'lodash';
 import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import outputService from '@/services/runoutput-service';
+import { RegionalAggregation } from '@/types/runoutput';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -359,7 +360,7 @@ export default defineComponent({
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
     };
-    const lookupData = ref<any>(null);
+    const mapRegionData = ref<RegionalAggregation>();
     watch(
       () => outputSourceSpecs.value,
       () => {
@@ -367,7 +368,7 @@ export default defineComponent({
           return outputSourceSpecs.value.find(spec => filter.id === spec.id);
         });
         outputService.getRegionAggregations(outputSourceSpecs.value).then(result => {
-          lookupData.value = result;
+          mapRegionData.value = result;
         });
       }
     );
@@ -388,7 +389,7 @@ export default defineComponent({
       mainModelOutput,
       metadata,
       isModel,
-      lookupData
+      mapRegionData
     };
   },
   data: () => ({

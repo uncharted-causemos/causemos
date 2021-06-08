@@ -1,30 +1,5 @@
 import API from '@/api/api';
-
-export interface OutputSpec {
-  id?: string; // Id that identifies this spec
-  modelId: string;
-  runId: string;
-  outputVariable: string;
-  temporalResolution: string;
-  temporalAggregation: string;
-  spatialAggregation: string;
-  timestamp: number;
-}
-
-type RegionLevel = 'country' | 'admin1' | 'admin2' | 'admin3'
-export interface RegionalAggregation {
-  country: RegionAgg[];
-  admin1: RegionAgg[];
-  admin2: RegionAgg[];
-  admin3: RegionAgg[];
-  [key: string]: RegionAgg[];
-}
-
-interface RegionAgg {
-  id: string; // Region id
-  [key: string]: number | string;
-}
-
+import { OutputSpec, RegionalAggregation, RegionAgg, RegionLevel } from '@/types/runoutput';
 
 export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
   try {
