@@ -307,14 +307,12 @@ export default {
       if (this.extent === undefined || this.colorOption === undefined) return;
       const useFeatureState = this.selectedLayer.vectorSourceLayer !== 'maas';
       this.baseLayer = baseLayer(this.valueProp, useFeatureState);
+      this.refreshColorLayer(useFeatureState);
+    },
+    refreshColorLayer(useFeatureState = false) {
       const { min, max } = this.extent;
       const { color, scaleFn } = this.colorOption;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 7), scaleFn, useFeatureState);
-    },
-    refreshScale() {
-      const { min, max } = this.extent;
-      const { color, scaleFn } = this.colorOption;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 7), scaleFn, false);
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
@@ -471,7 +469,7 @@ export default {
         const max = Math.max(...values);
         this.gridStats = { min, max };
       }
-      this.refreshScale();
+      this.refreshColorLayer();
       this.updateLayerFilter();
     }
   }
