@@ -91,10 +91,8 @@ const baseLayer = (property, useFeatureState = false) => {
         'fill-color': 'grey',
         'fill-opacity': [
           'case',
-          ['==', ['number', ['feature-state', property], -10000], -10000],
-          0,
-          ['boolean', ['feature-state', 'hover'], false],
-          0.4, // opacity to 0.4 on hover
+          ['==', null, ['feature-state', property]], 0.0,
+          ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
         ]
       }
@@ -107,8 +105,7 @@ const baseLayer = (property, useFeatureState = false) => {
         'fill-color': 'grey',
         'fill-opacity': [
           'case',
-          ['boolean', ['feature-state', 'hover'], false],
-          0.4, // opacity to 0.4 on hover
+          ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
         ]
       },
@@ -312,12 +309,12 @@ export default {
       this.baseLayer = baseLayer(this.valueProp, useFeatureState);
       const { min, max } = this.extent;
       const { color, scaleFn } = this.colorOption;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, useFeatureState);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 7), scaleFn, useFeatureState);
     },
     refreshScale() {
       const { min, max } = this.extent;
       const { color, scaleFn } = this.colorOption;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, false);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 7), scaleFn, false);
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
@@ -333,7 +330,7 @@ export default {
           source: this.vectorSourceId,
           sourceLayer: this.vectorSourceLayer
         }, {
-          [this.valueProp]: row[this.valueProp]
+          ...row
         });
       });
     },

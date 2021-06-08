@@ -168,19 +168,14 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
       'fill-color': interpolateColor(property, dataDomain, colors, scaleFn, useFeatureState),
       'fill-opacity': useFeatureState ? [
         'case',
-        ['==', null, ['feature-state', property]],
-        0.0,
-        ['<', ['feature-state', property], filterDomain.min],
-        0.0,
-        ['>', ['feature-state', property], filterDomain.max],
-        0.0,
-        ['boolean', ['feature-state', 'hover'], false],
-        0.8, // opacity to 1 on hover
+        ['==', null, ['feature-state', property]], 0.0,
+        ['<', ['feature-state', property], filterDomain.min], 0.0,
+        ['>', ['feature-state', property], filterDomain.max], 0.0,
+        ['boolean', ['feature-state', 'hover'], false], 0.8, // on hover
         0.6 // default opacity
       ] : [
         'case',
-        ['boolean', ['feature-state', 'hover'], false],
-        0.8, // opacity to 1 on hover
+        ['boolean', ['feature-state', 'hover'], false], 0.8, // opacity to 1 on hover
         0.6 // default opacity
       ]
     }
