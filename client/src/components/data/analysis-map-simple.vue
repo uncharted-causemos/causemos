@@ -34,6 +34,7 @@
         :layer-id="colorLayerId"
         :layer="colorLayer"
         @add-layer="onAddLayer"
+        @update-source="onUpdateSource"
       />
       <wm-map-vector
         v-if="vectorSource"
@@ -264,9 +265,6 @@ export default {
     regionData() {
       this.refresh();
     },
-    mapBounds() {
-      this.throttledReevaluateColourScale();
-    },
     range: {
       handler() {
         this.updateFilterRange();
@@ -343,6 +341,12 @@ export default {
       if (!this.regionData) return;
       this.setFeatureStates();
     },
+    onUpdateSource() {
+      setTimeout(() => {
+        // Hack: give enough time to map to render features from updated source
+        this.reevaluateColourScale();
+      }, 1000);
+    },
     onMapLoad(event) {
       const map = event.map;
       this.map = map;
@@ -354,6 +358,7 @@ export default {
       this.$emit('on-map-load');
     },
     onMapMove(event) {
+      this.throttledReevaluateColourScale();
       this.syncBounds(event);
     },
     syncBounds(event) {
