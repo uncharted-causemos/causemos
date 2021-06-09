@@ -201,7 +201,7 @@ class CAGRenderer extends SVGRenderer {
   }
 
   renderEdgeAdded(selection, renderer) {
-    // If we manually drew a new eage, we need to inject the path points it back in, as positions are not stored.
+    // If we manually drew a new edge, we need to inject the path points back in, as positions are not stored.
     if (temporaryNewEdge) {
       const sourceNode = temporaryNewEdge.sourceNode;
       const targetNode = temporaryNewEdge.targetNode;
