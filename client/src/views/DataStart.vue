@@ -21,7 +21,7 @@
 </template>
 
 <script>
-import { mapGetters } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import { getAnalysesByProjectId, createAnalysis, duplicateAnalysis, deleteAnalysis, updateAnalysis } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import { ANALYSIS } from '@/utils/messages-util';
@@ -54,6 +54,9 @@ export default {
     this.fetchRecentCards();
   },
   methods: {
+    ...mapActions({
+      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew'
+    }),
     async fetchRecentCards() {
       this.recentCards = (await getAnalysesByProjectId(this.project)).map(toCardData);
     },
@@ -62,8 +65,9 @@ export default {
         title: `untitled at ${dateFormatter(Date.now())}`,
         projectId: this.project
       });
+      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [] });
       this.$router.push({
-        name: 'data',
+        name: 'dataExplorer',
         params: {
           collection: this.project,
           analysisID: analysis.id

@@ -7,9 +7,19 @@
         <i class="fa fa-fw fa-compress" />
       </button>
     </header>
+    <modal-new-scenario-runs
+      v-if="isModel && showNewRunsModal === true"
+      :metadata="metadata"
+      :potential-scenarios="potentialScenarios"
+      @close="onNewScenarioRunsModalClose" />
+    <modal-check-runs-execution-status
+      v-if="isModel & showModelRunsExecutionStatus === true"
+      :metadata="metadata"
+      :potential-scenarios="runParameterValues"
+      @close="showModelRunsExecutionStatus = false" />
     <div class="flex-row">
       <!-- if has multiple scenarios -->
-      <div class="scenario-selector">
+      <div v-if="isModel" class="scenario-selector">
         <div>
           <div class="checkbox">
             <label @click="toggleBaselineDefaultsVisibility()">
@@ -54,7 +64,18 @@
             :class="{ 'disabled': potentialScenarioCount === 0}"
             @click="requestNewModelRuns()"
           >
-            Request
+            Review
+          </button>
+        </div>
+        <div v-else>
+          <disclaimer
+            :message="'check execution status'"
+          />
+          <button
+            class="search-button btn btn-primary btn-call-for-action"
+            @click="showModelExecutionStatus()"
+          >
+            Check execution status
           </button>
         </div>
       </div>
@@ -63,13 +84,14 @@
           <!-- TODO: extract button-group to its own component -->
           <div class="button-group">
             <button class="btn btn-default"
-                    :class="{'btn-primary':!isDescriptionView}"
-                    @click="isDescriptionView = false">
-              Data</button
-            ><button class="btn btn-default"
                     :class="{'btn-primary':isDescriptionView}"
                     @click="isDescriptionView = true">
               Descriptions
+            </button>
+            <button class="btn btn-default"
+                    :class="{'btn-primary':!isDescriptionView}"
+                    @click="isDescriptionView = false">
+              Data
             </button>
           </div>
           <div
@@ -119,13 +141,13 @@
             :color-from-index="colorFromIndex"
           />
         </header>
-        <div class="bookmark-capture" style="display: flex; flex-direction: column; flex: 1;">
+        <div class="insight-capture" style="display: flex; flex-direction: column; flex: 1;">
           <div style="display: flex; flex-direction: row;">
             <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView"
+            v-if="!isDescriptionView && selectedTimeseriesData.length  > 0 && selectedTimeseriesData[0].points.length > 1"
             class="timeseries-chart"
             :timeseries-data="selectedTimeseriesData"
             :selected-timestamp="selectedTimestamp"
@@ -134,17 +156,30 @@
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
-          <data-analysis-map
-            v-if="!isDescriptionView"
-            class="card-map full-width"
-            :output-source-specs="outputSourceSpecs"
-            :output-selection=0
-            :show-tooltip="true"
-            :selected-admin-level="selectedAdminLevel"
-            :filters="mapFilters"
-            @on-map-load="onMapLoad"
-            @slide-handle-change="onMapSlideChange"
-          />
+          <div
+            v-if="mapReady && !isDescriptionView"
+            class="card-map-container full-width">
+            <data-analysis-map
+              v-for="(spec, indx) in outputSourceSpecs"
+              :key="spec.id"
+              class="card-map"
+              :class="[
+                `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+              ]"
+              :style="{ borderColor: colorFromIndex(indx) }"
+              :output-source-specs="outputSourceSpecs"
+              :output-selection=indx
+              :show-tooltip="true"
+              :selected-admin-level="selectedAdminLevel"
+              :filters="mapFilters"
+              :map-bounds="mapBounds"
+              :is-grid-map="isGridMap"
+              @sync-bounds="onSyncMapBounds"
+              @click-layer-toggle="onClickMapLayerToggle"
+              @on-map-load="onMapLoad"
+              @slide-handle-change="updateMapFilters"
+            />
+          </div>
         </div>
       </div>
     </div>
@@ -153,21 +188,24 @@
 
 <script lang="ts">
 import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
-
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ScenarioDef } from '@/types/Datacubes';
+import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
-import API from '@/api/api';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import { Model, ModelFeature } from '@/types/Model';
+import { Model, DatacubeFeature } from '@/types/Datacube';
+import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
+import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
+import _ from 'lodash';
+import { DatacubeType, ModelRunStatus } from '@/types/Enums';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -176,7 +214,9 @@ export default defineComponent({
     'set-selected-scenario-ids',
     'select-timestamp',
     'set-drilldown-data',
-    'check-model-metadata-validity'
+    'check-model-metadata-validity',
+    'refetch-data',
+    'new-runs-mode'
   ],
   props: {
     isExpanded: {
@@ -191,8 +231,8 @@ export default defineComponent({
       type: String as PropType<string>,
       required: true
     },
-    allScenarioIds: {
-      type: Array as PropType<string[]>,
+    allModelRunData: {
+      type: Array as PropType<ModelRun[]>,
       default: []
     },
     selectedScenarioIds: {
@@ -222,23 +262,28 @@ export default defineComponent({
     Disclaimer,
     ParallelCoordinatesChart,
     DataAnalysisMap,
-    DropdownControl
+    DropdownControl,
+    ModalNewScenarioRuns,
+    ModalCheckRunsExecutionStatus
   },
   setup(props, { emit }) {
     const {
       selectedModelId,
       selectedScenarioIds,
+      allModelRunData,
       selectedTimestamp,
       selectedTemporalResolution,
       selectedTemporalAggregation,
-      selectedSpatialAggregation,
-      allScenarioIds
+      selectedSpatialAggregation
     } = toRefs(props);
+
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
 
     const {
       timeseriesData: selectedTimeseriesData,
       relativeTo
     } = useTimeseriesData(
+      metadata,
       selectedModelId,
       selectedScenarioIds,
       colorFromIndex,
@@ -252,11 +297,9 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues
-    } = useParallelCoordinatesData(selectedModelId, allScenarioIds);
+    } = useParallelCoordinatesData(metadata, allModelRunData);
 
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
-
-    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     watch(() => metadata.value, () => {
       mainModelOutput.value = metadata.value?.outputs[0];
@@ -266,9 +309,15 @@ export default defineComponent({
 
     const isDescriptionView = ref<boolean>(true);
 
+    const isModel = computed(() => {
+      return metadata.value?.type === DatacubeType.Model;
+    });
+
     watch(() => props.selectedScenarioIds, () => {
       relativeTo.value = null;
-      isDescriptionView.value = props.selectedScenarioIds.length === 0;
+      if (isModel.value) {
+        isDescriptionView.value = props.selectedScenarioIds.length === 0;
+      }
     }, {
       immediate: true
     });
@@ -277,21 +326,50 @@ export default defineComponent({
       emit('select-timestamp', newTimestamp);
     }
 
+    watch(
+      () => selectedTimeseriesData.value,
+      () => {
+        const allTimestamps = selectedTimeseriesData.value
+          .map(timeseries => timeseries.points)
+          .flat()
+          .map(point => point.timestamp);
+        const lastTimestamp = _.max(allTimestamps);
+        if (lastTimestamp !== undefined) {
+          emitTimestampSelection(lastTimestamp);
+        }
+      });
+
     const outputSourceSpecs = computed(() => {
-      return [{
-        id: selectedScenarioIds.value[0],
-        modelId: selectedModelId.value,
-        runId: selectedScenarioIds.value[0], // we may not have a selected run at this point, so init map with the first run by default
-        outputVariable: selectedModelId.value.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
-        timestamp: selectedTimestamp.value,
-        temporalResolution: selectedTemporalResolution.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        spatialAggregation: selectedSpatialAggregation.value
-      }];
+      return selectedScenarioIds.value.map(selectedScenarioId => {
+        return {
+          id: selectedScenarioId,
+          modelId: selectedModelId.value,
+          runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
+          outputVariable: metadata.value?.outputs[0].name,
+          timestamp: selectedTimestamp.value,
+          temporalResolution: selectedTemporalResolution.value,
+          temporalAggregation: selectedTemporalAggregation.value,
+          spatialAggregation: selectedSpatialAggregation.value
+        };
+      });
     });
+    const mapFilters = ref<AnalysisMapFilter[]>([]);
+    const updateMapFilters = (data: AnalysisMapFilter) => {
+      mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
+    };
+    watch(
+      () => outputSourceSpecs.value,
+      () => {
+        mapFilters.value = mapFilters.value.filter(filter => {
+          return outputSourceSpecs.value.find(spec => filter.id === spec.id);
+        });
+      }
+    );
 
     return {
       outputSourceSpecs,
+      updateMapFilters,
+      mapFilters,
       selectedTimeseriesData,
       colorFromIndex,
       emitTimestampSelection,
@@ -301,7 +379,9 @@ export default defineComponent({
       drilldownDimensions,
       runParameterValues,
       isDescriptionView,
-      mainModelOutput
+      mainModelOutput,
+      metadata,
+      isModel
     };
   },
   data: () => ({
@@ -310,19 +390,38 @@ export default defineComponent({
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
     potentialScenarios: [] as Array<ScenarioData>,
-    mapFilters: [] as Array<AnalysisMapFilter>
+    showNewRunsModal: false,
+    showModelRunsExecutionStatus: false,
+    mapBounds: [ // Default bounds to Ethiopia
+      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
+      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
+    ],
+    mapReady: false,
+    isGridMap: false
   }),
+  created() {
+    enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
+  },
+  unmounted() {
+    disableConcurrentTileRequestsCaching();
+  },
   methods: {
     onMapLoad() {
       this.$emit('on-map-load');
     },
-    onMapSlideChange(data: AnalysisMapFilter) {
-      this.mapFilters = [data];
+    onSyncMapBounds(mapBounds: Array<Array<number>>) {
+      this.mapBounds = mapBounds;
+    },
+    onClickMapLayerToggle(data: { isGridMap: boolean }) {
+      this.isGridMap = !data.isGridMap;
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
     },
     toggleNewRunsMode() {
+      // reset visibility of baselinedefault when toggling the new-runs-mode
+      this.showBaselineDefaults = false;
+
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
 
@@ -332,46 +431,32 @@ export default defineComponent({
         // clear any selected scenario and show the model desc page
         this.updateScenarioSelection({ scenarios: [] });
       }
+      this.$emit('new-runs-mode', { newRunsMode: this.showNewRunsMode });
     },
     requestNewModelRuns() {
-      // FIXME: cast to 'any' since typescript cannot see mixins yet!
-      (this as any).toaster('New runs requested\nPlease check back later!');
-      const firstScenario = this.potentialScenarios[0]; // FIXME
-      const paramArray: any[] = [];
-      Object.keys(firstScenario).forEach(key => {
-        paramArray.push({
-          name: key,
-          value: +firstScenario[key]
-        });
-      });
-      if (this.selectedModelId.includes('maxhop')) {
-        // country is supposed to be a drilldown so it is not included in the param list
-        // but is still needed, so add it manually
-        // @REVIEW
-        paramArray.push({
-          name: 'country',
-          value: 'Ethiopia'
-        });
-        API.post('maas/model-runs', {
-          model_id: this.selectedModelId,
-          model_name: 'MaxHop',
-          parameters: paramArray
-        });
-      } else {
-        // FIXME: currently other models are not executable
-        console.warn('Current mode is not executable!');
+      this.showNewRunsModal = true;
+    },
+    onNewScenarioRunsModalClose (status: any) {
+      this.showNewRunsModal = false;
+      if (status.cancel === false) {
+        // execution has just started for some new runs so start the hot-reload cycle
+        // first, exit new-runs-mode
+        this.toggleNewRunsMode();
+        // then, re-fetch data from server (wait some time to give the server a chance to update)
+        _.delay(() => this.$emit('refetch-data'), 2000);
       }
     },
-    updateScenarioSelection(e: { scenarios: Array<ScenarioDef> }) {
-      if (
-        e.scenarios.length === 0 ||
-        (e.scenarios.length === 1 && e.scenarios[0] === undefined)
-      ) {
+    showModelExecutionStatus() {
+      this.showModelRunsExecutionStatus = true;
+    },
+    updateScenarioSelection(e: { scenarios: Array<ScenarioData> }) {
+      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
+      if (selectedScenarios.length === 0) {
         // console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
       } else {
         // console.log('user selected: ' + e.scenarios.length);
-        this.$emit('set-selected-scenario-ids', e.scenarios.map(s => s.run_id));
+        this.$emit('set-selected-scenario-ids', selectedScenarios.map(s => s.run_id));
       }
       // we should emit to update the drilldown data everytime scenario selection changes
       this.$emit('set-drilldown-data', { drilldownDimensions: this.drilldownDimensions });
@@ -475,12 +560,44 @@ header {
   color: #bbb;
 }
 
-.card-map {
+.card-map-container {
   height: 100%;
   width: 70%;
 
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+  overflow-y: scroll;
+
   &.full-width {
     width: 100%;
+  }
+}
+
+.card-map {
+  flex-grow: 1;
+  width: auto;
+  height: inherit;
+  ::v-deep(.wm-map) {
+    border-style: solid;
+    border-color: inherit;
+  }
+  &.card-count-1 {
+    flex-grow: 1;
+    ::v-deep(.wm-map) {
+      border: none;
+    }
+  }
+  &.card-count-3,
+  &.card-count-4 {
+    height: 50%;
+    width: 50%;
+    max-width: 50%;
+  }
+  &.card-count-n {
+    height: 50%;
+    width: calc(100% / 3);
+    max-width: calc(100% / 3);
   }
 }
 

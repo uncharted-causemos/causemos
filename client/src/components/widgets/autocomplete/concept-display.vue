@@ -5,10 +5,11 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { conceptPrefix, conceptSuffix } from '@/utils/concept-util';
 
-export default {
+export default defineComponent({
   name: 'ConceptDisplay',
   props: {
     item: {
@@ -20,7 +21,7 @@ export default {
     conceptPrefix,
     conceptSuffix
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

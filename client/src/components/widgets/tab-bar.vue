@@ -1,7 +1,5 @@
 <template>
-  <ul
-    class="unstyled-list"
-  >
+  <ul>
     <li
       v-for="tab in tabs"
       :key="tab.id"
@@ -19,8 +17,10 @@
   </ul>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'TabBar',
   props: {
     tabs: {
@@ -38,11 +38,11 @@ export default {
   },
   emits: ['tab-click'],
   methods: {
-    onClick(tabId) {
+    onClick(tabId: string) {
       this.$emit('tab-click', tabId);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
@@ -50,10 +50,14 @@ export default {
 
 $spaceBetweenTabs: 5px;
 
+
+
 ul {
   height: $navbar-outer-height;
   display: flex;
-  padding-top: 3px;
+  list-style: none;
+  margin: 0;
+  padding: 3px 0 0;
 }
 
 li {

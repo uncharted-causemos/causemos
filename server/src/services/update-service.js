@@ -14,7 +14,7 @@ const {
 
 const indraService = rootRequire('/services/external/indra-service');
 const projectService = rootRequire('/services/project-service');
-const cache = rootRequire('/cache/node-lru-cache');
+// const cache = rootRequire('/cache/node-lru-cache');
 
 /**
  * Add additional fields to logs to pass as feedback to INDRA
@@ -23,15 +23,35 @@ const cache = rootRequire('/cache/node-lru-cache');
  * @param {array} audits
  */
 const _buildCurationLogs = async (projectId, audits) => {
-  const project = cache.get(projectId);
-  const curationLogs = audits.map(entry => {
-    return {
+  const empty2null = (v) => { return v === '' ? null : v; };
+
+  const curations = {};
+  for (let i = 0; i < audits.length; i++) {
+    const audit = audits[i];
+
+    [audit.before.subj, audit.before.obj, audit.after.subj, audit.after.obj].forEach(item => {
+      item.concept = [
+        item.theme, item.theme_property, item.process, item.process_property
+      ].map(empty2null);
+      delete item.theme;
+      delete item.theme_property;
+      delete item.process;
+      delete item.process_property;
+    });
+
+    curations[audit.matches_hash] = {
       project_id: projectId,
-      corpus_id: project.corpus_id || '',
-      ...entry
+      statement_id: audit.statement_id,
+      update_type: audit.update_type,
+      before: audit.before,
+      after: audit.after
     };
-  });
-  return curationLogs;
+  }
+
+  return {
+    project_id: projectId,
+    curations: curations
+  };
 };
 
 /**
@@ -115,8 +135,8 @@ const updateFnGenerator = (projectId, updateConfig) => {
   const logEntry = (statement) => {
     return {
       wm: _.pick(statement.wm, ['state', 'readers']),
-      subj: _.pick(statement.subj, ['factor', 'concept', 'polarity', 'concept_score']),
-      obj: _.pick(statement.obj, ['factor', 'concept', 'polarity', 'concept_score'])
+      subj: _.pick(statement.subj, ['factor', 'concept', 'polarity', 'concept_score', 'theme', 'theme_property', 'process', 'process_property']),
+      obj: _.pick(statement.obj, ['factor', 'concept', 'polarity', 'concept_score', 'theme', 'theme_property', 'process', 'process_property'])
     };
   };
 
@@ -128,6 +148,7 @@ const updateFnGenerator = (projectId, updateConfig) => {
         project_id: projectId,
         batch_id: batchId,
         statement_id: statement.id,
+        matches_hash: statement.matches_hash,
         update_type: updateType,
         before: {},
         after: {}
@@ -143,6 +164,7 @@ const updateFnGenerator = (projectId, updateConfig) => {
     });
     // build and send feedbackToIndra
     const curationLogs = await _buildCurationLogs(projectId, audits);
+
     indraService.sendFeedback(curationLogs).catch(function handleError(err) {
       Logger.warn(`Sending feedback to INDRA failed bactchId=${batchId} ` + err);
     });

@@ -1,4 +1,5 @@
 import API from '@/api/api';
+import { Datacube } from '@/types/Datacube';
 import { Timeseries } from '@/types/Timeseries';
 import { computed, Ref, ref, watchEffect } from 'vue';
 
@@ -9,6 +10,7 @@ import { computed, Ref, ref, watchEffect } from 'vue';
  * list of Timeseries objects.
  */
 export default function useTimeseriesData(
+  metadata: Ref<Datacube | null>,
   modelId: Ref<string>,
   modelRunIds: Ref<string[]>,
   colorFromIndex: (index: number) => string,
@@ -20,7 +22,7 @@ export default function useTimeseriesData(
 
   watchEffect(onInvalidate => {
     timeseriesData.value = [];
-    if (modelRunIds.value.length === 0) {
+    if (modelRunIds.value.length === 0 || metadata.value === null) {
       // Don't have the information needed to fetch the data
       return;
     }
@@ -35,7 +37,7 @@ export default function useTimeseriesData(
       if (selectedTemporalAggregation.value !== '') {
         temporalAgg = selectedTemporalAggregation.value;
       }
-      let spatialAgg = 'sum';
+      let spatialAgg = 'mean';
       if (selectedSpatialAggregation.value !== '') {
         spatialAgg = selectedSpatialAggregation.value;
       }
@@ -44,7 +46,7 @@ export default function useTimeseriesData(
           params: {
             model_id: modelId.value,
             run_id: runId,
-            feature: modelId.value.includes('maxhop') ? 'Hopper Presence Prediction' : 'production',
+            feature: metadata.value?.outputs[0].name,
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg

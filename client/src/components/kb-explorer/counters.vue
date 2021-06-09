@@ -26,11 +26,12 @@
   </div>
 </template>
 
-<script>
-import { EDGE_THRESHOLD } from '@/components/graph/cyto-graph';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import { EDGE_THRESHOLD } from '@/components/graph/cyto-graph.vue';
 import numberFormatter from '@/formatters/number-formatter';
 
-export default {
+export default defineComponent({
   name: 'Counters',
   props: {
     documentsCount: {
@@ -67,17 +68,17 @@ export default {
     }
   },
   computed: {
-    isVisible() {
-      return this.view === 'graphs' || this.view === 'modelConcepts' | this.view === 'modelVariables';
+    isVisible(): boolean {
+      return this.view === 'graphs';
     },
-    areEdgesDrawn() {
+    areEdgesDrawn(): boolean {
       return this.edgesCount <= EDGE_THRESHOLD;
     }
   },
   methods: {
     numberFormatter
   }
-};
+});
 </script>
 
 <style scoped lang="scss">

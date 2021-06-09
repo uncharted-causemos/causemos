@@ -58,7 +58,15 @@ export function calcEdgeColor(edge) {
   return UNDEFINED_COLOR;
 }
 
-export function scaleByWeight(v, weight) {
-  return 2 + v * weight;
+
+/**
+ * Use weights array to scale the edge width
+ *
+ * @param {number} baseWidth base-width
+ * @param {EdgeParameter} edgeParameter
+ */
+export function scaleByWeight(baseWidth, edgeParameter) {
+  const w = _.get(edgeParameter, 'parameter.weights', [0.5, 0.5]);
+  return 2 + baseWidth * (w[0] * 0.7 + w[1] * 0.3);
 }
 

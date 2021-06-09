@@ -40,16 +40,6 @@ const submitModelRun = async(metadata) => {
 };
 
 /**
- * Return all model runs belonging to a model
- *
- * @param{string} modelId - model id
- */
-const getAllModelRuns = async(modelId) => {
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return connection.find([{ field: 'model_id', value: modelId }], { size: SEARCH_LIMIT });
-};
-
-/**
  * Start a datacube ingest prefect flow using the provided ids
  *
  * @param {ModelRun} metadata - model run metadata
@@ -98,6 +88,14 @@ const startModelOutputPostProcessing = async (metadata) => {
   const result = await requestAsPromise(pipelinePayload);
   const flowId = _.get(result, 'data.create_flow_run.id');
   if (flowId) {
+    // Remove extra fields from Jataware
+    metadata.attributes = undefined;
+
+    // Rename default_run until Jataware fixes it
+    if (metadata.default_run !== undefined) {
+      metadata.is_default_run = metadata.default_run;
+      metadata.default_run = undefined;
+    }
     const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
     await connection.update({
       ...metadata,
@@ -109,6 +107,34 @@ const startModelOutputPostProcessing = async (metadata) => {
 };
 
 /**
+ * Mark a model run as failed during model execution
+ *
+ * @param {ModelRun} metadata - model run metadata
+ */
+const markModelRunFailed = async (metadata) => {
+  Logger.info(`Marking model run as failed ${metadata.model_name} ${metadata.id} `);
+  if (!metadata.id) {
+    throw new Error('Model run id missing');
+  }
+
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  return await connection.update({
+    id: metadata.id,
+    status: 'EXECUTION FAILED'
+  }, d => d.id);
+};
+
+/**
+ * Return all model runs belonging to a model
+ *
+ * @param{string} modelId - model id
+ */
+const getAllModelRuns = async(modelId) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  return connection.find([{ field: 'model_id', value: modelId }], { size: SEARCH_LIMIT });
+};
+
+/**
  * Get the status of a prefect flow submitted with the endpoint above
  *
  * @param {string} runId - model run id
@@ -117,7 +143,7 @@ const getJobStatus = async (runId) => {
   Logger.info(`Get job status for run ${runId}`);
 
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const result = await connection.findOne([{ field: 'id', value: runId }]);
+  const result = await connection.findOne([{ field: 'id', value: runId }], {});
   const flowId = _.get(result, 'flow_id');
   if (!flowId) {
     Logger.error(`No model run found for ${runId}`);
@@ -151,9 +177,10 @@ const getJobStatus = async (runId) => {
 };
 
 module.exports = {
+  submitModelRun,
   startModelOutputPostProcessing,
-  getJobStatus,
+  markModelRunFailed,
   getAllModelRuns,
-  submitModelRun
+  getJobStatus
 };
 

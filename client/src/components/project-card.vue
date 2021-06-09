@@ -49,7 +49,7 @@
       <div class="row">
         <div class="col-sm-12 details">
           <div>
-            <p><b>No additional information is available</b></p>
+            <p><b>{{project.description}}</b></p>
           </div>
         </div>
       </div>
@@ -82,20 +82,21 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
+import { defineComponent, computed, ref, PropType } from 'vue';
 import { mapActions } from 'vuex';
 
-import ModalConfirmation from '@/components/modals/modal-confirmation';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
-import messagesUtil from '@/utils/messages-util';
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
+import { Project } from '@/types/Common';
 
 /**
  * A card-styled widget to view project summary
  */
-export default {
+export default defineComponent({
   name: 'ProjectCard',
   components: {
     ModalConfirmation,
@@ -103,22 +104,20 @@ export default {
   },
   props: {
     project: {
-      type: Object,
+      type: Object as PropType<Project>,
       default: () => ({})
     }
   },
-  data: () => ({
-    showMore: false,
-    showModal: false,
-    REMOVE_PROJECT_MESSAGE: messagesUtil.REMOVE_PROJECT_MESSAGE
-  }),
-  computed: {
-    modelCount: function() {
-      return this.project.stat.model_count;
-    },
-    dataAnalysisCount: function() {
-      return this.project.stat.data_analysis_count;
-    }
+  setup(props) {
+    const showMore = ref(false);
+    const showModal = ref(false);
+
+    return {
+      modelCount: computed(() => props.project.stat.model_count),
+      dataAnalysisCount: computed(() => props.project.stat.data_analysis_count),
+      showMore,
+      showModal
+    };
   },
   methods: {
     ...mapActions({
@@ -138,13 +137,13 @@ export default {
     closeWarning() {
       this.showModal = false;
     },
-    open(id) {
+    open(id: string) {
       // Reset filters every time we open a new project
       this.clearLastQuery();
       this.$router.push({ name: 'overview', params: { project: id } });
     }
   }
-};
+});
 </script>
 
 <style scoped lang="scss">

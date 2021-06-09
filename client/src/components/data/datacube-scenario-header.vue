@@ -22,7 +22,7 @@
 <script lang="ts">
 import API from '@/api/api';
 import { computed, defineComponent, PropType, ref, watch } from 'vue';
-import { ModelRun, ModelRunParameter } from '@/types/Datacubes';
+import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
 
 type ScenarioDescription = ModelRunParameter[];
 
@@ -57,18 +57,19 @@ export default defineComponent({
       inputNames.value = {};
       if (props.selectedModelId === null) return;
 
-      const result = await API.get('fetch-demo-data', {
+      const result = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
         params: {
-          modelId: props.selectedModelId,
-          type: 'metadata'
         }
       });
-      const modelMetadata = JSON.parse(result.data);
+      const modelMetadata = result.data;
       const inputNamesMap: { [key: string]: string } = {};
-      modelMetadata.parameters.forEach((parameter: any) => {
-        inputNamesMap[parameter.name] = parameter.display_name;
-      });
-      inputNames.value = inputNamesMap;
+      if (modelMetadata.parameters) {
+        // only valid for models
+        modelMetadata.parameters.forEach((parameter: any) => {
+          inputNamesMap[parameter.name] = parameter.display_name;
+        });
+        inputNames.value = inputNamesMap;
+      }
     }
 
     // Fetch scenario descriptions

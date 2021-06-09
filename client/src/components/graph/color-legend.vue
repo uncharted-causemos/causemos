@@ -8,10 +8,12 @@
     </div>
   </hideable-legend>
 </template>
-<script>
+
+<script lang="ts">
 
 import * as d3 from 'd3';
 import * as vsup from 'vsup';
+import { defineComponent } from 'vue';
 import { createVSUPscale } from '@/utils/scales-util';
 import { createChart, translate } from '@/utils/svg-util';
 import HideableLegend from '../widgets/hideable-legend.vue';
@@ -27,7 +29,7 @@ const ICON_WIDTH = 15;
 // Add 5px to the legend height so the bottom y axis label isn't cut off
 const LEGEND_HEIGHT = LABEL_SIZE + CHART_SIZE + 5;
 
-export default {
+export default defineComponent({
   name: 'ColorLegend',
   components: {
     HideableLegend
@@ -43,7 +45,9 @@ export default {
   },
   methods: {
     refresh() {
-      const svg = d3.select(this.$refs.container).select('svg');
+      const svg = d3.select(this.$refs.container as HTMLDivElement).select('svg');
+      // Clear any previous renders
+      svg.selectAll('*').remove();
       const rightColumnStart = CHART_SIZE + LABEL_SIZE + COLUMN_GAP_SIZE;
       const rightColumnTextStart = rightColumnStart + ICON_WIDTH + (COLUMN_GAP_SIZE / 2);
       // Total width depends on which labels are shown
@@ -65,7 +69,7 @@ export default {
 
       svg.append('g').call(uncertaintyLegend);
       // Adjust labels for uncertainty legend
-      svg.select('.legend').selectAll('text').filter(function() {
+      svg.select('.legend').selectAll('text').each(function() {
         const label = d3.select(this).text();
         if (label === 'Polarity') {
           d3.select(this).attr('transform', translate(25, -10));
@@ -128,7 +132,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang='scss'>

@@ -19,10 +19,11 @@
   </modal-confirmation>
 </template>
 
-<script>
-import ModalConfirmation from '@/components/modals/modal-confirmation';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
-export default {
+export default defineComponent({
   name: 'RenameModal',
   components: {
     ModalConfirmation
@@ -50,5 +51,5 @@ export default {
       this.$emit('cancel');
     }
   }
-};
+});
 </script>

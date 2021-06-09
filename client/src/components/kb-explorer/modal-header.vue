@@ -22,24 +22,25 @@
       {{ areEdgesDrawn ? '': '(hidden) ' }} relationships
     </span>
     <template #trailing>
-      <bookmark-controls />
+      <insight-controls />
     </template>
   </full-screen-modal-header>
 </template>
 
-<script>
-import { mapGetters } from 'vuex';
-import { EDGE_THRESHOLD } from '@/components/graph/cyto-graph';
+<script lang="ts">
+import { useStore } from 'vuex';
+import { defineComponent, computed } from 'vue';
+import { EDGE_THRESHOLD } from '@/components/graph/cyto-graph.vue';
 import { SUBGRAPH, ADD_TO_CAG_THRESHOLD } from '@/utils/messages-util';
 import fullScreenModalHeader from '../widgets/full-screen-modal-header.vue';
-import BookmarkControls from '@/components/bookmark-panel/bookmark-controls';
+import InsightControls from '@/components/insight-manager/insight-controls.vue';
 import numberFormatter from '@/formatters/number-formatter';
 
-export default {
+export default defineComponent({
   name: 'KbExplorerModalHeader',
   components: {
     fullScreenModalHeader,
-    BookmarkControls
+    InsightControls
   },
   props: {
     navBackLabel: {
@@ -47,20 +48,23 @@ export default {
       default: ''
     }
   },
-  computed: {
-    ...mapGetters({
-      selectedSubgraphEdges: 'graph/selectedSubgraphEdges',
-      filteredEdgesCount: 'graph/filteredEdgesCount'
-    }),
-    areEdgesDrawn() {
-      return this.filteredEdgesCount <= EDGE_THRESHOLD;
-    },
-    canAddToCAG() {
-      return this.selectedSubgraphEdges.length <= ADD_TO_CAG_THRESHOLD;
-    },
-    addToCagTooltip() {
-      return this.canAddToCAG ? 'Add to workspace' : SUBGRAPH.TOO_MANY_EDGES;
-    }
+  emits: ['add-to-CAG', 'close'],
+  setup() {
+    const store = useStore();
+
+    const selectedSubgraphEdges = computed(() => store.getters['graph/selectedSubgraphEdges']);
+    const filteredEdgesCount = computed(() => store.getters['graph/filteredEdgesCount']);
+    const areEdgesDrawn = computed(() => filteredEdgesCount.value <= EDGE_THRESHOLD);
+    const canAddToCAG = computed(() => selectedSubgraphEdges.value.length <= ADD_TO_CAG_THRESHOLD);
+    const addToCagTooltip = computed(() => canAddToCAG.value ? 'Add to workspace' : SUBGRAPH.TOO_MANY_EDGES);
+
+    return {
+      selectedSubgraphEdges,
+      filteredEdgesCount,
+      areEdgesDrawn,
+      canAddToCAG,
+      addToCagTooltip
+    };
   },
   methods: {
     numberFormatter,
@@ -71,7 +75,7 @@ export default {
       this.$emit('close');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

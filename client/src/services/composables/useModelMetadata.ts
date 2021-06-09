@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Model } from '@/types/Model';
+import { Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 
 /**
@@ -15,10 +15,8 @@ export default function useModelMetadata(
     metadata.value = null;
     let isCancelled = false;
     async function fetchMetadata() {
-      const response = await API.get('fetch-demo-data', {
+      const response = await API.get(`maas/new-datacubes/${modelId.value}`, {
         params: {
-          modelId: modelId.value,
-          type: 'metadata'
         }
       });
       if (isCancelled) {
@@ -26,7 +24,7 @@ export default function useModelMetadata(
         //  fetch results to avoid a race condition.
         return;
       }
-      metadata.value = JSON.parse(response.data);
+      metadata.value = response.data;
     }
     onInvalidate(() => {
       isCancelled = true;

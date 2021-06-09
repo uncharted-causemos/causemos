@@ -74,7 +74,7 @@
 import API from '@/api/api';
 import { defineComponent, ref } from 'vue';
 import _ from 'lodash';
-import { Model, ModelParameter } from '@/types/Model';
+import { Model, ModelParameter } from '@/types/Datacube';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -92,13 +92,11 @@ export default defineComponent({
   setup(props) {
     const metadata = ref<Model | null>(null);
     async function fetchMetadata() {
-      const response = await API.get('fetch-demo-data', {
+      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
         params: {
-          modelId: props.selectedModelId,
-          type: 'metadata'
         }
       });
-      metadata.value = JSON.parse(response.data);
+      metadata.value = response.data;
     }
     fetchMetadata();
     return {

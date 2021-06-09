@@ -35,7 +35,7 @@
 </template>
 
 <script lang="ts">
-import { ModelPublishingStepID } from '@/types/ModelPublishingTypes';
+import { ModelPublishingStepID } from '@/types/Enums';
 import { ModelPublishingStep } from '@/types/UseCase';
 import { defineComponent, PropType } from 'vue';
 

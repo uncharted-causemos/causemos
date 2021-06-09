@@ -9,6 +9,7 @@
         :sensitivity-analysis-type="sensitivityAnalysisType"
         :scenarios="scenarios"
         :selected-node="selectedNode"
+        :current-engine="currentEngine"
         @background-click="onBackgroundClick"
         @show-indicator="showIndicator"
         @show-constraints="showConstraints"
@@ -38,7 +39,7 @@
     <modal-edit-constraints
       v-if="isEditConstraintsOpen"
       :node="selectedNode"
-      :scenarios="scenariosForSelectedNode"
+      :node-scenarios="scenariosForSelectedNode"
       :projection-steps="projectionSteps"
       @clear-constraints="clearConstraints"
       @close="closeEditConstraints"
@@ -157,19 +158,18 @@ export default {
   },
   watch: {
     selectedScenarioId() {
-      if (this.currentEngine === 'dyse') {
-        this.fetchSensitivityAnalysisResults();
-      }
       if (_.isNil(this.scenarios)) return;
+      this.fetchSensitivityAnalysisResults();
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       if (scenario && scenario.is_valid === false) {
         this.recalculateScenario(scenario);
       }
     },
     sensitivityAnalysisType() {
-      if (this.currentEngine === 'dyse') {
-        this.fetchSensitivityAnalysisResults();
-      }
+      this.fetchSensitivityAnalysisResults();
+    },
+    scenarios() {
+      this.fetchSensitivityAnalysisResults();
     }
   },
   mounted() {
@@ -480,7 +480,7 @@ export default {
       this.isEditConstraintsOpen = true;
     },
     async fetchSensitivityAnalysisResults() {
-      if (_.isNil(this.scenarios) || this.scenarios.length === 0) return;
+      if (this.currentEngine !== 'dyse' || _.isNil(this.scenarios) || this.scenarios.length === 0) return;
       this.sensitivityMatrixData = null;
       const now = Date.now();
       this.sensitivityDataTimestamp = now;

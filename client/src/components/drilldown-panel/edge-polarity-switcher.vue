@@ -32,52 +32,56 @@
   </div>
 </template>
 
-<script>
-import DropdownControl from '@/components/dropdown-control';
+<script lang="ts">
+import { defineComponent, ref } from 'vue';
+import DropdownControl from '@/components/dropdown-control.vue';
 import { STATEMENT_POLARITY, STATEMENT_POLARITY_MAP, polarityClass, statementPolarityColor } from '@/utils/polarity-util';
 
-export default {
+export default defineComponent({
   name: 'EdgePolaritySwitcher',
   components: {
     DropdownControl
   },
+  emits: ['edge-set-user-polarity'],
   props: {
     selectedRelationship: {
       type: Object,
       required: true
     }
   },
-  data: () => ({
-    isPolarityDropdownOpen: false
-  }),
+  setup() {
+    const isPolarityDropdownOpen = ref(false);
+
+    return {
+      isPolarityDropdownOpen,
+      STATEMENT_POLARITY
+    };
+  },
   computed: {
-    polarity() {
+    polarity(): number {
       return this.selectedRelationship.polarity;
     },
-    polarityClass() {
+    polarityClass(): string {
       return polarityClass(this.polarity);
     },
-    polarityColor() {
+    polarityColor(): { color: string } {
       return statementPolarityColor(this.polarity);
     },
-    polarityLabel() {
+    polarityLabel(): string {
       return STATEMENT_POLARITY_MAP[this.polarity];
     }
-  },
-  created() {
-    this.STATEMENT_POLARITY = STATEMENT_POLARITY;
   },
   methods: {
     togglePolarityDropdown() {
       this.isPolarityDropdownOpen = !this.isPolarityDropdownOpen;
     },
-    async onSelectEdgeUserPolarity(polarity) {
+    async onSelectEdgeUserPolarity(polarity: number) {
       this.isPolarityDropdownOpen = false;
       this.$emit('edge-set-user-polarity', this.selectedRelationship, polarity);
     }
 
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

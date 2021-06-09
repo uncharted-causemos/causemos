@@ -4,6 +4,7 @@ const uuid = require('uuid');
 
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
+const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const queryUtil = rootRequire('adapters/es/query-util');
@@ -18,6 +19,8 @@ const {
 const { set, del, get } = rootRequire('/cache/node-lru-cache');
 
 const MAX_NUMBER_PROJECTS = 100;
+
+const INCREMENTAL_ASSEMBLY_FLOW_ID = '90a09440-e504-4db9-ad89-9db370933c8b';
 
 /**
  * Returns projects summary
@@ -45,10 +48,11 @@ const findProject = async (projectId) => {
  *
  * @param {string} kbId - the index to clone from
  * @param {string} name - the human-friendly new index name
+ * @param {string} description - description of the project
  */
-const createProject = async (kbId, name) => {
+const createProject = async (kbId, name, description) => {
   const projectAdapter = Adapter.get(RESOURCE.PROJECT);
-  const result = await projectAdapter.clone(kbId, name);
+  const result = await projectAdapter.clone(kbId, name, description);
   const projectId = result.index;
 
   // Ontology
@@ -89,25 +93,11 @@ const createProject = async (kbId, name) => {
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
   await ontologyAdapter.insert(conceptsPayload, d => d.id);
 
-  // FIXME: Just test INDRA plumbing
-  const indraOptions = {
-    url: 'http://wm.indra.bio/assembly/new_project',
-    method: 'POST',
-    json: {
-      project_id: result.index,
-      project_name: name,
-      corpus_id: projectData.corpus_id
-    }
-  };
   try {
-    const result = await requestAsPromise(indraOptions);
-    console.log('');
-    console.log(result);
-    console.log('');
+    await indraService.sendNewProject(result.index, name, projectData.corpus_id);
   } catch (err) {
     console.log(err);
   }
-
 
   return result;
 };
@@ -685,6 +675,59 @@ const addReaderOutput = async (projectId, records, timestamp) => {
       extended_at: +timestamp
     }
   ], d => d.id);
+
+  return id;
+};
+
+/**
+ * Trigger a Prefect flow to:
+ *  - Take the reader output records associated with this projectExtensionId
+ *  - Send them to INDRA for reassembly
+ *  - Transform and insert/update the resulting statements into the project
+ *  - associated with this projectExtensionId
+ *
+ * @param {String} projectExtensionId - ID for a doc in the project-extension ES index
+ */
+const requestAssembly = async (projectExtensionId) => {
+  Logger.info(`Requesting new incremental assembly for extension "${projectExtensionId}" `);
+  if (!projectExtensionId) {
+    Logger.error('Required ID for incremental assembly request was not provided.');
+    return;
+  }
+
+  const runName = `requestAssembly-${projectExtensionId}`;
+  const flowParameters = {
+    PROJECT_EXTENSION_ID: projectExtensionId
+  };
+
+  // We need the two JSON.stringify below to go from
+  // JSON object -> JSON string -> escaped JSON string
+  const graphQLQuery = `
+    mutation {
+      create_flow_run(input: {
+        version_group_id: "${INCREMENTAL_ASSEMBLY_FLOW_ID}",
+        flow_run_name: "${runName}",
+        parameters: ${JSON.stringify(JSON.stringify(flowParameters))}
+      }) {
+        id
+      }
+    }
+  `;
+
+  const pipelinePayload = {
+    method: 'POST',
+    url: process.env.WM_PIPELINE_URL,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {
+      query: graphQLQuery
+    }
+  };
+
+  const result = await requestAsPromise(pipelinePayload);
+  return result;
 };
 
 module.exports = {
@@ -713,6 +756,7 @@ module.exports = {
 
   // incremental assembly
   addReaderOutput,
+  requestAssembly,
 
   // misc
   ontologyComposition

@@ -86,21 +86,22 @@
         </li>
       </ul>
 
-      <!-- Bookmarking -->
-      <bookmark-controls v-if="currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
+      <!-- Insighting -->
+      <insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
     </div>
   </nav>
 </template>
 
-<script>
+<script lang="ts">
 import { mapGetters } from 'vuex';
+import { defineComponent } from 'vue';
 
-import BookmarkControls from '@/components/bookmark-panel/bookmark-controls';
+import InsightControls from '@/components/insight-manager/insight-controls.vue';
 
-export default {
+export default defineComponent({
   name: 'NavBar',
   components: {
-    BookmarkControls
+    InsightControls
   },
   computed: {
     ...mapGetters({
@@ -111,7 +112,7 @@ export default {
       lastQuery: 'query/lastQuery'
     })
   }
-};
+});
 </script>
 
 

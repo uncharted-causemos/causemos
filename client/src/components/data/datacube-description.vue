@@ -1,26 +1,29 @@
 <template>
   <div class="datacube-description-container">
-    <div class="datacube-description-column"
-         v-if="metadata.parameters" >
-      <h5>Input Descriptions</h5>
-      <div
-        v-for="param in inputParameters"
-        :key="param.id"
-      >
-        <b>{{param.display_name}} </b>
-        <span v-if="param.unit" v-tooltip="param.unit_description"> ({{param.unit}})</span>
-        <span v-if="param.description">: {{ param.description }}</span>
-        <p />
-      </div>
-      <h5>Output Descriptions</h5>
-      <div
-        v-for="output in metadata.outputs"
-        :key="output.id"
-      >
-        <b>{{output.display_name}} </b>
-        <span v-if="output.unit" v-tooltip="output.unit_description"> ({{output.unit}})</span>
-        <span v-if="output.description">: {{ output.description }}</span>
-      </div>
+    <div class="datacube-description-column">
+      <template v-if="metadata.parameters">
+        <h5>Input Descriptions</h5>
+        <div
+          v-for="param in inputParameters"
+          :key="param.id"
+        >
+          <b>{{param.display_name}} </b>
+          <span v-if="param.unit" v-tooltip="param.unit_description"> ({{param.unit}})</span>
+          <span v-if="param.description">: {{ param.description }}</span>
+          <p />
+        </div>
+      </template>
+      <template v-if="metadata.outputs">
+        <h5>Output Descriptions</h5>
+        <div
+          v-for="output in metadata.outputs"
+          :key="output.id"
+        >
+          <b>{{output.display_name}} </b>
+          <span v-if="output.unit" v-tooltip="output.unit_description"> ({{output.unit}})</span>
+          <span v-if="output.description">: {{ output.description }}</span>
+        </div>
+      </template>
     </div>
     <div class="datacube-description-column"
          v-if="metadata.name" >
@@ -43,45 +46,14 @@
         <b>Maintainer: </b> {{ metadata.maintainer.name }} ({{metadata.maintainer.email}}),
         {{metadata.maintainer.organization}}
       </div>
-      <div class="metadata-row" v-if="metadata.maintainer.website"><strong>Source: </strong>
+      <div class="metadata-row" v-if="isSourceValidUrl"><strong>Source: </strong>
         <a
-          v-if="isSourceValidUrl"
-          :href="metadata.source"
+          :href="metadata.maintainer.website"
           target="_blank"
-          rel="noopener noreferrer"
-        >{{ metadata.maintainer.website }}</a>
-        <span v-else>{{ metadata.maintainer.website }}</span>
+          rel="noopener noreferrer">
+          {{ metadata.maintainer.website }}
+        </a>
       </div>
-      <!--<div
-        v-if="isKnownAdmin(selectedParameterOptions.admin1)"
-        class="metadata-row"
-      >
-        <b>Admin L1: </b> {{ selectedParameterOptions.admin1 }}
-      </div>
-      <div
-        v-if="isKnownAdmin(selectedParameterOptions.admin2)"
-        class="metadata-row"
-      >
-        <b>Admin L2: </b> {{ selectedParameterOptions.admin2 }}
-      </div>
-      <div
-        v-if="isKnownAdmin(selectedParameterOptions.admin3)"
-        class="metadata-row"
-      >
-        <b>Admin L3: </b> {{ selectedParameterOptions.admin3 }}
-      </div>
-      <div
-        v-if="isKnownAdmin(selectedParameterOptions.admin4)"
-        class="metadata-row"
-      >
-        <b>Admin L4: </b> {{ selectedParameterOptions.admin4 }}
-      </div>
-      <div
-        v-if="isKnownAdmin(selectedParameterOptions.admin5)"
-        class="metadata-row"
-      >
-        <b>Admin L5: </b> {{ selectedParameterOptions.admin5 }}
-      </div> -->
     </div>
   </div>
 </template>
@@ -104,13 +76,11 @@ export default defineComponent({
   setup(props) {
     const metadata = ref<any>({});
     async function fetchMetadata() {
-      const response = await API.get('fetch-demo-data', {
+      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
         params: {
-          modelId: props.selectedModelId,
-          type: 'metadata'
         }
       });
-      metadata.value = JSON.parse(response.data);
+      metadata.value = response.data;
     }
     fetchMetadata();
     return {
@@ -119,7 +89,7 @@ export default defineComponent({
   },
   computed: {
     isSourceValidUrl(): boolean {
-      return stringUtil.isValidUrl(this.metadata.source);
+      return stringUtil.isValidUrl(this.metadata.maintainer.website);
     },
     inputParameters(): Array<any> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);

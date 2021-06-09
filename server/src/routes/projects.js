@@ -35,7 +35,8 @@ router.get('/', asyncHandler(async (req, res) => {
 router.post('/', asyncHandler(async (req, res) => {
   const baseId = req.body.baseId;
   const projectName = req.body.projectName;
-  const result = await projectService.createProject(baseId, projectName);
+  const projectDescription = req.body.projectDescription;
+  const result = await projectService.createProject(baseId, projectName, projectDescription);
 
 
   res.json(result);
@@ -289,28 +290,10 @@ router.post('/:projectId/assembly', asyncHandler(async (req, res) => {
   const records = req.body.records;
   const timestamp = req.body.timestamp;
 
-  console.log(projectId);
-  console.log(timestamp);
-  console.log(records);
-
-  await projectService.addReaderOutput(projectId, records, timestamp);
-
-  // FIXME: Send signal to kick start incremental knowledge ingestion process
-
-
-  // const options = {
-  //   url: 'http://wm.indra.bio/assembly/add_project_records',
-  //   method: 'POST',
-  //   json: {
-  //     project_id: projectId,
-  //     records: payload
-  //   }
-  // };
-  // const result = await requestAsPromise(options);
-  // console.log('');
-  // console.log(result);
-  // console.log('');
-  res.json({});
+  const projectionId = await projectService.addReaderOutput(projectId, records, timestamp);
+  // Send signal to kick start incremental knowledge ingestion process
+  const result = await projectService.requestAssembly(projectionId);
+  res.json(result);
 }));
 
 module.exports = router;

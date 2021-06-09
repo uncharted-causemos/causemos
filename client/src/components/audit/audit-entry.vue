@@ -22,21 +22,24 @@
   </span>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import { COMPACT_POLARITY } from '@/utils/polarity-util';
-import HighlightValue from '@/components/audit/highlight-value';
+import HighlightValue from '@/components/audit/highlight-value.vue';
 
 const POLARITY_CORRECTION_TYPES = [
   'factor_polarity'
 ];
-const UPDATE_GROUNDING = 'update_ontology';
 
-const VETTING = 'vetting';
-
-export default {
+export default defineComponent({
   name: 'AuditEntry',
   components: {
     HighlightValue
+  },
+  setup() {
+    return {
+      COMPACT_POLARITY
+    };
   },
   props: {
     displayValues: {
@@ -53,15 +56,9 @@ export default {
     }
   },
   computed: {
-    showGroundingScore: function() {
-      return this.updateType === UPDATE_GROUNDING || this.updateType === VETTING;
-    },
-    isPolarityUpdate: function() {
+    isPolarityUpdate(): boolean {
       return POLARITY_CORRECTION_TYPES.includes(this.updateType);
     }
-  },
-  created() {
-    this.COMPACT_POLARITY = COMPACT_POLARITY;
   }
-};
+});
 </script>

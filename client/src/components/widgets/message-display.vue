@@ -21,12 +21,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 /**
  * A simple wrapper to display messages
  */
-import HighlightText from '@/components/widgets/highlight-text';
-export default {
+import HighlightText from '@/components/widgets/highlight-text.vue';
+export default defineComponent({
   name: 'MessageDisplay',
   components: {
     HighlightText
@@ -70,7 +71,7 @@ export default {
       this.$emit('dismiss');
     }
   }
-};
+});
 </script>
 
 <style lang='scss' scoped>

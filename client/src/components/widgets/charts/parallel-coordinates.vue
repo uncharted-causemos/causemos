@@ -22,7 +22,7 @@ import _ from 'lodash';
 import { renderParallelCoordinates, renderBaselineMarkers } from '@/charts/parallel-coordinates';
 import { defineComponent, PropType } from 'vue';
 import { ScenarioData } from '@/types/Common';
-import { DimensionInfo } from '@/types/Model';
+import { DimensionInfo } from '@/types/Datacube';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 
 const RESIZE_DELAY = 50;
@@ -60,7 +60,7 @@ export default defineComponent({
     'generated-scenarios'
   ],
   data: () => ({
-    lastSelectedLines: [] as Array<ScenarioData>
+    lastSelectedLines: [] as Array<string>
   }),
   watch: {
     dimensionsData(): void {
@@ -76,7 +76,9 @@ export default defineComponent({
     initialDataSelection(): void {
       if (!this.newRunsMode) {
         // do not make initial line selection override existing user selections
-        if (this.lastSelectedLines.length === 0) {
+        if (this.lastSelectedLines.length === 0 || this.initialDataSelection.length === 0 ||
+            !_.isEqual(this.lastSelectedLines, this.initialDataSelection)) {
+          this.lastSelectedLines.length = 0;
           this.render(undefined);
         }
       }
@@ -128,7 +130,7 @@ export default defineComponent({
     },
     onLinesSelection(selectedLines?: Array<ScenarioData> /* array of selected lines on the PCs plot */): void {
       if (selectedLines && Array.isArray(selectedLines)) {
-        this.lastSelectedLines = selectedLines;
+        this.lastSelectedLines = selectedLines.map(s => s.run_id) as string[];
         this.$emit('select-scenario', { scenarios: selectedLines });
       }
     },

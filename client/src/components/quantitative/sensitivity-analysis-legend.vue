@@ -10,15 +10,16 @@
   </hideable-legend>
 </template>
 
-<script>
+<script lang="ts">
+import { defineComponent } from 'vue';
 import HideableLegend from '../widgets/hideable-legend.vue';
 
-export default {
+export default defineComponent({
   name: 'SensitivityAnalysisLegend',
   components: {
     HideableLegend
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

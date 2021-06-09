@@ -14,8 +14,10 @@
   </button>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'SmallIconButton',
   props: {
     useWhiteBg: {
@@ -29,11 +31,11 @@ export default {
   },
   emits: ['click'],
   methods: {
-    onClick(e) {
+    onClick(e: Event) {
       this.$emit('click', e);
     }
   }
-};
+});
 </script>
 
 

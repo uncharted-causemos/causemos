@@ -15,32 +15,40 @@
   </ul>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
-import { mapGetters } from 'vuex';
-
+import { defineComponent, ref, computed } from 'vue';
+import { useStore } from 'vuex';
 import modelService from '@/services/model-service';
-import RenameModal from '@/components/action-bar/rename-modal';
-import ModelOptions from '@/components/action-bar/model-options';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
+import ModelOptions from '@/components/action-bar/model-options.vue';
 import { CAG } from '@/utils/messages-util';
-export default {
+import useToaster from '@/services/composables/useToaster';
+
+export default defineComponent({
   name: 'QuantitativeModelOptions',
   components: {
     RenameModal,
     ModelOptions
   },
-  data: () => ({
-    showRenameModal: false,
-    cagName: '',
-    newCagName: ''
-  }),
-  computed: {
-    ...mapGetters({
-      currentCAG: 'app/currentCAG'
-    }),
-    cagNameToDisplay() {
-      return !_.isEmpty(this.newCagName) ? this.newCagName : this.cagName;
-    }
+  setup() {
+    const store = useStore();
+    const showRenameModal = ref(false);
+    const cagName = ref('');
+    const newCagName = ref('');
+
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const cagNameToDisplay = computed(() => !_.isEmpty(newCagName.value) ? newCagName.value : cagName.value);
+
+    return {
+      showRenameModal,
+      cagName,
+      newCagName,
+      currentCAG,
+      cagNameToDisplay,
+
+      toaster: useToaster()
+    };
   },
   async mounted() {
     // Initialize name
@@ -48,7 +56,7 @@ export default {
     this.cagName = data.name;
   },
   methods: {
-    onRenameModalConfirm(newCagNameInput) {
+    onRenameModalConfirm(newCagNameInput: string) {
       // Optimistically set new name
       this.newCagName = newCagNameInput;
       this.saveNewCagName();
@@ -69,7 +77,7 @@ export default {
       this.showRenameModal = false;
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

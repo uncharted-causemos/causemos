@@ -1,23 +1,8 @@
-import useModelMetadata from './useModelMetadata';
-import useScenarioData from './useScenarioData';
-import { Model, ModelParameter } from '../../types/Model';
+import { Model, ModelParameter } from '../../types/Datacube';
 import { computed, ref, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
-import { getRandomNumber } from '../../../tests/utils/random';
-
-// FIXME: need an endpoint to fetch such aggregations for all scenarios
-const OUTPUT_AGGREGATIONS: { [key: string]: number } = {
-  // example maxhop
-  '28ba629b-8e7c-4ff4-9485-7a7be3ed75ba': 0.1570271866,
-  'e39a3296-5fa0-4f63-8b5e-81be2e182455': 0.0700502704,
-  '8b886e51-38c9-46bf-95fa-8c41b6e85b57': 0.3211381196,
-  // DSSAT
-  '2d80c9f0-1e44-4a6c-91fe-2ebb26e39dea': 313639493,
-  '2ff53645-d481-4ff7-a067-e13f392f30a4': 115408980,
-  '25e0971b-c229-4c9a-a0f9-c121fce51309': 116547768,
-  '057d28d5-a7ed-472b-ae37-ba16571944ea': 146281019,
-  '967a0a69-552f-4861-ad7f-0c1bd8bab856': 204827768
-};
+import { ModelRun } from '@/types/ModelRun';
+import { ModelRunStatus } from '@/types/Enums';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -25,41 +10,29 @@ const OUTPUT_AGGREGATIONS: { [key: string]: number } = {
  * transforms it into several structures that the PC chart accepts.
  */
 export default function useParallelCoordinatesData(
-  modelId: Ref<string>,
-  allScenarioIds?: Ref<string[]>
+  metadata: Ref<Model | null>,
+  allModelRunData: Ref<ModelRun[]>
 ) {
-  const allModelRunData = useScenarioData(modelId, allScenarioIds);
-  const metadata = useModelMetadata(modelId) as Ref<Model | null>;
-
   const runParameterValues = computed(() => {
     if (allModelRunData.value.length === 0 || metadata.value === null) {
       return [];
     }
-    const outputParameterName =
-      metadata.value.outputs[0].name ?? 'Undefined output parameter';
-    const parameterMetadata = metadata.value.parameters;
+    const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
     return allModelRunData.value.map((modelRun, runIndex) => {
       const run_id = allModelRunData.value[runIndex].id;
       const runStatus = allModelRunData.value[runIndex].status;
       const run: ScenarioData = {
         run_id,
-        status: runStatus ?? 'READY'
+        status: runStatus ?? ModelRunStatus.Ready
       };
-      if (run.status === 'READY') {
-        run[outputParameterName] = OUTPUT_AGGREGATIONS[run_id] ?? getRandomNumber(0, 1);
+      if (run.status === ModelRunStatus.Ready) {
+        // FIXME: assume the first feature is the primary one by default
+        const output_agg_values = allModelRunData.value[runIndex].output_agg_values[0].value;
+        run[outputParameterName] = output_agg_values;
       }
-      if (modelId.value.includes('maxhop')) {
-        modelRun.parameters.forEach(({ name, value }) => {
-          run[name ?? 'undefined'] = value;
-        });
-      } else {
-        modelRun.parameters.forEach(({ id, value }) => {
-          const parameterName = parameterMetadata.find(
-            parameter => parameter.id === id
-          )?.name;
-          run[parameterName ?? 'undefined'] = value;
-        });
-      }
+      modelRun.parameters.forEach(({ name, value }) => {
+        run[name ?? 'undefined'] = value;
+      });
       return run;
     });
   });
@@ -68,25 +41,13 @@ export default function useParallelCoordinatesData(
     if (metadata.value === null) {
       return [];
     }
+
     // Restructure the output parameter
-    const { name, display_name, description } = metadata.value.outputs[0];
-    const baselineRunID = allModelRunData.value.find(run => modelId.value.includes('maxhop') ? run.is_default_run : run.default_run)
-      ?.id;
-    const defaultOutputValue = OUTPUT_AGGREGATIONS[baselineRunID ?? 0];
-    const outputDimension = {
-      name,
-      display_name,
-      description,
-      is_output: true,
-      type: '', // FIXME
-      default: defaultOutputValue
-    };
-    const inputDimensions = modelId.value.includes('maxhop') ? metadata.value.parameters.filter(p => p.name !== 'country') : metadata.value.parameters;
+    const outputDimension = metadata.value.outputs[0];
+    const inputDimensions = metadata.value.parameters;
     // Append the output parameter to the list of input parameters
     return [...inputDimensions, outputDimension] as ModelParameter[];
   });
-
-  // TODO: use each axis min/max based on the metadata
 
   // The parallel coordinates component expects data as a collection of name/value pairs
   //  (see ScenarioData)
@@ -95,8 +56,8 @@ export default function useParallelCoordinatesData(
   //    { dim1: value21, dim2: value22 }
   // ]
 
-  // HACK: force 'rainfall_multiplier' to be ordinal
-  const ordinalDimensionNames = ref(modelId.value.includes('maxhop') ? [] : ['rainfall_multiplier']);
+  // @HACK: this is not needed, but left in case quick testing of the ordinal capability is needed
+  const ordinalDimensionNames = ref([]);
 
   const drilldownDimensions = computed(() =>
     dimensions.value.filter(p => p.is_drilldown)

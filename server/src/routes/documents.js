@@ -11,7 +11,7 @@ router.get('/:docId', asyncHandler(async (req, res) => {
   const documentAdapter = Adapter.get(RESOURCE.DOCUMENT);
 
   const result = await documentAdapter.findOne([
-    { field: 'doc_id', value: docId }
+    { field: 'id', value: docId }
   ], {});
   res.json(result);
 }));

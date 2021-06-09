@@ -14,12 +14,13 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
-import { mapActions, mapGetters } from 'vuex';
+import { defineComponent, computed, PropType } from 'vue';
+import { mapActions, useStore } from 'vuex';
 import numberFormatter from '@/formatters/number-formatter';
 
-export default {
+export default defineComponent({
   name: 'Pagination',
   props: {
     label: {
@@ -27,27 +28,27 @@ export default {
       default: ''
     },
     total: {
-      type: Number,
+      type: Number as PropType<number>,
       default: 0
     }
   },
-  computed: {
-    ...mapGetters({
-      view: 'query/view',
-      query: 'query/query'
-    }),
-    pageFrom() {
-      return this.query[this.view].from;
-    },
-    pageSize() {
-      return this.query[this.view].size;
-    },
-    incrementedPageLimit: function() {
-      return this.pageFrom + this.pageSize;
-    },
-    pageSizeCount: function() {
-      return this.total < this.incrementedPageLimit ? this.total : this.incrementedPageLimit;
-    }
+  setup(props) {
+    const store = useStore();
+
+    const view = store.getters['query/view'];
+
+    const pageFrom = computed(() => store.getters['query/query'][view].from);
+    const pageSize = computed(() => store.getters['query/query'][view].size);
+    const incrementedPageLimit = computed(() => pageFrom.value + pageSize.value);
+    const pageSizeCount = computed(() => props.total < incrementedPageLimit.value ? props.total : incrementedPageLimit.value);
+
+    return {
+      view,
+      pageFrom,
+      pageSize,
+      incrementedPageLimit,
+      pageSizeCount
+    };
   },
   methods: {
     ...mapActions({
@@ -69,7 +70,7 @@ export default {
       });
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

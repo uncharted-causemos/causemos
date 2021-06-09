@@ -93,7 +93,7 @@ const attrsQuery = (ids) => {
       bool: {
         filter: {
           terms: {
-            doc_id: ids
+            id: ids
           }
         }
       }

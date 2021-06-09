@@ -37,18 +37,15 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
-
-
-import StatementsColumnsSelector from '@/components/kb-explorer/statements-columns-selector';
-
+import StatementsColumnsSelector from '@/components/kb-explorer/statements-columns-selector.vue';
 import filtersUtil from '@/utils/filters-util';
 
 
-
-export default {
+export default defineComponent({
   name: 'ActionBar',
   components: {
     StatementsColumnsSelector
@@ -111,7 +108,7 @@ export default {
       }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

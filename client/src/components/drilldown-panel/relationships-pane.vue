@@ -141,6 +141,11 @@ export default {
     SmallIconButton,
     CollapsibleListHeader
   },
+  emits: [
+    'show-relationship-suggestions',
+    'remove-edge',
+    'select-edge'
+  ],
   props: {
     selectedNode: {
       type: Object,

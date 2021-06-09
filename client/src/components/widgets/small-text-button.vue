@@ -6,8 +6,10 @@
   </button>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+
+export default defineComponent({
   name: 'SmallTextButton',
   props: {
     label: {
@@ -21,11 +23,11 @@ export default {
   },
   emits: ['click'],
   methods: {
-    onClick(e) {
+    onClick(e: Event) {
       this.$emit('click', e);
     }
   }
-};
+});
 </script>
 
 

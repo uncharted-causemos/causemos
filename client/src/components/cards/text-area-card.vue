@@ -18,12 +18,13 @@
   </card>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
-import Card from '@/components/widgets/card';
-import CloseButton from '@/components/widgets/close-button';
+import { defineComponent } from 'vue';
+import Card from '@/components/widgets/card.vue';
+import CloseButton from '@/components/widgets/close-button.vue';
 
-export default {
+export default defineComponent({
   name: 'TextAreaCard',
   components: {
     Card,
@@ -43,12 +44,12 @@ export default {
     'saveText', 'close'
   ],
   data: () => ({
-    enteredText: null,
+    enteredText: '',
     hasUnsavedText: false
   }),
   watch: {
     enteredText(newText, oldText) {
-      if (oldText !== null) {
+      if (newText && oldText !== '') {
         this.hasUnsavedText = true;
         this.scheduleTextSave();
       }
@@ -58,7 +59,10 @@ export default {
     this.enteredText = this.initialText;
   },
   methods: {
-    scheduleTextSave: _.throttle(function() { this.saveText(); }, 3000, { trailing: true, leading: false }),
+    scheduleTextSave() {
+      const saveText = this.saveText;
+      return _.debounce(function() { saveText(); }, 3000)();
+    },
     saveText() {
       if (this.hasUnsavedText) {
         this.hasUnsavedText = false;
@@ -73,7 +77,7 @@ export default {
       this.$emit('close');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

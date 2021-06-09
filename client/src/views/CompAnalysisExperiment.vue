@@ -1,10 +1,5 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <div class="comp-analysis-experiment-header">
-      <button class="search-button btn btn-primary btn-call-for-action" disabled>
-        Search datacubes
-      </button>
-    </div>
     <main>
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
@@ -12,7 +7,7 @@
       :class="{ 'datacube-expanded': true }"
       :selected-admin-level="selectedAdminLevel"
       :selected-model-id="selectedModelId"
-      :all-scenario-ids="allScenarioIds"
+      :all-model-run-data="allModelRunData"
       :selected-scenario-ids="selectedScenarioIds"
       :selected-timestamp="selectedTimestamp"
       :selected-temporal-resolution="selectedTemporalResolution"
@@ -21,8 +16,10 @@
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
+      @refetch-data="fetchData"
+      @new-runs-mode="newRunsMode=!newRunsMode"
     >
-      <template v-slot:datacube-model-header>
+      <template #datacube-model-header>
         <div class="datacube-header" v-if="mainModelOutput">
           <div v-if="isExpanded">
             <h5>{{mainModelOutput.display_name}} | {{metadata.name}}</h5>
@@ -38,7 +35,7 @@
             class="scenario-header"
             :isExpanded="isExpanded"
             :outputVariable="mainModelOutput.display_name"
-            :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
+            :outputVariableUnits="unit"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
@@ -47,7 +44,17 @@
         </div>
       </template>
 
-      <template v-slot:datacube-description>
+      <template #spatial-aggregation-config>
+        <dropdown-button
+          class="spatial-aggregation"
+          :inner-button-label="'Spatial Aggregation'"
+          :items="['mean', 'sum']"
+          :selected-item="selectedSpatialAggregation"
+          @item-selected="item => selectedSpatialAggregation = item"
+        />
+      </template>
+
+      <template #datacube-description>
         <datacube-description
           :selected-model-id="selectedModelId"
         />
@@ -65,12 +72,14 @@
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
+            :metadata="metadata"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
             :selected-temporal-resolution="selectedTemporalResolution"
             :selected-temporal-aggregation="selectedTemporalAggregation"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :unit="unit"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -82,18 +91,22 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import MAXHOP from '@/assets/MAXHOP.js';
 import { computed, defineComponent, Ref, ref, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { LegacyBreakdownDataStructure } from '@/types/Common';
-import { DimensionInfo, Model, ModelFeature } from '@/types/Model';
-import { getRandomNumber } from '../../tests/utils/random';
+import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
+import { getRandomNumber } from '@/utils/random';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import router from '@/router';
+import _ from 'lodash';
+import { DatacubeType } from '@/types/Enums';
+import { useStore } from 'vuex';
+import { NamedBreakdownData } from '@/types/Datacubes';
 
 const DRILLDOWN_TABS = [
   {
@@ -112,7 +125,8 @@ export default defineComponent({
     BreakdownPane,
     DatacubeScenarioHeader,
     Disclaimer,
-    DatacubeDescription
+    DatacubeDescription,
+    DropdownButton
   },
   setup() {
     const selectedAdminLevel = ref(2);
@@ -120,84 +134,159 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData: LegacyBreakdownDataStructure[] = [];
+    const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
-    const modelId = ref(MAXHOP.modelId);
+    const store = useStore();
+    const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
+    // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
+    const datacubeId = analysisItem.value[0].id;
+
+    const modelId = ref(datacubeId);
+    const selectedModelId = ref(datacubeId);
 
     const metadata = useModelMetadata(modelId) as Ref<Model | null>;
 
-    const mainModelOutput = ref<ModelFeature | undefined>(undefined);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+
+    const selectedScenarioIds = ref([] as string[]);
+
+    const selectedTimestamp = ref(null) as Ref<number | null>;
+
+    const newRunsMode = ref(false);
+
+    const modelRunsFetchedAt = ref(0);
+
+    const allModelRunData = useScenarioData(modelId, modelRunsFetchedAt);
+
+    const timeInterval = 10000;
+
+    function fetchData() {
+      if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
+        modelRunsFetchedAt.value = Date.now();
+      }
+    }
+
+    // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
+    const timerHandler = setInterval(fetchData, timeInterval);
+
+    const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
+    const scenarioCount = computed(() => allModelRunData.value.length);
+    const unit = computed(() =>
+      mainModelOutput.value &&
+      mainModelOutput.value.unit &&
+      mainModelOutput.value.unit !== ''
+        ? mainModelOutput.value.unit
+        : null
+    );
 
     watch(() => metadata.value, () => {
       mainModelOutput.value = metadata.value?.outputs[0];
+
+      if (metadata.value?.type === DatacubeType.Indicator) {
+        selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
+      }
     }, {
       immediate: true
     });
-
-    // FIXME: use endpoint to fetch IDs
-    const allModelRunData = useScenarioData(modelId);
-
-    const allScenarioIds = allModelRunData.value.map(run => run.id);
-    const selectedScenarioIds = ref([] as string[]);
-    function setSelectedScenarioIds(newIds: string[]) {
-      selectedScenarioIds.value = newIds;
-    }
-
-    const selectedTimestamp = ref(0);
-    function setSelectedTimestamp(value: number) {
-      selectedTimestamp.value = value;
-    }
-
-    const scenarioCount = computed(() => allScenarioIds.length);
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
       selectedTemporalResolution: 'month',
       selectedTemporalAggregation: 'mean',
-      selectedSpatialAggregation: 'mean',
+      selectedSpatialAggregation: ref('mean'),
       selectedAdminLevel,
       setSelectedAdminLevel,
-      selectedModelId: modelId,
-      allScenarioIds,
+      selectedModelId,
       selectedScenarioIds,
-      setSelectedScenarioIds,
       typeBreakdownData,
       selectedTimestamp,
-      setSelectedTimestamp,
       isExpanded,
       colorFromIndex,
-      scenarioCount,
       metadata,
-      mainModelOutput
+      mainModelOutput,
+      allModelRunData,
+      allScenarioIds,
+      scenarioCount,
+      fetchData,
+      newRunsMode,
+      timerHandler,
+      unit
     };
   },
-  methods: {
-    setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      // TODO: inspect 'this.selectedScenarioIds' for drilldown data
-      this.typeBreakdownData.length = 0;
-      if (this.selectedScenarioIds.length === 0) {
-        return;
-      }
-      e.drilldownDimensions.forEach(dd => {
-        const drillDownChildren: Array<{name: string; value: number}> = [];
-        const choices = dd.choices as Array<string>;
-        choices.forEach((c) => {
-          drillDownChildren.push({
-            name: c,
-            value: getRandomNumber(0, 5000) // FIXME: use random data for now. Later, pickup the actual breakdown aggregation from (selected scenarios) data
-          });
-        });
-        const breakdown = {
-          name: dd.name,
-          data: {
-            name: 'ALL',
-            value: drillDownChildren.map(c => c.value).reduce((a, b) => a + b, 0), // sum all children values
-            children: drillDownChildren
+  watch: {
+    $route(/* to, from */) {
+      // NOTE:  this is only valid when the route is focused on the 'data' space
+      if (this.$route.name === 'data') {
+        const timestamp = this.$route.query.timestamp as any;
+        if (timestamp !== undefined) {
+          this.setSelectedTimestamp(timestamp);
+        }
+
+        if (this.allScenarioIds.length > 0) {
+          // FIXME: only support saving insights with at most a single valid scenario id
+          const selectedScenarioID = this.$route.query.selectedScenarioID as any;
+          if (selectedScenarioID !== undefined) {
+            // we should have at least one valid scenario selected. If not, cancel scenario selection
+            const selectedIds = selectedScenarioID !== '' ? [selectedScenarioID] : [];
+            this.setSelectedScenarioIds(selectedIds);
           }
+        }
+      }
+    }
+  },
+  mounted(): void {
+    this.updateRouteParams();
+  },
+  unmounted(): void {
+    clearInterval(this.timerHandler);
+  },
+  methods: {
+    setSelectedTimestamp(value: number) {
+      if (this.selectedTimestamp === value) return;
+      this.selectedTimestamp = value;
+      this.updateRouteParams();
+    },
+    setSelectedScenarioIds(newIds: string[]) {
+      if (_.isEqual(this.selectedScenarioIds, newIds)) return;
+      this.selectedScenarioIds = newIds;
+      this.updateRouteParams();
+    },
+    updateRouteParams() {
+      // save the info in the query params so saved insights would pickup the latest value
+      // FIXME: only support saving insights with at most a single valid scenario id
+      router.push({
+        query: {
+          timestamp: this.selectedTimestamp,
+          selectedScenarioID: this.selectedScenarioIds.length === 1 ? this.selectedScenarioIds[0] : undefined
+        }
+      }).catch(() => {});
+    },
+    setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
+      this.typeBreakdownData = [];
+      if (this.selectedScenarioIds.length === 0) return;
+      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
+        const choices = dimension.choices ?? [];
+        const dataForEachRun = this.selectedScenarioIds.map(() => {
+          // Generate random breakdown data for each run
+          const drilldownChildren = choices.map(choice => ({
+            // Breakdown data IDs are written as the hierarchical path delimited by '__'
+            id: 'All__' + choice,
+            // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
+            //  from (selected scenarios) data
+            value: getRandomNumber(0, 5000)
+          }));
+          const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
+          return {
+            Total: [{ id: 'All', value: sumTotal }],
+            [dimension.name]: drilldownChildren
+          };
+        });
+        return {
+          name: dimension.name,
+          data: dataForEachRun
         };
-        this.typeBreakdownData.push(breakdown);
       });
     }
   }
@@ -239,5 +328,9 @@ main {
 .datacube-header {
   flex: 1;
   min-height: 70px;
+}
+
+.spatial-aggregation {
+  margin: 5px 0;
 }
 </style>

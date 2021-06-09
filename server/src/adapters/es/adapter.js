@@ -27,12 +27,14 @@ const RESOURCE = Object.freeze({
 
   // MAAS data
   DATA_MODEL_RUN: 'data-model-run',
+  DATA_DATACUBE: 'data-datacube',
 
   // Misc
   AUDIT: 'audit',
   BOOKMARK: 'bookmark',
   ONTOLOGY: 'ontology',
-  SESSION_LOG: 'session-log'
+  SESSION_LOG: 'session-log',
+  INDICATOR_METADATA: 'indicator-metadata'
 });
 
 class Adapter {

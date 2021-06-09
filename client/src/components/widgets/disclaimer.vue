@@ -2,8 +2,9 @@
   <span class="disclaimer-container">{{ message }}</span>
 </template>
 
-<script>
-export default {
+<script lang="ts">
+import { defineComponent } from 'vue';
+export default defineComponent({
   name: 'Disclaimer',
   props: {
     message: {
@@ -11,7 +12,7 @@ export default {
       required: true
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>

@@ -85,16 +85,18 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 
 import _ from 'lodash';
 
-import Modal from '@/components/modals/modal';
-import DateDropdown from '@/components/widgets/date-dropdown';
-import { ENGINE_OPTIONS } from '@/utils/projection-util';
+import { defineComponent, ref, computed, PropType } from 'vue';
+import Modal from '@/components/modals/modal.vue';
+import DateDropdown from '@/components/widgets/date-dropdown.vue';
 import { DATE_SELECTION } from '@/utils/messages-util';
+import modelService from '@/services/model-service';
+import { CAGModelSummary } from '@/types/CAG';
 
-export default {
+export default defineComponent({
   name: 'ModalEditParameters',
   components: {
     Modal,
@@ -102,39 +104,47 @@ export default {
   },
   props: {
     modelSummary: {
-      type: Object,
+      type: Object as PropType<CAGModelSummary>,
       required: true
     }
   },
   emits: [
     'close', 'save'
   ],
-  data: () => ({
-    selectedEngine: 'dyse',
-    selectedStartDate: null,
-    selectedEndDate: null,
-    selectedNumSteps: 0,
-    selectedProjectionStartDate: null,
-    engineOptions: ENGINE_OPTIONS,
-    hasErrorStartDate: false,
-    hasErrorEndDate: false,
-    hasErrorProjectionStartDate: false
-  }),
-  computed: {
-    startDate() {
-      return this.modelSummary.parameter.indicator_time_series_range.start;
-    },
-    endDate() {
-      return this.modelSummary.parameter.indicator_time_series_range.end;
-    },
-    projectionStartDate() {
-      return this.modelSummary.parameter.projection_start;
-    }
+  setup(props) {
+    const selectedEngine = ref('dyse');
+    const selectedStartDate = ref(0);
+    const selectedEndDate = ref(0);
+    const selectedNumSteps = ref(0);
+    const selectedProjectionStartDate = ref(0);
+
+    const hasErrorStartDate = ref(false);
+    const hasErrorEndDate = ref(false);
+    const hasErrorProjectionStartDate = ref(false);
+
+    return {
+      // constants
+      errorMsgStartDate: DATE_SELECTION.START_DATE_AFTER_END_DATE,
+      errorMsgEndDate: DATE_SELECTION.END_DATE_BEFORE_START_DATE,
+      errorMsgProjectionStartDate: DATE_SELECTION.END_DATE_BEFORE_START_DATE,
+
+      // reactive
+      selectedEngine,
+      selectedStartDate,
+      selectedEndDate,
+      selectedNumSteps,
+      selectedProjectionStartDate,
+      engineOptions: modelService.ENGINE_OPTIONS,
+      hasErrorStartDate,
+      hasErrorEndDate,
+      hasErrorProjectionStartDate,
+
+      startDate: computed(() => props.modelSummary.parameter.indicator_time_series_range.start),
+      endDate: computed(() => props.modelSummary.parameter.indicator_time_series_range.end),
+      projectionStartDate: computed(() => props.modelSummary.parameter.projection_start)
+    };
   },
   created() {
-    this.errorMsgStartDate = DATE_SELECTION.START_DATE_AFTER_END_DATE;
-    this.errorMsgEndDate = DATE_SELECTION.END_DATE_BEFORE_START_DATE;
-    this.errorMsgProjectionStartDate = DATE_SELECTION.END_DATE_BEFORE_START_DATE;
   },
   mounted() {
     if (_.isEmpty(this.modelSummary)) return;
@@ -145,9 +155,6 @@ export default {
     this.selectedNumSteps = this.modelSummary.parameter.num_steps;
   },
   methods: {
-    selectEngine(option) {
-      this.selectedEngine = option;
-    },
     close() {
       this.$emit('close', null);
     },
@@ -162,23 +169,23 @@ export default {
         engine: this.selectedEngine
       });
     },
-    onUpdateStartDate(newTimeStamp) {
+    onUpdateStartDate(newTimeStamp: number) {
       this.selectedStartDate = newTimeStamp;
       this.hasErrorEndDate = false; // Reset so we don't get both messages at the same time
       this.hasErrorStartDate = this.selectedStartDate > this.selectedEndDate;
       this.hasErrorProjectionStartDate = this.selectedProjectionStartDate < this.selectedStartDate;
     },
-    onUpdateEndDate(newTimeStamp) {
+    onUpdateEndDate(newTimeStamp: number) {
       this.selectedEndDate = newTimeStamp;
       this.hasErrorStartDate = false;
       this.hasErrorEndDate = this.selectedEndDate < this.selectedStartDate;
     },
-    onUpdateProjectionStartDate(newTimeStamp) {
+    onUpdateProjectionStartDate(newTimeStamp: number) {
       this.selectedProjectionStartDate = newTimeStamp;
       this.hasErrorProjectionStartDate = this.selectedProjectionStartDate < this.selectedStartDate;
     }
   }
-};
+});
 </script>
 
 <style scoped lang="scss">
@@ -199,6 +206,4 @@ export default {
 .first-button {
   margin-right: 10px;
 }
-
-
 </style>

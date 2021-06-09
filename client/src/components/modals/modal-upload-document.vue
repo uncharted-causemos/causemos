@@ -12,7 +12,7 @@
             accept=".html, .csv, .doc, .pdf, .txt"
             class="form-control-file"
             @change="updateInputFile">
-          <span class="instruction-set">.html, .csv, .doc, .pdf, .txt, or zip (max. 100MB) </span>
+          <p class="instruction-set">.html, .csv, .doc, .pdf, or .txt (max. 100MB) </p>
           <div
             v-if="loading"
             class="upload-file-label">
@@ -37,15 +37,17 @@
   </modal>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent, ref, computed } from 'vue';
 import dartService from '@/services/dart-service';
-import Modal from '@/components/modals/modal';
+import Modal from '@/components/modals/modal.vue';
+import useToaster from '@/services/composables/useToaster';
 
 /**
  * Modal that handles the uploading of documents
  **/
-export default {
+export default defineComponent({
   name: 'ModalDocumentUpload',
   components: {
     Modal
@@ -53,17 +55,18 @@ export default {
   emits: [
     'close'
   ],
-  data: () => ({
-    loading: false,
-    sendStatus: 'Please upload a file.',
-    metadataLabels: '',
-    metadataGenre: '',
-    inputFile: null
-  }),
-  computed: {
-    isValid: function() {
-      return !_.isNil(this.inputFile);
-    }
+  setup() {
+    const inputFile = ref(null as any);
+    return {
+      loading: ref(false),
+      metadataLabels: ref(''), // not used
+      metadataGenre: ref(''), // not used
+      sendStatus: ref('Please upload a file.'),
+      inputFile,
+      isValid: computed(() => !_.isNil(inputFile.value)),
+
+      toaster: useToaster()
+    };
   },
   methods: {
     close() {
@@ -87,11 +90,14 @@ export default {
       this.metadataLabels = '';
       this.inputFile = null;
     },
-    updateInputFile(evt) {
-      this.inputFile = evt.target.files[0];
+    updateInputFile(evt: Event) {
+      const el = evt.target as HTMLInputElement;
+      if (el && el.files) {
+        this.inputFile = el.files[0];
+      }
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
@@ -116,10 +122,11 @@ export default {
 
 form {
   input {
-    display: inline-block;
+    width: 100%;
   }
-  span {
-    color: $label-color;
-  }
+}
+
+.instruction-set {
+  color: $label-color;
 }
 </style>
