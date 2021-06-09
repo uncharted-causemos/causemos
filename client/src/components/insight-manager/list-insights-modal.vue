@@ -490,7 +490,8 @@ export default {
       return `${window.location.protocol}//${window.location.host}/#${slideURL}`;
     },
     switchTab(id) {
-      console.log(id);
+      this.activeInsight = null;
+      this.selectedInsight = null;
       this.activeTabId = id;
     },
     toggleExportMenu() {
