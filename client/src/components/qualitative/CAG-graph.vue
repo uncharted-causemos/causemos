@@ -70,6 +70,8 @@ const FADED_OPACITY = 0.2;
 // const GRAPH_HEIGHT = 40;
 const THRESHOLD_TIME = 1;
 
+let temporaryNewEdge = null;
+
 class CAGRenderer extends SVGRenderer {
   renderNodeAdded(nodeSelection) {
     nodeSelection.append('g').classed('node-handles', true);
@@ -198,7 +200,18 @@ class CAGRenderer extends SVGRenderer {
       .style('stroke', 'none');
   }
 
-  renderEdgeAdded(selection) {
+  renderEdgeAdded(selection, renderer) {
+    // If we manually drew a new eage, we need to inject the path points it back in, as positions are not stored.
+    if (temporaryNewEdge) {
+      const sourceNode = temporaryNewEdge.sourceNode;
+      const targetNode = temporaryNewEdge.targetNode;
+      const edge = renderer.layout.edges.find(d => d.source === sourceNode.concept && d.target === targetNode.concept);
+      if (edge) {
+        edge.points = renderer.getPathBetweenNodes(sourceNode, targetNode);
+      }
+      temporaryNewEdge = null;
+    }
+
     selection
       .append('path')
       .classed('edge-path-bg', true)
@@ -455,7 +468,13 @@ class CAGRenderer extends SVGRenderer {
           .style('fill', 'none');
       })
       .on('end', () => {
-        this.options.newEdgeFn(getLayoutNodeById(this.newEdgeSourceId), getLayoutNodeById(this.newEdgeTargetId));
+        const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
+        const targetNode = getLayoutNodeById(this.newEdgeTargetId);
+
+        if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
+        temporaryNewEdge = { sourceNode, targetNode };
+
+        this.options.newEdgeFn(sourceNode, targetNode);
       });
     handles.call(drag);
   }
@@ -586,7 +605,7 @@ export default {
         this.renderer.disableNodeHandles();
         this.renderer.resetDragState();
 
-        if (_.isNil(source) || _.isNil(target)) return;
+
         this.$emit('new-edge', { source, target });
       },
       ontologyConcepts: this.ontologyConcepts
