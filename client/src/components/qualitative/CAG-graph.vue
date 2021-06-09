@@ -120,30 +120,11 @@ class CAGRenderer extends SVGRenderer {
     });
   }
 
-  // Override render function to check for ambigous edges and highlight them
+  // Override render function to also check for ambigous edges and highlight them
   async render() {
     await super.render();
-    const graph = this.layout;
-    const highlightOptions = {
-      color: 'red',
-      duration: 6000
-    };
-
-    const ambigEdges = [];
-
-    for (const edge of graph.edges) {
-      const polarity = edge.data.polarity;
-      if (polarity !== 1 && polarity !== -1) {
-        d3.select(this.svgEl).select('.foreground-layer')
-          .append('text')
-          .attr('x', 10)
-          .attr('y', 15)
-          .text('Warning: ambigous endges detected in graph'); // obviously not very pretty, will change soon
-        ambigEdges.push(edge);
-      }
-    }
-    this.highlight({ nodes: [], edges: ambigEdges }, highlightOptions); // when a node is first added it grabs the overidden highlight from below
-  } // ask about this, defiitely missing something to do with JS inheritance and Vue.
+    this.highlightAmbiguousEdges();
+  }
 
   renderNodeUpdated() {
     // not sure anything is needed here, function is requird though
@@ -566,6 +547,29 @@ class CAGRenderer extends SVGRenderer {
       .style('border-radius', DEFAULT_STYLE.nodeHeader.borderRadius)
       .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
       .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
+  }
+
+  highlightAmbiguousEdges() {
+    const graph = this.layout;
+    const highlightOptions = {
+      color: 'red',
+      duration: 4000
+    };
+
+    const ambigEdges = [];
+
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        d3.select(this.svgEl).select('.foreground-layer')
+          .append('text')
+          .attr('x', 10)
+          .attr('y', 15)
+          .text('Warning: ambigous endges detected in graph'); // obviously not very pretty, will change soon
+        ambigEdges.push(edge);
+      }
+    }
+    this.highlight({ nodes: [], edges: ambigEdges }, highlightOptions); // when a node is first added it grabs the overidden highlight from below
   }
 }
 
