@@ -561,15 +561,24 @@ class CAGRenderer extends SVGRenderer {
     for (const edge of graph.edges) {
       const polarity = edge.data.polarity;
       if (polarity !== 1 && polarity !== -1) {
-        d3.select(this.svgEl).select('.foreground-layer')
-          .append('text')
-          .attr('x', 10)
-          .attr('y', 15)
-          .text('Warning: ambigous endges detected in graph'); // obviously not very pretty, will change soon
         ambigEdges.push(edge);
       }
     }
-    this.highlight({ nodes: [], edges: ambigEdges }, highlightOptions); // when a node is first added it grabs the overidden highlight from below
+
+    const warning = d3.select(this.svgEl).select('.foreground-layer')
+      .append('text')
+      .attr('x', 10)
+      .attr('y', 15)
+      .attr('opacity', 0)
+      .classed('ambiguous-edge-warning', true)
+      .text('Warning: ambiguous edges detected in graph'); // obviously not very pretty, will change soon
+
+    if (ambigEdges.length > 0) {
+      warning.attr('opacity', 1);
+      this.highlight({ nodes: [], edges: ambigEdges }, highlightOptions); // when a node is first added it grabs the overidden highlight from below
+    } else {
+      warning.attr('opacity', 0);
+    }
   }
 }
 
@@ -844,5 +853,11 @@ export default {
   width: 100%;
   height: 100%;
   overflow: hidden;
+}
+
+.ambiguous-edge-warning {
+  color: $negative;
+  font-size: $font-size-medium;
+  font-weight: normal;
 }
 </style>
