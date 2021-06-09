@@ -5,6 +5,7 @@
       :model-components="modelComponents"
       @add-concept="createNewNode()"
       @import-cag="showModalImportCAG=true"
+      @reset-cag="resetCAGLayout()"
     />
     <main>
       <div
@@ -713,6 +714,10 @@ export default {
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges);
       this.setUpdateToken(result.updateToken);
+    },
+    resetCAGLayout() {
+      // do nothing for now
+      console.log('reset button pushed');
     }
   }
 };

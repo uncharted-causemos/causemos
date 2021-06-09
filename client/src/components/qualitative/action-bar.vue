@@ -33,6 +33,14 @@
           @click="importCAG"
         ><i class="fa fa-fw fa-connectdevelop" />Import CAG</button>
       </li>
+      <li class="nav-item">
+        <button
+          v-tooltip.top-center="'reset CAG positioning'"
+          type="button"
+          class="btn btn-primary"
+          @click="resetCAG"
+        >Reset Layout</button>
+      </li>
 
     </ul>
 
@@ -140,6 +148,9 @@ export default {
     },
     importCAG() {
       this.$emit('import-cag');
+    },
+    resetCAG() {
+      this.$emit('reset-cag');
     },
     onRenameModalConfirm(newCagNameInput) {
       // Optimistically set new name
