@@ -471,6 +471,9 @@ class CAGRenderer extends SVGRenderer {
         const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
         const targetNode = getLayoutNodeById(this.newEdgeTargetId);
 
+        this.disableNodeHandles();
+        this.resetDragState();
+
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
         temporaryNewEdge = { sourceNode, targetNode };
 
@@ -602,10 +605,6 @@ export default {
       useEdgeControl: true,
       useStableLayout: true,
       newEdgeFn: (source, target) => {
-        this.renderer.disableNodeHandles();
-        this.renderer.resetDragState();
-
-
         this.$emit('new-edge', { source, target });
       },
       ontologyConcepts: this.ontologyConcepts
