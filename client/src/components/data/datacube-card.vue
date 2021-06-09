@@ -169,6 +169,7 @@
               :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
               :output-selection=indx
+              :relative-to="relativeTo"
               :show-tooltip="true"
               :selected-admin-level="selectedAdminLevel"
               :filters="mapFilters"

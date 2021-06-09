@@ -141,7 +141,7 @@ export default {
     },
     relativeTo: {
       type: Number,
-      default: () => 0
+      default: () => undefined
     },
     showTooltip: {
       type: Boolean,
@@ -182,22 +182,36 @@ export default {
     gridStats: undefined
   }),
   computed: {
-    outputSourceSpecsValidated() {
-      return this.outputSourceSpecs.filter(spec => {
-        const { modelId, runId, outputVariable, timestamp, id, temporalResolution, temporalAggregation, spatialAggregation } = spec || {};
-        return modelId && runId && outputVariable && timestamp && id && temporalResolution && temporalAggregation && spatialAggregation;
-      });
-    },
     selection() {
-      return this.outputSourceSpecsValidated[this.outputSelection];
+      return this.outputSourceSpecs[this.outputSelection];
+    },
+    baselineSpec() {
+      return _.isNil(this.relativeTo) || this.relativeTo === this.outputSelection
+        ? undefined
+        : this.outputSourceSpecs[this.relativeTo];
     },
     stats() {
       const stats = {};
       if (!this.regionData) return stats;
-      for (const [key, data] of Object.entries(this.regionData)) {
-        const values = data.filter(v => v[this.valueProp] !== undefined).map(v => v[this.valueProp]);
-        if (values.length === 0) return stats;
-        stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+      if (this.baselineSpec) {
+        const baselineProp = this.baselineSpec.id;
+        for (const [key, data] of Object.entries(this.regionData)) {
+          const values = [];
+          data.filter(v => v[baselineProp] !== undefined).forEach(v => {
+            // eslint-disable-next-line @typescript-eslint/no-unused-vars
+            const { id, ...rest } = v;
+            const diffs = Object.values(rest).map(value => value - rest[baselineProp]);
+            values.push(...diffs);
+          });
+          if (values.length === 0) return stats;
+          stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+        }
+      } else {
+        for (const [key, data] of Object.entries(this.regionData)) {
+          const values = data.filter(v => v[this.valueProp] !== undefined).map(v => v[this.valueProp]);
+          if (values.length === 0) return stats;
+          stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+        }
       }
       return stats;
     },
@@ -206,7 +220,7 @@ export default {
       const extent = this.isGridMap ? this.gridStats : this.stats[adminLevel];
       if (!extent) return { min: 0, max: 1 };
       if (extent.min === extent.max) {
-        extent.min = 0;
+        extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
       }
       return extent;
     },
@@ -218,7 +232,7 @@ export default {
       if (this.selectedLayer.vectorSourceLayer !== 'maas') {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       } else {
-        const outputSpecs = this.outputSourceSpecsValidated
+        const outputSpecs = this.outputSourceSpecs
           .map(spec => {
             return {
               modelId: spec.modelId,
@@ -261,6 +275,9 @@ export default {
       this.updateLayerFilter();
     },
     selection() {
+      this.refresh();
+    },
+    relativeTo() {
       this.refresh();
     },
     regionData() {
@@ -316,7 +333,8 @@ export default {
     refreshColorLayer(useFeatureState = false) {
       const { min, max } = this.extent;
       const { color, scaleFn } = this.colorOption;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 7), scaleFn, useFeatureState);
+      const relativeToProp = this.baselineSpec && this.baselineSpec.id;
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 7), scaleFn, useFeatureState, relativeToProp);
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
@@ -430,13 +448,18 @@ export default {
       this._unsetHover(event.map);
     },
     popupValueFormatter(feature) {
-      if (_.isNil(feature)) return;
-      if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return;
+      if (_.isNil(feature)) return null;
+      if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return null;
 
       if (this.selectedLayer.vectorSourceLayer === 'maas') {
         return chartValueFormatter(this.extent.min, this.extent.max)(feature.properties[this.valueProp]);
       } else {
-        const fields = [chartValueFormatter(this.extent.min, this.extent.max)(feature.state[this.valueProp])];
+        const value = feature.state[this.valueProp];
+        const fields = [chartValueFormatter(this.extent.min, this.extent.max)(value)];
+        if (this.baselineSpec) {
+          const diff = feature.state[this.valueProp] - feature.state[this.baselineSpec.id];
+          fields.push('Diff: ' + chartValueFormatter(this.extent.min, this.extent.max)(diff));
+        }
         [3, 2, 1, 0].forEach(i => fields.push(feature.properties['NAME_' + i]));
         return fields.filter(field => !_.isNil(field)).join('<br />');
       }
