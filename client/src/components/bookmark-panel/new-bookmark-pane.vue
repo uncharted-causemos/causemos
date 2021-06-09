@@ -77,7 +77,7 @@ import { BOOKMARKS } from '@/utils/messages-util';
 
 const MSG_EMPTY_BOOKMARK_NAME = 'Insight name cannot be blank';
 
-
+// NOTE: this component is no longer used since new insights are exclusively created via new-insight-modal
 export default {
   name: 'NewBookmarkPane',
   components: {
@@ -139,6 +139,7 @@ export default {
       setCurrentPane: 'bookmarkPanel/setCurrentPane'
     }),
     initBookmark() {
+      // FIXME: this method may be removed as it wouldn't have any effect since the bookmark panel is always hidden and reinitialized anyway
       this.name = '';
       this.description = '';
       this.hasError = false;

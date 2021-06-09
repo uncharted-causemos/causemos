@@ -44,10 +44,7 @@ export default {
     ...mapGetters({
       countBookmarks: 'bookmarkPanel/countBookmarks',
       currentPane: 'bookmarkPanel/currentPane',
-      isPanelOpen: 'bookmarkPanel/isPanelOpen',
-      currentView: 'app/currentView',
-      project: 'insightPanel/projectId',
-      publishedModelId: 'insightPanel/publishedModelId'
+      isPanelOpen: 'bookmarkPanel/isPanelOpen'
     }),
     allowNewBookmarks() {
       return this.currentView === 'kbExplorer' ||
@@ -83,14 +80,15 @@ export default {
       fetchInsights();
     });
     return {
+      currentView,
+      project
     };
   },
   methods: {
     ...mapActions({
       showBookmarkPanel: 'bookmarkPanel/showBookmarkPanel',
       hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
-      setCurrentPane: 'bookmarkPanel/setCurrentPane',
-      setCountBookmarks: 'bookmarkPanel/setCountBookmarks'
+      setCurrentPane: 'bookmarkPanel/setCurrentPane'
     }),
     toggleInsightPane(pane) {
       const paneState = this.isPanelOpen;

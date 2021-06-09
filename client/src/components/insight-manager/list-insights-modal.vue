@@ -136,16 +136,15 @@ export default {
       fetchInsights();
     });
     return {
-      listInsights
+      listInsights,
+      publishedModelId,
+      project
     };
   },
   computed: {
     ...mapGetters({
-      project: 'insightPanel/projectId',
       projectMetadata: 'app/projectMetadata',
-      currentView: 'app/currentView',
-      countInsights: 'insightPanel/countInsights',
-      publishedModelId: 'insightPanel/publishedModelId'
+      countInsights: 'insightPanel/countInsights'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);

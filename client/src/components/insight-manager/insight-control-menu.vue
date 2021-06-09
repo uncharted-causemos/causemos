@@ -52,9 +52,7 @@ export default {
       countInsights: 'insightPanel/countInsights',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
-      project: 'insightPanel/projectId',
-      currentView: 'app/currentView',
-      publishedModelId: 'insightPanel/publishedModelId'
+      currentView: 'app/currentView'
     })
   },
   setup() {

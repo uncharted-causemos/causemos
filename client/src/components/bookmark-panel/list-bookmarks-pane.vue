@@ -2,33 +2,12 @@
   <div class="list-bookmarks-pane-container">
     <div class="pane-header">
       <h6>Saved Insights</h6>
-      <button
-        type="button"
-        class="btn btn-primary"
-        @click="toggleExportMenu"
-      >
-        <span class="lbl">Export</span>
-        <i
-          class="fa fa-fw"
-          :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
-        />
-      </button>
-      <dropdown-control v-if="exportActive" class="below">
-        <template #content>
-          <div
-            class="dropdown-option"
-            @click="exportPPTX"
-          >
-            Powerpoint
-          </div>
-          <div
-            class="dropdown-option"
-            @click="exportDOCX"
-          >
-            Word
-          </div>
-        </template>
-      </dropdown-control>
+      <dropdown-button
+        class="export-dropdown"
+        :inner-button-label="'Export'"
+        :items="['Powerpoint', 'Word']"
+        @item-selected="exportBookmark"
+      />
       <close-button @click="closeBookmarkPanel()" />
     </div>
     <div
@@ -86,12 +65,12 @@ import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageR
 import { saveAs } from 'file-saver';
 import { mapGetters, mapActions, useStore } from 'vuex';
 import API from '@/api/api';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 import { BOOKMARKS } from '@/utils/messages-util';
 
 import BookmarkEditor from '@/components/bookmark-panel/bookmark-editor';
 import CloseButton from '@/components/widgets/close-button';
-import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
 
 import dateFormatter from '@/formatters/date-formatter';
@@ -106,13 +85,12 @@ export default {
   components: {
     BookmarkEditor,
     CloseButton,
-    DropdownControl,
+    DropdownButton,
     MessageDisplay
   },
   data: () => ({
     activeBookmark: null,
     exportActive: false,
-    // listBookmarks: [],
     messageNoData: BOOKMARKS.NO_DATA,
     selectedBookmark: null
   }),
@@ -142,16 +120,16 @@ export default {
       fetchInsights();
     });
     return {
-      listBookmarks
+      listBookmarks,
+      publishedModelId,
+      currentView,
+      project
     };
   },
   computed: {
     ...mapGetters({
-      project: 'insightPanel/projectId',
       projectMetadata: 'app/projectMetadata',
-      currentView: 'app/currentView',
-      countBookmarks: 'bookmarkPanel/countBookmarks',
-      publishedModelId: 'insightPanel/publishedModelId'
+      countBookmarks: 'bookmarkPanel/countBookmarks'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -170,6 +148,18 @@ export default {
       const listBookmarks = await getInsights(this.project, this.publishedModelId, this.currentView);
       this.listBookmarks = listBookmarks;
       this.setCountBookmarks(listBookmarks.length);
+    },
+    exportBookmark(item) {
+      switch (item) {
+        case 'Word':
+          this.exportDOCX();
+          break;
+        case 'Powerpoint':
+          this.exportPPTX();
+          break;
+        default:
+          break;
+      }
     },
     openEditor(id) {
       if (id === this.activeBookmark) {
@@ -467,21 +457,10 @@ export default {
   .selected {
     border: 3px solid $selected;
   }
-  .pane-header {
-    .dropdown-container {
-      position: absolute;
-      right: 46px;
-      padding: 0;
-      width: auto;
-      height: fit-content;
-      // Clip children overflowing the border-radius at the corners
-      overflow: hidden;
+}
 
-      &.below {
-        top: 48px;
-      }
-    }
-  }
+.export-dropdown {
+  margin-right: 3rem;
 }
 
 </style>
