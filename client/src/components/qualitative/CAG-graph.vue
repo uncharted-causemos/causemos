@@ -857,7 +857,7 @@ export default {
   overflow: hidden;
 }
 
-.ambiguous-edge-warning {
+.ambiguous-edge-warning { // this isnt actually getting bound to the class - not sure how this works with vue and D3
   color: $negative;
   font-size: $font-size-medium;
   font-weight: normal;
