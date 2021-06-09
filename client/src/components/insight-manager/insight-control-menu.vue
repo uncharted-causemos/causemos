@@ -2,7 +2,7 @@
   <ul class="insight-controls-container nav navbar-nav navbar-right">
     <li class="nav-item">
       <button
-        v-tooltip.top-center="'See insights list'"
+        v-tooltip.top-center="'See a list of all insights'"
         class="btn insight-btn"
         :class="{ 'insight-manager-open': isPanelOpen && currentPane === 'list-insights' }"
         @click="toggleInsightPane('list-insights')"
@@ -10,10 +10,11 @@
         <i
           class="fa fa-fw fa-star fa-lg"
         />
-        Insights:
+        All Insights:
         <span class="insight-counter">{{ countInsights }}</span>
         <i
-          class="fa fa-fw fa-caret-down"
+          class="fa fa-fw"
+          :class="isPanelOpen ? 'fa-caret-up' : 'fa-caret-down' "
         />
       </button>
     </li>
@@ -40,9 +41,9 @@
 </template>
 
 <script>
-import _ from 'lodash';
-import { mapActions, mapGetters } from 'vuex';
-import API from '@/api/api';
+import { mapActions, mapGetters, useStore } from 'vuex';
+import { getAllInsights } from '@/services/insight-service';
+import { watchEffect, computed } from 'vue';
 
 export default {
   name: 'InsightControlsMenu',
@@ -51,25 +52,44 @@ export default {
       countInsights: 'insightPanel/countInsights',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
-      project: 'app/project'
+      project: 'insightPanel/projectId',
+      currentView: 'app/currentView',
+      publishedModelId: 'insightPanel/publishedModelId'
     })
   },
-  watch: {
-    collection(n, o) {
-      if (_.isEqual(n, o)) return;
-      this.refresh();
-    }
-  },
-  mounted() {
-    this.refresh();
+  setup() {
+    const store = useStore();
+    const publishedModelId = computed(() => store.getters['insightPanel/publishedModelId']);
+    const project = computed(() => store.getters['insightPanel/projectId']);
+
+    // FIXME: refactor into a composable
+    watchEffect(onInvalidate => {
+      let isCancelled = false;
+      async function fetchInsights() {
+        // FIXME: use a count API instead of fetching list and using length
+        const insights = await getAllInsights(project.value, publishedModelId.value); // all insights
+        if (isCancelled) {
+          // Dependencies have changed since the fetch started, so ignore the
+          //  fetch results to avoid a race condition.
+          return;
+        }
+        store.dispatch('insightPanel/setCountInsights', insights.length);
+      }
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      fetchInsights();
+    });
+    return {
+    };
   },
   methods: {
     ...mapActions({
-      currentView: 'app/currentView',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
-      setCurrentPane: 'insightPanel/setCurrentPane'
+      setCurrentPane: 'insightPanel/setCurrentPane',
+      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel'
     }),
     allowNewInsights() {
       return this.currentView === 'kbExplorer' ||
@@ -90,16 +110,9 @@ export default {
       } else {
         this.showInsightPanel();
         this.setCurrentPane(pane);
+        // hide the local insight panel (i.e., bookmark panel)
+        this.hideBookmarkPanel();
       }
-    },
-    refresh() {
-      // FIXME: currently, the insight feature is dependent on an active "project"
-      //        but this needs to be revised since insight saved during model publishing won't have a project association
-      API.get('bookmarks/counts', {
-        params: { project_id: this.project }
-      }).then(d => {
-        this.setCountInsights(d.data);
-      });
     }
   }
 };

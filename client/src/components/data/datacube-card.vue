@@ -85,12 +85,12 @@
           <div class="button-group">
             <button class="btn btn-default"
                     :class="{'btn-primary':isDescriptionView}"
-                    @click="isDescriptionView = true">
+                    @click="$emit('update-desc-view', true)">
               Descriptions
             </button>
             <button class="btn btn-default"
                     :class="{'btn-primary':!isDescriptionView}"
-                    @click="isDescriptionView = false">
+                    @click="$emit('update-desc-view', false)">
               Data
             </button>
           </div>
@@ -216,10 +216,15 @@ export default defineComponent({
     'set-drilldown-data',
     'check-model-metadata-validity',
     'refetch-data',
-    'new-runs-mode'
+    'new-runs-mode',
+    'update-desc-view'
   ],
   props: {
     isExpanded: {
+      type: Boolean,
+      default: true
+    },
+    isDescriptionView: {
       type: Boolean,
       default: true
     },
@@ -307,17 +312,12 @@ export default defineComponent({
       immediate: true
     });
 
-    const isDescriptionView = ref<boolean>(true);
-
     const isModel = computed(() => {
       return metadata.value?.type === DatacubeType.Model;
     });
 
     watch(() => props.selectedScenarioIds, () => {
       relativeTo.value = null;
-      if (isModel.value) {
-        isDescriptionView.value = props.selectedScenarioIds.length === 0;
-      }
     }, {
       immediate: true
     });
@@ -378,7 +378,6 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues,
-      isDescriptionView,
       mainModelOutput,
       metadata,
       isModel

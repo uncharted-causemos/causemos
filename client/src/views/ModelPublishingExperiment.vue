@@ -35,10 +35,12 @@
       :selected-temporal-aggregation="selectedTemporalAggregation"
       :selected-temporal-resolution="selectedTemporalResolution"
       :selected-spatial-aggregation="selectedSpatialAggregation"
+      :is-description-view="isDescriptionView"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
       @check-model-metadata-validity="checkModelMetadataValidity"
+      @update-desc-view="updateDescView"
     >
       <template v-slot:datacube-model-header>
         <datacube-model-header
@@ -110,17 +112,16 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
-import { defineComponent, Ref, ref } from 'vue';
+import { defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
-import { ModelPublishingStep } from '@/types/UseCase';
 import { ModelPublishingStepID } from '@/types/Enums';
 import router from '@/router';
-import { DimensionInfo, Model } from '@/types/Datacube';
+import { DimensionInfo, Model, ModelPublishingStep } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
@@ -178,6 +179,7 @@ export default defineComponent({
 
     const modelRunsFetchedAt = ref(0);
 
+    // FIXME: we no longer need/should push insight params to the url
     const updateRouteParams = () => {
       // save the info in the query params so saved insights would pickup the latest value
       router.push({
@@ -186,7 +188,7 @@ export default defineComponent({
           temporalAggregation: selectedTemporalAggregation.value,
           temporalResolution: selectedTemporalResolution.value,
           spatialAggregation: selectedSpatialAggregation.value,
-          timeStamp: selectedTimestamp.value,
+          timestamp: selectedTimestamp.value,
           selectedScenarioID: selectedScenarioIds.value.length === 1 ? selectedScenarioIds.value[0] : undefined
         }
       }).catch(() => {});
@@ -241,6 +243,12 @@ export default defineComponent({
       }
     ]);
 
+    const isDescriptionView = ref<boolean>(true);
+
+    watchEffect(() => {
+      isDescriptionView.value = selectedScenarioIds.value.length === 0;
+    });
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -260,20 +268,26 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalResolution,
       metadata,
-      updateRouteParams
+      updateRouteParams,
+      isDescriptionView
     };
+  },
+  beforeRouteLeave() {
+    // clear model id state so that other pages won't incorrectly load related insights
+    this.setPublishedModelId('undefined');
+    this.setProjectId('undefined'); // @Review
   },
   watch: {
     $route(/* to, from */) {
       // react to route changes (either by clicking on a publishing step or on one of the insights)
       // NOTE:  this is only valid when the route is focused on the 'modelPublishingExperiment'
-      if (this.$route.name === 'modelPublishingExperiment') {
+      if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
         const publishStepId = this.$route.query.step as any;
         if (publishStepId !== undefined) {
           this.currentPublishingStep = publishStepId as ModelPublishingStepID;
         }
 
-        const timestamp = this.$route.query.timeStamp as any;
+        const timestamp = this.$route.query.timestamp as any;
         if (timestamp !== undefined) {
           this.setSelectedTimestamp(timestamp);
         }
@@ -332,12 +346,36 @@ export default defineComponent({
 
     // TODO: when new-runs-mode is active, clear the breakdown panel content
     // TODO: add other viz options as per WG4 recent slides
+
+    this.setPublishedModelId(this.selectedModelId);
+    this.setProjectId('dssat publish project id'); // @Review
   },
   methods: {
+    ...mapActions({
+      setViewState: 'insightPanel/setViewState',
+      setDataState: 'insightPanel/setDataState',
+      setPublishedModelId: 'insightPanel/setPublishedModelId',
+      setProjectId: 'insightPanel/setProjectId'
+    }),
+    updateDescView(val: boolean) {
+      this.isDescriptionView = val;
+    },
+    saveUpdatedState() {
+      this.setDataState({
+        selectedScenarioIds: this.selectedScenarioIds,
+        selectedTimestamp: this.selectedTimestamp as number
+      });
+      this.setViewState({
+        spatialAggregation: this.selectedSpatialAggregation,
+        temporalAggregation: this.selectedTemporalAggregation,
+        temporalResolution: this.selectedTemporalResolution
+      });
+    },
     setSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;
       this.selectedTimestamp = value;
       this.updateRouteParams();
+      this.saveUpdatedState();
     },
     fetchAvailableAggregations() {
       // TODO: fetch actual available aggregations based on the pipeline support
@@ -365,14 +403,17 @@ export default defineComponent({
     handleTemporalAggregationSelection(tempAgg: string) {
       this.selectedTemporalAggregation = tempAgg;
       this.checkStepForCompletenessAndUpdateRouteParams();
+      this.saveUpdatedState();
     },
     handleTemporalResolutionSelection(tempRes: string) {
       this.selectedTemporalResolution = tempRes;
       this.checkStepForCompletenessAndUpdateRouteParams();
+      this.saveUpdatedState();
     },
     handleSpatialAggregationSelection(spatialAgg: string) {
       this.selectedSpatialAggregation = spatialAgg;
       this.checkStepForCompletenessAndUpdateRouteParams();
+      this.saveUpdatedState();
     },
     checkStepForCompletenessAndUpdateRouteParams() {
       // mark this step as complete
@@ -444,20 +485,6 @@ export default defineComponent({
 
 ::v-deep(.attribute-invalid button) {
   border:1px solid red !important;
-}
-
-.new-insight-popup {
-  display: block;
-  background-color: rgb(236, 236, 236);
-  position: absolute;
-  margin: auto;
-  display: flex;
-  flex-direction: column;
-  padding: 15px;
-  box-shadow: 0px 5px 4px 2px rgba(0, 0, 0, 0.05),
-              0px 3px 2px 1px rgba(0, 0, 0, 0.05);
-  z-index: 2;
-  width: 30vw;
 }
 
 main {

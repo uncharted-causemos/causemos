@@ -5,7 +5,8 @@ import {
   DatacubeStatus,
   DatacubeType,
   ModelParameterDataType,
-  TemporalResolution
+  TemporalResolution,
+  ModelPublishingStepID
 } from '@/types/Enums';
 
 export interface DatacubeMaintainer {
@@ -79,4 +80,10 @@ export interface Model extends Datacube {
 
 export interface Indicator extends Datacube {
   data_paths: string[];
+}
+
+export interface ModelPublishingStep {
+  id: ModelPublishingStepID;
+  completed: boolean;
+  text: string;
 }

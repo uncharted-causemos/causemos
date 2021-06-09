@@ -160,7 +160,8 @@ export default defineComponent({
       if (
         selectedModelId.value === null ||
         selectedScenarioIds.value.length === 0 ||
-        selectedTimestamp.value === null
+        selectedTimestamp.value === null ||
+        metadata.value === null
       ) {
         return;
       }

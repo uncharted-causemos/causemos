@@ -11,9 +11,9 @@
           </div>
           <div class="form-group">
             <form>
-              <label> Title* </label>
+              <label> Name* </label>
               <input
-                v-model="title"
+                v-model="name"
                 v-focus
                 type="text"
                 class="form-control"
@@ -27,7 +27,7 @@
               </div>
               <label>Description</label>
               <textarea
-                rows="5"
+                rows="2"
                 v-model="description"
                 class="form-control" />
             </form>
@@ -49,7 +49,7 @@
             <button
               type="button"
               class="btn btn-primary"
-              :class="{ 'disabled': title.length === 0}"
+              :class="{ 'disabled': name.length === 0}"
               @click="saveInsight"
             >
               Save
@@ -70,23 +70,10 @@
                 <li>
                   <i :class="iconToDisplay" /> {{ viewName }}
                 </li>
-                <li>
-                  <b>Project Name:</b> {{ projectMetadata.name }}
-                </li>
-                <li>
-                  <b>Ontology:</b> {{ projectMetadata.ontology }}
-                </li>
-                <li>
-                  <b>Created:</b> {{ projectMetadata.created_at }}
-                </li>
-                <li>
-                  <b>Modifed:</b> {{ projectMetadata.modified_at }}
-                </li>
-                <li>
-                  <b>Corpus:</b> {{ projectMetadata.corpus_id }}
-                </li>
-                <li v-if="formattedFilterString.length > 0">
-                  <b>Filters:</b> {{ formattedFilterString }}
+                <li
+                  v-for="metadataAttr in metadataDetails"
+                  :key="metadataAttr.key">
+                  <b>{{metadataAttr.key}}</b> {{ metadataAttr.value }}
                 </li>
               </ul>
             </div>
@@ -113,7 +100,7 @@ import { VIEWS_LIST } from '@/utils/views-util';
 import { BOOKMARKS } from '@/utils/messages-util';
 
 
-const MSG_EMPTY_BOOKMARK_TITLE = 'Insight title cannot be blank';
+const MSG_EMPTY_BOOKMARK_NAME = 'Insight name cannot be blank';
 
 const METDATA_DRILLDOWN_TABS = [
   {
@@ -132,15 +119,14 @@ export default {
   data: () => ({
     description: '',
     drilldownTabs: METDATA_DRILLDOWN_TABS,
-    errorMsg: MSG_EMPTY_BOOKMARK_TITLE,
+    errorMsg: MSG_EMPTY_BOOKMARK_NAME,
     hasError: false,
     imagePreview: null,
     metadata: '',
-    title: ''
+    name: ''
   }),
   computed: {
     ...mapGetters({
-      project: 'app/project',
       currentView: 'app/currentView',
       currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
@@ -148,6 +134,11 @@ export default {
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
       countInsights: 'insightPanel/countInsights',
+
+      dataState: 'insightPanel/dataState',
+      viewState: 'insightPanel/viewState',
+      publishedModelId: 'insightPanel/publishedModelId',
+      project: 'insightPanel/projectId',
 
       filters: 'dataSearch/filters',
       ontologyConcepts: 'dataSearch/ontologyConcepts',
@@ -173,13 +164,70 @@ export default {
           `${c.values.map(v => FilterValueFormatter(v)).join(', ')}`;
       }, '');
       return `${filterString.length > 0 ? filterString : ''}`;
+    },
+    insightVisibility() {
+      return this.currentView === 'modelPublishingExperiment' ? 'public' : 'private';
+    },
+    insightTargetView() {
+      return this.currentView === 'modelPublishingExperiment' ? 'data' : this.currentView;
+    },
+    insightModelId() {
+      return this.currentView === 'modelPublishingExperiment' || this.currentView === 'data' ? this.publishedModelId : '';
+    },
+    metadataDetails() {
+      const arr = [];
+      // @HACK: The content of this function needs to be revised and cleaned
+      arr.push({
+        key: 'Project Name:',
+        value: this.projectMetadata.name
+      });
+      if (this.currentView === 'modelPublishingExperiment' || this.currentView === 'data') {
+        // FIXME: additional metadata attributes should be defined and sent down based on the source page
+        arr.push({
+          key: 'Model ID:',
+          value: this.insightModelId
+        });
+        arr.push({
+          key: 'Target View:',
+          value: this.insightTargetView
+        });
+        arr.push({
+          key: 'Visibility:',
+          value: this.insightVisibility
+        });
+      } else {
+        arr.push({
+          key: 'Ontology:',
+          value: this.projectMetadata.ontology
+        });
+        arr.push({
+          key: 'Created:',
+          value: this.projectMetadata.created_at
+        });
+        arr.push({
+          key: 'Modified:',
+          value: this.projectMetadata.modified_at
+        });
+        arr.push({
+          key: 'Corpus:',
+          value: this.projectMetadata.corpus_id
+        });
+        if (this.formattedFilterString.length > 0) {
+          arr.push({
+            key: 'Filters:',
+            value: this.formattedFilterString
+          });
+        }
+      }
+
+      return arr;
     }
   },
   watch: {
-    title(n) {
+    name(n) {
       if (_.isEmpty(n) && this.isPanelOpen) {
         this.hasError = true;
-        this.errorMsg = MSG_EMPTY_BOOKMARK_TITLE;
+        this.errorMsg = MSG_EMPTY_BOOKMARK_NAME;
       } else {
         this.hasError = false;
         this.errorMsg = null;
@@ -202,30 +250,39 @@ export default {
       this.setCurrentPane('');
     },
     initInsight() {
-      this.title = '';
+      this.name = '';
       this.description = '';
       this.hasError = false;
     },
     async autofillInsight() {
       this.modelSummary = this.currentCAG ? await modelService.getSummary(this.currentCAG) : null;
 
-      this.title = (this.projectMetadata ? this.projectMetadata.name : '') +
+      this.name = (this.projectMetadata ? this.projectMetadata.name : '') +
         (this.modelSummary ? (' - ' + this.modelSummary.name) : '') +
         (this.currentView ? (' - ' + this.currentView) : '');
 
       this.description = this.formattedFilterString.length > 0 && `Filters: ${this.formattedFilterString} `;
     },
     async saveInsight() {
-      if (this.hasError || _.isEmpty(this.title)) return;
+      if (this.hasError || _.isEmpty(this.name)) return;
       const url = this.$route.fullPath;
-      API.post('bookmarks', {
+      const newInsight = {
+        name: this.name,
         description: this.description,
+        visibility: this.insightVisibility,
         project_id: this.project,
-        title: this.title,
-        thumbnailSource: this.imagePreview,
+        model_id: this.insightModelId,
         url,
-        view: this.currentView
-      }).then((result) => {
+        target_view: this.insightTargetView,
+        pre_actions: null,
+        post_actions: null,
+        is_default: true,
+        analytical_question: '',
+        thumbnail: this.imagePreview,
+        view_state: this.viewState,
+        data_state: this.dataState
+      };
+      API.post('insights', newInsight).then((result) => {
         const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_ADDITION : BOOKMARKS.ERRONEOUS_ADDITION;
         if (message === BOOKMARKS.SUCCESSFUL_ADDITION) {
           this.toaster(message, 'success', false);
@@ -275,15 +332,17 @@ export default {
       display: flex;
       flex-direction: row;
       .fields {
-        flex: 0 1 auto;
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        padding: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
         .preview {
           flex: 0 0 auto;
           margin: 0 0 1rem;
           overflow: hidden;
+          align-self: center;
           img {
             max-height: 100%;
             max-width: 100%;
@@ -291,6 +350,7 @@ export default {
         }
         .form-group {
           flex: 1 1 auto;
+          margin-bottom: 3px;
           form {
             display: flex;
             flex-direction: column;

@@ -6,11 +6,11 @@
         @click="selectInsight()"
       >
         <img
-          :src="insight.thumbnail_source"
+          :src="insight.thumbnail"
           class="thumbnail">
       </div>
       <div class="insight-title">
-        <h5>{{ insight.title }}</h5>
+        <h5>{{ insight.name }}</h5>
       </div>
       <div class="insight-footer">
         <div class="insight-checkbox" @click="updateCuration()">

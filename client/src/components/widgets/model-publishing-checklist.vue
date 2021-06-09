@@ -36,7 +36,7 @@
 
 <script lang="ts">
 import { ModelPublishingStepID } from '@/types/Enums';
-import { ModelPublishingStep } from '@/types/UseCase';
+import { ModelPublishingStep } from '@/types/Datacube';
 import { defineComponent, PropType } from 'vue';
 
 export default defineComponent({

@@ -1,74 +1,82 @@
 <template>
-  <div class="list-insights-modal-container">
-    <full-screen-modal-header
-      icon="angle-left"
-      nav-back-label="Exit Saved Insights"
-      @close="closeInsightPanel"
-    >
-      <template #trailing>
-        <insight-control-menu />
-      </template>
-    </full-screen-modal-header>
-    <div class="search">
-      <input
-        v-model="search"
-        v-focus
-        type="text"
-        class="form-control"
-        placeholder="Search insights"
+  <div class="list-bookmarks-pane-container">
+    <div class="pane-header">
+      <h6>Saved Insights</h6>
+      <button
+        type="button"
+        class="btn btn-primary"
+        @click="toggleExportMenu"
       >
-      <div class="export">
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="toggleExportMenu"
-        >
-          <span class="lbl">Export</span>
-          <i
-            class="fa fa-fw"
-            :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
-          />
-        </button>
-        <dropdown-control v-if="exportActive" class="below">
-          <template #content>
-            <div
-              class="dropdown-option"
-              @click="exportPPTX"
-            >
-              Powerpoint
-            </div>
-            <div
-              class="dropdown-option"
-              @click="exportDOCX"
-            >
-              Word
-            </div>
-          </template>
-        </dropdown-control>
-      </div>
-    </div>
-    <div class="pane-wrapper">
-      <div
-        v-if="listInsights.length > 0"
-        class="pane-content">
-        <insight-card
-          v-for="insight in searchedInsights"
-          :key="insight.id"
-          :active-insight="activeInsight"
-          :insight="insight"
-          :curated="isCuratedInsight(insight.id)"
-          @delete-insight="deleteInsight(insight.id)"
-          @open-editor="openEditor(insight.id)"
-          @select-insight="selectInsight(insight)"
-          @update-curation="updateCuration(insight.id)"
+        <span class="lbl">Export</span>
+        <i
+          class="fa fa-fw"
+          :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
         />
-      </div>
-      <message-display
-        class="pane-content"
-        v-else
-        :message="messageNoData"
-      />
+      </button>
+      <dropdown-control v-if="exportActive" class="below">
+        <template #content>
+          <div
+            class="dropdown-option"
+            @click="exportPPTX"
+          >
+            Powerpoint
+          </div>
+          <div
+            class="dropdown-option"
+            @click="exportDOCX"
+          >
+            Word
+          </div>
+        </template>
+      </dropdown-control>
+      <close-button @click="closeBookmarkPanel()" />
     </div>
+    <div
+      v-if="listBookmarks.length > 0"
+      class="pane-content">
+      <div
+        v-for="bookmark in listBookmarks"
+        :key="bookmark.id">
+        <div
+          class="bookmark"
+          :class="{ 'selected': selectedBookmark === bookmark, '': selectedBookmark !== bookmark }"
+          @click="selectBookmark(bookmark)">
+          <div class="bookmark-header">
+            <div class="bookmark-title">
+              <i class="fa fa-star"></i>
+              {{ stringFormatter(bookmark.name, 25) }}
+            </div>
+            <div class="bookmark-action" @click.stop="openEditor(bookmark.id)">
+              <i class="fa fa-ellipsis-h bookmark-header-btn" />
+              <bookmark-editor
+                v-if="activeBookmark === bookmark.id"
+                @delete="deleteBookmark(bookmark.id)"
+              />
+            </div>
+          </div>
+          <div
+            class="bookmark-content">
+            <div class="bookmark-thumbnail">
+              <img
+                :src="bookmark.thumbnail"
+                class="thumbnail">
+            </div>
+            <div
+              v-if="bookmark.description.length > 0"
+              class="bookmark-description">
+              {{ bookmark.description }}
+            </div>
+            <div
+              v-else
+              class="bookmark-empty-description">No description provided</div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <message-display
+      v-else
+      :message="messageNoData"
+    />
   </div>
 </template>
 
@@ -81,54 +89,52 @@ import API from '@/api/api';
 
 import { BOOKMARKS } from '@/utils/messages-util';
 
-import InsightCard from '@/components/insight-manager/insight-card';
+import BookmarkEditor from '@/components/bookmark-panel/bookmark-editor';
+import CloseButton from '@/components/widgets/close-button';
 import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
-import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
-import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 import router from '@/router';
-import { getAllInsights } from '@/services/insight-service';
+import { getInsights } from '@/services/insight-service';
 import { ref, watchEffect, computed } from 'vue';
 
 export default {
-  name: 'ListInsightsModal',
+  name: 'ListBookmarksPane',
   components: {
+    BookmarkEditor,
+    CloseButton,
     DropdownControl,
-    FullScreenModalHeader,
-    InsightCard,
-    InsightControlMenu,
     MessageDisplay
   },
   data: () => ({
-    activeInsight: null,
-    curatedInsights: [],
+    activeBookmark: null,
     exportActive: false,
+    // listBookmarks: [],
     messageNoData: BOOKMARKS.NO_DATA,
-    search: '',
-    selectedInsight: null
+    selectedBookmark: null
   }),
   setup() {
-    const listInsights = ref([]);
+    const listBookmarks = ref([]);
     const store = useStore();
     const publishedModelId = computed(() => store.getters['insightPanel/publishedModelId']);
     const project = computed(() => store.getters['insightPanel/projectId']);
+    const currentView = computed(() => store.getters['app/currentView']);
 
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        const insights = await getAllInsights(project.value, publishedModelId.value);
+        const insights = await getInsights(project.value, publishedModelId.value, currentView.value);
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
           return;
         }
-        listInsights.value = insights;
-        store.dispatch('insightPanel/setCountInsights', listInsights.value.length);
+        listBookmarks.value = insights;
+        store.dispatch('bookmarkPanel/setCountBookmarks', listBookmarks.value.length);
       }
       onInvalidate(() => {
         isCancelled = true;
@@ -136,7 +142,7 @@ export default {
       fetchInsights();
     });
     return {
-      listInsights
+      listBookmarks
     };
   },
   computed: {
@@ -144,7 +150,7 @@ export default {
       project: 'insightPanel/projectId',
       projectMetadata: 'app/projectMetadata',
       currentView: 'app/currentView',
-      countInsights: 'insightPanel/countInsights',
+      countBookmarks: 'bookmarkPanel/countBookmarks',
       publishedModelId: 'insightPanel/publishedModelId'
     }),
     metadataSummary() {
@@ -152,66 +158,78 @@ export default {
       const projectModifiedDate = new Date(this.projectMetadata.modified_at);
       return `Project: ${this.projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
         `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
-    },
-    searchedInsights() {
-      if (this.search.length > 0) {
-        const result = this.listInsights.filter((insight) => {
-          return insight.name.toLowerCase().includes(this.search.toLowerCase());
-        });
-        return result;
-      } else {
-        return this.listInsights;
-      }
     }
-  },
-  mounted() {
-    this.curatedInsights = [];
   },
   methods: {
     ...mapActions({
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCountInsights: 'insightPanel/setCountInsights'
+      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
+      setCountBookmarks: 'bookmarkPanel/setCountBookmarks'
     }),
-    dateFormatter,
     stringFormatter,
-    closeInsightPanel() {
-      this.hideInsightPanel();
-      this.activeInsight = null;
-      this.selectedInsight = null;
+    async refresh() {
+      const listBookmarks = await getInsights(this.project, this.publishedModelId, this.currentView);
+      this.listBookmarks = listBookmarks;
+      this.setCountBookmarks(listBookmarks.length);
     },
-    deleteInsight(id) {
+    openEditor(id) {
+      if (id === this.activeBookmark) {
+        this.activeBookmark = null;
+        return;
+      }
+      this.activeBookmark = id;
+    },
+    toggleExportMenu() {
+      this.exportActive = !this.exportActive;
+    },
+    closeBookmarkPanel() {
+      this.hideBookmarkPanel();
+      this.activeBookmark = null;
+      this.selectedBookmark = null;
+    },
+    selectBookmark(bookmark) {
+      if (bookmark === this.selectedBookmark) {
+        this.selectedBookmark = null;
+        return;
+      }
+      this.selectedBookmark = bookmark;
+      router.push({
+        query: {
+          insight_id: this.selectedBookmark.id
+        }
+      }).catch(() => {});
+    },
+    deleteBookmark(id) {
       API.delete(`insights/${id}`).then(result => {
         const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_REMOVAL : BOOKMARKS.ERRONEOUS_REMOVAL;
         if (message === BOOKMARKS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
-          const count = this.countInsights - 1;
-          this.setCountInsights(count);
-          this.updateCuration(id);
+          const count = this.countBookmarks - 1;
+          this.setCountBookmarks(count);
           this.refresh();
         } else {
           this.toaster(message, 'error', true);
         }
       });
     },
-    getInsightSet() {
-      if (this.curatedInsights.length > 0) {
-        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
-        return curatedSet;
-      } else {
-        return this.listInsights;
-      }
+    openExport() {
+      this.exportActive = true;
     },
-    getSourceUrlForExport(i) {
-      return i.url + '?insight_id=' + i.id;
+    getFileName() {
+      const date = new Date();
+      const formattedDate = dateFormatter(date, 'YYYY-MM-DD hh:mm:ss a');
+      return `Causemos ${this.projectMetadata.name} ${formattedDate}`;
+    },
+    slideURL(slideURL) {
+      return `${window.location.protocol}//${window.location.host}/#${slideURL}`;
     },
     exportDOCX() {
-      // 72dpi * 8.5 inches width, as word perplexingly uses pixels
+      // 72dpi * 8.5 inches width, as word perplexing uses pixels
       // same height as width so that we can attempt to be consistent with the layout.
       const docxMaxImageSize = 612;
-      const insightSet = this.getInsightSet();
-      const sections = insightSet.map((i) => {
-        const imageSize = this.scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
-        const insightDate = dateFormatter(i.modified_at);
+
+      const sections = this.listBookmarks.map((bm) => {
+        const imageSize = this.scaleImage(bm.thumbnail, docxMaxImageSize, docxMaxImageSize);
+        const insightDate = dateFormatter(bm.modified_at);
         return {
           footers: {
             default: new Footer({
@@ -235,14 +253,14 @@ export default {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               heading: HeadingLevel.HEADING_2,
-              text: `${i.name}`
+              text: `${bm.title}`
             }),
             new Paragraph({
               break: 1,
               alignment: AlignmentType.CENTER,
               children: [
                 new ImageRun({
-                  data: i.thumbnail,
+                  data: bm.thumbnail,
                   transformation: {
                     height: imageSize.height,
                     width: imageSize.width
@@ -261,7 +279,7 @@ export default {
                 }),
                 new TextRun({
                   size: 24,
-                  text: `${i.description}`
+                  text: `${bm.description}`
                 }),
                 new TextRun({
                   bold: true,
@@ -281,7 +299,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(this.getSourceUrlForExport(i))
+                  link: this.slideURL(bm.url)
                 })
               ]
             })
@@ -314,12 +332,12 @@ export default {
         background: { fill: 'FFFFFF' },
         slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right }
       });
-      const insightSet = this.getInsightSet();
-      insightSet.forEach((i) => {
-        const imageSize = this.scaleImage(i.thumbnail, widthLimitImage, heightLimitImage);
-        const insightDate = dateFormatter(i.modified_at);
+
+      this.listBookmarks.forEach((bm) => {
+        const imageSize = this.scaleImage(bm.thumbnail, widthLimitImage, heightLimitImage);
+        const insightDate = dateFormatter(bm.modified_at);
         const slide = pres.addSlide();
-        const notes = `Title: ${i.name}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
+        const notes = `Title: ${bm.title}\nDescription: ${bm.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
 
         /*
           PPTXGEN BUG WORKAROUND - library level function slide.addNotes(notes) doesn't insert notes
@@ -333,7 +351,7 @@ export default {
         });
 
         slide.addImage({
-          data: i.thumbnail,
+          data: bm.thumbnail,
           // centering image code for x & y limited by consts for max content size
           // plus base offsets needed to stay clear of other elements
           x: (widthLimitImage - imageSize.width) / 2,
@@ -343,16 +361,16 @@ export default {
         });
         slide.addText([
           {
-            text: `${i.name}: `,
+            text: `${bm.title}: `,
             options: {
               bold: true,
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i))
+                url: this.slideURL(bm.url)
               }
             }
           },
           {
-            text: `${i.description} `,
+            text: `${bm.description} `,
             options: {
               break: false
             }
@@ -378,11 +396,6 @@ export default {
       });
       this.exportActive = false;
     },
-    getFileName() {
-      const date = new Date();
-      const formattedDate = dateFormatter(date, 'YYYY-MM-DD hh:mm:ss a');
-      return `Causemos ${this.projectMetadata.name} ${formattedDate}`;
-    },
     getPngDimensionsInPixels(base64png) {
       const header = atob(base64png.slice(22, 72)).slice(16, 24);
       const uint8 = Uint8Array.from(header, c => c.charCodeAt(0));
@@ -390,27 +403,6 @@ export default {
       const width = dataView.getInt32(0);
       const height = dataView.getInt32(4);
       return { height, width };
-    },
-    isCuratedInsight(id) {
-      return this.curatedInsights.reduce((res, ci) => {
-        res = res || ci === id;
-        return res;
-      }, false);
-    },
-    openEditor(id) {
-      if (id === this.activeInsight) {
-        this.activeInsight = null;
-        return;
-      }
-      this.activeInsight = id;
-    },
-    openExport() {
-      this.exportActive = true;
-    },
-    async refresh() {
-      const listInsights = await getAllInsights(this.project, this.publishedModelId);
-      this.listInsights = listInsights;
-      this.setCountInsights(listInsights.length);
     },
     scaleImage(base64png, widthLimit, heightLimit) {
       const imageSize = this.getPngDimensionsInPixels(base64png);
@@ -426,80 +418,68 @@ export default {
         width: scaledWidth,
         height: scaledHeight
       };
-    },
-    selectInsight(insight) {
-      if (insight === this.selectedInsight) {
-        this.selectedInsight = null;
-        return;
-      }
-      this.selectedInsight = insight;
-      // Restore the state
-      router.push({
-        query: {
-          insight_id: this.selectedInsight.id
-        }
-      }).catch(() => {});
-      this.closeInsightPanel();
-    },
-    slideURL(slideURL) {
-      return `${window.location.protocol}//${window.location.host}/#${slideURL}`;
-    },
-    toggleExportMenu() {
-      this.exportActive = !this.exportActive;
-    },
-    updateCuration(id) {
-      if (this.isCuratedInsight(id)) {
-        this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
-      } else {
-        this.curatedInsights.push(id);
-      }
     }
   }
 };
 </script>
 
-<style lang="scss" scoped>
+<style lang="scss">
 @import "~styles/variables";
-.list-insights-modal-container {
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: stretch;
-  height: 100vh;
-  .search {
-    padding: 1rem;
-    display: flex;
-    .form-control {
-      flex: 1 1 auto;
-    }
-    .export {
-      padding: 0 0 0 1rem;
-      flex: 0 0 auto;
-      .dropdown-container {
-        position: absolute;
-        right: 1rem;
-        padding: 0;
-        width: auto;
-        height: fit-content;
-        // Clip children overflowing the border-radius at the corners
-        overflow: hidden;
-
-        &.below {
-          top: 96px;
-        }
-      }
+.list-bookmarks-pane-container {
+  color: #707070;
+  .pane-header{
+    > button {
+      margin-right: 35px;
     }
   }
-  .pane-wrapper {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
-    overflow: auto;
-    .pane-content {
+  .bookmark {
+    cursor: pointer;
+    padding: 5px 5px 10px;
+    border-bottom: 1px solid #e5e5e5;
+    .bookmark-header {
       display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      .bookmark-header-btn {
+        cursor: pointer;
+        padding: 5px;
+        color: gray;
+      }
+      .bookmark-action {
+        flex: 0 1 auto;
+      }
+      .bookmark-title {
+        flex: 1 1 auto;
+        font-weight: bold;
+      }
+    }
+      .bookmark-empty-description {
+        color: #D6DBDF;
+      }
+      .bookmark-thumbnail {
+        .thumbnail {
+          width:  100%;
+          min-height: 100px;
+        }
+      }
+
+  }
+  .selected {
+    border: 3px solid $selected;
+  }
+  .pane-header {
+    .dropdown-container {
+      position: absolute;
+      right: 46px;
+      padding: 0;
+      width: auto;
+      height: fit-content;
+      // Clip children overflowing the border-radius at the corners
+      overflow: hidden;
+
+      &.below {
+        top: 48px;
+      }
     }
   }
 }

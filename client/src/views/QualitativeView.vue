@@ -302,6 +302,9 @@ export default {
     this.PANE_ID = PANE_ID;
     this.timerId = null;
     this.cagsToImport = [];
+    // update insight related state
+    this.setPublishedModelId('undefined');
+    this.setProjectId(this.project);
   },
   mounted() {
     this.recalculateCAG();
@@ -311,7 +314,9 @@ export default {
   },
   methods: {
     ...mapActions({
-      setUpdateToken: 'app/setUpdateToken'
+      setUpdateToken: 'app/setUpdateToken',
+      setPublishedModelId: 'insightPanel/setPublishedModelId',
+      setProjectId: 'insightPanel/setProjectId'
     }),
     async refresh() {
       // Get CAG data

@@ -171,6 +171,11 @@ export default {
       this.fetchSensitivityAnalysisResults();
     }
   },
+  created() {
+    // update insight related state
+    this.setPublishedModelId('undefined');
+    this.setProjectId(this.project);
+  },
   mounted() {
     this.refresh();
   },
@@ -181,7 +186,9 @@ export default {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      setSelectedScenarioId: 'model/setSelectedScenarioId'
+      setSelectedScenarioId: 'model/setSelectedScenarioId',
+      setPublishedModelId: 'insightPanel/setPublishedModelId',
+      setProjectId: 'insightPanel/setProjectId'
     }),
     async refresh() {
       this.enableOverlay();
