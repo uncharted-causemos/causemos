@@ -272,7 +272,7 @@ const runProjectionExperiment = async (
  * @param {string} experimentId - eperiment id/hash
  * @param {number} threshold - optional, number of times to poll
  */
-const getExperimentResult = async (modelId: string, experimentId: string, threshold = 10) => {
+const getExperimentResult = async (modelId: string, experimentId: string, threshold = 30) => {
   const model = await getSummary(modelId);
   const taskFn = async () => {
     const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: model.parameter.engine, experiment_id: experimentId } });
