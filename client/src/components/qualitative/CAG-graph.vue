@@ -564,14 +564,16 @@ class CAGRenderer extends SVGRenderer {
         ambigEdges.push(edge);
       }
     }
+    const foreground = d3.select(this.svgEl).select('.foreground-layer');
 
-    const warning = d3.select(this.svgEl).select('.foreground-layer')
-      .append('text')
-      .attr('x', 10)
-      .attr('y', 15)
-      .attr('opacity', 0)
-      .classed('ambiguous-edge-warning', true)
-      .text('Warning: ambiguous edges detected in graph'); // obviously not very pretty, will change soon
+    const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
+      ? d3.select('.ambiguous-edge-warning') // select it
+      : foreground.append('text') // or create it if it hasn't been already
+        .attr('x', 10)
+        .attr('y', 15)
+        .attr('opacity', 0)
+        .classed('ambiguous-edge-warning', true)
+        .text('Warning: ambiguous edges detected in graph'); // obviously not very pretty, will change soon
 
     if (ambigEdges.length > 0) {
       warning.attr('opacity', 1);
