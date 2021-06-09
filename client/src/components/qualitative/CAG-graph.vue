@@ -143,7 +143,7 @@ class CAGRenderer extends SVGRenderer {
         ambigEdges.push(edge);
       }
     }
-    this.highlight({ nodes: graph.nodes, edges: ambigEdges }, highlightOptions); // when a node is first added it grabs the overidden highlight from below
+    this.highlight({ nodes: [], edges: ambigEdges }, highlightOptions); // when a node is first added it grabs the overidden highlight from below
   } // ask about this, defiitely missing something to do with JS inheritance and Vue.
 
   renderNodeUpdated() {
