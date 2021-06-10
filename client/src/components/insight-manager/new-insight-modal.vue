@@ -97,7 +97,7 @@ import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import modelService from '@/services/model-service';
 import { VIEWS_LIST } from '@/utils/views-util';
-import { BOOKMARKS } from '@/utils/messages-util';
+import { INSIGHTS } from '@/utils/messages-util';
 
 
 const MSG_EMPTY_BOOKMARK_NAME = 'Insight name cannot be blank';
@@ -283,8 +283,8 @@ export default {
         data_state: this.dataState
       };
       API.post('insights', newInsight).then((result) => {
-        const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_ADDITION : BOOKMARKS.ERRONEOUS_ADDITION;
-        if (message === BOOKMARKS.SUCCESSFUL_ADDITION) {
+        const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
+        if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
           this.toaster(message, 'success', false);
           const count = this.countInsights + 1;
           this.setCountInsights(count);

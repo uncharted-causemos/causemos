@@ -395,16 +395,20 @@ function renderParallelCoordinates(
     }
 
     // add initial status for all potential model runs as 'draft or not-submitted'
-    newScenarioData.forEach(ns => {
-      ns.status = ModelRunStatus.Draft;
+    //  this will ensure proper coloring/rendering
+    // However, this param must be explicitly removed before sending model-runs
+    //  for execution since the server will create them
+    newScenarioData.forEach(newModelRun => {
+      newModelRun.status = ModelRunStatus.Draft;
     });
 
+    // some markers were added, so notify external listeners
+    const potentialModelRuns = _.map(newScenarioData, function (run) {
+      return _.omit(run, ['status']);
+    });
+    onNewRuns(potentialModelRuns);
 
-    // some markers were added, so notify external listeners and draw potential lines
-    onNewRuns(newScenarioData);
-
-
-    // render all potential scenario-run lines
+    // render all potential model-run lines
     gElement
       .selectAll<SVGPathElement, ScenarioData>('myPath')
       .data(newScenarioData)

@@ -67,7 +67,7 @@ import { mapGetters, mapActions, useStore } from 'vuex';
 import API from '@/api/api';
 import DropdownButton from '@/components/dropdown-button.vue';
 
-import { BOOKMARKS } from '@/utils/messages-util';
+import { INSIGHTS } from '@/utils/messages-util';
 
 import BookmarkEditor from '@/components/bookmark-panel/bookmark-editor';
 import CloseButton from '@/components/widgets/close-button';
@@ -91,7 +91,7 @@ export default {
   data: () => ({
     activeBookmark: null,
     exportActive: false,
-    messageNoData: BOOKMARKS.NO_DATA,
+    messageNoData: INSIGHTS.NO_DATA,
     selectedBookmark: null
   }),
   setup() {
@@ -190,8 +190,8 @@ export default {
     },
     deleteBookmark(id) {
       API.delete(`insights/${id}`).then(result => {
-        const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_REMOVAL : BOOKMARKS.ERRONEOUS_REMOVAL;
-        if (message === BOOKMARKS.SUCCESSFUL_REMOVAL) {
+        const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
+        if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
           const count = this.countBookmarks - 1;
           this.setCountBookmarks(count);
