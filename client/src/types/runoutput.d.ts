@@ -1,6 +1,7 @@
 
 // Types related to model/indicator run outputs
 
+import { AdminLevel } from '@/types/Enums';
 export interface OutputSpec {
   id?: string; // Id that identifies this spec
   modelId: string;
@@ -11,17 +12,13 @@ export interface OutputSpec {
   spatialAggregation: string;
   timestamp: number;
 }
-
-export type RegionLevel = 'country' | 'admin1' | 'admin2' | 'admin3'
-export interface RegionalAggregation {
-  country: RegionAgg[];
-  admin1: RegionAgg[];
-  admin2: RegionAgg[];
-  admin3: RegionAgg[];
-  [key: string]: RegionAgg[]; // this is added to work around the typing error while trying to access the property by string. e.g. regionAggregation['country']
+export type RegionalData = {
+  [key in AdminLevel]?: { id: string; value: number }[];
 }
-
+export type RegionalAggregation = {
+  [key in AdminLevel]?: RegionAgg[];
+}
 export interface RegionAgg {
   id: string; // Region id
-  [key: string]: number | string;
+  values: {[key: string]: number};
 }

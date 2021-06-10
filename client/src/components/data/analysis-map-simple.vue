@@ -197,10 +197,9 @@ export default {
         const baselineProp = this.baselineSpec.id;
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = [];
-          data.filter(v => v[baselineProp] !== undefined).forEach(v => {
+          data.filter(v => v.values[baselineProp] !== undefined).forEach(v => {
             // eslint-disable-next-line @typescript-eslint/no-unused-vars
-            const { id, ...rest } = v;
-            const diffs = Object.values(rest).map(value => value - rest[baselineProp]);
+            const diffs = Object.values(v.values).map(value => value - v.values[baselineProp]);
             values.push(...diffs);
           });
           if (values.length) {
@@ -209,7 +208,7 @@ export default {
         }
       } else {
         for (const [key, data] of Object.entries(this.regionData)) {
-          const values = data.filter(v => v[this.valueProp] !== undefined).map(v => v[this.valueProp]);
+          const values = data.filter(v => v.values[this.valueProp] !== undefined).map(v => v.values[this.valueProp]);
           if (values.length) {
             stats[key] = { min: Math.min(...values), max: Math.max(...values) };
           }
@@ -352,7 +351,7 @@ export default {
           source: this.vectorSourceId,
           sourceLayer: this.vectorSourceLayer
         }, {
-          ...row
+          ...row.values
         });
       });
     },

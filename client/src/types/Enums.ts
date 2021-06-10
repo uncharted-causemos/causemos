@@ -46,3 +46,12 @@ export enum ModelPublishingStepID {
   Tweak_Visualization,
   Capture_Insight
 }
+
+export enum AdminLevel {
+  Country = 'country',
+  Admin1 = 'admin1',
+  Admin2 = 'admin2',
+  Admin3 = 'admin3',
+  Admin4 = 'admin4',
+  Admin5 = 'admin5',
+}

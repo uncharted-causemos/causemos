@@ -1,7 +1,8 @@
 import API from '@/api/api';
-import { OutputSpec, RegionalAggregation, RegionAgg, RegionLevel } from '@/types/runoutput';
+import { AdminLevel } from '@/types/Enums';
+import { OutputSpec, RegionalAggregation, RegionAgg, RegionalData } from '@/types/runoutput';
 
-export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
+export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalData> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
   //       Meanwhile just ignore the error.
   try {
@@ -25,20 +26,22 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
 export const getRegionAggregations = async (specs: OutputSpec[]): Promise<RegionalAggregation> => {
   // Fetch and restructure the result
   const results = await Promise.all(specs.map(getRegionAggregation));
+
   const dict = {
-    country: {} as { [key: string]: RegionAgg},
-    admin1: {} as { [key: string]: RegionAgg},
-    admin2: {} as { [key: string]: RegionAgg},
-    admin3: {} as { [key: string]: RegionAgg}
+    country: {},
+    admin1: {},
+    admin2: {},
+    admin3: {}
+  } as {
+    [key in AdminLevel]: {[key: string]: RegionAgg };
   };
   results.forEach((result, index) => {
-    const rl: RegionLevel[] = ['country', 'admin1', 'admin2', 'admin3'];
-    rl.forEach(level => {
-      result[level].forEach(item => {
+    Object.values(AdminLevel).forEach(level => {
+      (result[level] || []).forEach(item => {
         if (!dict[level][item.id]) {
-          dict[level][item.id] = { id: item.id };
+          dict[level][item.id] = { id: item.id, values: {} };
         }
-        dict[level][item.id][specs[index].id || index] = item.value;
+        dict[level][item.id].values[specs[index].id || index] = item.value;
       });
     });
   });
