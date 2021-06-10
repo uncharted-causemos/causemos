@@ -62,7 +62,7 @@
       </div>
       <div class="pane-wrapper">
         <div
-          v-if="listInsights.length > 0"
+          v-if="countInsights > 0"
           class="pane-content"
         >
           <insight-card
@@ -91,7 +91,7 @@
       class="list"
     >
       <div
-        v-if="listInsights.length > 0"
+        v-if="countInsights > 0"
         class="pane-content"
       >
         <insight-card
@@ -124,7 +124,7 @@ import { saveAs } from 'file-saver';
 import { mapGetters, mapActions } from 'vuex';
 import API from '@/api/api';
 
-import { BOOKMARKS } from '@/utils/messages-util';
+import { INSIGHTS } from '@/utils/messages-util';
 
 import InsightCard from '@/components/insight-manager/insight-card';
 import DropdownControl from '@/components/dropdown-control';
@@ -162,7 +162,7 @@ export default {
     curatedInsights: [],
     exportActive: false,
     listInsights: [],
-    messageNoData: BOOKMARKS.NO_DATA,
+    messageNoData: INSIGHTS.NO_DATA,
     search: '',
     selectedInsight: null,
     tabs: INSIGHT_TABS
@@ -218,12 +218,12 @@ export default {
     },
     deleteInsight(id) {
       API.delete(`bookmarks/${id}`).then(result => {
-        const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_REMOVAL : BOOKMARKS.ERRONEOUS_REMOVAL;
-        if (message === BOOKMARKS.SUCCESSFUL_REMOVAL) {
+        const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
+        if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
           const count = this.countInsights - 1;
           this.setCountInsights(count);
-          this.updateCuration(id);
+          this.removeCuration(id);
           this.refresh();
         } else {
           this.toaster(message, 'error', true);
@@ -457,6 +457,9 @@ export default {
         this.setCountInsights(listInsights.length);
       });
     },
+    removeCuration(id) {
+      this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
+    },
     scaleImage(base64png, widthLimit, heightLimit) {
       const imageSize = this.getPngDimensionsInPixels(base64png);
       let scaledWidth = widthLimit;
@@ -499,7 +502,7 @@ export default {
     },
     updateCuration(id) {
       if (this.isCuratedInsight(id)) {
-        this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
+        this.removeCuration(id);
       } else {
         this.curatedInsights.push(id);
       }
