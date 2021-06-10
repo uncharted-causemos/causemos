@@ -303,7 +303,7 @@ export default {
     this.timerId = null;
     this.cagsToImport = [];
     // update insight related state
-    this.setPublishedModelId('undefined');
+    this.setPublishedModelId(''); // clear current model-id; later this would be repurposed perhaps as cag-id
     this.setProjectId(this.project);
   },
   mounted() {

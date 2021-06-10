@@ -4,10 +4,12 @@ import _ from 'lodash';
 
 /**
  * Get all insights
+ *  - insights associated with current project
+ *    (private project-specific)
+ *  - insights that are public
+ *    (saved during model publication flow AND are associated with a specific model)
  */
 export const getAllInsights = async (project_id: string, model_id: string) => {
-  // NOTE: if a param is undefined it will be ignored
-
   // first, fetch all insights related to the current project
   const fetchParams1 = {
     project_id
@@ -16,14 +18,13 @@ export const getAllInsights = async (project_id: string, model_id: string) => {
   const result1: Insight[] = _.orderBy(insights1, d => d.modified_at, ['desc']);
 
   // second, fetch all insights related to the currently selected model
+  // NOTE: public insights from any/all models are not currently returned by this call
   const fetchParams2 = {
-    model_id: model_id ?? '',
+    model_id,
     visibility: 'public'
   };
   const insights2 = (await API.get('insights', { params: fetchParams2 })).data;
   const result2: Insight[] = _.orderBy(insights2, d => d.modified_at, ['desc']);
-
-  // NOTE: public insights from any model are not currently returned by this call
 
   // merge results1 and result2 to avoid duplication
   const listBookmarks = _.unionBy(result1, result2, 'id');
@@ -33,24 +34,25 @@ export const getAllInsights = async (project_id: string, model_id: string) => {
 
 /**
  * Get context-sensitive (local) insights
+ * - insights associated with the current project, match the current view,
+ *   as well as the current context-id (e.g. selected datacube/model/cag/indicator)
+ * - insights that are public
+*    (saved during model publication flow AND are associated with a specific model AND match target view)
  */
 export const getInsights = async (project_id: string, model_id: string, target_view: string) => {
   const fetchParams = {
     project_id,
-    model_id: model_id ?? '',
+    model_id,
     target_view
   };
-  // @Hack, model id should not be valid when this function is called from non-data spaces
-  if (target_view && target_view !== '' && target_view !== 'data' && target_view !== 'modelPublishingExperiment') {
-    fetchParams.model_id = '';
-  }
   const insights1 = (await API.get('insights', { params: fetchParams })).data;
   const result1: Insight[] = _.orderBy(insights1, d => d.modified_at, ['desc']);
 
-  // fetch public published model insights (those won't have valid project)
-  // second, fetch all insights related to the current model
+  // second, fetch all insights related to the current model (i.e., published model insights)
+  //  those won't have valid project so the visibility flag will get all of them,
+  //   and then match against current view and context (or model) id
   const fetchParams2 = {
-    model_id: model_id ?? '',
+    model_id,
     target_view,
     visibility: 'public'
   };
