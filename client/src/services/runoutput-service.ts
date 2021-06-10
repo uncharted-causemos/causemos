@@ -23,19 +23,8 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
 };
 
 export const getRegionAggregations = async (specs: OutputSpec[]): Promise<RegionalAggregation> => {
-  const promises = specs.map(spec => {
-    return getRegionAggregation({
-      modelId: spec.modelId,
-      runId: spec.runId,
-      outputVariable: spec.outputVariable,
-      temporalResolution: spec.temporalResolution,
-      temporalAggregation: spec.temporalAggregation,
-      spatialAggregation: spec.spatialAggregation,
-      timestamp: spec.timestamp
-    });
-  });
   // Fetch and restructure the result
-  const results = await Promise.all(promises);
+  const results = await Promise.all(specs.map(getRegionAggregation));
   const dict = {
     country: {} as { [key: string]: RegionAgg},
     admin1: {} as { [key: string]: RegionAgg},

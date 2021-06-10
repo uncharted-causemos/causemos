@@ -203,14 +203,16 @@ export default {
             const diffs = Object.values(rest).map(value => value - rest[baselineProp]);
             values.push(...diffs);
           });
-          if (values.length === 0) return stats;
-          stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          if (values.length) {
+            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          }
         }
       } else {
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = data.filter(v => v[this.valueProp] !== undefined).map(v => v[this.valueProp]);
-          if (values.length === 0) return stats;
-          stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          if (values.length) {
+            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          }
         }
       }
       return stats;
