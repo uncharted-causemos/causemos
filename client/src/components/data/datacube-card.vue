@@ -209,7 +209,7 @@ import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-
 import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import outputService from '@/services/runoutput-service';
-import { RegionalAggregation } from '@/types/Runoutput';
+import { RegionalAggregations } from '@/types/Runoutput';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -361,7 +361,7 @@ export default defineComponent({
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
     };
-    const mapRegionData = ref<RegionalAggregation>();
+    const mapRegionData = ref<RegionalAggregations>();
     watch(
       () => outputSourceSpecs.value,
       () => {
