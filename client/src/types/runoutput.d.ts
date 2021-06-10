@@ -12,10 +12,10 @@ export interface OutputSpec {
   spatialAggregation: string;
   timestamp: number;
 }
-export type RegionalData = {
+export type RegionalAggregation = {
   [key in AdminLevel]?: { id: string; value: number }[];
 }
-export type RegionalAggregation = {
+export type RegionalAggregations = {
   [key in AdminLevel]?: RegionAgg[];
 }
 export interface RegionAgg {
