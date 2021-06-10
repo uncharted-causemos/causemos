@@ -107,7 +107,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
 import { DatacubeType } from '@/types/Enums';
-import { mapActions, mapGetters, useStore } from 'vuex';
+import { mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import API from '@/api/api';
 import { Insight } from '@/types/Insight';
@@ -202,12 +202,33 @@ export default defineComponent({
       store.dispatch('insightPanel/setProjectId', projectId.value);
     });
 
+    const selectedTemporalResolution = ref('month');
+    const selectedTemporalAggregation = ref('mean');
+    const selectedSpatialAggregation = ref('mean');
+
+    watchEffect(() => {
+      const dataState = {
+        selectedModelId: selectedModelId.value,
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value
+      };
+      const viewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value
+      };
+
+      store.dispatch('insightPanel/setViewState', viewState);
+      store.dispatch('insightPanel/setDataState', dataState);
+    });
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
-      selectedTemporalResolution: 'month',
-      selectedTemporalAggregation: 'mean',
-      selectedSpatialAggregation: ref('mean'),
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId,
@@ -242,9 +263,6 @@ export default defineComponent({
       immediate: true
     }
   },
-  mounted(): void {
-    this.saveUpdatedState();
-  },
   unmounted(): void {
     clearInterval(this.timerHandler);
   },
@@ -254,10 +272,6 @@ export default defineComponent({
     })
   },
   methods: {
-    ...mapActions({
-      setViewState: 'insightPanel/setViewState',
-      setDataState: 'insightPanel/setDataState'
-    }),
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },
@@ -267,19 +281,6 @@ export default defineComponent({
           insight_id: undefined
         }
       }).catch(() => {});
-    },
-    saveUpdatedState() {
-      this.setDataState({
-        selectedModelId: this.selectedModelId,
-        selectedScenarioIds: this.selectedScenarioIds,
-        selectedTimestamp: this.selectedTimestamp as number
-      });
-      this.setViewState({
-        spatialAggregation: this.selectedSpatialAggregation,
-        temporalAggregation: this.selectedTemporalAggregation,
-        temporalResolution: this.selectedTemporalResolution,
-        isDescriptionView: this.isDescriptionView
-      });
     },
     updateStateFromInsight(insight_id: string) {
       API.get(`insights/${insight_id}`).then(d => {
@@ -320,7 +321,6 @@ export default defineComponent({
     setSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;
       this.selectedTimestamp = value;
-      this.saveUpdatedState();
       this.clearRouteParam();
     },
     setSelectedScenarioIds(newIds: string[]) {
@@ -328,7 +328,6 @@ export default defineComponent({
         if (_.isEqual(this.selectedScenarioIds, newIds)) return;
       }
       this.selectedScenarioIds = newIds;
-      this.saveUpdatedState();
       this.clearRouteParam();
     },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {

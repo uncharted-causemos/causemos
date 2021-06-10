@@ -121,7 +121,7 @@ import { ModelPublishingStepID } from '@/types/Enums';
 import router from '@/router';
 import { DimensionInfo, Model, ModelPublishingStep } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
-import { mapActions, mapGetters } from 'vuex';
+import { mapActions, mapGetters, useStore } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
@@ -160,6 +160,8 @@ export default defineComponent({
     initialInsightCount: -1
   }),
   setup() {
+    const store = useStore();
+
     const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
@@ -247,6 +249,22 @@ export default defineComponent({
 
     watchEffect(() => {
       isDescriptionView.value = selectedScenarioIds.value.length === 0;
+    });
+
+    watchEffect(() => {
+      const dataState = {
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value
+      };
+      const viewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value
+      };
+
+      store.dispatch('insightPanel/setViewState', viewState);
+      store.dispatch('insightPanel/setDataState', dataState);
     });
 
     return {
@@ -352,30 +370,16 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setViewState: 'insightPanel/setViewState',
-      setDataState: 'insightPanel/setDataState',
       setPublishedModelId: 'insightPanel/setPublishedModelId',
       setProjectId: 'insightPanel/setProjectId'
     }),
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },
-    saveUpdatedState() {
-      this.setDataState({
-        selectedScenarioIds: this.selectedScenarioIds,
-        selectedTimestamp: this.selectedTimestamp as number
-      });
-      this.setViewState({
-        spatialAggregation: this.selectedSpatialAggregation,
-        temporalAggregation: this.selectedTemporalAggregation,
-        temporalResolution: this.selectedTemporalResolution
-      });
-    },
     setSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;
       this.selectedTimestamp = value;
       this.updateRouteParams();
-      this.saveUpdatedState();
     },
     fetchAvailableAggregations() {
       // TODO: fetch actual available aggregations based on the pipeline support
@@ -403,17 +407,14 @@ export default defineComponent({
     handleTemporalAggregationSelection(tempAgg: string) {
       this.selectedTemporalAggregation = tempAgg;
       this.checkStepForCompletenessAndUpdateRouteParams();
-      this.saveUpdatedState();
     },
     handleTemporalResolutionSelection(tempRes: string) {
       this.selectedTemporalResolution = tempRes;
       this.checkStepForCompletenessAndUpdateRouteParams();
-      this.saveUpdatedState();
     },
     handleSpatialAggregationSelection(spatialAgg: string) {
       this.selectedSpatialAggregation = spatialAgg;
       this.checkStepForCompletenessAndUpdateRouteParams();
-      this.saveUpdatedState();
     },
     checkStepForCompletenessAndUpdateRouteParams() {
       // mark this step as complete
