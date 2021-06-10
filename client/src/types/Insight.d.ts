@@ -5,6 +5,8 @@ export interface Bookmark {
   description?: string;
   visibility: string; // public or private
   project_id?: string;
+
+  // FIXME: refactor as this is more of a context-id (e.g., datacube-id, CAG-id, etc.)
   model_id?: string;
 
   url: string;

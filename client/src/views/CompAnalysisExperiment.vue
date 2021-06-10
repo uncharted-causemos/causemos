@@ -283,10 +283,11 @@ export default defineComponent({
     },
     updateStateFromInsight(insight_id: string) {
       API.get(`insights/${insight_id}`).then(d => {
-        const listBookmarks: Insight[] = _.orderBy(d.data, d => d.modified_at, ['desc']);
-        if (listBookmarks.length > 0) {
+        const loadedInsight: Insight = d.data;
+        if (loadedInsight) {
+          //
           // insight was found and loaded
-          const loadedInsight = listBookmarks[0];
+          //
           // data state
           // FIXME: the order of resetting the state is important
           if (loadedInsight.data_state?.selectedModelId) {

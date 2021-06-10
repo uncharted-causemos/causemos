@@ -97,8 +97,8 @@ const getAllInsights = async (projectId, modelId, targetView, visibility) => {
  */
 const getInsight = async (insightId) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const results = await insightsConnection.find([{ field: 'id', value: insightId }], { size: 50 });
-  return results;
+  const result = await insightsConnection.findOne([{ field: 'id', value: insightId }], {});
+  return result;
 };
 
 /**

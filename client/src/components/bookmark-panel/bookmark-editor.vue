@@ -24,6 +24,7 @@
 <script>
 import DropdownControl from '@/components/dropdown-control';
 
+// FIXME: refactor with insight-editor as one reusable component
 export default {
   name: 'BookmarkEditor',
   components: {
