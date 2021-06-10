@@ -1,6 +1,6 @@
 import API from '@/api/api';
 import { AdminLevel } from '@/types/Enums';
-import { OutputSpec, RegionalAggregations, RegionAgg, RegionalAggregation } from '@/types/runoutput';
+import { OutputSpec, RegionalAggregations, RegionAgg, RegionalAggregation } from '@/types/Runoutput';
 
 export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.

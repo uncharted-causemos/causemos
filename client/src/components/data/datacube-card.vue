@@ -209,7 +209,7 @@ import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-
 import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import outputService from '@/services/runoutput-service';
-import { RegionalAggregation } from '@/types/runoutput';
+import { RegionalAggregation } from '@/types/Runoutput';
 
 export default defineComponent({
   name: 'DatacubeCard',
