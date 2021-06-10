@@ -518,12 +518,19 @@ export default {
         return;
       }
       this.selectedInsight = insight;
-      // Restore the state
-      router.push({
-        query: {
-          insight_id: this.selectedInsight.id
-        }
-      }).catch(() => {});
+      const savedURL = insight.url;
+      const currentURL = this.$route.fullPath;
+      if (savedURL !== currentURL) {
+        // FIXME: refactor and use getSourceUrlForExport() to retrive final url with insight_id appended
+        const finalURL = savedURL.includes('insight_id') ? savedURL : savedURL + '?insight_id=' + this.selectedInsight.id;
+        this.$router.push(finalURL);
+      } else {
+        router.push({
+          query: {
+            insight_id: this.selectedInsight.id
+          }
+        }).catch(() => {});
+      }
       this.closeInsightPanel();
     },
     slideURL(slideURL) {
