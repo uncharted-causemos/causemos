@@ -84,13 +84,12 @@ export default {
     }
   },
   methods: {
-    initBookmark() {
+    initInsight() {
       this.title = '';
       this.description = '';
       this.hasError = false;
     },
     saveInsight() {
-      console.log('insight saved!');
       this.$emit('close-insight-popup', { saved: true });
     },
     closeInsightPopup() {

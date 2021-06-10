@@ -1,5 +1,5 @@
 <template>
-  <div class="new-node-container">
+  <div class="new-node-container" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
     <input
       ref="input"
       v-model="userInput"
@@ -47,6 +47,10 @@ export default {
     conceptsInCag: {
       type: Array,
       default: () => []
+    },
+    placement: {
+      type: Object,
+      default: () => ({ x: 0, y: 0 })
     }
   },
   emits: [
