@@ -340,10 +340,18 @@ export default {
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
 
+      // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
         source: this.vectorSourceId,
         sourceLayer: this.vectorSourceLayer
       });
+      // Note: RemoveFeatureState doesn't seem very reliable.
+      // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and results { id: 'Ethiopia', state: {} }
+      // But once new state, lets's say {b: 4} is set by setFetureState, it just extends previous state instead of setting it to new state resulting something like
+      // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
+      // To work around above issue, explitly set null to each output value by default since removeFeatureState doesn't seem very reliable.
+      const featureStateBase = {};
+      this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = null; });
 
       this.regionData[adminLevel].forEach(row => {
         this.map.setFeatureState({
@@ -351,6 +359,7 @@ export default {
           source: this.vectorSourceId,
           sourceLayer: this.vectorSourceLayer
         }, {
+          ...featureStateBase,
           ...row.values
         });
       });
