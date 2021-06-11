@@ -817,7 +817,7 @@ export default {
       // Check if the subgraph was added less than 1 min ago
       const thresholdTime = moment().subtract(THRESHOLD_TIME, 'minutes').valueOf();
       const nodes = this.data.nodes.filter(n => n.modified_at >= thresholdTime).map(n => n.concept);
-      const edges = this.data.edges.filter(e => e.modified_at >= thresholdTime && (e.polarity === 1 || e.polarity === -1));
+      const edges = this.data.edges.filter(e => e.modified_at >= thresholdTime && (e.polarity === 1 || e.polarity === -1)); // filter out ambiguous edges so they dont get double highlighted if they are both new and ambiguous
       console.log(edges.length);
       this.renderer.highlight({ nodes, edges }, options);
     },
