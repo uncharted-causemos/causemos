@@ -713,7 +713,7 @@ export default {
     },
     resetCAGLayout() {
       // do nothing for now
-      console.log('reset button pushed');
+      console.log(this);
     }
   }
 };

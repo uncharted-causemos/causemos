@@ -39,7 +39,7 @@
           type="button"
           class="btn btn-primary"
           @click="resetCAG"
-        ><i class="fa fa-fw fa-refresh" />Reset Layout</button>
+        ><i class="fa fa-fw fa-undo" />Reset Layout</button>
       </li>
 
     </ul>
