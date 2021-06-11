@@ -570,14 +570,16 @@ class CAGRenderer extends SVGRenderer {
       ? d3.select('.ambiguous-edge-warning') // select it
       : foreground.append('text') // or create it if it hasn't been already
         .attr('x', 10)
-        .attr('y', 15)
+        .attr('y', 20)
         .attr('opacity', 0)
+        .attr('fill', 'red')
+        .attr('font-size', '1.6rem')
         .classed('ambiguous-edge-warning', true)
         .text('Warning: ambiguous edges detected in graph'); // obviously not very pretty, will change soon
 
     if (ambigEdges.length > 0) {
       warning.attr('opacity', 1);
-      this.highlight({ nodes: [], edges: ambigEdges }, highlightOptions); // when a node is first added it grabs the overidden highlight from below
+      this.highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
     } else {
       warning.attr('opacity', 0);
     }
@@ -855,11 +857,5 @@ export default {
   width: 100%;
   height: 100%;
   overflow: hidden;
-}
-
-.ambiguous-edge-warning { // this isnt actually getting bound to the class - not sure how this works with vue and D3
-  color: $negative;
-  font-size: $font-size-medium;
-  font-weight: normal;
 }
 </style>
