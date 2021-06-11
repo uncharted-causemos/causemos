@@ -77,7 +77,7 @@ export default defineComponent({
     const metadata = ref<any>({});
     async function fetchMetadata() {
       const response = await getDatacubeById(props.selectedModelId);
-      metadata.value = response.data;
+      metadata.value = response;
     }
     fetchMetadata();
     return {

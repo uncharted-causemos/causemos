@@ -21,7 +21,7 @@ export default function useModelMetadata(
         //  fetch results to avoid a race condition.
         return;
       }
-      metadata.value = response.data;
+      metadata.value = response;
     }
     onInvalidate(() => {
       isCancelled = true;

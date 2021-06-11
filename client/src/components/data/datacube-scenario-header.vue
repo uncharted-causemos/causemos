@@ -59,7 +59,7 @@ export default defineComponent({
       if (props.selectedModelId === null) return;
 
       const result = await getDatacubeById(props.selectedModelId);
-      const modelMetadata = result.data;
+      const modelMetadata = result;
       const inputNamesMap: { [key: string]: string } = {};
       if (modelMetadata.parameters) {
         // only valid for models
