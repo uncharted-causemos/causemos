@@ -575,7 +575,7 @@ class CAGRenderer extends SVGRenderer {
         .attr('fill', 'red')
         .attr('font-size', '1.6rem')
         .classed('ambiguous-edge-warning', true)
-        .text('Warning: ambiguous edges detected in graph'); // obviously not very pretty, will change soon
+        .text('Warning: ambiguous edges detected in graph'); // not very pretty, could update in the future
 
     if (ambigEdges.length > 0) {
       warning.attr('opacity', 1);
