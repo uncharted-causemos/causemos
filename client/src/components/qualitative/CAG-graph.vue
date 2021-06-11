@@ -800,8 +800,6 @@ export default {
       this.highlight();
       this.renderer.hideNeighbourhood();
 
-
-
       // if there is a new node with an input textbox, focus input there
       if (d3.select('.node input[type=text]').node()) {
         d3.select('.node input[type=text]').node().focus();
