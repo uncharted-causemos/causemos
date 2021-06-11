@@ -346,8 +346,8 @@ export default {
         sourceLayer: this.vectorSourceLayer
       });
       // Note: RemoveFeatureState doesn't seem very reliable.
-      // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and results { id: 'Ethiopia', state: {} }
-      // But once new state, lets's say {b: 4} is set by setFetureState, it just extends previous state instead of setting it to new state resulting something like
+      // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
+      // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
       // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
       // To work around above issue, explitly set null to each output value by default since removeFeatureState doesn't seem very reliable.
       const featureStateBase = {};
