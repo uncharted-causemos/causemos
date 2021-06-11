@@ -171,9 +171,6 @@ export default {
     insightTargetView() {
       return this.currentView === 'modelPublishingExperiment' ? 'data' : this.currentView;
     },
-    insightModelId() {
-      return this.currentView === 'modelPublishingExperiment' || this.currentView === 'data' ? this.publishedModelId : '';
-    },
     metadataDetails() {
       const arr = [];
       // @HACK: The content of this function needs to be revised and cleaned
@@ -185,7 +182,7 @@ export default {
         // FIXME: additional metadata attributes should be defined and sent down based on the source page
         arr.push({
           key: 'Model ID:',
-          value: this.insightModelId
+          value: this.publishedModelId
         });
         arr.push({
           key: 'Target View:',
@@ -271,7 +268,7 @@ export default {
         description: this.description,
         visibility: this.insightVisibility,
         project_id: this.project,
-        model_id: this.insightModelId,
+        model_id: this.publishedModelId,
         url,
         target_view: this.insightTargetView,
         pre_actions: null,

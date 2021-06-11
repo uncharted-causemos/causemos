@@ -1,6 +1,65 @@
 import API from '@/api/api';
-import { Insight } from '@/types/Insight';
 import _ from 'lodash';
+
+const getParamsForAllInsightsFetch = (project_id: string, model_id: string) => {
+  return [
+    // first, fetch all insights related to the current project
+    {
+      project_id
+    },
+    // second, fetch all public insights related to the currently selected model
+    {
+      model_id,
+      visibility: 'public'
+    }
+  ];
+};
+
+const getParamsForLocalInsightsFetch = (project_id: string, model_id: string, target_view: string) => {
+  return [
+    // first, fetch all insights related to the current project, filtered for current view
+    {
+      project_id,
+      model_id,
+      target_view
+    },
+    // second, fetch all insights related to the current model (i.e., published model insights)
+    //  those won't have valid project so the visibility flag will get all of them,
+    //   and then match against current view and context (or model) id    {
+    {
+      model_id,
+      target_view,
+      visibility: 'public'
+    }
+  ];
+};
+
+/**
+ * Fetch insights for a given array of fetch parameters
+ * @param fetchParamsArray an array where each element is a combination of filter fields
+ * @returns the result is a unique flat array with a union of all fetch operations
+ */
+const fetchInsights = async (fetchParamsArray: any[]) => {
+  // this sequential async loop works
+  /*
+  const allResults: Insight[] = [];
+  for (const fetchParams of fetchParamsArray) {
+    const insights = (await API.get('insights', { params: fetchParams })).data;
+    const orderedInsights: Insight[] = _.orderBy(insights, d => d.modified_at, ['desc']);
+    allResults.push(...orderedInsights);
+  }
+  */
+
+  // but we may also run the loop in parallel; map the array to promises
+  const promises = fetchParamsArray.map(async (fetchParams) => {
+    return API.get('insights', { params: fetchParams });
+  });
+  // wait until all promises are resolved
+  const allRawResponses = await Promise.all(promises);
+  const allFlatResults = allRawResponses.flatMap(res => res.data);
+
+  return _.uniqBy(allFlatResults, 'id');
+};
 
 /**
  * Get all insights
@@ -10,26 +69,8 @@ import _ from 'lodash';
  *    (saved during model publication flow AND are associated with a specific model)
  */
 export const getAllInsights = async (project_id: string, model_id: string) => {
-  // first, fetch all insights related to the current project
-  const fetchParams1 = {
-    project_id
-  };
-  const insights1 = (await API.get('insights', { params: fetchParams1 })).data;
-  const result1: Insight[] = _.orderBy(insights1, d => d.modified_at, ['desc']);
-
-  // second, fetch all insights related to the currently selected model
-  // NOTE: public insights from any/all models are not currently returned by this call
-  const fetchParams2 = {
-    model_id,
-    visibility: 'public'
-  };
-  const insights2 = (await API.get('insights', { params: fetchParams2 })).data;
-  const result2: Insight[] = _.orderBy(insights2, d => d.modified_at, ['desc']);
-
-  // merge results1 and result2 to avoid duplication
-  const listBookmarks = _.unionBy(result1, result2, 'id');
-
-  return listBookmarks;
+  const fetchParamsArray = getParamsForAllInsightsFetch(project_id, model_id);
+  return fetchInsights(fetchParamsArray);
 };
 
 /**
@@ -40,29 +81,8 @@ export const getAllInsights = async (project_id: string, model_id: string) => {
 *    (saved during model publication flow AND are associated with a specific model AND match target view)
  */
 export const getInsights = async (project_id: string, model_id: string, target_view: string) => {
-  const fetchParams = {
-    project_id,
-    model_id,
-    target_view
-  };
-  const insights1 = (await API.get('insights', { params: fetchParams })).data;
-  const result1: Insight[] = _.orderBy(insights1, d => d.modified_at, ['desc']);
-
-  // second, fetch all insights related to the current model (i.e., published model insights)
-  //  those won't have valid project so the visibility flag will get all of them,
-  //   and then match against current view and context (or model) id
-  const fetchParams2 = {
-    model_id,
-    target_view,
-    visibility: 'public'
-  };
-  const insights2 = (await API.get('insights', { params: fetchParams2 })).data;
-  const result2: Insight[] = _.orderBy(insights2, d => d.modified_at, ['desc']);
-
-  // merge results1 and result2 to avoid duplication
-  const listBookmarks = _.unionBy(result1, result2, 'id');
-
-  return listBookmarks;
+  const fetchParamsArray = getParamsForLocalInsightsFetch(project_id, model_id, target_view);
+  return fetchInsights(fetchParamsArray);
 };
 
 /**

@@ -173,7 +173,8 @@ export default {
   },
   created() {
     // update insight related state
-    this.setPublishedModelId(''); // clear current model-id; later this would be repurposed perhaps as cag-id
+    // FIXME: use publishedModelId to store cag-id, reflected context-specific-id; TO BE REFACTORED
+    this.setPublishedModelId(this.currentCAG);
     this.setProjectId(this.project);
   },
   mounted() {
