@@ -1,6 +1,6 @@
 import API from '@/api/api';
 import { AdminLevel } from '@/types/Enums';
-import { OutputSpec, RegionalAggregations, RegionAgg, RegionalAggregation } from '@/types/Runoutput';
+import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation } from '@/types/Runoutput';
 
 export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
@@ -23,7 +23,7 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
   }
 };
 
-export const getRegionAggregations = async (specs: OutputSpec[]): Promise<RegionalAggregations> => {
+export const getRegionAggregations = async (specs: OutputSpecWithId[]): Promise<RegionalAggregations> => {
   // Fetch and restructure the result
   const results = await Promise.all(specs.map(getRegionAggregation));
 
@@ -41,7 +41,7 @@ export const getRegionAggregations = async (specs: OutputSpec[]): Promise<Region
         if (!dict[level][item.id]) {
           dict[level][item.id] = { id: item.id, values: {} };
         }
-        dict[level][item.id].values[specs[index].id || index] = item.value;
+        dict[level][item.id].values[specs[index].id] = item.value;
       });
     });
   });

@@ -2,8 +2,12 @@
 // Types related to model/indicator run outputs
 
 import { AdminLevel } from '@/types/Enums';
+
+export interface OutputSpecWithId extends OutputSpec {
+  id: string; // User defined id for identifying the output for this spec
+}
+
 export interface OutputSpec {
-  id?: string; // Id that identifies this spec
   modelId: string;
   runId: string;
   outputVariable: string;
