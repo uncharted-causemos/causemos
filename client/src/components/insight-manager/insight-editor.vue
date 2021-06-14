@@ -1,18 +1,18 @@
 <template>
   <dropdown-control
-    class="bookmark-editor-dropdown"
+    class="insight-editor-dropdown"
   >
     <template #content>
       <div
         class="dropdown-option disabled"
-        @click="editBookmark"
+        @click="editInsight"
       >
         <i class="fa fa-edit" />
         Edit
       </div>
       <div
         class="dropdown-option"
-        @click="deleteBookmark"
+        @click="deleteInsight"
       >
         <i class="fa fa-trash" />
         Delete
@@ -21,30 +21,31 @@
   </dropdown-control>
 </template>
 
-<script>
-import DropdownControl from '@/components/dropdown-control';
+<script lang="ts">
+import { defineComponent } from 'vue';
+import DropdownControl from '@/components/dropdown-control.vue';
 
-export default {
-  name: 'BookmarkEditor',
+export default defineComponent({
+  name: 'InsightEditor',
   components: {
     DropdownControl
   },
   methods: {
-    editBookmark() {
+    editInsight() {
       this.$emit('edit');
     },
-    deleteBookmark() {
+    deleteInsight() {
       this.$emit('delete');
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
-.bookmark-editor-dropdown{
-  position:absolute;
-  right: 16px;
+.insight-editor-dropdown{
+  position: absolute;
+  right: 0px;
+  bottom: 32px;
   width: fit-content;
 }
 </style>

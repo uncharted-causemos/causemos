@@ -49,7 +49,7 @@
       <div class="row">
         <div class="col-sm-12 details">
           <div>
-            <p><b>No additional information is available</b></p>
+            <p><b>{{project.description}}</b></p>
           </div>
         </div>
       </div>

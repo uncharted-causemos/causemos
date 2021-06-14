@@ -42,7 +42,7 @@
           />
         </div>
       </div>
-      <div class="tab-content bookmark-capture">
+      <div class="tab-content insight-capture">
         <main>
           <div
             v-if="activeTab === 'flow' && scenarioData && graphData"

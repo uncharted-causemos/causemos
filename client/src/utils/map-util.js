@@ -133,7 +133,7 @@ export function isLayerLoaded(map, layerId) {
  * @param {Function} scaleFn - d3 scale function
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear, useFeatureState = false) {
+function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo) {
   const scale = scaleFn()
     .domain(domain)
     .range([0, colors.length - 1]);
@@ -142,10 +142,14 @@ function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear, us
     stops.push(scale.invert(index));
     stops.push(['to-color', color]);
   });
+  const getter = useFeatureState ? 'feature-state' : 'get';
+  const valueExpr = !_.isNil(relativeTo)
+    ? ['-', [getter, property], [getter, relativeTo]]
+    : [getter, property];
   return [
     'interpolate',
     ['linear'],
-    [(useFeatureState ? 'feature-state' : 'get'), property],
+    valueExpr,
     ...stops
   ];
 }
@@ -160,29 +164,32 @@ function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear, us
  * @param {Function} scaleFn - d3 scale function
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colors, scaleFn = d3.scaleLinear, useFeatureState = false) {
+export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo) {
+  // TODO: split this into two functions (one for feature state and one for grid map style)
+  const missingProperty = [
+    ['==', null, ['feature-state', property]], 0.0
+  ];
+  !_.isNil(relativeTo) && missingProperty.push(
+    ['==', null, ['feature-state', relativeTo]], 0.0
+  );
+  const propertyGetter = _.isNil(relativeTo)
+    ? ['feature-state', property]
+    : ['-', ['feature-state', property], ['feature-state', relativeTo]];
   return {
     type: 'fill',
     paint: {
       'fill-antialias': false,
-      'fill-color': interpolateColor(property, dataDomain, colors, scaleFn, useFeatureState),
+      'fill-color': interpolateColor(property, dataDomain, colors, scaleFn, useFeatureState, relativeTo),
       'fill-opacity': useFeatureState ? [
         'case',
-        ['==', null, ['feature-state', property]],
-        0.0,
-        ['<', ['feature-state', property], filterDomain.min],
-        0.0,
-        ['>', ['feature-state', property], filterDomain.max],
-        0.0,
-        ['boolean', ['feature-state', 'hover'], false],
-        0.8, // opacity to 1 on hover
+        ...missingProperty,
+        ['<', propertyGetter, filterDomain.min], 0.0,
+        ['>', propertyGetter, filterDomain.max], 0.0,
+        ['boolean', ['feature-state', 'hover'], false], 0.8, // on hover
         0.6 // default opacity
       ] : [
         'case',
-        ['==', ['number', ['get', property], -10000], -10000],
-        0.0,
-        ['boolean', ['feature-state', 'hover'], false],
-        0.8, // opacity to 1 on hover
+        ['boolean', ['feature-state', 'hover'], false], 0.8, // opacity to 1 on hover
         0.6 // default opacity
       ]
     }

@@ -22,8 +22,9 @@ class Project extends Base {
    *
    * @param {string} indraStatementIndex - Name of the source index to clone (the indra statements)
    * @param {string} projectName - Project name
+   * @param {string} projectDescription - Project Description
   */
-  async clone(indraStatementIndex, projectName) {
+  async clone(indraStatementIndex, projectName, projectDescription) {
     // Get new project index attributes
     let response = await this.client.search({
       index: 'knowledge-base',
@@ -44,6 +45,7 @@ class Project extends Base {
     const project = {
       id: `project-${uuid()}`,
       name: projectName,
+      description: projectDescription,
       ontology: kb.ontology
     };
 
@@ -68,6 +70,7 @@ class Project extends Base {
         id: project.id,
         kb_id: indraStatementIndex,
         name: project.name,
+        description: project.description,
         ontology: project.ontology,
         created_at: Date.now(),
         modified_at: Date.now(),
@@ -75,7 +78,7 @@ class Project extends Base {
         extended_at: Date.now() // Last time additional documents were added to the project
       }
     });
-
+    
     // Clone project
     response = await this.client.indices.clone({
       index: indraStatementIndex,

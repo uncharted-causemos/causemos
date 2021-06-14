@@ -68,7 +68,7 @@ export const DATE_SELECTION = {
 
 export const EMPTY_INPUT_PARAMS = 'There are no input parameters for this emulator';
 
-export const BOOKMARKS = {
+export const INSIGHTS = {
   SUCCESSFUL_ADDITION: 'New insight succesfully added',
   ERRONEOUS_ADDITION: 'There was an error in creating a new insight',
   SUCCESSFUL_REMOVAL: 'Insight succesfully removed',
@@ -118,7 +118,7 @@ export default {
   MODEL_CREATION,
   DATE_SELECTION,
   EMPTY_INPUT_PARAMS,
-  BOOKMARKS,
+  INSIGHTS,
   CAG,
   SUBGRAPH
 };

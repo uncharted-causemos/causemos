@@ -141,7 +141,7 @@
             :color-from-index="colorFromIndex"
           />
         </header>
-        <div class="bookmark-capture" style="display: flex; flex-direction: column; flex: 1;">
+        <div class="insight-capture" style="display: flex; flex-direction: column; flex: 1;">
           <div style="display: flex; flex-direction: row;">
             <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
@@ -169,11 +169,13 @@
               :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
               :output-selection=indx
+              :relative-to="relativeTo"
               :show-tooltip="true"
               :selected-admin-level="selectedAdminLevel"
               :filters="mapFilters"
               :map-bounds="mapBounds"
               :is-grid-map="isGridMap"
+              :region-data="mapRegionData"
               @sync-bounds="onSyncMapBounds"
               @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
@@ -187,6 +189,7 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -203,9 +206,10 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import _ from 'lodash';
 import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import outputService from '@/services/runoutput-service';
+import { RegionalAggregations } from '@/types/Runoutput';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -345,11 +349,11 @@ export default defineComponent({
           id: selectedScenarioId,
           modelId: selectedModelId.value,
           runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
-          outputVariable: metadata.value?.outputs[0].name,
+          outputVariable: metadata.value?.outputs[0].name || '',
           timestamp: selectedTimestamp.value,
-          temporalResolution: selectedTemporalResolution.value,
-          temporalAggregation: selectedTemporalAggregation.value,
-          spatialAggregation: selectedSpatialAggregation.value
+          temporalResolution: selectedTemporalResolution.value || 'month',
+          temporalAggregation: selectedTemporalAggregation.value || 'mean',
+          spatialAggregation: selectedSpatialAggregation.value || 'mean'
         };
       });
     });
@@ -357,11 +361,15 @@ export default defineComponent({
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
     };
+    const mapRegionData = ref<RegionalAggregations>();
     watch(
       () => outputSourceSpecs.value,
       () => {
         mapFilters.value = mapFilters.value.filter(filter => {
           return outputSourceSpecs.value.find(spec => filter.id === spec.id);
+        });
+        outputService.getRegionAggregations(outputSourceSpecs.value).then(result => {
+          mapRegionData.value = result;
         });
       }
     );
@@ -381,7 +389,8 @@ export default defineComponent({
       isDescriptionView,
       mainModelOutput,
       metadata,
-      isModel
+      isModel,
+      mapRegionData
     };
   },
   data: () => ({
