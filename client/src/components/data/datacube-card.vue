@@ -553,20 +553,10 @@ header {
   min-height: 0;
 }
 
-.map {
-  flex: 3;
-}
-
-// TODO: remove
-.placeholder {
-  background: #eee;
-  text-align: center;
-  padding: 10px;
-  color: #bbb;
-}
 
 .card-map-container {
-  height: 100%;
+  min-height: 0;
+  flex: 3;
   width: 70%;
 
   display: flex;
