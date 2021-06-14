@@ -64,14 +64,19 @@ export default {
       // remove the previous source and add updated one with new tile urls
       // this will remove all layer attached to the source
       this.$_removeSource(this.sourceId);
-      this.map.addSource(this.sourceId, {
+      const payload = {
         type: 'vector',
         promoteId: this.promoteId,
         tiles: tileUrls,
         maxzoom: this.sourceMaxzoom
-      });
+      };
+      this.map.addSource(this.sourceId, payload);
       // Re-add the layers
       layerDefs.forEach(layer => this.map.addLayer(layer));
+      this.$_emitEvent('update-source', {
+        id: this.sourceId,
+        ...payload
+      });
     },
     _addLayer() {
       this.$_removeLayer(this.layerId);
