@@ -45,5 +45,5 @@ export interface BreakdownData {
 
 export interface NamedBreakdownData {
   name: string;
-  data: BreakdownData[];
+  data: BreakdownData;
 }
