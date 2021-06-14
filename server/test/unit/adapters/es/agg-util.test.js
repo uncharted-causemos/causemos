@@ -11,7 +11,7 @@ describe('agg-util', function() {
       const expectedAggregation = {
         terms: {
           size: 300,
-          field: 'subj.concept'
+          field: 'subj.concept.raw'
         }
       };
       expect(termsAggregation('subjConcept')).to.eql(expectedAggregation);
