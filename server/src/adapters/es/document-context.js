@@ -9,7 +9,8 @@ const facetQuery = (filters, fieldNames) => {
   const facets = {};
   fieldNames.forEach(field => {
     // We do not support multi-field facets, so fields is a single element array.
-    const esField = FIELDS[field].fields[0];
+    const esField = (FIELDS[field].aggFields || FIELDS[field].fields)[0];
+
     facets[field] = {
       terms: {
         field: esField,

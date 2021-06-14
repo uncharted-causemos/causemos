@@ -245,6 +245,7 @@ class Statement {
    */
   async searchFields(projectId, searchField, queryString) {
     const fieldNames = FIELDS[searchField].fields;
+    const aggFieldNames = FIELDS[searchField].aggFields || fieldNames;
 
     // Wrap each word in * *
     const processedQuery = decodeURI(queryString)
@@ -255,7 +256,7 @@ class Statement {
       .join(' ');
 
     const searchBodies = [];
-    fieldNames.forEach(field => {
+    fieldNames.forEach((field, idx) => {
       searchBodies.push({ index: projectId });
       searchBodies.push({
         size: 0,
@@ -271,7 +272,7 @@ class Statement {
             aggs: {
               fieldAgg: {
                 terms: {
-                  field: field,
+                  field: aggFieldNames[idx],
                   size: MAX_ES_SUGGESTION_BUCKET_SIZE
                 }
               }
@@ -283,6 +284,7 @@ class Statement {
     const { body } = await this.client.msearch({
       body: searchBodies
     });
+
 
     const allResults = body.responses.reduce((acc, resp) => {
       const aggs = resp.aggregations.nestedAgg || resp.aggregations;

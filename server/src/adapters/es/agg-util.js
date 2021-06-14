@@ -4,7 +4,7 @@ const { FIELDS } = require('./config');
 const DEFAULT_SIZE = 300; // set reasonable default size
 
 const termsAggregation = (facetField) => {
-  const { fields } = FIELDS[facetField];
+  const fields = FIELDS[facetField].aggFields || FIELDS[facetField].fields;
   const result = {
     terms: {
       size: DEFAULT_SIZE,
@@ -16,7 +16,8 @@ const termsAggregation = (facetField) => {
 };
 
 const rangeAggregation = (facetField) => {
-  const { fields, range } = FIELDS[facetField];
+  const fields = FIELDS[facetField].aggFields || FIELDS[facetField].fields;
+  const { range } = FIELDS[facetField];
   const ranges = range.map((rangeBucket) => {
     const { from, to } = rangeBucket;
     const result = { key: from.toString() };
@@ -45,7 +46,8 @@ const rangeAggregation = (facetField) => {
  * and would require further refinement depending on how we'd like to aggregate the statement by dates - June 15th 2020
  */
 const dateRangeAggregation = (facetField) => {
-  const { fields, range } = FIELDS[facetField];
+  const fields = FIELDS[facetField].aggFields || FIELDS[facetField].fields;
+  const { range } = FIELDS[facetField];
   const subAggregation = {};
   range.forEach(dates => {
     const startYear = dates.from;
