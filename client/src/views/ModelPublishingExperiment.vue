@@ -384,7 +384,7 @@ export default defineComponent({
       this.updateRouteParams();
     },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
+      this.typeBreakdownData = []; e.drilldownDimensions.map(dimension => {
         const choices = dimension.choices ?? [];
         const dataForEachRun = this.selectedScenarioIds.map(() => {
           // Generate random breakdown data for each run

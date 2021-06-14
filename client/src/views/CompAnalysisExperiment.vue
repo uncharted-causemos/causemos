@@ -76,6 +76,7 @@
             :unit="unit"
             :selected-spatial-aggregation="selectedSpatialAggregation"
             :selected-timestamp="selectedTimestamp"
+            :selected-scenario-ids="selectedScenarioIds"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -278,7 +279,7 @@ export default defineComponent({
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       this.typeBreakdownData = [];
       if (this.selectedScenarioIds.length === 0) return;
-      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
+      this.typeBreakdownData = []; e.drilldownDimensions.map(dimension => {
         const choices = dimension.choices ?? [];
         const dataForEachRun = this.selectedScenarioIds.map(() => {
           // Generate random breakdown data for each run

@@ -1,9 +1,8 @@
-import _ from 'lodash';
-import { BreakdownData } from '@/types/Datacubes';
 import { Ref, ref } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
-import API from '@/api/api';
 import { Model } from '@/types/Datacube';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { getRegionAggregations } from '../runoutput-service';
 
 export default function useRegionalData(
   selectedModelId: Ref<string>,
@@ -13,19 +12,20 @@ export default function useRegionalData(
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | null>
-) {
+): Ref<RegionalAggregations | null> {
   // Fetch regional-data for selected model and scenarios
   // FIXME: this code contains a race condition if the selected model or
   //  scenario IDs were to change quickly and the promise sets completed
   //  out of order.
-  const regionalData = ref<BreakdownData[]>([]);
+  const regionalData = ref<RegionalAggregations | null>(null);
   watchEffect(async () => {
-    regionalData.value = [];
+    regionalData.value = null;
     const modelMetadata = metadata.value;
+    const timestamp = selectedTimestamp.value;
     if (
       selectedModelId.value === null ||
       selectedScenarioIds.value.length === 0 ||
-      selectedTimestamp.value === null ||
+      timestamp === null ||
       modelMetadata === null
     ) {
       return;
@@ -34,27 +34,19 @@ export default function useRegionalData(
       selectedSpatialAggregation.value === ''
         ? 'mean'
         : selectedSpatialAggregation.value;
-    const promises = selectedScenarioIds.value.map(scenarioId =>
-      API.get('/maas/output/regional-data', {
-        params: {
-          model_id: selectedModelId.value,
-          run_id: scenarioId,
-          feature: modelMetadata.outputs[0].name,
-          resolution: selectedTemporalResolution.value,
-          temporal_agg: selectedTemporalAggregation.value,
-          spatial_agg: spatialAggregation,
-          timestamp: selectedTimestamp.value
-        }
+    const outputSpecs: OutputSpecWithId[] = selectedScenarioIds.value.map(
+      selectedScenarioId => ({
+        id: selectedScenarioId,
+        modelId: selectedModelId.value,
+        runId: selectedScenarioId,
+        outputVariable: modelMetadata.outputs[0].name || '',
+        timestamp,
+        temporalResolution: selectedTemporalResolution.value || 'month',
+        temporalAggregation: selectedTemporalAggregation.value || 'mean',
+        spatialAggregation
       })
     );
-    const allRegionalData = (await Promise.all(promises)).map(response => {
-      const data = response.data;
-      return _.isEmpty(data) ? {} : data;
-    });
-    if (_.some(allRegionalData, response => _.isEmpty(response))) {
-      return;
-    }
-    regionalData.value = allRegionalData;
+    regionalData.value = await getRegionAggregations(outputSpecs);
   });
   return regionalData;
 }

@@ -37,7 +37,10 @@ export interface Datacube {
 }
 
 export interface BreakdownData {
-  [key: string]: { id: string; value: number }[];
+  [aggregationLevel: string]: {
+    id: string;
+    values: { [modelRunId: string]: number };
+  }[];
 }
 
 export interface NamedBreakdownData {

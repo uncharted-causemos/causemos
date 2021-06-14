@@ -1,7 +1,7 @@
 <template>
   <div class="breakdown-pane-container">
     <aggregation-checklist-pane
-      v-if="regionalData.length !== 0"
+      v-if="regionalData !== null && regionalData.length !== 0"
       class="checklist-section"
       :aggregation-level-count="availableAdminLevelTitles.length"
       :aggregation-level="selectedAdminLevel"
@@ -9,6 +9,7 @@
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
       :raw-data="regionalData"
       :units="unit"
+      :selected-scenario-ids="selectedScenarioIds"
       @aggregation-level-change="setSelectedAdminLevel"
     >
       <template #aggregation-description>
@@ -40,6 +41,7 @@
       :aggregation-level-title="type.name"
       :ordered-aggregation-level-keys="['Total', type.name]"
       :raw-data="type.data"
+      :selected-scenario-ids="selectedScenarioIds"
       :units="unit"
     >
       <template #aggregation-description>
@@ -105,7 +107,11 @@ export default defineComponent({
       default: null
     },
     regionalData: {
-      type: Array as PropType<BreakdownData[]>,
+      type: Object as PropType<BreakdownData | null>,
+      default: null
+    },
+    selectedScenarioIds: {
+      type: Array as PropType<string[]>,
       default: []
     }
   },
@@ -117,8 +123,8 @@ export default defineComponent({
     }
 
     const availableAdminLevelTitles = computed(() => {
-      if (regionalData.value.length === 0) return [];
-      const adminLevelCount = Object.keys(regionalData.value[0]).length;
+      if (regionalData.value === null) return [];
+      const adminLevelCount = Object.keys(regionalData.value).length;
       return ADMIN_LEVEL_KEYS.slice(0, adminLevelCount).map(
         adminLevel => ADMIN_LEVEL_TITLES[adminLevel]
       );
