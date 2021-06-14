@@ -9,14 +9,14 @@
         <insight-control-menu />
       </template>
     </full-screen-modal-header>
-    <div class="search">
-      <input
-        v-model="search"
-        v-focus
-        type="text"
-        class="form-control"
-        placeholder="Search insights"
-      >
+
+    <div class="tab-controls">
+      <tab-bar
+        class="tabs"
+        :active-tab-id="activeTabId"
+        :tabs="tabs"
+        @tab-click="switchTab"
+      />
       <div class="export">
         <button
           type="button"
@@ -47,16 +47,60 @@
         </dropdown-control>
       </div>
     </div>
-    <div class="pane-wrapper">
+    <div
+      v-if="activeTabId === tabs[0].id"
+      class="cards"
+    >
+      <div class="search">
+        <input
+          v-model="search"
+          v-focus
+          type="text"
+          class="form-control"
+          placeholder="Search insights"
+        >
+      </div>
+      <div class="pane-wrapper">
+        <div
+          v-if="countInsights > 0"
+          class="pane-content"
+        >
+          <insight-card
+            v-for="insight in searchedInsights"
+            :active-insight="activeInsight"
+            :card-mode="true"
+            :curated="isCuratedInsight(insight.id)"
+            :key="insight.id"
+            :insight="insight"
+            @delete-insight="deleteInsight(insight.id)"
+            @open-editor="openEditor(insight.id)"
+            @select-insight="selectInsight(insight)"
+            @update-curation="updateCuration(insight.id)"
+          />
+        </div>
+        <message-display
+          class="pane-content"
+          v-else
+          :message="messageNoData"
+        />
+      </div>
+    </div>
+
+    <div
+      v-else-if="activeTabId === tabs[1].id"
+      class="list"
+    >
       <div
-        v-if="listInsights.length > 0"
-        class="pane-content">
+        v-if="countInsights > 0"
+        class="pane-content"
+      >
         <insight-card
-          v-for="insight in searchedInsights"
-          :key="insight.id"
+          v-for="insight in selectedInsights"
           :active-insight="activeInsight"
-          :insight="insight"
           :curated="isCuratedInsight(insight.id)"
+          :key="insight.id"
+          :insight="insight"
+          :show-description="true"
           @delete-insight="deleteInsight(insight.id)"
           @open-editor="openEditor(insight.id)"
           @select-insight="selectInsight(insight)"
@@ -80,16 +124,27 @@ import { saveAs } from 'file-saver';
 import { mapGetters, mapActions } from 'vuex';
 import API from '@/api/api';
 
-import { BOOKMARKS } from '@/utils/messages-util';
+import { INSIGHTS } from '@/utils/messages-util';
 
 import InsightCard from '@/components/insight-manager/insight-card';
 import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
+import TabBar from '@/components/widgets/tab-bar';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
+
+const INSIGHT_TABS = [
+  {
+    id: 'cards',
+    name: 'Cards'
+  }, {
+    id: 'list',
+    name: 'List'
+  }
+];
 
 export default {
   name: 'ListInsightsModal',
@@ -98,16 +153,19 @@ export default {
     FullScreenModalHeader,
     InsightCard,
     InsightControlMenu,
-    MessageDisplay
+    MessageDisplay,
+    TabBar
   },
   data: () => ({
     activeInsight: null,
+    activeTabId: INSIGHT_TABS[0].id,
     curatedInsights: [],
     exportActive: false,
     listInsights: [],
-    messageNoData: BOOKMARKS.NO_DATA,
+    messageNoData: INSIGHTS.NO_DATA,
     search: '',
-    selectedInsight: null
+    selectedInsight: null,
+    tabs: INSIGHT_TABS
   }),
   computed: {
     ...mapGetters({
@@ -128,6 +186,14 @@ export default {
           return insight.title.toLowerCase().includes(this.search.toLowerCase());
         });
         return result;
+      } else {
+        return this.listInsights;
+      }
+    },
+    selectedInsights() {
+      if (this.curatedInsights.length > 0) {
+        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
+        return curatedSet;
       } else {
         return this.listInsights;
       }
@@ -152,31 +218,23 @@ export default {
     },
     deleteInsight(id) {
       API.delete(`bookmarks/${id}`).then(result => {
-        const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_REMOVAL : BOOKMARKS.ERRONEOUS_REMOVAL;
-        if (message === BOOKMARKS.SUCCESSFUL_REMOVAL) {
+        const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
+        if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
           const count = this.countInsights - 1;
           this.setCountInsights(count);
-          this.updateCuration(id);
+          this.removeCuration(id);
           this.refresh();
         } else {
           this.toaster(message, 'error', true);
         }
       });
     },
-    getInsightSet() {
-      if (this.curatedInsights.length > 0) {
-        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
-        return curatedSet;
-      } else {
-        return this.listInsights;
-      }
-    },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexingly uses pixels
       // same height as width so that we can attempt to be consistent with the layout.
       const docxMaxImageSize = 612;
-      const insightSet = this.getInsightSet();
+      const insightSet = this.selectedInsights;
       const sections = insightSet.map((i) => {
         const imageSize = this.scaleImage(i.thumbnail_source, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(i.modified_at);
@@ -282,7 +340,7 @@ export default {
         background: { fill: 'FFFFFF' },
         slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right }
       });
-      const insightSet = this.getInsightSet();
+      const insightSet = this.selectedInsights;
       insightSet.forEach((i) => {
         const imageSize = this.scaleImage(i.thumbnail_source, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(i.modified_at);
@@ -314,6 +372,7 @@ export default {
             text: `${i.title}: `,
             options: {
               bold: true,
+              color: '000088',
               hyperlink: {
                 url: this.slideURL(i.url)
               }
@@ -326,7 +385,23 @@ export default {
             }
           },
           {
-            text: `\n(Captured on: ${insightDate} - ${this.metadataSummary})`,
+            text: `\n(Captured on: ${insightDate} - ${this.metadataSummary} `,
+            options: {
+              break: false
+            }
+          },
+          {
+            text: 'View On Causemos',
+            options: {
+              break: false,
+              color: '000088',
+              hyperlink: {
+                url: this.slideURL(i.url)
+              }
+            }
+          },
+          {
+            text: '.)',
             options: {
               break: false
             }
@@ -382,6 +457,9 @@ export default {
         this.setCountInsights(listInsights.length);
       });
     },
+    removeCuration(id) {
+      this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
+    },
     scaleImage(base64png, widthLimit, heightLimit) {
       const imageSize = this.getPngDimensionsInPixels(base64png);
       let scaledWidth = widthLimit;
@@ -414,12 +492,17 @@ export default {
     slideURL(slideURL) {
       return `${window.location.protocol}//${window.location.host}/#${slideURL}`;
     },
+    switchTab(id) {
+      this.activeInsight = null;
+      this.selectedInsight = null;
+      this.activeTabId = id;
+    },
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
     },
     updateCuration(id) {
       if (this.isCuratedInsight(id)) {
-        this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
+        this.removeCuration(id);
       } else {
         this.curatedInsights.push(id);
       }
@@ -433,17 +516,18 @@ export default {
 .list-insights-modal-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: top;
   align-items: stretch;
   height: 100vh;
-  .search {
-    padding: 1rem;
+  .tab-controls {
     display: flex;
-    .form-control {
+    flex: 0 0 auto;
+    padding: 0 1rem;
+    .tabs {
       flex: 1 1 auto;
     }
     .export {
-      padding: 0 0 0 1rem;
+      padding: 0.75rem 0 0 ;
       flex: 0 0 auto;
       .dropdown-container {
         position: absolute;
@@ -451,6 +535,7 @@ export default {
         padding: 0;
         width: auto;
         height: fit-content;
+        text-align: left;
         // Clip children overflowing the border-radius at the corners
         overflow: hidden;
 
@@ -460,17 +545,37 @@ export default {
       }
     }
   }
-  .pane-wrapper {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
+  .cards {
+    background-color: $background-light-2;
+    display: inline-block;
+    height: 100%;
     overflow: auto;
-    .pane-content {
+    padding: 1rem;
+    .search {
       display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
+      padding: 0 0 1rem;
+      .form-control {
+        flex: 1 1 auto;
+      }
     }
+    .pane-wrapper {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      .pane-content {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+    }
+  }
+  .list {
+    background-color: $background-light-2;
+    display: inline-block;
+    height: 100%;
+    overflow: auto;
+    padding: 1rem;
   }
 }
 

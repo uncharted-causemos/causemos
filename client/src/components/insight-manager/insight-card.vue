@@ -1,5 +1,8 @@
 <template>
-  <card class="insight">
+  <card
+    class="insight"
+    :class="{ 'card-mode': cardMode }"
+  >
     <div class="insight-content">
       <div
         class="insight-thumbnail"
@@ -9,11 +12,14 @@
           :src="insight.thumbnail_source"
           class="thumbnail">
       </div>
-      <div class="insight-title">
+      <div v-if="showDescription" class="insight-description">
+        <b>{{ insight.title }}</b>. {{ insight.description }}
+      </div>
+      <div v-else class="insight-title">
         <h5>{{ insight.title }}</h5>
       </div>
       <div class="insight-footer">
-        <div class="insight-checkbox" @click="updateCuration()">
+        <div v-if="cardMode" class="insight-checkbox" @click="updateCuration()">
           <label>
             <i
               class="fa fa-lg fa-fw"
@@ -59,7 +65,15 @@ export default defineComponent({
       type: Object,
       default: null
     },
+    cardMode: {
+      type: Boolean,
+      default: false
+    },
     curated: {
+      type: Boolean,
+      default: false
+    },
+    showDescription: {
       type: Boolean,
       default: false
     }
@@ -86,11 +100,13 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+.card-mode {
+  max-width: 300px;
+}
 .insight {
   cursor: pointer;
   padding: 5px 5px 10px;
   border: 1px solid #e5e5e5;
-  max-width: 300px;
   margin: 0px 1rem 1rem 0px;
   .insight-content {
     display: flex;
@@ -101,7 +117,9 @@ export default defineComponent({
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
-      width: 100%;
+    }
+    .insight-description {
+      flex: 1 1 auto;
     }
     .insight-footer {
       display: flex;
@@ -122,7 +140,9 @@ export default defineComponent({
     }
     .insight-thumbnail {
       .thumbnail {
+        margin: auto;
         width:  100%;
+        max-width: 700px;
       }
     }
   }

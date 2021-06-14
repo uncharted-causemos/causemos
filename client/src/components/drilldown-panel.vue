@@ -127,7 +127,7 @@ $drilldown-width: 25vw;
   box-shadow: 0px 5px 4px 2px rgba(0, 0, 0, 0.05),
               0px 3px 2px 1px rgba(0, 0, 0, 0.05);
 
-  &.slide-fade-enter,
+  &.slide-fade-enter-from,
   &.slide-fade-leave-to {
     width: 0;
 

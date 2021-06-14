@@ -9,8 +9,7 @@
     <main>
       <div
         class="graph-container"
-        @dblclick="onBackgroundDblClick"
-      >
+        @dblclick="onBackgroundDblClick">
         <empty-state-instructions v-if="showEmptyStateInstructions" />
         <CAG-graph
           v-else
@@ -374,14 +373,11 @@ export default {
         this.showConceptExistsToaster(suggestion.label);
         return;
       }
-      const graphData = _.clone(this.modelComponents);
       const node = {
         id: (new Date()).getTime().toString(),
         concept: suggestion.concept,
         label: suggestion.label
       };
-      graphData.nodes.push(node);
-      this.modelComponents = graphData;
       this.saveNodeToGraph(node);
     },
     // Makes API call to store the new node on the backend

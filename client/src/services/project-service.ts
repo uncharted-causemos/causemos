@@ -41,11 +41,11 @@ const getProjectFacetsPromise = async (projectId: string, facets: string[], filt
 };
 
 // Create new project based on KB specified by baseId
-const createProject = async (baseId: string, projectName: string, projectDescrption: string) => {
+const createProject = async (baseId: string, projectName: string, projectDescription: string) => {
   const result = await API.post('projects', {
     baseId: baseId,
     projectName: projectName,
-    description: projectDescrption
+    projectDescription: projectDescription
   });
   const id = result.data.index;
 
