@@ -13,10 +13,7 @@ export default function useRegionalData(
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | null>
 ) {
-  // Fetch regional-data for selected model and scenarios
-  // FIXME: this code contains a race condition if the selected model or
-  //  scenario IDs were to change quickly and the promise sets completed
-  //  out of order.
+  // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
@@ -40,10 +37,14 @@ export default function useRegionalData(
       spatialAggregation: selectedSpatialAggregation.value || 'mean'
     }));
   });
-  watchEffect(async () => {
+  watchEffect(async onInvalidate => {
     regionalData.value = null;
     if (outputSpecs.value.length === 0) return;
-    regionalData.value = await getRegionAggregations(outputSpecs.value);
+    let isCancelled = false;
+    onInvalidate(() => { isCancelled = true; });
+    const result = await getRegionAggregations(outputSpecs.value);
+    if (isCancelled) return;
+    regionalData.value = result;
   });
   return {
     outputSpecs,
