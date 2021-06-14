@@ -13,6 +13,8 @@
       :selected-temporal-resolution="selectedTemporalResolution"
       :selected-temporal-aggregation="selectedTemporalAggregation"
       :selected-spatial-aggregation="selectedSpatialAggregation"
+      :regional-data="regionalData"
+      :output-source-specs="outputSpecs"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -192,7 +194,7 @@ export default defineComponent({
     const selectedTemporalAggregation = ref('mean');
     const selectedTemporalResolution = ref('month');
 
-    const regionalData = useRegionalData(
+    const { outputSpecs, regionalData } = useRegionalData(
       selectedModelId,
       selectedScenarioIds,
       selectedTimestamp,
@@ -225,7 +227,8 @@ export default defineComponent({
       newRunsMode,
       timerHandler,
       unit,
-      regionalData
+      regionalData,
+      outputSpecs
     };
   },
   watch: {

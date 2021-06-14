@@ -175,7 +175,7 @@
               :filters="mapFilters"
               :map-bounds="mapBounds"
               :is-grid-map="isGridMap"
-              :region-data="mapRegionData"
+              :region-data="regionalData"
               @sync-bounds="onSyncMapBounds"
               @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
@@ -208,8 +208,7 @@ import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vu
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
-import outputService from '@/services/runoutput-service';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -258,6 +257,14 @@ export default defineComponent({
     selectedSpatialAggregation: {
       type: String as PropType<string>,
       default: 'mean'
+    },
+    regionalData: {
+      type: Object as PropType<RegionalAggregations | null>,
+      default: null
+    },
+    outputSourceSpecs: {
+      type: Array as PropType<OutputSpecWithId[]>,
+      default: () => []
     }
   },
   components: {
@@ -275,7 +282,6 @@ export default defineComponent({
       selectedModelId,
       selectedScenarioIds,
       allModelRunData,
-      selectedTimestamp,
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation
@@ -343,39 +349,22 @@ export default defineComponent({
         }
       });
 
-    const outputSourceSpecs = computed(() => {
-      return selectedScenarioIds.value.map(selectedScenarioId => {
-        return {
-          id: selectedScenarioId,
-          modelId: selectedModelId.value,
-          runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
-          outputVariable: metadata.value?.outputs[0].name || '',
-          timestamp: selectedTimestamp.value,
-          temporalResolution: selectedTemporalResolution.value || 'month',
-          temporalAggregation: selectedTemporalAggregation.value || 'mean',
-          spatialAggregation: selectedSpatialAggregation.value || 'mean'
-        };
-      });
-    });
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
     };
-    const mapRegionData = ref<RegionalAggregations>();
+    // When the list of selected scenario IDs changes, remove any map filters
+    //  that no longer apply to any of the selected scenarios
     watch(
-      () => outputSourceSpecs.value,
+      () => selectedScenarioIds.value,
       () => {
         mapFilters.value = mapFilters.value.filter(filter => {
-          return outputSourceSpecs.value.find(spec => filter.id === spec.id);
-        });
-        outputService.getRegionAggregations(outputSourceSpecs.value).then(result => {
-          mapRegionData.value = result;
+          return selectedScenarioIds.value.find(scenarioId => filter.id === scenarioId);
         });
       }
     );
 
     return {
-      outputSourceSpecs,
       updateMapFilters,
       mapFilters,
       selectedTimeseriesData,
@@ -389,8 +378,7 @@ export default defineComponent({
       isDescriptionView,
       mainModelOutput,
       metadata,
-      isModel,
-      mapRegionData
+      isModel
     };
   },
   data: () => ({
