@@ -35,6 +35,8 @@
       :selected-temporal-aggregation="selectedTemporalAggregation"
       :selected-temporal-resolution="selectedTemporalResolution"
       :selected-spatial-aggregation="selectedSpatialAggregation"
+      :regional-data="regionalData"
+      :output-source-specs="outputSpecs"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -98,6 +100,8 @@
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :regional-data="regionalData"
+            :output-source-specs="outputSpecs"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -125,6 +129,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
+import useRegionalData from '@/services/composables/useRegionalData';
 
 const DRILLDOWN_TABS = [
   {
@@ -241,6 +246,16 @@ export default defineComponent({
       }
     ]);
 
+    const { regionalData, outputSpecs } = useRegionalData(
+      selectedModelId,
+      selectedScenarioIds,
+      selectedTimestamp,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      metadata
+    );
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -260,7 +275,9 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedTemporalResolution,
       metadata,
-      updateRouteParams
+      updateRouteParams,
+      regionalData,
+      outputSpecs
     };
   },
   watch: {
