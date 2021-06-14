@@ -32,7 +32,7 @@ import { mapActions, mapGetters, useStore } from 'vuex';
 import BookmarkPanel from '@/components/bookmark-panel/bookmark-panel';
 
 // import API from '@/api/api';
-import { getInsights } from '@/services/insight-service';
+import { getInsightsCount } from '@/services/insight-service';
 import { watchEffect, computed } from 'vue';
 
 export default {
@@ -65,14 +65,13 @@ export default {
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        // FIXME: use a count API instead of fetching list and using length
-        const insights = await getInsights(project.value, publishedModelId.value, currentView.value); // local insights
+        const insightsCount = await getInsightsCount(project.value, publishedModelId.value, currentView.value); // local insights
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
           return;
         }
-        store.dispatch('bookmarkPanel/setCountBookmarks', insights.length);
+        store.dispatch('bookmarkPanel/setCountBookmarks', insightsCount);
       }
       onInvalidate(() => {
         isCancelled = true;

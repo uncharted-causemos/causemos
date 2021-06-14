@@ -57,8 +57,8 @@ router.get('/', asyncHandler(async (req, res) => {
  * GET a count of insights
  **/
 router.get('/counts', asyncHandler(async (req, res) => {
-  const { project_id: projectId } = req.query;
-  const result = await insightService.counts(projectId);
+  const { project_id, model_id, target_view, visibility } = req.query;
+  const result = await insightService.counts(project_id, model_id, target_view, visibility);
   res.json(result);
 }));
 

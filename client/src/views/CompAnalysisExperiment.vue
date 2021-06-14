@@ -198,7 +198,10 @@ export default defineComponent({
       }
 
       // NOTE: the following line is being set only inside the data view and the model publish page
-      store.dispatch('insightPanel/setPublishedModelId', metadata.value?.id);
+      if (metadata.value !== null) {
+        // note: this value of metadata may be undefined while model is still being loaded
+        store.dispatch('insightPanel/setPublishedModelId', metadata.value?.id);
+      }
       store.dispatch('insightPanel/setProjectId', projectId.value);
     });
 

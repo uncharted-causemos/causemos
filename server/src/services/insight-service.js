@@ -106,9 +106,34 @@ const getInsight = async (insightId) => {
  *
  * @param {string} projectId
  */
-const counts = async (projectId) => {
+const counts = async (projectId, modelId, targetView, visibility) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const count = await insightsConnection.count([{ field: 'project_id', value: projectId }]);
+  const searchFilters = [];
+  if (projectId) {
+    searchFilters.push({
+      field: 'project_id',
+      value: projectId
+    });
+  }
+  if (modelId !== undefined) {
+    searchFilters.push({
+      field: 'model_id',
+      value: modelId
+    });
+  }
+  if (targetView) {
+    searchFilters.push({
+      field: 'target_view',
+      value: targetView
+    });
+  }
+  if (visibility) {
+    searchFilters.push({
+      field: 'visibility',
+      value: visibility
+    });
+  }
+  const count = await insightsConnection.count(searchFilters);
   return count;
 };
 

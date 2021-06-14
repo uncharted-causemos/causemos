@@ -42,7 +42,7 @@
 
 <script>
 import { mapActions, mapGetters, useStore } from 'vuex';
-import { getAllInsights } from '@/services/insight-service';
+import { getAllInsightsCount } from '@/services/insight-service';
 import { watchEffect, computed } from 'vue';
 
 export default {
@@ -57,21 +57,22 @@ export default {
   },
   setup() {
     const store = useStore();
-    const publishedModelId = computed(() => store.getters['insightPanel/publishedModelId']);
     const project = computed(() => store.getters['insightPanel/projectId']);
 
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        // FIXME: use a count API instead of fetching list and using length
-        const insights = await getAllInsights(project.value, publishedModelId.value); // all insights
+        // @REVIEW @FIXME: when publishedModelId was a computed property it didn't return an updated value when the store value was changed
+        const publishedModelId = store.getters['insightPanel/publishedModelId'];
+        // all insights count = projectinsights count + public published model insights count
+        const allInsightsCount = await getAllInsightsCount(project.value, publishedModelId);
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
           return;
         }
-        store.dispatch('insightPanel/setCountInsights', insights.length);
+        store.dispatch('insightPanel/setCountInsights', allInsightsCount);
       }
       onInvalidate(() => {
         isCancelled = true;
