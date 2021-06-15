@@ -21,6 +21,15 @@ export const CODE_TABLE: FieldMap = {
     ...searchable('Keyword', false)
   }
 };
+export const CATEGORY = 'category';
+export const TAGS = 'tags';
+export const PARAMETERS = 'parameters';
+export const VARIABLE_NAME = 'variableName';
+export const VARIABLE_UNIT = 'variableUnit';
+export const TEMPORAL_RESOLUTION = 'temporalResolution';
+export const MAINTAINER_NAME = 'maintainerName';
+export const MAINTAINER_ORG = 'maintainerOrg';
+
 
 
 export const DISPLAY_NAMES: {[ key: string ]: string } = {
@@ -36,14 +45,14 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
 
 
 export const FACET_FIELDS: string [] = [
-  'category',
-  'tags',
-  'parameters',
-  'variableName',
-  'variableUnit',
-  'temporalResolution',
-  'maintainerName',
-  'maintainerOrg'
+  CATEGORY,
+  TAGS,
+  PARAMETERS,
+  VARIABLE_NAME,
+  VARIABLE_UNIT,
+  TEMPORAL_RESOLUTION,
+  MAINTAINER_NAME,
+  MAINTAINER_ORG
 ];
 
 export const datacubeKeys = (datacubeRow: Record<string, any>): string[] => {

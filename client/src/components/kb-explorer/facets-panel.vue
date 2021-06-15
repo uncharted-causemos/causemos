@@ -209,7 +209,7 @@ const FACET_GROUPS = {
 
 
 export default {
-  name: 'KnowledgeFacetsPanel',
+  name: 'FacetsPanel',
   components: {
     CategoricalFacet,
     NumericalFacet,

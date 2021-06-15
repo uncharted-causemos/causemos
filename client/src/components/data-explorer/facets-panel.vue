@@ -29,7 +29,7 @@ import SidePanel from '@/components/side-panel/side-panel';
 import datacubeUtil from '@/utils/datacube-util';
 
 export default {
-  name: 'DataExplorerFacetsPanel',
+  name: 'FacetsPanel',
   components: {
     CategoricalFacet,
     SidePanel

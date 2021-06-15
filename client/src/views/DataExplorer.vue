@@ -5,14 +5,16 @@
     />
     <div class="flex h-100" v-if="datacubes.length > 0">
       <div class="flex h-100">
-        <data-explorer-facets-panel
+        <facets-panel
           :facets="facets"
           :filtered-facets="filteredFacets"
         />
       </div>
       <search class="flex-grow-1 h-100"
         :datacubes="datacubes"
+        :facets="facets"
         :filtered-datacubes="filteredDatacubes"
+        :filtered-facets="filteredFacets"
       />
     </div>
   </div>
@@ -22,9 +24,9 @@
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
-import DataExplorerFacetsPanel from '@/components/facets-panel/data-explorer-facets-panel';
+import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
-import Search from '@/components/data-explorer/search';
+import Search from '../components/data-explorer/search.vue';
 
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
 
@@ -35,7 +37,7 @@ export default {
   name: 'DataExplorer',
   components: {
     Search,
-    DataExplorerFacetsPanel,
+    FacetsPanel,
     ModalHeader
   },
   data: () => ({
