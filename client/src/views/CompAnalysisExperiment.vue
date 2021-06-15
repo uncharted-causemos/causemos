@@ -13,6 +13,8 @@
       :selected-temporal-resolution="selectedTemporalResolution"
       :selected-temporal-aggregation="selectedTemporalAggregation"
       :selected-spatial-aggregation="selectedSpatialAggregation"
+      :regional-data="regionalData"
+      :output-source-specs="outputSpecs"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -72,14 +74,11 @@
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
-            :metadata="metadata"
-            :selected-model-id="selectedModelId"
-            :selected-scenario-ids="selectedScenarioIds"
-            :selected-timestamp="selectedTimestamp"
-            :selected-temporal-resolution="selectedTemporalResolution"
-            :selected-temporal-aggregation="selectedTemporalAggregation"
-            :selected-spatial-aggregation="selectedSpatialAggregation"
+            :regional-data="regionalData"
             :unit="unit"
+            :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-timestamp="selectedTimestamp"
+            :selected-scenario-ids="selectedScenarioIds"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -101,6 +100,7 @@ import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
@@ -190,12 +190,26 @@ export default defineComponent({
       immediate: true
     });
 
+    const selectedSpatialAggregation = ref('mean');
+    const selectedTemporalAggregation = ref('mean');
+    const selectedTemporalResolution = ref('month');
+
+    const { outputSpecs, regionalData } = useRegionalData(
+      selectedModelId,
+      selectedScenarioIds,
+      selectedTimestamp,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      metadata
+    );
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
-      selectedTemporalResolution: 'month',
-      selectedTemporalAggregation: 'mean',
-      selectedSpatialAggregation: ref('mean'),
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId,
@@ -212,7 +226,9 @@ export default defineComponent({
       fetchData,
       newRunsMode,
       timerHandler,
-      unit
+      unit,
+      regionalData,
+      outputSpecs
     };
   },
   watch: {
@@ -266,26 +282,39 @@ export default defineComponent({
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       this.typeBreakdownData = [];
       if (this.selectedScenarioIds.length === 0) return;
+      // typeBreakdownData array contains an entry for each drilldown dimension
+      //  (e.g. 'crop type')
       this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
+        // Initialize total for each scenarioId to 0
+        const totals = {} as { [scenarioId: string]: number };
+        this.selectedScenarioIds.forEach(scenarioId => {
+          totals[scenarioId] = 0;
+        });
+        // Randomly assign values for each option in the dimension (e.g. 'maize', 'corn)
+        //  to each scenario, and keep track of the sum totals for each scenario
         const choices = dimension.choices ?? [];
-        const dataForEachRun = this.selectedScenarioIds.map(() => {
-          // Generate random breakdown data for each run
-          const drilldownChildren = choices.map(choice => ({
-            // Breakdown data IDs are written as the hierarchical path delimited by '__'
-            id: 'All__' + choice,
+        const drilldownChildren = choices.map(choice => {
+          const values = {} as { [scenarioId: string]: number };
+          this.selectedScenarioIds.forEach(scenarioId => {
             // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
             //  from (selected scenarios) data
-            value: getRandomNumber(0, 5000)
-          }));
-          const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
+            const randomValue = getRandomNumber(0, 5000);
+            values[scenarioId] = randomValue;
+            totals[scenarioId] += randomValue;
+          });
           return {
-            Total: [{ id: 'All', value: sumTotal }],
-            [dimension.name]: drilldownChildren
+            // Breakdown data IDs are written as the hierarchical path delimited by '__'
+            id: 'All__' + choice,
+            values
           };
         });
+
         return {
           name: dimension.name,
-          data: dataForEachRun
+          data: {
+            Total: [{ id: 'All', values: totals }],
+            [dimension.name]: drilldownChildren
+          }
         };
       });
     }
