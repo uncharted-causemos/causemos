@@ -1,7 +1,9 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { Timeseries } from '@/types/Timeseries';
+import { getValidatedOutputs } from '@/utils/datacube-util';
 import { computed, Ref, ref, watchEffect } from 'vue';
+import { useStore } from 'vuex';
 
 /**
  * Takes a model ID, a list of model run IDs, and a colouring function,
@@ -20,9 +22,12 @@ export default function useTimeseriesData(
 ) {
   const timeseriesData = ref<Timeseries[]>([]);
 
+  const store = useStore();
+  const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
   watchEffect(onInvalidate => {
     timeseriesData.value = [];
-    if (modelRunIds.value.length === 0 || metadata.value === null) {
+    if (modelRunIds.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
       // Don't have the information needed to fetch the data
       return;
     }
@@ -41,12 +46,13 @@ export default function useTimeseriesData(
       if (selectedSpatialAggregation.value !== '') {
         spatialAgg = selectedSpatialAggregation.value;
       }
+      const outputs = getValidatedOutputs(metadata.value?.outputs ?? []);
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
             model_id: modelId.value,
             run_id: runId,
-            feature: metadata.value?.outputs[0].name,
+            feature: outputs[currentOutputIndex.value].name,
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg

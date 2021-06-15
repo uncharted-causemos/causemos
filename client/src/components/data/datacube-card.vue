@@ -190,7 +190,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed, Ref, watchEffect } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -209,6 +209,8 @@ import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-
 import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { useStore } from 'vuex';
+import { getValidatedOutputs } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -283,6 +285,10 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus
   },
   setup(props, { emit }) {
+    //
+    const store = useStore();
+    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
     const {
       selectedModelId,
       selectedScenarioIds,
@@ -316,10 +322,11 @@ export default defineComponent({
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
-    watch(() => metadata.value, () => {
-      mainModelOutput.value = metadata.value?.outputs[0];
-    }, {
-      immediate: true
+    watchEffect(() => {
+      if (metadata.value && currentOutputIndex.value >= 0) {
+        const outputs = getValidatedOutputs(metadata.value?.outputs);
+        mainModelOutput.value = outputs[currentOutputIndex.value];
+      }
     });
 
     const isModel = computed(() => {

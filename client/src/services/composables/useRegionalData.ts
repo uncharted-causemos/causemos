@@ -3,6 +3,8 @@ import { computed, watchEffect } from '@vue/runtime-core';
 import { Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
+import { useStore } from 'vuex';
+import { getValidatedOutputs } from '@/utils/datacube-util';
 
 export default function useRegionalData(
   selectedModelId: Ref<string>,
@@ -13,6 +15,9 @@ export default function useRegionalData(
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | null>
 ) {
+  const store = useStore();
+  const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
@@ -22,15 +27,17 @@ export default function useRegionalData(
       selectedModelId.value === null ||
       selectedScenarioIds.value.length === 0 ||
       timestamp === null ||
-      modelMetadata === null
+      modelMetadata === null ||
+      currentOutputIndex.value === undefined
     ) {
       return [];
     }
+    const outputs = getValidatedOutputs(modelMetadata.outputs);
     return selectedScenarioIds.value.map(selectedScenarioId => ({
       id: selectedScenarioId,
       modelId: selectedModelId.value,
       runId: selectedScenarioId,
-      outputVariable: modelMetadata.outputs[0].name || '',
+      outputVariable: outputs[currentOutputIndex.value].name || '',
       timestamp,
       temporalResolution: selectedTemporalResolution.value || 'month',
       temporalAggregation: selectedTemporalAggregation.value || 'mean',

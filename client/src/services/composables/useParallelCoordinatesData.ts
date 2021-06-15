@@ -3,6 +3,8 @@ import { computed, ref, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { ModelRunStatus } from '@/types/Enums';
+import { useStore } from 'vuex';
+import { getValidatedOutputs } from '@/utils/datacube-util';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -13,11 +15,15 @@ export default function useParallelCoordinatesData(
   metadata: Ref<Model | null>,
   allModelRunData: Ref<ModelRun[]>
 ) {
+  const store = useStore();
+  const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
   const runParameterValues = computed(() => {
-    if (allModelRunData.value.length === 0 || metadata.value === null) {
+    if (allModelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
       return [];
     }
-    const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
+    const outputs = getValidatedOutputs(metadata.value.outputs);
+    const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
     return allModelRunData.value.map((modelRun, runIndex) => {
       const run_id = allModelRunData.value[runIndex].id;
       const runStatus = allModelRunData.value[runIndex].status;
@@ -41,9 +47,10 @@ export default function useParallelCoordinatesData(
     if (metadata.value === null) {
       return [];
     }
+    const outputs = getValidatedOutputs(metadata.value.outputs);
 
     // Restructure the output parameter
-    const outputDimension = metadata.value.outputs[0];
+    const outputDimension = outputs[currentOutputIndex.value];
     const inputDimensions = metadata.value.parameters;
     // Append the output parameter to the list of input parameters
     return [...inputDimensions, outputDimension] as ModelParameter[];

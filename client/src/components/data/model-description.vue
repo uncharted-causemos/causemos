@@ -14,13 +14,13 @@
               v-model="param.display_name"
               type="text"
               class="model-attribute-text"
-              :class="{ 'attribute-invalid': param.display_name === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.display_name) }"
             >
             <input
               v-model="param.unit"
               type="text"
               class="model-attribute-text"
-              :class="{ 'attribute-invalid': param.unit === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
           <td>
@@ -28,7 +28,7 @@
               v-model="param.description"
               type="text"
               class="model-attribute-desc"
-              :class="{ 'attribute-invalid': param.description === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
           </td>
         </tr>
@@ -41,19 +41,19 @@
           </tr>
       </thead>
       <tbody v-if="metadata && metadata.outputs">
-        <tr v-for="param in metadata.outputs" :key="param.id">
+        <tr v-for="param in outputVariables" :key="param.id">
           <td class="model-attribute-pair">
             <input
               v-model="param.display_name"
               type="text"
               class="model-attribute-text"
-              :class="{ 'attribute-invalid': param.display_name === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.display_name) }"
             >
             <input
               v-model="param.unit"
               type="text"
               class="model-attribute-text"
-              :class="{ 'attribute-invalid': param.unit === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
           <td>
@@ -61,7 +61,7 @@
               v-model="param.description"
               type="text"
               class="model-attribute-desc"
-              :class="{ 'attribute-invalid': param.description === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
           </td>
         </tr>
@@ -72,9 +72,11 @@
 
 <script lang="ts">
 import API from '@/api/api';
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref } from 'vue';
 import _ from 'lodash';
 import { Model, ModelParameter } from '@/types/Datacube';
+import { useStore } from 'vuex';
+import { getValidatedOutputs } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -91,6 +93,9 @@ export default defineComponent({
   ],
   setup(props) {
     const metadata = ref<Model | null>(null);
+    const store = useStore();
+    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
     async function fetchMetadata() {
       const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
         params: {
@@ -100,16 +105,21 @@ export default defineComponent({
     }
     fetchMetadata();
     return {
-      metadata
+      metadata,
+      currentOutputIndex
     };
   },
   computed: {
     inputParameters(): Array<any> {
       return this.metadata ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
+    },
+    outputVariables(): Array<any> {
+      if (this.metadata && this.currentOutputIndex >= 0) {
+        const outputs = getValidatedOutputs(this.metadata.outputs);
+        return [outputs[this.currentOutputIndex]];
+      }
+      return [undefined];
     }
-  },
-  mounted(): void {
-    this.checkAndNotifyValidity();
   },
   watch: {
     metadata: {
@@ -121,13 +131,16 @@ export default defineComponent({
     }
   },
   methods: {
+    isValid(name: string) {
+      return name && name !== '';
+    },
     checkAndNotifyValidity() {
       if (this.metadata === null || _.isEmpty(this.metadata)) {
         return;
       }
       let isValid = true;
-      const invalidInputs = this.metadata.parameters.filter((p: any) => p.display_name === '' || p.unit === '' || p.description === '');
-      const invalidOutputs = this.metadata.outputs.filter((p: any) => p.display_name === '' || p.unit === '' || p.description === '');
+      const invalidInputs = this.inputParameters.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
+      const invalidOutputs = this.outputVariables.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
       if (invalidInputs.length > 0 || invalidOutputs.length > 0) {
         isValid = false;
       }
@@ -179,6 +192,7 @@ export default defineComponent({
   width: 100%;
   display: flex;
   flex-direction: column;
+  overflow: auto;
 }
 
 </style>
