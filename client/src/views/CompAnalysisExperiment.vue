@@ -232,9 +232,9 @@ export default defineComponent({
       selectedTimestamp,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
+      selectedTemporalResolution,
       metadata
     );
-      selectedTemporalResolution,
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -260,8 +260,8 @@ export default defineComponent({
       timerHandler,
       unit,
       regionalData,
-      outputSpecs
-      isDescriptionView,
+      outputSpecs,
+      isDescriptionView
     };
   },
   watch: {

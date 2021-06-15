@@ -303,7 +303,7 @@ export default defineComponent({
       metadata,
       updateRouteParams,
       regionalData,
-      outputSpecs
+      outputSpecs,
       isDescriptionView
     };
   },
