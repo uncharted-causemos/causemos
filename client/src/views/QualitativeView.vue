@@ -301,6 +301,10 @@ export default {
     this.PANE_ID = PANE_ID;
     this.timerId = null;
     this.cagsToImport = [];
+    // update insight related state
+    // FIXME: use contextId to store cag-id, reflected context-specific-id; TO BE REFACTORED
+    this.setContextId(this.currentCAG);
+    this.setProjectId(this.project);
   },
   mounted() {
     this.recalculateCAG();
@@ -310,7 +314,9 @@ export default {
   },
   methods: {
     ...mapActions({
-      setUpdateToken: 'app/setUpdateToken'
+      setUpdateToken: 'app/setUpdateToken',
+      setContextId: 'insightPanel/setContextId',
+      setProjectId: 'insightPanel/setProjectId'
     }),
     async refresh() {
       // Get CAG data

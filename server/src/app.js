@@ -26,7 +26,7 @@ const documentsRouter = rootRequire('/routes/documents');
 const scenariosRouter = rootRequire('/routes/scenario');
 const settingsRouter = rootRequire('/routes/settings');
 const dartRouter = rootRequire('/routes/dart');
-const bookmarksRouter = rootRequire('/routes/bookmarks');
+const insightsRouter = rootRequire('/routes/insights');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
 const maasRouter = rootRequire('/routes/maas');
@@ -90,8 +90,8 @@ app.use('/api/dart', [
   dartRouter
 ]);
 
-app.use('/api/bookmarks', [
-  bookmarksRouter
+app.use('/api/insights', [
+  insightsRouter
 ]);
 
 // The routes here are for model parameterization and model-based experiments
