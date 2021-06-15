@@ -22,17 +22,29 @@ export const CODE_TABLE: FieldMap = {
   }
 };
 
+
 export const DISPLAY_NAMES: {[ key: string ]: string } = {
   category: 'Category',
-  model: 'Output Variable',
-  output_name: 'Output Name',
-  output_units: 'Output Units',
-  outputs: 'Output Variables',
-  parameters: 'Input Knobs',
-  source: 'Source',
+  maintainerName: 'Maintainer',
+  maintainerOrg: 'Organization',
   tags: 'Tags',
-  type: 'Types'
+  temporalResolution: 'Temporal Resolution',
+  type: 'Types',
+  variableName: 'Output Name',
+  variableUnit: 'Output Units'
 };
+
+
+export const FACET_FIELDS: string [] = [
+  'category',
+  'tags',
+  'parameters',
+  'variableName',
+  'variableUnit',
+  'temporalResolution',
+  'maintainerName',
+  'maintainerOrg'
+];
 
 export const datacubeKeys = (datacubeRow: Record<string, any>): string[] => {
   let keys = Object.keys(datacubeRow);
@@ -44,6 +56,7 @@ export const datacubeKeys = (datacubeRow: Record<string, any>): string[] => {
 
 export default {
   CODE_TABLE,
+  FACET_FIELDS,
   DISPLAY_NAMES,
   datacubeKeys
 };

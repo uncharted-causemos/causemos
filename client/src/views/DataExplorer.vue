@@ -6,13 +6,13 @@
     <div class="flex h-100" v-if="datacubes.length > 0">
       <div class="flex h-100">
         <data-explorer-facets-panel
-          :datacubes="datacubes"
-          :filteredDatacubes="filteredDatacubes"
+          :facets="facets"
+          :filtered-facets="filteredFacets"
         />
       </div>
       <search class="flex-grow-1 h-100"
         :datacubes="datacubes"
-        :filteredDatacubes="filteredDatacubes"
+        :filtered-datacubes="filteredDatacubes"
       />
     </div>
   </div>
@@ -26,9 +26,10 @@ import DataExplorerFacetsPanel from '@/components/facets-panel/data-explorer-fac
 import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '@/components/data-explorer/search';
 
-import { getDatacubes } from '@/services/new-datacube-service';
+import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
 
 import filtersUtil from '@/utils/filters-util';
+import { FACET_FIELDS } from '@/utils/datacube-util';
 
 export default {
   name: 'DataExplorer',
@@ -39,7 +40,9 @@ export default {
   },
   data: () => ({
     datacubes: [],
-    filteredDatacubes: []
+    facets: [],
+    filteredDatacubes: [],
+    filteredFacets: []
   }),
   computed: {
     ...mapGetters({
@@ -89,6 +92,11 @@ export default {
       this.datacubes = await getDatacubes(defaultFilters);
       this.datacubes.forEach(item => (item.isAvailable = true));
       this.setSearchResultsCount(this.filteredDatacubes.length);
+
+      // get facet data
+      this.facets = await getDatacubeFacets(FACET_FIELDS, defaultFilters);
+      this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, filters);
+
       this.disableOverlay();
     }
   }

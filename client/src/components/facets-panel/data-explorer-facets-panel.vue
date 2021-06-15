@@ -5,7 +5,7 @@
     :current-tab-name="currentTab"
   >
     <div v-if="currentTab === 'Data Cube Facets'" class="facet-panel-list">
-      <div v-for="facet in facets" :key="facet.label">
+      <div v-for="facet in formattedFacets" :key="facet.label">
         <categorical-facet
           key="facet.label"
           :facet="facet.id"
@@ -21,14 +21,12 @@
 
 <script>
 
-import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
 import CategoricalFacet from '@/components/facets/categorical-facet';
 
 import SidePanel from '@/components/side-panel/side-panel';
 import datacubeUtil from '@/utils/datacube-util';
-import filtersUtil from '@/utils/filters-util';
 
 export default {
   name: 'DataExplorerFacetsPanel',
@@ -43,13 +41,13 @@ export default {
     currentTab: 'Data Cube Facets'
   }),
   props: {
-    datacubes: {
-      type: Array,
-      default: () => []
+    facets: {
+      type: Object,
+      default: () => {}
     },
-    filteredDatacubes: {
-      type: Array,
-      default: () => []
+    filteredFacets: {
+      type: Object,
+      default: () => {}
     }
   },
   computed: {
@@ -58,85 +56,37 @@ export default {
       updateToken: 'app/updateToken',
       project: 'app/project'
     }),
-    facets() {
-      const keys = datacubeUtil.datacubeKeys(this.datacubes[0]);
-      const columns = keys.reduce((a, k) => {
-        a[k] = {
-          label: k,
-          data: {}, // { label: count, } dictionary
-          filteredData: {} //  { label: count, } dictionary
-        };
-        return a;
-      }, []);
-      this.datacubes.forEach((c) => {
-        keys.forEach((k) => {
-          if (Array.isArray(c[k])) {
-            c[k].forEach((l) => {
-              const category = typeof l === 'object' ? l.name : l;
-              columns[k].data[category] = columns[k].data[category] ? columns[k].data[category] + 1 : 1;
-            });
-          } else if (typeof c[k] === 'string') {
-            columns[k].data[c[k]] = columns[k].data[c[k]] ? columns[k].data[c[k]] + 1 : 1;
-          }
-        });
-      });
-
-      if (this.filteredDatacubes) {
-        this.filteredDatacubes.forEach((c) => {
-          keys.forEach((k) => {
-            if (Array.isArray(c[k])) {
-              c[k].forEach((l) => {
-                const category = typeof l === 'object' ? l.name : l;
-                columns[k].filteredData[category] = columns[k].filteredData[category] ? columns[k].filteredData[category] + 1 : 1;
-              });
-            } else if (typeof c[k] === 'string') {
-              columns[k].filteredData[c[k]] = columns[k].filteredData[c[k]] ? columns[k].filteredData[c[k]] + 1 : 1;
-            }
-          });
-        });
-      }
+    formattedFacets() {
+      const keys = Object.keys(this.facets);
 
       // mux the filtered data and base data into facets.
-      const facetList = keys.map((k) => {
-        const categoryKeys = Object.keys(columns[k].data);
-        const baseData = categoryKeys.map((ck) => {
-          return {
-            key: ck,
-            value: columns[k].data[ck]
-          };
+      const facetList = keys.map((key) => {
+        const baseData = [];
+        const filteredData = [];
+        const filteredFacetDict = this.filteredFacets[key] ? this.filteredFacets[key].reduce((dict, category) => {
+          dict[category.key] = category.value;
+          return dict;
+        }, {}) : {};
+
+        this.facets[key].forEach((category) => {
+          baseData.push({
+            key: category.key,
+            value: category.value
+          });
+          filteredData.push({
+            key: category.key,
+            value: filteredFacetDict[category.key] || 0
+          });
         });
-        const filteredData = categoryKeys.map((ck) => {
-          return {
-            key: ck,
-            value: columns[k].filteredData[ck] || 0
-          };
-        });
+
         return {
-          id: k,
-          label: datacubeUtil.DISPLAY_NAMES[k] || k,
+          id: key,
+          label: datacubeUtil.DISPLAY_NAMES[key] || key,
           baseData,
           filteredData
         };
-      }).filter((f) => f.baseData.length > 0);
+      });
       return facetList;
-    }
-  },
-  watch: {
-    filters(n, o) {
-      if (filtersUtil.isEqual(n, o)) return;
-      if (!filtersUtil.isClauseEqual(n, o, 'enable', false)) {
-        this.groupBaseState = {};
-      }
-      this.groupFacetState = {};
-    },
-    updateToken(n, o) {
-      if (_.isEqual(n, o)) return;
-
-      // Update happened, invalidate
-      this.groupBaseState = {};
-      this.groupFacetState = {};
-      this.refreshBase();
-      this.refresh();
     }
   },
   methods: {
