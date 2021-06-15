@@ -6,7 +6,8 @@ interface InsightState {
   countInsights: number;
   viewState: any;
   dataState: any;
-  publishedModelId: string;
+  contextId: string;
+  analysisId: string;
   projectId: string;
 }
 
@@ -19,7 +20,8 @@ const state: InsightState = {
   countInsights: 0,
   viewState: {},
   dataState: {},
-  publishedModelId: '',
+  contextId: '',
+  analysisId: '',
   projectId: ''
 };
 
@@ -30,7 +32,8 @@ const getters: GetterTree<InsightState, any> = {
   countInsights: state => state.countInsights,
   viewState: state => state.viewState,
   dataState: state => state.dataState,
-  publishedModelId: state => state.publishedModelId,
+  contextId: state => state.contextId,
+  analysisId: state => state.analysisId,
   projectId: state => state.projectId
 };
 
@@ -54,8 +57,11 @@ const actions: ActionTree<InsightState, any> = {
   setDataState: ({ commit }, newValue) => {
     commit('setDataState', newValue);
   },
-  setPublishedModelId: ({ commit }, newValue) => {
-    commit('setPublishedModelId', newValue);
+  setContextId: ({ commit }, newValue) => {
+    commit('setContextId', newValue);
+  },
+  setAnalysisId: ({ commit }, newValue) => {
+    commit('setAnalysisId', newValue);
   },
   setProjectId: ({ commit }, newValue) => {
     commit('setProjectId', newValue);
@@ -82,8 +88,11 @@ const mutations: MutationTree<InsightState> = {
   setDataState(state, value) {
     state.dataState = value;
   },
-  setPublishedModelId(state, value) {
-    state.publishedModelId = value;
+  setContextId(state, value) {
+    state.contextId = value;
+  },
+  setAnalysisId(state, value) {
+    state.analysisId = value;
   },
   setProjectId(state, value) {
     state.projectId = value;

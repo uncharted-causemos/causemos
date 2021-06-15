@@ -302,8 +302,8 @@ export default {
     this.timerId = null;
     this.cagsToImport = [];
     // update insight related state
-    // FIXME: use publishedModelId to store cag-id, reflected context-specific-id; TO BE REFACTORED
-    this.setPublishedModelId(this.currentCAG);
+    // FIXME: use contextId to store cag-id, reflected context-specific-id; TO BE REFACTORED
+    this.setContextId(this.currentCAG);
     this.setProjectId(this.project);
   },
   mounted() {
@@ -315,7 +315,7 @@ export default {
   methods: {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken',
-      setPublishedModelId: 'insightPanel/setPublishedModelId',
+      setContextId: 'insightPanel/setContextId',
       setProjectId: 'insightPanel/setProjectId'
     }),
     async refresh() {

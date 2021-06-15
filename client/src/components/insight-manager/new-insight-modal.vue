@@ -137,7 +137,7 @@ export default {
 
       dataState: 'insightPanel/dataState',
       viewState: 'insightPanel/viewState',
-      publishedModelId: 'insightPanel/publishedModelId',
+      contextId: 'insightPanel/contextId',
       project: 'insightPanel/projectId',
 
       filters: 'dataSearch/filters',
@@ -182,7 +182,7 @@ export default {
         // FIXME: additional metadata attributes should be defined and sent down based on the source page
         arr.push({
           key: 'Model ID:',
-          value: this.publishedModelId
+          value: this.contextId
         });
         arr.push({
           key: 'Target View:',
@@ -268,7 +268,7 @@ export default {
         description: this.description,
         visibility: this.insightVisibility,
         project_id: this.project,
-        model_id: this.publishedModelId,
+        context_id: this.contextId,
         url,
         target_view: this.insightTargetView,
         pre_actions: null,

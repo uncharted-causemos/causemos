@@ -1,13 +1,13 @@
 
 // @base/abstract type
-export interface Bookmark {
+export interface Snapshot {
   id?: string;
   description?: string;
   visibility: string; // public or private
   project_id?: string;
 
-  // FIXME: refactor as this is more of a context-id (e.g., datacube-id, CAG-id, etc.)
-  model_id?: string;
+  // e.g., datacube-id, CAG-id, etc.
+  context_id?: string;
 
   url: string;
 
@@ -26,7 +26,7 @@ export interface Bookmark {
 }
 
 // @concrete type
-export interface Insight extends Bookmark {
+export interface Insight extends Snapshot {
   name: string;
   data_state?: DataState;
   is_default: boolean; // is this the default insight?
@@ -35,7 +35,7 @@ export interface Insight extends Bookmark {
 }
 
 // @concrete type
-export interface AnalyticalQuestion extends Bookmark {
+export interface AnalyticalQuestion extends Snapshot {
   question: string;
   insightId?: string; // has an insight been linked to satisfy/answer this question?
 }

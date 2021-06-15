@@ -101,7 +101,7 @@ export default {
 
       dataState: 'insightPanel/dataState',
       viewState: 'insightPanel/viewState',
-      publishedModelId: 'insightPanel/publishedModelId',
+      contextId: 'insightPanel/contextId',
 
       filters: 'dataSearch/filters',
       ontologyConcepts: 'dataSearch/ontologyConcepts',
@@ -165,7 +165,7 @@ export default {
       // but for now uses a special class to target the capture area
       const el = document.getElementsByClassName('bookmark-capture')[0];
       const thumbnailSource = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
-      const modelId = this.publishedModelId;
+      const contextId = this.contextId;
       const targetView = this.currentView === 'modelPublishingExperiment' ? 'data' : this.currentView;
       const visibility = this.currentView === 'modelPublishingExperiment' ? 'public' : 'private';
       const newInsight = {
@@ -173,7 +173,7 @@ export default {
         description: this.description,
         visibility,
         project_id: this.project,
-        model_id: modelId,
+        context_id: contextId,
         url,
         target_view: targetView,
         pre_actions: null,

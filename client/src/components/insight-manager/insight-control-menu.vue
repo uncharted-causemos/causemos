@@ -63,10 +63,10 @@ export default {
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        // @REVIEW @FIXME: when publishedModelId was a computed property it didn't return an updated value when the store value was changed
-        const publishedModelId = store.getters['insightPanel/publishedModelId'];
-        // all insights count = projectinsights count + public published model insights count
-        const allInsightsCount = await getAllInsightsCount(project.value, publishedModelId);
+        // @REVIEW @FIXME: when contextId was a computed property it didn't return an updated value when the store value was changed
+        const contextId = store.getters['insightPanel/contextId'];
+        // all insights count = project-insights count + context (i.e., datacube-id, cag-id) insights count
+        const allInsightsCount = await getAllInsightsCount(project.value, contextId);
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.

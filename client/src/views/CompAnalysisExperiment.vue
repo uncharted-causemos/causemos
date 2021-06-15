@@ -200,7 +200,7 @@ export default defineComponent({
       // NOTE: the following line is being set only inside the data view and the model publish page
       if (metadata.value !== null) {
         // note: this value of metadata may be undefined while model is still being loaded
-        store.dispatch('insightPanel/setPublishedModelId', metadata.value?.id);
+        store.dispatch('insightPanel/setContextId', metadata.value?.id);
       }
       store.dispatch('insightPanel/setProjectId', projectId.value);
     });
@@ -288,6 +288,9 @@ export default defineComponent({
     updateStateFromInsight(insight_id: string) {
       API.get(`insights/${insight_id}`).then(d => {
         const loadedInsight: Insight = d.data;
+        // FIXME: before applying the insight, which will overwrite current state,
+        //  consider pushing current state to the url to support browser hsitory
+        //  in case the user wants to navigate to the original state using back button
         if (loadedInsight) {
           //
           // insight was found and loaded

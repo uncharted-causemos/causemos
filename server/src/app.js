@@ -26,7 +26,6 @@ const documentsRouter = rootRequire('/routes/documents');
 const scenariosRouter = rootRequire('/routes/scenario');
 const settingsRouter = rootRequire('/routes/settings');
 const dartRouter = rootRequire('/routes/dart');
-const bookmarksRouter = rootRequire('/routes/bookmarks');
 const insightsRouter = rootRequire('/routes/insights');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
@@ -89,10 +88,6 @@ app.use('/api', [
 
 app.use('/api/dart', [
   dartRouter
-]);
-
-app.use('/api/bookmarks', [
-  bookmarksRouter
 ]);
 
 app.use('/api/insights', [

@@ -1,6 +1,8 @@
 import API from '@/api/api';
 import _ from 'lodash';
 
+// FIXME: add support for analysisId field
+
 //
 // Filter fields
 //
@@ -8,41 +10,41 @@ import _ from 'lodash';
 // example: get all insights related to a given project
 //  if a target-view and/or context-id is provided then the result will be filtered accordingly
 
-const getProjectSpecificFilterFields = (project_id: string, model_id?: string, target_view?: string) => {
+const getProjectSpecificFilterFields = (project_id: string, context_id?: string, target_view?: string) => {
   return {
     project_id,
-    model_id,
+    context_id,
     target_view
   };
 };
 
 // example: return all public insights that were created during DSSAT publication
 //  if a target-view is provided then the result will be filtered against current view
-const getPublishedModelFilterFields = (model_id: string, target_view?: string) => {
+const getPublishedModelFilterFields = (context_id: string, target_view?: string) => {
   return {
-    model_id,
+    context_id,
     visibility: 'public',
     target_view
   };
 };
 
-const getParamsForAllInsightsFetch = (project_id: string, model_id: string) => {
+const getParamsForAllInsightsFetch = (project_id: string, context_id: string) => {
   return [
     // first, fetch all insights related to the current project
     getProjectSpecificFilterFields(project_id),
     // second, fetch all public insights related to the currently selected model
-    getPublishedModelFilterFields(model_id)
+    getPublishedModelFilterFields(context_id)
   ];
 };
 
-const getParamsForLocalInsightsFetch = (project_id: string, model_id: string, target_view: string) => {
+const getParamsForContextSpecificInsightsFetch = (project_id: string, context_id: string, target_view: string) => {
   return [
     // first, fetch all insights related to the current project, and the currently loaded datacube/model-id, and filtered for current view
-    getProjectSpecificFilterFields(project_id, model_id, target_view),
+    getProjectSpecificFilterFields(project_id, context_id, target_view),
     // second, fetch all insights related to the current model (i.e., published model insights)
     //  those won't have valid project so the visibility flag will get all of them,
     //   and then match against current view and context (or model) id
-    getPublishedModelFilterFields(model_id, target_view)
+    getPublishedModelFilterFields(context_id, target_view)
   ];
 };
 
@@ -57,11 +59,11 @@ const getParamsForLocalInsightsFetch = (project_id: string, model_id: string, ta
  *  - insights that are public
  *    (saved during model publication flow AND are associated with a specific model)
  * @param project_id project id
- * @param model_id model id
+ * @param context_id context id
  * @returns the list of all insights
  */
-export const getAllInsights = async (project_id: string, model_id: string) => {
-  const fetchParamsArray = getParamsForAllInsightsFetch(project_id, model_id);
+export const getAllInsights = async (project_id: string, context_id: string) => {
+  const fetchParamsArray = getParamsForAllInsightsFetch(project_id, context_id);
   return fetchInsights(fetchParamsArray);
 };
 
@@ -71,12 +73,12 @@ export const getAllInsights = async (project_id: string, model_id: string) => {
  * - insights that are public
  *   (saved during model publication flow AND are associated with a specific model AND match target view)
  * @param project_id project id
- * @param model_id model id
+ * @param context_id context id
  * @param target_view target view
  * @returns the list of local (context-specific) insights
  */
-export const getInsights = async (project_id: string, model_id: string, target_view: string) => {
-  const fetchParamsArray = getParamsForLocalInsightsFetch(project_id, model_id, target_view);
+export const getContextSpecificInsights = async (project_id: string, context_id: string, target_view: string) => {
+  const fetchParamsArray = getParamsForContextSpecificInsightsFetch(project_id, context_id, target_view);
   return fetchInsights(fetchParamsArray);
 };
 
@@ -86,22 +88,22 @@ export const getInsights = async (project_id: string, model_id: string, target_v
 
 /**
  * @param project_id project id
- * @param model_id model id
+ * @param context_id context id
  * @param target_view target view
  * @returns the total count of local insights
  */
-export const getInsightsCount = async (project_id: string, model_id: string, target_view: string) => {
-  const fetchParamsArray = getParamsForLocalInsightsFetch(project_id, model_id, target_view);
+export const getSpecificInsightsCount = async (project_id: string, context_id: string, target_view: string) => {
+  const fetchParamsArray = getParamsForContextSpecificInsightsFetch(project_id, context_id, target_view);
   return fetchInsightsCount(fetchParamsArray);
 };
 
 /**
  * @param project_id project id
- * @param model_id model id
+ * @param context_id context id
  * @returns the total count of all insights
  */
-export const getAllInsightsCount = async (project_id: string, model_id: string) => {
-  const fetchParamsArray = getParamsForAllInsightsFetch(project_id, model_id);
+export const getAllInsightsCount = async (project_id: string, context_id: string) => {
+  const fetchParamsArray = getParamsForAllInsightsFetch(project_id, context_id);
   return fetchInsightsCount(fetchParamsArray);
 };
 
@@ -153,7 +155,8 @@ const fetchInsightsCount = async (fetchParamsArray: any[]) => {
 };
 
 export default {
-  getInsights,
+  getContextSpecificInsights,
   getAllInsights,
-  getInsightsCount
+  getSpecificInsightsCount,
+  getAllInsightsCount
 };

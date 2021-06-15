@@ -19,7 +19,7 @@ const createInsight = async (
   description,
   visibility,
   projectId,
-  modelId,
+  contextId,
   url,
   targetView,
   preActions,
@@ -42,7 +42,7 @@ const createInsight = async (
     modified_at: moment().valueOf(),
     visibility,
     project_id: projectId,
-    model_id: modelId,
+    context_id: contextId,
     url,
     target_view: targetView,
     pre_actions: preActions,
@@ -61,19 +61,20 @@ const createInsight = async (
 /**
  * Returns a list of insights
  */
-const getAllInsights = async (projectId, modelId, targetView, visibility) => {
+const getAllInsights = async (projectId, contextId, targetView, visibility) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
   const searchFilters = [];
+  // FIXME: add support for analysisId field
   if (projectId) {
     searchFilters.push({
       field: 'project_id',
       value: projectId
     });
   }
-  if (modelId !== undefined) {
+  if (contextId !== undefined) {
     searchFilters.push({
-      field: 'model_id',
-      value: modelId
+      field: 'context_id',
+      value: contextId
     });
   }
   if (targetView) {
@@ -106,7 +107,7 @@ const getInsight = async (insightId) => {
  *
  * @param {string} projectId
  */
-const counts = async (projectId, modelId, targetView, visibility) => {
+const counts = async (projectId, contextId, targetView, visibility) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
   const searchFilters = [];
   if (projectId) {
@@ -115,10 +116,10 @@ const counts = async (projectId, modelId, targetView, visibility) => {
       value: projectId
     });
   }
-  if (modelId !== undefined) {
+  if (contextId !== undefined) {
     searchFilters.push({
-      field: 'model_id',
-      value: modelId
+      field: 'context_id',
+      value: contextId
     });
   }
   if (targetView) {

@@ -77,7 +77,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 import router from '@/router';
-import { getInsights } from '@/services/insight-service';
+import { getContextSpecificInsights } from '@/services/insight-service';
 import { ref, watchEffect, computed } from 'vue';
 
 export default {
@@ -97,7 +97,7 @@ export default {
   setup() {
     const listBookmarks = ref([]);
     const store = useStore();
-    const publishedModelId = computed(() => store.getters['insightPanel/publishedModelId']);
+    const contextId = computed(() => store.getters['insightPanel/contextId']);
     const project = computed(() => store.getters['insightPanel/projectId']);
     const currentView = computed(() => store.getters['app/currentView']);
 
@@ -105,7 +105,7 @@ export default {
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        const insights = await getInsights(project.value, publishedModelId.value, currentView.value);
+        const insights = await getContextSpecificInsights(project.value, contextId.value, currentView.value);
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
@@ -121,7 +121,7 @@ export default {
     });
     return {
       listBookmarks,
-      publishedModelId,
+      contextId,
       currentView,
       project
     };
@@ -145,7 +145,7 @@ export default {
     }),
     stringFormatter,
     async refresh() {
-      const listBookmarks = await getInsights(this.project, this.publishedModelId, this.currentView);
+      const listBookmarks = await getContextSpecificInsights(this.project, this.contextId, this.currentView);
       this.listBookmarks = listBookmarks;
       this.setCountBookmarks(listBookmarks.length);
     },

@@ -9,13 +9,14 @@ const insightService = rootRequire('/services/insight-service');
  * POST commit for an insight
  */
 router.post('/', asyncHandler(async (req, res) => {
+  // FIXME: add support for analysisId field
   const {
     name,
     description,
     // modified_at -> automatically added inside the function createInsight()
     visibility,
     project_id,
-    model_id,
+    context_id,
     url,
     target_view,
     pre_actions,
@@ -31,7 +32,7 @@ router.post('/', asyncHandler(async (req, res) => {
     description,
     visibility,
     project_id,
-    model_id,
+    context_id,
     url,
     target_view,
     pre_actions,
@@ -48,8 +49,8 @@ router.post('/', asyncHandler(async (req, res) => {
  * GET a list of insights
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const { project_id, model_id, target_view, visibility } = req.query;
-  const result = await insightService.getAllInsights(project_id, model_id, target_view, visibility);
+  const { project_id, context_id, target_view, visibility } = req.query;
+  const result = await insightService.getAllInsights(project_id, context_id, target_view, visibility);
   res.json(result);
 }));
 
@@ -57,8 +58,8 @@ router.get('/', asyncHandler(async (req, res) => {
  * GET a count of insights
  **/
 router.get('/counts', asyncHandler(async (req, res) => {
-  const { project_id, model_id, target_view, visibility } = req.query;
-  const result = await insightService.counts(project_id, model_id, target_view, visibility);
+  const { project_id, context_id, target_view, visibility } = req.query;
+  const result = await insightService.counts(project_id, context_id, target_view, visibility);
   res.json(result);
 }));
 

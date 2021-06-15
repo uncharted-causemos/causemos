@@ -173,8 +173,8 @@ export default {
   },
   created() {
     // update insight related state
-    // FIXME: use publishedModelId to store cag-id, reflected context-specific-id; TO BE REFACTORED
-    this.setPublishedModelId(this.currentCAG);
+    // FIXME: use contextId to store cag-id, reflected context-specific-id; TO BE REFACTORED
+    this.setContextId(this.currentCAG);
     this.setProjectId(this.project);
   },
   mounted() {
@@ -188,7 +188,7 @@ export default {
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
-      setPublishedModelId: 'insightPanel/setPublishedModelId',
+      setContextId: 'insightPanel/setContextId',
       setProjectId: 'insightPanel/setProjectId'
     }),
     async refresh() {

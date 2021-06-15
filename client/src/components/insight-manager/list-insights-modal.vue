@@ -172,14 +172,14 @@ export default {
   setup() {
     const listInsights = ref([]);
     const store = useStore();
-    const publishedModelId = computed(() => store.getters['insightPanel/publishedModelId']);
+    const contextId = computed(() => store.getters['insightPanel/contextId']);
     const project = computed(() => store.getters['insightPanel/projectId']);
 
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        const insights = await getAllInsights(project.value, publishedModelId.value);
+        const insights = await getAllInsights(project.value, contextId.value);
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
@@ -195,7 +195,7 @@ export default {
     });
     return {
       listInsights,
-      publishedModelId,
+      contextId,
       project
     };
   },
@@ -490,7 +490,7 @@ export default {
       this.exportActive = true;
     },
     async refresh() {
-      const listInsights = await getAllInsights(this.project, this.publishedModelId);
+      const listInsights = await getAllInsights(this.project, this.contextId);
       this.listInsights = listInsights;
       this.setCountInsights(listInsights.length);
     },

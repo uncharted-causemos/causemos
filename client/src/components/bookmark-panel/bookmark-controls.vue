@@ -32,7 +32,7 @@ import { mapActions, mapGetters, useStore } from 'vuex';
 import BookmarkPanel from '@/components/bookmark-panel/bookmark-panel';
 
 // import API from '@/api/api';
-import { getInsightsCount } from '@/services/insight-service';
+import { getSpecificInsightsCount } from '@/services/insight-service';
 import { watchEffect, computed } from 'vue';
 
 export default {
@@ -57,7 +57,6 @@ export default {
   },
   setup() {
     const store = useStore();
-    const publishedModelId = computed(() => store.getters['insightPanel/publishedModelId']);
     const project = computed(() => store.getters['insightPanel/projectId']);
     const currentView = computed(() => store.getters['app/currentView']);
 
@@ -65,7 +64,8 @@ export default {
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        const insightsCount = await getInsightsCount(project.value, publishedModelId.value, currentView.value); // local insights
+        const contextId = store.getters['insightPanel/contextId'];
+        const insightsCount = await getSpecificInsightsCount(project.value, contextId, currentView.value); // local insights
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
