@@ -171,6 +171,12 @@ export default {
       this.fetchSensitivityAnalysisResults();
     }
   },
+  created() {
+    // update insight related state
+    // FIXME: use contextId to store cag-id, reflected context-specific-id; TO BE REFACTORED
+    this.setContextId(this.currentCAG);
+    this.setProjectId(this.project);
+  },
   mounted() {
     this.refresh();
   },
@@ -181,7 +187,9 @@ export default {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      setSelectedScenarioId: 'model/setSelectedScenarioId'
+      setSelectedScenarioId: 'model/setSelectedScenarioId',
+      setContextId: 'insightPanel/setContextId',
+      setProjectId: 'insightPanel/setProjectId'
     }),
     async refresh() {
       this.enableOverlay();

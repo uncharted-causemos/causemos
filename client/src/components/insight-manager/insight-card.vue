@@ -9,14 +9,14 @@
         @click="selectInsight()"
       >
         <img
-          :src="insight.thumbnail_source"
+          :src="insight.thumbnail"
           class="thumbnail">
       </div>
       <div v-if="showDescription" class="insight-description">
-        <b>{{ insight.title }}</b>. {{ insight.description }}
+        <b>{{ insight.name }}</b>. {{ insight.description }}
       </div>
       <div v-else class="insight-title">
-        <h5>{{ insight.title }}</h5>
+        <h5>{{ insight.name }}</h5>
       </div>
       <div class="insight-footer">
         <div v-if="cardMode" class="insight-checkbox" @click="updateCuration()">
