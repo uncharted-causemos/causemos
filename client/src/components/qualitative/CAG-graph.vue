@@ -100,7 +100,7 @@ class CAGRenderer extends SVGRenderer {
   // Override render function to also check for ambigous edges and highlight them
   async render() {
     await super.render();
-    this.highlightAmbiguousEdges();
+    this.displayAmbiguousEdgeWarning();
   }
 
   renderNodeUpdated() {
@@ -548,11 +548,41 @@ class CAGRenderer extends SVGRenderer {
       .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
   }
 
-  highlightAmbiguousEdges() {
+  displayAmbiguousEdgeWarning() {
     const graph = this.layout;
+    const foregroundLayer = d3.select(this.svgEl).select('.foreground-layer');
+
+    const highlightFunction = this.highlight;
+    const highlightAmbiguousEdgesFunction = this.highlightAmbiguousEdges;
+
+    const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
+      ? d3.select('.ambiguous-edge-warning') // select it
+      : foregroundLayer.append('text') // or create it if it hasn't been already
+        .attr('x', 10)
+        .attr('y', 20)
+        .attr('opacity', 0)
+        .attr('fill', 'red')
+        .attr('font-size', '1.6rem')
+        .classed('ambiguous-edge-warning', true)
+        .text('Warning: ambiguous edges detected in graph') // not very pretty, could update in the future
+        .on('mouseover', function () {
+          highlightAmbiguousEdgesFunction(graph, highlightFunction);
+        });
+
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        warning.attr('opacity', 1);
+        return;
+      }
+    }
+    warning.attr('opacity', 0);
+  }
+
+  highlightAmbiguousEdges(graph, highlight) {
     const highlightOptions = {
       color: 'red',
-      duration: 4000
+      duration: 1000
     };
 
     const ambigEdges = [];
@@ -563,24 +593,9 @@ class CAGRenderer extends SVGRenderer {
         ambigEdges.push(edge);
       }
     }
-    const foreground = d3.select(this.svgEl).select('.foreground-layer');
-
-    const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
-      ? d3.select('.ambiguous-edge-warning') // select it
-      : foreground.append('text') // or create it if it hasn't been already
-        .attr('x', 10)
-        .attr('y', 20)
-        .attr('opacity', 0)
-        .attr('fill', 'red')
-        .attr('font-size', '1.6rem')
-        .classed('ambiguous-edge-warning', true)
-        .text('Warning: ambiguous edges detected in graph'); // not very pretty, could update in the future
 
     if (ambigEdges.length > 0) {
-      warning.attr('opacity', 1);
-      this.highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
-    } else {
-      warning.attr('opacity', 0);
+      highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
     }
   }
 }
