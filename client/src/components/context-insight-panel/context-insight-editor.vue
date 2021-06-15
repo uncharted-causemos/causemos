@@ -1,18 +1,18 @@
 <template>
   <dropdown-control
-    class="bookmark-editor-dropdown"
+    class="context-insight-editor-dropdown"
   >
     <template #content>
       <div
         class="dropdown-option disabled"
-        @click="editBookmark"
+        @click="editContextInsight"
       >
         <i class="fa fa-edit" />
         Edit
       </div>
       <div
         class="dropdown-option"
-        @click="deleteBookmark"
+        @click="deleteContextInsight"
       >
         <i class="fa fa-trash" />
         Delete
@@ -26,15 +26,15 @@ import DropdownControl from '@/components/dropdown-control';
 
 // FIXME: refactor with insight-editor as one reusable component
 export default {
-  name: 'BookmarkEditor',
+  name: 'ContextInsightEditor',
   components: {
     DropdownControl
   },
   methods: {
-    editBookmark() {
+    editContextInsight() {
       this.$emit('edit');
     },
-    deleteBookmark() {
+    deleteContextInsight() {
       this.$emit('delete');
     }
   }
@@ -43,7 +43,7 @@ export default {
 
 <style lang="scss" scoped>
 @import "~styles/variables";
-.bookmark-editor-dropdown{
+.context-insight-editor-dropdown{
   position:absolute;
   right: 16px;
   width: fit-content;

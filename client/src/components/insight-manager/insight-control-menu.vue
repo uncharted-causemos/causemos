@@ -88,7 +88,7 @@ export default {
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
       setCurrentPane: 'insightPanel/setCurrentPane',
-      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel'
+      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel'
     }),
     allowNewInsights() {
       return this.currentView === 'kbExplorer' ||
@@ -109,8 +109,8 @@ export default {
       } else {
         this.showInsightPanel();
         this.setCurrentPane(pane);
-        // hide the local insight panel (i.e., bookmark panel)
-        this.hideBookmarkPanel();
+        // hide the local insight panel
+        this.hideContextInsightPanel();
       }
     }
   }

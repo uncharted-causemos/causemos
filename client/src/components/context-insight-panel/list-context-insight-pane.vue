@@ -1,53 +1,53 @@
 <template>
-  <div class="list-bookmarks-pane-container">
+  <div class="list-context-insights-pane-container">
     <div class="pane-header">
       <h6>Saved Insights</h6>
       <dropdown-button
         class="export-dropdown"
         :inner-button-label="'Export'"
         :items="['Powerpoint', 'Word']"
-        @item-selected="exportBookmark"
+        @item-selected="exportContextInsight"
       />
-      <close-button @click="closeBookmarkPanel()" />
+      <close-button @click="closecontextInsightPanel()" />
     </div>
     <div
-      v-if="listBookmarks.length > 0"
+      v-if="listContextInsights.length > 0"
       class="pane-content">
       <div
-        v-for="bookmark in listBookmarks"
-        :key="bookmark.id">
+        v-for="contextInsight in listContextInsights"
+        :key="contextInsight.id">
         <div
-          class="bookmark"
-          :class="{ 'selected': selectedBookmark === bookmark, '': selectedBookmark !== bookmark }"
-          @click="selectBookmark(bookmark)">
-          <div class="bookmark-header">
-            <div class="bookmark-title">
+          class="context-insight"
+          :class="{ 'selected': selectedContextInsight === contextInsight, '': selectedContextInsight !== contextInsight }"
+          @click="selectContextInsight(contextInsight)">
+          <div class="context-insight-header">
+            <div class="context-insight-title">
               <i class="fa fa-star"></i>
-              {{ stringFormatter(bookmark.name, 25) }}
+              {{ stringFormatter(contextInsight.name, 25) }}
             </div>
-            <div class="bookmark-action" @click.stop="openEditor(bookmark.id)">
-              <i class="fa fa-ellipsis-h bookmark-header-btn" />
-              <bookmark-editor
-                v-if="activeBookmark === bookmark.id"
-                @delete="deleteBookmark(bookmark.id)"
+            <div class="context-insight-action" @click.stop="openEditor(contextInsight.id)">
+              <i class="fa fa-ellipsis-h context-insight-header-btn" />
+              <context-insight-editor
+                v-if="activeContextInsight === contextInsight.id"
+                @delete="deleteContextInsight(contextInsight.id)"
               />
             </div>
           </div>
           <div
-            class="bookmark-content">
-            <div class="bookmark-thumbnail">
+            class="context-insight-content">
+            <div class="context-insight-thumbnail">
               <img
-                :src="bookmark.thumbnail"
+                :src="contextInsight.thumbnail"
                 class="thumbnail">
             </div>
             <div
-              v-if="bookmark.description.length > 0"
-              class="bookmark-description">
-              {{ bookmark.description }}
+              v-if="contextInsight.description.length > 0"
+              class="context-insight-description">
+              {{ contextInsight.description }}
             </div>
             <div
               v-else
-              class="bookmark-empty-description">No description provided</div>
+              class="context-insight-empty-description">No description provided</div>
           </div>
         </div>
       </div>
@@ -69,7 +69,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
 
-import BookmarkEditor from '@/components/bookmark-panel/bookmark-editor';
+import ContextInsightEditor from '@/components/context-insight-panel/context-insight-editor';
 import CloseButton from '@/components/widgets/close-button';
 import MessageDisplay from '@/components/widgets/message-display';
 
@@ -81,21 +81,21 @@ import { getContextSpecificInsights } from '@/services/insight-service';
 import { ref, watchEffect, computed } from 'vue';
 
 export default {
-  name: 'ListBookmarksPane',
+  name: 'ListContextInsightPane',
   components: {
-    BookmarkEditor,
+    ContextInsightEditor,
     CloseButton,
     DropdownButton,
     MessageDisplay
   },
   data: () => ({
-    activeBookmark: null,
+    activeContextInsight: null,
     exportActive: false,
     messageNoData: INSIGHTS.NO_DATA,
-    selectedBookmark: null
+    selectedContextInsight: null
   }),
   setup() {
-    const listBookmarks = ref([]);
+    const listContextInsights = ref([]);
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
     const project = computed(() => store.getters['insightPanel/projectId']);
@@ -111,8 +111,8 @@ export default {
           //  fetch results to avoid a race condition.
           return;
         }
-        listBookmarks.value = insights;
-        store.dispatch('bookmarkPanel/setCountBookmarks', listBookmarks.value.length);
+        listContextInsights.value = insights;
+        store.dispatch('contextInsightPanel/setCountContextInsights', listContextInsights.value.length);
       }
       onInvalidate(() => {
         isCancelled = true;
@@ -120,7 +120,7 @@ export default {
       fetchInsights();
     });
     return {
-      listBookmarks,
+      listContextInsights,
       contextId,
       currentView,
       project
@@ -129,7 +129,7 @@ export default {
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countBookmarks: 'bookmarkPanel/countBookmarks'
+      countContextInsights: 'contextInsightPanel/countContextInsights'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -140,16 +140,16 @@ export default {
   },
   methods: {
     ...mapActions({
-      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
-      setCountBookmarks: 'bookmarkPanel/setCountBookmarks'
+      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
+      setCountContextInsights: 'contextInsightPanel/setCountContextInsights'
     }),
     stringFormatter,
     async refresh() {
-      const listBookmarks = await getContextSpecificInsights(this.project, this.contextId, this.currentView);
-      this.listBookmarks = listBookmarks;
-      this.setCountBookmarks(listBookmarks.length);
+      const listContextInsights = await getContextSpecificInsights(this.project, this.contextId, this.currentView);
+      this.listContextInsights = listContextInsights;
+      this.setCountContextInsights(listContextInsights.length);
     },
-    exportBookmark(item) {
+    exportContextInsight(item) {
       switch (item) {
         case 'Word':
           this.exportDOCX();
@@ -162,39 +162,39 @@ export default {
       }
     },
     openEditor(id) {
-      if (id === this.activeBookmark) {
-        this.activeBookmark = null;
+      if (id === this.activeContextInsight) {
+        this.activeContextInsight = null;
         return;
       }
-      this.activeBookmark = id;
+      this.activeContextInsight = id;
     },
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
     },
-    closeBookmarkPanel() {
-      this.hideBookmarkPanel();
-      this.activeBookmark = null;
-      this.selectedBookmark = null;
+    closecontextInsightPanel() {
+      this.hideContextInsightPanel();
+      this.activeContextInsight = null;
+      this.selectedContextInsight = null;
     },
-    selectBookmark(bookmark) {
-      if (bookmark === this.selectedBookmark) {
-        this.selectedBookmark = null;
+    selectContextInsight(contextInsight) {
+      if (contextInsight === this.selectedContextInsight) {
+        this.selectedContextInsight = null;
         return;
       }
-      this.selectedBookmark = bookmark;
+      this.selectedContextInsight = contextInsight;
       router.push({
         query: {
-          insight_id: this.selectedBookmark.id
+          insight_id: this.selectedContextInsight.id
         }
       }).catch(() => {});
     },
-    deleteBookmark(id) {
+    deleteContextInsight(id) {
       API.delete(`insights/${id}`).then(result => {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
-          const count = this.countBookmarks - 1;
-          this.setCountBookmarks(count);
+          const count = this.countContextInsights - 1;
+          this.setCountContextInsights(count);
           this.refresh();
         } else {
           this.toaster(message, 'error', true);
@@ -217,7 +217,7 @@ export default {
       // same height as width so that we can attempt to be consistent with the layout.
       const docxMaxImageSize = 612;
 
-      const sections = this.listBookmarks.map((bm) => {
+      const sections = this.listContextInsights.map((bm) => {
         const imageSize = this.scaleImage(bm.thumbnail, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(bm.modified_at);
         return {
@@ -323,7 +323,7 @@ export default {
         slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right }
       });
 
-      this.listBookmarks.forEach((bm) => {
+      this.listContextInsights.forEach((bm) => {
         const imageSize = this.scaleImage(bm.thumbnail, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(bm.modified_at);
         const slide = pres.addSlide();
@@ -415,44 +415,43 @@ export default {
 
 <style lang="scss">
 @import "~styles/variables";
-.list-bookmarks-pane-container {
+.list-context-insights-pane-container {
   color: #707070;
   .pane-header{
     > button {
       margin-right: 35px;
     }
   }
-  .bookmark {
+  .context-insight {
     cursor: pointer;
     padding: 5px 5px 10px;
     border-bottom: 1px solid #e5e5e5;
-    .bookmark-header {
+    .context-insight-header {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      .bookmark-header-btn {
+      .context-insight-header-btn {
         cursor: pointer;
         padding: 5px;
         color: gray;
       }
-      .bookmark-action {
+      .context-insight-action {
         flex: 0 1 auto;
       }
-      .bookmark-title {
+      .context-insight-title {
         flex: 1 1 auto;
         font-weight: bold;
+        }
+    }
+    .context-insight-empty-description {
+      color: #D6DBDF;
+    }
+    .context-insight-thumbnail {
+      .thumbnail {
+        width:  100%;
+        min-height: 100px;
       }
     }
-      .bookmark-empty-description {
-        color: #D6DBDF;
-      }
-      .bookmark-thumbnail {
-        .thumbnail {
-          width:  100%;
-          min-height: 100px;
-        }
-      }
-
   }
   .selected {
     border: 3px solid $selected;

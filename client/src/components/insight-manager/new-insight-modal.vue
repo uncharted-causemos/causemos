@@ -100,7 +100,7 @@ import { VIEWS_LIST } from '@/utils/views-util';
 import { INSIGHTS } from '@/utils/messages-util';
 
 
-const MSG_EMPTY_BOOKMARK_NAME = 'Insight name cannot be blank';
+const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 
 const METDATA_DRILLDOWN_TABS = [
   {
@@ -119,7 +119,7 @@ export default {
   data: () => ({
     description: '',
     drilldownTabs: METDATA_DRILLDOWN_TABS,
-    errorMsg: MSG_EMPTY_BOOKMARK_NAME,
+    errorMsg: MSG_EMPTY_INSIGHT_NAME,
     hasError: false,
     imagePreview: null,
     metadata: '',
@@ -224,7 +224,7 @@ export default {
     name(n) {
       if (_.isEmpty(n) && this.isPanelOpen) {
         this.hasError = true;
-        this.errorMsg = MSG_EMPTY_BOOKMARK_NAME;
+        this.errorMsg = MSG_EMPTY_INSIGHT_NAME;
       } else {
         this.hasError = false;
         this.errorMsg = null;

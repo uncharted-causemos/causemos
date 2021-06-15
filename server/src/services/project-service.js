@@ -134,7 +134,6 @@ const deleteProject = async (projectId) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const scenarioAdapter = Adapter.get(RESOURCE.SCENARIO);
   // misc
-  const bookmarkAdapter = Adapter.get(RESOURCE.BOOKMARK);
   const insightAdapter = Adapter.get(RESOURCE.INSIGHT);
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
 
@@ -165,11 +164,6 @@ const deleteProject = async (projectId) => {
   // Clean up analysis
   Logger.info(`Deleting ${projectId} analyses`);
   response = await analysisAdapter.remove([{ field: 'project_id', value: projectId }]);
-  Logger.info(JSON.stringify(response));
-
-  // Remove project's bookmarks
-  Logger.info(`Deleting ${projectId} bookmarks`);
-  response = await bookmarkAdapter.remove([{ field: 'project_id', value: projectId }]);
   Logger.info(JSON.stringify(response));
 
   // Remove project's insights

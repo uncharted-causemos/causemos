@@ -90,7 +90,7 @@
       <insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
 
       <!-- Insighting (LOCAL) -->
-      <bookmark-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
+      <context-insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
     </div>
   </nav>
 </template>
@@ -100,13 +100,13 @@ import { mapGetters } from 'vuex';
 import { defineComponent } from 'vue';
 
 import InsightControls from '@/components/insight-manager/insight-controls.vue';
-import BookmarkControls from '@/components/bookmark-panel/bookmark-controls.vue';
+import ContextInsightControls from '@/components/context-insight-panel/context-insight-controls.vue';
 
 export default defineComponent({
   name: 'NavBar',
   components: {
     InsightControls,
-    BookmarkControls
+    ContextInsightControls
   },
   computed: {
     ...mapGetters({

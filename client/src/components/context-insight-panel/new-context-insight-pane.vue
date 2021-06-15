@@ -1,8 +1,8 @@
 <template>
-  <div class="new-bookmark-pane-container">
+  <div class="new-context-insight-pane-container">
     <div class="pane-header">
       <h6>New Insight</h6>
-      <close-button @click="closeBookmarkPanel()" />
+      <close-button @click="closecontextInsightPanel()" />
     </div>
     <div class="pane-title">
       <i
@@ -20,7 +20,7 @@
             type="text"
             class="form-control"
             placeholder="Untitled insight"
-            @keyup.enter.stop="saveBookmark"
+            @keyup.enter.stop="saveContextInsight"
           >
           <div
             v-if="hasError === true"
@@ -39,13 +39,13 @@
       <button
         type="button"
         class="btn btn-light"
-        @click="closeBookmarkPanel"
+        @click="closecontextInsightPanel"
       >
         Cancel
       </button>
       <button
         class="btn btn-primary"
-        @click="autofillBookmark"
+        @click="autofillContextInsight"
       >
         Autofill
       </button>
@@ -53,7 +53,7 @@
         type="button"
         class="btn btn-primary"
         :class="{ 'disabled': name.length === 0}"
-        @click="saveBookmark"
+        @click="saveContextInsight"
       >
         Save
       </button>
@@ -75,11 +75,11 @@ import { VIEWS_LIST } from '@/utils/views-util';
 import { INSIGHTS } from '@/utils/messages-util';
 
 
-const MSG_EMPTY_BOOKMARK_NAME = 'Insight name cannot be blank';
+const MSG_EMPTY_CONTEXT_INSIGHT_NAME = 'Insight name cannot be blank';
 
 // NOTE: this component is no longer used since new insights are exclusively created via new-insight-modal
 export default {
-  name: 'NewBookmarkPane',
+  name: 'NewContextInsightPane',
   components: {
     CloseButton
   },
@@ -87,7 +87,7 @@ export default {
     name: '',
     description: '',
     hasError: false,
-    errorMsg: MSG_EMPTY_BOOKMARK_NAME
+    errorMsg: MSG_EMPTY_CONTEXT_INSIGHT_NAME
   }),
   computed: {
     ...mapGetters({
@@ -96,8 +96,8 @@ export default {
       currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
 
-      isPanelOpen: 'bookmarkPanel/isPanelOpen',
-      countBookmarks: 'bookmarkPanel/countBookmarks',
+      isPanelOpen: 'contextInsightPanel/isPanelOpen',
+      countContextInsights: 'contextInsightPanel/countContextInsights',
 
       dataState: 'insightPanel/dataState',
       viewState: 'insightPanel/viewState',
@@ -125,7 +125,7 @@ export default {
     name(n) {
       if (_.isEmpty(n) && this.isPanelOpen) {
         this.hasError = true;
-        this.errorMsg = MSG_EMPTY_BOOKMARK_NAME;
+        this.errorMsg = MSG_EMPTY_CONTEXT_INSIGHT_NAME;
       } else {
         this.hasError = false;
         this.errorMsg = null;
@@ -134,17 +134,17 @@ export default {
   },
   methods: {
     ...mapActions({
-      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
-      setCountBookmarks: 'bookmarkPanel/setCountBookmarks',
-      setCurrentPane: 'bookmarkPanel/setCurrentPane'
+      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
+      setCountContextInsights: 'contextInsightPanel/setCountContextInsights',
+      setCurrentPane: 'contextInsightPanel/setCurrentPane'
     }),
-    initBookmark() {
-      // FIXME: this method may be removed as it wouldn't have any effect since the bookmark panel is always hidden and reinitialized anyway
+    initContextInsight() {
+      // FIXME: this method may be removed as it wouldn't have any effect since the context-insight panel is always hidden and reinitialized anyway
       this.name = '';
       this.description = '';
       this.hasError = false;
     },
-    async autofillBookmark() {
+    async autofillContextInsight() {
       this.modelSummary = this.currentCAG ? await modelService.getSummary(this.currentCAG) : null;
 
       this.name = (this.projectMetadata ? this.projectMetadata.name : '') +
@@ -158,12 +158,12 @@ export default {
       }, '');
       this.description = `${filterString.length > 0 ? 'Filters: ' + filterString : ''} `;
     },
-    async saveBookmark() {
+    async saveContextInsight() {
       if (this.hasError || _.isEmpty(this.name)) return;
       const url = this.$route.fullPath;
       // FIXME: ideally this should change according to the view or be passed a target
       // but for now uses a special class to target the capture area
-      const el = document.getElementsByClassName('bookmark-capture')[0];
+      const el = document.getElementsByClassName('insight-capture')[0];
       const thumbnailSource = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
       const contextId = this.contextId;
       const targetView = this.currentView === 'modelPublishingExperiment' ? 'data' : this.currentView;
@@ -189,19 +189,19 @@ export default {
           const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
           if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
             this.toaster(message, 'success', false);
-            const count = this.countBookmarks + 1;
-            this.setCountBookmarks(count);
+            const count = this.countContextInsights + 1;
+            this.setCountContextInsights(count);
           } else {
             this.toaster(message, 'error', true);
           }
-          this.hideBookmarkPanel();
-          this.initBookmark();
+          this.hideContextInsightPanel();
+          this.initContextInsight();
         });
     },
-    closeBookmarkPanel() {
-      this.hideBookmarkPanel();
+    closecontextInsightPanel() {
+      this.hideContextInsightPanel();
       this.setCurrentPane('');
-      this.initBookmark();
+      this.initContextInsight();
     }
   }
 };
@@ -210,7 +210,7 @@ export default {
 <style lang="scss">
 @import "~styles/variables";
 
-.new-bookmark-pane-container {
+.new-context-insight-pane-container {
   .controls {
     display: flex;
     justify-content: flex-end;

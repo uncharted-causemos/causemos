@@ -1,48 +1,48 @@
 <template>
   <div
-    class="bookmark-container"
+    class="context-insight-container"
     :class="{'panel-hidden': !isOpen}"
   >
-    <new-bookmark-pane v-if="currentPane === 'new-bookmark'" />
-    <list-bookmarks-pane v-if="currentPane === 'list-bookmarks'" />
+    <new-context-insight-pane v-if="currentPane === 'new-context-insight'" />
+    <list-context-insight-pane v-if="currentPane === 'list-context-insights'" />
   </div>
 </template>
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import NewBookmarkPane from '@/components/bookmark-panel/new-bookmark-pane';
-import ListBookmarksPane from '@/components/bookmark-panel/list-bookmarks-pane';
+import NewContextInsightPane from '@/components/context-insight-panel/new-context-insight-pane';
+import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane';
 
 
 export default {
-  name: 'BookmarkPanel',
+  name: 'ContextInsightPanel',
   components: {
-    NewBookmarkPane,
-    ListBookmarksPane
+    NewContextInsightPane,
+    ListContextInsightPane
   },
   props: {
-    allowNewBookmarks: {
+    allowNewContextInsights: {
       type: Boolean,
       default: true
     }
   },
   computed: {
     ...mapGetters({
-      isPanelOpen: 'bookmarkPanel/isPanelOpen',
-      currentPane: 'bookmarkPanel/currentPane'
+      isPanelOpen: 'contextInsightPanel/isPanelOpen',
+      currentPane: 'contextInsightPanel/currentPane'
     }),
     isOpen() {
       return this.isPanelOpen === true;
     }
   },
   mounted() {
-    if (!this.allowNewBookmarks && this.currentPane === 'new-bookmark') {
-      this.setCurrentPane('list-bookmarks');
+    if (!this.allowNewContextInsights && this.currentPane === 'new-context-insight') {
+      this.setCurrentPane('list-context-insights');
     }
   },
   methods: {
     ...mapActions({
-      setCurrentPane: 'bookmarkPanel/setCurrentPane'
+      setCurrentPane: 'contextInsightPanel/setCurrentPane'
     })
   }
 };
@@ -51,7 +51,7 @@ export default {
 <style lang="scss" scoped>
 @import "~styles/variables";
 
-.bookmark-container {
+.context-insight-container {
   position: absolute;
   display: flex;
   flex-direction: column;
@@ -70,7 +70,7 @@ export default {
   color: #707070;
 }
 
-.bookmark-container.panel-hidden {
+.context-insight-container.panel-hidden {
   display: none;
 }
 

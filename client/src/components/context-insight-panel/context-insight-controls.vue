@@ -1,19 +1,19 @@
 <template>
   <div>
     <ul
-      class="bookmark-controls-container nav navbar-nav navbar-right">
+      class="context-insight-controls-container nav navbar-nav navbar-right">
       <li class="nav-item">
         <button
           v-tooltip.top-center="'See a list  of context-specific insights'"
-          class="btn bookmark-btn"
-          :class="{ 'bookmark-panel-open': isPanelOpen && currentPane === 'list-bookmarks' }"
-          @click="toggleInsightPane('list-bookmarks')"
+          class="btn context-insight-btn"
+          :class="{ 'context-insight-panel-open': isPanelOpen && currentPane === 'list-context-insights' }"
+          @click="toggleInsightPane('list-context-insights')"
         >
           <i
             class="fa fa-fw fa-star fa-lg"
           />
           Insights:
-          <span class="bookmark-counter">{{ countBookmarks }}</span>
+          <span class="context-insight-counter">{{ countContextInsights }}</span>
           <i
             class="fa fa-fw"
             :class="isPanelOpen ? 'fa-caret-up' : 'fa-caret-down' "
@@ -21,7 +21,7 @@
         </button>
       </li>
     </ul>
-    <bookmark-panel :allow-new-bookmarks="allowNewBookmarks" />
+    <context-insight-panel :allow-new-context-insights="allowNewContextInsights" />
   </div>
 </template>
 
@@ -29,24 +29,24 @@
 // import _ from 'lodash';
 import { mapActions, mapGetters, useStore } from 'vuex';
 
-import BookmarkPanel from '@/components/bookmark-panel/bookmark-panel';
+import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel';
 
 // import API from '@/api/api';
 import { getSpecificInsightsCount } from '@/services/insight-service';
 import { watchEffect, computed } from 'vue';
 
 export default {
-  name: 'BookmarkControls',
+  name: 'ContextInsightControls',
   components: {
-    BookmarkPanel
+    ContextInsightPanel
   },
   computed: {
     ...mapGetters({
-      countBookmarks: 'bookmarkPanel/countBookmarks',
-      currentPane: 'bookmarkPanel/currentPane',
-      isPanelOpen: 'bookmarkPanel/isPanelOpen'
+      countContextInsights: 'contextInsightPanel/countContextInsights',
+      currentPane: 'contextInsightPanel/currentPane',
+      isPanelOpen: 'contextInsightPanel/isPanelOpen'
     }),
-    allowNewBookmarks() {
+    allowNewContextInsights() {
       return this.currentView === 'kbExplorer' ||
         this.currentView === 'data' ||
         this.currentView === 'qualitative' ||
@@ -71,7 +71,7 @@ export default {
           //  fetch results to avoid a race condition.
           return;
         }
-        store.dispatch('bookmarkPanel/setCountBookmarks', insightsCount);
+        store.dispatch('contextInsightPanel/setCountContextInsights', insightsCount);
       }
       onInvalidate(() => {
         isCancelled = true;
@@ -85,21 +85,21 @@ export default {
   },
   methods: {
     ...mapActions({
-      showBookmarkPanel: 'bookmarkPanel/showBookmarkPanel',
-      hideBookmarkPanel: 'bookmarkPanel/hideBookmarkPanel',
-      setCurrentPane: 'bookmarkPanel/setCurrentPane'
+      showContextInsightPanel: 'contextInsightPanel/showContextInsightPanel',
+      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
+      setCurrentPane: 'contextInsightPanel/setCurrentPane'
     }),
     toggleInsightPane(pane) {
       const paneState = this.isPanelOpen;
       if (paneState) {
         if (this.currentPane === pane) {
-          this.hideBookmarkPanel();
+          this.hideContextInsightPanel();
           this.setCurrentPane('');
         } else {
           this.setCurrentPane(pane);
         }
       } else {
-        this.showBookmarkPanel();
+        this.showContextInsightPanel();
         this.setCurrentPane(pane);
       }
     }
@@ -110,16 +110,16 @@ export default {
 <style lang="scss" scoped>
 @import '~styles/variables';
 
-.bookmark-controls-container {
+.context-insight-controls-container {
   margin: 0;
 }
 
-.bookmark-btn {
+.context-insight-btn {
   height: $navbar-outer-height;
   background-color: transparent;
   border: transparent;
   color: rgba(255, 255, 255, 0.71);
-  .bookmark-counter {
+  .context-insight-counter {
     padding: 5px;
   }
 
@@ -130,8 +130,8 @@ export default {
 
 .btn-primary:active,
 .btn:focus,
-.bookmark-panel-open,
-.bookmark-panel-open:hover {
+.context-insight-panel-open,
+.context-insight-panel-open:hover {
   background-color: $selected;
   color: #FFF;
 }
