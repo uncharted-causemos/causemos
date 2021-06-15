@@ -233,7 +233,8 @@ export default {
     correction: null,
     factorRecommendationsList: [],
     pathSuggestionSource: '',
-    pathSuggestionTarget: ''
+    pathSuggestionTarget: '',
+    edgeToSelectOnNextRefresh: null
   }),
   computed: {
     ...mapGetters({
@@ -316,6 +317,14 @@ export default {
       // Get CAG data
       this.modelSummary = await modelService.getSummary(this.currentCAG);
       this.modelComponents = await modelService.getComponents(this.currentCAG);
+      if (this.edgeToSelectOnNextRefresh !== null) {
+        const { source, target } = this.edgeToSelectOnNextRefresh;
+        const foundEdge = this.modelComponents.edges.find(edge => edge.source === source && edge.target === target);
+        if (foundEdge !== undefined) {
+          this.selectEdge(foundEdge);
+        }
+        this.edgeToSelectOnNextRefresh = null;
+      }
     },
     async addCAGComponents(nodes, edges) {
       return modelService.addComponents(this.currentCAG, nodes, edges);
@@ -331,6 +340,10 @@ export default {
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
         const edgeData = await projectService.getProjectStatementIdsByEdges(this.project, [edge], null);
         const formattedEdge = Object.assign({}, edge, { reference_ids: edgeData[edge.source + '///' + edge.target] || [] });
+        this.edgeToSelectOnNextRefresh = {
+          source: edge.source,
+          target: edge.target
+        };
         if (formattedEdge.reference_ids.length === 0) {
           this.showPathSuggestions = true;
           this.pathSuggestionSource = formattedEdge.source;
