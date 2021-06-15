@@ -205,48 +205,42 @@ export default defineComponent({
       default: '[Aggregation Level Title]'
     },
     rawData: {
-      type: Object as PropType<BreakdownData[]>,
-      default: () => {
-        return [] as BreakdownData[];
-      }
+      type: Object as PropType<BreakdownData | null>,
+      default: null
     },
     units: {
       type: String,
       default: null
+    },
+    selectedScenarioIds: {
+      type: Array as PropType<string[]>,
+      default: []
     }
   },
   emits: ['aggregation-level-change', 'toggle-checked'],
   setup(props) {
-    const { rawData, aggregationLevel, orderedAggregationLevelKeys } = toRefs(
-      props
-    );
+    const {
+      rawData,
+      aggregationLevel,
+      orderedAggregationLevelKeys,
+      selectedScenarioIds
+    } = toRefs(props);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
       //  out of it, augmented with 'expanded' and 'checked' properties to keep
       //  track of the state of the component.
       const newStatefulData = { children: [] as StatefulDataNode[] };
-
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
+        if (rawData.value === null) return;
         // Get the list of values at this aggregation level for each selected
         //  model run
-        const modelRunsAtThisLevel = rawData.value.map(
-          modelRun => modelRun[aggregationLevelKey] ?? []
-        );
-        // Flatten values into one array and inject the index of the model run
-        //  that each value belongs to
-        const valuesAtThisLevel = _.flatten(
-          modelRunsAtThisLevel.map((modelRun, modelRunIndex) => {
-            return modelRun.map(({ id, value }) => ({
-              id,
-              value,
-              modelRunIndex
-            }));
-          })
-        );
-        if (valuesAtThisLevel.length === 0) return;
-        const modelRunCount = modelRunsAtThisLevel.length;
-        valuesAtThisLevel.forEach(({ id, value, modelRunIndex }) => {
+        const valuesAtThisLevel = rawData.value[aggregationLevelKey];
+        if (valuesAtThisLevel === undefined) return;
+        const modelRunCount = selectedScenarioIds.value.length;
+        const getIndexFromRunId = (modelRunId: string) =>
+          selectedScenarioIds.value.findIndex(id => id === modelRunId);
+        valuesAtThisLevel.forEach(({ id, values }) => {
           const path = id.split('__');
           const name = path[path.length - 1];
           // Find where in the tree this region should be inserted
@@ -264,27 +258,26 @@ export default defineComponent({
             pointer = nextNode.children;
             _path = _path.splice(1);
           }
-          // Check if a previous model run already added this node
-          const existingNode = pointer.find(node => node.name === name);
-          if (existingNode !== undefined) {
-            // Node exists, so add this model run's value to the node's list
-            existingNode.values[modelRunIndex] = value;
-          } else {
-            // Initialize values for every model run to null
-            const values = new Array(modelRunCount).fill(null);
-            // Set this model run's value
-            values[modelRunIndex] = value;
-            // Create stateful node and insert it into its place in the tree
-            pointer.push({
-              name,
-              values,
-              path,
-              isExpanded: false,
-              // TODO: isChecked functionality still needs to be implemented
-              isChecked: true,
-              children: []
-            });
-          }
+          // Initialize values for every model run to null
+          const valueArray = new Array(modelRunCount).fill(null);
+          // Convert values from { [modelRunId]: value } to an array where
+          //  the index of each run's value comes from the selectedScenarioIds
+          //  array. This is necessary to have consistent colouring with other
+          //  components.
+          Object.keys(values).forEach(modelRunId => {
+            const modelRunIndex = getIndexFromRunId(modelRunId);
+            valueArray[modelRunIndex] = values[modelRunId];
+          });
+          // Create stateful node and insert it into its place in the tree
+          pointer.push({
+            name,
+            values: valueArray,
+            path,
+            isExpanded: false,
+            // TODO: isChecked functionality still needs to be implemented
+            isChecked: true,
+            children: []
+          });
         });
       });
       statefulData.value = newStatefulData;
@@ -333,7 +326,10 @@ export default defineComponent({
       if (_.isNil(statefulData.value)) return 0;
       // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
       //  the root level.
-      return findMaxVisibleBarValue(statefulData.value, aggregationLevel.value + 1);
+      return findMaxVisibleBarValue(
+        statefulData.value,
+        aggregationLevel.value + 1
+      );
     });
 
     const visibleRows = computed(() => {

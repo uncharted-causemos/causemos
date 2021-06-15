@@ -134,7 +134,7 @@ const deleteProject = async (projectId) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const scenarioAdapter = Adapter.get(RESOURCE.SCENARIO);
   // misc
-  const bookmarkAdapter = Adapter.get(RESOURCE.BOOKMARK);
+  const insightAdapter = Adapter.get(RESOURCE.INSIGHT);
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
 
   const models = await modelAdapter.find([{ field: 'project_id', value: projectId }], {});
@@ -166,9 +166,9 @@ const deleteProject = async (projectId) => {
   response = await analysisAdapter.remove([{ field: 'project_id', value: projectId }]);
   Logger.info(JSON.stringify(response));
 
-  // Remove project's bookmarks
-  Logger.info(`Deleting ${projectId} bookmarks`);
-  response = await bookmarkAdapter.remove([{ field: 'project_id', value: projectId }]);
+  // Remove project's insights
+  Logger.info(`Deleting ${projectId} insights`);
+  response = await insightAdapter.remove([{ field: 'project_id', value: projectId }]);
   Logger.info(JSON.stringify(response));
 
   // Remove project's ontologies

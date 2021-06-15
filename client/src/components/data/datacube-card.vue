@@ -85,12 +85,12 @@
           <div class="button-group">
             <button class="btn btn-default"
                     :class="{'btn-primary':isDescriptionView}"
-                    @click="isDescriptionView = true">
+                    @click="$emit('update-desc-view', true)">
               Descriptions
             </button>
             <button class="btn btn-default"
                     :class="{'btn-primary':!isDescriptionView}"
-                    @click="isDescriptionView = false">
+                    @click="$emit('update-desc-view', false)">
               Data
             </button>
           </div>
@@ -141,7 +141,7 @@
             :color-from-index="colorFromIndex"
           />
         </header>
-        <div class="insight-capture" style="display: flex; flex-direction: column; flex: 1;">
+        <div class="insight-capture">
           <div style="display: flex; flex-direction: row;">
             <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
@@ -157,7 +157,7 @@
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
           <div
-            v-if="mapReady && !isDescriptionView"
+            v-if="mapReady && !isDescriptionView && regionalData !== null"
             class="card-map-container full-width">
             <data-analysis-map
               v-for="(spec, indx) in outputSourceSpecs"
@@ -169,11 +169,13 @@
               :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
               :output-selection=indx
+              :relative-to="relativeTo"
               :show-tooltip="true"
               :selected-admin-level="selectedAdminLevel"
               :filters="mapFilters"
               :map-bounds="mapBounds"
               :is-grid-map="isGridMap"
+              :region-data="regionalData"
               @sync-bounds="onSyncMapBounds"
               @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
@@ -187,6 +189,7 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -203,9 +206,9 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import _ from 'lodash';
 import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -216,10 +219,15 @@ export default defineComponent({
     'set-drilldown-data',
     'check-model-metadata-validity',
     'refetch-data',
-    'new-runs-mode'
+    'new-runs-mode',
+    'update-desc-view'
   ],
   props: {
     isExpanded: {
+      type: Boolean,
+      default: true
+    },
+    isDescriptionView: {
       type: Boolean,
       default: true
     },
@@ -254,6 +262,14 @@ export default defineComponent({
     selectedSpatialAggregation: {
       type: String as PropType<string>,
       default: 'mean'
+    },
+    regionalData: {
+      type: Object as PropType<RegionalAggregations | null>,
+      default: null
+    },
+    outputSourceSpecs: {
+      type: Array as PropType<OutputSpecWithId[]>,
+      default: () => []
     }
   },
   components: {
@@ -271,7 +287,6 @@ export default defineComponent({
       selectedModelId,
       selectedScenarioIds,
       allModelRunData,
-      selectedTimestamp,
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation
@@ -307,17 +322,12 @@ export default defineComponent({
       immediate: true
     });
 
-    const isDescriptionView = ref<boolean>(true);
-
     const isModel = computed(() => {
       return metadata.value?.type === DatacubeType.Model;
     });
 
     watch(() => props.selectedScenarioIds, () => {
       relativeTo.value = null;
-      if (isModel.value) {
-        isDescriptionView.value = props.selectedScenarioIds.length === 0;
-      }
     }, {
       immediate: true
     });
@@ -339,35 +349,22 @@ export default defineComponent({
         }
       });
 
-    const outputSourceSpecs = computed(() => {
-      return selectedScenarioIds.value.map(selectedScenarioId => {
-        return {
-          id: selectedScenarioId,
-          modelId: selectedModelId.value,
-          runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
-          outputVariable: metadata.value?.outputs[0].name,
-          timestamp: selectedTimestamp.value,
-          temporalResolution: selectedTemporalResolution.value,
-          temporalAggregation: selectedTemporalAggregation.value,
-          spatialAggregation: selectedSpatialAggregation.value
-        };
-      });
-    });
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
     };
+    // When the list of selected scenario IDs changes, remove any map filters
+    //  that no longer apply to any of the selected scenarios
     watch(
-      () => outputSourceSpecs.value,
+      () => selectedScenarioIds.value,
       () => {
         mapFilters.value = mapFilters.value.filter(filter => {
-          return outputSourceSpecs.value.find(spec => filter.id === spec.id);
+          return selectedScenarioIds.value.find(scenarioId => filter.id === scenarioId);
         });
       }
     );
 
     return {
-      outputSourceSpecs,
       updateMapFilters,
       mapFilters,
       selectedTimeseriesData,
@@ -378,7 +375,6 @@ export default defineComponent({
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues,
-      isDescriptionView,
       mainModelOutput,
       metadata,
       isModel
@@ -544,24 +540,22 @@ header {
   }
 }
 
-.timeseries-chart {
+.insight-capture {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   flex: 1;
 }
 
-.map {
-  flex: 3;
+.timeseries-chart {
+  flex: 1;
+  min-height: 0;
 }
 
-// TODO: remove
-.placeholder {
-  background: #eee;
-  text-align: center;
-  padding: 10px;
-  color: #bbb;
-}
 
 .card-map-container {
-  height: 100%;
+  min-height: 0;
+  flex: 3;
   width: 70%;
 
   display: flex;

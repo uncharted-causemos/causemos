@@ -13,11 +13,15 @@
       :selected-temporal-resolution="selectedTemporalResolution"
       :selected-temporal-aggregation="selectedTemporalAggregation"
       :selected-spatial-aggregation="selectedSpatialAggregation"
+      :regional-data="regionalData"
+      :output-source-specs="outputSpecs"
+      :is-description-view="isDescriptionView"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
       @refetch-data="fetchData"
       @new-runs-mode="newRunsMode=!newRunsMode"
+      @update-desc-view="updateDescView"
     >
       <template #datacube-model-header>
         <div class="datacube-header" v-if="mainModelOutput">
@@ -72,14 +76,11 @@
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
-            :metadata="metadata"
-            :selected-model-id="selectedModelId"
-            :selected-scenario-ids="selectedScenarioIds"
-            :selected-timestamp="selectedTimestamp"
-            :selected-temporal-resolution="selectedTemporalResolution"
-            :selected-temporal-aggregation="selectedTemporalAggregation"
-            :selected-spatial-aggregation="selectedSpatialAggregation"
+            :regional-data="regionalData"
             :unit="unit"
+            :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-timestamp="selectedTimestamp"
+            :selected-scenario-ids="selectedScenarioIds"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -91,7 +92,7 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { computed, defineComponent, Ref, ref, watch } from 'vue';
+import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
@@ -101,12 +102,16 @@ import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
 import { DatacubeType } from '@/types/Enums';
-import { useStore } from 'vuex';
+import { mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
+import API from '@/api/api';
+import { Insight } from '@/types/Insight';
+
 
 const DRILLDOWN_TABS = [
   {
@@ -142,10 +147,11 @@ export default defineComponent({
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
     const datacubeId = analysisItem.value[0].id;
 
-    const modelId = ref(datacubeId);
+    const projectId = computed(() => store.getters['app/project']);
+
     const selectedModelId = ref(datacubeId);
 
-    const metadata = useModelMetadata(modelId) as Ref<Model | null>;
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -157,7 +163,7 @@ export default defineComponent({
 
     const modelRunsFetchedAt = ref(0);
 
-    const allModelRunData = useScenarioData(modelId, modelRunsFetchedAt);
+    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
     const timeInterval = 10000;
 
@@ -180,22 +186,62 @@ export default defineComponent({
         : null
     );
 
-    watch(() => metadata.value, () => {
+    const isDescriptionView = ref<boolean>(true);
+
+    watchEffect(() => {
       mainModelOutput.value = metadata.value?.outputs[0];
 
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
+      } else {
+        isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
-    }, {
-      immediate: true
+
+      // NOTE: the following line is being set only inside the data view and the model publish page
+      if (metadata.value !== null) {
+        // note: this value of metadata may be undefined while model is still being loaded
+        store.dispatch('insightPanel/setContextId', metadata.value?.id);
+      }
+      store.dispatch('insightPanel/setProjectId', projectId.value);
     });
+
+    const selectedTemporalResolution = ref('month');
+    const selectedTemporalAggregation = ref('mean');
+    const selectedSpatialAggregation = ref('mean');
+
+    watchEffect(() => {
+      const dataState = {
+        selectedModelId: selectedModelId.value,
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value
+      };
+      const viewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value
+      };
+
+      store.dispatch('insightPanel/setViewState', viewState);
+      store.dispatch('insightPanel/setDataState', dataState);
+    });
+
+    const { outputSpecs, regionalData } = useRegionalData(
+      selectedModelId,
+      selectedScenarioIds,
+      selectedTimestamp,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      metadata
+    );
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
-      selectedTemporalResolution: 'month',
-      selectedTemporalAggregation: 'mean',
-      selectedSpatialAggregation: ref('mean'),
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
       selectedAdminLevel,
       setSelectedAdminLevel,
       selectedModelId,
@@ -212,80 +258,132 @@ export default defineComponent({
       fetchData,
       newRunsMode,
       timerHandler,
-      unit
+      unit,
+      regionalData,
+      outputSpecs,
+      isDescriptionView
     };
   },
   watch: {
-    $route(/* to, from */) {
-      // NOTE:  this is only valid when the route is focused on the 'data' space
-      if (this.$route.name === 'data') {
-        const timestamp = this.$route.query.timestamp as any;
-        if (timestamp !== undefined) {
-          this.setSelectedTimestamp(timestamp);
-        }
-
-        if (this.allScenarioIds.length > 0) {
-          // FIXME: only support saving insights with at most a single valid scenario id
-          const selectedScenarioID = this.$route.query.selectedScenarioID as any;
-          if (selectedScenarioID !== undefined) {
-            // we should have at least one valid scenario selected. If not, cancel scenario selection
-            const selectedIds = selectedScenarioID !== '' ? [selectedScenarioID] : [];
-            this.setSelectedScenarioIds(selectedIds);
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'data' space
+        if (this.$route.name === 'data' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id as any;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
           }
         }
-      }
+      },
+      immediate: true
     }
-  },
-  mounted(): void {
-    this.updateRouteParams();
   },
   unmounted(): void {
     clearInterval(this.timerHandler);
   },
+  computed: {
+    ...mapGetters({
+      project: 'app/project'
+    })
+  },
   methods: {
+    updateDescView(val: boolean) {
+      this.isDescriptionView = val;
+    },
+    clearRouteParam() {
+      router.push({
+        query: {
+          insight_id: undefined
+        }
+      }).catch(() => {});
+    },
+    updateStateFromInsight(insight_id: string) {
+      API.get(`insights/${insight_id}`).then(d => {
+        const loadedInsight: Insight = d.data;
+        // FIXME: before applying the insight, which will overwrite current state,
+        //  consider pushing current state to the url to support browser hsitory
+        //  in case the user wants to navigate to the original state using back button
+        if (loadedInsight) {
+          //
+          // insight was found and loaded
+          //
+          // data state
+          // FIXME: the order of resetting the state is important
+          if (loadedInsight.data_state?.selectedModelId) {
+            // this will reload datacube metadata as well as scenario runs
+            this.selectedModelId = loadedInsight.data_state?.selectedModelId;
+          }
+          if (loadedInsight.data_state?.selectedScenarioIds) {
+            // this would only be valid and effective if/after datacube runs are reloaded
+            this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
+          }
+          if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+            this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+          }
+          // view state
+          if (loadedInsight.view_state?.spatialAggregation) {
+            this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation;
+          }
+          if (loadedInsight.view_state?.temporalAggregation) {
+            this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation;
+          }
+          if (loadedInsight.view_state?.temporalResolution) {
+            this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution;
+          }
+          if (loadedInsight.view_state?.isDescriptionView !== undefined) {
+            this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+          }
+        }
+      });
+    },
     setSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;
       this.selectedTimestamp = value;
-      this.updateRouteParams();
+      this.clearRouteParam();
     },
     setSelectedScenarioIds(newIds: string[]) {
-      if (_.isEqual(this.selectedScenarioIds, newIds)) return;
+      if (this.metadata?.type !== DatacubeType.Indicator) {
+        if (_.isEqual(this.selectedScenarioIds, newIds)) return;
+      }
       this.selectedScenarioIds = newIds;
-      this.updateRouteParams();
-    },
-    updateRouteParams() {
-      // save the info in the query params so saved insights would pickup the latest value
-      // FIXME: only support saving insights with at most a single valid scenario id
-      router.push({
-        query: {
-          timestamp: this.selectedTimestamp,
-          selectedScenarioID: this.selectedScenarioIds.length === 1 ? this.selectedScenarioIds[0] : undefined
-        }
-      }).catch(() => {});
+      this.clearRouteParam();
     },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       this.typeBreakdownData = [];
       if (this.selectedScenarioIds.length === 0) return;
+      // typeBreakdownData array contains an entry for each drilldown dimension
+      //  (e.g. 'crop type')
       this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
+        // Initialize total for each scenarioId to 0
+        const totals = {} as { [scenarioId: string]: number };
+        this.selectedScenarioIds.forEach(scenarioId => {
+          totals[scenarioId] = 0;
+        });
+        // Randomly assign values for each option in the dimension (e.g. 'maize', 'corn)
+        //  to each scenario, and keep track of the sum totals for each scenario
         const choices = dimension.choices ?? [];
-        const dataForEachRun = this.selectedScenarioIds.map(() => {
-          // Generate random breakdown data for each run
-          const drilldownChildren = choices.map(choice => ({
-            // Breakdown data IDs are written as the hierarchical path delimited by '__'
-            id: 'All__' + choice,
+        const drilldownChildren = choices.map(choice => {
+          const values = {} as { [scenarioId: string]: number };
+          this.selectedScenarioIds.forEach(scenarioId => {
             // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
             //  from (selected scenarios) data
-            value: getRandomNumber(0, 5000)
-          }));
-          const sumTotal = drilldownChildren.map(c => c.value).reduce((a, b) => a + b, 0);
+            const randomValue = getRandomNumber(0, 5000);
+            values[scenarioId] = randomValue;
+            totals[scenarioId] += randomValue;
+          });
           return {
-            Total: [{ id: 'All', value: sumTotal }],
-            [dimension.name]: drilldownChildren
+            // Breakdown data IDs are written as the hierarchical path delimited by '__'
+            id: 'All__' + choice,
+            values
           };
         });
+
         return {
           name: dimension.name,
-          data: dataForEachRun
+          data: {
+            Total: [{ id: 'All', values: totals }],
+            [dimension.name]: drilldownChildren
+          }
         };
       });
     }

@@ -32,7 +32,7 @@ const RESOURCE = Object.freeze({
 
   // Misc
   AUDIT: 'audit',
-  BOOKMARK: 'bookmark',
+  INSIGHT: 'insight',
   ONTOLOGY: 'ontology',
   SESSION_LOG: 'session-log',
   INDICATOR_METADATA: 'indicator-metadata'
