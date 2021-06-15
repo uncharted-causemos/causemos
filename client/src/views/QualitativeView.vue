@@ -712,8 +712,11 @@ export default {
       this.setUpdateToken(result.updateToken);
     },
     resetCAGLayout() {
-      // do nothing for now
-      console.log(this);
+      const graphOptions = this.$refs.cagGraph.renderer.options;
+      const prevStabilitySetting = graphOptions.useStableLayout;
+      graphOptions.useStableLayout = false;
+      this.$refs.cagGraph.refresh();
+      graphOptions.useStableLayout = prevStabilitySetting;
     }
   }
 };
