@@ -20,9 +20,9 @@ router.post('/', asyncHandler(async (req, res) => {
     model_name,
     parameters,
     data_paths: [],
-    pre_gen_output_paths: [],
     is_default_run: false,
-    created_at: Date.now()
+    created_at: Date.now(),
+    tags: []
   };
 
   const result = await maasService.submitModelRun(metadata);
