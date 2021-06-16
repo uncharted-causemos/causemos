@@ -11,7 +11,7 @@ const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./con
  */
 const _termsBuilder = (clause) => {
   const { field, values } = clause;
-  const esFields = FIELDS[field].fields;
+  const esFields = FIELDS[field].aggFields || FIELDS[field].fields;
   const result = esFields.map(field => {
     return { terms: { [field]: values } };
   });

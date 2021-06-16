@@ -252,7 +252,7 @@ class Statement {
       // .toLowerCase() TODO: case insensitive search works for concepts but not author
       .split(' ')
       .filter(el => el !== '')
-      .map(el => `*${el}*`)
+      .map(el => `${el}*`)
       .join(' ');
 
     const searchBodies = [];
