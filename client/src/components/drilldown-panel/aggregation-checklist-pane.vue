@@ -409,7 +409,6 @@ export default defineComponent({
         path.length - 1
       ];
       const itemId = path.join(PATH_DELIMETER);
-      console.log('agg pane', aggregationLevel, itemId);
       this.$emit('toggle-is-item-selected', aggregationLevel, itemId);
     },
     isNodeChecked() {
