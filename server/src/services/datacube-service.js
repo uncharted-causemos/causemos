@@ -26,6 +26,22 @@ const countDatacubes = async (filter) => {
 };
 
 /**
+ * Insert a new datacube
+ */
+const insertDatacube = async(metadata) => {
+  const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  return await connection.insert(metadata);
+};
+
+/**
+ * Update a datacube with the specified changes
+ */
+const updateDatacube = async(metadataDelta) => {
+  const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  return await connection.update([metadataDelta]);
+};
+
+/**
  * Returns field aggregations
  *
  * @param {object} filters
@@ -52,6 +68,9 @@ module.exports = {
   getDatacubes,
   getAllDatacubes,
   countDatacubes,
+
+  insertDatacube,
+  updateDatacube,
 
   facets,
   searchFields

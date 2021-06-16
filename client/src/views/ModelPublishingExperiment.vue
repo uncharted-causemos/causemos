@@ -18,6 +18,7 @@
           :publishingSteps="publishingSteps"
           :currentPublishingStep="currentPublishingStep"
           @navigate-to-publishing-step="showPublishingStep"
+          @publish-model="publishModel"
         />
       </div>
     </div>
@@ -131,6 +132,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
+import { updateDatacube } from '@/services/new-datacube-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -394,6 +396,14 @@ export default defineComponent({
       setContextId: 'insightPanel/setContextId',
       setProjectId: 'insightPanel/setProjectId'
     }),
+    publishModel() {
+      // call the backend to update model metadata and finalize model publication
+      if (this.metadata) {
+        // this.metadata?.status = 'ready'; // FIXME
+        updateDatacube(this.metadata?.id, this.metadata);
+        // TODO: redirect to model family page
+      }
+    },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },

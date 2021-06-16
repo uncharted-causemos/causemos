@@ -1,4 +1,5 @@
 import API from '@/api/api';
+import { Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import fu from '@/utils/filters-util';
 
@@ -7,7 +8,7 @@ import fu from '@/utils/filters-util';
  * @param {Filters} filters
  */
 export const getDatacubes = async (filters: Filters) => {
-  const { data } = await API.get(`maas/new-datacubes?filters=${JSON.stringify(filters)}`);
+  const { data } = await API.get('maas/new-datacubes', { params: { filters: filters } });
   return data;
 };
 
@@ -17,7 +18,12 @@ export const getDatacubes = async (filters: Filters) => {
  * @param {Filters} filters
  */
 export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
-  const { data } = await API.get(`maas/new-datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`);
+  const { data } = await API.get('maas/new-datacubes/facets', {
+    params: {
+      filters: filters,
+      facets: facets
+    }
+  });
   return data;
 };
 
@@ -38,8 +44,7 @@ export const getDatacubeById = async (datacubeId: string) => {
  * @returns {number}
  */
 export const getDatacubesCount = async (filters: Filters) => {
-  const filtersQuery = filters ? `?filters=${JSON.stringify(filters)}` : '';
-  const { data } = await API.get(`maas/new-datacubes/count${filtersQuery}`);
+  const { data } = await API.get('maas/new-datacubes/count', { params: { filters: filters } });
   return data || 0;
 };
 
@@ -71,7 +76,19 @@ const _getDatacubesCount = async (datacubeType: string) => {
   return getDatacubesCount(filters);
 };
 
+/**
+ * Update an existing model metadata
+ * @param datacubeId datacube or model id
+ * @param fields an object of all metadata fields and their new values
+ * @returns success or error on failure
+ */
+export const updateDatacube = async (datacubeId: string, metadata: Model) => {
+  const result = await API.put(`maas/new-datacubes/${datacubeId}`, metadata);
+  return result.data;
+};
+
 export default {
+  updateDatacube,
   getDatacubes,
   getDatacubeById,
   getDatacubesCount,

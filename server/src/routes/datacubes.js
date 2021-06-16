@@ -8,8 +8,20 @@ const filtersUtil = rootRequire('/util/filters-util');
  * Insert a new model or indicator metadata doc
  */
 router.post('/', asyncHandler(async (req, res) => {
-  // TODO
-  res.status(200).json({ FIXME: true });
+  const metadata = req.body;
+  const result = await datacubeService.insertDatacube(metadata);
+  res.json(result);
+}));
+
+/**
+ * Update a model or indicator metadata doc
+ */
+router.put('/:datacubeId', asyncHandler(async (req, res) => {
+  const datacubeId = req.params.datacubeId;
+  const metadata = req.body;
+  metadata.id = metadata.id || datacubeId;
+  const result = await datacubeService.insertDatacube(metadata);
+  res.json(result);
 }));
 
 /**
