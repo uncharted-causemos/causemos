@@ -196,6 +196,19 @@ export default class ModelRenderer extends SVGRenderer {
           return interpolatePath(previousPath, currentPath)(t);
         };
       });
+    console.log(selection);
+    selection
+      .selectAll('.edge-path')
+      .append('text')
+      // .classed('indicator-edit-icon', true)
+      // .attr('x', width - 18) // fitting icon
+      // .attr('y', 15) // fitting ic
+      .style('font-family', 'FontAwesome')
+      .style('font-size', '6em')
+      .style('stroke', 'none')
+      .style('fill', 'black')
+      // .style('cursor', 'pointer')
+      .text('THIS IS A TEST');
   }
 
   renderEdgeRemoved(selection) {
