@@ -18,12 +18,7 @@ export const getDatacubes = async (filters: Filters) => {
  * @param {Filters} filters
  */
 export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
-  const { data } = await API.get('maas/new-datacubes/facets', {
-    params: {
-      filters: filters,
-      facets: facets
-    }
-  });
+  const { data } = await API.get(`maas/new-datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`);
   return data;
 };
 
