@@ -1,4 +1,5 @@
 import API from '@/api/api';
+import { Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import fu from '@/utils/filters-util';
 
@@ -75,7 +76,19 @@ const _getDatacubesCount = async (datacubeType: string) => {
   return getDatacubesCount(filters);
 };
 
+/**
+ * Update an existing model metadata
+ * @param datacubeId datacube or model id
+ * @param fields an object of all metadata fields and their new values
+ * @returns success or error on failure
+ */
+export const updateDatacube = async (datacubeId: string, metadata: Model) => {
+  const result = await API.put(`maas/new-datacubes/${datacubeId}`, metadata);
+  return result.data;
+};
+
 export default {
+  updateDatacube,
   getDatacubes,
   getDatacubeById,
   getDatacubesCount,

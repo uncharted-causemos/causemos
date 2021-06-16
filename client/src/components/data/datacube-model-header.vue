@@ -64,34 +64,36 @@ export default defineComponent({
       const result = await getDatacubeById(props.selectedModelId);
       const modelMetadata: Model = result.data;
 
-      // fill in the model attribute
-      // TODO: how spacing and label names are used
-      modelAttributes.value.push({
-        name: 'Model family',
-        value: modelMetadata.name,
-        tweakable: false,
-        type: 'text'
-      });
-      /*
-      modelAttributes.value.push({
-        name: 'Model instance',
-        value: modelMetadata.version,
-        tweakable: false,
-        type: 'text'
-      });
-      */
-      modelAttributes.value.push({
-        name: 'Default output variable',
-        value: modelMetadata.outputs.map(o => o.display_name),
-        tweakable: true,
-        type: 'select'
-      });
-      modelAttributes.value.push({
-        name: 'Model description',
-        value: modelMetadata.description,
-        tweakable: true,
-        type: 'textarea'
-      });
+      if (modelMetadata) {
+        // fill in the model attribute
+        // TODO: how spacing and label names are used
+        modelAttributes.value.push({
+          name: 'Model family',
+          value: modelMetadata.name,
+          tweakable: false,
+          type: 'text'
+        });
+        /*
+        modelAttributes.value.push({
+          name: 'Model instance',
+          value: modelMetadata.version,
+          tweakable: false,
+          type: 'text'
+        });
+        */
+        modelAttributes.value.push({
+          name: 'Default output variable',
+          value: modelMetadata.outputs.map(o => o.display_name),
+          tweakable: true,
+          type: 'select'
+        });
+        modelAttributes.value.push({
+          name: 'Model description',
+          value: modelMetadata.description,
+          tweakable: true,
+          type: 'textarea'
+        });
+      }
     }
 
     watch(() => props.selectedModelId, fetchModelInfo, { immediate: true });
