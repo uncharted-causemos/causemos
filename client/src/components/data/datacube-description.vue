@@ -116,7 +116,7 @@ export default defineComponent({
   width: 100%;
   display: flex;
   flex-direction: row;
-  overflow: scroll;
+  overflow: auto;
 }
 
 .datacube-description-column {
