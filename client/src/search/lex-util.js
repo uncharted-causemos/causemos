@@ -66,7 +66,6 @@ function dynamicMappedSuggestionBuilder(message, isMultiValue, mapFn) {
  * @param {string} message - assistant message
  * @param {boolean} isMultiValue - if state allows multi value
  * @param {function} suggestionFn - a function that returns a list of suggestion strings
- * @param {function} customMatchFn - a function that matches the search text to the suggestions
  */
 function dynamicSimpleSuggestionBuilder(message, isMultiValue, suggestionFn) {
   return {
@@ -78,7 +77,6 @@ function dynamicSimpleSuggestionBuilder(message, isMultiValue, suggestionFn) {
         return new ValueStateValue(suggestion);
       });
       return states;
-      // return states.filter(d => customMatchFn(d.key, hint));
     },
     multivalue: isMultiValue,
     allowUnknown: false
