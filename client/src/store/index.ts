@@ -10,6 +10,7 @@ import ModelStore from './modules/model-store';
 import DataSearchStore from './modules/data-search-store';
 import DataAnalysisStore from './modules/data-analysis-store';
 import InsightPanelStore from './modules/insight-panel-store';
+import contextInsightPanelStore from './modules/context-insight-panel-store';
 
 export default new Vuex.Store({
   modules: {
@@ -22,6 +23,7 @@ export default new Vuex.Store({
     model: ModelStore,
     dataSearch: DataSearchStore,
     dataAnalysis: DataAnalysisStore,
-    insightPanel: InsightPanelStore
+    insightPanel: InsightPanelStore,
+    contextInsightPanel: contextInsightPanelStore
   }
 });
