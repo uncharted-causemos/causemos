@@ -81,7 +81,6 @@ export default {
 
       // get the filtered data
       const filters = _.cloneDeep(this.filters);
-      filtersUtil.setClause(filters, 'type', ['model'], 'or', false);
       this.filteredDatacubes = await getDatacubes(filters);
       this.filteredDatacubes.forEach(item => (item.isAvailable = true));
 

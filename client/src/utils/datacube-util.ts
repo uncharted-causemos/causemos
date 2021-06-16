@@ -33,6 +33,7 @@ export const VARIABLE_UNIT = 'variableUnit';
 export const TEMPORAL_RESOLUTION = 'temporalResolution';
 export const MAINTAINER_NAME = 'maintainerName';
 export const MAINTAINER_ORG = 'maintainerOrg';
+export const TYPE = 'type';
 
 
 
@@ -46,7 +47,7 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   maintainerOrg: 'Organization',
   tags: 'Tags',
   temporalResolution: 'Temporal Resolution',
-  type: 'Types',
+  type: 'Datacube Types',
   variableName: 'Output Name',
   variableUnit: 'Output Units'
 };
@@ -64,7 +65,8 @@ export const FACET_FIELDS: string [] = [
   VARIABLE_UNIT,
   TEMPORAL_RESOLUTION,
   MAINTAINER_NAME,
-  MAINTAINER_ORG
+  MAINTAINER_ORG,
+  TYPE
 ];
 
 
