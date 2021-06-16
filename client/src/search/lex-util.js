@@ -29,12 +29,6 @@ function mappedSuggestionBuilder(message, isMultiValue, map) {
   };
 }
 
-function _matches(target, str) {
-  return target.toLowerCase().replace(/_/g, ' ').includes(
-    str.toLowerCase().replace(/_/g, ' ')
-  );
-}
-
 /**
  * Suggestion builder for MappedOptionState where the states are dynamic
  *
@@ -74,7 +68,7 @@ function dynamicMappedSuggestionBuilder(message, isMultiValue, mapFn) {
  * @param {function} suggestionFn - a function that returns a list of suggestion strings
  * @param {function} customMatchFn - a function that matches the search text to the suggestions
  */
-function dynamicSimpleSuggestionBuilder(message, isMultiValue, suggestionFn, customMatchFn = _matches) {
+function dynamicSimpleSuggestionBuilder(message, isMultiValue, suggestionFn) {
   return {
     name: message,
     suggestionLimit: SUGGESTIONS_LIMIT,
@@ -83,7 +77,8 @@ function dynamicSimpleSuggestionBuilder(message, isMultiValue, suggestionFn, cus
       const states = suggestions.map(suggestion => {
         return new ValueStateValue(suggestion);
       });
-      return states.filter(d => customMatchFn(d.key, hint));
+      return states;
+      // return states.filter(d => customMatchFn(d.key, hint));
     },
     multivalue: isMultiValue,
     allowUnknown: false
