@@ -5,6 +5,7 @@
       :model-components="modelComponents"
       @add-concept="createNewNode()"
       @import-cag="showModalImportCAG=true"
+      @reset-cag="resetCAGLayout()"
     />
     <main>
       <div
@@ -715,6 +716,13 @@ export default {
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges);
       this.setUpdateToken(result.updateToken);
+    },
+    async resetCAGLayout() {
+      const graphOptions = this.$refs.cagGraph.renderer.options;
+      const prevStabilitySetting = graphOptions.useStableLayout;
+      graphOptions.useStableLayout = false;
+      await this.$refs.cagGraph.refresh();
+      graphOptions.useStableLayout = prevStabilitySetting;
     }
   }
 };
