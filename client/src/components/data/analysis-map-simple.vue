@@ -59,7 +59,7 @@
 import _ from 'lodash';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
-import { getColors } from '@/utils/colors-util';
+import { COLOR_SCHEME } from '@/utils/colors-util';
 import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
@@ -258,6 +258,12 @@ export default {
     colorOption() {
       return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
     },
+    colorScheme() {
+      if (!_.isNil(this.relativeTo)) {
+        return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
+      }
+      return COLOR_SCHEME.PURPLES_7;
+    },
     filter() {
       return this.filters.find(filter => filter.id === this.valueProp);
     },
@@ -333,9 +339,9 @@ export default {
     },
     refreshColorLayer(useFeatureState = false) {
       const { min, max } = this.extent;
-      const { color, scaleFn } = this.colorOption;
+      const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec && this.baselineSpec.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 7), scaleFn, useFeatureState, relativeToProp);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
@@ -349,9 +355,9 @@ export default {
       // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
       // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
       // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
-      // To work around above issue, explitly set null to each output value by default since removeFeatureState doesn't seem very reliable.
+      // To work around above issue, explitly set undefined to each output value by default since removeFeatureState doesn't seem very reliable.
       const featureStateBase = {};
-      this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = null; });
+      this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
       this.regionData[adminLevel].forEach(row => {
         this.map.setFeatureState({
