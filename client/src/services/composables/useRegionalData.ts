@@ -1,8 +1,18 @@
 import { Ref, ref } from '@vue/reactivity';
-import { computed, watchEffect } from '@vue/runtime-core';
+import { computed, watch, watchEffect } from '@vue/runtime-core';
 import { Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
+import { DatacubeGeography } from '@/types/Common';
+import _ from 'lodash';
+import { readonly } from 'vue';
+
+const EMPTY_REGION_LIST: DatacubeGeography = {
+  country: [],
+  admin1: [],
+  admin2: [],
+  admin3: []
+};
 
 export default function useRegionalData(
   selectedModelId: Ref<string>,
@@ -41,13 +51,40 @@ export default function useRegionalData(
     regionalData.value = null;
     if (outputSpecs.value.length === 0) return;
     let isCancelled = false;
-    onInvalidate(() => { isCancelled = true; });
+    onInvalidate(() => {
+      isCancelled = true;
+    });
     const result = await getRegionAggregations(outputSpecs.value);
     if (isCancelled) return;
     regionalData.value = result;
   });
+  const deselectedRegionIds = ref<DatacubeGeography>(
+    _.cloneDeep(EMPTY_REGION_LIST)
+  );
+  watch(selectedModelId, () => {
+    // Reset the deselected region list when the selected model changes
+    deselectedRegionIds.value = _.cloneDeep(EMPTY_REGION_LIST);
+  });
+  const toggleIsRegionSelected = (
+    adminLevel: keyof DatacubeGeography,
+    regionId: string
+  ) => {
+    const currentlyDeselected = deselectedRegionIds.value[adminLevel];
+    const isRegionSelected = !currentlyDeselected.includes(regionId);
+    // If region is currently selected, add it to list of deselected regions.
+    //  Otherwise, remove from the list of deselected regions.
+    const updatedList = isRegionSelected
+      ? [...currentlyDeselected, regionId]
+      : currentlyDeselected.filter(item => item !== regionId);
+    // Assign new object to deselectedRegionIds.value to trigger reactivity updates.
+    deselectedRegionIds.value = Object.assign({}, deselectedRegionIds.value, {
+      [adminLevel]: updatedList
+    });
+  };
   return {
     outputSpecs,
-    regionalData
+    regionalData,
+    deselectedRegionIds: readonly(deselectedRegionIds),
+    toggleIsRegionSelected
   };
 }

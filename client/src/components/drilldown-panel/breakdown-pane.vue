@@ -10,6 +10,8 @@
       :raw-data="regionalData"
       :units="unit"
       :selected-scenario-ids="selectedScenarioIds"
+      :deselected-item-ids="deselectedRegionIds"
+      @toggle-is-item-selected="toggleIsRegionSelected"
       @aggregation-level-change="setSelectedAdminLevel"
     >
       <template #aggregation-description>
@@ -75,6 +77,7 @@ import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-c
 import dateFormatter from '@/formatters/date-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { DatacubeGeography } from '@/types/Common';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -113,13 +116,21 @@ export default defineComponent({
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    deselectedRegionIds: {
+      type: Object as PropType<DatacubeGeography | null>,
+      default: null
     }
   },
-  emits: ['set-selected-admin-level'],
+  emits: ['set-selected-admin-level', 'toggle-is-region-selected'],
   setup(props, { emit }) {
     const { regionalData } = toRefs(props);
     function setSelectedAdminLevel(level: number) {
       emit('set-selected-admin-level', level);
+    }
+
+    function toggleIsRegionSelected(adminLevel: string, regionId: string) {
+      emit('toggle-is-region-selected', adminLevel, regionId);
     }
 
     const availableAdminLevelTitles = computed(() => {
@@ -132,6 +143,7 @@ export default defineComponent({
 
     return {
       setSelectedAdminLevel,
+      toggleIsRegionSelected,
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS
