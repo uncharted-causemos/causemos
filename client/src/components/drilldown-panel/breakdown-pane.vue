@@ -12,6 +12,8 @@
       :selected-scenario-ids="selectedScenarioIds"
       :deselected-item-ids="deselectedRegionIds"
       @toggle-is-item-selected="toggleIsRegionSelected"
+      @select-all="selectAllRegions"
+      @deselect-all="deselectAllRegions"
       @aggregation-level-change="setSelectedAdminLevel"
     >
       <template #aggregation-description>
@@ -122,7 +124,12 @@ export default defineComponent({
       default: null
     }
   },
-  emits: ['set-selected-admin-level', 'toggle-is-region-selected'],
+  emits: [
+    'set-selected-admin-level',
+    'toggle-is-region-selected',
+    'select-all-regions',
+    'deselect-all-regions'
+  ],
   setup(props, { emit }) {
     const { regionalData } = toRefs(props);
     function setSelectedAdminLevel(level: number) {
@@ -131,6 +138,14 @@ export default defineComponent({
 
     function toggleIsRegionSelected(adminLevel: string, regionId: string) {
       emit('toggle-is-region-selected', adminLevel, regionId);
+    }
+
+    function selectAllRegions() {
+      emit('select-all-regions');
+    }
+
+    function deselectAllRegions() {
+      emit('deselect-all-regions');
     }
 
     const availableAdminLevelTitles = computed(() => {
@@ -146,7 +161,9 @@ export default defineComponent({
       toggleIsRegionSelected,
       availableAdminLevelTitles,
       timestampFormatter,
-      ADMIN_LEVEL_KEYS
+      ADMIN_LEVEL_KEYS,
+      selectAllRegions,
+      deselectAllRegions
     };
   },
   computed: {

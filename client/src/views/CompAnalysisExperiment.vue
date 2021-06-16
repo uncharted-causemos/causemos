@@ -84,6 +84,8 @@
             :deselected-region-ids="deselectedRegionIds"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
+            @select-all-regions="setAllRegionsSelected(true)"
+            @deselect-all-regions="setAllRegionsSelected(false)"
           />
         </template>
     </drilldown-panel>
@@ -232,7 +234,8 @@ export default defineComponent({
       outputSpecs,
       regionalData,
       deselectedRegionIds,
-      toggleIsRegionSelected
+      toggleIsRegionSelected,
+      setAllRegionsSelected
     } = useRegionalData(
       selectedModelId,
       selectedScenarioIds,
@@ -270,7 +273,8 @@ export default defineComponent({
       outputSpecs,
       isDescriptionView,
       deselectedRegionIds,
-      toggleIsRegionSelected
+      toggleIsRegionSelected,
+      setAllRegionsSelected
     };
   },
   watch: {

@@ -237,7 +237,12 @@ export default defineComponent({
       default: null
     }
   },
-  emits: ['aggregation-level-change', 'toggle-is-item-selected'],
+  emits: [
+    'aggregation-level-change',
+    'toggle-is-item-selected',
+    'select-all',
+    'deselect-all'
+  ],
   setup(props) {
     const {
       rawData,
@@ -419,10 +424,10 @@ export default defineComponent({
       return true;
     },
     deselectAll() {
-      console.log('deselectAll');
+      this.$emit('deselect-all');
     },
     selectAll() {
-      console.log('selectAll');
+      this.$emit('select-all');
     }
   }
 });

@@ -61,9 +61,12 @@ export default function useRegionalData(
   const deselectedRegionIds = ref<DatacubeGeography>(
     _.cloneDeep(EMPTY_REGION_LIST)
   );
+  const resetSelection = () => {
+    deselectedRegionIds.value = _.cloneDeep(EMPTY_REGION_LIST);
+  };
   watch(selectedModelId, () => {
     // Reset the deselected region list when the selected model changes
-    deselectedRegionIds.value = _.cloneDeep(EMPTY_REGION_LIST);
+    resetSelection();
   });
   const toggleIsRegionSelected = (
     adminLevel: keyof DatacubeGeography,
@@ -81,10 +84,23 @@ export default function useRegionalData(
       [adminLevel]: updatedList
     });
   };
+  const setAllRegionsSelected = (isSelectingAll: boolean) => {
+    if (isSelectingAll) {
+      resetSelection();
+      return;
+    }
+    deselectedRegionIds.value = {
+      country: (regionalData.value?.country ?? []).map(entry => entry.id) ?? [],
+      admin1: (regionalData.value?.admin1 ?? []).map(entry => entry.id) ?? [],
+      admin2: (regionalData.value?.admin2 ?? []).map(entry => entry.id) ?? [],
+      admin3: (regionalData.value?.admin3 ?? []).map(entry => entry.id) ?? []
+    };
+  };
   return {
     outputSpecs,
     regionalData,
     deselectedRegionIds: readonly(deselectedRegionIds),
-    toggleIsRegionSelected
+    toggleIsRegionSelected,
+    setAllRegionsSelected
   };
 }
