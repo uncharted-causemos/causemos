@@ -33,7 +33,7 @@ export default function useParallelCoordinatesData(
       };
       if (run.status === ModelRunStatus.Ready) {
         // FIXME: assume the first feature is the primary one by default
-        const output_agg_values = allModelRunData.value[runIndex].output_agg_values[0].value;
+        const output_agg_values = allModelRunData.value[runIndex].output_agg_values[currentOutputIndex.value].value;
         run[outputParameterName] = output_agg_values;
       }
       modelRun.parameters.forEach(({ name, value }) => {
