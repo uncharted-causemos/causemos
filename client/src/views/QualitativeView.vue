@@ -717,11 +717,11 @@ export default {
       const result = await this.addCAGComponents(newNodesPayload, newEdges);
       this.setUpdateToken(result.updateToken);
     },
-    resetCAGLayout() {
+    async resetCAGLayout() {
       const graphOptions = this.$refs.cagGraph.renderer.options;
       const prevStabilitySetting = graphOptions.useStableLayout;
       graphOptions.useStableLayout = false;
-      this.$refs.cagGraph.refresh();
+      await this.$refs.cagGraph.refresh();
       graphOptions.useStableLayout = prevStabilitySetting;
     }
   }
