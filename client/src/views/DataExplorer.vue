@@ -3,7 +3,7 @@
     <modal-header
       :nav-back-label="navBackLabel"
     />
-    <div class="flex h-100" v-if="datacubes.length > 0">
+    <div class="flex h-100" v-if="facets !== null && filteredFacets !== null">
       <div class="flex h-100">
         <facets-panel
           :facets="facets"
@@ -11,10 +11,8 @@
         />
       </div>
       <search class="flex-grow-1 h-100"
-        :datacubes="datacubes"
         :facets="facets"
         :filtered-datacubes="filteredDatacubes"
-        :filtered-facets="filteredFacets"
       />
     </div>
   </div>
@@ -41,10 +39,9 @@ export default {
     ModalHeader
   },
   data: () => ({
-    datacubes: [],
-    facets: [],
+    facets: null,
     filteredDatacubes: [],
-    filteredFacets: []
+    filteredFacets: null
   }),
   computed: {
     ...mapGetters({
@@ -75,11 +72,11 @@ export default {
     }),
 
     async refresh() {
-      await this.fetchAllDatacubes();
+      await this.fetchAllDatacubeData();
     },
 
-    // retrieves filtered and unfiltered datacube lists
-    async fetchAllDatacubes() {
+    // retrieves filtered datacube list
+    async fetchAllDatacubeData() {
       this.enableOverlay();
 
       // get the filtered data
@@ -88,14 +85,8 @@ export default {
       this.filteredDatacubes = await getDatacubes(filters);
       this.filteredDatacubes.forEach(item => (item.isAvailable = true));
 
-      // get all data
+      // retrieves filtered & unfiltered facet data
       const defaultFilters = { clauses: [] };
-      filtersUtil.setClause(defaultFilters, 'type', ['model'], 'or', false);
-      this.datacubes = await getDatacubes(defaultFilters);
-      this.datacubes.forEach(item => (item.isAvailable = true));
-      this.setSearchResultsCount(this.filteredDatacubes.length);
-
-      // get facet data
       this.facets = await getDatacubeFacets(FACET_FIELDS, defaultFilters);
       this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, filters);
 

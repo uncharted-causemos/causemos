@@ -55,17 +55,9 @@ export const FACET_FIELDS: string [] = [
   MAINTAINER_ORG
 ];
 
-export const datacubeKeys = (datacubeRow: Record<string, any>): string[] => {
-  let keys = Object.keys(datacubeRow);
-  keys = keys.filter((k) => DISPLAY_NAMES[k] !== undefined);
-  keys.sort();
-  return keys;
-};
-
 
 export default {
   CODE_TABLE,
   FACET_FIELDS,
-  DISPLAY_NAMES,
-  datacubeKeys
+  DISPLAY_NAMES
 };
