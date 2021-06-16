@@ -7,7 +7,7 @@ import fu from '@/utils/filters-util';
  * @param {Filters} filters
  */
 export const getDatacubes = async (filters: Filters) => {
-  const { data } = await API.get(`maas/new-datacubes?filters=${JSON.stringify(filters)}`);
+  const { data } = await API.get('maas/new-datacubes', { params: { filters: filters } });
   return data;
 };
 
@@ -17,7 +17,12 @@ export const getDatacubes = async (filters: Filters) => {
  * @param {Filters} filters
  */
 export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
-  const { data } = await API.get(`maas/new-datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`);
+  const { data } = await API.get('maas/new-datacubes/facets', {
+    params: {
+      filters: filters,
+      facets: facets
+    }
+  });
   return data;
 };
 
@@ -38,8 +43,7 @@ export const getDatacubeById = async (datacubeId: string) => {
  * @returns {number}
  */
 export const getDatacubesCount = async (filters: Filters) => {
-  const filtersQuery = filters ? `?filters=${JSON.stringify(filters)}` : '';
-  const { data } = await API.get(`maas/new-datacubes/count${filtersQuery}`);
+  const { data } = await API.get('maas/new-datacubes/count', { params: { filters: filters } });
   return data || 0;
 };
 
