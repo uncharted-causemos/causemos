@@ -254,7 +254,7 @@ export default defineComponent({
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
-      //  out of it, augmented with 'expanded' and 'checked' properties to keep
+      //  out of it, augmented with a boolean 'expanded' property to keep
       //  track of the state of the component.
       const newStatefulData = { children: [] as StatefulDataNode[] };
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
@@ -415,13 +415,6 @@ export default defineComponent({
       ];
       const itemId = path.join(PATH_DELIMETER);
       this.$emit('toggle-is-item-selected', aggregationLevel, itemId);
-    },
-    isNodeChecked() {
-      // TODO: We'll need to determine some way for node selected states to be stored
-      //  in a parent or ancestor of this component and passed in as a prop, so that
-      //  it can be queried here, something like
-      //  return checkedNodes.find(pathToNode.join('-')) !== undefined;
-      return true;
     },
     deselectAll() {
       this.$emit('deselect-all');
