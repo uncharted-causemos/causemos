@@ -43,22 +43,22 @@ const FIELDS = Object.freeze({
   },
   country: {
     fields: ['geography.country'],
-    type: FIELD_TYPES.REGEXP,
+    type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   admin1: {
     fields: ['geography.admin1'],
-    type: FIELD_TYPES.REGEXP,
+    type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   admin2: {
     fields: ['geography.admin2'],
-    type: FIELD_TYPES.REGEXP,
+    type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   admin3: {
     fields: ['geography.admin3'],
-    type: FIELD_TYPES.REGEXP,
+    type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   isStochastic: {

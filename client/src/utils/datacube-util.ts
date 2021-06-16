@@ -17,12 +17,16 @@ export const CODE_TABLE: FieldMap = {
   },
   SEARCH: {
     // _search is hidden special datacube field that combines text/keyword field values. It's used for text searching.
-    ...field('_search', 'Keyword'),
+    ...field('keyword', 'Keyword'),
     ...searchable('Keyword', false)
   }
 };
 export const CATEGORY = 'category';
 export const TAGS = 'tags';
+export const COUNTRY = 'country';
+export const ADMIN1 = 'admin1';
+export const ADMIN2 = 'admin2';
+export const ADMIN3 = 'admin3';
 export const PARAMETERS = 'parameters';
 export const VARIABLE_NAME = 'variableName';
 export const VARIABLE_UNIT = 'variableUnit';
@@ -33,7 +37,11 @@ export const MAINTAINER_ORG = 'maintainerOrg';
 
 
 export const DISPLAY_NAMES: {[ key: string ]: string } = {
+  admin1: 'Adminstrative Area 1',
+  admin2: 'Adminstrative Area 2',
+  admin3: 'Adminstrative Area 3',
   category: 'Category',
+  country: 'Country',
   maintainerName: 'Maintainer',
   maintainerOrg: 'Organization',
   tags: 'Tags',
@@ -47,6 +55,10 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
 export const FACET_FIELDS: string [] = [
   CATEGORY,
   TAGS,
+  COUNTRY,
+  ADMIN1,
+  ADMIN2,
+  ADMIN3,
   PARAMETERS,
   VARIABLE_NAME,
   VARIABLE_UNIT,
