@@ -1,3 +1,4 @@
+import { DatacubeFeature } from '@/types/Datacube';
 import { FieldMap, field, searchable } from './lex-util';
 
 /**
@@ -69,9 +70,15 @@ export const FACET_FIELDS: string [] = [
   TYPE
 ];
 
+export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
+  // FIXME: only numeric outputs are currently supported
+  return outputs.filter(o => o.type === 'int' || o.type === 'float');
+};
+
 
 export default {
   CODE_TABLE,
   FACET_FIELDS,
-  DISPLAY_NAMES
+  DISPLAY_NAMES,
+  getValidatedOutputs
 };

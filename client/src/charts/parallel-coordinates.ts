@@ -23,7 +23,7 @@ interface BrushType {
   end: string | number;
 }
 
-type D3ScaleFunc = (name: string) => D3Scale | undefined;
+type D3ScaleFunc = (name: string) => D3Scale;
 
 type D3LineSelection = d3.Selection<SVGPathElement, ScenarioData, null, undefined>;
 type D3AxisSelection = d3.Selection<SVGGElement, DimensionInfo, SVGGElement, any>
@@ -96,7 +96,7 @@ const numberFloatFormat = d3.format(',.2f');
 //
 // global variables
 //
-let xScaleMap: {[key: string]: D3ScaleFunc} = {};
+let xScaleMap: {[key: string]: D3Scale} = {};
 let yScale: d3.ScalePoint<string>;
 let renderedAxes: D3AxisSelection;
 let axisRange: Array<number> = [];
@@ -1550,7 +1550,7 @@ const createScales = (
   axisRange: Array<number>,
   height: number) => {
   //
-  const xScaleMap: {[key: string]: D3ScaleFunc} = {};
+  const xScaleMap: {[key: string]: D3Scale} = {};
 
   // each axis will provide min/max values that should be used as the scale domain
   //  alternatively, scan the all the data entries to find the min/max
@@ -1568,8 +1568,14 @@ const createScales = (
       dataExtent = d3.extent(data.map(point => +point[name]));
     }
     if (dataExtent[0] === undefined || dataExtent[0] === undefined) {
-      console.error('Unable to derive extent from data', data);
-      return undefined;
+      console.error('Unable to derive extent from data. A default linear scale will be created!', data);
+
+      // this dimension should have an undefined scale:
+      //  e.g., an output dimension where ALL runs have non-ready status
+      //  i.e., no line will ever have a value for this dimension axis, but we still want to render its axis
+
+      // ensure we return a default lineaer scale
+      dataExtent = [0, 1];
     }
     // extend the domain of each axis to ensure a nice scale rendering
     if (enlargeAxesScaleToFitData) {
@@ -1592,6 +1598,19 @@ const createScales = (
       dataExtent = dimensions.find(d => d.name === name)?.choices ?? [''];
     } else {
       dataExtent = data.map(function(p) { return p[name]; }) as Array<string>; // note this will return an array of values for all runs
+    }
+
+    if (dataExtent[0] === undefined || dataExtent[0] === undefined) {
+      console.error('Unable to derive extent from data. A default linear scale will be created!', data);
+
+      // this dimension should have an undefined scale:
+      //  e.g., an output dimension where ALL runs have non-ready status
+      //  i.e., no line will ever have a value for this dimension axis, but we still want to render its axis
+
+      // ensure we return a default categorical scale
+      dataExtent = [];
+      dataExtent.push('dummay-last');
+      dataExtent.unshift('dummy-first');
     }
 
     // extend the domain of each axis to ensure a nice scale rendering
@@ -1631,10 +1650,11 @@ const createScales = (
     });
   }
 
-  // For each dimension, I build a linear scale. I store all in a x object
+  // For each dimension, build a scale and cache its function in the map
   for (const i in dimensions) {
     const name = dimensions[i].name;
-    xScaleMap[name] = defaultScales[pcTypes[name]];
+    const scaleFuncParameterized = defaultScales[pcTypes[name]];
+    xScaleMap[name] = scaleFuncParameterized(name);
   }
 
   // Build the y scale -> it find the best position (vertically) for each x axis
@@ -1647,8 +1667,7 @@ const createScales = (
 
 // handy function to return the d3 scale for any given dimension from the map of scale functions
 const getXScaleFromMap = (dimName: string) => {
-  const xScaleDim = xScaleMap[dimName];
-  return xScaleDim(dimName) as D3Scale;
+  return xScaleMap[dimName];
 };
 
 export {

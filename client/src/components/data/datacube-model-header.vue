@@ -22,21 +22,25 @@
           rows="2"
           :class="{ 'disabled': !attr.tweakable }"
         />
-        <select name="cars" id="cars"
+        <select name="outputs" id="outputs"
           v-if="attr.type === 'select'"
+          @change="onOutputSelectionChange($event)"
         >
           <option
-            v-for="selectValue in attr.value"
-            :key="selectValue" >{{selectValue}}</option>
+            v-for="(selectValue, indx) in attr.value"
+            :key="selectValue"
+            :selected="indx === currentOutputIndex"
+          >{{selectValue}}</option>
         </select>
     </div>
   </div>
 </template>
 
 <script lang="ts">
+import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model } from '@/types/Datacube';
-import { defineComponent, ref, watch } from 'vue';
-import { getDatacubeById } from '@/services/new-datacube-service';
+import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
+import { mapActions, useStore } from 'vuex';
 
 interface ModelAttribute {
   name: string;
@@ -58,18 +62,17 @@ export default defineComponent({
 
     // FIXME: to really support proper data handling, do not fetch data locally at every component
     //         instead, fetch at parent and pass to children as needed, so updating one will update the others
-    async function fetchModelInfo() {
-      if (props.selectedModelId === null) return;
 
-      const result = await getDatacubeById(props.selectedModelId);
-      const modelMetadata: Model = result.data;
+    const { selectedModelId } = toRefs(props);
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
 
-      if (modelMetadata) {
+    watchEffect(() => {
+      if (metadata.value) {
         // fill in the model attribute
         // TODO: how spacing and label names are used
         modelAttributes.value.push({
           name: 'Model family',
-          value: modelMetadata.name,
+          value: metadata.value.name,
           tweakable: false,
           type: 'text'
         });
@@ -81,31 +84,43 @@ export default defineComponent({
           type: 'text'
         });
         */
+        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
         modelAttributes.value.push({
           name: 'Default output variable',
-          value: modelMetadata.outputs.map(o => o.display_name),
+          value: outputs.map(o => o.display_name),
           tweakable: true,
           type: 'select'
         });
         modelAttributes.value.push({
           name: 'Model description',
-          value: modelMetadata.description,
+          value: metadata.value.description,
           tweakable: true,
           type: 'textarea'
         });
       }
-    }
+    });
 
-    watch(() => props.selectedModelId, fetchModelInfo, { immediate: true });
+    const store = useStore();
+    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
     return {
-      modelAttributes
+      modelAttributes,
+      metadata,
+      currentOutputIndex
     };
   },
   methods: {
+    ...mapActions({
+      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
+    }),
     updateAttributeValue(attr: ModelAttribute) {
       console.log(attr.value);
       // TODO: update the local data or the back end to ensure other components are synced up
+    },
+    onOutputSelectionChange(event: any) {
+      const selectedOutputIndex = event.target.selectedIndex;
+      // update the store so that other components can sync
+      this.setCurrentOutputIndex(selectedOutputIndex);
     }
   }
 });

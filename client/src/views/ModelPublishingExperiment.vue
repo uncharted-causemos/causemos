@@ -16,7 +16,7 @@
         <model-publishing-checklist
           v-if="openPublishAccordion"
           :publishingSteps="publishingSteps"
-          :currentPublishingStep="currentPublishingStep"
+          :currentPublishStep="currentPublishStep"
           @navigate-to-publishing-step="showPublishingStep"
           @publish-model="publishModel"
         />
@@ -40,7 +40,7 @@
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
       @set-selected-scenario-ids="setSelectedScenarioIds"
-      @select-timestamp="setSelectedTimestamp"
+      @select-timestamp="updateSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
       @check-model-metadata-validity="checkModelMetadataValidity"
       @update-desc-view="updateDescView"
@@ -117,13 +117,12 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
-import { defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { ModelPublishingStepID } from '@/types/Enums';
-import router from '@/router';
 import { DimensionInfo, Model, ModelPublishingStep } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
@@ -168,6 +167,13 @@ export default defineComponent({
   }),
   setup() {
     const store = useStore();
+    const currentOutputIndex: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
+    const selectedTemporalAggregation: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedTemporalAggregation']);
+    const selectedTemporalResolution: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedTemporalResolution']);
+    const selectedSpatialAggregation: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedSpatialAggregation']);
+    const selectedTimestamp: ComputedRef<number> = computed(() => store.getters['modelPublishStore/selectedTimestamp']);
+    const selectedScenarioIds: ComputedRef<string[]> = computed(() => store.getters['modelPublishStore/selectedScenarioIds']);
 
     const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
@@ -176,61 +182,39 @@ export default defineComponent({
 
     const typeBreakdownData: NamedBreakdownData[] = [];
 
-    const currentPublishingStep = ref(ModelPublishingStepID.Enrich_Description);
-    const selectedTemporalAggregation = ref('');
-    const selectedTemporalResolution = ref('');
-    const selectedSpatialAggregation = ref('');
-
+    // FIXME: set initial model to DSSAT in case the query param does not have a valid datacubeid
     const selectedModelId = ref(DSSAT_PRODUCTION_DATA.modelId);
     const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
 
-    const allScenarioIds = DSSAT_PRODUCTION_DATA.scenarioIds;
-
     const modelRunsFetchedAt = ref(0);
-
-    // FIXME: we no longer need/should push insight params to the url
-    const updateRouteParams = () => {
-      // save the info in the query params so saved insights would pickup the latest value
-      router.push({
-        query: {
-          step: currentPublishingStep.value,
-          temporalAggregation: selectedTemporalAggregation.value,
-          temporalResolution: selectedTemporalResolution.value,
-          spatialAggregation: selectedSpatialAggregation.value,
-          timestamp: selectedTimestamp.value,
-          selectedScenarioID: selectedScenarioIds.value.length === 1 ? selectedScenarioIds.value[0] : undefined
-        }
-      }).catch(() => {});
-    };
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
     // so no external status need to be tracked
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
-    const selectedScenarioIds = ref([] as string[]);
+    const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
+
     function setSelectedScenarioIds(newIds: string[]) {
       let isChanged = newIds.length !== selectedScenarioIds.value.length;
       newIds.forEach((id, index) => {
         isChanged = isChanged || (id !== selectedScenarioIds.value[index]);
       });
       if (!isChanged) return;
-      selectedScenarioIds.value = newIds;
+      store.dispatch('modelPublishStore/setSelectedScenarioIds', newIds);
+
       if (newIds.length > 0) {
-        if (currentPublishingStep.value === ModelPublishingStepID.Enrich_Description) {
+        if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
           // user attempted to select one or more scenarios but the model publishing step is not correct
           // this would be the case of the user selected a scenario on the PC plot while the model publishing step is still assuming description view
-          currentPublishingStep.value = ModelPublishingStepID.Tweak_Visualization;
+          store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Tweak_Visualization);
         }
       } else {
         // if no scenario selection is made, ensure we are back to the first step
-        if (currentPublishingStep.value !== ModelPublishingStepID.Enrich_Description) {
-          currentPublishingStep.value = ModelPublishingStepID.Enrich_Description;
+        if (currentPublishStep.value !== ModelPublishingStepID.Enrich_Description) {
+          store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Enrich_Description);
         }
       }
-      updateRouteParams();
     }
-
-    const selectedTimestamp = ref<number | null>(null);
 
     const openPublishAccordion = ref(false);
 
@@ -298,15 +282,15 @@ export default defineComponent({
       selectedTimestamp,
       openPublishAccordion,
       publishingSteps,
-      currentPublishingStep,
+      currentPublishStep,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedTemporalResolution,
       metadata,
-      updateRouteParams,
       regionalData,
       outputSpecs,
-      isDescriptionView
+      isDescriptionView,
+      currentOutputIndex
     };
   },
   beforeRouteLeave() {
@@ -315,48 +299,19 @@ export default defineComponent({
     this.setProjectId('undefined'); // @Review
   },
   watch: {
-    $route(/* to, from */) {
-      // react to route changes (either by clicking on a publishing step or on one of the insights)
-      // NOTE:  this is only valid when the route is focused on the 'modelPublishingExperiment'
-      if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
-        const publishStepId = this.$route.query.step as any;
-        if (publishStepId !== undefined) {
-          this.currentPublishingStep = publishStepId as ModelPublishingStepID;
-        }
-
-        const timestamp = this.$route.query.timestamp as any;
-        if (timestamp !== undefined) {
-          this.setSelectedTimestamp(timestamp);
-        }
-
-        const publishTemporalAggr = this.$route.query.temporalAggregation as any;
-        if (publishTemporalAggr !== undefined) {
-          this.selectedTemporalAggregation = publishTemporalAggr;
-        }
-
-        const publishTemporalRes = this.$route.query.temporalResolution as any;
-        if (publishTemporalRes !== undefined) {
-          this.selectedTemporalResolution = publishTemporalRes;
-        }
-
-        const publishSpatialAggr = this.$route.query.spatialAggregation as any;
-        if (publishSpatialAggr !== undefined) {
-          this.selectedSpatialAggregation = publishSpatialAggr;
-        }
-
-        if (this.allScenarioIds.length > 0) {
-          let selectedIds = this.selectedScenarioIds;
-          if (this.currentPublishingStep === ModelPublishingStepID.Enrich_Description) {
-            selectedIds = [];
-          } else {
-            // FIXME: only support saving insights with at most a single valid scenario id
-            const selectedScenarioID = this.$route.query.selectedScenarioID as any;
-            // we should have at least one valid scenario selected. If not, then select the first one
-            selectedIds = selectedScenarioID !== undefined && selectedScenarioID !== '' ? [selectedScenarioID] : [this.allScenarioIds[0]];
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'model publishing experiment' space
+        if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
+          const datacubeid = this.$route.query.datacubeid as any;
+          if (datacubeid !== undefined) {
+            // re-fetch model data
+            this.setSelectedTimestamp(null);
+            this.selectedModelId = datacubeid;
           }
-          this.setSelectedScenarioIds(selectedIds);
         }
-      }
+      },
+      immediate: true
     },
     countInsights: {
       handler(/* newValue, oldValue */) {
@@ -368,7 +323,7 @@ export default defineComponent({
           // if the current insights count differ, then the user has saved some new insight(s)
           if (this.initialInsightCount !== this.countInsights) {
             // so mark this step as completed
-            this.currentPublishingStep = ModelPublishingStepID.Capture_Insight;
+            this.setCurrentPublishStep(ModelPublishingStepID.Capture_Insight);
             this.updatePublishingStep(true);
           }
         }
@@ -377,9 +332,6 @@ export default defineComponent({
   },
   mounted(): void {
     this.fetchAvailableAggregations();
-
-    // ensure the URL query params match initial publish step value
-    this.updateRouteParams();
 
     // TODO: when new-runs-mode is active, clear the breakdown panel content
     // TODO: add other viz options as per WG4 recent slides
@@ -390,11 +342,21 @@ export default defineComponent({
     //  where a domain-modeler is able,
     //  for example to use it to publish new instances and model track usage
     this.setProjectId('dssat publish project id'); // @Review
+
+    // set initial output variable index
+    // FIXME: default will be provided later through metadata
+    this.setCurrentOutputIndex(0);
   },
   methods: {
     ...mapActions({
       setContextId: 'insightPanel/setContextId',
-      setProjectId: 'insightPanel/setProjectId'
+      setProjectId: 'insightPanel/setProjectId',
+      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
+      setCurrentPublishStep: 'modelPublishStore/setCurrentPublishStep',
+      setSelectedTimestamp: 'modelPublishStore/setSelectedTimestamp',
+      setSelectedTemporalAggregation: 'modelPublishStore/setSelectedTemporalAggregation',
+      setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
+      setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution'
     }),
     publishModel() {
       // call the backend to update model metadata and finalize model publication
@@ -407,14 +369,12 @@ export default defineComponent({
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },
-    setSelectedTimestamp(value: number) {
+    updateSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;
-      this.selectedTimestamp = value;
-      this.updateRouteParams();
+      this.setSelectedTimestamp(value);
     },
     fetchAvailableAggregations() {
       // TODO: fetch actual available aggregations based on the pipeline support
-
       this.temporalResolutions.push('year');
       this.temporalResolutions.push('month');
 
@@ -425,36 +385,45 @@ export default defineComponent({
       this.spatialAggregations.push('sum');
     },
     updatePublishingStep(completed: boolean) {
-      const currStep = this.publishingSteps.find(ps => ps.id === this.currentPublishingStep);
+      const currStep = this.publishingSteps.find(ps => ps.id === this.currentPublishStep);
       if (currStep) {
         currStep.completed = completed;
       }
     },
     showPublishingStep(publishStepInfo: {publishStep: ModelPublishingStep}) {
-      this.currentPublishingStep = publishStepInfo.publishStep.id;
+      this.setCurrentPublishStep(publishStepInfo.publishStep.id);
       this.openPublishAccordion = !this.openPublishAccordion;
-      this.updateRouteParams();
+
+      if (this.allScenarioIds.length > 0) {
+        let selectedIds = this.selectedScenarioIds;
+        if (this.currentPublishStep === ModelPublishingStepID.Enrich_Description) {
+          selectedIds = [];
+        } else {
+          // we should have at least one valid scenario selected. If not, then select the first one
+          selectedIds = this.selectedScenarioIds.length > 0 ? this.selectedScenarioIds : [this.allScenarioIds[0]];
+        }
+        this.setSelectedScenarioIds(selectedIds);
+      }
     },
     handleTemporalAggregationSelection(tempAgg: string) {
-      this.selectedTemporalAggregation = tempAgg;
-      this.checkStepForCompletenessAndUpdateRouteParams();
+      this.setSelectedTemporalAggregation(tempAgg);
+      this.checkStepForCompleteness();
     },
     handleTemporalResolutionSelection(tempRes: string) {
-      this.selectedTemporalResolution = tempRes;
-      this.checkStepForCompletenessAndUpdateRouteParams();
+      this.setSelectedTemporalResolution(tempRes);
+      this.checkStepForCompleteness();
     },
     handleSpatialAggregationSelection(spatialAgg: string) {
-      this.selectedSpatialAggregation = spatialAgg;
-      this.checkStepForCompletenessAndUpdateRouteParams();
+      this.setSelectedSpatialAggregation(spatialAgg);
+      this.checkStepForCompleteness();
     },
-    checkStepForCompletenessAndUpdateRouteParams() {
+    checkStepForCompleteness() {
       // mark this step as complete
       if (this.selectedSpatialAggregation !== '' &&
           this.selectedTemporalAggregation !== '' &&
           this.selectedTemporalResolution !== '') {
         this.updatePublishingStep(true);
       }
-      this.updateRouteParams();
     },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       this.typeBreakdownData = [];
