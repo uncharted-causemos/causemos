@@ -1,6 +1,6 @@
 import { ModelRun } from '@/types/ModelRun';
 import { ref, Ref, watchEffect } from 'vue';
-import { getModelRunMetadata } from '../new-datacube-service';
+import { getModelRunMetadata } from '@/services/new-datacube-service';
 
 /**
  * Takes a model ID and a list of scenario IDs, then fetches and
