@@ -21,7 +21,14 @@
 
 <script lang="ts">
 import API from '@/api/api';
-import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs,
+  watchEffect
+} from 'vue';
 import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
 import { Model } from '@/types/Datacube';
 
@@ -89,20 +96,14 @@ export default defineComponent({
         return [];
       }
 
-      // CLEANUP: There may be a simpler way of stitching these
-      //  data structures together that we should investigate
-      //  after the upcoming site visit (April 2021)
-      return Object.keys(inputNames.value).map(inputName => {
-        return {
-          name: inputName,
-          values: scenarioDescriptions.value.map(parameterValues => {
-            return (
-              parameterValues.find(parameter => parameter.name === inputName)
-                ?.value ?? 'undefined'
-            );
-          })
-        };
-      });
+      return Object.keys(inputNames.value).map(inputName => ({
+        name: inputNames.value[inputName],
+        values: scenarioDescriptions.value.map(
+          parameterValues =>
+            parameterValues.find(({ name }) => name === inputName)?.value ??
+            'missing'
+        )
+      }));
     });
 
     return {
