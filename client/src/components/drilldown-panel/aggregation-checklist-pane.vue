@@ -24,8 +24,8 @@
     </div>
     <div class="flex-row">
       <div class="select-all-buttons">
-        <small-text-button :label="'Select All'" @click="selectAll" />
-        <small-text-button :label="'Deselect All'" @click="deselectAll" />
+        <small-text-button :label="'Select All'" @click="setAllSelected(true)" />
+        <small-text-button :label="'Deselect All'" @click="setAllSelected(false)" />
       </div>
       <div v-if="units !== null" class="units">
         {{ units }}
@@ -240,8 +240,7 @@ export default defineComponent({
   emits: [
     'aggregation-level-change',
     'toggle-is-item-selected',
-    'select-all',
-    'deselect-all'
+    'set-all-selected'
   ],
   setup(props) {
     const {
@@ -416,11 +415,8 @@ export default defineComponent({
       const itemId = path.join(PATH_DELIMETER);
       this.$emit('toggle-is-item-selected', aggregationLevel, itemId);
     },
-    deselectAll() {
-      this.$emit('deselect-all');
-    },
-    selectAll() {
-      this.$emit('select-all');
+    setAllSelected(isSelected: boolean) {
+      this.$emit('set-all-selected', isSelected);
     }
   }
 });

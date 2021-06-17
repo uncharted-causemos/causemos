@@ -84,8 +84,7 @@
             :deselected-region-ids="deselectedRegionIds"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
-            @select-all-regions="setAllRegionsSelected(true)"
-            @deselect-all-regions="setAllRegionsSelected(false)"
+            @set-all-regions-selected="setAllRegionsSelected"
           />
         </template>
     </drilldown-panel>

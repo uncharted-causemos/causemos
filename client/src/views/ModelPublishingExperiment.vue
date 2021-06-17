@@ -106,8 +106,7 @@
             :output-source-specs="outputSpecs"
             :deselected-region-ids="deselectedRegionIds"
             @toggle-is-region-selected="toggleIsRegionSelected"
-            @select-all-regions="setAllRegionsSelected(true)"
-            @deselect-all-regions="setAllRegionsSelected(false)"
+            @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
