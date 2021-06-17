@@ -16,6 +16,7 @@
       :regional-data="regionalData"
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
+      :metadata="metadata"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -63,7 +64,7 @@
 
       <template #datacube-description>
         <datacube-description
-          :selected-model-id="selectedModelId"
+          :metadata="metadata"
         />
       </template>
 

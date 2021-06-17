@@ -136,7 +136,7 @@
             class="scenario-header"
             :outputVariable="mainModelOutput.display_name"
             :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
-            :selected-model-id="selectedModelId"
+            :metadata="metadata"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />
@@ -190,7 +190,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, watch, toRefs, computed, Ref, watchEffect } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -202,7 +202,6 @@ import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model, DatacubeFeature } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
@@ -271,6 +270,10 @@ export default defineComponent({
     outputSourceSpecs: {
       type: Array as PropType<OutputSpecWithId[]>,
       default: () => []
+    },
+    metadata: {
+      type: Object as PropType<Model | null>,
+      default: null
     }
   },
   components: {
@@ -284,7 +287,6 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus
   },
   setup(props, { emit }) {
-    //
     const store = useStore();
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
@@ -294,10 +296,9 @@ export default defineComponent({
       allModelRunData,
       selectedTemporalResolution,
       selectedTemporalAggregation,
-      selectedSpatialAggregation
+      selectedSpatialAggregation,
+      metadata
     } = toRefs(props);
-
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
 
     const {
       timeseriesData: selectedTimeseriesData,
@@ -382,7 +383,6 @@ export default defineComponent({
       drilldownDimensions,
       runParameterValues,
       mainModelOutput,
-      metadata,
       isModel
     };
   },

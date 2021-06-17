@@ -59,9 +59,8 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, Ref, toRefs } from 'vue';
+import { defineComponent, PropType } from 'vue';
 import stringUtil from '@/utils/string-util';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model } from '@/types/Datacube';
 
 export default defineComponent({
@@ -69,17 +68,10 @@ export default defineComponent({
   components: {
   },
   props: {
-    selectedModelId: {
-      type: String,
+    metadata: {
+      type: Object as PropType<Model | null>,
       default: null
     }
-  },
-  setup(props) {
-    const { selectedModelId } = toRefs(props);
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
-    return {
-      metadata
-    };
   },
   computed: {
     isSourceValidUrl(): boolean {

@@ -21,9 +21,8 @@
 
 <script lang="ts">
 import API from '@/api/api';
-import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
 import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model } from '@/types/Datacube';
 
 type ScenarioDescription = ModelRunParameter[];
@@ -39,10 +38,6 @@ export default defineComponent({
       type: String,
       required: true
     },
-    selectedModelId: {
-      type: String,
-      required: true
-    },
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       required: true
@@ -50,53 +45,41 @@ export default defineComponent({
     colorFromIndex: {
       type: Function as PropType<(index: number) => string>,
       default: () => '#000'
+    },
+    metadata: {
+      type: Object as PropType<Model | null>,
+      default: null
     }
   },
   setup(props) {
-    // Fetch input names
-    const inputNames = ref<{ [key: string]: string }>({});
-    if (props.selectedModelId === null) return;
-
-    const { selectedModelId } = toRefs(props);
-    const modelMetadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
-
-    watchEffect(() => {
-      if (modelMetadata.value) {
-        const inputNamesMap: { [key: string]: string } = {};
-        if (modelMetadata.value.parameters) {
-          // only valid for models
-          modelMetadata.value.parameters.forEach((parameter: any) => {
-            inputNamesMap[parameter.name] = parameter.display_name;
-          });
-          inputNames.value = inputNamesMap;
-        }
-      }
+    const { metadata, selectedScenarioIds } = toRefs(props);
+    if (metadata.value === null) return;
+    const inputNames = computed(() => {
+      if (metadata.value === null) return {};
+      const inputNamesMap: { [key: string]: string } = {};
+      metadata.value.parameters.forEach(parameter => {
+        inputNamesMap[parameter.name] = parameter.display_name;
+      });
+      return inputNamesMap;
     });
 
-    // Fetch scenario descriptions
     const scenarioDescriptions = ref<ScenarioDescription[]>([]);
-    async function fetchScenarioDescriptions() {
+    watchEffect(async () => {
       scenarioDescriptions.value = [];
-      if (
-        props.selectedModelId === null ||
-        props.selectedScenarioIds.length === 0
-      ) {
+      if (metadata.value === null || selectedScenarioIds.value.length === 0) {
         return [];
       }
+      // Fetch scenario descriptions
       const allMetadata = await API.get('/maas/model-runs', {
         params: {
-          modelId: props.selectedModelId
+          modelId: metadata.value.id
         }
       });
       scenarioDescriptions.value = allMetadata.data
-        .filter((run: ModelRun) => props.selectedScenarioIds.includes(run.id))
+        .filter((run: ModelRun) => selectedScenarioIds.value.includes(run.id))
         .map((scenarioMetadata: ModelRun) => {
           return scenarioMetadata.parameters;
         });
-    }
-
-    watch(() => props.selectedScenarioIds, fetchScenarioDescriptions, {
-      immediate: true
     });
     const inputParameters = computed(() => {
       if (
