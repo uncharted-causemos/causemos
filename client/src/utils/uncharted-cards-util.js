@@ -1,12 +1,12 @@
 import * as $ from 'jquery';
-import { defineComponent } from 'vue';
+import { createApp } from 'vue';
 
 import ToggleButtonComponent from '@/components/widgets/toggle-button';
 
-const ToggleButton = defineComponent(ToggleButtonComponent);
 // Find the uncharted reader content element under $parent and create and inject reader switch button
 // returns switch button object
 export const createReaderSwitchButton = ({ parentElement, onClick = () => {}, description = 'Show PDF Document', isOn = true }) => {
+  const propsData = { label: 'PDF Document', value: !isOn };
   const container = document.createElement('div');
   container.title = description;
   container.style.cssText = `
@@ -15,25 +15,23 @@ export const createReaderSwitchButton = ({ parentElement, onClick = () => {}, de
   `;
   $(parentElement).find('.reader-content-header .close-button').before(container);
 
-  const toggleButton = new ToggleButton({
-    propsData: {
-      label: 'PDF Document',
-      value: !isOn
-    }
-  });
-  // set switch to !isOn before mount and to isOn on next tick for animation
-  toggleButton.$mount();
-  toggleButton.$on('change', () => onClick());
-  setTimeout(() => (toggleButton.value = isOn), 0);
+  const wrapper = document.createElement('div');
+  const toggleButton = createApp(ToggleButtonComponent, propsData);
+  toggleButton.mount(wrapper);
 
-  container.appendChild(toggleButton.$el);
+  // set switch to !isOn before mount and to isOn on next tick for animation
+  // toggleButton.mount(container);
+  // ToggleButton.$on('change', () => onClick());
+  // setTimeout(() => (toggleButton.value = isOn), 0);
+
+  container.appendChild(wrapper);
 
   return {
     element: container,
     onClick,
     destroy() {
       container.remove();
-      toggleButton.$destroy();
+      // toggleButton.$destroy();
     }
   };
 };
