@@ -97,6 +97,12 @@ class CAGRenderer extends SVGRenderer {
       .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
   }
 
+  // Override render function to also check for ambigous edges and highlight them
+  async render() {
+    await super.render();
+    this.displayAmbiguousEdgeWarning();
+  }
+
   renderNodeUpdated() {
     // not sure anything is needed here, function is requird though
   }
@@ -541,6 +547,57 @@ class CAGRenderer extends SVGRenderer {
       .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
       .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
   }
+
+  displayAmbiguousEdgeWarning() {
+    const graph = this.layout;
+    const foregroundLayer = d3.select(this.svgEl).select('.foreground-layer');
+
+    const highlightFunction = this.highlight;
+    const highlightAmbiguousEdgesFunction = this.highlightAmbiguousEdges;
+
+    const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
+      ? d3.select('.ambiguous-edge-warning') // select it
+      : foregroundLayer.append('text') // or create it if it hasn't been already
+        .attr('x', 10)
+        .attr('y', 20)
+        .attr('opacity', 0)
+        .attr('fill', 'red')
+        .attr('font-size', '1.6rem')
+        .classed('ambiguous-edge-warning', true)
+        .text('Warning: ambiguous edges detected in graph') // not very pretty, could update in the future
+        .on('mouseover', function () {
+          highlightAmbiguousEdgesFunction(graph, highlightFunction);
+        });
+
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        warning.attr('opacity', 1);
+        return;
+      }
+    }
+    warning.attr('opacity', 0);
+  }
+
+  highlightAmbiguousEdges(graph, highlight) {
+    const highlightOptions = {
+      color: 'red',
+      duration: 1000
+    };
+
+    const ambigEdges = [];
+
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        ambigEdges.push(edge);
+      }
+    }
+
+    if (ambigEdges.length > 0) {
+      highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
+    }
+  }
 }
 
 
@@ -724,7 +781,6 @@ export default {
         duration: 4000,
         color: SELECTED_COLOR
       };
-
       // Check if the subgraph was added less than 1 min ago
       const thresholdTime = moment().subtract(THRESHOLD_TIME, 'minutes').valueOf();
       const nodes = this.data.nodes.filter(n => n.modified_at >= thresholdTime).map(n => n.concept);

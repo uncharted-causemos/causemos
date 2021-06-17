@@ -117,11 +117,10 @@
 </template>
 
 <script>
-import _ from 'lodash';
 import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters, mapActions, useStore } from 'vuex';
 import API from '@/api/api';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -135,6 +134,9 @@ import InsightControlMenu from '@/components/insight-manager/insight-control-men
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
+import router from '@/router';
+import { getAllInsights } from '@/services/insight-service';
+import { ref, watchEffect, computed } from 'vue';
 
 const INSIGHT_TABS = [
   {
@@ -145,6 +147,7 @@ const INSIGHT_TABS = [
     name: 'List'
   }
 ];
+
 
 export default {
   name: 'ListInsightsModal',
@@ -161,17 +164,44 @@ export default {
     activeTabId: INSIGHT_TABS[0].id,
     curatedInsights: [],
     exportActive: false,
-    listInsights: [],
     messageNoData: INSIGHTS.NO_DATA,
     search: '',
     selectedInsight: null,
     tabs: INSIGHT_TABS
   }),
+  setup() {
+    const listInsights = ref([]);
+    const store = useStore();
+    const contextId = computed(() => store.getters['insightPanel/contextId']);
+    const project = computed(() => store.getters['insightPanel/projectId']);
+
+    // FIXME: refactor into a composable
+    watchEffect(onInvalidate => {
+      let isCancelled = false;
+      async function fetchInsights() {
+        const insights = await getAllInsights(project.value, contextId.value);
+        if (isCancelled) {
+          // Dependencies have changed since the fetch started, so ignore the
+          //  fetch results to avoid a race condition.
+          return;
+        }
+        listInsights.value = insights;
+        store.dispatch('insightPanel/setCountInsights', listInsights.value.length);
+      }
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      fetchInsights();
+    });
+    return {
+      listInsights,
+      contextId,
+      project
+    };
+  },
   computed: {
     ...mapGetters({
-      project: 'app/project',
       projectMetadata: 'app/projectMetadata',
-      currentView: 'app/currentView',
       countInsights: 'insightPanel/countInsights'
     }),
     metadataSummary() {
@@ -183,7 +213,7 @@ export default {
     searchedInsights() {
       if (this.search.length > 0) {
         const result = this.listInsights.filter((insight) => {
-          return insight.title.toLowerCase().includes(this.search.toLowerCase());
+          return insight.name.toLowerCase().includes(this.search.toLowerCase());
         });
         return result;
       } else {
@@ -200,7 +230,6 @@ export default {
     }
   },
   mounted() {
-    this.refresh();
     this.curatedInsights = [];
   },
   methods: {
@@ -210,14 +239,13 @@ export default {
     }),
     dateFormatter,
     stringFormatter,
-
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsight = null;
       this.selectedInsight = null;
     },
     deleteInsight(id) {
-      API.delete(`bookmarks/${id}`).then(result => {
+      API.delete(`insights/${id}`).then(result => {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
@@ -230,13 +258,24 @@ export default {
         }
       });
     },
+    getInsightSet() {
+      if (this.curatedInsights.length > 0) {
+        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
+        return curatedSet;
+      } else {
+        return this.listInsights;
+      }
+    },
+    getSourceUrlForExport(i) {
+      return i.url + '?insight_id=' + i.id;
+    },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexingly uses pixels
       // same height as width so that we can attempt to be consistent with the layout.
       const docxMaxImageSize = 612;
       const insightSet = this.selectedInsights;
       const sections = insightSet.map((i) => {
-        const imageSize = this.scaleImage(i.thumbnail_source, docxMaxImageSize, docxMaxImageSize);
+        const imageSize = this.scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(i.modified_at);
         return {
           footers: {
@@ -261,14 +300,14 @@ export default {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               heading: HeadingLevel.HEADING_2,
-              text: `${i.title}`
+              text: `${i.name}`
             }),
             new Paragraph({
               break: 1,
               alignment: AlignmentType.CENTER,
               children: [
                 new ImageRun({
-                  data: i.thumbnail_source,
+                  data: i.thumbnail,
                   transformation: {
                     height: imageSize.height,
                     width: imageSize.width
@@ -307,7 +346,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(i.url)
+                  link: this.slideURL(this.getSourceUrlForExport(i))
                 })
               ]
             })
@@ -342,10 +381,10 @@ export default {
       });
       const insightSet = this.selectedInsights;
       insightSet.forEach((i) => {
-        const imageSize = this.scaleImage(i.thumbnail_source, widthLimitImage, heightLimitImage);
+        const imageSize = this.scaleImage(i.thumbnail, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(i.modified_at);
         const slide = pres.addSlide();
-        const notes = `Title: ${i.title}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
+        const notes = `Title: ${i.name}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
 
         /*
           PPTXGEN BUG WORKAROUND - library level function slide.addNotes(notes) doesn't insert notes
@@ -359,7 +398,7 @@ export default {
         });
 
         slide.addImage({
-          data: i.thumbnail_source,
+          data: i.thumbnail,
           // centering image code for x & y limited by consts for max content size
           // plus base offsets needed to stay clear of other elements
           x: (widthLimitImage - imageSize.width) / 2,
@@ -369,12 +408,12 @@ export default {
         });
         slide.addText([
           {
-            text: `${i.title}: `,
+            text: `${i.name}: `,
             options: {
               bold: true,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(i.url)
+                url: this.slideURL(this.getSourceUrlForExport(i))
               }
             }
           },
@@ -396,7 +435,7 @@ export default {
               break: false,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(i.url)
+                url: this.slideURL(this.getSourceUrlForExport(i))
               }
             }
           },
@@ -450,12 +489,10 @@ export default {
     openExport() {
       this.exportActive = true;
     },
-    refresh() {
-      API.get('bookmarks', { params: { project_id: this.project } }).then(d => {
-        const listInsights = _.orderBy(d.data, d => d.modified_at, ['desc']);
-        this.listInsights = listInsights;
-        this.setCountInsights(listInsights.length);
-      });
+    async refresh() {
+      const listInsights = await getAllInsights(this.project, this.contextId);
+      this.listInsights = listInsights;
+      this.setCountInsights(listInsights.length);
     },
     removeCuration(id) {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
@@ -481,11 +518,18 @@ export default {
         return;
       }
       this.selectedInsight = insight;
-      // Restore the state
       const savedURL = insight.url;
       const currentURL = this.$route.fullPath;
       if (savedURL !== currentURL) {
-        this.$router.push(savedURL);
+        // FIXME: refactor and use getSourceUrlForExport() to retrive final url with insight_id appended
+        const finalURL = savedURL.includes('insight_id') ? savedURL : savedURL + '?insight_id=' + this.selectedInsight.id;
+        this.$router.push(finalURL);
+      } else {
+        router.push({
+          query: {
+            insight_id: this.selectedInsight.id
+          }
+        }).catch(() => {});
       }
       this.closeInsightPanel();
     },

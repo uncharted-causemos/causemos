@@ -5,6 +5,7 @@
       :model-components="modelComponents"
       @add-concept="createNewNode()"
       @import-cag="showModalImportCAG=true"
+      @reset-cag="resetCAGLayout()"
     />
     <main>
       <div
@@ -301,6 +302,10 @@ export default {
     this.PANE_ID = PANE_ID;
     this.timerId = null;
     this.cagsToImport = [];
+    // update insight related state
+    // FIXME: use contextId to store cag-id, reflected context-specific-id; TO BE REFACTORED
+    this.setContextId(this.currentCAG);
+    this.setProjectId(this.project);
   },
   mounted() {
     this.recalculateCAG();
@@ -310,7 +315,9 @@ export default {
   },
   methods: {
     ...mapActions({
-      setUpdateToken: 'app/setUpdateToken'
+      setUpdateToken: 'app/setUpdateToken',
+      setContextId: 'insightPanel/setContextId',
+      setProjectId: 'insightPanel/setProjectId'
     }),
     async refresh() {
       // Get CAG data
@@ -709,6 +716,13 @@ export default {
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges);
       this.setUpdateToken(result.updateToken);
+    },
+    async resetCAGLayout() {
+      const graphOptions = this.$refs.cagGraph.renderer.options;
+      const prevStabilitySetting = graphOptions.useStableLayout;
+      graphOptions.useStableLayout = false;
+      await this.$refs.cagGraph.refresh();
+      graphOptions.useStableLayout = prevStabilitySetting;
     }
   }
 };
