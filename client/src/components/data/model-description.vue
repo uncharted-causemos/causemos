@@ -88,7 +88,7 @@ import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { useStore } from 'vuex';
 
 export default defineComponent({
-  name: 'DatacubeDescription',
+  name: 'ModelDescription',
   components: {
   },
   props: {
