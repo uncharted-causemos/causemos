@@ -299,7 +299,7 @@ export default defineComponent({
   watch: {
     $route: {
       handler(/* newValue, oldValue */) {
-        // NOTE:  this is only valid when the route is focused on the 'data' space
+        // NOTE:  this is only valid when the route is focused on the 'model publishing experiment' space
         if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
           const datacubeid = this.$route.query.datacubeid as any;
           if (datacubeid !== undefined) {
