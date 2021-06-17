@@ -20,7 +20,6 @@
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
 import {
   computed,
   defineComponent,
@@ -29,8 +28,9 @@ import {
   toRefs,
   watchEffect
 } from 'vue';
-import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
+import { ModelRunParameter } from '@/types/ModelRun';
 import { Model } from '@/types/Datacube';
+import { getModelRunMetadata } from '@/services/new-datacube-service';
 
 type ScenarioDescription = ModelRunParameter[];
 
@@ -71,22 +71,23 @@ export default defineComponent({
     });
 
     const scenarioDescriptions = ref<ScenarioDescription[]>([]);
-    watchEffect(async () => {
+    watchEffect(async onInvalidate => {
       scenarioDescriptions.value = [];
       if (metadata.value === null || selectedScenarioIds.value.length === 0) {
         return [];
       }
+      let isCancelled = false;
       // Fetch scenario descriptions
-      const allMetadata = await API.get('/maas/model-runs', {
-        params: {
-          modelId: metadata.value.id
-        }
-      });
-      scenarioDescriptions.value = allMetadata.data
-        .filter((run: ModelRun) => selectedScenarioIds.value.includes(run.id))
-        .map((scenarioMetadata: ModelRun) => {
+      const allMetadata = await getModelRunMetadata(metadata.value.id);
+      if (isCancelled) return;
+      scenarioDescriptions.value = allMetadata
+        .filter((run) => selectedScenarioIds.value.includes(run.id))
+        .map((scenarioMetadata) => {
           return scenarioMetadata.parameters;
         });
+      onInvalidate(() => {
+        isCancelled = true;
+      });
     });
     const inputParameters = computed(() => {
       if (
