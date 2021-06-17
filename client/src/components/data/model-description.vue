@@ -37,11 +37,22 @@
     <table class="table model-table">
       <thead>
           <tr>
-              <th>Output Knobs</th>
+              <th>
+                Output Knobs
+              </th>
+              <th v-if="outputVariables.length > 0 && currentOutputName !== ''">
+                Selected Output:
+                <span style="fontWeight: normal">
+                  {{ outputVariables[currentOutputIndex].display_name }}
+                </span>
+              </th>
           </tr>
       </thead>
       <tbody v-if="metadata && metadata.outputs">
-        <tr v-for="param in outputVariables" :key="param.id">
+        <tr
+          v-for="param in outputVariables"
+          :key="param.id"
+          :style="{backgroundColor: param.name === currentOutputName ? 'gray' : 'transparent'}">
           <td class="model-attribute-pair">
             <input
               v-model="param.display_name"
@@ -71,9 +82,9 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from 'vue';
+import { computed, defineComponent, PropType, ComputedRef, toRefs } from 'vue';
 import _ from 'lodash';
-import { Model, ModelParameter } from '@/types/Datacube';
+import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { useStore } from 'vuex';
 
 export default defineComponent({
@@ -89,26 +100,38 @@ export default defineComponent({
   emits: [
     'check-model-metadata-validity'
   ],
-  setup() {
+  setup(props) {
+    const { metadata } = toRefs(props);
     const store = useStore();
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
+    // NOTE: this index is mostly driven from the component 'datacube-model-header'
+    //       which may list either all outputs or only the validated ones
+    const currentOutputIndex: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
+    const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
+      if (metadata.value && currentOutputIndex.value >= 0) {
+        const outputs = metadata.value.validatedOutputs ? metadata.value.validatedOutputs : metadata.value.outputs;
+        return outputs;
+      }
+      return [];
+    });
+
+    const currentOutputName = computed(() => {
+      if (outputVariables.value) {
+        return outputVariables.value[currentOutputIndex.value].name;
+      }
+      return '';
+    });
+
     return {
-      currentOutputIndex
+      currentOutputIndex,
+      currentOutputName,
+      outputVariables
     };
   },
   computed: {
     inputParameters(): Array<any> {
       return this.metadata ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
-    },
-    outputVariables(): Array<any> {
-      const listOnlyValidatedOutputs = false;
-      if (this.metadata && this.currentOutputIndex >= 0) {
-        const outputs = this.metadata.validatedOutputs && listOnlyValidatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
-        // instead of returning only one (default) output, we could also return all outouts
-        return outputs;
-        // return [outputs[this.currentOutputIndex]];
-      }
-      return [undefined];
     }
   },
   watch: {
