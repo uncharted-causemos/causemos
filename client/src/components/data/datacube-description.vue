@@ -101,7 +101,7 @@ export default defineComponent({
   width: 100%;
   display: flex;
   flex-direction: row;
-  overflow: scroll;
+  overflow: auto;
 }
 
 .datacube-description-column {
@@ -110,7 +110,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   padding: 0 10px;
-  overflow-y: scroll;
+  overflow-y: auto;
 
   h5 {
     @include header-secondary;
