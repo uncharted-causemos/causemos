@@ -62,6 +62,7 @@ import { ScenarioData } from '@/types/Common';
 import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
+import { mapGetters } from 'vuex';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -85,7 +86,10 @@ export default defineComponent({
   computed: {
     inputParameters(): Array<any> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
-    }
+    },
+    ...mapGetters({
+      currentOutputIndex: 'modelPublishStore/currentOutputIndex'
+    })
   },
   data: () => ({
     potentialRuns: [] as Array<ScenarioData>
@@ -101,9 +105,10 @@ export default defineComponent({
       // FIXME: only submitting ONE sceanrio is supported at this time
       const firstScenario = this.potentialRuns[0];
       const paramArray: any[] = [];
+      const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       Object.keys(firstScenario).forEach(key => {
         // exclude output variable values since they will be undefined for potential runs
-        if (key !== this.metadata.outputs[0].name) {
+        if (key !== outputs[this.currentOutputIndex].name) {
           paramArray.push({
             name: key,
             value: firstScenario[key]

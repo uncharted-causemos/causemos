@@ -68,6 +68,7 @@ export interface Datacube {
   geography: DatacubeGeography;
   period: DatacubePeriod;
   outputs: DatacubeFeature[];
+  validatedOutputs?: DatacubeFeature[];
   status: DatacubeStatus;
   _search: string;
 }
