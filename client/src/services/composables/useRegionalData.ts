@@ -1,11 +1,13 @@
+import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
 import { computed, watch, watchEffect } from '@vue/runtime-core';
 import { Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { DatacubeGeography } from '@/types/Common';
-import _ from 'lodash';
 import { readonly } from 'vue';
+import { useStore } from 'vuex';
+
 
 const EMPTY_REGION_LIST: DatacubeGeography = {
   country: [],
@@ -13,7 +15,6 @@ const EMPTY_REGION_LIST: DatacubeGeography = {
   admin2: [],
   admin3: []
 };
-
 export default function useRegionalData(
   selectedModelId: Ref<string>,
   selectedScenarioIds: Ref<string[]>,
@@ -23,6 +24,9 @@ export default function useRegionalData(
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | null>
 ) {
+  const store = useStore();
+  const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
@@ -32,15 +36,17 @@ export default function useRegionalData(
       selectedModelId.value === null ||
       selectedScenarioIds.value.length === 0 ||
       timestamp === null ||
-      modelMetadata === null
+      modelMetadata === null ||
+      currentOutputIndex.value === undefined
     ) {
       return [];
     }
+    const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
     return selectedScenarioIds.value.map(selectedScenarioId => ({
       id: selectedScenarioId,
       modelId: selectedModelId.value,
       runId: selectedScenarioId,
-      outputVariable: modelMetadata.outputs[0].name || '',
+      outputVariable: outputs[currentOutputIndex.value].name || '',
       timestamp,
       temporalResolution: selectedTemporalResolution.value || 'month',
       temporalAggregation: selectedTemporalAggregation.value || 'mean',

@@ -119,7 +119,7 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
-import { defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
@@ -169,6 +169,7 @@ export default defineComponent({
   }),
   setup() {
     const store = useStore();
+    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
     const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
@@ -316,7 +317,8 @@ export default defineComponent({
       isDescriptionView,
       deselectedRegionIds,
       toggleIsRegionSelected,
-      setAllRegionsSelected
+      setAllRegionsSelected,
+      currentOutputIndex
     };
   },
   beforeRouteLeave() {
@@ -400,11 +402,16 @@ export default defineComponent({
     //  where a domain-modeler is able,
     //  for example to use it to publish new instances and model track usage
     this.setProjectId('dssat publish project id'); // @Review
+
+    // set initial output variable index
+    // FIXME: default will be provided later through metadata
+    this.setCurrentOutputIndex(0);
   },
   methods: {
     ...mapActions({
       setContextId: 'insightPanel/setContextId',
-      setProjectId: 'insightPanel/setProjectId'
+      setProjectId: 'insightPanel/setProjectId',
+      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
     }),
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
