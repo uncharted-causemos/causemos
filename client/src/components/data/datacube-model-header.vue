@@ -37,9 +37,8 @@
 </template>
 
 <script lang="ts">
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model } from '@/types/Datacube';
-import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs, watchEffect } from 'vue';
 import { mapActions, useStore } from 'vuex';
 
 interface ModelAttribute {
@@ -52,19 +51,14 @@ interface ModelAttribute {
 export default defineComponent({
   name: 'DatacubeModelHeader',
   props: {
-    selectedModelId: {
-      type: String,
-      required: true
+    metadata: {
+      type: Object as PropType<Model | null>,
+      default: null
     }
   },
   setup(props) {
     const modelAttributes = ref<ModelAttribute[]>([]);
-
-    // FIXME: to really support proper data handling, do not fetch data locally at every component
-    //         instead, fetch at parent and pass to children as needed, so updating one will update the others
-
-    const { selectedModelId } = toRefs(props);
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+    const { metadata } = toRefs(props);
 
     watchEffect(() => {
       if (metadata.value) {
@@ -105,7 +99,6 @@ export default defineComponent({
 
     return {
       modelAttributes,
-      metadata,
       currentOutputIndex
     };
   },

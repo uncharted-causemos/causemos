@@ -38,6 +38,7 @@
       :regional-data="regionalData"
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
+      :metadata="metadata"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -47,12 +48,12 @@
       <template v-slot:datacube-model-header>
         <datacube-model-header
           class="scenario-header"
-          :selected-model-id="selectedModelId"
+          :metadata="metadata"
         />
       </template>
       <template v-slot:datacube-description>
         <model-description
-          :selected-model-id="selectedModelId"
+          :metadata="metadata"
         />
       </template>
       <template #temporal-aggregation-config>

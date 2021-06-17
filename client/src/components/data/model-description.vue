@@ -71,32 +71,28 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, Ref, toRefs } from 'vue';
+import { computed, defineComponent, PropType } from 'vue';
 import _ from 'lodash';
 import { Model, ModelParameter } from '@/types/Datacube';
 import { useStore } from 'vuex';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 
 export default defineComponent({
   name: 'DatacubeDescription',
   components: {
   },
   props: {
-    selectedModelId: {
-      type: String,
+    metadata: {
+      type: Object as PropType<Model | null>,
       default: null
     }
   },
   emits: [
     'check-model-metadata-validity'
   ],
-  setup(props) {
-    const { selectedModelId } = toRefs(props);
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+  setup() {
     const store = useStore();
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
     return {
-      metadata,
       currentOutputIndex
     };
   },
