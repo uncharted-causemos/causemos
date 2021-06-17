@@ -196,19 +196,47 @@ export default class ModelRenderer extends SVGRenderer {
           return interpolatePath(previousPath, currentPath)(t);
         };
       });
-    console.log(selection);
+    console.log('edge path: ', selection.selectAll('.edge-path'));
+    // selection
+    //   .selectAll('.edge-path')
+    //   .append('text')
+    //   // .classed('indicator-edit-icon', true)
+    //   // .attr('x', width - 18) // fitting icon
+    //   // .attr('y', 15) // fitting ic
+    //   .style('font-family', 'FontAwesome')
+    //   .style('font-size', '6em')
+    //   .style('stroke', 'none')
+    //   .style('fill', 'black')
+    //   // .style('cursor', 'pointer')
+    //   .text('d', function (d) {
+    //     console.log(d);
+    //     return 'this is a test';
+    //   });
+
     selection
       .selectAll('.edge-path')
-      .append('text')
-      // .classed('indicator-edit-icon', true)
-      // .attr('x', width - 18) // fitting icon
-      // .attr('y', 15) // fitting ic
-      .style('font-family', 'FontAwesome')
-      .style('font-size', '6em')
-      .style('stroke', 'none')
-      .style('fill', 'black')
-      // .style('cursor', 'pointer')
-      .text('THIS IS A TEST');
+      .each(function (d) {
+        console.log('this is a test: ', d);
+        const startCoord = d.points[0];
+        const endCoord = d.points[d.points.length - 1];
+        console.log('start: ', startCoord);
+        console.log('end: ', endCoord);
+
+        // const middleX = startCoord.x + ((endCoord.x - startCoord.x) / 2);
+        // const middleY = startCoord.y + ((endCoord.y - startCoord.y) / 2);
+        const middleCoord = d.points[d.points.length / 2];
+
+        console.log('middle: ', middleCoord);
+
+        selection
+          .append('text')
+          .attr('x', middleCoord.x)
+          .attr('y', middleCoord.y)
+          .classed('off-edge-icon', true)
+          .style('font-size', '2em')
+          .attr('font-family', 'FontAwesome')
+          .text(function() { return '/uf05e'; });
+      });
   }
 
   renderEdgeRemoved(selection) {
