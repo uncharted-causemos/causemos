@@ -28,6 +28,7 @@
           <div v-if="isExpanded">
             <h5>
               <select name="outputs" id="outputs"
+                v-if="outputs.length > 1"
                 @change="onOutputSelectionChange($event)"
               >
                 <option
@@ -36,7 +37,8 @@
                   :selected="indx === currentOutputIndex"
                 >{{output.display_name !== '' ? output.display_name : output.name}}</option>
               </select>
-              <label style="margin-left: 1rem; font-weight: normal;"> | {{metadata.name}}</label>
+              <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
+              <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
             </h5>
             <disclaimer
               v-if="scenarioCount > 0"

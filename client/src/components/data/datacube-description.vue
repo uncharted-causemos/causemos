@@ -15,10 +15,6 @@
       </template>
       <template v-if="metadata.outputs">
         <h5>Output Descriptions</h5>
-        <!-- NOTE that outputFeatures computed property is not used here
-                  and metadata.outputs is used directly since the goal is to
-                  list all outputs not only the validated ones
-        -->
         <div
           v-for="output in metadata.outputs"
           :key="output.id"
@@ -66,7 +62,6 @@
 import API from '@/api/api';
 import { defineComponent, ref } from 'vue';
 import stringUtil from '@/utils/string-util';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -98,10 +93,6 @@ export default defineComponent({
     },
     inputParameters(): Array<any> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
-    },
-    outputFeatures(): Array<any> {
-      const outputs = getValidatedOutputs(this.metadata.outputs);
-      return outputs;
     }
   }
 });
