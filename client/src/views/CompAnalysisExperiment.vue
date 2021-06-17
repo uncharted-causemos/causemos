@@ -26,7 +26,20 @@
       <template #datacube-model-header>
         <div class="datacube-header" v-if="mainModelOutput">
           <div v-if="isExpanded">
-            <h5>{{mainModelOutput.display_name}} | {{metadata.name}}</h5>
+            <h5>
+              <select name="outputs" id="outputs"
+                v-if="outputs.length > 1"
+                @change="onOutputSelectionChange($event)"
+              >
+                <option
+                  v-for="(output, indx) in outputs"
+                  :key="output.name"
+                  :selected="indx === currentOutputIndex"
+                >{{output.display_name !== '' ? output.display_name : output.name}}</option>
+              </select>
+              <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
+              <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
+            </h5>
             <disclaimer
               v-if="scenarioCount > 0"
               :message="
@@ -35,16 +48,6 @@
               "
             />
           </div>
-          <datacube-scenario-header
-            class="scenario-header"
-            :isExpanded="isExpanded"
-            :outputVariable="mainModelOutput.display_name"
-            :outputVariableUnits="unit"
-            :selected-model-id="selectedModelId"
-            :selected-scenario-ids="selectedScenarioIds"
-            :color-from-index="colorFromIndex"
-            v-else
-          />
         </div>
       </template>
 
@@ -96,7 +99,6 @@ import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
-import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
@@ -107,7 +109,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
 import { DatacubeType } from '@/types/Enums';
-import { mapGetters, useStore } from 'vuex';
+import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import API from '@/api/api';
 import { Insight } from '@/types/Insight';
@@ -128,7 +130,6 @@ export default defineComponent({
     DatacubeCard,
     DrilldownPanel,
     BreakdownPane,
-    DatacubeScenarioHeader,
     Disclaimer,
     DatacubeDescription,
     DropdownButton
@@ -148,6 +149,8 @@ export default defineComponent({
     const datacubeId = analysisItem.value[0].id;
 
     const projectId = computed(() => store.getters['app/project']);
+
+    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
     const selectedModelId = ref(datacubeId);
 
@@ -188,8 +191,14 @@ export default defineComponent({
 
     const isDescriptionView = ref<boolean>(true);
 
+    const outputs = ref([]) as Ref<DatacubeFeature[]>;
+
     watchEffect(() => {
-      mainModelOutput.value = metadata.value?.outputs[0];
+      if (metadata.value && currentOutputIndex.value >= 0) {
+        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+
+        mainModelOutput.value = outputs.value[currentOutputIndex.value];
+      }
 
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
@@ -261,7 +270,9 @@ export default defineComponent({
       unit,
       regionalData,
       outputSpecs,
-      isDescriptionView
+      isDescriptionView,
+      outputs,
+      currentOutputIndex
     };
   },
   watch: {
@@ -281,12 +292,27 @@ export default defineComponent({
   unmounted(): void {
     clearInterval(this.timerHandler);
   },
+  mounted() {
+    // reset to 0 when any analysis loads
+    //  to avoid the shared store state from conflicting when a different datacube/analysis is loaded
+    // FIXME: actually read the value of the default output variable from the metadata
+    // later, this value will be persisted per analysis
+    this.setCurrentOutputIndex(0);
+  },
   computed: {
     ...mapGetters({
       project: 'app/project'
     })
   },
   methods: {
+    ...mapActions({
+      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
+    }),
+    onOutputSelectionChange(event: any) {
+      const selectedOutputIndex = event.target.selectedIndex;
+      // update the store so that other components can sync
+      this.setCurrentOutputIndex(selectedOutputIndex);
+    },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },
