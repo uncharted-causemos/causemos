@@ -1,7 +1,7 @@
 <template>
   <div class="datacube-description-container">
     <div class="datacube-description-column">
-      <template v-if="metadata.parameters">
+      <template v-if="metadata && metadata.parameters">
         <h5>Input Descriptions</h5>
         <div
           v-for="param in inputParameters"
@@ -13,7 +13,7 @@
           <p />
         </div>
       </template>
-      <template v-if="metadata.outputs">
+      <template v-if="metadata && metadata.outputs">
         <h5>Output Descriptions</h5>
         <div
           v-for="output in metadata.outputs"
@@ -26,7 +26,7 @@
       </template>
     </div>
     <div class="datacube-description-column"
-         v-if="metadata.name" >
+         v-if="metadata && metadata.name" >
       <h5>Datacube Details</h5>
       <div
         v-if="metadata.geography.country"
@@ -59,9 +59,10 @@
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
-import { defineComponent, ref } from 'vue';
+import { defineComponent, Ref, toRefs } from 'vue';
 import stringUtil from '@/utils/string-util';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import { Model } from '@/types/Datacube';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -74,25 +75,18 @@ export default defineComponent({
     }
   },
   setup(props) {
-    const metadata = ref<any>({});
-    async function fetchMetadata() {
-      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
-      metadata.value = response.data;
-    }
-    fetchMetadata();
+    const { selectedModelId } = toRefs(props);
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
     return {
       metadata
     };
   },
   computed: {
     isSourceValidUrl(): boolean {
-      return stringUtil.isValidUrl(this.metadata.maintainer.website);
+      return this.metadata ? stringUtil.isValidUrl(this.metadata.maintainer.website) : false;
     },
     inputParameters(): Array<any> {
-      return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
+      return this.metadata ? this.metadata.parameters.filter((p: any) => !p.is_drilldown) : [];
     }
   }
 });

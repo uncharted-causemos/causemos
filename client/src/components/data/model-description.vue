@@ -71,12 +71,12 @@
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, Ref, toRefs } from 'vue';
 import _ from 'lodash';
 import { Model, ModelParameter } from '@/types/Datacube';
 import { useStore } from 'vuex';
 import { getValidatedOutputs } from '@/utils/datacube-util';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -92,18 +92,10 @@ export default defineComponent({
     'check-model-metadata-validity'
   ],
   setup(props) {
-    const metadata = ref<Model | null>(null);
+    const { selectedModelId } = toRefs(props);
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
     const store = useStore();
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
-
-    async function fetchMetadata() {
-      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
-      metadata.value = response.data;
-    }
-    fetchMetadata();
     return {
       metadata,
       currentOutputIndex
@@ -114,9 +106,12 @@ export default defineComponent({
       return this.metadata ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
     },
     outputVariables(): Array<any> {
+      const listAllOutputs = true;
       if (this.metadata && this.currentOutputIndex >= 0) {
-        const outputs = getValidatedOutputs(this.metadata.outputs);
-        return [outputs[this.currentOutputIndex]];
+        const outputs = listAllOutputs ? this.metadata.outputs : getValidatedOutputs(this.metadata.outputs);
+        // instead of returning only one (default) output, we could also return all outouts
+        return outputs;
+        // return [outputs[this.currentOutputIndex]];
       }
       return [undefined];
     }
