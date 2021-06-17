@@ -60,7 +60,6 @@ export default defineComponent({
   },
   setup(props) {
     const { metadata, selectedScenarioIds } = toRefs(props);
-    if (metadata.value === null) return;
     const inputNames = computed(() => {
       if (metadata.value === null) return {};
       const inputNamesMap: { [key: string]: string } = {};
@@ -69,7 +68,6 @@ export default defineComponent({
       });
       return inputNamesMap;
     });
-
     const scenarioDescriptions = ref<ScenarioDescription[]>([]);
     watchEffect(async onInvalidate => {
       scenarioDescriptions.value = [];
@@ -90,13 +88,6 @@ export default defineComponent({
       });
     });
     const inputParameters = computed(() => {
-      if (
-        scenarioDescriptions.value.length === 0 ||
-        Object.keys(inputNames.value).length === 0
-      ) {
-        return [];
-      }
-
       return Object.keys(inputNames.value).map(inputName => ({
         name: inputNames.value[inputName],
         values: scenarioDescriptions.value.map(
