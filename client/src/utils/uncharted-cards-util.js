@@ -18,12 +18,6 @@ export const createReaderSwitchButton = ({ parentElement, onClick = () => {}, de
   const wrapper = document.createElement('div');
   const toggleButton = createApp(ToggleButtonComponent, propsData);
   toggleButton.mount(wrapper);
-
-  // set switch to !isOn before mount and to isOn on next tick for animation
-  // toggleButton.mount(container);
-  // ToggleButton.$on('change', () => onClick());
-  // setTimeout(() => (toggleButton.value = isOn), 0);
-
   container.appendChild(wrapper);
 
   return {
@@ -31,7 +25,6 @@ export const createReaderSwitchButton = ({ parentElement, onClick = () => {}, de
     onClick,
     destroy() {
       container.remove();
-      // toggleButton.$destroy();
     }
   };
 };
