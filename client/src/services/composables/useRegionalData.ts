@@ -4,7 +4,6 @@ import { Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { useStore } from 'vuex';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 
 export default function useRegionalData(
   selectedModelId: Ref<string>,
@@ -32,7 +31,7 @@ export default function useRegionalData(
     ) {
       return [];
     }
-    const outputs = getValidatedOutputs(modelMetadata.outputs);
+    const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
     return selectedScenarioIds.value.map(selectedScenarioId => ({
       id: selectedScenarioId,
       modelId: selectedModelId.value,

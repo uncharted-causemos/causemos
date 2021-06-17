@@ -210,7 +210,6 @@ import { DatacubeType, ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -324,7 +323,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
-        const outputs = getValidatedOutputs(metadata.value?.outputs);
+        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
         mainModelOutput.value = outputs[currentOutputIndex.value];
       }
     });

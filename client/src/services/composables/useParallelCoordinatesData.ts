@@ -4,7 +4,6 @@ import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { ModelRunStatus } from '@/types/Enums';
 import { useStore } from 'vuex';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -22,7 +21,7 @@ export default function useParallelCoordinatesData(
     if (allModelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
       return [];
     }
-    const outputs = getValidatedOutputs(metadata.value.outputs);
+    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
     const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
     return allModelRunData.value.map((modelRun, runIndex) => {
       const run_id = allModelRunData.value[runIndex].id;
@@ -47,7 +46,7 @@ export default function useParallelCoordinatesData(
     if (metadata.value === null) {
       return [];
     }
-    const outputs = getValidatedOutputs(metadata.value.outputs);
+    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
     // Restructure the output parameter
     const outputDimension = outputs[currentOutputIndex.value];

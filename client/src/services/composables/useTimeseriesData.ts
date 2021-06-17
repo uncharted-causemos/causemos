@@ -1,7 +1,6 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { Timeseries } from '@/types/Timeseries';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 import { computed, Ref, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 
@@ -46,7 +45,9 @@ export default function useTimeseriesData(
       if (selectedSpatialAggregation.value !== '') {
         spatialAgg = selectedSpatialAggregation.value;
       }
-      const outputs = getValidatedOutputs(metadata.value?.outputs ?? []);
+      const modelMetadata = metadata.value;
+      if (!modelMetadata) return;
+      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {

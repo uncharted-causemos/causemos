@@ -37,11 +37,10 @@
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model } from '@/types/Datacube';
-import { computed, defineComponent, Ref, ref, watch } from 'vue';
+import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
 import { mapActions, useStore } from 'vuex';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 
 interface ModelAttribute {
   name: string;
@@ -61,51 +60,45 @@ export default defineComponent({
   setup(props) {
     const modelAttributes = ref<ModelAttribute[]>([]);
 
-    const metadata = ref({}) as Ref<Model>;
-
     // FIXME: to really support proper data handling, do not fetch data locally at every component
     //         instead, fetch at parent and pass to children as needed, so updating one will update the others
-    async function fetchModelInfo() {
-      if (props.selectedModelId === null) return;
 
-      const result = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
-      metadata.value = result.data;
+    const { selectedModelId } = toRefs(props);
+    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
 
-      // fill in the model attribute
-      // TODO: how spacing and label names are used
-      modelAttributes.value.push({
-        name: 'Model family',
-        value: metadata.value.name,
-        tweakable: false,
-        type: 'text'
-      });
-      /*
-      modelAttributes.value.push({
-        name: 'Model instance',
-        value: modelMetadata.version,
-        tweakable: false,
-        type: 'text'
-      });
-      */
-      const outputs = getValidatedOutputs(metadata.value?.outputs);
-      modelAttributes.value.push({
-        name: 'Default output variable',
-        value: outputs.map(o => o.display_name),
-        tweakable: true,
-        type: 'select'
-      });
-      modelAttributes.value.push({
-        name: 'Model description',
-        value: metadata.value.description,
-        tweakable: true,
-        type: 'textarea'
-      });
-    }
-
-    watch(() => props.selectedModelId, fetchModelInfo, { immediate: true });
+    watchEffect(() => {
+      if (metadata.value) {
+        // fill in the model attribute
+        // TODO: how spacing and label names are used
+        modelAttributes.value.push({
+          name: 'Model family',
+          value: metadata.value.name,
+          tweakable: false,
+          type: 'text'
+        });
+        /*
+        modelAttributes.value.push({
+          name: 'Model instance',
+          value: modelMetadata.version,
+          tweakable: false,
+          type: 'text'
+        });
+        */
+        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        modelAttributes.value.push({
+          name: 'Default output variable',
+          value: outputs.map(o => o.display_name),
+          tweakable: true,
+          type: 'select'
+        });
+        modelAttributes.value.push({
+          name: 'Model description',
+          value: metadata.value.description,
+          tweakable: true,
+          type: 'textarea'
+        });
+      }
+    });
 
     const store = useStore();
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);

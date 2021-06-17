@@ -101,7 +101,6 @@ import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
@@ -196,7 +195,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
-        outputs.value = getValidatedOutputs(metadata.value?.outputs);
+        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
         mainModelOutput.value = outputs.value[currentOutputIndex.value];
       }

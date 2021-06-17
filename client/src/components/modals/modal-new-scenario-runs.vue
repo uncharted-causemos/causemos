@@ -63,7 +63,6 @@ import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
 import { mapGetters } from 'vuex';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -106,7 +105,7 @@ export default defineComponent({
       // FIXME: only submitting ONE sceanrio is supported at this time
       const firstScenario = this.potentialRuns[0];
       const paramArray: any[] = [];
-      const outputs = getValidatedOutputs(this.metadata.outputs);
+      const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       Object.keys(firstScenario).forEach(key => {
         // exclude output variable values since they will be undefined for potential runs
         if (key !== outputs[this.currentOutputIndex].name) {

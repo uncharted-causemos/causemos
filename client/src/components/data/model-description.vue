@@ -75,7 +75,6 @@ import { computed, defineComponent, Ref, toRefs } from 'vue';
 import _ from 'lodash';
 import { Model, ModelParameter } from '@/types/Datacube';
 import { useStore } from 'vuex';
-import { getValidatedOutputs } from '@/utils/datacube-util';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 
 export default defineComponent({
@@ -106,9 +105,9 @@ export default defineComponent({
       return this.metadata ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
     },
     outputVariables(): Array<any> {
-      const listAllOutputs = true;
+      const listOnlyValidatedOutputs = false;
       if (this.metadata && this.currentOutputIndex >= 0) {
-        const outputs = listAllOutputs ? this.metadata.outputs : getValidatedOutputs(this.metadata.outputs);
+        const outputs = this.metadata.validatedOutputs && listOnlyValidatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
         // instead of returning only one (default) output, we could also return all outouts
         return outputs;
         // return [outputs[this.currentOutputIndex]];
