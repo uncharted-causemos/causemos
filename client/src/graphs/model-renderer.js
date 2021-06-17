@@ -222,20 +222,26 @@ export default class ModelRenderer extends SVGRenderer {
         console.log('start: ', startCoord);
         console.log('end: ', endCoord);
 
+
+        const middleX = startCoord.x + ((endCoord.x - startCoord.x) / 2);
+        const middleY = d.points[d.points.length / 2].y;
+        const middleCoord = { x: middleX, y: middleY };
         // const middleX = startCoord.x + ((endCoord.x - startCoord.x) / 2);
         // const middleY = startCoord.y + ((endCoord.y - startCoord.y) / 2);
-        const middleCoord = d.points[d.points.length / 2];
 
         console.log('middle: ', middleCoord);
 
         selection
+          .classed('off-edge-icon', true)
           .append('text')
           .attr('x', middleCoord.x)
           .attr('y', middleCoord.y)
-          .classed('off-edge-icon', true)
-          .style('font-size', '2em')
-          .attr('font-family', 'FontAwesome')
-          .text(function() { return '/uf05e'; });
+          .style('font-family', 'FontAwesome')
+          .style('font-size', '12px')
+          .style('stroke', 'none')
+          .style('fill', 'black')
+          .style('cursor', 'pointer')
+          .text('\uf05e');
       });
   }
 
