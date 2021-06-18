@@ -213,6 +213,19 @@ export default class ModelRenderer extends SVGRenderer {
     //     return 'this is a test';
     //   });
 
+    const controlStyles = POLARITY_ICON_SVG_SETTINGS;
+    selection
+      .append('text')
+      .attr('x', d => controlStyles[d.data.polarity].x)
+      .attr('y', d => controlStyles[d.data.polarity].y)
+      .style('background-color', 'red')
+      .style('font-family', 'FontAwesome')
+      .style('font-size', d => controlStyles[d.data.polarity]['font-size'])
+      .style('stroke', 'none')
+      .style('fill', 'white')
+      .style('cursor', 'pointer')
+      .text(d => controlStyles[d.data.polarity].text);
+
     selection
       .selectAll('.edge-path')
       .each(function (d) {
@@ -231,17 +244,17 @@ export default class ModelRenderer extends SVGRenderer {
 
         console.log('middle: ', middleCoord);
 
-        selection
-          .classed('off-edge-icon', true)
-          .append('text')
-          .attr('x', middleCoord.x)
-          .attr('y', middleCoord.y)
-          .style('font-family', 'FontAwesome')
-          .style('font-size', '12px')
-          .style('stroke', 'none')
-          .style('fill', 'black')
-          .style('cursor', 'pointer')
-          .text('\uf05e');
+      //   selection
+      //     .classed('off-edge-icon', true)
+      //     .append('text')
+      //     .attr('x', middleCoord.x)
+      //     .attr('y', middleCoord.y)
+      //     .style('font-family', 'FontAwesome')
+      //     .style('font-size', '12px')
+      //     .style('stroke', 'none')
+      //     .style('fill', 'black')
+      //     .style('cursor', 'pointer')
+      //     .text('\uf05e');
       });
   }
 
