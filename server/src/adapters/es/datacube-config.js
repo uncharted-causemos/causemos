@@ -1,10 +1,4 @@
-const FIELD_TYPES = Object.freeze({
-  NORMAL: 0,
-  REGEXP: 1,
-  RANGED: 2,
-  DATE: 3,
-  CUSTOM: 7
-});
+const { FIELD_TYPES } = require('./config');
 
 const FIELD_LEVELS = Object.freeze({
   DATACUBE: 0,
