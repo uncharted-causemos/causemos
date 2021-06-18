@@ -40,9 +40,9 @@ export const TYPE = 'type';
 
 
 export const DISPLAY_NAMES: {[ key: string ]: string } = {
-  admin1: 'Adminstrative Area 1',
-  admin2: 'Adminstrative Area 2',
-  admin3: 'Adminstrative Area 3',
+  admin1: 'Administrative Area 1',
+  admin2: 'Administrative Area 2',
+  admin3: 'Administrative Area 3',
   category: 'Category',
   country: 'Country',
   maintainerName: 'Maintainer',
@@ -56,6 +56,7 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
 
 
 export const FACET_FIELDS: string [] = [
+  TYPE,
   CATEGORY,
   TAGS,
   COUNTRY,
@@ -67,8 +68,7 @@ export const FACET_FIELDS: string [] = [
   VARIABLE_UNIT,
   TEMPORAL_RESOLUTION,
   MAINTAINER_NAME,
-  MAINTAINER_ORG,
-  TYPE
+  MAINTAINER_ORG
 ];
 
 export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
