@@ -217,8 +217,8 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
 
   // 2. create payload for model creation in the modelling engine
   const model = await modelService.findOne(modelId);
-  const timeSeriesStart = model.parameter.indicator_time_series_range.start;
-  const timeSeriesEnd = model.parameter.indicator_time_series_range.end;
+  const timeSeriesStart = _.get(model, 'parameter.indicator_time_series_range.start', 0);
+  const timeSeriesEnd = _.get(model, 'parameter.indicator_time_series_range.end', 1);
   const enginePayload = {
     id: modelId,
     statements: modelStatements,

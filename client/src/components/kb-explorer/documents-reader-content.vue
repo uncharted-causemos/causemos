@@ -1,7 +1,8 @@
 <template>
   <div
     class="uncharted-cards-reader-content-container uncharted-cards-style"
-    :class="classObject" />
+    :class="classObject"
+    @change="toggle"/>
 </template>
 
 <script>
@@ -79,6 +80,9 @@ export default {
     this.destroySwitchButton();
   },
   methods: {
+    toggle() {
+      this.switchButtonData.onClick();
+    },
     refresh() {
       // remove child nodes (single reader content node in this case)
       removeChildren(this.$el);

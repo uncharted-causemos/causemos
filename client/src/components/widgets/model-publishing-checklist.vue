@@ -8,7 +8,7 @@
           v-for="step in publishingSteps"
           :key="step.id"
           class="checklist-item"
-          :class="{'step-selected': step.id === currentPublishingStep}"
+          :class="{'step-selected': step.id === currentPublishStep}"
           @click="navToPublishingStep(step)">
             <i
               class="step-icon-common fa fa-lg fa-border"
@@ -46,7 +46,7 @@ export default defineComponent({
       type: Array as PropType<ModelPublishingStep[]>,
       default: []
     },
-    currentPublishingStep: {
+    currentPublishStep: {
       // type: Number,
       default: ModelPublishingStepID.Enrich_Description
     }
