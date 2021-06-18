@@ -21,6 +21,7 @@ import { mapActions, mapGetters } from 'vuex';
 
 import TextPill from '@/search/pills/text-pill';
 import RangePill from '@/search/pills/range-pill';
+import ValuePill from '@/search/pills/value-pill';
 import DynamicValuePill from '@/search/pills/dynamic-value-pill';
 import SingleRelationState from '@/search/single-relation-state';
 
@@ -57,13 +58,18 @@ export default {
   mounted() {
     // Generates lex pills from select datacube columns
     const keys = Object.keys(this.facets);
-    const datacubePills = keys.map(k => new TextPill({
-      field: k,
-      display: k,
-      icon: '',
-      iconText: '',
-      searchDisplay: datacubeUtil.DISPLAY_NAMES[k]
-    }));
+    const datacubePills = keys.map(k => {
+      const dcField = {
+        field: k,
+        display: k,
+        icon: '',
+        iconText: '',
+        searchDisplay: datacubeUtil.DISPLAY_NAMES[k]
+      };
+      const dcOptions = this.facets[k].map(f => f.key);
+
+      return new ValuePill(dcField, dcOptions);
+    });
 
     // Defines a list of searchable fields for LEX
     this.pills = [
