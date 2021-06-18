@@ -7,7 +7,7 @@ const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('ada
 const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
-const queryUtil = rootRequire('adapters/es/query-util');
+const StatementQueryUtil = rootRequire('adapters/es/statement-query-util');
 const conceptUtil = rootRequire('/util/concept-util');
 const graphUtil = rootRequire('/util/graph-util');
 const {
@@ -21,6 +21,8 @@ const { set, del, get } = rootRequire('/cache/node-lru-cache');
 const MAX_NUMBER_PROJECTS = 100;
 
 const INCREMENTAL_ASSEMBLY_FLOW_ID = '90a09440-e504-4db9-ad89-9db370933c8b';
+
+const queryUtil = new StatementQueryUtil();
 
 /**
  * Returns projects summary

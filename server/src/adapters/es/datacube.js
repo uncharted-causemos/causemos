@@ -1,7 +1,7 @@
 const _ = require('lodash');
 
 const ES = require('./client');
-const queryUtil = require('./datacube-query-util');
+const { DatacubeQueryUtil } = require('./datacube-query-util');
 const { AggUtil } = require('./agg-util');
 const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./datacube-config');
 const { RESOURCE } = require('./adapter');
@@ -10,6 +10,7 @@ const Logger = rootRequire('/config/logger');
 const MAX_ES_SUGGESTION_BUCKET_SIZE = 20;
 
 const aggUtil = new AggUtil(FIELDS);
+const queryUtil = new DatacubeQueryUtil();
 
 const _facetQuery = (filters, fields = []) => {
   const filterQuery = queryUtil.buildQuery(filters);
