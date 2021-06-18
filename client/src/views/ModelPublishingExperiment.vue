@@ -117,13 +117,13 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
-import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, ComputedRef, defineComponent, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { ModelPublishingStepID } from '@/types/Enums';
-import { DimensionInfo, Model, ModelPublishingStep } from '@/types/Datacube';
+import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -183,7 +183,7 @@ export default defineComponent({
 
     // FIXME: set initial model to DSSAT in case the query param does not have a valid datacubeid
     const selectedModelId = ref(DSSAT_PRODUCTION_DATA.modelId);
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+    const metadata = useModelMetadata(selectedModelId);
 
     const modelRunsFetchedAt = ref(0);
 

@@ -1,9 +1,10 @@
-import { Model, ModelParameter } from '../../types/Datacube';
+import { Indicator, Model, ModelParameter } from '../../types/Datacube';
 import { computed, ref, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { ModelRunStatus } from '@/types/Enums';
 import { useStore } from 'vuex';
+import { isModel } from '@/utils/datacube-util';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -11,7 +12,7 @@ import { useStore } from 'vuex';
  * transforms it into several structures that the PC chart accepts.
  */
 export default function useParallelCoordinatesData(
-  metadata: Ref<Model | null>,
+  metadata: Ref<Model | Indicator | null>,
   allModelRunData: Ref<ModelRun[]>
 ) {
   const store = useStore();
@@ -43,7 +44,7 @@ export default function useParallelCoordinatesData(
   });
 
   const dimensions = computed(() => {
-    if (metadata.value === null) {
+    if (metadata.value === null || !isModel(metadata.value)) {
       return [];
     }
     const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;

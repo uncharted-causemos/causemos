@@ -26,7 +26,7 @@
       </template>
     </div>
     <div class="datacube-description-column"
-         v-if="metadata && metadata.name" >
+        v-if="metadata && metadata.name" >
       <h5>Datacube Details</h5>
       <div
         v-if="metadata.geography.country"
@@ -61,7 +61,8 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 import stringUtil from '@/utils/string-util';
-import { Model } from '@/types/Datacube';
+import { Indicator, Model } from '@/types/Datacube';
+import { isModel } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -69,7 +70,7 @@ export default defineComponent({
   },
   props: {
     metadata: {
-      type: Object as PropType<Model | null>,
+      type: Object as PropType<Model | Indicator | null>,
       default: null
     }
   },
@@ -78,7 +79,9 @@ export default defineComponent({
       return this.metadata ? stringUtil.isValidUrl(this.metadata.maintainer.website) : false;
     },
     inputParameters(): Array<any> {
-      return this.metadata ? this.metadata.parameters.filter((p: any) => !p.is_drilldown) : [];
+      return (this.metadata && isModel(this.metadata))
+        ? this.metadata.parameters.filter((p: any) => !p.is_drilldown)
+        : [];
     }
   }
 });
