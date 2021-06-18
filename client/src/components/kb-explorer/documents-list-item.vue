@@ -46,7 +46,7 @@ export default {
       return item && item.date && !_.isNaN(item.date);
     },
     getFormattedDate(item) {
-      return new Date(item).toDateString();
+      return new Date(item).toUTCString();
     }
   }
 };

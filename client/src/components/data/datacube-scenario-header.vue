@@ -21,9 +21,10 @@
 
 <script lang="ts">
 import API from '@/api/api';
-import { computed, defineComponent, PropType, ref, watch } from 'vue';
+import { computed, defineComponent, PropType, Ref, ref, toRefs, watch, watchEffect } from 'vue';
 import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
-import { getDatacubeById } from '@/services/new-datacube-service';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import { Model } from '@/types/Datacube';
 
 type ScenarioDescription = ModelRunParameter[];
 
@@ -54,21 +55,23 @@ export default defineComponent({
   setup(props) {
     // Fetch input names
     const inputNames = ref<{ [key: string]: string }>({});
-    async function fetchInputNames() {
-      inputNames.value = {};
-      if (props.selectedModelId === null) return;
+    if (props.selectedModelId === null) return;
 
-      const result = await getDatacubeById(props.selectedModelId);
-      const modelMetadata = result;
-      const inputNamesMap: { [key: string]: string } = {};
-      if (modelMetadata.parameters) {
-        // only valid for models
-        modelMetadata.parameters.forEach((parameter: any) => {
-          inputNamesMap[parameter.name] = parameter.display_name;
-        });
-        inputNames.value = inputNamesMap;
+    const { selectedModelId } = toRefs(props);
+    const modelMetadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+
+    watchEffect(() => {
+      if (modelMetadata.value) {
+        const inputNamesMap: { [key: string]: string } = {};
+        if (modelMetadata.value.parameters) {
+          // only valid for models
+          modelMetadata.value.parameters.forEach((parameter: any) => {
+            inputNamesMap[parameter.name] = parameter.display_name;
+          });
+          inputNames.value = inputNamesMap;
+        }
       }
-    }
+    });
 
     // Fetch scenario descriptions
     const scenarioDescriptions = ref<ScenarioDescription[]>([]);
@@ -92,7 +95,6 @@ export default defineComponent({
         });
     }
 
-    watch(() => props.selectedModelId, fetchInputNames, { immediate: true });
     watch(() => props.selectedScenarioIds, fetchScenarioDescriptions, {
       immediate: true
     });
