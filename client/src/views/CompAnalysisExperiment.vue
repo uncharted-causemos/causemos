@@ -16,6 +16,7 @@
       :regional-data="regionalData"
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
+      :metadata="metadata"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -63,7 +64,7 @@
 
       <template #datacube-description>
         <datacube-description
-          :selected-model-id="selectedModelId"
+          :metadata="metadata"
         />
       </template>
 
@@ -97,7 +98,7 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
+import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
@@ -154,7 +155,7 @@ export default defineComponent({
 
     const selectedModelId = ref(datacubeId);
 
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+    const metadata = useModelMetadata(selectedModelId);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
