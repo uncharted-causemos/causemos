@@ -20,7 +20,7 @@ router.put('/:datacubeId', asyncHandler(async (req, res) => {
   const datacubeId = req.params.datacubeId;
   const metadata = req.body;
   metadata.id = metadata.id || datacubeId;
-  const result = await datacubeService.insertDatacube(metadata);
+  const result = await datacubeService.updateDatacube(metadata);
   res.json(result);
 }));
 
