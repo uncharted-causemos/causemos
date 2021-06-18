@@ -4,16 +4,15 @@ import { computed, watch, watchEffect } from '@vue/runtime-core';
 import { Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
-import { DatacubeGeography } from '@/types/Common';
 import { readonly } from 'vue';
 import { useStore } from 'vuex';
+import { AdminRegionSets } from '@/types/Datacubes';
 
-
-const EMPTY_REGION_LIST: DatacubeGeography = {
-  country: [],
-  admin1: [],
-  admin2: [],
-  admin3: []
+const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
+  country: new Set(),
+  admin1: new Set(),
+  admin2: new Set(),
+  admin3: new Set()
 };
 export default function useRegionalData(
   selectedModelId: Ref<string>,
@@ -25,7 +24,9 @@ export default function useRegionalData(
   metadata: Ref<Model | null>
 ) {
   const store = useStore();
-  const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+  const currentOutputIndex = computed(
+    () => store.getters['modelPublishStore/currentOutputIndex']
+  );
 
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
@@ -41,7 +42,9 @@ export default function useRegionalData(
     ) {
       return [];
     }
-    const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
+    const outputs = modelMetadata.validatedOutputs
+      ? modelMetadata.validatedOutputs
+      : modelMetadata.outputs;
     return selectedScenarioIds.value.map(selectedScenarioId => ({
       id: selectedScenarioId,
       modelId: selectedModelId.value,
@@ -64,27 +67,27 @@ export default function useRegionalData(
     if (isCancelled) return;
     regionalData.value = result;
   });
-  const deselectedRegionIds = ref<DatacubeGeography>(
-    _.cloneDeep(EMPTY_REGION_LIST)
+  const deselectedRegionIds = ref<AdminRegionSets>(
+    _.cloneDeep(EMPTY_ADMIN_REGION_SETS)
   );
   const resetSelection = () => {
-    deselectedRegionIds.value = _.cloneDeep(EMPTY_REGION_LIST);
+    deselectedRegionIds.value = _.cloneDeep(EMPTY_ADMIN_REGION_SETS);
   };
   watch(selectedModelId, () => {
     // Reset the deselected region list when the selected model changes
     resetSelection();
   });
   const toggleIsRegionSelected = (
-    adminLevel: keyof DatacubeGeography,
+    adminLevel: keyof AdminRegionSets,
     regionId: string
   ) => {
     const currentlyDeselected = deselectedRegionIds.value[adminLevel];
-    const isRegionSelected = !currentlyDeselected.includes(regionId);
+    const isRegionSelected = !currentlyDeselected.has(regionId);
     // If region is currently selected, add it to list of deselected regions.
     //  Otherwise, remove from the list of deselected regions.
     const updatedList = isRegionSelected
-      ? [...currentlyDeselected, regionId]
-      : currentlyDeselected.filter(item => item !== regionId);
+      ? _.clone(currentlyDeselected).add(regionId)
+      : _.clone(currentlyDeselected).delete(regionId);
     // Assign new object to deselectedRegionIds.value to trigger reactivity updates.
     deselectedRegionIds.value = Object.assign({}, deselectedRegionIds.value, {
       [adminLevel]: updatedList
@@ -96,10 +99,18 @@ export default function useRegionalData(
       return;
     }
     deselectedRegionIds.value = {
-      country: (regionalData.value?.country ?? []).map(entry => entry.id) ?? [],
-      admin1: (regionalData.value?.admin1 ?? []).map(entry => entry.id) ?? [],
-      admin2: (regionalData.value?.admin2 ?? []).map(entry => entry.id) ?? [],
-      admin3: (regionalData.value?.admin3 ?? []).map(entry => entry.id) ?? []
+      country: new Set(
+        (regionalData.value?.country ?? []).map(entry => entry.id) ?? []
+      ),
+      admin1: new Set(
+        (regionalData.value?.admin1 ?? []).map(entry => entry.id) ?? []
+      ),
+      admin2: new Set(
+        (regionalData.value?.admin2 ?? []).map(entry => entry.id) ?? []
+      ),
+      admin3: new Set(
+        (regionalData.value?.admin3 ?? []).map(entry => entry.id) ?? []
+      )
     };
   };
   return {

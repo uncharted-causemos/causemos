@@ -76,9 +76,8 @@
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
-import { DatacubeGeography } from '@/types/Common';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -119,7 +118,7 @@ export default defineComponent({
       default: []
     },
     deselectedRegionIds: {
-      type: Object as PropType<DatacubeGeography | null>,
+      type: Object as PropType<AdminRegionSets | null>,
       default: null
     }
   },

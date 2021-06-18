@@ -24,8 +24,14 @@
     </div>
     <div class="flex-row">
       <div class="select-all-buttons">
-        <small-text-button :label="'Select All'" @click="setAllSelected(true)" />
-        <small-text-button :label="'Deselect All'" @click="setAllSelected(false)" />
+        <small-text-button
+          :label="'Select All'"
+          @click="setAllSelected(true)"
+        />
+        <small-text-button
+          :label="'Deselect All'"
+          @click="setAllSelected(false)"
+        />
       </div>
       <div v-if="units !== null" class="units">
         {{ units }}
@@ -111,7 +117,7 @@ const extractVisibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
   selectedLevel: number,
-  deselectedItemIds: { [aggregationLevel: string]: string[] } | null,
+  deselectedItemIds: { [aggregationLevel: string]: Set<string> } | null,
   orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
@@ -153,7 +159,8 @@ const extractVisibleRows = (
   const itemId = metadataNode.path.join(PATH_DELIMETER);
   const isChecked =
     deselectedItemIds === null ||
-    !(deselectedItemIds[aggregationLevel] ?? []).includes(itemId);
+    deselectedItemIds[aggregationLevel] === undefined ||
+    !deselectedItemIds[aggregationLevel].has(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
@@ -233,7 +240,9 @@ export default defineComponent({
       default: []
     },
     deselectedItemIds: {
-      type: Object as PropType<{ [aggregationLevel: string]: string[] } | null>,
+      type: Object as PropType<{
+        [aggregationLevel: string]: Set<string>;
+      } | null>,
       default: null
     }
   },
