@@ -1,6 +1,6 @@
 import { Ref, ref } from '@vue/reactivity';
 import { computed, watchEffect } from '@vue/runtime-core';
-import { Model } from '@/types/Datacube';
+import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { useStore } from 'vuex';
@@ -12,7 +12,7 @@ export default function useRegionalData(
   selectedSpatialAggregation: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
-  metadata: Ref<Model | null>
+  metadata: Ref<Model | Indicator | null>
 ) {
   const store = useStore();
   const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);

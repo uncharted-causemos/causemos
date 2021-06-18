@@ -37,9 +37,8 @@
 </template>
 
 <script lang="ts">
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import { Model } from '@/types/Datacube';
-import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { mapActions, useStore } from 'vuex';
 
 interface ModelAttribute {
@@ -52,52 +51,47 @@ interface ModelAttribute {
 export default defineComponent({
   name: 'DatacubeModelHeader',
   props: {
-    selectedModelId: {
-      type: String,
-      required: true
+    metadata: {
+      type: Object as PropType<Model | null>,
+      default: null
     }
   },
   setup(props) {
-    const modelAttributes = ref<ModelAttribute[]>([]);
+    const { metadata } = toRefs(props);
 
-    // FIXME: to really support proper data handling, do not fetch data locally at every component
-    //         instead, fetch at parent and pass to children as needed, so updating one will update the others
-
-    const { selectedModelId } = toRefs(props);
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
-
-    watchEffect(() => {
-      if (metadata.value) {
-        // fill in the model attribute
-        // TODO: how spacing and label names are used
-        modelAttributes.value.push({
-          name: 'Model family',
-          value: metadata.value.name,
-          tweakable: false,
-          type: 'text'
-        });
-        /*
-        modelAttributes.value.push({
-          name: 'Model instance',
-          value: modelMetadata.version,
-          tweakable: false,
-          type: 'text'
-        });
-        */
-        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-        modelAttributes.value.push({
-          name: 'Default output variable',
-          value: outputs.map(o => o.display_name),
-          tweakable: true,
-          type: 'select'
-        });
-        modelAttributes.value.push({
-          name: 'Model description',
-          value: metadata.value.description,
-          tweakable: true,
-          type: 'textarea'
-        });
-      }
+    const modelAttributes = computed<ModelAttribute[]>(() => {
+      const attributes: ModelAttribute[] = [];
+      if (metadata.value === null) return attributes;
+      // fill in the model attribute
+      // TODO: how spacing and label names are used
+      attributes.push({
+        name: 'Model family',
+        value: metadata.value.name,
+        tweakable: false,
+        type: 'text'
+      });
+      /*
+      attributes.push({
+        name: 'Model instance',
+        value: modelMetadata.version,
+        tweakable: false,
+        type: 'text'
+      });
+      */
+      const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+      attributes.push({
+        name: 'Default output variable',
+        value: outputs.map(o => o.display_name),
+        tweakable: true,
+        type: 'select'
+      });
+      attributes.push({
+        name: 'Model description',
+        value: metadata.value.description,
+        tweakable: true,
+        type: 'textarea'
+      });
+      return attributes;
     });
 
     const store = useStore();
@@ -105,7 +99,6 @@ export default defineComponent({
 
     return {
       modelAttributes,
-      metadata,
       currentOutputIndex
     };
   },

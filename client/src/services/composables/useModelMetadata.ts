@@ -1,4 +1,4 @@
-import { Model } from '@/types/Datacube';
+import { Indicator, Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs } from '@/utils/datacube-util';
@@ -9,8 +9,8 @@ import { getValidatedOutputs } from '@/utils/datacube-util';
  */
 export default function useModelMetadata(
   modelId: Ref<string>
-) {
-  const metadata = ref<Model | null>(null);
+): Ref<Model | Indicator | null> {
+  const metadata = ref<Model | Indicator | null>(null);
 
   watchEffect(onInvalidate => {
     metadata.value = null;

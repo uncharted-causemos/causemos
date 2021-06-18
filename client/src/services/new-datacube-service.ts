@@ -1,6 +1,7 @@
 import API from '@/api/api';
 import { Model } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
+import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
 
 /**
@@ -82,6 +83,13 @@ export const updateDatacube = async (datacubeId: string, metadata: Model) => {
   return result.data;
 };
 
+export const getModelRunMetadata = async (modelId: string) => {
+  const { data } = await API.get<ModelRun[]>('/maas/model-runs', {
+    params: { modelId }
+  });
+  return data;
+};
+
 export default {
   updateDatacube,
   getDatacubes,
@@ -89,5 +97,6 @@ export default {
   getDatacubesCount,
   getDatacubeFacets,
   getModelDatacubesCount,
-  getIndicatorDatacubesCount
+  getIndicatorDatacubesCount,
+  getModelRunMetadata
 };

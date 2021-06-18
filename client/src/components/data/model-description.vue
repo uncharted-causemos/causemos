@@ -82,19 +82,18 @@
 </template>
 
 <script lang="ts">
-import { computed, ComputedRef, defineComponent, Ref, toRefs } from 'vue';
+import { computed, defineComponent, PropType, ComputedRef, toRefs } from 'vue';
 import _ from 'lodash';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { useStore } from 'vuex';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 
 export default defineComponent({
-  name: 'DatacubeDescription',
+  name: 'ModelDescription',
   components: {
   },
   props: {
-    selectedModelId: {
-      type: String,
+    metadata: {
+      type: Object as PropType<Model | null>,
       default: null
     }
   },
@@ -102,8 +101,7 @@ export default defineComponent({
     'check-model-metadata-validity'
   ],
   setup(props) {
-    const { selectedModelId } = toRefs(props);
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+    const { metadata } = toRefs(props);
     const store = useStore();
 
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
@@ -126,7 +124,6 @@ export default defineComponent({
     });
 
     return {
-      metadata,
       currentOutputIndex,
       currentOutputName,
       outputVariables
