@@ -7,7 +7,7 @@ const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('ada
 const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
-const StatementQueryUtil = rootRequire('adapters/es/statement-query-util');
+const { StatementQueryUtil } = rootRequire('adapters/es/statement-query-util');
 const conceptUtil = rootRequire('/util/concept-util');
 const graphUtil = rootRequire('/util/graph-util');
 const {
