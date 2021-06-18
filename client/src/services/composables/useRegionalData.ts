@@ -85,9 +85,12 @@ export default function useRegionalData(
     const isRegionSelected = !currentlyDeselected.has(regionId);
     // If region is currently selected, add it to list of deselected regions.
     //  Otherwise, remove from the list of deselected regions.
-    const updatedList = isRegionSelected
-      ? _.clone(currentlyDeselected).add(regionId)
-      : _.clone(currentlyDeselected).delete(regionId);
+    const updatedList = _.clone(currentlyDeselected);
+    if (isRegionSelected) {
+      updatedList.add(regionId);
+    } else {
+      updatedList.delete(regionId);
+    }
     // Assign new object to deselectedRegionIds.value to trigger reactivity updates.
     deselectedRegionIds.value = Object.assign({}, deselectedRegionIds.value, {
       [adminLevel]: updatedList
