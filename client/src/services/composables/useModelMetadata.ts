@@ -16,13 +16,12 @@ export default function useModelMetadata(
     metadata.value = null;
     let isCancelled = false;
     async function fetchMetadata() {
-      const response = await getDatacubeById(modelId.value);
+      const rawMetadata = await getDatacubeById(modelId.value);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
         return;
       }
-      const rawMetadata = response.data;
       // filter outputs and remove invalid/unsupported ones
       //  For now, saved the validated output in a new attribute.
       // @Review: Later, we could just replace the 'outputs' attribute with the validated list
