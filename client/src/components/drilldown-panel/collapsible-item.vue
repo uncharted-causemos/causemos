@@ -4,25 +4,25 @@
       <div class="item-controls">
         <slot name="controls" />
       </div>
-      <div
-        class="item-title"
-        @click="toggle()">
+      <div class="item-title" @click="toggleIsExpanded">
         <i
-          :class="{ 'fa fa-angle-down fa-fw': expanded, 'fa fa-angle-right fa-fw': !expanded }"
+          :class="{
+            'fa fa-angle-down fa-fw': isExpanded,
+            'fa fa-angle-right fa-fw': !isExpanded
+          }"
         />
         <slot name="title" />
       </div>
     </div>
-    <div v-if="expanded === true">
+    <div v-if="isExpanded">
       <slot name="content" />
     </div>
   </div>
 </template>
 
 <script lang="ts">
-
 import _ from 'lodash';
-import { defineComponent } from 'vue';
+import { defineComponent, onMounted, PropType, ref, toRefs, watch } from 'vue';
 
 /**
  * A collapsible wrapper component that allows the injection of two external
@@ -40,12 +40,12 @@ import { defineComponent } from 'vue';
  *      </p>
  *   </collapsible-item>
  *
-*/
+ */
 export default defineComponent({
   name: 'CollapsibleItem',
   props: {
     override: {
-      type: Object,
+      type: Object as PropType<{ value: boolean }>,
       default: null
     },
     defaultExpand: {
@@ -53,27 +53,38 @@ export default defineComponent({
       default: false
     }
   },
-  data: () => ({
-    expanded: false
-  }),
-  mounted() {
-    if (_.isNil(this.override) && !this.defaultExpand) return;
-    if (!_.isNil(this.override)) {
-      this.expanded = this.override.value;
-    } else if (this.defaultExpand) {
-      this.expand();
-    }
-  },
-  methods: {
-    expand() {
-      this.expanded = true;
-    },
-    collapse() {
-      this.expanded = false;
-    },
-    toggle() {
-      this.expanded = !this.expanded;
-    }
+  setup(props) {
+    const { override, defaultExpand } = toRefs(props);
+    const isExpanded = ref(false);
+
+    onMounted(() => {
+      if (!_.isNil(override.value)) {
+        isExpanded.value = override.value.value;
+      } else if (defaultExpand) {
+        isExpanded.value = true;
+      }
+    });
+
+    // Whenever the override value is set by a parent
+    //  component, reset isExpanded to that value.
+    watch(
+      () => override.value,
+      () => {
+        const newValue = override.value;
+        if (!_.isNil(newValue)) {
+          isExpanded.value = newValue.value;
+        }
+      }
+    );
+
+    const toggleIsExpanded = () => {
+      isExpanded.value = !isExpanded.value;
+    };
+
+    return {
+      isExpanded,
+      toggleIsExpanded
+    };
   }
 });
 </script>
