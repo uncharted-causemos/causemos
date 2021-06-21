@@ -442,6 +442,7 @@ class CAGRenderer extends SVGRenderer {
     const drag = d3.drag()
       .on('start', (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
+        // add code here
       })
       .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
