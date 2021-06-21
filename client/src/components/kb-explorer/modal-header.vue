@@ -23,7 +23,6 @@
     </span>
     <template #trailing>
       <insight-controls />
-      <context-insight-controls />
     </template>
   </full-screen-modal-header>
 </template>
@@ -37,14 +36,12 @@ import fullScreenModalHeader from '../widgets/full-screen-modal-header.vue';
 import numberFormatter from '@/formatters/number-formatter';
 
 import InsightControls from '@/components/insight-manager/insight-controls.vue';
-import ContextInsightControls from '@/components/context-insight-panel/context-insight-controls.vue';
 
 export default defineComponent({
   name: 'KbExplorerModalHeader',
   components: {
     fullScreenModalHeader,
-    InsightControls,
-    ContextInsightControls
+    InsightControls
   },
   props: {
     navBackLabel: {

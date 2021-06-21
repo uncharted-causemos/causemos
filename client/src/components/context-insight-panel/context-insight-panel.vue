@@ -1,84 +1,67 @@
 <template>
-  <div
-    class="context-insight-container"
-    :class="{'panel-hidden': !isOpen}"
+  <side-panel
+    class="context-insights-panel-container"
+    :tabs="ContextInsightsTabs"
+    :current-tab-name="currentTab"
+    :add-padding="false"
+    :is-large="false"
+    @set-active="setActive"
   >
-    <new-context-insight-pane v-if="currentPane === 'new-context-insight'" />
-    <list-context-insight-pane v-if="currentPane === 'list-context-insights'" />
-  </div>
+    <div class="context-insights-container">
+      <list-context-insight-pane />
+    </div>
+  </side-panel>
 </template>
 
-<script>
-import { mapGetters, mapActions } from 'vuex';
-import NewContextInsightPane from '@/components/context-insight-panel/new-context-insight-pane';
-import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane';
+<script lang="ts">
+import { mapActions, mapGetters } from 'vuex';
 
+import SidePanel from '@/components/side-panel/side-panel.vue';
+import { defineComponent } from 'vue';
+import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 
-export default {
+export default defineComponent({
   name: 'ContextInsightPanel',
   components: {
-    NewContextInsightPane,
+    SidePanel,
     ListContextInsightPane
   },
-  props: {
-    allowNewContextInsights: {
-      type: Boolean,
-      default: true
-    }
-  },
+  data: () => ({
+    ContextInsightsTabs: [
+      { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' }
+    ],
+    currentTab: '' // start with panel collapsed
+  }),
   computed: {
     ...mapGetters({
-      isPanelOpen: 'contextInsightPanel/isPanelOpen',
-      currentPane: 'contextInsightPanel/currentPane'
-    }),
-    isOpen() {
-      return this.isPanelOpen === true;
-    }
+      project: 'app/project'
+    })
+  },
+  watch: {
+  },
+  created() {
   },
   mounted() {
-    if (!this.allowNewContextInsights && this.currentPane === 'new-context-insight') {
-      this.setCurrentPane('list-context-insights');
-    }
   },
   methods: {
     ...mapActions({
-      setCurrentPane: 'contextInsightPanel/setCurrentPane'
-    })
+    }),
+    setActive(tab: string) {
+      this.currentTab = tab;
+    }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
-@import "~styles/variables";
+  @import "~styles/variables";
 
-.context-insight-container {
-  position: absolute;
-  display: flex;
-  flex-direction: column;
-  top: $navbar-outer-height;
-  right: 0;
-  width: 25vw;
-  height: calc(100vh - #{$navbar-outer-height});
-  z-index: 600;
-  transition: all 0.5s ease;
-  padding: 0 10px;
-  background: $background-light-1;
-  box-shadow: 0 2px 2px rgba(0,0,0,.12), 0 4px 4px rgba(0,0,0,.24);
-  overflow-y: auto;
-  overflow-x: hidden;
-  word-wrap: break-word;
-  color: #707070;
-}
-
-.context-insight-container.panel-hidden {
-  display: none;
-}
-
-::v-deep(.pane-header) {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  height: 56px;
-}
+  .context-insights-panel-container {
+    margin-top: 1rem;
+    .context-insights-container {
+      margin-left: 1rem;
+      margin-right: 1rem;
+      overflow: auto;
+    }
+  }
 </style>
-
