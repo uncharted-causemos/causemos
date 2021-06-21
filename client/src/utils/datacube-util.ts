@@ -1,3 +1,5 @@
+import { DatacubeFeature, Model, Datacube } from '@/types/Datacube';
+import { DatacubeType } from '@/types/Enums';
 import { FieldMap, field, searchable } from './lex-util';
 
 /**
@@ -41,9 +43,19 @@ export const datacubeKeys = (datacubeRow: Record<string, any>): string[] => {
   return keys;
 };
 
+export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
+  // FIXME: only numeric outputs are currently supported
+  return outputs.filter(o => o.type === 'int' || o.type === 'float');
+};
+
+export function isModel(datacube: Datacube): datacube is Model {
+  return datacube.type === DatacubeType.Model;
+}
+
 
 export default {
   CODE_TABLE,
   DISPLAY_NAMES,
-  datacubeKeys
+  datacubeKeys,
+  getValidatedOutputs
 };

@@ -10,6 +10,9 @@
       :raw-data="regionalData"
       :units="unit"
       :selected-scenario-ids="selectedScenarioIds"
+      :deselected-item-ids="deselectedRegionIds"
+      @toggle-is-item-selected="toggleIsRegionSelected"
+      @set-all-selected="setAllRegionsSelected"
       @aggregation-level-change="setSelectedAdminLevel"
     >
       <template #aggregation-description>
@@ -73,7 +76,7 @@
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 
 function timestampFormatter(timestamp: number) {
@@ -113,13 +116,29 @@ export default defineComponent({
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    deselectedRegionIds: {
+      type: Object as PropType<AdminRegionSets | null>,
+      default: null
     }
   },
-  emits: ['set-selected-admin-level'],
+  emits: [
+    'set-selected-admin-level',
+    'toggle-is-region-selected',
+    'set-all-regions-selected'
+  ],
   setup(props, { emit }) {
     const { regionalData } = toRefs(props);
     function setSelectedAdminLevel(level: number) {
       emit('set-selected-admin-level', level);
+    }
+
+    function toggleIsRegionSelected(adminLevel: string, regionId: string) {
+      emit('toggle-is-region-selected', adminLevel, regionId);
+    }
+
+    function setAllRegionsSelected(isSelected: boolean) {
+      emit('set-all-regions-selected', isSelected);
     }
 
     const availableAdminLevelTitles = computed(() => {
@@ -132,9 +151,11 @@ export default defineComponent({
 
     return {
       setSelectedAdminLevel,
+      toggleIsRegionSelected,
       availableAdminLevelTitles,
       timestampFormatter,
-      ADMIN_LEVEL_KEYS
+      ADMIN_LEVEL_KEYS,
+      setAllRegionsSelected
     };
   },
   computed: {

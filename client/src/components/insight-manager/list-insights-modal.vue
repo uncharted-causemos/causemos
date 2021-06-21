@@ -47,71 +47,85 @@
         </dropdown-control>
       </div>
     </div>
-    <div
-      v-if="activeTabId === tabs[0].id"
-      class="cards"
-    >
-      <div class="search">
-        <input
-          v-model="search"
-          v-focus
-          type="text"
-          class="form-control"
-          placeholder="Search insights"
-        >
-      </div>
-      <div class="pane-wrapper">
+    <div class="body flex">
+      <analytical-questions-panel />
+
+      <!-- body -->
+      <div class="body-main-content flex-col">
         <div
-          v-if="countInsights > 0"
-          class="pane-content"
+          v-if="activeTabId === tabs[0].id"
+          class="cards"
         >
-          <insight-card
-            v-for="insight in searchedInsights"
-            :active-insight="activeInsight"
-            :card-mode="true"
-            :curated="isCuratedInsight(insight.id)"
-            :key="insight.id"
-            :insight="insight"
-            @delete-insight="deleteInsight(insight.id)"
-            @open-editor="openEditor(insight.id)"
-            @select-insight="selectInsight(insight)"
-            @update-curation="updateCuration(insight.id)"
+          <div class="search">
+            <input
+              v-model="search"
+              v-focus
+              type="text"
+              class="form-control"
+              placeholder="Search insights"
+            >
+          </div>
+          <div class="pane-wrapper">
+            <div
+              v-if="countInsights > 0"
+              class="pane-content"
+            >
+              <insight-card
+                v-for="insight in searchedInsights"
+                :active-insight="activeInsight"
+                :card-mode="true"
+                :curated="isCuratedInsight(insight.id)"
+                :key="insight.id"
+                :insight="insight"
+                @delete-insight="deleteInsight(insight.id)"
+                @open-editor="openEditor(insight.id)"
+                @select-insight="selectInsight(insight)"
+                @update-curation="updateCuration(insight.id)"
+                draggable
+                @dragstart="startDrag($event, insight)"
+                @dragend="dragEnd($event)"
+              />
+            </div>
+            <message-display
+              class="pane-content"
+              v-else
+              :message="messageNoData"
+            />
+          </div>
+        </div>
+
+        <div
+          v-else-if="activeTabId === tabs[1].id"
+          class="list"
+        >
+          <div
+            v-if="questions.length > 0"
+            class="pane-content"
+          >
+            <div
+              v-for="questionItem in questions"
+              :key="questionItem.id"
+              style="margin-bottom: 5rem;">
+              <h3 class="analysis-question">{{questionItem.question}}</h3>
+              <insight-card
+                v-for="insight in questionItem.linkedInsights"
+                :key="insight.id"
+                :insight="insight"
+                :show-description="true"
+                :show-question="false"
+                @delete-insight="deleteInsight(insight.id)"
+                @open-editor="openEditor(insight.id)"
+                @select-insight="selectInsight(insight)"
+              />
+            </div>
+          </div>
+          <message-display
+            class="pane-content"
+            v-else
+            :message="messageNoData"
           />
         </div>
-        <message-display
-          class="pane-content"
-          v-else
-          :message="messageNoData"
-        />
       </div>
-    </div>
-
-    <div
-      v-else-if="activeTabId === tabs[1].id"
-      class="list"
-    >
-      <div
-        v-if="countInsights > 0"
-        class="pane-content"
-      >
-        <insight-card
-          v-for="insight in selectedInsights"
-          :active-insight="activeInsight"
-          :curated="isCuratedInsight(insight.id)"
-          :key="insight.id"
-          :insight="insight"
-          :show-description="true"
-          @delete-insight="deleteInsight(insight.id)"
-          @open-editor="openEditor(insight.id)"
-          @select-insight="selectInsight(insight)"
-          @update-curation="updateCuration(insight.id)"
-        />
-      </div>
-      <message-display
-        class="pane-content"
-        v-else
-        :message="messageNoData"
-      />
     </div>
   </div>
 </template>
@@ -138,6 +152,9 @@ import router from '@/router';
 import { getAllInsights } from '@/services/insight-service';
 import { ref, watchEffect, computed } from 'vue';
 
+import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
+
+
 const INSIGHT_TABS = [
   {
     id: 'cards',
@@ -157,7 +174,8 @@ export default {
     InsightCard,
     InsightControlMenu,
     MessageDisplay,
-    TabBar
+    TabBar,
+    AnalyticalQuestionsPanel
   },
   data: () => ({
     activeInsight: null,
@@ -174,6 +192,8 @@ export default {
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
     const project = computed(() => store.getters['insightPanel/projectId']);
+
+    const questions = computed(() => store.getters['analysisChecklist/questions']);
 
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {
@@ -196,7 +216,8 @@ export default {
     return {
       listInsights,
       contextId,
-      project
+      project,
+      questions
     };
   },
   computed: {
@@ -243,6 +264,36 @@ export default {
       this.hideInsightPanel();
       this.activeInsight = null;
       this.selectedInsight = null;
+    },
+    startDrag(evt, insight) {
+      evt.currentTarget.style.border = '3px dashed black';
+
+      evt.dataTransfer.dropEffect = 'move';
+      evt.dataTransfer.effectAllowed = 'move';
+      evt.dataTransfer.setData('insight_id', insight.id);
+
+      const img = document.createElement('img');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      // Setting img src
+      img.src = insight.thumbnail;
+
+      // Drawing to canvas with a smaller size
+      canvas.width = img.width * 0.2;
+      canvas.height = img.height * 0.2;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // add to ensure visibility
+      document.body.append(canvas);
+
+      // Setting drag image with drawn canvas image
+      evt.dataTransfer.setDragImage(canvas, 0, 0);
+    },
+    dragEnd(evt) {
+      const matches = document.querySelectorAll('canvas');
+      matches.forEach(c => c.remove());
+
+      evt.currentTarget.style.border = 'none';
     },
     deleteInsight(id) {
       API.delete(`insights/${id}`).then(result => {
@@ -540,6 +591,8 @@ export default {
       this.activeInsight = null;
       this.selectedInsight = null;
       this.activeTabId = id;
+
+      // FIXME: reload insights since questions most recent question stuff may not be up to date
     },
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
@@ -620,6 +673,25 @@ export default {
     height: 100%;
     overflow: auto;
     padding: 1rem;
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  background: $background-light-3;
+
+  .body-main-content {
+    flex: 1;
+    min-width: 0;
+    isolation: isolate;
+
+    .analysis-question {
+      padding: 5px 5px 10px;
+      border: 1px solid #e5e5e5;
+      margin: 0px 1rem 1rem 0px;
+      background-color: white;
+    }
   }
 }
 

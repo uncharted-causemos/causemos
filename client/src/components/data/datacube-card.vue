@@ -8,18 +8,18 @@
       </button>
     </header>
     <modal-new-scenario-runs
-      v-if="isModel && showNewRunsModal === true"
+      v-if="isModelMetadata && showNewRunsModal === true"
       :metadata="metadata"
       :potential-scenarios="potentialScenarios"
       @close="onNewScenarioRunsModalClose" />
     <modal-check-runs-execution-status
-      v-if="isModel & showModelRunsExecutionStatus === true"
+      v-if="isModelMetadata & showModelRunsExecutionStatus === true"
       :metadata="metadata"
       :potential-scenarios="runParameterValues"
       @close="showModelRunsExecutionStatus = false" />
     <div class="flex-row">
       <!-- if has multiple scenarios -->
-      <div v-if="isModel" class="scenario-selector">
+      <div v-if="isModelMetadata" class="scenario-selector">
         <div>
           <div class="checkbox">
             <label @click="toggleBaselineDefaultsVisibility()">
@@ -132,11 +132,11 @@
         <slot name="datacube-description" v-if="isDescriptionView" />
         <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
-            v-if="mainModelOutput"
+            v-if="mainModelOutput && isModelMetadata"
             class="scenario-header"
             :outputVariable="mainModelOutput.display_name"
             :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
-            :selected-model-id="selectedModelId"
+            :metadata="metadata"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />
@@ -190,7 +190,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -202,13 +202,14 @@ import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
-import useModelMetadata from '@/services/composables/useModelMetadata';
-import { Model, DatacubeFeature } from '@/types/Datacube';
+import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { DatacubeType, ModelRunStatus } from '@/types/Enums';
+import { ModelRunStatus } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { useStore } from 'vuex';
+import { isModel } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -270,6 +271,10 @@ export default defineComponent({
     outputSourceSpecs: {
       type: Array as PropType<OutputSpecWithId[]>,
       default: () => []
+    },
+    metadata: {
+      type: Object as PropType<Model | Indicator | null>,
+      default: null
     }
   },
   components: {
@@ -283,16 +288,18 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus
   },
   setup(props, { emit }) {
+    const store = useStore();
+    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
     const {
       selectedModelId,
       selectedScenarioIds,
       allModelRunData,
       selectedTemporalResolution,
       selectedTemporalAggregation,
-      selectedSpatialAggregation
+      selectedSpatialAggregation,
+      metadata
     } = toRefs(props);
-
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
 
     const {
       timeseriesData: selectedTimeseriesData,
@@ -316,14 +323,15 @@ export default defineComponent({
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
-    watch(() => metadata.value, () => {
-      mainModelOutput.value = metadata.value?.outputs[0];
-    }, {
-      immediate: true
+    watchEffect(() => {
+      if (metadata.value && currentOutputIndex.value >= 0) {
+        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        mainModelOutput.value = outputs[currentOutputIndex.value];
+      }
     });
 
-    const isModel = computed(() => {
-      return metadata.value?.type === DatacubeType.Model;
+    const isModelMetadata = computed(() => {
+      return metadata.value !== null && isModel(metadata.value);
     });
 
     watch(() => props.selectedScenarioIds, () => {
@@ -376,8 +384,7 @@ export default defineComponent({
       drilldownDimensions,
       runParameterValues,
       mainModelOutput,
-      metadata,
-      isModel
+      isModelMetadata
     };
   },
   data: () => ({

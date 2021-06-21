@@ -25,7 +25,8 @@ const createInsight = async (
   preActions,
   postActions,
   isDefault,
-  analyticalQuestion,
+  // eslint-disable-next-line camelcase
+  analytical_question,
   thumbnail,
   viewState,
   dataState) => {
@@ -48,7 +49,7 @@ const createInsight = async (
     pre_actions: preActions,
     post_actions: postActions,
     is_default: isDefault,
-    analytical_question: analyticalQuestion,
+    analytical_question: analytical_question,
     thumbnail,
     view_state: viewState,
     data_state: dataState
@@ -56,6 +57,28 @@ const createInsight = async (
 
   // Acknowledge success
   return { id: newId };
+};
+
+/**
+ * Insert an insight object as a whole
+ */
+const insertInsight = async(insight) => {
+  const connection = Adapter.get(RESOURCE.INSIGHT);
+  return await connection.insert(insight);
+};
+
+/**
+ * Update an insight with the specified changes
+ */
+const updateInsight = async(id, insight) => {
+  const connection = Adapter.get(RESOURCE.INSIGHT);
+  const result = await connection.update({
+    id: id,
+    ...insight
+  }, d => d.id);
+  if (result.errors) {
+    throw new Error(JSON.stringify(result.items[0]));
+  }
 };
 
 /**
@@ -157,5 +180,7 @@ module.exports = {
   getAllInsights,
   getInsight,
   counts,
-  remove
+  remove,
+  insertInsight,
+  updateInsight
 };
