@@ -196,66 +196,18 @@ export default class ModelRenderer extends SVGRenderer {
           return interpolatePath(previousPath, currentPath)(t);
         };
       });
-    console.log('edge path: ', selection.selectAll('.edge-path'));
-    // selection
-    //   .selectAll('.edge-path')
-    //   .append('text')
-    //   // .classed('indicator-edit-icon', true)
-    //   // .attr('x', width - 18) // fitting icon
-    //   // .attr('y', 15) // fitting ic
-    //   .style('font-family', 'FontAwesome')
-    //   .style('font-size', '6em')
-    //   .style('stroke', 'none')
-    //   .style('fill', 'black')
-    //   // .style('cursor', 'pointer')
-    //   .text('d', function (d) {
-    //     console.log(d);
-    //     return 'this is a test';
-    //   });
+  }
 
-    const controlStyles = POLARITY_ICON_SVG_SETTINGS;
-    selection
-      .append('text')
-      .attr('x', d => controlStyles[d.data.polarity].x)
-      .attr('y', d => controlStyles[d.data.polarity].y)
-      .style('background-color', 'red')
-      .style('font-family', 'FontAwesome')
-      .style('font-size', d => controlStyles[d.data.polarity]['font-size'])
-      .style('stroke', 'none')
-      .style('fill', 'white')
-      .style('cursor', 'pointer')
-      .text(d => controlStyles[d.data.polarity].text);
-
-    selection
-      .selectAll('.edge-path')
-      .each(function (d) {
-        console.log('this is a test: ', d);
-        const startCoord = d.points[0];
-        const endCoord = d.points[d.points.length - 1];
-        console.log('start: ', startCoord);
-        console.log('end: ', endCoord);
-
-
-        const middleX = startCoord.x + ((endCoord.x - startCoord.x) / 2);
-        const middleY = d.points[d.points.length / 2].y;
-        const middleCoord = { x: middleX, y: middleY };
-        // const middleX = startCoord.x + ((endCoord.x - startCoord.x) / 2);
-        // const middleY = startCoord.y + ((endCoord.y - startCoord.y) / 2);
-
-        console.log('middle: ', middleCoord);
-
-      //   selection
-      //     .classed('off-edge-icon', true)
-      //     .append('text')
-      //     .attr('x', middleCoord.x)
-      //     .attr('y', middleCoord.y)
-      //     .style('font-family', 'FontAwesome')
-      //     .style('font-size', '12px')
-      //     .style('stroke', 'none')
-      //     .style('fill', 'black')
-      //     .style('cursor', 'pointer')
-      //     .text('\uf05e');
-      });
+  updateEdgePoints() {
+    super.updateEdgePoints();
+    // const chart = this.chart;
+    // chart.selectAll('.edge').each(function() {
+    //   const pathNode = d3.select(this).select('path').node();
+    //   const offIndicator = self.calculateEdgeControlPlacement(pathNode);
+    //   d3.select(this).select('.edge-control')
+    //     .attr('transform', svgUtil.translate(offIndicator.x, offIndicator.y));
+    // });
+    // some more stuff
   }
 
   renderEdgeRemoved(selection) {
@@ -277,6 +229,9 @@ export default class ModelRenderer extends SVGRenderer {
       .style('cursor', 'pointer');
 
     const controlStyles = POLARITY_ICON_SVG_SETTINGS;
+
+    console.log('this: ', this);
+    console.log('selection', selection);
 
     selection
       .append('text')
