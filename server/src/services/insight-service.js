@@ -25,6 +25,7 @@ const createInsight = async (
   preActions,
   postActions,
   isDefault,
+  // eslint-disable-next-line camelcase
   analytical_question,
   thumbnail,
   viewState,
