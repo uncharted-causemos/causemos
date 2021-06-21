@@ -8,6 +8,7 @@
       @reset-cag="resetCAGLayout()"
     />
     <main>
+      <context-insight-panel />
       <div
         class="graph-container"
         @dblclick="onBackgroundDblClick">
@@ -165,6 +166,7 @@ import ModalImportConflict from '@/components/qualitative/modal-import-conflict'
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
+import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -210,7 +212,8 @@ export default {
     ModalConfirmation,
     ModalImportCag,
     ModalImportConflict,
-    ModalPathFind
+    ModalPathFind,
+    ContextInsightPanel
   },
   data: () => ({
     modelSummary: null,

@@ -1,14 +1,13 @@
 <template>
   <div class="list-context-insights-pane-container">
     <div class="pane-header">
-      <h6>Saved Insights</h6>
+      <h4>Insights: {{listContextInsights.length}}</h4>
       <dropdown-button
         class="export-dropdown"
         :inner-button-label="'Export'"
         :items="['Powerpoint', 'Word']"
         @item-selected="exportContextInsight"
       />
-      <close-button @click="closecontextInsightPanel()" />
     </div>
     <div
       v-if="listContextInsights.length > 0"
@@ -70,7 +69,6 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import { INSIGHTS } from '@/utils/messages-util';
 
 import ContextInsightEditor from '@/components/context-insight-panel/context-insight-editor';
-import CloseButton from '@/components/widgets/close-button';
 import MessageDisplay from '@/components/widgets/message-display';
 
 import dateFormatter from '@/formatters/date-formatter';
@@ -84,7 +82,6 @@ export default {
   name: 'ListContextInsightPane',
   components: {
     ContextInsightEditor,
-    CloseButton,
     DropdownButton,
     MessageDisplay
   },
@@ -170,11 +167,6 @@ export default {
     },
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
-    },
-    closecontextInsightPanel() {
-      this.hideContextInsightPanel();
-      this.activeContextInsight = null;
-      this.selectedContextInsight = null;
     },
     selectContextInsight(contextInsight) {
       if (contextInsight === this.selectedContextInsight) {
@@ -418,9 +410,9 @@ export default {
 .list-context-insights-pane-container {
   color: #707070;
   .pane-header{
-    > button {
-      margin-right: 35px;
-    }
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
   }
   .context-insight {
     cursor: pointer;

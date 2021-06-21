@@ -1,6 +1,7 @@
 <template>
   <div class="comp-analysis-experiment-container">
     <main>
+    <context-insight-panel />
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
     <datacube-card
@@ -114,7 +115,7 @@ import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
-
+import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
 
 const DRILLDOWN_TABS = [
   {
@@ -133,7 +134,8 @@ export default defineComponent({
     BreakdownPane,
     Disclaimer,
     DatacubeDescription,
-    DropdownButton
+    DropdownButton,
+    ContextInsightPanel
   },
   setup() {
     const selectedAdminLevel = ref(2);
