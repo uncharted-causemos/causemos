@@ -218,6 +218,8 @@ class CAGRenderer extends SVGRenderer {
       temporaryNewEdge = null;
     }
 
+    console.log(selection.nodes());
+
     selection
       .append('path')
       .classed('edge-path-bg', true)
@@ -442,6 +444,35 @@ class CAGRenderer extends SVGRenderer {
     const drag = d3.drag()
       .on('start', (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
+        // const allNodes = this.layout.nodes;
+
+        // const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
+        // const index = allNodes.indexOf(sourceNode);
+        // if (index > -1) {
+        //   allNodes.splice(index, 1);
+        // }
+        // console.log(allNodes);
+        // const options = this.options;
+
+        // allNodes.forEach(function(node) {
+        //   const targetNode = getLayoutNodeById(node.id);
+        //   // console.log(targetNode);
+
+        //   if (_.isNil(sourceNode)) {
+        //     console.log('source null');
+        //     return;
+        //   }
+        //   if (_.isNil(targetNode)) {
+        //     console.log('target null');
+        //     return;
+        //   }
+        //   // want to just draw the edge, not do the API call
+        //   options.newEdgeFn(sourceNode, targetNode);
+        // });
+
+
+        // this.options.newEdgeFn(this.newEdgeSource, targetNode);
+
         // add code here
       })
       .on('drag', (evt) => {
