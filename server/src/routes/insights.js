@@ -46,6 +46,17 @@ router.post('/', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * Update an insight doc
+ */
+router.put('/:id', asyncHandler(async (req, res) => {
+  const insightId = req.params.id;
+  const insight = req.body;
+  insight.id = insight.id || insightId;
+  await insightService.updateInsight(insightId, insight);
+  res.status(200).send({ updated: 'success' });
+}));
+
+/**
  * GET a list of insights
  */
 router.get('/', asyncHandler(async (req, res) => {
