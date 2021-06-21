@@ -1,6 +1,7 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { Timeseries } from '@/types/Timeseries';
+import _ from 'lodash';
 import { computed, Ref, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 
@@ -17,16 +18,23 @@ export default function useTimeseriesData(
   colorFromIndex: (index: number) => string,
   selectedTemporalResolution: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
-  selectedSpatialAggregation: Ref<string>
+  selectedSpatialAggregation: Ref<string>,
+  onNewLastTimestamp: (lastTimestamp: number) => void
 ) {
   const timeseriesData = ref<Timeseries[]>([]);
 
   const store = useStore();
-  const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+  const currentOutputIndex = computed(
+    () => store.getters['modelPublishStore/currentOutputIndex']
+  );
 
   watchEffect(onInvalidate => {
     timeseriesData.value = [];
-    if (modelRunIds.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
+    if (
+      modelRunIds.value.length === 0 ||
+      metadata.value === null ||
+      currentOutputIndex.value === undefined
+    ) {
       // Don't have the information needed to fetch the data
       return;
     }
@@ -47,7 +55,9 @@ export default function useTimeseriesData(
       }
       const modelMetadata = metadata.value;
       if (!modelMetadata) return;
-      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
+      const outputs = modelMetadata.validatedOutputs
+        ? modelMetadata.validatedOutputs
+        : modelMetadata.outputs;
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
@@ -109,6 +119,17 @@ export default function useTimeseriesData(
       });
     });
     return returnValue;
+  });
+
+  watchEffect(() => {
+    const allTimestamps = timeseriesDataForDisplay.value
+      .map(timeseries => timeseries.points)
+      .flat()
+      .map(point => point.timestamp);
+    const lastTimestamp = _.max(allTimestamps);
+    if (lastTimestamp !== undefined) {
+      onNewLastTimestamp(lastTimestamp);
+    }
   });
 
   return { timeseriesData: timeseriesDataForDisplay, relativeTo };

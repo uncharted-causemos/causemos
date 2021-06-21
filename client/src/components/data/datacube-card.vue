@@ -147,7 +147,7 @@
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && selectedTimeseriesData.length  > 0 && selectedTimeseriesData[0].points.length > 1"
+            v-if="!isDescriptionView && selectedTimeseriesData.length > 0 && selectedTimeseriesData[0].points.length > 1"
             class="timeseries-chart"
             :timeseries-data="selectedTimeseriesData"
             :selected-timestamp="selectedTimestamp"
@@ -301,6 +301,10 @@ export default defineComponent({
       metadata
     } = toRefs(props);
 
+    const emitTimestampSelection = (newTimestamp: number) => {
+      emit('select-timestamp', newTimestamp);
+    };
+
     const {
       timeseriesData: selectedTimeseriesData,
       relativeTo
@@ -311,7 +315,8 @@ export default defineComponent({
       colorFromIndex,
       selectedTemporalResolution,
       selectedTemporalAggregation,
-      selectedSpatialAggregation
+      selectedSpatialAggregation,
+      emitTimestampSelection
     );
 
     const {
@@ -339,23 +344,6 @@ export default defineComponent({
     }, {
       immediate: true
     });
-
-    function emitTimestampSelection(newTimestamp: number) {
-      emit('select-timestamp', newTimestamp);
-    }
-
-    watch(
-      () => selectedTimeseriesData.value,
-      () => {
-        const allTimestamps = selectedTimeseriesData.value
-          .map(timeseries => timeseries.points)
-          .flat()
-          .map(point => point.timestamp);
-        const lastTimestamp = _.max(allTimestamps);
-        if (lastTimestamp !== undefined) {
-          emitTimestampSelection(lastTimestamp);
-        }
-      });
 
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
