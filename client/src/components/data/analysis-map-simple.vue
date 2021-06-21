@@ -1,6 +1,7 @@
 <template>
   <div class="analysis-map-container">
     <div class="value-filter">
+      <map-legend />
       <slider-continuous-range
         v-if="extent"
         v-model="range"
@@ -63,6 +64,7 @@ import { COLOR_SCHEME } from '@/utils/colors-util';
 import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
+import MapLegend from '@/components/widgets/map-legend';
 
 // Map filter animation fps rate (Use lower value if there's a performance issue)
 const FILTER_ANIMATION_FPS = 5;
@@ -120,7 +122,8 @@ export default {
     WmMap,
     WmMapVector,
     WmMapPopup,
-    SliderContinuousRange
+    SliderContinuousRange,
+    MapLegend
   },
   emits: [
     'on-map-load',
