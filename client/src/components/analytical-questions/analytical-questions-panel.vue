@@ -145,7 +145,7 @@ export default defineComponent({
       const loadedInsight = await getInsightById(insight_id);
       if (loadedInsight) {
         const existingIndex = questionItem.linkedInsights.findIndex(i => i.id === loadedInsight.id);
-        if (existingIndex >= 0) {} else {
+        if (existingIndex < 0) {
           // only add any dropped insight once to each question
           questionItem.linkedInsights.push(loadedInsight);
 
