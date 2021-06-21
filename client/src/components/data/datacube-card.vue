@@ -112,7 +112,7 @@
               <template #content>
                 <div
                   class="dropdown-option"
-                  @click="relativeTo = null; isRelativeDropdownOpen = false;"
+                  @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
                 >
                   none
                 </div>
@@ -121,7 +121,7 @@
                   class="dropdown-option"
                   :style="{ color: colorFromIndex(index) }"
                   :key="index"
-                  @click="relativeTo = index; isRelativeDropdownOpen = false;"
+                  @click="emitRelativeToSelection(index); isRelativeDropdownOpen = false;"
                 >
                   Run {{index}}
                 </div>
@@ -147,9 +147,9 @@
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && selectedTimeseriesData.length > 0 && selectedTimeseriesData[0].points.length > 1"
+            v-if="!isDescriptionView && timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
             class="timeseries-chart"
-            :timeseries-data="selectedTimeseriesData"
+            :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
             @select-timestamp="emitTimestampSelection"
           />
@@ -199,7 +199,6 @@ import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coord
 import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
-import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
@@ -210,6 +209,7 @@ import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCachi
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
+import { Timeseries } from '@/types/Timeseries';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -221,7 +221,8 @@ export default defineComponent({
     'check-model-metadata-validity',
     'refetch-data',
     'new-runs-mode',
-    'update-desc-view'
+    'update-desc-view',
+    'set-relative-to'
   ],
   props: {
     isExpanded: {
@@ -236,10 +237,6 @@ export default defineComponent({
       type: Number,
       default: 0
     },
-    selectedModelId: {
-      type: String as PropType<string>,
-      required: true
-    },
     allModelRunData: {
       type: Array as PropType<ModelRun[]>,
       default: []
@@ -252,18 +249,6 @@ export default defineComponent({
       type: Number,
       default: 0
     },
-    selectedTemporalResolution: {
-      type: String as PropType<string>,
-      default: 'month'
-    },
-    selectedTemporalAggregation: {
-      type: String as PropType<string>,
-      default: 'mean'
-    },
-    selectedSpatialAggregation: {
-      type: String as PropType<string>,
-      default: 'mean'
-    },
     regionalData: {
       type: Object as PropType<RegionalAggregations | null>,
       default: null
@@ -274,6 +259,14 @@ export default defineComponent({
     },
     metadata: {
       type: Object as PropType<Model | Indicator | null>,
+      default: null
+    },
+    timeseriesData: {
+      type: Array as PropType<Timeseries[]>,
+      default: []
+    },
+    relativeTo: {
+      type: Number as PropType<number | null>,
       default: null
     }
   },
@@ -292,12 +285,8 @@ export default defineComponent({
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
     const {
-      selectedModelId,
       selectedScenarioIds,
       allModelRunData,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation,
       metadata
     } = toRefs(props);
 
@@ -305,19 +294,9 @@ export default defineComponent({
       emit('select-timestamp', newTimestamp);
     };
 
-    const {
-      timeseriesData: selectedTimeseriesData,
-      relativeTo
-    } = useTimeseriesData(
-      metadata,
-      selectedModelId,
-      selectedScenarioIds,
-      colorFromIndex,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation,
-      emitTimestampSelection
-    );
+    const emitRelativeToSelection = (newValue: number | null) => {
+      emit('set-relative-to', newValue);
+    };
 
     const {
       dimensions,
@@ -339,12 +318,6 @@ export default defineComponent({
       return metadata.value !== null && isModel(metadata.value);
     });
 
-    watch(() => props.selectedScenarioIds, () => {
-      relativeTo.value = null;
-    }, {
-      immediate: true
-    });
-
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
@@ -363,16 +336,15 @@ export default defineComponent({
     return {
       updateMapFilters,
       mapFilters,
-      selectedTimeseriesData,
       colorFromIndex,
       emitTimestampSelection,
-      relativeTo,
       dimensions,
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues,
       mainModelOutput,
-      isModelMetadata
+      isModelMetadata,
+      emitRelativeToSelection
     };
   },
   data: () => ({

@@ -2,7 +2,7 @@ import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { Timeseries } from '@/types/Timeseries';
 import _ from 'lodash';
-import { computed, Ref, ref, watchEffect } from 'vue';
+import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 
 /**
@@ -92,6 +92,16 @@ export default function useTimeseriesData(
   });
 
   const relativeTo = ref<number | null>(null);
+  // Whenever the selected runs change, reset "relative to" state
+  watch(
+    () => modelRunIds.value,
+    () => {
+      relativeTo.value = null;
+    },
+    {
+      immediate: true
+    }
+  );
   const timeseriesDataForDisplay = computed(() => {
     if (timeseriesData.value.length === 0) return [];
     if (relativeTo.value === null || timeseriesData.value.length < 2) {
@@ -132,5 +142,13 @@ export default function useTimeseriesData(
     }
   });
 
-  return { timeseriesData: timeseriesDataForDisplay, relativeTo };
+  const setRelativeTo = (newValue: number | null) => {
+    relativeTo.value = newValue;
+  };
+
+  return {
+    timeseriesData: timeseriesDataForDisplay,
+    relativeTo,
+    setRelativeTo
+  };
 }

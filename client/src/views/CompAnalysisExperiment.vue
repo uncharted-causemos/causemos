@@ -18,9 +18,12 @@
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
       :metadata="metadata"
+      :timeseries-data="timeseriesData"
+      :relative-to="relativeTo"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
+      @set-relative-to="setRelativeTo"
       @refetch-data="fetchData"
       @new-runs-mode="newRunsMode=!newRunsMode"
       @update-desc-view="updateDescView"
@@ -119,6 +122,7 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
 import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
+import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 const DRILLDOWN_TABS = [
   {
@@ -241,6 +245,35 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
+    const clearRouteParam = () => {
+      router.push({
+        query: {
+          insight_id: undefined
+        }
+      }).catch(() => {});
+    };
+
+    const setSelectedTimestamp = (value: number) => {
+      if (selectedTimestamp.value === value) return;
+      selectedTimestamp.value = value;
+      clearRouteParam();
+    };
+
+    const {
+      timeseriesData,
+      relativeTo,
+      setRelativeTo
+    } = useTimeseriesData(
+      metadata,
+      selectedModelId,
+      selectedScenarioIds,
+      colorFromIndex,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      setSelectedTimestamp
+    );
+
     const {
       outputSpecs,
       regionalData,
@@ -287,7 +320,12 @@ export default defineComponent({
       toggleIsRegionSelected,
       setAllRegionsSelected,
       outputs,
-      currentOutputIndex
+      currentOutputIndex,
+      setSelectedTimestamp,
+      clearRouteParam,
+      timeseriesData,
+      relativeTo,
+      setRelativeTo
     };
   },
   watch: {
@@ -331,13 +369,6 @@ export default defineComponent({
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },
-    clearRouteParam() {
-      router.push({
-        query: {
-          insight_id: undefined
-        }
-      }).catch(() => {});
-    },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight: Insight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
@@ -374,11 +405,6 @@ export default defineComponent({
           this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
         }
       }
-    },
-    setSelectedTimestamp(value: number) {
-      if (this.selectedTimestamp === value) return;
-      this.selectedTimestamp = value;
-      this.clearRouteParam();
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {
