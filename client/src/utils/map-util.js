@@ -205,26 +205,23 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
   const propertyGetter = _.isNil(relativeTo)
     ? ['feature-state', property]
     : ['-', ['feature-state', property], ['feature-state', relativeTo]];
-  const fillColor = discreteColors(property, dataDomain, colors, scaleFn, useFeatureState, relativeTo);
-  return {
+  const style = {
     type: 'fill',
     paint: {
       'fill-antialias': false,
-      'fill-color': fillColor,
-      'fill-opacity': useFeatureState ? [
-        'case',
-        ...missingProperty,
-        ['<', propertyGetter, filterDomain.min], 0.0,
-        ['>', propertyGetter, filterDomain.max], 0.0,
-        ['boolean', ['feature-state', 'hover'], false], 0.8, // on hover
-        0.6 // default opacity
-      ] : [
-        'case',
-        ['boolean', ['feature-state', 'hover'], false], 0.8, // opacity to 1 on hover
-        0.6 // default opacity
-      ]
+      'fill-color': discreteColors(property, dataDomain, colors, scaleFn, useFeatureState, relativeTo)
     }
   };
+  if (useFeatureState) {
+    style.paint['fill-opacity'] = [
+      'case',
+      ...missingProperty,
+      ['<', propertyGetter, filterDomain.min], 0.0,
+      ['>', propertyGetter, filterDomain.max], 0.0,
+      1
+    ];
+  }
+  return style;
 }
 
 /**
