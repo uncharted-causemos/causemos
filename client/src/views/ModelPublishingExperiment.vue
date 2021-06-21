@@ -104,6 +104,9 @@
             :selected-spatial-aggregation="selectedSpatialAggregation"
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
+            :deselected-region-ids="deselectedRegionIds"
+            @toggle-is-region-selected="toggleIsRegionSelected"
+            @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -256,7 +259,13 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    const { regionalData, outputSpecs } = useRegionalData(
+    const {
+      regionalData,
+      outputSpecs,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
       selectedModelId,
       selectedScenarioIds,
       selectedTimestamp,
@@ -288,6 +297,9 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected,
       currentOutputIndex
     };
   },

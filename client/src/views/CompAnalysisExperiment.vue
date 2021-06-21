@@ -86,7 +86,10 @@
             :selected-spatial-aggregation="selectedSpatialAggregation"
             :selected-timestamp="selectedTimestamp"
             :selected-scenario-ids="selectedScenarioIds"
+            :deselected-region-ids="deselectedRegionIds"
+            @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
+            @set-all-regions-selected="setAllRegionsSelected"
           />
         </template>
     </drilldown-panel>
@@ -238,7 +241,13 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    const { outputSpecs, regionalData } = useRegionalData(
+    const {
+      outputSpecs,
+      regionalData,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
       selectedModelId,
       selectedScenarioIds,
       selectedTimestamp,
@@ -274,6 +283,9 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected,
       outputs,
       currentOutputIndex
     };

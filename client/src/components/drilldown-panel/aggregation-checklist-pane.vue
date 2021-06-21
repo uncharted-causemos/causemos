@@ -24,8 +24,14 @@
     </div>
     <div class="flex-row">
       <div class="select-all-buttons">
-        <small-text-button :label="'Select All'" @click="selectAll" />
-        <small-text-button :label="'Deselect All'" @click="deselectAll" />
+        <small-text-button
+          :label="'Select All'"
+          @click="setAllSelected(true)"
+        />
+        <small-text-button
+          :label="'Deselect All'"
+          @click="setAllSelected(false)"
+        />
       </div>
       <div v-if="units !== null" class="units">
         {{ units }}
@@ -67,7 +73,6 @@ interface StatefulDataNode {
   values: (number | null)[];
   path: string[];
   isExpanded: boolean;
-  isChecked: boolean;
 }
 
 // The root of the tree. Imitates the structure of a real node
@@ -111,7 +116,9 @@ interface ChecklistRowData {
 const extractVisibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
-  selectedLevel: number
+  selectedLevel: number,
+  deselectedItemIds: { [aggregationLevel: string]: Set<string> } | null,
+  orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
   const depthLevel = isStatefulDataNode(metadataNode)
@@ -128,7 +135,13 @@ const extractVisibleRows = (
   const children = metadataNode.children.reduce((accumulator, child) => {
     return [
       ...accumulator,
-      ...extractVisibleRows(child, _hiddenAncestorNames, selectedLevel)
+      ...extractVisibleRows(
+        child,
+        _hiddenAncestorNames,
+        selectedLevel,
+        deselectedItemIds,
+        orderedAggregationLevelKeys
+      )
     ];
   }, [] as ChecklistRowData[]);
   const isExpanded = isStatefulDataNode(metadataNode)
@@ -142,13 +155,20 @@ const extractVisibleRows = (
   if (!isNodeVisible || !isStatefulDataNode(metadataNode)) {
     return visibleChildren;
   }
+  const aggregationLevel = orderedAggregationLevelKeys[depthLevel];
+  const itemId = metadataNode.path.join(PATH_DELIMETER);
+  const isChecked =
+    deselectedItemIds === null ||
+    deselectedItemIds[aggregationLevel] === undefined ||
+    !deselectedItemIds[aggregationLevel].has(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
       metadataNode,
       depthLevel,
       _hiddenAncestorNames,
-      selectedLevel
+      selectedLevel,
+      isChecked
     ),
     ...visibleChildren
   ];
@@ -158,9 +178,10 @@ const checklistRowDataFromNode = (
   node: StatefulDataNode,
   depthLevel: number,
   hiddenAncestorNames: string[],
-  selectedLevel: number
+  selectedLevel: number,
+  isChecked: boolean
 ): ChecklistRowData => {
-  const { name, values, children, isExpanded, isChecked, path } = node;
+  const { name, values, children, isExpanded, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
   const showExpandToggle = children.length > 0;
   const indentationCount =
@@ -177,6 +198,8 @@ const checklistRowDataFromNode = (
     path
   };
 };
+
+const PATH_DELIMETER = '__';
 
 export default defineComponent({
   name: 'AggregationChecklistPane',
@@ -215,20 +238,31 @@ export default defineComponent({
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    deselectedItemIds: {
+      type: Object as PropType<{
+        [aggregationLevel: string]: Set<string>;
+      } | null>,
+      default: null
     }
   },
-  emits: ['aggregation-level-change', 'toggle-checked'],
+  emits: [
+    'aggregation-level-change',
+    'toggle-is-item-selected',
+    'set-all-selected'
+  ],
   setup(props) {
     const {
       rawData,
       aggregationLevel,
       orderedAggregationLevelKeys,
-      selectedScenarioIds
+      selectedScenarioIds,
+      deselectedItemIds
     } = toRefs(props);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
-      //  out of it, augmented with 'expanded' and 'checked' properties to keep
+      //  out of it, augmented with a boolean 'expanded' property to keep
       //  track of the state of the component.
       const newStatefulData = { children: [] as StatefulDataNode[] };
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
@@ -241,9 +275,9 @@ export default defineComponent({
         const getIndexFromRunId = (modelRunId: string) =>
           selectedScenarioIds.value.findIndex(id => id === modelRunId);
         valuesAtThisLevel.forEach(({ id, values }) => {
-          const path = id.split('__');
+          const path = id.split(PATH_DELIMETER);
           const name = path[path.length - 1];
-          // Find where in the tree this region should be inserted
+          // Find where in the tree this item should be inserted
           let _path = id.split('__');
           let pointer = newStatefulData.children;
           while (_path.length > 1) {
@@ -274,8 +308,6 @@ export default defineComponent({
             values: valueArray,
             path,
             isExpanded: false,
-            // TODO: isChecked functionality still needs to be implemented
-            isChecked: true,
             children: []
           });
         });
@@ -334,7 +366,13 @@ export default defineComponent({
 
     const visibleRows = computed(() => {
       if (_.isNil(statefulData.value)) return [];
-      return extractVisibleRows(statefulData.value, [], aggregationLevel.value);
+      return extractVisibleRows(
+        statefulData.value,
+        [],
+        aggregationLevel.value,
+        deselectedItemIds.value,
+        orderedAggregationLevelKeys.value
+      );
     });
 
     return {
@@ -369,9 +407,9 @@ export default defineComponent({
         | RootStatefulDataNode
         | StatefulDataNode
         | undefined = this.statefulData;
-      for (const regionName of path) {
+      for (const itemName of path) {
         currentNode = currentNode.children.find(
-          child => child.name === regionName
+          child => child.name === itemName
         );
         if (currentNode === undefined) return;
       }
@@ -380,22 +418,14 @@ export default defineComponent({
       }
     },
     toggleChecked(path: string[]) {
-      // TODO: this may need to be updated depending on how we choose to store
-      //  and share the checked state of nodes (see isNodeChecked below)
-      this.$emit('toggle-checked', path);
+      const aggregationLevel = this.orderedAggregationLevelKeys[
+        path.length - 1
+      ];
+      const itemId = path.join(PATH_DELIMETER);
+      this.$emit('toggle-is-item-selected', aggregationLevel, itemId);
     },
-    isNodeChecked() {
-      // TODO: We'll need to determine some way for node selected states to be stored
-      //  in a parent or ancestor of this component and passed in as a prop, so that
-      //  it can be queried here, something like
-      //  return checkedNodes.find(pathToNode.join('-')) !== undefined;
-      return true;
-    },
-    deselectAll() {
-      console.log('deselectAll');
-    },
-    selectAll() {
-      console.log('selectAll');
+    setAllSelected(isSelected: boolean) {
+      this.$emit('set-all-selected', isSelected);
     }
   }
 });
