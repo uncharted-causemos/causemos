@@ -90,9 +90,11 @@
             :selected-timestamp="selectedTimestamp"
             :selected-scenario-ids="selectedScenarioIds"
             :deselected-region-ids="deselectedRegionIds"
+            :selected-breakdown-option="breakdownOption"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
             @set-all-regions-selected="setAllRegionsSelected"
+            @set-breakdown-option="setBreakdownOption"
           />
         </template>
     </drilldown-panel>
@@ -290,6 +292,11 @@ export default defineComponent({
       metadata
     );
 
+    const breakdownOption = ref('none');
+    const setBreakdownOption = (newValue: string) => {
+      breakdownOption.value = newValue;
+    };
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -325,7 +332,9 @@ export default defineComponent({
       clearRouteParam,
       timeseriesData,
       relativeTo,
-      setRelativeTo
+      setRelativeTo,
+      breakdownOption,
+      setBreakdownOption
     };
   },
   watch: {
