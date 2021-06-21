@@ -274,7 +274,7 @@ export default {
         pre_actions: null,
         post_actions: null,
         is_default: true,
-        analytical_question: '',
+        analytical_question: [],
         thumbnail: this.imagePreview,
         view_state: this.viewState,
         data_state: this.dataState
