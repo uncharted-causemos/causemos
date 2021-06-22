@@ -196,12 +196,6 @@ export function createDivergingColorStops(domain, colors, scaleFn) {
  */
 export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo) {
   // TODO: split this into two functions (one for feature state and one for grid map style)
-  const missingProperty = [
-    ['==', null, ['feature-state', property]], 0.0
-  ];
-  !_.isNil(relativeTo) && missingProperty.push(
-    ['==', null, ['feature-state', relativeTo]], 0.0
-  );
   const propertyGetter = _.isNil(relativeTo)
     ? ['feature-state', property]
     : ['-', ['feature-state', property], ['feature-state', relativeTo]];
@@ -213,6 +207,12 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
     }
   };
   if (useFeatureState) {
+    const missingProperty = [
+      ['==', null, ['feature-state', property]], 0.0
+    ];
+    !_.isNil(relativeTo) && missingProperty.push(
+      ['==', null, ['feature-state', relativeTo]], 0.0
+    );
     style.paint['fill-opacity'] = [
       'case',
       ...missingProperty,

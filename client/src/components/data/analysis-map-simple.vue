@@ -428,6 +428,8 @@ export default {
           if (cur.id !== this.valueProp && !cur.global) return prev;
           return [...prev, ...createRangeFilter(cur.range, cur.id)];
         }, []);
+        const relativeToProp = this.baselineSpec && this.baselineSpec.id;
+        if (relativeToProp) filter.unshift(['has', relativeToProp]);
         this.colorLayer.filter = ['all', ['has', this.valueProp], ...filter];
       } else {
         this.refreshLayers();
@@ -467,21 +469,20 @@ export default {
       this._unsetHover(event.map);
     },
     popupValueFormatter(feature) {
-      if (_.isNil(feature)) return null;
-      if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return null;
+      const isGridView = this.selectedLayer.vectorSourceLayer === 'maas';
+      const prop = isGridView ? feature?.properties : feature?.state;
+      if (_.isNil(prop && prop[this.valueProp])) return null;
 
-      if (this.selectedLayer.vectorSourceLayer === 'maas') {
-        return chartValueFormatter(this.extent.min, this.extent.max)(feature.properties[this.valueProp]);
-      } else {
-        const value = feature.state[this.valueProp];
-        const fields = [chartValueFormatter(this.extent.min, this.extent.max)(value)];
-        if (this.baselineSpec) {
-          const diff = feature.state[this.valueProp] - feature.state[this.baselineSpec.id];
-          fields.push('Diff: ' + chartValueFormatter(this.extent.min, this.extent.max)(diff));
-        }
-        [3, 2, 1, 0].forEach(i => fields.push(feature.properties['NAME_' + i]));
-        return fields.filter(field => !_.isNil(field)).join('<br />');
+      const value = prop[this.valueProp];
+      const format = v => chartValueFormatter(this.extent.min, this.extent.max)(v);
+      const rows = [format(value)];
+      if (this.baselineSpec) {
+        const diff = prop[this.valueProp] - prop[this.baselineSpec.id];
+        const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
+        rows.push(text);
       }
+      !isGridView && rows.push('Region: ' + feature.id.replaceAll('__', '/'));
+      return rows.filter(field => !_.isNil(field)).join('<br />');
     },
     setSelectedLayer() {
       this.selectedLayer = this.isGridMap ? layers[4] : layers[this.selectedAdminLevel];
