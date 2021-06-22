@@ -9,13 +9,11 @@
     <!-- FIXME: breakdown options are hardcoded, but eventually should
     be dynamically populated based on the various "breakdownData" types
     that the selected datacube includes -->
-    <!-- FIXME: 'by year' should dynamically change to whichever
-    temporal aggregation level is selected -->
     <dropdown-button
       v-else
       class="breakdown-option-dropdown"
-      :items="['none', 'by year']"
-      :selectedItem="selectedBreakdownOption"
+      :items="BREAKDOWN_OPTIONS"
+      :selectedItem="selectedBreakdownOption ?? 'none'"
       @item-selected="emitBreakdownOptionSelection"
     />
     <aggregation-checklist-pane
@@ -52,7 +50,6 @@
         </p>
       </template>
     </aggregation-checklist-pane>
-    <!-- TODO: dropdown to select what we're breaking down by -->
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="type in visibleTypeBreakdownData"
@@ -101,12 +98,29 @@ import {
 } from '@/types/Datacubes';
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import DropdownButton from '@/components/dropdown-button.vue';
+import { TemporalAggregationLevel } from '@/types/Enums';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
   //  and be consistent.
   return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
 }
+
+// FIXME: This dynamically change to whichever temporal aggregation level is selected
+const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
+export const BREAKDOWN_OPTIONS = [
+  null,
+  selectedTemporalAggregationLevel
+];
+
+const getBreakdownOptionDisplayName = (option: TemporalAggregationLevel | null) => {
+  switch (option) {
+    case TemporalAggregationLevel.Year:
+      return 'by year';
+    default:
+      return 'none';
+  }
+};
 
 export default defineComponent({
   components: { aggregationChecklistPane, DropdownButton },
@@ -145,8 +159,8 @@ export default defineComponent({
       default: null
     },
     selectedBreakdownOption: {
-      type: String,
-      default: 'none'
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   emits: [
@@ -170,7 +184,10 @@ export default defineComponent({
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string) => {
-      emit('set-breakdown-option', breakdownOption);
+      // FIXME: this branching logic can be removed once `dropdown-button` is
+      //  extended to support values with different display names
+      const payload = breakdownOption === 'none' ? null : TemporalAggregationLevel.Year;
+      emit('set-breakdown-option', payload);
     };
 
     const availableAdminLevelTitles = computed(() => {
@@ -188,7 +205,9 @@ export default defineComponent({
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
       setAllRegionsSelected,
-      emitBreakdownOptionSelection
+      emitBreakdownOptionSelection,
+      BREAKDOWN_OPTIONS: BREAKDOWN_OPTIONS.map(getBreakdownOptionDisplayName),
+      getBreakdownOptionDisplayName
     };
   },
   computed: {
@@ -236,5 +255,4 @@ export default defineComponent({
 .disabled-dropdown-instructions {
   color: $text-color-medium;
 }
-
 </style>

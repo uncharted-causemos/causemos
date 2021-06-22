@@ -27,8 +27,8 @@ export default defineComponent({
       default: 0
     },
     breakdownOption: {
-      type: String,
-      default: 'none'
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   setup(props, { emit }) {

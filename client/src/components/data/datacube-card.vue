@@ -271,8 +271,8 @@ export default defineComponent({
       default: null
     },
     breakdownOption: {
-      type: String,
-      default: 'none'
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   components: {

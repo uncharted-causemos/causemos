@@ -1,5 +1,6 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
+import { TemporalAggregationLevel } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
@@ -19,7 +20,7 @@ export default function useTimeseriesData(
   selectedTemporalResolution: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
   selectedSpatialAggregation: Ref<string>,
-  breakdownOption: Ref<string>,
+  breakdownOption: Ref<string | null>,
   onNewLastTimestamp: (lastTimestamp: number) => void
 ) {
   const timeseriesData = ref<Timeseries[]>([]);
@@ -133,7 +134,7 @@ export default function useTimeseriesData(
   });
 
   watch(() => [breakdownOption.value, timeseriesData.value], () => {
-    const preprocessingStep = breakdownOption.value === 'by year'
+    const preprocessingStep = breakdownOption.value === TemporalAggregationLevel.Year
       ? (timestamp: number) => new Date(timestamp * 1000).getUTCMonth()
       : (timestamp: number) => timestamp;
     const allTimestamps = timeseriesData.value
@@ -147,7 +148,7 @@ export default function useTimeseriesData(
   });
 
   const afterApplyingBreakdown = computed(() => {
-    if (breakdownOption.value === 'none' || afterApplyingRelativeTo.value.length !== 1) {
+    if (breakdownOption.value === null || afterApplyingRelativeTo.value.length !== 1) {
       return afterApplyingRelativeTo.value;
     }
     // FIXME: Still need to add logic for breaking down timeseries by other

@@ -56,3 +56,7 @@ export enum AdminLevel {
   Admin4 = 'admin4',
   Admin5 = 'admin5',
 }
+
+export enum TemporalAggregationLevel {
+  Year = 'year'
+}

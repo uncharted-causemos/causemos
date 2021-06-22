@@ -262,11 +262,8 @@ export default defineComponent({
       clearRouteParam();
     };
 
-    // TODO: can/should this be moved into useTimeseries?
-    // Maybe have a temporalBreakdown computed property so
-    //  useTimeseries doesn't need to know/care about the other types?
-    const breakdownOption = ref('none');
-    const setBreakdownOption = (newValue: string) => {
+    const breakdownOption = ref<string | null>(null);
+    const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
 

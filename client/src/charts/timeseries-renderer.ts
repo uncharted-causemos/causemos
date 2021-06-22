@@ -6,6 +6,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
+import { TemporalAggregationLevel } from '@/types/Enums';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -55,7 +56,7 @@ export default function(
   height: number,
   selectedTimestamp: number,
   onTimestampSelected: (timestamp: number) => void,
-  breakdownOption: string
+  breakdownOption: string | null
 ) {
   const groupElement = selection.append('g');
   const [xExtent, yExtent] = calculateExtents(timeseriesList);
@@ -75,7 +76,7 @@ export default function(
     yExtent,
     breakdownOption
   );
-  const timestampFormatter = breakdownOption === 'by year'
+  const timestampFormatter = breakdownOption === TemporalAggregationLevel.Year
     ? BY_YEAR_DATE_FORMATTER
     : DATE_FORMATTER;
   renderAxes(groupElement, xScale, yScale, valueFormatter, width, height, timestampFormatter);
@@ -83,7 +84,7 @@ export default function(
     renderLine(groupElement, timeSeries, xScale, yScale, breakdownOption);
   });
 
-  const preprocessingStep = breakdownOption === 'by year'
+  const preprocessingStep = breakdownOption === TemporalAggregationLevel.Year
     ? timestampToMonth
     : (value: number) => value;
   generateSelectableTimestamps(
@@ -142,9 +143,9 @@ function calculateScales(
   height: number,
   xExtent: [number, number],
   yExtent: [number, number],
-  breakdownOption: string
+  breakdownOption: string | null
 ) {
-  const xScaleDomain = breakdownOption === 'by year'
+  const xScaleDomain = breakdownOption === TemporalAggregationLevel.Year
     ? [0, 11] // January === 0, December === 11
     : xExtent;
   const xScale = d3
@@ -163,9 +164,9 @@ function renderLine(
   timeseries: Timeseries,
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
-  breakdownOption: string
+  breakdownOption: string | null
 ) {
-  const _xScale = breakdownOption === 'by year'
+  const _xScale = breakdownOption === TemporalAggregationLevel.Year
     ? (timestamp: number) => xScale(timestampToMonth(timestamp))
     : xScale;
   // Draw a line connecting all points in this segment
