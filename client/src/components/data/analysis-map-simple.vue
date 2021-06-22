@@ -163,17 +163,13 @@ export default {
       type: Boolean,
       default: false
     },
-    selectedAdminLevel: {
+    selectedLayerId: {
       type: Number,
       default: 0
     },
     filters: {
       type: Array,
       default: () => []
-    },
-    isGridMap: {
-      type: Boolean,
-      default: () => false
     },
     mapBounds: {
       type: Array,
@@ -192,7 +188,6 @@ export default {
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
-    selectedLayer: undefined,
     gridStats: undefined,
     legendData: []
   }),
@@ -204,6 +199,22 @@ export default {
       return _.isNil(this.relativeTo) || this.relativeTo === this.outputSelection
         ? undefined
         : this.outputSourceSpecs[this.relativeTo];
+    },
+    selectedLayer() {
+      return layers[this.selectedLayerId];
+    },
+    vectorSourceLayer() {
+      return this.selectedLayer?.vectorSourceLayer;
+    },
+    idPropName() {
+      return this.selectedLayer?.idPropName;
+    },
+    isGridMap() {
+      return this.vectorSourceLayer === 'maas';
+    },
+    adminLevel() {
+      if (this.selectedLayerId > 3) return undefined;
+      return this.selectedLayerId === 0 ? 'country' : 'admin' + this.selectedLayerId;
     },
     stats() {
       const stats = {};
@@ -232,8 +243,7 @@ export default {
       return stats;
     },
     extent() {
-      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
-      const extent = this.isGridMap ? this.gridStats : this.stats[adminLevel];
+      const extent = this.stats[this.adminLevel] || this.gridStats;
       if (!extent) return { min: 0, max: 1 };
       if (extent.min === extent.max) {
         extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
@@ -245,9 +255,7 @@ export default {
       return (this.selection && this.selection.id) || '';
     },
     vectorSource() {
-      if (this.selectedLayer.vectorSourceLayer !== 'maas') {
-        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
-      } else {
+      if (this.isGridMap) {
         const outputSpecs = this.outputSourceSpecs
           .map(spec => {
             return {
@@ -262,6 +270,8 @@ export default {
             };
           });
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/grid-output/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
+      } else {
+        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
     layerButtonClass() {
@@ -300,14 +310,7 @@ export default {
       this.refresh();
     },
     selectedLayer() {
-      Object.assign(this, this.selectedLayer);
       this.refreshLayers();
-    },
-    isGridMap() {
-      this.setSelectedLayer();
-    },
-    selectedAdminLevel() {
-      this.setSelectedLayer();
     }
   },
   created() {
@@ -317,10 +320,11 @@ export default {
     };
 
     this.vectorSourceId = 'maas-vector-source';
-    this.selectedLayer = layers[this.selectedAdminLevel];
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+    // Init layer objects
+    this.refreshLayers();
   },
   mounted() {
     this.refresh();
@@ -335,7 +339,7 @@ export default {
     },
     refreshLayers() {
       if (this.extent === undefined || this.colorOption === undefined) return;
-      const useFeatureState = this.selectedLayer.vectorSourceLayer !== 'maas';
+      const useFeatureState = !this.isGridMap;
       this.baseLayer = baseLayer(this.valueProp, useFeatureState);
       this.refreshColorLayer(useFeatureState);
     },
@@ -347,7 +351,7 @@ export default {
       this.legendData = createMapLegendData([min, max], this.colorScheme, scaleFn, relativeToProp);
     },
     setFeatureStates() {
-      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
+      if (!this.adminLevel) return;
 
       // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
@@ -362,7 +366,7 @@ export default {
       const featureStateBase = {};
       this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
-      this.regionData[adminLevel].forEach(row => {
+      this.regionData[this.adminLevel].forEach(row => {
         this.map.setFeatureState({
           id: row.id,
           source: this.vectorSourceId,
@@ -423,7 +427,7 @@ export default {
     updateLayerFilter() {
       if (!this.colorLayer) return;
       // Merge filter for the current map and all globally applied filters together
-      if (this.selectedLayer.vectorSourceLayer === 'maas') {
+      if (this.isGridMap) {
         const filter = this.filters.reduce((prev, cur) => {
           if (cur.id !== this.valueProp && !cur.global) return prev;
           return [...prev, ...createRangeFilter(cur.range, cur.id)];
@@ -469,8 +473,7 @@ export default {
       this._unsetHover(event.map);
     },
     popupValueFormatter(feature) {
-      const isGridView = this.selectedLayer.vectorSourceLayer === 'maas';
-      const prop = isGridView ? feature?.properties : feature?.state;
+      const prop = this.isGridMap ? feature?.properties : feature?.state;
       if (_.isNil(prop && prop[this.valueProp])) return null;
 
       const value = prop[this.valueProp];
@@ -481,11 +484,8 @@ export default {
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
         rows.push(text);
       }
-      if (!isGridView) rows.push('Region: ' + feature.id.replaceAll('__', '/'));
+      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll('__', '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
-    },
-    setSelectedLayer() {
-      this.selectedLayer = this.isGridMap ? layers[4] : layers[this.selectedAdminLevel];
     },
     throttledReevaluateColourScale: _.throttle(
       function() { this.reevaluateColourScale(); },
@@ -498,8 +498,8 @@ export default {
       if (!this.map) return;
       // Exit early if the layer hasn't finished loading
       if (!isLayerLoaded(this.map, this.baseLayerId)) return;
-      // This only applies too grid map
-      if (this.selectedLayer.vectorSourceLayer !== 'maas') return;
+      // This only applies to grid map
+      if (!this.isGridMap) return;
       const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });
       const values = [];
       for (const feature of features) {
