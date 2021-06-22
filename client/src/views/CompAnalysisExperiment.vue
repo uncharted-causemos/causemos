@@ -275,7 +275,6 @@ export default defineComponent({
       metadata,
       selectedModelId,
       selectedScenarioIds,
-      colorFromIndex,
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,

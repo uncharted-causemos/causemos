@@ -7,6 +7,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
+import { getMonthFromTimestamp } from '@/utils/date-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -24,7 +25,6 @@ const X_AXIS_TICK_SIZE_PX = 2;
 //  and be consistent.
 const DATE_FORMATTER = (value: any) => dateFormatter(value * 1000, 'MMM DD, YYYY');
 const BY_YEAR_DATE_FORMATTER = (value: any) => dateFormatter(new Date(0, value), 'MMM');
-const timestampToMonth = (timestamp: number) => new Date(timestamp * 1000).getUTCMonth();
 
 
 const DEFAULT_LINE_COLOR = '#000';
@@ -88,7 +88,7 @@ export default function(
   //  from the standard epoch format, e.g. `1451606400` for `Dec 31, 2015 @ 7pm`
   //  to a less specific domain like "the month's index", e.g. `1` for `February`
   const convertToXScaleDomain = breakdownOption === TemporalAggregationLevel.Year
-    ? timestampToMonth
+    ? getMonthFromTimestamp
     : (value: number) => value;
   generateSelectableTimestamps(
     groupElement,
@@ -170,7 +170,7 @@ function renderLine(
   breakdownOption: string | null
 ) {
   const _xScale = breakdownOption === TemporalAggregationLevel.Year
-    ? (timestamp: number) => xScale(timestampToMonth(timestamp))
+    ? (timestamp: number) => xScale(getMonthFromTimestamp(timestamp))
     : xScale;
   // Draw a line connecting all points in this segment
   const line = d3
