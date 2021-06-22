@@ -1,14 +1,7 @@
 <template>
   <div class="analysis-map-container">
     <div class="value-filter">
-      <map-legend />
-      <slider-continuous-range
-        v-if="extent"
-        v-model="range"
-        :min="extent.min"
-        :max="extent.max"
-        :color-option="colorOption"
-      />
+      <map-legend :data="legendData" />
       <div
         class="layer-toggle-button"
         @click="clickLayerToggle">
@@ -61,13 +54,9 @@ import _ from 'lodash';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
-import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded } from '@/utils/map-util';
+import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded, createDivergingColorStops, createColorStops } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
 import MapLegend from '@/components/widgets/map-legend';
-
-// Map filter animation fps rate (Use lower value if there's a performance issue)
-const FILTER_ANIMATION_FPS = 5;
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -116,13 +105,37 @@ const baseLayer = (property, useFeatureState = false) => {
   }
 };
 
+const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
+  const stops = !_.isNil(relativeTo)
+    ? createDivergingColorStops(domain, colors, scaleFn)
+    : createColorStops(domain, colors, scaleFn);
+  const labels = [];
+  // process with color stops (e.g [c1, v1, c2, v2, c3]) where cn is color and vn is value.
+  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 3])(v);
+  stops.forEach((item, index) => {
+    if (index === 1) {
+      labels.push(`< ${format(item)}`);
+    } else if (index % 2 !== 0) {
+      labels.push(`${format(stops[index - 2])} - ${format(item)}`);
+    }
+    // if last stop value
+    if (index === stops.length - 2) {
+      labels.push(`> ${format(item)}`);
+    }
+  });
+  const data = [];
+  colors.forEach((item, index) => {
+    data.push({ color: item, label: labels[index] });
+  });
+  return data.reverse();
+};
+
 export default {
   name: 'AnalysisMap',
   components: {
     WmMap,
     WmMapVector,
     WmMapPopup,
-    SliderContinuousRange,
     MapLegend
   },
   emits: [
@@ -178,11 +191,10 @@ export default {
     baseLayer: undefined,
     colorLayer: undefined,
     hoverId: undefined,
-    range: undefined,
-    featuresDrawn: undefined,
     map: undefined,
     selectedLayer: undefined,
-    gridStats: undefined
+    gridStats: undefined,
+    legendData: []
   }),
   computed: {
     selection() {
@@ -272,12 +284,6 @@ export default {
     },
     isFilterGlobal() {
       return this.filter && this.filter.global;
-    },
-    filterRange() {
-      if (this.filter === undefined) {
-        return this.extent;
-      }
-      return this.filter && this.filter.range;
     }
   },
   watch: {
@@ -292,12 +298,6 @@ export default {
     },
     regionData() {
       this.refresh();
-    },
-    range: {
-      handler() {
-        this.updateFilterRange();
-      },
-      deep: true
     },
     selectedLayer() {
       Object.assign(this, this.selectedLayer);
@@ -328,7 +328,6 @@ export default {
   methods: {
     refresh() {
       if (!this.map || !this.selection) return;
-      this.range = this.filterRange;
 
       this.setFeatureStates();
       this.refreshLayers();
@@ -344,7 +343,8 @@ export default {
       const { min, max } = this.extent;
       const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec && this.baselineSpec.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
+      this.legendData = createMapLegendData([min, max], this.colorScheme, scaleFn, relativeToProp);
     },
     setFeatureStates() {
       const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
@@ -486,10 +486,6 @@ export default {
     setSelectedLayer() {
       this.selectedLayer = this.isGridMap ? layers[4] : layers[this.selectedAdminLevel];
     },
-    updateFilterRange: _.throttle(function () {
-      if (!this.range || !this.valueProp) return;
-      this.$emit('slide-handle-change', { id: this.valueProp, range: this.range });
-    }, 1000 / FILTER_ANIMATION_FPS),
     throttledReevaluateColourScale: _.throttle(
       function() { this.reevaluateColourScale(); },
       100,
@@ -534,7 +530,7 @@ export default {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-end;
+  align-items: flex-start;
   cursor: pointer;
   .filter-toggle-button {
     padding: 5px;

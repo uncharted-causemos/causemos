@@ -153,7 +153,7 @@ function discreteColors(property, domain, colors, scaleFn = d3.scaleLinear, useF
 // * c1, when value is less than v1
 // * c2, when value is between v1 and v2
 // * c3, when value is greater than or equal to v2
-function createColorStops(domain, colors, scaleFn) {
+export function createColorStops(domain, colors, scaleFn) {
   const scale = scaleFn()
     .domain(domain)
     .range([0, 1]);
@@ -168,7 +168,7 @@ function createColorStops(domain, colors, scaleFn) {
   return stops;
 }
 
-function createDivergingColorStops(domain, colors, scaleFn) {
+export function createDivergingColorStops(domain, colors, scaleFn) {
   const max = Math.max(...domain.map(Math.abs));
   const scale = scaleFn()
     .domain([-max, 0, max])

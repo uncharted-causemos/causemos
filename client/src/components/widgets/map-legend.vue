@@ -3,9 +3,10 @@
     <div
       v-for="d in data"
       :key="d.color"
+      class="color-row"
     >
-      <div class="color" v-bind:style="{backgroundColor: d.color }">1</div>
-      <span class="label">2</span>
+      <div class="color" v-bind:style="{backgroundColor: d.color }"></div>
+      <span class="color-label">{{ d.label }}</span>
     </div>
   </div>
 </template>
@@ -23,39 +24,26 @@ export default defineComponent({
   props: {
     data: {
       type: Array as PropType<MapLegendData[]>,
-      default: [
-        {
-          color: '#4d9221',
-          label: '> 100'
-        },
-        {
-          color: '#a1d76a',
-          label: '1'
-        },
-        {
-          color: '#e6f5d0',
-          label: '> 100'
-        },
-        {
-          color: '#f7f7f7',
-          label: '> 100'
-        },
-        {
-          color: '#fde0ef',
-          label: '> 100'
-        },
-        {
-          color: '#e9a3c9',
-          label: '> 100'
-        },
-        {
-          color: '#c51b7d',
-          label: '> 100'
-        }
-      ]
+      default: []
     }
   }
 });
 </script>
 <style lang="scss" scoped>
+.color-row {
+  margin: 2px;
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+}
+.color {
+  height: 17px;
+  width: 17px;
+}
+.color-label {
+  padding-left: 5px;
+  font-size: 10px;
+  display: inline-flex;
+  align-items: center;
+}
 </style>
