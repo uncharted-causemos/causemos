@@ -84,7 +84,10 @@ export default function(
     renderLine(groupElement, timeSeries, xScale, yScale, breakdownOption);
   });
 
-  const preprocessingStep = breakdownOption === TemporalAggregationLevel.Year
+  // Depending on the selected breakdown option, timestamp values may need to be mapped
+  //  from the standard epoch format, e.g. `1451606400` for `Dec 31, 2015 @ 7pm`
+  //  to a less specific domain like "the month's index", e.g. `1` for `February`
+  const convertToXScaleDomain = breakdownOption === TemporalAggregationLevel.Year
     ? timestampToMonth
     : (value: number) => value;
   generateSelectableTimestamps(
@@ -93,7 +96,7 @@ export default function(
     xScale,
     height,
     onTimestampSelected,
-    preprocessingStep
+    convertToXScaleDomain
   );
 
   const timestampElements = generateSelectedTimestampElements(
@@ -113,7 +116,7 @@ export default function(
     yScale,
     valueFormatter,
     timestampFormatter,
-    preprocessingStep
+    convertToXScaleDomain
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -126,7 +129,7 @@ export default function(
       yScale,
       valueFormatter,
       timestampFormatter,
-      preprocessingStep
+      convertToXScaleDomain
     );
   };
 }
@@ -228,13 +231,13 @@ function generateSelectableTimestamps(
   xScale: d3.ScaleLinear<number, number>,
   height: number,
   onTimestampSelected: (timestamp: number) => void,
-  preprocessingStep: (timestamp: number) => number
+  convertToXScaleDomain: (timestamp: number) => number
 ) {
   const timestampGroup = selection.append('g');
   const allTimestamps = timeseriesList
     .map(timeSeries => timeSeries.points)
     .flat()
-    .map(point => preprocessingStep(point.timestamp));
+    .map(point => convertToXScaleDomain(point.timestamp));
   const uniqueTimestamps = _.uniq(allTimestamps);
   const hitboxWidth =
     uniqueTimestamps.length > 1
@@ -374,7 +377,7 @@ function updateTimestampElements(
   yScale: d3.ScaleLinear<number, number>,
   valueFormatter: (value: any) => string,
   timestampFormatter: (timestamp: number) => string,
-  preprocessingStep: (value: number) => number
+  convertToXScaleDomain: (value: number) => number
 ) {
   if (timestamp === null) {
     // Hide everything
@@ -403,7 +406,7 @@ function updateTimestampElements(
     // Adjust the length and vertical position of each dashed line
     const timeseries = timeseriesList[index];
     const point = timeseries.points.find(
-      point => preprocessingStep(point.timestamp) === timestamp
+      point => convertToXScaleDomain(point.timestamp) === timestamp
     );
     if (point === undefined) {
       // This line doesn't have a value at the selected timestamp,
