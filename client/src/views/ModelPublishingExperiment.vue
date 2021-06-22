@@ -18,6 +18,7 @@
           :publishingSteps="publishingSteps"
           :currentPublishStep="currentPublishStep"
           @navigate-to-publishing-step="showPublishingStep"
+          @publish-model="publishModel"
         />
       </div>
     </div>
@@ -38,6 +39,7 @@
       :regional-data="regionalData"
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
+      :metadata="metadata"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="updateSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -47,12 +49,12 @@
       <template v-slot:datacube-model-header>
         <datacube-model-header
           class="scenario-header"
-          :selected-model-id="selectedModelId"
+          :metadata="metadata"
         />
       </template>
       <template v-slot:datacube-description>
         <model-description
-          :selected-model-id="selectedModelId"
+          :metadata="metadata"
         />
       </template>
       <template #temporal-aggregation-config>
@@ -97,13 +99,15 @@
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
-            :metadata="metadata"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
             :selected-spatial-aggregation="selectedSpatialAggregation"
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
+            :deselected-region-ids="deselectedRegionIds"
+            @toggle-is-region-selected="toggleIsRegionSelected"
+            @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
           />
         </template>
@@ -116,13 +120,14 @@
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
-import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, ComputedRef, defineComponent, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { ModelPublishingStepID } from '@/types/Enums';
-import { DimensionInfo, Model, ModelPublishingStep } from '@/types/Datacube';
+import { Model, DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
+import { isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -130,6 +135,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
+import { updateDatacube } from '@/services/new-datacube-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -182,7 +188,7 @@ export default defineComponent({
 
     // FIXME: set initial model to DSSAT in case the query param does not have a valid datacubeid
     const selectedModelId = ref(DSSAT_PRODUCTION_DATA.modelId);
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+    const metadata = useModelMetadata(selectedModelId);
 
     const modelRunsFetchedAt = ref(0);
 
@@ -256,7 +262,13 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    const { regionalData, outputSpecs } = useRegionalData(
+    const {
+      regionalData,
+      outputSpecs,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
       selectedModelId,
       selectedScenarioIds,
       selectedTimestamp,
@@ -288,6 +300,9 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected,
       currentOutputIndex
     };
   },
@@ -356,6 +371,14 @@ export default defineComponent({
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
       setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution'
     }),
+    publishModel() {
+      // call the backend to update model metadata and finalize model publication
+      if (this.metadata && isModel(this.metadata)) {
+        // this.metadata?.status = 'ready'; // FIXME
+        updateDatacube(this.metadata.id, this.metadata as Model);
+        // TODO: redirect to model family page
+      }
+    },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },

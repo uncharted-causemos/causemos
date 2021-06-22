@@ -1,16 +1,16 @@
 const _ = require('lodash');
 
 const ES = require('./client');
-const { StatementQueryUtil } = require('./statement-query-util');
-const { findFilter } = rootRequire('/util/filters-util');
+const { DatacubeQueryUtil } = require('./datacube-query-util');
 const { AggUtil } = require('./agg-util');
-const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./config');
+const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./datacube-config');
+const { RESOURCE } = require('./adapter');
 const Logger = rootRequire('/config/logger');
 
 const MAX_ES_SUGGESTION_BUCKET_SIZE = 20;
 
 const aggUtil = new AggUtil(FIELDS);
-const queryUtil = new StatementQueryUtil();
+const queryUtil = new DatacubeQueryUtil();
 
 const _facetQuery = (filters, fields = []) => {
   const filterQuery = queryUtil.buildQuery(filters);
@@ -64,7 +64,7 @@ const _facetPostProcess = (fields, facets) => {
 };
 
 /**
- * Return statement id
+ * Return datacube id
  * @param {object} doc - object to insert/update to Elasticsearch
  */
 
@@ -72,93 +72,32 @@ const _keyFn = (doc) => {
   return doc.id;
 };
 
-class Statement {
+class Datacube {
   constructor (index) {
     this.index = index;
     this.client = ES.client;
   }
 
-  async findOne (statementFilters, options) {
+  async findOne (filters, options) {
     options.size = 1; // return only one
 
-    const result = await this._search(statementFilters, options);
+    const result = await this._search(filters, options);
     if (_.isEmpty(result.hits.hits)) return null;
     return result.hits.hits[0]._source;
   }
 
-  async find (statementFilters, options) {
-    const result = await this._search(statementFilters, options);
+  async find (filters, options) {
+    const result = await this._search(filters, options);
     if (_.isEmpty(result.hits.hits)) return [];
     return result.hits.hits.map(d => d._source);
   }
 
   /**
-   * Provides counts statistics for the number of statements, documents, and
-   * evidences under the filter criteria. This uses cardinality aggregation
-   * to "count" the objects at nested levels, as such there may be a small
-   * degree of error.
-   *
-   * @param {object} statementFilters
+   * Count dtacubes
+   * @param {object} filters - datacube related filters
    */
-  async stats (statementFilters) {
-    const filterQuery = queryUtil.buildQuery(statementFilters);
-    const clauses = statementFilters.clauses || [];
-    const nestedFilters = queryUtil.buildFilters(queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
-
-    const response = await this.client.search({
-      index: this.index,
-      body: {
-        size: 0,
-        query: filterQuery.query,
-        aggs: {
-          docs: {
-            nested: {
-              path: 'evidence'
-            },
-            aggs: {
-              filtered: {
-                filter: nestedFilters,
-                aggs: {
-                  documentsCount: {
-                    cardinality: {
-                      field: 'evidence.document_context.doc_id'
-                    }
-                  },
-                  evidenceCount: {
-                    cardinality: {
-                      field: 'evidence.evidence_context.source_hash'
-                    }
-                  }
-                }
-              }
-            }
-          },
-          relationshipsCount: {
-            cardinality: {
-              field: 'wm.edge'
-            }
-          }
-        }
-      }
-    });
-
-    const statementsCount = await this.count(statementFilters);
-    const filteredAggResult = response.body.aggregations.docs.filtered;
-    return {
-      statementsCount,
-      documentsCount: filteredAggResult.documentsCount.value,
-      evidenceCount: filteredAggResult.evidenceCount.value,
-      relationshipsCount: response.body.aggregations.relationshipsCount.value
-    };
-  }
-
-  /**
-   * Count statements
-   * Note: by default staged, deleted, self-looped statements are filtered
-   * @param {object} statementFilters - statement related filters
-   */
-  async count (statementFilters) {
-    const filterQuery = queryUtil.buildQuery(statementFilters);
+  async count (filters) {
+    const filterQuery = queryUtil.buildQuery(filters);
     const countQuery = {
       index: this.index,
       body: filterQuery
@@ -167,57 +106,18 @@ class Statement {
     return result.body.count;
   }
 
-  /**
-   * Count number of evidence nested in statement
-   * Note: by default staged, deleted, self-looped statements are filtered
-   * @param {object} statementFilters - statement related filters
-   */
-  async evidenceCount (statementFilters) {
-    const filterQuery = queryUtil.buildQuery(statementFilters);
-    const readerFilter = findFilter(statementFilters, 'reader');
-    const ALL_READERS = ['hume', 'eidos', 'sofia'];
-    const selectedReaders = _.get(readerFilter, 'values') || ALL_READERS;
-    /**
-     * FIXME: Fix this to use count the evidence instead of using precomputed value as
-     * precomputed count will be incorrect after document level filtering
-     **/
-    // Sum counts of selected readers
-    const aggsQuery = {};
-    selectedReaders.forEach(reader => {
-      aggsQuery[reader] = {
-        sum: {
-          field: `wm.readers_evidence_count.${reader}`
-        }
-      };
-    });
-    const searchQuery = {
-      index: this.index,
-      body: {
-        size: 0,
-        query: filterQuery.query,
-        aggs: aggsQuery
-      }
-    };
-    const response = await this.client.search(searchQuery);
-    const aggregations = response.body.aggregations;
-    const evidenceCount = selectedReaders.reduce((acc, r) => {
-      return acc + aggregations[r].value;
-    }, 0);
-    return evidenceCount;
-  }
-
 
   /**
-   * Returns statement facets
+   * Returns datacube facets
    *
    * @param {object} filters
-   * @param {array} fieldsNames - array of config fields
+   * @param {array} fieldNames - array of config fields
    */
-  async getFacets(statementFilters, fieldNames) {
+  async getFacets(filters, fieldNames) {
     // Sanity check, remove invalid fields
     const filteredFieldNames = [];
     fieldNames.forEach(f => {
-      if (FIELDS[f] && FIELDS[f].level === FIELD_LEVELS.STATEMENT) {
+      if (FIELDS[f] && FIELDS[f].level === FIELD_LEVELS.DATACUBE) {
         filteredFieldNames.push(f);
       }
     });
@@ -226,7 +126,7 @@ class Statement {
     }
 
     // Query
-    const query = _facetQuery(statementFilters, filteredFieldNames);
+    const query = _facetQuery(filters, filteredFieldNames);
     const response = await this.client.search({
       index: this.index,
       body: query
@@ -242,15 +142,13 @@ class Statement {
   /**
    * Search various fields in ES for terms starting with the queryString
    *
-   * @param {string} projectId
    * @param {string} searchField - config fields
    * @param {string} queryString - search query
    */
-  async searchFields(projectId, searchField, queryString) {
+  async searchFields(searchField, queryString) {
     const fieldNames = FIELDS[searchField].fields;
-    const aggFieldNames = FIELDS[searchField].aggFields || fieldNames;
 
-    // Wrap each word in * *
+    // Add wildcard so that we do a prefix search
     const processedQuery = decodeURI(queryString)
       // .toLowerCase() TODO: case insensitive search works for concepts but not author
       .split(' ')
@@ -259,8 +157,8 @@ class Statement {
       .join(' ');
 
     const searchBodies = [];
-    fieldNames.forEach((field, idx) => {
-      searchBodies.push({ index: projectId });
+    fieldNames.forEach(field => {
+      searchBodies.push({ index: RESOURCE.DATA_DATACUBE });
       searchBodies.push({
         size: 0,
         aggs: this._createNestedQuery(field, {
@@ -275,7 +173,7 @@ class Statement {
             aggs: {
               fieldAgg: {
                 terms: {
-                  field: aggFieldNames[idx],
+                  field: field,
                   size: MAX_ES_SUGGESTION_BUCKET_SIZE
                 }
               }
@@ -287,7 +185,6 @@ class Statement {
     const { body } = await this.client.msearch({
       body: searchBodies
     });
-
 
     const allResults = body.responses.reduce((acc, resp) => {
       const aggs = resp.aggregations.nestedAgg || resp.aggregations;
@@ -334,7 +231,7 @@ class Statement {
   }
 
   /**
-   * Insert a list of statements
+   * Insert a list of datacubes
    * @param {array} payloadArray
    * @param {string} refreshOption - one of 'true', 'false', 'wait_for'
    */
@@ -344,7 +241,7 @@ class Statement {
   }
 
   /**
-   * Update a list of statements keyed by id
+   * Update a list of datacubes keyed by id
    * @param {array} payloadArray
    * @param {string} refreshOption - one of 'true', 'false', 'wait_for'
    */
@@ -414,4 +311,4 @@ class Statement {
   }
 }
 
-module.exports = { Statement };
+module.exports = { Datacube };

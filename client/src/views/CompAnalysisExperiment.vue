@@ -1,6 +1,7 @@
 <template>
   <div class="comp-analysis-experiment-container">
     <main>
+    <context-insight-panel />
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
     <datacube-card
@@ -16,6 +17,7 @@
       :regional-data="regionalData"
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
+      :metadata="metadata"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -63,7 +65,7 @@
 
       <template #datacube-description>
         <datacube-description
-          :selected-model-id="selectedModelId"
+          :metadata="metadata"
         />
       </template>
 
@@ -84,7 +86,10 @@
             :selected-spatial-aggregation="selectedSpatialAggregation"
             :selected-timestamp="selectedTimestamp"
             :selected-scenario-ids="selectedScenarioIds"
+            :deselected-region-ids="deselectedRegionIds"
+            @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
+            @set-all-regions-selected="setAllRegionsSelected"
           />
         </template>
     </drilldown-panel>
@@ -97,7 +102,7 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { DimensionInfo, Model, DatacubeFeature } from '@/types/Datacube';
+import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
@@ -111,9 +116,9 @@ import _ from 'lodash';
 import { DatacubeType } from '@/types/Enums';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
-import API from '@/api/api';
+import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
-
+import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
 
 const DRILLDOWN_TABS = [
   {
@@ -132,7 +137,8 @@ export default defineComponent({
     BreakdownPane,
     Disclaimer,
     DatacubeDescription,
-    DropdownButton
+    DropdownButton,
+    ContextInsightPanel
   },
   setup() {
     const selectedAdminLevel = ref(2);
@@ -154,7 +160,7 @@ export default defineComponent({
 
     const selectedModelId = ref(datacubeId);
 
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+    const metadata = useModelMetadata(selectedModelId);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -235,7 +241,13 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    const { outputSpecs, regionalData } = useRegionalData(
+    const {
+      outputSpecs,
+      regionalData,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
       selectedModelId,
       selectedScenarioIds,
       selectedTimestamp,
@@ -271,6 +283,9 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected,
       outputs,
       currentOutputIndex
     };
@@ -323,44 +338,42 @@ export default defineComponent({
         }
       }).catch(() => {});
     },
-    updateStateFromInsight(insight_id: string) {
-      API.get(`insights/${insight_id}`).then(d => {
-        const loadedInsight: Insight = d.data;
-        // FIXME: before applying the insight, which will overwrite current state,
-        //  consider pushing current state to the url to support browser hsitory
-        //  in case the user wants to navigate to the original state using back button
-        if (loadedInsight) {
-          //
-          // insight was found and loaded
-          //
-          // data state
-          // FIXME: the order of resetting the state is important
-          if (loadedInsight.data_state?.selectedModelId) {
-            // this will reload datacube metadata as well as scenario runs
-            this.selectedModelId = loadedInsight.data_state?.selectedModelId;
-          }
-          if (loadedInsight.data_state?.selectedScenarioIds) {
-            // this would only be valid and effective if/after datacube runs are reloaded
-            this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
-          }
-          if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
-            this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
-          }
-          // view state
-          if (loadedInsight.view_state?.spatialAggregation) {
-            this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation;
-          }
-          if (loadedInsight.view_state?.temporalAggregation) {
-            this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation;
-          }
-          if (loadedInsight.view_state?.temporalResolution) {
-            this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution;
-          }
-          if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-            this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
-          }
+    async updateStateFromInsight(insight_id: string) {
+      const loadedInsight: Insight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedModelId) {
+          // this will reload datacube metadata as well as scenario runs
+          this.selectedModelId = loadedInsight.data_state?.selectedModelId;
         }
-      });
+        if (loadedInsight.data_state?.selectedScenarioIds) {
+          // this would only be valid and effective if/after datacube runs are reloaded
+          this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+          this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        // view state
+        if (loadedInsight.view_state?.spatialAggregation) {
+          this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation;
+        }
+        if (loadedInsight.view_state?.temporalAggregation) {
+          this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation;
+        }
+        if (loadedInsight.view_state?.temporalResolution) {
+          this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution;
+        }
+        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
+          this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+        }
+      }
     },
     setSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;

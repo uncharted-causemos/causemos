@@ -47,3 +47,10 @@ export interface NamedBreakdownData {
   name: string;
   data: BreakdownData;
 }
+
+export interface AdminRegionSets {
+  country: Set<string>;
+  admin1: Set<string>;
+  admin2: Set<string>;
+  admin3: Set<string>;
+}

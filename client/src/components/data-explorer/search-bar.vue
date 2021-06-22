@@ -21,6 +21,7 @@ import { mapActions, mapGetters } from 'vuex';
 
 import TextPill from '@/search/pills/text-pill';
 import RangePill from '@/search/pills/range-pill';
+import ValuePill from '@/search/pills/value-pill';
 import DynamicValuePill from '@/search/pills/dynamic-value-pill';
 import SingleRelationState from '@/search/single-relation-state';
 
@@ -33,9 +34,9 @@ const CONCEPTS_MSG = 'Select one or more ontological concepts';
 export default {
   name: 'SearchBar',
   props: {
-    datacubes: {
-      type: Array,
-      default: () => []
+    facets: {
+      type: Object,
+      default: () => {}
     }
   },
   computed: {
@@ -56,14 +57,19 @@ export default {
   },
   mounted() {
     // Generates lex pills from select datacube columns
-    const keys = datacubeUtil.datacubeKeys(this.datacubes[0]);
-    const datacubePills = keys.map(k => new TextPill({
-      field: k,
-      display: k,
-      icon: '',
-      iconText: '',
-      searchDisplay: datacubeUtil.DISPLAY_NAMES[k]
-    }));
+    const keys = Object.keys(this.facets);
+    const datacubePills = keys.map(k => {
+      const dcField = {
+        field: k,
+        display: k,
+        icon: '',
+        iconText: '',
+        searchDisplay: datacubeUtil.DISPLAY_NAMES[k]
+      };
+      const dcOptions = this.facets[k].map(f => f.key);
+
+      return new ValuePill(dcField, dcOptions);
+    });
 
     // Defines a list of searchable fields for LEX
     this.pills = [

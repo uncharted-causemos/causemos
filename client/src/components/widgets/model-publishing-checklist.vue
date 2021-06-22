@@ -70,6 +70,7 @@ export default defineComponent({
     publishModel() {
       (this as any).toaster('Publishing model ...');
       // TODO: redirect to another view where the published model can be seen
+      this.$emit('publish-model');
     }
   }
 });

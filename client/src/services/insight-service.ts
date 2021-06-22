@@ -1,4 +1,5 @@
 import API from '@/api/api';
+import { Insight } from '@/types/Insight';
 import _ from 'lodash';
 
 // FIXME: add support for analysisId field
@@ -107,6 +108,22 @@ export const getAllInsightsCount = async (project_id: string, context_id: string
   return fetchInsightsCount(fetchParamsArray);
 };
 
+export const getInsightById = async (insight_id: string) => {
+  const result = await API.get(`insights/${insight_id}`);
+  return result.data;
+};
+
+export const updateInsight = async (insight_id: string, insight: Insight) => {
+  const result = await API.put(`insights/${insight_id}`, insight, {
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+  return result.data;
+};
+
+// TODO: add deleteInsight API
+
 //
 // Core fetch functions
 //
@@ -158,5 +175,6 @@ export default {
   getContextSpecificInsights,
   getAllInsights,
   getSpecificInsightsCount,
-  getAllInsightsCount
+  getAllInsightsCount,
+  getInsightById
 };

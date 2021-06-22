@@ -1,7 +1,7 @@
 
 // @base/abstract type
 export interface Snapshot {
-  id?: string;
+  id: string;
   description?: string;
   visibility: string; // public or private
   project_id?: string;
@@ -30,14 +30,14 @@ export interface Insight extends Snapshot {
   name: string;
   data_state?: DataState;
   is_default: boolean; // is this the default insight?
-  analytical_question?: string; // optional question this insight aims to answer
+  analytical_question: string[]; // optional question this insight aims to answer
   thumbnail: string; // e.g., image url or base64 encoding
 }
 
 // @concrete type
 export interface AnalyticalQuestion extends Snapshot {
   question: string;
-  insightId?: string; // has an insight been linked to satisfy/answer this question?
+  linkedInsights: Insight[]; // has some insight(s) been linked to satisfy/answer this question?
 }
 
 // view-specific values (no data dependency)

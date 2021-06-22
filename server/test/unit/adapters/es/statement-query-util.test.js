@@ -1,5 +1,6 @@
 const expect = require('chai').expect;
-const queryUtil = rootRequire('/adapters/es/query-util');
+const { StatementQueryUtil } = rootRequire('/adapters/es/statement-query-util');
+const queryUtil = new StatementQueryUtil();
 
 const EMPTY_ENABLE_FILTER = {
   bool: {

@@ -3,7 +3,8 @@ const FIELD_TYPES = Object.freeze({
   REGEXP: 1,
   RANGED: 2,
   DATE: 3,
-  CUSTOM: 7
+  CUSTOM: 7,
+  _QUALITY: 99 // HACK for query-util
 });
 
 const FIELD_LEVELS = Object.freeze({
@@ -188,6 +189,7 @@ const FIELDS = Object.freeze({
 
   // Placeholder for custom filter
   quality: {
+    type: FIELD_TYPES._QUALITY,
     level: FIELD_LEVELS.CUSTOM
   },
 
