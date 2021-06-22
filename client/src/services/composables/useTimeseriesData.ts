@@ -19,6 +19,7 @@ export default function useTimeseriesData(
   selectedTemporalResolution: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
   selectedSpatialAggregation: Ref<string>,
+  breakdownOption: Ref<string>,
   onNewLastTimestamp: (lastTimestamp: number) => void
 ) {
   const timeseriesData = ref<Timeseries[]>([]);
@@ -102,7 +103,7 @@ export default function useTimeseriesData(
       immediate: true
     }
   );
-  const timeseriesDataForDisplay = computed(() => {
+  const afterApplyingRelativeTo = computed(() => {
     if (timeseriesData.value.length === 0) return [];
     if (relativeTo.value === null || timeseriesData.value.length < 2) {
       return timeseriesData.value;
@@ -131,15 +132,33 @@ export default function useTimeseriesData(
     return returnValue;
   });
 
-  watchEffect(() => {
-    const allTimestamps = timeseriesDataForDisplay.value
+  watch(() => [breakdownOption.value, timeseriesData.value], () => {
+    const preprocessingStep = breakdownOption.value === 'by year'
+      ? (timestamp: number) => new Date(timestamp * 1000).getUTCMonth()
+      : (timestamp: number) => timestamp;
+    const allTimestamps = timeseriesData.value
       .map(timeseries => timeseries.points)
       .flat()
-      .map(point => point.timestamp);
+      .map(point => preprocessingStep(point.timestamp));
     const lastTimestamp = _.max(allTimestamps);
     if (lastTimestamp !== undefined) {
       onNewLastTimestamp(lastTimestamp);
     }
+  });
+
+  const afterApplyingBreakdown = computed(() => {
+    if (breakdownOption.value === 'none' || afterApplyingRelativeTo.value.length !== 1) {
+      return afterApplyingRelativeTo.value;
+    }
+    // FIXME: Still need to add logic for breaking down timeseries by other
+    //  temporal aggregation levels and by other facets of the data
+    const onlyTimeseries = afterApplyingRelativeTo.value[0].points;
+    // FIXME: timestamps are currently in milliseconds, but will eventually be provided in seconds
+    const brokenDownByYear = _.groupBy(onlyTimeseries, point => new Date(point.timestamp * 1000).getUTCFullYear());
+    // FIXME: remove -5 slice
+    return Object.values(brokenDownByYear).slice(-5).map((points, index) => {
+      return { color: colorFromIndex(index), points };
+    });
   });
 
   const setRelativeTo = (newValue: number | null) => {
@@ -147,7 +166,7 @@ export default function useTimeseriesData(
   };
 
   return {
-    timeseriesData: timeseriesDataForDisplay,
+    timeseriesData: afterApplyingBreakdown,
     relativeTo,
     setRelativeTo
   };

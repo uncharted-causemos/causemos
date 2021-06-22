@@ -10,14 +10,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import renderTimeseries from '@/charts/timeseries-renderer';
 import { Timeseries } from '@/types/Timeseries';
-import {
-  defineComponent,
-  PropType,
-  onMounted,
-  ref,
-  watch,
-  nextTick
-} from 'vue';
+import { defineComponent, PropType, onMounted, ref, watch, toRefs } from 'vue';
 
 const RESIZE_DELAY = 15;
 
@@ -32,9 +25,16 @@ export default defineComponent({
     selectedTimestamp: {
       type: Number,
       default: 0
+    },
+    breakdownOption: {
+      type: String,
+      default: 'none'
     }
   },
   setup(props, { emit }) {
+    const { timeseriesData, breakdownOption, selectedTimestamp } = toRefs(
+      props
+    );
     const lineChart = ref<HTMLElement | null>(null);
     function selectTimestamp(newValue: number) {
       emit('select-timestamp', newValue);
@@ -43,7 +43,7 @@ export default defineComponent({
       | ((timestamp: number | null) => void)
       | undefined;
     const resize = _.debounce(function({ width, height }) {
-      if (lineChart.value === null || props.timeseriesData.length === 0) return;
+      if (lineChart.value === null || timeseriesData.value.length === 0) return;
       const svg = d3.select<HTMLElement, null>(lineChart.value);
       if (svg === null) return;
       // Set new size
@@ -52,22 +52,14 @@ export default defineComponent({
       svg.selectAll('*').remove();
       updateTimestampElements = renderTimeseries(
         svg,
-        props.timeseriesData,
+        timeseriesData.value,
         width,
         height,
-        props.selectedTimestamp,
-        selectTimestamp
+        selectedTimestamp.value,
+        selectTimestamp,
+        breakdownOption.value
       );
     }, RESIZE_DELAY);
-    function selectLastTimestamp() {
-      // HACK: this code has been hoisted to datacube-card and should be removed
-      const allTimestamps = props.timeseriesData
-        .map(timeseries => timeseries.points)
-        .flat()
-        .map(point => point.timestamp);
-      const lastTimestamp = _.max(allTimestamps);
-      selectTimestamp(lastTimestamp ?? 0);
-    }
     watch(
       () => props.selectedTimestamp,
       selectedTimestamp => {
@@ -77,7 +69,7 @@ export default defineComponent({
       }
     );
     watch(
-      () => props.timeseriesData,
+      () => [props.timeseriesData, props.breakdownOption],
       () => {
         // Underlying data has changed, so rerender chart
         const parentElement = lineChart.value?.parentElement;
@@ -85,18 +77,6 @@ export default defineComponent({
         resize({
           width: parentElement.clientWidth,
           height: parentElement.clientHeight
-        });
-        // HACK: this is a workaround to fix a reactivity issue
-        //  that may be a vue reactivity bug. If the timestamp is
-        //  selected this frame, the new selection will be bubbled
-        //  up to CompAnalysisExperiment, but the drilldown panel
-        //  (and the breakdown pane it contains) won't be reactively
-        //  updated. Another workaround is to add
-        //  :timestamp="selectedTimestamp"
-        //  to the <breakdown-pane>'s prop list in
-        //  CompAnalysisExperiment.
-        nextTick(() => {
-          selectLastTimestamp();
         });
       }
     );
@@ -107,7 +87,6 @@ export default defineComponent({
         width: parentElement.clientWidth,
         height: parentElement.clientHeight
       });
-      selectLastTimestamp();
     });
     return { resize, lineChart };
   }

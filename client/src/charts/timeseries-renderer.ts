@@ -22,6 +22,9 @@ const X_AXIS_TICK_SIZE_PX = 2;
 // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
 //  and be consistent.
 const DATE_FORMATTER = (value: any) => dateFormatter(value * 1000, 'MMM DD, YYYY');
+const BY_YEAR_DATE_FORMATTER = (value: any) => dateFormatter(new Date(0, value), 'MMM');
+const timestampToMonth = (timestamp: number) => new Date(timestamp * 1000).getUTCMonth();
+
 
 const DEFAULT_LINE_COLOR = '#000';
 const LABEL_BACKGROUND_COLOR = 'white';
@@ -51,7 +54,8 @@ export default function(
   width: number,
   height: number,
   selectedTimestamp: number,
-  onTimestampSelected: (timestamp: number) => void
+  onTimestampSelected: (timestamp: number) => void,
+  breakdownOption: string
 ) {
   const groupElement = selection.append('g');
   const [xExtent, yExtent] = calculateExtents(timeseriesList);
@@ -64,18 +68,31 @@ export default function(
   }
 
   const valueFormatter = chartValueFormatter(...yExtent);
-  const [xScale, yScale] = calculateScales(width, height, xExtent, yExtent);
-  renderAxes(groupElement, xScale, yScale, valueFormatter, width, height);
+  const [xScale, yScale] = calculateScales(
+    width,
+    height,
+    xExtent,
+    yExtent,
+    breakdownOption
+  );
+  const timestampFormatter = breakdownOption === 'by year'
+    ? BY_YEAR_DATE_FORMATTER
+    : DATE_FORMATTER;
+  renderAxes(groupElement, xScale, yScale, valueFormatter, width, height, timestampFormatter);
   timeseriesList.forEach(timeSeries => {
-    renderLine(groupElement, timeSeries, xScale, yScale);
+    renderLine(groupElement, timeSeries, xScale, yScale, breakdownOption);
   });
 
+  const preprocessingStep = breakdownOption === 'by year'
+    ? timestampToMonth
+    : (value: number) => value;
   generateSelectableTimestamps(
     groupElement,
     timeseriesList,
     xScale,
     height,
-    onTimestampSelected
+    onTimestampSelected,
+    preprocessingStep
   );
 
   const timestampElements = generateSelectedTimestampElements(
@@ -93,7 +110,9 @@ export default function(
     timeseriesList,
     xScale,
     yScale,
-    valueFormatter
+    valueFormatter,
+    timestampFormatter,
+    preprocessingStep
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -104,7 +123,9 @@ export default function(
       timeseriesList,
       xScale,
       yScale,
-      valueFormatter
+      valueFormatter,
+      timestampFormatter,
+      preprocessingStep
     );
   };
 }
@@ -120,11 +141,15 @@ function calculateScales(
   width: number,
   height: number,
   xExtent: [number, number],
-  yExtent: [number, number]
+  yExtent: [number, number],
+  breakdownOption: string
 ) {
+  const xScaleDomain = breakdownOption === 'by year'
+    ? [0, 11] // January === 0, December === 11
+    : xExtent;
   const xScale = d3
     .scaleLinear()
-    .domain(xExtent)
+    .domain(xScaleDomain)
     .range([Y_AXIS_WIDTH, width - PADDING_RIGHT]);
   const yScale = d3
     .scaleLinear()
@@ -137,12 +162,16 @@ function renderLine(
   parentGroupElement: D3GElementSelection,
   timeseries: Timeseries,
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>
+  yScale: d3.ScaleLinear<number, number>,
+  breakdownOption: string
 ) {
+  const _xScale = breakdownOption === 'by year'
+    ? (timestamp: number) => xScale(timestampToMonth(timestamp))
+    : xScale;
   // Draw a line connecting all points in this segment
   const line = d3
     .line<TimeseriesPoint>()
-    .x(d => xScale(d.timestamp))
+    .x(d => _xScale(d.timestamp))
     .y(d => yScale(d.value));
   const groupElement = parentGroupElement.append('g');
   groupElement
@@ -163,12 +192,13 @@ function renderAxes(
   //  seem to reflect that.
   valueFormatter: (value: any) => string,
   width: number,
-  height: number
+  height: number,
+  timestampFormatter: (timestamp: any) => string
 ) {
   const xAxis = d3
     .axisBottom(xScale)
     .tickSize(X_AXIS_TICK_SIZE_PX)
-    .tickFormat(DATE_FORMATTER)
+    .tickFormat(timestampFormatter)
     .ticks(X_AXIS_TICK_COUNT);
   const yAxis = d3
     .axisLeft(yScale)
@@ -196,13 +226,14 @@ function generateSelectableTimestamps(
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
   height: number,
-  onTimestampSelected: (timestamp: number) => void
+  onTimestampSelected: (timestamp: number) => void,
+  preprocessingStep: (timestamp: number) => number
 ) {
   const timestampGroup = selection.append('g');
   const allTimestamps = timeseriesList
     .map(timeSeries => timeSeries.points)
     .flat()
-    .map(point => point.timestamp);
+    .map(point => preprocessingStep(point.timestamp));
   const uniqueTimestamps = _.uniq(allTimestamps);
   const hitboxWidth =
     uniqueTimestamps.length > 1
@@ -340,12 +371,14 @@ function updateTimestampElements(
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
-  valueFormatter: (value: any) => string
+  valueFormatter: (value: any) => string,
+  timestampFormatter: (timestamp: number) => string,
+  preprocessingStep: (value: number) => number
 ) {
   if (timestamp === null) {
     // Hide everything
     selectedTimestampGroup.attr('visibility', 'hidden');
-    valueGroups.forEach(valueGroup => valueGroup.attr('visibility, hidden'));
+    valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
     return;
   }
   // Move selectedTimestamp elements horizontally to the right position
@@ -356,7 +389,7 @@ function updateTimestampElements(
   // Display the newly selected timestamp
   const labelText = selectedTimestampGroup
     .select<SVGTextElement>('text')
-    .text(DATE_FORMATTER(timestamp));
+    .text(timestampFormatter(timestamp));
   // Resize background to match
   const { labelWidth } = calculateLabelDimensions(labelText);
   selectedTimestampGroup
@@ -369,7 +402,7 @@ function updateTimestampElements(
     // Adjust the length and vertical position of each dashed line
     const timeseries = timeseriesList[index];
     const point = timeseries.points.find(
-      point => point.timestamp === timestamp
+      point => preprocessingStep(point.timestamp) === timestamp
     );
     if (point === undefined) {
       // This line doesn't have a value at the selected timestamp,

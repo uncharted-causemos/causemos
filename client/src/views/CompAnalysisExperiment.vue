@@ -20,6 +20,7 @@
       :metadata="metadata"
       :timeseries-data="timeseriesData"
       :relative-to="relativeTo"
+      :breakdown-option="breakdownOption"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -261,6 +262,14 @@ export default defineComponent({
       clearRouteParam();
     };
 
+    // TODO: can/should this be moved into useTimeseries?
+    // Maybe have a temporalBreakdown computed property so
+    //  useTimeseries doesn't need to know/care about the other types?
+    const breakdownOption = ref('none');
+    const setBreakdownOption = (newValue: string) => {
+      breakdownOption.value = newValue;
+    };
+
     const {
       timeseriesData,
       relativeTo,
@@ -273,6 +282,7 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
+      breakdownOption,
       setSelectedTimestamp
     );
 
@@ -291,11 +301,6 @@ export default defineComponent({
       selectedTemporalResolution,
       metadata
     );
-
-    const breakdownOption = ref('none');
-    const setBreakdownOption = (newValue: string) => {
-      breakdownOption.value = newValue;
-    };
 
     return {
       drilldownTabs: DRILLDOWN_TABS,

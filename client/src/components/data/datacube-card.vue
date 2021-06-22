@@ -151,6 +151,7 @@
             class="timeseries-chart"
             :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
+            :breakdown-option="breakdownOption"
             @select-timestamp="emitTimestampSelection"
           />
           <div style="display: flex; flex-direction: row;">
@@ -268,6 +269,10 @@ export default defineComponent({
     relativeTo: {
       type: Number as PropType<number | null>,
       default: null
+    },
+    breakdownOption: {
+      type: String,
+      default: 'none'
     }
   },
   components: {
