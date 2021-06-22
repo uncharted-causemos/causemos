@@ -747,6 +747,29 @@ const requestAssembly = async (assemblyRequestId) => {
   return result;
 };
 
+/**
+ * Push new documents (id/name pairs) into project tracker
+ *
+ * @param {string} projectId
+ * @param {array} docs  [ {name, id}, {name, id} ... ]
+ */
+const extendProject = async (projectId, docs) => {
+  const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
+  const client = projectExtension.client;
+
+  await client.update({
+    index: RESOURCE.PROJECT_EXTENSION,
+    id: projectId,
+    body: {
+      script: {
+        lang: 'painless',
+        inline: 'ctx._source.document.addAll(params.docs)',
+        params: { docs }
+      }
+    }
+  });
+};
+
 module.exports = {
   listProjects,
   findProject,
@@ -774,6 +797,7 @@ module.exports = {
   // incremental assembly
   addReaderOutput,
   requestAssembly,
+  extendProject,
 
   // misc
   ontologyComposition
