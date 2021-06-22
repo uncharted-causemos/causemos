@@ -19,29 +19,57 @@ export const CODE_TABLE: FieldMap = {
   },
   SEARCH: {
     // _search is hidden special datacube field that combines text/keyword field values. It's used for text searching.
-    ...field('_search', 'Keyword'),
+    ...field('keyword', 'Keyword'),
     ...searchable('Keyword', false)
   }
 };
+export const CATEGORY = 'category';
+export const TAGS = 'tags';
+export const COUNTRY = 'country';
+export const ADMIN1 = 'admin1';
+export const ADMIN2 = 'admin2';
+export const ADMIN3 = 'admin3';
+export const PARAMETERS = 'parameters';
+export const VARIABLE_NAME = 'variableName';
+export const VARIABLE_UNIT = 'variableUnit';
+export const TEMPORAL_RESOLUTION = 'temporalResolution';
+export const MAINTAINER_NAME = 'maintainerName';
+export const MAINTAINER_ORG = 'maintainerOrg';
+export const TYPE = 'type';
+
+
 
 export const DISPLAY_NAMES: {[ key: string ]: string } = {
+  admin1: 'Administrative Area 1',
+  admin2: 'Administrative Area 2',
+  admin3: 'Administrative Area 3',
   category: 'Category',
-  model: 'Output Variable',
-  output_name: 'Output Name',
-  output_units: 'Output Units',
-  outputs: 'Output Variables',
-  parameters: 'Input Knobs',
-  source: 'Source',
+  country: 'Country',
+  maintainerName: 'Maintainer',
+  maintainerOrg: 'Organization',
   tags: 'Tags',
-  type: 'Types'
+  temporalResolution: 'Temporal Resolution',
+  type: 'Datacube Types',
+  variableName: 'Output Name',
+  variableUnit: 'Output Units'
 };
 
-export const datacubeKeys = (datacubeRow: Record<string, any>): string[] => {
-  let keys = Object.keys(datacubeRow);
-  keys = keys.filter((k) => DISPLAY_NAMES[k] !== undefined);
-  keys.sort();
-  return keys;
-};
+
+export const FACET_FIELDS: string [] = [
+  TYPE,
+  CATEGORY,
+  TAGS,
+  COUNTRY,
+  ADMIN1,
+  ADMIN2,
+  ADMIN3,
+  PARAMETERS,
+  VARIABLE_NAME,
+  VARIABLE_UNIT,
+  TEMPORAL_RESOLUTION,
+  MAINTAINER_NAME,
+  MAINTAINER_ORG
+];
 
 export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
   // FIXME: only numeric outputs are currently supported
@@ -55,7 +83,7 @@ export function isModel(datacube: Datacube): datacube is Model {
 
 export default {
   CODE_TABLE,
+  FACET_FIELDS,
   DISPLAY_NAMES,
-  datacubeKeys,
   getValidatedOutputs
 };
