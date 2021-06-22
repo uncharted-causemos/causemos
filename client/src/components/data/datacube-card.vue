@@ -95,7 +95,7 @@
             </button>
           </div>
           <div
-            v-if="!isDescriptionView && selectedScenarioIds.length > 1"
+            v-if="!isDescriptionView && timeseriesData.length > 1"
             class="relative-box"
           >
             Relative to:
@@ -117,7 +117,7 @@
                   none
                 </div>
                 <div
-                  v-for="(scenarioId, index) in selectedScenarioIds"
+                  v-for="(unused, index) in timeseriesData"
                   class="dropdown-option"
                   :style="{ color: colorFromIndex(index) }"
                   :key="index"
