@@ -481,7 +481,7 @@ export default {
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
         rows.push(text);
       }
-      !isGridView && rows.push('Region: ' + feature.id.replaceAll('__', '/'));
+      if (!isGridView) rows.push('Region: ' + feature.id.replaceAll('__', '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
     },
     setSelectedLayer() {
@@ -493,6 +493,7 @@ export default {
       { trailing: true, leading: true }
     ),
     // Dynamically calculate min max stats for grid map
+    // TODO: Use precomputed stats for each zoom level (espcially for 'sum') when backend api is ready since this is performance intensive
     reevaluateColourScale() {
       if (!this.map) return;
       // Exit early if the layer hasn't finished loading
