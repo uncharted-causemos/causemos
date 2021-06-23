@@ -5,5 +5,5 @@ export const getYearFromTimestamp = (timestamp: number) => {
 };
 
 export const getMonthFromTimestamp = (timestamp: number) => {
-  return new Date(timestamp * 1000).getMonth();
+  return new Date(timestamp * 1000).getUTCMonth();
 };
