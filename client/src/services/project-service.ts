@@ -84,7 +84,9 @@ const getProjectStatements = async (projectId: string, filters: Filters, options
 };
 
 const getProjectGraph = async (projectId: string, filters: Filters) => {
+  console.log('calling API...');
   const result = await API.get(`projects/${projectId}/graphs`, { params: { filters: filters } });
+  console.log(result.data);
   return result.data;
 };
 

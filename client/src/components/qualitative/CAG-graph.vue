@@ -34,6 +34,8 @@ import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-sele
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
 
+import projectService from '@/services/project-service';
+
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
 const tweenEdgeAndNodes = false; // Flag to turn on/off path animation
@@ -217,8 +219,6 @@ class CAGRenderer extends SVGRenderer {
       }
       temporaryNewEdge = null;
     }
-
-    console.log(selection.nodes());
 
     selection
       .append('path')
@@ -440,9 +440,9 @@ class CAGRenderer extends SVGRenderer {
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
     const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-
     const drag = d3.drag()
-      .on('start', (evt) => {
+      .on('start', async (evt) => {
+        console.log(evt);
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
         // const allNodes = this.layout.nodes;
 
@@ -472,8 +472,14 @@ class CAGRenderer extends SVGRenderer {
 
 
         // this.options.newEdgeFn(this.newEdgeSource, targetNode);
-
+        // console.log(projectService.getProjectGraph());
         // add code here
+        const project_id = evt.subject.parent.data.project_id;
+        console.log('starting call...');
+        projectService.getProjectGraph(project_id).then(d => {
+          console.log('new promise test: ', d);
+        });
+        console.log('complete');
       })
       .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
@@ -518,6 +524,11 @@ class CAGRenderer extends SVGRenderer {
         this.options.newEdgeFn(sourceNode, targetNode);
       });
     handles.call(drag);
+  }
+
+  async getEdgesInfo(project_id) {
+    const result = await projectService.getProjectGraph(project_id);
+    console.log(result);
   }
 
   getPathBetweenNodes(source, target) {
@@ -695,6 +706,9 @@ export default {
       useStableLayout: true,
       newEdgeFn: (source, target) => {
         this.$emit('new-edge', { source, target });
+      },
+      edgeInfoFn: (project_id) => {
+        console.log(project_id);
       },
       ontologyConcepts: this.ontologyConcepts
     });
