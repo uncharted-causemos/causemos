@@ -102,9 +102,9 @@
             <button
               class="btn btn-default"
               @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
-              :style="{ color: relativeTo === null ? 'black' : colorFromIndex(relativeTo) }"
+              :style="{ color: baselineMetadata?.color ?? 'black' }"
             >
-              {{relativeTo === null ? 'none' : `Run ${relativeTo}`}}</button
+              {{baselineMetadata?.name ?? 'none'}}</button
             >
             <dropdown-control
               v-if="isRelativeDropdownOpen"
@@ -117,13 +117,13 @@
                   none
                 </div>
                 <div
-                  v-for="(unused, index) in timeseriesData"
+                  v-for="(timeseries, index) in timeseriesData"
                   class="dropdown-option"
-                  :style="{ color: colorFromIndex(index) }"
+                  :style="{ color: timeseries.color }"
                   :key="index"
-                  @click="emitRelativeToSelection(index); isRelativeDropdownOpen = false;"
+                  @click="emitRelativeToSelection(timeseries.id); isRelativeDropdownOpen = false;"
                 >
-                  Run {{index}}
+                  {{timeseries.name}}
                 </div>
               </template>
             </dropdown-control>
@@ -267,11 +267,15 @@ export default defineComponent({
       default: []
     },
     relativeTo: {
-      type: Number as PropType<number | null>,
+      type: String as PropType<string | null>,
       default: null
     },
     breakdownOption: {
       type: String as PropType<string | null>,
+      default: null
+    },
+    baselineMetadata: {
+      type: Object as PropType<{name: string; color: string} | null>,
       default: null
     }
   },

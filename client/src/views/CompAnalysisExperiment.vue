@@ -21,6 +21,7 @@
       :timeseries-data="timeseriesData"
       :relative-to="relativeTo"
       :breakdown-option="breakdownOption"
+      :baseline-metadata="baselineMetadata"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -270,6 +271,7 @@ export default defineComponent({
     const {
       timeseriesData,
       relativeTo,
+      baselineMetadata,
       setRelativeTo
     } = useTimeseriesData(
       metadata,
@@ -332,6 +334,7 @@ export default defineComponent({
       setSelectedTimestamp,
       clearRouteParam,
       timeseriesData,
+      baselineMetadata,
       relativeTo,
       setRelativeTo,
       breakdownOption,

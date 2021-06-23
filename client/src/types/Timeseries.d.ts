@@ -4,6 +4,8 @@ export interface TimeseriesPoint {
 }
 
 export interface Timeseries {
-  color?: string;
+  id: string;
+  name: string;
+  color: string;
   points: TimeseriesPoint[];
 }

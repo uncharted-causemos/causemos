@@ -11,7 +11,7 @@ import { useStore } from 'vuex';
 const applyBreakdown = (
   timeseriesData: Timeseries[],
   breakdownOption: string | null
-) => {
+): Timeseries[] => {
   if (breakdownOption === null || timeseriesData.length !== 1) {
     return timeseriesData;
   }
@@ -21,9 +21,10 @@ const applyBreakdown = (
   const brokenDownByYear = _.groupBy(onlyTimeseries, point =>
     getYearFromTimestamp(point.timestamp)
   );
-  return Object.values(brokenDownByYear)
+  return Object.keys(brokenDownByYear)
     .slice(-5) // FIXME: remove -5 slice, replace it with aggregation pane checkbox state
-    .map((points, index) => {
+    .map((year, index) => {
+      const points = brokenDownByYear[year];
       // Depending on the selected breakdown option, timestamp values may need to be mapped
       //  from the standard epoch format, e.g. `1451606400` for `Dec 31, 2015 @ 7pm`
       //  to a less specific domain like "the month's index", e.g. `1` for `February`
@@ -31,24 +32,38 @@ const applyBreakdown = (
         value,
         timestamp: getMonthFromTimestamp(timestamp)
       }));
-      return { color: colorFromIndex(index), points: mappedToBreakdownDomain };
+      return {
+        name: year,
+        id: year,
+        color: colorFromIndex(index),
+        points: mappedToBreakdownDomain
+      };
     });
 };
 
 const applyRelativeTo = (
   timeseriesData: Timeseries[],
-  relativeTo: number | null
+  relativeTo: string | null
 ) => {
-  if (relativeTo === null || timeseriesData.length < 2) {
-    return timeseriesData;
+  const baselineData = timeseriesData.find(
+    timeseries => timeseries.id === relativeTo
+  );
+  if (
+    relativeTo === null ||
+    timeseriesData.length < 2 ||
+    baselineData === undefined
+  ) {
+    return {
+      baselineMetadata: null,
+      timeseriesData
+    };
   }
   // User wants to display data relative to one run
-  const baselineData = timeseriesData[relativeTo];
   const returnValue: Timeseries[] = [];
-  timeseriesData.forEach((timeseries, index) => {
-    if (index === relativeTo) return;
+  timeseriesData.forEach(timeseries => {
     // Adjust values
-    const { color, points } = timeseries;
+    const { id, name, color, points } = timeseries;
+    if (id === relativeTo) return;
     const adjustedPoints = points.map(({ timestamp, value }) => {
       const baselineValue =
         baselineData.points.find(point => point.timestamp === timestamp)
@@ -59,11 +74,17 @@ const applyRelativeTo = (
       };
     });
     returnValue.push({
+      id,
+      name,
       color,
       points: adjustedPoints
     });
   });
-  return returnValue;
+  const baselineMetadata = {
+    name: baselineData.name,
+    color: baselineData.color
+  };
+  return { baselineMetadata, timeseriesData: returnValue };
 };
 
 /**
@@ -142,8 +163,10 @@ export default function useTimeseriesData(
       // Assign a colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
       rawTimeseriesData.value = fetchResults.map((points, index) => {
+        const name = `Run ${index}`;
+        const id = index.toString();
         const color = colorFromIndex(index);
-        return { color, points };
+        return { name, id, color, points };
       });
     }
     onInvalidate(() => {
@@ -152,7 +175,7 @@ export default function useTimeseriesData(
     fetchTimeseries();
   });
 
-  const relativeTo = ref<number | null>(null);
+  const relativeTo = ref<string | null>(null);
   // Whenever the selected runs change, reset "relative to" state
   watch(
     () => modelRunIds.value,
@@ -165,7 +188,12 @@ export default function useTimeseriesData(
   );
 
   const processedTimeseriesData = computed(() => {
-    if (rawTimeseriesData.value.length === 0) return [];
+    if (rawTimeseriesData.value.length === 0) {
+      return {
+        baselineMetadata: null,
+        timeseriesData: []
+      };
+    }
     const afterApplyingBreakdown = applyBreakdown(
       rawTimeseriesData.value,
       breakdownOption.value
@@ -191,12 +219,17 @@ export default function useTimeseriesData(
     }
   );
 
-  const setRelativeTo = (newValue: number | null) => {
+  const setRelativeTo = (newValue: string | null) => {
     relativeTo.value = newValue;
   };
 
   return {
-    timeseriesData: processedTimeseriesData,
+    timeseriesData: computed(
+      () => processedTimeseriesData.value.timeseriesData
+    ),
+    baselineMetadata: computed(
+      () => processedTimeseriesData.value.baselineMetadata
+    ),
     relativeTo,
     setRelativeTo
   };
