@@ -123,17 +123,11 @@ export default defineComponent({
         });
       });
       const modelId = this.metadata.id;
-      // FIXME: only max-hop model is executable at this time
-      if (modelId.includes('maxhop')) {
-        API.post('maas/model-runs', {
-          model_id: modelId,
-          model_name: this.metadata?.name,
-          parameters: paramArray
-        });
-      } else {
-        // FIXME: currently other models are not executable
-        console.warn('Current model is not executable!');
-      }
+      API.post('maas/model-runs', {
+        model_id: modelId,
+        model_name: this.metadata?.name,
+        parameters: paramArray
+      });
 
       this.close(false);
     },
