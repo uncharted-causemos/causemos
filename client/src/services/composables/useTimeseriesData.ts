@@ -177,10 +177,12 @@ export default function useTimeseriesData(
 
   const relativeTo = ref<string | null>(null);
   // Whenever the selected runs change, reset "relative to" state
+  //  and selected breakdown option
   watch(
-    () => modelRunIds.value,
+    () => [modelRunIds.value],
     () => {
       relativeTo.value = null;
+      breakdownOption.value = null;
     },
     {
       immediate: true
