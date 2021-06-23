@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 import ProjectOverview from '@/views/ProjectOverview.vue';
+import ProjectDomainModelOverview from '@/views/ProjectDomainModelOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import DataStart from '@/views/DataStart.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
@@ -50,6 +51,11 @@ async function loadAnalysisStateNew(to, from, next) {
   next();
 }
 
+async function loadDomainModelProjectState(to, from, next) {
+  await store.dispatch('app/isDomainModelProject', true);
+  next();
+}
+
 const routes = [
   {
     path: '/',
@@ -67,6 +73,12 @@ const routes = [
     component: ProjectOverview
   },
   {
+    path: '/:project/domainModelOverview',
+    name: 'domainModelOverview',
+    component: ProjectDomainModelOverview,
+    beforeEnter: loadDomainModelProjectState
+  },
+  {
     path: '/:project/data',
     name: 'dataStart',
     component: DataStart
@@ -76,6 +88,13 @@ const routes = [
     name: 'data',
     component: CompAnalysisExperiment,
     beforeEnter: loadAnalysisStateNew
+  },
+  {
+    // @HACK: a special route to view the a domain model instance (or datacube) using the same way an analyst would see it
+    path: '/:project/domainModelOverview',
+    name: 'dataPreview',
+    component: CompAnalysisExperiment,
+    beforeEnter: loadDomainModelProjectState
   },
   {
     path: '/:project/data/:analysisID/explorer',
@@ -96,7 +115,8 @@ const routes = [
   {
     path: '/:project/model-publishing-experiment',
     name: 'modelPublishingExperiment',
-    component: ModelPublishingExperiment
+    component: ModelPublishingExperiment,
+    beforeEnter: loadDomainModelProjectState
   },
   {
     path: '/graph-experiment',

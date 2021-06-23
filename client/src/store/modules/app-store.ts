@@ -9,6 +9,7 @@ interface AppState {
   ontologySet: Set<string>;
   projectMetadata: any; // FIXME
   conceptDefinitions: { [key: string]: string };
+  isDomainModelProject: boolean;
 }
 
 const state: AppState = {
@@ -18,7 +19,8 @@ const state: AppState = {
   ontologyConcepts: [],
   ontologySet: new Set<string>(),
   projectMetadata: {},
-  conceptDefinitions: {}
+  conceptDefinitions: {},
+  isDomainModelProject: false
 };
 
 
@@ -39,7 +41,8 @@ const getters: GetterTree<AppState, any> = {
   ontologyConcepts: state => state.ontologyConcepts,
   ontologySet: state => state.ontologySet,
   projectMetadata: state => state.projectMetadata,
-  conceptDefinitions: state => state.conceptDefinitions
+  conceptDefinitions: state => state.conceptDefinitions,
+  isDomainModelProject: state => state.isDomainModelProject
 };
 
 
@@ -61,6 +64,9 @@ const actions: ActionTree<AppState, any> = {
   },
   setConceptDefinitions: ({ commit }, examples) => {
     commit('setConceptDefinitions', examples);
+  },
+  isDomainModelProject: ({ commit }, value) => {
+    commit('isDomainModelProject', value);
   }
 };
 
@@ -87,6 +93,9 @@ const mutations: MutationTree<AppState> = {
   },
   setConceptDefinitions(state, definitions) {
     state.conceptDefinitions = definitions;
+  },
+  isDomainModelProject(state, value) {
+    state.isDomainModelProject = value;
   }
 };
 

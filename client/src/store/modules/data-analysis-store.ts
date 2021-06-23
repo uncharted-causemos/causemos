@@ -221,6 +221,15 @@ const actions: ActionTree<AnalysisState, any> = {
     });
     commit('setAnalysisItemsNew', analysisItems);
   },
+  async updateAnalysisItemsNewPreview({ state, commit }, { datacubeIDs }: { datacubeIDs: string[] }) {
+    const analysisItems = datacubeIDs.map(datacubeId => {
+      const analysisItem = state.analysisItems.find(item => item.id === datacubeId);
+      return analysisItem !== undefined
+        ? analysisItem // Preserve existing item
+        : createNewAnalysisItemNew(datacubeId);
+    });
+    commit('setAnalysisItemsNewPreview', analysisItems);
+  },
   setMapBounds({ commit }, bounds: [[number, number], [number, number]]) {
     commit('setMapBounds', bounds);
   },
@@ -317,6 +326,9 @@ const mutations: MutationTree<AnalysisState> = {
   setAnalysisItemsNew(state, items = []) {
     state.analysisItems = items;
     saveStateNew(state);
+  },
+  setAnalysisItemsNewPreview(state, items = []) {
+    state.analysisItems = items;
   },
   setMapBounds(state, bounds: MapBounds) {
     state.mapBounds = bounds;

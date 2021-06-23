@@ -11,6 +11,16 @@ export interface Project {
   stat: { [key: string]: string | number };
 }
 
+export interface DomainModelProject {
+  id: string;
+  name: string;
+  modified_at: number;
+  created_at: number;
+  source: string;
+  published_instances: string[];
+  registered_instances: string[];
+}
+
 // Side panel
 export interface SidePanelTab {
   name: string;

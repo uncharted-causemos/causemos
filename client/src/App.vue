@@ -16,6 +16,7 @@ import { mapActions, mapGetters } from 'vuex';
 import NavBar from '@/components/nav-bar';
 import Overlay from '@/components/overlay';
 import projectService from '@/services/project-service';
+import domainModelProjectService from '@/services/domain-model-project-service';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
@@ -38,7 +39,8 @@ export default {
       currentView: 'app/currentView',
       overlayMessage: 'app/overlayMessage',
       overlayActivated: 'app/overlayActivated',
-      project: 'app/project'
+      project: 'app/project',
+      isDomainModelProject: 'app/isDomainModelProject'
     }),
     isNavBarHidden() {
       return viewsWithNoNavbar.includes(this.currentView);
@@ -46,11 +48,19 @@ export default {
   },
   watch: {
     project: function() {
-      this.refresh();
+      if (this.isDomainModelProject) {
+        this.refreshDomainModel();
+      } else {
+        this.refresh();
+      }
     }
   },
   mounted() {
-    this.refresh();
+    if (this.isDomainModelProject) {
+      this.refreshDomainModel();
+    } else {
+      this.refresh();
+    }
   },
   methods: {
     ...mapActions({
@@ -58,6 +68,14 @@ export default {
       setProjectMetadata: 'app/setProjectMetadata',
       setConceptDefinitions: 'app/setConceptDefinitions'
     }),
+    refreshDomainModel() {
+      if (_.isEmpty(this.project)) {
+        return;
+      }
+      domainModelProjectService.getProject(this.project).then(project => {
+        this.setProjectMetadata({ name: project.name });
+      });
+    },
     refresh() {
       if (_.isEmpty(this.project)) {
         this.setOntologyConcepts([]);

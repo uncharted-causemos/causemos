@@ -8,7 +8,8 @@ export enum ModelRunStatus {
 
 export enum DatacubeStatus {
   Ready = 'READY',
-  Processing = 'PROCESSING'
+  Processing = 'PROCESSING',
+  Registered = 'REGISTERED'
 }
 
 export enum DatacubeType {
