@@ -13,7 +13,7 @@
       v-else
       class="breakdown-option-dropdown"
       :items="BREAKDOWN_OPTIONS"
-      :selectedItem="selectedBreakdownOption ?? 'none'"
+      :selectedItem="getBreakdownOptionDisplayName(selectedBreakdownOption)"
       @item-selected="emitBreakdownOptionSelection"
     />
     <aggregation-checklist-pane
@@ -116,7 +116,7 @@ export const BREAKDOWN_OPTIONS = [
 const getBreakdownOptionDisplayName = (option: TemporalAggregationLevel | null) => {
   switch (option) {
     case TemporalAggregationLevel.Year:
-      return 'by year';
+      return 'Split by year';
     default:
       return 'none';
   }
