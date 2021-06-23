@@ -7,7 +7,6 @@ import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
-import { getMonthFromTimestamp } from '@/utils/date-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -23,9 +22,10 @@ const X_AXIS_TICK_SIZE_PX = 2;
 //  seem to reflect that.
 // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
 //  and be consistent.
-const DATE_FORMATTER = (value: any) => dateFormatter(value * 1000, 'MMM DD, YYYY');
-const BY_YEAR_DATE_FORMATTER = (value: any) => dateFormatter(new Date(0, value), 'MMM');
-
+const DATE_FORMATTER = (value: any) =>
+  dateFormatter(value * 1000, 'MMM DD, YYYY');
+const BY_YEAR_DATE_FORMATTER = (value: any) =>
+  dateFormatter(new Date(0, value), 'MMM');
 
 const DEFAULT_LINE_COLOR = '#000';
 const LABEL_BACKGROUND_COLOR = 'white';
@@ -76,27 +76,29 @@ export default function(
     yExtent,
     breakdownOption
   );
-  const timestampFormatter = breakdownOption === TemporalAggregationLevel.Year
-    ? BY_YEAR_DATE_FORMATTER
-    : DATE_FORMATTER;
-  renderAxes(groupElement, xScale, yScale, valueFormatter, width, height, timestampFormatter);
+  const timestampFormatter =
+    breakdownOption === TemporalAggregationLevel.Year
+      ? BY_YEAR_DATE_FORMATTER
+      : DATE_FORMATTER;
+  renderAxes(
+    groupElement,
+    xScale,
+    yScale,
+    valueFormatter,
+    width,
+    height,
+    timestampFormatter
+  );
   timeseriesList.forEach(timeSeries => {
-    renderLine(groupElement, timeSeries, xScale, yScale, breakdownOption);
+    renderLine(groupElement, timeSeries, xScale, yScale);
   });
 
-  // Depending on the selected breakdown option, timestamp values may need to be mapped
-  //  from the standard epoch format, e.g. `1451606400` for `Dec 31, 2015 @ 7pm`
-  //  to a less specific domain like "the month's index", e.g. `1` for `February`
-  const convertToXScaleDomain = breakdownOption === TemporalAggregationLevel.Year
-    ? getMonthFromTimestamp
-    : (value: number) => value;
   generateSelectableTimestamps(
     groupElement,
     timeseriesList,
     xScale,
     height,
-    onTimestampSelected,
-    convertToXScaleDomain
+    onTimestampSelected
   );
 
   const timestampElements = generateSelectedTimestampElements(
@@ -115,8 +117,7 @@ export default function(
     xScale,
     yScale,
     valueFormatter,
-    timestampFormatter,
-    convertToXScaleDomain
+    timestampFormatter
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -128,8 +129,7 @@ export default function(
       xScale,
       yScale,
       valueFormatter,
-      timestampFormatter,
-      convertToXScaleDomain
+      timestampFormatter
     );
   };
 }
@@ -148,9 +148,10 @@ function calculateScales(
   yExtent: [number, number],
   breakdownOption: string | null
 ) {
-  const xScaleDomain = breakdownOption === TemporalAggregationLevel.Year
-    ? [0, 11] // January === 0, December === 11
-    : xExtent;
+  const xScaleDomain =
+    breakdownOption === TemporalAggregationLevel.Year
+      ? [0, 11] // January === 0, December === 11
+      : xExtent;
   const xScale = d3
     .scaleLinear()
     .domain(xScaleDomain)
@@ -166,16 +167,12 @@ function renderLine(
   parentGroupElement: D3GElementSelection,
   timeseries: Timeseries,
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  breakdownOption: string | null
+  yScale: d3.ScaleLinear<number, number>
 ) {
-  const _xScale = breakdownOption === TemporalAggregationLevel.Year
-    ? (timestamp: number) => xScale(getMonthFromTimestamp(timestamp))
-    : xScale;
   // Draw a line connecting all points in this segment
   const line = d3
     .line<TimeseriesPoint>()
-    .x(d => _xScale(d.timestamp))
+    .x(d => xScale(d.timestamp))
     .y(d => yScale(d.value));
   const groupElement = parentGroupElement.append('g');
   groupElement
@@ -230,22 +227,22 @@ function generateSelectableTimestamps(
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
   height: number,
-  onTimestampSelected: (timestamp: number) => void,
-  convertToXScaleDomain: (timestamp: number) => number
+  onTimestampSelected: (timestamp: number) => void
 ) {
   const timestampGroup = selection.append('g');
   const allTimestamps = timeseriesList
     .map(timeSeries => timeSeries.points)
     .flat()
-    .map(point => convertToXScaleDomain(point.timestamp));
+    .map(point => point.timestamp);
   const uniqueTimestamps = _.uniq(allTimestamps);
+  // FIXME: We assume that all timestamps are evenly spaced when determining
+  //  how wide the hover/click hitbox should be. This may not always be the case.
+
+  // Arbitrarily choose how wide the hitbox should be if there's only one unique
+  //  timestamp
   const hitboxWidth =
     uniqueTimestamps.length > 1
-      // FIXME: We assume that all timestamps are evenly spaced when determining
-      //  how wide the hover/click hitbox should be. This may not always be the case.
       ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
-      // Arbitrarily choose how wide the hitbox should be if there's only one unique
-      //  timestamp
       : SELECTED_TIMESTAMP_WIDTH * 5;
   uniqueTimestamps.forEach(timestamp => {
     const timestampMarker = timestampGroup
@@ -361,7 +358,10 @@ function generateSelectedTimestampElements(
       .attr('y2', 0);
     const label = generateLabel(gElement, color, '[value]');
     const height = label.node()?.getBBox().height ?? 0;
-    label.attr('transform', translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2));
+    label.attr(
+      'transform',
+      translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2)
+    );
     label.select('text').style('text-anchor', 'start');
     label.select('rect').attr('transform', translate(0, 0));
     return gElement;
@@ -376,8 +376,7 @@ function updateTimestampElements(
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
   valueFormatter: (value: any) => string,
-  timestampFormatter: (timestamp: number) => string,
-  convertToXScaleDomain: (value: number) => number
+  timestampFormatter: (timestamp: number) => string
 ) {
   if (timestamp === null) {
     // Hide everything
@@ -406,7 +405,7 @@ function updateTimestampElements(
     // Adjust the length and vertical position of each dashed line
     const timeseries = timeseriesList[index];
     const point = timeseries.points.find(
-      point => convertToXScaleDomain(point.timestamp) === timestamp
+      point => point.timestamp === timestamp
     );
     if (point === undefined) {
       // This line doesn't have a value at the selected timestamp,

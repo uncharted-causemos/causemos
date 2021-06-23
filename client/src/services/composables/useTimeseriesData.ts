@@ -21,11 +21,17 @@ const applyBreakdown = (
   const brokenDownByYear = _.groupBy(onlyTimeseries, point =>
     getYearFromTimestamp(point.timestamp)
   );
-  // FIXME: remove -5 slice, replace it with aggregation pane checkbox state
   return Object.values(brokenDownByYear)
-    .slice(-5)
+    .slice(-5) // FIXME: remove -5 slice, replace it with aggregation pane checkbox state
     .map((points, index) => {
-      return { color: colorFromIndex(index), points };
+      // Depending on the selected breakdown option, timestamp values may need to be mapped
+      //  from the standard epoch format, e.g. `1451606400` for `Dec 31, 2015 @ 7pm`
+      //  to a less specific domain like "the month's index", e.g. `1` for `February`
+      const mappedToBreakdownDomain = points.map(({ value, timestamp }) => ({
+        value,
+        timestamp: getMonthFromTimestamp(timestamp)
+      }));
+      return { color: colorFromIndex(index), points: mappedToBreakdownDomain };
     });
 };
 
