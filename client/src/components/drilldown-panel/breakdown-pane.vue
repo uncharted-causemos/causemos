@@ -7,9 +7,6 @@
       >
         Select <strong>exactly one scenario</strong> to enable breakdown options.
       </p>
-      <!-- FIXME: breakdown options are hardcoded, but eventually should
-      be dynamically populated based on the various "breakdownData" types
-      that the selected datacube includes -->
       <dropdown-button
         v-else
         class="breakdown-option-dropdown"
@@ -110,6 +107,9 @@ function timestampFormatter(timestamp: number) {
 
 // FIXME: This dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
+
+// Breakdown options are hardcoded, but eventually should be dynamically populated
+// based on the various "breakdownData" types that the selected datacube includes
 export const BREAKDOWN_OPTIONS = [
   null,
   selectedTemporalAggregationLevel
