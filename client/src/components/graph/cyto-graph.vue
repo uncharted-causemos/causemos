@@ -224,7 +224,7 @@ export default {
       const neighborhood = nodesSelectedIds.map(id => calculateNeighborhood(this.graphData, id)); // Calculate neighborhood for each selected node.
       const merged = { edges: [] }; // Group neighborhood by nodes and edges
       neighborhood.forEach(n => {
-        merged.edges.push(n.edges.map(edge => { return { source: edge.source, target: edge.target }; }));
+        merged.edges.push(n.edges);
       });
 
       merged.edges = _.uniqBy(_.flatten(merged.edges), (edge) => edge.source + '///' + edge.target);
