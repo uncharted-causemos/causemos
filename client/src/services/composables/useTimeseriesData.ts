@@ -203,17 +203,19 @@ export default function useTimeseriesData(
     return applyRelativeTo(afterApplyingBreakdown, relativeTo.value);
   });
 
+  // Whenever the selected breakdown option or raw timeseries data changes,
+  //  reselect the last timestamp across all series
   watch(
     () => [breakdownOption.value, rawTimeseriesData.value],
     () => {
-      const preprocessingStep =
+      const mapToBreakdownDomain =
         breakdownOption.value === TemporalAggregationLevel.Year
           ? getMonthFromTimestamp
           : (timestamp: number) => timestamp;
       const allTimestamps = rawTimeseriesData.value
         .map(timeseries => timeseries.points)
         .flat()
-        .map(point => preprocessingStep(point.timestamp));
+        .map(point => mapToBreakdownDomain(point.timestamp));
       const lastTimestamp = _.max(allTimestamps);
       if (lastTimestamp !== undefined) {
         onNewLastTimestamp(lastTimestamp);
