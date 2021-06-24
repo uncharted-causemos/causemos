@@ -61,7 +61,7 @@ export default defineComponent({
       );
     }, RESIZE_DELAY);
     watch(
-      () => props.selectedTimestamp,
+      () => selectedTimestamp.value,
       selectedTimestamp => {
         if (updateTimestampElements !== undefined) {
           updateTimestampElements(selectedTimestamp);
@@ -69,7 +69,7 @@ export default defineComponent({
       }
     );
     watch(
-      () => [props.timeseriesData, props.breakdownOption],
+      () => [timeseriesData.value, breakdownOption.value],
       () => {
         // Underlying data has changed, so rerender chart
         const parentElement = lineChart.value?.parentElement;
