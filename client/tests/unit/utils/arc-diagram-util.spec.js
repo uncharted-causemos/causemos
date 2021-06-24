@@ -53,6 +53,7 @@ describe('arc-diagram-util', () => {
   });
 
   it('check graph neighborhood for a node', () => {
+    // TODO: Update this
     const graph = {
       nodes: [
         { id: 'a' }, { id: 'b' }, { id: 'c' }
