@@ -106,7 +106,7 @@ export default defineComponent({
       });
     },
     onDownload() {
-      this.$router.push(this.downloadURL);
+      window.location.href = this.downloadURL;
     },
     onDuplicate() {
       modelService.duplicateModel(this.currentCAG).then(() => {
