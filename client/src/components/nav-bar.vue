@@ -28,7 +28,7 @@
               class="nav-link"
               :to="{name:'domainDatacubeOverview', params:{project: project}}"
             ><i class="fa fa-connectdevelop" />
-              <span>{{isDomainProject ? ' Model' : ' Indicator'}}</span> Family Page</router-link>
+              Family Page</router-link>
           </li>
           <li
             v-if="project !== null && !isDomainProject"

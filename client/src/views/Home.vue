@@ -428,11 +428,11 @@ export default defineComponent({
 }
 
 .datacube-link {
-  border-bottom-width: 1px;
-  border-bottom-style: solid;
+  color: blue;
 
   &:hover {
-    color: blue;
+    border-bottom-width: 1px;
+    border-bottom-style: solid;
     cursor: pointer;
   }
 }

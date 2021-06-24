@@ -125,7 +125,7 @@ import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
-import { DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
+import { DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
 import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
@@ -249,7 +249,11 @@ export default defineComponent({
     const isDescriptionView = ref<boolean>(true);
 
     watchEffect(() => {
-      isDescriptionView.value = selectedScenarioIds.value.length === 0;
+      if (metadata.value?.type === DatacubeType.Indicator) {
+        setSelectedScenarioIds([DatacubeType.Indicator.toString()]);
+      } else {
+        isDescriptionView.value = selectedScenarioIds.value.length === 0;
+      }
     });
 
     watchEffect(() => {
