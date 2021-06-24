@@ -93,7 +93,6 @@
             :selected-scenario-ids="selectedScenarioIds"
             :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
-            :is-breakdown-options-enabled="true"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
             @set-all-regions-selected="setAllRegionsSelected"

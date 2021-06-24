@@ -1,20 +1,18 @@
 <template>
   <div class="breakdown-pane-container">
-    <template v-if="isBreakdownOptionsEnabled">
-      <p
-        v-if="selectedScenarioIds.length !== 1"
-        class="disabled-dropdown-instructions"
-      >
-        Select <strong>exactly one scenario</strong> to enable breakdown options.
-      </p>
-      <dropdown-button
-        v-else
-        class="breakdown-option-dropdown"
-        :items="BREAKDOWN_OPTIONS"
-        :selectedItem="getBreakdownOptionDisplayName(selectedBreakdownOption)"
-        @item-selected="emitBreakdownOptionSelection"
-      />
-    </template>
+    <p
+      v-if="selectedScenarioIds.length !== 1"
+      class="disabled-dropdown-instructions"
+    >
+      Select <strong>exactly one scenario</strong> to enable breakdown options.
+    </p>
+    <dropdown-button
+      v-else
+      class="breakdown-option-dropdown"
+      :items="BREAKDOWN_OPTIONS"
+      :selectedItem="getBreakdownOptionDisplayName(selectedBreakdownOption)"
+      @item-selected="emitBreakdownOptionSelection"
+    />
     <aggregation-checklist-pane
       v-if="regionalData !== null && regionalData.length !== 0"
       class="checklist-section"
@@ -163,10 +161,6 @@ export default defineComponent({
     selectedBreakdownOption: {
       type: String as PropType<string | null>,
       default: null
-    },
-    isBreakdownOptionsEnabled: {
-      type: Boolean,
-      default: false
     }
   },
   emits: [
