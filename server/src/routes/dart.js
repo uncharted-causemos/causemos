@@ -24,8 +24,7 @@ router.get('/:docId/raw', asyncHandler(async (req, res, next) => {
 }));
 
 router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) => {
-  // FIXME:
-  // const metadata = req.body.metadata;
+  const metadata = req.body.metadata;
 
   const project = req.body.project;
   console.log('extending ', project);
@@ -33,10 +32,10 @@ router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) =
   for (let i = 0; i < req.files.length; i++) {
     const file = req.files[i];
 
-    // const results = await dartService.uploadDocument(file, metadata);
-    console.log(i, file.originalname);
+    const r = await dartService.uploadDocument(file, metadata);
+    console.log(i, file.originalname, JSON.parse(r).documentId);
     results.push({
-      document_id: i, // FIXME
+      document_id: JSON.parse(r).documentId,
       name: file.originalname
     });
   }
@@ -44,13 +43,6 @@ router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) =
   // Write to project-extension
   await projectService.extendProject(project, results);
   res.json(results);
-
-  /*
-  const results = {};
-  console.log('req', req.file, req.files);
-  console.log('metadata', metadata);
-  res.json(results);
-  */
 }));
 
 router.get('/readers-status', asyncHandler(async (req, res, next) => {
