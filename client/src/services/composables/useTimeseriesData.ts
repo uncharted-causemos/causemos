@@ -160,7 +160,7 @@ export default function useTimeseriesData(
         //  fetch results to avoid a race condition.
         return;
       }
-      // Assign a colour to each timeseries and store it in the
+      // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
       rawTimeseriesData.value = fetchResults.map((points, index) => {
         const name = `Run ${index}`;
