@@ -31,10 +31,10 @@
         </button>
       </div>
       <div class="col-sm-2 number-col">
-        {{ project.published_instances.length }}
+        {{ project.ready_instances.length }} | <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
       </div>
       <div class="col-sm-2 number-col">
-        {{ project.registered_instances.length }}
+        {{ project.type }}
       </div>
       <div class="col-sm-2" style="text-align: center">
         {{ project.source }}
@@ -94,20 +94,20 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { DomainModelProject } from '@/types/Common';
+import { DomainProject } from '@/types/Common';
 
 /**
  * A card-styled widget to view project summary
  */
 export default defineComponent({
-  name: 'DomainModelProjectCard',
+  name: 'DomainDatacubeProjectCard',
   components: {
     ModalConfirmation,
     MessageDisplay
   },
   props: {
     project: {
-      type: Object as PropType<DomainModelProject>,
+      type: Object as PropType<DomainProject>,
       default: () => ({})
     }
   },
@@ -123,7 +123,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       clearLastQuery: 'query/clearLastQuery',
-      isDomainModelProject: 'app/isDomainModelProject'
+      isDomainProject: 'app/isDomainProject'
     }),
     dateFormatter,
     toggleShowMore() {
@@ -142,8 +142,8 @@ export default defineComponent({
     open(id: string) {
       // Reset filters every time we open a new project
       this.clearLastQuery();
-      this.isDomainModelProject(true);
-      this.$router.push({ name: 'domainModelOverview', params: { project: id } });
+      this.isDomainProject(true);
+      this.$router.push({ name: 'domainDatacubeOverview', params: { project: id } });
     }
   }
 });

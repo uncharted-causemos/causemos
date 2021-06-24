@@ -3,7 +3,7 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 
-const domainModelProjectService = rootRequire('/services/domain-model-project-service');
+const domainProjectService = rootRequire('/services/domain-project-service');
 
 /**
  * POST commit for a new project
@@ -14,15 +14,17 @@ router.post('/', asyncHandler(async (req, res) => {
     description,
     // modified_at -> automatically added inside the function createProject()
     source,
-    published_instances,
-    registered_instances
+    type,
+    ready_instances,
+    draft_instances
   } = req.body;
-  const result = await domainModelProjectService.createProject(
+  const result = await domainProjectService.createProject(
     name,
     description,
     source,
-    published_instances,
-    registered_instances);
+    type,
+    ready_instances,
+    draft_instances);
   res.json(result);
 }));
 
@@ -31,7 +33,7 @@ router.post('/', asyncHandler(async (req, res) => {
  */
 router.put('/:id', asyncHandler(async (req, res) => {
   const projectId = req.params.id;
-  await domainModelProjectService.updateProject(projectId, req.body);
+  await domainProjectService.updateProject(projectId, req.body);
   res.status(200).send({});
 }));
 
@@ -39,7 +41,7 @@ router.put('/:id', asyncHandler(async (req, res) => {
  * GET a list of insights
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const result = await domainModelProjectService.getAllProjects();
+  const result = await domainProjectService.getAllProjects();
   res.json(result);
 }));
 
@@ -48,7 +50,7 @@ router.get('/', asyncHandler(async (req, res) => {
  */
 router.get('/:id', asyncHandler(async (req, res) => {
   const projectId = req.params.id;
-  const result = await domainModelProjectService.getProject(projectId);
+  const result = await domainProjectService.getProject(projectId);
   res.status(200);
   res.json(result);
 }));
@@ -58,7 +60,7 @@ router.get('/:id', asyncHandler(async (req, res) => {
  */
 router.delete('/:id', asyncHandler(async (req, res) => {
   const projectId = req.params.id;
-  const result = await domainModelProjectService.remove(projectId);
+  const result = await domainProjectService.remove(projectId);
   res.status(200);
   res.json(result);
 }));

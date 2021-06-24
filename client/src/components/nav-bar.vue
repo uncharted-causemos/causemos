@@ -21,17 +21,17 @@
             </span>
           </li>
           <li
-            v-if="project !== null && isDomainModelProject"
+            v-if="project !== null && isDomainProject"
             class="nav-item"
             :class="{underlined: currentView === 'overview'}">
             <router-link
               class="nav-link"
-              :to="{name:'domainModelOverview', params:{project: project}}"
+              :to="{name:'domainDatacubeOverview', params:{project: project}}"
             ><i class="fa fa-connectdevelop" />
-              Model Family Page</router-link>
+              <span>{{isDomainProject ? ' Model' : ' Indicator'}}</span> Family Page</router-link>
           </li>
           <li
-            v-if="project !== null && !isDomainModelProject"
+            v-if="project !== null && !isDomainProject"
             class="nav-item"
             :class="{underlined: currentView === 'overview'}">
             <router-link
@@ -41,7 +41,7 @@
               Overview</router-link>
           </li>
           <li
-            v-if="project !== null && !isDomainModelProject"
+            v-if="project !== null && !isDomainProject"
             class="nav-item"
             :class="{underlined: currentView === 'dataStart' || currentView === 'data'}">
             <router-link
@@ -51,7 +51,7 @@
               Data</router-link>
           </li>
           <li
-            v-if="project !== null && !isDomainModelProject"
+            v-if="project !== null && !isDomainProject"
             class="nav-item"
             :class="{underlined: currentView === 'qualitative' || currentView === 'qualitativeStart'}">
             <router-link
@@ -61,7 +61,7 @@
               Knowledge</router-link>
           </li>
           <li
-            v-if="project !== null && !isDomainModelProject"
+            v-if="project !== null && !isDomainProject"
             class="nav-item"
             :class="{underlined: currentView === 'quantitativeStart' || currentView === 'quantitative'}">
             <router-link
@@ -78,7 +78,7 @@
         class="nav navbar-nav navbar-right help-holder">
         <!--
         <li
-            v-if="project !== null && !isDomainModelProject"
+            v-if="project !== null && !isDomainProject"
             class="nav-item"
             :class="{underlined: currentView === 'modelPublishingExperiment'}">
             <router-link
@@ -121,7 +121,7 @@ export default defineComponent({
       projectMetadata: 'app/projectMetadata',
       selectedModel: 'model/selectedModel',
       lastQuery: 'query/lastQuery',
-      isDomainModelProject: 'app/isDomainModelProject'
+      isDomainProject: 'app/isDomainProject'
     })
   }
 });

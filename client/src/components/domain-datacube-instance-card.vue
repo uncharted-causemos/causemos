@@ -103,7 +103,7 @@ import { DatacubeStatus } from '@/types/Enums';
  * A card-styled widget to view project summary
  */
 export default defineComponent({
-  name: 'DomainModelInstanceCard',
+  name: 'DomainDatacubeInstanceCard',
   components: {
     ModalConfirmation,
     MessageDisplay

@@ -7,10 +7,10 @@
         alt="CauseMos logo"
       >
     </div>
-    <h3 class="header-prompt">Welcome to the domain model family page of <b>{{modelFamily}}</b></h3>
+    <h3 class="header-prompt">Welcome to the domain {{datacubeType}} family page of <b>{{datacubeFamily}}</b></h3>
     <div class="row title">
       <div class="descriptions">
-        Through this page, you can publish model instances and track model insights.
+        Through this page, you can publish {{datacubeType}} instances and track insights.
       </div>
     </div>
     <div class="row projects-list">
@@ -30,11 +30,11 @@
       </div>
       <div class="instances-list-elements">
         <div
-          v-for="instance in modelInstances"
+          v-for="instance in datacubeInstances"
           :key="instance.id">
-          <domain-model-instance-card
+          <domain-datacube-instance-card
             :model="instance"
-            @delete="deleteModelInstance(instance)" />
+            @delete="deleteDatacubeInstance(instance)" />
         </div>
       </div>
     </div>
@@ -43,20 +43,21 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import DomainModelInstanceCard from '@/components/domain-model-instance-card.vue';
-import projectService from '@/services/domain-model-project-service';
+import DomainDatacubeInstanceCard from '@/components/domain-datacube-instance-card.vue';
+import projectService from '@/services/domain-project-service';
 import filtersUtil from '@/utils/filters-util';
 import { getDatacubes, updateDatacube } from '@/services/new-datacube-service';
 import { DatacubeStatus } from '@/types/Enums';
 
 export default {
-  name: 'ProjectDomainModelOverview',
+  name: 'DomainProjectOverview',
   components: {
-    DomainModelInstanceCard
+    DomainDatacubeInstanceCard
   },
   data: () => ({
-    modelFamily: '',
-    modelInstances: []
+    datacubeFamily: '',
+    datacubeType: '',
+    datacubeInstances: []
   }),
   computed: {
     ...mapGetters({
@@ -66,22 +67,23 @@ export default {
   async mounted() {
     // first: fetch project info
     const projectInfo = await projectService.getProject(this.project);
-    this.modelFamily = projectInfo.name;
+    this.datacubeFamily = projectInfo.name;
+    this.datacubeType = projectInfo.type;
 
     // then, fetch model instances
     const newFilters = filtersUtil.newFilters();
-    // filtersUtil.addSearchTerm(newFilters, 'name', this.modelFamily, 'and', false);
-    filtersUtil.addSearchTerm(newFilters, 'type', 'model', 'and', false);
+    // filtersUtil.addSearchTerm(newFilters, 'name', this.datacubeFamily, 'and', false);
+    // filtersUtil.addSearchTerm(newFilters, 'type', 'model', 'and', false);
     const instances = await getDatacubes(newFilters);
     // FIXME: manaully allow overalapping models
     //  (e.g., old dssat and new dssat to be listed under the family name of dssat)
-    this.modelInstances = instances.filter(i => i.name.includes(this.modelFamily));
+    this.datacubeInstances = instances.filter(i => i.name.includes(this.datacubeFamily));
   },
   methods: {
     ...mapActions({
       setProjectMetadata: 'app/setProjectMetadata'
     }),
-    async deleteModelInstance(instance) {
+    async deleteDatacubeInstance(instance) {
       // FIXME: for now, unpublish the model
       instance.status = DatacubeStatus.Registered;
       await updateDatacube(instance.id, instance);

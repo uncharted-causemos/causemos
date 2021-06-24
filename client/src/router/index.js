@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
 import ProjectOverview from '@/views/ProjectOverview.vue';
-import ProjectDomainModelOverview from '@/views/ProjectDomainModelOverview.vue';
+import DomainProjectOverview from '@/views/DomainProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import DataStart from '@/views/DataStart.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
@@ -51,8 +51,8 @@ async function loadAnalysisStateNew(to, from, next) {
   next();
 }
 
-async function loadDomainModelProjectState(to, from, next) {
-  await store.dispatch('app/isDomainModelProject', true);
+async function loadDomainProjectState(to, from, next) {
+  await store.dispatch('app/isDomainProject', true);
   next();
 }
 
@@ -73,10 +73,10 @@ const routes = [
     component: ProjectOverview
   },
   {
-    path: '/:project/domainModelOverview',
-    name: 'domainModelOverview',
-    component: ProjectDomainModelOverview,
-    beforeEnter: loadDomainModelProjectState
+    path: '/:project/domainDatacubeOverview',
+    name: 'domainDatacubeOverview',
+    component: DomainProjectOverview,
+    beforeEnter: loadDomainProjectState
   },
   {
     path: '/:project/data',
@@ -91,10 +91,10 @@ const routes = [
   },
   {
     // @HACK: a special route to view the a domain model instance (or datacube) using the same way an analyst would see it
-    path: '/:project/domainModelOverview',
+    path: '/:project/domainDatacubeOverview',
     name: 'dataPreview',
     component: CompAnalysisExperiment,
-    beforeEnter: loadDomainModelProjectState
+    beforeEnter: loadDomainProjectState
   },
   {
     path: '/:project/data/:analysisID/explorer',
@@ -116,7 +116,7 @@ const routes = [
     path: '/:project/model-publishing-experiment',
     name: 'modelPublishingExperiment',
     component: ModelPublishingExperiment,
-    beforeEnter: loadDomainModelProjectState
+    beforeEnter: loadDomainProjectState
   },
   {
     path: '/graph-experiment',

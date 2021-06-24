@@ -15,7 +15,7 @@ const RESOURCE = Object.freeze({
   ANALYSIS: 'analysis',
   CAG: 'model', // Duplicate for the time being
 
-  DOMAIN_MODEL_PROJECT: 'domain-model-project',
+  DOMAIN_PROJECT: 'domain-project',
 
   // Qualitative data
   STATEMENT: 'statement',

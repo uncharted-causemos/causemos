@@ -36,8 +36,7 @@ const asyncHandler = require('express-async-handler');
 
 const kbsRouter = rootRequire('/routes/knowledge-bases');
 const projectsRouter = rootRequire('/routes/projects');
-const domainModelProjectsRouter = rootRequire('/routes/domain-model-projects');
-
+const DomainProjectsRouter = rootRequire('/routes/domain-projects');
 
 const sessionLogService = rootRequire('/services/session-log-service');
 
@@ -162,7 +161,7 @@ app.use('/api/fetch-demo-data', asyncHandler(async (req, res) => {
 app.use('/api/projects', projectsRouter);
 app.use('/api/kbs', kbsRouter);
 
-app.use('/api/domain-model-projects', domainModelProjectsRouter);
+app.use('/api/domain-projects', DomainProjectsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

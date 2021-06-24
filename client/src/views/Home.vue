@@ -80,13 +80,13 @@
       </div>
       <div class="col-md-6 page-content">
         <div class="row title">
-          <h3>Domain Model Projects</h3>
+          <h3>Domain Model/Indicator Projects</h3>
         </div>
         <hr>
         <div class="row">
           <div class="controls">
             <input
-              v-model="searchDomainModels"
+              v-model="searchDomainDatacubes"
               type="text"
               placeholder="Search projects..."
               class="form-control"
@@ -96,19 +96,19 @@
                 <button
                   type="button"
                   class="btn btn-default"
-                  @click="toggleSortingDropdownDomainModels"
-                ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDomainModel }}
+                  @click="toggleSortingDropdownDomainDatacubes"
+                ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDomainDatacube }}
                   <i class="fa fa-caret-down" />
                 </button>
               </div>
-              <div v-if="showSortingDropdownDomainModels">
+              <div v-if="showSortingDropdownDomainDatacubes">
                 <dropdown-control class="dropdown">
                   <template #content>
                     <div
-                      v-for="option in sortingOptionsDomainModels"
+                      v-for="option in sortingOptionsDomainDatacubes"
                       :key="option"
                       class="dropdown-option"
-                      @click="sortDomainModels(option)">
+                      @click="sortDomainDatacubes(option)">
                       {{ option }}
                     </div>
                   </template>
@@ -120,13 +120,18 @@
         <div class="row projects-list">
           <div class="row projects-list-header">
             <div class="col-sm-4">
-              Model-family-name
+              Family name
             </div>
             <div class="col-sm-2 number-col">
-              # Published Instances
+              Published (Y | N)
             </div>
             <div class="col-sm-2 number-col">
-              # Registered Instances
+              <div>Type</div>
+              (
+                <span class="datacube-link" @click="addDmoainModels=!addDmoainModels">M</span>
+                  &nbsp;|&nbsp;
+                <span class="datacube-link" @click="addDomainIndicators=!addDomainIndicators">I</span>
+              )
             </div>
             <div class="col-sm-2">
               Source
@@ -137,11 +142,11 @@
           </div>
           <div class="projects-list-elements">
             <div
-              v-for="project in filteredDomainModelProjects"
+              v-for="project in filteredDomainProjects"
               :key="project.id">
-              <domain-model-project-card
+              <domain-datacube-project-card
                 :project="project"
-                @delete="deleteDomainModelProject" />
+                @delete="deleteDomainProject" />
             </div>
           </div>
         </div>
@@ -155,23 +160,22 @@ import { defineComponent } from 'vue';
 import { mapActions } from 'vuex';
 import projectService from '@/services/project-service';
 import ProjectCard from '@/components/project-card.vue';
-import DomainModelProjectCard from '@/components/domain-model-project-card.vue';
+import DomainDatacubeProjectCard from '@/components/domain-datacube-project-card.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
-import { Project, DomainModelProject, KnowledgeBase } from '@/types/Common';
+import { Project, DomainProject, KnowledgeBase } from '@/types/Common';
 import filtersUtil from '@/utils/filters-util';
 import { getDatacubes } from '@/services/new-datacube-service';
-import domainModelProjectService from '@/services/domain-model-project-service';
+import domainProjectService from '@/services/domain-project-service';
 import { Model } from '@/types/Datacube';
-import { DatacubeStatus } from '@/types/Enums';
-import _ from 'lodash';
+import { DatacubeStatus, DatacubeType } from '@/types/Enums';
 
 
 export default defineComponent({
   name: 'Home',
   components: {
     ProjectCard,
-    DomainModelProjectCard,
+    DomainDatacubeProjectCard,
     DropdownControl,
     MessageDisplay
   },
@@ -183,11 +187,13 @@ export default defineComponent({
     selectedSortingOption: 'Most recent',
     newKnowledgeBase: false,
     //
-    searchDomainModels: '',
-    projectsListDomainModels: [] as DomainModelProject[],
-    showSortingDropdownDomainModels: false,
-    sortingOptionsDomainModels: ['Most recent', 'Earliest'],
-    selectedSortingOptionDomainModel: 'Most recent'
+    searchDomainDatacubes: '',
+    projectsListDomainDatacubes: [] as DomainProject[],
+    showSortingDropdownDomainDatacubes: false,
+    sortingOptionsDomainDatacubes: ['Most recent', 'Earliest'],
+    selectedSortingOptionDomainDatacube: 'Most recent',
+    addDmoainModels: true,
+    addDomainIndicators: false
   }),
   computed: {
     filteredProjects(): Project[] {
@@ -195,21 +201,29 @@ export default defineComponent({
         return project.name.toLowerCase().includes(this.search.toLowerCase());
       });
     },
-    filteredDomainModelProjects(): DomainModelProject[] {
-      return this.projectsListDomainModels.filter(project => {
-        return project.name.toLowerCase().includes(this.searchDomainModels.toLowerCase());
+    filteredDomainProjects(): DomainProject[] {
+      return this.projectsListDomainDatacubes.filter(project => {
+        const filteredProject = project.name.toLowerCase().includes(this.searchDomainDatacubes.toLowerCase());
+
+        if (project.type === DatacubeType.Indicator) {
+          return filteredProject && this.addDomainIndicators;
+        } else if (project.type === DatacubeType.Model) {
+          return filteredProject && this.addDmoainModels;
+        } else {
+          return filteredProject;
+        }
       });
     }
   },
   mounted() {
     this.refresh();
-    this.refreshDomainModels();
+    this.refreshDomainProjects();
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      isDomainModelProject: 'app/isDomainModelProject'
+      isDomainProject: 'app/isDomainProject'
     }),
     deleteProject(project: Project) {
       this.enableOverlay(`Deleting project '${project.name}'`);
@@ -218,11 +232,11 @@ export default defineComponent({
         this.refresh();
       });
     },
-    deleteDomainModelProject(project: DomainModelProject) {
+    deleteDomainProject(project: DomainProject) {
       this.enableOverlay(`Deleting domain model project '${project.name}'`);
-      domainModelProjectService.deleteProject(project.id).then(() => {
+      domainProjectService.deleteProject(project.id ?? '').then(() => {
         this.disableOverlay();
-        this.refreshDomainModels();
+        this.refreshDomainProjects();
       });
     },
     refresh() {
@@ -246,40 +260,36 @@ export default defineComponent({
         });
       });
     },
-    async refreshDomainModels() {
+    async refreshDomainProjects() {
       // fetch all model datacubes, extract model families, and ensure a project for each
-      const existingProjects: DomainModelProject[] = await domainModelProjectService.getProjects();
+      const existingProjects: DomainProject[] = await domainProjectService.getProjects();
       const modelFamilyNames = existingProjects.map(p => p.name);
 
-      const newFilters = filtersUtil.newFilters();
-      filtersUtil.addSearchTerm(newFilters, 'type', 'model', 'and', false);
-      const modelDatacubes: Model[] = await getDatacubes(newFilters);
+      // FIXME: the following code attempt to compute the project stat counts
+      //   (e.g., published instances and registered instances) on the client side
+      //  However, this should not be done here and ideally be calculated once
+      //   and perhasp cached and provided by the backend as part of the projects information
 
-      // this list will track any existing project that should be updated
-      //  because for example a new instance datacube was registered
-      const updateProjects: DomainModelProject[] = [];
+      const newFilters = filtersUtil.newFilters();
+      // filtersUtil.addSearchTerm(newFilters, 'type', 'model', 'and', false);
+      const datacubes: Model[] = await getDatacubes(newFilters);
 
       // this list will track new projects that should be created
       //  for example because there is a new model family
-      const newProjects: {
-        name: string;
-        published_instances: string[];
-        registered_instances: string[];
-        desc: string;
-        source: string;
-      }[] = [];
+      const newProjects: DomainProject[] = [];
 
       // check model families (datacubes) for a one-to-one mapping with projects
       //  and track new ones to create projects for them
-      modelDatacubes.forEach(modelDatacube => {
+      datacubes.forEach(datacube => {
         // is there an existing project for this datacube?
-        if (!modelFamilyNames.includes(modelDatacube.name)) {
+        if (!modelFamilyNames.includes(datacube.name)) {
           newProjects.push({
-            name: modelDatacube.name,
-            published_instances: [],
-            registered_instances: [],
-            desc: modelDatacube.description,
-            source: modelDatacube.maintainer.organization
+            name: datacube.name,
+            ready_instances: [],
+            draft_instances: [],
+            type: datacube.type,
+            description: datacube.description,
+            source: datacube.maintainer.organization
           });
         }
       });
@@ -291,89 +301,79 @@ export default defineComponent({
       // FIXME: we currently match using substring to manually group datacubes
       //        ideally, we should use family_name instead of name and do a full string comparison
       //
-      modelDatacubes.forEach(modelDatacube => {
+      datacubes.forEach(datacube => {
         // first, update existing projects, if needed
         // are there some existing projects that should include the current model instance/datacube
-        const matchingExistingProjects = existingProjects.filter(p => modelDatacube.name.includes(p.name));
+        const matchingExistingProjects = existingProjects.filter(p => datacube.name.includes(p.name));
         if (matchingExistingProjects.length > 0) {
           matchingExistingProjects.forEach(matchingProject => {
-            if (modelDatacube.status === DatacubeStatus.Registered && !matchingProject.registered_instances.includes(modelDatacube.name)) {
+            if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.name)) {
               // this is a new model instance datacube, so we need to increase the registered instances of this project
-              matchingProject.registered_instances.push(modelDatacube.name);
-              updateProjects.push(matchingProject);
+              matchingProject.draft_instances.push(datacube.name);
             }
-            if (modelDatacube.status === DatacubeStatus.Ready && !matchingProject.published_instances.includes(modelDatacube.name)) {
+            if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.name)) {
               // this is a new model instance datacube, so we need to increase the published instances of this project
-              matchingProject.published_instances.push(modelDatacube.name);
-              updateProjects.push(matchingProject);
+              matchingProject.ready_instances.push(datacube.name);
             }
           });
         }
 
         // then, against new projects
-        const matchingNewProjects = newProjects.filter(p => modelDatacube.name.includes(p.name));
+        const matchingNewProjects = newProjects.filter(p => datacube.name.includes(p.name));
         if (matchingNewProjects.length > 0) {
           matchingNewProjects.forEach(matchingProject => {
-            if (modelDatacube.status === DatacubeStatus.Registered && !matchingProject.registered_instances.includes(modelDatacube.name)) {
+            if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.name)) {
               // this is a new model instance datacube, so we need to increase the registered instances of this project
-              matchingProject.registered_instances.push(modelDatacube.name);
+              matchingProject.draft_instances.push(datacube.name);
             }
-            if (modelDatacube.status === DatacubeStatus.Ready && !matchingProject.published_instances.includes(modelDatacube.name)) {
+            if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.name)) {
               // this is a new model instance datacube, so we need to increase the published instances of this project
-              matchingProject.published_instances.push(modelDatacube.name);
+              matchingProject.ready_instances.push(datacube.name);
             }
           });
         }
       });
 
-      // update existing projects
-      const updatePromises = _.uniqBy(updateProjects, 'id').map(async (projectInfo) => {
-        return domainModelProjectService.updateDomainModelProject(projectInfo.id, {
-          registered_instances: projectInfo.registered_instances,
-          published_instances: projectInfo.published_instances
-        });
-      });
-      await Promise.all(updatePromises);
-
       // create new projects
       const createPromises = newProjects.map(async (projectInfo) => {
-        return domainModelProjectService.createDomainModelProject(
+        return domainProjectService.createDomainProject(
           projectInfo.name,
-          projectInfo.desc,
+          projectInfo.description,
           projectInfo.source,
-          projectInfo.published_instances,
-          projectInfo.registered_instances);
+          projectInfo.type,
+          projectInfo.ready_instances,
+          projectInfo.draft_instances);
       });
       await Promise.all(createPromises);
 
       // since the ultimate list of projects may have changed, fetch the latest and use it
-      const allProjects: DomainModelProject[] = await domainModelProjectService.getProjects();
-      this.projectsListDomainModels = allProjects;
+      const allProjects: DomainProject[] = await domainProjectService.getProjects();
+      this.projectsListDomainDatacubes = allProjects;
 
       // Sort by modified_at date with latest on top
-      this.sortDomainModelsByMostRecentDate();
+      this.sortDomainDatacubesByMostRecentDate();
     },
     onDismiss() {
       this.newKnowledgeBase = false;
     },
     gotoNewProject() {
-      this.isDomainModelProject(false);
+      this.isDomainProject(false);
       this.$router.push('newProject');
     },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    toggleSortingDropdownDomainModels() {
-      this.showSortingDropdownDomainModels = !this.showSortingDropdownDomainModels;
+    toggleSortingDropdownDomainDatacubes() {
+      this.showSortingDropdownDomainDatacubes = !this.showSortingDropdownDomainDatacubes;
     },
     sortByMostRecentDate() {
       this.projectsList.sort((a, b) => {
         return b.modified_at - a.modified_at;
       });
     },
-    sortDomainModelsByMostRecentDate() {
-      this.projectsListDomainModels.sort((a, b) => {
-        return b.modified_at - a.modified_at;
+    sortDomainDatacubesByMostRecentDate() {
+      this.projectsListDomainDatacubes.sort((a, b) => {
+        return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
       });
     },
     sortByEarliestDate() {
@@ -381,9 +381,9 @@ export default defineComponent({
         return a.modified_at - b.modified_at;
       });
     },
-    sortDomainModelsByEarliestDate() {
-      this.projectsListDomainModels.sort((a, b) => {
-        return a.modified_at - b.modified_at;
+    sortDomainDatacubesByEarliestDate() {
+      this.projectsListDomainDatacubes.sort((a, b) => {
+        return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
       });
     },
     sort(option: string) {
@@ -400,18 +400,18 @@ export default defineComponent({
           this.sortByMostRecentDate();
       }
     },
-    sortDomainModels(option: string) {
-      this.selectedSortingOptionDomainModel = option;
-      this.showSortingDropdownDomainModels = false;
+    sortDomainDatacubes(option: string) {
+      this.selectedSortingOptionDomainDatacube = option;
+      this.showSortingDropdownDomainDatacubes = false;
       switch (option) {
-        case this.sortingOptionsDomainModels[0]:
-          this.sortDomainModelsByMostRecentDate();
+        case this.sortingOptionsDomainDatacubes[0]:
+          this.sortDomainDatacubesByMostRecentDate();
           break;
-        case this.sortingOptionsDomainModels[1]:
-          this.sortDomainModelsByEarliestDate();
+        case this.sortingOptionsDomainDatacubes[1]:
+          this.sortDomainDatacubesByEarliestDate();
           break;
         default:
-          this.sortDomainModelsByMostRecentDate();
+          this.sortDomainDatacubesByMostRecentDate();
       }
     }
   }
@@ -425,6 +425,16 @@ export default defineComponent({
   display: flex;
   padding-left: 5rem;
   padding-right: 5rem
+}
+
+.datacube-link {
+  border-bottom-width: 1px;
+  border-bottom-style: solid;
+
+  &:hover {
+    color: blue;
+    cursor: pointer;
+  }
 }
 
 .title {

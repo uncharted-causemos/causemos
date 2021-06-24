@@ -119,7 +119,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       clearLastQuery: 'query/clearLastQuery',
-      isDomainModelProject: 'app/isDomainModelProject'
+      isDomainProject: 'app/isDomainProject'
     }),
     dateFormatter,
     toggleShowMore() {
@@ -138,7 +138,7 @@ export default defineComponent({
     open(id: string) {
       // Reset filters every time we open a new project
       this.clearLastQuery();
-      this.isDomainModelProject(false);
+      this.isDomainProject(false);
       this.$router.push({ name: 'overview', params: { project: id } });
     }
   }

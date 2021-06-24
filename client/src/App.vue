@@ -16,7 +16,7 @@ import { mapActions, mapGetters } from 'vuex';
 import NavBar from '@/components/nav-bar';
 import Overlay from '@/components/overlay';
 import projectService from '@/services/project-service';
-import domainModelProjectService from '@/services/domain-model-project-service';
+import domainProjectService from '@/services/domain-project-service';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
@@ -40,7 +40,7 @@ export default {
       overlayMessage: 'app/overlayMessage',
       overlayActivated: 'app/overlayActivated',
       project: 'app/project',
-      isDomainModelProject: 'app/isDomainModelProject'
+      isDomainProject: 'app/isDomainProject'
     }),
     isNavBarHidden() {
       return viewsWithNoNavbar.includes(this.currentView);
@@ -48,16 +48,16 @@ export default {
   },
   watch: {
     project: function() {
-      if (this.isDomainModelProject) {
-        this.refreshDomainModel();
+      if (this.isDomainProject) {
+        this.refreshDomainProject();
       } else {
         this.refresh();
       }
     }
   },
   mounted() {
-    if (this.isDomainModelProject) {
-      this.refreshDomainModel();
+    if (this.isDomainProject) {
+      this.refreshDomainProject();
     } else {
       this.refresh();
     }
@@ -68,11 +68,11 @@ export default {
       setProjectMetadata: 'app/setProjectMetadata',
       setConceptDefinitions: 'app/setConceptDefinitions'
     }),
-    refreshDomainModel() {
+    refreshDomainProject() {
       if (_.isEmpty(this.project)) {
         return;
       }
-      domainModelProjectService.getProject(this.project).then(project => {
+      domainProjectService.getProject(this.project).then(project => {
         this.setProjectMetadata({ name: project.name });
       });
     },
