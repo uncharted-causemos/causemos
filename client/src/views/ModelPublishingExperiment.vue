@@ -39,11 +39,16 @@
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
       :metadata="metadata"
+      :timeseries-data="timeseriesData"
+      :relative-to="relativeTo"
+      :breakdown-option="breakdownOption"
+      :baseline-metadata="baselineMetadata"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="updateSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
       @check-model-metadata-validity="checkModelMetadataValidity"
       @update-desc-view="updateDescView"
+      @set-relative-to="setRelativeTo"
     >
       <template v-slot:datacube-model-header>
         <datacube-model-header
@@ -133,6 +138,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
+import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 const DRILLDOWN_TABS = [
   {
@@ -275,6 +281,31 @@ export default defineComponent({
       metadata
     );
 
+    const breakdownOption = ref<string | null>(null);
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
+    };
+
+    const setSelectedTimestamp = (timestamp: number | null) =>
+      store.dispatch('modelPublishStore/setSelectedTimestamp', timestamp);
+
+    const {
+      timeseriesData,
+      relativeTo,
+      baselineMetadata,
+      setRelativeTo
+    } = useTimeseriesData(
+      metadata,
+      selectedModelId,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      breakdownOption,
+      setSelectedTimestamp
+    );
+
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -300,7 +331,14 @@ export default defineComponent({
       deselectedRegionIds,
       toggleIsRegionSelected,
       setAllRegionsSelected,
-      currentOutputIndex
+      currentOutputIndex,
+      setSelectedTimestamp,
+      timeseriesData,
+      baselineMetadata,
+      relativeTo,
+      setRelativeTo,
+      breakdownOption,
+      setBreakdownOption
     };
   },
   beforeRouteLeave() {
@@ -363,7 +401,6 @@ export default defineComponent({
       setProjectId: 'insightPanel/setProjectId',
       setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
       setCurrentPublishStep: 'modelPublishStore/setCurrentPublishStep',
-      setSelectedTimestamp: 'modelPublishStore/setSelectedTimestamp',
       setSelectedTemporalAggregation: 'modelPublishStore/setSelectedTemporalAggregation',
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
       setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution'
