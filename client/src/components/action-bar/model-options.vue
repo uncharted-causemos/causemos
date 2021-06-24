@@ -35,7 +35,7 @@
         <div
           class="dropdown-option"
           @click="onDownload">
-          <a :href="downloadURL"> Download </a>
+          Download
         </div>
       </template>
     </dropdown-control>
@@ -104,6 +104,9 @@ export default defineComponent({
       }).catch(() => {
         this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
       });
+    },
+    onDownload() {
+      this.$router.push(this.downloadURL);
     },
     onDuplicate() {
       modelService.duplicateModel(this.currentCAG).then(() => {
