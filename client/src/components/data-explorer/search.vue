@@ -5,7 +5,7 @@
     </div>
     <div class="search-panel flex-grow-1 flex-col h-100">
       <div class="search-bar-box">
-        <search-bar :datacubes="datacubes" />
+        <search-bar :facets="facets" />
       </div>
       <div class="tab-panel flex-grow-1 h-0 flex-col">
         <tab-bar
@@ -52,9 +52,9 @@ export default {
     ]
   }),
   props: {
-    datacubes: {
-      type: Array,
-      default: () => []
+    facets: {
+      type: Object,
+      default: () => {}
     },
     filteredDatacubes: {
       type: Array,

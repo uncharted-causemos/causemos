@@ -18,6 +18,7 @@
           :publishingSteps="publishingSteps"
           :currentPublishStep="currentPublishStep"
           @navigate-to-publishing-step="showPublishingStep"
+          @publish-model="publishModel"
         />
       </div>
     </div>
@@ -125,7 +126,8 @@ import ModelPublishingChecklist from '@/components/widgets/model-publishing-chec
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { ModelPublishingStepID } from '@/types/Enums';
-import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
+import { Model, DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
+import { isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -133,6 +135,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
+import { updateDatacube } from '@/services/new-datacube-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -368,6 +371,14 @@ export default defineComponent({
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
       setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution'
     }),
+    publishModel() {
+      // call the backend to update model metadata and finalize model publication
+      if (this.metadata && isModel(this.metadata)) {
+        // this.metadata?.status = 'ready'; // FIXME
+        updateDatacube(this.metadata.id, this.metadata as Model);
+        // TODO: redirect to model family page
+      }
+    },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },

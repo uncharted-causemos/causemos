@@ -1,6 +1,7 @@
 const { Project } = require('./project');
 const { DocumentContext } = require('./document-context');
 const { Statement } = require('./statement');
+const { Datacube } = require('./datacube');
 const { Base } = require('./base');
 
 const SEARCH_LIMIT = 10000;
@@ -45,6 +46,8 @@ class Adapter {
       return new DocumentContext(id, 'corpus');
     } else if (type === RESOURCE.PROJECT) {
       return new Project(type);
+    } else if (type === RESOURCE.DATA_DATACUBE) {
+      return new Datacube(type);
     } else {
       return new Base(type);
     }
