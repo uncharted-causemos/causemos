@@ -442,44 +442,15 @@ class CAGRenderer extends SVGRenderer {
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     const drag = d3.drag()
       .on('start', async (evt) => {
-        console.log(evt);
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
-        // const allNodes = this.layout.nodes;
-
-        // const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
-        // const index = allNodes.indexOf(sourceNode);
-        // if (index > -1) {
-        //   allNodes.splice(index, 1);
-        // }
-        // console.log(allNodes);
-        // const options = this.options;
-
-        // allNodes.forEach(function(node) {
-        //   const targetNode = getLayoutNodeById(node.id);
-        //   // console.log(targetNode);
-
-        //   if (_.isNil(sourceNode)) {
-        //     console.log('source null');
-        //     return;
-        //   }
-        //   if (_.isNil(targetNode)) {
-        //     console.log('target null');
-        //     return;
-        //   }
-        //   // want to just draw the edge, not do the API call
-        //   options.newEdgeFn(sourceNode, targetNode);
-        // });
-
-
-        // this.options.newEdgeFn(this.newEdgeSource, targetNode);
-        // console.log(projectService.getProjectGraph());
-        // add code here
+        const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
         const project_id = evt.subject.parent.data.project_id;
-        console.log('starting call...');
-        projectService.getProjectGraph(project_id).then(d => {
-          console.log('new promise test: ', d);
+
+        const filters = { clauses: [{ field: 'subjConcept', values: [sourceNode.concept], isNot: false, operand: 'or' }] };
+
+        projectService.getProjectGraph(project_id, filters).then(d => {
+          console.log('result: ', d);
         });
-        console.log('complete');
       })
       .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
