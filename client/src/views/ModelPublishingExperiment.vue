@@ -390,7 +390,7 @@ export default defineComponent({
         // remove newly-added fields such as 'validatedOutputs' so that ES can update
         await updateDatacube(modelToUpdate.id, modelToUpdate);
         // redirect to model family page
-        this.$router.push({ name: 'domainDatacubeOverview', params: { project: this.projectId } });
+        this.$router.push({ name: 'domainDatacubeOverview', params: { project: this.projectId, projectType: modelToUpdate.type } });
       }
     },
     updateDescView(val: boolean) {

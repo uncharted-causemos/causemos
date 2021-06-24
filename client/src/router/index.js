@@ -51,11 +51,6 @@ async function loadAnalysisStateNew(to, from, next) {
   next();
 }
 
-async function loadDomainProjectState(to, from, next) {
-  await store.dispatch('app/isDomainProject', true);
-  next();
-}
-
 const routes = [
   {
     path: '/',
@@ -68,42 +63,40 @@ const routes = [
     component: NewProject
   },
   {
-    path: '/:project/overview',
+    path: '/:projectType/:project/overview',
     name: 'overview',
     component: ProjectOverview
   },
   {
-    path: '/:project/domainDatacubeOverview',
+    path: '/:projectType/:project/domainDatacubeOverview',
     name: 'domainDatacubeOverview',
-    component: DomainProjectOverview,
-    beforeEnter: loadDomainProjectState
+    component: DomainProjectOverview
   },
   {
-    path: '/:project/data',
+    path: '/:projectType/:project/data',
     name: 'dataStart',
     component: DataStart
   },
   {
-    path: '/:project/data/:analysisID',
+    path: '/:projectType/:project/data/:analysisID',
     name: 'data',
     component: CompAnalysisExperiment,
     beforeEnter: loadAnalysisStateNew
   },
   {
     // @HACK: a special route to view the a domain model instance (or datacube) using the same way an analyst would see it
-    path: '/:project/domainDatacubeOverview',
+    path: '/:projectType/:project/domainDatacubeOverview',
     name: 'dataPreview',
-    component: CompAnalysisExperiment,
-    beforeEnter: loadDomainProjectState
+    component: CompAnalysisExperiment
   },
   {
-    path: '/:project/data/:analysisID/explorer',
+    path: '/:projectType/:project/data/:analysisID/explorer',
     name: 'dataExplorer',
     component: DataExplorer,
     beforeEnter: loadAnalysisState
   },
   {
-    path: '/:project/data/:analysisID/create-data-cube',
+    path: '/:projectType/:project/data/:analysisID/create-data-cube',
     name: 'createDataCube',
     component: CreateDataCube
   },
@@ -113,10 +106,9 @@ const routes = [
     component: TileExperiment
   },
   {
-    path: '/:project/model-publishing-experiment',
+    path: '/:projectType/:project/model-publishing-experiment',
     name: 'modelPublishingExperiment',
-    component: ModelPublishingExperiment,
-    beforeEnter: loadDomainProjectState
+    component: ModelPublishingExperiment
   },
   {
     path: '/graph-experiment',
@@ -124,32 +116,32 @@ const routes = [
     component: GraphExperiment
   },
   {
-    path: '/:project/qualitative',
+    path: '/:projectType/:project/qualitative',
     name: 'qualitativeStart',
     component: QualitativeStart
   },
   {
-    path: '/:project/qualitative/:currentCAG',
+    path: '/:projectType/:project/qualitative/:currentCAG',
     name: 'qualitative',
     component: QualitativeView
   },
   {
-    path: '/:project/kb-explorer',
+    path: '/:projectType/:project/kb-explorer',
     name: 'kbExplorer',
     component: KnowledgeBaseExplorer
   },
   {
-    path: '/:project/quantitative',
+    path: '/:projectType/:project/quantitative',
     name: 'quantitativeStart',
     component: QuantitativeStart
   },
   {
-    path: '/:project/quantitative/:currentCAG',
+    path: '/:projectType/:project/quantitative/:currentCAG',
     name: 'quantitative',
     component: QuantitativeView
   },
   {
-    path: '/:project/audit-trail',
+    path: '/:projectType/:project/audit-trail',
     name: 'auditTrail',
     component: AuditTrail
   },

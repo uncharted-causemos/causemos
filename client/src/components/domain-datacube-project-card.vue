@@ -122,8 +122,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      clearLastQuery: 'query/clearLastQuery',
-      isDomainProject: 'app/isDomainProject'
+      clearLastQuery: 'query/clearLastQuery'
     }),
     dateFormatter,
     toggleShowMore() {
@@ -142,8 +141,7 @@ export default defineComponent({
     open(id: string) {
       // Reset filters every time we open a new project
       this.clearLastQuery();
-      this.isDomainProject(true);
-      this.$router.push({ name: 'domainDatacubeOverview', params: { project: id } });
+      this.$router.push({ name: 'domainDatacubeOverview', params: { project: id, projectType: this.project.type } });
     }
   }
 });

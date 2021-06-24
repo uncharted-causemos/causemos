@@ -89,6 +89,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import { Project } from '@/types/Common';
+import { ProjectType } from '@/types/Enums';
 
 /**
  * A card-styled widget to view project summary
@@ -118,8 +119,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      clearLastQuery: 'query/clearLastQuery',
-      isDomainProject: 'app/isDomainProject'
+      clearLastQuery: 'query/clearLastQuery'
     }),
     dateFormatter,
     toggleShowMore() {
@@ -138,8 +138,7 @@ export default defineComponent({
     open(id: string) {
       // Reset filters every time we open a new project
       this.clearLastQuery();
-      this.isDomainProject(false);
-      this.$router.push({ name: 'overview', params: { project: id } });
+      this.$router.push({ name: 'overview', params: { project: id, projectType: ProjectType.Analysis } });
     }
   }
 });

@@ -21,7 +21,7 @@
             </span>
           </li>
           <li
-            v-if="project !== null && isDomainProject"
+            v-if="project !== null && projectType !== ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'overview'}">
             <router-link
@@ -31,7 +31,7 @@
               Family Page</router-link>
           </li>
           <li
-            v-if="project !== null && !isDomainProject"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'overview'}">
             <router-link
@@ -41,7 +41,7 @@
               Overview</router-link>
           </li>
           <li
-            v-if="project !== null && !isDomainProject"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'dataStart' || currentView === 'data'}">
             <router-link
@@ -51,7 +51,7 @@
               Data</router-link>
           </li>
           <li
-            v-if="project !== null && !isDomainProject"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'qualitative' || currentView === 'qualitativeStart'}">
             <router-link
@@ -61,7 +61,7 @@
               Knowledge</router-link>
           </li>
           <li
-            v-if="project !== null && !isDomainProject"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'quantitativeStart' || currentView === 'quantitative'}">
             <router-link
@@ -78,7 +78,7 @@
         class="nav navbar-nav navbar-right help-holder">
         <!--
         <li
-            v-if="project !== null && !isDomainProject"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'modelPublishingExperiment'}">
             <router-link
@@ -108,12 +108,16 @@ import { mapGetters } from 'vuex';
 import { defineComponent } from 'vue';
 
 import InsightControls from '@/components/insight-manager/insight-controls.vue';
+import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'NavBar',
   components: {
     InsightControls
   },
+  data: () => ({
+    ProjectType
+  }),
   computed: {
     ...mapGetters({
       project: 'app/project',
@@ -121,7 +125,7 @@ export default defineComponent({
       projectMetadata: 'app/projectMetadata',
       selectedModel: 'model/selectedModel',
       lastQuery: 'query/lastQuery',
-      isDomainProject: 'app/isDomainProject'
+      projectType: 'app/projectType'
     })
   }
 });

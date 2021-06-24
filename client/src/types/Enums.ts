@@ -17,6 +17,12 @@ export enum DatacubeType {
   Indicator = 'indicator'
 }
 
+export enum ProjectType {
+  Model = 'model',
+  Indicator = 'indicator',
+  Analysis = 'analysis'
+}
+
 export enum DatacubeAttributeVariableType {
   Int = 'int',
   Float = 'float',

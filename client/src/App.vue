@@ -17,6 +17,7 @@ import NavBar from '@/components/nav-bar';
 import Overlay from '@/components/overlay';
 import projectService from '@/services/project-service';
 import domainProjectService from '@/services/domain-project-service';
+import { ProjectType } from '@/types/Enums';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
@@ -40,7 +41,7 @@ export default {
       overlayMessage: 'app/overlayMessage',
       overlayActivated: 'app/overlayActivated',
       project: 'app/project',
-      isDomainProject: 'app/isDomainProject'
+      projectType: 'app/projectType'
     }),
     isNavBarHidden() {
       return viewsWithNoNavbar.includes(this.currentView);
@@ -48,18 +49,26 @@ export default {
   },
   watch: {
     project: function() {
-      if (this.isDomainProject) {
-        this.refreshDomainProject();
-      } else {
+      if (_.isEmpty(this.project)) {
+        this.setProjectMetadata({});
+        return;
+      }
+      if (this.projectType === ProjectType.Analysis) {
         this.refresh();
+      } else {
+        this.refreshDomainProject();
       }
     }
   },
   mounted() {
-    if (this.isDomainProject) {
-      this.refreshDomainProject();
-    } else {
+    if (_.isEmpty(this.project)) {
+      this.setProjectMetadata({});
+      return;
+    }
+    if (this.projectType === ProjectType.Analysis) {
       this.refresh();
+    } else {
+      this.refreshDomainProject();
     }
   },
   methods: {

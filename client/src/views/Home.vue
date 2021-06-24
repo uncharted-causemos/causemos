@@ -222,8 +222,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay',
-      isDomainProject: 'app/isDomainProject'
+      disableOverlay: 'app/disableOverlay'
     }),
     deleteProject(project: Project) {
       this.enableOverlay(`Deleting project '${project.name}'`);
@@ -357,7 +356,6 @@ export default defineComponent({
       this.newKnowledgeBase = false;
     },
     gotoNewProject() {
-      this.isDomainProject(false);
       this.$router.push('newProject');
     },
     toggleSortingDropdown() {

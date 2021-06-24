@@ -51,6 +51,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import { CAG } from '@/utils/messages-util';
 import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
+import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'ModelOptions',
@@ -98,7 +99,8 @@ export default defineComponent({
         this.$router.push({
           name: this.viewAfterDeletion,
           params: {
-            project: this.project
+            project: this.project,
+            projectType: ProjectType.Analysis
           }
         });
       }).catch(() => {
@@ -112,7 +114,8 @@ export default defineComponent({
         this.$router.push({
           name: this.viewAfterDeletion,
           params: {
-            project: this.project
+            project: this.project,
+            projectType: ProjectType.Analysis
           }
         });
       }).catch(() => {
