@@ -105,7 +105,7 @@ function timestampFormatter(timestamp: number) {
   return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
 }
 
-// FIXME: This dynamically change to whichever temporal aggregation level is selected
+// FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
 
 // Breakdown options are hardcoded, but eventually should be dynamically populated
