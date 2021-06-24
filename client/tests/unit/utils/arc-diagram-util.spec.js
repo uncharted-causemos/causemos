@@ -51,30 +51,4 @@ describe('arc-diagram-util', () => {
     const g2Result = ArcDiagramUtil.calculateBestMultiGraphsOrder([g2n1, g2n2]);
     expect(g1Result).to.deep.equal(g2Result);
   });
-
-  it('check graph neighborhood for a node', () => {
-    // TODO: Update this
-    const graph = {
-      nodes: [
-        { id: 'a' }, { id: 'b' }, { id: 'c' }
-      ],
-      edges: [
-        { source: 'a', target: 'b' },
-        { source: 'a', target: 'c' }
-      ]
-    };
-
-    const node = 'b';
-    const neighborhood = {
-      nodes: [
-        { id: 'a' }, { id: 'b' }
-      ],
-      edges: [
-        { source: 'a', target: 'b' }
-      ]
-    };
-
-    const result = ArcDiagramUtil.calculateNeighborhood(graph, node);
-    expect(result).to.deep.equal(neighborhood);
-  });
 });
