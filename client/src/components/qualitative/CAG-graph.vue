@@ -436,20 +436,18 @@ class CAGRenderer extends SVGRenderer {
       .style('fill', 'white')
       .style('pointer-events', 'none')
       .text('\uf061');
-
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
     const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
     const drag = d3.drag()
       .on('start', async (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
+
         const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
         const project_id = evt.subject.parent.data.project_id;
         const nodesInGraph = evt.subject.parent.data.nodes;
-        // const edgesInGraph = evt.subject.parent.data.edges;
-
         const highlightOptions = {
-          color: 'red',
+          color: SELECTED_COLOR,
           duration: 5000
         };
 
@@ -463,8 +461,7 @@ class CAGRenderer extends SVGRenderer {
           const nodesToHighlight = [];
           filteredEdges.forEach(edge => nodesToHighlight.push(getLayoutNodeById(edge.target)));
           const nodesToHighlightMapped = nodesToHighlight.map(n => n.concept);
-          console.log(nodesToHighlight);
-          highlight({ nodes: nodesToHighlightMapped, edges: [] }, highlightOptions);
+          this.highlight({ nodes: nodesToHighlightMapped, edges: [] }, highlightOptions);
         });
       })
       .on('drag', (evt) => {
