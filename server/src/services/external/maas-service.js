@@ -224,18 +224,19 @@ const startIndicatorPostProcessing = async (metadata) => {
   };
 
   const result = await requestAsPromise(pipelinePayload);
-  if (result.status === 200) {
+  const flowId = _.get(result, 'data.create_flow_run.id');
+  if (flowId) {
     // Remove some unused Jataware fields
     metadata.attributes = undefined;
     for (const output of metadata.outputs) {
       output.is_primary = undefined;
     }
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    await connection.update({
+    await connection.insert([{
       ...metadata,
       type: 'indicator',
       status: 'PROCESSING'
-    }, d => d.id);
+    }], d => d.id);
   }
   return result;
 };
