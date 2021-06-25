@@ -8,12 +8,19 @@ export enum ModelRunStatus {
 
 export enum DatacubeStatus {
   Ready = 'READY',
-  Processing = 'PROCESSING'
+  Processing = 'PROCESSING',
+  Registered = 'REGISTERED'
 }
 
 export enum DatacubeType {
   Model = 'model',
   Indicator = 'indicator'
+}
+
+export enum ProjectType {
+  Model = 'model',
+  Indicator = 'indicator',
+  Analysis = 'analysis'
 }
 
 export enum DatacubeAttributeVariableType {

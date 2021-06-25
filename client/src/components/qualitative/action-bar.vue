@@ -93,6 +93,8 @@ import ModelOptions from '@/components/action-bar/model-options';
 import TextAreaCard from '../cards/text-area-card';
 import { CAG, EXPORT_MESSAGES } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
+import { ProjectType } from '@/types/Enums';
+
 export default {
   name: 'ActionBar',
   components: {
@@ -191,7 +193,8 @@ export default {
           name: 'quantitative',
           params: {
             project: this.project,
-            currentCAG: this.currentCAG
+            currentCAG: this.currentCAG,
+            projectType: ProjectType.Analysis
           }
         });
       } catch {

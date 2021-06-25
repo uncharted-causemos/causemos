@@ -125,8 +125,8 @@ import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
-import { ModelPublishingStepID } from '@/types/Enums';
-import { Model, DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
+import { DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
+import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
@@ -136,6 +136,7 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
 import { updateDatacube } from '@/services/new-datacube-service';
+import _ from 'lodash';
 
 const DRILLDOWN_TABS = [
   {
@@ -171,6 +172,8 @@ export default defineComponent({
   }),
   setup() {
     const store = useStore();
+    const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
+
     const currentOutputIndex: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
     const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
     const selectedTemporalAggregation: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedTemporalAggregation']);
@@ -178,6 +181,9 @@ export default defineComponent({
     const selectedSpatialAggregation: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedSpatialAggregation']);
     const selectedTimestamp: ComputedRef<number> = computed(() => store.getters['modelPublishStore/selectedTimestamp']);
     const selectedScenarioIds: ComputedRef<string[]> = computed(() => store.getters['modelPublishStore/selectedScenarioIds']);
+
+    // reset on init:
+    store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Enrich_Description);
 
     const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
@@ -243,7 +249,11 @@ export default defineComponent({
     const isDescriptionView = ref<boolean>(true);
 
     watchEffect(() => {
-      isDescriptionView.value = selectedScenarioIds.value.length === 0;
+      if (metadata.value?.type === DatacubeType.Indicator) {
+        setSelectedScenarioIds([DatacubeType.Indicator.toString()]);
+      } else {
+        isDescriptionView.value = selectedScenarioIds.value.length === 0;
+      }
     });
 
     watchEffect(() => {
@@ -303,13 +313,13 @@ export default defineComponent({
       deselectedRegionIds,
       toggleIsRegionSelected,
       setAllRegionsSelected,
-      currentOutputIndex
+      currentOutputIndex,
+      projectId
     };
   },
   beforeRouteLeave() {
     // clear model id state so that other pages won't incorrectly load related insights
     this.setContextId('undefined');
-    this.setProjectId('undefined'); // @Review
   },
   watch: {
     $route: {
@@ -354,7 +364,7 @@ export default defineComponent({
     //  representing a special type of project (for each model family)
     //  where a domain-modeler is able,
     //  for example to use it to publish new instances and model track usage
-    this.setProjectId('dssat publish project id'); // @Review
+    this.setProjectId(this.projectId); // @Review
 
     // set initial output variable index
     // FIXME: default will be provided later through metadata
@@ -371,12 +381,16 @@ export default defineComponent({
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
       setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution'
     }),
-    publishModel() {
+    async publishModel() {
       // call the backend to update model metadata and finalize model publication
       if (this.metadata && isModel(this.metadata)) {
-        // this.metadata?.status = 'ready'; // FIXME
-        updateDatacube(this.metadata.id, this.metadata as Model);
-        // TODO: redirect to model family page
+        this.metadata.status = DatacubeStatus.Ready;
+        const modelToUpdate = _.cloneDeep(this.metadata);
+        delete modelToUpdate.validatedOutputs;
+        // remove newly-added fields such as 'validatedOutputs' so that ES can update
+        await updateDatacube(modelToUpdate.id, modelToUpdate);
+        // redirect to model family page
+        this.$router.push({ name: 'domainDatacubeOverview', params: { project: this.projectId, projectType: modelToUpdate.type } });
       }
     },
     updateDescView(val: boolean) {

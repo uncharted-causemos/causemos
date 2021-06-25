@@ -26,7 +26,7 @@
               :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
               >
               <i
-                v-if="run['status'] === 'SUBMITTED'"
+                v-if="run['status'] === ModelRunStatus.Submitted"
                 class="fa fa-fw fa-spinner"
               />
               <i
