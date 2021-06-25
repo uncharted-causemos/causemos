@@ -31,7 +31,7 @@
       @update-desc-view="updateDescView"
     >
       <template #datacube-model-header>
-        <div class="datacube-header" v-if="mainModelOutput">
+        <div class="datacube-header" v-if="metadata && mainModelOutput">
           <div v-if="isExpanded">
             <h5>
               <select name="outputs" id="outputs"

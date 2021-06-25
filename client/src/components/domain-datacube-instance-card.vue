@@ -3,12 +3,12 @@
     <modal-confirmation
       v-if="showModal"
       :autofocus-confirm="false"
-      @confirm="remove"
+      @confirm="unpublish"
       @close="showModal = false"
     >
-      <template #title>Delete Project</template>
+      <template #title>Unpublish Model Instance</template>
       <template #message>
-        <p>Are you sure you want to delete <strong>{{ project.name }}</strong> and all associated CAGs/Models/Scenarios?</p>
+        <p>Are you sure you want to unpublish <strong>{{ model.name }}</strong>?</p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
@@ -25,18 +25,19 @@
         <button
           type="button"
           class="btn btn-link"
-          @click="open(project.id)">
-          <span class="overflow-ellipsis project-name">{{project.name}}</span>
+          @click="edit(model.id)">
+          <span class="overflow-ellipsis project-name">{{model.name}}</span>
         </button>
       </div>
-      <div class="col-sm-2 number-col">
-        {{ dataAnalysisCount }}
-      </div>
       <div class="col-sm-4">
-        {{ project.corpus_id }}
+        {{ model.maintainer.organization }}
+      </div>
+      <div class="col-sm-2"
+        :style="{ color: statusColor }">
+        {{ statusLabel }}
       </div>
       <div class="col-sm-2">
-        {{ dateFormatter(project.modified_at) }}
+        {{ dateFormatter(model.created_at) }}
       </div>
     </div>
     <div
@@ -46,7 +47,7 @@
       <div class="row">
         <div class="col-sm-12 details">
           <div>
-            <p><b>{{project.description}}</b></p>
+            <p><b>{{model.description}}</b></p>
           </div>
         </div>
       </div>
@@ -56,23 +57,30 @@
       class="project-card-footer"
     >
       <div class="row">
-        <div class="col-sm-8">
+        <div class="col-sm-10">
           <button
-            v-tooltip.top-center="'Open the project'"
+            v-tooltip.top-center="'Open model instance for review'"
             type="button"
             class="btn btn-primary"
-            @click="open(project.id)"
+            @click="open(model.id)"
           ><i class="fa fa-folder-open-o" />
-            Open Project</button>
+            Open Instance</button>
+          <button
+            v-tooltip.top-center="'Edit model instance publication'"
+            type="button"
+            class="btn btn-primary"
+            @click="edit(model.id)"
+          ><i class="fa fa-edit" />
+            Publish (or Edit) Instance</button>
         </div>
         <div class="col-sm-2">
           <button
-            v-tooltip.top-center="'Remove the project from the list'"
+            v-tooltip.top-center="'Unpublish the model instance'"
             type="button"
             class="remove-button"
             @click.stop="showWarningModal"
           ><i class="fa fa-trash" />
-            Remove Project</button>
+            Unpublish</button>
         </div>
       </div>
     </div>
@@ -81,52 +89,74 @@
 
 <script lang="ts">
 
-import { defineComponent, computed, ref, PropType } from 'vue';
-import { mapActions } from 'vuex';
+import { defineComponent, ref, PropType } from 'vue';
+import { mapActions, mapGetters } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { Project } from '@/types/Common';
-import { ProjectType } from '@/types/Enums';
+import { Model } from '@/types/Datacube';
+import { DatacubeStatus } from '@/types/Enums';
 
 /**
  * A card-styled widget to view project summary
  */
 export default defineComponent({
-  name: 'ProjectCard',
+  name: 'DomainDatacubeInstanceCard',
   components: {
     ModalConfirmation,
     MessageDisplay
   },
   props: {
-    project: {
-      type: Object as PropType<Project>,
+    model: {
+      type: Object as PropType<Model>,
       default: () => ({})
     }
   },
-  setup(props) {
+  computed: {
+    ...mapGetters({
+      project: 'app/project'
+    }),
+    statusColor(): any {
+      let color = '';
+      switch (this.model.status) {
+        case DatacubeStatus.Ready:
+          color = 'green';
+          break;
+        case DatacubeStatus.Registered:
+          color = 'black';
+          break;
+        default:
+          color = 'red';
+      }
+      return color;
+    },
+    statusLabel(): any {
+      const label = this.model.status === DatacubeStatus.Ready ? 'Published' : this.model.status.toLowerCase();
+      return label.charAt(0).toUpperCase() + label.slice(1);
+    }
+  },
+  setup() {
     const showMore = ref(false);
     const showModal = ref(false);
 
     return {
-      modelCount: computed(() => props.project.stat.model_count),
-      dataAnalysisCount: computed(() => props.project.stat.data_analysis_count),
       showMore,
       showModal
     };
   },
   methods: {
     ...mapActions({
-      clearLastQuery: 'query/clearLastQuery'
+      clearLastQuery: 'query/clearLastQuery',
+      updateAnalysisItemsNewPreview: 'dataAnalysis/updateAnalysisItemsNewPreview'
     }),
     dateFormatter,
     toggleShowMore() {
       this.showMore = !this.showMore;
     },
-    remove() {
-      this.$emit('delete', this.project);
+    unpublish() {
+      this.$emit('unpublish', this.model);
       this.showModal = false;
     },
     showWarningModal() {
@@ -135,10 +165,21 @@ export default defineComponent({
     closeWarning() {
       this.showModal = false;
     },
-    open(id: string) {
-      // Reset filters every time we open a new project
+    async open(id: string) {
+      // Reset filters every time we open
       this.clearLastQuery();
-      this.$router.push({ name: 'overview', params: { project: id, projectType: ProjectType.Analysis } });
+      // redirect
+      // open the datacube page similar to the data space
+      await this.updateAnalysisItemsNewPreview({ datacubeIDs: [id] });
+      this.$router.push({
+        name: 'dataPreview'
+      });
+    },
+    edit(id: string) {
+      // Reset filters every time we edit
+      this.clearLastQuery();
+      // redirect
+      this.$router.push({ name: 'modelPublishingExperiment', query: { datacubeid: id } });
     }
   }
 });

@@ -1,6 +1,7 @@
 const { Project } = require('./project');
 const { DocumentContext } = require('./document-context');
 const { Statement } = require('./statement');
+const { Datacube } = require('./datacube');
 const { Base } = require('./base');
 
 const SEARCH_LIMIT = 10000;
@@ -13,6 +14,8 @@ const RESOURCE = Object.freeze({
   MODEL: 'model',
   ANALYSIS: 'analysis',
   CAG: 'model', // Duplicate for the time being
+
+  DOMAIN_PROJECT: 'domain-project',
 
   // Qualitative data
   STATEMENT: 'statement',
@@ -45,6 +48,8 @@ class Adapter {
       return new DocumentContext(id, 'corpus');
     } else if (type === RESOURCE.PROJECT) {
       return new Project(type);
+    } else if (type === RESOURCE.DATA_DATACUBE) {
+      return new Datacube(type);
     } else {
       return new Base(type);
     }

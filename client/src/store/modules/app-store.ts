@@ -23,6 +23,9 @@ const state: AppState = {
 
 
 const getters: GetterTree<AppState, any> = {
+  projectType: (state, getters, rootState /*, rootGetters */) => {
+    return rootState.route.params.projectType || null;
+  },
   project: (state, getters, rootState /*, rootGetters */) => {
     return rootState.route.params.project || null;
   },

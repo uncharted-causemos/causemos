@@ -80,6 +80,7 @@ import projectService from '@/services/project-service';
 
 import KnowledgeBaseRow from '@/components/new-project/knowledge-base-row.vue';
 import { KnowledgeBase } from '@/types/Common';
+import { ProjectType } from '@/types/Enums';
 
 const MSG_EMPTY_PROJECT_NAME = 'Project name cannot be blank';
 
@@ -130,7 +131,7 @@ export default defineComponent({
 
       this.isProcessing = false;
       this.disableOverlay();
-      this.$router.push({ name: 'overview', params: { project: id } });
+      this.$router.push({ name: 'overview', params: { project: id, projectType: ProjectType.Analysis } });
     },
     cancel() {
       this.$router.push({ name: 'home' });

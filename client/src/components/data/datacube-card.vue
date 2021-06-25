@@ -172,10 +172,9 @@
               :output-selection=indx
               :relative-to="relativeTo"
               :show-tooltip="true"
-              :selected-admin-level="selectedAdminLevel"
+              :selected-layer-id="mapSelectedLayer"
               :filters="mapFilters"
               :map-bounds="mapBounds"
-              :is-grid-map="isGridMap"
               :region-data="regionalData"
               @sync-bounds="onSyncMapBounds"
               @click-layer-toggle="onClickMapLayerToggle"
@@ -376,6 +375,11 @@ export default defineComponent({
   },
   unmounted() {
     disableConcurrentTileRequestsCaching();
+  },
+  computed: {
+    mapSelectedLayer(): number {
+      return this.isGridMap ? 4 : this.selectedAdminLevel;
+    }
   },
   methods: {
     onMapLoad() {

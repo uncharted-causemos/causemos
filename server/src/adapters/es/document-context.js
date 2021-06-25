@@ -1,9 +1,11 @@
 const _ = require('lodash');
 const ES = require('./client');
 const { FIELDS, FIELD_LEVELS } = require('./config');
-const { buildQuery, buildFilters, levelFilter } = require('./query-util');
+const { StatementQueryUtil } = require('./statement-query-util');
 
 const MAX_DOCUMENT_CONTEXT = 2000;
+
+const queryUtil = new StatementQueryUtil();
 
 const facetQuery = (filters, fieldNames) => {
   const facets = {};
@@ -25,9 +27,9 @@ const facetQuery = (filters, fieldNames) => {
     };
   });
 
-  const q = buildQuery(filters);
+  const q = queryUtil.buildQuery(filters);
   const clauses = filters.clauses || [];
-  const nestedFilters = buildFilters(levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
+  const nestedFilters = queryUtil.buildFilters(queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
 
   return {
     size: 0,
@@ -51,9 +53,9 @@ const facetQuery = (filters, fieldNames) => {
 
 // Filter for document ids
 const idQuery = (filters) => {
-  const q = buildQuery(filters);
+  const q = queryUtil.buildQuery(filters);
   const clauses = filters.clauses || [];
-  const nestedFilters = buildFilters(levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
+  const nestedFilters = queryUtil.buildFilters(queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
 
   return {
     size: 0,

@@ -78,7 +78,7 @@ class Project extends Base {
         extended_at: Date.now() // Last time additional documents were added to the project
       }
     });
-    
+
     // Clone project
     response = await this.client.indices.clone({
       index: indraStatementIndex,

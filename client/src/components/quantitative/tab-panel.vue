@@ -129,6 +129,7 @@ import IndicatorSummary from '@/components/indicator/indicator-summary';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
+import { ProjectType } from '@/types/Enums';
 
 const PANE_ID = {
   INDICATOR: 'indicator',
@@ -285,7 +286,8 @@ export default {
         name: 'qualitative',
         params: {
           project: this.project,
-          currentCAG: this.currentCAG
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis
         }
       });
     },
