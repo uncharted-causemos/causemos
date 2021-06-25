@@ -3,7 +3,7 @@
     <modal-confirmation
       v-if="showModal"
       :autofocus-confirm="false"
-      @confirm="remove"
+      @confirm="unpublish"
       @close="showModal = false"
     >
       <template #title>Unpublish Model Instance</template>
@@ -155,8 +155,8 @@ export default defineComponent({
     toggleShowMore() {
       this.showMore = !this.showMore;
     },
-    remove() {
-      this.$emit('delete', this.model);
+    unpublish() {
+      this.$emit('unpublish', this.model);
       this.showModal = false;
     },
     showWarningModal() {

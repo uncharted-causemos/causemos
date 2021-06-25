@@ -13,6 +13,40 @@
         Through this page, you can publish {{datacubeType}} instances and track insights.
       </div>
     </div>
+    <div class="row">
+      <div class="controls">
+        <input
+          v-model="searchDatacubeInstances"
+          type="text"
+          placeholder="Search ..."
+          class="form-control"
+        >
+        <div class="sorting">
+          <div>
+            <button
+              type="button"
+              class="btn btn-default"
+              @click="toggleSortingDropdownDatacubeInstances"
+            ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
+              <i class="fa fa-caret-down" />
+            </button>
+          </div>
+          <div v-if="showSortingDropdownDatacubeInstances">
+            <dropdown-control class="dropdown">
+              <template #content>
+                <div
+                  v-for="option in sortingOptionsDatacubeInstances"
+                  :key="option"
+                  class="dropdown-option"
+                  @click="sortDatacubeInstances(option)">
+                  {{ option }}
+                </div>
+              </template>
+            </dropdown-control>
+          </div>
+        </div>
+      </div>
+    </div>
     <div class="row projects-list">
       <div class="row projects-list-header">
         <div class="col-sm-4">
@@ -30,11 +64,11 @@
       </div>
       <div class="instances-list-elements">
         <div
-          v-for="instance in datacubeInstances"
+          v-for="instance in filteredDatacubeInstances"
           :key="instance.id">
           <domain-datacube-instance-card
             :model="instance"
-            @delete="deleteDatacubeInstance(instance)" />
+            @unpublish="unpublishDatacubeInstance(instance)" />
         </div>
       </div>
     </div>
@@ -57,12 +91,21 @@ export default {
   data: () => ({
     datacubeFamily: '',
     datacubeType: '',
-    datacubeInstances: []
+    datacubeInstances: [],
+    searchDatacubeInstances: '',
+    showSortingDropdownDatacubeInstances: false,
+    sortingOptionsDatacubeInstances: ['Most recent', 'Earliest'],
+    selectedSortingOptionDatacubeInstances: 'Most recent'
   }),
   computed: {
     ...mapGetters({
       project: 'app/project'
-    })
+    }),
+    filteredDatacubeInstances() {
+      return this.datacubeInstances.filter(instance => {
+        return instance.name.toLowerCase().includes(this.searchDatacubeInstances.toLowerCase());
+      });
+    }
   },
   async mounted() {
     // first: fetch project info
@@ -78,15 +121,47 @@ export default {
     // FIXME: manaully allow overalapping models
     //  (e.g., old dssat and new dssat to be listed under the family name of dssat)
     this.datacubeInstances = instances.filter(i => i.name.includes(this.datacubeFamily));
+
+    // Sort by modified_at date with latest on top
+    this.sortDatacubeInstancesByMostRecentDate();
   },
   methods: {
     ...mapActions({
-      setProjectMetadata: 'app/setProjectMetadata'
+      setProjectMetadata: 'app/setProjectMetadata',
+      enableOverlay: 'app/enableOverlay',
+      disableOverlay: 'app/disableOverlay'
     }),
-    async deleteDatacubeInstance(instance) {
-      // FIXME: for now, unpublish the model
+    async unpublishDatacubeInstance(instance) {
+      // unpublish the datacube instance
       instance.status = DatacubeStatus.Registered;
       await updateDatacube(instance.id, instance);
+    },
+    toggleSortingDropdownDatacubeInstances() {
+      this.showSortingDropdownDatacubeInstances = !this.showSortingDropdownDatacubeInstances;
+    },
+    sortDatacubeInstancesByMostRecentDate() {
+      this.datacubeInstances.sort((a, b) => {
+        return a.modified_at && b.modified_at ? b.modified_at - a.modified_at : 0;
+      });
+    },
+    sortDatacubeInstancesByEarliestDate() {
+      this.datacubeInstances.sort((a, b) => {
+        return a.modified_at && b.modified_at ? a.modified_at - b.modified_at : 0;
+      });
+    },
+    sortDatacubeInstances(option) {
+      this.selectedSortingOptionDatacubeInstances = option;
+      this.showSortingDropdownDatacubeInstances = false;
+      switch (option) {
+        case this.sortingOptionsDatacubeInstances[0]:
+          this.sortDatacubeInstancesByMostRecentDate();
+          break;
+        case this.sortingOptionsDatacubeInstances[1]:
+          this.sortDatacubeInstancesByEarliestDate();
+          break;
+        default:
+          this.sortDatacubeInstancesByMostRecentDate();
+      }
     }
   }
 };
@@ -169,6 +244,39 @@ $padding-size: 12.5vh;
   }
   .btn-primary {
     margin: 20px 5px 10px;
+  }
+}
+
+.controls {
+  display: flex;
+  padding-bottom: 5px;
+  margin-top: 5px;
+  justify-content: space-between;
+  input[type=text] {
+    padding: 8px;
+    width: 250px;
+    margin-right: 10px;
+  }
+  .sorting {
+    position: relative;
+    .btn {
+      width: 180px !important;
+      text-align: left;
+      .lbl {
+        font-weight: normal;
+      }
+      .fa {
+        position:absolute;
+        right: 20px;
+      }
+    }
+    .dropdown {
+      position: absolute;
+      width: 100%;
+    }
+  }
+  .form-control {
+    background: #fff;
   }
 }
 </style>
