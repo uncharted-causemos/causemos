@@ -185,7 +185,7 @@ const getJobStatus = async (runId) => {
 const startIndicatorPostProcessing = async (metadata) => {
   Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
   if (!metadata.id) {
-    Logger.error('Required ids for model output post processing were not provided');
+    Logger.error('Required ids for indicator post processing were not provided');
     return;
   }
 
