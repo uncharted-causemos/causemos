@@ -7,10 +7,10 @@
         alt="CauseMos logo"
       >
     </div>
-    <h3 class="header-prompt">Welcome to the domain {{datacubeType}} family page of <b>{{datacubeFamily}}</b></h3>
+    <h3 class="header-prompt">Welcome to the domain {{projectMetadata.type}} family page of <b>{{projectMetadata.name}}</b></h3>
     <div class="row title">
       <div class="descriptions">
-        Through this page, you can publish {{datacubeType}} instances and track insights.
+        Through this page, you can publish {{projectMetadata.type}} instances and track insights.
       </div>
     </div>
     <div class="row">
@@ -78,10 +78,10 @@
 <script>
 import { mapGetters, mapActions } from 'vuex';
 import DomainDatacubeInstanceCard from '@/components/domain-datacube-instance-card.vue';
-import projectService from '@/services/domain-project-service';
 import filtersUtil from '@/utils/filters-util';
 import { getDatacubes, updateDatacube } from '@/services/new-datacube-service';
 import { DatacubeStatus } from '@/types/Enums';
+import _ from 'lodash';
 
 export default {
   name: 'DomainProjectOverview',
@@ -89,8 +89,6 @@ export default {
     DomainDatacubeInstanceCard
   },
   data: () => ({
-    datacubeFamily: '',
-    datacubeType: '',
     datacubeInstances: [],
     searchDatacubeInstances: '',
     showSortingDropdownDatacubeInstances: false,
@@ -99,7 +97,8 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      project: 'app/project'
+      project: 'app/project',
+      projectMetadata: 'app/projectMetadata'
     }),
     filteredDatacubeInstances() {
       return this.datacubeInstances.filter(instance => {
@@ -107,30 +106,40 @@ export default {
       });
     }
   },
+  watch: {
+    projectMetadata: function() {
+      this.fetchDatacubeInstances();
+    }
+  },
   async mounted() {
-    // first: fetch project info
-    const projectInfo = await projectService.getProject(this.project);
-    this.datacubeFamily = projectInfo.name;
-    this.datacubeType = projectInfo.type;
-
-    // then, fetch model instances
-    const newFilters = filtersUtil.newFilters();
-    // filtersUtil.addSearchTerm(newFilters, 'name', this.datacubeFamily, 'and', false);
-    // filtersUtil.addSearchTerm(newFilters, 'type', 'model', 'and', false);
-    const instances = await getDatacubes(newFilters);
-    // FIXME: manaully allow overalapping models
-    //  (e.g., old dssat and new dssat to be listed under the family name of dssat)
-    this.datacubeInstances = instances.filter(i => i.name.includes(this.datacubeFamily));
-
-    // Sort by modified_at date with latest on top
-    this.sortDatacubeInstancesByMostRecentDate();
+    this.fetchDatacubeInstances();
   },
   methods: {
     ...mapActions({
-      setProjectMetadata: 'app/setProjectMetadata',
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay'
     }),
+    async fetchDatacubeInstances() {
+      if (_.isEmpty(this.projectMetadata)) {
+        return;
+      }
+
+      this.enableOverlay('Loading datacube family instances');
+
+      // fetch model instances
+      const newFilters = filtersUtil.newFilters();
+      // filtersUtil.addSearchTerm(newFilters, 'name', this.datacubeFamily, 'and', false);
+      filtersUtil.addSearchTerm(newFilters, 'type', this.projectMetadata.type, 'and', false);
+      const instances = await getDatacubes(newFilters);
+      // FIXME: manaully allow overalapping models
+      //  (e.g., old dssat and new dssat to be listed under the family name of dssat)
+      this.datacubeInstances = instances.filter(i => i.name.includes(this.projectMetadata.name));
+
+      // Sort by modified_at date with latest on top
+      this.sortDatacubeInstancesByMostRecentDate();
+
+      this.disableOverlay();
+    },
     async unpublishDatacubeInstance(instance) {
       // unpublish the datacube instance
       instance.status = DatacubeStatus.Registered;

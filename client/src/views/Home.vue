@@ -260,97 +260,115 @@ export default defineComponent({
       });
     },
     async refreshDomainProjects() {
-      // fetch all model datacubes, extract model families, and ensure a project for each
+      this.enableOverlay('Loading projects');
+
+      // FIXME: enable this when we have a proper workflow with Jataware
+      //  so that on the registeration of a new datacube family,
+      //  Causemos is notified and a new project is created with initial counts
+      // Causemos backend will cache the counts and update them whenever a datacube is un/published
+      const computeCountsOnTheFly = true;
       const existingProjects: DomainProject[] = await domainProjectService.getProjects();
-      const modelFamilyNames = existingProjects.map(p => p.name);
 
-      // FIXME: the following code attempt to compute the project stat counts
-      //   (e.g., published instances and registered instances) on the client side
-      //  However, this should not be done here and ideally be calculated once
-      //   and perhasp cached and provided by the backend as part of the projects information
+      if (computeCountsOnTheFly) {
+        // fetch all model datacubes, extract model families, and ensure a project for each
+        const modelFamilyNames = existingProjects.map(p => p.name);
 
-      const newFilters = filtersUtil.newFilters();
-      // filtersUtil.addSearchTerm(newFilters, 'type', 'model', 'and', false);
-      const datacubes: Model[] = await getDatacubes(newFilters);
+        // FIXME: the following code attempt to compute the project stat counts
+        //   (e.g., published instances and registered instances) on the client side
+        //  However, this should not be done here and ideally be calculated once
+        //   and perhasp cached and provided by the backend as part of the projects information
 
-      // this list will track new projects that should be created
-      //  for example because there is a new model family
-      const newProjects: DomainProject[] = [];
+        const newFilters = filtersUtil.newFilters();
+        const datacubes: Model[] = await getDatacubes(newFilters);
 
-      // check model families (datacubes) for a one-to-one mapping with projects
-      //  and track new ones to create projects for them
-      datacubes.forEach(datacube => {
-        // is there an existing project for this datacube?
-        if (!modelFamilyNames.includes(datacube.name)) {
-          newProjects.push({
-            name: datacube.name,
-            ready_instances: [],
-            draft_instances: [],
-            type: datacube.type,
-            description: datacube.description,
-            source: datacube.maintainer.organization
+        // this list will track new projects that should be created
+        //  for example because there is a new model family
+        const newProjects: DomainProject[] = [];
+
+        // check model families (datacubes) for a one-to-one mapping with projects
+        //  and track new ones to create projects for them
+        datacubes.forEach(datacube => {
+          // is there an existing project for this datacube?
+          if (!modelFamilyNames.includes(datacube.name)) {
+            newProjects.push({
+              name: datacube.name,
+              ready_instances: [],
+              draft_instances: [],
+              type: datacube.type,
+              description: datacube.description,
+              source: datacube.maintainer.organization
+            });
+          }
+        });
+
+        //
+        // after we know all existing projects as well as new projects
+        // let's check datacubes against them and update (registered/published) counts
+        //
+        // FIXME: we currently match using substring to manually group datacubes
+        //        ideally, we should use family_name instead of name and do a full string comparison
+        //
+        datacubes.forEach(datacube => {
+          // first, update existing projects, if needed
+          // are there some existing projects that should include the current model instance/datacube
+          const matchingExistingProjects = existingProjects.filter(p => datacube.name.includes(p.name));
+          if (matchingExistingProjects.length > 0) {
+            matchingExistingProjects.forEach(matchingProject => {
+              if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.name)) {
+                // this is a new model instance datacube, so we need to increase the registered instances of this project
+                matchingProject.draft_instances.push(datacube.name);
+              }
+              if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.name)) {
+                // this is a new model instance datacube, so we need to increase the published instances of this project
+                matchingProject.ready_instances.push(datacube.name);
+              }
+            });
+          }
+
+          // then, against new projects
+          const matchingNewProjects = newProjects.filter(p => datacube.name.includes(p.name));
+          if (matchingNewProjects.length > 0) {
+            matchingNewProjects.forEach(matchingProject => {
+              if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.name)) {
+                // this is a new model instance datacube, so we need to increase the registered instances of this project
+                matchingProject.draft_instances.push(datacube.name);
+              }
+              if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.name)) {
+                // this is a new model instance datacube, so we need to increase the published instances of this project
+                matchingProject.ready_instances.push(datacube.name);
+              }
+            });
+          }
+        });
+
+        // create new projects
+        if (newProjects.length > 0) {
+          const createPromises = newProjects.map(async (projectInfo) => {
+            return domainProjectService.createDomainProject(
+              projectInfo.name,
+              projectInfo.description,
+              projectInfo.source,
+              projectInfo.type,
+              projectInfo.ready_instances,
+              projectInfo.draft_instances);
           });
+          await Promise.all(createPromises);
+
+          // since the ultimate list of projects may have changed,
+          //  fetch (again) the latest list and use it
+          const allProjects: DomainProject[] = await domainProjectService.getProjects();
+          this.projectsListDomainDatacubes = allProjects;
+        } else {
+          this.projectsListDomainDatacubes = existingProjects;
         }
-      });
-
-      //
-      // after we know all existing projects as well as new projects
-      // let's check datacubes against them and update (registered/published) counts
-      //
-      // FIXME: we currently match using substring to manually group datacubes
-      //        ideally, we should use family_name instead of name and do a full string comparison
-      //
-      datacubes.forEach(datacube => {
-        // first, update existing projects, if needed
-        // are there some existing projects that should include the current model instance/datacube
-        const matchingExistingProjects = existingProjects.filter(p => datacube.name.includes(p.name));
-        if (matchingExistingProjects.length > 0) {
-          matchingExistingProjects.forEach(matchingProject => {
-            if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.name)) {
-              // this is a new model instance datacube, so we need to increase the registered instances of this project
-              matchingProject.draft_instances.push(datacube.name);
-            }
-            if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.name)) {
-              // this is a new model instance datacube, so we need to increase the published instances of this project
-              matchingProject.ready_instances.push(datacube.name);
-            }
-          });
-        }
-
-        // then, against new projects
-        const matchingNewProjects = newProjects.filter(p => datacube.name.includes(p.name));
-        if (matchingNewProjects.length > 0) {
-          matchingNewProjects.forEach(matchingProject => {
-            if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.name)) {
-              // this is a new model instance datacube, so we need to increase the registered instances of this project
-              matchingProject.draft_instances.push(datacube.name);
-            }
-            if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.name)) {
-              // this is a new model instance datacube, so we need to increase the published instances of this project
-              matchingProject.ready_instances.push(datacube.name);
-            }
-          });
-        }
-      });
-
-      // create new projects
-      const createPromises = newProjects.map(async (projectInfo) => {
-        return domainProjectService.createDomainProject(
-          projectInfo.name,
-          projectInfo.description,
-          projectInfo.source,
-          projectInfo.type,
-          projectInfo.ready_instances,
-          projectInfo.draft_instances);
-      });
-      await Promise.all(createPromises);
-
-      // since the ultimate list of projects may have changed, fetch the latest and use it
-      const allProjects: DomainProject[] = await domainProjectService.getProjects();
-      this.projectsListDomainDatacubes = allProjects;
+      } else {
+        this.projectsListDomainDatacubes = existingProjects;
+      }
 
       // Sort by modified_at date with latest on top
       this.sortDomainDatacubesByMostRecentDate();
+
+      this.disableOverlay();
     },
     onDismiss() {
       this.newKnowledgeBase = false;

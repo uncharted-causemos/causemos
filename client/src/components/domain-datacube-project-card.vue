@@ -141,7 +141,13 @@ export default defineComponent({
     open(id: string) {
       // Reset filters every time we open a new project
       this.clearLastQuery();
-      this.$router.push({ name: 'domainDatacubeOverview', params: { project: id, projectType: this.project.type } });
+      this.$router.push({
+        name: 'domainDatacubeOverview',
+        params: {
+          project: id,
+          projectType: this.project.type
+        }
+      });
     }
   }
 });
