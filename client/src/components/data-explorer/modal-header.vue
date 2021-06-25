@@ -28,6 +28,7 @@ import { deleteAnalysis } from '@/services/analysis-service';
 import { ANALYSIS } from '@/utils/messages-util';
 
 import FullScreenModalHeader from '../widgets/full-screen-modal-header';
+import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'DataExplorerModalHeader',
@@ -59,7 +60,8 @@ export default {
         name: 'data',
         params: {
           collection: this.project,
-          analysisID: this.analysisId
+          analysisID: this.analysisId,
+          projectType: ProjectType.Analysis
         }
       });
     },
@@ -72,7 +74,8 @@ export default {
       this.$router.push({
         name: 'dataStart',
         params: {
-          project: this.project
+          project: this.project,
+          projectType: ProjectType.Analysis
         }
       });
       this.$emit('close');

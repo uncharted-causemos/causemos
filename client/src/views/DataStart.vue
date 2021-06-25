@@ -27,6 +27,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { ANALYSIS } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import StartScreen from '@/components/start-screen';
+import { ProjectType } from '@/types/Enums';
 
 const toCardData = analysis => ({
   analysisId: analysis.id,
@@ -70,7 +71,8 @@ export default {
         name: 'dataExplorer',
         params: {
           collection: this.project,
-          analysisID: analysis.id
+          analysisID: analysis.id,
+          projectType: ProjectType.Analysis
         }
       });
     },
@@ -79,7 +81,8 @@ export default {
         name: 'data',
         params: {
           collection: this.project,
-          analysisID: recentCard.analysisId
+          analysisID: recentCard.analysisId,
+          projectType: ProjectType.Analysis
         }
       });
     },

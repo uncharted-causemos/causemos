@@ -131,7 +131,7 @@ export default defineComponent({
   },
   computed: {
     inputParameters(): Array<any> {
-      return this.metadata ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
+      return this.metadata && this.metadata.parameters ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
     }
   },
   watch: {
