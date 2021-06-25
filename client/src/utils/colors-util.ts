@@ -24,7 +24,10 @@ const COLOR_SCALES: { [key: string]: (v: number) => string } = Object.freeze({
 });
 
 export const COLOR_SCHEME = Object.freeze({
-  WM_GREEN: getColors(COLOR.WM_GREEN, 2)
+  WM_GREEN: getColors(COLOR.WM_GREEN, 2),
+  GREYS_7: ['#f7f7f7', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525'], // https://colorbrewer2.org/?type=sequential&scheme=Greys&n=7
+  PURPLES_7: ['#f2f0f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'], // https://colorbrewer2.org/?type=sequential&scheme=Purples&n=7
+  PIYG_7: ['#c51b7d', '#e9a3c9', '#fde0ef', '#f7f7f7', '#e6f5d0', '#a1d76a', '#4d9221'] // https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=7
 });
 
 export const UNDEFINED_COLOR = '#000000';

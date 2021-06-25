@@ -133,25 +133,55 @@ export function isLayerLoaded(map, layerId) {
  * @param {Function} scaleFn - d3 scale function
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-function interpolateColor(property, domain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo) {
-  const scale = scaleFn()
-    .domain(domain)
-    .range([0, colors.length - 1]);
-  const stops = [];
-  colors.forEach((color, index) => {
-    stops.push(scale.invert(index));
-    stops.push(['to-color', color]);
-  });
+function discreteColors(property, domain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo) {
+  const stops = !_.isNil(relativeTo)
+    ? createDivergingColorStops(domain, colors, scaleFn)
+    : createColorStops(domain, colors, scaleFn);
   const getter = useFeatureState ? 'feature-state' : 'get';
   const valueExpr = !_.isNil(relativeTo)
     ? ['-', [getter, property], [getter, relativeTo]]
     : [getter, property];
   return [
-    'interpolate',
-    ['linear'],
+    'step',
     valueExpr,
     ...stops
   ];
+}
+
+// Produce an array representing color stops
+// For example, with [c1, v1, c2, v2, c3], colors will be mapped as following
+// * c1, when value is less than v1
+// * c2, when value is between v1 and v2
+// * c3, when value is greater than or equal to v2
+export function createColorStops(domain, colors, scaleFn) {
+  const scale = scaleFn()
+    .domain(domain)
+    .range([0, 1]);
+  const stops = [];
+  const numColors = colors.length;
+  const step = 1 / numColors;
+  colors.forEach((color, index) => {
+    stops.push(color);
+    const i = index + 1;
+    if (i < colors.length) stops.push(scale.invert(i * step));
+  });
+  return stops;
+}
+
+export function createDivergingColorStops(domain, colors, scaleFn) {
+  const max = Math.max(...domain.map(Math.abs));
+  const scale = scaleFn()
+    .domain([-max, 0, max])
+    .range([-1, 0, 1]);
+  const stops = [];
+  const numColors = colors.length;
+  const step = 2 / numColors;
+  colors.forEach((color, index) => {
+    stops.push(color);
+    const i = index + 1;
+    if (i < colors.length) stops.push(scale.invert((i * step) - 1));
+  });
+  return stops;
 }
 
 /**
@@ -175,25 +205,23 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
   const propertyGetter = _.isNil(relativeTo)
     ? ['feature-state', property]
     : ['-', ['feature-state', property], ['feature-state', relativeTo]];
-  return {
+  const style = {
     type: 'fill',
     paint: {
       'fill-antialias': false,
-      'fill-color': interpolateColor(property, dataDomain, colors, scaleFn, useFeatureState, relativeTo),
-      'fill-opacity': useFeatureState ? [
-        'case',
-        ...missingProperty,
-        ['<', propertyGetter, filterDomain.min], 0.0,
-        ['>', propertyGetter, filterDomain.max], 0.0,
-        ['boolean', ['feature-state', 'hover'], false], 0.8, // on hover
-        0.6 // default opacity
-      ] : [
-        'case',
-        ['boolean', ['feature-state', 'hover'], false], 0.8, // opacity to 1 on hover
-        0.6 // default opacity
-      ]
+      'fill-color': discreteColors(property, dataDomain, colors, scaleFn, useFeatureState, relativeTo)
     }
   };
+  if (useFeatureState) {
+    style.paint['fill-opacity'] = [
+      'case',
+      ...missingProperty,
+      ['<', propertyGetter, filterDomain.min], 0.0,
+      ['>', propertyGetter, filterDomain.max], 0.0,
+      1
+    ];
+  }
+  return style;
 }
 
 /**
