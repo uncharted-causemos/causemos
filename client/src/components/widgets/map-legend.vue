@@ -1,19 +1,19 @@
 <template>
   <div class="map-legend-container">
     <div
-      v-for="d in data"
+      v-for="d in ramp"
       :key="d.color"
       class="color-row"
     >
-      <div class="color" v-bind:style="{backgroundColor: d.color }"></div>
       <span class="color-label">{{ d.label }}</span>
+      <div class="color" v-bind:style="{backgroundColor: d.color }"></div>
     </div>
   </div>
 </template>
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 
-export interface MapLegendData {
+export interface MapLegendColor {
   color: string;
   label?: string;
 }
@@ -22,8 +22,8 @@ export default defineComponent({
   name: 'MapLegend',
   emits: [],
   props: {
-    data: {
-      type: Array as PropType<MapLegendData[]>,
+    ramp: {
+      type: Array as PropType<MapLegendColor[]>,
       default: []
     }
   }
@@ -34,14 +34,14 @@ export default defineComponent({
   margin: 2px;
   display: flex;
   flex-direction: row;
-  justify-content: space-between;
+  justify-content: flex-end;
 }
 .color {
   height: 17px;
   width: 17px;
 }
 .color-label {
-  padding-left: 5px;
+  padding-right: 5px;
   font-size: 10px;
   display: inline-flex;
   align-items: center;

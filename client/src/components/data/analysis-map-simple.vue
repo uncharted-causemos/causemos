@@ -1,7 +1,7 @@
 <template>
   <div class="analysis-map-container">
     <div class="value-filter">
-      <map-legend :data="legendData" />
+      <map-legend :ramp="legendData" />
       <div
         class="layer-toggle-button"
         @click="clickLayerToggle">
@@ -532,7 +532,7 @@ export default {
   z-index: 1;
   display: flex;
   flex-direction: column;
-  align-items: flex-start;
+  align-items: flex-end;
   cursor: pointer;
   .filter-toggle-button {
     padding: 5px;
