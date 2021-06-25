@@ -3,6 +3,7 @@ const asyncHandler = require('express-async-handler');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
+const Logger = rootRequire('/config/logger');
 
 const dartService = rootRequire('/services/external/dart-service');
 const projectService = rootRequire('/services/project-service');
@@ -23,19 +24,23 @@ router.get('/:docId/raw', asyncHandler(async (req, res, next) => {
   docStream.pipe(res);
 }));
 
+/**
+ * Upload a set of documents
+ */
 router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) => {
   const metadata = req.body.metadata;
-
   const project = req.body.project;
-  console.log('extending ', project);
+
+  Logger.info(`Extending project: ${project}`);
   const results = [];
   for (let i = 0; i < req.files.length; i++) {
     const file = req.files[i];
 
     const r = await dartService.uploadDocument(file, metadata);
-    console.log(i, file.originalname, JSON.parse(r).documentId);
+    const documentId = JSON.parse(r).documentId;
+    Logger.info(`\t${i} ${file.originalname} ${documentId}`);
     results.push({
-      document_id: JSON.parse(r).documentId,
+      document_id: documentId,
       name: file.originalname
     });
   }

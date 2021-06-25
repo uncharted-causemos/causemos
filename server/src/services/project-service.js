@@ -763,8 +763,8 @@ const extendProject = async (projectId, docs) => {
     body: {
       script: {
         lang: 'painless',
-        inline: 'ctx._source.document.addAll(params.docs)',
-        params: { docs }
+        inline: 'ctx._source.document.addAll(params.docs); ctx._source.modified_at = params.timestamp',
+        params: { docs, timestamp: Date.now() }
       }
     }
   });
