@@ -1,6 +1,7 @@
 <template>
   <div class="comp-analysis-experiment-container">
     <main>
+    <context-insight-panel />
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
     <datacube-card
@@ -85,7 +86,10 @@
             :selected-spatial-aggregation="selectedSpatialAggregation"
             :selected-timestamp="selectedTimestamp"
             :selected-scenario-ids="selectedScenarioIds"
+            :deselected-region-ids="deselectedRegionIds"
+            @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
+            @set-all-regions-selected="setAllRegionsSelected"
           />
         </template>
     </drilldown-panel>
@@ -114,7 +118,7 @@ import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
-
+import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
 
 const DRILLDOWN_TABS = [
   {
@@ -133,7 +137,8 @@ export default defineComponent({
     BreakdownPane,
     Disclaimer,
     DatacubeDescription,
-    DropdownButton
+    DropdownButton,
+    ContextInsightPanel
   },
   setup() {
     const selectedAdminLevel = ref(2);
@@ -236,7 +241,13 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    const { outputSpecs, regionalData } = useRegionalData(
+    const {
+      outputSpecs,
+      regionalData,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
       selectedModelId,
       selectedScenarioIds,
       selectedTimestamp,
@@ -272,6 +283,9 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected,
       outputs,
       currentOutputIndex
     };
