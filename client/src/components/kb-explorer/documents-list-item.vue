@@ -8,7 +8,7 @@
           <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-2 number-col">
-        <div class="row-field" v-if="checkDate(documentMeta.publication_date)">{{ getFormattedDate(documentMeta.publication_date.date) }}</div>
+        <div class="row-field" v-if="checkDate(documentMeta.publication_date)">{{ dateFormatter(documentMeta.publication_date.date, 'yyyy-MM-DD') }}</div>
         <i v-else class="fa fa-minus"/>
       </div>
       <div class="col-sm-3 number-col">
@@ -23,10 +23,19 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
+import { defineComponent } from 'vue';
+import dateFormatter from '@/formatters/date-formatter';
 
-export default {
+interface DateObj {
+  date: number;
+  month: number;
+  year: number;
+  day: number;
+}
+
+export default defineComponent({
   name: 'DocumentsListItem',
   props: {
     documentMeta: {
@@ -36,20 +45,18 @@ export default {
   },
   emits: ['document-click'],
   methods: {
-    showDocument(e) {
+    dateFormatter,
+    showDocument(e: Event) {
       this.$emit('document-click', { event: e, docmeta: this.documentMeta });
     },
-    checkString(item) {
+    checkString(item: string) {
       return item && item.length > 0;
     },
-    checkDate(item) {
+    checkDate(item: DateObj) {
       return item && item.date && !_.isNaN(item.date);
-    },
-    getFormattedDate(item) {
-      return new Date(item).toUTCString();
     }
   }
-};
+});
 </script>
 
 <style scoped lang="scss">
