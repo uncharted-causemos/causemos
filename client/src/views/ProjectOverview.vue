@@ -67,6 +67,7 @@ import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';
 import ModalReadersStatus from '@/components/modals/modal-readers-status';
+import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'ProjectOverview',
@@ -162,7 +163,8 @@ export default {
       this.$router.push({
         name: navigateTo,
         params: {
-          project: this.project
+          project: this.project,
+          projectType: ProjectType.Analysis
         }
       });
     }

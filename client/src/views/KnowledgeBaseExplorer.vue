@@ -105,6 +105,8 @@ import * as curationService from '@/services/curation-service';
 
 import messagesUtil from '@/utils/messages-util';
 
+import { ProjectType } from '@/types/Enums';
+
 const CORRECTIONS = messagesUtil.CORRECTIONS;
 
 const PANE_ID = {
@@ -350,11 +352,11 @@ export default {
     onViewCag() {
       this.showModalAddedToCag = false;
       this.setSelectedSubgraphEdges([]);
-      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag } });
+      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis } });
     },
     onCancel() {
       this.setSelectedSubgraphEdges([]);
-      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag } });
+      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis } });
     },
     onRelationshipClick(relationship) {
       this.showEvidenceOverlay = true;
