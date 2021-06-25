@@ -111,9 +111,11 @@
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
             :deselected-region-ids="deselectedRegionIds"
+            :selected-breakdown-option="breakdownOption"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
+            @set-breakdown-option="setBreakdownOption"
           />
         </template>
     </drilldown-panel>
