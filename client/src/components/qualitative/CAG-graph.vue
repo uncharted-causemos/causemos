@@ -445,11 +445,26 @@ class CAGRenderer extends SVGRenderer {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
         const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
         const project_id = evt.subject.parent.data.project_id;
+        const nodesInGraph = evt.subject.parent.data.nodes;
+        // const edgesInGraph = evt.subject.parent.data.edges;
+
+        const highlightOptions = {
+          color: 'red',
+          duration: 5000
+        };
 
         const filters = { clauses: [{ field: 'subjConcept', values: [sourceNode.concept], isNot: false, operand: 'or' }] };
 
         projectService.getProjectGraph(project_id, filters).then(d => {
-          console.log('result: ', d);
+          const resultEdges = d.edges;
+
+          const filteredEdges = resultEdges.filter(edge => (nodesInGraph.some(node => edge.target === node.concept)) &&
+                                                           (edge.total > 0));
+          const nodesToHighlight = [];
+          filteredEdges.forEach(edge => nodesToHighlight.push(getLayoutNodeById(edge.target)));
+          const nodesToHighlightMapped = nodesToHighlight.map(n => n.concept);
+          console.log(nodesToHighlight);
+          highlight({ nodes: nodesToHighlightMapped, edges: [] }, highlightOptions);
         });
       })
       .on('drag', (evt) => {
@@ -495,11 +510,6 @@ class CAGRenderer extends SVGRenderer {
         this.options.newEdgeFn(sourceNode, targetNode);
       });
     handles.call(drag);
-  }
-
-  async getEdgesInfo(project_id) {
-    const result = await projectService.getProjectGraph(project_id);
-    console.log(result);
   }
 
   getPathBetweenNodes(source, target) {
@@ -598,7 +608,6 @@ class CAGRenderer extends SVGRenderer {
       color: 'red',
       duration: 1000
     };
-
     const ambigEdges = [];
 
     for (const edge of graph.edges) {
@@ -677,9 +686,6 @@ export default {
       useStableLayout: true,
       newEdgeFn: (source, target) => {
         this.$emit('new-edge', { source, target });
-      },
-      edgeInfoFn: (project_id) => {
-        console.log(project_id);
       },
       ontologyConcepts: this.ontologyConcepts
     });
