@@ -177,11 +177,75 @@ const getJobStatus = async (runId) => {
   return requestAsPromise(pipelinePayload);
 };
 
+/**
+ * Start a datacube ingest prefect flow using the provided ids
+ *
+ * @param {Indicator} metadata -indicator metadata
+ */
+const startIndicatorPostProcessing = async (metadata) => {
+  Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
+  if (!metadata.id) {
+    Logger.error('Required ids for model output post processing were not provided');
+    return;
+  }
+
+  const runName = `${metadata.name} : ${metadata.id}`;
+  const flowParameters = {
+    model_id: metadata.id,
+    run_id: 'indicator',
+    data_paths: metadata.data_paths,
+    is_indicator: true
+  };
+
+  // We need the two JSON.stringify below to go from
+  // JSON object -> JSON string -> escaped JSON string
+  const graphQLQuery = `
+    mutation {
+      create_flow_run(input: {
+        version_group_id: "${PIPELINE_FLOW_ID}",
+        flow_run_name: "${runName}",
+        parameters: ${JSON.stringify(JSON.stringify(flowParameters))}
+      }) {
+        id
+      }
+    }
+  `;
+
+  const pipelinePayload = {
+    method: 'POST',
+    url: process.env.WM_PIPELINE_URL,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {
+      query: graphQLQuery
+    }
+  };
+
+  const result = await requestAsPromise(pipelinePayload);
+  if (result.status === 200) {
+    // Remove some unused Jataware fields
+    metadata.attributes = undefined;
+    for (const output of metadata.outputs) {
+      output.is_primary = undefined;
+    }
+    const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+    await connection.update({
+      ...metadata,
+      type: 'indicator',
+      status: 'PROCESSING'
+    }, d => d.id);
+  }
+  return result;
+};
+
 module.exports = {
   submitModelRun,
   startModelOutputPostProcessing,
   markModelRunFailed,
   getAllModelRuns,
-  getJobStatus
+  getJobStatus,
+  startIndicatorPostProcessing
 };
 
