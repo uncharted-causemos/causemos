@@ -447,25 +447,28 @@ class CAGRenderer extends SVGRenderer {
         const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
         const project_id = evt.subject.parent.data.project_id;
         const nodesInGraph = evt.subject.parent.data.nodes;
+
         const edgesInGraph = evt.subject.parent.data.edges;
-        const edgesFromSourceNode = edgesInGraph.filter(edge => edge.source === sourceNode.concept);
+        const edgesFromSource = edgesInGraph.filter(edge => edge.source === sourceNode.concept);
+
         const highlightOptions = {
           color: SELECTED_COLOR,
           duration: 3000
         };
 
-        const filters = { clauses: [{ field: 'subjConcept', values: [sourceNode.concept], isNot: false, operand: 'or' }] };
+        const conceptsInGraph = nodesInGraph.map(node => node.concept);
+
+        const filters = {
+          clauses: [
+            { field: 'subjConcept', values: [sourceNode.concept], isNot: false, operand: 'or' },
+            { field: 'objConcept', values: conceptsInGraph, isNot: false, operand: 'or' }]
+        };
 
         projectService.getProjectGraph(project_id, filters).then(d => {
           const resultEdges = d.edges; // contains all possible edges in the project originating from the source
-
-          const filteredEdges = resultEdges.filter(edge => (nodesInGraph.some(node => edge.target === node.concept)) && // filter out nodes that are not in the current graph
-                                                           !(edgesFromSourceNode.some(sourceEdge => edge.target === sourceEdge.target)) && // filter out nodes that already have an edge from the source
-                                                           (edge.total > 0)); // filter out nodes that would have no evidence when connected by an edge from the source
-          const nodesToHighlight = [];
-          filteredEdges.forEach(edge => nodesToHighlight.push(getLayoutNodeById(edge.target))); // convert list of edges to list of target nodes
-          const nodesToHighlightMapped = nodesToHighlight.map(n => n.concept);
-          this.highlight({ nodes: nodesToHighlightMapped, edges: [] }, highlightOptions); // highlight possible target nodes
+          const resultEdgesTrimmed = resultEdges.filter(edge => !edgesFromSource.some(edgeFromSource => edge.target === edgeFromSource.target));
+          const nodesToHighlight = resultEdgesTrimmed.map(edge => getLayoutNodeById(edge.target).concept); // convert list of edges to list of target nodes
+          this.highlight({ nodes: nodesToHighlight, edges: [] }, highlightOptions); // highlight possible target nodes
         });
       })
       .on('drag', (evt) => {
