@@ -40,6 +40,7 @@ const FIELDS = Object.freeze({
   },
   subjConcept: {
     fields: ['subj.concept'],
+    aggFields: ['subj.concept.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.STATEMENT
   },
@@ -55,6 +56,7 @@ const FIELDS = Object.freeze({
   },
   objConcept: {
     fields: ['obj.concept'],
+    aggFields: ['obj.concept.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.STATEMENT
   },
@@ -101,6 +103,7 @@ const FIELDS = Object.freeze({
   },
   topic: {
     fields: ['wm.topic'], // equivalent of ['subj.concept', 'obj.concept']
+    aggFields: ['wm.topic.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.STATEMENT
   },
@@ -213,16 +216,19 @@ const FIELDS = Object.freeze({
   },
   docAuthor: {
     fields: [docPath('author')],
+    aggFields: [docPath('author.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   },
   docOrganization: {
     fields: [docPath('ner_analytics.org')],
+    aggFields: [docPath('ner_analytics.org.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   },
   docLocation: {
     fields: [docPath('ner_analytics.loc')],
+    aggFields: [docPath('ner_analytics.loc.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   },

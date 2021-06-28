@@ -8,19 +8,19 @@ class AggUtil {
   }
 
   termsAggregation(facetField) {
-    const { fields } = this.configFields[facetField];
+    const fields = this.configFields[facetField].aggFields || this.configFields[facetField].fields;
     const result = {
       terms: {
         size: DEFAULT_SIZE,
         field: fields[0]
       }
     };
-
     return result;
   }
 
   rangeAggregation(facetField) {
-    const { fields, range } = this.configFields[facetField];
+    const { range } = this.configFields[facetField];
+    const fields = this.configFields[facetField].aggFields || this.configFields[facetField].fields;
     const ranges = range.map((rangeBucket) => {
       const { from, to } = rangeBucket;
       const result = { key: from.toString() };
@@ -49,7 +49,8 @@ class AggUtil {
    * and would require further refinement depending on how we'd like to aggregate the statement by dates - June 15th 2020
    */
   dateRangeAggregation(facetField) {
-    const { fields, range } = this.configFields[facetField];
+    const { range } = this.configFields[facetField];
+    const fields = this.configFields[facetField].aggFields || this.configFields[facetField].fields;
     const subAggregation = {};
     range.forEach(dates => {
       const startYear = dates.from;

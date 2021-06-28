@@ -1,14 +1,7 @@
-import _ from 'lodash';
 import { Lex, TransitionFactory, ValueState } from '@uncharted.software/lex/dist/lex';
 import BasePill from '@/search/pills/base-pill';
 import lexUtil from '@/search/lex-util';
 
-
-const conceptMatch = (target, str) => {
-  return _.last(target.split('/')).toLowerCase().replace(/_/g, ' ').includes(
-    str.toLowerCase().replace(/_/g, ' ')
-  );
-};
 
 /**
  * Used for suggestions that can change during the user session.
@@ -35,7 +28,7 @@ export default class DynamicValuePill extends BasePill {
 
     if (['topic', 'subjConcept', 'objConcept'].includes(config.field)) {
       this.valueState = ConceptValueState;
-      this.branchConfig = lexUtil.dynamicSimpleSuggestionBuilder(msg, isMultiValue, suggestionFn, conceptMatch);
+      this.branchConfig = lexUtil.dynamicSimpleSuggestionBuilder(msg, isMultiValue, suggestionFn);
     } else {
       this.valueState = ValueState;
       this.branchConfig = lexUtil.dynamicSimpleSuggestionBuilder(msg, isMultiValue, suggestionFn);
