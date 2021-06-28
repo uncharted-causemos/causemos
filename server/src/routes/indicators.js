@@ -7,7 +7,7 @@ const maasService = rootRequire('/services/external/maas-service');
 /**
  * Start a indicator data post processing job
  */
-router.post('/:indicatorId/post-process', asyncHandler(async (req, res) => {
+router.post('/post-process', asyncHandler(async (req, res) => {
   const metadata = req.body;
 
   try {
