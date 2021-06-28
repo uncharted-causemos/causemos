@@ -58,7 +58,7 @@ const resolveComponents = async(modelId, resource, components) => {
     component.model_id = modelId;
     component.modified_at = modifiedAt;
 
-    if (_.isNil(component.id)) {
+    if (_.isNil(component.id) || component.id === '') {
       component.id = uuid();
       indexList.push(component);
     } else {
