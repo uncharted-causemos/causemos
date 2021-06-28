@@ -232,11 +232,16 @@ const startIndicatorPostProcessing = async (metadata) => {
       output.is_primary = undefined;
     }
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    await connection.insert([{
-      ...metadata,
-      type: 'indicator',
-      status: 'PROCESSING'
-    }], d => d.id);
+    for (const output of metadata.outputs) {
+      const clonedMetadata = _.cloneDeep(metadata);
+      clonedMetadata.id = `${clonedMetadata.id}_${clonedMetadata.name}`;
+      clonedMetadata.outputs = [output];
+      await connection.insert([{
+        ...clonedMetadata,
+        type: 'indicator',
+        status: 'PROCESSING'
+      }], d => d.id);
+    }
   }
   return result;
 };
