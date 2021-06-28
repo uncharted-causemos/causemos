@@ -297,7 +297,7 @@ export default {
         this.filters);
 
       const formattedNodes = nodesToAdd.map(node => {
-        return { concept: node.id, label: this.ontologyFormatter(node.id) };
+        return { id: '', concept: node.id, label: this.ontologyFormatter(node.id) };
       });
 
       const formattedEdges = selectedEdges.map(selectedEdge => {
@@ -307,6 +307,7 @@ export default {
         if (_.isEmpty(existingEdge)) {
           // New edge
           return {
+            id: '',
             source: selectedEdge.source,
             target: selectedEdge.target,
             reference_ids: selectedEdgesData[edgeId]

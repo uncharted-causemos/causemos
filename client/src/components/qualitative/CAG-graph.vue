@@ -651,6 +651,9 @@ export default {
     }
   },
   created() {
+    // renderer is intentionally left out of `data` to avoid
+    //  making it deeply reactive, since it contains a very
+    //  large tree of references
     this.renderer = null;
   },
   mounted() {
