@@ -234,7 +234,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
     for (const output of metadata.outputs) {
       const clonedMetadata = _.cloneDeep(metadata);
-      clonedMetadata.id = `${clonedMetadata.id}_${clonedMetadata.name}`;
+      clonedMetadata.id = `${clonedMetadata.id}_${output.name}`;
       clonedMetadata.outputs = [output];
       await connection.insert([{
         ...clonedMetadata,
