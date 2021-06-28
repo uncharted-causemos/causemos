@@ -107,7 +107,7 @@ const addComponents = async (modelId: string, nodes: NodeParameter[], edges: Edg
   return result.data;
 };
 
-const removeComponents = async (modelId: string, nodes: NodeParameter[], edges: EdgeParameter[]) => {
+const removeComponents = async (modelId: string, nodes: { id: string }[], edges: { id: string }[]) => {
   const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', nodes, edges });
   return result.data;
 };
@@ -491,6 +491,7 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
     const targetNode = cagA.nodes.find(d => d.concept === node.concept);
     if (_.isNil(targetNode)) {
       cagA.nodes.push({
+        id: '',
         concept: node.concept,
         label: node.label,
         parameter: node.parameter
@@ -526,6 +527,7 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
       }
     } else {
       cagA.edges.push({
+        id: '',
         source: edge.source,
         target: edge.target,
         reference_ids: edge.reference_ids,
