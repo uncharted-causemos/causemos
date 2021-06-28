@@ -266,7 +266,7 @@ export default defineComponent({
       //  so that on the registeration of a new datacube family,
       //  Causemos is notified and a new project is created with initial counts
       // Causemos backend will cache the counts and update them whenever a datacube is un/published
-      const computeCountsOnTheFly = true;
+      const computeCountsOnTheFly = false;
       const existingProjects: DomainProject[] = await domainProjectService.getProjects();
 
       if (computeCountsOnTheFly) {
