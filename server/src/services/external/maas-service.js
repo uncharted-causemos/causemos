@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
@@ -189,6 +190,20 @@ const startIndicatorPostProcessing = async (metadata) => {
     return;
   }
 
+  // Remove some unused Jataware fields
+  metadata.attributes = undefined;
+  for (const output of metadata.outputs) {
+    output.is_primary = undefined;
+  }
+
+  const newIndicatorMetadata = metadata.outputs.map(output => {
+    const clonedMetadata = _.cloneDeep(metadata);
+    clonedMetadata.data_id = metadata.id;
+    clonedMetadata.id = uuid();
+    clonedMetadata.outputs = [output];
+    return clonedMetadata;
+  })
+
   const runName = `${metadata.name} : ${metadata.id}`;
   const flowParameters = {
     model_id: metadata.id,
@@ -226,22 +241,14 @@ const startIndicatorPostProcessing = async (metadata) => {
   const result = await requestAsPromise(pipelinePayload);
   const flowId = _.get(result, 'data.create_flow_run.id');
   if (flowId) {
-    // Remove some unused Jataware fields
-    metadata.attributes = undefined;
-    for (const output of metadata.outputs) {
-      output.is_primary = undefined;
-    }
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    for (const output of metadata.outputs) {
-      const clonedMetadata = _.cloneDeep(metadata);
-      clonedMetadata.id = `${clonedMetadata.id}_${output.name}`;
-      clonedMetadata.outputs = [output];
-      await connection.insert([{
-        ...clonedMetadata,
+    await Promise.all(newIndicatorMetadata.map(indicatorMetadata => {
+      connection.insert([{
+        ...indicatorMetadata,
         type: 'indicator',
         status: 'PROCESSING'
       }], d => d.id);
-    }
+    }))
   }
   return result;
 };
