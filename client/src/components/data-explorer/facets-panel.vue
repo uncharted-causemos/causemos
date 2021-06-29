@@ -3,6 +3,7 @@
     class="facet-panel-container"
     :tabs="facetTabs"
     :current-tab-name="currentTab"
+    @set-active="setActive"
   >
     <div v-if="currentTab === 'Data Cube Facets'" class="facet-panel-list">
       <div v-for="facet in formattedFacets" :key="facet.label">
@@ -92,7 +93,10 @@ export default {
   methods: {
     ...mapActions({
       disableOverlay: 'app/disableOverlay'
-    })
+    }),
+    setActive(tab) {
+      this.currentTab = tab;
+    }
   }
 };
 </script>
