@@ -161,6 +161,7 @@ $selected-background: #EBF1FC;
   }
   .table-fixed-head {
     overflow-y: auto;
+    overflow-x: hidden;
     height: 100%;
   }
   .table-fixed-head thead th {
