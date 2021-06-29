@@ -196,6 +196,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     output.is_primary = undefined;
   }
 
+  // Create data now to send to elasticsearch
   const newIndicatorMetadata = metadata.outputs.map(output => {
     const clonedMetadata = _.cloneDeep(metadata);
     clonedMetadata.data_id = metadata.id;
@@ -207,6 +208,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   const runName = `${metadata.name} : ${metadata.id}`;
   const flowParameters = {
     model_id: metadata.id,
+    doc_ids: newIndicatorMetadata.map(indicatorMetadata => indicatorMetadata.id),
     run_id: 'indicator',
     data_paths: metadata.data_paths,
     is_indicator: true
