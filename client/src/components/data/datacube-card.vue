@@ -95,7 +95,7 @@
             </button>
           </div>
           <div
-            v-if="!isDescriptionView && timeseriesData.length > 1"
+            v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
             class="relative-box"
           >
             Relative to:
