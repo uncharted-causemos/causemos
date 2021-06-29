@@ -169,7 +169,11 @@ export default {
       return this.currentView === 'modelPublishingExperiment' ? 'public' : 'private';
     },
     insightTargetView() {
-      return this.currentView === 'modelPublishingExperiment' ? 'data' : this.currentView;
+      // an insight created during model publication should be listed either
+      //  in the full list of insights,
+      //  or as a context specific insight when opening the page of the corresponding model family instance
+      //  (the latter is currently supported via a special route named dataPreview)
+      return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview'] : this.currentView;
     },
     metadataDetails() {
       const arr = [];

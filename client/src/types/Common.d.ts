@@ -1,3 +1,5 @@
+import { DatacubeType } from '@/types/Enums';
+
 // Project metadata
 export interface Project {
   id: string;
@@ -9,6 +11,18 @@ export interface Project {
   modified_at: number;
   created_at: number;
   stat: { [key: string]: string | number };
+}
+
+export interface DomainProject {
+  id?: string;
+  name: string;
+  description: string;
+  modified_at?: number;
+  created_at?: number;
+  source: string;
+  type: DatacubeType; // e.g., model, indicator
+  ready_instances: string[];
+  draft_instances: string[];
 }
 
 // Side panel

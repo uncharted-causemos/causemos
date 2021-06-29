@@ -16,6 +16,8 @@ import { mapActions, mapGetters } from 'vuex';
 import NavBar from '@/components/nav-bar';
 import Overlay from '@/components/overlay';
 import projectService from '@/services/project-service';
+import domainProjectService from '@/services/domain-project-service';
+import { ProjectType } from '@/types/Enums';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
@@ -38,7 +40,8 @@ export default {
       currentView: 'app/currentView',
       overlayMessage: 'app/overlayMessage',
       overlayActivated: 'app/overlayActivated',
-      project: 'app/project'
+      project: 'app/project',
+      projectType: 'app/projectType'
     }),
     isNavBarHidden() {
       return viewsWithNoNavbar.includes(this.currentView);
@@ -46,11 +49,27 @@ export default {
   },
   watch: {
     project: function() {
-      this.refresh();
+      if (_.isEmpty(this.project)) {
+        this.setProjectMetadata({});
+        return;
+      }
+      if (this.projectType === ProjectType.Analysis) {
+        this.refresh();
+      } else {
+        this.refreshDomainProject();
+      }
     }
   },
   mounted() {
-    this.refresh();
+    if (_.isEmpty(this.project)) {
+      this.setProjectMetadata({});
+      return;
+    }
+    if (this.projectType === ProjectType.Analysis) {
+      this.refresh();
+    } else {
+      this.refreshDomainProject();
+    }
   },
   methods: {
     ...mapActions({
@@ -58,6 +77,14 @@ export default {
       setProjectMetadata: 'app/setProjectMetadata',
       setConceptDefinitions: 'app/setConceptDefinitions'
     }),
+    refreshDomainProject() {
+      if (_.isEmpty(this.project)) {
+        return;
+      }
+      domainProjectService.getProject(this.project).then(project => {
+        this.setProjectMetadata({ name: project.name });
+      });
+    },
     refresh() {
       if (_.isEmpty(this.project)) {
         this.setOntologyConcepts([]);

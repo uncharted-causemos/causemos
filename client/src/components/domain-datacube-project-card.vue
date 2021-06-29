@@ -8,7 +8,7 @@
     >
       <template #title>Delete Project</template>
       <template #message>
-        <p>Are you sure you want to delete <strong>{{ project.name }}</strong> and all associated CAGs/Models/Scenarios?</p>
+        <p>Are you sure you want to delete <strong>{{ project.name }}</strong> and all associated instances?</p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
@@ -25,15 +25,19 @@
         <button
           type="button"
           class="btn btn-link"
+          style="padding-left: 8px"
           @click="open(project.id)">
           <span class="overflow-ellipsis project-name">{{project.name}}</span>
         </button>
       </div>
       <div class="col-sm-2 number-col">
-        {{ dataAnalysisCount }}
+        {{ project.ready_instances.length }} | <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
       </div>
-      <div class="col-sm-4">
-        {{ project.corpus_id }}
+      <div class="col-sm-2 number-col">
+        {{ project.type }}
+      </div>
+      <div class="col-sm-2" style="text-align: center">
+        {{ project.source }}
       </div>
       <div class="col-sm-2">
         {{ dateFormatter(project.modified_at) }}
@@ -65,7 +69,8 @@
           ><i class="fa fa-folder-open-o" />
             Open Project</button>
         </div>
-        <div class="col-sm-2">
+        <div class="col-sm-4">
+          <!--
           <button
             v-tooltip.top-center="'Remove the project from the list'"
             type="button"
@@ -73,6 +78,7 @@
             @click.stop="showWarningModal"
           ><i class="fa fa-trash" />
             Remove Project</button>
+            -->
         </div>
       </div>
     </div>
@@ -81,38 +87,35 @@
 
 <script lang="ts">
 
-import { defineComponent, computed, ref, PropType } from 'vue';
+import { defineComponent, ref, PropType } from 'vue';
 import { mapActions } from 'vuex';
 
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { Project } from '@/types/Common';
-import { ProjectType } from '@/types/Enums';
+import { DomainProject } from '@/types/Common';
 
 /**
  * A card-styled widget to view project summary
  */
 export default defineComponent({
-  name: 'ProjectCard',
+  name: 'DomainDatacubeProjectCard',
   components: {
     ModalConfirmation,
     MessageDisplay
   },
   props: {
     project: {
-      type: Object as PropType<Project>,
+      type: Object as PropType<DomainProject>,
       default: () => ({})
     }
   },
-  setup(props) {
+  setup() {
     const showMore = ref(false);
     const showModal = ref(false);
 
     return {
-      modelCount: computed(() => props.project.stat.model_count),
-      dataAnalysisCount: computed(() => props.project.stat.data_analysis_count),
       showMore,
       showModal
     };
@@ -138,7 +141,7 @@ export default defineComponent({
     open(id: string) {
       // Reset filters every time we open a new project
       this.clearLastQuery();
-      this.$router.push({ name: 'overview', params: { project: id, projectType: ProjectType.Analysis } });
+      this.$router.push({ name: 'domainDatacubeOverview', params: { project: id, projectType: this.project.type } });
     }
   }
 });
