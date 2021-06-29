@@ -90,18 +90,6 @@ export default {
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'
     }),
 
-    async addToAnalysis() {
-      await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
-      this.$router.push({
-        name: 'data',
-        params: {
-          collection: this.project,
-          analysisID: this.analysisId,
-          projectType: ProjectType.Analysis
-        }
-      });
-    },
-
     // retrieves filtered datacube list
     async fetchAllDatacubeData() {
       this.enableOverlay();
@@ -124,13 +112,15 @@ export default {
     },
     async onRenameModalConfirm(newName) {
       try {
+        // update analysis name
         await updateAnalysis(this.analysisId, { title: newName });
+        // update analysis datacubes
         await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
         this.toaster(ANALYSIS.SUCCESSFUL_RENAME, 'success', false);
         this.$router.push({
           name: 'data',
           params: {
-            collection: this.project,
+            project: this.project,
             analysisID: this.analysisId,
             projectType: ProjectType.Analysis
           }
