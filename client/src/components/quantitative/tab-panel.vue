@@ -53,6 +53,7 @@
               :current-engine="currentEngine"
               @background-click="onBackgroundClick"
               @node-body-click="showConstraints"
+              @node-double-click="onNodeDrilldown"
               @node-header-click="showIndicator"
               @edge-click="showRelation"
             />
@@ -288,6 +289,17 @@ export default {
           project: this.project,
           currentCAG: this.currentCAG,
           projectType: ProjectType.Analysis
+        }
+      });
+    },
+    onNodeDrilldown(node) {
+      this.$router.push({
+        name: 'nodeDrilldown',
+        params: {
+          project: this.project,
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis,
+          nodeId: node.id
         }
       });
     },

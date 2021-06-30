@@ -17,6 +17,7 @@ import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import CompAnalysisExperiment from '@/views/CompAnalysisExperiment';
 import ModelPublishingExperiment from '@/views/ModelPublishingExperiment';
+import NodeDrilldown from '@/views/NodeDrilldown';
 import qs from 'qs';
 import _ from 'lodash';
 import store from '@/store';
@@ -139,6 +140,11 @@ const routes = [
     path: '/:projectType/:project/quantitative/:currentCAG',
     name: 'quantitative',
     component: QuantitativeView
+  },
+  {
+    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId',
+    name: 'nodeDrilldown',
+    component: NodeDrilldown
   },
   {
     path: '/:projectType/:project/audit-trail',
