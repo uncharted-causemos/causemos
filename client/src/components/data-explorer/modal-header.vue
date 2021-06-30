@@ -9,7 +9,7 @@
       type="button"
       class="btn btn-primary btn-call-for-action"
       :disabled="selectedDatacubes.length < 1"
-      @click="addToAnalysis"
+      @click="updateAnalysis"
     >
       <i class="fa fa-fw fa-plus-circle" />
       Add to Analysis
@@ -22,7 +22,7 @@
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters } from 'vuex';
 
 import { deleteAnalysis } from '@/services/analysis-service';
 import { ANALYSIS } from '@/utils/messages-util';
@@ -39,9 +39,13 @@ export default {
     navBackLabel: {
       type: String,
       default: ''
+    },
+    showNamingModal: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['close'],
+  emits: ['close', 'update-analysis'],
   computed: {
     ...mapGetters({
       analysisId: 'dataAnalysis/analysisId',
@@ -51,19 +55,8 @@ export default {
     })
   },
   methods: {
-    ...mapActions({
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew'
-    }),
-    async addToAnalysis() {
-      await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
-      this.$router.push({
-        name: 'data',
-        params: {
-          collection: this.project,
-          analysisID: this.analysisId,
-          projectType: ProjectType.Analysis
-        }
-      });
+    updateAnalysis() {
+      this.$emit('update-analysis');
     },
 
     async onClose() {

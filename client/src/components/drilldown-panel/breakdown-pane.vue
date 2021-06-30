@@ -1,5 +1,18 @@
 <template>
   <div class="breakdown-pane-container">
+    <p
+      v-if="selectedScenarioIds.length !== 1"
+      class="disabled-dropdown-instructions"
+    >
+      Select <strong>exactly one scenario</strong> to enable breakdown options.
+    </p>
+    <dropdown-button
+      v-else
+      class="breakdown-option-dropdown"
+      :items="BREAKDOWN_OPTIONS"
+      :selectedItem="getBreakdownOptionDisplayName(selectedBreakdownOption)"
+      @item-selected="emitBreakdownOptionSelection"
+    />
     <aggregation-checklist-pane
       v-if="regionalData !== null && regionalData.length !== 0"
       class="checklist-section"
@@ -34,7 +47,6 @@
         </p>
       </template>
     </aggregation-checklist-pane>
-    <!-- TODO: dropdown to select what we're breaking down by -->
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="type in visibleTypeBreakdownData"
@@ -76,8 +88,14 @@
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import {
+  AdminRegionSets,
+  BreakdownData,
+  NamedBreakdownData
+} from '@/types/Datacubes';
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import DropdownButton from '@/components/dropdown-button.vue';
+import { TemporalAggregationLevel } from '@/types/Enums';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -85,8 +103,27 @@ function timestampFormatter(timestamp: number) {
   return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
 }
 
+// FIXME: This should dynamically change to whichever temporal aggregation level is selected
+const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
+
+// Breakdown options are hardcoded, but eventually should be dynamically populated
+// based on the various "breakdownData" types that the selected datacube includes
+export const BREAKDOWN_OPTIONS = [
+  null,
+  selectedTemporalAggregationLevel
+];
+
+const getBreakdownOptionDisplayName = (option: TemporalAggregationLevel | null) => {
+  switch (option) {
+    case TemporalAggregationLevel.Year:
+      return 'Split by year';
+    default:
+      return 'none';
+  }
+};
+
 export default defineComponent({
-  components: { aggregationChecklistPane },
+  components: { aggregationChecklistPane, DropdownButton },
   name: 'BreakdownPane',
   props: {
     selectedAdminLevel: {
@@ -120,26 +157,38 @@ export default defineComponent({
     deselectedRegionIds: {
       type: Object as PropType<AdminRegionSets | null>,
       default: null
+    },
+    selectedBreakdownOption: {
+      type: String as PropType<string | null>,
+      default: null
     }
   },
   emits: [
     'set-selected-admin-level',
     'toggle-is-region-selected',
-    'set-all-regions-selected'
+    'set-all-regions-selected',
+    'set-breakdown-option'
   ],
   setup(props, { emit }) {
     const { regionalData } = toRefs(props);
-    function setSelectedAdminLevel(level: number) {
+    const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
-    }
+    };
 
-    function toggleIsRegionSelected(adminLevel: string, regionId: string) {
+    const toggleIsRegionSelected = (adminLevel: string, regionId: string) => {
       emit('toggle-is-region-selected', adminLevel, regionId);
-    }
+    };
 
-    function setAllRegionsSelected(isSelected: boolean) {
+    const setAllRegionsSelected = (isSelected: boolean) => {
       emit('set-all-regions-selected', isSelected);
-    }
+    };
+
+    const emitBreakdownOptionSelection = (breakdownOption: string) => {
+      // FIXME: this branching logic can be removed once `dropdown-button` is
+      //  extended to support values with different display names
+      const payload = breakdownOption === 'none' ? null : TemporalAggregationLevel.Year;
+      emit('set-breakdown-option', payload);
+    };
 
     const availableAdminLevelTitles = computed(() => {
       if (regionalData.value === null) return [];
@@ -155,7 +204,10 @@ export default defineComponent({
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
-      setAllRegionsSelected
+      setAllRegionsSelected,
+      emitBreakdownOptionSelection,
+      BREAKDOWN_OPTIONS: BREAKDOWN_OPTIONS.map(getBreakdownOptionDisplayName),
+      getBreakdownOptionDisplayName
     };
   },
   computed: {
@@ -193,5 +245,14 @@ export default defineComponent({
 
 .checklist-section {
   margin-top: 30px;
+}
+
+.breakdown-option-dropdown {
+  display: inline-block;
+  min-width: 100px;
+}
+
+.disabled-dropdown-instructions {
+  color: $text-color-medium;
 }
 </style>

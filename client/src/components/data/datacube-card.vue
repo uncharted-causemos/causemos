@@ -95,16 +95,16 @@
             </button>
           </div>
           <div
-            v-if="!isDescriptionView && selectedScenarioIds.length > 1"
+            v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
             class="relative-box"
           >
             Relative to:
             <button
               class="btn btn-default"
               @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
-              :style="{ color: relativeTo === null ? 'black' : colorFromIndex(relativeTo) }"
+              :style="{ color: baselineMetadata?.color ?? 'black' }"
             >
-              {{relativeTo === null ? 'none' : `Run ${relativeTo}`}}</button
+              {{baselineMetadata?.name ?? 'none'}}</button
             >
             <dropdown-control
               v-if="isRelativeDropdownOpen"
@@ -112,18 +112,18 @@
               <template #content>
                 <div
                   class="dropdown-option"
-                  @click="relativeTo = null; isRelativeDropdownOpen = false;"
+                  @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
                 >
                   none
                 </div>
                 <div
-                  v-for="(scenarioId, index) in selectedScenarioIds"
+                  v-for="(timeseries, index) in timeseriesData"
                   class="dropdown-option"
-                  :style="{ color: colorFromIndex(index) }"
+                  :style="{ color: timeseries.color }"
                   :key="index"
-                  @click="relativeTo = index; isRelativeDropdownOpen = false;"
+                  @click="emitRelativeToSelection(timeseries.id); isRelativeDropdownOpen = false;"
                 >
-                  Run {{index}}
+                  {{timeseries.name}}
                 </div>
               </template>
             </dropdown-control>
@@ -147,10 +147,11 @@
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && selectedTimeseriesData.length  > 0 && selectedTimeseriesData[0].points.length > 1"
+            v-if="!isDescriptionView && timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
             class="timeseries-chart"
-            :timeseries-data="selectedTimeseriesData"
+            :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
+            :breakdown-option="breakdownOption"
             @select-timestamp="emitTimestampSelection"
           />
           <div style="display: flex; flex-direction: row;">
@@ -198,7 +199,6 @@ import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coord
 import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
-import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
@@ -209,6 +209,7 @@ import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCachi
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
+import { Timeseries } from '@/types/Timeseries';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -220,7 +221,8 @@ export default defineComponent({
     'check-model-metadata-validity',
     'refetch-data',
     'new-runs-mode',
-    'update-desc-view'
+    'update-desc-view',
+    'set-relative-to'
   ],
   props: {
     isExpanded: {
@@ -235,10 +237,6 @@ export default defineComponent({
       type: Number,
       default: 0
     },
-    selectedModelId: {
-      type: String as PropType<string>,
-      required: true
-    },
     allModelRunData: {
       type: Array as PropType<ModelRun[]>,
       default: []
@@ -251,18 +249,6 @@ export default defineComponent({
       type: Number,
       default: 0
     },
-    selectedTemporalResolution: {
-      type: String as PropType<string>,
-      default: 'month'
-    },
-    selectedTemporalAggregation: {
-      type: String as PropType<string>,
-      default: 'mean'
-    },
-    selectedSpatialAggregation: {
-      type: String as PropType<string>,
-      default: 'mean'
-    },
     regionalData: {
       type: Object as PropType<RegionalAggregations | null>,
       default: null
@@ -273,6 +259,22 @@ export default defineComponent({
     },
     metadata: {
       type: Object as PropType<Model | Indicator | null>,
+      default: null
+    },
+    timeseriesData: {
+      type: Array as PropType<Timeseries[]>,
+      default: []
+    },
+    relativeTo: {
+      type: String as PropType<string | null>,
+      default: null
+    },
+    breakdownOption: {
+      type: String as PropType<string | null>,
+      default: null
+    },
+    baselineMetadata: {
+      type: Object as PropType<{name: string; color: string} | null>,
       default: null
     }
   },
@@ -291,27 +293,18 @@ export default defineComponent({
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
     const {
-      selectedModelId,
       selectedScenarioIds,
       allModelRunData,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation,
       metadata
     } = toRefs(props);
 
-    const {
-      timeseriesData: selectedTimeseriesData,
-      relativeTo
-    } = useTimeseriesData(
-      metadata,
-      selectedModelId,
-      selectedScenarioIds,
-      colorFromIndex,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation
-    );
+    const emitTimestampSelection = (newTimestamp: number) => {
+      emit('select-timestamp', newTimestamp);
+    };
+
+    const emitRelativeToSelection = (newValue: number | null) => {
+      emit('set-relative-to', newValue);
+    };
 
     const {
       dimensions,
@@ -333,29 +326,6 @@ export default defineComponent({
       return metadata.value !== null && isModel(metadata.value);
     });
 
-    watch(() => props.selectedScenarioIds, () => {
-      relativeTo.value = null;
-    }, {
-      immediate: true
-    });
-
-    function emitTimestampSelection(newTimestamp: number) {
-      emit('select-timestamp', newTimestamp);
-    }
-
-    watch(
-      () => selectedTimeseriesData.value,
-      () => {
-        const allTimestamps = selectedTimeseriesData.value
-          .map(timeseries => timeseries.points)
-          .flat()
-          .map(point => point.timestamp);
-        const lastTimestamp = _.max(allTimestamps);
-        if (lastTimestamp !== undefined) {
-          emitTimestampSelection(lastTimestamp);
-        }
-      });
-
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
@@ -374,16 +344,15 @@ export default defineComponent({
     return {
       updateMapFilters,
       mapFilters,
-      selectedTimeseriesData,
       colorFromIndex,
       emitTimestampSelection,
-      relativeTo,
       dimensions,
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues,
       mainModelOutput,
-      isModelMetadata
+      isModelMetadata,
+      emitRelativeToSelection
     };
   },
   data: () => ({
