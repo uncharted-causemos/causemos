@@ -174,7 +174,7 @@ export default {
     updateDesc() {
       if (this.isEditingDesc) {
         // we may have just modified the desc text, so update the server value
-        domainProjectService.updateDomainProject(this.projectMetadata.id, { description: this.projectMetadata.description });
+        domainProjectService.updateDomainProject(this.projectMetadata.name, { description: this.projectMetadata.description });
       }
       this.isEditingDesc = !this.isEditingDesc;
     },

@@ -52,15 +52,15 @@ const createProject = async (
  * @param {string} projectId - project id
  * @param {object} projectFields - project fields
  */
-const updateProject = async(projectId, projectFields) => {
+const updateProject = async(projectName, projectFields) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
 
   const keyFn = (doc) => {
-    return doc.id;
+    return doc.name;
   };
 
   const results = await domainProjectConnection.update({
-    id: projectId,
+    name: projectName,
     ...projectFields
   }, keyFn);
 
