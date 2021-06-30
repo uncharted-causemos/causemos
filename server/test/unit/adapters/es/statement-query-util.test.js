@@ -167,14 +167,14 @@ describe('query-util', function() {
                     {
                       bool: {
                         should: [
-                          { terms: { 'subj.concept': ['foo'] } }
+                          { terms: { 'subj.concept.raw': ['foo'] } }
                         ]
                       }
                     },
                     {
                       bool: {
                         should: [
-                          { terms: { 'obj.concept': ['bar'] } }
+                          { terms: { 'obj.concept.raw': ['bar'] } }
                         ]
                       }
                     }
@@ -226,14 +226,14 @@ describe('query-util', function() {
                     {
                       bool: {
                         should: [
-                          { terms: { 'wm.topic': ['fizz', 'buzz'] } }
+                          { terms: { 'wm.topic.raw': ['fizz', 'buzz'] } }
                         ]
                       }
                     },
                     {
                       bool: {
                         should: [
-                          { terms: { 'obj.concept': ['bar'] } }
+                          { terms: { 'obj.concept.raw': ['bar'] } }
                         ]
                       }
                     }
@@ -312,7 +312,7 @@ describe('query-util', function() {
                     {
                       bool: {
                         should: [
-                          { terms: { 'obj.concept': ['bar'] } }
+                          { terms: { 'obj.concept.raw': ['bar'] } }
                         ]
                       }
                     }
@@ -365,7 +365,7 @@ describe('query-util', function() {
                         should: [
                           {
                             terms: {
-                              'obj.concept': ['bar']
+                              'obj.concept.raw': ['bar']
                             }
                           }
                         ]
@@ -410,7 +410,7 @@ describe('query-util', function() {
                         should: [
                           {
                             terms: {
-                              'obj.concept': [
+                              'obj.concept.raw': [
                                 'bar'
                               ]
                             }
@@ -469,7 +469,7 @@ describe('query-util', function() {
                         should: [
                           {
                             terms: {
-                              'obj.concept': ['bar']
+                              'obj.concept.raw': ['bar']
                             }
                           }
                         ]

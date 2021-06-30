@@ -73,7 +73,10 @@ const createRangeFilter = ({ min, max }, prop) => {
   return [lowerBound, upperBound];
 };
 
-const baseLayer = (property, useFeatureState = false) => {
+const baseLayer = (property, useFeatureState = false, relativeTo) => {
+  const caseRelativeToMissing = [];
+  const getter = useFeatureState ? 'feature-state' : 'get';
+  relativeTo && caseRelativeToMissing.push(['all', ['==', null, [getter, relativeTo]]], 1);
   if (useFeatureState) {
     return Object.freeze({
       type: 'fill',
@@ -83,6 +86,7 @@ const baseLayer = (property, useFeatureState = false) => {
         'fill-opacity': [
           'case',
           ['==', null, ['feature-state', property]], 0.0,
+          ...caseRelativeToMissing,
           ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
         ]
@@ -96,6 +100,7 @@ const baseLayer = (property, useFeatureState = false) => {
         'fill-color': 'grey',
         'fill-opacity': [
           'case',
+          ...caseRelativeToMissing,
           ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
         ]
@@ -340,13 +345,13 @@ export default {
     refreshLayers() {
       if (this.extent === undefined || this.colorOption === undefined) return;
       const useFeatureState = !this.isGridMap;
-      this.baseLayer = baseLayer(this.valueProp, useFeatureState);
+      this.baseLayer = baseLayer(this.valueProp, useFeatureState, this.baselineSpec?.id);
       this.refreshColorLayer(useFeatureState);
     },
     refreshColorLayer(useFeatureState = false) {
       const { min, max } = this.extent;
       const { scaleFn } = this.colorOption;
-      const relativeToProp = this.baselineSpec && this.baselineSpec.id;
+      const relativeToProp = this.baselineSpec?.id;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
       this.legendData = createMapLegendData([min, max], this.colorScheme, scaleFn, relativeToProp);
     },

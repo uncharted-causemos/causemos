@@ -16,7 +16,7 @@ class QueryUtil {
    */
   _termsBuilder(clause) {
     const { field, values } = clause;
-    const esFields = this.configFields[field].fields;
+    const esFields = this.configFields[field].aggFields || this.configFields[field].fields;
     const result = esFields.map(field => {
       return { terms: { [field]: values } };
     });
