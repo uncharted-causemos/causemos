@@ -254,6 +254,9 @@ export default defineComponent({
       } else {
         isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
+      if (metadata.value) {
+        store.dispatch('insightPanel/setContextId', metadata.value.name);
+      }
     });
 
     watchEffect(() => {
@@ -317,10 +320,6 @@ export default defineComponent({
       projectId
     };
   },
-  beforeRouteLeave() {
-    // clear model id state so that other pages won't incorrectly load related insights
-    this.setContextId('undefined');
-  },
   watch: {
     $route: {
       handler(/* newValue, oldValue */) {
@@ -359,21 +358,12 @@ export default defineComponent({
     // TODO: when new-runs-mode is active, clear the breakdown panel content
     // TODO: add other viz options as per WG4 recent slides
 
-    this.setContextId(this.selectedModelId);
-    // NOTE: when publishing domain models, there will be a custom/different project id
-    //  representing a special type of project (for each model family)
-    //  where a domain-modeler is able,
-    //  for example to use it to publish new instances and model track usage
-    this.setProjectId(this.projectId); // @Review
-
     // set initial output variable index
     // FIXME: default will be provided later through metadata
     this.setCurrentOutputIndex(0);
   },
   methods: {
     ...mapActions({
-      setContextId: 'insightPanel/setContextId',
-      setProjectId: 'insightPanel/setProjectId',
       setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
       setCurrentPublishStep: 'modelPublishStore/setCurrentPublishStep',
       setSelectedTimestamp: 'modelPublishStore/setSelectedTimestamp',

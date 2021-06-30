@@ -6,6 +6,8 @@ const es = rootRequire('adapters/es/adapter');
 const Adapter = es.Adapter;
 const RESOURCE = es.RESOURCE;
 
+const MAX_NUMBER_PROJECTS = 100;
+
 /**
  * Wrapper to create a new project.
  *
@@ -24,11 +26,11 @@ const createProject = async (
   draft_instances) => {
   const newId = uuid();
   Logger.info('Creating project entry: ' + newId);
-  const DomainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
+  const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const keyFn = (doc) => {
-    return doc.id;
+    return doc.name; // prevent duplicate doc based on the name field instead of id
   };
-  await DomainProjectConnection.insert({
+  await domainProjectConnection.insert({
     id: newId,
     name,
     description,
@@ -51,13 +53,13 @@ const createProject = async (
  * @param {object} projectFields - project fields
  */
 const updateProject = async(projectId, projectFields) => {
-  const DomainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
+  const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
 
   const keyFn = (doc) => {
     return doc.id;
   };
 
-  const results = await DomainProjectConnection.update({
+  const results = await domainProjectConnection.update({
     id: projectId,
     ...projectFields
   }, keyFn);
@@ -73,9 +75,9 @@ const updateProject = async(projectId, projectFields) => {
  * Returns a list of all projects
  */
 const getAllProjects = async () => {
-  const DomainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
+  const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const searchFilters = [];
-  const results = await DomainProjectConnection.find(searchFilters, { size: 50 });
+  const results = await domainProjectConnection.find(searchFilters, { size: MAX_NUMBER_PROJECTS });
   return results;
 };
 
@@ -83,8 +85,8 @@ const getAllProjects = async () => {
  * Returns a project
  */
 const getProject = async (projectId) => {
-  const DomainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
-  const result = await DomainProjectConnection.findOne([{ field: 'id', value: projectId }], {});
+  const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
+  const result = await domainProjectConnection.findOne([{ field: 'id', value: projectId }], {});
   return result;
 };
 
@@ -94,8 +96,8 @@ const getProject = async (projectId) => {
  * @param {string} projectId - the project id
  */
 const remove = async (projectId) => {
-  const DomainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
-  const stats = await DomainProjectConnection.remove([{ field: 'id', value: projectId }]);
+  const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
+  const stats = await domainProjectConnection.remove([{ field: 'id', value: projectId }]);
   return stats;
 };
 

@@ -191,7 +191,7 @@ export default {
     const listInsights = ref([]);
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['insightPanel/projectId']);
+    const project = computed(() => store.getters['app/project']);
 
     const questions = computed(() => store.getters['analysisChecklist/questions']);
 

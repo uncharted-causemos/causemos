@@ -95,7 +95,7 @@ export default {
     const listContextInsights = ref([]);
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['insightPanel/projectId']);
+    const project = computed(() => store.getters['app/project']);
     const currentView = computed(() => store.getters['app/currentView']);
 
     // FIXME: refactor into a composable
