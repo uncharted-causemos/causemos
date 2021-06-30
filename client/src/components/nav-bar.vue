@@ -21,7 +21,17 @@
             </span>
           </li>
           <li
-            v-if="project !== null"
+            v-if="project !== null && projectType !== ProjectType.Analysis"
+            class="nav-item"
+            :class="{underlined: currentView === 'overview'}">
+            <router-link
+              class="nav-link"
+              :to="{name:'domainDatacubeOverview', params:{project: project}}"
+            ><i class="fa fa-connectdevelop" />
+              Family Page</router-link>
+          </li>
+          <li
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'overview'}">
             <router-link
@@ -31,7 +41,7 @@
               Overview</router-link>
           </li>
           <li
-            v-if="project!== null"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'dataStart' || currentView === 'data'}">
             <router-link
@@ -41,7 +51,7 @@
               Data</router-link>
           </li>
           <li
-            v-if="project!== null"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'qualitative' || currentView === 'qualitativeStart'}">
             <router-link
@@ -51,7 +61,7 @@
               Knowledge</router-link>
           </li>
           <li
-            v-if="project!== null"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'quantitativeStart' || currentView === 'quantitative'}">
             <router-link
@@ -66,9 +76,9 @@
       <!-- Help button -->
       <ul
         class="nav navbar-nav navbar-right help-holder">
-        <!-- @REVIEW: link to navigate to the model publishing view (this view must be attached to a project for the insight panel to work) -->
+        <!--
         <li
-            v-if="project!== null"
+            v-if="project !== null && projectType === ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'modelPublishingExperiment'}">
             <router-link
@@ -77,6 +87,7 @@
             > <i class="fa fa-cubes" />
               Publish Model</router-link>
         </li>
+        -->
         <li class="nav-item nav-item--help">
           <a
             href="https://docs.google.com/presentation/d/1DvixJx4bTkaaIC1mvN26Mf-ykfPzS1NWEmOMMyDWI3E/edit?usp=sharing"
@@ -97,19 +108,24 @@ import { mapGetters } from 'vuex';
 import { defineComponent } from 'vue';
 
 import InsightControls from '@/components/insight-manager/insight-controls.vue';
+import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'NavBar',
   components: {
     InsightControls
   },
+  data: () => ({
+    ProjectType
+  }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentView: 'app/currentView',
       projectMetadata: 'app/projectMetadata',
       selectedModel: 'model/selectedModel',
-      lastQuery: 'query/lastQuery'
+      lastQuery: 'query/lastQuery',
+      projectType: 'app/projectType'
     })
   }
 });

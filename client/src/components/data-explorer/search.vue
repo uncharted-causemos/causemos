@@ -1,21 +1,18 @@
 <template>
   <div class="search-container flex">
-    <div class="left-panel h-100">
-      <!-- facets goes here -->
-    </div>
-    <div class="search-panel flex-grow-1 flex-col h-100">
-      <div class="search-bar-box">
+    <div class="search-panel">
+      <div class="search-bar-section">
         <search-bar :facets="facets" />
       </div>
-      <div class="tab-panel flex-grow-1 h-0 flex-col">
+      <div class="tab-section">
         <tab-bar
           class="tab-bar"
           :tabs="tabs"
           :active-tab-id="view"
           @tab-click="setActive"
         />
-        <div class="tab-content flex-grow-1 h-0">
-          <div class="tab-pane active h-100">
+        <div class="tab-content">
+          <div class="tab-pane active">
             <search-listview :datacubes="filteredDatacubes"/>
           </div>
         </div>
@@ -101,20 +98,36 @@ export default {
 @import "~styles/variables";
 .search-container {
   min-height: 0px;
-  .search-bar-box {
-    padding: 6px 8px 0px;
-  }
-  .search-resaults {
-    padding: 20px;
-  }
-  .scrollable {
-    overflow-y: auto;
-  }
-  .card-limit-label {
-    padding: 5px 0;
-  }
-  .tab-bar {
-    margin-left: 10px;
+  .search-panel {
+    display: flex;
+    flex-direction: column;
+    align-content: stretch;
+    align-self: stretch;
+    .search-bar-section {
+      padding: 6px 8px 0px;
+      flex: 0 0 auto;
+      align-self: stretch;
+
+    }
+    .tab-section {
+      flex: 1 1 auto;
+      align-self: stretch;
+      display: flex;
+      flex-direction: column;
+      align-content: stretch;
+      overflow: hidden;
+      .tab-bar {
+        margin-left: 10px;
+        flex: 0 0 auto;
+        align-self: stretch;
+      }
+      .tab-content {
+        flex: 1 1 auto;
+        align-self: stretch;
+        overflow-y: auto;
+        padding: 0 0 50px;
+      }
+    }
   }
 }
 </style>

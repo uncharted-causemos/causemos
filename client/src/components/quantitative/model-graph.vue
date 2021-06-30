@@ -32,7 +32,7 @@ export default {
     }
   },
   emits: [
-    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click'
+    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-double-click'
   ],
   computed: {
     ...mapGetters({
@@ -81,6 +81,9 @@ export default {
       } else if (node.classed('indicator-edit-icon')) {
         this.$emit('node-header-click', node.datum().data);
       }
+    });
+    this.renderer.setCallback('nodeDblClick', (event, node) => {
+      this.$emit('node-double-click', node.datum().data);
     });
     this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {
       this.$emit('node-enter', node, g);

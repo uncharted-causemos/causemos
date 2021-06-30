@@ -35,7 +35,7 @@
         <div
           class="dropdown-option"
           @click="onDownload">
-          <a :href="downloadURL"> Download </a>
+          Download
         </div>
       </template>
     </dropdown-control>
@@ -51,6 +51,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import { CAG } from '@/utils/messages-util';
 import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
+import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'ModelOptions',
@@ -98,12 +99,16 @@ export default defineComponent({
         this.$router.push({
           name: this.viewAfterDeletion,
           params: {
-            project: this.project
+            project: this.project,
+            projectType: ProjectType.Analysis
           }
         });
       }).catch(() => {
         this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
       });
+    },
+    onDownload() {
+      window.location.href = this.downloadURL;
     },
     onDuplicate() {
       modelService.duplicateModel(this.currentCAG).then(() => {
@@ -112,7 +117,8 @@ export default defineComponent({
         this.$router.push({
           name: this.viewAfterDeletion,
           params: {
-            project: this.project
+            project: this.project,
+            projectType: ProjectType.Analysis
           }
         });
       }).catch(() => {

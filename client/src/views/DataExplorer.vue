@@ -1,7 +1,15 @@
 <template>
   <div class="data-explorer-container">
+    <rename-modal
+      v-if="showRenameModal"
+      :modal-title="'Name New Analysis'"
+      current-name=""
+      @confirm="onRenameModalConfirm"
+      @cancel="onRenameModalClose"
+    />
     <modal-header
       :nav-back-label="navBackLabel"
+      @update-analysis="renameAnalysis"
     />
     <div class="flex h-100" v-if="facets !== null && filteredFacets !== null">
       <div class="flex h-100">
@@ -24,28 +32,38 @@ import { mapActions, mapGetters } from 'vuex';
 
 import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
+import RenameModal from '../components/action-bar/rename-modal.vue';
 import Search from '../components/data-explorer/search.vue';
 
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
+import { updateAnalysis } from '@/services/analysis-service';
 
 import filtersUtil from '@/utils/filters-util';
 import { FACET_FIELDS } from '@/utils/datacube-util';
+import { ANALYSIS } from '@/utils/messages-util';
+import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'DataExplorer',
   components: {
     Search,
     FacetsPanel,
-    ModalHeader
+    ModalHeader,
+    RenameModal
   },
   data: () => ({
     facets: null,
     filteredDatacubes: [],
-    filteredFacets: null
+    filteredFacets: null,
+    showRenameModal: false
   }),
   computed: {
     ...mapGetters({
-      filters: 'dataSearch/filters'
+      analysisId: 'dataAnalysis/analysisId',
+      filters: 'dataSearch/filters',
+      project: 'app/project',
+      selectedDatacubes: 'dataSearch/selectedDatacubes',
+      searchResultsCount: 'dataSearch/searchResultsCount'
     }),
     navBackLabel() {
       if (this.$route.query && this.$route.query.analysisName) {
@@ -66,14 +84,11 @@ export default {
   },
   methods: {
     ...mapActions({
+      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'
     }),
-
-    async refresh() {
-      await this.fetchAllDatacubeData();
-    },
 
     // retrieves filtered datacube list
     async fetchAllDatacubeData() {
@@ -90,6 +105,37 @@ export default {
       this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, filters);
 
       this.disableOverlay();
+    },
+
+    async refresh() {
+      await this.fetchAllDatacubeData();
+    },
+    async onRenameModalConfirm(newName) {
+      try {
+        // update analysis name
+        await updateAnalysis(this.analysisId, { title: newName });
+        // update analysis datacubes
+        await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
+        this.toaster(ANALYSIS.SUCCESSFUL_RENAME, 'success', false);
+        this.$router.push({
+          name: 'data',
+          params: {
+            project: this.project,
+            analysisID: this.analysisId,
+            projectType: ProjectType.Analysis
+          }
+        });
+      } catch (e) {
+        this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
+      }
+      this.onRenameModalClose();
+    },
+    onRenameModalClose() {
+      this.showRenameModal = false;
+    },
+
+    renameAnalysis() {
+      this.showRenameModal = true;
     }
   }
 };

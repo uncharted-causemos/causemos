@@ -29,6 +29,7 @@ import { CAG } from '@/utils/messages-util';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
+import { ProjectType } from '@/types/Enums';
 
 interface RecentCard {
   id: string;
@@ -85,7 +86,8 @@ export default defineComponent({
         name: 'quantitative',
         params: {
           project: this.project,
-          currentCAG: recentCard.id
+          currentCAG: recentCard.id,
+          projectType: ProjectType.Analysis
         }
       });
     },

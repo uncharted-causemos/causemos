@@ -400,7 +400,7 @@ export default {
       }
 
       if (item !== null && !_.isEmpty(recommendations)) {
-        this.$emit('show-factor-recommendations', { regrounding: { factor: item.key, curGrounding, newGrounding }, recommendations });
+        this.$emit('show-factor-recommendations', item.key, curGrounding, newGrounding, recommendations);
       }
     },
     openConfirmCurationModal(confirmedCallback) {

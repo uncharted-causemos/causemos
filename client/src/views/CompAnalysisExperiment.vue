@@ -18,15 +18,20 @@
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
       :metadata="metadata"
+      :timeseries-data="timeseriesData"
+      :relative-to="relativeTo"
+      :breakdown-option="breakdownOption"
+      :baseline-metadata="baselineMetadata"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="setSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
+      @set-relative-to="setRelativeTo"
       @refetch-data="fetchData"
       @new-runs-mode="newRunsMode=!newRunsMode"
       @update-desc-view="updateDescView"
     >
       <template #datacube-model-header>
-        <div class="datacube-header" v-if="mainModelOutput">
+        <div class="datacube-header" v-if="metadata && mainModelOutput">
           <div v-if="isExpanded">
             <h5>
               <select name="outputs" id="outputs"
@@ -87,9 +92,11 @@
             :selected-timestamp="selectedTimestamp"
             :selected-scenario-ids="selectedScenarioIds"
             :deselected-region-ids="deselectedRegionIds"
+            :selected-breakdown-option="breakdownOption"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
             @set-all-regions-selected="setAllRegionsSelected"
+            @set-breakdown-option="setBreakdownOption"
           />
         </template>
     </drilldown-panel>
@@ -119,6 +126,7 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
 import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
+import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 const DRILLDOWN_TABS = [
   {
@@ -241,6 +249,41 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
+    const clearRouteParam = () => {
+      router.push({
+        query: {
+          insight_id: undefined
+        }
+      }).catch(() => {});
+    };
+
+    const setSelectedTimestamp = (value: number) => {
+      if (selectedTimestamp.value === value) return;
+      selectedTimestamp.value = value;
+      clearRouteParam();
+    };
+
+    const breakdownOption = ref<string | null>(null);
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
+    };
+
+    const {
+      timeseriesData,
+      relativeTo,
+      baselineMetadata,
+      setRelativeTo
+    } = useTimeseriesData(
+      metadata,
+      selectedModelId,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      breakdownOption,
+      setSelectedTimestamp
+    );
+
     const {
       outputSpecs,
       regionalData,
@@ -287,7 +330,15 @@ export default defineComponent({
       toggleIsRegionSelected,
       setAllRegionsSelected,
       outputs,
-      currentOutputIndex
+      currentOutputIndex,
+      setSelectedTimestamp,
+      clearRouteParam,
+      timeseriesData,
+      baselineMetadata,
+      relativeTo,
+      setRelativeTo,
+      breakdownOption,
+      setBreakdownOption
     };
   },
   watch: {
@@ -331,13 +382,6 @@ export default defineComponent({
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },
-    clearRouteParam() {
-      router.push({
-        query: {
-          insight_id: undefined
-        }
-      }).catch(() => {});
-    },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight: Insight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
@@ -374,11 +418,6 @@ export default defineComponent({
           this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
         }
       }
-    },
-    setSelectedTimestamp(value: number) {
-      if (this.selectedTimestamp === value) return;
-      this.selectedTimestamp = value;
-      this.clearRouteParam();
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {

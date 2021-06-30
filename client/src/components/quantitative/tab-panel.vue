@@ -53,6 +53,7 @@
               :current-engine="currentEngine"
               @background-click="onBackgroundClick"
               @node-body-click="showConstraints"
+              @node-double-click="onNodeDrilldown"
               @node-header-click="showIndicator"
               @edge-click="showRelation"
             />
@@ -129,6 +130,7 @@ import IndicatorSummary from '@/components/indicator/indicator-summary';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
+import { ProjectType } from '@/types/Enums';
 
 const PANE_ID = {
   INDICATOR: 'indicator',
@@ -285,7 +287,19 @@ export default {
         name: 'qualitative',
         params: {
           project: this.project,
-          currentCAG: this.currentCAG
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
+    onNodeDrilldown(node) {
+      this.$router.push({
+        name: 'nodeDrilldown',
+        params: {
+          project: this.project,
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis,
+          nodeId: node.id
         }
       });
     },

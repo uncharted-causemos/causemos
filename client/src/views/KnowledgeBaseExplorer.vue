@@ -105,6 +105,8 @@ import * as curationService from '@/services/curation-service';
 
 import messagesUtil from '@/utils/messages-util';
 
+import { ProjectType } from '@/types/Enums';
+
 const CORRECTIONS = messagesUtil.CORRECTIONS;
 
 const PANE_ID = {
@@ -295,7 +297,7 @@ export default {
         this.filters);
 
       const formattedNodes = nodesToAdd.map(node => {
-        return { concept: node.id, label: this.ontologyFormatter(node.id) };
+        return { id: '', concept: node.id, label: this.ontologyFormatter(node.id) };
       });
 
       const formattedEdges = selectedEdges.map(selectedEdge => {
@@ -305,6 +307,7 @@ export default {
         if (_.isEmpty(existingEdge)) {
           // New edge
           return {
+            id: '',
             source: selectedEdge.source,
             target: selectedEdge.target,
             reference_ids: selectedEdgesData[edgeId]
@@ -350,11 +353,11 @@ export default {
     onViewCag() {
       this.showModalAddedToCag = false;
       this.setSelectedSubgraphEdges([]);
-      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag } });
+      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis } });
     },
     onCancel() {
       this.setSelectedSubgraphEdges([]);
-      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag } });
+      this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis } });
     },
     onRelationshipClick(relationship) {
       this.showEvidenceOverlay = true;

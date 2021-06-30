@@ -1,13 +1,7 @@
 <template>
   <div class="analysis-map-container">
     <div class="value-filter">
-      <slider-continuous-range
-        v-if="extent"
-        v-model="range"
-        :min="extent.min"
-        :max="extent.max"
-        :color-option="colorOption"
-      />
+      <map-legend :ramp="legendData" />
       <div
         class="layer-toggle-button"
         @click="clickLayerToggle">
@@ -59,13 +53,10 @@
 import _ from 'lodash';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
-import { getColors } from '@/utils/colors-util';
-import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded } from '@/utils/map-util';
+import { COLOR_SCHEME } from '@/utils/colors-util';
+import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded, createDivergingColorStops, createColorStops } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
-
-// Map filter animation fps rate (Use lower value if there's a performance issue)
-const FILTER_ANIMATION_FPS = 5;
+import MapLegend from '@/components/widgets/map-legend';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -82,7 +73,10 @@ const createRangeFilter = ({ min, max }, prop) => {
   return [lowerBound, upperBound];
 };
 
-const baseLayer = (property, useFeatureState = false) => {
+const baseLayer = (property, useFeatureState = false, relativeTo) => {
+  const caseRelativeToMissing = [];
+  const getter = useFeatureState ? 'feature-state' : 'get';
+  relativeTo && caseRelativeToMissing.push(['all', ['==', null, [getter, relativeTo]]], 1);
   if (useFeatureState) {
     return Object.freeze({
       type: 'fill',
@@ -92,6 +86,7 @@ const baseLayer = (property, useFeatureState = false) => {
         'fill-opacity': [
           'case',
           ['==', null, ['feature-state', property]], 0.0,
+          ...caseRelativeToMissing,
           ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
         ]
@@ -105,6 +100,7 @@ const baseLayer = (property, useFeatureState = false) => {
         'fill-color': 'grey',
         'fill-opacity': [
           'case',
+          ...caseRelativeToMissing,
           ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
         ]
@@ -114,13 +110,38 @@ const baseLayer = (property, useFeatureState = false) => {
   }
 };
 
+const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
+  const stops = !_.isNil(relativeTo)
+    ? createDivergingColorStops(domain, colors, scaleFn)
+    : createColorStops(domain, colors, scaleFn);
+  const labels = [];
+  // process with color stops (e.g [c1, v1, c2, v2, c3]) where cn is color and vn is value.
+  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 3])(v);
+  stops.forEach((item, index) => {
+    if (index === 1) {
+      labels.push(`< ${format(item)}`);
+    } else if (index % 2 !== 0) {
+      labels.push(`${format(stops[index - 2])} - ${format(item)}`);
+    }
+    // if last stop value
+    if (index === stops.length - 2) {
+      labels.push(`> ${format(item)}`);
+    }
+  });
+  const data = [];
+  colors.forEach((item, index) => {
+    data.push({ color: item, label: labels[index] });
+  });
+  return data.reverse();
+};
+
 export default {
   name: 'AnalysisMap',
   components: {
     WmMap,
     WmMapVector,
     WmMapPopup,
-    SliderContinuousRange
+    MapLegend
   },
   emits: [
     'on-map-load',
@@ -147,17 +168,13 @@ export default {
       type: Boolean,
       default: false
     },
-    selectedAdminLevel: {
+    selectedLayerId: {
       type: Number,
       default: 0
     },
     filters: {
       type: Array,
       default: () => []
-    },
-    isGridMap: {
-      type: Boolean,
-      default: () => false
     },
     mapBounds: {
       type: Array,
@@ -175,11 +192,9 @@ export default {
     baseLayer: undefined,
     colorLayer: undefined,
     hoverId: undefined,
-    range: undefined,
-    featuresDrawn: undefined,
     map: undefined,
-    selectedLayer: undefined,
-    gridStats: undefined
+    gridStats: undefined,
+    legendData: []
   }),
   computed: {
     selection() {
@@ -189,6 +204,22 @@ export default {
       return _.isNil(this.relativeTo) || this.relativeTo === this.outputSelection
         ? undefined
         : this.outputSourceSpecs[this.relativeTo];
+    },
+    selectedLayer() {
+      return layers[this.selectedLayerId];
+    },
+    vectorSourceLayer() {
+      return this.selectedLayer?.vectorSourceLayer;
+    },
+    idPropName() {
+      return this.selectedLayer?.idPropName;
+    },
+    isGridMap() {
+      return this.vectorSourceLayer === 'maas';
+    },
+    adminLevel() {
+      if (this.selectedLayerId > 3) return undefined;
+      return this.selectedLayerId === 0 ? 'country' : 'admin' + this.selectedLayerId;
     },
     stats() {
       const stats = {};
@@ -217,8 +248,7 @@ export default {
       return stats;
     },
     extent() {
-      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
-      const extent = this.isGridMap ? this.gridStats : this.stats[adminLevel];
+      const extent = this.stats[this.adminLevel] || this.gridStats;
       if (!extent) return { min: 0, max: 1 };
       if (extent.min === extent.max) {
         extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
@@ -230,9 +260,7 @@ export default {
       return (this.selection && this.selection.id) || '';
     },
     vectorSource() {
-      if (this.selectedLayer.vectorSourceLayer !== 'maas') {
-        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
-      } else {
+      if (this.isGridMap) {
         const outputSpecs = this.outputSourceSpecs
           .map(spec => {
             return {
@@ -247,6 +275,8 @@ export default {
             };
           });
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/grid-output/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
+      } else {
+        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
     layerButtonClass() {
@@ -258,17 +288,17 @@ export default {
     colorOption() {
       return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
     },
+    colorScheme() {
+      if (!_.isNil(this.relativeTo)) {
+        return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
+      }
+      return COLOR_SCHEME.PURPLES_7;
+    },
     filter() {
       return this.filters.find(filter => filter.id === this.valueProp);
     },
     isFilterGlobal() {
       return this.filter && this.filter.global;
-    },
-    filterRange() {
-      if (this.filter === undefined) {
-        return this.extent;
-      }
-      return this.filter && this.filter.range;
     }
   },
   watch: {
@@ -284,21 +314,8 @@ export default {
     regionData() {
       this.refresh();
     },
-    range: {
-      handler() {
-        this.updateFilterRange();
-      },
-      deep: true
-    },
     selectedLayer() {
-      Object.assign(this, this.selectedLayer);
       this.refreshLayers();
-    },
-    isGridMap() {
-      this.setSelectedLayer();
-    },
-    selectedAdminLevel() {
-      this.setSelectedLayer();
     }
   },
   created() {
@@ -308,10 +325,11 @@ export default {
     };
 
     this.vectorSourceId = 'maas-vector-source';
-    this.selectedLayer = layers[this.selectedAdminLevel];
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+    // Init layer objects
+    this.refreshLayers();
   },
   mounted() {
     this.refresh();
@@ -319,7 +337,6 @@ export default {
   methods: {
     refresh() {
       if (!this.map || !this.selection) return;
-      this.range = this.filterRange;
 
       this.setFeatureStates();
       this.refreshLayers();
@@ -327,30 +344,40 @@ export default {
     },
     refreshLayers() {
       if (this.extent === undefined || this.colorOption === undefined) return;
-      const useFeatureState = this.selectedLayer.vectorSourceLayer !== 'maas';
-      this.baseLayer = baseLayer(this.valueProp, useFeatureState);
+      const useFeatureState = !this.isGridMap;
+      this.baseLayer = baseLayer(this.valueProp, useFeatureState, this.baselineSpec?.id);
       this.refreshColorLayer(useFeatureState);
     },
     refreshColorLayer(useFeatureState = false) {
       const { min, max } = this.extent;
-      const { color, scaleFn } = this.colorOption;
-      const relativeToProp = this.baselineSpec && this.baselineSpec.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 7), scaleFn, useFeatureState, relativeToProp);
+      const { scaleFn } = this.colorOption;
+      const relativeToProp = this.baselineSpec?.id;
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
+      this.legendData = createMapLegendData([min, max], this.colorScheme, scaleFn, relativeToProp);
     },
     setFeatureStates() {
-      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
+      if (!this.adminLevel) return;
 
+      // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
         source: this.vectorSourceId,
         sourceLayer: this.vectorSourceLayer
       });
+      // Note: RemoveFeatureState doesn't seem very reliable.
+      // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
+      // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
+      // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
+      // To work around above issue, explitly set undefined to each output value by default since removeFeatureState doesn't seem very reliable.
+      const featureStateBase = {};
+      this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
-      this.regionData[adminLevel].forEach(row => {
+      this.regionData[this.adminLevel].forEach(row => {
         this.map.setFeatureState({
           id: row.id,
           source: this.vectorSourceId,
           sourceLayer: this.vectorSourceLayer
         }, {
+          ...featureStateBase,
           ...row.values
         });
       });
@@ -405,11 +432,13 @@ export default {
     updateLayerFilter() {
       if (!this.colorLayer) return;
       // Merge filter for the current map and all globally applied filters together
-      if (this.selectedLayer.vectorSourceLayer === 'maas') {
+      if (this.isGridMap) {
         const filter = this.filters.reduce((prev, cur) => {
           if (cur.id !== this.valueProp && !cur.global) return prev;
           return [...prev, ...createRangeFilter(cur.range, cur.id)];
         }, []);
+        const relativeToProp = this.baselineSpec && this.baselineSpec.id;
+        if (relativeToProp) filter.unshift(['has', relativeToProp]);
         this.colorLayer.filter = ['all', ['has', this.valueProp], ...filter];
       } else {
         this.refreshLayers();
@@ -449,41 +478,33 @@ export default {
       this._unsetHover(event.map);
     },
     popupValueFormatter(feature) {
-      if (_.isNil(feature)) return null;
-      if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return null;
+      const prop = this.isGridMap ? feature?.properties : feature?.state;
+      if (_.isNil(prop && prop[this.valueProp])) return null;
 
-      if (this.selectedLayer.vectorSourceLayer === 'maas') {
-        return chartValueFormatter(this.extent.min, this.extent.max)(feature.properties[this.valueProp]);
-      } else {
-        const value = feature.state[this.valueProp];
-        const fields = [chartValueFormatter(this.extent.min, this.extent.max)(value)];
-        if (this.baselineSpec) {
-          const diff = feature.state[this.valueProp] - feature.state[this.baselineSpec.id];
-          fields.push('Diff: ' + chartValueFormatter(this.extent.min, this.extent.max)(diff));
-        }
-        [3, 2, 1, 0].forEach(i => fields.push(feature.properties['NAME_' + i]));
-        return fields.filter(field => !_.isNil(field)).join('<br />');
+      const value = prop[this.valueProp];
+      const format = v => chartValueFormatter(this.extent.min, this.extent.max)(v);
+      const rows = [format(value)];
+      if (this.baselineSpec) {
+        const diff = prop[this.valueProp] - prop[this.baselineSpec.id];
+        const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
+        rows.push(text);
       }
+      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll('__', '/'));
+      return rows.filter(field => !_.isNil(field)).join('<br />');
     },
-    setSelectedLayer() {
-      this.selectedLayer = this.isGridMap ? layers[4] : layers[this.selectedAdminLevel];
-    },
-    updateFilterRange: _.throttle(function () {
-      if (!this.range || !this.valueProp) return;
-      this.$emit('slide-handle-change', { id: this.valueProp, range: this.range });
-    }, 1000 / FILTER_ANIMATION_FPS),
     throttledReevaluateColourScale: _.throttle(
       function() { this.reevaluateColourScale(); },
       100,
       { trailing: true, leading: true }
     ),
     // Dynamically calculate min max stats for grid map
+    // TODO: Use precomputed stats for each zoom level (espcially for 'sum') when backend api is ready since this is performance intensive
     reevaluateColourScale() {
       if (!this.map) return;
       // Exit early if the layer hasn't finished loading
       if (!isLayerLoaded(this.map, this.baseLayerId)) return;
-      // This only applies too grid map
-      if (this.selectedLayer.vectorSourceLayer !== 'maas') return;
+      // This only applies to grid map
+      if (!this.isGridMap) return;
       const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });
       const values = [];
       for (const feature of features) {
