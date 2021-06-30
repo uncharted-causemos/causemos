@@ -203,7 +203,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     clonedMetadata.id = uuid();
     clonedMetadata.outputs = [output];
     return clonedMetadata;
-  })
+  });
 
   const runName = `${metadata.name} : ${metadata.id}`;
   const flowParameters = {
@@ -250,7 +250,7 @@ const startIndicatorPostProcessing = async (metadata) => {
         type: 'indicator',
         status: 'PROCESSING'
       }], d => d.id);
-    }))
+    }));
   }
   return result;
 };
