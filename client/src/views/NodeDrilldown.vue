@@ -23,6 +23,7 @@
             v-for="driver in drivers"
             :key="driver"
             :name="driver"
+            :is-driver="true"
             class="graph-node"
           />
         </div>
@@ -46,6 +47,7 @@
             v-for="impact in impacts"
             :key="impact"
             :name="impact"
+            :is-driver="false"
             class="graph-node"
           />
         </div>
