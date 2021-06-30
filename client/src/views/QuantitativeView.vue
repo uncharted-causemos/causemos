@@ -190,7 +190,7 @@ export default {
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
-      setContextId: 'insightPanel/setContextId',
+      setContextId: 'insightPanel/setContextId'
     }),
     async refresh() {
       this.enableOverlay();

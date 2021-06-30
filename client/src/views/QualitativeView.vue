@@ -319,7 +319,7 @@ export default {
   methods: {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken',
-      setContextId: 'insightPanel/setContextId',
+      setContextId: 'insightPanel/setContextId'
     }),
     async refresh() {
       // Get CAG data
