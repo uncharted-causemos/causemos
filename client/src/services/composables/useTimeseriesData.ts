@@ -164,7 +164,7 @@ export default function useTimeseriesData(
       //  `rawTimeseriesData` ref
       rawTimeseriesData.value = fetchResults.map((points, index) => {
         const name = `Run ${index}`;
-        const id = index.toString();
+        const id = modelRunIds.value[index];
         const color = colorFromIndex(index);
         return { name, id, color, points };
       });

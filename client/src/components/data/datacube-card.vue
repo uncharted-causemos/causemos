@@ -169,7 +169,7 @@
               ]"
               :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
-              :output-selection=indx
+              :output-selection=spec.id
               :relative-to="relativeTo"
               :show-tooltip="true"
               :selected-layer-id="mapSelectedLayer"
