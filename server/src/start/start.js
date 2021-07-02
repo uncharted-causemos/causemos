@@ -39,11 +39,11 @@ async function runStartup() {
     });
   });
 
-  let lastTimeRecordsWereChecked = (new Date()).getTime() || 0;
+  let lastTimeRecordsWereChecked = (new Date()).getTime();
   const MAX_PROJECT_EXTENSION_COUNT = 999;
   setInterval(async () => {
     try {
-      const now = (new Date()).getTime() || 0;
+      const now = (new Date()).getTime();
       Logger.info('=== Fetching reader status records from DART. ===', lastTimeRecordsWereChecked);
       const result = await dartService.queryReadersStatus(lastTimeRecordsWereChecked);
       // Records successfully checked. Next time, only check for records since `now`.
