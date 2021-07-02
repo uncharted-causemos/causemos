@@ -192,9 +192,6 @@ const startIndicatorPostProcessing = async (metadata) => {
 
   // Remove some unused Jataware fields
   metadata.attributes = undefined;
-  for (const output of metadata.outputs) {
-    output.is_primary = undefined;
-  }
 
   // Create data now to send to elasticsearch
   const newIndicatorMetadata = metadata.outputs.map(output => {
