@@ -6,6 +6,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
+import { TemporalAggregationLevel } from '@/types/Enums';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -21,7 +22,10 @@ const X_AXIS_TICK_SIZE_PX = 2;
 //  seem to reflect that.
 // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
 //  and be consistent.
-const DATE_FORMATTER = (value: any) => dateFormatter(value * 1000, 'MMM DD, YYYY');
+const DATE_FORMATTER = (value: any) =>
+  dateFormatter(value * 1000, 'MMM DD, YYYY');
+const BY_YEAR_DATE_FORMATTER = (value: any) =>
+  dateFormatter(new Date(0, value), 'MMM');
 
 const DEFAULT_LINE_COLOR = '#000';
 const LABEL_BACKGROUND_COLOR = 'white';
@@ -51,7 +55,8 @@ export default function(
   width: number,
   height: number,
   selectedTimestamp: number,
-  onTimestampSelected: (timestamp: number) => void
+  onTimestampSelected: (timestamp: number) => void,
+  breakdownOption: string | null
 ) {
   const groupElement = selection.append('g');
   const [xExtent, yExtent] = calculateExtents(timeseriesList);
@@ -64,8 +69,26 @@ export default function(
   }
 
   const valueFormatter = chartValueFormatter(...yExtent);
-  const [xScale, yScale] = calculateScales(width, height, xExtent, yExtent);
-  renderAxes(groupElement, xScale, yScale, valueFormatter, width, height);
+  const [xScale, yScale] = calculateScales(
+    width,
+    height,
+    xExtent,
+    yExtent,
+    breakdownOption
+  );
+  const timestampFormatter =
+    breakdownOption === TemporalAggregationLevel.Year
+      ? BY_YEAR_DATE_FORMATTER
+      : DATE_FORMATTER;
+  renderAxes(
+    groupElement,
+    xScale,
+    yScale,
+    valueFormatter,
+    width,
+    height,
+    timestampFormatter
+  );
   timeseriesList.forEach(timeSeries => {
     renderLine(groupElement, timeSeries, xScale, yScale);
   });
@@ -93,7 +116,8 @@ export default function(
     timeseriesList,
     xScale,
     yScale,
-    valueFormatter
+    valueFormatter,
+    timestampFormatter
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -104,7 +128,8 @@ export default function(
       timeseriesList,
       xScale,
       yScale,
-      valueFormatter
+      valueFormatter,
+      timestampFormatter
     );
   };
 }
@@ -120,11 +145,16 @@ function calculateScales(
   width: number,
   height: number,
   xExtent: [number, number],
-  yExtent: [number, number]
+  yExtent: [number, number],
+  breakdownOption: string | null
 ) {
+  const xScaleDomain =
+    breakdownOption === TemporalAggregationLevel.Year
+      ? [0, 11] // January === 0, December === 11
+      : xExtent;
   const xScale = d3
     .scaleLinear()
-    .domain(xExtent)
+    .domain(xScaleDomain)
     .range([Y_AXIS_WIDTH, width - PADDING_RIGHT]);
   const yScale = d3
     .scaleLinear()
@@ -163,12 +193,13 @@ function renderAxes(
   //  seem to reflect that.
   valueFormatter: (value: any) => string,
   width: number,
-  height: number
+  height: number,
+  timestampFormatter: (timestamp: any) => string
 ) {
   const xAxis = d3
     .axisBottom(xScale)
     .tickSize(X_AXIS_TICK_SIZE_PX)
-    .tickFormat(DATE_FORMATTER)
+    .tickFormat(timestampFormatter)
     .ticks(X_AXIS_TICK_COUNT);
   const yAxis = d3
     .axisLeft(yScale)
@@ -204,13 +235,14 @@ function generateSelectableTimestamps(
     .flat()
     .map(point => point.timestamp);
   const uniqueTimestamps = _.uniq(allTimestamps);
+  // FIXME: We assume that all timestamps are evenly spaced when determining
+  //  how wide the hover/click hitbox should be. This may not always be the case.
+
+  // Arbitrarily choose how wide the hitbox should be if there's only one unique
+  //  timestamp
   const hitboxWidth =
     uniqueTimestamps.length > 1
-      // FIXME: We assume that all timestamps are evenly spaced when determining
-      //  how wide the hover/click hitbox should be. This may not always be the case.
       ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
-      // Arbitrarily choose how wide the hitbox should be if there's only one unique
-      //  timestamp
       : SELECTED_TIMESTAMP_WIDTH * 5;
   uniqueTimestamps.forEach(timestamp => {
     const timestampMarker = timestampGroup
@@ -326,7 +358,10 @@ function generateSelectedTimestampElements(
       .attr('y2', 0);
     const label = generateLabel(gElement, color, '[value]');
     const height = label.node()?.getBBox().height ?? 0;
-    label.attr('transform', translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2));
+    label.attr(
+      'transform',
+      translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2)
+    );
     label.select('text').style('text-anchor', 'start');
     label.select('rect').attr('transform', translate(0, 0));
     return gElement;
@@ -340,12 +375,13 @@ function updateTimestampElements(
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
-  valueFormatter: (value: any) => string
+  valueFormatter: (value: any) => string,
+  timestampFormatter: (timestamp: number) => string
 ) {
   if (timestamp === null) {
     // Hide everything
     selectedTimestampGroup.attr('visibility', 'hidden');
-    valueGroups.forEach(valueGroup => valueGroup.attr('visibility, hidden'));
+    valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
     return;
   }
   // Move selectedTimestamp elements horizontally to the right position
@@ -356,7 +392,7 @@ function updateTimestampElements(
   // Display the newly selected timestamp
   const labelText = selectedTimestampGroup
     .select<SVGTextElement>('text')
-    .text(DATE_FORMATTER(timestamp));
+    .text(timestampFormatter(timestamp));
   // Resize background to match
   const { labelWidth } = calculateLabelDimensions(labelText);
   selectedTimestampGroup

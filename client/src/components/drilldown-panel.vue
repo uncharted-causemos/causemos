@@ -1,7 +1,7 @@
 <template>
   <transition name="slide-fade">
     <div
-      v-if="isOpen"
+      v-if="isOpen === null || isOpen"
       class="drilldown-panel-container"
     >
       <tab-bar
