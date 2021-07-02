@@ -192,10 +192,6 @@ const startIndicatorPostProcessing = async (metadata) => {
 
   // Remove some unused Jataware fields
   metadata.attributes = undefined;
-  for (const output of metadata.outputs) {
-    output.family_name = metadata.name;
-    output.default_feature = output.name;
-  }
 
   // Create data now to send to elasticsearch
   const newIndicatorMetadata = metadata.outputs.map(output => {
@@ -203,6 +199,10 @@ const startIndicatorPostProcessing = async (metadata) => {
     clonedMetadata.data_id = metadata.id;
     clonedMetadata.id = uuid();
     clonedMetadata.outputs = [output];
+    clonedMetadata.family_name = metadata.name;
+    clonedMetadata.default_feature = output.name;
+    clonedMetadata.type = 'indicator';
+    clonedMetadata.status = 'PROCESSING';
     return clonedMetadata;
   });
 
@@ -245,13 +245,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   const flowId = _.get(result, 'data.create_flow_run.id');
   if (flowId) {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    await connection.insert(newIndicatorMetadata.map(indicatorMetadata => {
-      return {
-        ...indicatorMetadata,
-        type: 'indicator',
-        status: 'PROCESSING'
-      };
-    }), d => d.id);
+    await connection.insert(newIndicatorMetadata, d => d.id);
   }
   return result;
 };
