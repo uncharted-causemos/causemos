@@ -244,13 +244,14 @@ const startIndicatorPostProcessing = async (metadata) => {
   const flowId = _.get(result, 'data.create_flow_run.id');
   if (flowId) {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    await Promise.all(newIndicatorMetadata.map(indicatorMetadata => {
-      connection.insert([{
+    const promiseResults = await Promise.all(newIndicatorMetadata.map(indicatorMetadata => {
+      return connection.insert([{
         ...indicatorMetadata,
         type: 'indicator',
         status: 'PROCESSING'
       }], d => d.id);
     }));
+    Logger.error(`${promiseResults}`);
   }
   return result;
 };
