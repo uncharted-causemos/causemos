@@ -46,7 +46,9 @@
                 style="border: none; background-color: white"
                 @click="$emit('addCustomGrounding', customGrounding)"
               >
-                <i class="fa fa-plus-circle fa-3x"></i>
+                <span style="color: #255DCC">
+                  <i class="fa fa-plus-circle fa-3x"></i>
+                </span>
               </button>
             </div>
           </div>
