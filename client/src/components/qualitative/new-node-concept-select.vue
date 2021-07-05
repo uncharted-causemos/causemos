@@ -2,18 +2,22 @@
   <div class="new-node-container" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
     <div class="new-node-top">
       <input
-        ref="input"
+        ref="ground-input"
         v-model="userInput"
         type="text"
         placeholder="Type a concept"
+        style="height: 2.5rem;"
         @keydown="onKeyDown"
       >
       <button
+        v-if="userInput.length < 1"
         class="mx-2"
         style="border: none; background-color: white;"
         @click="showCustomGrounding"
       >
-        <i class="fa fa-plus-circle"></i>
+        <span style="color: #255DCC; font-size: 1.5rem;">
+          <i class="fa fa-plus-circle"></i>
+        </span>
       </button>
     </div>
     <dropdown-control class="suggestion-dropdown">
