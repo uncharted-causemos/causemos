@@ -204,7 +204,8 @@ export default defineComponent({
     return {
       currentOutputIndex,
       currentOutputName,
-      outputVariables
+      outputVariables,
+      FeatureQualifierRoles
     };
   },
   computed: {
@@ -221,9 +222,6 @@ export default defineComponent({
       deep: true
     }
   },
-  data: () => ({
-    FeatureQualifierRoles
-  }),
   methods: {
     scrollToSection(sectionName: string) {
       const elm = document.getElementById(sectionName) as HTMLElement;
@@ -344,7 +342,6 @@ table.model-table thead tr th {
 
 .model-attribute-desc {
   border-width: 1px;
-  // margin-bottom: 22px;
   border-color: rgb(216, 214, 214);
   min-width: 100%;
   flex-basis: 100%;

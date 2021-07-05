@@ -7,6 +7,7 @@
           <span
             class="edit-model-desc"
             @click="updateDesc"
+            v-tooltip.top-center="'Edit description'"
           >
             <i class="fa fa-edit" />
           </span>
@@ -15,13 +16,12 @@
         <div v-if="!isEditingDesc">
           {{projectMetadata.description}}
         </div>
-        <div v-if="isEditingDesc">
-          <textarea
-            v-model="projectMetadata.description"
-            type="text"
-            class="model-attribute-desc"
-          />
-        </div>
+        <textarea
+          v-if="isEditingDesc"
+          v-model="projectMetadata.description"
+          type="text"
+          class="model-attribute-desc"
+        />
         <div style="padding-top: 5px; ">
           <a
             :href="maintainerWebsite"
@@ -117,12 +117,14 @@ import { DatacubeStatus } from '@/types/Enums';
 import _ from 'lodash';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import domainProjectService from '@/services/domain-project-service';
+import DropdownControl from '@/components/dropdown-control.vue';
 
 export default {
   name: 'DomainProjectOverview',
   components: {
     DomainDatacubeInstanceCard,
-    ListContextInsightPane
+    ListContextInsightPane,
+    DropdownControl
   },
   data: () => ({
     datacubeInstances: [],
@@ -283,7 +285,7 @@ $padding-size: 3vh;
 
 .instances-list-elements {
   height: 75vh;
-  overflow-y: scroll;
+  overflow-y: auto;
 }
 
 .maintainer {

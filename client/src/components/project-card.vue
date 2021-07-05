@@ -47,7 +47,7 @@
       <div class="row">
         <div class="col-sm-12 details">
           <div>
-            <p><b>{{project.description}}</b></p>
+            <p>{{project.description}}</p>
           </div>
         </div>
       </div>

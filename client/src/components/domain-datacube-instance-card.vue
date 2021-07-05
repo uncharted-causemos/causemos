@@ -38,14 +38,14 @@
       </div>
     </div>
     <div class="row">
-      <div class="col-sm-3 instance-nice-list" style="margin-left: 2rem">
+      <div class="col-sm-3 fixed-height-column" style="margin-left: 2rem">
         <div
           v-for="input in inputKnobs"
           :key="input.name">
           {{ input.display_name }}
         </div>
       </div>
-      <div class="col-sm-2 instance-nice-list">
+      <div class="col-sm-2 fixed-height-column">
         <div
           v-for="output in validatedOutputs"
           :key="output.name">
@@ -56,7 +56,7 @@
         <!-- placeholder for map or image for regional context -->
         <div style="backgroundColor: darkgray; height: 100px"></div>
       </div>
-      <div class="col-sm-2 instance-nice-list">
+      <div class="col-sm-2 fixed-height-column">
         <div
           v-for="analysis in ['analysis x', 'analysis y', 'analysis z']"
           :key="analysis">
@@ -114,8 +114,8 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import { Datacube, Model } from '@/types/Datacube';
-import { DatacubeStatus, DatacubeType } from '@/types/Enums';
-import { getValidatedOutputs } from '@/utils/datacube-util';
+import { DatacubeStatus } from '@/types/Enums';
+import { getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
 
 /**
  * A card-styled widget to view project summary
@@ -137,11 +137,11 @@ export default defineComponent({
       project: 'app/project'
     }),
     breakdownParameters(): any[] {
-      if (this.datacube.type === DatacubeType.Indicator) return [];
+      if (isIndicator(this.datacube)) return [];
       return (this.datacube as Model).parameters.filter(p => p.is_drilldown);
     },
     inputKnobs(): any[] {
-      if (this.datacube.type === DatacubeType.Indicator) return [];
+      if (isIndicator(this.datacube)) return [];
       return (this.datacube as Model).parameters.filter(p => !p.is_drilldown);
     },
     validatedOutputs(): any[] {
@@ -219,16 +219,15 @@ export default defineComponent({
 @import "~styles/variables";
 
 .instance-header {
-  text-transform: uppercase;
-  font-size: large;
+  @include header-secondary;
   font-weight: bold;
   color: darkgrey;
   padding-bottom: 5px;
 }
 
-.instance-nice-list {
+.fixed-height-column {
   height: 12vh;
-  overflow: scroll;
+  overflow: auto;
 }
 
 .project-card-container {

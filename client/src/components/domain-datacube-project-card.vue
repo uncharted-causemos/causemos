@@ -36,7 +36,7 @@
       <div class="col-sm-2 text-center no-padding">
         {{ project.type }}
       </div>
-      <div class="col-sm-3 text-center no-padding text-overflow-nice">
+      <div class="col-sm-3 text-center no-padding overflow-ellipsis">
         {{ project.source }}
       </div>
       <div class="col-sm-3 no-padding">
@@ -50,7 +50,7 @@
       <div class="row">
         <div class="col-sm-12 details">
           <div>
-            <p><b>{{project.description}}</b></p>
+            <p>{{project.description}}</p>
           </div>
         </div>
       </div>
@@ -169,12 +169,6 @@ export default defineComponent({
 .project-card-container:hover {
   border-color: $selected;
   cursor: pointer;
-}
-
-.text-overflow-nice {
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 .selected {

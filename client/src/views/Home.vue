@@ -138,7 +138,7 @@
               <div class="col-sm-2 number-col" style="padding: 0;">
                 <div>Type</div>
                 (
-                  <span class="datacube-link" @click="addDmoainModels=!addDmoainModels">M</span>
+                  <span class="datacube-link" @click="addDomainModels=!addDomainModels">M</span>
                     &nbsp;|&nbsp;
                   <span class="datacube-link" @click="addDomainIndicators=!addDomainIndicators">I</span>
                 )
@@ -203,7 +203,7 @@ export default defineComponent({
     showSortingDropdownDomainDatacubes: false,
     sortingOptionsDomainDatacubes: ['Most recent', 'Earliest'],
     selectedSortingOptionDomainDatacube: 'Most recent',
-    addDmoainModels: true,
+    addDomainModels: true,
     addDomainIndicators: false
   }),
   computed: {
@@ -219,7 +219,7 @@ export default defineComponent({
         if (project.type === DatacubeType.Indicator) {
           return filteredProject && this.addDomainIndicators;
         } else if (project.type === DatacubeType.Model) {
-          return filteredProject && this.addDmoainModels;
+          return filteredProject && this.addDomainModels;
         } else {
           return filteredProject;
         }
@@ -358,6 +358,8 @@ export default defineComponent({
         });
 
         // create new projects
+        // @REVIEW: ensure that the creation of new projects enforce unique names
+        //  since project-name is the primary key used to identify various projects
         if (newProjects.length > 0) {
           const createPromises = newProjects.map(async (projectInfo) => {
             return domainProjectService.createDomainProject(
