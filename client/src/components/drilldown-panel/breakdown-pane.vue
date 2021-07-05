@@ -14,7 +14,7 @@
       @item-selected="emitBreakdownOptionSelection"
     />
     <aggregation-checklist-pane
-      v-if="regionalData !== null && regionalData.length !== 0"
+      v-if="regionalData !== null && Object.keys(regionalData).length !== 0"
       class="checklist-section"
       :aggregation-level-count="availableAdminLevelTitles.length"
       :aggregation-level="selectedAdminLevel"
@@ -70,17 +70,31 @@
         </p>
       </template>
     </aggregation-checklist-pane>
-    <!-- <aggregation-checklist-pane
-      :aggregation-level-count="aggregationLevels.length"
-      :aggregation-level="selectedAdminLevel"
-      :aggregation-level-title="'year'"
-      :raw-data="adminLevelData"
-      @aggregation-level-change="setSelectedAdminLevel"
+    <aggregation-checklist-pane
+      v-if="temporalBreakdownData !== null && Object.keys(temporalBreakdownData).length !== 0"
+      class="checklist-section"
+      :aggregation-level-count="Object.keys(temporalBreakdownData).length"
+      :aggregation-level="0"
+      :aggregation-level-title="'Year'"
+      :ordered-aggregation-level-keys="['Year']"
+      :raw-data="temporalBreakdownData"
+      :units="unit"
+      :selected-scenario-ids="selectedScenarioIds"
     >
-      <template #subtitle>
-        <span>Showing data across <strong>all time</strong>.</span>
+      <!-- TODO:
+      :deselected-item-ids="deselectedRegionIds"
+      @toggle-is-item-selected="toggleIsRegionSelected"
+      @set-all-selected="setAllRegionsSelected"
+      @aggregation-level-change="setSelectedAdminLevel"
+      -->
+      <template #aggregation-description>
+        <p class="aggregation-description">
+          Aggregated by
+          <strong>sum</strong
+          >.
+        </p>
       </template>
-    </aggregation-checklist-pane> -->
+    </aggregation-checklist-pane>
   </div>
 </template>
 
@@ -147,6 +161,10 @@ export default defineComponent({
       default: null
     },
     regionalData: {
+      type: Object as PropType<BreakdownData | null>,
+      default: null
+    },
+    temporalBreakdownData: {
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
@@ -232,6 +250,10 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '~styles/variables';
+
+.breakdown-pane-container {
+  margin-bottom: 40px;
+}
 
 .aggregation-description {
   color: $text-color-medium;

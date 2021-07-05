@@ -1,5 +1,6 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
+import { BreakdownData } from '@/types/Datacubes';
 import { TemporalAggregationLevel } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
@@ -189,6 +190,44 @@ export default function useTimeseriesData(
     }
   );
 
+  const temporalBreakdownData = computed<BreakdownData | null>(() => {
+    if (rawTimeseriesData.value.length === 0) return null;
+    const result: {
+      id: string;
+      values: { [modelRunId: string]: number };
+    }[] = [];
+    rawTimeseriesData.value.map(({ points }, index) => {
+      const brokenDownByYear = _.groupBy(points, point =>
+        getYearFromTimestamp(point.timestamp)
+      );
+      const summed = Object.entries(brokenDownByYear).map(([year, values]) => {
+        const sum = _.sumBy(values, 'value');
+        return {
+          year,
+          value: sum
+        };
+      });
+      const modelRunId = modelRunIds.value[index];
+      summed.forEach(({ year, value }) => {
+        const entryForThisYear = result.find(entry => entry.id === year);
+        if (entryForThisYear === undefined) {
+          // Add an entry for this year
+          result.push({
+            id: year,
+            values: { [modelRunId]: value }
+          });
+        } else {
+          // Add a value to this year's entry
+          entryForThisYear.values[modelRunId] = value;
+        }
+      });
+    });
+
+    return {
+      Year: result
+    };
+  });
+
   const processedTimeseriesData = computed(() => {
     if (rawTimeseriesData.value.length === 0) {
       return {
@@ -235,6 +274,7 @@ export default function useTimeseriesData(
       () => processedTimeseriesData.value.baselineMetadata
     ),
     relativeTo,
-    setRelativeTo
+    setRelativeTo,
+    temporalBreakdownData
   };
 }

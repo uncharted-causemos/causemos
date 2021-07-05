@@ -87,6 +87,7 @@
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
             :regional-data="regionalData"
+            :temporal-breakdown-data="temporalBreakdownData"
             :unit="unit"
             :selected-spatial-aggregation="selectedSpatialAggregation"
             :selected-timestamp="selectedTimestamp"
@@ -272,7 +273,8 @@ export default defineComponent({
       timeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      setRelativeTo,
+      temporalBreakdownData
     } = useTimeseriesData(
       metadata,
       selectedModelId,
@@ -338,7 +340,8 @@ export default defineComponent({
       relativeTo,
       setRelativeTo,
       breakdownOption,
-      setBreakdownOption
+      setBreakdownOption,
+      temporalBreakdownData
     };
   },
   watch: {
