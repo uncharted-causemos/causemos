@@ -78,7 +78,6 @@ export default defineComponent({
 .question-text {
   padding: 8px;
   width: 100%;
-  margin-right: 10px;
   background-color: white;
   border-color: gray;
   border-width: thin;
