@@ -100,9 +100,11 @@ export default defineComponent({
     async onClickUpload() {
       this.loading = true;
       this.sendStatus = 'Sending file. Please wait...';
+      const names = [];
       const formData = new FormData();
       for (let i = 0; i < this.inputFile.length; i++) {
         formData.append('file', this.inputFile[i]);
+        names.push(this.inputFile[i].name);
       }
       formData.append('metadata', JSON.stringify({
         genre: this.metadataGenre,
@@ -112,7 +114,7 @@ export default defineComponent({
 
       // TODO: save project to  doc_id mapping
       await dartService.uploadDocument(formData);
-      this.toaster(`Successfully uploaded ${this.inputFile.name}. Please see <page> to view reader status and to start knowledge reassembly`, 'success', false);
+      this.toaster(`Successfully uploaded ${names.join(', ')} for processing`, 'success', false);
       this.loading = false;
       this.metadataGenre = '';
       this.metadataLabels = '';
