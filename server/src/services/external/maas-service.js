@@ -55,8 +55,9 @@ const startModelOutputPostProcessing = async (metadata) => {
 
   const runName = `${metadata.model_name} : ${metadata.id}`;
   const flowParameters = {
-    model_id: metadata.model_id,
+    data_id: metadata.model_id,
     run_id: metadata.id,
+    doc_ids: [metadata.id],
     data_paths: metadata.data_paths,
     compute_tiles: false
   };
@@ -208,7 +209,7 @@ const startIndicatorPostProcessing = async (metadata) => {
 
   const runName = `${metadata.name} : ${metadata.id}`;
   const flowParameters = {
-    model_id: metadata.id,
+    data_id: metadata.id,
     doc_ids: newIndicatorMetadata.map(indicatorMetadata => indicatorMetadata.id),
     run_id: 'indicator',
     data_paths: metadata.data_paths,

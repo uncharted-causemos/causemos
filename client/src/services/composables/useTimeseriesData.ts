@@ -88,14 +88,14 @@ const applyRelativeTo = (
 };
 
 /**
- * Takes a model ID, a list of model run IDs, and a colouring function,
+ * Takes a data ID, a list of model run IDs, and a colouring function,
  * fetches the timeseries data for each run, then assigns a colour to
  * each timeseries using the colouring function, returning the resulting
  * list of Timeseries objects.
  */
 export default function useTimeseriesData(
   metadata: Ref<Datacube | null>,
-  modelId: Ref<string>,
+  dataId: Ref<string>,
   modelRunIds: Ref<string[]>,
   selectedTemporalResolution: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
@@ -143,7 +143,7 @@ export default function useTimeseriesData(
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
-            model_id: modelId.value,
+            data_id: dataId.value,
             run_id: runId,
             feature: outputs[currentOutputIndex.value].name,
             resolution: temporalRes,
