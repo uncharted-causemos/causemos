@@ -364,6 +364,10 @@ export default defineComponent({
     // FIXME: actually read the value of the default output variable from the metadata
     // later, this value will be persisted per analysis
     this.setCurrentOutputIndex(0);
+
+    // ensure the insight explorer panel is closed in case the user has
+    //  previously opened it and clicked the browser back button
+    this.hideInsightPanel();
   },
   computed: {
     ...mapGetters({
@@ -372,7 +376,8 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
+      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
+      hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
