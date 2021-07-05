@@ -442,13 +442,14 @@ class CAGRenderer extends SVGRenderer {
     const drag = d3.drag()
       .on('start', async (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
+        const graph = evt.subject.parent.data; // FIXME - we should avoid this kind of data access, we should probably pass projectID into the renderer directly
 
         // Begin processing to highlight nodes that have evidence for an edge originating from the source
         const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
-        const project_id = evt.subject.parent.data.project_id;
-        const nodesInGraph = evt.subject.parent.data.nodes;
+        const project_id = graph.project_id;
+        const nodesInGraph = graph.nodes;
 
-        const edgesInGraph = evt.subject.parent.data.edges;
+        const edgesInGraph = graph.edges;
         const edgesFromSource = edgesInGraph.filter(edge => edge.source === sourceNode.concept);
         const conceptsInGraph = nodesInGraph.map(node => node.concept);
 
