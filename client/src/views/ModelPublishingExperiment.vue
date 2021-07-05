@@ -112,6 +112,7 @@
             :output-source-specs="outputSpecs"
             :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
+            :temporal-breakdown-data="temporalBreakdownData"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
@@ -308,7 +309,8 @@ export default defineComponent({
       timeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      setRelativeTo,
+      temporalBreakdownData
     } = useTimeseriesData(
       metadata,
       selectedModelId,
@@ -354,7 +356,8 @@ export default defineComponent({
       setRelativeTo,
       breakdownOption,
       setBreakdownOption,
-      projectId
+      projectId,
+      temporalBreakdownData
     };
   },
   beforeRouteLeave() {
