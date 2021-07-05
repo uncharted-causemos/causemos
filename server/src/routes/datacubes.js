@@ -29,7 +29,8 @@ router.put('/:datacubeId', asyncHandler(async (req, res) => {
  */
 router.get('/', asyncHandler(async (req, res) => {
   const filters = filtersUtil.parse(req.query.filters);
-  const result = await datacubeService.getDatacubes(filters);
+  const options = JSON.parse(req.query.options) || {};
+  const result = await datacubeService.getDatacubes(filters, options);
   res.json(result);
 }));
 

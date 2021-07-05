@@ -82,7 +82,7 @@ export default {
         return;
       }
       domainProjectService.getProject(this.project).then(project => {
-        this.setProjectMetadata({ name: project.name });
+        this.setProjectMetadata(project);
       });
     },
     refresh() {

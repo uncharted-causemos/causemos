@@ -91,7 +91,7 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      project: 'insightPanel/projectId',
+      project: 'app/project',
       currentView: 'app/currentView',
       currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',

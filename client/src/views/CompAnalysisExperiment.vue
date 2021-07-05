@@ -162,8 +162,6 @@ export default defineComponent({
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
     const datacubeId = analysisItem.value[0].id;
 
-    const projectId = computed(() => store.getters['app/project']);
-
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
     const selectedModelId = ref(datacubeId);
@@ -225,7 +223,6 @@ export default defineComponent({
         // note: this value of metadata may be undefined while model is still being loaded
         store.dispatch('insightPanel/setContextId', metadata.value?.id);
       }
-      store.dispatch('insightPanel/setProjectId', projectId.value);
     });
 
     const selectedTemporalResolution = ref('month');

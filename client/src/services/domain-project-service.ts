@@ -24,8 +24,8 @@ const createDomainProject = async (projectName: string, projectDescription: stri
   return result.data.id;
 };
 
-const updateDomainProject = async (projectId: string, fields: { [key: string]: any }) => {
-  const result = await API.put(`domain-projects/${projectId}`, fields);
+const updateDomainProject = async (projectName: string, fields: { [key: string]: any }) => {
+  const result = await API.put(`domain-projects/${projectName}`, fields);
   return result.data;
 };
 

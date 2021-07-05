@@ -23,6 +23,13 @@ export enum ProjectType {
   Analysis = 'analysis'
 }
 
+export enum FeatureQualifierRoles {
+  Weight = 'weight',
+  Statistics = 'statistics',
+  Breakdown = 'breakdown',
+  Tooltip = 'tooltip'
+}
+
 export enum DatacubeAttributeVariableType {
   Int = 'int',
   Float = 'float',
