@@ -18,28 +18,28 @@
     <div
       class="row project-card-header"
       @click="toggleShowMore()">
-      <div class="col-sm-4">
+      <div class="col-sm-3 no-padding">
         <i
           :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
         />
         <button
           type="button"
-          class="btn btn-link"
-          style="padding-left: 8px"
+          class="btn btn-link no-padding"
+          style="margin-left: 1rem;"
           @click="open(project.id)">
           <span class="overflow-ellipsis project-name">{{project.name}}</span>
         </button>
       </div>
-      <div class="col-sm-2 number-col">
+      <div class="col-sm-1 text-center no-padding">
         {{ project.ready_instances.length }} | <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
       </div>
-      <div class="col-sm-2 number-col">
+      <div class="col-sm-2 text-center no-padding">
         {{ project.type }}
       </div>
-      <div class="col-sm-2" style="text-align: center">
+      <div class="col-sm-3 text-center no-padding overflow-ellipsis">
         {{ project.source }}
       </div>
-      <div class="col-sm-2">
+      <div class="col-sm-3 no-padding">
         {{ dateFormatter(project.modified_at) }}
       </div>
     </div>
@@ -50,7 +50,7 @@
       <div class="row">
         <div class="col-sm-12 details">
           <div>
-            <p><b>{{project.description}}</b></p>
+            <p>{{project.description}}</p>
           </div>
         </div>
       </div>
@@ -141,7 +141,13 @@ export default defineComponent({
     open(id: string) {
       // Reset filters every time we open a new project
       this.clearLastQuery();
-      this.$router.push({ name: 'domainDatacubeOverview', params: { project: id, projectType: this.project.type } });
+      this.$router.push({
+        name: 'domainDatacubeOverview',
+        params: {
+          project: id,
+          projectType: this.project.type
+        }
+      });
     }
   }
 });
@@ -156,6 +162,8 @@ export default defineComponent({
   border: 1px solid #dedede;
   margin: 1px 0;
   padding: 10px;
+  padding-top: 5px;
+  padding-bottom: 5px;
 }
 
 .project-card-container:hover {
@@ -170,10 +178,8 @@ export default defineComponent({
 
 .project-card-header {
   i {
-    margin-left: 20px;
+    margin-left: 15px;
   }
-  padding-bottom: 5px;
-  padding-top: 5px;
 }
 
 .project-card-content {
@@ -201,9 +207,12 @@ export default defineComponent({
   }
 }
 
-.number-col {
-  text-align: right;
-  padding-right: 30px;
+.text-center {
+  text-align: center;
+}
+
+.no-padding {
+  padding: 0;
 }
 
 .remove-button {

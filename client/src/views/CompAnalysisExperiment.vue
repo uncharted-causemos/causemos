@@ -163,8 +163,6 @@ export default defineComponent({
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
     const datacubeId = analysisItem.value[0].id;
 
-    const projectId = computed(() => store.getters['app/project']);
-
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
     const selectedModelId = ref(datacubeId);
@@ -226,7 +224,6 @@ export default defineComponent({
         // note: this value of metadata may be undefined while model is still being loaded
         store.dispatch('insightPanel/setContextId', metadata.value?.id);
       }
-      store.dispatch('insightPanel/setProjectId', projectId.value);
     });
 
     const selectedTemporalResolution = ref('month');
@@ -367,6 +364,10 @@ export default defineComponent({
     // FIXME: actually read the value of the default output variable from the metadata
     // later, this value will be persisted per analysis
     this.setCurrentOutputIndex(0);
+
+    // ensure the insight explorer panel is closed in case the user has
+    //  previously opened it and clicked the browser back button
+    this.hideInsightPanel();
   },
   computed: {
     ...mapGetters({
@@ -375,7 +376,8 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
+      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
+      hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;

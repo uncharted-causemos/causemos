@@ -5,7 +5,7 @@ const projectService = rootRequire('/services/project-service');
 const dartService = rootRequire('/services/external/dart-service');
 const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
 
-const READER_OUTPUT_POLL_INTERVAL = 30 * 60 * 1000; // in milliseconds
+const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
 
 /**
  * Runs start up jobs, e.g. any type of prefetching of sanity checks

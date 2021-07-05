@@ -128,6 +128,7 @@ export default {
   computed: {
     ...mapGetters({
       currentView: 'app/currentView',
+      projectType: 'app/projectType',
       currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
 
@@ -138,7 +139,7 @@ export default {
       dataState: 'insightPanel/dataState',
       viewState: 'insightPanel/viewState',
       contextId: 'insightPanel/contextId',
-      project: 'insightPanel/projectId',
+      project: 'app/project',
 
       filters: 'dataSearch/filters',
       ontologyConcepts: 'dataSearch/ontologyConcepts',
@@ -173,7 +174,7 @@ export default {
       //  in the full list of insights,
       //  or as a context specific insight when opening the page of the corresponding model family instance
       //  (the latter is currently supported via a special route named dataPreview)
-      return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview'] : this.currentView;
+      return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview'] : this.currentView;
     },
     metadataDetails() {
       const arr = [];
