@@ -477,6 +477,7 @@ class CAGRenderer extends SVGRenderer {
               .attr('transform', `translate(${pointerX}, ${pointerY}) scale(1.5)`)
               .attr('fill', calcEdgeColor(edge))
               .attr('opactiy', 0)
+              .style('pointer-events', 'none')
               .transition()
               .duration(300)
               .attr('opacity', 1);
