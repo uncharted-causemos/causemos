@@ -473,7 +473,7 @@ class CAGRenderer extends SVGRenderer {
               .append('svg:path')
               .attr('d', svgUtil.ARROW)
               .classed('edge-possibility-indicator', true)
-              .attr('transform', 'translate(' + pointerX + ',' + pointerY + ')')
+              .attr('transform', `translate(${pointerX}, ${pointerY}) scale(1.5)`)
               .attr('fill', calcEdgeColor(edge))
               .attr('opactiy', 0)
               .transition()
