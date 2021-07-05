@@ -466,7 +466,6 @@ class CAGRenderer extends SVGRenderer {
           const resultEdgesTrimmed = resultEdges.filter(edge => !edgesFromSource.some(edgeFromSource => edge.target === edgeFromSource.target)); // trim nodes that already have edge from this source
 
           resultEdgesTrimmed.forEach(edge => {
-            console.log(edge);
             const targetNode = getLayoutNodeById(edge.target);
             const pointerX = targetNode.x;
             const pointerY = targetNode.y + (targetNode.height * 0.5);
@@ -522,7 +521,6 @@ class CAGRenderer extends SVGRenderer {
 
         // remove edge indicators
         const indicators = d3.selectAll('.edge-possibility-indicator');
-        console.log('indicators: ', indicators);
         indicators
           .transition()
           .duration(300)
