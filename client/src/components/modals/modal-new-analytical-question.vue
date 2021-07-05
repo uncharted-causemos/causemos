@@ -63,7 +63,7 @@ export default defineComponent({
 
 ::v-deep(.modal-container) {
   .modal-body {
-    overflow-y: scroll;
+    overflow-y: auto;
   }
 }
 
