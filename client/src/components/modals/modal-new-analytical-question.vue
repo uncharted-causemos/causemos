@@ -7,7 +7,7 @@
       <textarea
         v-model="questionText"
         type="text"
-        placeholder="question text here..."
+        placeholder="Enter a new analytical question"
         rows="3"
         class="question-text"
       />
