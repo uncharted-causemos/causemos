@@ -206,7 +206,7 @@ export default defineComponent({
 
       const question_id = evt.dataTransfer.getData('question_id');
       if (question_id !== '') {
-        // TODO: swap questions: question_id and questionItem.id
+        // swap questions: question_id and questionItem.id
         const questions = _.cloneDeep(this.questionsList);
         const i1 = questions.findIndex(q => q.id === question_id);
         const i2 = questions.findIndex(q => q.id === questionItem.id);
