@@ -157,6 +157,30 @@ class CAGRenderer extends SVGRenderer {
       .style('fill', d => calcEdgeColor(d.data))
       .style('stroke', 'none');
 
+    // node indicator defs
+    svg.select('defs')
+      .selectAll('.node-indicator')
+      .data(nodes)
+      .enter()
+      .append('marker')
+      .classed('node-indicator', true)
+      .attr('id', d => {
+        const target = d.data.concept.replace(/\s/g, '');
+        return `indicator-${target}`;
+      })
+      .attr('viewBox', svgUtil.MARKER_VIEWBOX)
+      .attr('refX', 2)
+      .attr('refY', 0)
+      .attr('orient', 'auto')
+      .attr('markerWidth', 15)
+      .attr('markerHeight', 15)
+      .attr('markerUnits', 'userSpaceOnUse')
+      .attr('xoverflow', 'visible')
+      .append('svg:path')
+      .attr('d', svgUtil.ARROW)
+      // .style('fill', d => calcEdgeColor(d.data))
+      .style('stroke', 'none');
+
     svg.select('defs')
       .selectAll('.edge-marker-start')
       .data(edges)
@@ -450,13 +474,10 @@ class CAGRenderer extends SVGRenderer {
 
         const edgesInGraph = evt.subject.parent.data.edges;
         const edgesFromSource = edgesInGraph.filter(edge => edge.source === sourceNode.concept);
-
-        const highlightOptions = {
-          color: SELECTED_COLOR,
-          duration: 3000
-        };
-
         const conceptsInGraph = nodesInGraph.map(node => node.concept);
+
+        const svg = this.svgEl;
+        const foregroundLayer = d3.select(svg).select('.data-layer');
 
         const filters = {
           clauses: [
@@ -466,9 +487,24 @@ class CAGRenderer extends SVGRenderer {
 
         projectService.getProjectGraph(project_id, filters).then(d => {
           const resultEdges = d.edges; // contains all possible edges in the project originating from the source
-          const resultEdgesTrimmed = resultEdges.filter(edge => !edgesFromSource.some(edgeFromSource => edge.target === edgeFromSource.target));
-          const nodesToHighlight = resultEdgesTrimmed.map(edge => getLayoutNodeById(edge.target).concept); // convert list of edges to list of target nodes
-          this.highlight({ nodes: nodesToHighlight, edges: [] }, highlightOptions); // highlight possible target nodes
+          const resultEdgesTrimmed = resultEdges.filter(edge => !edgesFromSource.some(edgeFromSource => edge.target === edgeFromSource.target)); // trim nodes that already have edge from this source
+
+          resultEdgesTrimmed.forEach(edge => {
+            console.log(edge);
+            const targetNode = getLayoutNodeById(edge.target);
+            const pointerX = targetNode.x;
+            const pointerY = targetNode.y + (targetNode.height * 0.5);
+            foregroundLayer
+              .append('svg:path')
+              .attr('d', svgUtil.ARROW)
+              .classed('edge-possibility-indicator', true)
+              .attr('transform', 'translate(' + pointerX + ',' + pointerY + ')')
+              .attr('fill', calcEdgeColor(edge))
+              .attr('opactiy', 0)
+              .transition()
+              .duration(300)
+              .attr('opacity', 1);
+          });
         });
       })
       .on('drag', (evt) => {
@@ -507,6 +543,15 @@ class CAGRenderer extends SVGRenderer {
 
         this.disableNodeHandles();
         this.resetDragState();
+
+        // remove edge indicators
+        const indicators = d3.selectAll('.edge-possibility-indicator');
+        console.log('indicators: ', indicators);
+        indicators
+          .transition()
+          .duration(300)
+          .style('opacity', 0)
+          .remove();
 
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
         temporaryNewEdge = { sourceNode, targetNode };
