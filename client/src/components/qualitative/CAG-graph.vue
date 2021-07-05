@@ -157,30 +157,6 @@ class CAGRenderer extends SVGRenderer {
       .style('fill', d => calcEdgeColor(d.data))
       .style('stroke', 'none');
 
-    // node indicator defs
-    svg.select('defs')
-      .selectAll('.node-indicator')
-      .data(nodes)
-      .enter()
-      .append('marker')
-      .classed('node-indicator', true)
-      .attr('id', d => {
-        const target = d.data.concept.replace(/\s/g, '');
-        return `indicator-${target}`;
-      })
-      .attr('viewBox', svgUtil.MARKER_VIEWBOX)
-      .attr('refX', 2)
-      .attr('refY', 0)
-      .attr('orient', 'auto')
-      .attr('markerWidth', 15)
-      .attr('markerHeight', 15)
-      .attr('markerUnits', 'userSpaceOnUse')
-      .attr('xoverflow', 'visible')
-      .append('svg:path')
-      .attr('d', svgUtil.ARROW)
-      // .style('fill', d => calcEdgeColor(d.data))
-      .style('stroke', 'none');
-
     svg.select('defs')
       .selectAll('.edge-marker-start')
       .data(edges)
