@@ -18,24 +18,25 @@
     <div
       class="row project-card-header"
       @click="toggleShowMore()">
-      <div class="col-sm-4">
+      <div class="col-sm-3 no-padding">
         <i
           :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
         />
         <button
           type="button"
-          class="btn btn-link"
+          class="btn btn-link no-padding"
+          style="margin-left: 1rem;"
           @click="open(project.id)">
           <span class="overflow-ellipsis project-name">{{project.name}}</span>
         </button>
       </div>
-      <div class="col-sm-2 number-col">
+      <div class="col-sm-2 text-center no-padding">
         {{ dataAnalysisCount }}
       </div>
-      <div class="col-sm-4">
+      <div class="col-sm-4 text-center no-padding">
         {{ project.corpus_id }}
       </div>
-      <div class="col-sm-2">
+      <div class="col-sm-3 text-center no-padding" style="padding-right: 1rem">
         {{ dateFormatter(project.modified_at) }}
       </div>
     </div>
@@ -46,7 +47,7 @@
       <div class="row">
         <div class="col-sm-12 details">
           <div>
-            <p><b>{{project.description}}</b></p>
+            <p>{{project.description}}</p>
           </div>
         </div>
       </div>
@@ -152,7 +153,8 @@ export default defineComponent({
   background: #fcfcfc;
   border: 1px solid #dedede;
   margin: 1px 0;
-  padding: 10px;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .project-card-container:hover {
@@ -198,9 +200,12 @@ export default defineComponent({
   }
 }
 
-.number-col {
-  text-align: right;
-  padding-right: 30px;
+.text-center {
+  text-align: center;
+}
+
+.no-padding {
+  padding: 0;
 }
 
 .remove-button {

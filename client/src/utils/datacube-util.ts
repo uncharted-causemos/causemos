@@ -1,4 +1,4 @@
-import { DatacubeFeature, Model, Datacube } from '@/types/Datacube';
+import { DatacubeFeature, Model, Indicator, Datacube } from '@/types/Datacube';
 import { DatacubeType } from '@/types/Enums';
 import { FieldMap, field, searchable } from './lex-util';
 
@@ -80,6 +80,9 @@ export function isModel(datacube: Datacube): datacube is Model {
   return datacube.type === DatacubeType.Model;
 }
 
+export function isIndicator(datacube: Datacube): datacube is Indicator {
+  return datacube.type === DatacubeType.Indicator;
+}
 
 export default {
   CODE_TABLE,

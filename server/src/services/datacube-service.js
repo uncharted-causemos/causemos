@@ -12,9 +12,12 @@ const getAllDatacubes = async() => {
 /**
  * Return datacubes that match the provided filter
  */
-const getDatacubes = async(filter) => {
+const getDatacubes = async(filter, options) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.find(filter, { size: SEARCH_LIMIT });
+  if (!options.size) {
+    options.size = SEARCH_LIMIT;
+  }
+  return await connection.find(filter, options);
 };
 
 /**

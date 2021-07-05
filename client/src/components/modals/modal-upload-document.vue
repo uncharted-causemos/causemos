@@ -1,10 +1,14 @@
 <template>
   <modal @close="close()">
     <template #header>
-      <h4><i class="fa fa-upload" /> Upload Document</h4>
+      <h4><i class="fa fa-upload" /> Add Documents</h4>
     </template>
     <template #body>
       <div>
+        <p>
+        Based on the numbers and sizes of documents, it may 10 to 20 minutes to process, assemble,
+        and ingest into the project.
+        </p>
         <form>
           <input
             ref="files"
@@ -13,7 +17,7 @@
             accept=".html, .csv, .doc, .pdf, .txt"
             class="form-control-file"
             @change="updateInputFile">
-          <p class="instruction-set">.html, .csv, .doc, .pdf, or .txt (max. 100MB) </p>
+          <p class="instruction-set">.html, .csv, .doc, .pdf, or .txt (max. 100MB total) </p>
           <div v-if="inputFile">
             <table class="table table-condensed table-bordered">
               <tbody>
@@ -96,9 +100,11 @@ export default defineComponent({
     async onClickUpload() {
       this.loading = true;
       this.sendStatus = 'Sending file. Please wait...';
+      const names = [];
       const formData = new FormData();
       for (let i = 0; i < this.inputFile.length; i++) {
         formData.append('file', this.inputFile[i]);
+        names.push(this.inputFile[i].name);
       }
       formData.append('metadata', JSON.stringify({
         genre: this.metadataGenre,
@@ -108,7 +114,7 @@ export default defineComponent({
 
       // TODO: save project to  doc_id mapping
       await dartService.uploadDocument(formData);
-      this.toaster(`Successfully uploaded ${this.inputFile.name}. Please see <page> to view reader status and to start knowledge reassembly`, 'success', false);
+      this.toaster(`Successfully uploaded ${names.join(', ')} for processing`, 'success', false);
       this.loading = false;
       this.metadataGenre = '';
       this.metadataLabels = '';
