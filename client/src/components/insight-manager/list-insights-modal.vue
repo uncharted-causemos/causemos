@@ -81,7 +81,7 @@
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
                 @update-curation="updateCuration(insight.id)"
-                draggable
+                draggable='true'
                 @dragstart="startDrag($event, insight)"
                 @dragend="dragEnd($event)"
               />
