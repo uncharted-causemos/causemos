@@ -50,9 +50,14 @@ const getFactorRecommendations = async (projectId, statementIds, factor, numReco
     headers: headers,
     json: payload
   };
-  const result = await requestAsPromise(options);
-  result.recommendations = await _mapRegroundingRecommendationsToStatementIds(projectId, statementIds, result.recommendations);
-  result.recommendations = result.recommendations.slice(0, numRecommendations);
+  let result = { recommendations: [] };
+  try {
+    result = await requestAsPromise(options);
+    result.recommendations = await _mapRegroundingRecommendationsToStatementIds(projectId, statementIds, result.recommendations);
+    result.recommendations = result.recommendations.slice(0, numRecommendations);
+  } catch (err) {
+    Logger.error(err);
+  }
   return result;
 };
 
@@ -81,9 +86,14 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
     headers: headers,
     json: payload
   };
-  const result = await requestAsPromise(options);
-  result.recommendations = await _mapPolarityRecommendationsToStatements(projectId, statementIds, polarity, result.recommendations);
-  result.recommendations = result.recommendations.slice(0, numRecommendations);
+  let result = { recommendations: [] };
+  try {
+    result = await requestAsPromise(options);
+    result.recommendations = await _mapPolarityRecommendationsToStatements(projectId, statementIds, polarity, result.recommendations);
+    result.recommendations = result.recommendations.slice(0, numRecommendations);
+  } catch (err) {
+    Logger.error(err);
+  }
   return result;
 };
 
@@ -107,8 +117,13 @@ const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, nu
     headers: headers,
     json: payload
   };
-  const result = await requestAsPromise(options);
-  result.recommendations = await _mapEmptyEdgeRecommendationsToStatements(projectId, result.recommendations);
+  let result = { recommendations: [] };
+  try {
+    result = await requestAsPromise(options);
+    result.recommendations = await _mapEmptyEdgeRecommendationsToStatements(projectId, result.recommendations);
+  } catch (err) {
+    Logger.error(err);
+  }
   return result;
 };
 
@@ -146,8 +161,8 @@ const _getStatementsForRegroundingRecommendations = async (projectId, statementI
             terms: { id: statementIds }
           },
           should: [
-            { terms: { 'subj.factor': factors } },
-            { terms: { 'obj.factor': factors } }
+            { terms: { 'subj.factor.raw': factors } },
+            { terms: { 'obj.factor.raw': factors } }
           ],
           minimum_should_match: 1
         }
@@ -219,8 +234,8 @@ const _getStatementsForPolarityRecommendations = async (projectId, statementIds,
             return {
               bool: {
                 must: [
-                  { term: { 'subj.factor': r.subj_factor } },
-                  { term: { 'obj.factor': r.obj_factor } }
+                  { term: { 'subj.factor.raw': r.subj_factor } },
+                  { term: { 'obj.factor.raw': r.obj_factor } }
                 ]
               }
             };
