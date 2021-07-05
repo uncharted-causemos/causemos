@@ -1,10 +1,14 @@
 <template>
   <modal @close="close()">
     <template #header>
-      <h4><i class="fa fa-upload" /> Upload Document</h4>
+      <h4><i class="fa fa-upload" /> Add Documents</h4>
     </template>
     <template #body>
       <div>
+        <p>
+        Based on the numbers and sizes of documents, it may 10 to 20 minutes to process, assemble,
+        and ingest into the project.
+        </p>
         <form>
           <input
             ref="files"
@@ -13,7 +17,7 @@
             accept=".html, .csv, .doc, .pdf, .txt"
             class="form-control-file"
             @change="updateInputFile">
-          <p class="instruction-set">.html, .csv, .doc, .pdf, or .txt (max. 100MB) </p>
+          <p class="instruction-set">.html, .csv, .doc, .pdf, or .txt (max. 100MB total) </p>
           <div v-if="inputFile">
             <table class="table table-condensed table-bordered">
               <tbody>
