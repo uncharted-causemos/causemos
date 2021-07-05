@@ -197,18 +197,24 @@ export default function useTimeseriesData(
       values: { [modelRunId: string]: number };
     }[] = [];
     rawTimeseriesData.value.map(({ points }, index) => {
+      // Group points by year
       const brokenDownByYear = _.groupBy(points, point =>
         getYearFromTimestamp(point.timestamp)
       );
-      const summed = Object.entries(brokenDownByYear).map(([year, values]) => {
+      // Aggregate points to get one value for each year
+      const reduced = Object.entries(brokenDownByYear).map(([year, values]) => {
         const sum = _.sumBy(values, 'value');
+        const aggregateValue = selectedTemporalAggregation.value === 'mean'
+          ? sum / values.length
+          : sum;
         return {
           year,
-          value: sum
+          value: aggregateValue
         };
       });
+      // Restructure into the BreakdownData format
       const modelRunId = modelRunIds.value[index];
-      summed.forEach(({ year, value }) => {
+      reduced.forEach(({ year, value }) => {
         const entryForThisYear = result.find(entry => entry.id === year);
         if (entryForThisYear === undefined) {
           // Add an entry for this year

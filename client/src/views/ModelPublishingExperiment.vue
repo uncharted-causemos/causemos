@@ -108,6 +108,7 @@
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
             :deselected-region-ids="deselectedRegionIds"

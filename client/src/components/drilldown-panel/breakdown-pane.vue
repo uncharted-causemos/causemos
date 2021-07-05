@@ -90,7 +90,7 @@
       <template #aggregation-description>
         <p class="aggregation-description">
           Aggregated by
-          <strong>sum</strong
+          <strong>{{ selectedTemporalAggregation }}</strong
           >.
         </p>
       </template>
@@ -153,6 +153,10 @@ export default defineComponent({
       default: null
     },
     selectedSpatialAggregation: {
+      type: String as PropType<string | null>,
+      default: 'mean'
+    },
+    selectedTemporalAggregation: {
       type: String as PropType<string | null>,
       default: 'mean'
     },

@@ -58,6 +58,16 @@
         </div>
       </template>
 
+      <template #temporal-aggregation-config>
+        <dropdown-button
+          class="dropdown-config"
+          :inner-button-label="'Temporal Resolution'"
+          :items="['mean', 'sum']"
+          :selected-item="selectedTemporalResolution"
+          @item-selected="item => selectedTemporalAggregation = item"
+        />
+      </template>
+
       <template #spatial-aggregation-config>
         <dropdown-button
           class="spatial-aggregation"
@@ -90,6 +100,7 @@
             :temporal-breakdown-data="temporalBreakdownData"
             :unit="unit"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
             :selected-timestamp="selectedTimestamp"
             :selected-scenario-ids="selectedScenarioIds"
             :deselected-region-ids="deselectedRegionIds"
