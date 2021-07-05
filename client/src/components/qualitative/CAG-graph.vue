@@ -10,6 +10,13 @@
       :concepts-in-cag="conceptsInCag"
       :placement="{ x: newNodeX, y: newNodeY }"
       @suggestion-selected="onSuggestionSelected"
+      @show-custom-grounding="showCustomGrounding = true"
+    />
+    <modal-custom-grounding
+      v-if="showCustomGrounding"
+      ref="customGrounding"
+      @close="showCustomGrounding = false"
+      @add-custom-grounding="addCustomGrounding"
     />
     <color-legend
       :show-cag-encodings="true" />
@@ -33,6 +40,7 @@ import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
+import ModalCustomGrounding from '@/components/modals/modal-custom-grounding.vue';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
@@ -605,7 +613,8 @@ export default {
   name: 'CAGGraph',
   components: {
     NewNodeConceptSelect,
-    ColorLegend
+    ColorLegend,
+    ModalCustomGrounding
   },
   props: {
     data: {
@@ -624,7 +633,8 @@ export default {
   data: () => ({
     selectedNode: '',
     newNodeX: 0,
-    newNodeY: 0
+    newNodeY: 0,
+    showCustomGrounding: false
   }),
   computed: {
     ...mapGetters({
@@ -763,6 +773,9 @@ export default {
     this.mouseTrap.reset();
   },
   methods: {
+    addCustomGrounding(value) {
+      console.log(`Emitted custom grounding: ${JSON.stringify(value)}`);
+    },
     async refresh() {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data);
