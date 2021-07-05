@@ -1,12 +1,21 @@
 <template>
   <div class="new-node-container" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
-    <input
-      ref="input"
-      v-model="userInput"
-      type="text"
-      placeholder="Type a concept"
-      @keydown="onKeyDown"
-    >
+    <div class="new-node-top">
+      <input
+        ref="input"
+        v-model="userInput"
+        type="text"
+        placeholder="Type a concept"
+        @keydown="onKeyDown"
+      >
+      <button
+        class="mx-2"
+        style="border: none; background-color: white;"
+        @click="showCustomGrounding"
+      >
+        <i class="fa fa-plus-circle"></i>
+      </button>
+    </div>
     <dropdown-control class="suggestion-dropdown">
       <template #content>
         <div
@@ -54,7 +63,8 @@ export default {
     }
   },
   emits: [
-    'suggestion-selected'
+    'suggestion-selected',
+    'show-custom-grounding'
   ],
   data: () => ({
     userInput: '',
@@ -121,6 +131,9 @@ export default {
       this.$emit('suggestion-selected', suggestion);
       this.userInput = '';
     },
+    showCustomGrounding() {
+      this.$emit('show-custom-grounding');
+    },
     focusInput() {
       this.$refs.input.focus();
     },
@@ -165,6 +178,11 @@ export default {
     border: none;
     border-radius: 4px;
   }
+}
+
+.new-node-top {
+  display: flex;
+  flex-direction: row;
 }
 
 .suggestion-dropdown {
