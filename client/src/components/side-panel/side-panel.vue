@@ -73,6 +73,7 @@ export default defineComponent({
       default: false
     }
   },
+  emits: ['set-active'],
   computed: {
     isPanelOpen() {
       for (let i = 0; i < this.tabs.length; i++) {

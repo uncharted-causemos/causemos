@@ -31,9 +31,9 @@ router.post('/', asyncHandler(async (req, res) => {
 /**
  * PUT update an existing project
  */
-router.put('/:id', asyncHandler(async (req, res) => {
-  const projectId = req.params.id;
-  await domainProjectService.updateProject(projectId, req.body);
+router.put('/:name', asyncHandler(async (req, res) => {
+  const projectName = req.params.name;
+  await domainProjectService.updateProject(projectName, req.body);
   res.status(200).send({});
 }));
 

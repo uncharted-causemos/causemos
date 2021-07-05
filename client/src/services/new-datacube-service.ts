@@ -8,8 +8,8 @@ import fu from '@/utils/filters-util';
  * Get datacubes
  * @param {Filters} filters
  */
-export const getDatacubes = async (filters: Filters) => {
-  const { data } = await API.get('maas/new-datacubes', { params: { filters: filters } });
+export const getDatacubes = async (filters: Filters, options = {}) => {
+  const { data } = await API.get('maas/new-datacubes', { params: { filters: filters, options: options } });
   return data;
 };
 

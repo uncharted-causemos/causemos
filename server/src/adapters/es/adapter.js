@@ -21,7 +21,6 @@ const RESOURCE = Object.freeze({
   STATEMENT: 'statement',
   DOCUMENT: 'corpus',
   DOCUMENT_CONTEXT: 'document-context',
-  PROJECT_EXTENSION: 'project-extension',
 
   // Quantitative data
   NODE_PARAMETER: 'node-parameter',
@@ -37,7 +36,12 @@ const RESOURCE = Object.freeze({
   INSIGHT: 'insight',
   ONTOLOGY: 'ontology',
   SESSION_LOG: 'session-log',
-  INDICATOR_METADATA: 'indicator-metadata'
+  INDICATOR_METADATA: 'indicator-metadata',
+
+
+  // Tracking
+  ASSEMBLY_REQUEST: 'assembly-request',
+  PROJECT_EXTENSION: 'project-extension'
 });
 
 class Adapter {
