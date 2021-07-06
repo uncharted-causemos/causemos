@@ -12,7 +12,6 @@
       :class="{ 'is-outgoing-arrow': isDriver }"
       :viewBox="MARKER_VIEWBOX"
     >
-      <!-- TODO: show edge polarity and strength -->
       <line x1="-5" y1="0" x2="0" y2="0" :style="edgeStyle"/>
       <path :d="ARROW" :fill="edgeColor" stroke="none" />
     </svg>
