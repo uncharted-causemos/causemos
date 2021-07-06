@@ -1,7 +1,7 @@
 <template>
   <div class="graph-node-container">
     <header>
-      {{ name }}
+      {{ node.label }}
     </header>
     <div class="graph">
       <!-- TODO: draw a little chart here -->
@@ -22,14 +22,19 @@
 </template>
 
 <script lang="ts">
-import { defineComponent } from 'vue';
+import { defineComponent, PropType } from 'vue';
 import { ARROW, MARKER_VIEWBOX } from '@/utils/svg-util';
+import { EdgeParameter, NodeParameter } from '@/types/CAG';
 export default defineComponent({
   name: 'GraphNode',
   props: {
-    name: {
-      type: String,
-      default: ''
+    node: {
+      type: Object as PropType<NodeParameter>,
+      required: true
+    },
+    edge: {
+      type: Object as PropType<EdgeParameter>,
+      required: true
     },
     isDriver: {
       type: Boolean,
