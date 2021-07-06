@@ -77,7 +77,7 @@
           class="dropdown-config"
           :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
           :inner-button-label="'Temporal Resolution'"
-          :items="temporalResolutions"
+          :items="Object.values(TemporalResolutionOption)"
           :selected-item="selectedTemporalResolution"
           @item-selected="handleTemporalResolutionSelection"
         />
@@ -133,7 +133,7 @@ import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
-import { AggregationOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
 import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
@@ -174,7 +174,6 @@ export default defineComponent({
     })
   },
   data: () => ({
-    temporalResolutions: [] as string[],
     initialInsightCount: -1
   }),
   setup() {
@@ -364,7 +363,8 @@ export default defineComponent({
       setBreakdownOption,
       projectId,
       temporalBreakdownData,
-      AggregationOption
+      AggregationOption,
+      TemporalResolutionOption
     };
   },
   watch: {
@@ -399,12 +399,6 @@ export default defineComponent({
       }
     }
   },
-  mounted(): void {
-    this.fetchAvailableAggregations();
-
-    // TODO: when new-runs-mode is active, clear the breakdown panel content
-    // TODO: add other viz options as per WG4 recent slides
-  },
   methods: {
     ...mapActions({
       setCurrentPublishStep: 'modelPublishStore/setCurrentPublishStep',
@@ -437,11 +431,6 @@ export default defineComponent({
     updateSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;
       this.setSelectedTimestamp(value);
-    },
-    fetchAvailableAggregations() {
-      // TODO: fetch actual available aggregations based on the pipeline support
-      this.temporalResolutions.push('year');
-      this.temporalResolutions.push('month');
     },
     updatePublishingStep(completed: boolean) {
       const currStep = this.publishingSteps.find(ps => ps.id === this.currentPublishStep);

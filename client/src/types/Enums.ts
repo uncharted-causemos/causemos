@@ -79,3 +79,8 @@ export enum AggregationOption {
   Mean = 'mean',
   Sum = 'sum'
 }
+
+export enum TemporalResolutionOption {
+  Year = 'year',
+  Month = 'month'
+}
