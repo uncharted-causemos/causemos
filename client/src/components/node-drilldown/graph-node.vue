@@ -86,6 +86,7 @@ header {
 .arrow {
   position: absolute;
   top: 50%;
+  // Make incoming arrowheads overlap the node slightly
   right: calc(100% - #{$overlap} + #{$border-width});
   width: 20px;
   height: 20px;
