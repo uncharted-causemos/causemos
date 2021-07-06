@@ -204,9 +204,10 @@ export default function useTimeseriesData(
       // Aggregate points to get one value for each year
       const reduced = Object.entries(brokenDownByYear).map(([year, values]) => {
         const sum = _.sumBy(values, 'value');
-        const aggregateValue = selectedTemporalAggregation.value === 'mean'
-          ? sum / values.length
-          : sum;
+        const aggregateValue =
+          selectedTemporalAggregation.value === 'mean'
+            ? sum / values.length
+            : sum;
         return {
           year,
           value: aggregateValue
@@ -229,8 +230,14 @@ export default function useTimeseriesData(
       });
     });
 
+    const sortedByDescendingYear = result.sort((a, b) => {
+      // localeCompare will return 1 if `a` should come after `b`, so we negate the result to
+      //  achieve descending order (e.g. 2020, 2019, 2018, ...)
+      return -a.id.localeCompare(b.id, undefined, { numeric: true });
+    });
+
     return {
-      Year: result
+      Year: sortedByDescendingYear
     };
   });
 
