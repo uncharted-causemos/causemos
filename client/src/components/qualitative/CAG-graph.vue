@@ -34,6 +34,8 @@ import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-sele
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
 
+import projectService from '@/services/project-service';
+
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
 const tweenEdgeAndNodes = false; // Flag to turn on/off path animation
@@ -434,14 +436,53 @@ class CAGRenderer extends SVGRenderer {
       .style('fill', 'white')
       .style('pointer-events', 'none')
       .text('\uf061');
-
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
     const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-
     const drag = d3.drag()
-      .on('start', (evt) => {
+      .on('start', async (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
+        const graph = evt.subject.parent.data; // FIXME - we should avoid this kind of data access, we should probably pass projectID into the renderer directly
+
+        // Begin processing to highlight nodes that have evidence for an edge originating from the source
+        const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
+        const project_id = graph.project_id;
+        const nodesInGraph = graph.nodes;
+
+        const edgesInGraph = graph.edges;
+        const edgesFromSource = edgesInGraph.filter(edge => edge.source === sourceNode.concept);
+        const conceptsInGraph = nodesInGraph.map(node => node.concept);
+
+        const svg = this.svgEl;
+        const foregroundLayer = d3.select(svg).select('.data-layer');
+
+        const filters = {
+          clauses: [
+            { field: 'subjConcept', values: [sourceNode.concept], isNot: false, operand: 'or' },
+            { field: 'objConcept', values: conceptsInGraph, isNot: false, operand: 'or' }]
+        };
+
+        projectService.getProjectGraph(project_id, filters).then(d => {
+          const resultEdges = d.edges; // contains all possible edges in the project originating from the source
+          const resultEdgesTrimmed = resultEdges.filter(edge => !edgesFromSource.some(edgeFromSource => edge.target === edgeFromSource.target)); // trim nodes that already have edge from this source
+
+          resultEdgesTrimmed.forEach(edge => {
+            const targetNode = getLayoutNodeById(edge.target);
+            const pointerX = targetNode.x;
+            const pointerY = targetNode.y + (targetNode.height * 0.5);
+            foregroundLayer
+              .append('svg:path')
+              .attr('d', svgUtil.ARROW)
+              .classed('edge-possibility-indicator', true)
+              .attr('transform', `translate(${pointerX}, ${pointerY}) scale(1.5)`)
+              .attr('fill', calcEdgeColor(edge))
+              .attr('opactiy', 0)
+              .style('pointer-events', 'none')
+              .transition()
+              .duration(300)
+              .attr('opacity', 1);
+          });
+        });
       })
       .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
@@ -479,6 +520,14 @@ class CAGRenderer extends SVGRenderer {
 
         this.disableNodeHandles();
         this.resetDragState();
+
+        // remove edge indicators
+        const indicators = d3.selectAll('.edge-possibility-indicator');
+        indicators
+          .transition()
+          .duration(300)
+          .style('opacity', 0)
+          .remove();
 
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
         temporaryNewEdge = { sourceNode, targetNode };
@@ -584,7 +633,6 @@ class CAGRenderer extends SVGRenderer {
       color: 'red',
       duration: 1000
     };
-
     const ambigEdges = [];
 
     for (const edge of graph.edges) {
