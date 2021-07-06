@@ -40,7 +40,7 @@
           Aggregated by
           <strong>{{
             selectedSpatialAggregation === ''
-              ? 'mean'
+              ? AggregationOption.Mean
               : selectedSpatialAggregation
           }}</strong
           >.
@@ -109,7 +109,7 @@ import {
 } from '@/types/Datacubes';
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import DropdownButton from '@/components/dropdown-button.vue';
-import { TemporalAggregationLevel } from '@/types/Enums';
+import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -153,11 +153,11 @@ export default defineComponent({
     },
     selectedSpatialAggregation: {
       type: String as PropType<string | null>,
-      default: 'mean'
+      default: AggregationOption.Mean
     },
     selectedTemporalAggregation: {
       type: String as PropType<string | null>,
-      default: 'mean'
+      default: AggregationOption.Mean
     },
     unit: {
       type: String as PropType<string>,
@@ -243,7 +243,8 @@ export default defineComponent({
       BREAKDOWN_OPTIONS: BREAKDOWN_OPTIONS.map(getBreakdownOptionDisplayName),
       getBreakdownOptionDisplayName,
       isRegionalDataValid,
-      isTemporalBreakdownDataValid
+      isTemporalBreakdownDataValid,
+      AggregationOption
     };
   },
   computed: {

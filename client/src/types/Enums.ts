@@ -74,3 +74,8 @@ export enum AdminLevel {
 export enum TemporalAggregationLevel {
   Year = 'year'
 }
+
+export enum AggregationOption {
+  Mean = 'mean',
+  Sum = 'sum'
+}

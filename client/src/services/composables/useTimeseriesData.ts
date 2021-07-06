@@ -1,7 +1,7 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { TemporalAggregationLevel } from '@/types/Enums';
+import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
@@ -128,11 +128,11 @@ export default function useTimeseriesData(
       if (selectedTemporalResolution.value !== '') {
         temporalRes = selectedTemporalResolution.value;
       }
-      let temporalAgg = 'sum';
+      let temporalAgg: string = AggregationOption.Sum;
       if (selectedTemporalAggregation.value !== '') {
         temporalAgg = selectedTemporalAggregation.value;
       }
-      let spatialAgg = 'mean';
+      let spatialAgg: string = AggregationOption.Mean;
       if (selectedSpatialAggregation.value !== '') {
         spatialAgg = selectedSpatialAggregation.value;
       }
@@ -205,7 +205,7 @@ export default function useTimeseriesData(
       const reduced = Object.entries(brokenDownByYear).map(([year, values]) => {
         const sum = _.sumBy(values, 'value');
         const aggregateValue =
-          selectedTemporalAggregation.value === 'mean'
+          selectedTemporalAggregation.value === AggregationOption.Mean
             ? sum / values.length
             : sum;
         return {

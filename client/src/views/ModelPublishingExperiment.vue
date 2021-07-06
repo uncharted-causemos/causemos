@@ -67,7 +67,7 @@
           class="dropdown-config"
           :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
           :inner-button-label="'Temporal Aggregation'"
-          :items="temporalAggregations"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedTemporalAggregation"
           @item-selected="handleTemporalAggregationSelection"
         />
@@ -87,7 +87,7 @@
           class="dropdown-config"
           :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
           :inner-button-label="'Spatial Aggregation'"
-          :items="spatialAggregations"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedSpatialAggregation"
           @item-selected="handleSpatialAggregationSelection"
         />
@@ -134,7 +134,7 @@ import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
-import { DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
+import { AggregationOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
 import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
@@ -175,9 +175,7 @@ export default defineComponent({
     })
   },
   data: () => ({
-    temporalAggregations: [] as string[],
     temporalResolutions: [] as string[],
-    spatialAggregations: [] as string[],
     initialInsightCount: -1
   }),
   setup() {
@@ -361,7 +359,8 @@ export default defineComponent({
       breakdownOption,
       setBreakdownOption,
       projectId,
-      temporalBreakdownData
+      temporalBreakdownData,
+      AggregationOption
     };
   },
   watch: {
@@ -437,12 +436,6 @@ export default defineComponent({
       // TODO: fetch actual available aggregations based on the pipeline support
       this.temporalResolutions.push('year');
       this.temporalResolutions.push('month');
-
-      this.temporalAggregations.push('mean');
-      this.temporalAggregations.push('sum');
-
-      this.spatialAggregations.push('mean');
-      this.spatialAggregations.push('sum');
     },
     updatePublishingStep(completed: boolean) {
       const currStep = this.publishingSteps.find(ps => ps.id === this.currentPublishStep);

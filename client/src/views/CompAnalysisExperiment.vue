@@ -62,7 +62,7 @@
         <dropdown-button
           class="dropdown-config"
           :inner-button-label="'Temporal Aggregation'"
-          :items="['mean', 'sum']"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedTemporalAggregation"
           @item-selected="item => selectedTemporalAggregation = item"
         />
@@ -72,7 +72,7 @@
         <dropdown-button
           class="spatial-aggregation"
           :inner-button-label="'Spatial Aggregation'"
-          :items="['mean', 'sum']"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedSpatialAggregation"
           @item-selected="item => selectedSpatialAggregation = item"
         />
@@ -132,7 +132,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
-import { DatacubeType } from '@/types/Enums';
+import { AggregationOption, DatacubeType } from '@/types/Enums';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
@@ -238,8 +238,8 @@ export default defineComponent({
     });
 
     const selectedTemporalResolution = ref('month');
-    const selectedTemporalAggregation = ref('mean');
-    const selectedSpatialAggregation = ref('mean');
+    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
     watchEffect(() => {
       const dataState = {
@@ -349,7 +349,8 @@ export default defineComponent({
       setRelativeTo,
       breakdownOption,
       setBreakdownOption,
-      temporalBreakdownData
+      temporalBreakdownData,
+      AggregationOption
     };
   },
   watch: {
