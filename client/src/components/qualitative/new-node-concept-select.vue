@@ -2,7 +2,7 @@
   <div class="new-node-container" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
     <div class="new-node-top">
       <input
-        ref="ground-input"
+        ref="input"
         v-model="userInput"
         type="text"
         placeholder="Type a concept"
@@ -13,7 +13,7 @@
         v-if="userInput.length < 1"
         class="mx-2"
         style="border: none; background-color: white;"
-        @click="showCustomGrounding"
+        @click="$emit('show-custom-concept')"
       >
         <span style="color: #255DCC; font-size: 1.5rem;">
           <i class="fa fa-plus-circle"></i>
@@ -68,7 +68,7 @@ export default {
   },
   emits: [
     'suggestion-selected',
-    'show-custom-grounding'
+    'show-custom-concept'
   ],
   data: () => ({
     userInput: '',
@@ -134,9 +134,6 @@ export default {
     selectSuggestion(suggestion) {
       this.$emit('suggestion-selected', suggestion);
       this.userInput = '';
-    },
-    showCustomGrounding() {
-      this.$emit('show-custom-grounding');
     },
     focusInput() {
       this.$refs.input.focus();
