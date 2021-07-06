@@ -61,9 +61,9 @@
       <template #temporal-aggregation-config>
         <dropdown-button
           class="dropdown-config"
-          :inner-button-label="'Temporal Resolution'"
+          :inner-button-label="'Temporal Aggregation'"
           :items="['mean', 'sum']"
-          :selected-item="selectedTemporalResolution"
+          :selected-item="selectedTemporalAggregation"
           @item-selected="item => selectedTemporalAggregation = item"
         />
       </template>
