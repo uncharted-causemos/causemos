@@ -204,14 +204,14 @@ const startIndicatorPostProcessing = async (metadata) => {
     clonedMetadata.type = 'indicator';
     clonedMetadata.status = 'PROCESSING';
 
-    let qualifierConcepts = [];
+    let qualifierMatches = [];
     if (metadata.qualifier_outputs) {
       // Filter out unrelated qualifiers
       clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
         qualifier => qualifier.related_features.includes(output.name));
 
       // Combine all concepts from the qualifiers into one list
-      qualifierConcepts = clonedMetadata.qualifier_outputs.map(qualifier => [
+      qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
         qualifier.ontologies.concepts,
         qualifier.ontologies.processes,
         qualifier.ontologies.properties
@@ -219,10 +219,11 @@ const startIndicatorPostProcessing = async (metadata) => {
     }
 
     // Append to the concepts from the output
-    clonedMetadata.concepts = qualifierConcepts.concat(output.ontologies.concepts,
+    const allMatches = qualifierMatches.concat(output.ontologies.concepts,
       output.ontologies.processes,
       output.ontologies.properties);
 
+    clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
     return clonedMetadata;
   });
 
