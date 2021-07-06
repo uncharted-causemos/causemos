@@ -128,7 +128,6 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
 import { computed, ComputedRef, defineComponent, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
@@ -200,8 +199,7 @@ export default defineComponent({
 
     const typeBreakdownData: NamedBreakdownData[] = [];
 
-    // FIXME: set initial model to DSSAT in case the query param does not have a valid datacubeid
-    const selectedModelId = ref(DSSAT_PRODUCTION_DATA.modelId);
+    const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
     const modelRunsFetchedAt = ref(0);

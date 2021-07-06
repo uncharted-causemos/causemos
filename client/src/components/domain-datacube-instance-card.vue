@@ -80,14 +80,14 @@
           v-tooltip.top-center="'Open datacube instance for review'"
           type="button"
           class="btn btn-primary button-spacing btn-call-for-action"
-          @click="open(datacube.id)"
+          @click="open(datacube.data_id)"
         ><i class="fa fa-folder-open-o" />
           Open</button>
           <button
           v-tooltip.top-center="'Edit datacube instance publication'"
           type="button"
           class="btn btn-primary button-spacing"
-          @click="edit(datacube.id)"
+          @click="edit(datacube.data_id)"
         ><i class="fa fa-edit" />
           Edit</button>
       </div>

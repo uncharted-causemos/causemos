@@ -189,12 +189,9 @@ export default {
 
       // fetch model instances
       const newFilters = filtersUtil.newFilters();
-      // filtersUtil.addSearchTerm(newFilters, 'name', this.datacubeFamily, 'and', false);
+      filtersUtil.addSearchTerm(newFilters, 'familyName', this.projectMetadata.name, 'and', false);
       filtersUtil.addSearchTerm(newFilters, 'type', this.projectMetadata.type, 'and', false);
-      const instances = await getDatacubes(newFilters);
-      // FIXME: manaully allow overalapping models
-      //  (e.g., old dssat and new dssat to be listed under the family name of dssat)
-      this.datacubeInstances = instances.filter(i => i.name.includes(this.projectMetadata.name));
+      this.datacubeInstances = await getDatacubes(newFilters);
 
       // set context id as the current family name
       this.setContextId(this.projectMetadata.name);

@@ -101,11 +101,35 @@ const remove = async (projectId) => {
   return stats;
 };
 
+/**
+ * Review all domain projects and creates a new one if needed
+ * @param {*} metadata datacube metadata
+ */
+const updateDomainProjects = async (metadata) => {
+  // check if there is an existing (domain) project that match the current metadata
+  // ideally, there shouldn't be such a project since this fucntion would only be called once on the registration of a new indicator family
+  // if such a project already exist, we probably should overwite it
+
+  const existingProjects = await getAllProjects();
+  const modelFamilyNames = existingProjects.map(p => p.name);
+
+  if (!modelFamilyNames.includes(metadata.family_name)) {
+    await createProject(
+      metadata.family_name,
+      metadata.description,
+      metadata.maintainer.organization,
+      metadata.type,
+      [], // FIXME: initial stats need to be set // ready_instances
+      []); // FIXME: initial stats need to be set // draft_instances
+  }
+};
+
 
 module.exports = {
   createProject,
   getAllProjects,
   getProject,
   remove,
-  updateProject
+  updateProject,
+  updateDomainProjects
 };

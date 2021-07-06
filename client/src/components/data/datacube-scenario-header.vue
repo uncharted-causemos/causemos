@@ -76,7 +76,7 @@ export default defineComponent({
       }
       let isCancelled = false;
       // Fetch scenario descriptions
-      const allMetadata = await getModelRunMetadata(metadata.value.id);
+      const allMetadata = await getModelRunMetadata(metadata.value.data_id);
       if (isCancelled) return;
       scenarioDescriptions.value = allMetadata
         .filter((run) => selectedScenarioIds.value.includes(run.id))
