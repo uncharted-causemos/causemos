@@ -178,10 +178,6 @@ const updateFnGenerator = (projectId, updateConfig) => {
 
     indraService.sendFeedback(curationLogs).catch(function handleError(err) {
       Logger.warn(`Sending feedback to INDRA failed bactchId=${batchId} ` + err);
-      console.log('##################################');
-      console.log(curationLogs);
-      console.log(JSON.stringify(curationLogs));
-      console.log('##################################');
     });
 
     auditAdapter.insert(audits, () => uuid());
