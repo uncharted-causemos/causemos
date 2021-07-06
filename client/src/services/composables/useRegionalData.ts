@@ -7,6 +7,7 @@ import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
 import { useStore } from 'vuex';
 import { AdminRegionSets } from '@/types/Datacubes';
+import { AggregationOption } from '@/types/Enums';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -52,8 +53,8 @@ export default function useRegionalData(
       outputVariable: outputs[currentOutputIndex.value].name || '',
       timestamp,
       temporalResolution: selectedTemporalResolution.value || 'month',
-      temporalAggregation: selectedTemporalAggregation.value || 'mean',
-      spatialAggregation: selectedSpatialAggregation.value || 'mean'
+      temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,
+      spatialAggregation: selectedSpatialAggregation.value || AggregationOption.Mean
     }));
   });
   watchEffect(async onInvalidate => {

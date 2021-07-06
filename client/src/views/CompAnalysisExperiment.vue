@@ -58,11 +58,21 @@
         </div>
       </template>
 
+      <template #temporal-aggregation-config>
+        <dropdown-button
+          class="dropdown-config"
+          :inner-button-label="'Temporal Aggregation'"
+          :items="Object.values(AggregationOption)"
+          :selected-item="selectedTemporalAggregation"
+          @item-selected="item => selectedTemporalAggregation = item"
+        />
+      </template>
+
       <template #spatial-aggregation-config>
         <dropdown-button
           class="spatial-aggregation"
           :inner-button-label="'Spatial Aggregation'"
-          :items="['mean', 'sum']"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedSpatialAggregation"
           @item-selected="item => selectedSpatialAggregation = item"
         />
@@ -87,8 +97,10 @@
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
             :regional-data="regionalData"
+            :temporal-breakdown-data="temporalBreakdownData"
             :unit="unit"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
             :selected-timestamp="selectedTimestamp"
             :selected-scenario-ids="selectedScenarioIds"
             :deselected-region-ids="deselectedRegionIds"
@@ -120,7 +132,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
-import { DatacubeType } from '@/types/Enums';
+import { AggregationOption, DatacubeType } from '@/types/Enums';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
@@ -226,8 +238,8 @@ export default defineComponent({
     });
 
     const selectedTemporalResolution = ref('month');
-    const selectedTemporalAggregation = ref('mean');
-    const selectedSpatialAggregation = ref('mean');
+    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
     watchEffect(() => {
       const dataState = {
@@ -269,7 +281,8 @@ export default defineComponent({
       timeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      setRelativeTo,
+      temporalBreakdownData
     } = useTimeseriesData(
       metadata,
       selectedModelId,
@@ -335,7 +348,9 @@ export default defineComponent({
       relativeTo,
       setRelativeTo,
       breakdownOption,
-      setBreakdownOption
+      setBreakdownOption,
+      temporalBreakdownData,
+      AggregationOption
     };
   },
   watch: {
