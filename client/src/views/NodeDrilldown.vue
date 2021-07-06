@@ -258,7 +258,7 @@ h4 {
   max-height: 500px;
   display: flex;
   flex-direction: column;
-  margin: 0 10px;
+  margin: 0 15px;
 }
 
 h6 {
