@@ -14,7 +14,7 @@
       @item-selected="emitBreakdownOptionSelection"
     />
     <aggregation-checklist-pane
-      v-if="regionalData !== null && Object.keys(regionalData).length !== 0"
+      v-if="isRegionalDataValid"
       class="checklist-section"
       :aggregation-level-count="availableAdminLevelTitles.length"
       :aggregation-level="selectedAdminLevel"
@@ -71,7 +71,7 @@
       </template>
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
-      v-if="temporalBreakdownData !== null && Object.keys(temporalBreakdownData).length !== 0"
+      v-if="isTemporalBreakdownDataValid"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
       :aggregation-level="0"
@@ -122,12 +122,11 @@ const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
 
 // Breakdown options are hardcoded, but eventually should be dynamically populated
 // based on the various "breakdownData" types that the selected datacube includes
-export const BREAKDOWN_OPTIONS = [
-  null,
-  selectedTemporalAggregationLevel
-];
+export const BREAKDOWN_OPTIONS = [null, selectedTemporalAggregationLevel];
 
-const getBreakdownOptionDisplayName = (option: TemporalAggregationLevel | null) => {
+const getBreakdownOptionDisplayName = (
+  option: TemporalAggregationLevel | null
+) => {
   switch (option) {
     case TemporalAggregationLevel.Year:
       return 'Split by year';
@@ -192,7 +191,7 @@ export default defineComponent({
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
-    const { regionalData } = toRefs(props);
+    const { regionalData, temporalBreakdownData } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
     };
@@ -208,7 +207,8 @@ export default defineComponent({
     const emitBreakdownOptionSelection = (breakdownOption: string) => {
       // FIXME: this branching logic can be removed once `dropdown-button` is
       //  extended to support values with different display names
-      const payload = breakdownOption === 'none' ? null : TemporalAggregationLevel.Year;
+      const payload =
+        breakdownOption === 'none' ? null : TemporalAggregationLevel.Year;
       emit('set-breakdown-option', payload);
     };
 
@@ -220,6 +220,18 @@ export default defineComponent({
       );
     });
 
+    const isRegionalDataValid = computed(
+      () =>
+        regionalData.value !== null &&
+        Object.keys(regionalData.value).length !== 0
+    );
+
+    const isTemporalBreakdownDataValid = computed(
+      () =>
+        temporalBreakdownData.value !== null &&
+        Object.keys(temporalBreakdownData.value).length !== 0
+    );
+
     return {
       setSelectedAdminLevel,
       toggleIsRegionSelected,
@@ -229,7 +241,9 @@ export default defineComponent({
       setAllRegionsSelected,
       emitBreakdownOptionSelection,
       BREAKDOWN_OPTIONS: BREAKDOWN_OPTIONS.map(getBreakdownOptionDisplayName),
-      getBreakdownOptionDisplayName
+      getBreakdownOptionDisplayName,
+      isRegionalDataValid,
+      isTemporalBreakdownDataValid
     };
   },
   computed: {
