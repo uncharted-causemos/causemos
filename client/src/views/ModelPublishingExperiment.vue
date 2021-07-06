@@ -67,7 +67,7 @@
           class="dropdown-config"
           :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
           :inner-button-label="'Temporal Aggregation'"
-          :items="temporalAggregations"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedTemporalAggregation"
           @item-selected="handleTemporalAggregationSelection"
         />
@@ -87,7 +87,7 @@
           class="dropdown-config"
           :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
           :inner-button-label="'Spatial Aggregation'"
-          :items="spatialAggregations"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedSpatialAggregation"
           @item-selected="handleSpatialAggregationSelection"
         />
@@ -108,10 +108,12 @@
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
             :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
+            :temporal-breakdown-data="temporalBreakdownData"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
@@ -132,7 +134,7 @@ import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
-import { DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
+import { AggregationOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
 import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
@@ -173,9 +175,7 @@ export default defineComponent({
     })
   },
   data: () => ({
-    temporalAggregations: [] as string[],
     temporalResolutions: [] as string[],
-    spatialAggregations: [] as string[],
     initialInsightCount: -1
   }),
   setup() {
@@ -311,7 +311,8 @@ export default defineComponent({
       timeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      setRelativeTo,
+      temporalBreakdownData
     } = useTimeseriesData(
       metadata,
       selectedModelId,
@@ -357,7 +358,9 @@ export default defineComponent({
       setRelativeTo,
       breakdownOption,
       setBreakdownOption,
-      projectId
+      projectId,
+      temporalBreakdownData,
+      AggregationOption
     };
   },
   watch: {
@@ -433,12 +436,6 @@ export default defineComponent({
       // TODO: fetch actual available aggregations based on the pipeline support
       this.temporalResolutions.push('year');
       this.temporalResolutions.push('month');
-
-      this.temporalAggregations.push('mean');
-      this.temporalAggregations.push('sum');
-
-      this.spatialAggregations.push('mean');
-      this.spatialAggregations.push('sum');
     },
     updatePublishingStep(completed: boolean) {
       const currStep = this.publishingSteps.find(ps => ps.id === this.currentPublishStep);
