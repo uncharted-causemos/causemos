@@ -25,7 +25,7 @@ import { EdgeParameter, NodeParameter } from '@/types/CAG';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
 
-const BASE_EDGE_WIDTH = 2;
+const BASE_EDGE_WIDTH = 0.5;
 const NO_EVIDENCE_DASH = '2, 1';
 
 export default defineComponent({
