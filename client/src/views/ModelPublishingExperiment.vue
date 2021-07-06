@@ -173,9 +173,6 @@ export default defineComponent({
       project: 'app/project'
     })
   },
-  data: () => ({
-    initialInsightCount: -1
-  }),
   setup() {
     const store = useStore();
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
@@ -384,19 +381,13 @@ export default defineComponent({
     },
     countInsights: {
       handler(/* newValue, oldValue */) {
-        if (this.initialInsightCount === -1) {
-          // save initial insights count
-          this.initialInsightCount = this.countInsights;
-        } else {
-          // initial insights count is valid and we have some update
-          // if the current insights count differ, then the user has saved some new insight(s)
-          if (this.initialInsightCount !== this.countInsights) {
-            // so mark this step as completed
-            this.setCurrentPublishStep(ModelPublishingStepID.Capture_Insight);
-            this.updatePublishingStep(true);
-          }
+        if (this.countInsights > 0) {
+          // we have at least one insight, so mark the relevant step as completed
+          const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+          if (ps) { ps.completed = true; }
         }
-      }
+      },
+      immediate: true
     }
   },
   methods: {
@@ -451,6 +442,10 @@ export default defineComponent({
           selectedIds = this.selectedScenarioIds.length > 0 ? this.selectedScenarioIds : [this.allScenarioIds[0]];
         }
         this.setSelectedScenarioIds(selectedIds);
+      }
+
+      if (this.currentPublishStep === ModelPublishingStepID.Tweak_Visualization) {
+        this.checkStepForCompleteness();
       }
     },
     handleTemporalAggregationSelection(tempAgg: string) {
@@ -513,7 +508,8 @@ export default defineComponent({
       });
     },
     checkModelMetadataValidity(info: { valid: boolean }) {
-      this.updatePublishingStep(info.valid);
+      const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Enrich_Description);
+      if (ps) { ps.completed = info.valid; }
     },
     toggleAccordion(event: any) {
       this.openPublishAccordion = !this.openPublishAccordion;
