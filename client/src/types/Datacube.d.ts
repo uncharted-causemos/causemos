@@ -72,6 +72,7 @@ export interface Datacube {
   category: string[];
   maintainer: DatacubeMaintainer;
   tags: string[];
+  concepts: OntologyMatch[];
   geography: DatacubeGeography;
   period: DatacubePeriod;
   outputs: DatacubeFeature[];
