@@ -255,13 +255,19 @@ export default defineComponent({
     const isDescriptionView = ref<boolean>(true);
 
     watchEffect(() => {
+      if (metadata.value) {
+        store.dispatch('insightPanel/setContextId', metadata.value.name);
+        // set initial output variable index
+        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature);
+        store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+      }
+    });
+
+    watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Indicator) {
         setSelectedScenarioIds([DatacubeType.Indicator.toString()]);
       } else {
         isDescriptionView.value = selectedScenarioIds.value.length === 0;
-      }
-      if (metadata.value) {
-        store.dispatch('insightPanel/setContextId', metadata.value.name);
       }
     });
 
@@ -398,14 +404,9 @@ export default defineComponent({
 
     // TODO: when new-runs-mode is active, clear the breakdown panel content
     // TODO: add other viz options as per WG4 recent slides
-
-    // set initial output variable index
-    // FIXME: default will be provided later through metadata
-    this.setCurrentOutputIndex(0);
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
       setCurrentPublishStep: 'modelPublishStore/setCurrentPublishStep',
       setSelectedTemporalAggregation: 'modelPublishStore/setSelectedTemporalAggregation',
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
@@ -414,10 +415,17 @@ export default defineComponent({
     async publishModel() {
       // call the backend to update model metadata and finalize model publication
       if (this.metadata && isModel(this.metadata)) {
+        // mark this datacube as published
         this.metadata.status = DatacubeStatus.Ready;
+        // update the default output feature
+        const validatedOutputs = this.metadata.validatedOutputs ?? [];
+        if (validatedOutputs.length > 0) {
+          this.metadata.default_feature = validatedOutputs[this.currentOutputIndex].name;
+        }
+        // remove newly-added fields such as 'validatedOutputs' so that ES can update
         const modelToUpdate = _.cloneDeep(this.metadata);
         delete modelToUpdate.validatedOutputs;
-        // remove newly-added fields such as 'validatedOutputs' so that ES can update
+        // update server data
         await updateDatacube(modelToUpdate.id, modelToUpdate);
         // redirect to model family page
         this.$router.push({ name: 'domainDatacubeOverview', params: { project: this.projectId, projectType: modelToUpdate.type } });
