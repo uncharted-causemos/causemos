@@ -83,7 +83,7 @@ export default {
   },
   emits: [
     'close',
-    'addCustomGrounding'
+    'saveCustomConcept'
   ]
 };
 </script>
