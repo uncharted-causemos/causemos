@@ -1,10 +1,11 @@
 <template>
   <modal
-    :use-green-header="true"
+    :use-green-header="false"
+    :show-close-button="true"
     @close="close()"
   >
     <template #header>
-      <h1>Add custom grounding</h1>
+      <h5>Add custom concept</h5>
     </template>
     <template #body>
       <div class="row input-row">
@@ -25,25 +26,37 @@
       </div>
     </template>
     <template #footer>
-      <button v-if="haveData" onclick="saveCustomConcept">Save</button>
+      <SmallTextButton
+         :label="'Save Concept'"
+         @click="saveCustomConcept" />
     </template>
   </modal>
 </template>
 
 <script>
 import Modal from '@/components/modals/modal';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 export default {
   name: 'modal-custom-concept',
   components: {
-    Modal
+    Modal,
+    SmallTextButton
   },
   methods: {
-    close() {
-      this.$emit('close', null);
-    },
     saveCustomConcept() {
       this.$emit('saveCustomConcept', this.customGrounding);
+    },
+    clearData() {
+      this.newTheme = this.newThemeProperty = this.newProcess = this.newProcessProperty = '';
+    },
+    close() {
+      this.clearData();
+      if (this.hasContext === true) {
+        this.hasContext = false;
+        return;
+      }
+      this.$emit('close', null);
     }
   },
   data: () => ({
@@ -75,6 +88,9 @@ export default {
 };
 </script>
 
-<style scoped>
-
+<style lang="scss" scoped>
+.input-row {
+  margin: 10px;
+  padding: 5px;
+}
 </style>
