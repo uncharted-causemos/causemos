@@ -10,23 +10,24 @@
     <template #body>
       <div class="row input-row">
         <label class="col-md-4">Theme</label>
-        <input id="inputTheme" class="col-md-6" v-model="newTheme" type="text" placeholder="Type a theme"/>
+        <input id="inputTheme" class="col-md-6" v-model="theme" type="text" placeholder="Type a theme"/>
       </div>
       <div class="row input-row">
         <label class="col-md-4">Theme property</label>
-        <input id="inputThemeProperty" class="col-md-6" v-model="newThemeProperty" type="text" placeholder="Type the theme property (optional)"/>
+        <input id="inputThemeProperty" class="col-md-6" v-model="theme_property" type="text" placeholder="Type the theme property (optional)"/>
       </div>
       <div class="row input-row">
         <label class="col-md-4">Process</label>
-        <input id="inputProcess" class="col-md-6" v-model="newProcess" type="text" placeholder="Type a process (optional)"/>
+        <input id="inputProcess" class="col-md-6" v-model="process" type="text" placeholder="Type a process (optional)"/>
       </div>
       <div class="row input-row">
         <label class="col-md-4">Process property</label>
-        <input id="inputProcessProperty" class="col-md-6" v-model="newProcessProperty" type="text" placeholder="Type the process property (optional)"/>
+        <input id="inputProcessProperty" class="col-md-6" v-model="process_property" type="text" placeholder="Type the process property (optional)"/>
       </div>
     </template>
     <template #footer>
       <SmallTextButton
+         :disabled="!haveData"
          :label="'Save Concept'"
          @click="saveCustomConcept" />
     </template>
@@ -46,6 +47,7 @@ export default {
   methods: {
     saveCustomConcept() {
       this.$emit('saveCustomConcept', this.customGrounding);
+      this.$emit('close');
     },
     clearData() {
       this.newTheme = this.newThemeProperty = this.newProcess = this.newProcessProperty = '';
