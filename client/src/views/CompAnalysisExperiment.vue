@@ -218,22 +218,26 @@ export default defineComponent({
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     watchEffect(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
+      if (metadata.value) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
-        mainModelOutput.value = outputs.value[currentOutputIndex.value];
-      }
+        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
+        mainModelOutput.value = outputs.value[initialOutputIndex];
+
+        // note: this value of metadata may be undefined while model is still being loaded
+        store.dispatch('insightPanel/setContextId', metadata.value?.id);
+
+        // save the initial output variable index
+        store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+      }
+    });
+
+    watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       } else {
         isDescriptionView.value = selectedScenarioIds.value.length === 0;
-      }
-
-      // NOTE: the following line is being set only inside the data view and the model publish page
-      if (metadata.value !== null) {
-        // note: this value of metadata may be undefined while model is still being loaded
-        store.dispatch('insightPanel/setContextId', metadata.value?.id);
       }
     });
 
@@ -371,12 +375,6 @@ export default defineComponent({
     clearInterval(this.timerHandler);
   },
   mounted() {
-    // reset to 0 when any analysis loads
-    //  to avoid the shared store state from conflicting when a different datacube/analysis is loaded
-    // FIXME: actually read the value of the default output variable from the metadata
-    // later, this value will be persisted per analysis
-    this.setCurrentOutputIndex(0);
-
     // ensure the insight explorer panel is closed in case the user has
     //  previously opened it and clicked the browser back button
     this.hideInsightPanel();

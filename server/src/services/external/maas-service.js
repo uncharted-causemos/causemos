@@ -4,6 +4,7 @@ const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
+const domainProjectService = rootRequire('/services/domain-project-service');
 
 const PIPELINE_FLOW_ID = '4d8d9239-2594-45af-9ec9-d24eafb1f1af';
 
@@ -192,6 +193,12 @@ const startIndicatorPostProcessing = async (metadata) => {
 
   // Remove some unused Jataware fields
   metadata.attributes = undefined;
+
+  // ensure for each newly registered indicator datacube a corresponding domain project
+  // @TODO: when indicator publish workflow is added,
+  //        the following function would be called at:
+  //        insertDatacube() in server/src/services/datacube-service
+  await domainProjectService.updateDomainProjects(metadata);
 
   // Create data now to send to elasticsearch
   const newIndicatorMetadata = metadata.outputs.map(output => {

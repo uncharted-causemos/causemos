@@ -96,7 +96,7 @@ const applyRelativeTo = (
  */
 export default function useTimeseriesData(
   metadata: Ref<Datacube | null>,
-  modelId: Ref<string>,
+  dataId: Ref<string>,
   modelRunIds: Ref<string[]>,
   selectedTemporalResolution: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
@@ -144,7 +144,7 @@ export default function useTimeseriesData(
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
-            model_id: modelId.value,
+            model_id: dataId.value,
             run_id: runId,
             feature: outputs[currentOutputIndex.value].name,
             resolution: temporalRes,

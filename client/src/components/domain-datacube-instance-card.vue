@@ -17,7 +17,7 @@
     </modal-confirmation>
     <div class="row project-card-header">
       <b>
-      {{primaryOutput.name}} : <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+      {{primaryOutput.display_name}} : <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
       </b>
     </div>
     <div class="row">
@@ -80,14 +80,14 @@
           v-tooltip.top-center="'Open datacube instance for review'"
           type="button"
           class="btn btn-primary button-spacing btn-call-for-action"
-          @click="open(datacube.id)"
+          @click="open(datacube.data_id)"
         ><i class="fa fa-folder-open-o" />
           Open</button>
           <button
           v-tooltip.top-center="'Edit datacube instance publication'"
           type="button"
           class="btn btn-primary button-spacing"
-          @click="edit(datacube.id)"
+          @click="edit(datacube.data_id)"
         ><i class="fa fa-edit" />
           Edit</button>
       </div>
@@ -148,7 +148,7 @@ export default defineComponent({
       return getValidatedOutputs(this.datacube.outputs);
     },
     primaryOutput(): any {
-      return this.validatedOutputs[0]; // FIXME
+      return this.validatedOutputs.find(o => o.name === this.datacube.default_feature);
     },
     statusColor(): string {
       let color = '';

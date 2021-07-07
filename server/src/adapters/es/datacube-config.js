@@ -15,6 +15,11 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
+  dataId: {
+    fields: ['data_id'],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.DATACUBE
+  },
   keyword: { // For search only
     fields: ['_search'],
     type: FIELD_TYPES.REGEXP,
@@ -72,6 +77,11 @@ const FIELDS = Object.freeze({
   },
   name: {
     fields: ['name'],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.DATACUBE
+  },
+  familyName: {
+    fields: ['family_name'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },

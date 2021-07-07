@@ -277,6 +277,9 @@ export default defineComponent({
       //  so that on the registeration of a new datacube family,
       //  Causemos is notified and a new project is created with initial counts
       // Causemos backend will cache the counts and update them whenever a datacube is un/published
+      //
+      // UPDATE: initial code is added to the backend to create a new domain project on the registeration of a new datacube
+      //         thus, the following code should be simplified to only retrieve existing domain projects
       const computeCountsOnTheFly = false;
       const existingProjects: DomainProject[] = await domainProjectService.getProjects();
 
@@ -292,7 +295,7 @@ export default defineComponent({
         const newFilters = filtersUtil.newFilters();
         const options = { // ES search/get API options
           // size: 1,
-          includes: ['name', 'description', 'maintainer', 'type']
+          includes: ['family_name', 'description', 'maintainer', 'type']
         };
         const datacubes: Model[] = await getDatacubes(newFilters, options);
 
@@ -304,9 +307,9 @@ export default defineComponent({
         //  and track new ones to create projects for them
         datacubes.forEach(datacube => {
           // is there an existing project for this datacube?
-          if (!modelFamilyNames.includes(datacube.name)) {
+          if (!modelFamilyNames.includes(datacube.family_name)) {
             const newProject: DomainProject = {
-              name: datacube.name,
+              name: datacube.family_name,
               ready_instances: [],
               draft_instances: [],
               type: datacube.type,
@@ -327,31 +330,31 @@ export default defineComponent({
         datacubes.forEach(datacube => {
           // first, update existing projects, if needed
           // are there some existing projects that should include the current model instance/datacube
-          const matchingExistingProjects = existingProjects.filter(p => datacube.name.includes(p.name));
+          const matchingExistingProjects = existingProjects.filter(p => datacube.family_name === p.name);
           if (matchingExistingProjects.length > 0) {
             matchingExistingProjects.forEach(matchingProject => {
-              if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.name)) {
+              if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.family_name)) {
                 // this is a new model instance datacube, so we need to increase the registered instances of this project
-                matchingProject.draft_instances.push(datacube.name);
+                matchingProject.draft_instances.push(datacube.family_name);
               }
-              if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.name)) {
+              if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.family_name)) {
                 // this is a new model instance datacube, so we need to increase the published instances of this project
-                matchingProject.ready_instances.push(datacube.name);
+                matchingProject.ready_instances.push(datacube.family_name);
               }
             });
           }
 
           // then, against new projects
-          const matchingNewProjects = newProjects.filter(p => datacube.name.includes(p.name));
+          const matchingNewProjects = newProjects.filter(p => datacube.family_name === p.name);
           if (matchingNewProjects.length > 0) {
             matchingNewProjects.forEach(matchingProject => {
-              if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.name)) {
+              if (datacube.status === DatacubeStatus.Registered && !matchingProject.draft_instances.includes(datacube.family_name)) {
                 // this is a new model instance datacube, so we need to increase the registered instances of this project
-                matchingProject.draft_instances.push(datacube.name);
+                matchingProject.draft_instances.push(datacube.family_name);
               }
-              if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.name)) {
+              if (datacube.status === DatacubeStatus.Ready && !matchingProject.ready_instances.includes(datacube.family_name)) {
                 // this is a new model instance datacube, so we need to increase the published instances of this project
-                matchingProject.ready_instances.push(datacube.name);
+                matchingProject.ready_instances.push(datacube.family_name);
               }
             });
           }
