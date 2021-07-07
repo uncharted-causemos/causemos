@@ -57,6 +57,47 @@ export default class ModelRenderer extends SVGRenderer {
     this.scenarioData = d;
   }
 
+  async render() {
+    await super.render();
+    console.log('in render: ', this);
+    const chart = this.chart;
+    const selection = chart.selectAll('.edge');
+    if (selection.node()) {
+      selection.nodes()
+        .forEach(function (d) {
+          const edge = d3.select(d);
+          const path = edge.select('.edge-path');
+          const pathNode = path.node();
+          const pathData = path.data()[0].data;
+          const firstOrderWeight = pathData.parameter.weights[0];
+          const secondOrderWeight = pathData.parameter.weights[1];
+
+          if (firstOrderWeight === 0 && secondOrderWeight === 0) {
+            const halfWayPoint = pathNode.getTotalLength() / 2;
+            const indicatorPoint = pathNode.getPointAtLength(halfWayPoint);
+            edge
+              .append('g')
+              .classed('unweighted-edge-indicator', true)
+              .attr('transform', `translate(${indicatorPoint.x},${indicatorPoint.y})`)
+              .append('circle')
+              .attr('opacity', 0)
+              .attr('r', 5)
+              .attr('fill', 'red')
+              .transition()
+              .duration(1000)
+              .attr('opacity', 1);
+          } else {
+            edge
+              .selectAll('.unweighted-edge-indicator')
+              .transition()
+              .duration(1000)
+              .attr('opacity', 0)
+              .remove();
+          }
+        });
+    }
+  }
+
   renderNodeAdded(nodeSelection) {
     nodeSelection.each(function() {
       const selection = d3.select(this);
@@ -196,29 +237,6 @@ export default class ModelRenderer extends SVGRenderer {
           return interpolatePath(previousPath, currentPath)(t);
         };
       });
-    if (selection.node()) {
-      selection.nodes()
-        .forEach(function (d) {
-          const edge = d3.select(d);
-          const path = edge.select('.edge-path');
-          const pathNode = path.node();
-          const pathData = path.data()[0].data;
-          const firstOrderWeight = pathData.parameter.weights[0];
-          const secondOrderWeight = pathData.parameter.weights[1];
-
-          if (firstOrderWeight === 0 && secondOrderWeight === 0) {
-            const halfWayPoint = pathNode.getTotalLength() / 2;
-            const indicatorPoint = pathNode.getPointAtLength(halfWayPoint);
-            edge
-              .append('g')
-              .classed('unweighted-edge-indicator', true)
-              .attr('transform', `translate(${indicatorPoint.x},${indicatorPoint.y})`)
-              .append('circle')
-              .attr('r', 5)
-              .attr('fill', 'red');
-          }
-        });
-    }
   }
 
   renderEdgeRemoved(selection) {
