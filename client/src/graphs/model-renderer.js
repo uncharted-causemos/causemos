@@ -196,25 +196,26 @@ export default class ModelRenderer extends SVGRenderer {
           return interpolatePath(previousPath, currentPath)(t);
         };
       });
-
     if (selection.node()) {
-      const dataLayer = d3.select(selection.node().parentNode);
-      selection
-        .selectAll('.edge-path')
-        .transition()
-        .duration(1000)
-        .each(function (edge) {
-          const firstOrderWeight = edge.data.parameter.weights[0];
-          const secondOrderWeight = edge.data.parameter.weights[1];
+      selection.nodes()
+        .forEach(function (d) {
+          const edge = d3.select(d);
+          const path = edge.select('.edge-path');
+          const pathNode = path.node();
+          const pathData = path.data()[0].data;
+          const firstOrderWeight = pathData.parameter.weights[0];
+          const secondOrderWeight = pathData.parameter.weights[1];
 
           if (firstOrderWeight === 0 && secondOrderWeight === 0) {
-            const halfWayPoint = this.getTotalLength() / 2;
-            const indicatorPoint = this.getPointAtLength(halfWayPoint);
-            dataLayer
+            const halfWayPoint = pathNode.getTotalLength() / 2;
+            const indicatorPoint = pathNode.getPointAtLength(halfWayPoint);
+            edge
+              .append('g')
+              .classed('unweighted-edge-indicator', true)
+              .attr('transform', `translate(${indicatorPoint.x},${indicatorPoint.y})`)
               .append('circle')
               .attr('r', 5)
-              .attr('fill', 'red')
-              .attr('transform', `translate(${indicatorPoint.x},${indicatorPoint.y})`);
+              .attr('fill', 'red');
           }
         });
     }
