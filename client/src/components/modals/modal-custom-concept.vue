@@ -9,8 +9,8 @@
     </template>
     <template #body>
       <div class="row form-group">
-        <label for="theme" class="col-md-3 col-form-label">Theme</label>
-        <div id="theme" class="col-md-7">
+        <label class="col-md-3 col-form-label">Theme</label>
+        <div class="col-md-7">
           <input class="form-control" v-model="theme" type="text" placeholder="Type a theme"/>
         </div>
       </div>
