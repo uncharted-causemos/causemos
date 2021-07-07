@@ -10,7 +10,7 @@
       v-else
       class="breakdown-option-dropdown"
       :items="BREAKDOWN_OPTIONS"
-      :selectedItem="getBreakdownOptionDisplayName(selectedBreakdownOption)"
+      :selectedItem="selectedBreakdownOption"
       @item-selected="emitBreakdownOptionSelection"
     />
     <aggregation-checklist-pane
@@ -108,7 +108,7 @@ import {
   NamedBreakdownData
 } from '@/types/Datacubes';
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
-import DropdownButton from '@/components/dropdown-button.vue';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
 
 function timestampFormatter(timestamp: number) {
@@ -122,18 +122,10 @@ const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
 
 // Breakdown options are hardcoded, but eventually should be dynamically populated
 // based on the various "breakdownData" types that the selected datacube includes
-export const BREAKDOWN_OPTIONS = [null, selectedTemporalAggregationLevel];
-
-const getBreakdownOptionDisplayName = (
-  option: TemporalAggregationLevel | null
-) => {
-  switch (option) {
-    case TemporalAggregationLevel.Year:
-      return 'Split by year';
-    default:
-      return 'none';
-  }
-};
+const BREAKDOWN_OPTIONS: DropdownItem[] = [
+  { value: null, displayName: 'none' },
+  { value: selectedTemporalAggregationLevel, displayName: 'Split by year' }
+];
 
 export default defineComponent({
   components: { aggregationChecklistPane, DropdownButton },
@@ -204,12 +196,8 @@ export default defineComponent({
       emit('set-all-regions-selected', isSelected);
     };
 
-    const emitBreakdownOptionSelection = (breakdownOption: string) => {
-      // FIXME: this branching logic can be removed once `dropdown-button` is
-      //  extended to support values with different display names
-      const payload =
-        breakdownOption === 'none' ? null : TemporalAggregationLevel.Year;
-      emit('set-breakdown-option', payload);
+    const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
+      emit('set-breakdown-option', breakdownOption);
     };
 
     const availableAdminLevelTitles = computed(() => {
@@ -240,8 +228,7 @@ export default defineComponent({
       ADMIN_LEVEL_KEYS,
       setAllRegionsSelected,
       emitBreakdownOptionSelection,
-      BREAKDOWN_OPTIONS: BREAKDOWN_OPTIONS.map(getBreakdownOptionDisplayName),
-      getBreakdownOptionDisplayName,
+      BREAKDOWN_OPTIONS,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
       AggregationOption
