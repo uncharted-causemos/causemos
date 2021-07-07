@@ -26,23 +26,30 @@
       </div>
     </template>
     <template #footer>
-      <SmallTextButton
-         :disabled="!haveData"
-         :label="'Save Concept'"
-         @click="saveCustomConcept" />
+      <ul class="unstyled-list">
+        <button
+          type="button"
+          class="btn first-button"
+          @click.stop="close()">Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          :disabled="!haveData"
+          @click.stop="saveCustomConcept">Save Concept
+        </button>
+      </ul>
     </template>
   </modal>
 </template>
 
 <script>
 import Modal from '@/components/modals/modal';
-import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 export default {
   name: 'modal-custom-concept',
   components: {
-    Modal,
-    SmallTextButton
+    Modal
   },
   methods: {
     saveCustomConcept() {
