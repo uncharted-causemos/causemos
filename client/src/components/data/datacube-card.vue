@@ -156,6 +156,15 @@
             :breakdown-option="breakdownOption"
             @select-timestamp="emitTimestampSelection"
           />
+          <p
+            v-else-if="timeseriesData.length > 0 && timeseriesData[0].points.length === 1"
+            class="hidden-timeseries-message"
+          >
+            Data only exists for
+            <span class="timestamp">
+              {{ timestampFormatter(timeseriesData[0].points[0].timestamp) }}
+            </span>.
+          </p>
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
@@ -212,6 +221,14 @@ import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
 import { Timeseries } from '@/types/Timeseries';
+import dateFormatter from '@/formatters/date-formatter';
+
+
+function timestampFormatter(timestamp: number) {
+  // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
+  //  and be consistent.
+  return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
+}
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -354,7 +371,8 @@ export default defineComponent({
       runParameterValues,
       mainModelOutput,
       isModelMetadata,
-      emitRelativeToSelection
+      emitRelativeToSelection,
+      timestampFormatter
     };
   },
   data: () => ({
@@ -604,6 +622,14 @@ header {
     &:not(.isVisible) {
       padding: 0;
     }
+  }
+}
+
+.hidden-timeseries-message {
+  margin: 15px 0;
+
+  .timestamp {
+    color: $selected-dark;
   }
 }
 </style>
