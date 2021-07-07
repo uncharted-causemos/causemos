@@ -27,7 +27,7 @@
                 class="fa fa-lg fa-fw"
                 :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
               />
-              Baseline Defaults
+              Default Values
             </label>
           </div>
           <div class="checkbox">
@@ -88,8 +88,10 @@
                     @click="$emit('update-desc-view', true)">
               Descriptions
             </button>
+            <!-- make 'Data' tab disabled when no scenario selection -->
             <button class="btn btn-default"
                     :class="{'btn-primary':!isDescriptionView}"
+                    :disabled="selectedScenarioIds.length === 0"
                     @click="$emit('update-desc-view', false)">
               Data
             </button>
@@ -356,7 +358,7 @@ export default defineComponent({
     };
   },
   data: () => ({
-    showBaselineDefaults: false,
+    showBaselineDefaults: true,
     showNewRunsMode: false,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
