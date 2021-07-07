@@ -88,7 +88,7 @@ import router from '@/router';
 import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
-import { CAGGraph, CAGModelSummary } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -126,7 +126,7 @@ export default defineComponent({
       });
     });
 
-    const scenarios = ref<any[]>([]);
+    const scenarios = ref<Scenario[]>([]);
 
     watchEffect(async onInvalidate => {
       // Fetch scenarios
