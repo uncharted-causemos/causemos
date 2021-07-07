@@ -1,5 +1,5 @@
 <template>
-  <div class="graph-node-container">
+  <div class="neighbor-node-container">
     <header>
       {{ node.label }}
     </header>
@@ -29,7 +29,7 @@ const BASE_EDGE_WIDTH = 0.5;
 const NO_EVIDENCE_DASH = '2, 1';
 
 export default defineComponent({
-  name: 'GraphNode',
+  name: 'NeighborNode',
   props: {
     node: {
       type: Object as PropType<NodeParameter>,
@@ -69,7 +69,7 @@ $overlap: $arrow-width / 4;
 $border-width: 1px;
 
 // TODO: copy graph styles more exactly
-.graph-node-container {
+.neighbor-node-container {
   height: 80px;
   width: 140px;
   border-radius: 3px;

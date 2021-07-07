@@ -19,13 +19,13 @@
       <div class="nodes-container">
         <div class="drivers">
           <h5>Top Drivers</h5>
-          <graph-node
+          <neighbor-node
             v-for="driver in drivers"
             :key="driver.edge.id"
             :node="driver.node"
             :edge="driver.edge"
             :is-driver="true"
-            class="graph-node"
+            class="neighbor-node"
           />
         </div>
         <div class="selected-node">
@@ -48,13 +48,13 @@
         </div>
         <div class="impacts">
           <h5>Top Impacts</h5>
-          <graph-node
+          <neighbor-node
             v-for="impact in impacts"
             :key="impact.edge.id"
             :node="impact.node"
             :edge="impact.edge"
             :is-driver="false"
-            class="graph-node"
+            class="neighbor-node"
           />
         </div>
       </div>
@@ -83,7 +83,7 @@
 <script lang="ts">
 import { computed, defineComponent, ref, watchEffect } from 'vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import GraphNode from '@/components/node-drilldown/graph-node.vue';
+import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import router from '@/router';
 import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
@@ -94,7 +94,7 @@ export default defineComponent({
   name: 'NodeDrilldown',
   components: {
     DrilldownPanel,
-    GraphNode
+    NeighborNode
   },
   setup() {
     // Get CAG and selected node from route
@@ -284,7 +284,7 @@ h6 {
   padding: 10px;
 }
 
-.graph-node {
+.neighbor-node {
   margin-top: 10px;
 }
 
