@@ -161,7 +161,7 @@
           </div>
           <div
             v-if="mapReady && !isDescriptionView && regionalData !== null"
-            class="card-map-container full-width">
+            class="card-map-container">
             <data-analysis-map
               v-for="(spec, indx) in outputSourceSpecs"
               :key="spec.id"
@@ -183,6 +183,14 @@
               @on-map-load="onMapLoad"
               @slide-handle-change="updateMapFilters"
             />
+          </div>
+          <div
+            v-else-if="!isDescriptionView"
+            class="card-map-container"
+          >
+            <div class="card-map placeholder">
+              <i class="fa fa-fw fa-spinner fa-spin" />
+            </div>
           </div>
         </div>
       </div>
@@ -544,10 +552,7 @@ header {
   justify-content: space-between;
   flex-wrap: wrap;
   overflow-y: scroll;
-
-  &.full-width {
-    width: 100%;
-  }
+  width: 100%;
 }
 
 .card-map {
@@ -574,6 +579,18 @@ header {
     height: 50%;
     width: calc(100% / 3);
     max-width: calc(100% / 3);
+  }
+}
+
+.placeholder {
+  background: #eee;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  i {
+    font-size: 50px;
+    opacity: 10%;
   }
 }
 
