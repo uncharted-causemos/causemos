@@ -188,9 +188,8 @@
             v-else-if="!isDescriptionView"
             class="card-map-container"
           >
-            <div class="card-map placeholder">
-              <i class="fa fa-fw fa-spinner fa-spin" />
-            </div>
+            <!-- Empty div to reduce jumpiness when the maps are loading -->
+            <div class="card-map" />
           </div>
         </div>
       </div>
@@ -579,18 +578,6 @@ header {
     height: 50%;
     width: calc(100% / 3);
     max-width: calc(100% / 3);
-  }
-}
-
-.placeholder {
-  background: #eee;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-
-  i {
-    font-size: 50px;
-    opacity: 10%;
   }
 }
 
