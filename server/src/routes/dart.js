@@ -61,28 +61,4 @@ router.get('/readers-status', asyncHandler(async (req, res, next) => {
   }
 }));
 
-/**
- * POST send file from local machine to the DART server for processing.
- *
- * Note: This endpoint is meant to be used for sending documents to the
- * dart service to get the document meta information.
- */
-// router.post('/extract-metadata', upload.single('file'), [], asyncHandler(async (req, res) => {
-//   const results = await dartService.sendFileForExtraction(req.file);
-//   res.json(results);
-// }));
-
-/**
- * POST send file and user modified document extraction to DART.
- *
- * Note: This endpoint is meant to be used for sending document meta information
- * to the server so that the information can be processed.
- */
-// router.post('/submit', upload.single('file'), [], asyncHandler(async (req, res) => {
-//   const extractedCdr = JSON.parse(req.body.extracted_cdr);
-//   const submitResult = await dartService.submitCdrExtractionToDart(extractedCdr);
-//   const results = await dartService.uploadToDart(req.file, submitResult.document_id);
-//   res.json(results);
-// }));
-
 module.exports = router;
