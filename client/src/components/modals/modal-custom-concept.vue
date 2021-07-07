@@ -8,21 +8,29 @@
       <h5>Add custom concept</h5>
     </template>
     <template #body>
-      <div class="row input-row">
-        <label class="col-md-4">Theme</label>
-        <input class="col-md-6" v-model="theme" type="text" placeholder="Type a theme"/>
+      <div class="row form-group">
+        <label for="theme" class="col-md-3 col-form-label">Theme</label>
+        <div id="theme" class="col-md-7">
+          <input class="form-control" v-model="theme" type="text" placeholder="Type a theme"/>
+        </div>
       </div>
-      <div class="row input-row">
-        <label class="col-md-4">Theme property</label>
-        <input class="col-md-6" v-model="theme_property" type="text" placeholder="Type the theme property (optional)"/>
+      <div class="row form-group">
+        <label class="col-md-3 col-form-label">Theme property</label>
+        <div class="col-md-7">
+          <input class="form-control" v-model="theme_property" type="text" placeholder="Type the theme property (optional)"/>
+        </div>
       </div>
-      <div class="row input-row">
-        <label class="col-md-4">Process</label>
-        <input class="col-md-6" v-model="process" type="text" placeholder="Type a process (optional)"/>
+      <div class="row form-group">
+        <label class="col-md-3 col-form-label">Process</label>
+        <div class="col-md-7">
+          <input class="form-control" v-model="process" type="text" placeholder="Type a process (optional)"/>
+        </div>
       </div>
-      <div class="row input-row">
-        <label class="col-md-4">Process property</label>
-        <input class="col-md-6" v-model="process_property" type="text" placeholder="Type the process property (optional)"/>
+      <div class="row form-group">
+        <label class="col-md-3 col-form-label">Process property</label>
+        <div class="col-md-7">
+          <input class="form-control" v-model="process_property" type="text" placeholder="Type the process property (optional)"/>
+        </div>
       </div>
     </template>
     <template #footer>
@@ -98,8 +106,4 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-.input-row {
-  margin: 10px;
-  padding: 5px;
-}
 </style>
