@@ -197,8 +197,6 @@ export default class ModelRenderer extends SVGRenderer {
         };
       });
 
-    // const svg = d3.select(this.svgEl);
-    // console.log('selection: ', selection.node().parentNode);
     if (selection.node()) {
       const dataLayer = d3.select(selection.node().parentNode);
       selection
