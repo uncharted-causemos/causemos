@@ -14,7 +14,7 @@
       @item-selected="emitBreakdownOptionSelection"
     />
     <aggregation-checklist-pane
-      v-if="regionalData !== null && regionalData.length !== 0"
+      v-if="isRegionalDataValid"
       class="checklist-section"
       :aggregation-level-count="availableAdminLevelTitles.length"
       :aggregation-level="selectedAdminLevel"
@@ -40,7 +40,7 @@
           Aggregated by
           <strong>{{
             selectedSpatialAggregation === ''
-              ? 'mean'
+              ? AggregationOption.Mean
               : selectedSpatialAggregation
           }}</strong
           >.
@@ -70,17 +70,31 @@
         </p>
       </template>
     </aggregation-checklist-pane>
-    <!-- <aggregation-checklist-pane
-      :aggregation-level-count="aggregationLevels.length"
-      :aggregation-level="selectedAdminLevel"
-      :aggregation-level-title="'year'"
-      :raw-data="adminLevelData"
-      @aggregation-level-change="setSelectedAdminLevel"
+    <aggregation-checklist-pane
+      v-if="isTemporalBreakdownDataValid"
+      class="checklist-section"
+      :aggregation-level-count="Object.keys(temporalBreakdownData).length"
+      :aggregation-level="0"
+      :aggregation-level-title="'Year'"
+      :ordered-aggregation-level-keys="['Year']"
+      :raw-data="temporalBreakdownData"
+      :units="unit"
+      :selected-scenario-ids="selectedScenarioIds"
     >
-      <template #subtitle>
-        <span>Showing data across <strong>all time</strong>.</span>
+      <!-- TODO:
+      :deselected-item-ids="deselectedRegionIds"
+      @toggle-is-item-selected="toggleIsRegionSelected"
+      @set-all-selected="setAllRegionsSelected"
+      @aggregation-level-change="setSelectedAdminLevel"
+      -->
+      <template #aggregation-description>
+        <p class="aggregation-description">
+          Aggregated by
+          <strong>{{ selectedTemporalAggregation }}</strong
+          >.
+        </p>
       </template>
-    </aggregation-checklist-pane> -->
+    </aggregation-checklist-pane>
   </div>
 </template>
 
@@ -95,7 +109,7 @@ import {
 } from '@/types/Datacubes';
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import DropdownButton from '@/components/dropdown-button.vue';
-import { TemporalAggregationLevel } from '@/types/Enums';
+import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -108,12 +122,11 @@ const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
 
 // Breakdown options are hardcoded, but eventually should be dynamically populated
 // based on the various "breakdownData" types that the selected datacube includes
-export const BREAKDOWN_OPTIONS = [
-  null,
-  selectedTemporalAggregationLevel
-];
+export const BREAKDOWN_OPTIONS = [null, selectedTemporalAggregationLevel];
 
-const getBreakdownOptionDisplayName = (option: TemporalAggregationLevel | null) => {
+const getBreakdownOptionDisplayName = (
+  option: TemporalAggregationLevel | null
+) => {
   switch (option) {
     case TemporalAggregationLevel.Year:
       return 'Split by year';
@@ -140,13 +153,21 @@ export default defineComponent({
     },
     selectedSpatialAggregation: {
       type: String as PropType<string | null>,
-      default: 'mean'
+      default: AggregationOption.Mean
+    },
+    selectedTemporalAggregation: {
+      type: String as PropType<string | null>,
+      default: AggregationOption.Mean
     },
     unit: {
       type: String as PropType<string>,
       default: null
     },
     regionalData: {
+      type: Object as PropType<BreakdownData | null>,
+      default: null
+    },
+    temporalBreakdownData: {
       type: Object as PropType<BreakdownData | null>,
       default: null
     },
@@ -170,7 +191,7 @@ export default defineComponent({
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
-    const { regionalData } = toRefs(props);
+    const { regionalData, temporalBreakdownData } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
     };
@@ -186,7 +207,8 @@ export default defineComponent({
     const emitBreakdownOptionSelection = (breakdownOption: string) => {
       // FIXME: this branching logic can be removed once `dropdown-button` is
       //  extended to support values with different display names
-      const payload = breakdownOption === 'none' ? null : TemporalAggregationLevel.Year;
+      const payload =
+        breakdownOption === 'none' ? null : TemporalAggregationLevel.Year;
       emit('set-breakdown-option', payload);
     };
 
@@ -198,6 +220,18 @@ export default defineComponent({
       );
     });
 
+    const isRegionalDataValid = computed(
+      () =>
+        regionalData.value !== null &&
+        Object.keys(regionalData.value).length !== 0
+    );
+
+    const isTemporalBreakdownDataValid = computed(
+      () =>
+        temporalBreakdownData.value !== null &&
+        Object.keys(temporalBreakdownData.value).length !== 0
+    );
+
     return {
       setSelectedAdminLevel,
       toggleIsRegionSelected,
@@ -207,7 +241,10 @@ export default defineComponent({
       setAllRegionsSelected,
       emitBreakdownOptionSelection,
       BREAKDOWN_OPTIONS: BREAKDOWN_OPTIONS.map(getBreakdownOptionDisplayName),
-      getBreakdownOptionDisplayName
+      getBreakdownOptionDisplayName,
+      isRegionalDataValid,
+      isTemporalBreakdownDataValid,
+      AggregationOption
     };
   },
   computed: {
@@ -232,6 +269,10 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '~styles/variables';
+
+.breakdown-pane-container {
+  margin-bottom: 40px;
+}
 
 .aggregation-description {
   color: $text-color-medium;

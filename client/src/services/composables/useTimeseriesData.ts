@@ -1,6 +1,7 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
-import { TemporalAggregationLevel } from '@/types/Enums';
+import { BreakdownData } from '@/types/Datacubes';
+import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
@@ -127,11 +128,11 @@ export default function useTimeseriesData(
       if (selectedTemporalResolution.value !== '') {
         temporalRes = selectedTemporalResolution.value;
       }
-      let temporalAgg = 'sum';
+      let temporalAgg: string = AggregationOption.Sum;
       if (selectedTemporalAggregation.value !== '') {
         temporalAgg = selectedTemporalAggregation.value;
       }
-      let spatialAgg = 'mean';
+      let spatialAgg: string = AggregationOption.Mean;
       if (selectedSpatialAggregation.value !== '') {
         spatialAgg = selectedSpatialAggregation.value;
       }
@@ -189,6 +190,57 @@ export default function useTimeseriesData(
     }
   );
 
+  const temporalBreakdownData = computed<BreakdownData | null>(() => {
+    if (rawTimeseriesData.value.length === 0) return null;
+    const result: {
+      id: string;
+      values: { [modelRunId: string]: number };
+    }[] = [];
+    rawTimeseriesData.value.map(({ points }, index) => {
+      // Group points by year
+      const brokenDownByYear = _.groupBy(points, point =>
+        getYearFromTimestamp(point.timestamp)
+      );
+      // Aggregate points to get one value for each year
+      const reduced = Object.entries(brokenDownByYear).map(([year, values]) => {
+        const sum = _.sumBy(values, 'value');
+        const aggregateValue =
+          selectedTemporalAggregation.value === AggregationOption.Mean
+            ? sum / values.length
+            : sum;
+        return {
+          year,
+          value: aggregateValue
+        };
+      });
+      // Restructure into the BreakdownData format
+      const modelRunId = modelRunIds.value[index];
+      reduced.forEach(({ year, value }) => {
+        const entryForThisYear = result.find(entry => entry.id === year);
+        if (entryForThisYear === undefined) {
+          // Add an entry for this year
+          result.push({
+            id: year,
+            values: { [modelRunId]: value }
+          });
+        } else {
+          // Add a value to this year's entry
+          entryForThisYear.values[modelRunId] = value;
+        }
+      });
+    });
+
+    const sortedByDescendingYear = result.sort((a, b) => {
+      // localeCompare will return 1 if `a` should come after `b`, so we negate the result to
+      //  achieve descending order (e.g. 2020, 2019, 2018, ...)
+      return -a.id.localeCompare(b.id, undefined, { numeric: true });
+    });
+
+    return {
+      Year: sortedByDescendingYear
+    };
+  });
+
   const processedTimeseriesData = computed(() => {
     if (rawTimeseriesData.value.length === 0) {
       return {
@@ -235,6 +287,7 @@ export default function useTimeseriesData(
       () => processedTimeseriesData.value.baselineMetadata
     ),
     relativeTo,
-    setRelativeTo
+    setRelativeTo,
+    temporalBreakdownData
   };
 }

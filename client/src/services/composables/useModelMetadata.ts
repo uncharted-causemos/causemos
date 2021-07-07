@@ -4,11 +4,11 @@ import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs } from '@/utils/datacube-util';
 
 /**
- * Takes a modelId then fetches and returns the metadata associated
+ * Takes a dataId then fetches and returns the metadata associated
  * with that model.
  */
 export default function useModelMetadata(
-  modelId: Ref<string>
+  dataId: Ref<string>
 ): Ref<Model | Indicator | null> {
   const metadata = ref<Model | Indicator | null>(null);
 
@@ -16,7 +16,7 @@ export default function useModelMetadata(
     metadata.value = null;
     let isCancelled = false;
     async function fetchMetadata() {
-      const rawMetadata = await getDatacubeById(modelId.value);
+      const rawMetadata = await getDatacubeById(dataId.value);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.

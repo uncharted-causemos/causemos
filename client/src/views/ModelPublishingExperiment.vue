@@ -67,7 +67,7 @@
           class="dropdown-config"
           :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
           :inner-button-label="'Temporal Aggregation'"
-          :items="temporalAggregations"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedTemporalAggregation"
           @item-selected="handleTemporalAggregationSelection"
         />
@@ -77,7 +77,7 @@
           class="dropdown-config"
           :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
           :inner-button-label="'Temporal Resolution'"
-          :items="temporalResolutions"
+          :items="Object.values(TemporalResolutionOption)"
           :selected-item="selectedTemporalResolution"
           @item-selected="handleTemporalResolutionSelection"
         />
@@ -87,7 +87,7 @@
           class="dropdown-config"
           :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
           :inner-button-label="'Spatial Aggregation'"
-          :items="spatialAggregations"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedSpatialAggregation"
           @item-selected="handleSpatialAggregationSelection"
         />
@@ -108,10 +108,12 @@
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
             :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
+            :temporal-breakdown-data="temporalBreakdownData"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
@@ -126,13 +128,12 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import DSSAT_PRODUCTION_DATA from '@/assets/DSSAT-production.js';
 import { computed, ComputedRef, defineComponent, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
-import { DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
 import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
@@ -172,12 +173,6 @@ export default defineComponent({
       project: 'app/project'
     })
   },
-  data: () => ({
-    temporalAggregations: [] as string[],
-    temporalResolutions: [] as string[],
-    spatialAggregations: [] as string[],
-    initialInsightCount: -1
-  }),
   setup() {
     const store = useStore();
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
@@ -200,8 +195,7 @@ export default defineComponent({
 
     const typeBreakdownData: NamedBreakdownData[] = [];
 
-    // FIXME: set initial model to DSSAT in case the query param does not have a valid datacubeid
-    const selectedModelId = ref(DSSAT_PRODUCTION_DATA.modelId);
+    const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
     const modelRunsFetchedAt = ref(0);
@@ -257,13 +251,19 @@ export default defineComponent({
     const isDescriptionView = ref<boolean>(true);
 
     watchEffect(() => {
+      if (metadata.value) {
+        store.dispatch('insightPanel/setContextId', metadata.value.name);
+        // set initial output variable index
+        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature);
+        store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+      }
+    });
+
+    watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Indicator) {
         setSelectedScenarioIds([DatacubeType.Indicator.toString()]);
       } else {
         isDescriptionView.value = selectedScenarioIds.value.length === 0;
-      }
-      if (metadata.value) {
-        store.dispatch('insightPanel/setContextId', metadata.value.name);
       }
     });
 
@@ -311,7 +311,8 @@ export default defineComponent({
       timeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      setRelativeTo,
+      temporalBreakdownData
     } = useTimeseriesData(
       metadata,
       selectedModelId,
@@ -357,7 +358,10 @@ export default defineComponent({
       setRelativeTo,
       breakdownOption,
       setBreakdownOption,
-      projectId
+      projectId,
+      temporalBreakdownData,
+      AggregationOption,
+      TemporalResolutionOption
     };
   },
   watch: {
@@ -377,34 +381,17 @@ export default defineComponent({
     },
     countInsights: {
       handler(/* newValue, oldValue */) {
-        if (this.initialInsightCount === -1) {
-          // save initial insights count
-          this.initialInsightCount = this.countInsights;
-        } else {
-          // initial insights count is valid and we have some update
-          // if the current insights count differ, then the user has saved some new insight(s)
-          if (this.initialInsightCount !== this.countInsights) {
-            // so mark this step as completed
-            this.setCurrentPublishStep(ModelPublishingStepID.Capture_Insight);
-            this.updatePublishingStep(true);
-          }
+        if (this.countInsights > 0) {
+          // we have at least one insight, so mark the relevant step as completed
+          const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+          if (ps) { ps.completed = true; }
         }
-      }
+      },
+      immediate: true
     }
-  },
-  mounted(): void {
-    this.fetchAvailableAggregations();
-
-    // TODO: when new-runs-mode is active, clear the breakdown panel content
-    // TODO: add other viz options as per WG4 recent slides
-
-    // set initial output variable index
-    // FIXME: default will be provided later through metadata
-    this.setCurrentOutputIndex(0);
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
       setCurrentPublishStep: 'modelPublishStore/setCurrentPublishStep',
       setSelectedTemporalAggregation: 'modelPublishStore/setSelectedTemporalAggregation',
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
@@ -413,10 +400,17 @@ export default defineComponent({
     async publishModel() {
       // call the backend to update model metadata and finalize model publication
       if (this.metadata && isModel(this.metadata)) {
+        // mark this datacube as published
         this.metadata.status = DatacubeStatus.Ready;
+        // update the default output feature
+        const validatedOutputs = this.metadata.validatedOutputs ?? [];
+        if (validatedOutputs.length > 0) {
+          this.metadata.default_feature = validatedOutputs[this.currentOutputIndex].name;
+        }
+        // remove newly-added fields such as 'validatedOutputs' so that ES can update
         const modelToUpdate = _.cloneDeep(this.metadata);
         delete modelToUpdate.validatedOutputs;
-        // remove newly-added fields such as 'validatedOutputs' so that ES can update
+        // update server data
         await updateDatacube(modelToUpdate.id, modelToUpdate);
         // redirect to model family page
         this.$router.push({ name: 'domainDatacubeOverview', params: { project: this.projectId, projectType: modelToUpdate.type } });
@@ -428,17 +422,6 @@ export default defineComponent({
     updateSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;
       this.setSelectedTimestamp(value);
-    },
-    fetchAvailableAggregations() {
-      // TODO: fetch actual available aggregations based on the pipeline support
-      this.temporalResolutions.push('year');
-      this.temporalResolutions.push('month');
-
-      this.temporalAggregations.push('mean');
-      this.temporalAggregations.push('sum');
-
-      this.spatialAggregations.push('mean');
-      this.spatialAggregations.push('sum');
     },
     updatePublishingStep(completed: boolean) {
       const currStep = this.publishingSteps.find(ps => ps.id === this.currentPublishStep);
@@ -459,6 +442,10 @@ export default defineComponent({
           selectedIds = this.selectedScenarioIds.length > 0 ? this.selectedScenarioIds : [this.allScenarioIds[0]];
         }
         this.setSelectedScenarioIds(selectedIds);
+      }
+
+      if (this.currentPublishStep === ModelPublishingStepID.Tweak_Visualization) {
+        this.checkStepForCompleteness();
       }
     },
     handleTemporalAggregationSelection(tempAgg: string) {
@@ -521,7 +508,8 @@ export default defineComponent({
       });
     },
     checkModelMetadataValidity(info: { valid: boolean }) {
-      this.updatePublishingStep(info.valid);
+      const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Enrich_Description);
+      if (ps) { ps.completed = info.valid; }
     },
     toggleAccordion(event: any) {
       this.openPublishAccordion = !this.openPublishAccordion;

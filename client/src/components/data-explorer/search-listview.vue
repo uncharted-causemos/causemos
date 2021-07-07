@@ -79,10 +79,10 @@ export default {
     }),
 
     isSelected(datacube) {
-      return this.selectedDatacubes.find(dId => dId === datacube.id) !== undefined;
+      return this.selectedDatacubes.find(dId => dId === datacube.data_id) !== undefined;
     },
     updateSelection(datacube) {
-      this.setSelectedDatacubes([datacube.id]);
+      this.setSelectedDatacubes([datacube.data_id]);
     },
     formatOutputVariables(datacube) {
       const modelName = datacube.name;

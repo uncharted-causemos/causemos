@@ -27,6 +27,7 @@ export default {
     current: null,
     box: null
   }),
+  emits: ['select-box'],
   mounted() {
     this.mapComponent = this.$parent;
     if (!this.mapComponent.map) {
