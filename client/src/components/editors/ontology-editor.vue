@@ -58,7 +58,7 @@
           />
           <small-text-button
             :label="'Create Concept'"
-            @click="$emit('showCustomConcept')"
+            @click="$emit('show-custom-concept')"
           />
         </div>
       </template>
@@ -110,7 +110,7 @@ export default defineComponent({
     }
   },
   emits: [
-    'select', 'close', 'showCustomConcept'
+    'select', 'close', 'show-custom-concept'
   ],
   setup() {
     const store = useStore();
