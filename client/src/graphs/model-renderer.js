@@ -196,18 +196,30 @@ export default class ModelRenderer extends SVGRenderer {
           return interpolatePath(previousPath, currentPath)(t);
         };
       });
-  }
 
-  updateEdgePoints() {
-    super.updateEdgePoints();
-    // const chart = this.chart;
-    // chart.selectAll('.edge').each(function() {
-    //   const pathNode = d3.select(this).select('path').node();
-    //   const offIndicator = self.calculateEdgeControlPlacement(pathNode);
-    //   d3.select(this).select('.edge-control')
-    //     .attr('transform', svgUtil.translate(offIndicator.x, offIndicator.y));
-    // });
-    // some more stuff
+    // const svg = d3.select(this.svgEl);
+    // console.log('selection: ', selection.node().parentNode);
+    if (selection.node()) {
+      const dataLayer = d3.select(selection.node().parentNode);
+      selection
+        .selectAll('.edge-path')
+        .transition()
+        .duration(1000)
+        .each(function (edge) {
+          const firstOrderWeight = edge.data.parameter.weights[0];
+          const secondOrderWeight = edge.data.parameter.weights[1];
+
+          if (firstOrderWeight === 0 && secondOrderWeight === 0) {
+            const halfWayPoint = this.getTotalLength() / 2;
+            const indicatorPoint = this.getPointAtLength(halfWayPoint);
+            dataLayer
+              .append('circle')
+              .attr('r', 5)
+              .attr('fill', 'red')
+              .attr('transform', `translate(${indicatorPoint.x},${indicatorPoint.y})`);
+          }
+        });
+    }
   }
 
   renderEdgeRemoved(selection) {
@@ -229,9 +241,6 @@ export default class ModelRenderer extends SVGRenderer {
       .style('cursor', 'pointer');
 
     const controlStyles = POLARITY_ICON_SVG_SETTINGS;
-
-    console.log('this: ', this);
-    console.log('selection', selection);
 
     selection
       .append('text')
