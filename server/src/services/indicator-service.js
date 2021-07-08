@@ -3,7 +3,7 @@ const moment = require('moment');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const AggregationsUtil = rootRequire('/util/aggregations-util');
 
 const DEFAULT_SIZE = 10000;
@@ -18,14 +18,12 @@ const DEFAULT_SIZE = 10000;
  */
 const _setIndicatorProperties = async (parameter) => {
   if (_.isNil(parameter.indicator_id)) throw new Error('No indicator_id specified in parameter object');
-  const indicatorMatch = await getIndicatorData(parameter.indicator_id, parameter.indicator_source);
+  const indicatorMatch = await getIndicatorData(parameter.indicator_id, parameter.indicator_feature);
   if (_.isEmpty(indicatorMatch)) {
     return null;
   }
 
-  // FIXME: more intelligent defaults
-  const unit = Object.keys(indicatorMatch)[0];
-  const countryLevelData = indicatorMatch[unit][0];
+  const countryLevelData = indicatorMatch[0];
   const admin1LevelData = countryLevelData.children[0];
   const admin2LevelData = admin1LevelData.children[0];
   const indicatorTimeSeries = admin2LevelData.meta.timeseries.map(d => {
@@ -34,7 +32,8 @@ const _setIndicatorProperties = async (parameter) => {
 
   parameter.indicator_time_series = indicatorTimeSeries;
   parameter.indicator_time_series_parameter = {
-    unit: unit,
+    // obsolete now
+    // unit: unit,
     country: countryLevelData.key,
     admin1: admin1LevelData.key,
     admin2: admin2LevelData.key
@@ -47,14 +46,14 @@ const _setIndicatorProperties = async (parameter) => {
  *
  * Returns an array of indicator data points for the specified indicator
  */
-const getIndicatorData = async (variable, model) => {
+const getIndicatorData = async (variable, feature) => {
   Logger.info(`Get indicator data from wm-go:  ${variable}`);
 
   const options = {
     method: 'GET',
     url: process.env.WM_GO_URL +
       // Get data for all units
-      `/maas/indicator-data?indicator=${encodeURI(variable)}&model=${encodeURI(model)}`
+      `/maas/output/raw-data?model_id=${encodeURI(variable)}&run_id=${encodeURI('indicator')}&feature=${encodeURI(feature)}`
   };
 
   const response = await requestAsPromise(options);
@@ -81,12 +80,7 @@ const getIndicatorData = async (variable, model) => {
     }
   ];
 
-  const result = {};
-  const groupedByUnit = _.groupBy(rawResult, d => d.value_unit);
-  Object.keys(groupedByUnit).forEach(unitKey => {
-    result[unitKey] = AggregationsUtil.groupDataArray(groupedByUnit[unitKey], _.cloneDeep(pipeline));
-  });
-  return result;
+  return AggregationsUtil.groupDataArray(rawResult, _.cloneDeep(pipeline));
 };
 
 /**
@@ -126,7 +120,8 @@ const _findAllWithoutIndicators = async (modelId) => {
 
 const getOntologyCandidates = async (modelId, concepts) => {
   const ontologyCandidates = {};
-  const indicatorMetadataAdapter = Adapter.get(RESOURCE.INDICATOR_METADATA);
+
+  const indicatorMetadataAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
   const esClient = indicatorMetadataAdapter.client;
 
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
@@ -158,7 +153,7 @@ const getOntologyCandidates = async (modelId, concepts) => {
       }
     });
     if (_.isEmpty(projectData.body.hits.hits)) {
-      compositionalConcepts = [concept];
+      compositionalConcepts = [concept.replace('wm_compositional', 'wm')];
     } else {
       // grab the subj/obj candidate names, and flatten them all into one array
       compositionalConcepts = projectData.body.hits.hits.map(
@@ -181,10 +176,30 @@ const getOntologyCandidates = async (modelId, concepts) => {
       }
     };
     const searchPayload = {
-      index: RESOURCE.INDICATOR_METADATA,
+      index: RESOURCE.DATA_DATACUBE,
       size: DEFAULT_SIZE,
       body: {
-        query,
+        query: {
+          bool: {
+            must: [
+              {
+                nested: {
+                  path: "ontology_matches",
+                  query: {
+                    terms: {
+                      "ontology_matches.name": compositionalConcepts
+                    }
+                  }
+                }
+              },
+              {
+                match: {
+                  type: 'indicator'
+                }
+              }
+            ]
+          }
+        },
         sort: [
           {
             _score: {
@@ -231,9 +246,10 @@ const setDefaultIndicators = async (modelId) => {
     conceptMatches[conceptKey] = {
       modified_at: editTime,
       parameter: {
-        indicator_id: topMatch.variable,
-        indicator_name: topMatch.output_name,
-        indicator_source: topMatch.model,
+        indicator_id: topMatch.data_id,
+        indicator_name: topMatch.name + "/" + topMatch.outputs[0].display_name,
+        indicator_source: topMatch.maintainer.organization,
+        indicator_feature: topMatch.default_feature,
         indicator_score: topMatch._match_score
         // Added in _setIndicatorProperties below
         // indicator_time_series,
@@ -250,7 +266,13 @@ const setDefaultIndicators = async (modelId) => {
   // Enrich conceptMatches
   for (const conceptKey of matchedKeys) {
     const matched = conceptMatches[conceptKey];
-    await _setIndicatorProperties(matched.parameter);
+    try {
+      await _setIndicatorProperties(matched.parameter);
+      delete matched.parameter.indicator_feature;
+    } catch {
+      Logger.info(`Concept failed to match:  ${conceptKey}`);
+      delete conceptMatches[conceptKey];
+    }
   }
 
   // Go through concept without indicator association and set default
