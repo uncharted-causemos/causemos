@@ -130,17 +130,17 @@ const getOntologyCandidates = async (modelId, concepts) => {
   for (const concept of concepts) {
     let compositionalConcepts = [];
     const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, modelData.project_id);
-    let query = {
+    const query = {
       bool: {
         should: [
           {
             term: {
-              'subj.candidates.name': concept
+              'subj.concept': concept
             }
           },
           {
             term: {
-              'obj.candidates.name': concept
+              'obj.concept': concept
             }
           }
         ]
@@ -152,29 +152,37 @@ const getOntologyCandidates = async (modelId, concepts) => {
         size: 1, query
       }
     });
-    if (_.isEmpty(projectData.body.hits.hits)) {
-      compositionalConcepts = [concept.replace('wm_compositional', 'wm')];
+    const results = projectData.body.hits.hits;
+    if (_.isEmpty(results)) {
+      compositionalConcepts = [concept];
     } else {
-      // grab the subj/obj candidate names, and flatten them all into one array
-      compositionalConcepts = projectData.body.hits.hits.map(
-        pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(
-          pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm'))
-        )).flat(1);
+      results.forEach(r => {
+        const source = r._source;
+        if (source.subj.concept === concept) {
+          compositionalConcepts = [
+            source.subj.theme,
+            source.subj.theme_property,
+            source.subj.process,
+            source.subj.process_property
+          ].filter(d => d !== '');
+        } else {
+          compositionalConcepts = [
+            source.obj.theme,
+            source.obj.theme_property,
+            source.obj.process,
+            source.obj.process_property
+          ].filter(d => d !== '');
+        }
+      });
+
+      // compositionalConcepts = results.map(
+      //   pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(
+      //     pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm'))
+      //   )).flat(1);
     }
     // make sure array contains unique values
     compositionalConcepts = [...new Set(compositionalConcepts)];
-    query = {
-      bool: {
-        should: [
-          {
-            terms: {
-              ontology_components: compositionalConcepts
-            }
-          }
-        ],
-        minimum_should_match: 1
-      }
-    };
+
     const searchPayload = {
       index: RESOURCE.DATA_DATACUBE,
       size: DEFAULT_SIZE,
@@ -183,13 +191,19 @@ const getOntologyCandidates = async (modelId, concepts) => {
           bool: {
             must: [
               {
-                nested: {
-                  path: 'ontology_matches',
-                  query: {
-                    terms: {
-                      'ontology_matches.name': compositionalConcepts
+                bool: {
+                  should: [
+                    {
+                      nested: {
+                        path: 'ontology_matches',
+                        query: {
+                          terms: {
+                            'ontology_matches.name': compositionalConcepts
+                          }
+                        }
+                      }
                     }
-                  }
+                  ]
                 }
               },
               {
@@ -211,6 +225,7 @@ const getOntologyCandidates = async (modelId, concepts) => {
     };
     const response = await esClient.search(searchPayload);
     const foundIndicatorMetadata = response.body.hits.hits;
+
     if (!_.isEmpty(foundIndicatorMetadata)) {
       ontologyCandidates[concept] = {
         ...foundIndicatorMetadata[0]._source,
@@ -237,6 +252,11 @@ const setDefaultIndicators = async (modelId) => {
   // All of these indicators are set by the same action, so they should
   // all have the same modified_at time
   const editTime = moment.valueOf();
+
+
+  console.log('ontology candidates');
+  console.log(ontologyCandidates);
+
 
   // Set default candidates
   const conceptMatches = {};
