@@ -1,13 +1,22 @@
 <template>
   <div
     class="uncharted-cards-reader-content-container uncharted-cards-style"
-    :class="classObject"
-    @change="toggle"/>
+    style="overflow-y: scroll">
+    <div
+      v-if="viewer"
+      class="fixed-header"
+      @click="toggle">
+      Raw text
+      <i class="fa fa-fw fa-toggle-on"/>
+      <i class="fa fa-fw fa-toggle-off"/>
+    </div>
+    <div ref="content" >Loading...</div>
+  </div>
 </template>
 
 <script>
 
-import _ from 'lodash';
+// import _ from 'lodash';
 import { ReaderContent } from '@uncharted.software/cards';
 import { createReaderSwitchButton } from '@/utils/uncharted-cards-util';
 import { removeChildren } from '@/utils/dom-util';
@@ -29,6 +38,15 @@ const DEFAULT_READER_CONTENT_CONFIG = {
 export default {
   name: 'DocumentsReaderContent',
   props: {
+    document: {
+      type: Object,
+      required: true
+    },
+    viewer: {
+      type: Object,
+      default: () => (null)
+    }
+    /*
     data: {
       type: Object,
       default: () => ({})
@@ -45,6 +63,7 @@ export default {
       type: Object,
       default: () => ({})
     }
+    */
   },
   data: () => ({
     classObject: {
@@ -57,6 +76,11 @@ export default {
     }
   },
   watch: {
+    viewer(n) {
+      console.log('huh', n);
+      this.refresh();
+    }
+    /*
     data(o, n) {
       if (_.isEqual(n, o)) return;
       this.refresh();
@@ -69,12 +93,13 @@ export default {
       if (_.isEqual(n, o)) return;
       this.refresh();
     }
+    */
   },
   mounted () {
     this.readerContent = new ReaderContent();
     this.registerEvents();
     this.refresh();
-    this.renderSwitchButton();
+    // this.renderSwitchButton();
   },
   unmounted() {
     this.destroySwitchButton();
@@ -85,20 +110,34 @@ export default {
     },
     refresh() {
       // remove child nodes (single reader content node in this case)
-      removeChildren(this.$el);
+      removeChildren(this.$refs.content);
+
+      if (this.viewer) {
+        this.$refs.content.appendChild(this.viewer.element);
+      } else {
+        this.$refs.content.innerHTML = 'Loading...';
+      }
+      /*
       const content = this.data.content;
       const isContentCustomElement = content instanceof Element || content instanceof HTMLDocument;
+      */
+
       // render and mount the reader content element to the dom
-      this.readerContent.reset({
-        config: this.readerContentConfig,
-        data: isContentCustomElement ? _.pick(this.data, ['id', 'source', 'sourceUrl', 'metadata']) : this.data
-      }).render();
-      this.classObject['no-reader-padding'] = false;
+      // this.readerContent.reset({
+      //   config: this.readerContentConfig,
+      //   data: isContentCustomElement ? _.pick(this.data, ['id', 'source', 'sourceUrl', 'metadata']) : this.data
+      // }).render();
+      // this.classObject['no-reader-padding'] = false;
+      // if (isContentCustomElement) {
+      //   this.classObject['no-reader-padding'] = true;
+      //   this.readerContent.$element.find('.content').html(content);
+      // }
+
+      /*
       if (isContentCustomElement) {
-        this.classObject['no-reader-padding'] = true;
-        this.readerContent.$element.find('.content').html(content);
+        this.$refs.content.appendChild(content);
       }
-      this.$el.appendChild(this.readerContent.$element[0]);
+      */
     },
     renderSwitchButton() {
       if (this.switchButtonData.show) {
@@ -127,6 +166,11 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+  .fixed-header {
+    position: fixed;
+    padding: 4px;
+  }
+
   .uncharted-cards-reader-content-container {
     &.no-reader-padding ::v-deep(.reader-content-body) {
       padding-top: 0;

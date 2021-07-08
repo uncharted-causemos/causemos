@@ -3,20 +3,31 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
+
+      <documents-reader-content
+        v-if="documentData"
+        :document="documentData"
+        :viewer="viewer" />
+      <!--
+      <documents-reader-content
+        :document="documentData" />
+      -->
+      <!--
       <documents-reader-content
         :data="readerContentData"
         :switch-button-data="switchButtonData"
         @click-close-icon="close"
       />
+      -->
     </template>
   </modal>
 </template>
 
 <script>
-import _ from 'lodash';
+// import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import API from '@/api/api';
-import { toCardData, DOC_FIELD } from '@/utils/document-util';
+import { toCardData } from '@/utils/document-util';
 import Modal from '@/components/modals/modal';
 import DocumentsReaderContent from '@/components/kb-explorer/documents-reader-content';
 import { createPDFViewer } from '@/utils/pdf/viewer';
@@ -24,8 +35,18 @@ import { createPDFViewer } from '@/utils/pdf/viewer';
 const CONTENT_WIDTH = 800;
 
 const isPdf = (data) => {
-  const fileType = data && data[DOC_FIELD.FILE_TYPE];
+  const fileType = data && data.file_type;
   return fileType === 'pdf' || fileType === 'application/pdf';
+};
+
+const createTextViewer = (text) => {
+  const el = document.createElement('div');
+  el.innerHTML = text;
+  el.style.paddingTop = '30px';
+  el.style.paddingLeft = '15px';
+  el.style.paddingRight = '15px';
+  el.style.paddingBottom = '15px';
+  return el;
 };
 
 export default {
@@ -35,12 +56,15 @@ export default {
     Modal
   },
   props: {
-    documentData: {
-      type: Object,
-      default: () => ({})
+    documentId: {
+      type: String,
+      required: true
     }
   },
   data: () => ({
+    viewer: null,
+    documentData: null,
+
     readerContentCustomElementData: {},
     readerContentRawData: {},
     readerContentData: {},
@@ -63,7 +87,28 @@ export default {
       this.fetchReaderContent();
     },
     async fetchReaderContent() {
-      if (!this.documentData) return;
+      const url = `documents/${this.documentId}`;
+      this.documentData = (await API.get(url)).data;
+      console.log('!!', this.documentData);
+
+      if (isPdf(this.documentData)) {
+        const rawDocUrl = `/api/dart/${this.documentId + 'abc'}/raw`;
+        try {
+          const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
+          viewer.renderPages();
+          this.viewer = viewer;
+        } catch (_) {
+          this.viewer = {
+            element: createTextViewer(this.documentData.extracted_text)
+          };
+        }
+      } else {
+        this.viewer = {
+          element: createTextViewer(this.documentData.extracted_text)
+        };
+      }
+
+      /*
       this.readerContentData = Object.assign(toCardData(this.documentData), { content: 'Loading...' });
       const docId = this.documentData[DOC_FIELD.DOC_ID] || this.documentData.doc_id;
 
@@ -81,6 +126,7 @@ export default {
       // render reader content with custom element data (pdf viewer) by default
       this.updateReaderContentData(isRawData, isRawData);
       return viewer && viewer.renderPages();
+      */
     },
     async fetchReaderContentRawDoc(docData, docId) {
       if (!isPdf(docData)) return;
