@@ -117,14 +117,14 @@
                 :concept="selectedRelationship.source"
                 :suggestions="suggestions"
                 @select="confirmUpdateGrounding(item, selectedRelationship.source, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
-                @close="closeEditor" />
+                @close="closeEditor"/>
 
               <ontology-editor
                 v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
                 :concept="selectedRelationship.target"
                 :suggestions="suggestions"
                 @select="confirmUpdateGrounding(item, selectedRelationship.target, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
-                @close="closeEditor" />
+                @close="closeEditor"/>
             </div>
           </template>
         </collapsible-item>

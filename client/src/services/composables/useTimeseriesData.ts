@@ -102,6 +102,7 @@ export default function useTimeseriesData(
   selectedTemporalAggregation: Ref<string>,
   selectedSpatialAggregation: Ref<string>,
   breakdownOption: Ref<string | null>,
+  selectedTimestamp: Ref<number | null>,
   onNewLastTimestamp: (lastTimestamp: number) => void
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
@@ -112,7 +113,6 @@ export default function useTimeseriesData(
   );
 
   watchEffect(onInvalidate => {
-    rawTimeseriesData.value = [];
     if (
       modelRunIds.value.length === 0 ||
       metadata.value === null ||
@@ -121,26 +121,24 @@ export default function useTimeseriesData(
       // Don't have the information needed to fetch the data
       return;
     }
+    const outputs = metadata.value.validatedOutputs
+      ? metadata.value.validatedOutputs
+      : metadata.value.outputs;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
-      let temporalRes = 'month';
-      if (selectedTemporalResolution.value !== '') {
-        temporalRes = selectedTemporalResolution.value;
-      }
-      let temporalAgg: string = AggregationOption.Sum;
-      if (selectedTemporalAggregation.value !== '') {
-        temporalAgg = selectedTemporalAggregation.value;
-      }
-      let spatialAgg: string = AggregationOption.Mean;
-      if (selectedSpatialAggregation.value !== '') {
-        spatialAgg = selectedSpatialAggregation.value;
-      }
-      const modelMetadata = metadata.value;
-      if (!modelMetadata) return;
-      const outputs = modelMetadata.validatedOutputs
-        ? modelMetadata.validatedOutputs
-        : modelMetadata.outputs;
+      const temporalRes =
+        selectedTemporalResolution.value !== ''
+          ? selectedTemporalResolution.value
+          : 'month';
+      const temporalAgg =
+        selectedTemporalAggregation.value !== ''
+          ? selectedTemporalAggregation.value
+          : AggregationOption.Sum;
+      const spatialAgg =
+        selectedSpatialAggregation.value !== ''
+          ? selectedSpatialAggregation.value
+          : AggregationOption.Mean;
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
@@ -165,7 +163,7 @@ export default function useTimeseriesData(
       //  `rawTimeseriesData` ref
       rawTimeseriesData.value = fetchResults.map((points, index) => {
         const name = `Run ${index}`;
-        const id = index.toString();
+        const id = modelRunIds.value[index];
         const color = colorFromIndex(index);
         return { name, id, color, points };
       });
@@ -268,6 +266,14 @@ export default function useTimeseriesData(
         .map(timeseries => timeseries.points)
         .flat()
         .map(point => mapToBreakdownDomain(point.timestamp));
+      // Don't call "onNewLastTimestamp" callback if the previously selected timestamp
+      //  still exists within the new timeseries's range.
+      if (
+        selectedTimestamp.value !== null &&
+        allTimestamps.includes(selectedTimestamp.value)
+      ) {
+        return;
+      }
       const lastTimestamp = _.max(allTimestamps);
       if (lastTimestamp !== undefined) {
         onNewLastTimestamp(lastTimestamp);

@@ -19,12 +19,13 @@
       <div class="nodes-container">
         <div class="drivers">
           <h5>Top Drivers</h5>
-          <graph-node
+          <neighbor-node
             v-for="driver in drivers"
-            :key="driver"
-            :name="driver"
+            :key="driver.edge.id"
+            :node="driver.node"
+            :edge="driver.edge"
             :is-driver="true"
-            class="graph-node"
+            class="neighbor-node"
           />
         </div>
         <div class="selected-node">
@@ -39,16 +40,21 @@
               </div>
             </div>
           </div>
-          <p><i class="fa fa-fw fa-info-circle"/>To create a scenario, set some values by clicking on the chart. To remove a point, click on it again.</p>
+          <p>
+            <i class="fa fa-fw fa-info-circle" />To create a scenario, set some
+            values by clicking on the chart. To remove a point, click on it
+            again.
+          </p>
         </div>
         <div class="impacts">
           <h5>Top Impacts</h5>
-          <graph-node
+          <neighbor-node
             v-for="impact in impacts"
-            :key="impact"
-            :name="impact"
+            :key="impact.edge.id"
+            :node="impact.node"
+            :edge="impact.edge"
             :is-driver="false"
-            class="graph-node"
+            class="neighbor-node"
           />
         </div>
       </div>
@@ -75,18 +81,20 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent } from 'vue';
+import { computed, defineComponent, ref, watchEffect } from 'vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import GraphNode from '@/components/node-drilldown/graph-node.vue';
+import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import router from '@/router';
 import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
+import modelService from '@/services/model-service';
+import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
 
 export default defineComponent({
   name: 'NodeDrilldown',
   components: {
     DrilldownPanel,
-    GraphNode
+    NeighborNode
   },
   setup() {
     // Get CAG and selected node from route
@@ -94,20 +102,92 @@ export default defineComponent({
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const nodeId = computed(() => store.getters['app/nodeId']);
-    // TODO: remove console.log once we're using nodeId
-    console.log('Selected node\'s ID:', nodeId.value);
-    // TODO: fetch top drivers and top impacts (as well as edge colours/weights)
+
+    const modelSummary = ref<CAGModelSummary | null>(null);
+    const modelComponents = ref<CAGGraph | null>(null);
+    const currentEngine = computed(
+      () => modelSummary.value?.parameter?.engine ?? null
+    );
+
+    watchEffect(onInvalidate => {
+      // Fetch model summary and components
+      if (currentCAG.value === null) return;
+      let isCancelled = false;
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      modelService.getSummary(currentCAG.value).then(_modelSummary => {
+        if (isCancelled) return;
+        modelSummary.value = _modelSummary;
+      });
+      modelService.getComponents(currentCAG.value).then(_modelComponents => {
+        if (isCancelled) return;
+        modelComponents.value = _modelComponents;
+      });
+    });
+
+    const scenarios = ref<Scenario[]>([]);
+
+    watchEffect(async onInvalidate => {
+      // Fetch scenarios
+      if (currentCAG.value === null || currentEngine.value === null) return;
+      let isCancelled = false;
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      const _scenarios = await modelService.getScenarios(
+        currentCAG.value,
+        currentEngine.value
+      );
+      if (isCancelled) return;
+      scenarios.value = _scenarios;
+    });
+
+    const selectedNode = computed(() => {
+      if (nodeId.value === undefined || modelComponents.value === null) {
+        return null;
+      }
+      return (
+        modelComponents.value.nodes.find(node => node.id === nodeId.value) ??
+        null
+      );
+    });
+    const nodeConceptName = computed(() => selectedNode.value?.label);
+
+
+    // TODO: Filter top drivers and top impacts
     //  CLARIFICATION REQUIRED:
     //    is this taken from the sensitivity analysis?
     //    do we want a maximum number of drivers/impacts? or add a scrollbar?
-    // TODO: fetch historical/projection data for each driver/impact and selected node.
-    // TODO: fetch node's concept name
-    const nodeConceptName = 'COVID Virus';
-    const drivers = ['precipitation', 'rainfall', 'sky water'];
-    const impacts = ['crop production', 'flooding'];
+    const drivers = computed(() => {
+      if (modelComponents.value === null || selectedNode.value === null) {
+        return [];
+      }
+      const selectedConcept = selectedNode.value.concept;
+      const { edges, nodes } = modelComponents.value;
+      return edges
+        .filter(edge => edge.target === selectedConcept)
+        .map(edge => ({
+          node: nodes.find(node => node.concept === edge.source),
+          edge
+        }));
+    });
+    const impacts = computed(() => {
+      if (modelComponents.value === null || selectedNode.value === null) {
+        return [];
+      }
+      const selectedConcept = selectedNode.value.concept;
+      const { edges, nodes } = modelComponents.value;
+      return edges
+        .filter(edge => edge.source === selectedConcept)
+        .map(edge => ({
+          node: nodes.find(node => node.concept === edge.target),
+          edge
+        }));
+    });
     const drilldownPanelTabs = computed(() => [
       {
-        name: `Data to quantify ${nodeConceptName}`,
+        name: `Data to quantify ${nodeConceptName.value}`,
         id: 'only-tab'
       }
     ]);
@@ -126,7 +206,9 @@ export default defineComponent({
       drilldownPanelTabs,
       drivers,
       impacts,
-      collapseNode
+      collapseNode,
+      modelComponents,
+      scenarios
     };
   }
 });
@@ -167,7 +249,6 @@ h4 {
   display: flex;
   flex: 1;
   min-height: 0;
-  padding: 10px;
   margin-bottom: 10px;
 }
 
@@ -177,7 +258,7 @@ h4 {
   max-height: 500px;
   display: flex;
   flex-direction: column;
-  margin: 0 10px;
+  margin: 0 15px;
 }
 
 h6 {
@@ -203,7 +284,7 @@ h6 {
   padding: 10px;
 }
 
-.graph-node {
+.neighbor-node {
   margin-top: 10px;
 }
 

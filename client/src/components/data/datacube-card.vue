@@ -161,7 +161,7 @@
           </div>
           <div
             v-if="mapReady && !isDescriptionView && regionalData !== null"
-            class="card-map-container full-width">
+            class="card-map-container">
             <data-analysis-map
               v-for="(spec, indx) in outputSourceSpecs"
               :key="spec.id"
@@ -171,7 +171,7 @@
               ]"
               :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
-              :output-selection=indx
+              :output-selection=spec.id
               :relative-to="relativeTo"
               :show-tooltip="true"
               :selected-layer-id="mapSelectedLayer"
@@ -183,6 +183,13 @@
               @on-map-load="onMapLoad"
               @slide-handle-change="updateMapFilters"
             />
+          </div>
+          <div
+            v-else-if="!isDescriptionView"
+            class="card-map-container"
+          >
+            <!-- Empty div to reduce jumpiness when the maps are loading -->
+            <div class="card-map" />
           </div>
         </div>
       </div>
@@ -544,10 +551,7 @@ header {
   justify-content: space-between;
   flex-wrap: wrap;
   overflow-y: scroll;
-
-  &.full-width {
-    width: 100%;
-  }
+  width: 100%;
 }
 
 .card-map {
