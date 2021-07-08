@@ -3,11 +3,23 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
-
+      <div>
+        <div v-if="viewer">
+          Show raw text
+          <i v-if="showTextViewer === false" class="fa fa-fw fa-toggle-off" @click="toggle" />
+          <i v-if="showTextViewer === true" class="fa fa-fw fa-toggle-on" @click="toggle" />
+        </div>
+      </div>
+      <div ref="content"
+        class="uncharted-cards-reader-content-container">
+        Loading...
+      </div>
+      <!--
       <documents-reader-content
         v-if="documentData"
         :document="documentData"
         :viewer="viewer" />
+      -->
       <!--
       <documents-reader-content
         :document="documentData" />
@@ -29,8 +41,9 @@ import { mapGetters } from 'vuex';
 import API from '@/api/api';
 import { toCardData } from '@/utils/document-util';
 import Modal from '@/components/modals/modal';
-import DocumentsReaderContent from '@/components/kb-explorer/documents-reader-content';
+// import DocumentsReaderContent from '@/components/kb-explorer/documents-reader-content';
 import { createPDFViewer } from '@/utils/pdf/viewer';
+import { removeChildren } from '@/utils/dom-util';
 
 const CONTENT_WIDTH = 800;
 
@@ -52,7 +65,7 @@ const createTextViewer = (text) => {
 export default {
   name: 'ModalDocument',
   components: {
-    DocumentsReaderContent,
+    // DocumentsReaderContent,
     Modal
   },
   props: {
@@ -62,8 +75,11 @@ export default {
     }
   },
   data: () => ({
-    viewer: null,
     documentData: null,
+    textViewer: null,
+    viewer: null,
+    textOnly: false,
+    showTextViewer: false,
 
     readerContentCustomElementData: {},
     readerContentRawData: {},
@@ -89,23 +105,28 @@ export default {
     async fetchReaderContent() {
       const url = `documents/${this.documentId}`;
       this.documentData = (await API.get(url)).data;
-      console.log('!!', this.documentData);
+      this.textViewer = {
+        element: createTextViewer(this.documentData.extracted_text)
+      };
 
       if (isPdf(this.documentData)) {
-        const rawDocUrl = `/api/dart/${this.documentId + 'abc'}/raw`;
+        const rawDocUrl = `/api/dart/${this.documentId}/raw`;
         try {
           const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
           viewer.renderPages();
           this.viewer = viewer;
         } catch (_) {
-          this.viewer = {
-            element: createTextViewer(this.documentData.extracted_text)
-          };
+          this.textOnly = true;
         }
       } else {
-        this.viewer = {
-          element: createTextViewer(this.documentData.extracted_text)
-        };
+        this.textOnly = true;
+      }
+
+      removeChildren(this.$refs.content);
+      if (this.textOnly === true) {
+        this.$refs.content.appendChild(this.textViewer.element);
+      } else {
+        this.$refs.content.appendChild(this.viewer.element);
       }
 
       /*
@@ -127,6 +148,17 @@ export default {
       this.updateReaderContentData(isRawData, isRawData);
       return viewer && viewer.renderPages();
       */
+    },
+    toggle() {
+      console.log('toggle');
+      this.showTextViewer = !this.showTextViewer;
+
+      removeChildren(this.$refs.content);
+      if (this.showTextViewer === true) {
+        this.$refs.content.appendChild(this.textViewer.element);
+      } else {
+        this.$refs.content.appendChild(this.viewer.element);
+      }
     },
     async fetchReaderContentRawDoc(docData, docId) {
       if (!isPdf(docData)) return;
@@ -173,6 +205,7 @@ export default {
   }
   .uncharted-cards-reader-content-container {
     height: 80vh;
+    overflow-y: scroll;
   }
   ::v-deep(.uncharted-cards-reader-content .reader-content-header .close-button i) {
     padding-right: 12px;
