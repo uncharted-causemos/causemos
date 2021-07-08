@@ -295,6 +295,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       breakdownOption,
+      selectedTimestamp,
       setSelectedTimestamp
     );
 
