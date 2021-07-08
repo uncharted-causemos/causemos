@@ -15,6 +15,16 @@
         class="uncharted-cards-reader-content-container">
         Loading...
       </div>
+      <div>
+        <hr>
+        <table>
+          <tr><td>Publication Date</td><td>???</td></tr>
+          <tr><td>Publisher</td><td>???</td></tr>
+          <tr><td>Author</td><td>???</td></tr>
+          <tr><td>Locations</td><td>???</td></tr>
+          <tr><td>Organizations</td><td>???</td></tr>
+        </table>
+      </div>
     </template>
   </modal>
 </template>
@@ -125,17 +135,12 @@ export default {
     .modal-body {
       padding: 0;
       margin: 0;
+      height: 80vh;
+      overflow-y: scroll;
     }
-  }
-  .uncharted-cards-reader-content-container {
-    height: 80vh;
-    overflow-y: scroll;
   }
   .toolbar {
     padding: 5px;
-  }
-  ::v-deep(.uncharted-cards-reader-content .reader-content-header .close-button i) {
-    padding-right: 12px;
   }
 }
 </style>
