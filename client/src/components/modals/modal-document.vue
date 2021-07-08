@@ -17,12 +17,27 @@
       </div>
       <div>
         <hr>
-        <table>
-          <tr><td>Publication Date</td><td>???</td></tr>
-          <tr><td>Publisher</td><td>???</td></tr>
-          <tr><td>Author</td><td>???</td></tr>
-          <tr><td>Locations</td><td>???</td></tr>
-          <tr><td>Organizations</td><td>???</td></tr>
+        <table v-if="documentData">
+          <tr>
+            <td class="doc-label">Publication Date</td>
+            <td>{{ dateFormatter(documentData.publication_date.date, 'YYYY-MM-DD') }}</td>
+          </tr>
+          <tr>
+            <td class="doc-label">Publisher</td>
+            <td class="doc-value">{{ documentData.publisher_name }}</td>
+          </tr>
+          <tr>
+            <td class="doc-label">Author</td>
+            <td class="doc-value">{{ documentData.author }}</td>
+          </tr>
+          <tr>
+            <td class="doc-label">Locations</td>
+            <td class="doc-value">{{ documentData.ner_analytics.loc.join(', ') }} </td>
+          </tr>
+          <tr>
+            <td class="doc-label">Organizations</td>
+            <td class="doc-value">{{ documentData.ner_analytics.org.join(', ') }}</td>
+          </tr>
         </table>
       </div>
     </template>
@@ -34,6 +49,7 @@ import API from '@/api/api';
 import Modal from '@/components/modals/modal';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
+import dateFormatter from '@/formatters/date-formatter';
 
 const CONTENT_WIDTH = 800;
 
@@ -76,6 +92,7 @@ export default {
     this.refresh();
   },
   methods: {
+    dateFormatter,
     refresh() {
       this.fetchReaderContent();
     },
@@ -125,6 +142,21 @@ export default {
 
 <style lang="scss" scoped>
 .modal-document-container {
+
+  .doc-label {
+    vertical-align: baseline;
+    width: 220px;
+    text-align: right;
+    padding: 1px 3px;
+    font-weight: 600;
+  }
+
+  .doc-value {
+    text-align: left;
+    padding: 1px 3px;
+    max-width: 400px;
+  }
+
   ::v-deep(.modal-container) {
     padding: 0;
     width: 800px;
