@@ -36,6 +36,9 @@ const getters: GetterTree<AppState, any> = {
   currentCAG: (state, getters, rootState /*, rootGetters */) => {
     return rootState.route.params.currentCAG || null;
   },
+  datacubeId: (state, getters, rootState) => {
+    return rootState.route.params.datacubeId || null;
+  },
   nodeId: (state, getters, rootState) => {
     return rootState.route.params.nodeId || null;
   },

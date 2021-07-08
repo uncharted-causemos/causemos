@@ -59,6 +59,16 @@
       :active-tab-id="'only-tab'"
     >
       <template #content>
+        <button
+          v-tooltip.top-center="'Data Explorer'"
+          type="button"
+          class="btn btn-primary btn-call-for-action block-button"
+          @click="openDataExplorer"
+        >
+          <i class="fa fa-fw fa-search" />
+          Data Explorer
+        </button>
+
         (Panes go here)
         <!-- TODO: Panes go here -->
         <!-- <indicator-summary
@@ -79,7 +89,7 @@ import { computed, defineComponent } from 'vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import GraphNode from '@/components/node-drilldown/graph-node.vue';
 import router from '@/router';
-import { useStore } from 'vuex';
+import { useStore, mapGetters } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
@@ -87,6 +97,16 @@ export default defineComponent({
   components: {
     DrilldownPanel,
     GraphNode
+  },
+  props: {
+
+  },
+  computed: {
+    ...mapGetters({
+      currentCAG: 'app/currentCAG',
+      nodeId: 'app/nodeId',
+      project: 'app/project'
+    })
   },
   setup() {
     // Get CAG and selected node from route
@@ -128,6 +148,19 @@ export default defineComponent({
       impacts,
       collapseNode
     };
+  },
+  methods: {
+    openDataExplorer() {
+      this.$router.push({
+        name: 'nodeDataExplorer',
+        params: {
+          currentCAG: this.currentCAG,
+          nodeId: this.nodeId,
+          project: this.project,
+          projectType: ProjectType.Analysis
+        }
+      });
+    }
   }
 });
 </script>
@@ -205,6 +238,10 @@ h6 {
 
 .graph-node {
   margin-top: 10px;
+}
+.block-button {
+  width: 100%;
+  display: block;
 }
 
 h5 {
