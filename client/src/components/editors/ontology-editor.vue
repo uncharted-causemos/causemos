@@ -56,6 +56,10 @@
             :label="'Search All Concepts'"
             @click="selectOption('pick')"
           />
+          <small-text-button
+            :label="'Create Concept'"
+            @click="$emit('show-custom-concept')"
+          />
         </div>
       </template>
     </dropdown-control>
@@ -106,7 +110,7 @@ export default defineComponent({
     }
   },
   emits: [
-    'select', 'close'
+    'select', 'close', 'show-custom-concept'
   ],
   setup() {
     const store = useStore();

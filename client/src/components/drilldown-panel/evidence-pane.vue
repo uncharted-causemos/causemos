@@ -117,14 +117,17 @@
                 :concept="selectedRelationship.source"
                 :suggestions="suggestions"
                 @select="confirmUpdateGrounding(item, selectedRelationship.source, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
-                @close="closeEditor" />
+                @close="closeEditor"
+                @showCustomConcept="showCustomConcept = true"/>
 
               <ontology-editor
                 v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
                 :concept="selectedRelationship.target"
                 :suggestions="suggestions"
                 @select="confirmUpdateGrounding(item, selectedRelationship.target, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
-                @close="closeEditor" />
+                @close="closeEditor"
+                @showCustomConcept="showCustomConcept = true"/>
+
             </div>
           </template>
         </collapsible-item>
@@ -150,6 +153,12 @@
         <p>Do you want to proceed?</p>
       </template>
     </modal-confirmation>
+    <modal-custom-concept
+      v-if="showCustomConcept"
+      ref="customConcept"
+      @close="showCustomConcept = false"
+      @save-custom-concept="saveCustomConcept"
+    />
   </div>
 </template>
 
@@ -169,6 +178,7 @@ import MessageDisplay from '@/components/widgets/message-display';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import statementPolarityFormatter from '@/formatters/statement-polarity-formatter';
 import numberFormatter from '@/formatters/number-formatter';
+import ModalCustomConcept from '@/components/modals/modal-custom-concept';
 
 import { STATEMENT_POLARITY, statementPolarityColor } from '@/utils/polarity-util';
 
@@ -184,7 +194,8 @@ export default {
     EvidenceGroup,
     MessageDisplay,
     SmallIconButton,
-    ModalConfirmation
+    ModalConfirmation,
+    ModalCustomConcept
   },
   props: {
     selectedRelationship: {
@@ -231,7 +242,8 @@ export default {
     messageNoData: SIDE_PANEL.EVIDENCE_NO_DATA,
     showConfirmCurationModal: false,
     curationConfirmedCallback: () => null,
-    suggestions: []
+    suggestions: [],
+    showCustomConcept: false
   }),
   computed: {
     numSelectedItems() {
@@ -286,6 +298,10 @@ export default {
     this.refresh();
   },
   methods: {
+    saveCustomConcept(value) {
+      // TODO : this is temporary, should be connected to storage function in future ticket
+      console.log(`Emitted custom grounding: ${JSON.stringify(value)}`);
+    },
     statementPolarityFormatter,
     numberFormatter,
     initializeData() {
