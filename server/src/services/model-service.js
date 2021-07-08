@@ -448,7 +448,9 @@ const buildNodeParametersPayload = (nodeParameters, startTime, endTime) => {
           maxValue: max,
           func: valueFunc,
           values: filteredTimeSeries,
-          numLevels: NUM_LEVELS
+          numLevels: NUM_LEVELS,
+          resolution: _.get(np.parameter, 'resolution', 'month'),
+          period: _.get(np.parameter, 'period', 12)
         };
       }
     }

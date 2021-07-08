@@ -21,7 +21,6 @@ const indexRouter = rootRequire('/routes/index');
 const auditsRouter = rootRequire('/routes/audits');
 const modelsRouter = rootRequire('/routes/models');
 const analysesRouter = rootRequire('/routes/analyses');
-// const evidencesRouter = rootRequire('/routes/evidences');
 const documentsRouter = rootRequire('/routes/documents');
 const scenariosRouter = rootRequire('/routes/scenario');
 const settingsRouter = rootRequire('/routes/settings');

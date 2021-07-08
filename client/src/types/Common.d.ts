@@ -15,7 +15,7 @@ export interface Project {
 
 export interface DomainProject {
   id?: string;
-  name: string;
+  name: string; // corresponds to a datacube family (family_name)
   description: string;
   modified_at?: number;
   created_at?: number;

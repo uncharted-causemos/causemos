@@ -58,11 +58,21 @@
         </div>
       </template>
 
+      <template #temporal-aggregation-config>
+        <dropdown-button
+          class="dropdown-config"
+          :inner-button-label="'Temporal Aggregation'"
+          :items="Object.values(AggregationOption)"
+          :selected-item="selectedTemporalAggregation"
+          @item-selected="item => selectedTemporalAggregation = item"
+        />
+      </template>
+
       <template #spatial-aggregation-config>
         <dropdown-button
           class="spatial-aggregation"
           :inner-button-label="'Spatial Aggregation'"
-          :items="['mean', 'sum']"
+          :items="Object.values(AggregationOption)"
           :selected-item="selectedSpatialAggregation"
           @item-selected="item => selectedSpatialAggregation = item"
         />
@@ -87,8 +97,10 @@
             :selected-admin-level="selectedAdminLevel"
             :type-breakdown-data="typeBreakdownData"
             :regional-data="regionalData"
+            :temporal-breakdown-data="temporalBreakdownData"
             :unit="unit"
             :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
             :selected-timestamp="selectedTimestamp"
             :selected-scenario-ids="selectedScenarioIds"
             :deselected-region-ids="deselectedRegionIds"
@@ -120,7 +132,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
-import { DatacubeType } from '@/types/Enums';
+import { AggregationOption, DatacubeType } from '@/types/Enums';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
@@ -161,8 +173,6 @@ export default defineComponent({
     const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
     const datacubeId = analysisItem.value[0].id;
-
-    const projectId = computed(() => store.getters['app/project']);
 
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
@@ -208,29 +218,32 @@ export default defineComponent({
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     watchEffect(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
+      if (metadata.value) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
-        mainModelOutput.value = outputs.value[currentOutputIndex.value];
-      }
+        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
+        mainModelOutput.value = outputs.value[initialOutputIndex];
+
+        // note: this value of metadata may be undefined while model is still being loaded
+        store.dispatch('insightPanel/setContextId', metadata.value?.id);
+
+        // save the initial output variable index
+        store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+      }
+    });
+
+    watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       } else {
         isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
-
-      // NOTE: the following line is being set only inside the data view and the model publish page
-      if (metadata.value !== null) {
-        // note: this value of metadata may be undefined while model is still being loaded
-        store.dispatch('insightPanel/setContextId', metadata.value?.id);
-      }
-      store.dispatch('insightPanel/setProjectId', projectId.value);
     });
 
     const selectedTemporalResolution = ref('month');
-    const selectedTemporalAggregation = ref('mean');
-    const selectedSpatialAggregation = ref('mean');
+    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
     watchEffect(() => {
       const dataState = {
@@ -272,7 +285,8 @@ export default defineComponent({
       timeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      setRelativeTo,
+      temporalBreakdownData
     } = useTimeseriesData(
       metadata,
       selectedModelId,
@@ -281,6 +295,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       breakdownOption,
+      selectedTimestamp,
       setSelectedTimestamp
     );
 
@@ -338,7 +353,9 @@ export default defineComponent({
       relativeTo,
       setRelativeTo,
       breakdownOption,
-      setBreakdownOption
+      setBreakdownOption,
+      temporalBreakdownData,
+      AggregationOption
     };
   },
   watch: {
@@ -359,11 +376,9 @@ export default defineComponent({
     clearInterval(this.timerHandler);
   },
   mounted() {
-    // reset to 0 when any analysis loads
-    //  to avoid the shared store state from conflicting when a different datacube/analysis is loaded
-    // FIXME: actually read the value of the default output variable from the metadata
-    // later, this value will be persisted per analysis
-    this.setCurrentOutputIndex(0);
+    // ensure the insight explorer panel is closed in case the user has
+    //  previously opened it and clicked the browser back button
+    this.hideInsightPanel();
   },
   computed: {
     ...mapGetters({
@@ -372,7 +387,8 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
+      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
+      hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;

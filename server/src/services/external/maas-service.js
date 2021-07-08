@@ -1,8 +1,10 @@
 const _ = require('lodash');
+const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
+const domainProjectService = rootRequire('/services/domain-project-service');
 
 const PIPELINE_FLOW_ID = '4d8d9239-2594-45af-9ec9-d24eafb1f1af';
 
@@ -189,9 +191,53 @@ const startIndicatorPostProcessing = async (metadata) => {
     return;
   }
 
+  // Remove some unused Jataware fields
+  metadata.attributes = undefined;
+
+  // ensure for each newly registered indicator datacube a corresponding domain project
+  // @TODO: when indicator publish workflow is added,
+  //        the following function would be called at:
+  //        insertDatacube() in server/src/services/datacube-service
+  await domainProjectService.updateDomainProjects(metadata);
+
+  // Create data now to send to elasticsearch
+  const newIndicatorMetadata = metadata.outputs.map(output => {
+    const clonedMetadata = _.cloneDeep(metadata);
+    clonedMetadata.data_id = metadata.id;
+    clonedMetadata.id = uuid();
+    clonedMetadata.outputs = [output];
+    clonedMetadata.family_name = metadata.name;
+    clonedMetadata.default_feature = output.name;
+    clonedMetadata.type = 'indicator';
+    clonedMetadata.status = 'PROCESSING';
+
+    let qualifierMatches = [];
+    if (metadata.qualifier_outputs) {
+      // Filter out unrelated qualifiers
+      clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
+        qualifier => qualifier.related_features.includes(output.name));
+
+      // Combine all concepts from the qualifiers into one list
+      qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
+        qualifier.ontologies.concepts,
+        qualifier.ontologies.processes,
+        qualifier.ontologies.properties
+      ]).flat(2);
+    }
+
+    // Append to the concepts from the output
+    const allMatches = qualifierMatches.concat(output.ontologies.concepts,
+      output.ontologies.processes,
+      output.ontologies.properties);
+
+    clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+    return clonedMetadata;
+  });
+
   const runName = `${metadata.name} : ${metadata.id}`;
   const flowParameters = {
     model_id: metadata.id,
+    doc_ids: newIndicatorMetadata.map(indicatorMetadata => indicatorMetadata.id),
     run_id: 'indicator',
     data_paths: metadata.data_paths,
     is_indicator: true
@@ -226,17 +272,8 @@ const startIndicatorPostProcessing = async (metadata) => {
   const result = await requestAsPromise(pipelinePayload);
   const flowId = _.get(result, 'data.create_flow_run.id');
   if (flowId) {
-    // Remove some unused Jataware fields
-    metadata.attributes = undefined;
-    for (const output of metadata.outputs) {
-      output.is_primary = undefined;
-    }
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    await connection.insert([{
-      ...metadata,
-      type: 'indicator',
-      status: 'PROCESSING'
-    }], d => d.id);
+    await connection.insert(newIndicatorMetadata, d => d.id);
   }
   return result;
 };

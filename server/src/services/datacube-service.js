@@ -1,5 +1,5 @@
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-
+const domainProjectService = rootRequire('/services/domain-project-service');
 
 /**
  * Return all datacubes
@@ -12,9 +12,12 @@ const getAllDatacubes = async() => {
 /**
  * Return datacubes that match the provided filter
  */
-const getDatacubes = async(filter) => {
+const getDatacubes = async(filter, options) => {
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.find(filter, { size: SEARCH_LIMIT });
+  if (!options.size) {
+    options.size = SEARCH_LIMIT;
+  }
+  return await connection.find(filter, options);
 };
 
 /**
@@ -29,6 +32,10 @@ const countDatacubes = async (filter) => {
  * Insert a new datacube
  */
 const insertDatacube = async(metadata) => {
+  // a new datacube (model or indicator) is being added
+  // ensure for each newly registered datacube a corresponding domain project
+  await domainProjectService.updateDomainProjects(metadata);
+
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
   return await connection.insert(metadata);
 };

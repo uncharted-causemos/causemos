@@ -102,7 +102,6 @@ export default defineComponent({
       // FIXME: cast to 'any' since typescript cannot see mixins yet!
       (this as any).toaster('New runs requested\nPlease check back later!');
 
-      const modelId = this.metadata.id;
       const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
 
@@ -124,7 +123,7 @@ export default defineComponent({
           });
         });
         return API.post('maas/model-runs', {
-          model_id: modelId,
+          model_id: this.metadata.data_id,
           model_name: this.metadata?.name,
           parameters: paramArray
         });

@@ -23,6 +23,13 @@ export enum ProjectType {
   Analysis = 'analysis'
 }
 
+export enum FeatureQualifierRoles {
+  Weight = 'weight',
+  Statistics = 'statistics',
+  Breakdown = 'breakdown',
+  Tooltip = 'tooltip'
+}
+
 export enum DatacubeAttributeVariableType {
   Int = 'int',
   Float = 'float',
@@ -66,4 +73,14 @@ export enum AdminLevel {
 
 export enum TemporalAggregationLevel {
   Year = 'year'
+}
+
+export enum AggregationOption {
+  Mean = 'mean',
+  Sum = 'sum'
+}
+
+export enum TemporalResolutionOption {
+  Year = 'year',
+  Month = 'month'
 }

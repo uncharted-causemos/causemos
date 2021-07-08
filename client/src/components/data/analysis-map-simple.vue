@@ -157,12 +157,12 @@ export default {
       default: () => []
     },
     outputSelection: {
-      type: Number,
-      default: () => 0
+      type: String,
+      default: null
     },
     relativeTo: {
-      type: Number,
-      default: () => undefined
+      type: String,
+      default: null
     },
     showTooltip: {
       type: Boolean,
@@ -198,12 +198,12 @@ export default {
   }),
   computed: {
     selection() {
-      return this.outputSourceSpecs[this.outputSelection];
+      return this.outputSourceSpecs.find(spec => spec.id === this.outputSelection);
     },
     baselineSpec() {
       return _.isNil(this.relativeTo) || this.relativeTo === this.outputSelection
         ? undefined
-        : this.outputSourceSpecs[this.relativeTo];
+        : this.outputSourceSpecs.find(spec => spec.id === this.relativeTo);
     },
     selectedLayer() {
       return layers[this.selectedLayerId];
@@ -229,7 +229,6 @@ export default {
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = [];
           data.filter(v => v.values[baselineProp] !== undefined).forEach(v => {
-            // eslint-disable-next-line @typescript-eslint/no-unused-vars
             const diffs = Object.values(v.values).map(value => value - v.values[baselineProp]);
             values.push(...diffs);
           });

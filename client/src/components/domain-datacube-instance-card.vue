@@ -1,87 +1,104 @@
 <template>
-  <div :class="{ 'project-card-container': !showMore, 'project-card-container selected': showMore }">
+  <div class="project-card-container">
     <modal-confirmation
       v-if="showModal"
       :autofocus-confirm="false"
       @confirm="unpublish"
       @close="showModal = false"
     >
-      <template #title>Unpublish Model Instance</template>
+      <template #title>Unpublish Datacube Instance</template>
       <template #message>
-        <p>Are you sure you want to unpublish <strong>{{ model.name }}</strong>?</p>
+        <p>Are you sure you want to unpublish <strong>{{ datacube.name }}</strong>?</p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
         />
       </template>
     </modal-confirmation>
-    <div
-      class="row project-card-header"
-      @click="toggleShowMore()">
-      <div class="col-sm-4">
-        <i
-          :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
-        />
-        <button
-          type="button"
-          class="btn btn-link"
-          @click="edit(model.id)">
-          <span class="overflow-ellipsis project-name">{{model.name}}</span>
-        </button>
+    <div class="row project-card-header">
+      <b>
+      {{primaryOutput.display_name}} : <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+      </b>
+    </div>
+    <div class="row">
+      <div class="col-sm-3 instance-header" style="margin-left: 2rem">
+        Inputs
       </div>
-      <div class="col-sm-4">
-        {{ model.maintainer.organization }}
+      <div class="col-sm-2 instance-header">
+        Outputs
       </div>
-      <div class="col-sm-2"
-        :style="{ color: statusColor }">
-        {{ statusLabel }}
+      <div class="col-sm-2 instance-header">
+        Scope
+      </div>
+      <div class="col-sm-2 instance-header">
+        Analyses
+      </div>
+      <div class="col-sm-2 instance-header">
+        Scenarios
+      </div>
+    </div>
+    <div class="row">
+      <div class="col-sm-3 fixed-height-column" style="margin-left: 2rem">
+        <div
+          v-for="input in inputKnobs"
+          :key="input.name">
+          {{ input.display_name }}
+        </div>
+      </div>
+      <div class="col-sm-2 fixed-height-column">
+        <div
+          v-for="output in validatedOutputs"
+          :key="output.name">
+          {{ output.name }}
+        </div>
       </div>
       <div class="col-sm-2">
-        {{ dateFormatter(model.created_at) }}
+        <!-- placeholder for map or image for regional context -->
+        <div style="backgroundColor: darkgray; height: 100px"></div>
       </div>
-    </div>
-    <div
-      v-if="showMore"
-      class="container-fluid project-card-content"
-      @click="toggleShowMore()">
-      <div class="row">
-        <div class="col-sm-12 details">
-          <div>
-            <p><b>{{model.description}}</b></p>
-          </div>
+      <div class="col-sm-2 fixed-height-column">
+        <div
+          v-for="analysis in ['analysis x', 'analysis y', 'analysis z']"
+          :key="analysis">
+          {{ analysis }}
         </div>
       </div>
+      <div class="col-sm-2" style="display: flex; flex-direction: column">
+        <div><b>Scenarios</b></div>
+        <div>55</div>
+        <div><b>Insights</b></div>
+        <div>7</div>
+        <div><b>Comments</b></div>
+        <div>3</div>
+      </div>
     </div>
-    <div
-      v-if="showMore"
-      class="project-card-footer"
-    >
-      <div class="row">
-        <div class="col-sm-10">
+
+    <div class="row">
+      <div class="col-sm-7"></div>
+      <div class="col-sm-3">
+        <button
+          v-tooltip.top-center="'Open datacube instance for review'"
+          type="button"
+          class="btn btn-primary button-spacing btn-call-for-action"
+          @click="open(datacube.data_id)"
+        ><i class="fa fa-folder-open-o" />
+          Open</button>
           <button
-            v-tooltip.top-center="'Open model instance for review'"
-            type="button"
-            class="btn btn-primary"
-            @click="open(model.id)"
-          ><i class="fa fa-folder-open-o" />
-            Open Instance</button>
-          <button
-            v-tooltip.top-center="'Edit model instance publication'"
-            type="button"
-            class="btn btn-primary"
-            @click="edit(model.id)"
-          ><i class="fa fa-edit" />
-            Publish (or Edit) Instance</button>
-        </div>
-        <div class="col-sm-2">
-          <button
-            v-tooltip.top-center="'Unpublish the model instance'"
-            type="button"
-            class="remove-button"
-            @click.stop="showWarningModal"
-          ><i class="fa fa-trash" />
-            Unpublish</button>
-        </div>
+          v-tooltip.top-center="'Edit datacube instance publication'"
+          type="button"
+          class="btn btn-primary button-spacing"
+          @click="edit(datacube.data_id)"
+        ><i class="fa fa-edit" />
+          Edit</button>
+      </div>
+      <div class="col-sm-2">
+        <button
+          v-tooltip.top-center="'Unpublish the datacube instance'"
+          type="button"
+          class="remove-button button-spacing"
+          @click.stop="showWarningModal"
+        ><i class="fa fa-trash" />
+          Unpublish</button>
       </div>
     </div>
   </div>
@@ -96,8 +113,9 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { Model } from '@/types/Datacube';
+import { Datacube, Model } from '@/types/Datacube';
 import { DatacubeStatus } from '@/types/Enums';
+import { getValidatedOutputs, isIndicator } from '@/utils/datacube-util';
 
 /**
  * A card-styled widget to view project summary
@@ -109,8 +127,8 @@ export default defineComponent({
     MessageDisplay
   },
   props: {
-    model: {
-      type: Object as PropType<Model>,
+    datacube: {
+      type: Object as PropType<Datacube>,
       default: () => ({})
     }
   },
@@ -118,31 +136,46 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project'
     }),
-    statusColor(): any {
+    breakdownParameters(): any[] {
+      if (isIndicator(this.datacube)) return [];
+      return (this.datacube as Model).parameters.filter(p => p.is_drilldown);
+    },
+    inputKnobs(): any[] {
+      if (isIndicator(this.datacube)) return [];
+      return (this.datacube as Model).parameters.filter(p => !p.is_drilldown);
+    },
+    validatedOutputs(): any[] {
+      return getValidatedOutputs(this.datacube.outputs);
+    },
+    primaryOutput(): any {
+      return this.validatedOutputs.find(o => o.name === this.datacube.default_feature);
+    },
+    statusColor(): string {
       let color = '';
-      switch (this.model.status) {
+      switch (this.datacube.status) {
         case DatacubeStatus.Ready:
-          color = 'green';
+          color = 'lightgreen';
           break;
         case DatacubeStatus.Registered:
-          color = 'black';
+          color = 'lightgray';
           break;
         default:
           color = 'red';
       }
       return color;
     },
-    statusLabel(): any {
-      const label = this.model.status === DatacubeStatus.Ready ? 'Published' : this.model.status.toLowerCase();
-      return label.charAt(0).toUpperCase() + label.slice(1);
+    statusLabel(): string {
+      if (this.datacube && this.datacube.status) {
+        const label = this.datacube.status === DatacubeStatus.Ready ? 'Published' : this.datacube.status.toLowerCase();
+        return label.charAt(0).toUpperCase() + label.slice(1);
+      }
+      return '';
     }
   },
   setup() {
-    const showMore = ref(false);
     const showModal = ref(false);
 
     return {
-      showMore,
       showModal
     };
   },
@@ -152,11 +185,8 @@ export default defineComponent({
       updateAnalysisItemsNewPreview: 'dataAnalysis/updateAnalysisItemsNewPreview'
     }),
     dateFormatter,
-    toggleShowMore() {
-      this.showMore = !this.showMore;
-    },
     unpublish() {
-      this.$emit('unpublish', this.model);
+      this.$emit('unpublish', this.datacube);
       this.showModal = false;
     },
     showWarningModal() {
@@ -188,17 +218,27 @@ export default defineComponent({
 <style scoped lang="scss">
 @import "~styles/variables";
 
+.instance-header {
+  @include header-secondary;
+  font-weight: bold;
+  color: darkgrey;
+  padding-bottom: 5px;
+}
+
+.fixed-height-column {
+  height: 12vh;
+  overflow: auto;
+}
+
 .project-card-container {
-  cursor: pointer;
   background: #fcfcfc;
   border: 1px solid #dedede;
   margin: 1px 0;
-  padding: 10px;
+  padding: 6px;
 }
 
 .project-card-container:hover {
   border-color: $selected;
-  cursor: pointer;
 }
 
 .selected {
@@ -207,41 +247,15 @@ export default defineComponent({
 }
 
 .project-card-header {
-  i {
-    margin-left: 20px;
-  }
   padding-bottom: 5px;
   padding-top: 5px;
+  padding-left: 3rem;
 }
 
-.project-card-content {
-  padding-bottom: 5px;
-  .details {
-    div {
-      margin-left: 10px;
-    }
-  }
-}
-
-.project-name {
-  max-width: 40ch;
-  display: inline-block;
-  text-align: left;
-  text-decoration: underline;
-}
-
-.project-card-footer {
-  padding-bottom: 5px;
-  padding-top: 5px;
-  .btn {
-    margin-left: 20px;
-    margin-right: 10px;
-  }
-}
-
-.number-col {
-  text-align: right;
-  padding-right: 30px;
+.button-spacing {
+  padding: 4px;
+  margin: 2px;
+  border-radius: 8px;
 }
 
 .remove-button {
@@ -249,7 +263,6 @@ export default defineComponent({
   color: white;
   font-weight: 600;
   border: none;
-  padding: 8px 16px;
   user-select: none;
 }
 </style>

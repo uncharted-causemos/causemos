@@ -8,8 +8,8 @@ import fu from '@/utils/filters-util';
  * Get datacubes
  * @param {Filters} filters
  */
-export const getDatacubes = async (filters: Filters) => {
-  const { data } = await API.get('maas/new-datacubes', { params: { filters: filters } });
+export const getDatacubes = async (filters: Filters, options = {}) => {
+  const { data } = await API.get('maas/new-datacubes', { params: { filters: filters, options: options } });
   return data;
 };
 
@@ -29,7 +29,7 @@ export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
  */
 export const getDatacubeById = async (datacubeId: string) => {
   const filters = fu.newFilters();
-  fu.setClause(filters, 'id', [datacubeId], 'or', false);
+  fu.setClause(filters, 'dataId', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
   return cubes && cubes[0];
 };
@@ -83,9 +83,9 @@ export const updateDatacube = async (datacubeId: string, metadata: Model) => {
   return result.data;
 };
 
-export const getModelRunMetadata = async (modelId: string) => {
+export const getModelRunMetadata = async (dataId: string) => {
   const { data } = await API.get<ModelRun[]>('/maas/model-runs', {
-    params: { modelId }
+    params: { modelId: dataId }
   });
   return data;
 };

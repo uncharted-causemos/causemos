@@ -81,7 +81,7 @@
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
                 @update-curation="updateCuration(insight.id)"
-                draggable
+                draggable='true'
                 @dragstart="startDrag($event, insight)"
                 @dragend="dragEnd($event)"
               />
@@ -191,7 +191,7 @@ export default {
     const listInsights = ref([]);
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['insightPanel/projectId']);
+    const project = computed(() => store.getters['app/project']);
 
     const questions = computed(() => store.getters['analysisChecklist/questions']);
 

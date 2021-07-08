@@ -27,7 +27,7 @@
                 class="fa fa-lg fa-fw"
                 :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
               />
-              Baseline Defaults
+              Default Values
             </label>
           </div>
           <div class="checkbox">
@@ -88,8 +88,10 @@
                     @click="$emit('update-desc-view', true)">
               Descriptions
             </button>
+            <!-- make 'Data' tab disabled when no scenario selection -->
             <button class="btn btn-default"
                     :class="{'btn-primary':!isDescriptionView}"
+                    :disabled="selectedScenarioIds.length === 0"
                     @click="$emit('update-desc-view', false)">
               Data
             </button>
@@ -159,7 +161,7 @@
           </div>
           <div
             v-if="mapReady && !isDescriptionView && regionalData !== null"
-            class="card-map-container full-width">
+            class="card-map-container">
             <data-analysis-map
               v-for="(spec, indx) in outputSourceSpecs"
               :key="spec.id"
@@ -169,7 +171,7 @@
               ]"
               :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
-              :output-selection=indx
+              :output-selection=spec.id
               :relative-to="relativeTo"
               :show-tooltip="true"
               :selected-layer-id="mapSelectedLayer"
@@ -181,6 +183,13 @@
               @on-map-load="onMapLoad"
               @slide-handle-change="updateMapFilters"
             />
+          </div>
+          <div
+            v-else-if="!isDescriptionView"
+            class="card-map-container"
+          >
+            <!-- Empty div to reduce jumpiness when the maps are loading -->
+            <div class="card-map" />
           </div>
         </div>
       </div>
@@ -356,7 +365,7 @@ export default defineComponent({
     };
   },
   data: () => ({
-    showBaselineDefaults: false,
+    showBaselineDefaults: true,
     showNewRunsMode: false,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
@@ -542,10 +551,7 @@ header {
   justify-content: space-between;
   flex-wrap: wrap;
   overflow-y: scroll;
-
-  &.full-width {
-    width: 100%;
-  }
+  width: 100%;
 }
 
 .card-map {

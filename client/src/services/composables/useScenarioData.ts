@@ -3,11 +3,11 @@ import { ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
 
 /**
- * Takes a model ID and a list of scenario IDs, then fetches and
+ * Takes a datacube data ID and a list of scenario IDs, then fetches and
  * returns the metadata for each scenario in one list.
  */
 export default function useScenarioData(
-  modelId: Ref<string>,
+  dataId: Ref<string>,
   modelRunsFetchedAt: Ref<number>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
@@ -16,7 +16,7 @@ export default function useScenarioData(
     console.log('refetching data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function fetchRunData() {
-      const newMetadata = await getModelRunMetadata(modelId.value);
+      const newMetadata = await getModelRunMetadata(dataId.value);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.

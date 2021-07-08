@@ -57,7 +57,7 @@ export default {
   },
   setup() {
     const store = useStore();
-    const project = computed(() => store.getters['insightPanel/projectId']);
+    const project = computed(() => store.getters['app/project']);
 
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {

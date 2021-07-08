@@ -56,9 +56,18 @@
             :label="'Search All Concepts'"
             @click="selectOption('pick')"
           />
+          <small-text-button
+            :label="'Create Concept'"
+            @click="showCustomConcept = true"
+          />
         </div>
       </template>
     </dropdown-control>
+    <modal-custom-concept
+      v-if="showCustomConcept === true"
+      @close="showCustomConcept = false"
+      @save-custom-concept="saveCustomConcept"
+    />
   </div>
 </template>
 
@@ -74,6 +83,7 @@ import CloseButton from '@/components/widgets/close-button.vue';
 import { UNKNOWN } from '@/utils/concept-util';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import precisionFormatter from '@/formatters/precision-formatter';
+import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 
 function _matchedConcepts(target: string, str: string) {
   return target.toLowerCase().replace(/_/g, ' ').includes(
@@ -93,7 +103,8 @@ export default defineComponent({
     ConceptDisplay,
     DropdownControl,
     CloseButton,
-    SmallTextButton
+    SmallTextButton,
+    ModalCustomConcept
   },
   props: {
     concept: {
@@ -112,6 +123,7 @@ export default defineComponent({
     const store = useStore();
     const selectedOption = ref('suggestions');
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
+    const showCustomConcept = ref(false);
 
     const croppedOntologyConcepts = computed(() => {
       let croppedOntologyConcepts = ontologyConcepts.value.filter((concept: string) => concept !== UNKNOWN);
@@ -125,7 +137,8 @@ export default defineComponent({
     return {
       selectedOption,
       ontologyConcepts,
-      croppedOntologyConcepts
+      croppedOntologyConcepts,
+      showCustomConcept
     };
   },
   methods: {
@@ -138,6 +151,9 @@ export default defineComponent({
       if (!_.isEmpty(suggestion) && (this.concept !== suggestion)) {
         this.$emit('select', suggestion);
       }
+    },
+    saveCustomConcept(v: { [key: string]: string }) {
+      this.select(v.theme);
     },
     close() {
       this.$emit('close');
