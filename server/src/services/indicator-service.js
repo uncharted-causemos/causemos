@@ -3,7 +3,7 @@ const moment = require('moment');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 const AggregationsUtil = rootRequire('/util/aggregations-util');
 
 const DEFAULT_SIZE = 10000;
