@@ -66,12 +66,12 @@ export default class ModelRenderer extends SVGRenderer {
         const edge = d3.select(d);
         const path = edge.select('.edge-path');
         const pathNode = path.node();
-        const pathData = path.data()[0].data;
+        const pathData = path.datum().data;
         const firstOrderWeight = pathData.parameter.weights[0];
         const secondOrderWeight = pathData.parameter.weights[1];
 
         if (firstOrderWeight === 0 && secondOrderWeight === 0) {
-          if (!edge.selectAll('.unwheighted-edge-indicator').node()) {
+          if (!edge.selectAll('.unweighted-edge-indicator').node()) {
             const halfWayPoint = pathNode.getTotalLength() / 2;
             const indicatorPoint = pathNode.getPointAtLength(halfWayPoint);
             edge
@@ -106,10 +106,6 @@ export default class ModelRenderer extends SVGRenderer {
   updateEdgePoints() {
     super.updateEdgePoints();
     const chart = this.chart;
-
-    chart.selectAll('.edge').selectAll('path').attr('d', d => {
-      return pathFn(d.points);
-    });
 
     chart.selectAll('.edge').each(function() {
       const pathNode = d3.select(this).select('path').node();
