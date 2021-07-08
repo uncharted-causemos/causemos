@@ -184,10 +184,10 @@ const getOntologyCandidates = async (modelId, concepts) => {
             must: [
               {
                 nested: {
-                  path: "ontology_matches",
+                  path: 'ontology_matches',
                   query: {
                     terms: {
-                      "ontology_matches.name": compositionalConcepts
+                      'ontology_matches.name': compositionalConcepts
                     }
                   }
                 }
@@ -247,7 +247,7 @@ const setDefaultIndicators = async (modelId) => {
       modified_at: editTime,
       parameter: {
         indicator_id: topMatch.data_id,
-        indicator_name: topMatch.name + "/" + topMatch.outputs[0].display_name,
+        indicator_name: topMatch.name + '/' + topMatch.outputs[0].display_name,
         indicator_source: topMatch.maintainer.organization,
         indicator_feature: topMatch.default_feature,
         indicator_score: topMatch._match_score
