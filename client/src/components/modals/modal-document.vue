@@ -3,16 +3,13 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
-      <div>
-        <div v-if="viewer"
-          class="toolbar">
-          Show raw text
-          <i v-if="showTextViewer === false" class="fa fa-fw fa-toggle-off" @click="toggle" />
-          <i v-if="showTextViewer === true" class="fa fa-fw fa-toggle-on" @click="toggle" />
-        </div>
+      <div v-if="viewer"
+        class="toolbar">
+        Show raw text
+        <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
+        <i v-if="showTextViewer === true" class="fa fa-lg fa-fw fa-toggle-on" @click="toggle" />
       </div>
-      <div ref="content"
-        class="uncharted-cards-reader-content-container">
+      <div ref="content">
         Loading...
       </div>
       <div>
@@ -67,8 +64,6 @@ const createTextViewer = (text) => {
   el.style.paddingBottom = '15px';
   return el;
 };
-
-// froehlich <= author
 
 export default {
   name: 'ModalDocument',
