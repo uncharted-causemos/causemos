@@ -16,9 +16,6 @@
       </button>
     </full-screen-modal-header>
     <main>
-      <context-insight-panel />
-      <!-- TODO: whether a card is actually expanded or not will
-      be dynamic later -->
       <datacube-card
         :class="{ 'datacube-expanded': true }"
         :selected-admin-level="selectedAdminLevel"
@@ -125,7 +122,6 @@ import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
@@ -133,9 +129,6 @@ import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 
-import router from '@/router';
-
-import { getInsightById } from '@/services/insight-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useRegionalData from '@/services/composables/useRegionalData';
@@ -144,7 +137,6 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { DatacubeType, ProjectType } from '@/types/Enums';
-import { Insight } from '@/types/Insight';
 
 import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
@@ -167,7 +159,6 @@ export default defineComponent({
     Disclaimer,
     DatacubeDescription,
     DropdownButton,
-    ContextInsightPanel,
     FullScreenModalHeader
   },
   setup() {
@@ -182,8 +173,6 @@ export default defineComponent({
     const store = useStore();
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
     const datacubeId = computed(() => store.getters['app/datacubeId']);
-
-    const projectId = computed(() => store.getters['app/project']);
 
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
@@ -240,48 +229,15 @@ export default defineComponent({
       } else {
         isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
-
-      // NOTE: the following line is being set only inside the data view and the model publish page
-      if (metadata.value !== null) {
-        // note: this value of metadata may be undefined while model is still being loaded
-        store.dispatch('insightPanel/setContextId', metadata.value?.id);
-      }
-      store.dispatch('insightPanel/setProjectId', projectId.value);
     });
 
     const selectedTemporalResolution = ref('month');
     const selectedTemporalAggregation = ref('mean');
     const selectedSpatialAggregation = ref('mean');
 
-    watchEffect(() => {
-      const dataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value
-      };
-      const viewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value
-      };
-
-      store.dispatch('insightPanel/setViewState', viewState);
-      store.dispatch('insightPanel/setDataState', dataState);
-    });
-
-    const clearRouteParam = () => {
-      router.push({
-        query: {
-          insight_id: undefined
-        }
-      }).catch(() => {});
-    };
-
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
-      clearRouteParam();
     };
 
     const breakdownOption = ref<string | null>(null);
@@ -356,7 +312,6 @@ export default defineComponent({
       outputs,
       currentOutputIndex,
       setSelectedTimestamp,
-      clearRouteParam,
       timeseriesData,
       baselineMetadata,
       relativeTo,
@@ -366,20 +321,6 @@ export default defineComponent({
       selectLabel,
       navBackLabel
     };
-  },
-  watch: {
-    $route: {
-      handler(/* newValue, oldValue */) {
-        // NOTE:  this is only valid when the route is focused on the 'data' space
-        if (this.$route.name === 'data' && this.$route.query) {
-          const insight_id = this.$route.query.insight_id as any;
-          if (insight_id !== undefined) {
-            this.updateStateFromInsight(insight_id);
-          }
-        }
-      },
-      immediate: true
-    }
   },
   unmounted(): void {
     clearInterval(this.timerHandler);
@@ -437,49 +378,11 @@ export default defineComponent({
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
     },
-    async updateStateFromInsight(insight_id: string) {
-      const loadedInsight: Insight = await getInsightById(insight_id);
-      // FIXME: before applying the insight, which will overwrite current state,
-      //  consider pushing current state to the url to support browser hsitory
-      //  in case the user wants to navigate to the original state using back button
-      if (loadedInsight) {
-        //
-        // insight was found and loaded
-        //
-        // data state
-        // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedModelId) {
-          // this will reload datacube metadata as well as scenario runs
-          this.selectedModelId = loadedInsight.data_state?.selectedModelId;
-        }
-        if (loadedInsight.data_state?.selectedScenarioIds) {
-          // this would only be valid and effective if/after datacube runs are reloaded
-          this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
-        }
-        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
-          this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
-        }
-        // view state
-        if (loadedInsight.view_state?.spatialAggregation) {
-          this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation;
-        }
-        if (loadedInsight.view_state?.temporalAggregation) {
-          this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation;
-        }
-        if (loadedInsight.view_state?.temporalResolution) {
-          this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution;
-        }
-        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-          this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
-        }
-      }
-    },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {
         if (_.isEqual(this.selectedScenarioIds, newIds)) return;
       }
       this.selectedScenarioIds = newIds;
-      this.clearRouteParam();
     },
     setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
       this.typeBreakdownData = [];
