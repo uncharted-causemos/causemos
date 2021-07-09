@@ -3,7 +3,7 @@
     <modal-header
       :nav-back-label="navBackLabel"
       :select-label="selectLabel"
-      @close="onBack"
+      @close="onClose"
       @selection="selectData"
     />
     <div class="flex h-100" v-if="facets !== null && filteredFacets !== null">
@@ -98,7 +98,7 @@ export default {
       await this.fetchAllDatacubeData();
     },
 
-    onBack() {
+    onClose() {
       this.$router.push({
         name: 'nodeDrilldown',
         params: {

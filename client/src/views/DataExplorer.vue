@@ -10,7 +10,7 @@
     <modal-header
       :nav-back-label="navBackLabel"
       :select-label="selectLabel"
-      @back="onBack"
+      @close="onClose"
       @selection="addToAnalysis"
     />
     <div class="flex h-100" v-if="facets !== null && filteredFacets !== null">
@@ -57,7 +57,7 @@ export default {
     facets: null,
     filteredDatacubes: [],
     filteredFacets: null,
-    navBackLabel: 'Data Space',
+    navBackLabel: 'Recent Analyses ',
     selectLabel: 'Add To Analysis',
     showRenameModal: false
   }),
@@ -127,7 +127,7 @@ export default {
         this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
       }
     },
-    async onBack() {
+    async onClose() {
       this.clear();
       await new Promise((resolve) => {
         setTimeout(() => { resolve(); }, 500);
