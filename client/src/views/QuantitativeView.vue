@@ -26,6 +26,7 @@
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
             @save-new-scenario="saveNewScenario"
+            @run-model="runModel"
           />
         </template>
       </tab-panel>
@@ -76,38 +77,6 @@ const isIndicatorChanged = (n, o) => {
   }
   return false;
 };
-
-// FIXME: Inject step=0 initial value constraints per node, we shouldn't need to do this,
-// engine should handle this quirky case. Sep 2020
-//
-// @param {array} nodeParameters - nodes
-// @param {array} constraints - the current scenario constraints
-const injectStepZero = (nodeParameters, constraints) => {
-  const result = _.cloneDeep(constraints);
-  nodeParameters.forEach(n => {
-    const concept = n.concept;
-    const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
-
-    const current = result.find(c => c.concept === concept);
-    if (!_.isNil(current)) {
-      if (!_.some(current.values, v => v.step === 0)) {
-        current.values.push({ step: 0, value: initialValue });
-      }
-    } else {
-      result.push({
-        concept: concept,
-        values: [{ step: 0, value: initialValue }]
-      });
-    }
-  });
-
-  result.forEach(r => {
-    r.values = _.orderBy(r.values, v => v.step);
-  });
-
-  return result;
-};
-
 
 export default {
   name: 'QuantitativeView',
@@ -192,6 +161,9 @@ export default {
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setContextId: 'insightPanel/setContextId'
     }),
+    runModel() {
+      console.log('running model');
+    },
     async refresh() {
       this.enableOverlay();
 
@@ -211,34 +183,7 @@ export default {
 
       // Create a base scenario if none existed
       if (scenarios.length === 0) {
-        let experimentId = 0;
-        let result = null;
-        try {
-          experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, injectStepZero(this.modelComponents.nodes, []));
-          result = await modelService.getExperimentResult(this.currentCAG, experimentId);
-        } catch (error) {
-          this.toaster(error.response.data, 'error', true);
-          this.disableOverlay();
-          return;
-        }
-
-        const scenario = {
-          modelId: this.currentCAG,
-          experimentId: experimentId,
-          result: result.results.data,
-          name: 'Baseline scenario',
-          description: 'Baseline scenario',
-          parameter: {
-            constraints: [],
-            num_steps: this.projectionSteps,
-            indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
-            projection_start: this.modelSummary.parameter.projection_start
-          },
-          engine: this.currentEngine,
-          is_baseline: true,
-          is_valid: true
-        };
-        await modelService.createScenario(scenario);
+        await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
         scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
       }
 
@@ -282,7 +227,7 @@ export default {
       let experimentId = 0;
       let result = null;
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, injectStepZero(this.modelComponents.nodes, scenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, scenario.parameter.constraints));
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         this.toaster(error.response.data, 'error', true);
@@ -336,8 +281,8 @@ export default {
       // Transfer draft data
       const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
       const newScenario = {
-        modelId: this.currentCAG,
-        experimentId: draft.experimentId,
+        model_id: this.currentCAG,
+        experiment_id: draft.experimentId,
         result: draft.result,
         name: name,
         description: description,
@@ -447,7 +392,7 @@ export default {
       let experimentId = 0;
       let result = null;
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, injectStepZero(this.modelComponents.nodes, this.draftScenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, this.draftScenario.parameter.constraints));
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         this.toaster(error.response.data, 'error', true);

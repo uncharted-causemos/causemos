@@ -47,6 +47,13 @@
           <i class="fa fa-fw fa-refresh" />
         </button>
       </li>
+      <li class="nav-item">
+        <button
+          class="btn btn-primary"
+          @click="runModel">
+          Run
+        </button>
+      </li>
     </ul>
 
     <save-scenario-modal
@@ -79,6 +86,9 @@ export default {
       default: () => []
     }
   },
+  emits: [
+    'run-model', 'revert-draft-changes', 'overwrite-scenario', 'save-new-scenario'
+  ],
   data: () => ({
     isModalOpen: false,
     isScendarioDropdownOpen: false
@@ -109,6 +119,9 @@ export default {
     ...mapActions({
       setSelectedScenarioId: 'model/setSelectedScenarioId'
     }),
+    runModel() {
+      this.$emit('run-model');
+    },
     revertDraftChanges() {
       this.$emit('revert-draft-changes');
     },
