@@ -109,7 +109,6 @@ export default {
 
     async refresh() {
       modelService.getComponents(this.currentCAG).then(_modelComponents => {
-        console.log('test', _modelComponents);
         this.modelComponents = _modelComponents;
       });
       await this.fetchAllDatacubeData();
