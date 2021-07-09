@@ -30,10 +30,11 @@ import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
 
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
+import modelService from '@/services/model-service';
+import { ProjectType } from '@/types/Enums';
 
 import filtersUtil from '@/utils/filters-util';
 import { NODE_FACET_FIELDS } from '@/utils/datacube-util';
-import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'NodeDataExplorer',
@@ -46,8 +47,8 @@ export default {
     facets: null,
     filteredDatacubes: [],
     filteredFacets: null,
-    navBackLabel: 'Back To Node Grounding',
-    selectLabel: 'Quantify Node'
+    selectLabel: 'Quantify Node',
+    modelComponents: null
   }),
   computed: {
     ...mapGetters({
@@ -57,7 +58,19 @@ export default {
       project: 'app/project',
       selectedDatacubes: 'dataSearch/selectedDatacubes',
       searchResultsCount: 'dataSearch/searchResultsCount'
-    })
+    }),
+    selectedNode() {
+      if (this.nodeId === undefined || this.modelComponents === null) {
+        return null;
+      }
+      return this.modelComponents.nodes.find(node => node.id === this.nodeId);
+    },
+    nodeConceptName() {
+      return this.selectedNode?.label;
+    },
+    navBackLabel() {
+      return `Back to ${this.nodeConceptName} Node`;
+    }
   },
   watch: {
     filters(n, o) {
@@ -95,6 +108,10 @@ export default {
     },
 
     async refresh() {
+      modelService.getComponents(this.currentCAG).then(_modelComponents => {
+        console.log('test', _modelComponents);
+        this.modelComponents = _modelComponents;
+      });
       await this.fetchAllDatacubeData();
     },
 

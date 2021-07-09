@@ -1,12 +1,5 @@
 <template>
   <div class="data-explorer-container">
-    <rename-modal
-      v-if="showRenameModal"
-      :modal-title="'Name New Analysis'"
-      current-name=""
-      @confirm="onRenameModalConfirm"
-      @cancel="onRenameModalClose"
-    />
     <modal-header
       :nav-back-label="navBackLabel"
       :select-label="selectLabel"
@@ -58,8 +51,7 @@ export default {
     filteredDatacubes: [],
     filteredFacets: null,
     navBackLabel: 'Recent Analyses ',
-    selectLabel: 'Add To Analysis',
-    showRenameModal: false
+    selectLabel: 'Add To Analysis'
   }),
   computed: {
     ...mapGetters({

@@ -279,7 +279,7 @@ export default defineComponent({
     );
 
     const selectLabel = 'Quantify Node';
-    const navBackLabel = 'Back To Data Explorer';
+    const navBackLabel = 'Select A Different Datacube';
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -344,7 +344,6 @@ export default defineComponent({
       setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
     }),
 
-
     onBack() {
       this.$router.push({
         name: 'nodeDataExplorer',
@@ -356,7 +355,6 @@ export default defineComponent({
         }
       });
     },
-
 
     onSelection () {
       this.$router.push({
