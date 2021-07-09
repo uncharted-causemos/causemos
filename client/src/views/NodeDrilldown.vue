@@ -65,6 +65,16 @@
       :active-tab-id="'only-tab'"
     >
       <template #content>
+        <button
+          v-tooltip.top-center="'Data Explorer'"
+          type="button"
+          class="btn btn-primary btn-call-for-action block-button"
+          @click="openDataExplorer"
+        >
+          <i class="fa fa-fw fa-search" />
+          Data Explorer
+        </button>
+
         (Panes go here)
         <!-- TODO: Panes go here -->
         <!-- <indicator-summary
@@ -85,7 +95,7 @@ import { computed, defineComponent, ref, watchEffect } from 'vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import router from '@/router';
-import { useStore } from 'vuex';
+import { useStore, mapGetters } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
 import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
@@ -95,6 +105,16 @@ export default defineComponent({
   components: {
     DrilldownPanel,
     NeighborNode
+  },
+  props: {
+
+  },
+  computed: {
+    ...mapGetters({
+      currentCAG: 'app/currentCAG',
+      nodeId: 'app/nodeId',
+      project: 'app/project'
+    })
   },
   setup() {
     // Get CAG and selected node from route
@@ -210,6 +230,19 @@ export default defineComponent({
       modelComponents,
       scenarios
     };
+  },
+  methods: {
+    openDataExplorer() {
+      this.$router.push({
+        name: 'nodeDataExplorer',
+        params: {
+          currentCAG: this.currentCAG,
+          nodeId: this.nodeId,
+          project: this.project,
+          projectType: ProjectType.Analysis
+        }
+      });
+    }
   }
 });
 </script>
@@ -286,6 +319,10 @@ h6 {
 
 .neighbor-node {
   margin-top: 10px;
+}
+.block-button {
+  width: 100%;
+  display: block;
 }
 
 h5 {

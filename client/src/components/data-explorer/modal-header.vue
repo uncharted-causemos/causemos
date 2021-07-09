@@ -2,17 +2,17 @@
   <full-screen-modal-header
     icon="angle-left"
     :nav-back-label="navBackLabel"
-    @close="onClose"
+    @close="onBack"
   >
     <button
-      v-tooltip.top-center="'Add to analysis'"
+      v-tooltip.top-center="selectLabel"
       type="button"
       class="btn btn-primary btn-call-for-action"
       :disabled="selectedDatacubes.length < 1"
-      @click="updateAnalysis"
+      @click="onSelection"
     >
       <i class="fa fa-fw fa-plus-circle" />
-      Add to Analysis
+      {{selectLabel}}
     </button>
     <span>
       <span class="selected">{{ selectedDatacubes.length }} selected</span>
@@ -23,12 +23,7 @@
 
 <script>
 import { mapGetters } from 'vuex';
-
-import { deleteAnalysis } from '@/services/analysis-service';
-import { ANALYSIS } from '@/utils/messages-util';
-
 import FullScreenModalHeader from '../widgets/full-screen-modal-header';
-import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'DataExplorerModalHeader',
@@ -36,6 +31,10 @@ export default {
     FullScreenModalHeader
   },
   props: {
+    selectLabel: {
+      type: String,
+      default: 'Add'
+    },
     navBackLabel: {
       type: String,
       default: ''
@@ -45,7 +44,7 @@ export default {
       default: false
     }
   },
-  emits: ['close', 'update-analysis'],
+  emits: ['close', 'selection'],
   computed: {
     ...mapGetters({
       analysisId: 'dataAnalysis/analysisId',
@@ -55,32 +54,11 @@ export default {
     })
   },
   methods: {
-    updateAnalysis() {
-      this.$emit('update-analysis');
+    onSelection() {
+      this.$emit('selection');
     },
-
-    async onClose() {
-      this.clear();
-      await new Promise((resolve) => {
-        setTimeout(() => { resolve(); }, 500);
-      });
-      this.$router.push({
-        name: 'dataStart',
-        params: {
-          project: this.project,
-          projectType: ProjectType.Analysis
-        }
-      });
+    onBack() {
       this.$emit('close');
-    },
-
-    async clear() {
-      try {
-        await deleteAnalysis(this.analysisId);
-        this.toaster(ANALYSIS.SUCCESSFUL_DELETION_UNINITIALIZED, 'success', false);
-      } catch (e) {
-        this.toaster(ANALYSIS.ERRONEOUS_DELETION_UNINITIALIZED, 'error', true);
-      }
     }
   }
 };

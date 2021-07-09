@@ -17,7 +17,9 @@ import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import CompAnalysisExperiment from '@/views/CompAnalysisExperiment';
 import ModelPublishingExperiment from '@/views/ModelPublishingExperiment';
+import NodeCompExperiment from '@/views/NodeCompExperiment';
 import NodeDrilldown from '@/views/NodeDrilldown';
+import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
 import qs from 'qs';
 import _ from 'lodash';
 import store from '@/store';
@@ -142,9 +144,19 @@ const routes = [
     component: QuantitativeView
   },
   {
+    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/data/:datacubeId',
+    name: 'nodeCompExperiment',
+    component: NodeCompExperiment
+  },
+  {
     path: '/:projectType/:project/quantitative/:currentCAG/:nodeId',
     name: 'nodeDrilldown',
     component: NodeDrilldown
+  },
+  {
+    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/explorer',
+    name: 'nodeDataExplorer',
+    component: NodeDataExplorer
   },
   {
     path: '/:projectType/:project/audit-trail',
