@@ -105,6 +105,7 @@
             :selected-scenario-ids="selectedScenarioIds"
             :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
+            :selected-timeseries-points="selectedTimeseriesPoints"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
             @set-all-regions-selected="setAllRegionsSelected"
@@ -362,7 +363,8 @@ export default defineComponent({
       breakdownOption,
       setBreakdownOption,
       temporalBreakdownData,
-      AggregationOption
+      AggregationOption,
+      selectedTimeseriesPoints
     };
   },
   watch: {

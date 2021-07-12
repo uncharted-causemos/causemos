@@ -22,7 +22,7 @@
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
       :raw-data="regionalData"
       :units="unit"
-      :selected-scenario-ids="selectedScenarioIds"
+      :selected-timeseries-points="selectedTimeseriesPoints"
       :deselected-item-ids="deselectedRegionIds"
       @toggle-is-item-selected="toggleIsRegionSelected"
       @set-all-selected="setAllRegionsSelected"
@@ -56,7 +56,7 @@
       :aggregation-level-title="type.name"
       :ordered-aggregation-level-keys="['Total', type.name]"
       :raw-data="type.data"
-      :selected-scenario-ids="selectedScenarioIds"
+      :selected-timeseries-points="selectedTimeseriesPoints"
       :units="unit"
     >
       <template #aggregation-description>
@@ -79,7 +79,7 @@
       :ordered-aggregation-level-keys="['Year']"
       :raw-data="temporalBreakdownData"
       :units="unit"
-      :selected-scenario-ids="selectedScenarioIds"
+      :selected-timeseries-points="selectedTimeseriesPoints"
     >
       <!-- TODO:
       :deselected-item-ids="deselectedRegionIds"
@@ -110,6 +110,7 @@ import {
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
 
 function timestampFormatter(timestamp: number) {
   // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
@@ -174,6 +175,10 @@ export default defineComponent({
     selectedBreakdownOption: {
       type: String as PropType<string | null>,
       default: null
+    },
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      required: true
     }
   },
   emits: [

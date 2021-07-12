@@ -43,8 +43,8 @@ export default function useRegionalData(
     const outputs = modelMetadata.validatedOutputs
       ? modelMetadata.validatedOutputs
       : modelMetadata.outputs;
-    return selectedTimeseriesPoints.value.map(({ scenarioId, timestamp }) => ({
-      id: scenarioId,
+    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
+      id: timeseriesId,
       modelId: selectedModelId.value,
       runId: scenarioId,
       outputVariable: outputs[currentOutputIndex.value].name || '',

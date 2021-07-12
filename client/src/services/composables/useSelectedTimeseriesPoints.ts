@@ -50,6 +50,7 @@ export default function useSelectedTimeseriesPoints(
         points
       );
       return {
+        timeseriesId: id,
         scenarioId,
         timestamp,
         isTimestampInTimeseries,

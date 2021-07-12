@@ -15,6 +15,7 @@ export interface Timeseries {
  * doesn't have a oint at the selected timestamp.
  */
 export interface TimeseriesPointSelection {
+  timeseriesId: string;
   scenarioId: string;
   timestamp: number;
   isTimestampInTimeseries: boolean;
