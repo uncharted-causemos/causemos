@@ -13,7 +13,6 @@
         <!-- searchbar -->
 
         <search-bar
-          v-if="ontologyConcepts.length > 0"
           class="search" />
 
         <div class="flex-grow-1 min-width-0">
