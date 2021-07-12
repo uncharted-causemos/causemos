@@ -2,10 +2,7 @@
   <div class="datacube-card-container">
     <header>
       <slot name="datacube-model-header" />
-      <button v-tooltip="'Collapse datacube'" class="btn btn-default">
-        <!-- @click="TODO" -->
-        <i class="fa fa-fw fa-compress" />
-      </button>
+      <slot name="datacube-model-header-collapse" />
     </header>
     <modal-new-scenario-runs
       v-if="isModelMetadata && showNewRunsModal === true"

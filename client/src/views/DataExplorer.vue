@@ -16,6 +16,8 @@
       <search class="flex-grow-1 h-100"
         :facets="facets"
         :filtered-datacubes="filteredDatacubes"
+        :enableMultipleSelection="enableMultipleSelection"
+        :initialDatacubeSelection="initialDatacubeSelection"
       />
     </div>
   </div>
@@ -29,10 +31,8 @@ import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
 
-import dateFormatter from '@/formatters/date-formatter';
-
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
-import { updateAnalysis, deleteAnalysis } from '@/services/analysis-service';
+import { getAnalysis } from '@/services/analysis-service';
 
 import filtersUtil from '@/utils/filters-util';
 import { FACET_FIELDS } from '@/utils/datacube-util';
@@ -50,8 +50,9 @@ export default {
     facets: null,
     filteredDatacubes: [],
     filteredFacets: null,
-    navBackLabel: 'Recent Analyses ',
-    selectLabel: 'Add To Analysis'
+    selectLabel: 'Add To Analysis',
+    analysis: undefined,
+    enableMultipleSelection: true
   }),
   computed: {
     ...mapGetters({
@@ -59,8 +60,15 @@ export default {
       filters: 'dataSearch/filters',
       project: 'app/project',
       selectedDatacubes: 'dataSearch/selectedDatacubes',
-      searchResultsCount: 'dataSearch/searchResultsCount'
-    })
+      searchResultsCount: 'dataSearch/searchResultsCount',
+      analysisItems: 'dataAnalysis/analysisItems'
+    }),
+    navBackLabel() {
+      return 'Back to ' + (this.analysis ? this.analysis.title : 'analysis');
+    },
+    initialDatacubeSelection() {
+      return this.analysisItems.map(item => item.id);
+    }
   },
   watch: {
     filters(n, o) {
@@ -98,48 +106,45 @@ export default {
 
     async refresh() {
       await this.fetchAllDatacubeData();
+      this.analysis = await getAnalysis(this.analysisId);
     },
     async addToAnalysis() {
       try {
-        // update analysis name
-        await updateAnalysis(this.analysisId, {
-          title: `${this.selectedDatacubes[0]} ${dateFormatter(Date.now(), 'MMM DD YYYY - hh:mm:ss')}`
-        });
-        // update analysis datacubes
+        // save the selected datacubes in the analysis object in the store/server
         await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
-        this.$router.push({
-          name: 'data',
-          params: {
-            project: this.project,
-            analysisID: this.analysisId,
-            projectType: ProjectType.Analysis
-          }
-        });
+
+        if (this.enableMultipleSelection) {
+          this.$router.push({
+            name: 'dataComparative',
+            params: {
+              project: this.project,
+              analysisID: this.analysisId,
+              projectType: ProjectType.Analysis
+            }
+          });
+        } else {
+          this.$router.push({
+            name: 'data',
+            params: {
+              project: this.project,
+              analysisID: this.analysisId,
+              projectType: ProjectType.Analysis
+            }
+          });
+        }
       } catch (e) {
         this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
       }
     },
     async onClose() {
-      this.clear();
-      await new Promise((resolve) => {
-        setTimeout(() => { resolve(); }, 500);
-      });
       this.$router.push({
-        name: 'dataStart',
+        name: 'dataComparative',
         params: {
           project: this.project,
+          analysisID: this.analysisId,
           projectType: ProjectType.Analysis
         }
       });
-    },
-
-    async clear() {
-      try {
-        await deleteAnalysis(this.analysisId);
-        this.toaster(ANALYSIS.SUCCESSFUL_DELETION_UNINITIALIZED, 'success', false);
-      } catch (e) {
-        this.toaster(ANALYSIS.ERRONEOUS_DELETION_UNINITIALIZED, 'error', true);
-      }
     }
   }
 };

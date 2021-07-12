@@ -7,7 +7,7 @@ import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
 import { useStore } from 'vuex';
 import { AdminRegionSets } from '@/types/Datacubes';
-import { AggregationOption } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -46,13 +46,17 @@ export default function useRegionalData(
     const outputs = modelMetadata.validatedOutputs
       ? modelMetadata.validatedOutputs
       : modelMetadata.outputs;
+    const defaultOutputIndex = modelMetadata.validatedOutputs?.findIndex(
+        o => o.name === metadata.value?.default_feature) ?? 0;
+    const mainFeatureName = outputs[defaultOutputIndex].name;
+
     return selectedScenarioIds.value.map(selectedScenarioId => ({
       id: selectedScenarioId,
       modelId: selectedModelId.value,
       runId: selectedScenarioId,
-      outputVariable: outputs[currentOutputIndex.value].name || '',
+      outputVariable: mainFeatureName || '',
       timestamp,
-      temporalResolution: selectedTemporalResolution.value || 'month',
+      temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
       temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,
       spatialAggregation: selectedSpatialAggregation.value || AggregationOption.Mean
     }));

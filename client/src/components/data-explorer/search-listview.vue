@@ -20,11 +20,21 @@
             :class="{ selected: isSelected(d), deactive: !d.isAvailable }"
             @click="updateSelection(d)">
             <td class="output-col">
-              <i
-                class="fa fa-lg fa-fw radio"
-                :class="{ 'fa-circle': isSelected(d), 'fa-circle-o': !isSelected(d) }"
-              />
-              <div class="text-bold">{{ formatOutputVariables(d) }}</div>
+              <!-- in case of requesting multiple selection -->
+              <template v-if="enableMultipleSelection">
+                <i
+                  class="fa fa-lg fa-fw radio"
+                  :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d) }"
+                />
+                <div class="text-bold">{{ formatOutputVariables(d) }}</div>
+              </template>
+              <template v-else>
+                <i
+                  class="fa fa-lg fa-fw radio"
+                  :class="{ 'fa-circle': isSelected(d), 'fa-circle-o': !isSelected(d) }"
+                />
+                <div class="text-bold">{{ formatOutputVariables(d) }}</div>
+              </template>
               <div>{{ d.source }}</div>
             </td>
             <td class="param-col">
@@ -65,6 +75,10 @@ export default {
     datacubes: {
       type: Array,
       default: () => []
+    },
+    enableMultipleSelection: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -77,12 +91,22 @@ export default {
     ...mapActions({
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
-
     isSelected(datacube) {
       return this.selectedDatacubes.find(dId => dId === datacube.data_id) !== undefined;
     },
     updateSelection(datacube) {
-      this.setSelectedDatacubes([datacube.data_id]);
+      if (this.enableMultipleSelection) {
+        // if the datacube is not in the list add it, otherwise remove it
+        if (this.isSelected(datacube)) {
+          const newSelectedDatacubes = this.selectedDatacubes.filter(dId => dId !== datacube.data_id);
+          this.setSelectedDatacubes(newSelectedDatacubes);
+        } else {
+          this.setSelectedDatacubes([...this.selectedDatacubes, datacube.data_id]);
+        }
+      } else {
+        // only one selection is alloed, so replace the selected datacubes array
+        this.setSelectedDatacubes([datacube.data_id]);
+      }
     },
     formatOutputVariables(datacube) {
       const modelName = datacube.name;

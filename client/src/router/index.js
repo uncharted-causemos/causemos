@@ -16,6 +16,7 @@ import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
 import CompAnalysisExperiment from '@/views/CompAnalysisExperiment';
+import CompAnalysis from '@/views/CompAnalysis';
 import ModelPublishingExperiment from '@/views/ModelPublishingExperiment';
 import NodeCompExperiment from '@/views/NodeCompExperiment';
 import NodeDrilldown from '@/views/NodeDrilldown';
@@ -84,6 +85,12 @@ const routes = [
     path: '/:projectType/:project/data/:analysisID',
     name: 'data',
     component: CompAnalysisExperiment,
+    beforeEnter: loadAnalysisStateNew
+  },
+  {
+    path: '/:projectType/:project/dataComparative/:analysisID',
+    name: 'dataComparative',
+    component: CompAnalysis,
     beforeEnter: loadAnalysisStateNew
   },
   {

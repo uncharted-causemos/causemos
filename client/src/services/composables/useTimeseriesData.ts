@@ -1,7 +1,7 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
+import { TemporalAggregationLevel, AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
@@ -124,13 +124,15 @@ export default function useTimeseriesData(
     const outputs = metadata.value.validatedOutputs
       ? metadata.value.validatedOutputs
       : metadata.value.outputs;
+    const defaultOutputIndex = metadata?.value.validatedOutputs?.findIndex(
+      o => o.name === metadata.value?.default_feature) ?? 0;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
       const temporalRes =
         selectedTemporalResolution.value !== ''
           ? selectedTemporalResolution.value
-          : 'month';
+          : TemporalResolutionOption.Month;
       const temporalAgg =
         selectedTemporalAggregation.value !== ''
           ? selectedTemporalAggregation.value
@@ -139,12 +141,14 @@ export default function useTimeseriesData(
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
+      const mainFeatureName = outputs[defaultOutputIndex].name;
+
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
             model_id: dataId.value,
             run_id: runId,
-            feature: outputs[currentOutputIndex.value].name,
+            feature: mainFeatureName,
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg
