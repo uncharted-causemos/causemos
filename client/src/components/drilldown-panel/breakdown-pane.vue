@@ -71,7 +71,7 @@
       </template>
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
-      v-if="isTemporalBreakdownDataValid"
+      v-if="isTemporalBreakdownDataValid && selectedBreakdownOption === null"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
       :aggregation-level="0"
