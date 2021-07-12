@@ -4,7 +4,7 @@
       :nav-back-label="navBackLabel"
       :select-label="selectLabel"
       @close="onClose"
-      @selection="addToAnalysis"
+      @selection="selectData"
     />
     <div class="flex h-100" v-if="facets !== null && filteredFacets !== null">
       <div class="flex h-100">
@@ -29,18 +29,15 @@ import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
 
-import dateFormatter from '@/formatters/date-formatter';
-
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
-import { updateAnalysis, deleteAnalysis } from '@/services/analysis-service';
-
-import filtersUtil from '@/utils/filters-util';
-import { FACET_FIELDS } from '@/utils/datacube-util';
-import { ANALYSIS } from '@/utils/messages-util';
+import modelService from '@/services/model-service';
 import { ProjectType } from '@/types/Enums';
 
+import filtersUtil from '@/utils/filters-util';
+import { NODE_FACET_FIELDS } from '@/utils/datacube-util';
+
 export default {
-  name: 'DataExplorer',
+  name: 'NodeDataExplorer',
   components: {
     Search,
     FacetsPanel,
@@ -50,17 +47,30 @@ export default {
     facets: null,
     filteredDatacubes: [],
     filteredFacets: null,
-    navBackLabel: 'Recent Analyses ',
-    selectLabel: 'Add To Analysis'
+    selectLabel: 'Quantify Node',
+    modelComponents: null
   }),
   computed: {
     ...mapGetters({
-      analysisId: 'dataAnalysis/analysisId',
       filters: 'dataSearch/filters',
+      currentCAG: 'app/currentCAG',
+      nodeId: 'app/nodeId',
       project: 'app/project',
       selectedDatacubes: 'dataSearch/selectedDatacubes',
       searchResultsCount: 'dataSearch/searchResultsCount'
-    })
+    }),
+    selectedNode() {
+      if (this.nodeId === undefined || this.modelComponents === null) {
+        return null;
+      }
+      return this.modelComponents.nodes.find(node => node.id === this.nodeId);
+    },
+    nodeConceptName() {
+      return this.selectedNode?.label;
+    },
+    navBackLabel() {
+      return `Back to ${this.nodeConceptName} Node`;
+    }
   },
   watch: {
     filters(n, o) {
@@ -84,62 +94,49 @@ export default {
       this.enableOverlay();
 
       // get the filtered data
-      const filters = _.cloneDeep(this.filters);
-      this.filteredDatacubes = await getDatacubes(filters);
+      const searchFilters = _.cloneDeep(this.filters);
+      filtersUtil.addSearchTerm(searchFilters, 'type', 'indicator', 'and', false);
+      this.filteredDatacubes = await getDatacubes(searchFilters);
       this.filteredDatacubes.forEach(item => (item.isAvailable = true));
 
       // retrieves filtered & unfiltered facet data
-      const defaultFilters = { clauses: [] };
-      this.facets = await getDatacubeFacets(FACET_FIELDS, defaultFilters);
-      this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, filters);
+      const defaultFilters = { clauses: [{ field: 'type', operand: 'and', isNot: false, values: ['indicator'] }] };
+      this.facets = await getDatacubeFacets(NODE_FACET_FIELDS, defaultFilters);
+      this.filteredFacets = await getDatacubeFacets(NODE_FACET_FIELDS, searchFilters);
 
       this.disableOverlay();
     },
 
     async refresh() {
+      modelService.getComponents(this.currentCAG).then(_modelComponents => {
+        this.modelComponents = _modelComponents;
+      });
       await this.fetchAllDatacubeData();
     },
-    async addToAnalysis() {
-      try {
-        // update analysis name
-        await updateAnalysis(this.analysisId, {
-          title: `${this.selectedDatacubes[0]} ${dateFormatter(Date.now(), 'MMM DD YYYY - hh:mm:ss')}`
-        });
-        // update analysis datacubes
-        await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
-        this.$router.push({
-          name: 'data',
-          params: {
-            project: this.project,
-            analysisID: this.analysisId,
-            projectType: ProjectType.Analysis
-          }
-        });
-      } catch (e) {
-        this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
-      }
-    },
-    async onClose() {
-      this.clear();
-      await new Promise((resolve) => {
-        setTimeout(() => { resolve(); }, 500);
-      });
+
+    onClose() {
       this.$router.push({
-        name: 'dataStart',
+        name: 'nodeDrilldown',
         params: {
+          currentCAG: this.currentCAG,
+          nodeId: this.nodeId,
           project: this.project,
           projectType: ProjectType.Analysis
         }
       });
     },
 
-    async clear() {
-      try {
-        await deleteAnalysis(this.analysisId);
-        this.toaster(ANALYSIS.SUCCESSFUL_DELETION_UNINITIALIZED, 'success', false);
-      } catch (e) {
-        this.toaster(ANALYSIS.ERRONEOUS_DELETION_UNINITIALIZED, 'error', true);
-      }
+    selectData () {
+      this.$router.push({
+        name: 'nodeCompExperiment',
+        params: {
+          currentCAG: this.currentCAG,
+          datacubeId: this.selectedDatacubes[0],
+          nodeId: this.nodeId,
+          project: this.project,
+          projectType: ProjectType.Analysis
+        }
+      });
     }
   }
 };

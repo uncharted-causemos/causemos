@@ -54,10 +54,23 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   variableUnit: 'Output Units'
 };
 
-
 export const FACET_FIELDS: string [] = [
   TYPE,
   CATEGORY,
+  TAGS,
+  COUNTRY,
+  ADMIN1,
+  ADMIN2,
+  ADMIN3,
+  PARAMETERS,
+  VARIABLE_NAME,
+  VARIABLE_UNIT,
+  TEMPORAL_RESOLUTION,
+  MAINTAINER_NAME,
+  MAINTAINER_ORG
+];
+
+export const NODE_FACET_FIELDS: string [] = [
   TAGS,
   COUNTRY,
   ADMIN1,
@@ -86,7 +99,8 @@ export function isIndicator(datacube: Datacube): datacube is Indicator {
 
 export default {
   CODE_TABLE,
-  FACET_FIELDS,
   DISPLAY_NAMES,
+  FACET_FIELDS,
+  NODE_FACET_FIELDS,
   getValidatedOutputs
 };
