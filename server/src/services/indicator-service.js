@@ -1,4 +1,3 @@
-const { lte } = require('lodash');
 const _ = require('lodash');
 const moment = require('moment');
 const Logger = rootRequire('/config/logger');
