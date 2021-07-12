@@ -139,6 +139,7 @@ import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
 import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
 const DRILLDOWN_TABS = [
   {
@@ -299,6 +300,13 @@ export default defineComponent({
       setSelectedTimestamp
     );
 
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
     const {
       outputSpecs,
       regionalData,
@@ -307,12 +315,11 @@ export default defineComponent({
       setAllRegionsSelected
     } = useRegionalData(
       selectedModelId,
-      selectedScenarioIds,
-      selectedTimestamp,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
-      metadata
+      metadata,
+      selectedTimeseriesPoints
     );
 
     return {

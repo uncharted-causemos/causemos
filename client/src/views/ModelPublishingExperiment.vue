@@ -146,6 +146,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { updateDatacube } from '@/services/new-datacube-service';
 import _ from 'lodash';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
 const DRILLDOWN_TABS = [
   {
@@ -283,22 +284,6 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    const {
-      regionalData,
-      outputSpecs,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
-    } = useRegionalData(
-      selectedModelId,
-      selectedScenarioIds,
-      selectedTimestamp,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      metadata
-    );
-
     const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
@@ -323,6 +308,28 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp
+    );
+
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
+    const {
+      regionalData,
+      outputSpecs,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
+      selectedModelId,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      metadata,
+      selectedTimeseriesPoints
     );
 
 

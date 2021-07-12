@@ -140,6 +140,7 @@ import { DatacubeType, ProjectType } from '@/types/Enums';
 
 import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
 const DRILLDOWN_TABS = [
   {
@@ -262,6 +263,13 @@ export default defineComponent({
       setSelectedTimestamp
     );
 
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
     const {
       outputSpecs,
       regionalData,
@@ -270,12 +278,11 @@ export default defineComponent({
       setAllRegionsSelected
     } = useRegionalData(
       selectedModelId,
-      selectedScenarioIds,
-      selectedTimestamp,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
-      metadata
+      metadata,
+      selectedTimeseriesPoints
     );
 
     const selectLabel = 'Quantify Node';
