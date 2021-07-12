@@ -31,13 +31,21 @@ router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) =
   const metadata = req.body.metadata;
   const project = req.body.project;
 
+  // FIXME: Inject tenant information
+  // - ata
+  // - new-america
+  metadata.tenants = [
+    'new-america'
+  ];
+
   Logger.info(`Extending project: ${project}`);
   const results = [];
   for (let i = 0; i < req.files.length; i++) {
     const file = req.files[i];
 
     const r = await dartService.uploadDocument(file, metadata);
-    const documentId = JSON.parse(r).documentId;
+    console.log(r);
+    const documentId = JSON.parse(r).document_id;
     Logger.info(`\t${i} ${file.originalname} ${documentId}`);
     results.push({
       document_id: documentId,

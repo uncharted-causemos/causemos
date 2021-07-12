@@ -6,8 +6,13 @@ const Logger = rootRequire('/config/logger');
 
 const basicAuthToken = auth.getBasicAuthToken(process.env.DART_SERVICE_USERNAME, process.env.DART_SERVICE_PASSWORD);
 
-const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
-const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
+// FIXME
+// const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
+// const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
+
+const DART_SERVICE_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
+const DART_READER_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
+
 const TIMEOUT = 3 * 1000;
 
 /**
@@ -43,6 +48,7 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
     },
     metadata: metadata
   };
+
   const options = {
     url: DART_SERVICE_URL + '/forklift/upload',
     method: 'POST',
