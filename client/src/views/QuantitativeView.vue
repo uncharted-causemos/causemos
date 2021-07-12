@@ -18,7 +18,7 @@
         @edit-indicator="editIndicator"
         @save-indicator-edits="saveIndicatorEdits"
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
-        @refresh="refresh"
+        @refresh-model="refreshModel"
       >
         <template #action-bar>
           <action-bar
@@ -44,7 +44,7 @@
       :node-scenarios="scenariosForSelectedNode"
       :projection-steps="projectionSteps"
       @close="closeEditConstraints"
-      @run-projection="runProjection"
+      @run-projection="saveDraft"
     />
     <modal-edit-parameters
       v-if="isModelParametersOpen"
@@ -163,6 +163,23 @@ export default {
     }),
     runModel() {
       console.log('running model');
+      this.refresh();
+    },
+    // async refresh() {
+    //   this.enableOverlay();
+    //   // Fetch core data that will run this view and children components
+    //   this.modelSummary = await modelService.getSummary(this.currentCAG);
+    //   this.modelComponents = await modelService.getComponents(this.currentCAG);
+    //   const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+    //   // FIXME: 0-length
+    //   this.scenarios = scenarios;
+    //   this.disableOverlay();
+    // },
+    async refreshModel() {
+      this.enableOverlay();
+      this.modelSummary = await modelService.getSummary(this.currentCAG);
+      this.modelComponents = await modelService.getComponents(this.currentCAG);
+      this.disableOverlay();
     },
     async refresh() {
       this.enableOverlay();
@@ -333,7 +350,7 @@ export default {
       // FIXME: Reset all selection state to have a clean start - we should try to preserve states when things are stable - Sept 2020.
       await modelService.updateNodeParameter(this.currentCAG, this.selectedNode);
       this.selectedNode = null;
-      this.refresh();
+      this.refreshModel();
     },
     showConstraints(nodeData, scenarios) {
       this.selectedNode = nodeData;
@@ -351,7 +368,7 @@ export default {
     closeModelParameters() {
       this.isModelParametersOpen = false;
     },
-    async runProjection({ concept, constraints }) {
+    async saveDraft({ concept, constraints }) {
       // FIXME: remove reliance on timestamp
       constraints.forEach(c => {
         delete c.timestamp;
@@ -387,7 +404,9 @@ export default {
           values: constraints
         });
       }
-
+      await this.runDraftScenario();
+    },
+    async runDraftScenario() {
       // Run experiment
       let experimentId = 0;
       let result = null;

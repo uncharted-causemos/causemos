@@ -211,7 +211,7 @@ export default {
   },
   emits: [
     'background-click', 'show-indicator', 'show-constraints', 'show-model-parameters',
-    'refresh', 'set-sensitivity-analysis-type', 'save-indicator-edits', 'edit-indicator'
+    'refresh-model', 'set-sensitivity-analysis-type', 'save-indicator-edits', 'edit-indicator'
   ],
   data: () => ({
     tabs: [
@@ -259,6 +259,9 @@ export default {
   },
   watch: {
     scenarios() {
+      this.refresh();
+    },
+    modelSummary() {
       this.refresh();
     }
   },
@@ -369,7 +372,7 @@ export default {
       };
       await modelService.updateNodeParameter(this.currentCAG, payload);
       this.closeDrilldown();
-      this.$emit('refresh');
+      this.$emit('refresh-model');
     },
     onFunctionSelected(newProperties) {
       const newParameter = Object.assign({}, this.selectedNode.parameter, newProperties);
@@ -380,13 +383,13 @@ export default {
       await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
       this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
       this.closeDrilldown();
-      this.$emit('refresh');
+      this.$emit('refresh-model');
     },
     async setEdgeWeights(edgeData) {
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
       this.closeDrilldown();
-      this.$emit('refresh');
+      this.$emit('refresh-model');
     },
     editIndicator() {
       this.$emit('edit-indicator');

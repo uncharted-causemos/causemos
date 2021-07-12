@@ -730,5 +730,7 @@ export default {
   calculateScenarioPercentageChange,
   expandExtentForDyseProjections,
   injectStepZero,
-  ENGINE_OPTIONS
+
+  ENGINE_OPTIONS,
+  MODEL_STATUS
 };
