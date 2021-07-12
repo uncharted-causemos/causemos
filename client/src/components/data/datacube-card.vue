@@ -149,7 +149,7 @@
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
+            v-if="!isDescriptionView && timeseriesData.length > 0 && !hasSingleTimestamp"
             class="timeseries-chart"
             :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
@@ -157,7 +157,7 @@
             @select-timestamp="emitTimestampSelection"
           />
           <p
-            v-else-if="timeseriesData.length > 0 && timeseriesData[0].points.length === 1"
+            v-else-if="hasSingleTimestamp"
             class="hidden-timeseries-message"
           >
             Data only exists for
@@ -314,7 +314,8 @@ export default defineComponent({
     const {
       selectedScenarioIds,
       allModelRunData,
-      metadata
+      metadata,
+      timeseriesData
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -360,6 +361,17 @@ export default defineComponent({
       }
     );
 
+    const hasSingleTimestamp = computed(() => {
+      const allPoints = timeseriesData.value.flatMap(timeseries => timeseries.points);
+      if (allPoints.length === 0) return false;
+      const allTimestamps = allPoints.map(point => point.timestamp);
+      const timestamp = allTimestamps[0];
+      for (const other of allTimestamps.slice(1)) {
+        if (other !== timestamp) return false;
+      }
+      return true;
+    });
+
     return {
       updateMapFilters,
       mapFilters,
@@ -372,7 +384,8 @@ export default defineComponent({
       mainModelOutput,
       isModelMetadata,
       emitRelativeToSelection,
-      timestampFormatter
+      timestampFormatter,
+      hasSingleTimestamp
     };
   },
   data: () => ({
