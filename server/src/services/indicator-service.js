@@ -1,3 +1,4 @@
+const { lte } = require('lodash');
 const _ = require('lodash');
 const moment = require('moment');
 const Logger = rootRequire('/config/logger');
@@ -175,13 +176,14 @@ const getOntologyCandidates = async (modelId, concepts) => {
         }
       });
 
-      // compositionalConcepts = results.map(
-      //   pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(
-      //     pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm'))
-      //   )).flat(1);
     }
     // make sure array contains unique values
     compositionalConcepts = [...new Set(compositionalConcepts)];
+
+    const compositionalKeywords = [...new Set(compositionalConcepts.map(comp => {
+      let words = comp.split('/').slice(2);
+      return words.map(word => word.split('_')).flat(1);
+    }).flat(1))];
 
     const searchPayload = {
       index: RESOURCE.DATA_DATACUBE,
@@ -201,6 +203,16 @@ const getOntologyCandidates = async (modelId, concepts) => {
                             'ontology_matches.name': compositionalConcepts
                           }
                         }
+                      }
+                    },
+                    {
+                      terms: {
+                        description: compositionalKeywords
+                      }
+                    },
+                    {
+                      terms: {
+                        'outputs.description': compositionalKeywords
                       }
                     }
                   ]
