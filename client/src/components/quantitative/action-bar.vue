@@ -51,7 +51,7 @@
         <button
           class="btn btn-primary"
           @click="runModel">
-          Run
+          {{ isModelDirty === 0 ? '*' : '' }} Run
         </button>
       </li>
     </ul>
@@ -81,6 +81,10 @@ export default {
     DropdownControl
   },
   props: {
+    modelSummary: {
+      type: Object,
+      required: true
+    },
     scenarios: {
       type: Array,
       default: () => []
@@ -113,6 +117,9 @@ export default {
       return {
         name: '[No Scenarios Exist]'
       };
+    },
+    isModelDirty() {
+      return _.get(this.modelSummary, 'status', true);
     }
   },
   methods: {

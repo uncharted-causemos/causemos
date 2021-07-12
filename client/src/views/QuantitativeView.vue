@@ -22,6 +22,7 @@
       >
         <template #action-bar>
           <action-bar
+            :model-summary="modelSummary"
             :scenarios="scenarios"
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
