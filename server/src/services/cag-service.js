@@ -180,13 +180,11 @@ const updateCAGMetadata = async(modelId, modelFields) => {
 
   const nonNullKeys = Object.keys(modelFields).filter(d => !_.isNil(d))
 
-  const results = nonNullKeys.includes('thumbnail_source') && nonNullKeys.length <= 2 ?
-    await CAGConnection.update({
-      id: modelId,
-      ...modelFields
-    }, keyFn)
-    :
-    await CAGConnection.update({
+  const results = nonNullKeys.includes('thumbnail_source') && nonNullKeys.length <= 2 ? await CAGConnection.update({
+    id: modelId,
+    ...modelFields
+  }, keyFn)
+    : await CAGConnection.update({
       id: modelId,
       modified_at: moment().valueOf(),
       ...modelFields
