@@ -30,7 +30,7 @@
         :output-source-specs="outputSpecs"
         :is-description-view="isDescriptionView"
         :metadata="metadata"
-        :timeseries-data="timeseriesData"
+        :timeseries-data="visibleTimeseriesData"
         :relative-to="relativeTo"
         :breakdown-option="breakdownOption"
         :baseline-metadata="baselineMetadata"
@@ -105,6 +105,7 @@
               :selected-scenario-ids="selectedScenarioIds"
               :deselected-region-ids="deselectedRegionIds"
               :selected-breakdown-option="breakdownOption"
+              :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
               @set-all-regions-selected="setAllRegionsSelected"
@@ -140,6 +141,7 @@ import { DatacubeType, ProjectType } from '@/types/Enums';
 
 import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
 const DRILLDOWN_TABS = [
   {
@@ -247,6 +249,7 @@ export default defineComponent({
 
     const {
       timeseriesData,
+      visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
       setRelativeTo
@@ -262,6 +265,13 @@ export default defineComponent({
       setSelectedTimestamp
     );
 
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
     const {
       outputSpecs,
       regionalData,
@@ -270,12 +280,11 @@ export default defineComponent({
       setAllRegionsSelected
     } = useRegionalData(
       selectedModelId,
-      selectedScenarioIds,
-      selectedTimestamp,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
-      metadata
+      metadata,
+      selectedTimeseriesPoints
     );
 
     const selectLabel = 'Quantify Node';
@@ -312,14 +321,15 @@ export default defineComponent({
       outputs,
       currentOutputIndex,
       setSelectedTimestamp,
-      timeseriesData,
+      visibleTimeseriesData,
       baselineMetadata,
       relativeTo,
       setRelativeTo,
       breakdownOption,
       setBreakdownOption,
       selectLabel,
-      navBackLabel
+      navBackLabel,
+      selectedTimeseriesPoints
     };
   },
   unmounted(): void {

@@ -113,6 +113,7 @@
               class="relative-dropdown">
               <template #content>
                 <div
+                  v-if="relativeTo !== null"
                   class="dropdown-option"
                   @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
                 >
@@ -222,20 +223,14 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { ModelRunStatus } from '@/types/Enums';
+import { ModelRunStatus, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
 import { Timeseries } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
-
-
-function timestampFormatter(timestamp: number) {
-  // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
-  //  and be consistent.
-  return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
-}
+import { getTimestamp } from '@/utils/date-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -322,7 +317,8 @@ export default defineComponent({
       selectedScenarioIds,
       allModelRunData,
       metadata,
-      timeseriesData
+      timeseriesData,
+      breakdownOption
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -378,6 +374,17 @@ export default defineComponent({
       }
       return true;
     });
+
+    const timestampFormatter = (timestamp: number) => {
+      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
+      //  and be consistent.
+      if (breakdownOption.value === TemporalAggregationLevel.Year) {
+        const month = timestamp;
+        // We're only displaying the month, so the year doesn't matter
+        return dateFormatter(getTimestamp(1970, month) * 1000, 'MMMM');
+      }
+      return dateFormatter(timestamp * 1000, 'MMMM YYYY');
+    };
 
     return {
       updateMapFilters,

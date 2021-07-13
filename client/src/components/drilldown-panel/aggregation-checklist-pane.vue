@@ -43,6 +43,7 @@
         :key="rowIndex"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
+        :selected-timeseries-points="selectedTimeseriesPoints"
         @toggle-expanded="toggleExpanded(row.path)"
         @toggle-checked="toggleChecked(row.path)"
       />
@@ -58,6 +59,7 @@ import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import { BreakdownData } from '@/types/Datacubes';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
   defineComponent,
   PropType,
@@ -235,9 +237,9 @@ export default defineComponent({
       type: String,
       default: null
     },
-    selectedScenarioIds: {
-      type: Array as PropType<string[]>,
-      default: []
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      required: true
     },
     deselectedItemIds: {
       type: Object as PropType<{
@@ -256,7 +258,7 @@ export default defineComponent({
       rawData,
       aggregationLevel,
       orderedAggregationLevelKeys,
-      selectedScenarioIds,
+      selectedTimeseriesPoints,
       deselectedItemIds
     } = toRefs(props);
     const statefulData = ref<RootStatefulDataNode | null>(null);
@@ -271,9 +273,11 @@ export default defineComponent({
         //  model run
         const valuesAtThisLevel = rawData.value[aggregationLevelKey];
         if (valuesAtThisLevel === undefined) return;
-        const modelRunCount = selectedScenarioIds.value.length;
-        const getIndexFromRunId = (modelRunId: string) =>
-          selectedScenarioIds.value.findIndex(id => id === modelRunId);
+        const timeseriesCount = selectedTimeseriesPoints.value.length;
+        const getIndexFromTimeseriesId = (timeseriesId: string) =>
+          selectedTimeseriesPoints.value.findIndex(
+            point => point.timeseriesId === timeseriesId
+          );
         valuesAtThisLevel.forEach(({ id, values }) => {
           const path = id.split(PATH_DELIMETER);
           const name = path[path.length - 1];
@@ -293,14 +297,14 @@ export default defineComponent({
             _path = _path.splice(1);
           }
           // Initialize values for every model run to null
-          const valueArray = new Array(modelRunCount).fill(null);
-          // Convert values from { [modelRunId]: value } to an array where
-          //  the index of each run's value comes from the selectedScenarioIds
+          const valueArray = new Array(timeseriesCount).fill(null);
+          // Convert values from { [timeseriesId]: value } to an array where
+          //  the index of each timeseries's value comes from the selectedTimeseriesPoints
           //  array. This is necessary to have consistent colouring with other
           //  components.
-          Object.keys(values).forEach(modelRunId => {
-            const modelRunIndex = getIndexFromRunId(modelRunId);
-            valueArray[modelRunIndex] = values[modelRunId];
+          Object.keys(values).forEach(timeseriesId => {
+            const timeseriesIndex = getIndexFromTimeseriesId(timeseriesId);
+            valueArray[timeseriesIndex] = values[timeseriesId];
           });
           // Create stateful node and insert it into its place in the tree
           pointer.push({

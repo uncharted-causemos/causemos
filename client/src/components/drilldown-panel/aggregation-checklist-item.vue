@@ -81,6 +81,7 @@
 
 <script lang="ts">
 import precisionFormatter from '@/formatters/precision-formatter';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { defineComponent, PropType } from '@vue/runtime-core';
 
@@ -117,6 +118,10 @@ export default defineComponent({
     maxVisibleBarValue: {
       type: Number,
       default: 0
+    },
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      required: true
     }
   },
   computed: {
@@ -165,6 +170,9 @@ export default defineComponent({
       return {
         color: colorFromIndex(index)
       };
+    },
+    colorFromIndex(index: number) {
+      return this.selectedTimeseriesPoints[index].color;
     }
   }
 });
