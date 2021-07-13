@@ -7,7 +7,6 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import { useStore } from 'vuex';
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
@@ -107,16 +106,10 @@ export default function useTimeseriesData(
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
 
-  const store = useStore();
-  const currentOutputIndex = computed(
-    () => store.getters['modelPublishStore/currentOutputIndex']
-  );
-
   watchEffect(onInvalidate => {
     if (
       modelRunIds.value.length === 0 ||
-      metadata.value === null ||
-      currentOutputIndex.value === undefined
+      metadata.value === null
     ) {
       // Don't have the information needed to fetch the data
       return;

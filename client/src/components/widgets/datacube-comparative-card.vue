@@ -204,7 +204,7 @@ export default defineComponent({
     });
 
     async function openDrilldown() {
-      // FIXME: instead of replacing the datacubeIDs array,
+      // NOTE: instead of replacing the datacubeIDs array,
       //  ensure that the current datacubeId is at 0 index
       let datacubeIDs: string[] = analysisItems.value.map((item: any) => item.datacubeId);
       const indx = datacubeIDs.findIndex((datacubeId: string) => datacubeId === props.datacubeId);

@@ -5,7 +5,6 @@ import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
-import { useStore } from 'vuex';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
@@ -24,11 +23,6 @@ export default function useRegionalData(
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | Indicator | null>
 ) {
-  const store = useStore();
-  const currentOutputIndex = computed(
-    () => store.getters['modelPublishStore/currentOutputIndex']
-  );
-
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
@@ -38,8 +32,7 @@ export default function useRegionalData(
       selectedModelId.value === null ||
       selectedScenarioIds.value.length === 0 ||
       timestamp === null ||
-      modelMetadata === null ||
-      currentOutputIndex.value === undefined
+      modelMetadata === null
     ) {
       return [];
     }

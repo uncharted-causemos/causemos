@@ -76,7 +76,7 @@ export default {
         }
       });
     },
-    async onRecent(recentCard) {
+    onRecent(recentCard) {
       this.$router.push({
         name: 'dataComparative',
         params: {
