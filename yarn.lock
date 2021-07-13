@@ -1664,13 +1664,6 @@
     semver "^7.3.2"
     tsutils "^3.17.1"
 
-"@uncharted.software/cards@^1.0.0":
-  version "1.0.0"
-  resolved "https://registry.yarnpkg.com/@uncharted.software/cards/-/cards-1.0.0.tgz#9f4b77850a5bb26957ee6ed137b6845facce431a"
-  integrity sha512-d8LJ1iSR6tWN/FRx8pX2zP5yAP6KbVhmUFCMr32hhhD70OvnDMid9lNZihw5f3fJCrkN79EjDJ+VqxXmhoMkww==
-  dependencies:
-    lodash "^4.17.11"
-
 "@uncharted.software/css-options@^3.1.0":
   version "3.1.0"
   resolved "https://registry.yarnpkg.com/@uncharted.software/css-options/-/css-options-3.1.0.tgz#dbfc05ba0c43f2b3c4b72cf11506c4417f5fd48e"
@@ -11696,10 +11689,10 @@ supports-color@^7.0.0, supports-color@^7.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-svg-flowgraph@0.4.2:
-  version "0.4.2"
-  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.4.2.tgz#bd70942a05672dc0d465d0d9c80bf6b9b74c9966"
-  integrity sha512-m/84rSIgK6qqwPv0bmqz6Wv8334gxY7zQx2P2YqTyXVS/OWmMVJRvyMobVfr6QgH2iVoxHQTdHELXAyvhF6zMA==
+svg-flowgraph@0.4.4:
+  version "0.4.4"
+  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.4.4.tgz#32b84a3f9c13b87a0296222934c3de9a59d2bd00"
+  integrity sha512-bE1WzYRJYlz6pV7O5V784N8igGeZ2wt5RXM8RtyN+3NNKoCQgemp4Vg53HQ8xeuCuoT6KKL2vRePMnLKT34mGw==
 
 svg-tags@^1.0.0:
   version "1.0.0"
