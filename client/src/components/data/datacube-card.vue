@@ -376,13 +376,13 @@ export default defineComponent({
     });
 
     const timestampFormatter = (timestamp: number) => {
+      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
+      //  and be consistent.
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
         const month = timestamp;
         // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestamp(1970, month), 'MMMM');
+        return dateFormatter(getTimestamp(1970, month) * 1000, 'MMMM');
       }
-      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
-      //  and be consistent.
       return dateFormatter(timestamp * 1000, 'MMMM YYYY');
     };
 
