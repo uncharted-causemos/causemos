@@ -18,7 +18,7 @@
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
       :metadata="metadata"
-      :timeseries-data="timeseriesData"
+      :timeseries-data="visibleTimeseriesData"
       :relative-to="relativeTo"
       :breakdown-option="breakdownOption"
       :baseline-metadata="baselineMetadata"
@@ -285,6 +285,7 @@ export default defineComponent({
 
     const {
       timeseriesData,
+      visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
       setRelativeTo,
@@ -357,6 +358,7 @@ export default defineComponent({
       setSelectedTimestamp,
       clearRouteParam,
       timeseriesData,
+      visibleTimeseriesData,
       baselineMetadata,
       relativeTo,
       setRelativeTo,

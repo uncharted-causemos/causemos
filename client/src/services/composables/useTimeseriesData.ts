@@ -64,7 +64,6 @@ const applyRelativeTo = (
   timeseriesData.forEach(timeseries => {
     // Adjust values
     const { id, name, color, points } = timeseries;
-    if (id === relativeTo) return;
     const adjustedPoints = points.map(({ timestamp, value }) => {
       const baselineValue =
         baselineData.points.find(point => point.timestamp === timestamp)
@@ -281,9 +280,16 @@ export default function useTimeseriesData(
     relativeTo.value = newValue;
   };
 
+  const timeseriesData = computed(
+    () => processedTimeseriesData.value.timeseriesData
+  );
+
   return {
-    timeseriesData: computed(
-      () => processedTimeseriesData.value.timeseriesData
+    timeseriesData,
+    visibleTimeseriesData: computed(() =>
+      timeseriesData.value.filter(
+        timeseries => timeseries.id !== relativeTo.value
+      )
     ),
     baselineMetadata: computed(
       () => processedTimeseriesData.value.baselineMetadata
