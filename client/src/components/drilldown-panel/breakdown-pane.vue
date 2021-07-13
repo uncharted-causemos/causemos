@@ -111,12 +111,7 @@ import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-
-function timestampFormatter(timestamp: number) {
-  // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
-  //  and be consistent.
-  return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
-}
+import { getTimestamp } from '@/utils/date-util';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
@@ -188,7 +183,7 @@ export default defineComponent({
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
-    const { regionalData, temporalBreakdownData } = toRefs(props);
+    const { regionalData, temporalBreakdownData, selectedBreakdownOption } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
     };
@@ -224,6 +219,17 @@ export default defineComponent({
         temporalBreakdownData.value !== null &&
         Object.keys(temporalBreakdownData.value).length !== 0
     );
+
+    const timestampFormatter = (timestamp: number) => {
+      if (selectedBreakdownOption.value === TemporalAggregationLevel.Year) {
+        const month = timestamp;
+        // We're only displaying the month, so the year doesn't matter
+        return dateFormatter(getTimestamp(1970, month), 'MMMM');
+      }
+      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
+      //  and be consistent.
+      return dateFormatter(timestamp * 1000, 'MMMM YYYY');
+    };
 
     return {
       setSelectedAdminLevel,
