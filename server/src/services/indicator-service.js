@@ -265,10 +265,6 @@ const setDefaultIndicators = async (modelId) => {
   const editTime = moment.valueOf();
 
 
-  console.log('ontology candidates');
-  console.log(ontologyCandidates);
-
-
   // Set default candidates
   const conceptMatches = {};
   const matchedKeys = Object.keys(ontologyCandidates);
