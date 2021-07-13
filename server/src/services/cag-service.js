@@ -178,11 +178,19 @@ const updateCAGMetadata = async(modelId, modelFields) => {
     return doc.id;
   };
 
-  const results = await CAGConnection.update({
-    id: modelId,
-    modified_at: moment().valueOf(),
-    ...modelFields
-  }, keyFn);
+  const nonNullKeys = Object.keys(modelFields).filter(d => !_.isNil(d))
+
+  const results = nonNullKeys.includes('thumbnail_source') && nonNullKeys.length <= 2 ?
+    await CAGConnection.update({
+      id: modelId,
+      ...modelFields
+    }, keyFn)
+    :
+    await CAGConnection.update({
+      id: modelId,
+      modified_at: moment().valueOf(),
+      ...modelFields
+    }, keyFn);
 
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
