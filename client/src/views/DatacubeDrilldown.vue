@@ -1,6 +1,7 @@
 <template>
   <div class="comp-analysis-experiment-container">
     <full-screen-modal-header
+      v-if="projectType === ProjectType.Analysis"
       icon="angle-left"
       :nav-back-label="navBackLabel"
       @close="onClose"
@@ -178,7 +179,7 @@ const DRILLDOWN_TABS = [
 ];
 
 export default defineComponent({
-  name: 'CompAnalysisExperiment',
+  name: 'DatacubeDrilldown',
   components: {
     DatacubeCard,
     DrilldownPanel,
@@ -389,7 +390,8 @@ export default defineComponent({
     };
   },
   data: () => ({
-    analysis: undefined
+    analysis: undefined,
+    ProjectType
   }),
   watch: {
     $route: {
@@ -412,12 +414,16 @@ export default defineComponent({
     // ensure the insight explorer panel is closed in case the user has
     //  previously opened it and clicked the browser back button
     this.hideInsightPanel();
-    this.analysis = await getAnalysis(this.analysisId);
+
+    if (this.projectType === ProjectType.Analysis) {
+      this.analysis = await getAnalysis(this.analysisId);
+    }
   },
   computed: {
     ...mapGetters({
       project: 'app/project',
-      analysisId: 'dataAnalysis/analysisId'
+      analysisId: 'dataAnalysis/analysisId',
+      projectType: 'app/projectType'
     }),
     navBackLabel(): string {
       if (this.analysis) {

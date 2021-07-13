@@ -53,14 +53,6 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import { useStore } from 'vuex';
 import router from '@/router';
 
-// DONE: add support for loading model datacubes along with indiactors
-// DONE remove breakdown pane from the CompAnalysis page
-// DONE add a mini map placeholder to the CompAnalysis page
-// Add the flow similar to the old data analysis space:
-//   start with empty analysis,
-//   allow adding more datacubes,
-//   and drilldown on a datacube to the CompAnalysisExperiment
-
 const DRILLDOWN_TABS = [
   {
     name: 'Breakdown',
