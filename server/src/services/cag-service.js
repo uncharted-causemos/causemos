@@ -178,8 +178,7 @@ const updateCAGMetadata = async(modelId, modelFields) => {
     return doc.id;
   };
 
-  const nonNullKeys = Object.keys(modelFields).filter(d => !_.isNil(d))
-
+  const nonNullKeys = Object.keys(modelFields).filter(d => !_.isNil(d));
   const results = nonNullKeys.includes('thumbnail_source') && nonNullKeys.length <= 2 ? await CAGConnection.update({
     id: modelId,
     ...modelFields
