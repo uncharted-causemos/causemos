@@ -13,16 +13,14 @@
       </button>
     </header>
     <div>
-      <div class="col-md-9 datacube-card-timeseries">
-        <div class="timeseries-chart">
-          <timeseries-chart
-            v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
-            :timeseries-data="timeseriesData"
-            :selected-timestamp="selectedTimestamp"
-            :breakdown-option="breakdownOption"
-            @select-timestamp="emitTimestampSelection"
-          />
-        </div>
+      <div class="col-md-9 timeseries-chart">
+        <timeseries-chart
+          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
+          :timeseries-data="timeseriesData"
+          :selected-timestamp="selectedTimestamp"
+          :breakdown-option="breakdownOption"
+          @select-timestamp="emitTimestampSelection"
+        />
       </div>
       <div class="datacube-map-placeholder col-md-3">
         <!-- placeholder for mini map -->
@@ -273,13 +271,6 @@ export default defineComponent({
   border-radius: 3px;
 }
 
-.datacube-card-timeseries {
-  display: flex;
-  flex-direction: column;
-  padding-left: 5px;
-  padding-right: 5px;
-}
-
 .datacube-expanded {
   min-width: 0;
   flex: 1;
@@ -301,8 +292,10 @@ export default defineComponent({
 }
 
 .timeseries-chart {
-  margin-left: 5px;
-  margin-right: 5px;
+  display: flex;
+  flex-direction: column;
+  padding-left: 5px;
+  padding-right: 5px;
 }
 
 .datacube-map-placeholder {
