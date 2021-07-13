@@ -113,6 +113,7 @@
               class="relative-dropdown">
               <template #content>
                 <div
+                  v-if="relativeTo !== null"
                   class="dropdown-option"
                   @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
                 >
