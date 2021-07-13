@@ -357,7 +357,6 @@ export default defineComponent({
       currentOutputIndex,
       setSelectedTimestamp,
       clearRouteParam,
-      timeseriesData,
       visibleTimeseriesData,
       baselineMetadata,
       relativeTo,

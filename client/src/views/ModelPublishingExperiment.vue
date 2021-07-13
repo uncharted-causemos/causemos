@@ -40,7 +40,7 @@
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
       :metadata="metadata"
-      :timeseries-data="timeseriesData"
+      :timeseries-data="visibleTimeseriesData"
       :relative-to="relativeTo"
       :breakdown-option="breakdownOption"
       :baseline-metadata="baselineMetadata"
@@ -114,6 +114,7 @@
             :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
             :temporal-breakdown-data="temporalBreakdownData"
+            :selected-timeseries-points="selectedTimeseriesPoints"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
@@ -294,6 +295,7 @@ export default defineComponent({
 
     const {
       timeseriesData,
+      visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
       setRelativeTo,
@@ -360,7 +362,7 @@ export default defineComponent({
       setAllRegionsSelected,
       currentOutputIndex,
       setSelectedTimestamp,
-      timeseriesData,
+      visibleTimeseriesData,
       baselineMetadata,
       relativeTo,
       setRelativeTo,
@@ -369,7 +371,8 @@ export default defineComponent({
       projectId,
       temporalBreakdownData,
       AggregationOption,
-      TemporalResolutionOption
+      TemporalResolutionOption,
+      selectedTimeseriesPoints
     };
   },
   watch: {
