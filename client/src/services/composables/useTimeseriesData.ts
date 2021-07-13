@@ -1,7 +1,7 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
+import { AggregationOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
@@ -253,19 +253,15 @@ export default function useTimeseriesData(
     return applyRelativeTo(afterApplyingBreakdown, relativeTo.value);
   });
 
-  // Whenever the selected breakdown option or raw timeseries data changes,
+  // Whenever the selected breakdown option or timeseries data changes,
   //  reselect the last timestamp across all series
   watch(
-    () => [breakdownOption.value, rawTimeseriesData.value],
+    () => [breakdownOption.value, processedTimeseriesData.value],
     () => {
-      const mapToBreakdownDomain =
-        breakdownOption.value === TemporalAggregationLevel.Year
-          ? getMonthFromTimestamp
-          : (timestamp: number) => timestamp;
-      const allTimestamps = rawTimeseriesData.value
+      const allTimestamps = processedTimeseriesData.value.timeseriesData
         .map(timeseries => timeseries.points)
         .flat()
-        .map(point => mapToBreakdownDomain(point.timestamp));
+        .map(point => point.timestamp);
       // Don't call "onNewLastTimestamp" callback if the previously selected timestamp
       //  still exists within the new timeseries's range.
       if (
