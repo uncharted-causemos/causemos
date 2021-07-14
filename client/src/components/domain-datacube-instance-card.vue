@@ -134,7 +134,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      project: 'app/project'
+      project: 'app/project',
+      projectMetadata: 'app/projectMetadata'
     }),
     breakdownParameters(): any[] {
       if (isIndicator(this.datacube)) return [];
@@ -205,7 +206,7 @@ export default defineComponent({
         name: 'dataPreview',
         params: {
           project: this.datacube.family_name,
-          projectType: this.project.type
+          projectType: this.projectMetadata.type
         }
       });
     },
@@ -218,7 +219,7 @@ export default defineComponent({
         query: { datacubeid: id },
         params: {
           project: this.datacube.family_name,
-          projectType: this.project.type
+          projectType: this.projectMetadata.type
         }
       });
     }
