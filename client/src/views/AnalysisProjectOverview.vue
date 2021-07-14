@@ -364,7 +364,7 @@ export default {
       });
     },
     onCreateCAG() {
-      modelService.newModel(this.project, 'untitled').then(result => {
+      modelService.newModel(this.project, `untitled at ${dateFormatter(Date.now())}`).then(result => {
         this.$router.push({
           name: 'qualitative',
           params: {
