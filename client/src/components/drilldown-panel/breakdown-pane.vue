@@ -22,7 +22,7 @@
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
       :raw-data="regionalData"
       :units="unit"
-      :selected-scenario-ids="selectedScenarioIds"
+      :selected-timeseries-points="selectedTimeseriesPoints"
       :deselected-item-ids="deselectedRegionIds"
       @toggle-is-item-selected="toggleIsRegionSelected"
       @set-all-selected="setAllRegionsSelected"
@@ -56,7 +56,7 @@
       :aggregation-level-title="type.name"
       :ordered-aggregation-level-keys="['Total', type.name]"
       :raw-data="type.data"
-      :selected-scenario-ids="selectedScenarioIds"
+      :selected-timeseries-points="selectedTimeseriesPoints"
       :units="unit"
     >
       <template #aggregation-description>
@@ -71,7 +71,7 @@
       </template>
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
-      v-if="isTemporalBreakdownDataValid"
+      v-if="isTemporalBreakdownDataValid && selectedBreakdownOption === null"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
       :aggregation-level="0"
@@ -79,7 +79,7 @@
       :ordered-aggregation-level-keys="['Year']"
       :raw-data="temporalBreakdownData"
       :units="unit"
-      :selected-scenario-ids="selectedScenarioIds"
+      :selected-timeseries-points="selectedTimeseriesPoints"
     >
       <!-- TODO:
       :deselected-item-ids="deselectedRegionIds"
@@ -110,12 +110,8 @@ import {
 import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
-
-function timestampFormatter(timestamp: number) {
-  // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
-  //  and be consistent.
-  return dateFormatter(timestamp * 1000, 'MMM DD, YYYY');
-}
+import { TimeseriesPointSelection } from '@/types/Timeseries';
+import { getTimestamp } from '@/utils/date-util';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
@@ -174,6 +170,10 @@ export default defineComponent({
     selectedBreakdownOption: {
       type: String as PropType<string | null>,
       default: null
+    },
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      required: true
     }
   },
   emits: [
@@ -183,7 +183,7 @@ export default defineComponent({
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
-    const { regionalData, temporalBreakdownData } = toRefs(props);
+    const { regionalData, temporalBreakdownData, selectedBreakdownOption } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
     };
@@ -219,6 +219,17 @@ export default defineComponent({
         temporalBreakdownData.value !== null &&
         Object.keys(temporalBreakdownData.value).length !== 0
     );
+
+    const timestampFormatter = (timestamp: number) => {
+      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
+      //  and be consistent.
+      if (selectedBreakdownOption.value === TemporalAggregationLevel.Year) {
+        const month = timestamp;
+        // We're only displaying the month, so the year doesn't matter
+        return dateFormatter(getTimestamp(1970, month) * 1000, 'MMMM');
+      }
+      return dateFormatter(timestamp * 1000, 'MMMM YYYY');
+    };
 
     return {
       setSelectedAdminLevel,

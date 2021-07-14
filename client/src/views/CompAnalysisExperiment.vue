@@ -18,7 +18,7 @@
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
       :metadata="metadata"
-      :timeseries-data="timeseriesData"
+      :timeseries-data="visibleTimeseriesData"
       :relative-to="relativeTo"
       :breakdown-option="breakdownOption"
       :baseline-metadata="baselineMetadata"
@@ -105,6 +105,7 @@
             :selected-scenario-ids="selectedScenarioIds"
             :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
+            :selected-timeseries-points="selectedTimeseriesPoints"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
             @set-all-regions-selected="setAllRegionsSelected"
@@ -139,6 +140,7 @@ import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
 import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
 const DRILLDOWN_TABS = [
   {
@@ -283,6 +285,7 @@ export default defineComponent({
 
     const {
       timeseriesData,
+      visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
       setRelativeTo,
@@ -299,6 +302,13 @@ export default defineComponent({
       setSelectedTimestamp
     );
 
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
     const {
       outputSpecs,
       regionalData,
@@ -307,12 +317,11 @@ export default defineComponent({
       setAllRegionsSelected
     } = useRegionalData(
       selectedModelId,
-      selectedScenarioIds,
-      selectedTimestamp,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
-      metadata
+      metadata,
+      selectedTimeseriesPoints
     );
 
     return {
@@ -348,14 +357,15 @@ export default defineComponent({
       currentOutputIndex,
       setSelectedTimestamp,
       clearRouteParam,
-      timeseriesData,
+      visibleTimeseriesData,
       baselineMetadata,
       relativeTo,
       setRelativeTo,
       breakdownOption,
       setBreakdownOption,
       temporalBreakdownData,
-      AggregationOption
+      AggregationOption,
+      selectedTimeseriesPoints
     };
   },
   watch: {
