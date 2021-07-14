@@ -6,6 +6,7 @@ import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
 import { AdminRegionSets } from '@/types/Datacubes';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
@@ -16,22 +17,18 @@ const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
 };
 export default function useRegionalData(
   selectedModelId: Ref<string>,
-  selectedScenarioIds: Ref<string[]>,
-  selectedTimestamp: Ref<number | null>,
   selectedSpatialAggregation: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
-  metadata: Ref<Model | Indicator | null>
+  metadata: Ref<Model | Indicator | null>,
+  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
 ) {
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
-    const timestamp = selectedTimestamp.value;
     if (
       selectedModelId.value === null ||
-      selectedScenarioIds.value.length === 0 ||
-      timestamp === null ||
       modelMetadata === null
     ) {
       return [];
@@ -39,14 +36,15 @@ export default function useRegionalData(
     const outputs = modelMetadata.validatedOutputs
       ? modelMetadata.validatedOutputs
       : modelMetadata.outputs;
+    
     const defaultOutputIndex = modelMetadata.validatedOutputs?.findIndex(
         o => o.name === metadata.value?.default_feature) ?? 0;
     const mainFeatureName = outputs[defaultOutputIndex].name;
 
-    return selectedScenarioIds.value.map(selectedScenarioId => ({
-      id: selectedScenarioId,
+    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
+      id: timeseriesId,
       modelId: selectedModelId.value,
-      runId: selectedScenarioId,
+      runId: scenarioId,
       outputVariable: mainFeatureName || '',
       timestamp,
       temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,

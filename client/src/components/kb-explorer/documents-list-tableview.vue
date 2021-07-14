@@ -2,7 +2,7 @@
   <div class="container-fluid">
     <modal-document
       v-if="!!documentModalData"
-      :document-data="documentModalData"
+      :document-id="documentModalData.doc_id"
       @close="documentModalData = null"
     />
     <div class="row container-row">

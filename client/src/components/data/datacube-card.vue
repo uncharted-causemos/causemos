@@ -110,6 +110,7 @@
               class="relative-dropdown">
               <template #content>
                 <div
+                  v-if="relativeTo !== null"
                   class="dropdown-option"
                   @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
                 >
@@ -146,13 +147,22 @@
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
+            v-if="!isDescriptionView && timeseriesData.length > 0 && !hasSingleTimestamp"
             class="timeseries-chart"
             :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
             :breakdown-option="breakdownOption"
             @select-timestamp="emitTimestampSelection"
           />
+          <p
+            v-else-if="hasSingleTimestamp"
+            class="hidden-timeseries-message"
+          >
+            Data only exists for
+            <span class="timestamp">
+              {{ timestampFormatter(timeseriesData[0].points[0].timestamp) }}
+            </span>.
+          </p>
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
@@ -210,12 +220,14 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { ModelRunStatus } from '@/types/Enums';
+import { ModelRunStatus, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
 import { Timeseries } from '@/types/Timeseries';
+import dateFormatter from '@/formatters/date-formatter';
+import { getTimestamp } from '@/utils/date-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -301,7 +313,9 @@ export default defineComponent({
     const {
       selectedScenarioIds,
       allModelRunData,
-      metadata
+      metadata,
+      timeseriesData,
+      breakdownOption
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -347,6 +361,28 @@ export default defineComponent({
       }
     );
 
+    const hasSingleTimestamp = computed(() => {
+      const allPoints = timeseriesData.value.flatMap(timeseries => timeseries.points);
+      if (allPoints.length === 0) return false;
+      const allTimestamps = allPoints.map(point => point.timestamp);
+      const timestamp = allTimestamps[0];
+      for (const other of allTimestamps.slice(1)) {
+        if (other !== timestamp) return false;
+      }
+      return true;
+    });
+
+    const timestampFormatter = (timestamp: number) => {
+      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
+      //  and be consistent.
+      if (breakdownOption.value === TemporalAggregationLevel.Year) {
+        const month = timestamp;
+        // We're only displaying the month, so the year doesn't matter
+        return dateFormatter(getTimestamp(1970, month) * 1000, 'MMMM');
+      }
+      return dateFormatter(timestamp * 1000, 'MMMM YYYY');
+    };
+
     return {
       updateMapFilters,
       mapFilters,
@@ -358,7 +394,9 @@ export default defineComponent({
       runParameterValues,
       mainModelOutput,
       isModelMetadata,
-      emitRelativeToSelection
+      emitRelativeToSelection,
+      timestampFormatter,
+      hasSingleTimestamp
     };
   },
   data: () => ({
@@ -605,6 +643,14 @@ header {
     &:not(.isVisible) {
       padding: 0;
     }
+  }
+}
+
+.hidden-timeseries-message {
+  margin: 15px 0;
+
+  .timestamp {
+    color: $selected-dark;
   }
 }
 </style>

@@ -3,106 +3,130 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
-      <documents-reader-content
-        :data="readerContentData"
-        :switch-button-data="switchButtonData"
-        @click-close-icon="close"
-      />
+      <div v-if="viewer"
+        class="toolbar">
+        Show raw text
+        <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
+        <i v-if="showTextViewer === true" class="fa fa-lg fa-fw fa-toggle-on" @click="toggle" />
+      </div>
+      <div ref="content">
+        Loading...
+      </div>
+      <div>
+        <hr>
+        <table v-if="documentData">
+          <tr>
+            <td class="doc-label">Publication Date</td>
+            <td>{{ dateFormatter(documentData.publication_date.date, 'YYYY-MM-DD') }}</td>
+          </tr>
+          <tr>
+            <td class="doc-label">Publisher</td>
+            <td class="doc-value">{{ documentData.publisher_name }}</td>
+          </tr>
+          <tr>
+            <td class="doc-label">Author</td>
+            <td class="doc-value">{{ documentData.author }}</td>
+          </tr>
+          <tr>
+            <td class="doc-label">Locations</td>
+            <td class="doc-value">{{ documentData.ner_analytics.loc.join(', ') }} </td>
+          </tr>
+          <tr>
+            <td class="doc-label">Organizations</td>
+            <td class="doc-value">{{ documentData.ner_analytics.org.join(', ') }}</td>
+          </tr>
+        </table>
+      </div>
     </template>
   </modal>
 </template>
 
 <script>
-import _ from 'lodash';
-import { mapGetters } from 'vuex';
 import API from '@/api/api';
-import { toCardData, DOC_FIELD } from '@/utils/document-util';
 import Modal from '@/components/modals/modal';
-import DocumentsReaderContent from '@/components/kb-explorer/documents-reader-content';
 import { createPDFViewer } from '@/utils/pdf/viewer';
+import { removeChildren } from '@/utils/dom-util';
+import dateFormatter from '@/formatters/date-formatter';
 
 const CONTENT_WIDTH = 800;
 
 const isPdf = (data) => {
-  const fileType = data && data[DOC_FIELD.FILE_TYPE];
+  const fileType = data && data.file_type;
   return fileType === 'pdf' || fileType === 'application/pdf';
+};
+
+const createTextViewer = (text) => {
+  const el = document.createElement('div');
+  el.innerHTML = text;
+  el.style.paddingTop = '30px';
+  el.style.paddingLeft = '15px';
+  el.style.paddingRight = '15px';
+  el.style.paddingBottom = '15px';
+  return el;
 };
 
 export default {
   name: 'ModalDocument',
   components: {
-    DocumentsReaderContent,
     Modal
   },
   props: {
-    documentData: {
-      type: Object,
-      default: () => ({})
+    documentId: {
+      type: String,
+      required: true
     }
   },
   data: () => ({
-    readerContentCustomElementData: {},
-    readerContentRawData: {},
-    readerContentData: {},
-    switchButtonData: {
-      show: false,
-      tooltip: '',
-      onClick: () => {}
-    }
+    documentData: null,
+    textViewer: null,
+    viewer: null,
+    textOnly: false,
+    showTextViewer: false
   }),
-  computed: {
-    ...mapGetters({
-      collection: 'app/collection'
-    })
-  },
   mounted() {
     this.refresh();
   },
   methods: {
+    dateFormatter,
     refresh() {
       this.fetchReaderContent();
     },
     async fetchReaderContent() {
-      if (!this.documentData) return;
-      this.readerContentData = Object.assign(toCardData(this.documentData), { content: 'Loading...' });
-      const docId = this.documentData[DOC_FIELD.DOC_ID] || this.documentData.doc_id;
+      const url = `documents/${this.documentId}`;
+      this.documentData = (await API.get(url)).data;
+      this.textViewer = {
+        element: createTextViewer(this.documentData.extracted_text)
+      };
 
-      const url = `documents/${docId}`;
-      const { data } = await API.get(url);
+      if (isPdf(this.documentData)) {
+        const rawDocUrl = `/api/dart/${this.documentId}/raw`;
+        try {
+          const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
+          viewer.renderPages();
+          this.viewer = viewer;
+        } catch (_) {
+          this.textOnly = true;
+        }
+      } else {
+        this.textOnly = true;
+      }
 
-      // update raw content data
-      this.readerContentRawData = data ? toCardData(data) : {};
-
-      // fetch and update custom element content data
-      const viewer = await this.fetchReaderContentRawDoc(data, docId);
-
-      const isRawData = !isPdf(data) || _.isNil(viewer); // if pdf, we provide custom element
-
-      // render reader content with custom element data (pdf viewer) by default
-      this.updateReaderContentData(isRawData, isRawData);
-      return viewer && viewer.renderPages();
-    },
-    async fetchReaderContentRawDoc(docData, docId) {
-      if (!isPdf(docData)) return;
-      const rawDocUrl = `/api/dart/${docId}/raw`;
-      try {
-        const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
-        this.readerContentCustomElementData = Object.assign(toCardData(docData), { content: viewer.element });
-        return viewer;
-      } catch (error) {
+      removeChildren(this.$refs.content);
+      if (this.textOnly === true) {
+        this.$refs.content.appendChild(this.textViewer.element);
+      } else {
+        this.$refs.content.appendChild(this.viewer.element);
       }
     },
-    updateReaderContentData(isRaw = false, disableSwtich = false) {
-      this.readerContentData = isRaw ? this.readerContentRawData : this.readerContentCustomElementData;
-      this.switchButtonData = isRaw ? {
-        show: !disableSwtich,
-        onClick: () => this.updateReaderContentData(false),
-        isOn: false
-      } : {
-        show: !disableSwtich,
-        onClick: () => this.updateReaderContentData(true),
-        isOn: true
-      };
+    toggle() {
+      this.showTextViewer = !this.showTextViewer;
+
+      removeChildren(this.$refs.content);
+      if (this.showTextViewer === true) {
+        this.$refs.content.appendChild(this.textViewer.element);
+      } else {
+        this.$refs.content.appendChild(this.viewer.element);
+      }
     },
     close() {
       this.$emit('close', null);
@@ -113,6 +137,21 @@ export default {
 
 <style lang="scss" scoped>
 .modal-document-container {
+
+  .doc-label {
+    vertical-align: baseline;
+    width: 220px;
+    text-align: right;
+    padding: 1px 3px;
+    font-weight: 600;
+  }
+
+  .doc-value {
+    text-align: left;
+    padding: 1px 3px;
+    max-width: 400px;
+  }
+
   ::v-deep(.modal-container) {
     padding: 0;
     width: 800px;
@@ -123,13 +162,12 @@ export default {
     .modal-body {
       padding: 0;
       margin: 0;
+      height: 80vh;
+      overflow-y: auto;
     }
   }
-  .uncharted-cards-reader-content-container {
-    height: 80vh;
-  }
-  ::v-deep(.uncharted-cards-reader-content .reader-content-header .close-button i) {
-    padding-right: 12px;
+  .toolbar {
+    padding: 5px;
   }
 }
 </style>

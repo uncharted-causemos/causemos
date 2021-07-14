@@ -63,7 +63,6 @@ const applyRelativeTo = (
   timeseriesData.forEach(timeseries => {
     // Adjust values
     const { id, name, color, points } = timeseries;
-    if (id === relativeTo) return;
     const adjustedPoints = points.map(({ timestamp, value }) => {
       const baselineValue =
         baselineData.points.find(point => point.timestamp === timestamp)
@@ -88,7 +87,7 @@ const applyRelativeTo = (
 };
 
 /**
- * Takes a model ID, a list of model run IDs, and a colouring function,
+ * Takes a data ID, a list of model run IDs, and a colouring function,
  * fetches the timeseries data for each run, then assigns a colour to
  * each timeseries using the colouring function, returning the resulting
  * list of Timeseries objects.
@@ -139,7 +138,7 @@ export default function useTimeseriesData(
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
-            model_id: dataId.value,
+            data_id: dataId.value,
             run_id: runId,
             feature: mainFeatureName,
             resolution: temporalRes,
@@ -250,19 +249,15 @@ export default function useTimeseriesData(
     return applyRelativeTo(afterApplyingBreakdown, relativeTo.value);
   });
 
-  // Whenever the selected breakdown option or raw timeseries data changes,
+  // Whenever the selected breakdown option or timeseries data changes,
   //  reselect the last timestamp across all series
   watch(
-    () => [breakdownOption.value, rawTimeseriesData.value],
+    () => [breakdownOption.value, processedTimeseriesData.value],
     () => {
-      const mapToBreakdownDomain =
-        breakdownOption.value === TemporalAggregationLevel.Year
-          ? getMonthFromTimestamp
-          : (timestamp: number) => timestamp;
-      const allTimestamps = rawTimeseriesData.value
+      const allTimestamps = processedTimeseriesData.value.timeseriesData
         .map(timeseries => timeseries.points)
         .flat()
-        .map(point => mapToBreakdownDomain(point.timestamp));
+        .map(point => point.timestamp);
       // Don't call "onNewLastTimestamp" callback if the previously selected timestamp
       //  still exists within the new timeseries's range.
       if (
@@ -282,9 +277,16 @@ export default function useTimeseriesData(
     relativeTo.value = newValue;
   };
 
+  const timeseriesData = computed(
+    () => processedTimeseriesData.value.timeseriesData
+  );
+
   return {
-    timeseriesData: computed(
-      () => processedTimeseriesData.value.timeseriesData
+    timeseriesData,
+    visibleTimeseriesData: computed(() =>
+      timeseriesData.value.filter(
+        timeseries => timeseries.id !== relativeTo.value
+      )
     ),
     baselineMetadata: computed(
       () => processedTimeseriesData.value.baselineMetadata
