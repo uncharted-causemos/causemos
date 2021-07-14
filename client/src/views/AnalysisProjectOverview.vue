@@ -41,7 +41,7 @@
           </button>
         </div>
         <div style="padding-top: 5px; ">
-          <b>Contributers: </b>
+          <b>Contributors: </b>
           <span v-for="analyst in ['Analyst 1', 'Analyst 2']"
           :key="analyst" class="maintainer">{{analyst}}</span>
         </div>
