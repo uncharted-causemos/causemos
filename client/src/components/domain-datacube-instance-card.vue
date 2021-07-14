@@ -202,14 +202,25 @@ export default defineComponent({
       // open the datacube page similar to the data space
       await this.updateAnalysisItemsNewPreview({ datacubeIDs: [id] });
       this.$router.push({
-        name: 'dataPreview'
+        name: 'dataPreview',
+        params: {
+          project: this.datacube.family_name,
+          projectType: this.project.type
+        }
       });
     },
     edit(id: string) {
       // Reset filters every time we edit
       this.clearLastQuery();
       // redirect
-      this.$router.push({ name: 'modelPublishingExperiment', query: { datacubeid: id } });
+      this.$router.push({
+        name: 'modelPublishingExperiment',
+        query: { datacubeid: id },
+        params: {
+          project: this.datacube.family_name,
+          projectType: this.project.type
+        }
+      });
     }
   }
 });

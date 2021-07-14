@@ -26,7 +26,7 @@
           type="button"
           class="btn btn-link no-padding"
           style="margin-left: 1rem;"
-          @click="open(project.id)">
+          @click="open()">
           <span class="overflow-ellipsis project-name">{{project.name}}</span>
         </button>
       </div>
@@ -65,7 +65,7 @@
             v-tooltip.top-center="'Open the project'"
             type="button"
             class="btn btn-primary"
-            @click="open(project.id)"
+            @click="open()"
           ><i class="fa fa-folder-open-o" />
             Open Project</button>
         </div>
@@ -138,13 +138,13 @@ export default defineComponent({
     closeWarning() {
       this.showModal = false;
     },
-    open(id: string) {
+    open() {
       // Reset filters every time we open a new project
       this.clearLastQuery();
       this.$router.push({
         name: 'domainDatacubeOverview',
         params: {
-          project: id,
+          project: this.project.name,
           projectType: this.project.type
         }
       });

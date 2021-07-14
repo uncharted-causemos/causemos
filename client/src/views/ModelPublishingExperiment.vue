@@ -424,7 +424,13 @@ export default defineComponent({
         // update server data
         await updateDatacube(modelToUpdate.id, modelToUpdate);
         // redirect to model family page
-        this.$router.push({ name: 'domainDatacubeOverview', params: { project: this.projectId, projectType: modelToUpdate.type } });
+        this.$router.push({
+          name: 'domainDatacubeOverview',
+          params: {
+            project: this.metadata.family_name,
+            projectType: modelToUpdate.type
+          }
+        });
       }
     },
     updateDescView(val: boolean) {

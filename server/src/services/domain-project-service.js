@@ -84,9 +84,9 @@ const getAllProjects = async () => {
 /**
  * Returns a project
  */
-const getProject = async (projectId) => {
+const getProject = async (projectName) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
-  const result = await domainProjectConnection.findOne([{ field: 'id', value: projectId }], {});
+  const result = await domainProjectConnection.findOne([{ field: 'name', value: projectName }], {});
   return result;
 };
 
