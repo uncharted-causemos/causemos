@@ -30,7 +30,7 @@
           <span class="overflow-ellipsis project-name">{{project.name}}</span>
         </button>
       </div>
-      <div class="col-sm-1 text-center no-padding">
+      <div class="col-sm-2 text-center no-padding">
         {{ project.ready_instances.length }} | <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
       </div>
       <div class="col-sm-2 text-center no-padding">
@@ -39,8 +39,8 @@
       <div class="col-sm-3 text-center no-padding overflow-ellipsis">
         {{ project.source }}
       </div>
-      <div class="col-sm-3 no-padding">
-        {{ dateFormatter(project.modified_at) }}
+      <div class="col-sm-2 no-padding">
+        {{ dateFormatter(project.modified_at, 'YYYY-MM-DD') }}
       </div>
     </div>
     <div

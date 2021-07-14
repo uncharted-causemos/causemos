@@ -18,7 +18,7 @@
     <div
       class="row project-card-header"
       @click="toggleShowMore()">
-      <div class="col-sm-3 no-padding">
+      <div class="col-sm-4 no-padding">
         <i
           :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
         />
@@ -36,8 +36,8 @@
       <div class="col-sm-4 text-center no-padding">
         {{ project.corpus_id }}
       </div>
-      <div class="col-sm-3 text-center no-padding" style="padding-right: 1rem">
-        {{ dateFormatter(project.modified_at) }}
+      <div class="col-sm-2 text-center no-padding" style="padding-right: 1rem">
+        {{ dateFormatter(project.modified_at, 'YYYY-MM-DD') }}
       </div>
     </div>
     <div
@@ -66,14 +66,14 @@
           ><i class="fa fa-folder-open-o" />
             Open Project</button>
         </div>
-        <div class="col-sm-2">
+        <div class="col-sm-3">
           <button
             v-tooltip.top-center="'Remove the project from the list'"
             type="button"
             class="remove-button"
             @click.stop="showWarningModal"
           ><i class="fa fa-trash" />
-            Remove Project</button>
+            Remove</button>
         </div>
       </div>
     </div>
