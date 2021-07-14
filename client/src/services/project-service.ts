@@ -73,12 +73,9 @@ const deleteProject = async (projectId: string) => {
  * @param {string} projectId Project ID
  * @param {string} description project description
  */
-const updateProjectDesc = async(projectId: string, description: string) => {
-  const result = await API.put(`/projects/${projectId}`, {
-    payload: {
-      updateType: 'update_desc'
-    },
-    description
+const updateProjectMetadata = async(projectId: string, metadata: any) => {
+  const result = await API.put(`/projects/${projectId}/metadata`, {
+    metadata
   });
   return result.data;
 };
@@ -139,7 +136,7 @@ export default {
   getProjectFacetsPromise,
   createProject,
   deleteProject,
-  updateProjectDesc,
+  updateProjectMetadata,
 
   getProjectStats,
   getProjectStatements,

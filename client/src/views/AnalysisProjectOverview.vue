@@ -235,7 +235,7 @@ export default {
       if (this.isEditingDesc) {
         this.projectMetadata.description = this.projectDesc;
         // we may have just modified the desc text, so update the server value
-        projectService.updateProjectDesc(this.project, this.projectMetadata.description);
+        projectService.updateProjectMetadata(this.project, { description: this.projectMetadata.description });
       } else {
         // make sure that local description value is up to date
         this.projectDesc = this.projectMetadata.description;
