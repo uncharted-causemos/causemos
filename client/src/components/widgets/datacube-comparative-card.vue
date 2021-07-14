@@ -16,7 +16,7 @@
       <div class="col-md-9 timeseries-chart">
         <timeseries-chart
           v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
-          :timeseries-data="timeseriesData"
+          :timeseries-data="visibleTimeseriesData"
           :selected-timestamp="selectedTimestamp"
           :breakdown-option="breakdownOption"
           @select-timestamp="emitTimestampSelection"
@@ -50,6 +50,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { useStore } from 'vuex';
 import router from '@/router';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
 const DRILLDOWN_TABS = [
   {
@@ -159,6 +160,7 @@ export default defineComponent({
 
     const {
       timeseriesData,
+      visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
       setRelativeTo,
@@ -175,6 +177,13 @@ export default defineComponent({
       setSelectedTimestamp
     );
 
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
     watchEffect(() => {
       if (temporalBreakdownData.value && props.isSelected) {
         emit('temporal-breakdown-data', temporalBreakdownData.value);
@@ -189,13 +198,13 @@ export default defineComponent({
       setAllRegionsSelected
     } = useRegionalData(
       datacubeId,
-      selectedScenarioIds,
-      selectedTimestamp,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
-      metadata
+      metadata,
+      selectedTimeseriesPoints
     );
+
 
     watchEffect(() => {
       if (regionalData.value && props.isSelected) {
@@ -254,7 +263,8 @@ export default defineComponent({
       deselectedRegionIds,
       setAllRegionsSelected,
       toggleIsRegionSelected,
-      openDrilldown
+      openDrilldown,
+      visibleTimeseriesData
     };
   }
 });

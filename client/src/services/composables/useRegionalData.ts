@@ -36,7 +36,7 @@ export default function useRegionalData(
     const outputs = modelMetadata.validatedOutputs
       ? modelMetadata.validatedOutputs
       : modelMetadata.outputs;
-    
+
     const defaultOutputIndex = modelMetadata.validatedOutputs?.findIndex(
         o => o.name === metadata.value?.default_feature) ?? 0;
     const mainFeatureName = outputs[defaultOutputIndex].name;
