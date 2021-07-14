@@ -235,8 +235,6 @@ export default {
       updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
       setContextId: 'insightPanel/setContextId'
     }),
-    async fetchRecentCards() {
-    },
     updateDesc() {
       if (this.isEditingDesc) {
         this.projectMetadata.description = this.projectDesc;
