@@ -95,7 +95,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
 
-interface AnalysisObjectCard {
+interface AnalysisOverviewCard {
   id: string;
   previewImageSrc: string | null;
   title: string;
@@ -108,14 +108,14 @@ interface AnalysisObjectCard {
  * A card-styled widget to view project summary
  */
 export default defineComponent({
-  name: 'AnalysisObjectCard',
+  name: 'AnalysisOverviewCard',
   components: {
     ModalConfirmation,
     MessageDisplay
   },
   props: {
     analysis: {
-      type: Object as PropType<AnalysisObjectCard>,
+      type: Object as PropType<AnalysisOverviewCard>,
       default: () => ({})
     }
   },

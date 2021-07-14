@@ -135,7 +135,7 @@
             <div
               v-for="analysis in filteredAnalyses"
               :key="analysis.id">
-              <analysis-object-card
+              <analysis-overview-card
                 :analysis="analysis"
                 @open="onOpen(analysis)"
                 @delete="onDelete(analysis)"
@@ -152,7 +152,7 @@
 
 <script>
 import { mapGetters, mapActions } from 'vuex';
-import AnalysisObjectCard from '@/components/analysis-object-card.vue';
+import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
@@ -186,7 +186,7 @@ const toQualitative = cag => ({
 export default {
   name: 'AnalysisProjectOverview',
   components: {
-    AnalysisObjectCard,
+    AnalysisOverviewCard,
     ListContextInsightPane,
     DropdownControl,
     ModalUploadDocument,
