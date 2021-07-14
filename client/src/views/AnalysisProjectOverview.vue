@@ -80,26 +80,24 @@
           <div style="justify-content: space-between; display: flex">
             <div class="controls">
               <input
-                v-model="searchAnalyses"
+                v-model="searchText"
                 type="text"
                 placeholder="Search ..."
                 class="form-control"
               >
               <div class="sorting">
-                <div>
-                  <button
-                    type="button"
-                    class="btn btn-default"
-                    @click="toggleSortingDropdownAnalyses"
-                  ><span class="lbl">Sort by</span> - {{ selectedSortingOptionAnalyses }}
-                    <i class="fa fa-caret-down" />
-                  </button>
-                </div>
+               <button
+                  type="button"
+                  class="btn btn-default"
+                  @click="toggleSortingDropdownAnalyses"
+                ><span class="lbl">Sort by</span> - {{ selectedAnalysisSortingOption }}
+                  <i class="fa fa-caret-down" />
+                </button>
                 <div v-if="showSortingDropdownAnalyses">
                   <dropdown-control class="dropdown">
                     <template #content>
                       <div
-                        v-for="option in sortingOptionsAnalyses"
+                        v-for="option in analysisSortingOptions"
                         :key="option"
                         class="dropdown-option"
                         @click="sortAnalyses(option)">
@@ -130,19 +128,17 @@
             </div>
           </div>
         </div>
-        <div class="row projects-list">
-          <div class="analyses-list-elements">
-            <div
-              v-for="analysis in filteredAnalyses"
-              :key="analysis.id">
-              <analysis-overview-card
-                :analysis="analysis"
-                @open="onOpen(analysis)"
-                @delete="onDelete(analysis)"
-                @rename="onRename(analysis)"
-                @duplicate="onDuplicate(analysis)"
-              />
-            </div>
+        <div class="row analyses-list-elements">
+          <div
+            v-for="analysis in filteredAnalyses"
+            :key="analysis.id">
+            <analysis-overview-card
+              :analysis="analysis"
+              @open="onOpen(analysis)"
+              @delete="onDelete(analysis)"
+              @rename="onRename(analysis)"
+              @duplicate="onDuplicate(analysis)"
+            />
           </div>
         </div>
       </div>
@@ -196,10 +192,10 @@ export default {
     analyses: [],
     qualitativeAnalyses: [],
     quantitativeAnalyses: [],
-    searchAnalyses: '',
+    searchText: '',
     showSortingDropdownAnalyses: false,
-    sortingOptionsAnalyses: ['Most recent', 'Earliest'],
-    selectedSortingOptionAnalyses: 'Most recent',
+    analysisSortingOptions: ['Most recent', 'Earliest'],
+    selectedAnalysisSortingOption: 'Most recent',
     isEditingDesc: false,
     showDocumentModal: false,
     showRenameModal: false,
@@ -213,7 +209,7 @@ export default {
     }),
     filteredAnalyses() {
       return this.analyses.filter(analysis => {
-        return analysis.title.toLowerCase().includes(this.searchAnalyses.toLowerCase());
+        return analysis.title.toLowerCase().includes(this.searchText.toLowerCase());
       });
     },
     tags() {
@@ -408,13 +404,13 @@ export default {
       });
     },
     sortAnalyses(option) {
-      this.selectedSortingOptionAnalyses = option;
+      this.selectedAnalysisSortingOption = option;
       this.showSortingDropdownAnalyses = false;
       switch (option) {
-        case this.sortingOptionsAnalyses[0]:
+        case this.analysisSortingOptions[0]:
           this.sortAnalysesByMostRecentDate();
           break;
-        case this.sortingOptionsAnalyses[1]:
+        case this.analysisSortingOptions[1]:
           this.sortAnalysesByEarliestDate();
           break;
         default:
@@ -470,6 +466,10 @@ $padding-size: 2vh;
 .analyses-list-elements {
   height: 65vh;
   overflow-y: auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 20px;
 }
 
 .maintainer {
@@ -514,19 +514,6 @@ $padding-size: 2vh;
 .cards > .overview-card-container:not(:first-child),
 .descriptions > p:not(:first-child) {
   margin-left: 6.25vh;
-}
-
-.projects-list {
-  flex: 1;
-  overflow: hidden;
-  display: flex;
-  flex-direction: column;
-  margin-bottom: 20px;
-  .projects-list-elements {
-    flex: 1;
-    overflow-y: auto;
-    overflow-x: hidden;
-  }
 }
 
 .title {
