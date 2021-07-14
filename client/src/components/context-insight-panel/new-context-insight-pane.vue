@@ -2,7 +2,7 @@
   <div class="new-context-insight-pane-container">
     <div class="pane-header">
       <h6>New Insight</h6>
-      <close-button @click="closecontextInsightPanel()" />
+      <close-button @click="closeContextInsightPanel()" />
     </div>
     <div class="pane-title">
       <i
@@ -39,7 +39,7 @@
       <button
         type="button"
         class="btn btn-light"
-        @click="closecontextInsightPanel"
+        @click="closeContextInsightPanel"
       >
         Cancel
       </button>
@@ -198,7 +198,7 @@ export default {
           this.initContextInsight();
         });
     },
-    closecontextInsightPanel() {
+    closeContextInsightPanel() {
       this.hideContextInsightPanel();
       this.setCurrentPane('');
       this.initContextInsight();

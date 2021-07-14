@@ -1,7 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
-import ProjectOverview from '@/views/ProjectOverview.vue';
 import DomainProjectOverview from '@/views/DomainProjectOverview.vue';
+import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import DataStart from '@/views/DataStart.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
@@ -44,14 +44,14 @@ function formatter(item) {
 
 // Load analysis state for dataAnalysis store before route enter
 async function loadAnalysisState(to, from, next) {
-  await store.dispatch('dataAnalysis/loadState', to.params.analysisID);
+  await store.dispatch('dataAnalysis/loadState', to.params.analysisId);
   next();
 }
 
 // Load analysis state for dataAnalysis store before route enter
 // NOTE: this is specific to the new data space (and the new data explorer)
 async function loadAnalysisStateNew(to, from, next) {
-  await store.dispatch('dataAnalysis/loadStateNew', to.params.analysisID);
+  await store.dispatch('dataAnalysis/loadStateNew', to.params.analysisId);
   next();
 }
 
@@ -69,7 +69,7 @@ const routes = [
   {
     path: '/:projectType/:project/overview',
     name: 'overview',
-    component: ProjectOverview
+    component: AnalysisProjectOverview
   },
   {
     path: '/:projectType/:project/domainDatacubeOverview',
@@ -82,13 +82,13 @@ const routes = [
     component: DataStart
   },
   {
-    path: '/:projectType/:project/data/:analysisID',
+    path: '/:projectType/:project/data/:analysisId',
     name: 'data',
     component: DatacubeDrilldown,
     beforeEnter: loadAnalysisStateNew
   },
   {
-    path: '/:projectType/:project/dataComparative/:analysisID',
+    path: '/:projectType/:project/dataComparative/:analysisId',
     name: 'dataComparative',
     component: CompAnalysis,
     beforeEnter: loadAnalysisStateNew
@@ -100,13 +100,13 @@ const routes = [
     component: DatacubeDrilldown
   },
   {
-    path: '/:projectType/:project/data/:analysisID/explorer',
+    path: '/:projectType/:project/data/:analysisId/explorer',
     name: 'dataExplorer',
     component: DataExplorer,
     beforeEnter: loadAnalysisState
   },
   {
-    path: '/:projectType/:project/data/:analysisID/create-data-cube',
+    path: '/:projectType/:project/data/:analysisId/create-data-cube',
     name: 'createDataCube',
     component: CreateDataCube
   },

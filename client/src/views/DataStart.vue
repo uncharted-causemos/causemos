@@ -71,7 +71,7 @@ export default {
         name: 'dataComparative',
         params: {
           project: this.project,
-          analysisID: analysis.id,
+          analysisId: analysis.id,
           projectType: ProjectType.Analysis
         }
       });
@@ -81,7 +81,7 @@ export default {
         name: 'dataComparative',
         params: {
           project: this.project,
-          analysisID: recentCard.analysisId,
+          analysisId: recentCard.analysisId,
           projectType: ProjectType.Analysis
         }
       });
