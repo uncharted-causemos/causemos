@@ -15,7 +15,8 @@ import QuantitativeStart from '@/views/QuantitativeStart.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
-import CompAnalysisExperiment from '@/views/CompAnalysisExperiment';
+import DatacubeDrilldown from '@/views/DatacubeDrilldown';
+import CompAnalysis from '@/views/CompAnalysis';
 import ModelPublishingExperiment from '@/views/ModelPublishingExperiment';
 import NodeCompExperiment from '@/views/NodeCompExperiment';
 import NodeDrilldown from '@/views/NodeDrilldown';
@@ -83,14 +84,20 @@ const routes = [
   {
     path: '/:projectType/:project/data/:analysisID',
     name: 'data',
-    component: CompAnalysisExperiment,
+    component: DatacubeDrilldown,
+    beforeEnter: loadAnalysisStateNew
+  },
+  {
+    path: '/:projectType/:project/dataComparative/:analysisID',
+    name: 'dataComparative',
+    component: CompAnalysis,
     beforeEnter: loadAnalysisStateNew
   },
   {
     // @HACK: a special route to view the a domain model instance (or datacube) using the same way an analyst would see it
     path: '/:projectType/:project/domainDatacubeOverview',
     name: 'dataPreview',
-    component: CompAnalysisExperiment
+    component: DatacubeDrilldown
   },
   {
     path: '/:projectType/:project/data/:analysisID/explorer',

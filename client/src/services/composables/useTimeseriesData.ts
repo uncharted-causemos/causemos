@@ -1,13 +1,12 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { AggregationOption } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import { useStore } from 'vuex';
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
@@ -106,16 +105,10 @@ export default function useTimeseriesData(
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
 
-  const store = useStore();
-  const currentOutputIndex = computed(
-    () => store.getters['modelPublishStore/currentOutputIndex']
-  );
-
   watchEffect(onInvalidate => {
     if (
       modelRunIds.value.length === 0 ||
-      metadata.value === null ||
-      currentOutputIndex.value === undefined
+      metadata.value === null
     ) {
       // Don't have the information needed to fetch the data
       return;
@@ -123,13 +116,15 @@ export default function useTimeseriesData(
     const outputs = metadata.value.validatedOutputs
       ? metadata.value.validatedOutputs
       : metadata.value.outputs;
+    const defaultOutputIndex = metadata?.value.validatedOutputs?.findIndex(
+      o => o.name === metadata.value?.default_feature) ?? 0;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
       const temporalRes =
         selectedTemporalResolution.value !== ''
           ? selectedTemporalResolution.value
-          : 'month';
+          : TemporalResolutionOption.Month;
       const temporalAgg =
         selectedTemporalAggregation.value !== ''
           ? selectedTemporalAggregation.value
@@ -138,12 +133,14 @@ export default function useTimeseriesData(
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
+      const mainFeatureName = outputs[defaultOutputIndex].name;
+
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
             data_id: dataId.value,
             run_id: runId,
-            feature: outputs[currentOutputIndex.value].name,
+            feature: mainFeatureName,
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg

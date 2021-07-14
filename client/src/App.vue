@@ -26,6 +26,7 @@ import 'vue3-resize/dist/vue3-resize.css';
 const viewsWithNoNavbar = [
   'nodeCompExperiment',
   'nodeDataExplorer',
+  'data',
   'kbExplorer',
   'dataExplorer',
   'createDataCube'
