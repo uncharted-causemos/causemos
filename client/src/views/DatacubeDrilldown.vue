@@ -452,7 +452,7 @@ export default defineComponent({
         name: 'dataComparative',
         params: {
           project: this.project,
-          analysisID: this.analysisId,
+          analysisId: this.analysisId,
           projectType: ProjectType.Analysis
         }
       });

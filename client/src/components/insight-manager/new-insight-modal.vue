@@ -174,7 +174,7 @@ export default {
       //  in the full list of insights,
       //  or as a context specific insight when opening the page of the corresponding model family instance
       //  (the latter is currently supported via a special route named dataPreview)
-      return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview'] : this.currentView;
+      return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview'] : [this.currentView, 'overview'];
     },
     metadataDetails() {
       const arr = [];
@@ -245,7 +245,9 @@ export default {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
-      setCurrentPane: 'insightPanel/setCurrentPane'
+      setCurrentPane: 'insightPanel/setCurrentPane',
+      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
+      setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane'
     }),
     closeInsightPanel() {
       this.hideInsightPanel();
@@ -293,9 +295,15 @@ export default {
         } else {
           this.toaster(message, 'error', true);
         }
-        this.hideInsightPanel();
+        this.closeInsightPanel();
         this.initInsight();
+        // also hide the context insight panel if opened, to force refresh upon re-open
+        this.closeContextInsightPanel();
       });
+    },
+    closeContextInsightPanel() {
+      this.hideContextInsightPanel();
+      this.setCurrentContextInsightPane('');
     },
     async takeSnapshot() {
       const el = document.getElementsByClassName('insight-capture')[0];

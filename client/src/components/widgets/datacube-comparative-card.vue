@@ -229,7 +229,7 @@ export default defineComponent({
         name: 'data',
         params: {
           project: project.value,
-          analysisID: analysisId.value,
+          analysisId: analysisId.value,
           projectType: ProjectType.Analysis
         }
       }).catch(() => {});

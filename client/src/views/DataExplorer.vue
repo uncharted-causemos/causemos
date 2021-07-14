@@ -118,7 +118,7 @@ export default {
             name: 'dataComparative',
             params: {
               project: this.project,
-              analysisID: this.analysisId,
+              analysisId: this.analysisId,
               projectType: ProjectType.Analysis
             }
           });
@@ -127,7 +127,7 @@ export default {
             name: 'data',
             params: {
               project: this.project,
-              analysisID: this.analysisId,
+              analysisId: this.analysisId,
               projectType: ProjectType.Analysis
             }
           });
@@ -141,7 +141,7 @@ export default {
         name: 'dataComparative',
         params: {
           project: this.project,
-          analysisID: this.analysisId,
+          analysisId: this.analysisId,
           projectType: ProjectType.Analysis
         }
       });

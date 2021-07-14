@@ -114,6 +114,31 @@ const createProject = async (kbId, name, description) => {
 };
 
 /**
+ * Updates a project info
+ *
+ * @param {string} projectId - project id
+ * @param {object} projectFields - project fields
+ */
+const updateProject = async(projectId, projectFields) => {
+  const project = Adapter.get(RESOURCE.PROJECT);
+
+  const keyFn = (doc) => {
+    return doc.id;
+  };
+
+  const results = await project.update({
+    id: projectId,
+    ...projectFields
+  }, keyFn);
+
+  if (results.errors) {
+    throw new Error(JSON.stringify(results.items[0]));
+  }
+
+  return results;
+};
+
+/**
  * Check health, used to check index is ready after cloning
  */
 const checkIndexStatus = async (projectId) => {
@@ -776,6 +801,7 @@ module.exports = {
   createProject,
   checkIndexStatus,
   deleteProject,
+  updateProject,
 
   findProjectStatements,
   findProjectStatementsByEdges,

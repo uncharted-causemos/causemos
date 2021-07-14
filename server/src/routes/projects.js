@@ -59,31 +59,39 @@ router.get('/:projectId', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
-/* PUT Update INDRA data */
 router.put('/:projectId', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
   const ids = req.body.ids;
   const payload = req.body.payload;
+  const description = req.body.description;
 
-  // Must have updateType, if obj/subj specified must have newValue
-  if (!payload.updateType ||
+  if (payload.updateType && payload.updateType === 'update_desc') {
+    // update project description
+    projectService.updateProject(projectId, { description: description });
+  } else {
+    //
+    // PUT Update INDRA data
+    //
+    // Must have updateType, if obj/subj specified must have newValue
+    if (!payload.updateType ||
       (!_.isEmpty(payload.subj) && !payload.subj.newValue) ||
       (!_.isEmpty(payload.obj) && !payload.obj.newValue)) {
-    throw new Error(`Invalid update config ${JSON.stringify(payload)}`);
-  }
-  await updateService.updateStatements(projectId, payload, ids);
+      throw new Error(`Invalid update config ${JSON.stringify(payload)}`);
+    }
+    await updateService.updateStatements(projectId, payload, ids);
 
-  // Send a background request to check if CAGs under the projects are stale
-  const unaffectedCurations = ['vet_statement', 'factor_polarity'];
-  if (!unaffectedCurations.includes(payload.updateType)) {
-    cagService.checkStaleCAGs(projectId, ids).catch(function handleError(err) {
-      Logger.warn(`Error checking CAG staleness under project ${projectId} ` + err);
-    });
-  }
+    // Send a background request to check if CAGs under the projects are stale
+    const unaffectedCurations = ['vet_statement', 'factor_polarity'];
+    if (!unaffectedCurations.includes(payload.updateType)) {
+      cagService.checkStaleCAGs(projectId, ids).catch(function handleError(err) {
+        Logger.warn(`Error checking CAG staleness under project ${projectId} ` + err);
+      });
+    }
 
-  // Bust project's graph cache if update changes the topology
-  if (['discard_statement', 'factor_grounding', 'reverse_relation'].includes(payload.updateType)) {
-    projectService.bustProjectGraphCache(projectId);
+    // Bust project's graph cache if update changes the topology
+    if (['discard_statement', 'factor_grounding', 'reverse_relation'].includes(payload.updateType)) {
+      projectService.bustProjectGraphCache(projectId);
+    }
   }
 
   const editTime = moment().valueOf();

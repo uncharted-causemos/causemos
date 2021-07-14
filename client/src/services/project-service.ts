@@ -68,6 +68,21 @@ const deleteProject = async (projectId: string) => {
   return result.data;
 };
 
+/**
+ * Update a project with given ID
+ * @param {string} projectId Project ID
+ * @param {string} description project description
+ */
+const updateProjectDesc = async(projectId: string, description: string) => {
+  const result = await API.put(`/projects/${projectId}`, {
+    payload: {
+      updateType: 'update_desc'
+    },
+    description
+  });
+  return result.data;
+};
+
 const getProjectStats = async (projectId: string, filters: Filters) => {
   const result = await API.get(`projects/${projectId}/count-stats`, { params: { filters: filters } });
   return result.data;
@@ -124,6 +139,7 @@ export default {
   getProjectFacetsPromise,
   createProject,
   deleteProject,
+  updateProjectDesc,
 
   getProjectStats,
   getProjectStatements,
