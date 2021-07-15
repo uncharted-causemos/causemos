@@ -84,7 +84,6 @@ import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import precisionFormatter from '@/formatters/precision-formatter';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 import modelService from '@/services/model-service';
-import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 const CONCEPT_SUGGESTION_COUNT = 15;
 
@@ -127,7 +126,6 @@ export default defineComponent({
     const showCustomConcept = ref(false);
 
     return {
-      ontologyFormatter: useOntologyFormatter(),
       selectedOption,
       ontologyConcepts,
       showCustomConcept
