@@ -4,6 +4,7 @@
       <h5 class="title"><i class="fa fa-fw fa-question" /> New Analytical Question</h5>
       <textarea
         v-model="newQuestionText"
+        v-focus
         type="text"
         placeholder="Enter a new analytical question"
         rows="10"
@@ -87,14 +88,14 @@
             <!-- second row display a list of linked insights -->
             <div class="checklist-item-insights">
               <div
-                v-for="insight in questionItem.linked_insights"
-                :key="insight.id"
+                v-for="insightId in questionItem.linked_insights"
+                :key="insightId"
                 class="checklist-item-insight">
                   <i @mousedown.stop.prevent class="fa fa-star" style="color: orange" />
-                  <span @mousedown.stop.prevent style="padding-left: 1rem; padding-right: 1rem;">{{ insight.name }}</span>
+                  <span @mousedown.stop.prevent style="padding-left: 1rem; padding-right: 1rem;">{{ insightsById(insightId).name }}</span>
                   <i class="fa fa-fw fa-close"
                     style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                    @click="deleteLinkedInsight($event, questionItem, insight)" />
+                    @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insightId)" />
               </div>
             </div>
           </div>
@@ -111,17 +112,21 @@ import { AnalyticalQuestion, Insight } from '@/types/Insight';
 import { computed, defineComponent, ref, watchEffect } from 'vue';
 import _ from 'lodash';
 import { QUESTIONS } from '@/utils/messages-util';
-import { getAllQuestions, addQuestion, deleteQuestion } from '@/services/question-service';
+import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
   setup() {
     const questionsList = ref<AnalyticalQuestion[]>([]);
+    const allInsights = ref<AnalyticalQuestion[]>([]);
+
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
     const project = computed(() => store.getters['app/project']);
 
     const questionsFetchedAt = ref(0);
+
+    const insightsById = (id: string) => allInsights.value.find(i => i.id === id);
 
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {
@@ -135,46 +140,19 @@ export default defineComponent({
           return;
         }
 
-        function addExampleQuestions() {
-          allQuestions.push({
-            id: (allQuestions.length + 1).toString(),
-            question: 'What are the key factors and relationships that are causing the problem?',
-            linked_insights: [],
-            visibility: 'public',
-            url: '',
-            target_view: ''
-          });
-          allQuestions.push({
-            id: (allQuestions.length + 1).toString(),
-            question: 'What is the total crop production under baseline condition?',
-            linked_insights: [],
-            visibility: 'public',
-            url: '',
-            target_view: ''
-          });
-          allQuestions.push({
-            id: (allQuestions.length + 1).toString(),
-            question: 'What is the theory of change?',
-            linked_insights: [],
-            visibility: 'public',
-            url: '',
-            target_view: ''
-          });
-        }
-        addExampleQuestions();
-
-        // @Review upon loading the default questions,
+        // @Review
         // existing insights may already be associated with some of them, so we need to reflect that
-        const allInsights = await getAllInsights(project.value, contextId.value);
+        allInsights.value = await getAllInsights(project.value, contextId.value);
         // compare each insight against all questions
-        allQuestions.forEach(questionItem => {
-          allInsights.forEach(insight => {
-            if (insight.analytical_question.includes(questionItem.question)) {
-              // FIXME: add insight id instead
-              questionItem.linked_insights.push(insight);
+        /*
+        allQuestions.forEach((questionItem: AnalyticalQuestion) => {
+          allInsights.forEach((insight: Insight) => {
+            if (insight.analytical_question.findIndex(q => q.id === questionItem.id) >= 0) {
+              questionItem.linked_insights.push({ id: insight.id as string, name: insight.name });
             }
           });
         });
+        */
         // update the store to facilitate questions consumption in other UI places
         store.dispatch('analysisChecklist/setQuestions', allQuestions);
 
@@ -189,7 +167,9 @@ export default defineComponent({
       questionsList,
       contextId,
       project,
-      questionsFetchedAt
+      questionsFetchedAt,
+      allInsights,
+      insightsById
     };
   },
   data: () => ({
@@ -297,20 +277,23 @@ export default defineComponent({
       const insight_id = evt.dataTransfer.getData('insight_id');
       if (insight_id !== '') {
         // fetch the dropped insight and use its name in this question's insights
-        const loadedInsight = await getInsightById(insight_id);
+        const loadedInsight: Insight = await getInsightById(insight_id);
         if (loadedInsight) {
-          const existingIndex = questionItem.linked_insights.findIndex(i => i.id === loadedInsight.id);
+          const existingIndex = questionItem.linked_insights.findIndex(id => id === loadedInsight.id);
           if (existingIndex < 0) {
             // only add any dropped insight once to each question
-            questionItem.linked_insights.push(loadedInsight);
+            questionItem.linked_insights.push(loadedInsight.id as string);
+
+            // update question on the backend
+            updateQuestion(questionItem.id as string, questionItem);
 
             // update the store to facilitate questions consumption in other UI places
             this.setQuestions(this.questionsList);
           }
           // add the following question (text) to the insight
-          if (!loadedInsight.analytical_question.includes(questionItem.question)) {
-            loadedInsight.analytical_question.push(questionItem.question);
-            updateInsight(loadedInsight.id, loadedInsight);
+          if (!(loadedInsight.analytical_question.findIndex(qid => qid === questionItem.id) >= 0)) {
+            loadedInsight.analytical_question.push(questionItem.id as string);
+            updateInsight(loadedInsight.id as string, loadedInsight);
           }
         }
       }
@@ -336,22 +319,36 @@ export default defineComponent({
       // Change the source element's background color back to white
       evt.currentTarget.style.background = 'white';
     },
-    deleteLinkedInsight(evt: any, questionItem: AnalyticalQuestion, insight: Insight) {
+    removeRelationBetweenInsightAndQuestion(evt: any, questionItem: AnalyticalQuestion, insightId: string) {
       evt.preventDefault();
       evt.stopPropagation();
 
+      //
+      // question
+      //
+
+      // filter linked insights of this question
       questionItem.linked_insights = questionItem.linked_insights.filter(
-        item => item.id !== insight.id
+        linId => linId !== insightId
       );
+
+      // update question on the backend
+      updateQuestion(questionItem.id as string, questionItem);
 
       // update the store to facilitate questions consumption in other UI places
       this.setQuestions(this.questionsList);
 
+      //
+      // insight
+      //
+
+      // update an insight, first fetch the insight to grab its list of linked_questions and update it
       // also, remove this insight from the question list
-      insight.analytical_question = insight.analytical_question.filter(
-        item => item !== questionItem.question
+      const insight: any = this.insightsById(insightId);
+      insight.analytical_question = insight?.analytical_question.filter(
+        (qid: string) => qid !== questionItem.id
       );
-      updateInsight(insight.id as string, insight);
+      updateInsight(insight?.id as string, insight);
     }
   }
 });
