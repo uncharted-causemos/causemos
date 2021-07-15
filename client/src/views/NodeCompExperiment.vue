@@ -407,10 +407,41 @@ export default defineComponent({
           admin3: this.metadata?.geography.admin3,
           geospatial_aggregation: this.outputSpecs[this.currentOutputIndex].spatialAggregation,
           temporal_aggregation: this.outputSpecs[this.currentOutputIndex].temporalAggregation,
-          temporal_resolution: this.outputSpecs[this.currentOutputIndex].temporalResolution
+          temporal_resolution: this.outputSpecs[this.currentOutputIndex].temporalResolution,
+          timeseries: [ // to do get actual timeseries data here
+            {
+              timestamp: 1527811200000,
+              value: 10.5
+            },
+            {
+              timestamp: 1530403200000,
+              value: 13.5
+            },
+            {
+              timestamp: 1533081600000,
+              value: 24.5
+            },
+            {
+              timestamp: 1535760000000,
+              value: 15.2
+            },
+            {
+              timestamp: 1538352000000,
+              value: 24.9
+            },
+            {
+              timestamp: 1541030400000,
+              value: 30.2
+            },
+            {
+              timestamp: 1543622400000,
+              value: 11.2
+            }
+          ]
         }
       };
-      modelService.updateNodeParameter(this.nodeId, nodeParameters);
+      console.log(nodeParameters);
+      modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
 
 
       this.$router.push({
