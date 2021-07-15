@@ -55,13 +55,15 @@ router.get('/vector-tiles/:z/:x/:y', (req, res) => {
  */
 router.get('/styles', asyncHandler(async (req, res) => {
   console.log('test');
+  /*
   const options = {
     url: 'https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json',
     method: 'GET',
     timeout: 10 * 1000 // 10 seconds
   };
-  const results = await requestAsPromise(options);
-  const stylesheet = JSON.parse(results);
+  */
+  // const results = await requestAsPromise(options);
+  // const stylesheet = JSON.parse(results);
   /**
    * Notes:
    * Mapbox tileJSON schema reference: https://github.com/mapbox/tilejson-spec/tree/master/2.0.0*
@@ -70,9 +72,29 @@ router.get('/styles', asyncHandler(async (req, res) => {
    * 'wmmap:' is custom a protocol that will be replaced with the correct domain by the map client
    *  eg. wmmap://vector-tiles -> https://causemos.uncharted.software/api/map/vector-tiles
    **/
-  const tileJson = await requestAsPromise({ url: stylesheet.sources.carto.url, method: 'GET' });
+  const stylesheet = {
+    version: 8,
+    sources: {
+      'raster-tiles': {
+        type: 'raster',
+        tiles: [
+          'https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg'
+        ],
+        tileSize: 256,
+        attribution: 'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
+      }
+    },
+    layers: [
+      {
+        id: 'simple-tiles',
+        type: 'raster',
+        source: 'raster-tiles',
+        minzoom: 0,
+        maxzoom: 22
+      }
+    ]
+  };
   stylesheet.sources.carto = {
-    ...JSON.parse(tileJson),
     type: 'raster',
     tileSize: 256,
     tiles: ['wmmap://vector-tiles/{z}/{x}/{y}'],
