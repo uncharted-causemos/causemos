@@ -58,6 +58,7 @@ const startModelOutputPostProcessing = async (metadata) => {
   const flowParameters = {
     model_id: metadata.model_id,
     run_id: metadata.id,
+    doc_ids: [metadata.id],
     data_paths: metadata.data_paths,
     compute_tiles: false
   };

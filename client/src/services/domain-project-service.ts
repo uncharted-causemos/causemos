@@ -7,8 +7,8 @@ const getProjects = async () => {
   return result.data;
 };
 
-const getProject = async (projectId: string) => {
-  const result = await API.get(`domain-projects/${projectId}`);
+const getProject = async (projectName: string) => {
+  const result = await API.get(`domain-projects/${projectName}`);
   return result.data;
 };
 

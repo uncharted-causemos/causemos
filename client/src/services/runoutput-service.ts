@@ -8,7 +8,7 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
   try {
     const { data } = await API.get('/maas/output/regional-data', {
       params: {
-        model_id: spec.modelId,
+        data_id: spec.modelId,
         run_id: spec.runId,
         feature: spec.outputVariable,
         resolution: spec.temporalResolution,

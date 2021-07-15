@@ -68,20 +68,20 @@ export default {
       });
       await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [] });
       this.$router.push({
-        name: 'dataExplorer',
+        name: 'dataComparative',
         params: {
-          collection: this.project,
-          analysisID: analysis.id,
+          project: this.project,
+          analysisId: analysis.id,
           projectType: ProjectType.Analysis
         }
       });
     },
     onRecent(recentCard) {
       this.$router.push({
-        name: 'data',
+        name: 'dataComparative',
         params: {
-          collection: this.project,
-          analysisID: recentCard.analysisId,
+          project: this.project,
+          analysisId: recentCard.analysisId,
           projectType: ProjectType.Analysis
         }
       });

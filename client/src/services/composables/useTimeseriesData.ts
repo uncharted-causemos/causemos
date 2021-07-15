@@ -1,13 +1,12 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import { useStore } from 'vuex';
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
@@ -64,7 +63,6 @@ const applyRelativeTo = (
   timeseriesData.forEach(timeseries => {
     // Adjust values
     const { id, name, color, points } = timeseries;
-    if (id === relativeTo) return;
     const adjustedPoints = points.map(({ timestamp, value }) => {
       const baselineValue =
         baselineData.points.find(point => point.timestamp === timestamp)
@@ -89,7 +87,7 @@ const applyRelativeTo = (
 };
 
 /**
- * Takes a model ID, a list of model run IDs, and a colouring function,
+ * Takes a data ID, a list of model run IDs, and a colouring function,
  * fetches the timeseries data for each run, then assigns a colour to
  * each timeseries using the colouring function, returning the resulting
  * list of Timeseries objects.
@@ -107,16 +105,10 @@ export default function useTimeseriesData(
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
 
-  const store = useStore();
-  const currentOutputIndex = computed(
-    () => store.getters['modelPublishStore/currentOutputIndex']
-  );
-
   watchEffect(onInvalidate => {
     if (
       modelRunIds.value.length === 0 ||
-      metadata.value === null ||
-      currentOutputIndex.value === undefined
+      metadata.value === null
     ) {
       // Don't have the information needed to fetch the data
       return;
@@ -124,13 +116,15 @@ export default function useTimeseriesData(
     const outputs = metadata.value.validatedOutputs
       ? metadata.value.validatedOutputs
       : metadata.value.outputs;
+    const defaultOutputIndex = metadata?.value.validatedOutputs?.findIndex(
+      o => o.name === metadata.value?.default_feature) ?? 0;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
       const temporalRes =
         selectedTemporalResolution.value !== ''
           ? selectedTemporalResolution.value
-          : 'month';
+          : TemporalResolutionOption.Month;
       const temporalAgg =
         selectedTemporalAggregation.value !== ''
           ? selectedTemporalAggregation.value
@@ -139,12 +133,14 @@ export default function useTimeseriesData(
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
+      const mainFeatureName = outputs[defaultOutputIndex].name;
+
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
-            model_id: dataId.value,
+            data_id: dataId.value,
             run_id: runId,
-            feature: outputs[currentOutputIndex.value].name,
+            feature: mainFeatureName,
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg
@@ -253,19 +249,15 @@ export default function useTimeseriesData(
     return applyRelativeTo(afterApplyingBreakdown, relativeTo.value);
   });
 
-  // Whenever the selected breakdown option or raw timeseries data changes,
+  // Whenever the selected breakdown option or timeseries data changes,
   //  reselect the last timestamp across all series
   watch(
-    () => [breakdownOption.value, rawTimeseriesData.value],
+    () => [breakdownOption.value, processedTimeseriesData.value],
     () => {
-      const mapToBreakdownDomain =
-        breakdownOption.value === TemporalAggregationLevel.Year
-          ? getMonthFromTimestamp
-          : (timestamp: number) => timestamp;
-      const allTimestamps = rawTimeseriesData.value
+      const allTimestamps = processedTimeseriesData.value.timeseriesData
         .map(timeseries => timeseries.points)
         .flat()
-        .map(point => mapToBreakdownDomain(point.timestamp));
+        .map(point => point.timestamp);
       // Don't call "onNewLastTimestamp" callback if the previously selected timestamp
       //  still exists within the new timeseries's range.
       if (
@@ -285,9 +277,16 @@ export default function useTimeseriesData(
     relativeTo.value = newValue;
   };
 
+  const timeseriesData = computed(
+    () => processedTimeseriesData.value.timeseriesData
+  );
+
   return {
-    timeseriesData: computed(
-      () => processedTimeseriesData.value.timeseriesData
+    timeseriesData,
+    visibleTimeseriesData: computed(() =>
+      timeseriesData.value.filter(
+        timeseries => timeseries.id !== relativeTo.value
+      )
     ),
     baselineMetadata: computed(
       () => processedTimeseriesData.value.baselineMetadata

@@ -1,4 +1,4 @@
-import { ModelPublishingStepID, AggregationOption } from '@/types/Enums';
+import { ModelPublishingStepID, AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface ModelPublishState {
@@ -18,7 +18,7 @@ const state: ModelPublishState = {
   currentOutputIndex: 0,
   currentPublishStep: ModelPublishingStepID.Enrich_Description,
   selectedTemporalAggregation: AggregationOption.Mean,
-  selectedTemporalResolution: 'month',
+  selectedTemporalResolution: TemporalResolutionOption.Month,
   selectedSpatialAggregation: AggregationOption.Mean,
   selectedTimestamp: null,
   selectedScenarioIds: []

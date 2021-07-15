@@ -40,7 +40,7 @@
       :output-source-specs="outputSpecs"
       :is-description-view="isDescriptionView"
       :metadata="metadata"
-      :timeseries-data="timeseriesData"
+      :timeseries-data="visibleTimeseriesData"
       :relative-to="relativeTo"
       :breakdown-option="breakdownOption"
       :baseline-metadata="baselineMetadata"
@@ -114,6 +114,7 @@
             :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
             :temporal-breakdown-data="temporalBreakdownData"
+            :selected-timeseries-points="selectedTimeseriesPoints"
             @toggle-is-region-selected="toggleIsRegionSelected"
             @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
@@ -146,6 +147,7 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { updateDatacube } from '@/services/new-datacube-service';
 import _ from 'lodash';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
 const DRILLDOWN_TABS = [
   {
@@ -283,22 +285,6 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    const {
-      regionalData,
-      outputSpecs,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
-    } = useRegionalData(
-      selectedModelId,
-      selectedScenarioIds,
-      selectedTimestamp,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      metadata
-    );
-
     const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
@@ -309,6 +295,7 @@ export default defineComponent({
 
     const {
       timeseriesData,
+      visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
       setRelativeTo,
@@ -323,6 +310,28 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp
+    );
+
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
+    const {
+      regionalData,
+      outputSpecs,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
+      selectedModelId,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      metadata,
+      selectedTimeseriesPoints
     );
 
 
@@ -353,7 +362,7 @@ export default defineComponent({
       setAllRegionsSelected,
       currentOutputIndex,
       setSelectedTimestamp,
-      timeseriesData,
+      visibleTimeseriesData,
       baselineMetadata,
       relativeTo,
       setRelativeTo,
@@ -362,7 +371,8 @@ export default defineComponent({
       projectId,
       temporalBreakdownData,
       AggregationOption,
-      TemporalResolutionOption
+      TemporalResolutionOption,
+      selectedTimeseriesPoints
     };
   },
   watch: {
@@ -414,7 +424,13 @@ export default defineComponent({
         // update server data
         await updateDatacube(modelToUpdate.id, modelToUpdate);
         // redirect to model family page
-        this.$router.push({ name: 'domainDatacubeOverview', params: { project: this.projectId, projectType: modelToUpdate.type } });
+        this.$router.push({
+          name: 'domainDatacubeOverview',
+          params: {
+            project: this.metadata.family_name,
+            projectType: modelToUpdate.type
+          }
+        });
       }
     },
     updateDescView(val: boolean) {
