@@ -440,7 +440,6 @@ export default defineComponent({
           ]
         }
       };
-      console.log(nodeParameters);
       modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
 
 
