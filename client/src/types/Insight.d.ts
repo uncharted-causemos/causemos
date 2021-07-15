@@ -1,7 +1,7 @@
 
 // @base/abstract type
 export interface Snapshot {
-  id: string;
+  id?: string;
   description?: string;
   visibility: string; // public or private
   project_id?: string;
@@ -37,7 +37,7 @@ export interface Insight extends Snapshot {
 // @concrete type
 export interface AnalyticalQuestion extends Snapshot {
   question: string;
-  linkedInsights: Insight[]; // has some insight(s) been linked to satisfy/answer this question?
+  linked_insights: Insight[]; // has some insight(s) been linked to satisfy/answer this question?
 }
 
 // view-specific values (no data dependency)

@@ -108,7 +108,7 @@
               style="margin-bottom: 5rem;">
               <h3 class="analysis-question">{{questionItem.question}}</h3>
               <insight-card
-                v-for="insight in questionItem.linkedInsights"
+                v-for="insight in questionItem.linked_insights"
                 :key="insight.id"
                 :insight="insight"
                 :show-description="true"

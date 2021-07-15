@@ -26,6 +26,7 @@ const scenariosRouter = rootRequire('/routes/scenario');
 const settingsRouter = rootRequire('/routes/settings');
 const dartRouter = rootRequire('/routes/dart');
 const insightsRouter = rootRequire('/routes/insights');
+const questionsRouter = rootRequire('/routes/questions');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
 const modelRunsRouter = rootRequire('/routes/model-runs');
@@ -93,6 +94,10 @@ app.use('/api/dart', [
 
 app.use('/api/insights', [
   insightsRouter
+]);
+
+app.use('/api/questions', [
+  questionsRouter
 ]);
 
 // The routes here are for model parameterization and model-based experiments
