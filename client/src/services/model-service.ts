@@ -384,7 +384,8 @@ const _markConceptHasEvidence = (hasEvidence: boolean) =>
     return {
       concept,
       hasEvidence,
-      shortName: conceptShortName(concept) || ''
+      shortName: conceptShortName(concept) || '',
+      label: ''
     };
   };
 
