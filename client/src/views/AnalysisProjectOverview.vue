@@ -73,6 +73,13 @@
     <hr />
     <div class="col-md-12">
       <div class="col-md-3 insight-container">
+        <button
+          type="button"
+          class="btn btn-primary btn-call-for-action button-spacing"
+          @click.stop="openInsightsExplorer">
+            <i class="fa fa-fw fa-star fa-lg" />
+            Review Analysis Checklist
+        </button>
         <list-context-insight-pane />
       </div>
       <div class="col-md-9">
@@ -229,8 +236,14 @@ export default {
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
-      setContextId: 'insightPanel/setContextId'
+      setContextId: 'insightPanel/setContextId',
+      showInsightPanel: 'insightPanel/showInsightPanel',
+      setCurrentPane: 'insightPanel/setCurrentPane'
     }),
+    openInsightsExplorer() {
+      this.showInsightPanel();
+      this.setCurrentPane('list-insights');
+    },
     updateDesc() {
       if (this.isEditingDesc) {
         this.projectMetadata.description = this.projectDesc;
@@ -432,6 +445,9 @@ $padding-size: 2vh;
   background-color: white;
   height: 70vh;
   overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  padding-top: 1rem;
 }
 
 .edit-model-desc {

@@ -230,6 +230,13 @@ export default defineComponent({
           const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_REMOVAL : QUESTIONS.ERRONEOUS_REMOVAL;
           if (message === QUESTIONS.SUCCESSFUL_REMOVAL) {
             (this as any).toaster(message, 'success', false);
+
+            // REVIEW: delete this question from any insight that references it
+            const selectedQuestionLinkedInsights = this.selectedQuestion?.linked_insights as string[];
+            selectedQuestionLinkedInsights.forEach(insightId => {
+              this.removeQuestionFromInsight(this.selectedQuestion as AnalyticalQuestion, insightId);
+            });
+
             // refresh
             this.questionsList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
             this.setQuestions(this.questionsList);
@@ -272,6 +279,11 @@ export default defineComponent({
         questions[i2] = q1;
         // update
         this.questionsList = questions;
+
+        // update the store to facilitate questions consumption in other UI places
+        this.setQuestions(this.questionsList);
+
+        // NOTE: re-ordering of questions is not persistent (and shouldn't be)
       }
 
       const insight_id = evt.dataTransfer.getData('insight_id');
@@ -344,6 +356,9 @@ export default defineComponent({
 
       // update an insight, first fetch the insight to grab its list of linked_questions and update it
       // also, remove this insight from the question list
+      this.removeQuestionFromInsight(questionItem, insightId);
+    },
+    removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
       const insight: any = this.insightsById(insightId);
       insight.analytical_question = insight?.analytical_question.filter(
         (qid: string) => qid !== questionItem.id

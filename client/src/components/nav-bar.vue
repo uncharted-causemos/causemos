@@ -87,7 +87,7 @@
       </ul>
 
       <!-- Insighting (ALL) -->
-      <insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
+      <insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment' || currentView === 'overview'" />
     </div>
   </nav>
 </template>

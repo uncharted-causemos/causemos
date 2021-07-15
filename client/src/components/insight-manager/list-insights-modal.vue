@@ -311,6 +311,7 @@ export default {
           this.toaster(message, 'error', true);
         }
       });
+      // FIXME: delete any reference to this insight from its list of analytical_questions
     },
     getInsightSet() {
       if (this.curatedInsights.length > 0) {
