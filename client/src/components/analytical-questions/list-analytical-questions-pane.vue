@@ -5,7 +5,7 @@
       <p>
         Are you sure you want to delete?
         <br/>
-        Note this deletion will remove the question from all projects!
+        <b style="color: red">Note this deletion will remove the question from all projects!</b>
       </p>
 
       <ul class="unstyled-list">
@@ -58,7 +58,7 @@
             type="button"
             class="btn remove-button button-spacing"
             :disabled="selectedQuestion === null"
-            @click="showDeleteModal = true">
+            @click="initiateQuestionDeletion">
               <i class="fa fa-trash" />
               Delete
           </button>
@@ -289,22 +289,29 @@ export default defineComponent({
         }
       });
     },
+    initiateQuestionDeletion() {
+      if (this.selectedQuestion?.visibility === 'public') {
+        this.showDeleteModal = true;
+      } else {
+        this.deleteSelectedQuestion();
+      }
+    },
     deleteSelectedQuestion() {
       if (this.selectedQuestion) {
+        // REVIEW: delete this question from any insight that references it
+        const selectedQuestionLinkedInsights = this.selectedQuestion?.linked_insights as string[];
+        selectedQuestionLinkedInsights.forEach(insightId => {
+          this.removeQuestionFromInsight(this.selectedQuestion as AnalyticalQuestion, insightId);
+        });
+
+        // refresh
+        this.questionsList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
+        this.setQuestions(this.questionsList);
+
         deleteQuestion(this.selectedQuestion.id as string).then(result => {
           const message = result.status === 200 ? QUESTIONS.SUCCESSFUL_REMOVAL : QUESTIONS.ERRONEOUS_REMOVAL;
           if (message === QUESTIONS.SUCCESSFUL_REMOVAL) {
             (this as any).toaster(message, 'success', false);
-
-            // REVIEW: delete this question from any insight that references it
-            const selectedQuestionLinkedInsights = this.selectedQuestion?.linked_insights as string[];
-            selectedQuestionLinkedInsights.forEach(insightId => {
-              this.removeQuestionFromInsight(this.selectedQuestion as AnalyticalQuestion, insightId);
-            });
-
-            // refresh
-            this.questionsList = this.questionsList.filter(q => q.question !== this.selectedQuestion?.question);
-            this.setQuestions(this.questionsList);
           } else {
             (this as any).toaster(message, 'error', true);
           }
