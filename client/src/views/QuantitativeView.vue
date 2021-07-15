@@ -166,16 +166,6 @@ export default {
       console.log('running model');
       this.refresh();
     },
-    // async refresh() {
-    //   this.enableOverlay();
-    //   // Fetch core data that will run this view and children components
-    //   this.modelSummary = await modelService.getSummary(this.currentCAG);
-    //   this.modelComponents = await modelService.getComponents(this.currentCAG);
-    //   const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-    //   // FIXME: 0-length
-    //   this.scenarios = scenarios;
-    //   this.disableOverlay();
-    // },
     async refreshModel() {
       this.enableOverlay();
       this.modelSummary = await modelService.getSummary(this.currentCAG);
