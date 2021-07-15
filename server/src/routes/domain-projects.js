@@ -46,11 +46,11 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 /**
- * GET by id
+ * GET project by (family) name
  */
-router.get('/:id', asyncHandler(async (req, res) => {
-  const projectId = req.params.id;
-  const result = await domainProjectService.getProject(projectId);
+router.get('/:name', asyncHandler(async (req, res) => {
+  const projectName = req.params.name;
+  const result = await domainProjectService.getProject(projectName);
   res.status(200);
   res.json(result);
 }));

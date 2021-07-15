@@ -13,7 +13,9 @@
         />
         <div class="tab-content">
           <div class="tab-pane active">
-            <search-listview :datacubes="filteredDatacubes"/>
+            <search-listview
+              :datacubes="filteredDatacubes"
+              :enableMultipleSelection="enableMultipleSelection" />
           </div>
         </div>
       </div>
@@ -56,12 +58,19 @@ export default {
     filteredDatacubes: {
       type: Array,
       default: () => []
+    },
+    enableMultipleSelection: {
+      type: Boolean,
+      default: false
+    },
+    initialDatacubeSelection: {
+      type: Array,
+      default: () => []
     }
   },
   computed: {
     ...mapGetters({
-      filters: 'dataSearch/filters',
-      analysisItems: 'dataAnalysis/analysisItems'
+      filters: 'dataSearch/filters'
     })
   },
   created() {
@@ -76,7 +85,7 @@ export default {
   },
   beforeMount() {
     // Set selected datacubes for ones that are already in the analysis items.
-    this.setSelectedDatacubes(this.analysisItems.map(item => item.id));
+    this.setSelectedDatacubes(this.initialDatacubeSelection);
   },
   methods: {
     ...mapActions({

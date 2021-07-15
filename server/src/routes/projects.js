@@ -59,16 +59,28 @@ router.get('/:projectId', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
-/* PUT Update INDRA data */
+router.put('/:projectId/metadata', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const payload = req.body.metadata;
+
+  projectService.updateProject(projectId, payload);
+
+  const editTime = moment().valueOf();
+  res.status(200).send({ updateToken: editTime });
+}));
+
 router.put('/:projectId', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
   const ids = req.body.ids;
   const payload = req.body.payload;
 
+  //
+  // PUT Update INDRA data
+  //
   // Must have updateType, if obj/subj specified must have newValue
   if (!payload.updateType ||
-      (!_.isEmpty(payload.subj) && !payload.subj.newValue) ||
-      (!_.isEmpty(payload.obj) && !payload.obj.newValue)) {
+    (!_.isEmpty(payload.subj) && !payload.subj.newValue) ||
+    (!_.isEmpty(payload.obj) && !payload.obj.newValue)) {
     throw new Error(`Invalid update config ${JSON.stringify(payload)}`);
   }
   await updateService.updateStatements(projectId, payload, ids);

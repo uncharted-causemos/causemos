@@ -1,5 +1,12 @@
 <template>
   <div class="comp-analysis-experiment-container">
+    <full-screen-modal-header
+      v-if="projectType === ProjectType.Analysis"
+      icon="angle-left"
+      :nav-back-label="navBackLabel"
+      @close="onClose"
+    >
+    </full-screen-modal-header>
     <main>
     <context-insight-panel />
     <!-- TODO: whether a card is actually expanded or not will
@@ -58,6 +65,16 @@
         </div>
       </template>
 
+      <template #datacube-model-header-collapse>
+        <button
+          v-tooltip="'Collapse datacube'"
+          class="btn btn-default"
+          @click="onClose"
+        >
+          <i class="fa fa-fw fa-compress" />
+        </button>
+      </template>
+
       <template #temporal-aggregation-config>
         <dropdown-button
           class="dropdown-config"
@@ -65,6 +82,16 @@
           :items="Object.values(AggregationOption)"
           :selected-item="selectedTemporalAggregation"
           @item-selected="item => selectedTemporalAggregation = item"
+        />
+      </template>
+
+      <template #temporal-resolution-config>
+        <dropdown-button
+          class="dropdown-config"
+          :inner-button-label="'Temporal Resolution'"
+          :items="Object.values(TemporalResolutionOption)"
+          :selected-item="selectedTemporalResolution"
+          @item-selected="item => selectedTemporalResolution = item"
         />
       </template>
 
@@ -133,13 +160,15 @@ import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
 import _ from 'lodash';
-import { AggregationOption, DatacubeType } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
 import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import { getAnalysis } from '@/services/analysis-service';
+import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
 const DRILLDOWN_TABS = [
@@ -152,7 +181,7 @@ const DRILLDOWN_TABS = [
 ];
 
 export default defineComponent({
-  name: 'CompAnalysisExperiment',
+  name: 'DatacubeDrilldown',
   components: {
     DatacubeCard,
     DrilldownPanel,
@@ -160,7 +189,8 @@ export default defineComponent({
     Disclaimer,
     DatacubeDescription,
     DropdownButton,
-    ContextInsightPanel
+    ContextInsightPanel,
+    FullScreenModalHeader
   },
   setup() {
     const selectedAdminLevel = ref(2);
@@ -243,7 +273,7 @@ export default defineComponent({
       }
     });
 
-    const selectedTemporalResolution = ref('month');
+    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
@@ -365,9 +395,14 @@ export default defineComponent({
       setBreakdownOption,
       temporalBreakdownData,
       AggregationOption,
+      TemporalResolutionOption,
       selectedTimeseriesPoints
     };
   },
+  data: () => ({
+    analysis: undefined,
+    ProjectType
+  }),
   watch: {
     $route: {
       handler(/* newValue, oldValue */) {
@@ -385,21 +420,43 @@ export default defineComponent({
   unmounted(): void {
     clearInterval(this.timerHandler);
   },
-  mounted() {
+  async mounted() {
     // ensure the insight explorer panel is closed in case the user has
     //  previously opened it and clicked the browser back button
     this.hideInsightPanel();
+
+    if (this.projectType === ProjectType.Analysis) {
+      this.analysis = await getAnalysis(this.analysisId);
+    }
   },
   computed: {
     ...mapGetters({
-      project: 'app/project'
-    })
+      project: 'app/project',
+      analysisId: 'dataAnalysis/analysisId',
+      projectType: 'app/projectType'
+    }),
+    navBackLabel(): string {
+      if (this.analysis) {
+        return 'Back to ' + (this.analysis as any).title;
+      }
+      return 'Back to analysis';
+    }
   },
   methods: {
     ...mapActions({
       setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
+    async onClose() {
+      this.$router.push({
+        name: 'dataComparative',
+        params: {
+          project: this.project,
+          analysisId: this.analysisId,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync

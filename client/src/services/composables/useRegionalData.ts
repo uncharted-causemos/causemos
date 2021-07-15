@@ -5,10 +5,9 @@ import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
-import { useStore } from 'vuex';
 import { AdminRegionSets } from '@/types/Datacubes';
-import { AggregationOption } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -24,36 +23,33 @@ export default function useRegionalData(
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
 ) {
-  const store = useStore();
-  const currentOutputIndex = computed(
-    () => store.getters['modelPublishStore/currentOutputIndex']
-  );
-
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
     if (
       selectedModelId.value === null ||
-      modelMetadata === null ||
-      currentOutputIndex.value === undefined
+      modelMetadata === null
     ) {
       return [];
     }
     const outputs = modelMetadata.validatedOutputs
       ? modelMetadata.validatedOutputs
       : modelMetadata.outputs;
+
+    const defaultOutputIndex = modelMetadata.validatedOutputs?.findIndex(
+        o => o.name === metadata.value?.default_feature) ?? 0;
+    const mainFeatureName = outputs[defaultOutputIndex].name;
+
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
       modelId: selectedModelId.value,
       runId: scenarioId,
-      outputVariable: outputs[currentOutputIndex.value].name || '',
+      outputVariable: mainFeatureName || '',
       timestamp,
-      temporalResolution: selectedTemporalResolution.value || 'month',
-      temporalAggregation:
-        selectedTemporalAggregation.value || AggregationOption.Mean,
-      spatialAggregation:
-        selectedSpatialAggregation.value || AggregationOption.Mean
+      temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
+      temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,
+      spatialAggregation: selectedSpatialAggregation.value || AggregationOption.Mean
     }));
   });
   watchEffect(async onInvalidate => {
