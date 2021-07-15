@@ -1,5 +1,28 @@
 <template>
   <div class="analytical-questions-panel-container">
+    <template v-if="showDeleteModal">
+      <h5 class="title"><i class="fa fa-fw fa-question" /> Delete Public Question</h5>
+      <p>
+        Are you sure you want to delete?
+        <br/>
+        Note this deletion will remove the question from all projects!
+      </p>
+
+      <ul class="unstyled-list">
+        <button
+          type="button"
+          class="btn first-button"
+          @click.stop="showDeleteModal = false">
+            Cancel
+        </button>
+        <button
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          @click.stop="deleteSelectedQuestion">
+            Confirm
+        </button>
+      </ul>
+    </template>
     <template v-if="showNewAnalyticalQuestion">
       <h5 class="title"><i class="fa fa-fw fa-question" /> New Analytical Question</h5>
       <textarea
@@ -26,25 +49,16 @@
         </button>
       </ul>
     </template>
-    <template v-else>
-      <button
-        v-tooltip.top-center="'Promote question to be public and visible to all projects'"
-        type="button"
-        class="btn btn-primary button-spacing"
-        :disabled="selectedQuestion === null"
-        @click="promote">
-          Promote Question
-          <i class="fa fa-question-circle" />
-      </button>
+    <template v-if="showDeleteModal === false && showNewAnalyticalQuestion === false">
       <div class="analytical-questions-header">
         <span>Questions ({{questionsList.length}})</span>
-        <div>
+        <div style="display: flex; align-items: center">
           <button
             v-tooltip.top-center="'Delete the selected analytical question'"
             type="button"
             class="btn remove-button button-spacing"
             :disabled="selectedQuestion === null"
-            @click="deleteSelectedQuestion">
+            @click="showDeleteModal = true">
               <i class="fa fa-trash" />
               Delete
           </button>
@@ -56,6 +70,21 @@
               <i class="fa fa-plus-circle" />
               Add
           </button>
+          <div class="insight-action" @click.stop="isOpenEditor=!isOpenEditor">
+            <i class="fa fa-ellipsis-v insight-header-btn" />
+            <dropdown-control v-if="isOpenEditor" class="insight-editor-dropdown">
+              <template #content>
+                <div
+                  class="dropdown-option"
+                  :class="{'disabled': selectedQuestion === null}"
+                  @click="promote"
+                >
+                  <i class="fa fa-edit" />
+                  Promote
+                </div>
+              </template>
+            </dropdown-control>
+          </div>
         </div>
       </div>
       <div v-if="questionsList.length > 0" class="analytical-questions-container">
@@ -78,8 +107,8 @@
               <i
                 class="step-icon-common fa fa-lg fa-border"
                 :class="{
-                  'fa-check-circle step-complete': questionItem.linked_insights.length > 0,
-                  'fa-circle step-not-complete': questionItem.linked_insights.length === 0,
+                  'fa-check-circle step-complete': fullLinkedInsights(questionItem.linked_insights).length > 0,
+                  'fa-circle step-not-complete': fullLinkedInsights(questionItem.linked_insights).length === 0,
                 }"
                 @mousedown.stop.prevent
               />
@@ -88,14 +117,14 @@
             <!-- second row display a list of linked insights -->
             <div class="checklist-item-insights">
               <div
-                v-for="insightId in questionItem.linked_insights"
-                :key="insightId"
+                v-for="insight in fullLinkedInsights(questionItem.linked_insights)"
+                :key="insight.id"
                 class="checklist-item-insight">
                   <i @mousedown.stop.prevent class="fa fa-star" style="color: orange" />
-                  <span @mousedown.stop.prevent style="padding-left: 1rem; padding-right: 1rem;">{{ insightsById(insightId).name }}</span>
+                  <span @mousedown.stop.prevent style="padding-left: 1rem; padding-right: 1rem;">{{ insight.name }}</span>
                   <i class="fa fa-fw fa-close"
                     style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                    @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insightId)" />
+                    @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
               </div>
             </div>
           </div>
@@ -113,12 +142,16 @@ import { computed, defineComponent, ref, watchEffect } from 'vue';
 import _ from 'lodash';
 import { QUESTIONS } from '@/utils/messages-util';
 import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion, getContextSpecificQuestions } from '@/services/question-service';
+import DropdownControl from '@/components/dropdown-control.vue';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
+  components: {
+    DropdownControl
+  },
   setup() {
     const questionsList = ref<AnalyticalQuestion[]>([]);
-    const allInsights = ref<AnalyticalQuestion[]>([]);
+    const allInsights = ref<Insight[]>([]);
 
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
@@ -128,6 +161,17 @@ export default defineComponent({
     const questionsFetchedAt = ref(0);
 
     const insightsById = (id: string) => allInsights.value.find(i => i.id === id);
+
+    const fullLinkedInsights = (linked_insights: string[]) => {
+      const result: Insight[] = [];
+      linked_insights.forEach(insightId => {
+        const ins = insightsById(insightId);
+        if (ins) {
+          result.push(ins);
+        }
+      });
+      return result;
+    };
 
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {
@@ -169,7 +213,8 @@ export default defineComponent({
       project,
       questionsFetchedAt,
       allInsights,
-      insightsById
+      insightsById,
+      fullLinkedInsights
     };
   },
   data: () => ({
@@ -179,7 +224,9 @@ export default defineComponent({
     currentTab: 'Analysis Checklist',
     selectedQuestion: null as AnalyticalQuestion | null,
     showNewAnalyticalQuestion: false,
-    newQuestionText: ''
+    newQuestionText: '',
+    showDeleteModal: false,
+    isOpenEditor: false
   }),
   computed: {
     ...mapGetters({
@@ -263,6 +310,8 @@ export default defineComponent({
           }
         });
       }
+      this.selectedQuestion = null;
+      this.showDeleteModal = false;
     },
     setActive(tab: string) {
       this.currentTab = tab;
@@ -378,10 +427,12 @@ export default defineComponent({
     },
     removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
       const insight: any = this.insightsById(insightId);
-      insight.analytical_question = insight?.analytical_question.filter(
-        (qid: string) => qid !== questionItem.id
-      );
-      updateInsight(insight?.id as string, insight);
+      if (insight) {
+        insight.analytical_question = insight?.analytical_question.filter(
+          (qid: string) => qid !== questionItem.id
+        );
+        updateInsight(insight?.id as string, insight);
+      }
     }
   }
 });
@@ -437,6 +488,22 @@ export default defineComponent({
     border: blue;
     border-width: 1px;
     background-color: red;
+  }
+
+  .insight-action {
+    flex: 1 1 auto;
+    text-align: right;
+    .insight-header-btn {
+      cursor: pointer;
+      padding: 5px;
+      color: gray;
+    }
+  }
+
+  .insight-editor-dropdown {
+    position: absolute;
+    right: 0px;
+    width: fit-content;
   }
 
   .analytical-questions-panel-container {
