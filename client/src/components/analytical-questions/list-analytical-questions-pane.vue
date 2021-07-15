@@ -112,7 +112,7 @@ import { AnalyticalQuestion, Insight } from '@/types/Insight';
 import { computed, defineComponent, ref, watchEffect } from 'vue';
 import _ from 'lodash';
 import { QUESTIONS } from '@/utils/messages-util';
-import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
+import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion, getContextSpecificQuestions } from '@/services/question-service';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -123,6 +123,7 @@ export default defineComponent({
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
     const project = computed(() => store.getters['app/project']);
+    const currentView = computed(() => store.getters['app/currentView']);
 
     const questionsFetchedAt = ref(0);
 
@@ -133,26 +134,25 @@ export default defineComponent({
       console.log('refetching questions at: ' + new Date(questionsFetchedAt.value).toTimeString());
       let isCancelled = false;
       async function fetchQuestions() {
-        const allQuestions = await getAllQuestions(project.value, contextId.value);
+        let allQuestions;
+        // allQuestions = await getAllQuestions(project.value);
+
+        if (contextId.value === '') {
+          allQuestions = await getAllQuestions(project.value);
+        } else {
+          allQuestions = await getContextSpecificQuestions(project.value, contextId.value, currentView.value);
+        }
+
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
           return;
         }
 
-        // @Review
-        // existing insights may already be associated with some of them, so we need to reflect that
+        // save a local copy of all insights for quick reference whenever needed
+        // FIXME: ideally this should be from a store so that changes to the insight list externally are captured
         allInsights.value = await getAllInsights(project.value, contextId.value);
-        // compare each insight against all questions
-        /*
-        allQuestions.forEach((questionItem: AnalyticalQuestion) => {
-          allInsights.forEach((insight: Insight) => {
-            if (insight.analytical_question.findIndex(q => q.id === questionItem.id) >= 0) {
-              questionItem.linked_insights.push({ id: insight.id as string, name: insight.name });
-            }
-          });
-        });
-        */
+
         // update the store to facilitate questions consumption in other UI places
         store.dispatch('analysisChecklist/setQuestions', allQuestions);
 
@@ -191,6 +191,24 @@ export default defineComponent({
     ...mapActions({
       setQuestions: 'analysisChecklist/setQuestions'
     }),
+    promote() {
+      // update selectedQuestion to be public, i.e., visible in all projects
+      if (this.selectedQuestion) {
+        this.selectedQuestion.visibility = 'public';
+        this.selectedQuestion.project_id = '';
+        this.selectedQuestion.context_id = '';
+        this.selectedQuestion.url = '';
+        updateQuestion(this.selectedQuestion.id as string, this.selectedQuestion).then(result => {
+          const message = result.status === 200 ? QUESTIONS.SUCCESFUL_UPDATE : QUESTIONS.ERRONEOUS_UPDATE;
+          // FIXME: cast to 'any' since typescript cannot see mixins yet!
+          if (message === QUESTIONS.SUCCESFUL_UPDATE) {
+            (this as any).toaster(message, 'success', false);
+          } else {
+            (this as any).toaster(message, 'error', true);
+          }
+        });
+      }
+    },
     addNewQuestion() {
       this.newQuestionText = '';
       this.showNewAnalyticalQuestion = true;

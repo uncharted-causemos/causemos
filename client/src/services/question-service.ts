@@ -21,20 +21,18 @@ const getProjectSpecificFilterFields = (project_id: string, context_id?: string,
 
 // example: return all public questions that were created during DSSAT publication
 //  if a target-view is provided then the result will be filtered against current view
-const getPublishedModelFilterFields = (context_id: string, target_view?: string) => {
+const getPublicFilterFields = () => {
   return {
-    context_id,
-    visibility: 'public',
-    target_view
+    visibility: 'public'
   };
 };
 
-const getParamsForAllQuestionsFetch = (project_id: string, context_id: string) => {
+const getParamsForAllQuestionsFetch = (project_id: string) => {
   return [
     // first, fetch all questions related to the current project
     getProjectSpecificFilterFields(project_id),
-    // second, fetch all public questions related to the currently selected model
-    getPublishedModelFilterFields(context_id)
+    // second, fetch all public questions
+    getPublicFilterFields()
   ];
 };
 
@@ -42,10 +40,8 @@ const getParamsForContextSpecificQuestionsFetch = (project_id: string, context_i
   return [
     // first, fetch all questions related to the current project, and the currently loaded datacube/model-id, and filtered for current view
     getProjectSpecificFilterFields(project_id, context_id, target_view),
-    // second, fetch all questions related to the current model (i.e., published model questions)
-    //  those won't have valid project so the visibility flag will get all of them,
-    //   and then match against current view and context (or model) id
-    getPublishedModelFilterFields(context_id, target_view)
+    // second, fetch all public questions
+    getPublicFilterFields()
   ];
 };
 
@@ -58,13 +54,12 @@ const getParamsForContextSpecificQuestionsFetch = (project_id: string, context_i
  *  - questions associated with current project
  *    (private project-specific)
  *  - questions that are public
- *    (saved during model publication flow AND are associated with a specific model)
+ *    (visible to all projects)
  * @param project_id project id
- * @param context_id context id
  * @returns the list of all questions
  */
-export const getAllQuestions = async (project_id: string, context_id: string) => {
-  const fetchParamsArray = getParamsForAllQuestionsFetch(project_id, context_id);
+export const getAllQuestions = async (project_id: string) => {
+  const fetchParamsArray = getParamsForAllQuestionsFetch(project_id);
   return fetchQuestions(fetchParamsArray);
 };
 
@@ -83,31 +78,6 @@ export const getContextSpecificQuestions = async (project_id: string, context_id
   return fetchQuestions(fetchParamsArray);
 };
 
-//
-// Fetch question counts
-//
-
-/**
- * @param project_id project id
- * @param context_id context id
- * @param target_view target view
- * @returns the total count of local questions
- */
-export const getSpecificQuestionsCount = async (project_id: string, context_id: string, target_view: string) => {
-  const fetchParamsArray = getParamsForContextSpecificQuestionsFetch(project_id, context_id, target_view);
-  return fetchQuestionsCount(fetchParamsArray);
-};
-
-/**
- * @param project_id project id
- * @param context_id context id
- * @returns the total count of all questions
- */
-export const getAllQuestionsCount = async (project_id: string, context_id: string) => {
-  const fetchParamsArray = getParamsForAllQuestionsFetch(project_id, context_id);
-  return fetchQuestionsCount(fetchParamsArray);
-};
-
 export const getQuestionById = async (question_id: string) => {
   const result = await API.get(`questions/${question_id}`);
   return result.data;
@@ -119,7 +89,7 @@ export const updateQuestion = async (question_id: string, question: AnalyticalQu
       'Content-Type': 'application/json'
     }
   });
-  return result.data;
+  return result;
 };
 
 export const addQuestion = async (question: AnalyticalQuestion) => {
@@ -163,27 +133,9 @@ const fetchQuestions = async (fetchParamsArray: any[]) => {
   return _.uniqBy(allFlatResults, 'id');
 };
 
-/**
- * Fetch questions for a given array of fetch parameters
- * @param fetchParamsArray an array where each element is a combination of filter fields
- * @returns the result is a unique flat array with a union of all fetch operations
- */
-const fetchQuestionsCount = async (fetchParamsArray: any[]) => {
-  // but we may also run the loop in parallel; map the array to promises
-  const promises = fetchParamsArray.map(async (fetchParams) => {
-    return API.get('questions/counts', { params: fetchParams });
-  });
-  // wait until all promises are resolved
-  const allRawResponses = await Promise.all(promises);
-  const allFlatResults = allRawResponses.flatMap(res => res.data);
-  return _.sum(allFlatResults);
-};
-
 export default {
   getContextSpecificQuestions,
   getAllQuestions,
-  getSpecificQuestionsCount,
-  getAllQuestionsCount,
   getQuestionById,
   addQuestion,
   updateQuestion
