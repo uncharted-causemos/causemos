@@ -80,7 +80,6 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
 import ConceptDisplay from '@/components/widgets/autocomplete/concept-display.vue';
 import CloseButton from '@/components/widgets/close-button.vue';
-import { UNKNOWN } from '@/utils/concept-util';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import precisionFormatter from '@/formatters/precision-formatter';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
@@ -127,20 +126,10 @@ export default defineComponent({
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
     const showCustomConcept = ref(false);
 
-    const croppedOntologyConcepts = computed(() => {
-      let croppedOntologyConcepts = ontologyConcepts.value.filter((concept: string) => concept !== UNKNOWN);
-      croppedOntologyConcepts = croppedOntologyConcepts.map((concept: string) => {
-        const splitted = _.split(concept, '/');
-        return splitted.slice(0, splitted.length - 1).join('/');
-      });
-      return _.uniq(croppedOntologyConcepts);
-    });
-
     return {
       ontologyFormatter: useOntologyFormatter(),
       selectedOption,
       ontologyConcepts,
-      croppedOntologyConcepts,
       showCustomConcept
     };
   },
