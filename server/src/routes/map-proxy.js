@@ -39,8 +39,7 @@ router.get('/tiles', (req, res) => {
  */
 router.get('/vector-tiles/:z/:x/:y', (req, res) => {
   const { x, y, z } = req.params;
-  // const url = `https://tiles.basemaps.cartocdn.com/vectortiles/carto.streets/v1/${z}/${x}/${y}.mvt${API_KEY_PARAM}`;
-  const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}.png`;
+  const url = `https://tiles.basemaps.cartocdn.com/vectortiles/carto.streets/v1/${z}/${x}/${y}.mvt${API_KEY_PARAM}`;
   request.get(url, (error) => {
     if (error && error.code) {
       Logger.info('Error ' + error.code);
@@ -54,7 +53,6 @@ router.get('/vector-tiles/:z/:x/:y', (req, res) => {
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
 router.get('/styles', asyncHandler(async (req, res) => {
-  console.log('test');
   const options = {
     url: 'https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json',
     method: 'GET',
@@ -73,8 +71,7 @@ router.get('/styles', asyncHandler(async (req, res) => {
   const tileJson = await requestAsPromise({ url: stylesheet.sources.carto.url, method: 'GET' });
   stylesheet.sources.carto = {
     ...JSON.parse(tileJson),
-    type: 'raster',
-    tileSize: 256,
+    type: 'vector',
     tiles: ['wmmap://vector-tiles/{z}/{x}/{y}']
   };
   res.json(stylesheet);
