@@ -120,9 +120,6 @@ export default defineComponent({
       } else {
         this.removeSearchTerm({ field: 'enable', term: 'self-loop' });
       }
-    },
-    addDocument() {
-      console.log('TODO: add the document!');
     }
   }
 });
