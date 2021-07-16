@@ -252,6 +252,16 @@ const FIELDS = Object.freeze({
     fields: [docPath('document_source')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
+  },
+  docLabel: {
+    fields: [docPath('label')],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.EVIDENCE
+  },
+  docByodTag: {
+    fields: [docPath('origin.byod_tag')],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.EVIDENCE
   }
 });
 
