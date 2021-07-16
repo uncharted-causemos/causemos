@@ -55,25 +55,7 @@ router.get('/vector-tiles/:z/:x/:y', (req, res) => {
 /**
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
-router.get('/styles', asyncHandler(async (req, res) => {
-  console.log('test');
-  /*
-  const options = {
-    url: 'https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json',
-    method: 'GET',
-    timeout: 10 * 1000 // 10 seconds
-  };
-  */
-  // const results = await requestAsPromise(options);
-  // const stylesheet = JSON.parse(results);
-  /**
-   * Notes:
-   * Mapbox tileJSON schema reference: https://github.com/mapbox/tilejson-spec/tree/master/2.0.0*
-   * This replace default enterprise carto tile service url with internal map tile proxy to hide carto tiles url
-   * that can potentially have the Carto API KEY.
-   * 'wmmap:' is custom a protocol that will be replaced with the correct domain by the map client
-   *  eg. wmmap://vector-tiles -> https://causemos.uncharted.software/api/map/vector-tiles
-   **/
+router.get('/styles/satellite', asyncHandler(async (req, res) => {
   const stylesheet = {
     version: 8,
     sources: {
@@ -96,13 +78,6 @@ router.get('/styles', asyncHandler(async (req, res) => {
       }
     ]
   };
-  // stylesheet.sources.carto = {
-  //   type: 'raster',
-  //   tileSize: 256,
-  //   tiles: ['wmmap://vector-tiles/{z}/{x}/{y}'],
-  //   vector_layers: []
-  // };
-  // stylesheet.layers = [];
   res.json(stylesheet);
 }));
 
