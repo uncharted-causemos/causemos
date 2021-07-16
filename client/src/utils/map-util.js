@@ -11,7 +11,7 @@ export const ETHIOPIA_BOUNDING_BOX = {
 const ORIGINAL_WORKER_URL = mapboxgl.workerUrl;
 const ORIGINAL_WORKER_COUNT = mapboxgl.workerCount;
 
-export const STYLE_URL = '/api/map/styles';
+export const STYLE_URL = '/api/map/styles/vector';
 export const BASE_MAP_OPTIONS = {
   style: STYLE_URL,
   mapStyle: STYLE_URL, // alias for 'style' for wm-map component
