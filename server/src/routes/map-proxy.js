@@ -101,7 +101,7 @@ router.get('/styles/satellite', asyncHandler(async (req, res) => {
       'raster-tiles': {
         type: 'raster',
         tiles: [
-          'wmmap://vector-tiles/{z}/{x}/{y}'
+          'wmmap://raster-tiles/{z}/{x}/{y}'
         ],
         tileSize: 256,
         attribution: 'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
