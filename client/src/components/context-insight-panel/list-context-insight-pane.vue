@@ -30,7 +30,9 @@
           :class="{ 'selected': selectedContextInsight === contextInsight, '': selectedContextInsight !== contextInsight }"
           @click="selectContextInsight(contextInsight)">
           <div class="context-insight-header">
-            <div class="context-insight-title">
+            <div
+              class="context-insight-title"
+              :class="{ 'private-insight-title': contextInsight.visibility === 'private' }">
               <i class="fa fa-star"></i>
               {{ stringFormatter(contextInsight.name, 25) }}
             </div>
@@ -442,6 +444,9 @@ export default {
 
 <style lang="scss">
 @import "~styles/variables";
+.private-insight-title {
+  color: black;
+}
 .list-context-insights-pane-container {
   color: #707070;
   overflow-y: hidden;
@@ -491,7 +496,7 @@ export default {
       .context-insight-title {
         flex: 1 1 auto;
         font-weight: bold;
-        }
+      }
     }
     .context-insight-empty-description {
       color: #D6DBDF;
