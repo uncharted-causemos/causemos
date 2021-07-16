@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div class="map-dropdown">
     <button
       type="button"
       class="btn btn-new-cag"
@@ -128,7 +128,11 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-$width-name: 10vw;
+$width-name: 30vw;
+
+.map-dropdown {
+  width: $width-name;
+}
 
 .layer-group {
   height: 18px;
@@ -136,7 +140,6 @@ $width-name: 10vw;
 
 .CAG-operations-dropdown {
   position: absolute;
-  margin-top: 2px;
   width: $width-name;
 }
 
