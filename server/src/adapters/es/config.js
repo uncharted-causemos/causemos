@@ -256,12 +256,12 @@ const FIELDS = Object.freeze({
   docLabel: {
     fields: [docPath('label')],
     type: FIELD_TYPES.NORMAL,
-    level: FIELD_LEVELS.STATEMENT
+    level: FIELD_LEVELS.EVIDENCE
   },
   docByodTag: {
     fields: [docPath('origin.byod_tag')],
     type: FIELD_TYPES.NORMAL,
-    level: FIELD_LEVELS.STATEMENT
+    level: FIELD_LEVELS.EVIDENCE
   }
 });
 
