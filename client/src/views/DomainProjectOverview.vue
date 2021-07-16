@@ -51,7 +51,7 @@
     </div>
     <hr />
     <div class="col-md-12">
-      <div class="col-md-3" style="backgroundColor: white; height: 75vh">
+      <div class="col-md-3 max-content-height" style="backgroundColor: white; padding-top: 1rem">
         <list-context-insight-pane />
       </div>
       <div class="col-md-9">
@@ -93,7 +93,7 @@
           </div>
         </div>
         <div class="row projects-list">
-          <div class="instances-list-elements">
+          <div class="instances-list-elements max-content-height">
             <div
               v-for="instance in filteredDatacubeInstances"
               :key="instance.id">
@@ -280,8 +280,11 @@ $padding-size: 3vh;
   font-size: x-large;
 }
 
+.max-content-height {
+  height: 60vh;
+}
+
 .instances-list-elements {
-  height: 75vh;
   overflow-y: auto;
 }
 

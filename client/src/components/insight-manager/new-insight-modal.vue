@@ -177,7 +177,7 @@ export default {
       //  or as a context specific insight when opening the page of the corresponding model family instance
       //  (the latter is currently supported via a special route named dataPreview)
       // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
-      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview'] : ['data', 'nodeDrilldown', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
     },
     metadataDetails() {
       const arr = [];

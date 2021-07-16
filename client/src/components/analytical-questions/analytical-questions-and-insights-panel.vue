@@ -7,22 +7,12 @@
     :is-large="false"
     @set-active="setActive"
   >
-    <div v-if="currentTab === 'Analysis Checklist'" >
       <list-analytical-questions-pane
+        v-if="currentTab === 'Analysis Checklist'"
         @add-question="addNewQuestion" />
-    </div>
 
-    <div v-if="currentTab === 'Context Insights'" class="context-insights-container">
-      <button
-        type="button"
-        class="btn btn-primary btn-call-for-action"
-        style="padding: 2px;"
-        @click.stop="newInsight">
-          <i class="fa fa-fw fa-star fa-lg" />
-          New Insight
-      </button>
-      <list-context-insight-pane />
-    </div>
+      <list-context-insight-pane
+        v-if="currentTab === 'Context Insights'" />
   </side-panel>
 </template>
 
@@ -49,15 +39,9 @@ export default defineComponent({
   }),
   methods: {
     ...mapActions({
-      showInsightPanel: 'insightPanel/showInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane'
     }),
     setActive(tab: string) {
       this.currentTab = tab;
-    },
-    newInsight() {
-      this.showInsightPanel();
-      this.setCurrentPane('new-insight');
     }
   }
 });
@@ -72,7 +56,7 @@ export default defineComponent({
     .context-insights-container {
       margin-left: 1rem;
       margin-right: 1rem;
-      overflow: auto;
+      overflow-y: auto;
       display: flex;
       flex-direction: column;
     }

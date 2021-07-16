@@ -7,10 +7,9 @@
     :is-large="false"
     @set-active="setActive"
   >
-    <div class="context-insights-container">
-      <list-analytical-questions-pane
-        @add-question="addNewQuestion" />
-    </div>
+    <list-analytical-questions-pane
+      class="analytical-questions-container"
+      @add-question="addNewQuestion" />
   </side-panel>
 </template>
 
@@ -47,7 +46,7 @@ export default defineComponent({
     .analytical-questions-container {
       margin-left: 1rem;
       margin-right: 1rem;
-      overflow: auto;
+      overflow-y: auto;
     }
   }
 </style>
