@@ -2,7 +2,7 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const request = require('request');
-const requestAsPromise = rootRequire('/util/request-as-promise');
+// const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const Logger = rootRequire('/config/logger');
 
@@ -39,8 +39,10 @@ router.get('/tiles', (req, res) => {
  */
 router.get('/vector-tiles/:z/:x/:y', (req, res) => {
   const { x, y, z } = req.params;
+  // const accessKey = 'pk.eyJ1Ijoib3dsZXhhbXBsZSIsImEiOiJja3I1M25pczAxNG40Mm5uM2Z1ZGhncm8xIn0.T0iwlmq0vEO49Tt8vE9Sxw';
   // const url = `https://tiles.basemaps.cartocdn.com/vectortiles/carto.streets/v1/${z}/${x}/${y}.mvt${API_KEY_PARAM}`;
   const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}.png`;
+  // const url = `https://api.mapbox.com/v4/mapbox.satellite/${z}/${y}/${x}@2x.jpg90?access_token=${accessKey}`;
   request.get(url, (error) => {
     if (error && error.code) {
       Logger.info('Error ' + error.code);
@@ -78,7 +80,7 @@ router.get('/styles', asyncHandler(async (req, res) => {
       'raster-tiles': {
         type: 'raster',
         tiles: [
-          'https://stamen-tiles.a.ssl.fastly.net/watercolor/{z}/{x}/{y}.jpg'
+          'wmmap://vector-tiles/{z}/{x}/{y}'
         ],
         tileSize: 256,
         attribution: 'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
@@ -94,13 +96,13 @@ router.get('/styles', asyncHandler(async (req, res) => {
       }
     ]
   };
-  stylesheet.sources.carto = {
-    type: 'raster',
-    tileSize: 256,
-    tiles: ['wmmap://vector-tiles/{z}/{x}/{y}'],
-    vector_layers: []
-  };
-  stylesheet.layers = [];
+  // stylesheet.sources.carto = {
+  //   type: 'raster',
+  //   tileSize: 256,
+  //   tiles: ['wmmap://vector-tiles/{z}/{x}/{y}'],
+  //   vector_layers: []
+  // };
+  // stylesheet.layers = [];
   res.json(stylesheet);
 }));
 
