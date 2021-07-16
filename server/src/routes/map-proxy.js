@@ -2,7 +2,7 @@ const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const request = require('request');
-const requestAsPromise = rootRequire('/util/request-as-promise');
+// const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const Logger = rootRequire('/config/logger');
 
@@ -57,13 +57,15 @@ router.get('/vector-tiles/:z/:x/:y', (req, res) => {
  */
 router.get('/styles', asyncHandler(async (req, res) => {
   console.log('test');
+  /*
   const options = {
     url: 'https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json',
     method: 'GET',
     timeout: 10 * 1000 // 10 seconds
   };
-  const results = await requestAsPromise(options);
-  const stylesheet = JSON.parse(results);
+  */
+  // const results = await requestAsPromise(options);
+  // const stylesheet = JSON.parse(results);
   /**
    * Notes:
    * Mapbox tileJSON schema reference: https://github.com/mapbox/tilejson-spec/tree/master/2.0.0*
@@ -72,23 +74,35 @@ router.get('/styles', asyncHandler(async (req, res) => {
    * 'wmmap:' is custom a protocol that will be replaced with the correct domain by the map client
    *  eg. wmmap://vector-tiles -> https://causemos.uncharted.software/api/map/vector-tiles
    **/
-  const tileJson = await requestAsPromise({ url: stylesheet.sources.carto.url, method: 'GET' });
-  stylesheet.sources.carto = {
-    ...JSON.parse(tileJson),
-    type: 'vector'
+  const stylesheet = {
+    version: 8,
+    sources: {
+      'raster-tiles': {
+        type: 'raster',
+        tiles: [
+          'wmmap://vector-tiles/{z}/{x}/{y}'
+        ],
+        tileSize: 256,
+        attribution: 'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
+      }
+    },
+    layers: [
+      {
+        id: 'simple-tiles',
+        type: 'raster',
+        source: 'raster-tiles',
+        minzoom: 0,
+        maxzoom: 22
+      }
+    ]
   };
-  stylesheet.sources.arcgisonline = {
-    type: 'raster',
-    tileSize: 256,
-    tiles: ['wmmap://vector-tiles/{z}/{x}/{y}']
-  };
-  stylesheet.layers.unshift({
-    id: 'simple-tiles',
-    type: 'raster',
-    source: 'arcgisonline',
-    minzoom: 0,
-    maxzoom: 22
-  });
+  // stylesheet.sources.carto = {
+  //   type: 'raster',
+  //   tileSize: 256,
+  //   tiles: ['wmmap://vector-tiles/{z}/{x}/{y}'],
+  //   vector_layers: []
+  // };
+  // stylesheet.layers = [];
   res.json(stylesheet);
 }));
 
