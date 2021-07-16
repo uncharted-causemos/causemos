@@ -103,8 +103,8 @@
           :selected-item="selectedSpatialAggregation"
           @item-selected="item => selectedSpatialAggregation = item"
         />
+        <map-dropdown/>
       </template>
-
       <template #datacube-description>
         <datacube-description
           :metadata="metadata"
@@ -155,6 +155,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
+import MapDropdown from '@/components/data/map-dropdown.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -190,7 +191,8 @@ export default defineComponent({
     DatacubeDescription,
     DropdownButton,
     ContextInsightPanel,
-    FullScreenModalHeader
+    FullScreenModalHeader,
+    MapDropdown
   },
   setup() {
     const selectedAdminLevel = ref(2);
