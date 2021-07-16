@@ -31,7 +31,7 @@
         </button>
       </div>
       <div class="col-sm-2 text-center no-padding">
-        {{ dataAnalysisCount }}
+        {{ dataAnalysisCount + modelCount }}
       </div>
       <div class="col-sm-4 text-center no-padding">
         {{ project.corpus_id }}
