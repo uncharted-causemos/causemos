@@ -8,8 +8,7 @@
     @set-active="setActive"
   >
       <list-analytical-questions-pane
-        v-if="currentTab === 'Analysis Checklist'"
-        @add-question="addNewQuestion" />
+        v-if="currentTab === 'Analysis Checklist'" />
 
       <list-context-insight-pane
         v-if="currentTab === 'Context Insights'" />

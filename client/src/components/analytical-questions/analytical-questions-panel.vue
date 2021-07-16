@@ -8,8 +8,7 @@
     @set-active="setActive"
   >
     <list-analytical-questions-pane
-      class="analytical-questions-container"
-      @add-question="addNewQuestion" />
+      class="analytical-questions-container" />
   </side-panel>
 </template>
 
