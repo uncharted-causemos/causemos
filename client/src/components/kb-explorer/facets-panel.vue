@@ -105,6 +105,24 @@
     </div>
     <div v-if="currentTab === 'Documents'">
       <categorical-facet
+        v-if="hasData(CODE_TABLE.DOC_LABEL.field)"
+        key="CODE_TABLE.DOC_LABEL.field"
+        :facet="CODE_TABLE.DOC_LABEL.field"
+        :label="CODE_TABLE.DOC_LABEL.searchDisplay"
+        :base-data="baseData[CODE_TABLE.DOC_LABEL.field]"
+        :selected-data="facetData[CODE_TABLE.DOC_LABEL.field]"
+        :rescale-after-select="true"
+      />
+      <categorical-facet
+        v-if="hasData(CODE_TABLE.DOC_BYOD_TAG.field)"
+        key="CODE_TABLE.DOC_BYOD_TAG.field"
+        :facet="CODE_TABLE.DOC_BYOD_TAG.field"
+        :label="CODE_TABLE.DOC_BYOD_TAG.searchDisplay"
+        :base-data="baseData[CODE_TABLE.DOC_BYOD_TAG.field]"
+        :selected-data="facetData[CODE_TABLE.DOC_BYOD_TAG.field]"
+        :rescale-after-select="true"
+      />
+      <categorical-facet
         v-if="hasData(CODE_TABLE.DOC_LOCATION.field)"
         key="CODE_TABLE.DOC_LOCATION.field"
         :facet="CODE_TABLE.DOC_LOCATION.field"
