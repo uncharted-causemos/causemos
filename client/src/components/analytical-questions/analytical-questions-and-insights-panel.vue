@@ -13,6 +13,14 @@
     </div>
 
     <div v-if="currentTab === 'Context Insights'" class="context-insights-container">
+      <button
+        type="button"
+        class="btn btn-primary btn-call-for-action"
+        style="padding: 2px;"
+        @click.stop="newInsight">
+          <i class="fa fa-fw fa-star fa-lg" />
+          New Insight
+      </button>
       <list-context-insight-pane />
     </div>
   </side-panel>
@@ -23,6 +31,7 @@ import SidePanel from '@/components/side-panel/side-panel.vue';
 import { defineComponent } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
+import { mapActions } from 'vuex';
 
 export default defineComponent({
   name: 'AnalyticalQuestionsAndInsightsPanel',
@@ -39,8 +48,16 @@ export default defineComponent({
     currentTab: ''
   }),
   methods: {
+    ...mapActions({
+      showInsightPanel: 'insightPanel/showInsightPanel',
+      setCurrentPane: 'insightPanel/setCurrentPane'
+    }),
     setActive(tab: string) {
       this.currentTab = tab;
+    },
+    newInsight() {
+      this.showInsightPanel();
+      this.setCurrentPane('new-insight');
     }
   }
 });
@@ -56,6 +73,8 @@ export default defineComponent({
       margin-left: 1rem;
       margin-right: 1rem;
       overflow: auto;
+      display: flex;
+      flex-direction: column;
     }
 
     .analytical-questions-container {

@@ -194,7 +194,7 @@ export default {
       this.datacubeInstances = await getDatacubes(newFilters);
 
       // set context id as the current family name
-      this.setContextId(this.projectMetadata.name);
+      this.setContextId('');
       // reset to avoid invalid data fetch when a given instance it loaded
       //  while the info of a previous instance is cached in the store
       this.setSelectedScenarioIds([]);

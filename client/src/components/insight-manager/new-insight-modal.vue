@@ -98,6 +98,7 @@ import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import modelService from '@/services/model-service';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { INSIGHTS } from '@/utils/messages-util';
+import { ProjectType } from '@/types/Enums';
 
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
@@ -167,14 +168,16 @@ export default {
       return `${filterString.length > 0 ? filterString : ''}`;
     },
     insightVisibility() {
-      return this.currentView === 'modelPublishingExperiment' ? 'public' : 'private';
+      return this.projectType === ProjectType.Analysis ? 'private' : 'public';
+      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
     },
     insightTargetView() {
       // an insight created during model publication should be listed either
       //  in the full list of insights,
       //  or as a context specific insight when opening the page of the corresponding model family instance
       //  (the latter is currently supported via a special route named dataPreview)
-      return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview'] : [this.currentView, 'overview'];
+      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview'] : ['data', 'nodeDrilldown', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
     },
     metadataDetails() {
       const arr = [];
