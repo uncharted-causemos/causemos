@@ -1,6 +1,6 @@
 <template>
   <div class="quantitative-view-container">
-    <context-insight-panel />
+    <analytical-questions-and-insights-panel />
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -64,7 +64,7 @@ import ActionBar from '@/components/quantitative/action-bar';
 import EditIndicatorModal from '@/components/indicator/modal-edit-indicator';
 import ModalEditConstraints from '@/components/modals/modal-edit-constraints';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
-import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 const DRAFT_SCENARIO_ID = null; // ID for draft scenario
 
@@ -117,7 +117,7 @@ export default {
     EditIndicatorModal,
     ModalEditConstraints,
     ModalEditParameters,
-    ContextInsightPanel
+    AnalyticalQuestionsAndInsightsPanel
   },
   data: () => ({
     // States

@@ -78,6 +78,16 @@ export const INSIGHTS = {
   NO_DATA: 'No insights have been saved'
 };
 
+export const QUESTIONS = {
+  SUCCESSFUL_ADDITION: 'New question succesfully added',
+  ERRONEOUS_ADDITION: 'There was an error in creating a new question',
+  SUCCESSFUL_REMOVAL: 'Question succesfully removed',
+  ERRONEOUS_REMOVAL: 'There was an error in removing the question',
+  SUCCESFUL_UPDATE: 'Question succesfully updated',
+  ERRONEOUS_UPDATE: 'There was an error in updating the question',
+  NO_DATA: 'No questions have been saved'
+};
+
 export const CAG = {
   SUCCESSFUL_DELETION: 'CAG succesfully deleted',
   ERRONEOUS_DELETION: 'There was an error in deleting the CAG. Try again',

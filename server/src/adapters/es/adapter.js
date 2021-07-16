@@ -34,6 +34,7 @@ const RESOURCE = Object.freeze({
   // Misc
   AUDIT: 'audit',
   INSIGHT: 'insight',
+  QUESTION: 'question',
   ONTOLOGY: 'ontology',
   SESSION_LOG: 'session-log',
   INDICATOR_METADATA: 'indicator-metadata',
