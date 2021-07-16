@@ -2,6 +2,7 @@
   <div class="list-context-insights-pane-container">
     <div class="pane-header">
       <button
+        v-if="allowNewInsights"
         type="button"
         class="row btn btn-primary btn-call-for-action"
         style="padding: 2px"
@@ -106,6 +107,12 @@ export default {
     ContextInsightEditor,
     DropdownButton,
     MessageDisplay
+  },
+  props: {
+    allowNewInsights: {
+      type: Boolean,
+      default: true
+    }
   },
   data: () => ({
     activeContextInsight: null,

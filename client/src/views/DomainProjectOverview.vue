@@ -52,7 +52,7 @@
     <hr />
     <div class="col-md-12">
       <div class="col-md-3 max-content-height" style="backgroundColor: white; padding-top: 1rem">
-        <list-context-insight-pane />
+        <list-context-insight-pane :allow-new-insights="false" />
       </div>
       <div class="col-md-9">
         <div class="row">
