@@ -21,6 +21,14 @@
     <div class="shared-actions">
       <div>
         <button
+          v-tooltip.top-center="'Add new document'"
+          type="button"
+          class="btn btn-normal-outline"
+          @click="showDocumentModal = true"
+        >Add Document</button>
+      </div>
+      <div>
+        <button
           v-tooltip.top-center="'Toggle self-loops'"
           type="button"
           class="btn btn-primary-outline"
@@ -34,6 +42,9 @@
         </button>
       </div>
     </div>
+    <modal-upload-document
+      v-if="showDocumentModal === true"
+      @close="showDocumentModal = false" />
   </div>
 </template>
 
@@ -43,17 +54,20 @@ import { defineComponent } from 'vue';
 import { mapGetters, mapActions } from 'vuex';
 import StatementsColumnsSelector from '@/components/kb-explorer/statements-columns-selector.vue';
 import filtersUtil from '@/utils/filters-util';
+import ModalUploadDocument from '@/components/modals/modal-upload-document.vue';
 
 
 export default defineComponent({
   name: 'ActionBar',
   components: {
-    StatementsColumnsSelector
+    StatementsColumnsSelector,
+    ModalUploadDocument
   },
   data: () => ({
     // Display toggles
     showModelDialog: false,
-    showColumnSelector: false
+    showColumnSelector: false,
+    showDocumentModal: false
   }),
   computed: {
     ...mapGetters({
@@ -106,6 +120,9 @@ export default defineComponent({
       } else {
         this.removeSearchTerm({ field: 'enable', term: 'self-loop' });
       }
+    },
+    addDocument() {
+      console.log('TODO: add the document!');
     }
   }
 });
