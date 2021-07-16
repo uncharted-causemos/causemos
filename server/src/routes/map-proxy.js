@@ -82,13 +82,13 @@ router.get('/styles', asyncHandler(async (req, res) => {
     tileSize: 256,
     tiles: ['wmmap://vector-tiles/{z}/{x}/{y}']
   };
-  stylesheet.layers = [{
+  stylesheet.layers.unshift({
     id: 'simple-tiles',
     type: 'raster',
     source: 'arcgisonline',
     minzoom: 0,
     maxzoom: 22
-  }];
+  });
   res.json(stylesheet);
 }));
 
