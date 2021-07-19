@@ -9,9 +9,9 @@ import { FieldMap, field, searchable } from './lex-util';
  * uses string-types while fields can have heterogeneous types.
 */
 export const CODE_TABLE: FieldMap = {
-  CONCEPT_NAME: {
-    ...field('concepts.name', 'Concept'),
-    ...searchable('Concept', false)
+  ONTOLOGY_MATCH: {
+    ...field('conceptName', 'Ontology'),
+    ...searchable('Ontology', false)
   },
   PERIOD: {
     ...field('period', 'Period'),
@@ -21,6 +21,30 @@ export const CODE_TABLE: FieldMap = {
     // _search is hidden special datacube field that combines text/keyword field values. It's used for text searching.
     ...field('keyword', 'Keyword'),
     ...searchable('Keyword', false)
+  },
+  COUNTRY: {
+    ...field('country', 'Country'),
+    ...searchable('Country', false)
+  },
+  ADMIN1: {
+    ...field('admin1', 'Administrative Area 1'),
+    ...searchable('Administrative Area 1', false)
+  },
+  ADMIN2: {
+    ...field('admin2', 'Administrative Area 2'),
+    ...searchable('Administrative Area 2', false)
+  },
+  ADMIN3: {
+    ...field('admin3', 'Administrative Area 3'),
+    ...searchable('Administrative Area 3', false)
+  },
+  OUTPUT_NAME: {
+    ...field('variableName', 'Output Name'),
+    ...searchable('Output Name', false)
+  },
+  DATASET_NAME: {
+    ...field('name', 'Dataset name'),
+    ...searchable('Dataset Name', false)
   }
 };
 export const CATEGORY = 'category';
@@ -30,8 +54,9 @@ export const ADMIN1 = 'admin1';
 export const ADMIN2 = 'admin2';
 export const ADMIN3 = 'admin3';
 export const PARAMETERS = 'parameters';
-export const VARIABLE_NAME = 'variableName';
+export const DATASET_NAME = 'name';
 export const VARIABLE_UNIT = 'variableUnit';
+export const FAMILY_NAME = 'familyName';
 export const TEMPORAL_RESOLUTION = 'temporalResolution';
 export const MAINTAINER_NAME = 'maintainerName';
 export const MAINTAINER_ORG = 'maintainerOrg';
@@ -50,8 +75,19 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   tags: 'Tags',
   temporalResolution: 'Temporal Resolution',
   type: 'Datacube Types',
-  variableName: 'Output Name',
-  variableUnit: 'Output Units'
+  name: 'Dataset Name',
+  variableUnit: 'Output Units',
+  familyName: 'Family Name'
+};
+
+export const SEARCH_MESSAGES: {[ key: string ]: string } = {
+  conceptName: 'Select one or more ontological concepts',
+  country: 'Select a country',
+  admin1: 'Select an administrative area',
+  admin2: 'Select an administrative area',
+  admin3: 'Select an administrative area',
+  variableName: 'Select an output name',
+  name: 'Select a dataset name'
 };
 
 export const FACET_FIELDS: string [] = [
@@ -63,8 +99,9 @@ export const FACET_FIELDS: string [] = [
   ADMIN2,
   ADMIN3,
   PARAMETERS,
-  VARIABLE_NAME,
+  DATASET_NAME,
   VARIABLE_UNIT,
+  FAMILY_NAME,
   TEMPORAL_RESOLUTION,
   MAINTAINER_NAME,
   MAINTAINER_ORG
@@ -77,8 +114,9 @@ export const NODE_FACET_FIELDS: string [] = [
   ADMIN2,
   ADMIN3,
   PARAMETERS,
-  VARIABLE_NAME,
+  DATASET_NAME,
   VARIABLE_UNIT,
+  FAMILY_NAME,
   TEMPORAL_RESOLUTION,
   MAINTAINER_NAME,
   MAINTAINER_ORG
@@ -99,6 +137,7 @@ export function isIndicator(datacube: Datacube): datacube is Indicator {
 
 export default {
   CODE_TABLE,
+  SEARCH_MESSAGES,
   DISPLAY_NAMES,
   FACET_FIELDS,
   NODE_FACET_FIELDS,

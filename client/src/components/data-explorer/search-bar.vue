@@ -27,9 +27,10 @@ import SingleRelationState from '@/search/single-relation-state';
 
 import datacubeUtil from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
+import suggestionService from '@/services/suggestion-service';
 
 const CODE_TABLE = datacubeUtil.CODE_TABLE;
-const CONCEPTS_MSG = 'Select one or more ontological concepts';
+const SEARCH_MESSAGES = datacubeUtil.SEARCH_MESSAGES;
 
 export default {
   name: 'SearchBar',
@@ -57,8 +58,9 @@ export default {
   },
   mounted() {
     // Generates lex pills from select datacube columns
-    const keys = Object.keys(this.facets);
-    const datacubePills = keys.map(k => {
+    const excludedFields = Object.values(CODE_TABLE).map(v => v.field);
+    const keys = _.difference(Object.keys(this.facets), excludedFields);
+    const basicPills = keys.map(k => {
       const dcField = {
         field: k,
         display: k,
@@ -74,11 +76,43 @@ export default {
     // Defines a list of searchable fields for LEX
     this.pills = [
       new TextPill(CODE_TABLE.SEARCH),
-      new DynamicValuePill(CODE_TABLE.CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
+      new DynamicValuePill(CODE_TABLE.ONTOLOGY_MATCH,
+        () => this.ontologyConcepts,
+        SEARCH_MESSAGES[CODE_TABLE.ONTOLOGY_MATCH.field],
+        true,
+        SingleRelationState),
       new RangePill(CODE_TABLE.PERIOD),
-      // TODO: Will add when there's support for location
-      // new ValuePill(CODE_TABLE.GEO_LOCATION_NAME, GeoUtil.GEO_LOCATION_NAMES, 'Select one or more geospatial context'),
-      ...datacubePills
+      new DynamicValuePill(CODE_TABLE.COUNTRY,
+        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.COUNTRY.field),
+        SEARCH_MESSAGES[CODE_TABLE.COUNTRY.field],
+        true,
+        SingleRelationState),
+      new DynamicValuePill(CODE_TABLE.ADMIN1,
+        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ADMIN1.field),
+        SEARCH_MESSAGES[CODE_TABLE.ADMIN1.field],
+        true,
+        SingleRelationState),
+      new DynamicValuePill(CODE_TABLE.ADMIN2,
+        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ADMIN2.field),
+        SEARCH_MESSAGES[CODE_TABLE.ADMIN2.field],
+        true,
+        SingleRelationState),
+      new DynamicValuePill(CODE_TABLE.ADMIN3,
+        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ADMIN3.field),
+        SEARCH_MESSAGES[CODE_TABLE.ADMIN3.field],
+        true,
+        SingleRelationState),
+      new DynamicValuePill(CODE_TABLE.OUTPUT_NAME,
+        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.OUTPUT_NAME.field),
+        SEARCH_MESSAGES[CODE_TABLE.OUTPUT_NAME.field],
+        true,
+        SingleRelationState),
+      new DynamicValuePill(CODE_TABLE.DATASET_NAME,
+        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.DATASET_NAME.field),
+        SEARCH_MESSAGES[CODE_TABLE.DATASET_NAME.field],
+        true,
+        SingleRelationState),
+      ...basicPills
     ];
 
     const filteredPills = _.reject(this.pills, (pill) => _.find(this.filters.clauses, { field: pill.searchKey }));

@@ -6,7 +6,7 @@ const FIELD_LEVELS = Object.freeze({
 });
 
 const NESTED_FIELD_PATHS = Object.freeze({
-  CONCEPTS: 'concepts'
+  CONCEPTS: 'ontology_matches'
 });
 
 const FIELDS = Object.freeze({
@@ -133,12 +133,12 @@ const FIELDS = Object.freeze({
 
   // Concepts
   conceptName: {
-    fields: ['concepts.name'],
+    fields: ['ontology_matches.name'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.CONCEPTS
   },
   conceptScore: {
-    fields: ['concepts.score'],
+    fields: ['ontology_matches.score'],
     type: FIELD_TYPES.RANGED,
     level: FIELD_LEVELS.CONCEPTS,
     range: [
