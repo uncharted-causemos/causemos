@@ -6,7 +6,7 @@
       @click="onShowModelOptionsDropdown"
     >
       <div class="btn-new-cag-controls">
-        <!-- <i class="layer-group fa fa-fw fa-layer-group"/> -->
+        <i class="layer-group fa fa-fw fa-layer-group"/>
         <span class="lbl">  Map Layers </span>
         <i class="fa fa-fw" :class="{ 'fa-angle-down': !showModelOptionsDropdown, 'fa-angle-up': showModelOptionsDropdown }"/>
       </div>
@@ -134,27 +134,21 @@ $width-name: 165px;
   padding: 0px 10px;
   margin: 5px 0;
   width: $width-name;
-  .btn-new-cag-controls {
-    margin: auto;
-    width: fit-content;
+  .btn-new-cag {
+    text-align: left;
+    padding: 5px;
+    background-color: #f2f2f2;
+    border: 1px solid gray;
+    width: 100%;
+    .btn-new-cag-controls {
+      margin: auto;
+      width: fit-content;
+    }
   }
-}
-
-.layer-group {
-  height: 18px;
-}
-
-.CAG-operations-dropdown {
-  position: absolute;
-  width: $width-name - 20px;
-}
-
-.btn-new-cag {
-  text-align: left;
-  padding: 5px;
-  background-color: #f2f2f2;
-  border: 1px solid gray;
-  width: 100%;
+  .CAG-operations-dropdown {
+    position: absolute;
+    width: $width-name - 20px;
+  }
 }
 
 a {
