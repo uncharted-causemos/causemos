@@ -31,11 +31,20 @@ export default {
     name: {
       type: String,
       required: true
+    },
+    startChecked: {
+      type: Boolean,
+      required: true
     }
   },
   data: () => ({
     checked: false
   }),
+  mounted() {
+    if (this.startChecked) {
+      this.clickRadioButton();
+    }
+  },
   methods: {
     clickRadioButton() {
       this.$refs.radioButton.click();

@@ -16,19 +16,19 @@
       class="CAG-operations-dropdown">
       <template #content>
         <map-dropdown-option
-          :id="'default'" :name="'base'" :text="'Default'"
+          :id="baseLayers.DEFAULT" :name="'base'" :text="'Default'" :startChecked="baseLayers.DEFAULT === selectedBaseLayer"
           @click="clickDefaultOption"
         />
         <map-dropdown-option
-          :id="'satellite'" :name="'base'" :text="'Satellite'"
+          :id="baseLayers.SATELLITE" :name="'base'" :text="'Satellite'" :startChecked="baseLayers.SATELLITE === selectedBaseLayer"
           @click="clickSatelliteOption"
         />
         <map-dropdown-option
-          :id="'admin'" :name="'first-layer'" :text="'Admin Regions'"
+          :id="firstLayers.ADMIN" :name="'first-layer'" :text="'Admin Regions'" :startChecked="firstLayers.ADMIN === selectedFirstLayer"
           @click="clickAdminOption"
         />
         <map-dropdown-option
-          :id="'tiles'" :name="'first-layer'" :text="'Tiles'"
+          :id="firstLayers.TILES" :name="'first-layer'" :text="'Tiles'" :startChecked="firstLayers.TILES === selectedFirstLayer"
           @click="clickTilesOption"
         />
       </template>
@@ -67,6 +67,10 @@ export default defineComponent({
       downloadURL: computed(() => `/api/models/${currentCAG.value}/register-payload`)
     };
   },
+  data: () => ({
+    baseLayers: BASE_LAYER,
+    firstLayers: FIRST_LAYER
+  }),
   computed: {
     ...mapGetters({
       selectedBaseLayer: 'map/selectedBaseLayer',
