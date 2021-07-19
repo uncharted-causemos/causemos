@@ -1,47 +1,43 @@
 <template>
   <div class="map-dropdown">
-    <div class="dropdown-button-container">
-      <button
-        type="button"
-        class="btn btn-new-cag"
-        @click="onShowModelOptionsDropdown"
-      ><i class="layer-group fa-layer-group"/>
-        <span class="lbl"> Map Layers </span>
-        <i
-          class="fa fa-fw"
-          :class="{ 'fa-angle-down': !showModelOptionsDropdown, 'fa-angle-up': showModelOptionsDropdown }"
-        />
-      </button>
-      <dropdown-control
-        v-if="showModelOptionsDropdown"
-        class="CAG-operations-dropdown">
-        <template #content>
-          <div
-            class="dropdown-option"
-            @click="onRenameCagClick"
-          >
-            Rename
-          </div>
-          <div
-            class="dropdown-option"
-            @click="onDuplicate"
-          >
-            Duplicate
-          </div>
-          <div
-            class="dropdown-option"
-            @click="onDeleteCAG"
-          >
-            Delete
-          </div>
-          <div
-            class="dropdown-option"
-            @click="onDownload">
-            Download
-          </div>
-        </template>
-      </dropdown-control>
-    </div>
+    <button
+      type="button"
+      class="btn btn-new-cag"
+      @click="onShowModelOptionsDropdown"
+    >
+      <!-- <i class="layer-group fa fa-fw fa-layer-group"/> -->
+      <span class="lbl">  Map Layers </span>
+      <i class="fa fa-fw" :class="{ 'fa-angle-down': !showModelOptionsDropdown, 'fa-angle-up': showModelOptionsDropdown }"/>
+    </button>
+    <dropdown-control
+      v-if="showModelOptionsDropdown"
+      class="CAG-operations-dropdown">
+      <template #content>
+        <div
+          class="dropdown-option"
+          @click="onRenameCagClick"
+        >
+          Rename
+        </div>
+        <div
+          class="dropdown-option"
+          @click="onDuplicate"
+        >
+          Duplicate
+        </div>
+        <div
+          class="dropdown-option"
+          @click="onDeleteCAG"
+        >
+          Delete
+        </div>
+        <div
+          class="dropdown-option"
+          @click="onDownload">
+          Download
+        </div>
+      </template>
+    </dropdown-control>
   </div>
 </template>
 
@@ -132,11 +128,9 @@ export default defineComponent({
 
 $width-name: 165px;
 
-.dropdown-button-container {
-  padding: 0px 10px;
-}
-
 .map-dropdown {
+  padding: 0px 10px;
+  margin: 5px 0;
   width: $width-name;
 }
 
@@ -146,16 +140,15 @@ $width-name: 165px;
 
 .CAG-operations-dropdown {
   position: absolute;
-  width: $width-name;
+  width: $width-name - 20px;
 }
 
 .btn-new-cag {
-  min-width: $width-name;
   text-align: left;
+  padding: 5px;
   background-color: #f2f2f2;
   border: 1px solid gray;
-  height: 25px;
-  margin-top: 5px;
+  width: 100%;
 }
 
 a {
