@@ -15,29 +15,10 @@
       v-if="showModelOptionsDropdown"
       class="CAG-operations-dropdown">
       <template #content>
-        <div
-          class="dropdown-option"
-          @click="onRenameCagClick"
-        >
-          Rename
-        </div>
-        <div
-          class="dropdown-option"
-          @click="onDuplicate"
-        >
-          Duplicate
-        </div>
-        <div
-          class="dropdown-option"
-          @click="onDeleteCAG"
-        >
-          Delete
-        </div>
-        <div
-          class="dropdown-option"
-          @click="onDownload">
-          Download
-        </div>
+        <map-dropdown-option :selected="true" :text="'Default'"/>
+        <map-dropdown-option :selected="true" :text="'Satellite'"/>
+        <map-dropdown-option :selected="true" :text="'Admin Regions'"/>
+        <map-dropdown-option :selected="true" :text="'Tiles'"/>
       </template>
     </dropdown-control>
   </div>
@@ -53,10 +34,12 @@ import { CAG } from '@/utils/messages-util';
 import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
 import { ProjectType } from '@/types/Enums';
+import MapDropdownOption from '@/components/data/map-dropdown-option.vue';
 
 export default defineComponent({
   name: 'ModelOptions',
   components: {
+    MapDropdownOption,
     DropdownControl
   },
   setup() {
@@ -125,6 +108,15 @@ export default defineComponent({
   }
 });
 </script>
+
+<style lang="scss" scoped>
+
+.CAG-operations-dropdown .dropdown-option {
+  border-bottom: 1px solid lightgray;
+  border-top: 1px solid lightgray;
+}
+
+</style>
 
 <style lang="scss" scoped>
 
