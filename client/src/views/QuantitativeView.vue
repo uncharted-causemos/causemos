@@ -67,6 +67,7 @@ import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 const DRAFT_SCENARIO_ID = null; // ID for draft scenario
+const OVERLAY_TIMOUT = 60000;
 
 const isIndicatorChanged = (n, o) => {
   if (o.indicator_name !== n.indicator_name ||
@@ -193,17 +194,14 @@ export default {
       setContextId: 'insightPanel/setContextId'
     }),
     async refresh() {
-      this.enableOverlay();
-
       // Check model is ready to be used for experiments
       const errors = await modelService.initializeModel(this.currentCAG);
       if (errors.length) {
-        this.disableOverlay();
-        this.toaster(errors[0], 'error', true);
+        // this.toaster(errors[0], 'error', true);
         console.error(errors);
-        return;
+        return false;
       }
-
+      this.disableOverlay();
       // Fetch core data that will run this view and children components
       this.modelSummary = await modelService.getSummary(this.currentCAG);
       this.modelComponents = await modelService.getComponents(this.currentCAG);
@@ -264,6 +262,7 @@ export default {
       if (this.currentEngine === 'dyse') {
         this.fetchSensitivityAnalysisResults();
       }
+      return true;
     },
     revertDraftChanges() {
       this.setSelectedScenarioId(this.previousScenarioId);
@@ -399,9 +398,21 @@ export default {
       this.isModelParametersOpen = true;
     },
     async saveModelParameter(newParameter) {
+      this.enableOverlay(modelService.MODEL_MSG_RETRAINING_BLOCK);
       this.isModelParametersOpen = false;
       await modelService.updateModelParameter(this.currentCAG, newParameter);
-      this.refresh();
+
+      // Allow some polling to occur (time limited) while blocking user access to the CAG.
+      let stopLoop = false;
+      const timeStart = Date.now();
+      while (!stopLoop) {
+        stopLoop = await this.refresh();
+        if ((Date.now() - timeStart) > OVERLAY_TIMOUT) {
+          stopLoop = true;
+          this.disableOverlay();
+          this.toaster('Timeout exceeded for window freeze. Please refresh screen to verify model rebuild has succeeded before altering CAG.', 'error', true);
+        }
+      }
     },
     closeModelParameters() {
       this.isModelParametersOpen = false;
