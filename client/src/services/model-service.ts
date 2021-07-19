@@ -19,6 +19,9 @@ const MODEL_STATUS = {
   READY: 2
 };
 
+const MODEL_MSG_RETRAINING_INFO = 'Model training is in progress, please check back in a few minutes';
+export const MODEL_MSG_RETRAINING_BLOCK = 'Model training is in progress, please wait...';
+
 const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
   const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
   return result.data;
@@ -223,7 +226,7 @@ const initializeModel = async (modelId: string) => {
     try {
       const r = await syncModelWithEngine(modelId, engine);
       if (r.status === MODEL_STATUS.TRAINING) {
-        errors.push('Model training is in progress, please check back in a few minutes');
+        errors.push(MODEL_MSG_RETRAINING_INFO);
       }
     } catch (error) {
       errors.push(error.response.data);
@@ -235,7 +238,7 @@ const initializeModel = async (modelId: string) => {
   if (model.status === MODEL_STATUS.TRAINING) {
     const r = await checkAndUpdateRegisteredStatus(modelId, engine);
     if (r === MODEL_STATUS.TRAINING) {
-      errors.push('Model training is in progress, please check back in a few minutes');
+      errors.push(MODEL_MSG_RETRAINING_INFO);
     }
     return errors;
   }
@@ -668,5 +671,6 @@ export default {
 
   calculateScenarioPercentageChange,
   expandExtentForDyseProjections,
-  ENGINE_OPTIONS
+  ENGINE_OPTIONS,
+  MODEL_MSG_RETRAINING_BLOCK
 };
