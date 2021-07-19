@@ -1,43 +1,68 @@
 <template>
-  <div
-    class="dropdown-option"
-  >
-    <i
-      class="fa fa-lg fa-fw radio"
-      :class="{ 'fa-circle-o': !selected}"
+  <div class="dropdown-option" @click="clickRadioButton">
+    <label
+      :for="id"
     >
-      <i class="fa fa-circle"/>
-    </i>
-    <div class="option-label">
-      {{ text }}
-    </div>
+      <input
+        ref="radioButton"
+        :id="id"
+        :value="id"
+        :checked="checked"
+        :name="name"
+        type="radio"
+      > {{ text }}
+    </label>
   </div>
 </template>
 
 <script>
+
 export default {
   name: 'map-dropdown-option',
   props: {
-    selected: {
-      type: Boolean,
+    id: {
+      type: String,
       required: true
     },
     text: {
       type: String,
-      default: ''
+      required: true
+    },
+    name: {
+      type: String,
+      required: true
+    }
+  },
+  data: () => ({
+    checked: false
+  }),
+  methods: {
+    clickRadioButton() {
+      this.$refs.radioButton.click();
     }
   }
 };
+
 </script>
 
 <style scoped>
 
 .dropdown-option {
-  cursor: pointer;
-  display: flex;
+  padding: 6px 2px;
 }
 
-.radio {
-  margin: 3px 0 0 0;
+input[type="radio"] {
+  appearance: radio;
+  margin: 0 8px;
+  cursor: pointer;
+  position: relative;
+  bottom: -2px;
 }
+
+label {
+  margin: 0;
+  font-weight: normal;
+  cursor: pointer;
+}
+
 </style>
