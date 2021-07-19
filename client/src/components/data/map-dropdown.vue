@@ -38,10 +38,7 @@ import { useStore } from 'vuex';
 import { defineComponent, ref, computed } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 
-import { CAG } from '@/utils/messages-util';
-import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
-import { ProjectType } from '@/types/Enums';
 import MapDropdownOption from '@/components/data/map-dropdown-option.vue';
 
 export default defineComponent({
@@ -75,43 +72,6 @@ export default defineComponent({
   methods: {
     onShowModelOptionsDropdown() {
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
-    },
-    onRenameCagClick() {
-      this.$emit('rename');
-      this.showModelOptionsDropdown = false;
-    },
-    onDeleteCAG() {
-      modelService.removeModel(this.currentCAG).then(() => {
-        this.toaster(CAG.SUCCESSFUL_DELETION, 'success', false);
-        // Back to splash page
-        this.$router.push({
-          name: this.viewAfterDeletion,
-          params: {
-            project: this.project,
-            projectType: ProjectType.Analysis
-          }
-        });
-      }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
-      });
-    },
-    onDownload() {
-      window.location.href = this.downloadURL;
-    },
-    onDuplicate() {
-      modelService.duplicateModel(this.currentCAG).then(() => {
-        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
-        // Back to splash page
-        this.$router.push({
-          name: this.viewAfterDeletion,
-          params: {
-            project: this.project,
-            projectType: ProjectType.Analysis
-          }
-        });
-      }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
-      });
     }
   }
 });
