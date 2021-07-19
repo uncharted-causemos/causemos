@@ -15,6 +15,7 @@ import options from './options';
 import { eventEmitter } from '../mixins';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
+import { mapGetters } from 'vuex';
 
 // Ref: https://docs.mapbox.com/mapbox-gl-js/api/#map.event:resize
 const MAPBOX_EVENTS = [
@@ -43,6 +44,12 @@ export default {
     ready: false,
     handleResize: () => null
   }),
+  computed: {
+    ...mapGetters({
+      selectedBaseLayer: 'map/selectedBaseLayer',
+      selectedFirstLayer: 'map/selectedFirstLayer'
+    })
+  },
   watch: {
     center(value, oldValue) {
       if (isEqual(value, oldValue)) return;
@@ -67,6 +74,9 @@ export default {
       if (!this.cameraMoveEnabled) return;
       // duration 0 to diable animation
       this.map.fitBounds(value, { duration: 0 });
+    },
+    selectedBaseLayer(value) {
+      this.map.setStyle(`/api/map/styles/${value}`);
     }
   },
   created() {

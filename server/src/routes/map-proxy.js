@@ -66,7 +66,7 @@ router.get('/raster-tiles/:z/:x/:y', (req, res) => {
 /**
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
-router.get('/styles/vector', asyncHandler(async (req, res) => {
+router.get('/styles/default', asyncHandler(async (req, res) => {
   const options = {
     url: 'https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json',
     method: 'GET',
