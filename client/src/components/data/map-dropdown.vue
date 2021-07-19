@@ -17,15 +17,19 @@
       <template #content>
         <map-dropdown-option
           :id="'default'" :name="'base'" :text="'Default'"
+          @click="clickDefaultOption"
         />
         <map-dropdown-option
           :id="'satellite'" :name="'base'" :text="'Satellite'"
+          @click="clickSatelliteOption"
         />
         <map-dropdown-option
           :id="'admin'" :name="'first-layer'" :text="'Admin Regions'"
+          @click="clickAdminOption"
         />
         <map-dropdown-option
           :id="'tiles'" :name="'first-layer'" :text="'Tiles'"
+          @click="clickTilesOption"
         />
       </template>
     </dropdown-control>
@@ -34,15 +38,16 @@
 
 <script lang="ts">
 
-import { useStore } from 'vuex';
+import { mapActions, mapGetters, useStore } from 'vuex';
 import { defineComponent, ref, computed } from 'vue';
-import DropdownControl from '@/components/dropdown-control.vue';
 
 import useToaster from '@/services/composables/useToaster';
 import MapDropdownOption from '@/components/data/map-dropdown-option.vue';
+import DropdownControl from '@/components/dropdown-control.vue';
+import { BASE_LAYER, FIRST_LAYER } from '@/services/map-service';
 
 export default defineComponent({
-  name: 'ModelOptions',
+  name: 'MapDropdown',
   components: {
     MapDropdownOption,
     DropdownControl
@@ -62,6 +67,12 @@ export default defineComponent({
       downloadURL: computed(() => `/api/models/${currentCAG.value}/register-payload`)
     };
   },
+  computed: {
+    ...mapGetters({
+      selectedBaseLayer: 'map/selectedBaseLayer',
+      selectedFirstLayer: 'map/selectedFirstLayer'
+    })
+  },
   props: {
     viewAfterDeletion: {
       type: String,
@@ -70,6 +81,22 @@ export default defineComponent({
   },
   emits: ['rename'],
   methods: {
+    ...mapActions({
+      setSelectedBaseLayer: 'map/setSelectedBaseLayer',
+      setSelectedFirstLayer: 'map/setSelectedFirstLayer'
+    }),
+    clickDefaultOption() {
+      this.setSelectedBaseLayer(BASE_LAYER.DEFAULT);
+    },
+    clickSatelliteOption() {
+      this.setSelectedBaseLayer(BASE_LAYER.SATELLITE);
+    },
+    clickAdminOption() {
+      this.setSelectedFirstLayer(FIRST_LAYER.ADMIN);
+    },
+    clickTilesOption() {
+      this.setSelectedFirstLayer(FIRST_LAYER.TILES);
+    },
     onShowModelOptionsDropdown() {
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
     }

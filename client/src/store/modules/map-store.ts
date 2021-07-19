@@ -1,19 +1,10 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
-
-enum BASE_LAYER {
-  SATELLITE = 'satellite',
-  DEFAULT = 'default'
-}
-
-enum FIRST_LAYER {
-  ADMIN = 'admin',
-  TILES = 'tiles'
-}
+import { BASE_LAYER, FIRST_LAYER } from '@/services/map-service';
 
 const MUTATIONS = {
   SET_SELECTED_BASE_LAYER: 'setSelectedBaseLayer',
   SET_SELECTED_FIRST_LAYER: 'SetSelectedFirstLayer'
-}
+};
 
 interface MapState {
   selectedBaseLayer: BASE_LAYER;
