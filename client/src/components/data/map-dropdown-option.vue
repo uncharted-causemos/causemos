@@ -4,8 +4,10 @@
   >
     <i
       class="fa fa-lg fa-fw radio"
-      :class="{ 'fa-circle': !selected, 'fa-circle-o': selected }"
-    />
+      :class="{ 'fa-circle-o': !selected}"
+    >
+      <i class="fa fa-circle"/>
+    </i>
     <div class="option-label">
       {{ text }}
     </div>

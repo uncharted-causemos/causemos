@@ -15,7 +15,20 @@
       v-if="showModelOptionsDropdown"
       class="CAG-operations-dropdown">
       <template #content>
-        <map-dropdown-option :selected="true" :text="'Default'"/>
+        <div class="dropdown-option">
+          <label
+            :for="'default'"
+          >
+            <input
+              :id="'default'"
+              :value="'default'"
+              :checked="true"
+              type="radio"
+              name="base"
+            > Default
+          </label>
+        </div>
+        <map-dropdown-option :selected="false" :text="'Default'"/>
         <map-dropdown-option :selected="true" :text="'Satellite'"/>
         <map-dropdown-option :selected="true" :text="'Admin Regions'"/>
         <map-dropdown-option :selected="true" :text="'Tiles'"/>
@@ -140,6 +153,22 @@ $width-name: 165px;
   .CAG-operations-dropdown {
     position: absolute;
     width: $width-name - 20px;
+    .dropdown-option {
+      padding: 6px 2px;
+    }
+    input[type="radio"] {
+      appearance: radio;
+      margin: 0 8px;
+      cursor: pointer;
+      position: relative;
+      bottom: -2px;
+    }
+
+    label {
+      margin: 0;
+      font-weight: normal;
+      cursor: pointer;
+    }
   }
 }
 
