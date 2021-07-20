@@ -38,7 +38,7 @@ const findOne = async(scenarioId) => {
  * @param {string} experimentId - external experiment id
  * @param {boolean} isBaseline
  */
-const create = async ({ result, parameter, name, description, modelId, engine, experimentId, isBaseline }) => {
+const create = async ({ result, parameter, name, description, model_id: modelId, engine, experiment_id: experimentId, isBaseline }) => {
   const scenarioConnection = Adapter.get(RESOURCE.SCENARIO);
   const id = uuid();
 

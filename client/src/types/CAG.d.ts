@@ -23,6 +23,18 @@ export interface ScenarioResult {
   };
 }
 
+export interface NewScenario {
+  name: string;
+  description: string;
+  model_id: string;
+  engine: string;
+  is_valid: boolean;
+  is_baseline: boolean;
+  parameter?: ScenarioParameter;
+  result?: ScenarioResult[];
+  experiment_id?: string;
+}
+
 export interface Scenario {
   id: string;
   name: string;
