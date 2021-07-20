@@ -57,6 +57,7 @@ import { COLOR_SCHEME } from '@/utils/colors-util';
 import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded, createDivergingColorStops, createColorStops } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import MapLegend from '@/components/widgets/map-legend';
+import { mapGetters } from 'vuex';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -136,7 +137,7 @@ const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
 };
 
 export default {
-  name: 'AnalysisMap',
+  name: 'AnalysisMapSimple',
   components: {
     WmMap,
     WmMapVector,
@@ -197,6 +198,19 @@ export default {
     legendData: []
   }),
   computed: {
+    ...mapGetters({
+      selectedBaseLayerEndpoint: 'map/selectedBaseLayerEndpoint',
+      selectedFirstLayer: 'map/selectedFirstLayer'
+    }),
+    mapFixedOptions() {
+      const options = {
+        minZoom: 1,
+        ...BASE_MAP_OPTIONS
+      };
+      options.style = this.selectedBaseLayerEndpoint;
+      options.mapStyle = this.selectedBaseLayerEndpoint;
+      return options;
+    },
     selection() {
       return this.outputSourceSpecs.find(spec => spec.id === this.outputSelection);
     },
@@ -318,11 +332,6 @@ export default {
     }
   },
   created() {
-    this.mapFixedOptions = {
-      minZoom: 1,
-      ...BASE_MAP_OPTIONS
-    };
-
     this.vectorSourceId = 'maas-vector-source';
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
