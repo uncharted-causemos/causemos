@@ -239,9 +239,7 @@ const setDefaultIndicators = async (modelId) => {
     conceptMatches[conceptKey] = {
       modified_at: editTime,
       parameter: {
-        indicator_feature: topMatch.default_feature,
         id: topMatch.id,
-        data_id: topMatch.data_id,
         name: topMatch.name,
         unit: '',
         country: '',
