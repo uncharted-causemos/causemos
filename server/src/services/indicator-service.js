@@ -244,7 +244,7 @@ const setDefaultIndicators = async (modelId) => {
         id: topMatch.id,
         data_id: topMatch.data_id,
         name: topMatch.name,
-        unit: '',
+        unit: topMatch.outputs[0].unit,
         country: '',
         admin1: '',
         admin2: '',
