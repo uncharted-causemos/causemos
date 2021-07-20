@@ -49,6 +49,7 @@
             :project="project"
             :is-fetching-statements="isFetchingStatements"
             :should-confirm-curations="true"
+            @updated-relations="resolveUpdatedRelations"
           >
             <edge-polarity-switcher
               :selected-relationship="selectedEdge"
@@ -911,6 +912,11 @@ export default defineComponent({
       graphOptions.useStableLayout = false;
       await this.cagGraph.refresh();
       graphOptions.useStableLayout = prevStabilitySetting;
+    },
+    async resolveUpdatedRelations(edges: EdgeParameter[]) {
+      console.log('about to resolve', edges);
+      edges.forEach(edge => {
+      });
     }
   }
 });
