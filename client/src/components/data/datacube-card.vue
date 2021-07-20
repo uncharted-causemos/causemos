@@ -424,7 +424,7 @@ export default defineComponent({
       selectedFirstLayer: 'map/selectedFirstLayer'
     }),
     mapSelectedLayer(): number {
-      return this.selectedFirstLayer === FIRST_LAYER.ADMIN ? 4 : this.selectedAdminLevel;
+      return this.selectedFirstLayer === FIRST_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
