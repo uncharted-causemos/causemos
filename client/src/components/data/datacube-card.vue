@@ -223,11 +223,12 @@ import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-
 import { ModelRunStatus, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
-import { useStore } from 'vuex';
+import { mapGetters, useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
 import { Timeseries } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestamp } from '@/utils/date-util';
+import { FIRST_LAYER } from '@/services/map-service';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -421,8 +422,11 @@ export default defineComponent({
     disableConcurrentTileRequestsCaching();
   },
   computed: {
+    ...mapGetters({
+      selectedFirstLayer: 'map/selectedFirstLayer'
+    }),
     mapSelectedLayer(): number {
-      return this.isGridMap ? 4 : this.selectedAdminLevel;
+      return this.selectedFirstLayer === FIRST_LAYER.ADMIN ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {

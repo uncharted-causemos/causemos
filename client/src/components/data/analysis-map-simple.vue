@@ -292,7 +292,7 @@ export default {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
-    layerButtonClass() {
+    layerButtonClass() { // TODO: REMOVE
       if (this.isGridMap) {
         return 'fa fa-th-large';
       }
