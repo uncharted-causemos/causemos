@@ -137,13 +137,12 @@ const getOntologyCandidates = async (modelId, concepts) => {
           ].filter(d => d !== '');
         }
       });
-
     }
     // make sure array contains unique values
     compositionalConcepts = [...new Set(compositionalConcepts)];
 
     const compositionalKeywords = [...new Set(compositionalConcepts.map(comp => {
-      let words = comp.split('/').slice(2);
+      const words = comp.split('/').slice(2);
       return words.map(word => word.split('_')).flat(1);
     }).flat(1))];
 
@@ -240,9 +239,7 @@ const setDefaultIndicators = async (modelId) => {
     conceptMatches[conceptKey] = {
       modified_at: editTime,
       parameter: {
-        indicator_feature: topMatch.default_feature,
         id: topMatch.id,
-        data_id: topMatch.data_id,
         name: topMatch.name,
         unit: topMatch.outputs[0].unit,
         country: '',
