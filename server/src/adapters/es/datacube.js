@@ -146,6 +146,7 @@ class Datacube {
    */
   async searchFields(searchField, queryString) {
     const fieldNames = FIELDS[searchField].fields;
+    const aggFieldNames = FIELDS[searchField].aggFields || fieldNames;
 
     // Add wildcard so that we do a prefix search
     const processedQuery = decodeURI(queryString)
@@ -156,7 +157,7 @@ class Datacube {
       .join(' ');
 
     const searchBodies = [];
-    fieldNames.forEach(field => {
+    fieldNames.forEach((field, idx) => {
       searchBodies.push({ index: 'data-datacube' });
       // ^^ from adapter.js RESOURCE.DATA_DATACUBE
       // can't use it directly because that would be circular dependency, yay!
@@ -174,7 +175,7 @@ class Datacube {
             aggs: {
               fieldAgg: {
                 terms: {
-                  field: field,
+                  field: aggFieldNames[idx],
                   size: MAX_ES_SUGGESTION_BUCKET_SIZE
                 }
               }

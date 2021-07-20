@@ -30,7 +30,7 @@ import filtersUtil from '@/utils/filters-util';
 import suggestionService from '@/services/suggestion-service';
 
 const CODE_TABLE = datacubeUtil.CODE_TABLE;
-const SEARCH_MESSAGES = datacubeUtil.SEARCH_MESSAGES;
+const SUGGESTION_CODE_TABLE = datacubeUtil.SUGGESTION_CODE_TABLE;
 
 export default {
   name: 'SearchBar',
@@ -58,7 +58,7 @@ export default {
   },
   mounted() {
     // Generates lex pills from select datacube columns
-    const excludedFields = Object.values(CODE_TABLE).map(v => v.field);
+    const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field.field);
     const keys = _.difference(Object.keys(this.facets), excludedFields);
     const basicPills = keys.map(k => {
       const dcField = {
@@ -73,45 +73,25 @@ export default {
       return new ValuePill(dcField, dcOptions);
     });
 
+    const suggestionPills = Object.values(SUGGESTION_CODE_TABLE).map(suggestInfo =>
+      new DynamicValuePill(suggestInfo.field,
+        suggestionService.getDatacubeSuggestionFunction(
+          suggestInfo.field.field, suggestInfo.filterFunc),
+        suggestInfo.searchMessage,
+        true,
+        SingleRelationState)
+    );
+
     // Defines a list of searchable fields for LEX
     this.pills = [
       new TextPill(CODE_TABLE.SEARCH),
       new DynamicValuePill(CODE_TABLE.ONTOLOGY_MATCH,
         () => this.ontologyConcepts,
-        SEARCH_MESSAGES[CODE_TABLE.ONTOLOGY_MATCH.field],
+        'Select one or more ontological concepts',
         true,
         SingleRelationState),
       new RangePill(CODE_TABLE.PERIOD),
-      new DynamicValuePill(CODE_TABLE.COUNTRY,
-        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.COUNTRY.field),
-        SEARCH_MESSAGES[CODE_TABLE.COUNTRY.field],
-        true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.ADMIN1,
-        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ADMIN1.field),
-        SEARCH_MESSAGES[CODE_TABLE.ADMIN1.field],
-        true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.ADMIN2,
-        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ADMIN2.field),
-        SEARCH_MESSAGES[CODE_TABLE.ADMIN2.field],
-        true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.ADMIN3,
-        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ADMIN3.field),
-        SEARCH_MESSAGES[CODE_TABLE.ADMIN3.field],
-        true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.OUTPUT_NAME,
-        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.OUTPUT_NAME.field),
-        SEARCH_MESSAGES[CODE_TABLE.OUTPUT_NAME.field],
-        true,
-        SingleRelationState),
-      new DynamicValuePill(CODE_TABLE.DATASET_NAME,
-        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.DATASET_NAME.field),
-        SEARCH_MESSAGES[CODE_TABLE.DATASET_NAME.field],
-        true,
-        SingleRelationState),
+      ...suggestionPills,
       ...basicPills
     ];
 

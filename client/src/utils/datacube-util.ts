@@ -1,6 +1,23 @@
 import { DatacubeFeature, Model, Indicator, Datacube } from '@/types/Datacube';
 import { DatacubeType } from '@/types/Enums';
-import { FieldMap, field, searchable } from './lex-util';
+import { Field, FieldMap, field, searchable } from './lex-util';
+
+export interface SuggestionField {
+  field: Field;
+  searchMessage: string;
+  filterFunc?: Function;
+}
+
+export interface SuggestionFieldMap { [key: string]: SuggestionField }
+
+// FIXME: Shouldn't need to do this filtering. ES should only return the relevant entries.
+const filterArray = (result: string[], hint: string) => {
+  const hints = hint
+    .toLowerCase()
+    .split(' ')
+    .filter(el => el !== '');
+  return result.filter(res => hints.every(h => res.toLowerCase().includes(h)));
+};
 
 /**
  * Configures datacube metadata field attributes, determines how they are displayed and their search semantics
@@ -21,32 +38,65 @@ export const CODE_TABLE: FieldMap = {
     // _search is hidden special datacube field that combines text/keyword field values. It's used for text searching.
     ...field('keyword', 'Keyword'),
     ...searchable('Keyword', false)
-  },
-  COUNTRY: {
-    ...field('country', 'Country'),
-    ...searchable('Country', false)
-  },
-  ADMIN1: {
-    ...field('admin1', 'Administrative Area 1'),
-    ...searchable('Administrative Area 1', false)
-  },
-  ADMIN2: {
-    ...field('admin2', 'Administrative Area 2'),
-    ...searchable('Administrative Area 2', false)
-  },
-  ADMIN3: {
-    ...field('admin3', 'Administrative Area 3'),
-    ...searchable('Administrative Area 3', false)
-  },
-  OUTPUT_NAME: {
-    ...field('variableName', 'Output Name'),
-    ...searchable('Output Name', false)
-  },
-  DATASET_NAME: {
-    ...field('name', 'Dataset name'),
-    ...searchable('Dataset Name', false)
   }
 };
+
+export const SUGGESTION_CODE_TABLE: SuggestionFieldMap = {
+  COUNTRY: {
+    field: {
+      ...field('country', 'Country'),
+      ...searchable('Country', false)
+    },
+    searchMessage: 'Select a country',
+    filterFunc: filterArray
+  },
+  ADMIN1: {
+    field: {
+      ...field('admin1', 'Administrative Area 1'),
+      ...searchable('Administrative Area 1', false)
+    },
+    searchMessage: 'Select an administrative area',
+    filterFunc: filterArray
+  },
+  ADMIN2: {
+    field: {
+      ...field('admin2', 'Administrative Area 2'),
+      ...searchable('Administrative Area 2', false)
+    },
+    searchMessage: 'Select an administrative area',
+    filterFunc: filterArray
+  },
+  ADMIN3: {
+    field: {
+      ...field('admin3', 'Administrative Area 3'),
+      ...searchable('Administrative Area 3', false)
+    },
+    searchMessage: 'Select an administrative area',
+    filterFunc: filterArray
+  },
+  OUTPUT_NAME: {
+    field: {
+      ...field('variableName', 'Output Name'),
+      ...searchable('Output Name', false)
+    },
+    searchMessage: 'Select an output name'
+  },
+  DATASET_NAME: {
+    field: {
+      ...field('name', 'Dataset Name'),
+      ...searchable('Dataset Name', false)
+    },
+    searchMessage: 'Select a dataset name'
+  },
+  FAMILY_NAME: {
+    field: {
+      ...field('familyName', 'Family Name'),
+      ...searchable('Family Name', false)
+    },
+    searchMessage: 'Select a family name'
+  }
+};
+
 export const CATEGORY = 'category';
 export const TAGS = 'tags';
 export const COUNTRY = 'country';
@@ -78,16 +128,6 @@ export const DISPLAY_NAMES: {[ key: string ]: string } = {
   name: 'Dataset Name',
   variableUnit: 'Output Units',
   familyName: 'Family Name'
-};
-
-export const SEARCH_MESSAGES: {[ key: string ]: string } = {
-  conceptName: 'Select one or more ontological concepts',
-  country: 'Select a country',
-  admin1: 'Select an administrative area',
-  admin2: 'Select an administrative area',
-  admin3: 'Select an administrative area',
-  variableName: 'Select an output name',
-  name: 'Select a dataset name'
 };
 
 export const FACET_FIELDS: string [] = [
@@ -137,7 +177,7 @@ export function isIndicator(datacube: Datacube): datacube is Indicator {
 
 export default {
   CODE_TABLE,
-  SEARCH_MESSAGES,
+  SUGGESTION_CODE_TABLE,
   DISPLAY_NAMES,
   FACET_FIELDS,
   NODE_FACET_FIELDS,

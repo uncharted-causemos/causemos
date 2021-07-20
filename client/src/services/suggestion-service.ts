@@ -9,10 +9,10 @@ import datacubeService from '@/services/new-datacube-service';
  * Typically, you would pass the suggestion function into a lex search pill.
  * @param {string} projectId - project id
  * @param {array<string>} ontology - ontology
- * @param {function(array<string>): array<string>} [postProcessFn] - optional processing on the fetched suggestions
+ * @param {function(array<string>, string): array<string>} [postProcessFn] - optional processing on the fetched suggestions
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
-const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>, postProcessFn: Function) => {
+const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>, postProcessFn?: Function) => {
   return _.debounce(async function(hint = '') {
     let result = ontology;
     if (!_.isEmpty(hint)) {
@@ -20,7 +20,7 @@ const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>
       result = suggestions.map(s => s.concept);
     }
     if (postProcessFn) {
-      return postProcessFn(result);
+      return postProcessFn(result, hint);
     }
     return result;
   }, 500, { trailing: true, leading: true });
@@ -34,17 +34,17 @@ const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>
  * For datacube suggestions, {@see getDatacubeSuggestionFunction} should be used instead.
  * @param {string} projectId - project id
  * @param {string} field - the ES field to get suggestions for
- * @param {function(array<string>): array<string>} [postProcessFn] - optional processing on the fetched suggestions
+ * @param {function(array<string>, string): array<string>} [postProcessFn] - optional processing on the fetched suggestions
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
-const getSuggestionFunction = (projectId: string, field: string, postProcessFn: Function) => {
+const getSuggestionFunction = (projectId: string, field: string, postProcessFn?: Function) => {
   return _.debounce(async function(hint = '') {
     let result = [];
     if (!_.isEmpty(hint)) {
       result = await modelService.getSuggestions(projectId, field, hint);
     }
     if (postProcessFn) {
-      return postProcessFn(result);
+      return postProcessFn(result, hint);
     }
     return result;
   }, 500, { trailing: true, leading: true });
@@ -56,7 +56,7 @@ const getSuggestionFunction = (projectId: string, field: string, postProcessFn: 
  * Typically, you would pass the suggestion function into a lex search pill.
  *
  * @param {string} field - the ES field to get suggestions for
- * @param {function(array<string>): array<string>} [postProcessFn] - optional processing on the fetched suggestions
+ * @param {function(array<string>, string): array<string>} [postProcessFn] - optional processing on the fetched suggestions
  * @returns {DebouncedFunc<function(*=): Promise<*>>} a function used to fetch suggestions
  */
 const getDatacubeSuggestionFunction = (field: string, postProcessFn?: Function) => {
@@ -66,7 +66,7 @@ const getDatacubeSuggestionFunction = (field: string, postProcessFn?: Function) 
       result = await datacubeService.getSuggestions(field, hint);
     }
     if (postProcessFn) {
-      return postProcessFn(result);
+      return postProcessFn(result, hint);
     }
     return result;
   }, 500, { trailing: true, leading: true });

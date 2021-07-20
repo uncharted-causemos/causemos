@@ -21,12 +21,19 @@ const FIELDS = Object.freeze({
     level: FIELD_LEVELS.DATACUBE
   },
   keyword: { // For search only
-    fields: ['_search'],
+    fields: ['name', 'description', 'family_name', 'category',
+      'maintainer.name', 'maintainer.organization', 'tags',
+      'geography.country', 'geography.admin1', 'geography.admin2', 'geography.admin3',
+      'parameters.name', 'parameters.display_name', 'parameters.description',
+      'outputs.name', 'outputs.display_name', 'outputs.description',
+      'qualifier_outputs.name', 'qualifier_outputs.display_name', 'qualifier_outputs.description'
+    ],
     type: FIELD_TYPES.REGEXP,
     level: FIELD_LEVELS.DATACUBE
   },
   category: {
     fields: ['category'],
+    aggFields: ['category.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
@@ -42,21 +49,25 @@ const FIELDS = Object.freeze({
   },
   country: {
     fields: ['geography.country'],
+    aggFields: ['geography.country.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   admin1: {
     fields: ['geography.admin1'],
+    aggFields: ['geography.admin1.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   admin2: {
     fields: ['geography.admin2'],
+    aggFields: ['geography.admin2.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   admin3: {
     fields: ['geography.admin3'],
+    aggFields: ['geography.admin3.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
@@ -67,21 +78,25 @@ const FIELDS = Object.freeze({
   },
   maintainerName: {
     fields: ['maintainer.name'],
+    aggFields: ['maintainer.name.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   maintainerOrg: {
     fields: ['maintainer.organization'],
+    aggFields: ['maintainer.organization.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   name: {
     fields: ['name'],
+    aggFields: ['name.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
   familyName: {
     fields: ['family_name'],
+    aggFields: ['family_name.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
@@ -97,6 +112,7 @@ const FIELDS = Object.freeze({
   },
   tags: {
     fields: ['tags'],
+    aggFields: ['tags.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
@@ -117,6 +133,7 @@ const FIELDS = Object.freeze({
   },
   variableName: {
     fields: ['outputs.display_name', 'parameters.display_name'],
+    aggFields: ['outputs.display_name.raw', 'parameters.display_name.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
