@@ -10,6 +10,7 @@
       @move="onMapMove"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
+      @styledata="onStyleChange"
     >
       <wm-map-vector
         v-if="vectorSource"
@@ -467,6 +468,9 @@ export default {
       if (!this.showTooltip) return;
       // reset hover feature state when mouse moves out of the map
       this._unsetHover(event.map);
+    },
+    onStyleChange() {
+      this.refresh();
     },
     popupValueFormatter(feature) {
       const prop = this.isGridMap ? feature?.properties : feature?.state;

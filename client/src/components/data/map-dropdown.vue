@@ -7,7 +7,7 @@
     >
       <div class="btn-new-cag-controls">
         <i class="layer-group fa fa-fw fa-layer-group"/>
-        <span class="lbl">  Map Layers </span>
+        <span class="lbl"> Map Layers </span>
         <i class="fa fa-fw" :class="{ 'fa-angle-down': !showModelOptionsDropdown, 'fa-angle-up': showModelOptionsDropdown }"/>
       </div>
     </button>
@@ -15,6 +15,7 @@
       v-if="showModelOptionsDropdown"
       class="CAG-operations-dropdown">
       <template #content>
+        <map-dropdown-category :text="'BASE LAYERS'"/>
         <map-dropdown-option
           :id="baseLayers.DEFAULT" :name="'base'" :text="'Default'" :startChecked="baseLayers.DEFAULT === selectedBaseLayer"
           @click="clickDefaultOption"
@@ -23,6 +24,7 @@
           :id="baseLayers.SATELLITE" :name="'base'" :text="'Satellite'" :startChecked="baseLayers.SATELLITE === selectedBaseLayer"
           @click="clickSatelliteOption"
         />
+        <map-dropdown-category :text="'DATA LAYERS'"/>
         <map-dropdown-option
           :id="firstLayers.ADMIN" :name="'first-layer'" :text="'Admin Regions'" :startChecked="firstLayers.ADMIN === selectedFirstLayer"
           @click="clickAdminOption"
@@ -45,10 +47,12 @@ import useToaster from '@/services/composables/useToaster';
 import MapDropdownOption from '@/components/data/map-dropdown-option.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { BASE_LAYER, FIRST_LAYER } from '@/services/map-service';
+import MapDropdownCategory from '@/components/data/map-dropdown-category.vue';
 
 export default defineComponent({
   name: 'MapDropdown',
   components: {
+    MapDropdownCategory,
     MapDropdownOption,
     DropdownControl
   },
