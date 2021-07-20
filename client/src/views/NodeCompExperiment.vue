@@ -360,7 +360,6 @@ export default defineComponent({
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
-      console.log(this.modelComponents);
     });
   },
 
