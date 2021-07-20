@@ -23,22 +23,6 @@ const _setIndicatorProperties = async (parameter) => {
     return null;
   }
   parameter.timeseries = indicatorData;
-
-  // const countryLevelData = indicatorMatch[0];
-  // const admin1LevelData = countryLevelData.children[0];
-  // const admin2LevelData = admin1LevelData.children[0];
-  // const indicatorTimeSeries = admin2LevelData.meta.timeseries.map(d => {
-  //   return { value: d.value, timestamp: d.timestamp };
-  // });
-
-  // parameter.indicator_time_series = indicatorTimeSeries;
-  // parameter.indicator_time_series_parameter = {
-  //   // obsolete now
-  //   // unit: unit,
-  //   country: countryLevelData.key,
-  //   admin1: admin1LevelData.key,
-  //   admin2: admin2LevelData.key
-  // };
 };
 
 /**
@@ -54,35 +38,12 @@ const getIndicatorData = async (parameter) => {
     method: 'GET',
     url: process.env.WM_GO_URL +
       // Get data for all units
-      // `/maas/output/raw-data?model_id=${encodeURI(variable)}&run_id=${encodeURI('indicator')}&feature=${encodeURI(feature)}`
       `/maas/output/timeseries?data_id=${encodeURI(parameter.data_id)}&run_id=indicator&feature=${encodeURI(parameter.indicator_feature)}&resolution=${encodeURI(parameter.temporal_resolution)}&temporal_agg=${encodeURI(parameter.temporal_aggregation)}&spatial_agg=${encodeURI(parameter.geospatial_aggregation)}`
   };
 
   const response = await requestAsPromise(options);
   const rawResult = JSON.parse(response);
 
-  // const pipeline = [
-  //   {
-  //     keyFn: (d) => d.country,
-  //     metaFn: (c) => {
-  //       return { timeseries: c.dataArray };
-  //     }
-  //   },
-  //   {
-  //     keyFn: (d) => d.admin1,
-  //     metaFn: (c) => {
-  //       return { timeseries: c.dataArray };
-  //     }
-  //   },
-  //   {
-  //     keyFn: (d) => d.admin2,
-  //     metaFn: (c) => {
-  //       return { timeseries: c.dataArray };
-  //     }
-  //   }
-  // ];
-
-  // return AggregationsUtil.groupDataArray(rawResult, _.cloneDeep(pipeline));
   return rawResult;
 };
 
