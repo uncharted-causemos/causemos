@@ -186,7 +186,6 @@
               :map-bounds="mapBounds"
               :region-data="regionalData"
               @sync-bounds="onSyncMapBounds"
-              @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
               @slide-handle-change="updateMapFilters"
             />
@@ -412,8 +411,7 @@ export default defineComponent({
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
     ],
-    mapReady: false,
-    isGridMap: false
+    mapReady: false
   }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
@@ -435,9 +433,6 @@ export default defineComponent({
     },
     onSyncMapBounds(mapBounds: Array<Array<number>>) {
       this.mapBounds = mapBounds;
-    },
-    onClickMapLayerToggle(data: { isGridMap: boolean }) {
-      this.isGridMap = !data.isGridMap;
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;

@@ -2,13 +2,6 @@
   <div class="analysis-map-container">
     <div class="value-filter">
       <map-legend :ramp="legendData" />
-      <div
-        class="layer-toggle-button"
-        @click="clickLayerToggle">
-        <i
-          :class="layerButtonClass"
-        />
-      </div>
     </div>
     <wm-map
       v-bind="mapFixedOptions"
@@ -148,8 +141,7 @@ export default {
     'on-map-load',
     'aggregation-level-change',
     'slide-handle-change',
-    'sync-bounds',
-    'click-layer-toggle'
+    'sync-bounds'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -292,12 +284,6 @@ export default {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
-    layerButtonClass() { // TODO: REMOVE
-      if (this.isGridMap) {
-        return 'fa fa-th-large';
-      }
-      return 'fa fa-globe';
-    },
     colorOption() {
       return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
     },
@@ -434,9 +420,6 @@ export default {
         component.enableCamera();
       });
     },
-    clickLayerToggle() {
-      this.$emit('click-layer-toggle', { isGridMap: this.isGridMap });
-    },
     updateLayerFilter() {
       if (!this.colorLayer) return;
       // Merge filter for the current map and all globally applied filters together
@@ -548,15 +531,6 @@ export default {
   align-items: flex-end;
   cursor: pointer;
   .filter-toggle-button {
-    padding: 5px;
-    border: 1px solid #888;
-    border-radius: 3px;
-    background-color: #ccc;
-    &.active {
-      background-color: #6FC5DE;
-    }
-  }
-  .layer-toggle-button {
     padding: 5px;
     border: 1px solid #888;
     border-radius: 3px;
