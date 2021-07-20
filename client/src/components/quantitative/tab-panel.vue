@@ -261,7 +261,7 @@ export default {
     scenarios() {
       this.refresh();
     },
-    modelSummary() {
+    modelComponents() {
       this.refresh();
     }
   },
