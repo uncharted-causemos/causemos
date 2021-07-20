@@ -14,8 +14,6 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters } from 'vuex';
-
 import SidePanel from '@/components/side-panel/side-panel.vue';
 import { defineComponent } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
@@ -32,20 +30,7 @@ export default defineComponent({
     ],
     currentTab: '' // start with panel collapsed
   }),
-  computed: {
-    ...mapGetters({
-      project: 'app/project'
-    })
-  },
-  watch: {
-  },
-  created() {
-  },
-  mounted() {
-  },
   methods: {
-    ...mapActions({
-    }),
     setActive(tab: string) {
       this.currentTab = tab;
     }
