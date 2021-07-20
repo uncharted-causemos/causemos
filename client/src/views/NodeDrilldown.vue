@@ -45,6 +45,46 @@
             values by clicking on the chart. To remove a point, click on it
             again.
           </p>
+          <hr>
+          <div>
+            Variable type
+          </div>
+          <div>
+            <span><strong>(Indicator name goes here)</strong></span>
+            &nbsp;
+            <button
+              v-tooltip.top-center="'Edit datacube'"
+              type="button"
+              class="btn btn-primary btn-sm">
+              Edit datacube
+            </button>
+            &nbsp;
+            <button
+              v-tooltip.top-center="'Change datacube'"
+              type="button"
+              class="btn btn-primary btn-sm"
+              @click="openDataExplorer">
+              Change datacube
+            </button>
+          </div>
+          <div>
+            (Indicator description goes here ...........................)
+          </div>
+          <div style="display: flex; align-items: center">
+            <table>
+              <tr>
+                <td>From</td>
+                <td><input class="form-control input-sm" type="text"/></td>
+                <td>to</td>
+                <td><input class="form-control input-sm" type="text"/></td>
+              </tr>
+            </table>
+            <div style="display: flex; align-items: center">
+              Seasonality
+              <i class="fa fa-fw fa-lg fa-toggle-off"/>
+              <input class="form-control input-sm" type="number"/>
+            </div>
+          </div>
         </div>
         <div class="impacts">
           <h5>Top Impacts</h5>
@@ -65,15 +105,6 @@
       :active-tab-id="'only-tab'"
     >
       <template #content>
-        <button
-          v-tooltip.top-center="'Data Explorer'"
-          type="button"
-          class="btn btn-primary btn-call-for-action block-button"
-          @click="openDataExplorer"
-        >
-          <i class="fa fa-fw fa-search" />
-          Data Explorer
-        </button>
 
         (Panes go here)
         <!-- TODO: Panes go here -->
@@ -207,7 +238,7 @@ export default defineComponent({
     });
     const drilldownPanelTabs = computed(() => [
       {
-        name: `Data to quantify ${nodeConceptName.value}`,
+        name: 'Breakdown',
         id: 'only-tab'
       }
     ]);
@@ -267,8 +298,8 @@ main {
 }
 
 header {
-  padding: 10px 0;
-  margin-bottom: 10px;
+  padding: 5px 0;
+  margin-bottom: 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -301,6 +332,15 @@ h6 {
   font-weight: normal;
 }
 
+input[type=text] {
+  width: 80px;
+  margin: 0px 5px;
+}
+input[type=number] {
+  width: 40px;
+  margin: 0px 5px;
+}
+
 .expanded-node {
   flex: 1;
   min-height: 0;
@@ -319,10 +359,6 @@ h6 {
 
 .neighbor-node {
   margin-top: 10px;
-}
-.block-button {
-  width: 100%;
-  display: block;
 }
 
 h5 {
