@@ -26,11 +26,11 @@
         />
         <map-dropdown-category :text="'DATA LAYERS'"/>
         <map-dropdown-option
-          :id="firstLayers.ADMIN" :name="'first-layer'" :text="'Admin Regions'" :startChecked="firstLayers.ADMIN === selectedFirstLayer"
+          :id="firstLayers.ADMIN" :name="'first-layer'" :text="'Admin Regions'" :startChecked="firstLayers.ADMIN === selectedDataLayer"
           @click="clickAdminOption"
         />
         <map-dropdown-option
-          :id="firstLayers.TILES" :name="'first-layer'" :text="'Tiles'" :startChecked="firstLayers.TILES === selectedFirstLayer"
+          :id="firstLayers.TILES" :name="'first-layer'" :text="'Tiles'" :startChecked="firstLayers.TILES === selectedDataLayer"
           @click="clickTilesOption"
         />
       </template>
@@ -46,7 +46,7 @@ import { defineComponent, ref, computed } from 'vue';
 import useToaster from '@/services/composables/useToaster';
 import MapDropdownOption from '@/components/data/map-dropdown-option.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { BASE_LAYER, FIRST_LAYER } from '@/services/map-service';
+import { BASE_LAYER, DATA_LAYER } from '@/services/map-service';
 import MapDropdownCategory from '@/components/data/map-dropdown-category.vue';
 
 export default defineComponent({
@@ -73,12 +73,12 @@ export default defineComponent({
   },
   data: () => ({
     baseLayers: BASE_LAYER,
-    firstLayers: FIRST_LAYER
+    firstLayers: DATA_LAYER
   }),
   computed: {
     ...mapGetters({
       selectedBaseLayer: 'map/selectedBaseLayer',
-      selectedFirstLayer: 'map/selectedFirstLayer'
+      selectedDataLayer: 'map/selectedDataLayer'
     })
   },
   props: {
@@ -91,7 +91,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       setSelectedBaseLayer: 'map/setSelectedBaseLayer',
-      setSelectedFirstLayer: 'map/setSelectedFirstLayer'
+      setSelectedDataLayer: 'map/setSelectedDataLayer'
     }),
     clickDefaultOption() {
       this.setSelectedBaseLayer(BASE_LAYER.DEFAULT);
@@ -100,10 +100,10 @@ export default defineComponent({
       this.setSelectedBaseLayer(BASE_LAYER.SATELLITE);
     },
     clickAdminOption() {
-      this.setSelectedFirstLayer(FIRST_LAYER.ADMIN);
+      this.setSelectedDataLayer(DATA_LAYER.ADMIN);
     },
     clickTilesOption() {
-      this.setSelectedFirstLayer(FIRST_LAYER.TILES);
+      this.setSelectedDataLayer(DATA_LAYER.TILES);
     },
     onShowModelOptionsDropdown() {
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;

@@ -3,12 +3,12 @@ export enum BASE_LAYER {
   DEFAULT = 'default'
 }
 
-export enum FIRST_LAYER {
+export enum DATA_LAYER {
   ADMIN = 'admin',
   TILES = 'tiles'
 }
 
 export default {
   BASE_LAYER,
-  FIRST_LAYER
+  DATA_LAYER
 };

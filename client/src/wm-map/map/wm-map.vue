@@ -47,7 +47,7 @@ export default {
   computed: {
     ...mapGetters({
       selectedBaseLayer: 'map/selectedBaseLayer',
-      selectedFirstLayer: 'map/selectedFirstLayer'
+      selectedDataLayer: 'map/selectedDataLayer'
     })
   },
   watch: {

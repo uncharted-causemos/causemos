@@ -193,7 +193,7 @@ export default {
   computed: {
     ...mapGetters({
       selectedBaseLayerEndpoint: 'map/selectedBaseLayerEndpoint',
-      selectedFirstLayer: 'map/selectedFirstLayer'
+      selectedDataLayer: 'map/selectedDataLayer'
     }),
     mapFixedOptions() {
       const options = {

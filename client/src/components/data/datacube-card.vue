@@ -227,7 +227,7 @@ import { isModel } from '@/utils/datacube-util';
 import { Timeseries } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestamp } from '@/utils/date-util';
-import { FIRST_LAYER } from '@/services/map-service';
+import { DATA_LAYER } from '@/services/map-service';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -421,10 +421,10 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      selectedFirstLayer: 'map/selectedFirstLayer'
+      selectedDataLayer: 'map/selectedDataLayer'
     }),
     mapSelectedLayer(): number {
-      return this.selectedFirstLayer === FIRST_LAYER.TILES ? 4 : this.selectedAdminLevel;
+      return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
