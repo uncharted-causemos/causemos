@@ -67,7 +67,7 @@ import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 const DRAFT_SCENARIO_ID = null; // ID for draft scenario
-const OVERLAY_TIMOUT = 60000;
+const POLLING_DELAY = 3000;
 
 const isIndicatorChanged = (n, o) => {
   if (o.indicator_name !== n.indicator_name ||
@@ -141,7 +141,10 @@ export default {
 
     // Tracking draft scenario
     previousScenarioId: null,
-    draftScenario: null
+    draftScenario: null,
+
+    // interval timers
+    pollingTimer_modelRebuild: null
   }),
   computed: {
     ...mapGetters({
@@ -197,7 +200,7 @@ export default {
       // Check model is ready to be used for experiments
       const errors = await modelService.initializeModel(this.currentCAG);
       if (errors.length) {
-        // this.toaster(errors[0], 'error', true);
+        this.toaster(errors[0], 'error', true);
         console.error(errors);
         return false;
       }
@@ -397,22 +400,20 @@ export default {
     showModelParameters() {
       this.isModelParametersOpen = true;
     },
-    async saveModelParameter(newParameter) {
+    checkModel() {
+      this.refresh().then(modelStatus => {
+        if (modelStatus) {
+          this.disableOverlay();
+          clearInterval(this.pollingTimer_modelRebuild);
+        }
+      });
+    },
+    saveModelParameter(newParameter) {
       this.enableOverlay(modelService.MODEL_MSG_RETRAINING_BLOCK);
       this.isModelParametersOpen = false;
-      await modelService.updateModelParameter(this.currentCAG, newParameter);
-
-      // Allow some polling to occur (time limited) while blocking user access to the CAG.
-      let stopLoop = false;
-      const timeStart = Date.now();
-      while (!stopLoop) {
-        stopLoop = await this.refresh();
-        if ((Date.now() - timeStart) > OVERLAY_TIMOUT) {
-          stopLoop = true;
-          this.disableOverlay();
-          this.toaster('Timeout exceeded for window freeze. Please refresh screen to verify model rebuild has succeeded before altering CAG.', 'error', true);
-        }
-      }
+      modelService.updateModelParameter(this.currentCAG, newParameter).then(() => {
+        this.pollingTimer_modelRebuild = setInterval(this.checkModel, POLLING_DELAY); // model rebuild should take a while.
+      });
     },
     closeModelParameters() {
       this.isModelParametersOpen = false;
