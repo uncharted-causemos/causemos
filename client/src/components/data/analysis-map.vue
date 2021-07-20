@@ -61,6 +61,8 @@
 
 <script>
 
+// TODO: Go through this file and revert changes. This file is deprecated.
+
 import _ from 'lodash';
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
