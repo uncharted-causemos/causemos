@@ -17,27 +17,28 @@ const DEFAULT_SIZE = 10000;
  * for the given indicator_name
  */
 const _setIndicatorProperties = async (parameter) => {
-  if (_.isNil(parameter.indicator_id)) throw new Error('No indicator_id specified in parameter object');
-  const indicatorMatch = await getIndicatorData(parameter.indicator_id, parameter.indicator_feature);
-  if (_.isEmpty(indicatorMatch)) {
+  if (_.isNil(parameter.data_id)) throw new Error('No indicator_id specified in parameter object');
+  const indicatorData = await getIndicatorData(parameter);
+  if (_.isEmpty(indicatorData)) {
     return null;
   }
+  parameter.timeseries = indicatorData;
 
-  const countryLevelData = indicatorMatch[0];
-  const admin1LevelData = countryLevelData.children[0];
-  const admin2LevelData = admin1LevelData.children[0];
-  const indicatorTimeSeries = admin2LevelData.meta.timeseries.map(d => {
-    return { value: d.value, timestamp: d.timestamp };
-  });
+  // const countryLevelData = indicatorMatch[0];
+  // const admin1LevelData = countryLevelData.children[0];
+  // const admin2LevelData = admin1LevelData.children[0];
+  // const indicatorTimeSeries = admin2LevelData.meta.timeseries.map(d => {
+  //   return { value: d.value, timestamp: d.timestamp };
+  // });
 
-  parameter.indicator_time_series = indicatorTimeSeries;
-  parameter.indicator_time_series_parameter = {
-    // obsolete now
-    // unit: unit,
-    country: countryLevelData.key,
-    admin1: admin1LevelData.key,
-    admin2: admin2LevelData.key
-  };
+  // parameter.indicator_time_series = indicatorTimeSeries;
+  // parameter.indicator_time_series_parameter = {
+  //   // obsolete now
+  //   // unit: unit,
+  //   country: countryLevelData.key,
+  //   admin1: admin1LevelData.key,
+  //   admin2: admin2LevelData.key
+  // };
 };
 
 /**
@@ -46,41 +47,43 @@ const _setIndicatorProperties = async (parameter) => {
  *
  * Returns an array of indicator data points for the specified indicator
  */
-const getIndicatorData = async (variable, feature) => {
-  Logger.info(`Get indicator data from wm-go:  ${variable}`);
+const getIndicatorData = async (parameter) => {
+  Logger.info(`Get indicator data from wm-go:  ${parameter.data_id}`);
 
   const options = {
     method: 'GET',
     url: process.env.WM_GO_URL +
       // Get data for all units
-      `/maas/output/raw-data?model_id=${encodeURI(variable)}&run_id=${encodeURI('indicator')}&feature=${encodeURI(feature)}`
+      // `/maas/output/raw-data?model_id=${encodeURI(variable)}&run_id=${encodeURI('indicator')}&feature=${encodeURI(feature)}`
+      `/maas/output/timeseries?data_id=${encodeURI(parameter.data_id)}&run_id=indicator&feature=${encodeURI(parameter.indicator_feature)}&resolution=${encodeURI(parameter.temporal_resolution)}&temporal_agg=${encodeURI(parameter.temporal_aggregation)}&spatial_agg=${encodeURI(parameter.geospatial_aggregation)}`
   };
 
   const response = await requestAsPromise(options);
   const rawResult = JSON.parse(response);
 
-  const pipeline = [
-    {
-      keyFn: (d) => d.country,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    },
-    {
-      keyFn: (d) => d.admin1,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    },
-    {
-      keyFn: (d) => d.admin2,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    }
-  ];
+  // const pipeline = [
+  //   {
+  //     keyFn: (d) => d.country,
+  //     metaFn: (c) => {
+  //       return { timeseries: c.dataArray };
+  //     }
+  //   },
+  //   {
+  //     keyFn: (d) => d.admin1,
+  //     metaFn: (c) => {
+  //       return { timeseries: c.dataArray };
+  //     }
+  //   },
+  //   {
+  //     keyFn: (d) => d.admin2,
+  //     metaFn: (c) => {
+  //       return { timeseries: c.dataArray };
+  //     }
+  //   }
+  // ];
 
-  return AggregationsUtil.groupDataArray(rawResult, _.cloneDeep(pipeline));
+  // return AggregationsUtil.groupDataArray(rawResult, _.cloneDeep(pipeline));
+  return rawResult;
 };
 
 /**
@@ -268,16 +271,27 @@ const setDefaultIndicators = async (modelId) => {
   // Set default candidates
   const conceptMatches = {};
   const matchedKeys = Object.keys(ontologyCandidates);
+  // params that will be hard coded for the time being
+  const spatial = 'mean';
+  const temporal_agg = 'mean';
+  const resolution = 'month';
   matchedKeys.forEach(conceptKey => {
     const topMatch = ontologyCandidates[conceptKey];
     conceptMatches[conceptKey] = {
       modified_at: editTime,
       parameter: {
-        indicator_id: topMatch.data_id,
-        indicator_name: topMatch.name + '/' + topMatch.outputs[0].display_name,
-        indicator_source: topMatch.maintainer.organization,
         indicator_feature: topMatch.default_feature,
-        indicator_score: topMatch._match_score
+        id: topMatch.id,
+        data_id: topMatch.data_id,
+        name: topMatch.name,
+        unit: '',
+        country: '',
+        admin1: '',
+        admin2: '',
+        admin3: '',
+        geospatial_aggregation: spatial,
+        temporal_aggregation: temporal_agg,
+        temporal_resolution: resolution
         // Added in _setIndicatorProperties below
         // indicator_time_series,
         // indicator_time_series_parameter: {
@@ -296,7 +310,7 @@ const setDefaultIndicators = async (modelId) => {
     try {
       await _setIndicatorProperties(matched.parameter);
       delete matched.parameter.indicator_feature;
-    } catch {
+    } catch (err) {
       Logger.info(`Concept failed to match:  ${conceptKey}`);
       delete conceptMatches[conceptKey];
     }
