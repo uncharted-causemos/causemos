@@ -4,7 +4,6 @@ const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
-const AggregationsUtil = rootRequire('/util/aggregations-util');
 
 const DEFAULT_SIZE = 10000;
 
@@ -234,7 +233,7 @@ const setDefaultIndicators = async (modelId) => {
   const matchedKeys = Object.keys(ontologyCandidates);
   // params that will be hard coded for the time being
   const spatial = 'mean';
-  const temporal_agg = 'mean';
+  const temporalAgg = 'mean';
   const resolution = 'month';
   matchedKeys.forEach(conceptKey => {
     const topMatch = ontologyCandidates[conceptKey];
@@ -251,7 +250,7 @@ const setDefaultIndicators = async (modelId) => {
         admin2: '',
         admin3: '',
         geospatial_aggregation: spatial,
-        temporal_aggregation: temporal_agg,
+        temporal_aggregation: temporalAgg,
         temporal_resolution: resolution
         // Added in _setIndicatorProperties below
         // indicator_time_series,
