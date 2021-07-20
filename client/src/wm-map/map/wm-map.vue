@@ -75,8 +75,8 @@ export default {
       // duration 0 to diable animation
       this.map.fitBounds(value, { duration: 0 });
     },
-    selectedBaseLayer(value) {
-      this.map.setStyle(`/api/map/styles/${value}`);
+    mapStyle(value) {
+      this.map.setStyle(value);
     }
   },
   created() {
@@ -97,6 +97,7 @@ export default {
     _loadMap() {
       // rename mapStyle to style
       const { mapStyle: style, ...options } = this.$props;
+      // TODO: Set fixed map options as I did before.
       this.map = new mapboxgl.Map({
         container: this.$refs.wmmap,
         style,

@@ -154,9 +154,18 @@ export default {
     ...mapGetters({
       mapBounds: 'dataAnalysis/mapBounds',
       analysisItems: 'dataAnalysis/analysisItems',
-      selectedBaseLayer: 'map/selectedBaseLayer',
+      selectedBaseLayerEndpoint: 'map/selectedBaseLayerEndpoint',
       selectedFirstLayer: 'map/selectedFirstLayer'
     }),
+    mapFixedOptions() {
+      const options = {
+        minZoom: 1,
+        ...BASE_MAP_OPTIONS
+      };
+      options.style = this.selectedBaseLayerEndpoint;
+      options.mapStyle = this.selectedBaseLayerEndpoint;
+      return options;
+    },
     filters() {
       return this.analysisItems.filter(item => !!item.filter)
         .map(({ id, filter }) => ({ id, ...filter }));
@@ -256,11 +265,6 @@ export default {
     }
   },
   created() {
-    this.mapFixedOptions = {
-      minZoom: 1,
-      ...BASE_MAP_OPTIONS
-    };
-    // TODO: Add a line of code here to change the base map options to satellite/default
     this.vectorSourceId = 'maas-vector-source';
     this.selectedLayer = layers[this.selectedAdminLevel];
     this.vectorSourceMaxzoom = 8;

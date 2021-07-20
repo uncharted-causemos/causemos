@@ -1,5 +1,6 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import { BASE_LAYER, FIRST_LAYER } from '@/services/map-service';
+import { STYLE_URL_PREFIX } from '@/utils/map-util';
 
 const MUTATIONS = {
   SET_SELECTED_BASE_LAYER: 'setSelectedBaseLayer',
@@ -18,6 +19,7 @@ const state: MapState = {
 
 const getters: GetterTree<MapState, any> = {
   selectedBaseLayer: state => state.selectedBaseLayer,
+  selectedBaseLayerEndpoint: state => `${STYLE_URL_PREFIX}${state.selectedBaseLayer}`,
   selectedFirstLayer: state => state.selectedFirstLayer
 };
 
