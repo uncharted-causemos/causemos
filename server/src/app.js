@@ -141,8 +141,12 @@ app.use('/api/maas/new-datacubes', [
   datacubeRouter
 ]);
 
-// Forward /api/maas/* to WM_GO_URL/maas/*
-app.use('/api/maas', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/maas' + req.url }));
+app.use('/api/maas/datacubes', [
+  datacubeRouter
+]);
+
+// Forward /api/maas/output/* to WM_GO_URL/maas/*
+app.use('/api/maas/output', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/maas' + req.url }));
 
 app.use('/api/map', [
   mapProxyRouter
