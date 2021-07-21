@@ -14,6 +14,7 @@
     >
       <wm-map-vector
         v-if="vectorSource"
+        :key="baseLayerTrigger"
         :source-id="vectorSourceId"
         :source="vectorSource"
         :source-layer="vectorSourceLayer"
@@ -26,6 +27,7 @@
       />
       <wm-map-vector
         v-if="vectorSource"
+        :key="selectedBaseLayerEndpoint"
         :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
         :promote-id="idPropName"
@@ -184,6 +186,7 @@ export default {
   },
   data: () => ({
     baseLayer: undefined,
+    baseLayerTrigger: undefined,
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
@@ -471,6 +474,7 @@ export default {
     },
     onStyleChange() {
       this.refresh();
+      this.baseLayerTrigger = this.selectedBaseLayerEndpoint;
     },
     popupValueFormatter(feature) {
       const prop = this.isGridMap ? feature?.properties : feature?.state;
