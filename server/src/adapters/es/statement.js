@@ -1,13 +1,16 @@
 const _ = require('lodash');
 
 const ES = require('./client');
-const queryUtil = require('./query-util');
+const { StatementQueryUtil } = require('./statement-query-util');
 const { findFilter } = rootRequire('/util/filters-util');
-const { rangeAggregation, termsAggregation, dateRangeAggregation } = require('./agg-util');
+const { AggUtil } = require('./agg-util');
 const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./config');
 const Logger = rootRequire('/config/logger');
 
 const MAX_ES_SUGGESTION_BUCKET_SIZE = 20;
+
+const aggUtil = new AggUtil(FIELDS);
+const queryUtil = new StatementQueryUtil();
 
 const _facetQuery = (filters, fields = []) => {
   const filterQuery = queryUtil.buildQuery(filters);
@@ -15,12 +18,12 @@ const _facetQuery = (filters, fields = []) => {
   fields.forEach(field => {
     const fieldMeta = FIELDS[field];
     if (fieldMeta.type === FIELD_TYPES.NORMAL) {
-      aggregations[field] = termsAggregation(field);
+      aggregations[field] = aggUtil.termsAggregation(field);
     } else if (fieldMeta.type === FIELD_TYPES.RANGED) {
-      aggregations[field] = rangeAggregation(field);
+      aggregations[field] = aggUtil.rangeAggregation(field);
     } else if (fieldMeta.type === FIELD_TYPES.DATE) {
       // FIXME: reimplement date range aggregation after figuring out how dates should be faceted in the Front end - June 16th 2020
-      aggregations[field] = dateRangeAggregation(field);
+      aggregations[field] = aggUtil.dateRangeAggregation(field);
     } else {
       throw new Error(`Unsupported aggregation for field ${field}`);
     }
@@ -245,17 +248,18 @@ class Statement {
    */
   async searchFields(projectId, searchField, queryString) {
     const fieldNames = FIELDS[searchField].fields;
+    const aggFieldNames = FIELDS[searchField].aggFields || fieldNames;
 
     // Wrap each word in * *
     const processedQuery = decodeURI(queryString)
       // .toLowerCase() TODO: case insensitive search works for concepts but not author
       .split(' ')
       .filter(el => el !== '')
-      .map(el => `*${el}*`)
+      .map(el => `${el}*`)
       .join(' ');
 
     const searchBodies = [];
-    fieldNames.forEach(field => {
+    fieldNames.forEach((field, idx) => {
       searchBodies.push({ index: projectId });
       searchBodies.push({
         size: 0,
@@ -271,7 +275,7 @@ class Statement {
             aggs: {
               fieldAgg: {
                 terms: {
-                  field: field,
+                  field: aggFieldNames[idx],
                   size: MAX_ES_SUGGESTION_BUCKET_SIZE
                 }
               }
@@ -283,6 +287,7 @@ class Statement {
     const { body } = await this.client.msearch({
       body: searchBodies
     });
+
 
     const allResults = body.responses.reduce((acc, resp) => {
       const aggs = resp.aggregations.nestedAgg || resp.aggregations;

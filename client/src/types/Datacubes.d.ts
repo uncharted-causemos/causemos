@@ -37,10 +37,20 @@ export interface Datacube {
 }
 
 export interface BreakdownData {
-  [key: string]: { id: string; value: number }[];
+  [aggregationLevel: string]: {
+    id: string;
+    values: { [modelRunId: string]: number };
+  }[];
 }
 
 export interface NamedBreakdownData {
   name: string;
-  data: BreakdownData[];
+  data: BreakdownData;
+}
+
+export interface AdminRegionSets {
+  country: Set<string>;
+  admin1: Set<string>;
+  admin2: Set<string>;
+  admin3: Set<string>;
 }

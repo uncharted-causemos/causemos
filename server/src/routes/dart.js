@@ -3,8 +3,10 @@ const asyncHandler = require('express-async-handler');
 const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
+const Logger = rootRequire('/config/logger');
 
 const dartService = rootRequire('/services/external/dart-service');
+const projectService = rootRequire('/services/project-service');
 
 /**
  * GET DART document from the docker service used for managing dart documents
@@ -22,9 +24,29 @@ router.get('/:docId/raw', asyncHandler(async (req, res, next) => {
   docStream.pipe(res);
 }));
 
-router.post('/corpus', upload.single('file'), [], asyncHandler(async (req, res) => {
+/**
+ * Upload a set of documents
+ */
+router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) => {
   const metadata = req.body.metadata;
-  const results = await dartService.uploadDocument(req.file, metadata);
+  const project = req.body.project;
+
+  Logger.info(`Extending project: ${project}`);
+  const results = [];
+  for (let i = 0; i < req.files.length; i++) {
+    const file = req.files[i];
+
+    const r = await dartService.uploadDocument(file, metadata);
+    const documentId = JSON.parse(r).documentId;
+    Logger.info(`\t${i} ${file.originalname} ${documentId}`);
+    results.push({
+      document_id: documentId,
+      name: file.originalname
+    });
+  }
+
+  // Write to project-extension
+  await projectService.extendProject(project, results);
   res.json(results);
 }));
 
@@ -38,29 +60,5 @@ router.get('/readers-status', asyncHandler(async (req, res, next) => {
     res.json({ records: [{ identity: 'eidos', version: '1.1.0', document_id: '0a6200447248b0bfb4a67d0fb5e84cbd', storage_key: 'fa318773-2b58-4a32-8891-ae548551b022.jsonld' }, { identity: 'eidos', version: '1.1.0', document_id: '2abf581c664923ed83f25c17fe1ddd50', storage_key: '0e0f6e1f-49b8-446d-b15c-77ee433c324a.jsonld' }, { identity: 'eidos', version: '1.1.0', document_id: '2bb0fd1f905675cd7a99a0d900bc1981', storage_key: 'b5712f59-80b7-470a-be6e-9b4d7fc652c4.jsonld' }] });
   }
 }));
-
-/**
- * POST send file from local machine to the DART server for processing.
- *
- * Note: This endpoint is meant to be used for sending documents to the
- * dart service to get the document meta information.
- */
-// router.post('/extract-metadata', upload.single('file'), [], asyncHandler(async (req, res) => {
-//   const results = await dartService.sendFileForExtraction(req.file);
-//   res.json(results);
-// }));
-
-/**
- * POST send file and user modified document extraction to DART.
- *
- * Note: This endpoint is meant to be used for sending document meta information
- * to the server so that the information can be processed.
- */
-// router.post('/submit', upload.single('file'), [], asyncHandler(async (req, res) => {
-//   const extractedCdr = JSON.parse(req.body.extracted_cdr);
-//   const submitResult = await dartService.submitCdrExtractionToDart(extractedCdr);
-//   const results = await dartService.uploadToDart(req.file, submitResult.document_id);
-//   res.json(results);
-// }));
 
 module.exports = router;

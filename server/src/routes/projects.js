@@ -59,16 +59,28 @@ router.get('/:projectId', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
-/* PUT Update INDRA data */
+router.put('/:projectId/metadata', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const payload = req.body.metadata;
+
+  projectService.updateProject(projectId, payload);
+
+  const editTime = moment().valueOf();
+  res.status(200).send({ updateToken: editTime });
+}));
+
 router.put('/:projectId', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
   const ids = req.body.ids;
   const payload = req.body.payload;
 
+  //
+  // PUT Update INDRA data
+  //
   // Must have updateType, if obj/subj specified must have newValue
   if (!payload.updateType ||
-      (!_.isEmpty(payload.subj) && !payload.subj.newValue) ||
-      (!_.isEmpty(payload.obj) && !payload.obj.newValue)) {
+    (!_.isEmpty(payload.subj) && !payload.subj.newValue) ||
+    (!_.isEmpty(payload.obj) && !payload.obj.newValue)) {
     throw new Error(`Invalid update config ${JSON.stringify(payload)}`);
   }
   await updateService.updateStatements(projectId, payload, ids);
@@ -254,7 +266,23 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
   const field = req.query.field;
   const queryString = req.query.q;
-  const results = await projectService.searchFields(projectId, field, queryString);
+  let results = await projectService.searchFields(projectId, field, queryString);
+
+  // FIXME: These fields are array fields and do not
+  // aggregate. We need to use nested or use es-native suggestion api.
+  // This is a quick hack to attemp to clean the results
+  if (field === 'docLocation' || field === 'docOrganization') {
+    const tokens = queryString.toLowerCase().split(' ').filter(d => d.length > 0);
+    results = results.filter(d => {
+      for (let i = 0; i < tokens.length; i++) {
+        if (d.toLowerCase().includes(tokens[i]) === false) {
+          return false;
+        }
+      }
+      return true;
+    });
+  }
+
   res.json(results);
 }));
 

@@ -47,81 +47,94 @@
         </dropdown-control>
       </div>
     </div>
-    <div
-      v-if="activeTabId === tabs[0].id"
-      class="cards"
-    >
-      <div class="search">
-        <input
-          v-model="search"
-          v-focus
-          type="text"
-          class="form-control"
-          placeholder="Search insights"
-        >
-      </div>
-      <div class="pane-wrapper">
+    <div class="body flex">
+      <analytical-questions-panel />
+
+      <!-- body -->
+      <div class="body-main-content flex-col">
         <div
-          v-if="countInsights > 0"
-          class="pane-content"
+          v-if="activeTabId === tabs[0].id"
+          class="cards"
         >
-          <insight-card
-            v-for="insight in searchedInsights"
-            :active-insight="activeInsight"
-            :card-mode="true"
-            :curated="isCuratedInsight(insight.id)"
-            :key="insight.id"
-            :insight="insight"
-            @delete-insight="deleteInsight(insight.id)"
-            @open-editor="openEditor(insight.id)"
-            @select-insight="selectInsight(insight)"
-            @update-curation="updateCuration(insight.id)"
+          <div class="search">
+            <input
+              v-model="search"
+              v-focus
+              type="text"
+              class="form-control"
+              placeholder="Search insights"
+            >
+          </div>
+          <div class="pane-wrapper">
+            <div
+              v-if="countInsights > 0"
+              class="pane-content"
+            >
+              <insight-card
+                v-for="insight in searchedInsights"
+                :active-insight="activeInsight"
+                :card-mode="true"
+                :curated="isCuratedInsight(insight.id)"
+                :key="insight.id"
+                :insight="insight"
+                @delete-insight="deleteInsight(insight.id)"
+                @open-editor="openEditor(insight.id)"
+                @select-insight="selectInsight(insight)"
+                @update-curation="updateCuration(insight.id)"
+                draggable='true'
+                @dragstart="startDrag($event, insight)"
+                @dragend="dragEnd($event)"
+              />
+            </div>
+            <message-display
+              class="pane-content"
+              v-else
+              :message="messageNoData"
+            />
+          </div>
+        </div>
+
+        <div
+          v-else-if="activeTabId === tabs[1].id"
+          class="list"
+        >
+          <div
+            v-if="questions.length > 0"
+            class="pane-content"
+          >
+            <div
+              v-for="questionItem in questions"
+              :key="questionItem.id"
+              style="margin-bottom: 5rem;">
+              <h3 class="analysis-question">{{questionItem.question}}</h3>
+              <insight-card
+                v-for="insightId in questionItem.linked_insights"
+                :key="insightId"
+                :insight="insightsById(insightId)"
+                :show-description="true"
+                :show-question="false"
+                @delete-insight="deleteInsight(insightId)"
+                @open-editor="openEditor(insightId)"
+                @select-insight="selectInsight(insightsById(insightId))"
+              />
+            </div>
+          </div>
+          <message-display
+            class="pane-content"
+            v-else
+            :message="messageNoData"
           />
         </div>
-        <message-display
-          class="pane-content"
-          v-else
-          :message="messageNoData"
-        />
       </div>
-    </div>
-
-    <div
-      v-else-if="activeTabId === tabs[1].id"
-      class="list"
-    >
-      <div
-        v-if="countInsights > 0"
-        class="pane-content"
-      >
-        <insight-card
-          v-for="insight in selectedInsights"
-          :active-insight="activeInsight"
-          :curated="isCuratedInsight(insight.id)"
-          :key="insight.id"
-          :insight="insight"
-          :show-description="true"
-          @delete-insight="deleteInsight(insight.id)"
-          @open-editor="openEditor(insight.id)"
-          @select-insight="selectInsight(insight)"
-          @update-curation="updateCuration(insight.id)"
-        />
-      </div>
-      <message-display
-        class="pane-content"
-        v-else
-        :message="messageNoData"
-      />
     </div>
   </div>
 </template>
 
 <script>
-import _ from 'lodash';
 import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
-import { mapGetters, mapActions } from 'vuex';
+import { mapGetters, mapActions, useStore } from 'vuex';
 import API from '@/api/api';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -135,6 +148,12 @@ import InsightControlMenu from '@/components/insight-manager/insight-control-men
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
+import router from '@/router';
+import { getAllInsights } from '@/services/insight-service';
+import { ref, watchEffect, computed } from 'vue';
+
+import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
+
 
 const INSIGHT_TABS = [
   {
@@ -146,6 +165,7 @@ const INSIGHT_TABS = [
   }
 ];
 
+
 export default {
   name: 'ListInsightsModal',
   components: {
@@ -154,24 +174,58 @@ export default {
     InsightCard,
     InsightControlMenu,
     MessageDisplay,
-    TabBar
+    TabBar,
+    AnalyticalQuestionsPanel
   },
   data: () => ({
     activeInsight: null,
     activeTabId: INSIGHT_TABS[0].id,
     curatedInsights: [],
     exportActive: false,
-    listInsights: [],
     messageNoData: INSIGHTS.NO_DATA,
     search: '',
     selectedInsight: null,
     tabs: INSIGHT_TABS
   }),
+  setup() {
+    const listInsights = ref([]);
+    const store = useStore();
+    const contextId = computed(() => store.getters['insightPanel/contextId']);
+    const project = computed(() => store.getters['app/project']);
+
+    const questions = computed(() => store.getters['analysisChecklist/questions']);
+
+    const insightsById = (id) => listInsights.value.find(i => i.id === id);
+
+    // FIXME: refactor into a composable
+    watchEffect(onInvalidate => {
+      let isCancelled = false;
+      async function fetchInsights() {
+        const insights = await getAllInsights(project.value, contextId.value);
+        if (isCancelled) {
+          // Dependencies have changed since the fetch started, so ignore the
+          //  fetch results to avoid a race condition.
+          return;
+        }
+        listInsights.value = insights;
+        store.dispatch('insightPanel/setCountInsights', listInsights.value.length);
+      }
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      fetchInsights();
+    });
+    return {
+      listInsights,
+      contextId,
+      project,
+      questions,
+      insightsById
+    };
+  },
   computed: {
     ...mapGetters({
-      project: 'app/project',
       projectMetadata: 'app/projectMetadata',
-      currentView: 'app/currentView',
       countInsights: 'insightPanel/countInsights'
     }),
     metadataSummary() {
@@ -183,7 +237,7 @@ export default {
     searchedInsights() {
       if (this.search.length > 0) {
         const result = this.listInsights.filter((insight) => {
-          return insight.title.toLowerCase().includes(this.search.toLowerCase());
+          return insight.name.toLowerCase().includes(this.search.toLowerCase());
         });
         return result;
       } else {
@@ -200,7 +254,6 @@ export default {
     }
   },
   mounted() {
-    this.refresh();
     this.curatedInsights = [];
   },
   methods: {
@@ -210,14 +263,43 @@ export default {
     }),
     dateFormatter,
     stringFormatter,
-
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsight = null;
       this.selectedInsight = null;
     },
+    startDrag(evt, insight) {
+      evt.currentTarget.style.border = '3px dashed black';
+
+      evt.dataTransfer.dropEffect = 'move';
+      evt.dataTransfer.effectAllowed = 'move';
+      evt.dataTransfer.setData('insight_id', insight.id);
+
+      const img = document.createElement('img');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      // Setting img src
+      img.src = insight.thumbnail;
+
+      // Drawing to canvas with a smaller size
+      canvas.width = img.width * 0.2;
+      canvas.height = img.height * 0.2;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // add to ensure visibility
+      document.body.append(canvas);
+
+      // Setting drag image with drawn canvas image
+      evt.dataTransfer.setDragImage(canvas, 0, 0);
+    },
+    dragEnd(evt) {
+      const matches = document.querySelectorAll('canvas');
+      matches.forEach(c => c.remove());
+
+      evt.currentTarget.style.border = 'none';
+    },
     deleteInsight(id) {
-      API.delete(`bookmarks/${id}`).then(result => {
+      API.delete(`insights/${id}`).then(result => {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
@@ -229,6 +311,18 @@ export default {
           this.toaster(message, 'error', true);
         }
       });
+      // FIXME: delete any reference to this insight from its list of analytical_questions
+    },
+    getInsightSet() {
+      if (this.curatedInsights.length > 0) {
+        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
+        return curatedSet;
+      } else {
+        return this.listInsights;
+      }
+    },
+    getSourceUrlForExport(i) {
+      return i.url + '?insight_id=' + i.id;
     },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexingly uses pixels
@@ -236,7 +330,7 @@ export default {
       const docxMaxImageSize = 612;
       const insightSet = this.selectedInsights;
       const sections = insightSet.map((i) => {
-        const imageSize = this.scaleImage(i.thumbnail_source, docxMaxImageSize, docxMaxImageSize);
+        const imageSize = this.scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(i.modified_at);
         return {
           footers: {
@@ -261,14 +355,14 @@ export default {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               heading: HeadingLevel.HEADING_2,
-              text: `${i.title}`
+              text: `${i.name}`
             }),
             new Paragraph({
               break: 1,
               alignment: AlignmentType.CENTER,
               children: [
                 new ImageRun({
-                  data: i.thumbnail_source,
+                  data: i.thumbnail,
                   transformation: {
                     height: imageSize.height,
                     width: imageSize.width
@@ -307,7 +401,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(i.url)
+                  link: this.slideURL(this.getSourceUrlForExport(i))
                 })
               ]
             })
@@ -342,10 +436,10 @@ export default {
       });
       const insightSet = this.selectedInsights;
       insightSet.forEach((i) => {
-        const imageSize = this.scaleImage(i.thumbnail_source, widthLimitImage, heightLimitImage);
+        const imageSize = this.scaleImage(i.thumbnail, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(i.modified_at);
         const slide = pres.addSlide();
-        const notes = `Title: ${i.title}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
+        const notes = `Title: ${i.name}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
 
         /*
           PPTXGEN BUG WORKAROUND - library level function slide.addNotes(notes) doesn't insert notes
@@ -359,7 +453,7 @@ export default {
         });
 
         slide.addImage({
-          data: i.thumbnail_source,
+          data: i.thumbnail,
           // centering image code for x & y limited by consts for max content size
           // plus base offsets needed to stay clear of other elements
           x: (widthLimitImage - imageSize.width) / 2,
@@ -369,12 +463,12 @@ export default {
         });
         slide.addText([
           {
-            text: `${i.title}: `,
+            text: `${i.name}: `,
             options: {
               bold: true,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(i.url)
+                url: this.slideURL(this.getSourceUrlForExport(i))
               }
             }
           },
@@ -396,7 +490,7 @@ export default {
               break: false,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(i.url)
+                url: this.slideURL(this.getSourceUrlForExport(i))
               }
             }
           },
@@ -450,12 +544,10 @@ export default {
     openExport() {
       this.exportActive = true;
     },
-    refresh() {
-      API.get('bookmarks', { params: { project_id: this.project } }).then(d => {
-        const listInsights = _.orderBy(d.data, d => d.modified_at, ['desc']);
-        this.listInsights = listInsights;
-        this.setCountInsights(listInsights.length);
-      });
+    async refresh() {
+      const listInsights = await getAllInsights(this.project, this.contextId);
+      this.listInsights = listInsights;
+      this.setCountInsights(listInsights.length);
     },
     removeCuration(id) {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
@@ -481,11 +573,18 @@ export default {
         return;
       }
       this.selectedInsight = insight;
-      // Restore the state
       const savedURL = insight.url;
       const currentURL = this.$route.fullPath;
       if (savedURL !== currentURL) {
-        this.$router.push(savedURL);
+        // FIXME: refactor and use getSourceUrlForExport() to retrive final url with insight_id appended
+        const finalURL = savedURL.includes('insight_id') ? savedURL : savedURL + '?insight_id=' + this.selectedInsight.id;
+        this.$router.push(finalURL);
+      } else {
+        router.push({
+          query: {
+            insight_id: this.selectedInsight.id
+          }
+        }).catch(() => {});
       }
       this.closeInsightPanel();
     },
@@ -496,6 +595,8 @@ export default {
       this.activeInsight = null;
       this.selectedInsight = null;
       this.activeTabId = id;
+
+      // FIXME: reload insights since questions most recent question stuff may not be up to date
     },
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
@@ -576,6 +677,25 @@ export default {
     height: 100%;
     overflow: auto;
     padding: 1rem;
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  background: $background-light-3;
+
+  .body-main-content {
+    flex: 1;
+    min-width: 0;
+    isolation: isolate;
+
+    .analysis-question {
+      padding: 5px 5px 10px;
+      border: 1px solid #e5e5e5;
+      margin: 0px 1rem 1rem 0px;
+      background-color: white;
+    }
   }
 }
 

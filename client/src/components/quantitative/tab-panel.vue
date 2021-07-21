@@ -53,6 +53,7 @@
               :current-engine="currentEngine"
               @background-click="onBackgroundClick"
               @node-body-click="showConstraints"
+              @node-double-click="onNodeDrilldown"
               @node-header-click="showIndicator"
               @edge-click="showRelation"
             />
@@ -129,6 +130,7 @@ import IndicatorSummary from '@/components/indicator/indicator-summary';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
+import { ProjectType } from '@/types/Enums';
 
 const PANE_ID = {
   INDICATOR: 'indicator',
@@ -209,7 +211,7 @@ export default {
   },
   emits: [
     'background-click', 'show-indicator', 'show-constraints', 'show-model-parameters',
-    'refresh', 'set-sensitivity-analysis-type', 'save-indicator-edits', 'edit-indicator'
+    'refresh-model', 'set-sensitivity-analysis-type', 'save-indicator-edits', 'edit-indicator'
   ],
   data: () => ({
     tabs: [
@@ -258,6 +260,9 @@ export default {
   watch: {
     scenarios() {
       this.refresh();
+    },
+    modelComponents() {
+      this.refresh();
     }
   },
   created() {
@@ -285,7 +290,19 @@ export default {
         name: 'qualitative',
         params: {
           project: this.project,
-          currentCAG: this.currentCAG
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
+    onNodeDrilldown(node) {
+      this.$router.push({
+        name: 'nodeDrilldown',
+        params: {
+          project: this.project,
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis,
+          nodeId: node.id
         }
       });
     },
@@ -355,7 +372,7 @@ export default {
       };
       await modelService.updateNodeParameter(this.currentCAG, payload);
       this.closeDrilldown();
-      this.$emit('refresh');
+      this.$emit('refresh-model');
     },
     onFunctionSelected(newProperties) {
       const newParameter = Object.assign({}, this.selectedNode.parameter, newProperties);
@@ -366,13 +383,13 @@ export default {
       await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
       this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
       this.closeDrilldown();
-      this.$emit('refresh');
+      this.$emit('refresh-model');
     },
     async setEdgeWeights(edgeData) {
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
       this.closeDrilldown();
-      this.$emit('refresh');
+      this.$emit('refresh-model');
     },
     editIndicator() {
       this.$emit('edit-indicator');

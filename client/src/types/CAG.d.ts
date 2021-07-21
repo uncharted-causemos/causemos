@@ -23,6 +23,18 @@ export interface ScenarioResult {
   };
 }
 
+export interface NewScenario {
+  name: string;
+  description: string;
+  model_id: string;
+  engine: string;
+  is_valid: boolean;
+  is_baseline: boolean;
+  parameter?: ScenarioParameter;
+  result?: ScenarioResult[];
+  experiment_id?: string;
+}
+
 export interface Scenario {
   id: string;
   name: string;
@@ -63,9 +75,8 @@ export interface NodeScenarioData {
     };
   }[];
 }
-
 export interface NodeParameter {
-  id?: string;
+  id: string;
   concept: string;
   label: string;
   model_id?: string;
@@ -74,7 +85,7 @@ export interface NodeParameter {
 }
 
 export interface EdgeParameter {
-  id?: string;
+  id: string;
   source: string;
   target: string;
   model_id?: string;
@@ -83,8 +94,15 @@ export interface EdgeParameter {
   parameter?: {
     weights: number[];
   };
+  // User polarity is taken into account when the user sets an edge's polarity manually
   user_polarity: number | null; // FIXME: need better ways to handle special case nulls
+  // Polarity is not stored on the backend, but computed locally from the fetched statements
   polarity?: number;
+}
+
+export interface SourceTargetPair {
+  source: string;
+  target: string;
 }
 
 export interface CAGModelParameter {

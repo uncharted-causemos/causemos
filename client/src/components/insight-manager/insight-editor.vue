@@ -25,6 +25,7 @@
 import { defineComponent } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 
+// FIXME: refactor with context-insight-editor as one reusable component
 export default defineComponent({
   name: 'InsightEditor',
   components: {

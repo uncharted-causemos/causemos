@@ -1,11 +1,12 @@
-
 import { DatacubeGeography, DatacubePeriod } from './Common';
 import {
   DatacubeAttributeVariableType,
   DatacubeStatus,
   DatacubeType,
   ModelParameterDataType,
-  TemporalResolution
+  TemporalResolution,
+  ModelPublishingStepID,
+  FeatureQualifierRoles
 } from '@/types/Enums';
 
 export interface DatacubeMaintainer {
@@ -47,6 +48,11 @@ export interface ModelParameter extends DatacubeAttribute {
   default: string;
 }
 
+export interface FeatureQualifier extends DatacubeAttribute {
+  related_features: string[];
+  roles: FeatureQualifierRoles[];
+}
+
 export interface DatacubeFeature extends DatacubeAttribute {
   is_primary: boolean;
   data_resolution: {
@@ -57,18 +63,25 @@ export interface DatacubeFeature extends DatacubeAttribute {
 
 export interface Datacube {
   id: string;
+  data_id: string; // this is the actual one to be used to fetch data
   name: string;
+  family_name: string;
   description: string;
   created_at: number;
   type: DatacubeType;
   category: string[];
   maintainer: DatacubeMaintainer;
   tags: string[];
+  ontology_matches: OntologyMatch[];
   geography: DatacubeGeography;
   period: DatacubePeriod;
   outputs: DatacubeFeature[];
+  validatedOutputs?: DatacubeFeature[];
+  default_feature: string; // name of the primary output feature
   status: DatacubeStatus;
   _search: string;
+  qualifier_outputs?: FeatureQualifier[];
+  default_view: any; // object that will contain various default view configurations such as default aggregations
 }
 
 export interface Model extends Datacube {
@@ -79,4 +92,10 @@ export interface Model extends Datacube {
 
 export interface Indicator extends Datacube {
   data_paths: string[];
+}
+
+export interface ModelPublishingStep {
+  id: ModelPublishingStepID;
+  completed: boolean;
+  text: string;
 }

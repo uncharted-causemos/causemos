@@ -1,8 +1,10 @@
-import { Model, ModelParameter } from '../../types/Datacube';
+import { Indicator, Model, ModelParameter } from '../../types/Datacube';
 import { computed, ref, Ref } from 'vue';
 import { ScenarioData } from '../../types/Common';
 import { ModelRun } from '@/types/ModelRun';
 import { ModelRunStatus } from '@/types/Enums';
+import { useStore } from 'vuex';
+import { isModel } from '@/utils/datacube-util';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -10,14 +12,18 @@ import { ModelRunStatus } from '@/types/Enums';
  * transforms it into several structures that the PC chart accepts.
  */
 export default function useParallelCoordinatesData(
-  metadata: Ref<Model | null>,
+  metadata: Ref<Model | Indicator | null>,
   allModelRunData: Ref<ModelRun[]>
 ) {
+  const store = useStore();
+  const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
   const runParameterValues = computed(() => {
-    if (allModelRunData.value.length === 0 || metadata.value === null) {
+    if (allModelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {
       return [];
     }
-    const outputParameterName = metadata.value.outputs[0].name ?? 'Undefined output parameter';
+    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+    const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
     return allModelRunData.value.map((modelRun, runIndex) => {
       const run_id = allModelRunData.value[runIndex].id;
       const runStatus = allModelRunData.value[runIndex].status;
@@ -26,8 +32,7 @@ export default function useParallelCoordinatesData(
         status: runStatus ?? ModelRunStatus.Ready
       };
       if (run.status === ModelRunStatus.Ready) {
-        // FIXME: assume the first feature is the primary one by default
-        const output_agg_values = allModelRunData.value[runIndex].output_agg_values[0].value;
+        const output_agg_values = allModelRunData.value[runIndex].output_agg_values[currentOutputIndex.value].value;
         run[outputParameterName] = output_agg_values;
       }
       modelRun.parameters.forEach(({ name, value }) => {
@@ -38,12 +43,13 @@ export default function useParallelCoordinatesData(
   });
 
   const dimensions = computed(() => {
-    if (metadata.value === null) {
+    if (metadata.value === null || !isModel(metadata.value)) {
       return [];
     }
+    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
     // Restructure the output parameter
-    const outputDimension = metadata.value.outputs[0];
+    const outputDimension = outputs[currentOutputIndex.value];
     const inputDimensions = metadata.value.parameters;
     // Append the output parameter to the list of input parameters
     return [...inputDimensions, outputDimension] as ModelParameter[];

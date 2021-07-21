@@ -1,9 +1,7 @@
 const expect = require('chai').expect;
-const {
-  termsAggregation,
-  rangeAggregation,
-  dateRangeAggregation
-} = rootRequire('/adapters/es/agg-util');
+const { FIELDS } = rootRequire('/adapters/es/config');
+const { AggUtil } = rootRequire('/adapters/es/agg-util');
+const aggUtil = new AggUtil(FIELDS);
 
 describe('agg-util', function() {
   describe('buildAggregation', function () {
@@ -11,10 +9,10 @@ describe('agg-util', function() {
       const expectedAggregation = {
         terms: {
           size: 300,
-          field: 'subj.concept'
+          field: 'subj.concept.raw'
         }
       };
-      expect(termsAggregation('subjConcept')).to.eql(expectedAggregation);
+      expect(aggUtil.termsAggregation('subjConcept')).to.eql(expectedAggregation);
     });
 
     it('handles basic range aggregation', () => {
@@ -35,7 +33,7 @@ describe('agg-util', function() {
           ]
         }
       };
-      expect(rangeAggregation('belief')).to.eql(expectedAggregation);
+      expect(aggUtil.rangeAggregation('belief')).to.eql(expectedAggregation);
     });
 
     it('handles open range aggregation', () => {
@@ -51,7 +49,7 @@ describe('agg-util', function() {
           ]
         }
       };
-      expect(rangeAggregation('numEvidence')).to.eql(expectedAggregation);
+      expect(aggUtil.rangeAggregation('numEvidence')).to.eql(expectedAggregation);
     });
 
     it('handles date range aggregation', () => {
@@ -169,7 +167,7 @@ describe('agg-util', function() {
           }
         }
       };
-      expect(dateRangeAggregation('startDate')).to.eql(expectedAggregation);
+      expect(aggUtil.dateRangeAggregation('startDate')).to.eql(expectedAggregation);
     });
 
     it('handles minimum grounding score aggregation', () => {
@@ -190,7 +188,7 @@ describe('agg-util', function() {
           ]
         }
       };
-      expect(rangeAggregation('minGroundingScore')).to.eql(expectedAggregation);
+      expect(aggUtil.rangeAggregation('minGroundingScore')).to.eql(expectedAggregation);
     });
   });
 });

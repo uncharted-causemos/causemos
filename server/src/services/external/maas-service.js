@@ -1,8 +1,10 @@
 const _ = require('lodash');
+const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
+const domainProjectService = rootRequire('/services/domain-project-service');
 
 const PIPELINE_FLOW_ID = '4d8d9239-2594-45af-9ec9-d24eafb1f1af';
 
@@ -56,6 +58,7 @@ const startModelOutputPostProcessing = async (metadata) => {
   const flowParameters = {
     model_id: metadata.model_id,
     run_id: metadata.id,
+    doc_ids: [metadata.id],
     data_paths: metadata.data_paths,
     compute_tiles: false
   };
@@ -177,11 +180,111 @@ const getJobStatus = async (runId) => {
   return requestAsPromise(pipelinePayload);
 };
 
+/**
+ * Start a datacube ingest prefect flow using the provided ids
+ *
+ * @param {Indicator} metadata -indicator metadata
+ */
+const startIndicatorPostProcessing = async (metadata) => {
+  Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
+  if (!metadata.id) {
+    Logger.error('Required ids for indicator post processing were not provided');
+    return;
+  }
+
+  // Remove some unused Jataware fields
+  metadata.attributes = undefined;
+
+  // ensure for each newly registered indicator datacube a corresponding domain project
+  // @TODO: when indicator publish workflow is added,
+  //        the following function would be called at:
+  //        insertDatacube() in server/src/services/datacube-service
+  await domainProjectService.updateDomainProjects(metadata);
+
+  // Create data now to send to elasticsearch
+  const newIndicatorMetadata = metadata.outputs.map(output => {
+    const clonedMetadata = _.cloneDeep(metadata);
+    clonedMetadata.data_id = metadata.id;
+    clonedMetadata.id = uuid();
+    clonedMetadata.outputs = [output];
+    clonedMetadata.family_name = metadata.name;
+    clonedMetadata.default_feature = output.name;
+    clonedMetadata.type = 'indicator';
+    clonedMetadata.status = 'PROCESSING';
+
+    let qualifierMatches = [];
+    if (metadata.qualifier_outputs) {
+      // Filter out unrelated qualifiers
+      clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
+        qualifier => qualifier.related_features.includes(output.name));
+
+      // Combine all concepts from the qualifiers into one list
+      qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
+        qualifier.ontologies.concepts,
+        qualifier.ontologies.processes,
+        qualifier.ontologies.properties
+      ]).flat(2);
+    }
+
+    // Append to the concepts from the output
+    const allMatches = qualifierMatches.concat(output.ontologies.concepts,
+      output.ontologies.processes,
+      output.ontologies.properties);
+
+    clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+    return clonedMetadata;
+  });
+
+  const runName = `${metadata.name} : ${metadata.id}`;
+  const flowParameters = {
+    model_id: metadata.id,
+    doc_ids: newIndicatorMetadata.map(indicatorMetadata => indicatorMetadata.id),
+    run_id: 'indicator',
+    data_paths: metadata.data_paths,
+    is_indicator: true
+  };
+
+  // We need the two JSON.stringify below to go from
+  // JSON object -> JSON string -> escaped JSON string
+  const graphQLQuery = `
+    mutation {
+      create_flow_run(input: {
+        version_group_id: "${PIPELINE_FLOW_ID}",
+        flow_run_name: "${runName}",
+        parameters: ${JSON.stringify(JSON.stringify(flowParameters))}
+      }) {
+        id
+      }
+    }
+  `;
+
+  const pipelinePayload = {
+    method: 'POST',
+    url: process.env.WM_PIPELINE_URL,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {
+      query: graphQLQuery
+    }
+  };
+
+  const result = await requestAsPromise(pipelinePayload);
+  const flowId = _.get(result, 'data.create_flow_run.id');
+  if (flowId) {
+    const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+    await connection.insert(newIndicatorMetadata, d => d.id);
+  }
+  return result;
+};
+
 module.exports = {
   submitModelRun,
   startModelOutputPostProcessing,
   markModelRunFailed,
   getAllModelRuns,
-  getJobStatus
+  getJobStatus,
+  startIndicatorPostProcessing
 };
 

@@ -62,6 +62,7 @@ import { ScenarioData } from '@/types/Common';
 import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
+import { mapGetters } from 'vuex';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -85,7 +86,10 @@ export default defineComponent({
   computed: {
     inputParameters(): Array<any> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
-    }
+    },
+    ...mapGetters({
+      currentOutputIndex: 'modelPublishStore/currentOutputIndex'
+    })
   },
   data: () => ({
     potentialRuns: [] as Array<ScenarioData>
@@ -94,41 +98,38 @@ export default defineComponent({
     this.potentialRuns = _.cloneDeep(this.potentialScenarios);
   },
   methods: {
-    startExecution() {
+    async startExecution() {
       // FIXME: cast to 'any' since typescript cannot see mixins yet!
       (this as any).toaster('New runs requested\nPlease check back later!');
 
-      // FIXME: only submitting ONE sceanrio is supported at this time
-      const firstScenario = this.potentialRuns[0];
-      const paramArray: any[] = [];
-      Object.keys(firstScenario).forEach(key => {
-        // exclude output variable values since they will be undefined for potential runs
-        if (key !== this.metadata.outputs[0].name) {
-          paramArray.push({
-            name: key,
-            value: firstScenario[key]
-          });
-        }
-      });
+      const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
-      drilldownParams.forEach(p => {
-        paramArray.push({
-          name: p.name,
-          value: p.default
+
+      const promises = this.potentialRuns.map(async (modelRun) => {
+        const paramArray: any[] = [];
+        Object.keys(modelRun).forEach(key => {
+          // exclude output variable values since they will be undefined for potential runs
+          if (key !== outputs[this.currentOutputIndex].name) {
+            paramArray.push({
+              name: key,
+              value: modelRun[key]
+            });
+          }
         });
-      });
-      const modelId = this.metadata.id;
-      // FIXME: only max-hop model is executable at this time
-      if (modelId.includes('maxhop')) {
-        API.post('maas/model-runs', {
-          model_id: modelId,
+        drilldownParams.forEach(p => {
+          paramArray.push({
+            name: p.name,
+            value: p.default
+          });
+        });
+        return API.post('maas/model-runs', {
+          model_id: this.metadata.data_id,
           model_name: this.metadata?.name,
           parameters: paramArray
         });
-      } else {
-        // FIXME: currently other models are not executable
-        console.warn('Current model is not executable!');
-      }
+      });
+      // wait until all promises are resolved
+      await Promise.all(promises);
 
       this.close(false);
     },

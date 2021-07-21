@@ -7,7 +7,7 @@ const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('ada
 const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
-const queryUtil = rootRequire('adapters/es/query-util');
+const { StatementQueryUtil } = rootRequire('adapters/es/statement-query-util');
 const conceptUtil = rootRequire('/util/concept-util');
 const graphUtil = rootRequire('/util/graph-util');
 const {
@@ -21,6 +21,8 @@ const { set, del, get } = rootRequire('/cache/node-lru-cache');
 const MAX_NUMBER_PROJECTS = 100;
 
 const INCREMENTAL_ASSEMBLY_FLOW_ID = '90a09440-e504-4db9-ad89-9db370933c8b';
+
+const queryUtil = new StatementQueryUtil();
 
 /**
  * Returns projects summary
@@ -54,6 +56,15 @@ const createProject = async (kbId, name, description) => {
   const projectAdapter = Adapter.get(RESOURCE.PROJECT);
   const result = await projectAdapter.clone(kbId, name, description);
   const projectId = result.index;
+
+  // Create an extension entry to house new project specific documents
+  const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
+  await projectExtension.insert([
+    {
+      project_id: projectId,
+      document: []
+    }
+  ], () => projectId);
 
   // Ontology
   const projectData = await projectAdapter.findOne([{ field: 'id', value: projectId }], {});
@@ -103,6 +114,31 @@ const createProject = async (kbId, name, description) => {
 };
 
 /**
+ * Updates a project info
+ *
+ * @param {string} projectId - project id
+ * @param {object} projectFields - project fields
+ */
+const updateProject = async(projectId, projectFields) => {
+  const project = Adapter.get(RESOURCE.PROJECT);
+
+  const keyFn = (doc) => {
+    return doc.id;
+  };
+
+  const results = await project.update({
+    id: projectId,
+    ...projectFields
+  }, keyFn);
+
+  if (results.errors) {
+    throw new Error(JSON.stringify(results.items[0]));
+  }
+
+  return results;
+};
+
+/**
  * Check health, used to check index is ready after cloning
  */
 const checkIndexStatus = async (projectId) => {
@@ -134,7 +170,8 @@ const deleteProject = async (projectId) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const scenarioAdapter = Adapter.get(RESOURCE.SCENARIO);
   // misc
-  const bookmarkAdapter = Adapter.get(RESOURCE.BOOKMARK);
+  const insightAdapter = Adapter.get(RESOURCE.INSIGHT);
+  const questionAdapter = Adapter.get(RESOURCE.QUESTION);
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
 
   const models = await modelAdapter.find([{ field: 'project_id', value: projectId }], {});
@@ -166,14 +203,25 @@ const deleteProject = async (projectId) => {
   response = await analysisAdapter.remove([{ field: 'project_id', value: projectId }]);
   Logger.info(JSON.stringify(response));
 
-  // Remove project's bookmarks
-  Logger.info(`Deleting ${projectId} bookmarks`);
-  response = await bookmarkAdapter.remove([{ field: 'project_id', value: projectId }]);
+  // Remove project's insights
+  Logger.info(`Deleting ${projectId} insights`);
+  response = await insightAdapter.remove([{ field: 'project_id', value: projectId }]);
+  Logger.info(JSON.stringify(response));
+
+  // Remove project's questions
+  Logger.info(`Deleting ${projectId} questions`);
+  response = await questionAdapter.remove([{ field: 'project_id', value: projectId }]);
   Logger.info(JSON.stringify(response));
 
   // Remove project's ontologies
   Logger.info(`Deleting ${projectId} ontologies`);
   response = await ontologyAdapter.remove([{ field: 'project_id', value: projectId }]);
+  Logger.info(JSON.stringify(response));
+
+  // Remove project extension
+  Logger.info(`Deleting ${projectId} extensions`);
+  const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
+  response = await projectExtension.remove([{ field: 'project_id', value: projectId }]);
   Logger.info(JSON.stringify(response));
 
   // Delete project data
@@ -653,12 +701,12 @@ const ontologyComposition = async (projectId, concept) => {
  * - Update project timestamp
  */
 const addReaderOutput = async (projectId, records, timestamp) => {
-  const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
+  const assemblyRequest = Adapter.get(RESOURCE.ASSEMBLY_REQUEST);
   const project = Adapter.get(RESOURCE.PROJECT);
 
   // create new records
   const id = uuid();
-  await projectExtension.insert([
+  await assemblyRequest.insert([
     {
       id,
       created_at: (new Date()).getTime(),
@@ -681,23 +729,23 @@ const addReaderOutput = async (projectId, records, timestamp) => {
 
 /**
  * Trigger a Prefect flow to:
- *  - Take the reader output records associated with this projectExtensionId
+ *  - Take the reader output records associated with this assemblyRequestId
  *  - Send them to INDRA for reassembly
  *  - Transform and insert/update the resulting statements into the project
- *  - associated with this projectExtensionId
+ *  - associated with this assemblyRequestId
  *
- * @param {String} projectExtensionId - ID for a doc in the project-extension ES index
+ * @param {String} assemblyRequestId - ID for a doc in the project-extension ES index
  */
-const requestAssembly = async (projectExtensionId) => {
-  Logger.info(`Requesting new incremental assembly for extension "${projectExtensionId}" `);
-  if (!projectExtensionId) {
+const requestAssembly = async (assemblyRequestId) => {
+  Logger.info(`Requesting new incremental assembly for extension "${assemblyRequestId}" `);
+  if (!assemblyRequestId) {
     Logger.error('Required ID for incremental assembly request was not provided.');
     return;
   }
 
-  const runName = `requestAssembly-${projectExtensionId}`;
+  const runName = `requestAssembly-${assemblyRequestId}`;
   const flowParameters = {
-    PROJECT_EXTENSION_ID: projectExtensionId
+    ASSEMBLY_REQUEST_ID: assemblyRequestId
   };
 
   // We need the two JSON.stringify below to go from
@@ -730,12 +778,36 @@ const requestAssembly = async (projectExtensionId) => {
   return result;
 };
 
+/**
+ * Push new documents (id/name pairs) into project tracker
+ *
+ * @param {string} projectId
+ * @param {array} docs  [ {name, id}, {name, id} ... ]
+ */
+const extendProject = async (projectId, docs) => {
+  const projectExtension = Adapter.get(RESOURCE.PROJECT_EXTENSION);
+  const client = projectExtension.client;
+
+  await client.update({
+    index: RESOURCE.PROJECT_EXTENSION,
+    id: projectId,
+    body: {
+      script: {
+        lang: 'painless',
+        inline: 'ctx._source.document.addAll(params.docs); ctx._source.modified_at = params.timestamp',
+        params: { docs, timestamp: Date.now() }
+      }
+    }
+  });
+};
+
 module.exports = {
   listProjects,
   findProject,
   createProject,
   checkIndexStatus,
   deleteProject,
+  updateProject,
 
   findProjectStatements,
   findProjectStatementsByEdges,
@@ -757,6 +829,7 @@ module.exports = {
   // incremental assembly
   addReaderOutput,
   requestAssembly,
+  extendProject,
 
   // misc
   ontologyComposition

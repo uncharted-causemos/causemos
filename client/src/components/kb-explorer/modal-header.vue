@@ -33,8 +33,9 @@ import { defineComponent, computed } from 'vue';
 import { EDGE_THRESHOLD } from '@/components/graph/cyto-graph.vue';
 import { SUBGRAPH, ADD_TO_CAG_THRESHOLD } from '@/utils/messages-util';
 import fullScreenModalHeader from '../widgets/full-screen-modal-header.vue';
-import InsightControls from '@/components/insight-manager/insight-controls.vue';
 import numberFormatter from '@/formatters/number-formatter';
+
+import InsightControls from '@/components/insight-manager/insight-controls.vue';
 
 export default defineComponent({
   name: 'KbExplorerModalHeader',

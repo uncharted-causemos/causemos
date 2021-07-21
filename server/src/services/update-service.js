@@ -72,6 +72,11 @@ const updateStatements = async (projectId, updateConfig, statementIds) => {
       updateConfig.subj.theme_property = result.theme_property;
       updateConfig.subj.process = result.process;
       updateConfig.subj.process_property = result.process_property;
+
+      // Need to account for things that fall outside of ontology
+      if (_.isNil(updateConfig.subj.theme)) {
+        updateConfig.subj.theme = updateConfig.subj.newValue;
+      }
     }
     if (updateConfig.obj && updateConfig.obj.newValue) {
       const result = await projectService.ontologyComposition(projectId, updateConfig.obj.newValue);
@@ -79,6 +84,11 @@ const updateStatements = async (projectId, updateConfig, statementIds) => {
       updateConfig.obj.theme_property = result.theme_property;
       updateConfig.obj.process = result.process;
       updateConfig.obj.process_property = result.process_property;
+
+      // Need to account for things that fall outside of ontology
+      if (_.isNil(updateConfig.obj.theme)) {
+        updateConfig.obj.theme = updateConfig.obj.newValue;
+      }
     }
     Logger.info(`Injecting compositional ontology concepts for factor regrounding ${JSON.stringify(updateConfig)}`);
   }
@@ -164,6 +174,7 @@ const updateFnGenerator = (projectId, updateConfig) => {
     });
     // build and send feedbackToIndra
     const curationLogs = await _buildCurationLogs(projectId, audits);
+
 
     indraService.sendFeedback(curationLogs).catch(function handleError(err) {
       Logger.warn(`Sending feedback to INDRA failed bactchId=${batchId} ` + err);

@@ -54,9 +54,11 @@ class Project extends Base {
       index: indraStatementIndex
     });
     const srcSettings = response.body[indraStatementIndex].settings;
+
     const projectSettings = {
       'index.number_of_shards': _.get(srcSettings, 'index.number_of_shards') || 5,
       'index.number_of_replicas': _.get(srcSettings, 'index.number_of_replicas') || 0,
+      'index.analysis': _.get(srcSettings, 'index.analysis') || {},
       'index.blocks.write': false,
       'index.blocks.read_only': false
     };
@@ -78,7 +80,7 @@ class Project extends Base {
         extended_at: Date.now() // Last time additional documents were added to the project
       }
     });
-    
+
     // Clone project
     response = await this.client.indices.clone({
       index: indraStatementIndex,

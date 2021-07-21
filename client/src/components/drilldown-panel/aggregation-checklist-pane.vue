@@ -24,8 +24,14 @@
     </div>
     <div class="flex-row">
       <div class="select-all-buttons">
-        <small-text-button :label="'Select All'" @click="selectAll" />
-        <small-text-button :label="'Deselect All'" @click="deselectAll" />
+        <small-text-button
+          :label="'Select All'"
+          @click="setAllSelected(true)"
+        />
+        <small-text-button
+          :label="'Deselect All'"
+          @click="setAllSelected(false)"
+        />
       </div>
       <div v-if="units !== null" class="units">
         {{ units }}
@@ -37,6 +43,7 @@
         :key="rowIndex"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
+        :selected-timeseries-points="selectedTimeseriesPoints"
         @toggle-expanded="toggleExpanded(row.path)"
         @toggle-checked="toggleChecked(row.path)"
       />
@@ -52,6 +59,7 @@ import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import { BreakdownData } from '@/types/Datacubes';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
   defineComponent,
   PropType,
@@ -67,7 +75,6 @@ interface StatefulDataNode {
   values: (number | null)[];
   path: string[];
   isExpanded: boolean;
-  isChecked: boolean;
 }
 
 // The root of the tree. Imitates the structure of a real node
@@ -111,7 +118,9 @@ interface ChecklistRowData {
 const extractVisibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
-  selectedLevel: number
+  selectedLevel: number,
+  deselectedItemIds: { [aggregationLevel: string]: Set<string> } | null,
+  orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
   const depthLevel = isStatefulDataNode(metadataNode)
@@ -128,7 +137,13 @@ const extractVisibleRows = (
   const children = metadataNode.children.reduce((accumulator, child) => {
     return [
       ...accumulator,
-      ...extractVisibleRows(child, _hiddenAncestorNames, selectedLevel)
+      ...extractVisibleRows(
+        child,
+        _hiddenAncestorNames,
+        selectedLevel,
+        deselectedItemIds,
+        orderedAggregationLevelKeys
+      )
     ];
   }, [] as ChecklistRowData[]);
   const isExpanded = isStatefulDataNode(metadataNode)
@@ -142,13 +157,20 @@ const extractVisibleRows = (
   if (!isNodeVisible || !isStatefulDataNode(metadataNode)) {
     return visibleChildren;
   }
+  const aggregationLevel = orderedAggregationLevelKeys[depthLevel];
+  const itemId = metadataNode.path.join(PATH_DELIMETER);
+  const isChecked =
+    deselectedItemIds === null ||
+    deselectedItemIds[aggregationLevel] === undefined ||
+    !deselectedItemIds[aggregationLevel].has(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
       metadataNode,
       depthLevel,
       _hiddenAncestorNames,
-      selectedLevel
+      selectedLevel,
+      isChecked
     ),
     ...visibleChildren
   ];
@@ -158,9 +180,10 @@ const checklistRowDataFromNode = (
   node: StatefulDataNode,
   depthLevel: number,
   hiddenAncestorNames: string[],
-  selectedLevel: number
+  selectedLevel: number,
+  isChecked: boolean
 ): ChecklistRowData => {
-  const { name, values, children, isExpanded, isChecked, path } = node;
+  const { name, values, children, isExpanded, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
   const showExpandToggle = children.length > 0;
   const indentationCount =
@@ -177,6 +200,8 @@ const checklistRowDataFromNode = (
     path
   };
 };
+
+const PATH_DELIMETER = '__';
 
 export default defineComponent({
   name: 'AggregationChecklistPane',
@@ -205,51 +230,58 @@ export default defineComponent({
       default: '[Aggregation Level Title]'
     },
     rawData: {
-      type: Object as PropType<BreakdownData[]>,
-      default: () => {
-        return [] as BreakdownData[];
-      }
+      type: Object as PropType<BreakdownData | null>,
+      default: null
     },
     units: {
       type: String,
       default: null
+    },
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      required: true
+    },
+    deselectedItemIds: {
+      type: Object as PropType<{
+        [aggregationLevel: string]: Set<string>;
+      } | null>,
+      default: null
     }
   },
-  emits: ['aggregation-level-change', 'toggle-checked'],
+  emits: [
+    'aggregation-level-change',
+    'toggle-is-item-selected',
+    'set-all-selected'
+  ],
   setup(props) {
-    const { rawData, aggregationLevel, orderedAggregationLevelKeys } = toRefs(
-      props
-    );
+    const {
+      rawData,
+      aggregationLevel,
+      orderedAggregationLevelKeys,
+      selectedTimeseriesPoints,
+      deselectedItemIds
+    } = toRefs(props);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
-      //  out of it, augmented with 'expanded' and 'checked' properties to keep
+      //  out of it, augmented with a boolean 'expanded' property to keep
       //  track of the state of the component.
       const newStatefulData = { children: [] as StatefulDataNode[] };
-
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
+        if (rawData.value === null) return;
         // Get the list of values at this aggregation level for each selected
         //  model run
-        const modelRunsAtThisLevel = rawData.value.map(
-          modelRun => modelRun[aggregationLevelKey] ?? []
-        );
-        // Flatten values into one array and inject the index of the model run
-        //  that each value belongs to
-        const valuesAtThisLevel = _.flatten(
-          modelRunsAtThisLevel.map((modelRun, modelRunIndex) => {
-            return modelRun.map(({ id, value }) => ({
-              id,
-              value,
-              modelRunIndex
-            }));
-          })
-        );
-        if (valuesAtThisLevel.length === 0) return;
-        const modelRunCount = modelRunsAtThisLevel.length;
-        valuesAtThisLevel.forEach(({ id, value, modelRunIndex }) => {
-          const path = id.split('__');
+        const valuesAtThisLevel = rawData.value[aggregationLevelKey];
+        if (valuesAtThisLevel === undefined) return;
+        const timeseriesCount = selectedTimeseriesPoints.value.length;
+        const getIndexFromTimeseriesId = (timeseriesId: string) =>
+          selectedTimeseriesPoints.value.findIndex(
+            point => point.timeseriesId === timeseriesId
+          );
+        valuesAtThisLevel.forEach(({ id, values }) => {
+          const path = id.split(PATH_DELIMETER);
           const name = path[path.length - 1];
-          // Find where in the tree this region should be inserted
+          // Find where in the tree this item should be inserted
           let _path = id.split('__');
           let pointer = newStatefulData.children;
           while (_path.length > 1) {
@@ -264,27 +296,24 @@ export default defineComponent({
             pointer = nextNode.children;
             _path = _path.splice(1);
           }
-          // Check if a previous model run already added this node
-          const existingNode = pointer.find(node => node.name === name);
-          if (existingNode !== undefined) {
-            // Node exists, so add this model run's value to the node's list
-            existingNode.values[modelRunIndex] = value;
-          } else {
-            // Initialize values for every model run to null
-            const values = new Array(modelRunCount).fill(null);
-            // Set this model run's value
-            values[modelRunIndex] = value;
-            // Create stateful node and insert it into its place in the tree
-            pointer.push({
-              name,
-              values,
-              path,
-              isExpanded: false,
-              // TODO: isChecked functionality still needs to be implemented
-              isChecked: true,
-              children: []
-            });
-          }
+          // Initialize values for every model run to null
+          const valueArray = new Array(timeseriesCount).fill(null);
+          // Convert values from { [timeseriesId]: value } to an array where
+          //  the index of each timeseries's value comes from the selectedTimeseriesPoints
+          //  array. This is necessary to have consistent colouring with other
+          //  components.
+          Object.keys(values).forEach(timeseriesId => {
+            const timeseriesIndex = getIndexFromTimeseriesId(timeseriesId);
+            valueArray[timeseriesIndex] = values[timeseriesId];
+          });
+          // Create stateful node and insert it into its place in the tree
+          pointer.push({
+            name,
+            values: valueArray,
+            path,
+            isExpanded: false,
+            children: []
+          });
         });
       });
       statefulData.value = newStatefulData;
@@ -333,12 +362,21 @@ export default defineComponent({
       if (_.isNil(statefulData.value)) return 0;
       // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
       //  the root level.
-      return findMaxVisibleBarValue(statefulData.value, aggregationLevel.value + 1);
+      return findMaxVisibleBarValue(
+        statefulData.value,
+        aggregationLevel.value + 1
+      );
     });
 
     const visibleRows = computed(() => {
       if (_.isNil(statefulData.value)) return [];
-      return extractVisibleRows(statefulData.value, [], aggregationLevel.value);
+      return extractVisibleRows(
+        statefulData.value,
+        [],
+        aggregationLevel.value,
+        deselectedItemIds.value,
+        orderedAggregationLevelKeys.value
+      );
     });
 
     return {
@@ -373,9 +411,9 @@ export default defineComponent({
         | RootStatefulDataNode
         | StatefulDataNode
         | undefined = this.statefulData;
-      for (const regionName of path) {
+      for (const itemName of path) {
         currentNode = currentNode.children.find(
-          child => child.name === regionName
+          child => child.name === itemName
         );
         if (currentNode === undefined) return;
       }
@@ -384,22 +422,14 @@ export default defineComponent({
       }
     },
     toggleChecked(path: string[]) {
-      // TODO: this may need to be updated depending on how we choose to store
-      //  and share the checked state of nodes (see isNodeChecked below)
-      this.$emit('toggle-checked', path);
+      const aggregationLevel = this.orderedAggregationLevelKeys[
+        path.length - 1
+      ];
+      const itemId = path.join(PATH_DELIMETER);
+      this.$emit('toggle-is-item-selected', aggregationLevel, itemId);
     },
-    isNodeChecked() {
-      // TODO: We'll need to determine some way for node selected states to be stored
-      //  in a parent or ancestor of this component and passed in as a prop, so that
-      //  it can be queried here, something like
-      //  return checkedNodes.find(pathToNode.join('-')) !== undefined;
-      return true;
-    },
-    deselectAll() {
-      console.log('deselectAll');
-    },
-    selectAll() {
-      console.log('selectAll');
+    setAllSelected(isSelected: boolean) {
+      this.$emit('set-all-selected', isSelected);
     }
   }
 });

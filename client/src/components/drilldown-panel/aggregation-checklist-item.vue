@@ -65,7 +65,11 @@
           />
         </div>
         <span
-          :class="{ faded: !itemData.isSelectedAggregationLevel, 'multiple-row-label': true }"
+          :class="{
+            'faded':
+              !itemData.isSelectedAggregationLevel || !itemData.isChecked,
+            'multiple-row-label': true
+          }"
           :style="textColorStyle(index)"
         >
           {{ precisionFormatter(value) ?? 'missing' }}
@@ -77,6 +81,7 @@
 
 <script lang="ts">
 import precisionFormatter from '@/formatters/precision-formatter';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { defineComponent, PropType } from '@vue/runtime-core';
 
@@ -84,7 +89,7 @@ const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
 
 interface AggregationChecklistItemPropType {
   name: string;
-  values: (number|null)[];
+  values: (number | null)[];
   isSelectedAggregationLevel: boolean;
   showExpandToggle: boolean;
   isExpanded: boolean;
@@ -113,6 +118,10 @@ export default defineComponent({
     maxVisibleBarValue: {
       type: Number,
       default: 0
+    },
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      required: true
     }
   },
   computed: {
@@ -153,15 +162,17 @@ export default defineComponent({
       this.$emit('toggle-checked');
     },
     histogramBarStyle(value: number | null, index: number) {
-      const percentage = value !== null
-        ? (value / this.maxVisibleBarValue) * 100
-        : 0;
+      const percentage =
+        value !== null ? (value / this.maxVisibleBarValue) * 100 : 0;
       return { width: `${percentage}%`, background: colorFromIndex(index) };
     },
     textColorStyle(index: number) {
       return {
         color: colorFromIndex(index)
       };
+    },
+    colorFromIndex(index: number) {
+      return this.selectedTimeseriesPoints[index].color;
     }
   }
 });
@@ -240,7 +251,7 @@ span.faded {
   background: #8767c8;
 
   &.faded {
-    background: #b3b4b5;
+    opacity: 25%;
   }
 }
 

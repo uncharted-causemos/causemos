@@ -33,6 +33,14 @@
           @click="importCAG"
         ><i class="fa fa-fw fa-connectdevelop" />Import CAG</button>
       </li>
+      <li class="nav-item">
+        <button
+          v-tooltip.top-center="'reset CAG positioning'"
+          type="button"
+          class="btn btn-primary"
+          @click="resetCAG"
+        ><i class="fa fa-fw fa-undo" />Reset Layout</button>
+      </li>
 
     </ul>
 
@@ -85,6 +93,8 @@ import ModelOptions from '@/components/action-bar/model-options';
 import TextAreaCard from '../cards/text-area-card';
 import { CAG, EXPORT_MESSAGES } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
+import { ProjectType } from '@/types/Enums';
+
 export default {
   name: 'ActionBar',
   components: {
@@ -104,7 +114,7 @@ export default {
     }
   },
   emits: [
-    'add-concept', 'import-cag'
+    'add-concept', 'import-cag', 'reset-cag'
   ],
   data: () => ({
     showRenameModal: false,
@@ -140,6 +150,9 @@ export default {
     },
     importCAG() {
       this.$emit('import-cag');
+    },
+    resetCAG() {
+      this.$emit('reset-cag');
     },
     onRenameModalConfirm(newCagNameInput) {
       // Optimistically set new name
@@ -180,7 +193,8 @@ export default {
           name: 'quantitative',
           params: {
             project: this.project,
-            currentCAG: this.currentCAG
+            currentCAG: this.currentCAG,
+            projectType: ProjectType.Analysis
           }
         });
       } catch {

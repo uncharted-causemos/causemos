@@ -6,22 +6,16 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 
 import _ from 'lodash';
+import { defineComponent } from 'vue';
 import { mapActions, mapGetters } from 'vuex';
 import API from '@/api/api';
 import filtersUtil from '@/utils/filters-util';
-import DocumentsListTableview from '@/components/kb-explorer/documents-list-tableview';
-import { createPDFViewer } from '@/utils/pdf/viewer';
+import DocumentsListTableview from '@/components/kb-explorer/documents-list-tableview.vue';
 
-const isPdf = (card) => {
-  return card.data.metadata && card.data.metadata['File type'] === 'application/pdf';
-};
-
-const READER_TRANSITION_DURATION = 300;
-
-export default {
+export default defineComponent({
   name: 'DocumentsView',
   components: {
     DocumentsListTableview
@@ -36,13 +30,13 @@ export default {
       project: 'app/project',
       documentsCount: 'kb/documentsCount'
     }),
-    pageFrom() {
+    pageFrom(): number {
       return this.documentsQuery.from;
     },
-    pageSize() {
+    pageSize(): number {
       return this.documentsQuery.size;
     },
-    sort() {
+    sort(): { [key: string]: string } {
       return this.documentsQuery.sort;
     }
   },
@@ -80,50 +74,9 @@ export default {
         this.documentData = d.data;
         this.disableOverlay();
       });
-    },
-    async fetchReaderContentRawDoc(targetCard) {
-      if (!isPdf(targetCard)) return;
-      const url = `/api/dart/${targetCard.data.id}/raw`;
-      try {
-        const viewer = await createPDFViewer({ url });
-        return viewer;
-      } catch (error) {
-      }
-    },
-    async fetchReaderContentData(targetCard) {
-      const docId = targetCard.data.id;
-      const url = `documents/${docId}`;
-      const { data } = await API.get(url);
-      const { content } = !_.isNull(data) ? data : { content: '' };
-      return content;
-    },
-    async fetchReaderContent(targetCard) {
-      const customElementObj = await this.fetchReaderContentRawDoc(targetCard);
-      const content = await this.fetchReaderContentData(targetCard);
-      return {
-        customElementObj,
-        content
-      };
-    },
-    async updateReaderContent(targetCard) {
-      this.$refs.cards.updateReaderContent(targetCard, 'Loading...', { switchButton: false });
-      const { customElementObj, content } = await this.fetchReaderContent(targetCard);
-      if (customElementObj) {
-        // NOTE: rendering pages is expensive so that it makes reader's opening animation sluggish.
-        // So give some time for reader to finish it's transition and then start rendering pages
-        await new Promise(resolve => setTimeout(resolve, READER_TRANSITION_DURATION));
-        this.$refs.cards.updateReaderContent(targetCard, content);
-        isPdf(targetCard) && customElementObj.renderPages();
-        return this.$refs.cards.updateReaderContentCustomElement(targetCard, customElementObj.element);
-      }
-      this.$refs.cards.updateReaderContent(targetCard, content, { switchButton: false });
-    },
-    onCardClick(targetCard) {
-      this.$refs.cards.openReader(targetCard);
-      this.updateReaderContent(targetCard);
     }
   }
-};
+});
 </script>
 
 

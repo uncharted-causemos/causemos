@@ -57,6 +57,65 @@ export default class ModelRenderer extends SVGRenderer {
     this.scenarioData = d;
   }
 
+  async render() {
+    await super.render();
+    const chart = this.chart;
+    const selection = chart.selectAll('.edge');
+    selection.nodes()
+      .forEach(function (d) {
+        const edge = d3.select(d);
+        const path = edge.select('.edge-path');
+        const pathNode = path.node();
+        const pathData = path.datum().data;
+        const firstOrderWeight = pathData.parameter.weights[0];
+        const secondOrderWeight = pathData.parameter.weights[1];
+
+        if (firstOrderWeight === 0 && secondOrderWeight === 0) {
+          if (!edge.selectAll('.unweighted-edge-indicator').node()) {
+            const halfWayPoint = pathNode.getTotalLength() / 2;
+            const indicatorPoint = pathNode.getPointAtLength(halfWayPoint);
+            edge
+              .append('g')
+              .classed('unweighted-edge-indicator', true)
+              .attr('transform', translate(indicatorPoint.x, indicatorPoint.y + 4)) // add 4 pixels to center on line - bit of a hack
+              .append('text')
+              .attr('opacity', 0)
+              .style('font-family', 'FontAwesome')
+              .style('font-size', '12px')
+              .style('stroke', 'none')
+              .style('fill', 'black')
+              .style('cursor', 'pointer')
+              .style('text-anchor', 'middle')
+              .text('\uf05e')
+              .transition()
+              .duration(1000)
+              .attr('opacity', 1);
+          }
+        } else {
+          edge
+            .selectAll('.unweighted-edge-indicator')
+            .transition()
+            .duration(1000)
+            .attr('opacity', 0)
+            .remove();
+        }
+      });
+    this.updateEdgePoints();
+  }
+
+  updateEdgePoints() {
+    super.updateEdgePoints();
+    const chart = this.chart;
+
+    chart.selectAll('.edge').each(function() {
+      const pathNode = d3.select(this).select('path').node();
+      const halfWayPoint = pathNode.getTotalLength() / 2;
+      const indicatorPoint = pathNode.getPointAtLength(halfWayPoint);
+      d3.select(this).selectAll('.unweighted-edge-indicator')
+        .attr('transform', translate(indicatorPoint.x, indicatorPoint.y + 4));
+    });
+  }
+
   renderNodeAdded(nodeSelection) {
     nodeSelection.each(function() {
       const selection = d3.select(this);

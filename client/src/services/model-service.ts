@@ -5,6 +5,7 @@ import { conceptShortName } from '@/utils/concept-util';
 import { startPolling } from '@/api/poller';
 import {
   Scenario,
+  NewScenario,
   ScenarioConstraint,
   NodeParameter,
   EdgeParameter,
@@ -107,7 +108,7 @@ const addComponents = async (modelId: string, nodes: NodeParameter[], edges: Edg
   return result.data;
 };
 
-const removeComponents = async (modelId: string, nodes: NodeParameter[], edges: EdgeParameter[]) => {
+const removeComponents = async (modelId: string, nodes: { id: string }[], edges: { id: string }[]) => {
   const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', nodes, edges });
   return result.data;
 };
@@ -181,7 +182,7 @@ const getNodeStatements = async (modelId: string, concept: string) => {
  * @param {string} scenario.experimentId - the identifier used ty the engine
  * @param {array} result - array of projections, one per node in the model graph
  */
-const createScenario = async (scenario: Scenario) => {
+const createScenario = async (scenario: NewScenario) => {
   const result = await API.post('scenarios', scenario);
   return result.data;
 };
@@ -384,7 +385,8 @@ const _markConceptHasEvidence = (hasEvidence: boolean) =>
     return {
       concept,
       hasEvidence,
-      shortName: conceptShortName(concept) || ''
+      shortName: conceptShortName(concept) || '',
+      label: ''
     };
   };
 
@@ -445,6 +447,36 @@ const runSensitivityAnalysis = async (
 };
 
 
+const createBaselineScenario = async (modelSummary: CAGModelSummary, nodes: NodeParameter[]) => {
+  const modelId = modelSummary.id;
+  const numSteps = modelSummary.parameter.num_steps;
+  try {
+    const experimentId = await runProjectionExperiment(modelId, numSteps, injectStepZero(nodes, []));
+    const result: any = await getExperimentResult(modelId, experimentId);
+
+    const scenario: NewScenario = {
+      model_id: modelId,
+      experiment_id: experimentId,
+      result: result.results.data,
+      name: 'Baseline scenario',
+      description: 'Baseline scenario',
+      parameter: {
+        constraints: [],
+        num_steps: numSteps,
+        indicator_time_series_range: modelSummary.parameter.indicator_time_series_range,
+        projection_start: modelSummary.parameter.projection_start
+      },
+      engine: modelSummary.parameter.engine,
+      is_baseline: true,
+      is_valid: true
+    };
+    await createScenario(scenario);
+  } catch (error) {
+    console.log(error);
+  }
+};
+
+
 /**
  * Adjust scenario parameters to adapt to model settings.
  *
@@ -491,6 +523,7 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
     const targetNode = cagA.nodes.find(d => d.concept === node.concept);
     if (_.isNil(targetNode)) {
       cagA.nodes.push({
+        id: '',
         concept: node.concept,
         label: node.label,
         parameter: node.parameter
@@ -526,6 +559,7 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
       }
     } else {
       cagA.edges.push({
+        id: '',
         source: edge.source,
         target: edge.target,
         reference_ids: edge.reference_ids,
@@ -622,6 +656,36 @@ export const expandExtentForDyseProjections = (yExtent: [number, number], numLev
   ];
 };
 
+
+// FIXME: Inject step=0 initial value constraints per node, we shouldn't need to do this,
+// engine should handle this quirky case. Sep 2020
+const injectStepZero = (nodeParameters: NodeParameter[], constraints: ScenarioConstraint[]) => {
+  const result = _.cloneDeep(constraints);
+  nodeParameters.forEach(n => {
+    const concept = n.concept;
+    const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+
+    const current = result.find(c => c.concept === concept);
+    if (!_.isNil(current)) {
+      if (!_.some(current.values, v => v.step === 0)) {
+        current.values.push({ step: 0, value: initialValue });
+      }
+    } else {
+      result.push({
+        concept: concept,
+        values: [{ step: 0, value: initialValue }]
+      });
+    }
+  });
+
+  result.forEach(r => {
+    r.values = _.orderBy(r.values, v => v.step);
+  });
+
+  return result;
+};
+
+
 export default {
   getProjectModels,
   getSummary,
@@ -634,6 +698,7 @@ export default {
   runProjectionExperiment,
   runSensitivityAnalysis,
   getExperimentResult,
+  createBaselineScenario,
 
   getScenarios,
   createScenario,
@@ -665,5 +730,8 @@ export default {
 
   calculateScenarioPercentageChange,
   expandExtentForDyseProjections,
-  ENGINE_OPTIONS
+  injectStepZero,
+
+  ENGINE_OPTIONS,
+  MODEL_STATUS
 };

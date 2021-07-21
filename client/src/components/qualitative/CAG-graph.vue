@@ -10,6 +10,13 @@
       :concepts-in-cag="conceptsInCag"
       :placement="{ x: newNodeX, y: newNodeY }"
       @suggestion-selected="onSuggestionSelected"
+      @show-custom-concept="showCustomConcept = true"
+    />
+    <modal-custom-concept
+      v-if="showCustomConcept"
+      ref="customGrounding"
+      @close="showCustomConcept = false"
+      @save-custom-concept="saveCustomConcept"
     />
     <color-legend
       :show-cag-encodings="true" />
@@ -33,6 +40,9 @@ import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
+import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
+
+import projectService from '@/services/project-service';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
@@ -95,6 +105,12 @@ class CAGRenderer extends SVGRenderer {
       .style('pointer-events', 'none')
       .text(d => d.label)
       .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
+  }
+
+  // Override render function to also check for ambigous edges and highlight them
+  async render() {
+    await super.render();
+    this.displayAmbiguousEdgeWarning();
   }
 
   renderNodeUpdated() {
@@ -428,14 +444,53 @@ class CAGRenderer extends SVGRenderer {
       .style('fill', 'white')
       .style('pointer-events', 'none')
       .text('\uf061');
-
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
     const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-
     const drag = d3.drag()
-      .on('start', (evt) => {
+      .on('start', async (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
+        const graph = evt.subject.parent.data; // FIXME - we should avoid this kind of data access, we should probably pass projectID into the renderer directly
+
+        // Begin processing to highlight nodes that have evidence for an edge originating from the source
+        const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
+        const project_id = graph.project_id;
+        const nodesInGraph = graph.nodes;
+
+        const edgesInGraph = graph.edges;
+        const edgesFromSource = edgesInGraph.filter(edge => edge.source === sourceNode.concept);
+        const conceptsInGraph = nodesInGraph.map(node => node.concept);
+
+        const svg = this.svgEl;
+        const foregroundLayer = d3.select(svg).select('.data-layer');
+
+        const filters = {
+          clauses: [
+            { field: 'subjConcept', values: [sourceNode.concept], isNot: false, operand: 'or' },
+            { field: 'objConcept', values: conceptsInGraph, isNot: false, operand: 'or' }]
+        };
+
+        projectService.getProjectGraph(project_id, filters).then(d => {
+          const resultEdges = d.edges; // contains all possible edges in the project originating from the source
+          const resultEdgesTrimmed = resultEdges.filter(edge => !edgesFromSource.some(edgeFromSource => edge.target === edgeFromSource.target)); // trim nodes that already have edge from this source
+
+          resultEdgesTrimmed.forEach(edge => {
+            const targetNode = getLayoutNodeById(edge.target);
+            const pointerX = targetNode.x;
+            const pointerY = targetNode.y + (targetNode.height * 0.5);
+            foregroundLayer
+              .append('svg:path')
+              .attr('d', svgUtil.ARROW)
+              .classed('edge-possibility-indicator', true)
+              .attr('transform', `translate(${pointerX}, ${pointerY}) scale(1.5)`)
+              .attr('fill', calcEdgeColor(edge))
+              .attr('opactiy', 0)
+              .style('pointer-events', 'none')
+              .transition()
+              .duration(300)
+              .attr('opacity', 1);
+          });
+        });
       })
       .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
@@ -473,6 +528,14 @@ class CAGRenderer extends SVGRenderer {
 
         this.disableNodeHandles();
         this.resetDragState();
+
+        // remove edge indicators
+        const indicators = d3.selectAll('.edge-possibility-indicator');
+        indicators
+          .transition()
+          .duration(300)
+          .style('opacity', 0)
+          .remove();
 
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
         temporaryNewEdge = { sourceNode, targetNode };
@@ -541,6 +604,56 @@ class CAGRenderer extends SVGRenderer {
       .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
       .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
   }
+
+  displayAmbiguousEdgeWarning() {
+    const graph = this.layout;
+    const foregroundLayer = d3.select(this.svgEl).select('.foreground-layer');
+
+    const highlightFunction = this.highlight;
+    const highlightAmbiguousEdgesFunction = this.highlightAmbiguousEdges;
+
+    const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
+      ? d3.select('.ambiguous-edge-warning') // select it
+      : foregroundLayer.append('text') // or create it if it hasn't been already
+        .attr('x', 10)
+        .attr('y', 20)
+        .attr('opacity', 0)
+        .attr('fill', 'red')
+        .attr('font-size', '1.6rem')
+        .classed('ambiguous-edge-warning', true)
+        .text('Warning: ambiguous edges detected in graph') // not very pretty, could update in the future
+        .on('mouseover', function () {
+          highlightAmbiguousEdgesFunction(graph, highlightFunction);
+        });
+
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        warning.attr('opacity', 1);
+        return;
+      }
+    }
+    warning.attr('opacity', 0);
+  }
+
+  highlightAmbiguousEdges(graph, highlight) {
+    const highlightOptions = {
+      color: 'red',
+      duration: 1000
+    };
+    const ambigEdges = [];
+
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        ambigEdges.push(edge);
+      }
+    }
+
+    if (ambigEdges.length > 0) {
+      highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
+    }
+  }
 }
 
 
@@ -548,7 +661,8 @@ export default {
   name: 'CAGGraph',
   components: {
     NewNodeConceptSelect,
-    ColorLegend
+    ColorLegend,
+    ModalCustomConcept
   },
   props: {
     data: {
@@ -567,7 +681,8 @@ export default {
   data: () => ({
     selectedNode: '',
     newNodeX: 0,
-    newNodeY: 0
+    newNodeY: 0,
+    showCustomConcept: false
   }),
   computed: {
     ...mapGetters({
@@ -594,6 +709,9 @@ export default {
     }
   },
   created() {
+    // renderer is intentionally left out of `data` to avoid
+    //  making it deeply reactive, since it contains a very
+    //  large tree of references
     this.renderer = null;
   },
   mounted() {
@@ -703,6 +821,9 @@ export default {
     this.mouseTrap.reset();
   },
   methods: {
+    saveCustomConcept(value) {
+      console.log(`Emitted custom grounding: ${JSON.stringify(value)}`);
+    },
     async refresh() {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data);
@@ -724,7 +845,6 @@ export default {
         duration: 4000,
         color: SELECTED_COLOR
       };
-
       // Check if the subgraph was added less than 1 min ago
       const thresholdTime = moment().subtract(THRESHOLD_TIME, 'minutes').valueOf();
       const nodes = this.data.nodes.filter(n => n.modified_at >= thresholdTime).map(n => n.concept);

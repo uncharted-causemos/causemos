@@ -8,12 +8,26 @@ export enum ModelRunStatus {
 
 export enum DatacubeStatus {
   Ready = 'READY',
-  Processing = 'PROCESSING'
+  Processing = 'PROCESSING',
+  Registered = 'REGISTERED'
 }
 
 export enum DatacubeType {
   Model = 'model',
   Indicator = 'indicator'
+}
+
+export enum ProjectType {
+  Model = 'model',
+  Indicator = 'indicator',
+  Analysis = 'analysis'
+}
+
+export enum FeatureQualifierRoles {
+  Weight = 'weight',
+  Statistics = 'statistics',
+  Breakdown = 'breakdown',
+  Tooltip = 'tooltip'
 }
 
 export enum DatacubeAttributeVariableType {
@@ -55,4 +69,18 @@ export enum AdminLevel {
   Admin3 = 'admin3',
   Admin4 = 'admin4',
   Admin5 = 'admin5',
+}
+
+export enum TemporalAggregationLevel {
+  Year = 'year'
+}
+
+export enum AggregationOption {
+  Mean = 'mean',
+  Sum = 'sum'
+}
+
+export enum TemporalResolutionOption {
+  Year = 'year',
+  Month = 'month'
 }

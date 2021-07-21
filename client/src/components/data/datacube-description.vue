@@ -1,7 +1,7 @@
 <template>
   <div class="datacube-description-container">
     <div class="datacube-description-column">
-      <template v-if="metadata.parameters">
+      <template v-if="metadata && metadata.parameters">
         <h5>Input Descriptions</h5>
         <div
           v-for="param in inputParameters"
@@ -13,7 +13,7 @@
           <p />
         </div>
       </template>
-      <template v-if="metadata.outputs">
+      <template v-if="metadata && metadata.outputs">
         <h5>Output Descriptions</h5>
         <div
           v-for="output in metadata.outputs"
@@ -26,7 +26,7 @@
       </template>
     </div>
     <div class="datacube-description-column"
-         v-if="metadata.name" >
+        v-if="metadata && metadata.name" >
       <h5>Datacube Details</h5>
       <div
         v-if="metadata.geography.country"
@@ -59,40 +59,29 @@
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
-import { defineComponent, ref } from 'vue';
+import { defineComponent, PropType } from 'vue';
 import stringUtil from '@/utils/string-util';
+import { Indicator, Model } from '@/types/Datacube';
+import { isModel } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeDescription',
   components: {
   },
   props: {
-    selectedModelId: {
-      type: String,
+    metadata: {
+      type: Object as PropType<Model | Indicator | null>,
       default: null
     }
   },
-  setup(props) {
-    const metadata = ref<any>({});
-    async function fetchMetadata() {
-      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
-      metadata.value = response.data;
-    }
-    fetchMetadata();
-    return {
-      metadata
-    };
-  },
   computed: {
     isSourceValidUrl(): boolean {
-      return stringUtil.isValidUrl(this.metadata.maintainer.website);
+      return this.metadata ? stringUtil.isValidUrl(this.metadata.maintainer.website) : false;
     },
     inputParameters(): Array<any> {
-      return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
+      return (this.metadata && isModel(this.metadata))
+        ? this.metadata.parameters.filter((p: any) => !p.is_drilldown)
+        : [];
     }
   }
 });
@@ -107,6 +96,7 @@ export default defineComponent({
   width: 100%;
   display: flex;
   flex-direction: row;
+  overflow: auto;
 }
 
 .datacube-description-column {
@@ -115,6 +105,7 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   padding: 0 10px;
+  overflow-y: auto;
 
   h5 {
     @include header-secondary;

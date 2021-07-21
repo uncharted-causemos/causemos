@@ -58,7 +58,7 @@ const resolveComponents = async(modelId, resource, components) => {
     component.model_id = modelId;
     component.modified_at = modifiedAt;
 
-    if (_.isNil(component.id)) {
+    if (_.isNil(component.id) || component.id === '') {
       component.id = uuid();
       indexList.push(component);
     } else {
@@ -178,11 +178,16 @@ const updateCAGMetadata = async(modelId, modelFields) => {
     return doc.id;
   };
 
-  const results = await CAGConnection.update({
+  const nonNullKeys = Object.keys(modelFields).filter(d => !_.isNil(modelFields[d]));
+  const results = nonNullKeys.includes('thumbnail_source') && nonNullKeys.length <= 2 ? await CAGConnection.update({
     id: modelId,
-    modified_at: moment().valueOf(),
     ...modelFields
-  }, keyFn);
+  }, keyFn)
+    : await CAGConnection.update({
+      id: modelId,
+      modified_at: moment().valueOf(),
+      ...modelFields
+    }, keyFn);
 
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));

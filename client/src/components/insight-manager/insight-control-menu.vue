@@ -2,7 +2,7 @@
   <ul class="insight-controls-container nav navbar-nav navbar-right">
     <li class="nav-item">
       <button
-        v-tooltip.top-center="'See insights list'"
+        v-tooltip.top-center="'See a list of all insights'"
         class="btn insight-btn"
         :class="{ 'insight-manager-open': isPanelOpen && currentPane === 'list-insights' }"
         @click="toggleInsightPane('list-insights')"
@@ -10,10 +10,11 @@
         <i
           class="fa fa-fw fa-star fa-lg"
         />
-        Insights:
+        All Insights:
         <span class="insight-counter">{{ countInsights }}</span>
         <i
-          class="fa fa-fw fa-caret-down"
+          class="fa fa-fw"
+          :class="isPanelOpen ? 'fa-caret-up' : 'fa-caret-down' "
         />
       </button>
     </li>
@@ -40,9 +41,9 @@
 </template>
 
 <script>
-import _ from 'lodash';
-import { mapActions, mapGetters } from 'vuex';
-import API from '@/api/api';
+import { mapActions, mapGetters, useStore } from 'vuex';
+import { getAllInsightsCount } from '@/services/insight-service';
+import { watchEffect, computed } from 'vue';
 
 export default {
   name: 'InsightControlsMenu',
@@ -51,25 +52,43 @@ export default {
       countInsights: 'insightPanel/countInsights',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
-      project: 'app/project'
+      currentView: 'app/currentView'
     })
   },
-  watch: {
-    collection(n, o) {
-      if (_.isEqual(n, o)) return;
-      this.refresh();
-    }
-  },
-  mounted() {
-    this.refresh();
+  setup() {
+    const store = useStore();
+    const project = computed(() => store.getters['app/project']);
+
+    // FIXME: refactor into a composable
+    watchEffect(onInvalidate => {
+      let isCancelled = false;
+      async function fetchInsights() {
+        // @REVIEW @FIXME: when contextId was a computed property it didn't return an updated value when the store value was changed
+        const contextId = store.getters['insightPanel/contextId'];
+        // all insights count = project-insights count + context (i.e., datacube-id, cag-id) insights count
+        const allInsightsCount = await getAllInsightsCount(project.value, contextId);
+        if (isCancelled) {
+          // Dependencies have changed since the fetch started, so ignore the
+          //  fetch results to avoid a race condition.
+          return;
+        }
+        store.dispatch('insightPanel/setCountInsights', allInsightsCount);
+      }
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      fetchInsights();
+    });
+    return {
+    };
   },
   methods: {
     ...mapActions({
-      currentView: 'app/currentView',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
-      setCurrentPane: 'insightPanel/setCurrentPane'
+      setCurrentPane: 'insightPanel/setCurrentPane',
+      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel'
     }),
     allowNewInsights() {
       return this.currentView === 'kbExplorer' ||
@@ -90,16 +109,9 @@ export default {
       } else {
         this.showInsightPanel();
         this.setCurrentPane(pane);
+        // hide the local insight panel
+        this.hideContextInsightPanel();
       }
-    },
-    refresh() {
-      // FIXME: currently, the insight feature is dependent on an active "project"
-      //        but this needs to be revised since insight saved during model publishing won't have a project association
-      API.get('bookmarks/counts', {
-        params: { project_id: this.project }
-      }).then(d => {
-        this.setCountInsights(d.data);
-      });
     }
   }
 };

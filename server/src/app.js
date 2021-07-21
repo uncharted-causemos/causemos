@@ -21,21 +21,23 @@ const indexRouter = rootRequire('/routes/index');
 const auditsRouter = rootRequire('/routes/audits');
 const modelsRouter = rootRequire('/routes/models');
 const analysesRouter = rootRequire('/routes/analyses');
-// const evidencesRouter = rootRequire('/routes/evidences');
 const documentsRouter = rootRequire('/routes/documents');
 const scenariosRouter = rootRequire('/routes/scenario');
 const settingsRouter = rootRequire('/routes/settings');
 const dartRouter = rootRequire('/routes/dart');
-const bookmarksRouter = rootRequire('/routes/bookmarks');
+const insightsRouter = rootRequire('/routes/insights');
+const questionsRouter = rootRequire('/routes/questions');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
-const maasRouter = rootRequire('/routes/maas');
+const modelRunsRouter = rootRequire('/routes/model-runs');
+const indicatorsRouter = rootRequire('/routes/indicators');
 const datacubeRouter = rootRequire('/routes/datacubes');
 const fetchFileService = rootRequire('/services/external/fetch-file-service');
 const asyncHandler = require('express-async-handler');
 
 const kbsRouter = rootRequire('/routes/knowledge-bases');
 const projectsRouter = rootRequire('/routes/projects');
+const DomainProjectsRouter = rootRequire('/routes/domain-projects');
 
 const sessionLogService = rootRequire('/services/session-log-service');
 
@@ -90,8 +92,12 @@ app.use('/api/dart', [
   dartRouter
 ]);
 
-app.use('/api/bookmarks', [
-  bookmarksRouter
+app.use('/api/insights', [
+  insightsRouter
+]);
+
+app.use('/api/questions', [
+  questionsRouter
 ]);
 
 // The routes here are for model parameterization and model-based experiments
@@ -122,9 +128,13 @@ app.use('/api/audits', [
   auditsRouter
 ]);
 
-// Handle some /api/mass/model-runs calls ourselves. The rest get handled below.
+// Handle some /api/mass calls ourselves. The rest get handled below.
 app.use('/api/maas/model-runs', [
-  maasRouter
+  modelRunsRouter
+]);
+
+app.use('/api/maas/indicators', [
+  indicatorsRouter
 ]);
 
 app.use('/api/maas/new-datacubes', [
@@ -160,6 +170,7 @@ app.use('/api/fetch-demo-data', asyncHandler(async (req, res) => {
 app.use('/api/projects', projectsRouter);
 app.use('/api/kbs', kbsRouter);
 
+app.use('/api/domain-projects', DomainProjectsRouter);
 
 // catch 404 and forward to error handler
 app.use(function(req, res, next) {

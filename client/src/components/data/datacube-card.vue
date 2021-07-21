@@ -2,24 +2,21 @@
   <div class="datacube-card-container">
     <header>
       <slot name="datacube-model-header" />
-      <button v-tooltip="'Collapse datacube'" class="btn btn-default">
-        <!-- @click="TODO" -->
-        <i class="fa fa-fw fa-compress" />
-      </button>
+      <slot name="datacube-model-header-collapse" />
     </header>
     <modal-new-scenario-runs
-      v-if="isModel && showNewRunsModal === true"
+      v-if="isModelMetadata && showNewRunsModal === true"
       :metadata="metadata"
       :potential-scenarios="potentialScenarios"
       @close="onNewScenarioRunsModalClose" />
     <modal-check-runs-execution-status
-      v-if="isModel & showModelRunsExecutionStatus === true"
+      v-if="isModelMetadata & showModelRunsExecutionStatus === true"
       :metadata="metadata"
       :potential-scenarios="runParameterValues"
       @close="showModelRunsExecutionStatus = false" />
     <div class="flex-row">
       <!-- if has multiple scenarios -->
-      <div v-if="isModel" class="scenario-selector">
+      <div v-if="isModelMetadata" class="scenario-selector">
         <div>
           <div class="checkbox">
             <label @click="toggleBaselineDefaultsVisibility()">
@@ -27,7 +24,7 @@
                 class="fa fa-lg fa-fw"
                 :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
               />
-              Baseline Defaults
+              Default Values
             </label>
           </div>
           <div class="checkbox">
@@ -85,45 +82,48 @@
           <div class="button-group">
             <button class="btn btn-default"
                     :class="{'btn-primary':isDescriptionView}"
-                    @click="isDescriptionView = true">
+                    @click="$emit('update-desc-view', true)">
               Descriptions
             </button>
+            <!-- make 'Data' tab disabled when no scenario selection -->
             <button class="btn btn-default"
                     :class="{'btn-primary':!isDescriptionView}"
-                    @click="isDescriptionView = false">
+                    :disabled="selectedScenarioIds.length === 0"
+                    @click="$emit('update-desc-view', false)">
               Data
             </button>
           </div>
           <div
-            v-if="!isDescriptionView && selectedScenarioIds.length > 1"
+            v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
             class="relative-box"
           >
             Relative to:
             <button
               class="btn btn-default"
               @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
-              :style="{ color: relativeTo === null ? 'black' : colorFromIndex(relativeTo) }"
+              :style="{ color: baselineMetadata?.color ?? 'black' }"
             >
-              {{relativeTo === null ? 'none' : `Run ${relativeTo}`}}</button
+              {{baselineMetadata?.name ?? 'none'}}</button
             >
             <dropdown-control
               v-if="isRelativeDropdownOpen"
               class="relative-dropdown">
               <template #content>
                 <div
+                  v-if="relativeTo !== null"
                   class="dropdown-option"
-                  @click="relativeTo = null; isRelativeDropdownOpen = false;"
+                  @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
                 >
                   none
                 </div>
                 <div
-                  v-for="(scenarioId, index) in selectedScenarioIds"
+                  v-for="(timeseries, index) in timeseriesData"
                   class="dropdown-option"
-                  :style="{ color: colorFromIndex(index) }"
+                  :style="{ color: timeseries.color }"
                   :key="index"
-                  @click="relativeTo = index; isRelativeDropdownOpen = false;"
+                  @click="emitRelativeToSelection(timeseries.id); isRelativeDropdownOpen = false;"
                 >
-                  Run {{index}}
+                  {{timeseries.name}}
                 </div>
               </template>
             </dropdown-control>
@@ -132,33 +132,43 @@
         <slot name="datacube-description" v-if="isDescriptionView" />
         <header v-if="isExpanded && !isDescriptionView">
           <datacube-scenario-header
-            v-if="mainModelOutput"
+            v-if="mainModelOutput && isModelMetadata"
             class="scenario-header"
             :outputVariable="mainModelOutput.display_name"
             :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
-            :selected-model-id="selectedModelId"
+            :metadata="metadata"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />
         </header>
-        <div class="insight-capture" style="display: flex; flex-direction: column; flex: 1;">
+        <div class="insight-capture">
           <div style="display: flex; flex-direction: row;">
             <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && selectedTimeseriesData.length  > 0 && selectedTimeseriesData[0].points.length > 1"
+            v-if="!isDescriptionView && timeseriesData.length > 0 && !hasSingleTimestamp"
             class="timeseries-chart"
-            :timeseries-data="selectedTimeseriesData"
+            :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
+            :breakdown-option="breakdownOption"
             @select-timestamp="emitTimestampSelection"
           />
+          <p
+            v-else-if="hasSingleTimestamp"
+            class="hidden-timeseries-message"
+          >
+            Data only exists for
+            <span class="timestamp">
+              {{ timestampFormatter(timeseriesData[0].points[0].timestamp) }}
+            </span>.
+          </p>
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
           <div
-            v-if="mapReady && !isDescriptionView"
-            class="card-map-container full-width">
+            v-if="mapReady && !isDescriptionView && regionalData !== null"
+            class="card-map-container">
             <data-analysis-map
               v-for="(spec, indx) in outputSourceSpecs"
               :key="spec.id"
@@ -168,19 +178,25 @@
               ]"
               :style="{ borderColor: colorFromIndex(indx) }"
               :output-source-specs="outputSourceSpecs"
-              :output-selection=indx
+              :output-selection=spec.id
               :relative-to="relativeTo"
               :show-tooltip="true"
-              :selected-admin-level="selectedAdminLevel"
+              :selected-layer-id="mapSelectedLayer"
               :filters="mapFilters"
               :map-bounds="mapBounds"
-              :is-grid-map="isGridMap"
-              :region-data="mapRegionData"
+              :region-data="regionalData"
               @sync-bounds="onSyncMapBounds"
               @click-layer-toggle="onClickMapLayerToggle"
               @on-map-load="onMapLoad"
               @slide-handle-change="updateMapFilters"
             />
+          </div>
+          <div
+            v-else-if="!isDescriptionView"
+            class="card-map-container"
+          >
+            <!-- Empty div to reduce jumpiness when the maps are loading -->
+            <div class="card-map" />
           </div>
         </div>
       </div>
@@ -190,7 +206,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, watch, toRefs, computed, Ref } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -199,17 +215,19 @@ import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coord
 import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
-import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
-import useModelMetadata from '@/services/composables/useModelMetadata';
-import { Model, DatacubeFeature } from '@/types/Datacube';
+import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { DatacubeType, ModelRunStatus } from '@/types/Enums';
+import { ModelRunStatus, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
-import outputService from '@/services/runoutput-service';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { useStore } from 'vuex';
+import { isModel } from '@/utils/datacube-util';
+import { Timeseries } from '@/types/Timeseries';
+import dateFormatter from '@/formatters/date-formatter';
+import { getTimestamp } from '@/utils/date-util';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -220,20 +238,22 @@ export default defineComponent({
     'set-drilldown-data',
     'check-model-metadata-validity',
     'refetch-data',
-    'new-runs-mode'
+    'new-runs-mode',
+    'update-desc-view',
+    'set-relative-to'
   ],
   props: {
     isExpanded: {
       type: Boolean,
       default: true
     },
+    isDescriptionView: {
+      type: Boolean,
+      default: true
+    },
     selectedAdminLevel: {
       type: Number,
       default: 0
-    },
-    selectedModelId: {
-      type: String as PropType<string>,
-      required: true
     },
     allModelRunData: {
       type: Array as PropType<ModelRun[]>,
@@ -247,17 +267,33 @@ export default defineComponent({
       type: Number,
       default: 0
     },
-    selectedTemporalResolution: {
-      type: String as PropType<string>,
-      default: 'month'
+    regionalData: {
+      type: Object as PropType<RegionalAggregations | null>,
+      default: null
     },
-    selectedTemporalAggregation: {
-      type: String as PropType<string>,
-      default: 'mean'
+    outputSourceSpecs: {
+      type: Array as PropType<OutputSpecWithId[]>,
+      default: () => []
     },
-    selectedSpatialAggregation: {
-      type: String as PropType<string>,
-      default: 'mean'
+    metadata: {
+      type: Object as PropType<Model | Indicator | null>,
+      default: null
+    },
+    timeseriesData: {
+      type: Array as PropType<Timeseries[]>,
+      default: []
+    },
+    relativeTo: {
+      type: String as PropType<string | null>,
+      default: null
+    },
+    breakdownOption: {
+      type: String as PropType<string | null>,
+      default: null
+    },
+    baselineMetadata: {
+      type: Object as PropType<{name: string; color: string} | null>,
+      default: null
     }
   },
   components: {
@@ -271,30 +307,24 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus
   },
   setup(props, { emit }) {
+    const store = useStore();
+    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
     const {
-      selectedModelId,
       selectedScenarioIds,
       allModelRunData,
-      selectedTimestamp,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation
+      metadata,
+      timeseriesData,
+      breakdownOption
     } = toRefs(props);
 
-    const metadata = useModelMetadata(selectedModelId) as Ref<Model | null>;
+    const emitTimestampSelection = (newTimestamp: number) => {
+      emit('select-timestamp', newTimestamp);
+    };
 
-    const {
-      timeseriesData: selectedTimeseriesData,
-      relativeTo
-    } = useTimeseriesData(
-      metadata,
-      selectedModelId,
-      selectedScenarioIds,
-      colorFromIndex,
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation
-    );
+    const emitRelativeToSelection = (newValue: number | null) => {
+      emit('set-relative-to', newValue);
+    };
 
     const {
       dimensions,
@@ -305,96 +335,72 @@ export default defineComponent({
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
-    watch(() => metadata.value, () => {
-      mainModelOutput.value = metadata.value?.outputs[0];
-    }, {
-      immediate: true
-    });
-
-    const isDescriptionView = ref<boolean>(true);
-
-    const isModel = computed(() => {
-      return metadata.value?.type === DatacubeType.Model;
-    });
-
-    watch(() => props.selectedScenarioIds, () => {
-      relativeTo.value = null;
-      if (isModel.value) {
-        isDescriptionView.value = props.selectedScenarioIds.length === 0;
+    watchEffect(() => {
+      if (metadata.value && currentOutputIndex.value >= 0) {
+        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        mainModelOutput.value = outputs[currentOutputIndex.value];
       }
-    }, {
-      immediate: true
     });
 
-    function emitTimestampSelection(newTimestamp: number) {
-      emit('select-timestamp', newTimestamp);
-    }
-
-    watch(
-      () => selectedTimeseriesData.value,
-      () => {
-        const allTimestamps = selectedTimeseriesData.value
-          .map(timeseries => timeseries.points)
-          .flat()
-          .map(point => point.timestamp);
-        const lastTimestamp = _.max(allTimestamps);
-        if (lastTimestamp !== undefined) {
-          emitTimestampSelection(lastTimestamp);
-        }
-      });
-
-    const outputSourceSpecs = computed(() => {
-      return selectedScenarioIds.value.map(selectedScenarioId => {
-        return {
-          id: selectedScenarioId,
-          modelId: selectedModelId.value,
-          runId: selectedScenarioId, // we may not have a selected run at this point, so init map with the first run by default
-          outputVariable: metadata.value?.outputs[0].name || '',
-          timestamp: selectedTimestamp.value,
-          temporalResolution: selectedTemporalResolution.value || 'month',
-          temporalAggregation: selectedTemporalAggregation.value || 'mean',
-          spatialAggregation: selectedSpatialAggregation.value || 'mean'
-        };
-      });
+    const isModelMetadata = computed(() => {
+      return metadata.value !== null && isModel(metadata.value);
     });
+
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
     };
-    const mapRegionData = ref<RegionalAggregations>();
+    // When the list of selected scenario IDs changes, remove any map filters
+    //  that no longer apply to any of the selected scenarios
     watch(
-      () => outputSourceSpecs.value,
+      () => selectedScenarioIds.value,
       () => {
         mapFilters.value = mapFilters.value.filter(filter => {
-          return outputSourceSpecs.value.find(spec => filter.id === spec.id);
-        });
-        outputService.getRegionAggregations(outputSourceSpecs.value).then(result => {
-          mapRegionData.value = result;
+          return selectedScenarioIds.value.find(scenarioId => filter.id === scenarioId);
         });
       }
     );
 
+    const hasSingleTimestamp = computed(() => {
+      const allPoints = timeseriesData.value.flatMap(timeseries => timeseries.points);
+      if (allPoints.length === 0) return false;
+      const allTimestamps = allPoints.map(point => point.timestamp);
+      const timestamp = allTimestamps[0];
+      for (const other of allTimestamps.slice(1)) {
+        if (other !== timestamp) return false;
+      }
+      return true;
+    });
+
+    const timestampFormatter = (timestamp: number) => {
+      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
+      //  and be consistent.
+      if (breakdownOption.value === TemporalAggregationLevel.Year) {
+        const month = timestamp;
+        // We're only displaying the month, so the year doesn't matter
+        return dateFormatter(getTimestamp(1970, month) * 1000, 'MMMM');
+      }
+      return dateFormatter(timestamp * 1000, 'MMMM YYYY');
+    };
+
     return {
-      outputSourceSpecs,
       updateMapFilters,
       mapFilters,
-      selectedTimeseriesData,
       colorFromIndex,
       emitTimestampSelection,
-      relativeTo,
       dimensions,
       ordinalDimensionNames,
       drilldownDimensions,
       runParameterValues,
-      isDescriptionView,
       mainModelOutput,
-      metadata,
-      isModel,
-      mapRegionData
+      isModelMetadata,
+      emitRelativeToSelection,
+      timestampFormatter,
+      hasSingleTimestamp
     };
   },
   data: () => ({
-    showBaselineDefaults: false,
+    showBaselineDefaults: true,
     showNewRunsMode: false,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
@@ -413,6 +419,11 @@ export default defineComponent({
   },
   unmounted() {
     disableConcurrentTileRequestsCaching();
+  },
+  computed: {
+    mapSelectedLayer(): number {
+      return this.isGridMap ? 4 : this.selectedAdminLevel;
+    }
   },
   methods: {
     onMapLoad() {
@@ -553,34 +564,29 @@ header {
   }
 }
 
-.timeseries-chart {
+.insight-capture {
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
   flex: 1;
 }
 
-.map {
-  flex: 3;
+.timeseries-chart {
+  flex: 1;
+  min-height: 0;
 }
 
-// TODO: remove
-.placeholder {
-  background: #eee;
-  text-align: center;
-  padding: 10px;
-  color: #bbb;
-}
 
 .card-map-container {
-  height: 100%;
+  min-height: 0;
+  flex: 3;
   width: 70%;
 
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
   overflow-y: scroll;
-
-  &.full-width {
-    width: 100%;
-  }
+  width: 100%;
 }
 
 .card-map {
@@ -637,6 +643,14 @@ header {
     &:not(.isVisible) {
       padding: 0;
     }
+  }
+}
+
+.hidden-timeseries-message {
+  margin: 15px 0;
+
+  .timestamp {
+    color: $selected-dark;
   }
 }
 </style>

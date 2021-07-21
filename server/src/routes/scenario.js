@@ -36,8 +36,8 @@ router.post('/', asyncHandler(async (req, res) => {
     name,
     description,
     engine,
-    experimentId,
-    modelId,
+    experiment_id,
+    model_id,
     is_baseline: isBaseline
   } = req.body;
 
@@ -50,9 +50,9 @@ router.post('/', asyncHandler(async (req, res) => {
     parameter,
     name,
     description,
-    modelId,
+    model_id,
     engine,
-    experimentId,
+    experiment_id,
     isBaseline
   });
   res.json(experiment);

@@ -2,17 +2,22 @@
   <div class="data-explorer-container">
     <modal-header
       :nav-back-label="navBackLabel"
+      :select-label="selectLabel"
+      @close="onClose"
+      @selection="addToAnalysis"
     />
-    <div class="flex h-100" v-if="datacubes.length > 0">
+    <div class="flex h-100" v-if="facets !== null && filteredFacets !== null">
       <div class="flex h-100">
-        <data-explorer-facets-panel
-          :datacubes="datacubes"
-          :filteredDatacubes="filteredDatacubes"
+        <facets-panel
+          :facets="facets"
+          :filtered-facets="filteredFacets"
         />
       </div>
       <search class="flex-grow-1 h-100"
-        :datacubes="datacubes"
-        :filteredDatacubes="filteredDatacubes"
+        :facets="facets"
+        :filtered-datacubes="filteredDatacubes"
+        :enableMultipleSelection="enableMultipleSelection"
+        :initialDatacubeSelection="initialDatacubeSelection"
       />
     </div>
   </div>
@@ -22,35 +27,47 @@
 import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
-import DataExplorerFacetsPanel from '@/components/facets-panel/data-explorer-facets-panel';
+import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
-import Search from '@/components/data-explorer/search';
+import Search from '../components/data-explorer/search.vue';
 
-import { getDatacubes } from '@/services/new-datacube-service';
+import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
+import { getAnalysis } from '@/services/analysis-service';
 
 import filtersUtil from '@/utils/filters-util';
+import { FACET_FIELDS } from '@/utils/datacube-util';
+import { ANALYSIS } from '@/utils/messages-util';
+import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'DataExplorer',
   components: {
     Search,
-    DataExplorerFacetsPanel,
+    FacetsPanel,
     ModalHeader
   },
   data: () => ({
-    datacubes: [],
-    filteredDatacubes: []
+    facets: null,
+    filteredDatacubes: [],
+    filteredFacets: null,
+    selectLabel: 'Add To Analysis',
+    analysis: undefined,
+    enableMultipleSelection: true
   }),
   computed: {
     ...mapGetters({
-      filters: 'dataSearch/filters'
+      analysisId: 'dataAnalysis/analysisId',
+      filters: 'dataSearch/filters',
+      project: 'app/project',
+      selectedDatacubes: 'dataSearch/selectedDatacubes',
+      searchResultsCount: 'dataSearch/searchResultsCount',
+      analysisItems: 'dataAnalysis/analysisItems'
     }),
     navBackLabel() {
-      if (this.$route.query && this.$route.query.analysisName) {
-        return `Data Space ${this.$route.query.analysisName}`;
-      } else {
-        return 'Data Space';
-      }
+      return 'Back to ' + (this.analysis ? this.analysis.title : 'analysis');
+    },
+    initialDatacubeSelection() {
+      return this.analysisItems.map(item => item.id);
     }
   },
   watch: {
@@ -64,32 +81,70 @@ export default {
   },
   methods: {
     ...mapActions({
+      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'
     }),
 
-    async refresh() {
-      await this.fetchAllDatacubes();
-    },
-
-    // retrieves filtered and unfiltered datacube lists
-    async fetchAllDatacubes() {
+    // retrieves filtered datacube list
+    async fetchAllDatacubeData() {
       this.enableOverlay();
 
       // get the filtered data
       const filters = _.cloneDeep(this.filters);
-      filtersUtil.setClause(filters, 'type', ['model'], 'or', false);
       this.filteredDatacubes = await getDatacubes(filters);
       this.filteredDatacubes.forEach(item => (item.isAvailable = true));
 
-      // get all data
+      // retrieves filtered & unfiltered facet data
       const defaultFilters = { clauses: [] };
-      filtersUtil.setClause(defaultFilters, 'type', ['model'], 'or', false);
-      this.datacubes = await getDatacubes(defaultFilters);
-      this.datacubes.forEach(item => (item.isAvailable = true));
-      this.setSearchResultsCount(this.filteredDatacubes.length);
+      this.facets = await getDatacubeFacets(FACET_FIELDS, defaultFilters);
+      this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, filters);
+
       this.disableOverlay();
+    },
+
+    async refresh() {
+      await this.fetchAllDatacubeData();
+      this.analysis = await getAnalysis(this.analysisId);
+    },
+    async addToAnalysis() {
+      try {
+        // save the selected datacubes in the analysis object in the store/server
+        await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
+
+        if (this.enableMultipleSelection) {
+          this.$router.push({
+            name: 'dataComparative',
+            params: {
+              project: this.project,
+              analysisId: this.analysisId,
+              projectType: ProjectType.Analysis
+            }
+          });
+        } else {
+          this.$router.push({
+            name: 'data',
+            params: {
+              project: this.project,
+              analysisId: this.analysisId,
+              projectType: ProjectType.Analysis
+            }
+          });
+        }
+      } catch (e) {
+        this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
+      }
+    },
+    async onClose() {
+      this.$router.push({
+        name: 'dataComparative',
+        params: {
+          project: this.project,
+          analysisId: this.analysisId,
+          projectType: ProjectType.Analysis
+        }
+      });
     }
   }
 };

@@ -3,7 +3,8 @@ const FIELD_TYPES = Object.freeze({
   REGEXP: 1,
   RANGED: 2,
   DATE: 3,
-  CUSTOM: 7
+  CUSTOM: 7,
+  _QUALITY: 99 // HACK for query-util
 });
 
 const FIELD_LEVELS = Object.freeze({
@@ -39,6 +40,7 @@ const FIELDS = Object.freeze({
   },
   subjConcept: {
     fields: ['subj.concept'],
+    aggFields: ['subj.concept.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.STATEMENT
   },
@@ -54,6 +56,7 @@ const FIELDS = Object.freeze({
   },
   objConcept: {
     fields: ['obj.concept'],
+    aggFields: ['obj.concept.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.STATEMENT
   },
@@ -100,6 +103,7 @@ const FIELDS = Object.freeze({
   },
   topic: {
     fields: ['wm.topic'], // equivalent of ['subj.concept', 'obj.concept']
+    aggFields: ['wm.topic.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.STATEMENT
   },
@@ -185,6 +189,7 @@ const FIELDS = Object.freeze({
 
   // Placeholder for custom filter
   quality: {
+    type: FIELD_TYPES._QUALITY,
     level: FIELD_LEVELS.CUSTOM
   },
 
@@ -211,16 +216,19 @@ const FIELDS = Object.freeze({
   },
   docAuthor: {
     fields: [docPath('author')],
+    aggFields: [docPath('author.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   },
   docOrganization: {
     fields: [docPath('ner_analytics.org')],
+    aggFields: [docPath('ner_analytics.org.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   },
   docLocation: {
     fields: [docPath('ner_analytics.loc')],
+    aggFields: [docPath('ner_analytics.loc.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   },
@@ -242,6 +250,16 @@ const FIELDS = Object.freeze({
   // Types of document sources => AutoCollection: Factiva, BackgroundSource: LUMA - Tom C. Sept 18th 2020
   docSourceDomain: {
     fields: [docPath('document_source')],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.EVIDENCE
+  },
+  docLabel: {
+    fields: [docPath('label')],
+    type: FIELD_TYPES.NORMAL,
+    level: FIELD_LEVELS.EVIDENCE
+  },
+  docByodTag: {
+    fields: [docPath('origin.byod_tag')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   }

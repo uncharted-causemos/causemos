@@ -10,11 +10,11 @@ export function conceptShortName(name: string) {
 }
 
 export function conceptPrefix(concept: string) {
-  return concept.split('/').splice(0, 3).join('/').replace(/_/g, ' ');
+  return _.split(concept, '/').splice(0, 3).join('/').replace(/_/g, ' ');
 }
 
 export function conceptSuffix(concept: string) {
-  return concept.split('/').splice(3).join('/').replace(/_/g, ' ');
+  return _.split(concept, '/').splice(3).join('/').replace(/_/g, ' ');
 }
 
 export function conceptHumanName(name: string, set: Set<string>) {

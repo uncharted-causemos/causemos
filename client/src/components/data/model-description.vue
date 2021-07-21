@@ -1,10 +1,21 @@
 <template>
+  <div class="desc-header">
+    <a @click="scrollToSection('inputknobs')">
+      Input Knobs
+    </a>
+    <a @click="scrollToSection('outputknobs')">
+      Output Features
+    </a>
+    <a @click="scrollToSection('outputqualifiers')" style="margin-right: 1rem;" >
+      Qualifiers
+    </a>
+  </div>
   <div class="model-description-container">
-    <table class="table model-table">
+    <table id="inputknobs" class="table model-table">
       <thead>
           <tr>
-              <th>Input Knobs</th>
-              <th>Description</th>
+              <th class="name-col">Input Knobs</th>
+              <th class="desc-col">Description</th>
           </tr>
       </thead>
       <tbody v-if="metadata && metadata.parameters">
@@ -14,13 +25,13 @@
               v-model="param.display_name"
               type="text"
               class="model-attribute-text"
-              :class="{ 'attribute-invalid': param.display_name === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.display_name) }"
             >
             <input
               v-model="param.unit"
               type="text"
               class="model-attribute-text"
-              :class="{ 'attribute-invalid': param.unit === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
           <td>
@@ -28,32 +39,43 @@
               v-model="param.description"
               type="text"
               class="model-attribute-desc"
-              :class="{ 'attribute-invalid': param.description === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
           </td>
         </tr>
       </tbody>
     </table>
-    <table class="table model-table">
+    <table id="outputknobs" class="table model-table">
       <thead>
           <tr>
-              <th>Output Knobs</th>
+              <th class="name-col">
+                Output Features
+                <div v-if="outputVariables.length > 0 && currentOutputName !== ''">
+                  <span style="fontWeight: normal; fontStyle: italic">
+                    Default: {{ outputVariables[currentOutputIndex].display_name }}
+                  </span>
+                </div>
+              </th>
+              <th class="desc-col">Description</th>
           </tr>
       </thead>
       <tbody v-if="metadata && metadata.outputs">
-        <tr v-for="param in metadata.outputs" :key="param.id">
+        <tr
+          v-for="param in outputVariables"
+          :key="param.id"
+          :class="{'primary-output': param.name === currentOutputName}">
           <td class="model-attribute-pair">
             <input
               v-model="param.display_name"
               type="text"
               class="model-attribute-text"
-              :class="{ 'attribute-invalid': param.display_name === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.display_name) }"
             >
             <input
               v-model="param.unit"
               type="text"
               class="model-attribute-text"
-              :class="{ 'attribute-invalid': param.unit === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
           <td>
@@ -61,8 +83,74 @@
               v-model="param.description"
               type="text"
               class="model-attribute-desc"
-              :class="{ 'attribute-invalid': param.description === '' }"
+              :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
+          </td>
+        </tr>
+      </tbody>
+    </table>
+    <!-- qualifiers -->
+    <table id="outputqualifiers" class="table model-table">
+      <thead>
+          <tr>
+              <th class="name-col">Qualifiers</th>
+              <th class="desc-col">Description</th>
+              <th class="additional-col"></th>
+          </tr>
+      </thead>
+      <tbody v-if="metadata && metadata.qualifier_outputs">
+        <tr
+          v-for="qualifier in metadata.qualifier_outputs"
+          :key="qualifier.id">
+          <td class="model-attribute-pair">
+            <input
+              v-model="qualifier.display_name"
+              type="text"
+              class="model-attribute-text"
+              :class="{ 'attribute-invalid': !isValid(qualifier.display_name) }"
+            >
+            <input
+              v-model="qualifier.unit"
+              type="text"
+              class="model-attribute-text"
+              :class="{ 'attribute-invalid': !isValid(qualifier.unit) }"
+            >
+            <div>Related Features</div>
+            <select disabled ame="related_features" id="related_features">
+              <option
+                v-for="relatedFeature in qualifier.related_features"
+                :key="relatedFeature"
+              >{{relatedFeature.name}}</option>
+            </select>
+          </td>
+          <td>
+            <textarea
+              v-model="qualifier.description"
+              type="text"
+              rows="3"
+              class="model-attribute-desc"
+              :class="{ 'attribute-invalid': !isValid(qualifier.description) }"
+            />
+          </td>
+          <td>
+            <div>Role</div>
+            <div class="role-list"
+              :class="{ 'attribute-invalid': !(qualifier.roles.length > 0) }"
+            >
+              <div
+                v-for="role in Object.keys(FeatureQualifierRoles)"
+                :key="role"
+                @click="updateQualifierRole(qualifier, role)"
+              >
+                <div>
+                  <i
+                    class="fa fa-fw"
+                    :class="{ 'fa-check-square-o': isValidQualifierRole(qualifier, role), 'fa-square-o': !isValidQualifierRole(qualifier, role) }"
+                  />
+                  {{ role }}
+                </div>
+                </div>
+            </div>
           </td>
         </tr>
       </tbody>
@@ -71,18 +159,19 @@
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
-import { defineComponent, ref } from 'vue';
+import { computed, defineComponent, PropType, ComputedRef, toRefs } from 'vue';
 import _ from 'lodash';
-import { Model, ModelParameter } from '@/types/Datacube';
+import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
+import { useStore } from 'vuex';
+import { FeatureQualifierRoles } from '@/types/Enums';
 
 export default defineComponent({
-  name: 'DatacubeDescription',
+  name: 'ModelDescription',
   components: {
   },
   props: {
-    selectedModelId: {
-      type: String,
+    metadata: {
+      type: Object as PropType<Model | null>,
       default: null
     }
   },
@@ -90,26 +179,39 @@ export default defineComponent({
     'check-model-metadata-validity'
   ],
   setup(props) {
-    const metadata = ref<Model | null>(null);
-    async function fetchMetadata() {
-      const response = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
-      metadata.value = response.data;
-    }
-    fetchMetadata();
+    const { metadata } = toRefs(props);
+    const store = useStore();
+
+    // NOTE: this index is mostly driven from the component 'datacube-model-header'
+    //       which may list either all outputs or only the validated ones
+    const currentOutputIndex: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+
+    const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
+      if (metadata.value && currentOutputIndex.value >= 0) {
+        const outputs = metadata.value.validatedOutputs ? metadata.value.validatedOutputs : metadata.value.outputs;
+        return outputs;
+      }
+      return [];
+    });
+
+    const currentOutputName = computed(() => {
+      if (outputVariables.value) {
+        return outputVariables.value[currentOutputIndex.value].name;
+      }
+      return '';
+    });
+
     return {
-      metadata
+      currentOutputIndex,
+      currentOutputName,
+      outputVariables,
+      FeatureQualifierRoles
     };
   },
   computed: {
     inputParameters(): Array<any> {
-      return this.metadata ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
+      return this.metadata && this.metadata.parameters ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
     }
-  },
-  mounted(): void {
-    this.checkAndNotifyValidity();
   },
   watch: {
     metadata: {
@@ -121,13 +223,35 @@ export default defineComponent({
     }
   },
   methods: {
+    scrollToSection(sectionName: string) {
+      const elm = document.getElementById(sectionName) as HTMLElement;
+      const scrollViewOptions: ScrollIntoViewOptions = {
+        behavior: 'smooth',
+        block: 'start',
+        inline: 'nearest'
+      };
+      elm.scrollIntoView(scrollViewOptions);
+    },
+    updateQualifierRole(qualifier: FeatureQualifier, role: FeatureQualifierRoles) {
+      if (qualifier.roles.includes(role)) {
+        qualifier.roles = qualifier.roles.filter(r => r !== role);
+      } else {
+        qualifier.roles.push(role);
+      }
+    },
+    isValidQualifierRole(qualifier: FeatureQualifier, role: FeatureQualifierRoles) {
+      return qualifier.roles.includes(role);
+    },
+    isValid(name: string) {
+      return name && name !== '';
+    },
     checkAndNotifyValidity() {
       if (this.metadata === null || _.isEmpty(this.metadata)) {
         return;
       }
       let isValid = true;
-      const invalidInputs = this.metadata.parameters.filter((p: any) => p.display_name === '' || p.unit === '' || p.description === '');
-      const invalidOutputs = this.metadata.outputs.filter((p: any) => p.display_name === '' || p.unit === '' || p.description === '');
+      const invalidInputs = this.inputParameters.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
+      const invalidOutputs = this.outputVariables.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
       if (invalidInputs.length > 0 || invalidOutputs.length > 0) {
         isValid = false;
       }
@@ -144,9 +268,59 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import "~styles/variables";
 
+.name-col {
+  width: 20%
+}
+
+.desc-col {
+  width: 60%
+}
+
+.additional-col {
+  width: 20%
+}
+
+.role-list {
+  display: flex;
+  flex-direction: column;
+  border-style: solid;
+  border-width: thin;
+  border-color: lightgray;
+  overflow: auto;
+  max-height: 80px;
+
+  div {
+    cursor: pointer;
+    &:hover {
+      background:#EAEBEC;
+    }
+  }
+}
+
+.desc-header {
+  padding-bottom: 1rem;
+  display: flex;
+  justify-content: flex-end;
+
+  a {
+    margin-left: 2rem;
+    color: blue;
+    cursor: pointer;
+  }
+}
+
 .model-table tbody tr td {
   border-width: 0px;
-  line-height: 24px;
+}
+
+table.model-table thead tr th {
+  background-color: lavender;
+}
+
+.primary-output {
+  border-left-style: solid;
+  border-left-color: cadetblue;
+  border-left-width: 20px;
 }
 
 .model-attribute-pair {
@@ -160,17 +334,16 @@ export default defineComponent({
 
 .model-attribute-text {
   border-width: 1px;
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   border-color: rgb(216, 214, 214);
-  min-width: 100px;
+  min-width: 100%;
   flex-basis: 100%;
 }
 
 .model-attribute-desc {
   border-width: 1px;
-  margin-bottom: 22px;
   border-color: rgb(216, 214, 214);
-  min-width: 400px;
+  min-width: 100%;
   flex-basis: 100%;
 }
 
@@ -179,6 +352,8 @@ export default defineComponent({
   width: 100%;
   display: flex;
   flex-direction: column;
+  overflow: auto;
+  position: relative;
 }
 
 </style>
