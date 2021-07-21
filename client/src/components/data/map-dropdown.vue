@@ -102,15 +102,6 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-.CAG-operations-dropdown .dropdown-option {
-  border-bottom: 1px solid lightgray;
-  border-top: 1px solid lightgray;
-}
-
-</style>
-
-<style lang="scss" scoped>
-
 $width-name: 160px;
 
 .map-dropdown {
@@ -135,7 +126,10 @@ $width-name: 160px;
   .CAG-operations-dropdown {
     position: absolute;
     width: $width-name - 20px;
-
+    .dropdown-option {
+      border-bottom: 1px solid lightgray;
+      border-top: 1px solid lightgray;
+    }
   }
 }
 
