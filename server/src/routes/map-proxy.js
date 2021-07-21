@@ -95,7 +95,7 @@ router.get('/styles/default', asyncHandler(async (req, res) => {
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
 router.get('/styles/satellite', asyncHandler(async (req, res) => {
-  const stylesheet = {
+  res.json({
     version: 8,
     sources: {
       'raster-tiles': {
@@ -116,8 +116,7 @@ router.get('/styles/satellite', asyncHandler(async (req, res) => {
         maxzoom: 22
       }
     ]
-  };
-  res.json(stylesheet);
+  });
 }));
 
 module.exports = router;
