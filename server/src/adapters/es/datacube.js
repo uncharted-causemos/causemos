@@ -4,7 +4,6 @@ const ES = require('./client');
 const { DatacubeQueryUtil } = require('./datacube-query-util');
 const { AggUtil } = require('./agg-util');
 const { FIELDS, FIELD_TYPES, FIELD_LEVELS, NESTED_FIELD_PATHS } = require('./datacube-config');
-const { RESOURCE } = require('./adapter');
 const Logger = rootRequire('/config/logger');
 
 const MAX_ES_SUGGESTION_BUCKET_SIZE = 20;
@@ -147,6 +146,7 @@ class Datacube {
    */
   async searchFields(searchField, queryString) {
     const fieldNames = FIELDS[searchField].fields;
+    const aggFieldNames = FIELDS[searchField].aggFields || fieldNames;
 
     // Add wildcard so that we do a prefix search
     const processedQuery = decodeURI(queryString)
@@ -157,8 +157,10 @@ class Datacube {
       .join(' ');
 
     const searchBodies = [];
-    fieldNames.forEach(field => {
-      searchBodies.push({ index: RESOURCE.DATA_DATACUBE });
+    fieldNames.forEach((field, idx) => {
+      searchBodies.push({ index: 'data-datacube' });
+      // ^^ from adapter.js RESOURCE.DATA_DATACUBE
+      // can't use it directly because that would be circular dependency, yay!
       searchBodies.push({
         size: 0,
         aggs: this._createNestedQuery(field, {
@@ -173,7 +175,7 @@ class Datacube {
             aggs: {
               fieldAgg: {
                 terms: {
-                  field: field,
+                  field: aggFieldNames[idx],
                   size: MAX_ES_SUGGESTION_BUCKET_SIZE
                 }
               }
