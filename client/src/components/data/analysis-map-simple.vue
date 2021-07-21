@@ -186,7 +186,7 @@ export default {
   },
   data: () => ({
     baseLayer: undefined,
-    baseLayerTrigger: undefined, // This data member is used specifically to trigger data layer re-rendering.
+    baseLayerTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
