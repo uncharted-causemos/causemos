@@ -3,7 +3,7 @@
     <button
       type="button"
       class="btn btn-new-cag"
-      @click="onShowModelOptionsDropdown"
+      @click="onShowDropdownOptions"
     >
       <div class="btn-new-cag-controls">
         <img
@@ -11,11 +11,11 @@
           src="../../assets/layers_icon.svg"
         >
         <span class="lbl"> Map Layers </span>
-        <i class="fa fa-fw" :class="{ 'fa-angle-down': !showModelOptionsDropdown, 'fa-angle-up': showModelOptionsDropdown }"/>
+        <i class="fa fa-fw" :class="{ 'fa-angle-down': !showDropdownOptions, 'fa-angle-up': showDropdownOptions }"/>
       </div>
     </button>
     <dropdown-control
-      v-if="showModelOptionsDropdown"
+      v-if="showDropdownOptions"
       class="CAG-operations-dropdown">
       <template #content>
         <map-dropdown-category :text="'BASE LAYERS'"/>
@@ -61,14 +61,14 @@ export default defineComponent({
   },
   setup() {
     const store = useStore();
-    const showModelOptionsDropdown = ref(false);
+    const showDropdownOptions = ref(false);
 
     const project = computed(() => store.getters['app/project']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     return {
       toaster: useToaster(),
-      showModelOptionsDropdown,
+      showDropdownOptions,
       project,
       currentCAG,
       downloadURL: computed(() => `/api/models/${currentCAG.value}/register-payload`)
@@ -108,8 +108,8 @@ export default defineComponent({
     clickTilesOption() {
       this.setSelectedDataLayer(DATA_LAYER.TILES);
     },
-    onShowModelOptionsDropdown() {
-      this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
+    onShowDropdownOptions() {
+      this.showDropdownOptions = !this.showDropdownOptions;
     }
   }
 });
