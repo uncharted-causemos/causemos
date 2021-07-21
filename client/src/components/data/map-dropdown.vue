@@ -133,9 +133,5 @@ $width-name: 160px;
   }
 }
 
-a {
-  text-decoration: inherit;
-  color: inherit;
-}
 </style>
 
