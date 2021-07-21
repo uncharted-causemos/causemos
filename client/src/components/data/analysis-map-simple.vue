@@ -186,7 +186,7 @@ export default {
   },
   data: () => ({
     baseLayer: undefined,
-    baseLayerTrigger: undefined,
+    baseLayerTrigger: undefined, // This data member is used specifically to trigger data layer re-rendering.
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
@@ -473,7 +473,6 @@ export default {
       this._unsetHover(event.map);
     },
     onStyleChange() {
-      this.refresh();
       this.baseLayerTrigger = this.selectedBaseLayerEndpoint;
     },
     popupValueFormatter(feature) {
