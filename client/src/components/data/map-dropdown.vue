@@ -6,7 +6,10 @@
       @click="onShowModelOptionsDropdown"
     >
       <div class="btn-new-cag-controls">
-        <i class="layer-group fa fa-fw fa-layer-group"/>
+        <img
+          class="logo"
+          src="../../assets/layers_icon.svg"
+        >
         <span class="lbl"> Map Layers </span>
         <i class="fa fa-fw" :class="{ 'fa-angle-down': !showModelOptionsDropdown, 'fa-angle-up': showModelOptionsDropdown }"/>
       </div>
@@ -123,7 +126,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-$width-name: 165px;
+$width-name: 160px;
 
 .map-dropdown {
   padding: 0px 10px;
@@ -138,6 +141,10 @@ $width-name: 165px;
     .btn-new-cag-controls {
       margin: auto;
       width: fit-content;
+      .logo {
+        padding-bottom: 2px;
+        padding-right: 2px;
+      }
     }
   }
   .CAG-operations-dropdown {
