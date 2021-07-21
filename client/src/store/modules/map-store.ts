@@ -14,7 +14,7 @@ interface MapState {
 
 const state: MapState = {
   selectedBaseLayer: BASE_LAYER.DEFAULT,
-  selectedDataLayer: DATA_LAYER.TILES
+  selectedDataLayer: DATA_LAYER.ADMIN
 };
 
 const getters: GetterTree<MapState, any> = {
