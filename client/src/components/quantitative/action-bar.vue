@@ -47,6 +47,13 @@
           <i class="fa fa-fw fa-refresh" />
         </button>
       </li>
+      <li class="nav-item">
+        <button
+          class="btn btn-primary"
+          @click="runModel">
+          {{ isModelDirty === 0 ? '*' : '' }} Run
+        </button>
+      </li>
     </ul>
 
     <save-scenario-modal
@@ -74,11 +81,18 @@ export default {
     DropdownControl
   },
   props: {
+    modelSummary: {
+      type: Object,
+      required: true
+    },
     scenarios: {
       type: Array,
       default: () => []
     }
   },
+  emits: [
+    'run-model', 'revert-draft-changes', 'overwrite-scenario', 'save-new-scenario'
+  ],
   data: () => ({
     isModalOpen: false,
     isScendarioDropdownOpen: false
@@ -103,12 +117,18 @@ export default {
       return {
         name: '[No Scenarios Exist]'
       };
+    },
+    isModelDirty() {
+      return _.get(this.modelSummary, 'status', true);
     }
   },
   methods: {
     ...mapActions({
       setSelectedScenarioId: 'model/setSelectedScenarioId'
     }),
+    runModel() {
+      this.$emit('run-model');
+    },
     revertDraftChanges() {
       this.$emit('revert-draft-changes');
     },

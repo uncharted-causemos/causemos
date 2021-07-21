@@ -15,18 +15,19 @@
             </a>
           </li>
           <li class="nav-item nav-item--label">
-            <span>{{ projectMetadata.name || project }}</span>
+            <span v-if="projectMetadata !== null && projectMetadata.name !== ''">{{ projectMetadata.name }}</span>
+            <span v-else>{{ project }}</span>
             <span v-if="currentView === 'home'">
               All Projects
             </span>
           </li>
           <li
-            v-if="project !== null && projectType !== ProjectType.Analysis"
+            v-if="project !== null && projectMetadata !== null && projectType !== ProjectType.Analysis"
             class="nav-item"
             :class="{underlined: currentView === 'overview'}">
             <router-link
               class="nav-link"
-              :to="{name:'domainDatacubeOverview', params:{project: project}}"
+              :to="{name:'domainDatacubeOverview', params:{project: projectMetadata.name}}"
             ><i class="fa fa-connectdevelop" />
               Family Page</router-link>
           </li>
@@ -76,18 +77,6 @@
       <!-- Help button -->
       <ul
         class="nav navbar-nav navbar-right help-holder">
-        <!--
-        <li
-            v-if="project !== null && projectType === ProjectType.Analysis"
-            class="nav-item"
-            :class="{underlined: currentView === 'modelPublishingExperiment'}">
-            <router-link
-              class="nav-link"
-              :to="{name: 'modelPublishingExperiment', params:{project}}"
-            > <i class="fa fa-cubes" />
-              Publish Model</router-link>
-        </li>
-        -->
         <li class="nav-item nav-item--help">
           <a
             href="https://docs.google.com/presentation/d/1DvixJx4bTkaaIC1mvN26Mf-ykfPzS1NWEmOMMyDWI3E/edit?usp=sharing"
@@ -98,7 +87,7 @@
       </ul>
 
       <!-- Insighting (ALL) -->
-      <insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
+      <insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment' || currentView === 'overview'" />
     </div>
   </nav>
 </template>

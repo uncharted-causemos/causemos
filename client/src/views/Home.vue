@@ -64,7 +64,7 @@
           </div>
           <div class="row projects-list">
             <div class="row projects-list-header">
-              <div class="col-sm-3">
+              <div class="col-sm-4">
                 Name
               </div>
               <div class="col-sm-2 number-col">
@@ -73,8 +73,8 @@
               <div class="col-sm-4 number-col">
                 Knowledge Base
               </div>
-              <div class="col-sm-3 number-col">
-                Last Updated
+              <div class="col-sm-2 number-col">
+                Updated
               </div>
             </div>
             <div class="projects-list-elements">
@@ -132,7 +132,7 @@
               <div class="col-sm-3">
                 Family name
               </div>
-              <div class="col-sm-1 number-col" style="padding: 0;">
+              <div class="col-sm-2 number-col" style="padding: 0;">
                 Ready (Y | N)
               </div>
               <div class="col-sm-2 number-col" style="padding: 0;">
@@ -146,8 +146,8 @@
               <div class="col-sm-3 number-col" style="padding: 0;">
                 Source
               </div>
-              <div class="col-sm-3 number-col" style="padding: 0;">
-                Last Updated
+              <div class="col-sm-2 number-col" style="padding: 0;">
+                Updated
               </div>
             </div>
             <div class="projects-list-elements">

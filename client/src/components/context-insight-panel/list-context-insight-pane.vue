@@ -75,7 +75,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 import router from '@/router';
-import { getContextSpecificInsights } from '@/services/insight-service';
+import { getContextSpecificInsights, getAllInsights } from '@/services/insight-service';
 import { ref, watchEffect, computed } from 'vue';
 
 export default {
@@ -102,7 +102,13 @@ export default {
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        const insights = await getContextSpecificInsights(project.value, contextId.value, currentView.value);
+        let insights;
+        // if contextId.value is '' then contextId must be ignored; fetch project insights rather than context insights
+        if (contextId.value === '') {
+          insights = await getAllInsights(project.value, contextId.value);
+        } else {
+          insights = await getContextSpecificInsights(project.value, contextId.value, currentView.value);
+        }
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
@@ -137,7 +143,6 @@ export default {
   },
   methods: {
     ...mapActions({
-      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
       setCountContextInsights: 'contextInsightPanel/setCountContextInsights'
     }),
     stringFormatter,

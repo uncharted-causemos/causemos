@@ -114,6 +114,31 @@ const createProject = async (kbId, name, description) => {
 };
 
 /**
+ * Updates a project info
+ *
+ * @param {string} projectId - project id
+ * @param {object} projectFields - project fields
+ */
+const updateProject = async(projectId, projectFields) => {
+  const project = Adapter.get(RESOURCE.PROJECT);
+
+  const keyFn = (doc) => {
+    return doc.id;
+  };
+
+  const results = await project.update({
+    id: projectId,
+    ...projectFields
+  }, keyFn);
+
+  if (results.errors) {
+    throw new Error(JSON.stringify(results.items[0]));
+  }
+
+  return results;
+};
+
+/**
  * Check health, used to check index is ready after cloning
  */
 const checkIndexStatus = async (projectId) => {
@@ -146,6 +171,7 @@ const deleteProject = async (projectId) => {
   const scenarioAdapter = Adapter.get(RESOURCE.SCENARIO);
   // misc
   const insightAdapter = Adapter.get(RESOURCE.INSIGHT);
+  const questionAdapter = Adapter.get(RESOURCE.QUESTION);
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
 
   const models = await modelAdapter.find([{ field: 'project_id', value: projectId }], {});
@@ -180,6 +206,11 @@ const deleteProject = async (projectId) => {
   // Remove project's insights
   Logger.info(`Deleting ${projectId} insights`);
   response = await insightAdapter.remove([{ field: 'project_id', value: projectId }]);
+  Logger.info(JSON.stringify(response));
+
+  // Remove project's questions
+  Logger.info(`Deleting ${projectId} questions`);
+  response = await questionAdapter.remove([{ field: 'project_id', value: projectId }]);
   Logger.info(JSON.stringify(response));
 
   // Remove project's ontologies
@@ -776,6 +807,7 @@ module.exports = {
   createProject,
   checkIndexStatus,
   deleteProject,
+  updateProject,
 
   findProjectStatements,
   findProjectStatementsByEdges,

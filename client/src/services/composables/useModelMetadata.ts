@@ -16,6 +16,7 @@ export default function useModelMetadata(
     metadata.value = null;
     let isCancelled = false;
     async function fetchMetadata() {
+      if (dataId.value === null) return;
       const rawMetadata = await getDatacubeById(dataId.value);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the

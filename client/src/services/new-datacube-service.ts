@@ -37,7 +37,7 @@ export const getDatacubeById = async (datacubeId: string) => {
 /**
  * Get the count of the datacubes that meets the filter criteria. By default filters is empty.
  * @param {Filters} filters Optional filters object
- * @returns {number}
+ * @returns {Promise<number>}
  */
 export const getDatacubesCount = async (filters: Filters) => {
   const { data } = await API.get('maas/new-datacubes/count', { params: { filters: filters } });
@@ -46,30 +46,27 @@ export const getDatacubesCount = async (filters: Filters) => {
 
 /**
  * Get the count of model type datacubes
- * @returns {number}
  */
 export const getModelDatacubesCount = async () => {
-  return _getDatacubesCount('model');
+  return await _getDatacubesCount('model');
 };
 
 /**
  * Get the count of indicator type datacubes
- * @returns {number}
  */
 export const getIndicatorDatacubesCount = async () => {
-  return _getDatacubesCount('indicator');
+  return await _getDatacubesCount('indicator');
 };
 
 /**
  * Get the datacube count for the specified type
  * @param {string} datacubeType - datacube type
- * @returns {number}
  */
 const _getDatacubesCount = async (datacubeType: string) => {
   const typeField = 'type';
   const filters = fu.newFilters();
   fu.setClause(filters, typeField, [`${datacubeType}`], 'or', false);
-  return getDatacubesCount(filters);
+  return await getDatacubesCount(filters);
 };
 
 /**

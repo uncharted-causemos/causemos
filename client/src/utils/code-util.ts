@@ -164,6 +164,14 @@ export const CODE_TABLE: FieldMap = {
   DOC_SENTIMENT: {
     ...field('docSentiment', 'Sentiment'),
     ...searchable('Sentiment', false)
+  },
+  DOC_LABEL: {
+    ...field('docLabel', 'Document Corpora'),
+    ...searchable('Document Corpora', false)
+  },
+  DOC_BYOD_TAG: {
+    ...field('docByodTag', 'Document Tags'),
+    ...searchable('Document Tags', false)
   }
 };
 

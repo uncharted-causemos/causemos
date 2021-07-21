@@ -26,11 +26,11 @@
           type="button"
           class="btn btn-link no-padding"
           style="margin-left: 1rem;"
-          @click="open(project.id)">
+          @click="open()">
           <span class="overflow-ellipsis project-name">{{project.name}}</span>
         </button>
       </div>
-      <div class="col-sm-1 text-center no-padding">
+      <div class="col-sm-2 text-center no-padding">
         {{ project.ready_instances.length }} | <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
       </div>
       <div class="col-sm-2 text-center no-padding">
@@ -39,8 +39,8 @@
       <div class="col-sm-3 text-center no-padding overflow-ellipsis">
         {{ project.source }}
       </div>
-      <div class="col-sm-3 no-padding">
-        {{ dateFormatter(project.modified_at) }}
+      <div class="col-sm-2 no-padding">
+        {{ dateFormatter(project.modified_at, 'YYYY-MM-DD') }}
       </div>
     </div>
     <div
@@ -65,7 +65,7 @@
             v-tooltip.top-center="'Open the project'"
             type="button"
             class="btn btn-primary"
-            @click="open(project.id)"
+            @click="open()"
           ><i class="fa fa-folder-open-o" />
             Open Project</button>
         </div>
@@ -138,13 +138,13 @@ export default defineComponent({
     closeWarning() {
       this.showModal = false;
     },
-    open(id: string) {
+    open() {
       // Reset filters every time we open a new project
       this.clearLastQuery();
       this.$router.push({
         name: 'domainDatacubeOverview',
         params: {
-          project: id,
+          project: this.project.name,
           projectType: this.project.type
         }
       });

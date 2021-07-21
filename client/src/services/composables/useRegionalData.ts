@@ -5,9 +5,9 @@ import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
-import { useStore } from 'vuex';
 import { AdminRegionSets } from '@/types/Datacubes';
-import { AggregationOption } from '@/types/Enums';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -17,42 +17,37 @@ const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
 };
 export default function useRegionalData(
   selectedModelId: Ref<string>,
-  selectedScenarioIds: Ref<string[]>,
-  selectedTimestamp: Ref<number | null>,
   selectedSpatialAggregation: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
-  metadata: Ref<Model | Indicator | null>
+  metadata: Ref<Model | Indicator | null>,
+  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
 ) {
-  const store = useStore();
-  const currentOutputIndex = computed(
-    () => store.getters['modelPublishStore/currentOutputIndex']
-  );
-
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
-    const timestamp = selectedTimestamp.value;
     if (
       selectedModelId.value === null ||
-      selectedScenarioIds.value.length === 0 ||
-      timestamp === null ||
-      modelMetadata === null ||
-      currentOutputIndex.value === undefined
+      modelMetadata === null
     ) {
       return [];
     }
     const outputs = modelMetadata.validatedOutputs
       ? modelMetadata.validatedOutputs
       : modelMetadata.outputs;
-    return selectedScenarioIds.value.map(selectedScenarioId => ({
-      id: selectedScenarioId,
+
+    const defaultOutputIndex = modelMetadata.validatedOutputs?.findIndex(
+        o => o.name === metadata.value?.default_feature) ?? 0;
+    const mainFeatureName = outputs[defaultOutputIndex].name;
+
+    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
+      id: timeseriesId,
       modelId: selectedModelId.value,
-      runId: selectedScenarioId,
-      outputVariable: outputs[currentOutputIndex.value].name || '',
+      runId: scenarioId,
+      outputVariable: mainFeatureName || '',
       timestamp,
-      temporalResolution: selectedTemporalResolution.value || 'month',
+      temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
       temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,
       spatialAggregation: selectedSpatialAggregation.value || AggregationOption.Mean
     }));

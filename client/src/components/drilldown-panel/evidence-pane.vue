@@ -2,7 +2,7 @@
   <div class="evidence-container">
     <modal-document
       v-if="!!documentModalData"
-      :document-data="documentModalData"
+      :document-id="documentModalData.doc_id"
       @close="documentModalData = null"
     />
     <div class="pane-summary">
@@ -116,6 +116,7 @@
                 v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_SUBJ"
                 :concept="selectedRelationship.source"
                 :suggestions="suggestions"
+                :project="project"
                 @select="confirmUpdateGrounding(item, selectedRelationship.source, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
                 @close="closeEditor"/>
 
@@ -123,6 +124,7 @@
                 v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
                 :concept="selectedRelationship.target"
                 :suggestions="suggestions"
+                :project="project"
                 @select="confirmUpdateGrounding(item, selectedRelationship.target, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
                 @close="closeEditor"/>
             </div>
