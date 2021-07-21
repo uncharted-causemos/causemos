@@ -13,7 +13,12 @@ const getIndicatorData = async (dataId, feature, temporalResolution, temporalAgg
   const options = {
     method: 'GET',
     url: process.env.WM_GO_URL +
-      `/maas/output/timeseries?data_id=${encodeURI(dataId)}&run_id=indicator&feature=${encodeURI(feature)}&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`
+      `/maas/output/timeseries?data_id=${encodeURI(dataId)}&run_id=indicator&feature=${encodeURI(feature)}&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {}
   };
   const response = await requestAsPromise(options);
   return response;
@@ -233,7 +238,7 @@ const setDefaultIndicators = async (modelId) => {
     const feature = topMatch.default_feature;
     const dataId = topMatch.data_id;
 
-    let timeseries = getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+    let timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
     if (_.isEmpty(timeseries)) {
       timeseries = [];
     }
