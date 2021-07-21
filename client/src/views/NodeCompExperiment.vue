@@ -397,7 +397,7 @@ export default defineComponent({
         model_id: this.selectedNode.model_id,
         parameter: {
           id: this.outputSpecs[this.currentOutputIndex].id,
-          name: this.mainModelOutput?.name,
+          name: this.mainModelOutput?.display_name,
           unit: this.mainModelOutput?.unit,
           // to do respect selections made by users in the experiment view
           country: '',

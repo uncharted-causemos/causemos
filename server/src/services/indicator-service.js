@@ -222,7 +222,7 @@ const setDefaultIndicators = async (modelId) => {
       modified_at: editTime,
       parameter: {
         id: topMatch.id,
-        name: topMatch.outputs[0].name,
+        name: topMatch.outputs[0].display_name,
         unit: topMatch.outputs[0].unit,
         country: '',
         admin1: '',
