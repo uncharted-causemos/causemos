@@ -473,6 +473,8 @@ export default {
       this._unsetHover(event.map);
     },
     onStyleChange() {
+      // This line of code must be executed after map style is changed so that the data layer shows up.
+      // The data layer only shows up if wm-map-vector is re-rendered using :key after the style change.
       this.baseLayerTrigger = this.selectedBaseLayerEndpoint;
     },
     popupValueFormatter(feature) {
