@@ -416,7 +416,7 @@ const clearNodeParameter = async (modelId, nodeId) => {
 /**
  *
  */
-const buildNodeParametersPayload = (nodeParameters, startTime, endTime) => {
+const buildNodeParametersPayload = (nodeParameters) => {
   const r = {};
 
   const NO_INDICATOR_DEFAULT = () => ({
@@ -434,20 +434,19 @@ const buildNodeParametersPayload = (nodeParameters, startTime, endTime) => {
       r[np.concept] = NO_INDICATOR_DEFAULT();
     } else {
       const indicatorTimeSeries = _.get(np.parameter, 'indicator_time_series', []);
-      const filteredTimeSeries = indicatorTimeSeries.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
 
-      if (_.isEmpty(filteredTimeSeries)) {
+      if (_.isEmpty(indicatorTimeSeries)) {
         r[np.concept] = NO_INDICATOR_DEFAULT();
       } else {
-        const values = filteredTimeSeries.map(d => d.value);
+        const values = indicatorTimeSeries.map(d => d.value);
         const { max, min } = modelUtil.projectionValueRange(values);
 
         r[np.concept] = {
           name: np.parameter.indicator_name,
-          minValue: min,
-          maxValue: max,
+          minValue: _.get(np.parameter, 'min', min),
+          maxValue: _.get(np.parameter, 'max', max),
           func: valueFunc,
-          values: filteredTimeSeries,
+          values: indicatorTimeSeries,
           numLevels: NUM_LEVELS,
           resolution: _.get(np.parameter, 'resolution', 'month'),
           period: _.get(np.parameter, 'period', 12)
