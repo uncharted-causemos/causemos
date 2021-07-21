@@ -8,7 +8,7 @@
       @reset-cag="resetCAGLayout()"
     />
     <main>
-      <context-insight-panel />
+      <analytical-questions-and-insights-panel />
       <div class="graph-container" @dblclick="onBackgroundDblClick">
         <empty-state-instructions v-if="showEmptyStateInstructions" />
         <CAG-graph
@@ -186,7 +186,7 @@ import ModalImportConflict from '@/components/qualitative/modal-import-conflict.
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
-import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { defineComponent, ref } from '@vue/runtime-core';
 import {
   CAGGraph as CAGGraphInterface,
@@ -249,7 +249,7 @@ export default defineComponent({
     ModalImportCag,
     ModalImportConflict,
     ModalPathFind,
-    ContextInsightPanel
+    AnalyticalQuestionsAndInsightsPanel
   },
   setup() {
     return {

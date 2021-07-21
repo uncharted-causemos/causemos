@@ -120,7 +120,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
-import { mapActions, mapGetters, useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
@@ -142,6 +142,7 @@ import { DatacubeType, ProjectType } from '@/types/Enums';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import modelService from '@/services/model-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -163,6 +164,11 @@ export default defineComponent({
     DropdownButton,
     FullScreenModalHeader
   },
+  data: () => ({
+    modelComponents: {
+      nodes: []
+    }
+  }),
   setup() {
     const selectedAdminLevel = ref(2);
     function setSelectedAdminLevel(newValue: number) {
@@ -173,6 +179,12 @@ export default defineComponent({
     const isExpanded = true;
 
     const store = useStore();
+
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const nodeId = computed(() => store.getters['app/nodeId']);
+    const project = computed(() => store.getters['app/project']);
+
+
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
     const datacubeId = computed(() => store.getters['app/datacubeId']);
 
@@ -329,7 +341,10 @@ export default defineComponent({
       setBreakdownOption,
       selectLabel,
       navBackLabel,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      currentCAG,
+      nodeId,
+      project
     };
   },
   unmounted(): void {
@@ -341,13 +356,21 @@ export default defineComponent({
     // FIXME: actually read the value of the default output variable from the metadata
     // later, this value will be persisted per analysis
     this.setCurrentOutputIndex(0);
+
+    // Load the CAG so we can find relevant components
+    modelService.getComponents(this.currentCAG).then(_modelComponents => {
+      this.modelComponents = _modelComponents;
+    });
   },
+
+
   computed: {
-    ...mapGetters({
-      currentCAG: 'app/currentCAG',
-      nodeId: 'app/nodeId',
-      project: 'app/project'
-    })
+    selectedNode(): any {
+      if (this.nodeId === undefined || this.modelComponents === null) {
+        return null;
+      }
+      return this.modelComponents.nodes.find((node: { id: any }) => node.id === this.nodeId);
+    }
   },
   methods: {
     ...mapActions({
@@ -367,6 +390,58 @@ export default defineComponent({
     },
 
     onSelection () {
+      const nodeParameters = {
+        id: this.selectedNode.id,
+        concept: this.selectedNode.concept,
+        label: this.selectedNode.label,
+        model_id: this.selectedNode.model_id,
+        parameter: {
+          id: this.outputSpecs[this.currentOutputIndex].id,
+          name: this.mainModelOutput?.display_name,
+          unit: this.mainModelOutput?.unit,
+          // to do respect selections made by users in the experiment view
+          country: '',
+          admin1: '',
+          admin2: '',
+          admin3: '',
+          geospatial_aggregation: this.outputSpecs[this.currentOutputIndex].spatialAggregation,
+          temporal_aggregation: this.outputSpecs[this.currentOutputIndex].temporalAggregation,
+          temporal_resolution: this.outputSpecs[this.currentOutputIndex].temporalResolution,
+          timeseries: [ // to do get actual timeseries data here
+            {
+              timestamp: 1527811200000,
+              value: 10.5
+            },
+            {
+              timestamp: 1530403200000,
+              value: 13.5
+            },
+            {
+              timestamp: 1533081600000,
+              value: 24.5
+            },
+            {
+              timestamp: 1535760000000,
+              value: 15.2
+            },
+            {
+              timestamp: 1538352000000,
+              value: 24.9
+            },
+            {
+              timestamp: 1541030400000,
+              value: 30.2
+            },
+            {
+              timestamp: 1543622400000,
+              value: 11.2
+            }
+          ]
+        }
+      };
+      modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
+
+
       this.$router.push({
         name: 'nodeDrilldown',
         params: {

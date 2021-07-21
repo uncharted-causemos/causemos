@@ -8,7 +8,7 @@
     >
     </full-screen-modal-header>
     <main>
-    <context-insight-panel />
+    <analytical-questions-and-insights-panel />
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
     <datacube-card
@@ -166,7 +166,7 @@ import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import { Insight } from '@/types/Insight';
-import ContextInsightPanel from '@/components/context-insight-panel/context-insight-panel.vue';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
@@ -190,7 +190,7 @@ export default defineComponent({
     Disclaimer,
     DatacubeDescription,
     DropdownButton,
-    ContextInsightPanel,
+    AnalyticalQuestionsAndInsightsPanel,
     FullScreenModalHeader,
     MapDropdown
   },
