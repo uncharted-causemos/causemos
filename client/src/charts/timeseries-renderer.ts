@@ -20,10 +20,9 @@ const X_AXIS_TICK_SIZE_PX = 2;
 //  because under the hood d3.tickFormat requires d3.NumberType.
 // It correctly converts, but its TypeScript definitions don't
 //  seem to reflect that.
-// FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
-//  and be consistent.
+
 const DATE_FORMATTER = (value: any) =>
-  dateFormatter(value * 1000, 'MMM DD, YYYY');
+  dateFormatter(value, 'MMM DD, YYYY');
 const BY_YEAR_DATE_FORMATTER = (value: any) =>
   dateFormatter(new Date(0, value), 'MMM');
 
