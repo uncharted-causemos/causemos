@@ -34,6 +34,15 @@ const getSummary = async (modelId: string) => {
 };
 
 /**
+ * Get the number of edges and nodes for each model passed in
+ */
+const getModelStats = async (modelIds: Array<string>) => {
+  const result = await API.get('models', { params: { modelIds: modelIds, size: 200 } });
+  return result.data;
+};
+
+
+/**
  * Get model data
  */
 const getComponents = async (modelId: string) => {
@@ -691,6 +700,7 @@ export default {
   getSummary,
   checkAndUpdateRegisteredStatus,
   getComponents,
+  getModelStats,
   getEdgeStatements,
   getNodeStatements,
 

@@ -177,7 +177,7 @@ const toQuantitative = analysis => ({
   type: 'quantitative'
 });
 
-const toQualitative = cag => ({
+const toQualitative = cag => ({ // andrew modify this
   id: cag.id,
   previewImageSrc: cag.thumbnail_source ?? null,
   title: cag.name,
@@ -267,6 +267,7 @@ export default {
       this.quantitativeAnalyses = result1.map(toQuantitative);
 
       // knowledge and model space analyses
+      // gonna need some code here
       const result2 = await modelService.getProjectModels(this.project);
       this.qualitativeAnalyses = result2.models.map(toQualitative);
 
