@@ -58,7 +58,7 @@ export default {
   },
   mounted() {
     // Generates lex pills from select datacube columns
-    const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field.field);
+    const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field);
     const keys = _.difference(Object.keys(this.facets), excludedFields);
     const basicPills = keys.map(k => {
       const dcField = {
@@ -74,9 +74,9 @@ export default {
     });
 
     const suggestionPills = Object.values(SUGGESTION_CODE_TABLE).map(suggestInfo =>
-      new DynamicValuePill(suggestInfo.field,
+      new DynamicValuePill(suggestInfo,
         suggestionService.getDatacubeSuggestionFunction(
-          suggestInfo.field.field, suggestInfo.filterFunc),
+          suggestInfo.field, suggestInfo.filterFunc),
         suggestInfo.searchMessage,
         true,
         SingleRelationState)

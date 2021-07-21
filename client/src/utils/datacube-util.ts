@@ -2,8 +2,7 @@ import { DatacubeFeature, Model, Indicator, Datacube } from '@/types/Datacube';
 import { DatacubeType } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 
-export interface SuggestionField {
-  field: Field;
+export interface SuggestionField extends Field {
   searchMessage: string;
   filterFunc?: Function;
 }
@@ -27,8 +26,8 @@ const filterArray = (result: string[], hint: string) => {
 */
 export const CODE_TABLE: FieldMap = {
   ONTOLOGY_MATCH: {
-    ...field('conceptName', 'Ontology'),
-    ...searchable('Ontology', false)
+    ...field('conceptName', 'Concept'),
+    ...searchable('Concept', false)
   },
   PERIOD: {
     ...field('period', 'Period'),
@@ -43,56 +42,42 @@ export const CODE_TABLE: FieldMap = {
 
 export const SUGGESTION_CODE_TABLE: SuggestionFieldMap = {
   COUNTRY: {
-    field: {
-      ...field('country', 'Country'),
-      ...searchable('Country', false)
-    },
+    ...field('country', 'Country'),
+    ...searchable('Country', false),
     searchMessage: 'Select a country',
     filterFunc: filterArray
   },
   ADMIN1: {
-    field: {
-      ...field('admin1', 'Administrative Area 1'),
-      ...searchable('Administrative Area 1', false)
-    },
+    ...field('admin1', 'Administrative Area 1'),
+    ...searchable('Administrative Area 1', false),
     searchMessage: 'Select an administrative area',
     filterFunc: filterArray
   },
   ADMIN2: {
-    field: {
-      ...field('admin2', 'Administrative Area 2'),
-      ...searchable('Administrative Area 2', false)
-    },
+    ...field('admin2', 'Administrative Area 2'),
+    ...searchable('Administrative Area 2', false),
     searchMessage: 'Select an administrative area',
     filterFunc: filterArray
   },
   ADMIN3: {
-    field: {
-      ...field('admin3', 'Administrative Area 3'),
-      ...searchable('Administrative Area 3', false)
-    },
+    ...field('admin3', 'Administrative Area 3'),
+    ...searchable('Administrative Area 3', false),
     searchMessage: 'Select an administrative area',
     filterFunc: filterArray
   },
   OUTPUT_NAME: {
-    field: {
-      ...field('variableName', 'Output Name'),
-      ...searchable('Output Name', false)
-    },
+    ...field('variableName', 'Output Name'),
+    ...searchable('Output Name', false),
     searchMessage: 'Select an output name'
   },
   DATASET_NAME: {
-    field: {
-      ...field('name', 'Dataset Name'),
-      ...searchable('Dataset Name', false)
-    },
+    ...field('name', 'Dataset Name'),
+    ...searchable('Dataset Name', false),
     searchMessage: 'Select a dataset name'
   },
   FAMILY_NAME: {
-    field: {
-      ...field('familyName', 'Family Name'),
-      ...searchable('Family Name', false)
-    },
+    ...field('familyName', 'Family Name'),
+    ...searchable('Family Name', false),
     searchMessage: 'Select a family name'
   }
 };
