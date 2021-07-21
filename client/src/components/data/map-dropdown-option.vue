@@ -7,7 +7,6 @@
         ref="radioButton"
         :id="id"
         :value="id"
-        :checked="checked"
         :name="name"
         type="radio"
       > {{ text }}
@@ -37,9 +36,6 @@ export default {
       required: true
     }
   },
-  data: () => ({
-    checked: false
-  }),
   mounted() {
     if (this.startChecked) {
       this.clickRadioButton();
