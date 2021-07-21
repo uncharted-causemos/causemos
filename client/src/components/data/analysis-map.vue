@@ -61,8 +61,6 @@
 
 <script>
 
-// TODO: Go through this file and revert changes. This file is deprecated.
-
 import _ from 'lodash';
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
@@ -260,6 +258,7 @@ export default {
       minZoom: 1,
       ...BASE_MAP_OPTIONS
     };
+
     this.vectorSourceId = 'maas-vector-source';
     this.selectedLayer = layers[this.selectedAdminLevel];
     this.vectorSourceMaxzoom = 8;
