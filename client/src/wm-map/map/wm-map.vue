@@ -97,7 +97,6 @@ export default {
     _loadMap() {
       // rename mapStyle to style
       const { mapStyle: style, ...options } = this.$props;
-      // TODO: Set fixed map options as I did before.
       this.map = new mapboxgl.Map({
         container: this.$refs.wmmap,
         style,
