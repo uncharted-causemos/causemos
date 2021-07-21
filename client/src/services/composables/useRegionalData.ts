@@ -21,7 +21,8 @@ export default function useRegionalData(
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | Indicator | null>,
-  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
+  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
+  feature?: Ref<string>
 ) {
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
@@ -33,19 +34,13 @@ export default function useRegionalData(
     ) {
       return [];
     }
-    const outputs = modelMetadata.validatedOutputs
-      ? modelMetadata.validatedOutputs
-      : modelMetadata.outputs;
-
-    const defaultOutputIndex = modelMetadata.validatedOutputs?.findIndex(
-        o => o.name === metadata.value?.default_feature) ?? 0;
-    const mainFeatureName = outputs[defaultOutputIndex].name;
+    const activeFeature = feature?.value ?? metadata.value?.default_feature ?? 0;
 
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
       modelId: selectedModelId.value,
       runId: scenarioId,
-      outputVariable: mainFeatureName || '',
+      outputVariable: activeFeature || '',
       timestamp,
       temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
       temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,

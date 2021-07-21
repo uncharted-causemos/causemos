@@ -151,7 +151,7 @@ const routes = [
     component: QuantitativeView
   },
   {
-    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/data/:datacubeId',
+    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/data/:datacubeId/feature/:feature',
     name: 'nodeCompExperiment',
     component: NodeCompExperiment
   },
