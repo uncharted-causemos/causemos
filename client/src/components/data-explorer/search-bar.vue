@@ -15,7 +15,6 @@
 
 <script>
 import _ from 'lodash';
-import API from '@/api/api';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
 
@@ -42,8 +41,7 @@ export default {
   },
   computed: {
     ...mapGetters({
-      filters: 'dataSearch/filters',
-      ontologyConcepts: 'dataSearch/ontologyConcepts'
+      filters: 'dataSearch/filters'
     })
   },
   watch: {
@@ -86,7 +84,7 @@ export default {
     this.pills = [
       new TextPill(CODE_TABLE.SEARCH),
       new DynamicValuePill(CODE_TABLE.ONTOLOGY_MATCH,
-        () => this.ontologyConcepts,
+        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ONTOLOGY_MATCH.field),
         'Select one or more ontological concepts',
         true,
         SingleRelationState),
@@ -143,12 +141,10 @@ export default {
 
     this.lexRef.render(this.$refs.lexContainer);
     this.setQuery();
-    this.updateOntologyConcepts();
   },
   methods: {
     ...mapActions({
-      setSearchFilters: 'dataSearch/setSearchFilters',
-      setOntologyConcepts: 'dataSearch/setOntologyConcepts'
+      setSearchFilters: 'dataSearch/setSearchFilters'
     }),
     setQuery() {
       if (!this.lexRef) return;
@@ -164,10 +160,6 @@ export default {
     },
     clearSearch() {
       this.lexRef.reset();
-    },
-    async updateOntologyConcepts() {
-      const { data } = await API.get('maas/concepts');
-      this.setOntologyConcepts(data);
     }
   }
 };

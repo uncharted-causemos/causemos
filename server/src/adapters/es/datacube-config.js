@@ -151,6 +151,7 @@ const FIELDS = Object.freeze({
   // Concepts
   conceptName: {
     fields: ['ontology_matches.name'],
+    aggFields: ['ontology_matches.name.raw'],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.CONCEPTS
   },
