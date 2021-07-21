@@ -43,10 +43,9 @@
 
 <script lang="ts">
 
-import { mapActions, mapGetters, useStore } from 'vuex';
-import { defineComponent, ref, computed } from 'vue';
+import { mapActions, mapGetters } from 'vuex';
+import { defineComponent } from 'vue';
 
-import useToaster from '@/services/composables/useToaster';
 import MapDropdownOption from '@/components/data/map-dropdown-option.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { BASE_LAYER, DATA_LAYER } from '@/services/map-service';
@@ -59,24 +58,10 @@ export default defineComponent({
     MapDropdownOption,
     DropdownControl
   },
-  setup() {
-    const store = useStore();
-    const showDropdownOptions = ref(false);
-
-    const project = computed(() => store.getters['app/project']);
-    const currentCAG = computed(() => store.getters['app/currentCAG']);
-
-    return {
-      toaster: useToaster(),
-      showDropdownOptions,
-      project,
-      currentCAG,
-      downloadURL: computed(() => `/api/models/${currentCAG.value}/register-payload`)
-    };
-  },
   data: () => ({
     baseLayers: BASE_LAYER,
-    firstLayers: DATA_LAYER
+    firstLayers: DATA_LAYER,
+    showDropdownOptions: false
   }),
   computed: {
     ...mapGetters({
