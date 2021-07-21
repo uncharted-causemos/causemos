@@ -2,6 +2,7 @@ const _ = require('lodash');
 const moment = require('moment');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
+const modelUtil = rootRequire('/util/model-util');
 
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 
@@ -230,30 +231,51 @@ const setDefaultIndicators = async (modelId) => {
         admin3: '',
         geospatial_aggregation: geospatialAgg,
         temporal_aggregation: temporalAgg,
-        temporal_resolution: resolution
+        temporal_resolution: resolution,
+        period: 12
       }
     };
 
-    // Time series
+    // Time series, min, max
     const feature = topMatch.default_feature;
     const dataId = topMatch.data_id;
+    const parameter = conceptMatches[conceptKey].parameter;
 
-    let timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+    const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
     if (_.isEmpty(timeseries)) {
-      timeseries = [];
+      parameter.timeseries = [];
+      parameter.min = 0;
+      parameter.max = 1;
+    } else {
+      parameter.timeseries = timeseries;
+      const values = timeseries.map(d => d.value);
+      const { max, min } = modelUtil.projectionValueRange(values);
+      parameter.min = min;
+      parameter.max = max;
     }
-    conceptMatches[conceptKey].parameter.timeseries = timeseries;
   }
 
-
-  // Go through concept without indicator association and set default
+  // Go through concept without indicator association and set default abstract indicators
   let patchedCount = 0;
   filteredNodeParameters.forEach(node => {
     const concept = node.concept;
     if (_.isEmpty(conceptMatches[concept])) {
       conceptMatches[concept] = {
         modified_at: editTime,
-        parameter: null
+        parameter: {
+          id: null,
+          name: 'Abstract',
+          unit: '',
+          country: '',
+          admin1: '',
+          admin2: '',
+          admin3: '',
+          geospatial_aggregation: 'mean',
+          temporal_aggregation: 'mean',
+          temporal_resolution: 'month',
+          period: 12,
+          timeseries: []
+        }
       };
       patchedCount += 1;
     }

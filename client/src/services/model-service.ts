@@ -330,8 +330,8 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
     const concept = nodeData.concept;
 
     graphData.initial_value = indicatorData.initial_value;
-    graphData.indicator_name = indicatorData.indicator_name || null;
-    graphData.indicator_time_series = indicatorData.indicator_time_series || [];
+    graphData.indicator_name = indicatorData.name || '';
+    graphData.indicator_time_series = indicatorData.timeseries || [];
     graphData.indicator_time_series_range = {
       start: modelParameter.indicator_time_series_range.start,
       end: modelParameter.indicator_time_series_range.end
