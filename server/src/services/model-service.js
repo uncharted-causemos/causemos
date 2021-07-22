@@ -49,6 +49,40 @@ const findOne = async (modelId) => {
   return model;
 };
 
+/**
+ * Get the number of Edges and Nodes for each model passed in
+ *
+ * @param {Array<String>} modelIDs - a list of model ID's for which stats will be returned for
+ */
+const getModelStats = async (modelIDs) => {
+  const dict = {};
+  const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  const edgeResult = await edgeAdapter.getFacets('model_id', [
+    {
+      field: 'model_id',
+      value: modelIDs
+    }
+  ]);
+
+  edgeResult.forEach(pair => {
+    dict[pair.key] = { edgeCount: pair.doc_count };
+  });
+
+  const nodesAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+  const nodeResult = await nodesAdapter.getFacets('model_id', [
+    {
+      field: 'model_id',
+      value: modelIDs
+    }
+  ]);
+
+  nodeResult.forEach(pair => {
+    dict[pair.key].nodeCount = pair.doc_count;
+  });
+
+  return dict;
+};
+
 
 /**
  * Converts a model edge into a stub statement
@@ -485,6 +519,7 @@ const buildEdgeParametersPayload = (edgeParameters) => {
 module.exports = {
   find,
   findOne,
+  getModelStats,
   buildModelStatements,
   setInitialParameters,
   buildProjectionPayload,
