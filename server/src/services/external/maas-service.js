@@ -6,6 +6,7 @@ const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
 
+const QUEUE_SERVICE_URL = 'http://10.65.18.52:4040/data-pipeline/enqueue';
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 /**
@@ -62,7 +63,7 @@ const startModelOutputPostProcessing = async (metadata) => {
 
   const pipelinePayload = {
     method: 'PUT',
-    url: 'http://10.65.18.52:4040/data-pipeline/enqueue',
+    url: QUEUE_SERVICE_URL,
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
@@ -230,7 +231,7 @@ const startIndicatorPostProcessing = async (metadata) => {
 
   const pipelinePayload = {
     method: 'PUT',
-    url: 'http://10.65.18.52:4040/data-pipeline/enqueue',
+    url: QUEUE_SERVICE_URL,
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
