@@ -114,7 +114,6 @@ export default {
         } else {
           this.setSelectedDatacubes([...this.selectedDatacubes, item]);
         }
-        console.log(this.selectedDatacubes);
       } else {
         // only one selection is alloed, so replace the selected datacubes array
         this.setSelectedDatacubes([item]);
