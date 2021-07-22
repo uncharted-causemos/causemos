@@ -1,9 +1,7 @@
 import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
-import API from '@/api/api';
 import router from '@/router';
-import { Datacube } from '@/types/Datacubes';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 type MapBounds = [[number, number], [number, number]];
@@ -59,6 +57,8 @@ interface AnalysisState {
   *
   * @returns {AnalysisItem}
   */
+// TODO: review and remove
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariable: string, source: string, units: string, outputDescription: string, model: string): AnalysisItem => {
   return {
     id: datacubeId,
