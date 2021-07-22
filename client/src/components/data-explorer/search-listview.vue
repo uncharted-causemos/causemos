@@ -102,7 +102,7 @@ export default {
     },
     updateSelection(datacube) {
       const item = {
-        dataId: datacube.data_id,
+        datacubeId: datacube.data_id,
         feature: datacube.default_feature,
         id: datacube.id
       };

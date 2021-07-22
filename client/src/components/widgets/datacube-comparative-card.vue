@@ -71,6 +71,14 @@ export default defineComponent({
       type: String,
       required: true
     },
+    id: {
+      type: String,
+      required: true
+    },
+    feature: {
+      type: String,
+      required: true
+    },
     isSelected: {
       type: Boolean,
       default: false
@@ -79,12 +87,13 @@ export default defineComponent({
   emits: ['temporal-breakdown-data', 'regional-data', 'selected-scenario-ids', 'select-timestamp'],
   setup(props, { emit }) {
     const {
-      datacubeId
+      datacubeId,
+      id
     } = toRefs(props);
 
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
 
-    const metadata = useModelMetadata(datacubeId);
+    const metadata = useModelMetadata(id);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -102,7 +111,6 @@ export default defineComponent({
 
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
-    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
 
     watchEffect(() => {
       if (metadata.value) {
@@ -213,18 +221,6 @@ export default defineComponent({
     });
 
     async function openDrilldown() {
-      // NOTE: instead of replacing the datacubeIDs array,
-      //  ensure that the current datacubeId is at 0 index
-      let datacubeIDs: string[] = analysisItems.value.map((item: any) => item.datacubeId);
-      const indx = datacubeIDs.findIndex((datacubeId: string) => datacubeId === props.datacubeId);
-      if (indx > 0) {
-        // move to 0-index
-        datacubeIDs = datacubeIDs.filter(datacubeId => datacubeId !== props.datacubeId);
-        datacubeIDs.unshift(props.datacubeId);
-      }
-      const updatedAnalysisInfo = { currentAnalysisId: analysisId.value, datacubeIDs: datacubeIDs };
-      await store.dispatch('dataAnalysis/updateAnalysisItemsNew', updatedAnalysisInfo);
-
       router.push({
         name: 'data',
         params: {

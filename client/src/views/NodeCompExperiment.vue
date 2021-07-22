@@ -189,13 +189,13 @@ export default defineComponent({
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
     const datacubeId = computed(() => store.getters['app/datacubeId']);
 
-    const feature = computed(() => store.getters['app/feature']);
+    const id = computed(() => store.getters['app/id']);
 
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
     const selectedModelId = ref(datacubeId);
 
-    const metadata = useModelMetadata(selectedModelId, feature);
+    const metadata = useModelMetadata(id);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -277,8 +277,7 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp,
-      feature
+      setSelectedTimestamp
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -300,8 +299,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints,
-      feature
+      selectedTimeseriesPoints
     );
 
     const selectLabel = 'Quantify Node';
@@ -349,8 +347,7 @@ export default defineComponent({
       selectedTimeseriesPoints,
       currentCAG,
       nodeId,
-      project,
-      feature
+      project
     };
   },
   unmounted(): void {

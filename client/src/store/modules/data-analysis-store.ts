@@ -35,6 +35,7 @@ interface AnalysisItem extends AnalysisItemState {
 interface AnalysisItemNew {
   id: string;
   datacubeId: string;
+  feature: string;
 }
 
 interface AlgebraciTransform {
@@ -74,11 +75,12 @@ const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariab
   };
 };
 
-const createNewAnalysisItemNew = (datacubeId: string): AnalysisItemNew => {
-  return {
-    id: datacubeId,
-    datacubeId
-  };
+const createNewAnalysisItemNew = (datacubeInfo: {
+    id: string;
+    datacubeId: string;
+    feature: string;
+}): AnalysisItemNew => {
+  return datacubeInfo;
 };
 
 /**
@@ -211,19 +213,19 @@ const actions: ActionTree<AnalysisState, any> = {
     commit('setAlgebraicTransformInputIds', newInputIds);
     commit('setAnalysisItems', analysisItems);
   },
-  async updateAnalysisItemsNew({ state, commit }, { currentAnalysisId, datacubeIDs }: { currentAnalysisId: string; datacubeIDs: string[] }) {
+  async updateAnalysisItemsNew({ state, commit }, { currentAnalysisId, datacubeIDs }: { currentAnalysisId: string; datacubeIDs: AnalysisItemNew[] }) {
     state.currentAnalysisId = currentAnalysisId;
     const analysisItems = datacubeIDs.map(datacubeId => {
-      const analysisItem = state.analysisItems.find(item => item.id === datacubeId);
+      const analysisItem = state.analysisItems.find(item => item.id === datacubeId.id);
       return analysisItem !== undefined
         ? analysisItem // Preserve existing item
         : createNewAnalysisItemNew(datacubeId);
     });
     commit('setAnalysisItemsNew', analysisItems);
   },
-  async updateAnalysisItemsNewPreview({ state, commit }, { datacubeIDs }: { datacubeIDs: string[] }) {
+  async updateAnalysisItemsNewPreview({ state, commit }, { datacubeIDs }: { datacubeIDs: AnalysisItemNew[] }) {
     const analysisItems = datacubeIDs.map(datacubeId => {
-      const analysisItem = state.analysisItems.find(item => item.id === datacubeId);
+      const analysisItem = state.analysisItems.find(item => item.id === datacubeId.id);
       return analysisItem !== undefined
         ? analysisItem // Preserve existing item
         : createNewAnalysisItemNew(datacubeId);

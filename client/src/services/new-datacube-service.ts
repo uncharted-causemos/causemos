@@ -29,7 +29,7 @@ export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
  */
 export const getDatacubeById = async (datacubeId: string, feature?: string) => {
   const filters = fu.newFilters();
-  fu.setClause(filters, 'dataId', [datacubeId], 'or', false);
+  fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
   if (cubes && feature) {
     const activeCube = cubes.filter((c: { default_feature: string }) => {
