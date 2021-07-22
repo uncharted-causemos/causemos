@@ -5,6 +5,7 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
+const datacubeService = rootRequire('/services/datacube-service');
 
 const QUEUE_SERVICE_URL = 'http://10.65.18.52:4040/data-pipeline/enqueue';
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
@@ -175,6 +176,23 @@ const startIndicatorPostProcessing = async (metadata) => {
   //        insertDatacube() in server/src/services/datacube-service
   await domainProjectService.updateDomainProjects(metadata);
 
+  const filters = {
+    clauses: [
+      { field: 'dataId', operand: 'and', isNot: false, values: [metadata.id] },
+      { field: 'type', operand: 'and', isNot: false, values: ['indicator'] },
+      { field: 'status', operand: 'and', isNot: false, values: ['READY'] }
+    ]
+  };
+  const existingIndicators = await datacubeService.getDatacubes(filters, {
+    includes: ['id', 'default_feature']
+  });
+
+  // Since id is a random uuid, ES will not provide any duplicate protection
+  // We will check ourselves using data_id and feature
+  if (existingIndicators.length > 0) {
+    Logger.warn(`Indicators with data_id ${metadata.id} already exist. Duplicates will not be processed.`);
+  }
+
   const acceptedTypes = ['int', 'float', 'boolean', 'datetime'];
   const resolutions = ['annual', 'monthly', 'dekad', 'weekly', 'daily', 'other'];
   let highestRes = 0;
@@ -182,6 +200,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   // Create data now to send to elasticsearch
   const newIndicatorMetadata = metadata.outputs
     .filter(output => acceptedTypes.includes(output.type)) // Don't process non-numeric data
+    .filter(output => !existingIndicators.some(item => item.default_feature === output.name))
     .map(output => {
       // Determine the highest available temporal resolution
       const outputRes = output.data_resolution && output.data_resolution.temporal_resolution;
@@ -219,6 +238,14 @@ const startIndicatorPostProcessing = async (metadata) => {
       clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
       return clonedMetadata;
     });
+
+  if (newIndicatorMetadata.length < metadata.outputs.length) {
+    Logger.warn(`Filtered out ${metadata.outputs.length - newIndicatorMetadata.length} indicators`);
+    if (newIndicatorMetadata.length === 0) {
+      Logger.warn('No indicators left to process. Aborting');
+      return 'No indicators processed';
+    }
+  }
 
   const flowParameters = {
     model_id: metadata.id,
