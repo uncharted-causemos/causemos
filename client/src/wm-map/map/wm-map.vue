@@ -44,12 +44,6 @@ export default {
     ready: false,
     handleResize: () => null
   }),
-  computed: {
-    ...mapGetters({
-      selectedBaseLayer: 'map/selectedBaseLayer',
-      selectedDataLayer: 'map/selectedDataLayer'
-    })
-  },
   watch: {
     center(value, oldValue) {
       if (isEqual(value, oldValue)) return;
