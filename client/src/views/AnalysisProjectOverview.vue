@@ -183,7 +183,9 @@ const toQualitative = cag => ({ // andrew modify this
   title: cag.name,
   subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY'),
   description: '',
-  type: 'qualitative'
+  type: 'qualitative',
+  edgeCount: cag.edgeCount,
+  nodeCount: cag.nodeCount
 });
 
 export default {
@@ -267,9 +269,17 @@ export default {
       this.quantitativeAnalyses = result1.map(toQuantitative);
 
       // knowledge and model space analyses
-      // gonna need some code here
+      // andrew gonna need some code here
       const result2 = await modelService.getProjectModels(this.project);
       this.qualitativeAnalyses = result2.models.map(toQualitative);
+      const toQuery = this.qualitativeAnalyses.map(model => model.id);
+      const statsResult = await modelService.getModelStats(toQuery);
+      this.qualitativeAnalyses.forEach(analysis => {
+        analysis.nodeCount = statsResult[analysis.id].nodeCount;
+        analysis.edgeCount = statsResult[analysis.id].edgeCount;
+      });
+      console.log(this.qualitativeAnalyses);
+      console.log(statsResult['15e81ca3-2a78-4c27-bbfb-2bc9d51fbc00']);
 
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
