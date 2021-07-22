@@ -148,6 +148,13 @@ router.get('/', asyncHandler(async (req, res) => {
   });
 }));
 
+/* GET get model stats */
+router.get('/modelStats', asyncHandler(async (req, res) => {
+  const { modelIds } = req.query;
+  const modelStats = await modelService.getModelStats(modelIds);
+  res.json(modelStats);
+}));
+
 
 /* GET retrieve single model */
 router.get('/:modelId', asyncHandler(async (req, res) => {
