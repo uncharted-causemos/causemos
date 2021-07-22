@@ -1,5 +1,5 @@
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
-import { BASE_LAYER, DATA_LAYER } from '@/services/map-service';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { STYLE_URL_PREFIX } from '@/utils/map-util';
 
 const MUTATIONS = {

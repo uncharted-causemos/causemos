@@ -50,10 +50,18 @@ import _ from 'lodash';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
-import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded, createDivergingColorStops, createColorStops } from '@/utils/map-util';
+import {
+  BASE_MAP_OPTIONS,
+  createHeatmapLayerStyle,
+  ETHIOPIA_BOUNDING_BOX,
+  isLayerLoaded,
+  createDivergingColorStops,
+  createColorStops,
+  STYLE_URL_PREFIX
+} from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import MapLegend from '@/components/widgets/map-legend';
-import { mapGetters } from 'vuex';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -182,6 +190,14 @@ export default {
     regionData: {
       type: Object,
       default: () => undefined
+    },
+    selectedBaseLayer: {
+      type: BASE_LAYER,
+      default: () => BASE_LAYER.DEFAULT
+    },
+    selectedDataLayer: {
+      type: DATA_LAYER,
+      default: () => DATA_LAYER.ADMIN
     }
   },
   data: () => ({
@@ -194,10 +210,6 @@ export default {
     legendData: []
   }),
   computed: {
-    ...mapGetters({
-      selectedBaseLayerEndpoint: 'map/selectedBaseLayerEndpoint',
-      selectedDataLayer: 'map/selectedDataLayer'
-    }),
     mapFixedOptions() {
       const options = {
         minZoom: 1,
@@ -263,6 +275,9 @@ export default {
         extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
       }
       return extent;
+    },
+    selectedBaseLayerEndpoint() {
+      return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
     },
     valueProp() {
       // Name of the value property of the feature to be rendered

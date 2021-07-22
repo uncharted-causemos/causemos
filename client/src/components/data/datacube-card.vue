@@ -227,7 +227,7 @@ import { isModel } from '@/utils/datacube-util';
 import { Timeseries } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestamp } from '@/utils/date-util';
-import { DATA_LAYER } from '@/services/map-service';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -411,7 +411,9 @@ export default defineComponent({
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
     ],
-    mapReady: false
+    mapReady: false,
+    selectedBaseLayer: BASE_LAYER.DEFAULT,
+    selectedDataLayer: DATA_LAYER.ADMIN
   }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
