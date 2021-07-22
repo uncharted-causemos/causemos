@@ -80,7 +80,7 @@
 
 <script>
 import _ from 'lodash';
-import { getDatacubes } from '@/services/datacube-service';
+import { getDatacubes } from '@/services/new-datacube-service';
 
 import IndicatorEditor from '@/components/indicator/indicator-editor';
 import Modal from '@/components/modals/modal';
