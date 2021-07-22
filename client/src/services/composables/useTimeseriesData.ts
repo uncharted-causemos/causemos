@@ -114,7 +114,8 @@ export default function useTimeseriesData(
       // Don't have the information needed to fetch the data
       return;
     }
-    const activeFeature = feature?.value ?? metadata.value?.default_feature ?? 0;
+    const activeFeature = feature?.value ?? metadata.value?.default_feature ?? '';
+    const activeDataId = dataId.value.length > 0 ? dataId.value : metadata?.value?.data_id;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
@@ -134,7 +135,7 @@ export default function useTimeseriesData(
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
-            data_id: dataId.value,
+            data_id: activeDataId,
             run_id: runId,
             feature: activeFeature,
             resolution: temporalRes,

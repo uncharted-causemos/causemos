@@ -132,8 +132,7 @@ export default {
         name: 'nodeCompExperiment',
         params: {
           currentCAG: this.currentCAG,
-          datacubeId: this.selectedDatacubes[0].datacubeId,
-          id: this.selectedDatacubes[0].id,
+          indicatorId: this.selectedDatacubes[0].id,
           nodeId: this.nodeId,
           project: this.project,
           projectType: ProjectType.Analysis

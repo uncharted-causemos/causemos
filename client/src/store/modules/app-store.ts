@@ -39,8 +39,8 @@ const getters: GetterTree<AppState, any> = {
   datacubeId: (state, getters, rootState) => {
     return rootState.route.params.datacubeId || null;
   },
-  id: (state, getters, rootState) => {
-    return rootState.route.params.id || null;
+  indicatorId: (state, getters, rootState) => {
+    return rootState.route.params.indicatorId || null;
   },
   nodeId: (state, getters, rootState) => {
     return rootState.route.params.nodeId || null;

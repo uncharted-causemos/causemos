@@ -34,13 +34,14 @@ export default function useRegionalData(
     ) {
       return [];
     }
-    const activeFeature = feature?.value ?? metadata.value?.default_feature ?? 0;
+    const activeFeature = feature?.value ?? metadata.value?.default_feature ?? '';
+    const activeModelId = selectedModelId.value.length > 0 ? selectedModelId.value : metadata?.value?.data_id ?? '';
 
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
-      modelId: selectedModelId.value,
+      modelId: activeModelId,
       runId: scenarioId,
-      outputVariable: activeFeature || '',
+      outputVariable: activeFeature,
       timestamp,
       temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
       temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,
