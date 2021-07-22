@@ -270,13 +270,15 @@ export default {
       const result2 = await modelService.getProjectModels(this.project);
       this.qualitativeAnalyses = result2.models.map(toQualitative);
 
-      const modelIDs = this.qualitativeAnalyses.map(model => model.id);
-      const stats = await modelService.getModelStats(modelIDs);
+      if (this.qualitativeAnalyses.length) {
+        const modelIDs = this.qualitativeAnalyses.map(model => model.id);
+        const stats = await modelService.getModelStats(modelIDs);
 
-      this.qualitativeAnalyses.forEach(analysis => { // merge edge and node counts into analysis objects, this doesnt feel like the best way of doing this
-        analysis.nodeCount = stats[analysis.id].nodeCount;
-        analysis.edgeCount = stats[analysis.id].edgeCount;
-      });
+        this.qualitativeAnalyses.forEach(analysis => { // merge edge and node counts into analysis objects
+          analysis.nodeCount = stats[analysis.id].nodeCount;
+          analysis.edgeCount = stats[analysis.id].edgeCount;
+        });
+      }
 
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
