@@ -84,6 +84,7 @@
             :is-fetching-statements="isFetchingStatements"
             :should-confirm-curations="true"
             @show-factor-recommendations="onShowFactorRecommendations"
+            @updated-relations="resolveUpdatedRelations"
           />
         </template>
         <template #overlay-pane>
@@ -914,7 +915,6 @@ export default defineComponent({
       graphOptions.useStableLayout = prevStabilitySetting;
     },
     async resolveUpdatedRelations(edges: EdgeParameter[]) {
-      console.log('about to resolve', edges);
       const currentEdges = this.modelComponents.edges;
       const currentNodes = this.modelComponents.nodes;
 
@@ -942,7 +942,6 @@ export default defineComponent({
           });
         } else {
           // Does not exist, need to create new edge and check for new nodes
-          console.log('>>', edge);
           edgePayload.push({
             id: '',
             source: edge.source,
@@ -964,8 +963,6 @@ export default defineComponent({
       });
 
       // update and refresh
-      console.log(nodePayload);
-      console.log(edgePayload);
       const data = await this.addCAGComponents(nodePayload, edgePayload);
       this.setUpdateToken(data.updateToken);
     }
