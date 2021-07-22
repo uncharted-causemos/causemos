@@ -49,6 +49,11 @@ const findOne = async (modelId) => {
   return model;
 };
 
+/**
+ * Get the number of Edges and Nodes for each model passed in
+ *
+ * @param {Array<String>} modelIDs - a list of model ID's for which stats will be returned for
+ */
 const getModelStats = async (modelIDs) => {
   const dict = {};
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
