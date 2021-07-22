@@ -26,11 +26,11 @@
       </div>
       <div class="col-sm-1 instance-header">
         {{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}
-        <div style="color: black">55</div>
+        <div style="color: black">{{analysis.type === 'quantitative' ? 'X' : analysis.nodeCount }}</div>
       </div>
       <div class="col-sm-1 instance-header">
         {{analysis.type === 'quantitative' ? 'Models': 'Relations'}}
-        <div style="color: black">4</div>
+        <div style="color: black">{{analysis.type === 'quantitative' ? 'X' : analysis.edgeCount }}</div>
       </div>
       <div class="col-sm-1 instance-header">
         Insights
