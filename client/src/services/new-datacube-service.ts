@@ -93,6 +93,22 @@ export const getModelRunMetadata = async (dataId: string) => {
   return data;
 };
 
+/**
+ * Find suggested terms for the specified string, looking in the provided field
+ *
+ * @param {string} field - field which should be searched
+ * @param {string} queryString - string to use to get suggestions
+ */
+export const getSuggestions = async (field: string, queryString: string) => {
+  const { data } = await API.get('maas/new-datacubes/suggestions', {
+    params: {
+      field,
+      q: queryString
+    }
+  });
+  return data;
+};
+
 // DEPRECATED - NO LONGER WORK
 // TODO: REMOVE
 
@@ -121,6 +137,7 @@ export default {
   getModelDatacubesCount,
   getIndicatorDatacubesCount,
   getModelRunMetadata,
+  getSuggestions,
 
   getModelRuns,
   getModelParameters
