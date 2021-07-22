@@ -177,15 +177,13 @@ const toQuantitative = analysis => ({
   type: 'quantitative'
 });
 
-const toQualitative = cag => ({ // andrew modify this
+const toQualitative = cag => ({
   id: cag.id,
   previewImageSrc: cag.thumbnail_source ?? null,
   title: cag.name,
   subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY'),
   description: '',
-  type: 'qualitative',
-  edgeCount: cag.edgeCount,
-  nodeCount: cag.nodeCount
+  type: 'qualitative'
 });
 
 export default {
@@ -269,17 +267,16 @@ export default {
       this.quantitativeAnalyses = result1.map(toQuantitative);
 
       // knowledge and model space analyses
-      // andrew gonna need some code here
       const result2 = await modelService.getProjectModels(this.project);
       this.qualitativeAnalyses = result2.models.map(toQualitative);
-      const toQuery = this.qualitativeAnalyses.map(model => model.id);
-      const statsResult = await modelService.getModelStats(toQuery);
-      this.qualitativeAnalyses.forEach(analysis => {
-        analysis.nodeCount = statsResult[analysis.id].nodeCount;
-        analysis.edgeCount = statsResult[analysis.id].edgeCount;
+
+      const modelIDs = this.qualitativeAnalyses.map(model => model.id);
+      const stats = await modelService.getModelStats(modelIDs);
+
+      this.qualitativeAnalyses.forEach(analysis => { // merge edge and node counts into analysis objects, this doesnt feel like the best way of doing this
+        analysis.nodeCount = stats[analysis.id].nodeCount;
+        analysis.edgeCount = stats[analysis.id].edgeCount;
       });
-      console.log(this.qualitativeAnalyses);
-      console.log(statsResult['15e81ca3-2a78-4c27-bbfb-2bc9d51fbc00']);
 
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
