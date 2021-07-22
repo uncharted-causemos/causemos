@@ -915,8 +915,59 @@ export default defineComponent({
     },
     async resolveUpdatedRelations(edges: EdgeParameter[]) {
       console.log('about to resolve', edges);
+      const currentEdges = this.modelComponents.edges;
+      const currentNodes = this.modelComponents.nodes;
+
+      const edgePayload: EdgeParameter[] = [];
+      const nodePayload: NodeParameter[] = [];
+
+      const hasNode = (concept: string) => {
+        return _.some(currentNodes, n => n.concept === concept) || _.some(nodePayload, n => n.concept === concept);
+      };
+
+      // Process new relations
       edges.forEach(edge => {
+        const existingEdge = currentEdges.find(ce => ce.source === edge.source && ce.target === edge.target);
+        if (existingEdge) {
+          // Exists, need to transfer statements
+          edgePayload.push({
+            id: existingEdge.id,
+            source: existingEdge.source,
+            target: existingEdge.target,
+            user_polarity: existingEdge.user_polarity,
+            reference_ids: _.uniq([
+              ...existingEdge.reference_ids,
+              ...edge.reference_ids
+            ])
+          });
+        } else {
+          // Does not exist, need to create new edge and check for new nodes
+          console.log('>>', edge);
+          edgePayload.push({
+            id: '',
+            source: edge.source,
+            target: edge.target,
+            user_polarity: null,
+            reference_ids: edge.reference_ids
+          });
+
+          [edge.source, edge.target].forEach(concept => {
+            if (hasNode(concept) === false) {
+              nodePayload.push({
+                id: '',
+                concept: concept,
+                label: this.ontologyFormatter(concept)
+              });
+            }
+          });
+        }
       });
+
+      // update and refresh
+      console.log(nodePayload);
+      console.log(edgePayload);
+      const data = await this.addCAGComponents(nodePayload, edgePayload);
+      this.setUpdateToken(data.updateToken);
     }
   }
 });

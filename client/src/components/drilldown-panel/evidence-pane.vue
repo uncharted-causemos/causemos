@@ -480,7 +480,7 @@ export default {
         relation.source = item.dataArray[0].subj.concept;
         relation.target = newGrounding;
       }
-      relation.refrence_ids = statementIds;
+      relation.reference_ids = statementIds;
       this.$emit('updated-relations', [relation]);
 
       this.checkResult(result, CORRECTIONS.SUCCESSFUL_CORRECTION, CORRECTIONS.ERRONEOUS_CORRECTION);
