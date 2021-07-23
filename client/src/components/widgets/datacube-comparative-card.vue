@@ -75,10 +75,6 @@ export default defineComponent({
       type: String,
       required: true
     },
-    feature: {
-      type: String,
-      required: true
-    },
     isSelected: {
       type: Boolean,
       default: false

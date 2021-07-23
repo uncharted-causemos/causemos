@@ -35,7 +35,6 @@ interface AnalysisItem extends AnalysisItemState {
 interface AnalysisItemNew {
   id: string;
   datacubeId: string;
-  feature: string;
 }
 
 interface AlgebraciTransform {
@@ -78,7 +77,6 @@ const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariab
 const createNewAnalysisItemNew = (datacubeInfo: {
     id: string;
     datacubeId: string;
-    feature: string;
 }): AnalysisItemNew => {
   return datacubeInfo;
 };

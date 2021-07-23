@@ -101,21 +101,21 @@ export default function useTimeseriesData(
   selectedSpatialAggregation: Ref<string>,
   breakdownOption: Ref<string | null>,
   selectedTimestamp: Ref<number | null>,
-  onNewLastTimestamp: (lastTimestamp: number) => void,
-  feature?: Ref<string>
+  onNewLastTimestamp: (lastTimestamp: number) => void
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
 
   watchEffect(onInvalidate => {
+    const modelMetadata = metadata.value;
     if (
       modelRunIds.value.length === 0 ||
-      metadata.value === null
+      modelMetadata === null
     ) {
       // Don't have the information needed to fetch the data
       return;
     }
-    const activeFeature = feature?.value ?? metadata.value?.default_feature ?? '';
-    const activeDataId = dataId.value.length > 0 ? dataId.value : metadata?.value?.data_id;
+    const activeFeature = modelMetadata.default_feature ?? '';
+    const activeDataId = dataId.value.length > 0 ? dataId.value : modelMetadata.data_id;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId

@@ -34,7 +34,6 @@
         :relative-to="relativeTo"
         :breakdown-option="breakdownOption"
         :baseline-metadata="baselineMetadata"
-        :feature="feature"
         @set-selected-scenario-ids="setSelectedScenarioIds"
         @select-timestamp="setSelectedTimestamp"
         @set-drilldown-data="setDrilldownData"

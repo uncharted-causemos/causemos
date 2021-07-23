@@ -21,8 +21,7 @@ export default function useRegionalData(
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | Indicator | null>,
-  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
-  feature?: Ref<string>
+  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
 ) {
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
@@ -34,8 +33,8 @@ export default function useRegionalData(
     ) {
       return [];
     }
-    const activeFeature = feature?.value ?? metadata.value?.default_feature ?? '';
-    const activeModelId = selectedModelId.value.length > 0 ? selectedModelId.value : metadata?.value?.data_id ?? '';
+    const activeFeature = modelMetadata.default_feature ?? '';
+    const activeModelId = selectedModelId.value.length > 0 ? selectedModelId.value : modelMetadata.data_id ?? '';
 
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,

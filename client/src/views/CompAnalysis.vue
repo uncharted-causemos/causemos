@@ -10,7 +10,6 @@
           :class="{ 'selected': selectedDatacubeId === item.id }"
           :datacubeId="item.datacubeId"
           :id="item.id"
-          :feature="item.feature"
           :isSelected="selectedDatacubeId === datacubeId"
           @click="selectedDatacubeId = datacubeId"
         />
