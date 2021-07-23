@@ -111,6 +111,7 @@ class CAGRenderer extends SVGRenderer {
   async render() {
     await super.render();
     this.displayAmbiguousEdgeWarning();
+    this.displayGraphStats();
   }
 
   renderNodeUpdated() {
@@ -634,6 +635,26 @@ class CAGRenderer extends SVGRenderer {
       }
     }
     warning.attr('opacity', 0);
+  }
+
+  displayGraphStats() {
+    const graph = this.layout;
+    const foregroundLayer = d3.select(this.svgEl).select('.forgroundLayer');
+    const edgesCount = graph.edges.length;
+    const nodeCount = graph.nodes.length;
+
+    console.log(nodeCount);
+
+    d3.select('.graph-stats-info').node()
+      ? d3.select('.graph-stats-info')
+      : foregroundLayer.append('text')
+        .attr('x', 20)
+        .attr('y', 30)
+        .attr('opacity', 1)
+        .attr('fill', 'black')
+        .attr('font-size', '1.6rem')
+        .classed('graph-stats-info', true)
+        .text(`Edges: ${edgesCount} Nodes: ${nodeCount}`);
   }
 
   highlightAmbiguousEdges(graph, highlight) {
