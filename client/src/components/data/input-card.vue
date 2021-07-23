@@ -27,7 +27,7 @@
 <script>
 import _ from 'lodash';
 import API from '@/api/api';
-import { getModelRuns } from '@/services/datacube-service';
+import { getModelRuns } from '@/services/new-datacube-service';
 import DataAnalysisMap from '@/components/data/analysis-map';
 import LineChart from '@/components/widgets/charts/line-chart';
 import { DEFAULT_COLOR } from '@/utils/colors-util';

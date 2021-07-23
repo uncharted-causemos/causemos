@@ -14,7 +14,7 @@
 </template>
 
 <script>
-import { getModelRuns } from '@/services/datacube-service';
+import { getModelRuns } from '@/services/new-datacube-service';
 import { mapActions } from 'vuex';
 import CloseButton from '@/components/widgets/close-button';
 

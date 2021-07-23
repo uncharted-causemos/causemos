@@ -49,6 +49,40 @@ const findOne = async (modelId) => {
   return model;
 };
 
+/**
+ * Get the number of Edges and Nodes for each model passed in
+ *
+ * @param {Array<String>} modelIDs - a list of model ID's for which stats will be returned for
+ */
+const getModelStats = async (modelIDs) => {
+  const dict = {};
+  const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  const edgeResult = await edgeAdapter.getFacets('model_id', [
+    {
+      field: 'model_id',
+      value: modelIDs
+    }
+  ]);
+
+  edgeResult.forEach(pair => {
+    dict[pair.key] = { edgeCount: pair.doc_count };
+  });
+
+  const nodesAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+  const nodeResult = await nodesAdapter.getFacets('model_id', [
+    {
+      field: 'model_id',
+      value: modelIDs
+    }
+  ]);
+
+  nodeResult.forEach(pair => {
+    dict[pair.key].nodeCount = pair.doc_count;
+  });
+
+  return dict;
+};
+
 
 /**
  * Converts a model edge into a stub statement
@@ -251,7 +285,10 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeS
 
   let payload = {};
   const startTime = projectionStartDate.valueOf();
-  const endTime = projectionStartDate.add(numTimeSteps, 'M').valueOf();
+  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
+  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
+  // endTime should be thought of as the last timestamp that will be returned.
+  const endTime = projectionStartDate.add(numTimeSteps - 1, 'M').valueOf();
   const constraints = _.isEmpty(parameters) ? [] : parameters;
   payload = {
     experimentType: EXPERIMENT_TYPE.PROJECTION,
@@ -428,27 +465,27 @@ const buildNodeParametersPayload = (nodeParameters) => {
   });
 
   nodeParameters.forEach(np => {
-    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func') || 'last';
+    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
 
     if (_.isEmpty(np.parameter)) {
       r[np.concept] = NO_INDICATOR_DEFAULT();
     } else {
-      const indicatorTimeSeries = _.get(np.parameter, 'indicator_time_series', []);
+      const indicatorTimeSeries = _.get(np.parameter, 'timeseries', []);
 
       if (_.isEmpty(indicatorTimeSeries)) {
         r[np.concept] = NO_INDICATOR_DEFAULT();
       } else {
         const values = indicatorTimeSeries.map(d => d.value);
-        const { max, min } = modelUtil.projectionValueRange(values);
+        const { max, min } = modelUtil.projectionValueRange(values); // FIXME: need to remove
 
         r[np.concept] = {
-          name: np.parameter.indicator_name,
+          name: np.parameter.name,
           minValue: _.get(np.parameter, 'min', min),
           maxValue: _.get(np.parameter, 'max', max),
           func: valueFunc,
           values: indicatorTimeSeries,
           numLevels: NUM_LEVELS,
-          resolution: _.get(np.parameter, 'resolution', 'month'),
+          resolution: _.get(np.parameter, 'temporal_resolution', 'month'),
           period: _.get(np.parameter, 'period', 12)
         };
       }
@@ -485,6 +522,7 @@ const buildEdgeParametersPayload = (edgeParameters) => {
 module.exports = {
   find,
   findOne,
+  getModelStats,
   buildModelStatements,
   setInitialParameters,
   buildProjectionPayload,
