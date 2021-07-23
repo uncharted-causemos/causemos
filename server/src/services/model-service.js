@@ -462,27 +462,27 @@ const buildNodeParametersPayload = (nodeParameters) => {
   });
 
   nodeParameters.forEach(np => {
-    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func') || 'last';
+    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
 
     if (_.isEmpty(np.parameter)) {
       r[np.concept] = NO_INDICATOR_DEFAULT();
     } else {
-      const indicatorTimeSeries = _.get(np.parameter, 'indicator_time_series', []);
+      const indicatorTimeSeries = _.get(np.parameter, 'timeseries', []);
 
       if (_.isEmpty(indicatorTimeSeries)) {
         r[np.concept] = NO_INDICATOR_DEFAULT();
       } else {
         const values = indicatorTimeSeries.map(d => d.value);
-        const { max, min } = modelUtil.projectionValueRange(values);
+        const { max, min } = modelUtil.projectionValueRange(values); // FIXME: need to remove
 
         r[np.concept] = {
-          name: np.parameter.indicator_name,
+          name: np.parameter.name,
           minValue: _.get(np.parameter, 'min', min),
           maxValue: _.get(np.parameter, 'max', max),
           func: valueFunc,
           values: indicatorTimeSeries,
           numLevels: NUM_LEVELS,
-          resolution: _.get(np.parameter, 'resolution', 'month'),
+          resolution: _.get(np.parameter, 'temporal_resolution', 'month'),
           period: _.get(np.parameter, 'period', 12)
         };
       }
