@@ -13,7 +13,7 @@ const session = require('express-session');
 // const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const Logger = rootRequire('/config/logger');
-const serverConfiguration = rootRequire('/config/yargs-wrapper');
+
 
 const nocache = require('nocache');
 
@@ -198,6 +198,5 @@ app.use(function(err, req, res, next) {
 });
 
 // Log server configuration
-Logger.info(`Server Configuration: ${JSON.stringify(serverConfiguration, null, 4)}`);
 
 module.exports = app;
