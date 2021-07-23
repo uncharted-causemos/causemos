@@ -12,12 +12,10 @@
 * [ ]
 
 
-## Required reviews
-(Indicate the required review stages for completion.)
+## Steps to add feature
+(List high level steps describing what needs to be done in order to complete the implementation)
 
-* [x] Code Review - required for any code changes.
-* [x] Design Review - required for any changes affecting the UI.
-
+1. 
 
 ## Source
 (If the motivation for this change came from someone other than the issue's author, please include any relevant source material. E.g.: an e-mail conversation with a client, a link to an external set of requirements, etc.)
