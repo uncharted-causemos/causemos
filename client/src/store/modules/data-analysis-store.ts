@@ -1,9 +1,7 @@
 import _ from 'lodash';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 import { getAnalysisState, saveAnalysisState } from '@/services/analysis-service';
-import API from '@/api/api';
 import router from '@/router';
-import { Datacube } from '@/types/Datacubes';
 import { ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 
 type MapBounds = [[number, number], [number, number]];
@@ -59,6 +57,8 @@ interface AnalysisState {
   *
   * @returns {AnalysisItem}
   */
+// TODO: review and remove
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const createNewAnalysisItem = (datacubeId: string, modelId: string, outputVariable: string, source: string, units: string, outputDescription: string, model: string): AnalysisItem => {
   return {
     id: datacubeId,
@@ -98,17 +98,19 @@ const toAnalysisItemStates = (analysisItems: AnalysisItem[] = []): AnalysisItemS
 };
 
 const loadFromAnalysisItemsState = async (analysisItems: AnalysisItem[] = []): Promise<AnalysisItem[]> => {
-  const datacubeIds = analysisItems.filter(item => !!item.datacubeId).map(item => item.datacubeId);
-  if (datacubeIds.length === 0) return [];
-  const filter = { clauses: [{ field: 'id', operand: 'or', isNot: false, values: datacubeIds }] };
-  // TODO: Define datacube interface in somewhere
-  const { data }: { data: Datacube[]} = await API.get(`maas/datacubes?filters=${JSON.stringify(filter)}`);
-  return analysisItems.map(item => {
-    const datacube = data.find(d => d.id === item.datacubeId);
-    if (!datacube) return item;
-    const { model, output_units: units, source, output_description: outputDescription } = datacube;
-    return { ...item, model, source, units, outputDescription };
-  });
+  return analysisItems;
+  // TODO: Review and remove
+  // const datacubeIds = analysisItems.filter(item => !!item.datacubeId).map(item => item.datacubeId);
+  // if (datacubeIds.length === 0) return [];
+  // const filter = { clauses: [{ field: 'id', operand: 'or', isNot: false, values: datacubeIds }] };
+  // // TODO: Define datacube interface in somewhere
+  // const { data }: { data: Datacube[]} = await API.get(`maas/datacubes?filters=${JSON.stringify(filter)}`);
+  // return analysisItems.map(item => {
+  //   const datacube = data.find(d => d.id === item.datacubeId);
+  //   if (!datacube) return item;
+  //   const { model, output_units: units, source, output_description: outputDescription } = datacube;
+  //   return { ...item, model, source, units, outputDescription };
+  // });
 };
 
 const saveState = _.debounce((state: AnalysisState) => {
@@ -189,23 +191,26 @@ const actions: ActionTree<AnalysisState, any> = {
     const newState = await getAnalysisState(analysisId);
     commit('loadStateNew', { analysisId, payload: newState });
   },
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
   async updateAnalysisItems({ state, commit }, datacubeIDs: string[]) {
-    const datacubes = [];
-    if (!_.isEmpty(datacubeIDs)) {
-      // Fetch datacubes metadata
-      const filter = { clauses: [{ field: 'id', operand: 'or', isNot: false, values: datacubeIDs }] };
-      const { data } = await API.get(`maas/datacubes?filters=${JSON.stringify(filter)}`);
-      datacubes.push(...data);
-    }
-    const analysisItems = datacubes.map(datacube => {
-      const { id, model, model_id: modelId, output_name: outputName, output_units: units, source, output_description: outputDescription } = datacube;
-      const analysisItem = state.analysisItems.find(item => item.id === id);
-      // Note: old data use model name as model Id and new data (supermaas) has dedicated modelId field
-      const mid = modelId || model;
-      return analysisItem !== undefined
-        ? analysisItem // Preserve existing item
-        : createNewAnalysisItem(id, mid, outputName, source, units, outputDescription, model);
-    });
+    // TODO: Review and remove
+    // const datacubes = [];
+    // if (!_.isEmpty(datacubeIDs)) {
+    //   // Fetch datacubes metadata
+    //   const filter = { clauses: [{ field: 'id', operand: 'or', isNot: false, values: datacubeIDs }] };
+    //   const { data } = await API.get(`maas/datacubes?filters=${JSON.stringify(filter)}`);
+    //   datacubes.push(...data);
+    // }
+    // const analysisItems = datacubes.map(datacube => {
+    //   const { id, model, model_id: modelId, output_name: outputName, output_units: units, source, output_description: outputDescription } = datacube;
+    //   const analysisItem = state.analysisItems.find(item => item.id === id);
+    //   // Note: old data use model name as model Id and new data (supermaas) has dedicated modelId field
+    //   const mid = modelId || model;
+    //   return analysisItem !== undefined
+    //     ? analysisItem // Preserve existing item
+    //     : createNewAnalysisItem(id, mid, outputName, source, units, outputDescription, model);
+    // });
+    const analysisItems: AnalysisItem[] = [];
     // Remove any algebraic input IDs whose matching analysis item has also been removed
     const newInputIds = ensureAlgebraicInputsArePresent(state.algebraicTransformInputIds, analysisItems);
     commit('setAlgebraicTransformInputIds', newInputIds);

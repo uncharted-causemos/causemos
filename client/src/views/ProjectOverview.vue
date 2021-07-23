@@ -54,7 +54,7 @@
 <script>
 import OverviewCard from '@/components/project-overview/overview-card';
 import { mapGetters, mapActions } from 'vuex';
-import { getModelDatacubesCount, getIndicatorDatacubesCount } from '@/services/datacube-service';
+import { getModelDatacubesCount, getIndicatorDatacubesCount } from '@/services/new-datacube-service';
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';

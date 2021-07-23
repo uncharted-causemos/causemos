@@ -19,11 +19,19 @@ const parseSimpleFilters = (simpleFilters) => {
   }
 
   simpleFilters.forEach(clause => {
-    boolFilters.push({
-      term: {
-        [clause.field]: clause.value
-      }
-    });
+    if (_.isArray(clause.value)) {
+      boolFilters.push({
+        terms: {
+          [clause.field]: clause.value
+        }
+      });
+    } else {
+      boolFilters.push({
+        term: {
+          [clause.field]: clause.value
+        }
+      });
+    }
   });
   return {
     query: {
@@ -235,17 +243,17 @@ class Base {
    * Returns distribution by fieldName
    *
    * @param {string} fieldName
+   * @param {object} optional, simpleFilters
    */
-  async getFacets(fieldName) {
+  async getFacets(fieldName, simpleFilters = null) {
+    const query = simpleFilters ? parseSimpleFilters(simpleFilters).query : { match_all: {} };
     const response = await this.client.search({
       index: this.index,
       body: {
         size: 0,
-        query: {
-          match_all: {}
-        },
+        query: query,
         aggs: {
-          projects: {
+          [fieldName]: {
             terms: {
               field: fieldName,
               size: 10000
@@ -255,7 +263,7 @@ class Base {
       }
     });
 
-    const counts = response.body.aggregations.projects.buckets;
+    const counts = response.body.aggregations[fieldName].buckets;
     return counts;
   }
 }

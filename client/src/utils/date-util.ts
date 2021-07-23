@@ -1,11 +1,9 @@
-
-// FIXME: timestamps are currently in seconds, but will eventually be provided in milliseconds
 export const getYearFromTimestamp = (timestamp: number) => {
-  return new Date(timestamp * 1000).getUTCFullYear();
+  return new Date(timestamp).getUTCFullYear();
 };
 
 export const getMonthFromTimestamp = (timestamp: number) => {
-  return new Date(timestamp * 1000).getUTCMonth();
+  return new Date(timestamp).getUTCMonth();
 };
 
 /** Returns a unix timestamp in seconds */

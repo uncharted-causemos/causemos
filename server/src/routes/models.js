@@ -148,6 +148,13 @@ router.get('/', asyncHandler(async (req, res) => {
   });
 }));
 
+/* GET get model stats */
+router.get('/model-stats', asyncHandler(async (req, res) => {
+  const { modelIds } = req.query;
+  const modelStats = await modelService.getModelStats(modelIds);
+  res.json(modelStats);
+}));
+
 
 /* GET retrieve single model */
 router.get('/:modelId', asyncHandler(async (req, res) => {
@@ -216,13 +223,15 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
   }
 
   // 2. create payload for model creation in the modelling engine
-  const model = await modelService.findOne(modelId);
-  const timeSeriesStart = _.get(model, 'parameter.indicator_time_series_range.start', 0);
-  const timeSeriesEnd = _.get(model, 'parameter.indicator_time_series_range.end', 1);
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, timeSeriesStart, timeSeriesEnd)
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters),
+    edges: edgeParameters.map(d => ({
+      source: d.source,
+      target: d.target,
+      weights: _.get(d.parameter, 'weights', [0.5, 0.5])
+    }))
   };
 
   res.setHeader('Content-disposition', `attachment; filename=${modelId}.json`);
@@ -267,13 +276,10 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   }
 
   // 2. create payload for model creation in the modelling engine
-  const model = await modelService.findOne(modelId);
-  const timeSeriesStart = model.parameter.indicator_time_series_range.start;
-  const timeSeriesEnd = model.parameter.indicator_time_series_range.end;
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, timeSeriesStart, timeSeriesEnd)
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters)
   };
 
   // 3. register model to engine
@@ -540,10 +546,8 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
   const parameter = model.parameter;
-  const timeSeriesStart = parameter.indicator_time_series_range.start;
-  const timeSeriesEnd = parameter.indicator_time_series_range.end;
   const engine = parameter.engine;
-  const payload = modelService.buildNodeParametersPayload([nodeParameter], timeSeriesStart, timeSeriesEnd);
+  const payload = modelService.buildNodeParametersPayload([nodeParameter]);
 
   // Register update with engine and retrieve new value
   let engineUpdateResult = null;

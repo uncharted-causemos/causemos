@@ -2,86 +2,29 @@ const _ = require('lodash');
 const moment = require('moment');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
+const modelUtil = rootRequire('/util/model-util');
 
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
-const AggregationsUtil = rootRequire('/util/aggregations-util');
 
 const DEFAULT_SIZE = 10000;
 
-/**
- * @param {object} parameter - parameter
- * @param {string} parameter.indicator_id - indicator variable
- * @param {string} parameter.indicator_source - dataset/model
- *
- * Extend the object passed in with the time series data and other associated data
- * for the given indicator_name
- */
-const _setIndicatorProperties = async (parameter) => {
-  if (_.isNil(parameter.indicator_id)) throw new Error('No indicator_id specified in parameter object');
-  const indicatorMatch = await getIndicatorData(parameter.indicator_id, parameter.indicator_feature);
-  if (_.isEmpty(indicatorMatch)) {
-    return null;
-  }
-
-  const countryLevelData = indicatorMatch[0];
-  const admin1LevelData = countryLevelData.children[0];
-  const admin2LevelData = admin1LevelData.children[0];
-  const indicatorTimeSeries = admin2LevelData.meta.timeseries.map(d => {
-    return { value: d.value, timestamp: d.timestamp };
-  });
-
-  parameter.indicator_time_series = indicatorTimeSeries;
-  parameter.indicator_time_series_parameter = {
-    // obsolete now
-    // unit: unit,
-    country: countryLevelData.key,
-    admin1: admin1LevelData.key,
-    admin2: admin2LevelData.key
-  };
-};
-
-/**
- * @param {string} variable - indicator name
- * @param {string} model - dataset/model name
- *
- * Returns an array of indicator data points for the specified indicator
- */
-const getIndicatorData = async (variable, feature) => {
-  Logger.info(`Get indicator data from wm-go:  ${variable}`);
+const getIndicatorData = async (dataId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
+  Logger.info(`Get indicator data from wm-go: ${dataId} ${feature}`);
 
   const options = {
     method: 'GET',
     url: process.env.WM_GO_URL +
-      // Get data for all units
-      `/maas/output/raw-data?model_id=${encodeURI(variable)}&run_id=${encodeURI('indicator')}&feature=${encodeURI(feature)}`
+      `/maas/output/timeseries?data_id=${encodeURI(dataId)}&run_id=indicator&feature=${encodeURI(feature)}&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {}
   };
-
   const response = await requestAsPromise(options);
-  const rawResult = JSON.parse(response);
-
-  const pipeline = [
-    {
-      keyFn: (d) => d.country,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    },
-    {
-      keyFn: (d) => d.admin1,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    },
-    {
-      keyFn: (d) => d.admin2,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    }
-  ];
-
-  return AggregationsUtil.groupDataArray(rawResult, _.cloneDeep(pipeline));
+  return response;
 };
+
 
 /**
  * Find all node parameters (concepts) without indicators
@@ -100,7 +43,7 @@ const _findAllWithoutIndicators = async (modelId) => {
       },
       must_not: {
         exists: {
-          field: 'parameter.indicator_name'
+          field: 'parameter.id'
         }
       }
     }
@@ -174,13 +117,12 @@ const getOntologyCandidates = async (modelId, concepts) => {
           ].filter(d => d !== '');
         }
       });
-
     }
     // make sure array contains unique values
     compositionalConcepts = [...new Set(compositionalConcepts)];
 
     const compositionalKeywords = [...new Set(compositionalConcepts.map(comp => {
-      let words = comp.split('/').slice(2);
+      const words = comp.split('/').slice(2);
       return words.map(word => word.split('_')).flat(1);
     }).flat(1))];
 
@@ -268,54 +210,78 @@ const setDefaultIndicators = async (modelId) => {
   // Set default candidates
   const conceptMatches = {};
   const matchedKeys = Object.keys(ontologyCandidates);
-  matchedKeys.forEach(conceptKey => {
+  // params that will be hard coded for the time being
+  const geospatialAgg = 'mean';
+  const temporalAgg = 'mean';
+  const resolution = 'month';
+
+  for (const conceptKey of matchedKeys) {
     const topMatch = ontologyCandidates[conceptKey];
+
+    // Medata and default configuration
     conceptMatches[conceptKey] = {
       modified_at: editTime,
       parameter: {
-        indicator_id: topMatch.data_id,
-        indicator_name: topMatch.name + '/' + topMatch.outputs[0].display_name,
-        indicator_source: topMatch.maintainer.organization,
-        indicator_feature: topMatch.default_feature,
-        indicator_score: topMatch._match_score
-        // Added in _setIndicatorProperties below
-        // indicator_time_series,
-        // indicator_time_series_parameter: {
-        //   unit,
-        //   country,
-        //   admin1,
-        //   admin2
-        // }
+        id: topMatch.id,
+        name: topMatch.outputs[0].display_name,
+        unit: topMatch.outputs[0].unit,
+        country: '',
+        admin1: '',
+        admin2: '',
+        admin3: '',
+        geospatial_aggregation: geospatialAgg,
+        temporal_aggregation: temporalAgg,
+        temporal_resolution: resolution,
+        period: 12
       }
     };
-  });
 
-  // Enrich conceptMatches
-  for (const conceptKey of matchedKeys) {
-    const matched = conceptMatches[conceptKey];
-    try {
-      await _setIndicatorProperties(matched.parameter);
-      delete matched.parameter.indicator_feature;
-    } catch {
-      Logger.info(`Concept failed to match:  ${conceptKey}`);
-      delete conceptMatches[conceptKey];
+    // Time series, min, max
+    const feature = topMatch.default_feature;
+    const dataId = topMatch.data_id;
+    const parameter = conceptMatches[conceptKey].parameter;
+
+    const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+    if (_.isEmpty(timeseries)) {
+      parameter.timeseries = [];
+      parameter.min = 0;
+      parameter.max = 1;
+    } else {
+      parameter.timeseries = timeseries;
+      const values = timeseries.map(d => d.value);
+      const { max, min } = modelUtil.projectionValueRange(values);
+      parameter.min = min;
+      parameter.max = max;
     }
   }
 
-  // Go through concept without indicator association and set default
+  // Go through concept without indicator association and set default abstract indicators
   let patchedCount = 0;
-  filteredNodeParameters.forEach(n => {
-    const concept = n.concept;
+  filteredNodeParameters.forEach(node => {
+    const concept = node.concept;
     if (_.isEmpty(conceptMatches[concept])) {
       conceptMatches[concept] = {
         modified_at: editTime,
-        parameter: null
+        parameter: {
+          id: null,
+          name: 'Abstract',
+          unit: '',
+          country: '',
+          admin1: '',
+          admin2: '',
+          admin3: '',
+          geospatial_aggregation: 'mean',
+          temporal_aggregation: 'mean',
+          temporal_resolution: 'month',
+          period: 12,
+          timeseries: []
+        }
       };
       patchedCount += 1;
     }
 
     // Set id for ES update
-    conceptMatches[concept].id = n.id;
+    conceptMatches[concept].id = node.id;
   });
   Logger.info('Patched unmatched concepts ' + patchedCount);
 
