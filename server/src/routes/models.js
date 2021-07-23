@@ -2,6 +2,7 @@ const _ = require('lodash');
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const moment = require('moment');
+const uuid = require('uuid');
 const router = express.Router();
 const Logger = rootRequire('/config/logger');
 const { setLock, releaseLock } = rootRequire('/cache/node-lru-cache');
@@ -563,11 +564,21 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     id: nodeParameter.id,
     parameter: nodeParameter.parameter
   };
-  const r = await nodeParameterAdapter.update([updateNodePayload], d => d.id, 'wait_for');
+  let r = await nodeParameterAdapter.update([updateNodePayload], d => d.id, 'wait_for');
   if (r.errors) {
     Logger.warn(JSON.stringify(r));
     throw new Error('Failed to update node-parameter');
   }
+
+  const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
+  const insertIndicatorMatchPayload = {
+    id: uuid(),
+    project_id: model.project_id,
+    node_id: nodeParameter.id,
+    indicator_id: nodeParameter.parameter.id,
+    timestamp: Date.now()
+  };
+  r = await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
 
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
   res.status(200).send({ updateToken: moment().valueOf() });

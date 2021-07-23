@@ -60,7 +60,60 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
-const getOntologyCandidates = async (modelId, concepts) => {
+const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, filteredNodeParameters) => {
+
+  const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
+  const esClient = indicatorMatchHistoryAdapter.client;
+  const conceptsWithoutHistory = [];
+  for (const node of filteredNodeParameters) {
+    const searchPayload = {
+      index: RESOURCE.INDICATOR_MATCH_HISTORY,
+      size: DEFAULT_SIZE,
+      body: {
+        query: {
+          bool: {
+            must: [
+              {
+                term: {
+                  project_id: model.project_id
+                }
+              },
+              {
+                term: {
+                  node_id: node.id
+                }
+              }
+            ]
+          }
+        },
+        sort: [
+          {
+            timestamp: {
+              order: 'desc'
+            }
+          }
+        ]
+      }
+    };
+    const response = await esClient.search(searchPayload);
+    const conceptPreviousMatches = response.body.hits.hits;
+    if (conceptPreviousMatches.length > 0) {
+
+      const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
+      const indicatorMetadata = await datacubeAdapter.findOne([{ field: 'id', value: conceptPreviousMatches[0]._source.indicator_id }], {});
+      ontologyCandidates[node.concept] = {
+        ...indicatorMetadata,
+        // since match score doesn't exist, as a user picked this, I default to 1 for now
+        _match_score: 1
+      };
+    } else {
+      conceptsWithoutHistory.push(node.concept);
+    }
+  }
+  return conceptsWithoutHistory;
+};
+
+const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
   const ontologyCandidates = {};
 
   const indicatorMetadataAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
@@ -69,7 +122,9 @@ const getOntologyCandidates = async (modelId, concepts) => {
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const modelData = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
 
-  for (const concept of concepts) {
+  const conceptsWithoutIndicators = await checkAndApplyIndicatorMatchHistory(ontologyCandidates, modelData, filteredNodeParameters);
+
+  for (const concept of conceptsWithoutIndicators) {
     let compositionalConcepts = [];
     const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, modelData.project_id);
     const query = {
@@ -198,8 +253,7 @@ const setDefaultIndicators = async (modelId) => {
   // Remove node parameters without concepts
   const filteredNodeParameters = nodeParameters.filter(n => !_.isNil(n.concept));
 
-  const concepts = filteredNodeParameters.map(n => n.concept);
-  const ontologyCandidates = await getOntologyCandidates(modelId, concepts);
+  const ontologyCandidates = await getOntologyCandidates(modelId, filteredNodeParameters);
 
   // All of these indicators are set by the same action, so they should
   // all have the same modified_at time
