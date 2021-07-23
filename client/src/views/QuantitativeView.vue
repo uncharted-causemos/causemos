@@ -173,6 +173,29 @@ export default {
       this.disableOverlay();
     },
     async refresh() {
+      // Basic model data
+      await this.refreshModel();
+
+      let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+
+      // If we have no scenarios at all, then we must sync with inference engines
+      if (scenarios.length === 0) {
+        // Check model is ready to be used for experiments
+        const errors = await modelService.initializeModel(this.currentCAG);
+        if (errors.length) {
+          this.disableOverlay();
+          this.toaster(errors[0], 'error', true);
+          console.error(errors);
+          return;
+        }
+
+        // Now we are up to date, create base scenario
+        await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+        scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      }
+      this.scenarios = scenarios;
+    },
+    async refreshX() {
       this.enableOverlay();
 
       // Check model is ready to be used for experiments
