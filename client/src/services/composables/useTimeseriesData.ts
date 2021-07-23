@@ -106,18 +106,16 @@ export default function useTimeseriesData(
   const rawTimeseriesData = ref<Timeseries[]>([]);
 
   watchEffect(onInvalidate => {
+    const modelMetadata = metadata.value;
     if (
       modelRunIds.value.length === 0 ||
-      metadata.value === null
+      modelMetadata === null
     ) {
       // Don't have the information needed to fetch the data
       return;
     }
-    const outputs = metadata.value.validatedOutputs
-      ? metadata.value.validatedOutputs
-      : metadata.value.outputs;
-    const defaultOutputIndex = metadata?.value.validatedOutputs?.findIndex(
-      o => o.name === metadata.value?.default_feature) ?? 0;
+    const activeFeature = modelMetadata.default_feature ?? '';
+    const activeDataId = modelMetadata.data_id;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
@@ -133,14 +131,13 @@ export default function useTimeseriesData(
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
-      const mainFeatureName = outputs[defaultOutputIndex].name;
 
       const promises = modelRunIds.value.map(runId =>
         API.get('maas/output/timeseries', {
           params: {
-            data_id: dataId.value,
+            data_id: activeDataId,
             run_id: runId,
-            feature: mainFeatureName,
+            feature: activeFeature,
             resolution: temporalRes,
             temporal_agg: temporalAgg,
             spatial_agg: spatialAgg
