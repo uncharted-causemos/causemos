@@ -6,12 +6,13 @@ const Logger = rootRequire('/config/logger');
 
 const basicAuthToken = auth.getBasicAuthToken(process.env.DART_SERVICE_USERNAME, process.env.DART_SERVICE_PASSWORD);
 
-// FIXME
-// const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
-// const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
 
-const DART_SERVICE_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
-const DART_READER_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
+const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
+const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
+
+// UAT DART - for testing only
+// const DART_SERVICE_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
+// const DART_READER_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
 
 const TIMEOUT = 3 * 1000;
 
