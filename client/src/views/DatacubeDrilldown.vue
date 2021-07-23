@@ -459,11 +459,9 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     setBaseLayer(val: BASE_LAYER) {
-      console.log(val);
       this.selectedBaseLayer = val;
     },
     setDataLayer(val: DATA_LAYER) {
-      console.log(val);
       this.selectedDataLayer = val;
     },
     async onClose() {

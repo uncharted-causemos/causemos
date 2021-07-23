@@ -193,10 +193,6 @@ export default {
     selectedBaseLayer: {
       type: String,
       required: true
-    },
-    selectedDataLayer: {
-      type: String,
-      required: true
     }
   },
   data: () => ({

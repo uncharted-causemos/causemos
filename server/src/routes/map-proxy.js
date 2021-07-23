@@ -57,7 +57,7 @@ router.get('/vector-tiles/:z/:x/:y', (req, res) => {
  * Proxy map raster tile requests for mapbox-gl-js
  * Use Carto API Key if provided
  */
-router.get('/raster-tiles/:z/:x/:y', (req, res) => {
+router.get('/satellite-tiles/:z/:x/:y', (req, res) => {
   const { x, y, z } = req.params;
   const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}.png`;
   return getBaseTiles(res, url);
@@ -98,10 +98,10 @@ router.get('/styles/satellite', asyncHandler(async (req, res) => {
   res.json({
     version: 8,
     sources: {
-      'raster-tiles': {
+      'satellite-tiles': {
         type: 'raster',
         tiles: [
-          'wmmap://raster-tiles/{z}/{x}/{y}'
+          'wmmap://satellite-tiles/{z}/{x}/{y}'
         ],
         tileSize: 256,
         attribution: 'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
@@ -111,7 +111,7 @@ router.get('/styles/satellite', asyncHandler(async (req, res) => {
       {
         id: 'simple-tiles',
         type: 'raster',
-        source: 'raster-tiles',
+        source: 'satellite-tiles',
         minzoom: 0,
         maxzoom: 22
       }
