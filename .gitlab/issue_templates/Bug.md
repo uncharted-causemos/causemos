@@ -2,12 +2,6 @@
 (Summarize the bug encountered concisely)
 
 
-## Version
-- Browser:
-- Operation System:
-- Release / SHA:
-
-
 ## Steps to reproduce
 (How one can reproduce the issue - this is very important)
 
@@ -27,4 +21,4 @@ logs, and code as it's very hard to read otherwise.)
 (If you can, link to the line of code that might be responsible for the problem)
 
 
-/label ~Bug ~Triage
+/label ~Bug

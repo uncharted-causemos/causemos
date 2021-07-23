@@ -23,4 +23,4 @@
 (If the motivation for this change came from someone other than the issue's author, please include any relevant source material. E.g.: an e-mail conversation with a client, a link to an external set of requirements, etc.)
 
 
-/label ~Enhancement ~Triage
+/label ~Feature
