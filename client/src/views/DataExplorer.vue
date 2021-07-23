@@ -67,7 +67,12 @@ export default {
       return 'Back to ' + (this.analysis ? this.analysis.title : 'analysis');
     },
     initialDatacubeSelection() {
-      return this.analysisItems.map(item => item.id);
+      return this.analysisItems.map(item => {
+        return {
+          id: item.id,
+          datacubeId: item.data_id
+        };
+      });
     }
   },
   watch: {
