@@ -600,9 +600,11 @@ header {
   position: relative;
 }
 
+$marginSize: 5px;
+
 .card-map-container {
   flex: 1;
-  min-width: 33%;
+  min-width: 0;
   display: flex;
   flex-direction: column;
 
@@ -618,13 +620,13 @@ header {
   &.card-count-3,
   &.card-count-4 {
     height: 50%;
-    min-width: 50%;
-    max-width: 50%;
+    min-width: calc(50% - #{$marginSize / 2});
+    max-width: calc(50% - #{$marginSize / 2});
   }
   &.card-count-n {
     height: 50%;
-    min-width: calc(100% / 3);
-    max-width: calc(100% / 3);
+    min-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
+    max-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
   }
 }
 
