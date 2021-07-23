@@ -34,7 +34,7 @@ export default function useRegionalData(
       return [];
     }
     const activeFeature = modelMetadata.default_feature ?? '';
-    const activeModelId = selectedModelId.value.length > 0 ? selectedModelId.value : modelMetadata.data_id ?? '';
+    const activeModelId = modelMetadata.data_id ?? '';
 
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,

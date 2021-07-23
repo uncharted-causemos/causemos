@@ -115,7 +115,7 @@ export default function useTimeseriesData(
       return;
     }
     const activeFeature = modelMetadata.default_feature ?? '';
-    const activeDataId = dataId.value.length > 0 ? dataId.value : modelMetadata.data_id;
+    const activeDataId = modelMetadata.data_id;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
