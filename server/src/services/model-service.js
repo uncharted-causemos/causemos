@@ -285,7 +285,10 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeS
 
   let payload = {};
   const startTime = projectionStartDate.valueOf();
-  const endTime = projectionStartDate.add(numTimeSteps, 'M').valueOf();
+  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
+  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
+  // endTime should be thought of as the last timestamp that will be returned.
+  const endTime = projectionStartDate.add(numTimeSteps - 1, 'M').valueOf();
   const constraints = _.isEmpty(parameters) ? [] : parameters;
   payload = {
     experimentType: EXPERIMENT_TYPE.PROJECTION,
