@@ -178,9 +178,9 @@ const startIndicatorPostProcessing = async (metadata) => {
 
   const filters = {
     clauses: [
-      { field: 'dataId', operand: 'and', isNot: false, values: [metadata.id] },
-      { field: 'type', operand: 'and', isNot: false, values: ['indicator'] },
-      { field: 'status', operand: 'and', isNot: false, values: ['READY'] }
+      { field: 'dataId', operand: 'or', isNot: false, values: [metadata.id] },
+      { field: 'type', operand: 'or', isNot: false, values: ['indicator'] },
+      { field: 'status', operand: 'or', isNot: false, values: ['READY'] }
     ]
   };
   const existingIndicators = await datacubeService.getDatacubes(filters, {
