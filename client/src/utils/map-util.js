@@ -1,6 +1,6 @@
 import _ from 'lodash';
 import mapboxgl from 'mapbox-gl';
-import { BASE_LAYER } from '@/services/map-service';
+import { BASE_LAYER } from '@/utils/map-util-new';
 
 export const ETHIOPIA_BOUNDING_BOX = {
   TOP: 18,

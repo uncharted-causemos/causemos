@@ -61,7 +61,6 @@ import {
 } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import MapLegend from '@/components/widgets/map-legend';
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -192,12 +191,12 @@ export default {
       default: () => undefined
     },
     selectedBaseLayer: {
-      type: BASE_LAYER,
-      default: () => BASE_LAYER.DEFAULT
+      type: String,
+      required: true
     },
     selectedDataLayer: {
-      type: DATA_LAYER,
-      default: () => DATA_LAYER.ADMIN
+      type: String,
+      required: true
     }
   },
   data: () => ({

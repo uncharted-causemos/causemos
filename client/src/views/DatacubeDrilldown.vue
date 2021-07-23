@@ -8,138 +8,144 @@
     >
     </full-screen-modal-header>
     <main>
-    <analytical-questions-and-insights-panel />
-    <!-- TODO: whether a card is actually expanded or not will
-    be dynamic later -->
-    <datacube-card
-      :class="{ 'datacube-expanded': true }"
-      :selected-admin-level="selectedAdminLevel"
-      :selected-model-id="selectedModelId"
-      :all-model-run-data="allModelRunData"
-      :selected-scenario-ids="selectedScenarioIds"
-      :selected-timestamp="selectedTimestamp"
-      :selected-temporal-resolution="selectedTemporalResolution"
-      :selected-temporal-aggregation="selectedTemporalAggregation"
-      :selected-spatial-aggregation="selectedSpatialAggregation"
-      :regional-data="regionalData"
-      :output-source-specs="outputSpecs"
-      :is-description-view="isDescriptionView"
-      :metadata="metadata"
-      :timeseries-data="visibleTimeseriesData"
-      :relative-to="relativeTo"
-      :breakdown-option="breakdownOption"
-      :baseline-metadata="baselineMetadata"
-      @set-selected-scenario-ids="setSelectedScenarioIds"
-      @select-timestamp="setSelectedTimestamp"
-      @set-drilldown-data="setDrilldownData"
-      @set-relative-to="setRelativeTo"
-      @refetch-data="fetchData"
-      @new-runs-mode="newRunsMode=!newRunsMode"
-      @update-desc-view="updateDescView"
-    >
-      <template #datacube-model-header>
-        <div class="datacube-header" v-if="metadata && mainModelOutput">
-          <div v-if="isExpanded">
-            <h5>
-              <select name="outputs" id="outputs"
-                v-if="outputs.length > 1"
-                @change="onOutputSelectionChange($event)"
-              >
-                <option
-                  v-for="(output, indx) in outputs"
-                  :key="output.name"
-                  :selected="indx === currentOutputIndex"
-                >{{output.display_name !== '' ? output.display_name : output.name}}</option>
-              </select>
-              <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
-            </h5>
-            <disclaimer
-              v-if="scenarioCount > 0"
-              :message="
-                scenarioCount +
-                  ' scenarios. Click a vertical line to select or deselect it.'
-              "
-            />
-          </div>
-        </div>
-      </template>
-
-      <template #datacube-model-header-collapse>
-        <button
-          v-tooltip="'Collapse datacube'"
-          class="btn btn-default"
-          @click="onClose"
-        >
-          <i class="fa fa-fw fa-compress" />
-        </button>
-      </template>
-
-      <template #temporal-aggregation-config>
-        <dropdown-button
-          class="dropdown-config"
-          :inner-button-label="'Temporal Aggregation'"
-          :items="Object.values(AggregationOption)"
-          :selected-item="selectedTemporalAggregation"
-          @item-selected="item => selectedTemporalAggregation = item"
-        />
-      </template>
-
-      <template #temporal-resolution-config>
-        <dropdown-button
-          class="dropdown-config"
-          :inner-button-label="'Temporal Resolution'"
-          :items="Object.values(TemporalResolutionOption)"
-          :selected-item="selectedTemporalResolution"
-          @item-selected="item => selectedTemporalResolution = item"
-        />
-      </template>
-
-      <template #spatial-aggregation-config>
-        <dropdown-button
-          class="spatial-aggregation"
-          :inner-button-label="'Spatial Aggregation'"
-          :items="Object.values(AggregationOption)"
-          :selected-item="selectedSpatialAggregation"
-          @item-selected="item => selectedSpatialAggregation = item"
-        />
-        <map-dropdown/>
-      </template>
-      <template #datacube-description>
-        <datacube-description
-          :metadata="metadata"
-        />
-      </template>
-
-    </datacube-card>
-    <drilldown-panel
-        class="drilldown"
-        :is-open="activeDrilldownTab !== null"
-        :tabs="drilldownTabs"
-        :active-tab-id="activeDrilldownTab"
+      <analytical-questions-and-insights-panel />
+      <!-- TODO: whether a card is actually expanded or not will
+      be dynamic later -->
+      <datacube-card
+        :class="{ 'datacube-expanded': true }"
+        :selected-admin-level="selectedAdminLevel"
+        :selected-model-id="selectedModelId"
+        :all-model-run-data="allModelRunData"
+        :selected-scenario-ids="selectedScenarioIds"
+        :selected-timestamp="selectedTimestamp"
+        :selected-temporal-resolution="selectedTemporalResolution"
+        :selected-temporal-aggregation="selectedTemporalAggregation"
+        :selected-spatial-aggregation="selectedSpatialAggregation"
+        :regional-data="regionalData"
+        :output-source-specs="outputSpecs"
+        :is-description-view="isDescriptionView"
+        :metadata="metadata"
+        :timeseries-data="visibleTimeseriesData"
+        :relative-to="relativeTo"
+        :breakdown-option="breakdownOption"
+        :baseline-metadata="baselineMetadata"
+        :selectedBaseLayer="selectedBaseLayer"
+        :selectedDataLayer="selectedDataLayer"
+        @set-selected-scenario-ids="setSelectedScenarioIds"
+        @select-timestamp="setSelectedTimestamp"
+        @set-drilldown-data="setDrilldownData"
+        @set-relative-to="setRelativeTo"
+        @refetch-data="fetchData"
+        @new-runs-mode="newRunsMode=!newRunsMode"
+        @update-desc-view="updateDescView"
       >
-        <template #content>
-          <breakdown-pane
-            v-if="activeDrilldownTab ==='breakdown'"
-            :selected-admin-level="selectedAdminLevel"
-            :type-breakdown-data="typeBreakdownData"
-            :regional-data="regionalData"
-            :temporal-breakdown-data="temporalBreakdownData"
-            :unit="unit"
-            :selected-spatial-aggregation="selectedSpatialAggregation"
-            :selected-temporal-aggregation="selectedTemporalAggregation"
-            :selected-timestamp="selectedTimestamp"
-            :selected-scenario-ids="selectedScenarioIds"
-            :deselected-region-ids="deselectedRegionIds"
-            :selected-breakdown-option="breakdownOption"
-            :selected-timeseries-points="selectedTimeseriesPoints"
-            @toggle-is-region-selected="toggleIsRegionSelected"
-            @set-selected-admin-level="setSelectedAdminLevel"
-            @set-all-regions-selected="setAllRegionsSelected"
-            @set-breakdown-option="setBreakdownOption"
+        <template #datacube-model-header>
+          <div class="datacube-header" v-if="metadata && mainModelOutput">
+            <div v-if="isExpanded">
+              <h5>
+                <select name="outputs" id="outputs"
+                  v-if="outputs.length > 1"
+                  @change="onOutputSelectionChange($event)"
+                >
+                  <option
+                    v-for="(output, indx) in outputs"
+                    :key="output.name"
+                    :selected="indx === currentOutputIndex"
+                  >{{output.display_name !== '' ? output.display_name : output.name}}</option>
+                </select>
+                <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
+                <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
+              </h5>
+              <disclaimer
+                v-if="scenarioCount > 0"
+                :message="
+                  scenarioCount +
+                    ' scenarios. Click a vertical line to select or deselect it.'
+                "
+              />
+            </div>
+          </div>
+        </template>
+
+        <template #datacube-model-header-collapse>
+          <button
+            v-tooltip="'Collapse datacube'"
+            class="btn btn-default"
+            @click="onClose"
+          >
+            <i class="fa fa-fw fa-compress" />
+          </button>
+        </template>
+
+        <template #temporal-aggregation-config>
+          <dropdown-button
+            class="dropdown-config"
+            :inner-button-label="'Temporal Aggregation'"
+            :items="Object.values(AggregationOption)"
+            :selected-item="selectedTemporalAggregation"
+            @item-selected="item => selectedTemporalAggregation = item"
           />
         </template>
-    </drilldown-panel>
+
+        <template #temporal-resolution-config>
+          <dropdown-button
+            class="dropdown-config"
+            :inner-button-label="'Temporal Resolution'"
+            :items="Object.values(TemporalResolutionOption)"
+            :selected-item="selectedTemporalResolution"
+            @item-selected="item => selectedTemporalResolution = item"
+          />
+        </template>
+
+        <template #spatial-aggregation-config>
+          <dropdown-button
+            class="spatial-aggregation"
+            :inner-button-label="'Spatial Aggregation'"
+            :items="Object.values(AggregationOption)"
+            :selected-item="selectedSpatialAggregation"
+            @item-selected="item => selectedSpatialAggregation = item"
+          />
+          <map-dropdown
+            :selectedBaseLayer="selectedBaseLayer"
+            :selectedDataLayer="selectedDataLayer"
+            @set-base-layer="setBaseLayer"
+            @set-data-layer="setDataLayer"
+          />
+        </template>
+        <template #datacube-description>
+          <datacube-description
+            :metadata="metadata"
+          />
+        </template>
+      </datacube-card>
+      <drilldown-panel
+          class="drilldown"
+          :is-open="activeDrilldownTab !== null"
+          :tabs="drilldownTabs"
+          :active-tab-id="activeDrilldownTab"
+        >
+          <template #content>
+            <breakdown-pane
+              v-if="activeDrilldownTab ==='breakdown'"
+              :selected-admin-level="selectedAdminLevel"
+              :type-breakdown-data="typeBreakdownData"
+              :regional-data="regionalData"
+              :temporal-breakdown-data="temporalBreakdownData"
+              :unit="unit"
+              :selected-spatial-aggregation="selectedSpatialAggregation"
+              :selected-temporal-aggregation="selectedTemporalAggregation"
+              :selected-timestamp="selectedTimestamp"
+              :selected-scenario-ids="selectedScenarioIds"
+              :deselected-region-ids="deselectedRegionIds"
+              :selected-breakdown-option="breakdownOption"
+              :selected-timeseries-points="selectedTimeseriesPoints"
+              @toggle-is-region-selected="toggleIsRegionSelected"
+              @set-selected-admin-level="setSelectedAdminLevel"
+              @set-all-regions-selected="setAllRegionsSelected"
+              @set-breakdown-option="setBreakdownOption"
+            />
+          </template>
+      </drilldown-panel>
     </main>
   </div>
 </template>
@@ -171,6 +177,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 const DRILLDOWN_TABS = [
   {
@@ -403,7 +410,9 @@ export default defineComponent({
   },
   data: () => ({
     analysis: undefined,
-    ProjectType
+    ProjectType,
+    selectedBaseLayer: BASE_LAYER.DEFAULT,
+    selectedDataLayer: DATA_LAYER.ADMIN
   }),
   watch: {
     $route: {
@@ -449,6 +458,14 @@ export default defineComponent({
       setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
+    setBaseLayer(val: BASE_LAYER) {
+      console.log(val);
+      this.selectedBaseLayer = val;
+    },
+    setDataLayer(val: DATA_LAYER) {
+      console.log(val);
+      this.selectedDataLayer = val;
+    },
     async onClose() {
       this.$router.push({
         name: 'dataComparative',

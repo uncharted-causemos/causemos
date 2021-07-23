@@ -15,7 +15,6 @@ import options from './options';
 import { eventEmitter } from '../mixins';
 
 import 'mapbox-gl/dist/mapbox-gl.css';
-import { mapGetters } from 'vuex';
 
 // Ref: https://docs.mapbox.com/mapbox-gl-js/api/#map.event:resize
 const MAPBOX_EVENTS = [

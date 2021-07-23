@@ -185,6 +185,8 @@
               :filters="mapFilters"
               :map-bounds="mapBounds"
               :region-data="regionalData"
+              :selectedBaseLayer="selectedBaseLayer"
+              :selectedDataLayer="selectedDataLayer"
               @sync-bounds="onSyncMapBounds"
               @on-map-load="onMapLoad"
               @slide-handle-change="updateMapFilters"
@@ -222,12 +224,12 @@ import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-
 import { ModelRunStatus, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
-import { mapGetters, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
 import { Timeseries } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestamp } from '@/utils/date-util';
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { DATA_LAYER } from '@/utils/map-util-new';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -294,6 +296,14 @@ export default defineComponent({
     baselineMetadata: {
       type: Object as PropType<{name: string; color: string} | null>,
       default: null
+    },
+    selectedBaseLayer: {
+      type: String,
+      required: true
+    },
+    selectedDataLayer: {
+      type: String,
+      required: true
     }
   },
   components: {
@@ -411,9 +421,7 @@ export default defineComponent({
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
     ],
-    mapReady: false,
-    selectedBaseLayer: BASE_LAYER.DEFAULT,
-    selectedDataLayer: DATA_LAYER.ADMIN
+    mapReady: false
   }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
@@ -422,9 +430,6 @@ export default defineComponent({
     disableConcurrentTileRequestsCaching();
   },
   computed: {
-    ...mapGetters({
-      selectedDataLayer: 'map/selectedDataLayer'
-    }),
     mapSelectedLayer(): number {
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }

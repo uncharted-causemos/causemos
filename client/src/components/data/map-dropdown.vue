@@ -43,12 +43,11 @@
 
 <script lang="ts">
 
-import { mapActions, mapGetters } from 'vuex';
 import { defineComponent } from 'vue';
 
 import MapDropdownOption from '@/components/data/map-dropdown-option.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { BASE_LAYER, DATA_LAYER } from '@/services/map-service';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import MapDropdownCategory from '@/components/data/map-dropdown-category.vue';
 
 export default defineComponent({
@@ -63,35 +62,33 @@ export default defineComponent({
     firstLayers: DATA_LAYER,
     showDropdownOptions: false
   }),
-  computed: {
-    ...mapGetters({
-      selectedBaseLayer: 'map/selectedBaseLayer',
-      selectedDataLayer: 'map/selectedDataLayer'
-    })
-  },
   props: {
+    selectedBaseLayer: {
+      type: String,
+      required: true
+    },
+    selectedDataLayer: {
+      type: String,
+      required: true
+    },
     viewAfterDeletion: {
       type: String,
       default: 'qualitativeView'
     }
   },
-  emits: ['rename'],
+  emits: ['rename', 'set-base-layer', 'set-data-layer'],
   methods: {
-    ...mapActions({
-      setSelectedBaseLayer: 'map/setSelectedBaseLayer',
-      setSelectedDataLayer: 'map/setSelectedDataLayer'
-    }),
     clickDefaultOption() {
-      this.setSelectedBaseLayer(BASE_LAYER.DEFAULT);
+      this.$emit('set-base-layer', BASE_LAYER.DEFAULT);
     },
     clickSatelliteOption() {
-      this.setSelectedBaseLayer(BASE_LAYER.SATELLITE);
+      this.$emit('set-base-layer', BASE_LAYER.SATELLITE);
     },
     clickAdminOption() {
-      this.setSelectedDataLayer(DATA_LAYER.ADMIN);
+      this.$emit('set-data-layer', DATA_LAYER.ADMIN);
     },
     clickTilesOption() {
-      this.setSelectedDataLayer(DATA_LAYER.TILES);
+      this.$emit('set-data-layer', DATA_LAYER.TILES);
     },
     onShowDropdownOptions() {
       this.showDropdownOptions = !this.showDropdownOptions;
