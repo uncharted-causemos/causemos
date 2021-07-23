@@ -84,7 +84,6 @@ export default {
   },
   methods: {
     ...mapActions({
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'

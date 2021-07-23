@@ -116,7 +116,7 @@ export default {
     async addToAnalysis() {
       try {
         // save the selected datacubes in the analysis object in the store/server
-        await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
+        await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, analysisItems: this.selectedDatacubes });
 
         if (this.enableMultipleSelection) {
           this.$router.push({
