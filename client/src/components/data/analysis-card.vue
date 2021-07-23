@@ -187,7 +187,7 @@
 import _ from 'lodash';
 import API from '@/api/api';
 import { mapActions, mapGetters } from 'vuex';
-import { getModelRuns, getModelParameters } from '@/services/datacube-service';
+import { getModelRuns, getModelParameters } from '@/services/new-datacube-service';
 import DataAnalysisMap from '@/components/data/analysis-map';
 import DropdownControl from '@/components/dropdown-control';
 import LineChart from '@/components/widgets/charts/line-chart';

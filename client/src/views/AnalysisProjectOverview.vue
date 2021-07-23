@@ -270,6 +270,16 @@ export default {
       const result2 = await modelService.getProjectModels(this.project);
       this.qualitativeAnalyses = result2.models.map(toQualitative);
 
+      if (this.qualitativeAnalyses.length) {
+        const modelIDs = this.qualitativeAnalyses.map(model => model.id);
+        const stats = await modelService.getModelStats(modelIDs);
+
+        this.qualitativeAnalyses.forEach(analysis => { // merge edge and node counts into analysis objects
+          analysis.nodeCount = stats[analysis.id].nodeCount;
+          analysis.edgeCount = stats[analysis.id].edgeCount;
+        });
+      }
+
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
       // clear context id to hint the insight manager to show ALL project insights
@@ -393,7 +403,7 @@ export default {
         title: `untitled at ${dateFormatter(Date.now())}`,
         projectId: this.project
       });
-      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [] });
+      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, analysisItems: [] });
       this.$router.push({
         name: 'dataComparative',
         params: {

@@ -153,6 +153,23 @@ const DRILLDOWN_TABS = [
   }
 ];
 
+
+const projectionValueRange = (values: number[]) => {
+  if (_.isEmpty(values)) return { max: 1, min: 0 };
+
+  let max = _.max(values) || 0;
+  let min = _.min(values) || 0;
+
+  if (max === min && max === 0) {
+    max += 1;
+  } else if (max === min) {
+    max += Math.abs(max);
+    min -= Math.abs(min);
+  }
+  return { max, min };
+};
+
+
 export default defineComponent({
   name: 'NodeCompExperiment',
   components: {
@@ -185,14 +202,14 @@ export default defineComponent({
     const project = computed(() => store.getters['app/project']);
 
 
-    // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
-    const datacubeId = computed(() => store.getters['app/datacubeId']);
+    // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
+    const indicatorId = computed(() => store.getters['app/indicatorId']);
 
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
-    const selectedModelId = ref(datacubeId);
+    const metadata = useModelMetadata(indicatorId);
 
-    const metadata = useModelMetadata(selectedModelId);
+    const selectedModelId = ref(metadata.value?.data_id ?? '');
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -390,6 +407,32 @@ export default defineComponent({
     },
 
     onSelection () {
+      // FIXME: to do get actual timeseries data here
+      const timeseries = [
+        {
+          timestamp: 1527811200000, value: 10.5
+        },
+        {
+          timestamp: 1530403200000, value: 13.5
+        },
+        {
+          timestamp: 1533081600000, value: 24.5
+        },
+        {
+          timestamp: 1535760000000, value: 15.2
+        },
+        {
+          timestamp: 1538352000000, value: 24.9
+        },
+        {
+          timestamp: 1541030400000, value: 30.2
+        },
+        {
+          timestamp: 1543622400000, value: 11.2
+        }
+      ];
+
+      const { max, min } = projectionValueRange(timeseries.map(d => d.value));
       const nodeParameters = {
         id: this.selectedNode.id,
         concept: this.selectedNode.concept,
@@ -407,36 +450,9 @@ export default defineComponent({
           geospatial_aggregation: this.outputSpecs[this.currentOutputIndex].spatialAggregation,
           temporal_aggregation: this.outputSpecs[this.currentOutputIndex].temporalAggregation,
           temporal_resolution: this.outputSpecs[this.currentOutputIndex].temporalResolution,
-          timeseries: [ // to do get actual timeseries data here
-            {
-              timestamp: 1527811200000,
-              value: 10.5
-            },
-            {
-              timestamp: 1530403200000,
-              value: 13.5
-            },
-            {
-              timestamp: 1533081600000,
-              value: 24.5
-            },
-            {
-              timestamp: 1535760000000,
-              value: 15.2
-            },
-            {
-              timestamp: 1538352000000,
-              value: 24.9
-            },
-            {
-              timestamp: 1541030400000,
-              value: 30.2
-            },
-            {
-              timestamp: 1543622400000,
-              value: 11.2
-            }
-          ]
+          period: 12,
+          max: max,
+          min: min
         }
       };
       modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
