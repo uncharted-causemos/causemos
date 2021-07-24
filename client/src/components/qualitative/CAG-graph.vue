@@ -608,7 +608,8 @@ class CAGRenderer extends SVGRenderer {
 
   displayAmbiguousEdgeWarning() {
     const graph = this.layout;
-    const foregroundLayer = d3.select(this.svgEl).select('.foreground-layer');
+    const svg = d3.select(this.svgEl);
+    const foregroundLayer = svg.select('.foreground-layer');
 
     const highlightFunction = this.highlight;
     const highlightAmbiguousEdgesFunction = this.highlightAmbiguousEdges;
@@ -616,7 +617,7 @@ class CAGRenderer extends SVGRenderer {
     const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
       ? d3.select('.ambiguous-edge-warning') // select it
       : foregroundLayer.append('text') // or create it if it hasn't been already
-        .attr('x', 10)
+        .attr('x', parseInt(svg.style('width')) - 310)
         .attr('y', 20)
         .attr('opacity', 0)
         .attr('fill', 'red')
@@ -630,7 +631,9 @@ class CAGRenderer extends SVGRenderer {
     for (const edge of graph.edges) {
       const polarity = edge.data.polarity;
       if (polarity !== 1 && polarity !== -1) {
-        warning.attr('opacity', 1);
+        warning
+          .attr('opacity', 1)
+          .attr('x', parseInt(svg.style('width')) - 310); // FIXME this doesn't move the warning if the window resizes, svg size doesnt change
         return;
       }
     }
@@ -639,22 +642,53 @@ class CAGRenderer extends SVGRenderer {
 
   displayGraphStats() {
     const graph = this.layout;
-    const foregroundLayer = d3.select(this.svgEl).select('.forgroundLayer');
-    const edgesCount = graph.edges.length;
+    const svg = d3.select(this.svgEl);
+    const foregroundLayer = svg.select('.foreground-layer');
+    const edgeCount = graph.edges.length;
     const nodeCount = graph.nodes.length;
 
-    console.log(nodeCount);
+    const squareSize = 26;
+    let statsGroup = null;
 
-    d3.select('.graph-stats-info').node()
-      ? d3.select('.graph-stats-info')
-      : foregroundLayer.append('text')
-        .attr('x', 20)
-        .attr('y', 30)
-        .attr('opacity', 1)
-        .attr('fill', 'black')
-        .attr('font-size', '1.6rem')
+    if (d3.select('.graph-stats-info').node()) {
+      statsGroup = d3.select('.graph-stats-info');
+    } else {
+      statsGroup = foregroundLayer.append('g')
+        .attr('transform', svgUtil.translate(5, 10))
         .classed('graph-stats-info', true)
-        .text(`Edges: ${edgesCount} Nodes: ${nodeCount}`);
+        .style('cursor', 'pointer');
+
+      statsGroup
+        .append('rect')
+        .style('width', squareSize.toString())
+        .style('height', squareSize.toString())
+        .style('rx', '6')
+        .style('fill', 'white')
+        .style('fill-opacity', '0')
+        .style('stroke', '#545353');
+
+      statsGroup
+        .append('text')
+        .style('font-family', 'FontAwesome')
+        .style('font-size', '20px')
+        .style('stroke', 'none')
+        .style('fill', '#545353')
+        .style('cursor', 'pointer')
+        .style('text-anchor', 'middle')
+        .style('alignment-baseline', 'middle')
+        .attr('x', (squareSize / 2).toString())
+        .attr('y', ((squareSize / 2) + 1).toString())
+        .text('\uf05a');
+    }
+
+    statsGroup
+      .on('mouseover', function() {
+        svgUtil.showSvgTooltip(statsGroup, `Nodes: ${nodeCount}\nEdges: ${edgeCount}`, [squareSize, squareSize / 2], 0);
+        statsGroup.selectAll('.svg-tooltip').style('fill', '#545353');
+      })
+      .on('mouseout', function() {
+        statsGroup.selectAll('.svg-tooltip').remove();
+      });
   }
 
   highlightAmbiguousEdges(graph, highlight) {
