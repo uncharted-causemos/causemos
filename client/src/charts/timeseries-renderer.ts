@@ -4,18 +4,16 @@ import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import dateFormatter from '@/formatters/date-formatter';
-import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
+import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
+import { renderAxes, renderLine } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
 const PADDING_TOP = 10;
 const PADDING_RIGHT = 40;
 
-const X_AXIS_TICK_COUNT = 4;
-const Y_AXIS_TICK_COUNT = 2;
-const X_AXIS_TICK_SIZE_PX = 2;
 // The type of value can't be more specific than `any`
 //  because under the hood d3.tickFormat requires d3.NumberType.
 // It correctly converts, but its TypeScript definitions don't
@@ -86,10 +84,13 @@ export default function(
     valueFormatter,
     width,
     height,
-    timestampFormatter
+    timestampFormatter,
+    Y_AXIS_WIDTH,
+    PADDING_RIGHT,
+    X_AXIS_HEIGHT
   );
-  timeseriesList.forEach(timeSeries => {
-    renderLine(groupElement, timeSeries, xScale, yScale);
+  timeseriesList.forEach(timeseries => {
+    renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
   });
 
   generateSelectableTimestamps(
@@ -160,65 +161,6 @@ function calculateScales(
     .domain(yExtent)
     .range([height - X_AXIS_HEIGHT, PADDING_TOP]);
   return [xScale, yScale];
-}
-
-function renderLine(
-  parentGroupElement: D3GElementSelection,
-  timeseries: Timeseries,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>
-) {
-  // Draw a line connecting all points in this segment
-  const line = d3
-    .line<TimeseriesPoint>()
-    .x(d => xScale(d.timestamp))
-    .y(d => yScale(d.value));
-  const groupElement = parentGroupElement.append('g');
-  groupElement
-    .append('path')
-    .classed('segment-line', true)
-    .attr('d', () => line(timeseries.points))
-    .style('fill', 'none')
-    .style('stroke', timeseries.color || DEFAULT_LINE_COLOR);
-}
-
-function renderAxes(
-  selection: D3GElementSelection,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  // The type of value can't be more specific than `any`
-  //  because under the hood d3.tickFormat requires d3.NumberType.
-  // It correctly converts, but its TypeScript definitions don't
-  //  seem to reflect that.
-  valueFormatter: (value: any) => string,
-  width: number,
-  height: number,
-  timestampFormatter: (timestamp: any) => string
-) {
-  const xAxis = d3
-    .axisBottom(xScale)
-    .tickSize(X_AXIS_TICK_SIZE_PX)
-    .tickFormat(timestampFormatter)
-    .ticks(X_AXIS_TICK_COUNT);
-  const yAxis = d3
-    .axisLeft(yScale)
-    .tickSize(width - Y_AXIS_WIDTH - PADDING_RIGHT)
-    .tickFormat(valueFormatter)
-    .ticks(Y_AXIS_TICK_COUNT);
-  selection
-    .append('g')
-    .classed('xAxis', true)
-    .style('pointer-events', 'none')
-    .call(xAxis)
-    .style('font-size', '10px')
-    .attr('transform', translate(0, height - X_AXIS_HEIGHT));
-  selection
-    .append('g')
-    .classed('yAxis', true)
-    .style('pointer-events', 'none')
-    .call(yAxis)
-    .style('font-size', '10px')
-    .attr('transform', translate(width - PADDING_RIGHT, 0));
 }
 
 function generateSelectableTimestamps(
