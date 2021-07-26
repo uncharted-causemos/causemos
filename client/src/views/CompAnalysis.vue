@@ -6,11 +6,12 @@
     <div class="flex-row column">
       <div v-if="analysisItems.length">
         <datacube-comparative-card
-          v-for="datacubeId in allDatacubeIDs"
-          :key="datacubeId"
+          v-for="item in analysisItems"
+          :key="item.id"
           class="datacube-comparative-card"
-          :class="{ 'selected': selectedDatacubeId === datacubeId }"
-          :datacubeId="datacubeId"
+          :class="{ 'selected': selectedDatacubeId === item.id }"
+          :datacubeId="item.datacubeId"
+          :id="item.id"
           :isSelected="selectedDatacubeId === datacubeId"
           @click="selectedDatacubeId = datacubeId"
         />
@@ -41,17 +42,13 @@ export default defineComponent({
     const store = useStore();
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
 
-    const allDatacubeIDs = ref([]);
-
     const selectedDatacubeId = ref('');
 
     if (analysisItems.value && analysisItems.value.length > 0) {
-      allDatacubeIDs.value = analysisItems.value.map((analysisItem: any) => analysisItem.id);
-      selectedDatacubeId.value = allDatacubeIDs.value[0]; // @FIXME: select first one by default
+      selectedDatacubeId.value = analysisItems.value[0].id; // @FIXME: select first one by default
     }
 
     return {
-      allDatacubeIDs,
       selectedDatacubeId,
       analysisItems
     };

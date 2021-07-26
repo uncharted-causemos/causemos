@@ -33,19 +33,14 @@ export default function useRegionalData(
     ) {
       return [];
     }
-    const outputs = modelMetadata.validatedOutputs
-      ? modelMetadata.validatedOutputs
-      : modelMetadata.outputs;
-
-    const defaultOutputIndex = modelMetadata.validatedOutputs?.findIndex(
-        o => o.name === metadata.value?.default_feature) ?? 0;
-    const mainFeatureName = outputs[defaultOutputIndex].name;
+    const activeFeature = modelMetadata.default_feature ?? '';
+    const activeModelId = modelMetadata.data_id ?? '';
 
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
-      modelId: selectedModelId.value,
+      modelId: activeModelId,
       runId: scenarioId,
-      outputVariable: mainFeatureName || '',
+      outputVariable: activeFeature,
       timestamp,
       temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
       temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,

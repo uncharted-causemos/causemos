@@ -29,7 +29,13 @@
           />
         </div>
         <div class="selected-node">
-          <h6>No scenarios selected.</h6>
+          <dropdown-button
+            class="scenario-selector"
+            :inner-button-label="'Scenario'"
+            :items="scenarioSelectDropdownItems"
+            :selected-item="selectedScenarioId"
+            @item-selected="setSelectedScenarioId"
+          />
           <div class="expanded-node">
             <div class="expanded-node-header">
               {{ nodeConceptName }}
@@ -39,6 +45,15 @@
                 <!-- TODO: Set goal button -->
               </div>
             </div>
+            <td-node-chart
+              v-if="selectedNodeScenarioData !== null"
+              class="scenario-chart"
+              :selected-scenario-id="selectedScenarioId"
+              :historical-timeseries="historicalTimeseries"
+              :projections="selectedNodeScenarioData.projections"
+              :projection-start-timestamp="modelSummary?.parameter?.projection_start"
+              @set-historical-timeseries="setHistoricalTimeseries"
+            />
           </div>
           <p>
             <i class="fa fa-fw fa-info-circle" />To create a scenario, set some
@@ -125,21 +140,24 @@
 import { computed, defineComponent, ref, watchEffect } from 'vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
+import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
 import { useStore, mapGetters } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
-import { CAGGraph, CAGModelSummary, Scenario } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, Scenario, ScenarioProjection } from '@/types/CAG';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import { TimeseriesPoint } from '@/types/Timeseries';
 
 export default defineComponent({
   name: 'NodeDrilldown',
   components: {
     DrilldownPanel,
-    NeighborNode
+    NeighborNode,
+    TdNodeChart,
+    DropdownButton
   },
-  props: {
-
-  },
+  props: {},
   computed: {
     ...mapGetters({
       currentCAG: 'app/currentCAG',
@@ -205,6 +223,89 @@ export default defineComponent({
     });
     const nodeConceptName = computed(() => selectedNode.value?.label);
 
+    const scenarioData = computed(() => {
+      if (modelSummary.value === null || modelComponents.value === null) {
+        return null;
+      }
+      return modelService.buildNodeChartData(
+        modelSummary.value,
+        modelComponents.value.nodes,
+        scenarios.value
+      );
+    });
+
+    const selectedNodeScenarioData = computed(() => {
+      if (
+        scenarioData.value === null ||
+        selectedNode.value === null
+      ) {
+        return null;
+      }
+      const selectedNodeScenarioData = scenarioData.value[selectedNode.value.concept] ?? null;
+      if (selectedNodeScenarioData === null) return null;
+
+      const projections: ScenarioProjection[] = [];
+      selectedNodeScenarioData.scenarios.forEach(({ id, name, result, constraints }) => {
+        if (result === undefined) return;
+        projections.push({
+          scenarioName: name,
+          scenarioId: id,
+          values: result.values,
+          confidenceInterval: result.confidenceInterval,
+          constraints: constraints ?? []
+        });
+      });
+
+      return {
+        indicatorName: selectedNodeScenarioData.indicator_name ?? 'Missing indicator name',
+        historicalTimeseries: [
+          { timestamp: 1483228800000, value: 0.5 },
+          { timestamp: 1485907200000, value: 0.5906666666666667 },
+          { timestamp: 1488326400000, value: 0.642 },
+          { timestamp: 1491004800000, value: 0.6903333333333334 },
+          { timestamp: 1493596800000, value: 0.7603333333333333 },
+          { timestamp: 1496275200000, value: 0.8 },
+          { timestamp: 1498867200000, value: 0.8236666666666668 },
+          { timestamp: 1501545600000, value: 0.85 },
+          { timestamp: 1504224000000, value: 0.8786666666666667 },
+          { timestamp: 1506816000000, value: 0.901 },
+          { timestamp: 1509494400000, value: 0.9283333333333335 },
+          { timestamp: 1514764800000, value: 0.9476666666666667 }
+        ], // TODO: replace dummy data with:
+        // selectedNodeScenarioData.indicator_time_series ?? [],
+        historicalConstraints: [],
+        projections
+      };
+    });
+
+    const historicalTimeseries = ref<TimeseriesPoint[]>([]);
+    watchEffect(() => {
+      historicalTimeseries.value =
+        selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+    });
+    const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
+      historicalTimeseries.value = newPoints;
+    };
+
+    // FIXME: Adjust quantitative view so that it clears selected scenarioID when modelID changes,
+    //  not when the view unmounts. Then we'll be able get the selectedScenarioId straight from the store
+    const selectedScenarioId = computed<string | null>(() => {
+      const scenarioId = store.getters['model/selectedScenarioId'];
+      if (scenarios.value.filter(d => d.id === scenarioId).length === 0) {
+        const baselineScenario = scenarios.value.find(d => d.is_baseline);
+        return baselineScenario?.id ?? null;
+      }
+      return scenarioId;
+    });
+
+    const setSelectedScenarioId =
+      (newId: string) => store.dispatch('model/setSelectedScenarioId', newId);
+
+    const scenarioSelectDropdownItems = computed<DropdownItem[]>(() =>
+      scenarios.value.map(scenario => {
+        return { displayName: scenario.name, value: scenario.id };
+      })
+    );
 
     // TODO: Filter top drivers and top impacts
     //  CLARIFICATION REQUIRED:
@@ -252,6 +353,7 @@ export default defineComponent({
         }
       });
     };
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -259,7 +361,14 @@ export default defineComponent({
       impacts,
       collapseNode,
       modelComponents,
-      scenarios
+      scenarios,
+      selectedNodeScenarioData,
+      selectedScenarioId,
+      setSelectedScenarioId,
+      modelSummary,
+      scenarioSelectDropdownItems,
+      historicalTimeseries,
+      setHistoricalTimeseries
     };
   },
   methods: {
@@ -325,6 +434,10 @@ h4 {
   margin: 0 15px;
 }
 
+.scenario-selector {
+  align-self: flex-start;
+}
+
 h6 {
   margin: 0;
   font-size: $font-size-medium;
@@ -348,6 +461,8 @@ input[type=number] {
   border-radius: 4px;
   overflow: hidden;
   margin: 10px 0;
+  display: flex;
+  flex-direction: column;
 }
 
 .expanded-node-header {
@@ -355,6 +470,11 @@ input[type=number] {
   display: flex;
   justify-content: space-between;
   padding: 10px;
+}
+
+.scenario-chart {
+  flex: 1;
+  min-height: 0;
 }
 
 .neighbor-node {

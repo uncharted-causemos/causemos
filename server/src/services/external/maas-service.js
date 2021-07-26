@@ -5,13 +5,13 @@ const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
+const datacubeService = rootRequire('/services/datacube-service');
 
-const PIPELINE_FLOW_ID = '4d8d9239-2594-45af-9ec9-d24eafb1f1af';
-
+const QUEUE_SERVICE_URL = 'http://10.65.18.52:4040/data-pipeline/enqueue';
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 /**
- * Return all model runs belonging to a model
+ * Submit a new model run to Jataware and store information about it in ES.
  *
  * @param {ModelRun} metadata - model run metadata
  */
@@ -54,59 +54,34 @@ const startModelOutputPostProcessing = async (metadata) => {
     return;
   }
 
-  const runName = `${metadata.model_name} : ${metadata.id}`;
   const flowParameters = {
     model_id: metadata.model_id,
     run_id: metadata.id,
     doc_ids: [metadata.id],
     data_paths: metadata.data_paths,
-    compute_tiles: false
+    compute_tiles: true
   };
 
-  // We need the two JSON.stringify below to go from
-  // JSON object -> JSON string -> escaped JSON string
-  const graphQLQuery = `
-    mutation {
-      create_flow_run(input: {
-        version_group_id: "${PIPELINE_FLOW_ID}",
-        flow_run_name: "${runName}",
-        parameters: ${JSON.stringify(JSON.stringify(flowParameters))}
-      }) {
-        id
-      }
-    }
-  `;
-
   const pipelinePayload = {
-    method: 'POST',
-    url: process.env.WM_PIPELINE_URL,
+    method: 'PUT',
+    url: QUEUE_SERVICE_URL,
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
     },
-    json: {
-      query: graphQLQuery
-    }
+    json: flowParameters
   };
 
-  const result = await requestAsPromise(pipelinePayload);
-  const flowId = _.get(result, 'data.create_flow_run.id');
-  if (flowId) {
-    // Remove extra fields from Jataware
-    metadata.attributes = undefined;
+  await requestAsPromise(pipelinePayload);
 
-    // Rename default_run until Jataware fixes it
-    if (metadata.default_run !== undefined) {
-      metadata.is_default_run = metadata.default_run;
-      metadata.default_run = undefined;
-    }
-    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-    await connection.update({
-      ...metadata,
-      flow_id: flowId,
-      status: 'PROCESSING'
-    }, d => d.id);
-  }
+  // Remove extra fields from Jataware
+  metadata.attributes = undefined;
+
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  const result = await connection.update({
+    ...metadata,
+    status: 'PROCESSING'
+  }, d => d.id);
   return result;
 };
 
@@ -201,81 +176,99 @@ const startIndicatorPostProcessing = async (metadata) => {
   //        insertDatacube() in server/src/services/datacube-service
   await domainProjectService.updateDomainProjects(metadata);
 
-  // Create data now to send to elasticsearch
-  const newIndicatorMetadata = metadata.outputs.map(output => {
-    const clonedMetadata = _.cloneDeep(metadata);
-    clonedMetadata.data_id = metadata.id;
-    clonedMetadata.id = uuid();
-    clonedMetadata.outputs = [output];
-    clonedMetadata.family_name = metadata.name;
-    clonedMetadata.default_feature = output.name;
-    clonedMetadata.type = 'indicator';
-    clonedMetadata.status = 'PROCESSING';
-
-    let qualifierMatches = [];
-    if (metadata.qualifier_outputs) {
-      // Filter out unrelated qualifiers
-      clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
-        qualifier => qualifier.related_features.includes(output.name));
-
-      // Combine all concepts from the qualifiers into one list
-      qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
-        qualifier.ontologies.concepts,
-        qualifier.ontologies.processes,
-        qualifier.ontologies.properties
-      ]).flat(2);
-    }
-
-    // Append to the concepts from the output
-    const allMatches = qualifierMatches.concat(output.ontologies.concepts,
-      output.ontologies.processes,
-      output.ontologies.properties);
-
-    clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
-    return clonedMetadata;
+  const filters = {
+    clauses: [
+      { field: 'dataId', operand: 'or', isNot: false, values: [metadata.id] },
+      { field: 'type', operand: 'or', isNot: false, values: ['indicator'] },
+      { field: 'status', operand: 'or', isNot: false, values: ['READY'] }
+    ]
+  };
+  const existingIndicators = await datacubeService.getDatacubes(filters, {
+    includes: ['id', 'default_feature']
   });
 
-  const runName = `${metadata.name} : ${metadata.id}`;
+  // Since id is a random uuid, ES will not provide any duplicate protection
+  // We will check ourselves using data_id and feature
+  if (existingIndicators.length > 0) {
+    Logger.warn(`Indicators with data_id ${metadata.id} already exist. Duplicates will not be processed.`);
+  }
+
+  const acceptedTypes = ['int', 'float', 'boolean', 'datetime'];
+  const resolutions = ['annual', 'monthly', 'dekad', 'weekly', 'daily', 'other'];
+  let highestRes = 0;
+
+  // Create data now to send to elasticsearch
+  const newIndicatorMetadata = metadata.outputs
+    .filter(output => acceptedTypes.includes(output.type)) // Don't process non-numeric data
+    .filter(output => !existingIndicators.some(item => item.default_feature === output.name))
+    .map(output => {
+      // Determine the highest available temporal resolution
+      const outputRes = output.data_resolution && output.data_resolution.temporal_resolution;
+      const resIndex = resolutions.indexOf(outputRes || '');
+      highestRes = Math.max(highestRes, resIndex);
+
+      const clonedMetadata = _.cloneDeep(metadata);
+      clonedMetadata.data_id = metadata.id;
+      clonedMetadata.id = uuid();
+      clonedMetadata.outputs = [output];
+      clonedMetadata.family_name = metadata.family_name || metadata.name;
+      clonedMetadata.default_feature = output.name;
+      clonedMetadata.type = 'indicator';
+      clonedMetadata.status = 'PROCESSING';
+
+      let qualifierMatches = [];
+      if (metadata.qualifier_outputs) {
+        // Filter out unrelated qualifiers
+        clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
+          qualifier => qualifier.related_features.includes(output.name));
+
+        // Combine all concepts from the qualifiers into one list
+        qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
+          qualifier.ontologies.concepts,
+          qualifier.ontologies.processes,
+          qualifier.ontologies.properties
+        ]).flat(2);
+      }
+
+      // Append to the concepts from the output
+      const allMatches = qualifierMatches.concat(output.ontologies.concepts,
+        output.ontologies.processes,
+        output.ontologies.properties);
+
+      clonedMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(allMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+      return clonedMetadata;
+    });
+
+  if (newIndicatorMetadata.length < metadata.outputs.length) {
+    Logger.warn(`Filtered out ${metadata.outputs.length - newIndicatorMetadata.length} indicators`);
+    if (newIndicatorMetadata.length === 0) {
+      Logger.warn('No indicators left to process. Aborting');
+      return 'No indicators processed';
+    }
+  }
+
   const flowParameters = {
     model_id: metadata.id,
     doc_ids: newIndicatorMetadata.map(indicatorMetadata => indicatorMetadata.id),
     run_id: 'indicator',
     data_paths: metadata.data_paths,
+    temporal_resolution: resolutions[highestRes],
     is_indicator: true
   };
 
-  // We need the two JSON.stringify below to go from
-  // JSON object -> JSON string -> escaped JSON string
-  const graphQLQuery = `
-    mutation {
-      create_flow_run(input: {
-        version_group_id: "${PIPELINE_FLOW_ID}",
-        flow_run_name: "${runName}",
-        parameters: ${JSON.stringify(JSON.stringify(flowParameters))}
-      }) {
-        id
-      }
-    }
-  `;
-
   const pipelinePayload = {
-    method: 'POST',
-    url: process.env.WM_PIPELINE_URL,
+    method: 'PUT',
+    url: QUEUE_SERVICE_URL,
     headers: {
       'Content-type': 'application/json',
       'Accept': 'application/json'
     },
-    json: {
-      query: graphQLQuery
-    }
+    json: flowParameters
   };
 
-  const result = await requestAsPromise(pipelinePayload);
-  const flowId = _.get(result, 'data.create_flow_run.id');
-  if (flowId) {
-    const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    await connection.insert(newIndicatorMetadata, d => d.id);
-  }
+  await requestAsPromise(pipelinePayload);
+  const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  const result = await connection.insert(newIndicatorMetadata, d => d.id);
   return result;
 };
 

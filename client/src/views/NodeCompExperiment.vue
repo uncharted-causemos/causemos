@@ -202,14 +202,14 @@ export default defineComponent({
     const project = computed(() => store.getters['app/project']);
 
 
-    // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
-    const datacubeId = computed(() => store.getters['app/datacubeId']);
+    // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
+    const indicatorId = computed(() => store.getters['app/indicatorId']);
 
     const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
 
-    const selectedModelId = ref(datacubeId);
+    const metadata = useModelMetadata(indicatorId);
 
-    const metadata = useModelMetadata(selectedModelId);
+    const selectedModelId = ref(metadata.value?.data_id ?? '');
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 

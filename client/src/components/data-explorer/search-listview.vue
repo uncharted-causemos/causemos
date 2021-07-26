@@ -26,14 +26,20 @@
                   class="fa fa-lg fa-fw radio"
                   :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d) }"
                 />
-                <div class="text-bold">{{ formatOutputVariables(d) }}</div>
+                <div>
+                  <div class="text-bold">{{ d.outputs[0].display_name }}</div>
+                  <div>{{ d.name }}</div>
+                </div>
               </template>
               <template v-else>
                 <i
                   class="fa fa-lg fa-fw radio"
                   :class="{ 'fa-circle': isSelected(d), 'fa-circle-o': !isSelected(d) }"
                 />
-                <div class="text-bold">{{ formatOutputVariables(d) }}</div>
+                <div>
+                  <div class="text-bold">{{ d.outputs[0].display_name }}</div>
+                  <div>{{ d.name }}</div>
+                </div>
               </template>
               <div>{{ d.source }}</div>
             </td>
@@ -92,26 +98,26 @@ export default {
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
     isSelected(datacube) {
-      return this.selectedDatacubes.find(dId => dId === datacube.data_id) !== undefined;
+      return this.selectedDatacubes.find(sd => sd.id === datacube.id) !== undefined;
     },
     updateSelection(datacube) {
+      const item = {
+        datacubeId: datacube.data_id,
+        feature: datacube.default_feature,
+        id: datacube.id
+      };
       if (this.enableMultipleSelection) {
         // if the datacube is not in the list add it, otherwise remove it
         if (this.isSelected(datacube)) {
-          const newSelectedDatacubes = this.selectedDatacubes.filter(dId => dId !== datacube.data_id);
+          const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
           this.setSelectedDatacubes(newSelectedDatacubes);
         } else {
-          this.setSelectedDatacubes([...this.selectedDatacubes, datacube.data_id]);
+          this.setSelectedDatacubes([...this.selectedDatacubes, item]);
         }
       } else {
         // only one selection is alloed, so replace the selected datacubes array
-        this.setSelectedDatacubes([datacube.data_id]);
+        this.setSelectedDatacubes([item]);
       }
-    },
-    formatOutputVariables(datacube) {
-      const modelName = datacube.name;
-      const outputName = datacube.outputs[0].name;
-      return `${modelName}/${outputName}`;
     },
     formatParameters({ parameters }) {
       const params = parameters || [];
