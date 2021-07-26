@@ -99,15 +99,15 @@
 </template>
 
 <script lang="ts">
-import {computed, defineComponent, PropType, toRefs} from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import {AdminRegionSets, BreakdownData, NamedBreakdownData} from '@/types/Datacubes';
-import {ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES} from '@/utils/admin-level-util';
-import DropdownButton, {DropdownItem} from '@/components/dropdown-button.vue';
-import {AggregationOption, TemporalAggregationLevel} from '@/types/Enums';
-import {TimeseriesPointSelection} from '@/types/Timeseries';
-import {getTimestamp} from '@/utils/date-util';
+import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
+import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
+import { AggregationOption, TemporalAggregationLevel } from '@/types/Enums';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
+import { getTimestamp } from '@/utils/date-util';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
