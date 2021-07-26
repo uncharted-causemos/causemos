@@ -76,7 +76,8 @@ export enum AdminLevel {
 }
 
 export enum TemporalAggregationLevel {
-  Year = 'year'
+  Year = 'year',
+  Region = 'region'
 }
 
 export enum AggregationOption {
