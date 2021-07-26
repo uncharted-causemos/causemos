@@ -4,11 +4,16 @@
       <h5>New Insight</h5>
     </full-screen-modal-header>
     <div class="pane-wrapper">
-      <div class="pane-row" v-if="imagePreview !== null">
+      <div class="pane-row">
         <div class="fields">
-          <div class="preview">
+          <div class="preview" v-if="imagePreview !== null">
             <img :src="imagePreview">
           </div>
+          <disclaimer
+            v-else
+            style="text-align: center; color: black"
+            :message="'No image preview!'"
+          />
           <div class="form-group">
             <form>
               <label> Name* </label>
@@ -99,6 +104,7 @@ import modelService from '@/services/model-service';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { INSIGHTS } from '@/utils/messages-util';
 import { ProjectType } from '@/types/Enums';
+import Disclaimer from '@/components/widgets/disclaimer';
 
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
@@ -115,7 +121,8 @@ export default {
   name: 'NewInsightModal',
   components: {
     DrilldownPanel,
-    FullScreenModalHeader
+    FullScreenModalHeader,
+    Disclaimer
   },
   data: () => ({
     description: '',

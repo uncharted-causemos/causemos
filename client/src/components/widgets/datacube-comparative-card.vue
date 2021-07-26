@@ -269,8 +269,6 @@ export default defineComponent({
       const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
       await this.store.dispatch('dataAnalysis/updateAnalysisItemsNew', updatedAnalysisInfo);
 
-      console.log(this.analysisItems, this.project, this.analysisId, workingAnalysisItems);
-
       router.push({
         name: 'data',
         params: {
