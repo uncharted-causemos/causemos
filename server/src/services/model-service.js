@@ -432,7 +432,7 @@ const buildNodeParametersPayload = (nodeParameters) => {
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
 
     if (_.isEmpty(np.parameter)) {
-      throw new Error(`${np.concept} is not parameerized`);
+      throw new Error(`${np.concept} is not parameterized`);
     } else {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
 
