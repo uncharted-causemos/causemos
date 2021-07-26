@@ -56,8 +56,9 @@ export default function(
     console.error('TD Node Renderer: unable to derive extent from data');
     return;
   }
+  const valueFormatter = chartValueFormatter(...yExtent);
 
-  // build axis for main graph (Focus)
+  // Build main "focus" chart scales and group element
   const focusHeight = totalHeight * 0.75;
   const [xScaleFocus, yScaleFocus] = calculateScales(
     totalWidth - PADDING_RIGHT,
@@ -67,7 +68,6 @@ export default function(
     xExtent,
     yExtent
   );
-  const valueFormatter = chartValueFormatter(...yExtent);
   const focusGroupElement = selection
     .append('g')
     .classed('focusGroupElement', true);
@@ -139,23 +139,22 @@ export default function(
       ]
     ])
     .on('brush', brushed);
-
   contextGroupElement
     .append('g') // create brush element and move to default
     .classed('brush', true)
     .call(brush)
     // set initial brush selection to entire context
     .call(brush.move, xScaleFocus.range());
-
   selection
     .selectAll('.brush > .selection')
     .attr('fill', CONTEXT_RANGE_FILL)
     .attr('stroke', CONTEXT_RANGE_STROKE)
     .attr('opacity', CONTEXT_RANGE_OPACITY);
 
+  // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
   selection
     .append('defs')
-    .append('clipPath') // build def for clipping mask
+    .append('clipPath')
     .attr('id', 'clipping-mask')
     .append('rect')
     .attr('width', xScaleFocus.range()[1] - xScaleFocus.range()[0])
