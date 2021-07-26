@@ -436,7 +436,7 @@ const buildNodeParametersPayload = (nodeParameters) => {
     } else {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
 
-      if (_.isElement(indicatorTimeSeries)) {
+      if (_.isEmpty(indicatorTimeSeries)) {
         // FIXME: Temporary fallback so engines don't blow up - July 2021
         indicatorTimeSeries = [
           { value: 0.0, timestamp: Date.UTC(2017, 1) },
