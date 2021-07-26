@@ -275,8 +275,8 @@ export default {
         const stats = await modelService.getModelStats(modelIDs);
 
         this.qualitativeAnalyses.forEach(analysis => { // merge edge and node counts into analysis objects
-          stats[analysis.id] && stats[analysis.id].nodeCount ? analysis.nodeCount = stats[analysis.id].nodeCount : analysis.nodeCount = 0;
-          stats[analysis.id] && stats[analysis.id].edgeCount ? analysis.edgeCount = stats[analysis.id].edgeCount : analysis.edgeCount = 0;
+          analysis.nodeCount = _.get(stats[analysis.id], 'nodeCount', 0);
+          analysis.edgeCount = _.get(stats[analysis.id], 'edgeCount', 0);
         });
       }
 
