@@ -56,17 +56,6 @@ const findOne = async (modelId) => {
  */
 const getModelStats = async (modelIDs) => {
   const dict = {};
-  const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-  const edgeResult = await edgeAdapter.getFacets('model_id', [
-    {
-      field: 'model_id',
-      value: modelIDs
-    }
-  ]);
-
-  edgeResult.forEach(pair => {
-    dict[pair.key] = { edgeCount: pair.doc_count };
-  });
 
   const nodesAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
   const nodeResult = await nodesAdapter.getFacets('model_id', [
@@ -75,9 +64,22 @@ const getModelStats = async (modelIDs) => {
       value: modelIDs
     }
   ]);
-
+  // dict[pair.key] = { edgeCount: pair.doc_count };
   nodeResult.forEach(pair => {
-    dict[pair.key].nodeCount = pair.doc_count;
+    dict[pair.key] = { nodeCount: pair.doc_count };
+  });
+
+  const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  const edgeResult = await edgeAdapter.getFacets('model_id', [
+    {
+      field: 'model_id',
+      value: modelIDs
+    }
+  ]);
+
+  // dict[pair.key].nodeCount = pair.doc_count;
+  edgeResult.forEach(pair => {
+    dict[pair.key].edgeCount = pair.doc_count;
   });
 
   return dict;
