@@ -86,15 +86,11 @@
             {{ indicatorDescription }}
           </div>
           <div style="display: flex; align-items: center">
-            <table>
-              <tr>
-                <td>From</td>
-                <td><input class="form-control input-sm" type="text"/></td>
-                <td>to</td>
-                <td><input class="form-control input-sm" type="text"/></td>
-              </tr>
-            </table>
-            <div style="display: flex; align-items: center">
+            <span>From </span>
+            <input class="form-control input-sm" v-model.number="indicatorMin"/>
+            <span>to </span>
+            <input class="form-control input-sm" v-model.number="indicatorMax"/>
+            <div style="display: flex; align-items: center; flex: 1">
               Seasonality
               <i class="fa fa-fw fa-lg fa-toggle-off"/>
               <input class="form-control input-sm" type="number"/>
@@ -361,6 +357,15 @@ export default defineComponent({
       if (indicatorData.value === null) return '';
       return indicatorData.value.outputs[0].description;
     });
+    const indicatorMin = ref(0);
+    const indicatorMax = ref(1);
+    watchEffect(() => {
+      const indicator = selectedNode.value?.parameter;
+      if (indicator !== null && indicator !== undefined) {
+        indicatorMin.value = indicator.min;
+        indicatorMax.value = indicator.max;
+      }
+    });
 
     return {
       nodeConceptName,
@@ -377,7 +382,9 @@ export default defineComponent({
       scenarioSelectDropdownItems,
       historicalTimeseries,
       setHistoricalTimeseries,
-      indicatorDescription
+      indicatorDescription,
+      indicatorMin,
+      indicatorMax
     };
   },
   methods: {
