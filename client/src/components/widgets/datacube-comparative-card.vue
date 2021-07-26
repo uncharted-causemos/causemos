@@ -11,6 +11,17 @@
         @click="openDrilldown">
         <i class="fa fa-fw fa-expand" />
       </button>
+      <datacard-options-button
+        class="menu"
+        :dropdown-below="true"
+        :wider-dropdown-options="true"
+      >
+        <template #content>
+          <div class="dropdown-option">
+            Remove
+          </div>
+        </template>
+      </datacard-options-button>
     </header>
     <div>
       <div class="col-md-9 timeseries-chart">
@@ -46,6 +57,7 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
 import { colorFromIndex } from '@/utils/colors-util';
+import DatacardOptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
@@ -65,6 +77,7 @@ const DRILLDOWN_TABS = [
 export default defineComponent({
   name: 'DatacubeComparativeCard',
   components: {
+    DatacardOptionsButton,
     TimeseriesChart
   },
   props: {
