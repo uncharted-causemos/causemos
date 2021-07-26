@@ -12,8 +12,8 @@
           :class="{ 'selected': selectedDatacubeId === item.id }"
           :datacubeId="item.datacubeId"
           :id="item.id"
-          :isSelected="selectedDatacubeId === datacubeId"
-          @click="selectedDatacubeId = datacubeId"
+          :isSelected="selectedDatacubeId === item.datacubeId"
+          @click="selectedDatacubeId = item.datacubeId"
         />
       </div>
       <empty-state-instructions v-else />
