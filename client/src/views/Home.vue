@@ -181,7 +181,6 @@ import domainProjectService from '@/services/domain-project-service';
 import { Model } from '@/types/Datacube';
 import { DatacubeStatus, DatacubeType } from '@/types/Enums';
 
-
 export default defineComponent({
   name: 'Home',
   components: {
@@ -281,7 +280,9 @@ export default defineComponent({
       // UPDATE: initial code is added to the backend to create a new domain project on the registeration of a new datacube
       //         thus, the following code should be simplified to only retrieve existing domain projects
       const computeCountsOnTheFly = false;
-      const existingProjects: DomainProject[] = await domainProjectService.getProjects();
+      const projectsSearchFilters = filtersUtil.newFilters();
+      filtersUtil.addSearchTerm(projectsSearchFilters, 'type', 'model', 'and', false); // NOTE: only domain-model projects are supported
+      const existingProjects: DomainProject[] = await domainProjectService.getProjects(projectsSearchFilters);
 
       if (computeCountsOnTheFly) {
         // fetch all model datacubes, extract model families, and ensure a project for each
@@ -377,7 +378,7 @@ export default defineComponent({
 
           // since the ultimate list of projects may have changed,
           //  fetch (again) the latest list and use it
-          const allProjects: DomainProject[] = await domainProjectService.getProjects();
+          const allProjects: DomainProject[] = await domainProjectService.getProjects(projectsSearchFilters);
 
           this.projectsListDomainDatacubes = allProjects;
         } else {

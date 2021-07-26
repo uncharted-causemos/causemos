@@ -5,6 +5,7 @@
       :message="overlayMessage"
     />
     <nav-bar v-if="!isNavBarHidden" />
+    <insight-manager />
     <router-view />
   </div>
 </template>
@@ -18,6 +19,7 @@ import Overlay from '@/components/overlay';
 import projectService from '@/services/project-service';
 import domainProjectService from '@/services/domain-project-service';
 import { ProjectType } from '@/types/Enums';
+import InsightManager from '@/components/insight-manager/insight-manager.vue';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
@@ -36,7 +38,8 @@ export default {
   name: 'App',
   components: {
     NavBar,
-    Overlay
+    Overlay,
+    InsightManager
   },
   computed: {
     ...mapGetters({

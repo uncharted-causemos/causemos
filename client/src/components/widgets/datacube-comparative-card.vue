@@ -109,7 +109,6 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
-    console.log(analysisItems);
 
     watchEffect(() => {
       if (metadata.value) {
@@ -269,8 +268,6 @@ export default defineComponent({
       }
       const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
       await this.store.dispatch('dataAnalysis/updateAnalysisItemsNew', updatedAnalysisInfo);
-
-      console.log(this.analysisItems, this.project, this.analysisId, workingAnalysisItems);
 
       router.push({
         name: 'data',
