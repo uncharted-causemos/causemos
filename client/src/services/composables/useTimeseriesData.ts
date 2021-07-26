@@ -7,6 +7,7 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
+import { useStore } from 'vuex';
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
@@ -103,6 +104,9 @@ export default function useTimeseriesData(
   selectedTimestamp: Ref<number | null>,
   onNewLastTimestamp: (lastTimestamp: number) => void
 ) {
+  const store = useStore();
+  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+
   const rawTimeseriesData = ref<Timeseries[]>([]);
 
   watchEffect(onInvalidate => {
@@ -114,7 +118,14 @@ export default function useTimeseriesData(
       // Don't have the information needed to fetch the data
       return;
     }
-    const activeFeature = modelMetadata.default_feature ?? '';
+    let activeFeature = '';
+    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
+    if (currentOutputEntry !== undefined) {
+      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
+      activeFeature = outputs[currentOutputEntry].name;
+    } else {
+      activeFeature = modelMetadata.default_feature ?? '';
+    }
     const activeDataId = modelMetadata.data_id;
     let isCancelled = false;
     async function fetchTimeseries() {

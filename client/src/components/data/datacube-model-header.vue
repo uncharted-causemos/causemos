@@ -95,7 +95,8 @@ export default defineComponent({
     });
 
     const store = useStore();
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     return {
       modelAttributes,
@@ -104,16 +105,20 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
     }),
     updateAttributeValue(attr: ModelAttribute) {
       console.log(attr.value);
       // TODO: update the local data or the back end to ensure other components are synced up
     },
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      this.setCurrentOutputIndex(selectedOutputIndex);
+      const defaultFeature = {
+        [this.metadata?.id ?? '']: selectedOutputIndex
+      };
+      this.setDatacubeCurrentOutputsMap(defaultFeature);
     }
   }
 });

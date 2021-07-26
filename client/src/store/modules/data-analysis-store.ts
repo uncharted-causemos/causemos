@@ -194,14 +194,12 @@ const actions: ActionTree<AnalysisState, any> = {
     });
     commit('setAnalysisItemsNew', updatedAnalysisItems);
   },
-  async updateAnalysisItemsNewPreview({ state, commit }, { analysisItems }: { analysisItems: AnalysisItemNew[] }) {
-    const updatedAnalysisItems = analysisItems.map(ai => {
-      const analysisItem = state.analysisItems.find(item => item.id === ai.id);
-      return analysisItem !== undefined
-        ? analysisItem // Preserve existing item
-        : createNewAnalysisItemNew(ai);
-    });
-    commit('setAnalysisItemsNewPreview', updatedAnalysisItems);
+  async updateAnalysisItemsNewPreview({ commit }, { datacubeIDs }: { datacubeIDs: string[]}) {
+    const datacubeInfo: AnalysisItemNew = {
+      id: datacubeIDs[0],
+      datacubeId: datacubeIDs[0]
+    };
+    commit('setAnalysisItemsNewPreview', [datacubeInfo]);
   },
   setMapBounds({ commit }, bounds: [[number, number], [number, number]]) {
     commit('setMapBounds', bounds);

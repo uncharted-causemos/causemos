@@ -2,7 +2,6 @@ import { ModelPublishingStepID, AggregationOption, TemporalResolutionOption } fr
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface ModelPublishState {
-  currentOutputIndex: number;
   currentPublishStep: number;
   selectedTemporalAggregation: string;
   selectedTemporalResolution: string;
@@ -15,7 +14,6 @@ interface ModelPublishState {
  * Used for model publish related states
  */
 const state: ModelPublishState = {
-  currentOutputIndex: 0,
   currentPublishStep: ModelPublishingStepID.Enrich_Description,
   selectedTemporalAggregation: AggregationOption.Mean,
   selectedTemporalResolution: TemporalResolutionOption.Month,
@@ -26,7 +24,6 @@ const state: ModelPublishState = {
 
 
 const getters: GetterTree<ModelPublishState, any> = {
-  currentOutputIndex: state => state.currentOutputIndex,
   currentPublishStep: state => state.currentPublishStep,
   selectedTemporalAggregation: state => state.selectedTemporalAggregation,
   selectedTemporalResolution: state => state.selectedTemporalResolution,
@@ -37,9 +34,6 @@ const getters: GetterTree<ModelPublishState, any> = {
 
 
 const actions: ActionTree<ModelPublishState, any> = {
-  setCurrentOutputIndex: ({ commit }, value) => {
-    commit('setCurrentOutputIndex', value);
-  },
   setCurrentPublishStep: ({ commit }, value) => {
     commit('setCurrentPublishStep', value);
   },
@@ -62,9 +56,6 @@ const actions: ActionTree<ModelPublishState, any> = {
 
 
 const mutations: MutationTree<ModelPublishState> = {
-  setCurrentOutputIndex(state, value) {
-    state.currentOutputIndex = value;
-  },
   setCurrentPublishStep(state, value) {
     state.currentPublishStep = value;
   },

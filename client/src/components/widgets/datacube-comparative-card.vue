@@ -52,6 +52,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import { useStore } from 'vuex';
 import router from '@/router';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import _ from 'lodash';
 
 const DRILLDOWN_TABS = [
   {
@@ -109,20 +110,26 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     watchEffect(() => {
       if (metadata.value) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
-        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+        let initialOutputIndex = 0;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        if (currentOutputEntry !== undefined) {
+          // we have a store entry for the default output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
-        mainModelOutput.value = outputs.value[initialOutputIndex];
-
-        // FIXME: BUG HERE if multiple models are selected and each one is overwoverwriting the store's currentOutputIndex
-        // save the initial output variable index
-        if (metadata.value.type === DatacubeType.Model) {
-          store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+          // update the store
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
+        mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
 
