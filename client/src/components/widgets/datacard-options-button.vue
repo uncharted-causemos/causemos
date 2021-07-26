@@ -1,6 +1,6 @@
 <template>
   <div
-    class="datacard-options-button"
+    class="datacard-options-button-container"
     :class="{ active: isMenuOpen }"
     @click.stop="onMenuClick"
     @dblclick.stop
@@ -50,9 +50,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-.options-button-container {
-  width: 32px;
-  height: 32px;
+.datacard-options-button-container {
   border-radius: 50%;
   cursor: pointer;
 
@@ -81,7 +79,7 @@ export default defineComponent({
   }
 
   &.active, &:hover {
-    background:#EAEBEC;
+    background: #EAEBEC;
 
     i {
       color: #000000;
