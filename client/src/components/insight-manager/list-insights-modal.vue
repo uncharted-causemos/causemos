@@ -231,7 +231,6 @@ export default {
       contextId,
       project,
       questions,
-      insightsById,
       fullLinkedInsights
     };
   },

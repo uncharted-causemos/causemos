@@ -20,7 +20,6 @@ import SidePanel from '@/components/side-panel/side-panel.vue';
 import { defineComponent } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
-import { mapActions } from 'vuex';
 
 export default defineComponent({
   name: 'AnalyticalQuestionsAndInsightsPanel',
@@ -37,8 +36,6 @@ export default defineComponent({
     currentTab: ''
   }),
   methods: {
-    ...mapActions({
-    }),
     setActive(tab: string) {
       this.currentTab = tab;
     }
