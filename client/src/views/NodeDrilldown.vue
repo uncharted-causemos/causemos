@@ -65,7 +65,7 @@
             Variable type
           </div>
           <div>
-            <span><strong>(Indicator name goes here)</strong></span>
+            <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
             &nbsp;
             <button
               v-tooltip.top-center="'Edit datacube'"
@@ -83,7 +83,7 @@
             </button>
           </div>
           <div>
-            (Indicator description goes here ...........................)
+            {{ indicatorDescription }}
           </div>
           <div style="display: flex; align-items: center">
             <table>
@@ -148,6 +148,7 @@ import modelService from '@/services/model-service';
 import { CAGGraph, CAGModelSummary, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -354,6 +355,19 @@ export default defineComponent({
       });
     };
 
+    const indicatorId = computed(() => {
+      const _selectedNode = selectedNode.value;
+      if (_selectedNode === null) return null;
+      const selectedNodeData = (modelComponents.value?.nodes ?? [])
+        .find(node => node.concept === _selectedNode.concept);
+      return selectedNodeData?.parameter?.id ?? null;
+    });
+    const indicatorData = useModelMetadata(indicatorId);
+    const indicatorDescription = computed(() => {
+      if (indicatorData.value === null) return '';
+      return indicatorData.value.outputs[0].description;
+    });
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -368,7 +382,8 @@ export default defineComponent({
       modelSummary,
       scenarioSelectDropdownItems,
       historicalTimeseries,
-      setHistoricalTimeseries
+      setHistoricalTimeseries,
+      indicatorDescription
     };
   },
   methods: {
