@@ -16,7 +16,6 @@ import {
   PropType,
   ref,
   toRefs,
-  watch,
   watchEffect
 } from 'vue';
 import renderChart from '@/charts/td-node-renderer';
@@ -33,7 +32,6 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPoint[]>,
       default: []
     },
-    // TODO: historicalConstraints
     selectedScenarioId: {
       type: String,
       default: null
@@ -57,21 +55,17 @@ export default defineComponent({
     const setConstraints = (newConstraints: ProjectionConstraint[]) => {
       constraints.value = newConstraints;
     };
+    watchEffect(() => {
+      const selectedScenario = projections.value.find(
+        scenario => scenario.scenarioId === selectedScenarioId.value
+      );
+      if (selectedScenario !== undefined) {
+        constraints.value = selectedScenario.constraints;
+      }
+    });
     const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
       emit('set-historical-timeseries', newPoints);
     };
-    watch(
-      () => [projections.value, selectedScenarioId.value],
-      () => {
-        const selectedScenario = projections.value.find(
-          scenario => scenario.scenarioId === selectedScenarioId.value
-        );
-        console.log('selectedScenario', selectedScenario, selectedScenario?.constraints);
-        if (selectedScenario !== undefined) {
-          constraints.value = selectedScenario.constraints;
-        }
-      }
-    );
     watchEffect(() => {
       // Rerender whenever dependencies change
       const parentElement = chartRef.value?.parentElement;
@@ -81,6 +75,7 @@ export default defineComponent({
       const _selectedScenarioId = selectedScenarioId.value;
       const _projections = projections.value;
       const { width, height } = chartSize.value;
+      const _constraints = constraints.value;
       if (
         svg === null ||
         _selectedScenarioId === null ||
@@ -94,9 +89,9 @@ export default defineComponent({
         svg,
         width === 0 ? parentElement.clientWidth : width,
         height === 0 ? parentElement.clientHeight : height,
-        projections.value,
-        selectedScenarioId.value,
-        constraints.value
+        _projections,
+        _selectedScenarioId,
+        _constraints
       );
     });
     onMounted(() => {
