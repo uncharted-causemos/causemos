@@ -288,8 +288,6 @@ export default defineComponent({
       historicalTimeseries.value = newPoints;
     };
 
-    // FIXME: Adjust quantitative view so that it clears selected scenarioID when modelID changes,
-    //  not when the view unmounts. Then we'll be able get the selectedScenarioId straight from the store
     const selectedScenarioId = computed<string | null>(() => {
       const scenarioId = store.getters['model/selectedScenarioId'];
       if (scenarios.value.filter(d => d.id === scenarioId).length === 0) {
@@ -356,11 +354,7 @@ export default defineComponent({
     };
 
     const indicatorId = computed(() => {
-      const _selectedNode = selectedNode.value;
-      if (_selectedNode === null) return null;
-      const selectedNodeData = (modelComponents.value?.nodes ?? [])
-        .find(node => node.concept === _selectedNode.concept);
-      return selectedNodeData?.parameter?.id ?? null;
+      return selectedNode.value?.parameter?.id ?? null;
     });
     const indicatorData = useModelMetadata(indicatorId);
     const indicatorDescription = computed(() => {
