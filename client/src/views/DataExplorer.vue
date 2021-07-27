@@ -13,23 +13,33 @@
           :filtered-facets="filteredFacets"
         />
       </div>
-      <search class="flex-grow-1 h-100"
-        :facets="facets"
-        :filtered-datacubes="filteredDatacubes"
-        :enableMultipleSelection="enableMultipleSelection"
-        :initialDatacubeSelection="initialDatacubeSelection"
-      />
+      <div class="flex-grow-1 h-100">
+        <search
+          class="search"
+          :facets="facets"
+          :filtered-datacubes="filteredDatacubes"
+          :enableMultipleSelection="enableMultipleSelection"
+          :initialDatacubeSelection="initialDatacubeSelection"
+        />
+        <simple-pagination
+          :current-page-length="filteredDatacubes.length"
+          :page-count="pageCount"
+          :page-size="pageSize"
+          @next-page="nextPage"
+          @prev-page="prevPage"
+        />
+      </div>
     </div>
   </div>
 </template>
 
 <script>
-import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
 import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
+import SimplePagination from '../components/data-explorer/simple-pagination.vue';
 
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
 import { getAnalysis } from '@/services/analysis-service';
@@ -44,7 +54,8 @@ export default {
   components: {
     Search,
     FacetsPanel,
-    ModalHeader
+    ModalHeader,
+    SimplePagination
   },
   data: () => ({
     facets: null,
@@ -52,7 +63,9 @@ export default {
     filteredFacets: null,
     selectLabel: 'Add To Analysis',
     analysis: undefined,
-    enableMultipleSelection: true
+    enableMultipleSelection: true,
+    pageCount: 0,
+    pageSize: 100
   }),
   computed: {
     ...mapGetters({
@@ -92,24 +105,41 @@ export default {
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'
     }),
 
+    prevPage() {
+      this.pageCount = this.pageCount - 1;
+      this.fetchDatacubeList();
+    },
+
+    nextPage() {
+      this.pageCount = this.pageCount + 1;
+      this.fetchDatacubeList();
+    },
+
     // retrieves filtered datacube list
+    async fetchDatacubeList () {
+      // get the filtered data
+      const options = {
+        from: this.pageCount * this.pageSize,
+        size: this.pageSize
+      };
+      this.filteredDatacubes = await getDatacubes(this.filters, options);
+      this.filteredDatacubes.forEach(item => (item.isAvailable = true));
+    },
+
+    // fetches all datacube info in list and facet format
     async fetchAllDatacubeData() {
       this.enableOverlay();
-
-      // get the filtered data
-      const filters = _.cloneDeep(this.filters);
-      this.filteredDatacubes = await getDatacubes(filters);
-      this.filteredDatacubes.forEach(item => (item.isAvailable = true));
-
+      this.fetchDatacubeList();
       // retrieves filtered & unfiltered facet data
       const defaultFilters = { clauses: [] };
       this.facets = await getDatacubeFacets(FACET_FIELDS, defaultFilters);
-      this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, filters);
+      this.filteredFacets = await getDatacubeFacets(FACET_FIELDS, this.filters);
 
       this.disableOverlay();
     },
 
     async refresh() {
+      this.pageCount = 0;
       await this.fetchAllDatacubeData();
       this.analysis = await getAnalysis(this.analysisId);
     },
@@ -163,6 +193,9 @@ export default {
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
+  .search {
+    height: calc(100% - 100px);
+  }
 }
 
 </style>
