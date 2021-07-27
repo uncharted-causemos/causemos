@@ -10,6 +10,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import {
+  computed,
   defineComponent,
   nextTick,
   onMounted,
@@ -39,16 +40,21 @@ export default defineComponent({
     projections: {
       type: Array as PropType<ScenarioProjection[]>,
       default: []
-    },
-    projectionStartTimestamp: {
-      type: Number,
-      default: 0
     }
   },
   setup(props, { emit }) {
     const { historicalTimeseries, projections, selectedScenarioId } = toRefs(
       props
     );
+    const historicalTimeseriesBeforeStart = computed(() => {
+      const projectionStartTimestamp =
+        projections.value.length === 0
+          ? 0
+          : projections.value[0].values[0].timestamp;
+      return historicalTimeseries.value.filter(
+        point => point.timestamp < projectionStartTimestamp
+      );
+    });
     const chartRef = ref<HTMLElement | null>(null);
     const chartSize = ref({ width: 0, height: 0 });
     const constraints = ref<ProjectionConstraint[]>([]);
@@ -132,7 +138,7 @@ export default defineComponent({
         svg,
         width,
         height,
-        historicalTimeseries.value,
+        historicalTimeseriesBeforeStart.value,
         projections,
         selectedScenarioId,
         constraints,
