@@ -195,8 +195,9 @@ export default {
 
       // set context id as the current family name
       if (this.datacubeInstances.length > 0) {
-        // FIXME: context-id should be an array to fetch insights for each and every model instance
-        this.setContextId(this.datacubeInstances[0].id);
+        // context-id should be an array to fetch insights for each and every model instance
+        const contextIDs = this.datacubeInstances.map(dc => dc.id);
+        this.setContextId(contextIDs);
       }
 
       // reset to avoid invalid data fetch when a given instance it loaded

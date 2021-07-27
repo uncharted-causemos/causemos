@@ -85,7 +85,7 @@
 import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
-import { mapGetters, mapActions, useStore } from 'vuex';
+import { mapGetters, mapActions } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -97,9 +97,9 @@ import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 import router from '@/router';
-import { getInsights, deleteInsight } from '@/services/insight-service';
-import { ref, watchEffect, computed } from 'vue';
-import { ProjectType } from '@/types/Enums';
+import { deleteInsight } from '@/services/insight-service';
+import { ref } from 'vue';
+import useInsightsData from '@/services/composables/useInsightsData';
 
 export default {
   name: 'ListContextInsightPane',
@@ -121,63 +121,11 @@ export default {
     selectedContextInsight: null
   }),
   setup() {
-    const listContextInsights = ref([]);
-    const store = useStore();
-    const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['app/project']);
-    const currentView = computed(() => store.getters['app/currentView']);
-    const projectType = computed(() => store.getters['app/projectType']);
-
-    // FIXME: refactor into a composable
-    watchEffect(onInvalidate => {
-      let isCancelled = false;
-      async function fetchInsights() {
-        //
-        // fetch public insights
-        //
-        const publicInsightsSearchFields = {};
-        publicInsightsSearchFields.visibility = 'public';
-        if (projectType.value !== ProjectType.Analysis) {
-          // when fetching public insights, then project-id is only relevant in domain projects
-          publicInsightsSearchFields.project_id = project.value;
-        }
-        if (contextId.value && contextId.value !== '') {
-          if (currentView.value !== 'domainDatacubeOverview') {
-            // context-id must be ignored when fetching insights at the project landing page
-            publicInsightsSearchFields.context_id = contextId.value;
-          }
-        }
-        const publicInsights = await getInsights(publicInsightsSearchFields);
-
-        //
-        // fetch project-specific insights
-        //
-        const contextInsightsSearchFields = {};
-        contextInsightsSearchFields.visibility = 'private';
-        if (contextId.value && contextId.value !== '') {
-          contextInsightsSearchFields.context_id = contextId.value;
-        }
-        const contextInsights = await getInsights(contextInsightsSearchFields);
-
-        const insights = [...publicInsights, ...contextInsights];
-        if (isCancelled) {
-          // Dependencies have changed since the fetch started, so ignore the
-          //  fetch results to avoid a race condition.
-          return;
-        }
-        listContextInsights.value = insights;
-        store.dispatch('contextInsightPanel/setCountContextInsights', listContextInsights.value.length);
-      }
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      fetchInsights();
-    });
+    const insightsFetchedAt = ref(0);
+    const listContextInsights = useInsightsData(insightsFetchedAt);
     return {
       listContextInsights,
-      contextId,
-      currentView,
-      project
+      insightsFetchedAt
     };
   },
   computed: {
@@ -194,21 +142,10 @@ export default {
   },
   methods: {
     ...mapActions({
-      setCountContextInsights: 'contextInsightPanel/setCountContextInsights',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
     }),
     stringFormatter,
-    async refresh() {
-      const insightSearchFields = {
-        project_id: this.project,
-        context_id: this.contextId,
-        target_view: this.currentView
-      };
-      const listContextInsights = await getInsights(insightSearchFields);
-      this.listContextInsights = listContextInsights;
-      this.setCountContextInsights(listContextInsights.length);
-    },
     newInsight() {
       this.showInsightPanel();
       this.setCurrentPane('new-insight');
@@ -256,9 +193,8 @@ export default {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
-          const count = this.countContextInsights - 1;
-          this.setCountContextInsights(count);
-          this.refresh();
+          // refresh the latest list from the server
+          this.insightsFetchedAt = Date.now();
         } else {
           this.toaster(message, 'error', true);
         }

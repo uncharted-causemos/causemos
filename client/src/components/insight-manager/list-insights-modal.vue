@@ -148,12 +148,11 @@ import InsightControlMenu from '@/components/insight-manager/insight-control-men
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 import router from '@/router';
-import { deleteInsight, getInsights } from '@/services/insight-service';
-import { ref, watchEffect, computed } from 'vue';
+import { deleteInsight } from '@/services/insight-service';
+import { ref, computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
-import { ProjectType } from '@/types/Enums';
-
+import useInsightsData from '@/services/composables/useInsightsData';
 
 const INSIGHT_TABS = [
   {
@@ -188,13 +187,7 @@ export default {
     tabs: INSIGHT_TABS
   }),
   setup() {
-    const listInsights = ref([]);
     const store = useStore();
-    const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['app/project']);
-    const currentView = computed(() => store.getters['app/currentView']);
-    const projectType = computed(() => store.getters['app/projectType']);
-
     const questions = computed(() => store.getters['analysisChecklist/questions']);
 
     const insightsById = (id) => listInsights.value.find(i => i.id === id);
@@ -210,57 +203,14 @@ export default {
       return result;
     };
 
-    // FIXME: refactor into a composable
-    watchEffect(onInvalidate => {
-      let isCancelled = false;
-      async function fetchInsights() {
-        //
-        // fetch public insights
-        //
-        const publicInsightsSearchFields = {};
-        publicInsightsSearchFields.visibility = 'public';
-        if (projectType.value !== ProjectType.Analysis) {
-          // when fetching public insights, then project-id is only relevant in domain projects
-          publicInsightsSearchFields.project_id = project.value;
-        }
-        if (contextId.value && contextId.value !== '') {
-          if (currentView.value !== 'domainDatacubeOverview') {
-            // context-id must be ignored when fetching insights at the project landing page
-            publicInsightsSearchFields.context_id = contextId.value;
-          }
-        }
-        const publicInsights = await getInsights(publicInsightsSearchFields);
+    const insightsFetchedAt = ref(0);
+    const listInsights = useInsightsData(insightsFetchedAt);
 
-        //
-        // fetch project-specific insights
-        //
-        const contextInsightsSearchFields = {};
-        contextInsightsSearchFields.visibility = 'private';
-        if (contextId.value && contextId.value !== '') {
-          contextInsightsSearchFields.context_id = contextId.value;
-        }
-        const contextInsights = await getInsights(contextInsightsSearchFields);
-
-        const insights = [...publicInsights, ...contextInsights];
-        if (isCancelled) {
-          // Dependencies have changed since the fetch started, so ignore the
-          //  fetch results to avoid a race condition.
-          return;
-        }
-        listInsights.value = insights;
-        store.dispatch('insightPanel/setCountInsights', listInsights.value.length);
-      }
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      fetchInsights();
-    });
     return {
       listInsights,
-      contextId,
-      project,
       questions,
-      fullLinkedInsights
+      fullLinkedInsights,
+      insightsFetchedAt
     };
   },
   computed: {
@@ -346,8 +296,8 @@ export default {
           const count = this.countInsights - 1;
           this.setCountInsights(count);
           this.removeCuration(id);
-          this.refresh();
-        } else {
+          // refresh the latest list from the server
+          this.insightsFetchedAt = Date.now();
           this.toaster(message, 'error', true);
         }
       });
@@ -583,15 +533,6 @@ export default {
     },
     openExport() {
       this.exportActive = true;
-    },
-    async refresh() {
-      const insightSearchFields = {
-        project_id: this.project,
-        context_id: this.contextId
-      };
-      const listInsights = await getInsights(insightSearchFields);
-      this.listInsights = listInsights;
-      this.setCountInsights(listInsights.length);
     },
     removeCuration(id) {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);

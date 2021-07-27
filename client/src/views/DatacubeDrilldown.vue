@@ -267,7 +267,7 @@ export default defineComponent({
         mainModelOutput.value = outputs.value[initialOutputIndex];
 
         // note: this value of metadata may be undefined while model is still being loaded
-        store.dispatch('insightPanel/setContextId', metadata.value?.id);
+        store.dispatch('insightPanel/setContextId', [metadata.value?.id]);
 
         // save the initial output variable index
         store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);

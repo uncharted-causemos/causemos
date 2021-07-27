@@ -282,8 +282,9 @@ export default {
 
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
-      // clear context id to hint the insight manager to show ALL project insights
-      this.setContextId('');
+      // context-id should be an array to fetch insights for each and every datacube/cag in all project analyses
+      const contextIDs = [];
+      this.setContextId(contextIDs);
 
       // Sort by modified_at date with latest on top
       this.sortAnalysesByMostRecentDate();
