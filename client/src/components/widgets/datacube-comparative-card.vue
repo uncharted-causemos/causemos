@@ -17,7 +17,10 @@
         :wider-dropdown-options="true"
       >
         <template #content>
-          <div class="dropdown-option">
+          <div
+            class="dropdown-option"
+            @click="clickRemove"
+          >
             Remove
           </div>
         </template>
@@ -61,7 +64,7 @@ import DatacardOptionsButton from '@/components/widgets/datacard-options-button.
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
@@ -269,6 +272,9 @@ export default defineComponent({
     };
   },
   methods: {
+    ...mapActions({
+      removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
+    }),
     async openDrilldown() {
       // NOTE: instead of replacing the datacubeIDs array,
       // ensure that the current datacubeId is at 0 index
@@ -293,6 +299,9 @@ export default defineComponent({
           projectType: ProjectType.Analysis
         }
       }).catch(() => {});
+    },
+    clickRemove() {
+      this.removeAnalysisItems([this.id]);
     }
   }
 });

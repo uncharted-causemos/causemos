@@ -53,24 +53,20 @@ export default defineComponent({
 .datacard-options-button-container {
   border-radius: 50%;
   cursor: pointer;
+  width: 18px;
+  height: 18px;
 
   .dropdown-container {
     display: none;
-    position: absolute;
-    bottom: 32px;
-    right: 32px;
+    position: relative;
+    right: 50px;
     padding: 0;
-    width: 100px;
+    width: fit-content;
     // Clip children overflowing the border-radius at the corners
     overflow: hidden;
 
-    &.wider {
-      width: 150px;
-    }
-
     &.below {
-      bottom: auto;
-      top: 32px;
+      top: 5px;
     }
 
     &.visible {
