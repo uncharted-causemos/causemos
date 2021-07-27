@@ -117,6 +117,7 @@ export default {
 
     // retrieves filtered datacube list
     async fetchDatacubeList () {
+      this.enableOverlay();
       // get the filtered data
       const options = {
         from: this.pageCount * this.pageSize,
@@ -124,12 +125,13 @@ export default {
       };
       this.filteredDatacubes = await getDatacubes(this.filters, options);
       this.filteredDatacubes.forEach(item => (item.isAvailable = true));
+      this.disableOverlay();
     },
 
     // fetches all datacube info in list and facet format
     async fetchAllDatacubeData() {
-      this.enableOverlay();
       this.fetchDatacubeList();
+      this.enableOverlay();
       // retrieves filtered & unfiltered facet data
       const defaultFilters = { clauses: [] };
       this.facets = await getDatacubeFacets(FACET_FIELDS, defaultFilters);
