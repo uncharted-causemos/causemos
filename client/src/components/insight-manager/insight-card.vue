@@ -12,10 +12,16 @@
           :src="insight.thumbnail"
           class="thumbnail">
       </div>
-      <div v-if="showDescription" class="insight-description">
+      <div
+        v-if="showDescription"
+        class="insight-description"
+        :class="{ 'private-insight-title': insight.visibility === 'private' }">
         <b>{{ insight.name }}</b>. {{ insight.description }}
       </div>
-      <div v-else class="insight-title">
+      <div
+        v-else
+        class="insight-title"
+        :class="{ 'private-insight-title': insight.visibility === 'private' }">
         <h5>{{ insight.name }}</h5>
       </div>
       <div class="insight-footer">
@@ -102,6 +108,9 @@ export default defineComponent({
 <style lang="scss" scoped>
 .card-mode {
   max-width: 300px;
+}
+.private-insight-title {
+  color: black;
 }
 .insight {
   cursor: pointer;

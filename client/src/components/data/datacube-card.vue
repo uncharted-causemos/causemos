@@ -194,6 +194,8 @@
                 :filters="mapFilters"
                 :map-bounds="mapBounds"
                 :region-data="regionalData"
+                :selectedBaseLayer="selectedBaseLayer"
+                :selectedDataLayer="selectedDataLayer"
                 @sync-bounds="onSyncMapBounds"
                 @click-layer-toggle="onClickMapLayerToggle"
                 @on-map-load="onMapLoad"
@@ -238,6 +240,7 @@ import { isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestamp } from '@/utils/date-util';
+import { DATA_LAYER } from '@/utils/map-util-new';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -308,6 +311,14 @@ export default defineComponent({
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
       default: []
+    },
+    selectedBaseLayer: {
+      type: String,
+      required: true
+    },
+    selectedDataLayer: {
+      type: String,
+      required: true
     }
   },
   components: {
@@ -423,8 +434,7 @@ export default defineComponent({
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
     ],
-    mapReady: false,
-    isGridMap: false
+    mapReady: false
   }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
@@ -434,7 +444,7 @@ export default defineComponent({
   },
   computed: {
     mapSelectedLayer(): number {
-      return this.isGridMap ? 4 : this.selectedAdminLevel;
+      return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
@@ -443,9 +453,6 @@ export default defineComponent({
     },
     onSyncMapBounds(mapBounds: Array<Array<number>>) {
       this.mapBounds = mapBounds;
-    },
-    onClickMapLayerToggle(data: { isGridMap: boolean }) {
-      this.isGridMap = !data.isGridMap;
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;

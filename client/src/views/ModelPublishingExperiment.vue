@@ -23,6 +23,7 @@
       </div>
     </div>
     <main>
+      <analytical-questions-and-insights-panel />
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
     <datacube-card
@@ -149,6 +150,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { updateDatacube } from '@/services/new-datacube-service';
 import _ from 'lodash';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 const DRILLDOWN_TABS = [
   {
@@ -168,7 +170,8 @@ export default defineComponent({
     DatacubeModelHeader,
     ModelPublishingChecklist,
     ModelDescription,
-    DropdownButton
+    DropdownButton,
+    AnalyticalQuestionsAndInsightsPanel
   },
   computed: {
     ...mapGetters({
@@ -255,7 +258,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value) {
-        store.dispatch('insightPanel/setContextId', metadata.value.name);
+        store.dispatch('insightPanel/setContextId', metadata.value.id);
         // set initial output variable index
         const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature);
         store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);

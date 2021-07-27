@@ -33,13 +33,7 @@ router.get('/tiles', (req, res) => {
   }).pipe(res);
 });
 
-/**
- * Proxy map vector tile requests for mapbox-gl-js
- * Use Carto API Key if provided
- */
-router.get('/vector-tiles/:z/:x/:y', (req, res) => {
-  const { x, y, z } = req.params;
-  const url = `https://tiles.basemaps.cartocdn.com/vectortiles/carto.streets/v1/${z}/${x}/${y}.mvt${API_KEY_PARAM}`;
+const getBaseTiles = async (res, url) => {
   request.get(url, (error) => {
     if (error && error.code) {
       Logger.info('Error ' + error.code);
@@ -47,12 +41,32 @@ router.get('/vector-tiles/:z/:x/:y', (req, res) => {
       res.json({ error: error });
     }
   }).pipe(res);
+};
+
+/**
+ * Proxy map vector tile requests for mapbox-gl-js
+ * Use Carto API Key if provided
+ */
+router.get('/vector-tiles/:z/:x/:y', (req, res) => {
+  const { x, y, z } = req.params;
+  const url = `https://tiles.basemaps.cartocdn.com/vectortiles/carto.streets/v1/${z}/${x}/${y}.mvt${API_KEY_PARAM}`;
+  return getBaseTiles(res, url);
+});
+
+/**
+ * Proxy map raster tile requests for mapbox-gl-js
+ * Use Carto API Key if provided
+ */
+router.get('/satellite-tiles/:z/:x/:y', (req, res) => {
+  const { x, y, z } = req.params;
+  const url = `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${z}/${y}/${x}.png`;
+  return getBaseTiles(res, url);
 });
 
 /**
  * Retrieve enterprise carto stylesheet for mapbox-gl-js
  */
-router.get('/styles', asyncHandler(async (req, res) => {
+router.get('/styles/default', asyncHandler(async (req, res) => {
   const options = {
     url: 'https://tiles.basemaps.cartocdn.com/gl/positron-gl-style/style.json',
     method: 'GET',
@@ -75,6 +89,34 @@ router.get('/styles', asyncHandler(async (req, res) => {
     tiles: ['wmmap://vector-tiles/{z}/{x}/{y}']
   };
   res.json(stylesheet);
+}));
+
+/**
+ * Retrieve enterprise carto stylesheet for mapbox-gl-js
+ */
+router.get('/styles/satellite', asyncHandler(async (req, res) => {
+  res.json({
+    version: 8,
+    sources: {
+      'satellite-tiles': {
+        type: 'raster',
+        tiles: [
+          'wmmap://satellite-tiles/{z}/{x}/{y}'
+        ],
+        tileSize: 256,
+        attribution: 'Map tiles by <a target="_top" rel="noopener" href="http://stamen.com">Stamen Design</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by/3.0">CC BY 3.0</a>. Data by <a target="_top" rel="noopener" href="http://openstreetmap.org">OpenStreetMap</a>, under <a target="_top" rel="noopener" href="http://creativecommons.org/licenses/by-sa/3.0">CC BY SA</a>'
+      }
+    },
+    layers: [
+      {
+        id: 'simple-tiles',
+        type: 'raster',
+        source: 'satellite-tiles',
+        minzoom: 0,
+        maxzoom: 22
+      }
+    ]
+  });
 }));
 
 module.exports = router;

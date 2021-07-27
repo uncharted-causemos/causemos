@@ -112,7 +112,12 @@
                 }"
                 @mousedown.stop.prevent
               />
-              <span @mousedown.stop.prevent class="checklist-item-text">{{ questionItem.question }}</span>
+              <span
+                @mousedown.stop.prevent
+                class="checklist-item-text"
+                :class="{ 'private-question-title': questionItem.visibility === 'private' }">
+                  {{ questionItem.question }}
+              </span>
             </div>
             <!-- second row display a list of linked insights -->
             <div class="checklist-item-insights">
@@ -559,6 +564,10 @@ export default defineComponent({
             padding: 0 10px;
             width: 170px;
             display: inline-block;
+            color: gray;
+          }
+          .private-question-title {
+            color: black;
           }
         }
 

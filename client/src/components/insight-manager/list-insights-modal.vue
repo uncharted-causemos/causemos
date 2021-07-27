@@ -108,14 +108,14 @@
               style="margin-bottom: 5rem;">
               <h3 class="analysis-question">{{questionItem.question}}</h3>
               <insight-card
-                v-for="insightId in questionItem.linked_insights"
-                :key="insightId"
-                :insight="insightsById(insightId)"
+                v-for="insight in fullLinkedInsights(questionItem.linked_insights)"
+                :key="insight.id"
+                :insight="insight"
                 :show-description="true"
                 :show-question="false"
-                @delete-insight="deleteInsight(insightId)"
-                @open-editor="openEditor(insightId)"
-                @select-insight="selectInsight(insightsById(insightId))"
+                @delete-insight="deleteInsight(insight.id)"
+                @open-editor="openEditor(insight.id)"
+                @select-insight="selectInsight(insight)"
               />
             </div>
           </div>
@@ -197,6 +197,17 @@ export default {
 
     const insightsById = (id) => listInsights.value.find(i => i.id === id);
 
+    const fullLinkedInsights = (linked_insights) => {
+      const result = [];
+      linked_insights.forEach(insightId => {
+        const ins = insightsById(insightId);
+        if (ins) {
+          result.push(ins);
+        }
+      });
+      return result;
+    };
+
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {
       let isCancelled = false;
@@ -220,7 +231,7 @@ export default {
       contextId,
       project,
       questions,
-      insightsById
+      fullLinkedInsights
     };
   },
   computed: {
