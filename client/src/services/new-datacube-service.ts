@@ -7,9 +7,15 @@ import fu from '@/utils/filters-util';
 /**
  * Get datacubes
  * @param {Filters} filters
+ * @param {object} options - ES options
  */
 export const getDatacubes = async (filters: Filters, options = {}) => {
-  const { data } = await API.get('maas/new-datacubes', { params: { filters: filters, options: options } });
+  const { data } = await API.get('maas/new-datacubes', {
+    params: {
+      filters: filters,
+      options: options
+    }
+  });
   return data;
 };
 
@@ -29,7 +35,7 @@ export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
  */
 export const getDatacubeById = async (datacubeId: string) => {
   const filters = fu.newFilters();
-  fu.setClause(filters, 'dataId', [datacubeId], 'or', false);
+  fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
   return cubes && cubes[0];
 };
@@ -103,6 +109,25 @@ export const getSuggestions = async (field: string, queryString: string) => {
   return data;
 };
 
+// DEPRECATED - NO LONGER WORK
+// TODO: REMOVE
+
+/**
+ * @deprecated
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const getModelRuns = async (modelId: any) => {
+  return [];
+};
+
+/**
+ * @deprecated
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const getModelParameters = async (modelId: any) => {
+  return [];
+};
+
 export default {
   updateDatacube,
   getDatacubes,
@@ -112,5 +137,8 @@ export default {
   getModelDatacubesCount,
   getIndicatorDatacubesCount,
   getModelRunMetadata,
-  getSuggestions
+  getSuggestions,
+
+  getModelRuns,
+  getModelParameters
 };

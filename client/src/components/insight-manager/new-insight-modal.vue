@@ -4,11 +4,16 @@
       <h5>New Insight</h5>
     </full-screen-modal-header>
     <div class="pane-wrapper">
-      <div class="pane-row" v-if="imagePreview !== null">
+      <div class="pane-row">
         <div class="fields">
-          <div class="preview">
+          <div class="preview" v-if="imagePreview !== null">
             <img :src="imagePreview">
           </div>
+          <disclaimer
+            v-else
+            style="text-align: center; color: black"
+            :message="'No image preview!'"
+          />
           <div class="form-group">
             <form>
               <label> Name* </label>
@@ -98,6 +103,8 @@ import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import modelService from '@/services/model-service';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { INSIGHTS } from '@/utils/messages-util';
+import { ProjectType } from '@/types/Enums';
+import Disclaimer from '@/components/widgets/disclaimer';
 
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
@@ -114,7 +121,8 @@ export default {
   name: 'NewInsightModal',
   components: {
     DrilldownPanel,
-    FullScreenModalHeader
+    FullScreenModalHeader,
+    Disclaimer
   },
   data: () => ({
     description: '',
@@ -167,14 +175,16 @@ export default {
       return `${filterString.length > 0 ? filterString : ''}`;
     },
     insightVisibility() {
-      return this.currentView === 'modelPublishingExperiment' ? 'public' : 'private';
+      return this.projectType === ProjectType.Analysis ? 'private' : 'public';
+      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
     },
     insightTargetView() {
       // an insight created during model publication should be listed either
       //  in the full list of insights,
       //  or as a context specific insight when opening the page of the corresponding model family instance
       //  (the latter is currently supported via a special route named dataPreview)
-      return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview'] : [this.currentView, 'overview'];
+      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
     },
     metadataDetails() {
       const arr = [];

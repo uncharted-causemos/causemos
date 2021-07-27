@@ -43,7 +43,7 @@ import { useStore } from 'vuex';
 
 import Modal from '@/components/modals/modal.vue';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
+import renderHistoricalProjectionsChart from '@/charts/scenario-renderer.js';
 import { NodeScenarioData } from '@/types/CAG';
 
 export default defineComponent({

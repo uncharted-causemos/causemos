@@ -13,7 +13,7 @@ const session = require('express-session');
 // const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const Logger = rootRequire('/config/logger');
-const serverConfiguration = rootRequire('/config/yargs-wrapper');
+
 
 const nocache = require('nocache');
 
@@ -141,8 +141,14 @@ app.use('/api/maas/new-datacubes', [
   datacubeRouter
 ]);
 
-// Forward /api/maas/* to WM_GO_URL/maas/*
-app.use('/api/maas', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/maas' + req.url }));
+app.use('/api/maas/datacubes', [
+  datacubeRouter
+]);
+
+// Forward /api/maas/output/* to WM_GO_URL/maas/output/*
+// Forward /api/maas/tiles/* to WM_GO_URL/maas/tiles/*
+app.use('/api/maas/output', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/maas/output' + req.url }));
+app.use('/api/maas/tiles', proxy(process.env.WM_GO_URL, { proxyReqPathResolver: req => '/maas/tiles' + req.url }));
 
 app.use('/api/map', [
   mapProxyRouter
@@ -192,6 +198,5 @@ app.use(function(err, req, res, next) {
 });
 
 // Log server configuration
-Logger.info(`Server Configuration: ${JSON.stringify(serverConfiguration, null, 4)}`);
 
 module.exports = app;

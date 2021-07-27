@@ -1,13 +1,24 @@
 <template>
   <div class="list-context-insights-pane-container">
     <div class="pane-header">
-      <h4>Insights: {{listContextInsights.length}}</h4>
-      <dropdown-button
-        class="export-dropdown"
-        :inner-button-label="'Export'"
-        :items="['Powerpoint', 'Word']"
-        @item-selected="exportContextInsight"
-      />
+      <button
+        v-if="allowNewInsights"
+        type="button"
+        class="row btn btn-primary btn-call-for-action"
+        style="padding: 2px"
+        @click.stop="newInsight">
+          <i class="fa fa-fw fa-star fa-lg" />
+          New Insight
+      </button>
+      <div class="title-header">
+        <h4>Insights: {{listContextInsights.length}}</h4>
+        <dropdown-button
+          class="export-dropdown"
+          :inner-button-label="'Export'"
+          :items="['Powerpoint', 'Word']"
+          @item-selected="exportContextInsight"
+        />
+      </div>
     </div>
     <div
       v-if="listContextInsights.length > 0"
@@ -20,7 +31,9 @@
           :class="{ 'selected': selectedContextInsight === contextInsight, '': selectedContextInsight !== contextInsight }"
           @click="selectContextInsight(contextInsight)">
           <div class="context-insight-header">
-            <div class="context-insight-title">
+            <div
+              class="context-insight-title"
+              :class="{ 'private-insight-title': contextInsight.visibility === 'private' }">
               <i class="fa fa-star"></i>
               {{ stringFormatter(contextInsight.name, 25) }}
             </div>
@@ -55,6 +68,16 @@
       v-else
       :message="messageNoData"
     />
+    <div class="pane-footer">
+      <button
+        type="button"
+        class="btn btn-primary btn-call-for-action"
+        style="padding: 2px; padding-top: 1rem; margin-top: 1rem;"
+        @click.stop="openInsightsExplorer">
+          <i class="fa fa-fw fa-star fa-lg" />
+          Review All Insights
+      </button>
+    </div>
   </div>
 </template>
 
@@ -84,6 +107,12 @@ export default {
     ContextInsightEditor,
     DropdownButton,
     MessageDisplay
+  },
+  props: {
+    allowNewInsights: {
+      type: Boolean,
+      default: true
+    }
   },
   data: () => ({
     activeContextInsight: null,
@@ -143,13 +172,23 @@ export default {
   },
   methods: {
     ...mapActions({
-      setCountContextInsights: 'contextInsightPanel/setCountContextInsights'
+      setCountContextInsights: 'contextInsightPanel/setCountContextInsights',
+      showInsightPanel: 'insightPanel/showInsightPanel',
+      setCurrentPane: 'insightPanel/setCurrentPane'
     }),
     stringFormatter,
     async refresh() {
       const listContextInsights = await getContextSpecificInsights(this.project, this.contextId, this.currentView);
       this.listContextInsights = listContextInsights;
       this.setCountContextInsights(listContextInsights.length);
+    },
+    newInsight() {
+      this.showInsightPanel();
+      this.setCurrentPane('new-insight');
+    },
+    openInsightsExplorer() {
+      this.showInsightPanel();
+      this.setCurrentPane('list-insights');
     },
     exportContextInsight(item) {
       switch (item) {
@@ -412,12 +451,38 @@ export default {
 
 <style lang="scss">
 @import "~styles/variables";
+.private-insight-title {
+  color: black;
+}
 .list-context-insights-pane-container {
   color: #707070;
+  overflow-y: hidden;
+  height: 100%;
   .pane-header{
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-direction: column;
+    .title-header{
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      flex-direction: row;
+      width: 100%;
+    }
+  }
+  .pane-content {
+    display: flex;
+    flex-direction: row;
+    flex-wrap: wrap;
+    overflow-y: auto;
+    height: 75%;
+  }
+  .pane-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-direction: column;
   }
   .context-insight {
     cursor: pointer;
@@ -438,7 +503,7 @@ export default {
       .context-insight-title {
         flex: 1 1 auto;
         font-weight: bold;
-        }
+      }
     }
     .context-insight-empty-description {
       color: #D6DBDF;

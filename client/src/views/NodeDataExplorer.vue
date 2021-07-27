@@ -84,7 +84,6 @@ export default {
   },
   methods: {
     ...mapActions({
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'
@@ -132,7 +131,7 @@ export default {
         name: 'nodeCompExperiment',
         params: {
           currentCAG: this.currentCAG,
-          datacubeId: this.selectedDatacubes[0],
+          indicatorId: this.selectedDatacubes[0].id,
           nodeId: this.nodeId,
           project: this.project,
           projectType: ProjectType.Analysis

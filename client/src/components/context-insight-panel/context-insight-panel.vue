@@ -46,7 +46,7 @@ export default defineComponent({
     .context-insights-container {
       margin-left: 1rem;
       margin-right: 1rem;
-      overflow: auto;
+      overflow-y: auto;
     }
   }
 </style>

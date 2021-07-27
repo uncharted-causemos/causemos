@@ -7,14 +7,11 @@
     :is-large="false"
     @set-active="setActive"
   >
-    <div v-if="currentTab === 'Analysis Checklist'" >
       <list-analytical-questions-pane
-        @add-question="addNewQuestion" />
-    </div>
+        v-if="currentTab === 'Analysis Checklist'" />
 
-    <div v-if="currentTab === 'Context Insights'" class="context-insights-container">
-      <list-context-insight-pane />
-    </div>
+      <list-context-insight-pane
+        v-if="currentTab === 'Context Insights'" />
   </side-panel>
 </template>
 
@@ -55,7 +52,9 @@ export default defineComponent({
     .context-insights-container {
       margin-left: 1rem;
       margin-right: 1rem;
-      overflow: auto;
+      overflow-y: auto;
+      display: flex;
+      flex-direction: column;
     }
 
     .analytical-questions-container {

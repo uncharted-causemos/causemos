@@ -5,13 +5,14 @@ import { conceptShortName } from '@/utils/concept-util';
 import { startPolling } from '@/api/poller';
 import {
   Scenario,
+  ConceptProjectionConstraints,
   NewScenario,
-  ScenarioConstraint,
   NodeParameter,
   EdgeParameter,
   CAGModelSummary,
   CAGGraph,
-  ScenarioResult
+  ScenarioResult,
+  NodeScenarioData
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
@@ -263,7 +264,7 @@ const initializeModel = async (modelId: string) => {
 const runProjectionExperiment = async (
   modelId: string,
   steps: number,
-  constraints: ScenarioConstraint[]) => {
+  constraints: ConceptProjectionConstraints[]) => {
   const model = await getSummary(modelId);
   const result = await API.post(`models/${modelId}/projection`, {
     engine: model.parameter.engine,
@@ -304,10 +305,10 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
  * @param {array} scenarios - array of scenario objects
  */
 const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[], scenarios: Scenario[]) => {
-  const result: any = {};
+  const result: {[concept: string]: NodeScenarioData} = {};
   const modelParameter = modelSummary.parameter;
 
-  const getScenarioConstraints = (scenario: Scenario, concept: string) => {
+  const getConceptProjectionConstraints = (scenario: Scenario, concept: string) => {
     if (_.isEmpty(scenario.parameter) || _.isNil(scenario.parameter)) return [];
 
     const constraints = scenario.parameter.constraints.find(d => d.concept === concept);
@@ -315,13 +316,13 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
   };
 
   const getScenarioResult = (scenario: Scenario, concept: string) => {
-    if (!scenario.result) return {};
+    if (!scenario.result) return null;
 
     const result = scenario.result.find(d => d.concept === concept);
 
     // Scenario may be stale/invalid
     if (!result) {
-      return {};
+      return null;
     }
 
     return {
@@ -330,37 +331,38 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
     };
   };
 
-  // FIXME: types
   nodes.forEach(nodeData => {
-    const graphData: any = {};
-
     // 1. indicator and model information
     const indicatorData = nodeData.parameter || {};
     const concept = nodeData.concept;
 
-    graphData.initial_value = indicatorData.initial_value;
-    graphData.indicator_name = indicatorData.indicator_name || null;
-    graphData.indicator_time_series = indicatorData.indicator_time_series || [];
-    graphData.indicator_time_series_range = {
-      start: modelParameter.indicator_time_series_range.start,
-      end: modelParameter.indicator_time_series_range.end
+    const graphData: NodeScenarioData = {
+      initial_value: indicatorData.initial_value,
+      indicator_name: indicatorData.name || '',
+      indicator_time_series: indicatorData.timeseries || [],
+      indicator_time_series_range: {
+        start: modelParameter.indicator_time_series_range.start,
+        end: modelParameter.indicator_time_series_range.end
+      },
+      projection_start: modelParameter.projection_start,
+      scenarios: []
     };
-    graphData.projection_start = modelParameter.projection_start;
-
-    graphData.scenarios = [];
 
     // 2. grab relevant data for this node from each scenario, if applicable
-    scenarios.forEach(scenario => {
-      const scenarioData: any = {};
-      scenarioData.id = scenario.id;
-      scenarioData.is_baseline = scenario.is_baseline;
-      scenarioData.is_valid = scenario.is_valid;
-      scenarioData.parameter = scenario.parameter;
-      scenarioData.name = scenario.name;
-      scenarioData.constraints = getScenarioConstraints(scenario, concept);
-      scenarioData.result = getScenarioResult(scenario, concept);
-      graphData.scenarios.push(scenarioData);
+    const scenarioDataForThisNode = scenarios.map(scenario => {
+      const { id, is_baseline, is_valid, parameter, name } = scenario;
+      return {
+        id,
+        is_baseline,
+        is_valid,
+        parameter,
+        name,
+        constraints: getConceptProjectionConstraints(scenario, concept),
+        result: getScenarioResult(scenario, concept) || undefined
+      };
     });
+
+    graphData.scenarios = scenarioDataForThisNode;
 
     result[concept] = graphData;
   });
@@ -427,7 +429,7 @@ const runSensitivityAnalysis = async (
   modelSummary: CAGModelSummary,
   analysisType: string,
   analysisMode: string,
-  constraints: ScenarioConstraint[]
+  constraints: ConceptProjectionConstraints[]
 ) => {
   const { id: modelId } = modelSummary;
   const { engine, num_steps: numTimeSteps, projection_start: experimentStart } = modelSummary.parameter;
@@ -668,7 +670,7 @@ export const expandExtentForDyseProjections = (yExtent: [number, number], numLev
 
 // FIXME: Inject step=0 initial value constraints per node, we shouldn't need to do this,
 // engine should handle this quirky case. Sep 2020
-const injectStepZero = (nodeParameters: NodeParameter[], constraints: ScenarioConstraint[]) => {
+const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptProjectionConstraints[]) => {
   const result = _.cloneDeep(constraints);
   nodeParameters.forEach(n => {
     const concept = n.concept;

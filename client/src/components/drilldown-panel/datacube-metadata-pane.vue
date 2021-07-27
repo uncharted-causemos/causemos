@@ -43,7 +43,7 @@
 
 <script>
 import _ from 'lodash';
-import { getDatacubeById } from '@/services/datacube-service';
+import { getDatacubeById } from '@/services/new-datacube-service';
 import dateFormatter from '@/formatters/date-formatter';
 
 export default {

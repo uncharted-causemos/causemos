@@ -80,7 +80,7 @@
             <i class="fa fa-fw fa-star fa-lg" />
             Review Analysis Checklist
         </button>
-        <list-context-insight-pane />
+        <analytical-questions-panel />
       </div>
       <div class="col-md-9">
         <div class="row">
@@ -157,7 +157,6 @@
 import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
-import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import { getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
@@ -167,6 +166,7 @@ import { ProjectType } from '@/types/Enums';
 import { ANALYSIS, CAG } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import projectService from '@/services/project-service';
+import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -190,7 +190,7 @@ export default {
   name: 'AnalysisProjectOverview',
   components: {
     AnalysisOverviewCard,
-    ListContextInsightPane,
+    AnalyticalQuestionsPanel,
     DropdownControl,
     ModalUploadDocument,
     RenameModal
@@ -275,8 +275,8 @@ export default {
         const stats = await modelService.getModelStats(modelIDs);
 
         this.qualitativeAnalyses.forEach(analysis => { // merge edge and node counts into analysis objects
-          analysis.nodeCount = stats[analysis.id].nodeCount;
-          analysis.edgeCount = stats[analysis.id].edgeCount;
+          analysis.nodeCount = _.get(stats[analysis.id], 'nodeCount', 0);
+          analysis.edgeCount = _.get(stats[analysis.id], 'edgeCount', 0);
         });
       }
 
@@ -403,7 +403,7 @@ export default {
         title: `untitled at ${dateFormatter(Date.now())}`,
         projectId: this.project
       });
-      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [] });
+      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, analysisItems: [] });
       this.$router.push({
         name: 'dataComparative',
         params: {
