@@ -447,6 +447,17 @@ const buildNodeParametersPayload = (nodeParameters) => {
         ];
       }
 
+      // More hack: DySE needs at least 2 data points
+      if (indicatorTimeSeries.length === 1) {
+        const timestamp = indicatorTimeSeries[0].timestamp;
+        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
+        indicatorTimeSeries.unshift({
+          value: indicatorTimeSeries[0].value,
+          timestamp: prevTimestamp
+        });
+      }
+
+
       r[np.concept] = {
         name: np.parameter.name,
         minValue: _.get(np.parameter, 'min', 0),
