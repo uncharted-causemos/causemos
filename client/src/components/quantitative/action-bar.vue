@@ -102,7 +102,7 @@ export default {
       selectedScenarioId: 'model/selectedScenarioId'
     }),
     isInDraftState() {
-      return _.isNil(this.selectedScenarioId);
+      return this.selectedScenarioId === 'draft';
     },
     selectedScenario() {
       if (this.isInDraftState) return null;

@@ -1,5 +1,6 @@
 <template>
   <div class="quantitative-view-container">
+    <button @click="testDraft()">!</button>
     <analytical-questions-and-insights-panel />
     <div class="graph-container">
       <tab-panel
@@ -68,7 +69,7 @@ import ModalEditConstraints from '@/components/modals/modal-edit-constraints';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
-const DRAFT_SCENARIO_ID = null; // ID for draft scenario
+const DRAFT_SCENARIO_ID = 'draft';
 
 const isIndicatorChanged = (n, o) => {
   if (o.indicator_name !== n.indicator_name ||
@@ -109,14 +110,15 @@ export default {
     sensitivityDataTimestamp: null,
 
     // Tracking draft scenario
-    previousScenarioId: null,
-    draftScenario: null
+    previousScenarioId: null
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
-      selectedScenarioId: 'model/selectedScenarioId'
+      selectedScenarioId: 'model/selectedScenarioId',
+      draftScenario: 'model/draftScenario',
+      draftScenarioDirty: 'model/draftScenarioDirty'
     }),
     ready() {
       return this.modelSummary && this.modelComponents && this.scenarios;
@@ -129,20 +131,20 @@ export default {
     }
   },
   watch: {
-    selectedScenarioId() {
-      if (_.isNil(this.scenarios)) return;
-      this.fetchSensitivityAnalysisResults();
-      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-      if (scenario && scenario.is_valid === false) {
-        this.recalculateScenario(scenario);
-      }
-    },
+    // selectedScenarioId() {
+    //   if (_.isNil(this.scenarios)) return;
+    //   this.fetchSensitivityAnalysisResults();
+    //   const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+    //   if (scenario && scenario.is_valid === false) {
+    //     this.recalculateScenario(scenario);
+    //   }
+    // },
     sensitivityAnalysisType() {
       this.fetchSensitivityAnalysisResults();
-    },
-    scenarios() {
-      this.fetchSensitivityAnalysisResults();
     }
+    // scenarios() {
+    //   this.fetchSensitivityAnalysisResults();
+    // }
   },
   created() {
     // update insight related state
@@ -157,6 +159,8 @@ export default {
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
+      newDraftScenario: 'model/newDraftScenario',
+      updateDrafScenariotConstraints: 'model/updateDrafScenariotConstraints',
       setContextId: 'insightPanel/setContextId'
     }),
     runModel() {
@@ -191,6 +195,12 @@ export default {
         scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
       }
       this.scenarios = scenarios;
+
+      let scenarioId = this.selectedScenarioId;
+      if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
+        scenarioId = scenarios.find(d => d.is_baseline).id;
+      }
+      this.setSelectedScenarioId(scenarioId);
     },
     async refreshX() {
       this.enableOverlay();
@@ -379,45 +389,37 @@ export default {
     closeModelParameters() {
       this.isModelParametersOpen = false;
     },
-    async saveDraft({ concept, constraints }) {
-      // FIXME: remove reliance on timestamp
-      constraints.forEach(c => {
-        delete c.timestamp;
-      });
-
+    async saveDraft({ concept, values }) {
       this.isEditConstraintsOpen = false;
       this.enableOverlay('Running experiment');
 
-      // Set draft scenario if none existed
+      // 1. If no draft scenario we need to create one
       if (_.isNil(this.draftScenario)) {
         const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-
-        this.draftScenario = {
-          id: DRAFT_SCENARIO_ID,
-          modelId: this.currentCAG,
+        const draft = {
+          id: 'draft',
+          name: 'Draft',
+          model_id: this.currentCAG,
+          description: '',
+          is_valid: true,
+          is_baseline: false,
           parameter: {
             constraints: _.cloneDeep(selectedScenario.parameter.constraints),
             num_steps: this.projectionSteps,
             indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
             projection_start: this.modelSummary.parameter.projection_start
           },
-          engine: this.currentEngine,
-          is_baseline: false,
-          is_valid: true
+          engine: this.currentEngine
         };
+        await this.newDraftScenario(draft);
       }
 
-      // Overwrite
-      _.remove(this.draftScenario.parameter.constraints, d => d.concept === concept);
-      if (!_.isEmpty(constraints)) {
-        this.draftScenario.parameter.constraints.push({
-          concept,
-          values: constraints
-        });
-      }
-      await this.runDraftScenario();
+      // 2. Update
+      await this.updateDrafScenariotConstraints({ concept, values });
     },
     async runDraftScenario() {
+      if (_.isEmpty(this.draftScenario)) return;
+
       // Run experiment
       let experimentId = 0;
       let result = null;
@@ -425,7 +427,8 @@ export default {
         experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, this.draftScenario.parameter.constraints));
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
-        this.toaster(error.response.data, 'error', true);
+        console.error(error);
+        this.toaster(error, 'error', true);
         this.disableOverlay();
         return;
       }
@@ -467,6 +470,22 @@ export default {
     },
     setSensitivityAnalysisType(newValue) {
       this.sensitivityAnalysisType = newValue;
+    },
+    async testDraft() {
+      console.log('hihi');
+
+      await this.saveDraft({
+        concept: 'wm/concept/crisis_or_disaster/environmental/flood',
+        values: [
+          { step: 0, value: 1 },
+          { step: 2, value: 0 },
+          { step: 4, value: 1 },
+          { step: 6, value: 0 },
+          { step: 8, value: 1 }
+        ]
+      });
+
+      await this.runDraftScenario();
     }
   }
 };
