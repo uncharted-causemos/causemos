@@ -170,6 +170,14 @@ const startIndicatorPostProcessing = async (metadata) => {
   // Remove some unused Jataware fields
   metadata.attributes = undefined;
 
+  // Apparently ES can't support negative timestamps
+  if (metadata.period && metadata.period.gte < 0) {
+    metadata.period.gte = 0;
+  }
+  if (metadata.period && metadata.period.lte < 0) {
+    metadata.period.lte = 0;
+  }
+
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
   //        the following function would be called at:
@@ -207,6 +215,8 @@ const startIndicatorPostProcessing = async (metadata) => {
       const resIndex = resolutions.indexOf(outputRes || '');
       highestRes = Math.max(highestRes, resIndex);
 
+      output.id = undefined;
+
       const clonedMetadata = _.cloneDeep(metadata);
       clonedMetadata.data_id = metadata.id;
       clonedMetadata.id = uuid();
@@ -242,8 +252,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   if (newIndicatorMetadata.length < metadata.outputs.length) {
     Logger.warn(`Filtered out ${metadata.outputs.length - newIndicatorMetadata.length} indicators`);
     if (newIndicatorMetadata.length === 0) {
-      Logger.warn('No indicators left to process. Aborting');
-      return 'No indicators processed';
+      Logger.warn('No indicators left to process.');
     }
   }
 
@@ -267,9 +276,12 @@ const startIndicatorPostProcessing = async (metadata) => {
   };
 
   await requestAsPromise(pipelinePayload);
-  const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  const result = await connection.insert(newIndicatorMetadata, d => d.id);
-  return result;
+  if (newIndicatorMetadata.length > 0) {
+    const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+    const result = await connection.insert(newIndicatorMetadata, d => d.id);
+    return result;
+  }
+  return 'No documents added';
 };
 
 module.exports = {
