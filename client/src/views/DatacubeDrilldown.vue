@@ -216,7 +216,8 @@ export default defineComponent({
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
     const datacubeId = analysisItem.value[0].id;
 
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const selectedModelId = ref(datacubeId);
 
@@ -256,22 +257,29 @@ export default defineComponent({
     );
 
     const isDescriptionView = ref<boolean>(true);
-
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     watchEffect(() => {
       if (metadata.value) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
-        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
-
-        mainModelOutput.value = outputs.value[initialOutputIndex];
-
         // note: this value of metadata may be undefined while model is still being loaded
         store.dispatch('insightPanel/setContextId', metadata.value?.id);
 
-        // save the initial output variable index
-        store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+        let initialOutputIndex = 0;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        if (currentOutputEntry !== undefined) {
+          // we have a store entry for the selected output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+
+          // update the store
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+        mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
 
@@ -445,7 +453,8 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       analysisId: 'dataAnalysis/analysisId',
-      projectType: 'app/projectType'
+      projectType: 'app/projectType',
+      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
     }),
     navBackLabel(): string {
       if (this.analysis) {
@@ -456,7 +465,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     setBaseLayer(val: BASE_LAYER) {
@@ -478,7 +487,9 @@ export default defineComponent({
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      this.setCurrentOutputIndex(selectedOutputIndex);
+      const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+      updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
+      this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
