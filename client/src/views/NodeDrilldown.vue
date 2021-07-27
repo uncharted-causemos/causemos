@@ -28,7 +28,7 @@
             class="neighbor-node"
           />
         </div>
-        <div class="selected-node">
+        <div class="selected-node-column">
           <dropdown-button
             class="scenario-selector"
             :inner-button-label="'Scenario'"
@@ -446,13 +446,13 @@ h4 {
   margin-bottom: 10px;
 }
 
-.selected-node {
+.selected-node-column {
   flex: 1;
   min-width: 0;
-  max-height: 500px;
   display: flex;
   flex-direction: column;
   margin: 0 15px;
+  overflow-y: auto;
 }
 
 .scenario-selector {
@@ -497,8 +497,8 @@ input[type=number] {
 }
 
 .expanded-node {
-  flex: 1;
-  min-height: 0;
+  height: 350px;
+  flex-shrink: 0;
   border: 1px solid black;
   border-radius: 4px;
   overflow: hidden;
