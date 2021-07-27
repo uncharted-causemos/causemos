@@ -85,12 +85,17 @@
           <div>
             {{ indicatorDescription }}
           </div>
-          <div style="display: flex; align-items: center">
-            <span>From </span>
-            <input class="form-control input-sm" v-model.number="indicatorMin"/>
-            <span>to </span>
-            <input class="form-control input-sm" v-model.number="indicatorMax"/>
-            <div style="display: flex; align-items: center; flex: 1">
+          <div class="indicator-controls">
+            <div class="indicator-control-column">
+              <span>Minimum value</span>
+              <input class="form-control input-sm" v-model.number="indicatorMin"/>
+            </div>
+            <span class="from-to-separator">to</span>
+            <div class="indicator-control-column">
+              <span>Maximum value</span>
+              <input class="form-control input-sm" v-model.number="indicatorMax"/>
+            </div>
+            <div class=" indicator-control-column seasonality">
               Seasonality
               <i class="fa fa-fw fa-lg fa-toggle-off"/>
               <input class="form-control input-sm" type="number"/>
@@ -459,6 +464,27 @@ h6 {
   font-size: $font-size-medium;
   color: $text-color-light;
   font-weight: normal;
+}
+
+.indicator-controls {
+  display: flex;
+  align-items: flex-start;
+}
+
+.indicator-control-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.from-to-separator {
+  align-self: baseline;
+  margin: 2.25rem 5px 0 5px;
+}
+
+.seasonality {
+  margin-left: 10px;
+  flex: 1;
+  min-width: 0;
 }
 
 input[type=text] {
