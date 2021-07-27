@@ -11,6 +11,20 @@
         @click="openDrilldown">
         <i class="fa fa-fw fa-expand" />
       </button>
+      <datacard-options-button
+        class="menu"
+        :dropdown-below="true"
+        :wider-dropdown-options="true"
+      >
+        <template #content>
+          <div
+            class="dropdown-option"
+            @click="clickRemove"
+          >
+            Remove
+          </div>
+        </template>
+      </datacard-options-button>
     </header>
     <div>
       <div class="col-md-9 timeseries-chart">
@@ -46,10 +60,11 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
 import { colorFromIndex } from '@/utils/colors-util';
+import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 
@@ -65,6 +80,7 @@ const DRILLDOWN_TABS = [
 export default defineComponent({
   name: 'DatacubeComparativeCard',
   components: {
+    DatacardOptionsButton,
     TimeseriesChart
   },
   props: {
@@ -255,6 +271,9 @@ export default defineComponent({
     };
   },
   methods: {
+    ...mapActions({
+      removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
+    }),
     async openDrilldown() {
       // NOTE: instead of replacing the datacubeIDs array,
       // ensure that the current datacubeId is at 0 index
@@ -277,6 +296,9 @@ export default defineComponent({
           projectType: ProjectType.Analysis
         }
       }).catch(() => {});
+    },
+    clickRemove() {
+      this.removeAnalysisItems([this.id]);
     }
   }
 });
@@ -303,13 +325,12 @@ export default defineComponent({
 .datacube-header {
   flex: 1;
   margin-left: 20px;
-  margin-right: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 
   .drilldown-btn {
     padding: 5px;
+    margin-left:auto;
   }
 }
 

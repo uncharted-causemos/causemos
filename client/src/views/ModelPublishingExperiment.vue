@@ -45,6 +45,7 @@
       :relative-to="relativeTo"
       :breakdown-option="breakdownOption"
       :baseline-metadata="baselineMetadata"
+      :selected-timeseries-points="selectedTimeseriesPoints"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="updateSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
