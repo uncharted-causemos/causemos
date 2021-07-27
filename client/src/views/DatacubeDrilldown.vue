@@ -29,6 +29,7 @@
         :relative-to="relativeTo"
         :breakdown-option="breakdownOption"
         :baseline-metadata="baselineMetadata"
+        :selected-timeseries-points="selectedTimeseriesPoints"
         :selectedBaseLayer="selectedBaseLayer"
         :selectedDataLayer="selectedDataLayer"
         @set-selected-scenario-ids="setSelectedScenarioIds"
