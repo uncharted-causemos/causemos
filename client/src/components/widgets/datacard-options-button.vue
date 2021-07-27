@@ -71,7 +71,6 @@ export default defineComponent({
     width: fit-content;
     border-radius: 0;
     box-shadow: none;
-    // Clip children overflowing the border-radius at the corners
     overflow: hidden;
 
     &.visible {
