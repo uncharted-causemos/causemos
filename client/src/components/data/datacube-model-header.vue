@@ -111,7 +111,6 @@ export default defineComponent({
       console.log(attr.value);
       // TODO: update the local data or the back end to ensure other components are synced up
     },
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync

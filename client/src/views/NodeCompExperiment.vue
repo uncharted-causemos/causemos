@@ -470,8 +470,9 @@ export default defineComponent({
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      this.datacubeCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
-      this.setDatacubeCurrentOutputsMap(this.datacubeCurrentOutputsMap);
+      const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+      updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
+      this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
