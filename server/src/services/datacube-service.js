@@ -36,7 +36,13 @@ const insertDatacube = async(metadata) => {
   // TODO: Fix all this copypasta from maas-service startIndicatorPostProcessing
 
   // Remove some unused Jataware fields
+  metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
+  metadata.stochastic = undefined;
   metadata.attributes = undefined;
+  metadata.image = undefined;
+  if (metadata.geography) {
+    metadata.geography.coordinates = undefined;
+  }
 
   // Apparently ES can't support negative timestamps
   if (metadata.period && metadata.period.gte < 0) {
@@ -48,8 +54,9 @@ const insertDatacube = async(metadata) => {
 
   metadata.data_id = metadata.id;
   metadata.type = metadata.type || 'model'; // Assume these ar all models for now
-  metadata.status = 'PROCESSING';
+  metadata.status = 'REGISTERED';
   metadata.family_name = metadata.family_name || metadata.name;
+  metadata.default_feature = metadata.outputs[0].name;
   metadata.outputs.forEach(output => { output.id = undefined; });
   metadata.parameters.forEach(param => { param.id = undefined; });
 
@@ -59,11 +66,14 @@ const insertDatacube = async(metadata) => {
     fields.push(metadata.qualifier_outputs);
   }
 
-  const ontologyMatches = fields.map(field => field.map(variable => [
-    ...variable.ontologies.concepts,
-    ...variable.ontologies.processes,
-    ...variable.ontologies.properties
-  ])).flat(2);
+  const ontologyMatches = fields.map(field => {
+    return field.filter(variable => variable.ontologies)
+      .map(variable => [
+        ...variable.ontologies.concepts,
+        ...variable.ontologies.processes,
+        ...variable.ontologies.properties
+      ]);
+  }).flat(2);
 
   metadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
 
@@ -72,7 +82,7 @@ const insertDatacube = async(metadata) => {
   await domainProjectService.updateDomainProjects(metadata);
 
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.insert(metadata);
+  return await connection.insert([metadata]);
 };
 
 /**

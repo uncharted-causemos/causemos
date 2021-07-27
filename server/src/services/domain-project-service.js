@@ -112,7 +112,7 @@ const updateDomainProjects = async (metadata) => {
   const existingProjects = await getAllProjects();
   const modelFamilyNames = existingProjects.map(p => p.name);
 
-  const familyName = metadata.family_name || metadata.display_name || metadata.name || uuid();
+  const familyName = metadata.family_name || metadata.name || uuid();
   if (!modelFamilyNames.includes(familyName)) {
     await createProject(
       familyName,
