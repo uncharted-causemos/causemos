@@ -43,11 +43,11 @@ export default defineComponent({
     },
     minValue: {
       type: Number,
-      default: 0
+      required: true
     },
     maxValue: {
       type: Number,
-      default: 1
+      required: true
     }
   },
   setup(props, { emit }) {
