@@ -40,12 +40,24 @@ export default defineComponent({
     projections: {
       type: Array as PropType<ScenarioProjection[]>,
       default: []
+    },
+    minValue: {
+      type: Number,
+      default: 0
+    },
+    maxValue: {
+      type: Number,
+      default: 1
     }
   },
   setup(props, { emit }) {
-    const { historicalTimeseries, projections, selectedScenarioId } = toRefs(
-      props
-    );
+    const {
+      historicalTimeseries,
+      projections,
+      selectedScenarioId,
+      minValue,
+      maxValue
+    } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
       const projectionStartTimestamp =
         projections.value.length === 0
@@ -82,6 +94,8 @@ export default defineComponent({
       const _projections = projections.value;
       const { width, height } = chartSize.value;
       const _constraints = constraints.value;
+      const min = minValue.value;
+      const max = maxValue.value;
       if (
         svg === null ||
         _selectedScenarioId === null ||
@@ -97,7 +111,9 @@ export default defineComponent({
         height === 0 ? parentElement.clientHeight : height,
         _projections,
         _selectedScenarioId,
-        _constraints
+        _constraints,
+        min,
+        max
       );
     });
     onMounted(() => {
@@ -128,7 +144,9 @@ export default defineComponent({
       height: number,
       projections: ScenarioProjection[],
       selectedScenarioId: string,
-      constraints: ProjectionConstraint[]
+      constraints: ProjectionConstraint[],
+      min: number,
+      max: number
     ) => {
       // Set new size
       svg.attr('width', width).attr('height', height);
@@ -142,6 +160,8 @@ export default defineComponent({
         projections,
         selectedScenarioId,
         constraints,
+        min,
+        max,
         setConstraints,
         setHistoricalTimeseries
       );

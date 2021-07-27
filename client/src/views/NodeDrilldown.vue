@@ -51,6 +51,8 @@
               :selected-scenario-id="selectedScenarioId"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
+              :min-value="indicatorMin"
+              :max-value="indicatorMax"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
           </div>
