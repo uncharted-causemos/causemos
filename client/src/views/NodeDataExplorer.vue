@@ -13,11 +13,21 @@
           :filtered-facets="filteredFacets"
         />
       </div>
-      <search class="flex-grow-1 h-100"
-        :facets="facets"
-        :filtered-datacubes="filteredDatacubes"
-        :enableMultipleSelection="false"
-      />
+      <div class="flex-grow-1 h-100">
+        <search
+          class="search"
+          :facets="facets"
+          :filtered-datacubes="filteredDatacubes"
+          :enableMultipleSelection="false"
+        />
+        <simple-pagination
+          :current-page-length="filteredDatacubes.length"
+          :page-count="pageCount"
+          :page-size="pageSize"
+          @next-page="nextPage"
+          @prev-page="prevPage"
+        />
+      </div>
     </div>
   </div>
 </template>
@@ -29,6 +39,8 @@ import { mapActions, mapGetters } from 'vuex';
 import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
 import Search from '../components/data-explorer/search.vue';
+import SimplePagination from '../components/data-explorer/simple-pagination.vue';
+
 
 import { getDatacubes, getDatacubeFacets } from '@/services/new-datacube-service';
 import modelService from '@/services/model-service';
@@ -42,14 +54,17 @@ export default {
   components: {
     Search,
     FacetsPanel,
-    ModalHeader
+    ModalHeader,
+    SimplePagination
   },
   data: () => ({
     facets: null,
     filteredDatacubes: [],
     filteredFacets: null,
     selectLabel: 'Quantify Node',
-    modelComponents: null
+    modelComponents: null,
+    pageCount: 0,
+    pageSize: 100
   }),
   computed: {
     ...mapGetters({
@@ -89,17 +104,42 @@ export default {
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'
     }),
 
-    // retrieves filtered datacube list
-    async fetchAllDatacubeData() {
-      this.enableOverlay();
+    prevPage() {
+      this.pageCount = this.pageCount - 1;
+      this.fetchDatacubeList();
+    },
 
-      // get the filtered data
+    nextPage() {
+      this.pageCount = this.pageCount + 1;
+      this.fetchDatacubeList();
+    },
+
+    getSearchFilters() {
       const searchFilters = _.cloneDeep(this.filters);
       filtersUtil.addSearchTerm(searchFilters, 'type', 'indicator', 'and', false);
-      this.filteredDatacubes = await getDatacubes(searchFilters);
-      this.filteredDatacubes.forEach(item => (item.isAvailable = true));
+      return searchFilters;
+    },
 
+    // retrieves filtered datacube list
+    async fetchDatacubeList () {
+      // get the filtered data
+      this.enableOverlay();
+      const searchFilters = this.getSearchFilters();
+      const options = {
+        from: this.pageCount * this.pageSize,
+        size: this.pageSize
+      };
+      this.filteredDatacubes = await getDatacubes(searchFilters, options);
+      this.filteredDatacubes.forEach(item => (item.isAvailable = true));
+      this.disableOverlay();
+    },
+
+    // fetches all datacube info in list and facet format
+    async fetchAllDatacubeData() {
+      this.fetchDatacubeList();
       // retrieves filtered & unfiltered facet data
+      this.enableOverlay();
+      const searchFilters = this.getSearchFilters();
       const defaultFilters = { clauses: [{ field: 'type', operand: 'and', isNot: false, values: ['indicator'] }] };
       this.facets = await getDatacubeFacets(NODE_FACET_FIELDS, defaultFilters);
       this.filteredFacets = await getDatacubeFacets(NODE_FACET_FIELDS, searchFilters);
@@ -108,6 +148,7 @@ export default {
     },
 
     async refresh() {
+      this.pageCount = 0;
       modelService.getComponents(this.currentCAG).then(_modelComponents => {
         this.modelComponents = _modelComponents;
       });
@@ -150,6 +191,9 @@ export default {
   position: relative;
   box-sizing: border-box;
   overflow: hidden;
+  .search {
+    height: calc(100% - 100px);
+  }
 }
 
 </style>
