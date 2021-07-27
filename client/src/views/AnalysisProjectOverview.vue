@@ -262,6 +262,9 @@ export default {
 
       this.enableOverlay('Loading analyses...');
 
+      // context-id should be an array to fetch insights for each and every datacube/cag in all project analyses
+      const contextIDs = [];
+
       // fetch data space analyses
       const result1 = await getAnalysesByProjectId(this.project);
       this.quantitativeAnalyses = result1.map(toQuantitative);
@@ -282,8 +285,6 @@ export default {
 
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
-      // context-id should be an array to fetch insights for each and every datacube/cag in all project analyses
-      const contextIDs = [];
       this.setContextId(contextIDs);
 
       // Sort by modified_at date with latest on top

@@ -11,7 +11,7 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
   const store = useStore();
   const contextIds = computed(() => store.getters['insightPanel/contextId']);
   const project = computed(() => store.getters['app/project']);
-  const currentView = computed(() => store.getters['app/currentView']);
+  // const currentView = computed(() => store.getters['app/currentView']);
   const projectType = computed(() => store.getters['app/projectType']);
 
   watchEffect(onInvalidate => {
@@ -28,7 +28,8 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
         publicInsightsSearchFields.project_id = project.value;
       }
       const publicFilterArray = [];
-      if (contextIds.value && contextIds.value.length > 0 && currentView.value !== 'domainDatacubeOverview') {
+      const ignoreContextId = false; // currentView.value === 'domainDatacubeOverview' || currentView.value === 'overview';
+      if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
         contextIds.value.forEach((contextId: string) => {
           // context-id must be ignored when fetching insights at the project landing page
           const searchFilter = _.clone(publicInsightsSearchFields);
@@ -44,6 +45,10 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
       // fetch project-specific insights
       //
       const contextInsightsSearchFields: InsightFilterFields = {};
+      if (projectType.value === ProjectType.Analysis) {
+        // when fetching project-specific insights, then project-id is relevant
+        contextInsightsSearchFields.project_id = project.value;
+      }
       contextInsightsSearchFields.visibility = 'private';
       const contextFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0) {
@@ -53,7 +58,7 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
           contextFilterArray.push(searchFilter);
         });
       } else {
-        contextFilterArray.push(publicInsightsSearchFields);
+        contextFilterArray.push(contextInsightsSearchFields);
       }
       const contextInsights = await fetchInsights(contextFilterArray);
 
@@ -63,7 +68,7 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
         //  fetch results to avoid a race condition.
         return;
       }
-      listContextInsights.value = insights;
+      listContextInsights.value = _.uniqBy(insights, 'id');
       store.dispatch('contextInsightPanel/setCountContextInsights', listContextInsights.value.length);
     }
     onInvalidate(() => {
