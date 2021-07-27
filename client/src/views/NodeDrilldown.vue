@@ -51,7 +51,6 @@
               :selected-scenario-id="selectedScenarioId"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
-              :projection-start-timestamp="modelSummary?.parameter?.projection_start"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
           </div>
@@ -258,23 +257,25 @@ export default defineComponent({
         });
       });
 
+      // TODO: remove dummy data
+      // [
+      //   { timestamp: 1483228800000, value: 0.5 },
+      //   { timestamp: 1485907200000, value: 0.5906666666666667 },
+      //   { timestamp: 1488326400000, value: 0.642 },
+      //   { timestamp: 1491004800000, value: 0.6903333333333334 },
+      //   { timestamp: 1493596800000, value: 0.7603333333333333 },
+      //   { timestamp: 1496275200000, value: 0.8 },
+      //   { timestamp: 1498867200000, value: 0.8236666666666668 },
+      //   { timestamp: 1501545600000, value: 0.85 },
+      //   { timestamp: 1504224000000, value: 0.8786666666666667 },
+      //   { timestamp: 1506816000000, value: 0.901 },
+      //   { timestamp: 1509494400000, value: 0.9283333333333335 },
+      //   { timestamp: 1514764800000, value: 0.9476666666666667 }
+      // ]
+
       return {
         indicatorName: selectedNodeScenarioData.indicator_name ?? 'Missing indicator name',
-        historicalTimeseries: [
-          { timestamp: 1483228800000, value: 0.5 },
-          { timestamp: 1485907200000, value: 0.5906666666666667 },
-          { timestamp: 1488326400000, value: 0.642 },
-          { timestamp: 1491004800000, value: 0.6903333333333334 },
-          { timestamp: 1493596800000, value: 0.7603333333333333 },
-          { timestamp: 1496275200000, value: 0.8 },
-          { timestamp: 1498867200000, value: 0.8236666666666668 },
-          { timestamp: 1501545600000, value: 0.85 },
-          { timestamp: 1504224000000, value: 0.8786666666666667 },
-          { timestamp: 1506816000000, value: 0.901 },
-          { timestamp: 1509494400000, value: 0.9283333333333335 },
-          { timestamp: 1514764800000, value: 0.9476666666666667 }
-        ], // TODO: replace dummy data with:
-        // selectedNodeScenarioData.indicator_time_series ?? [],
+        historicalTimeseries: selectedNodeScenarioData.indicator_time_series ?? [],
         historicalConstraints: [],
         projections
       };
