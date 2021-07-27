@@ -98,8 +98,18 @@
             </div>
             <div class=" indicator-control-column seasonality">
               Seasonality
-              <i class="fa fa-fw fa-lg fa-toggle-off"/>
-              <input class="form-control input-sm" type="number"/>
+              <div class="indicator-control-row">
+                <input type="radio" id="seasonality-true" :value="true" v-model="isSeasonalityActive">
+                <label for="seasonality-false">Yes</label>
+                <input class="form-control input-sm" type="number" v-model.number="indicatorPeriod">
+                <select disabled="true">
+                  <option selected :value='temporalResolution' :label="temporalResolution + (indicatorPeriod === 1 ? '' : 's')" />
+                </select>
+              </div>
+              <div class="indicator-control-row">
+                <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
+                <label for="seasonality-false">No</label>
+              </div>
             </div>
           </div>
         </div>
@@ -367,11 +377,23 @@ export default defineComponent({
     });
     const indicatorMin = ref(0);
     const indicatorMax = ref(1);
+    const temporalResolution = ref<string|null>(null);
+    const indicatorPeriod = ref(1);
+    const isSeasonalityActive = ref(false);
+    watchEffect(() => {
+      // if isSeasonalityActive is toggled on, indicatorPeriod should be at least 2,
+      //  since a period of 1 is equivalent to no seasonality
+      if (isSeasonalityActive.value === true && indicatorPeriod.value < 2) {
+        indicatorPeriod.value = 2;
+      }
+    });
     watchEffect(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator !== null && indicator !== undefined) {
         indicatorMin.value = indicator.min;
         indicatorMax.value = indicator.max;
+        temporalResolution.value = indicator.temporal_resolution;
+        indicatorPeriod.value = indicator.period;
       }
     });
 
@@ -392,7 +414,10 @@ export default defineComponent({
       setHistoricalTimeseries,
       indicatorDescription,
       indicatorMin,
-      indicatorMax
+      indicatorMax,
+      isSeasonalityActive,
+      indicatorPeriod,
+      temporalResolution
     };
   },
   methods: {
@@ -488,6 +513,11 @@ h6 {
   margin-left: 10px;
   flex: 1;
   min-width: 0;
+
+  label {
+    font-weight: normal;
+    margin-right: 10px;
+  }
 }
 
 input[type=text] {
@@ -495,8 +525,18 @@ input[type=text] {
   margin: 0px 5px;
 }
 input[type=number] {
-  width: 40px;
+  width: 60px;
   margin: 0px 5px;
+  display: inline-block;
+}
+
+input[type="radio"] {
+  appearance: radio;
+  margin: 0;
+  margin-right: 5px;
+  cursor: pointer;
+  position: relative;
+  bottom: -2px;
 }
 
 .expanded-node {
