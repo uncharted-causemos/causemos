@@ -101,7 +101,12 @@
               <div class="indicator-control-row">
                 <input type="radio" id="seasonality-true" :value="true" v-model="isSeasonalityActive">
                 <label for="seasonality-false">Yes</label>
-                <input class="form-control input-sm" type="number" v-model.number="indicatorPeriod">
+                <input
+                  v-model.number="indicatorPeriod"
+                  :disabled="isSeasonalityActive === false"
+                  class="form-control input-sm"
+                  type="number"
+                >
                 <select disabled="true">
                   <option selected :value='temporalResolution' :label="temporalResolution + (indicatorPeriod === 1 ? '' : 's')" />
                 </select>
