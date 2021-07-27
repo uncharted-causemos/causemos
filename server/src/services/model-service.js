@@ -2,7 +2,6 @@ const _ = require('lodash');
 const moment = require('moment');
 const delphiUtil = require('../util/delphi-util');
 const Logger = rootRequire('/config/logger');
-const uuid = require('uuid');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const modelUtil = rootRequire('/util/model-util');
@@ -425,72 +424,39 @@ const clearNodeParameter = async (modelId, nodeId) => {
   }
 };
 
-
-/**
- * Technically speaking we need to request initial_value from the engines
- *
- * @param {string} modeLId,
- * @param {object} nodeParameter
- * @param {array} nodeParameter.indicator_time_series
- * @param {string} nodeParameter.indicator_name
- * @param {object} nodeParameter.indicator_time_series_parameter
- * @param {float} nodeParameter.initial_value
- */
-// const updateNodeParameter = async(modelId, nodeParameter) => {
-//   const model = await findOne(modelId);
-//   const parameter = model.parameter;
-//   const timeSeriesStart = parameter.indicator_time_series_range.start;
-//   const timeSeriesEnd = parameter.indicator_time_series_range.end;
-//   const engine = parameter.engine;
-//
-//   // Register update with engine and retrieve new value
-//   if (engine === 'dyse') {
-//     dyseS
-//   } else {
-//     throw new Error(`updateNodeParameter not implemented for ${engine}`);
-//   }
-// };
-
-
 /**
  *
  */
 const buildNodeParametersPayload = (nodeParameters) => {
   const r = {};
 
-  const NO_INDICATOR_DEFAULT = () => ({
-    numLevels: NUM_LEVELS,
-    minValue: 0,
-    maxValue: 1,
-    name: 'dummy indicator ' + uuid(),
-    values: []
-  });
-
   nodeParameters.forEach(np => {
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
 
     if (_.isEmpty(np.parameter)) {
-      r[np.concept] = NO_INDICATOR_DEFAULT();
+      throw new Error(`${np.concept} is not parameterized`);
     } else {
-      const indicatorTimeSeries = _.get(np.parameter, 'timeseries', []);
+      let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
 
       if (_.isEmpty(indicatorTimeSeries)) {
-        r[np.concept] = NO_INDICATOR_DEFAULT();
-      } else {
-        const values = indicatorTimeSeries.map(d => d.value);
-        const { max, min } = modelUtil.projectionValueRange(values); // FIXME: need to remove
-
-        r[np.concept] = {
-          name: np.parameter.name,
-          minValue: _.get(np.parameter, 'min', min),
-          maxValue: _.get(np.parameter, 'max', max),
-          func: valueFunc,
-          values: indicatorTimeSeries,
-          numLevels: NUM_LEVELS,
-          resolution: _.get(np.parameter, 'temporal_resolution', 'month'),
-          period: _.get(np.parameter, 'period', 12)
-        };
+        // FIXME: Temporary fallback so engines don't blow up - July 2021
+        indicatorTimeSeries = [
+          { value: 0.0, timestamp: Date.UTC(2017, 1) },
+          { value: 0.0, timestamp: Date.UTC(2017, 2) },
+          { value: 0.0, timestamp: Date.UTC(2017, 3) }
+        ];
       }
+
+      r[np.concept] = {
+        name: np.parameter.name,
+        minValue: _.get(np.parameter, 'min', 0),
+        maxValue: _.get(np.parameter, 'max', 1),
+        func: valueFunc,
+        values: indicatorTimeSeries,
+        numLevels: NUM_LEVELS,
+        resolution: _.get(np.parameter, 'temporal_resolution', 'month'),
+        period: _.get(np.parameter, 'period', 12)
+      };
     }
   });
   return r;
@@ -511,15 +477,6 @@ const buildEdgeParametersPayload = (edgeParameters) => {
   });
   return r;
 };
-
-
-/**
- * TODO: Check if model validation check is required for Delphi or DySE:
- * Previous validation rules for Delphi engine were:
- * 1. check that there are no unknowns
- *
- * September 3rd 2020 Tom Choi
- */
 
 module.exports = {
   find,
