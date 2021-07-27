@@ -29,6 +29,7 @@ const PADDING_RIGHT = 40;
 
 const CONFIDENCE_BAND_OPACITY = 0.2;
 const CONSTRAINT_RADIUS = 4;
+const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
 
 /** How many positions on the Y axis the user's mouse position will
   be snapped to. */
@@ -472,7 +473,7 @@ const generateClickableAreas = (
       .classed('constraint-selector', true)
       .attr('cx', discreteXPosition)
       .attr('cy', discreteYPosition)
-      .attr('r', Math.min(spaceBetweenDiscreteYValues, spaceBetweenSteps))
+      .attr('r', CONSTRAINT_HOVER_RADIUS)
       .style('pointer-events', 'none')
       .style('fill', 'none')
       .style('stroke', SELECTED_COLOR);
