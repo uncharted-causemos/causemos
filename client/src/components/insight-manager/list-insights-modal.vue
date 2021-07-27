@@ -77,7 +77,7 @@
                 :curated="isCuratedInsight(insight.id)"
                 :key="insight.id"
                 :insight="insight"
-                @delete-insight="deleteInsight(insight.id)"
+                @delete-insight="removeInsight(insight.id)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
                 @update-curation="updateCuration(insight.id)"
@@ -113,7 +113,7 @@
                 :insight="insight"
                 :show-description="true"
                 :show-question="false"
-                @delete-insight="deleteInsight(insight.id)"
+                @delete-insight="removeInsight(insight.id)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
               />
@@ -135,7 +135,6 @@ import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
 import { mapGetters, mapActions, useStore } from 'vuex';
-import API from '@/api/api';
 
 import { INSIGHTS } from '@/utils/messages-util';
 
@@ -149,10 +148,11 @@ import InsightControlMenu from '@/components/insight-manager/insight-control-men
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 import router from '@/router';
-import { getAllInsights } from '@/services/insight-service';
+import { deleteInsight, getInsights } from '@/services/insight-service';
 import { ref, watchEffect, computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
+import { ProjectType } from '@/types/Enums';
 
 
 const INSIGHT_TABS = [
@@ -192,6 +192,8 @@ export default {
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
     const project = computed(() => store.getters['app/project']);
+    const currentView = computed(() => store.getters['app/currentView']);
+    const projectType = computed(() => store.getters['app/projectType']);
 
     const questions = computed(() => store.getters['analysisChecklist/questions']);
 
@@ -212,7 +214,34 @@ export default {
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        const insights = await getAllInsights(project.value, contextId.value);
+        //
+        // fetch public insights
+        //
+        const publicInsightsSearchFields = {};
+        publicInsightsSearchFields.visibility = 'public';
+        if (projectType.value !== ProjectType.Analysis) {
+          // when fetching public insights, then project-id is only relevant in domain projects
+          publicInsightsSearchFields.project_id = project.value;
+        }
+        if (contextId.value && contextId.value !== '') {
+          if (currentView.value !== 'domainDatacubeOverview') {
+            // context-id must be ignored when fetching insights at the project landing page
+            publicInsightsSearchFields.context_id = contextId.value;
+          }
+        }
+        const publicInsights = await getInsights(publicInsightsSearchFields);
+
+        //
+        // fetch project-specific insights
+        //
+        const contextInsightsSearchFields = {};
+        contextInsightsSearchFields.visibility = 'private';
+        if (contextId.value && contextId.value !== '') {
+          contextInsightsSearchFields.context_id = contextId.value;
+        }
+        const contextInsights = await getInsights(contextInsightsSearchFields);
+
+        const insights = [...publicInsights, ...contextInsights];
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
@@ -309,8 +338,8 @@ export default {
 
       evt.currentTarget.style.border = 'none';
     },
-    deleteInsight(id) {
-      API.delete(`insights/${id}`).then(result => {
+    removeInsight(id) {
+      deleteInsight(id).then(result => {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
@@ -556,7 +585,11 @@ export default {
       this.exportActive = true;
     },
     async refresh() {
-      const listInsights = await getAllInsights(this.project, this.contextId);
+      const insightSearchFields = {
+        project_id: this.project,
+        context_id: this.contextId
+      };
+      const listInsights = await getInsights(insightSearchFields);
       this.listInsights = listInsights;
       this.setCountInsights(listInsights.length);
     },

@@ -194,7 +194,11 @@ export default {
       this.datacubeInstances = await getDatacubes(newFilters);
 
       // set context id as the current family name
-      this.setContextId('');
+      if (this.datacubeInstances.length > 0) {
+        // FIXME: context-id should be an array to fetch insights for each and every model instance
+        this.setContextId(this.datacubeInstances[0].id);
+      }
+
       // reset to avoid invalid data fetch when a given instance it loaded
       //  while the info of a previous instance is cached in the store
       this.setSelectedScenarioIds([]);

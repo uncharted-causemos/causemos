@@ -86,7 +86,6 @@ import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
 import { mapGetters, mapActions, useStore } from 'vuex';
-import API from '@/api/api';
 import DropdownButton from '@/components/dropdown-button.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -98,8 +97,9 @@ import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 import router from '@/router';
-import { getContextSpecificInsights, getAllInsights } from '@/services/insight-service';
+import { getInsights, deleteInsight } from '@/services/insight-service';
 import { ref, watchEffect, computed } from 'vue';
+import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'ListContextInsightPane',
@@ -126,18 +126,40 @@ export default {
     const contextId = computed(() => store.getters['insightPanel/contextId']);
     const project = computed(() => store.getters['app/project']);
     const currentView = computed(() => store.getters['app/currentView']);
+    const projectType = computed(() => store.getters['app/projectType']);
 
     // FIXME: refactor into a composable
     watchEffect(onInvalidate => {
       let isCancelled = false;
       async function fetchInsights() {
-        let insights;
-        // if contextId.value is '' then contextId must be ignored; fetch project insights rather than context insights
-        if (contextId.value === '') {
-          insights = await getAllInsights(project.value, contextId.value);
-        } else {
-          insights = await getContextSpecificInsights(project.value, contextId.value, currentView.value);
+        //
+        // fetch public insights
+        //
+        const publicInsightsSearchFields = {};
+        publicInsightsSearchFields.visibility = 'public';
+        if (projectType.value !== ProjectType.Analysis) {
+          // when fetching public insights, then project-id is only relevant in domain projects
+          publicInsightsSearchFields.project_id = project.value;
         }
+        if (contextId.value && contextId.value !== '') {
+          if (currentView.value !== 'domainDatacubeOverview') {
+            // context-id must be ignored when fetching insights at the project landing page
+            publicInsightsSearchFields.context_id = contextId.value;
+          }
+        }
+        const publicInsights = await getInsights(publicInsightsSearchFields);
+
+        //
+        // fetch project-specific insights
+        //
+        const contextInsightsSearchFields = {};
+        contextInsightsSearchFields.visibility = 'private';
+        if (contextId.value && contextId.value !== '') {
+          contextInsightsSearchFields.context_id = contextId.value;
+        }
+        const contextInsights = await getInsights(contextInsightsSearchFields);
+
+        const insights = [...publicInsights, ...contextInsights];
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
@@ -178,7 +200,12 @@ export default {
     }),
     stringFormatter,
     async refresh() {
-      const listContextInsights = await getContextSpecificInsights(this.project, this.contextId, this.currentView);
+      const insightSearchFields = {
+        project_id: this.project,
+        context_id: this.contextId,
+        target_view: this.currentView
+      };
+      const listContextInsights = await getInsights(insightSearchFields);
       this.listContextInsights = listContextInsights;
       this.setCountContextInsights(listContextInsights.length);
     },
@@ -225,7 +252,7 @@ export default {
       }).catch(() => {});
     },
     deleteContextInsight(id) {
-      API.delete(`insights/${id}`).then(result => {
+      deleteInsight(id).then(result => {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
