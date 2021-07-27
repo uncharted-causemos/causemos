@@ -61,6 +61,7 @@ export default defineComponent({
   cursor: pointer;
   width: 18px;
   height: 18px;
+  color: #9D9E9E;
 
   .dropdown-container {
     display: none;
