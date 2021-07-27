@@ -158,7 +158,7 @@ import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
+import { getAnalysisState, getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';
@@ -269,6 +269,24 @@ export default {
       const result1 = await getAnalysesByProjectId(this.project);
       this.quantitativeAnalyses = result1.map(toQuantitative);
 
+      if (this.quantitativeAnalyses.length) {
+        // save context-id(s) for all data-analyses
+        const promises = this.quantitativeAnalyses.map(async (analysis) => {
+          return getAnalysisState(analysis.analysisId);
+        });
+        const allRawResponses = await Promise.all(promises);
+        // @REVIEW
+        // the assumption here is that each response in the allRawResponses refers to a specific quantitativeAnalyses
+        // so we could utilize that to update the stats count
+        allRawResponses.forEach((analysesState, indx) => {
+          const analysisContextIDs = analysesState.analysisItems.map(dc => dc.id);
+          contextIDs.push(...analysisContextIDs);
+
+          // save the datacube count
+          this.quantitativeAnalyses[indx].datacubesCount = analysisContextIDs.length;
+        });
+      }
+
       // knowledge and model space analyses
       const result2 = await modelService.getProjectModels(this.project);
       this.qualitativeAnalyses = result2.models.map(toQualitative);
@@ -281,10 +299,17 @@ export default {
           analysis.nodeCount = _.get(stats[analysis.id], 'nodeCount', 0);
           analysis.edgeCount = _.get(stats[analysis.id], 'edgeCount', 0);
         });
+
+        // save context-id(s) for all CAG-analyses
+        this.qualitativeAnalyses.forEach(qualitativeAnalysis => {
+          contextIDs.push(qualitativeAnalysis.id);
+        });
       }
 
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
+      // FIXME: this will fetch insights for all datacubes and CAGs in all project analyses
+      // however, the breakdown of such info is missing, and thus we cannot easily update the number of insights in each analysis
       this.setContextId(contextIDs);
 
       // Sort by modified_at date with latest on top

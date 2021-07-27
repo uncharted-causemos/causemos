@@ -26,7 +26,7 @@
       </div>
       <div class="col-sm-1 instance-header">
         {{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}
-        <div style="color: black">{{analysis.type === 'quantitative' ? '-' : analysis.nodeCount }}</div>
+        <div style="color: black">{{analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}</div>
       </div>
       <div class="col-sm-1 instance-header">
         {{analysis.type === 'quantitative' ? 'Models': 'Relations'}}
