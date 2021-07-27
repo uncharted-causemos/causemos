@@ -2,7 +2,8 @@ import { ProjectType } from '@/types/Enums';
 import { Insight } from '@/types/Insight';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
-import { getInsights, InsightFilterFields } from '../insight-service';
+import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import _ from 'lodash';
 
 export default function useInsightsData(insightsFetchedAt: Ref<number>) {
   const listContextInsights = ref([]) as Ref<Insight[]>;
@@ -16,7 +17,7 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
   watchEffect(onInvalidate => {
     console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
     let isCancelled = false;
-    async function fetchInsights() {
+    async function getInsights() {
       //
       // fetch public insights
       //
@@ -26,25 +27,35 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
         // when fetching public insights, then project-id is only relevant in domain projects
         publicInsightsSearchFields.project_id = project.value;
       }
-      if (contextIds.value && contextIds.value.length > 0) {
-        const contextId = contextIds.value[0]; // FIXME
-        if (currentView.value !== 'domainDatacubeOverview') {
+      const publicFilterArray = [];
+      if (contextIds.value && contextIds.value.length > 0 && currentView.value !== 'domainDatacubeOverview') {
+        contextIds.value.forEach((contextId: string) => {
           // context-id must be ignored when fetching insights at the project landing page
-          publicInsightsSearchFields.context_id = contextId;
-        }
+          const searchFilter = _.clone(publicInsightsSearchFields);
+          searchFilter.context_id = contextId;
+          publicFilterArray.push(searchFilter);
+        });
+      } else {
+        publicFilterArray.push(publicInsightsSearchFields);
       }
-      const publicInsights = await getInsights(publicInsightsSearchFields);
+      const publicInsights = await fetchInsights(publicFilterArray);
 
       //
       // fetch project-specific insights
       //
       const contextInsightsSearchFields: InsightFilterFields = {};
       contextInsightsSearchFields.visibility = 'private';
+      const contextFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0) {
-        const contextId = contextIds.value[0]; // FIXME
-        contextInsightsSearchFields.context_id = contextId;
+        contextIds.value.forEach((contextId: string) => {
+          const searchFilter = _.clone(contextInsightsSearchFields);
+          searchFilter.context_id = contextId;
+          contextFilterArray.push(searchFilter);
+        });
+      } else {
+        contextFilterArray.push(publicInsightsSearchFields);
       }
-      const contextInsights = await getInsights(contextInsightsSearchFields);
+      const contextInsights = await fetchInsights(contextFilterArray);
 
       const insights = [...publicInsights, ...contextInsights];
       if (isCancelled) {
@@ -58,7 +69,7 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
     onInvalidate(() => {
       isCancelled = true;
     });
-    fetchInsights();
+    getInsights();
   });
 
   return listContextInsights;

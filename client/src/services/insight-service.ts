@@ -10,16 +10,6 @@ export interface InsightFilterFields {
   analysis_id?: string;
 }
 
-export const getInsights = async (fetchParams: InsightFilterFields) => {
-  const fetchParamsArray = [fetchParams];
-  return fetchInsights(fetchParamsArray);
-};
-
-export const getInsightsCount = async (fetchParams: InsightFilterFields) => {
-  const fetchParamsArray = [fetchParams];
-  return fetchInsightsCount(fetchParamsArray);
-};
-
 export const getInsightById = async (insight_id: string) => {
   const result = await API.get(`insights/${insight_id}`);
   return result.data;
@@ -53,7 +43,7 @@ export const deleteInsight = async (id: string) => {
  * @param fetchParamsArray an array where each element is a combination of filter fields
  * @returns the result is a unique flat array with a union of all fetch operations
  */
-const fetchInsights = async (fetchParamsArray: InsightFilterFields[]) => {
+export const fetchInsights = async (fetchParamsArray: InsightFilterFields[]) => {
   // this sequential async loop works
   /*
   const allResults: Insight[] = [];
@@ -80,7 +70,7 @@ const fetchInsights = async (fetchParamsArray: InsightFilterFields[]) => {
  * @param fetchParamsArray an array where each element is a combination of filter fields
  * @returns the result is a unique flat array with a union of all fetch operations
  */
-const fetchInsightsCount = async (fetchParamsArray: any[]) => {
+export const fetchInsightsCount = async (fetchParamsArray: any[]) => {
   // but we may also run the loop in parallel; map the array to promises
   const promises = fetchParamsArray.map(async (fetchParams) => {
     return API.get('insights/counts', { params: fetchParams });

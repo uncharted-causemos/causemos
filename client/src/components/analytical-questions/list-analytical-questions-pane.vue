@@ -141,7 +141,7 @@
 <script lang="ts">
 import { mapActions, mapGetters, useStore } from 'vuex';
 
-import { getInsightById, updateInsight, getInsights, InsightFilterFields } from '@/services/insight-service';
+import { getInsightById, updateInsight, InsightFilterFields, fetchInsights } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight } from '@/types/Insight';
 import { computed, defineComponent, ref, watchEffect } from 'vue';
 import _ from 'lodash';
@@ -204,7 +204,7 @@ export default defineComponent({
           project_id: project.value,
           context_id: contextId.value
         };
-        allInsights.value = await getInsights(insightSearchFields);
+        allInsights.value = await fetchInsights([insightSearchFields]);
 
         // update the store to facilitate questions consumption in other UI places
         store.dispatch('analysisChecklist/setQuestions', allQuestions);

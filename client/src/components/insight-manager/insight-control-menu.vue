@@ -42,7 +42,7 @@
 
 <script>
 import { mapActions, mapGetters, useStore } from 'vuex';
-import { getInsightsCount } from '@/services/insight-service';
+import { fetchInsightsCount } from '@/services/insight-service';
 import { watchEffect, computed } from 'vue';
 
 export default {
@@ -70,7 +70,7 @@ export default {
           project_id: project.value,
           context_id: contextId
         };
-        const allInsightsCount = await getInsightsCount(insightSearchFields);
+        const allInsightsCount = await fetchInsightsCount([insightSearchFields]);
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.
