@@ -51,7 +51,7 @@ export default defineComponent({
 
 <style lang="scss">
 .datacard-options-button-container .dropdown-container .dropdown-option {
-  border: 1px solid darkgray;
+  border: 1px solid #9D9E9E;
 }
 </style>
 
