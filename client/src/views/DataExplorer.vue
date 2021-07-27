@@ -67,7 +67,12 @@ export default {
       return 'Back to ' + (this.analysis ? this.analysis.title : 'analysis');
     },
     initialDatacubeSelection() {
-      return this.analysisItems.map(item => item.id);
+      return this.analysisItems.map(item => {
+        return {
+          id: item.id,
+          datacubeId: item.data_id
+        };
+      });
     }
   },
   watch: {
@@ -111,7 +116,7 @@ export default {
     async addToAnalysis() {
       try {
         // save the selected datacubes in the analysis object in the store/server
-        await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
+        await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, analysisItems: this.selectedDatacubes });
 
         if (this.enableMultipleSelection) {
           this.$router.push({
