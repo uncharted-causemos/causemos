@@ -16,7 +16,8 @@ export default function useParallelCoordinatesData(
   allModelRunData: Ref<ModelRun[]>
 ) {
   const store = useStore();
-  const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+  const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
   const runParameterValues = computed(() => {
     if (allModelRunData.value.length === 0 || metadata.value === null || currentOutputIndex.value === undefined) {

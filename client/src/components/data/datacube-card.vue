@@ -333,7 +333,8 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const store = useStore();
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const {
       selectedScenarioIds,
