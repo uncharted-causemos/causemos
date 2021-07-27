@@ -5,7 +5,7 @@ import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
 import { renderAxes, renderLine } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
-import svgUtil, {
+import {
   confidenceArea,
   hideSvgTooltip,
   showSvgTooltip,
@@ -19,6 +19,7 @@ const HISTORICAL_RANGE_OPACITY = 0.025;
 const CONTEXT_RANGE_FILL = SELECTED_COLOR;
 const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
 const CONTEXT_RANGE_OPACITY = 0.4;
+const CONTEXT_TIMESERIES_OPACITY = 0.2;
 const GRIDLINE_COLOR = '#eee';
 
 const X_AXIS_HEIGHT = 20;
@@ -55,8 +56,9 @@ export default function(
     console.error('TD Node Renderer: unable to derive extent from data');
     return;
   }
+  const valueFormatter = chartValueFormatter(...yExtent);
 
-  // build axis for main graph (Focus)
+  // Build main "focus" chart scales and group element
   const focusHeight = totalHeight * 0.75;
   const [xScaleFocus, yScaleFocus] = calculateScales(
     totalWidth - PADDING_RIGHT,
@@ -66,17 +68,16 @@ export default function(
     xExtent,
     yExtent
   );
-  const valueFormatter = chartValueFormatter(...yExtent);
   const focusGroupElement = selection
     .append('g')
     .classed('focusGroupElement', true);
 
-  // build axis for summary graph for brushing (Context)
+  // Build "context" chart for zooming and panning
   const contextHeight = totalHeight - focusHeight;
   const [xScaleContext, yScaleContext] = calculateScales(
     totalWidth - PADDING_RIGHT,
     contextHeight,
-    focusHeight,
+    0,
     Y_AXIS_WIDTH,
     xExtent,
     yExtent
@@ -97,7 +98,7 @@ export default function(
     X_AXIS_HEIGHT
   );
   contextGroupElement.selectAll('.yAxis').remove();
-  contextGroupElement.attr('transform', svgUtil.translate(0, focusHeight)); // move context to bottom
+  contextGroupElement.attr('transform', translate(0, focusHeight)); // move context to bottom
   renderStaticElements(
     contextGroupElement,
     xScaleContext,
@@ -107,8 +108,27 @@ export default function(
     historicalTimeseries
   );
 
+  // Render timeseries in the context chart, then fade them out
+  renderHistoricalTimeseries(
+    historicalTimeseries,
+    contextGroupElement,
+    xScaleContext,
+    yScaleContext
+  );
+  renderProjections(
+    projections,
+    contextGroupElement,
+    xScaleContext,
+    yScaleContext,
+    selectedScenarioId
+  );
+  contextGroupElement
+    .selectAll('.segment-line')
+    .attr('opacity', CONTEXT_TIMESERIES_OPACITY);
+
+  // Create brush object and position over context axis
   const brush = d3
-    .brushX() // create brush object and position over context axis
+    .brushX()
     .extent([
       [xScaleContext.range()[0], yScaleContext.range()[1]],
       [
@@ -119,23 +139,22 @@ export default function(
       ]
     ])
     .on('brush', brushed);
-
-  selection
+  contextGroupElement
     .append('g') // create brush element and move to default
     .classed('brush', true)
     .call(brush)
     // set initial brush selection to entire context
     .call(brush.move, xScaleFocus.range());
-
   selection
     .selectAll('.brush > .selection')
     .attr('fill', CONTEXT_RANGE_FILL)
     .attr('stroke', CONTEXT_RANGE_STROKE)
     .attr('opacity', CONTEXT_RANGE_OPACITY);
 
+  // Add clipping mask to hide elements that are outside the focus chart area when zoomed in
   selection
     .append('defs')
-    .append('clipPath') // build def for clipping mask
+    .append('clipPath')
     .attr('id', 'clipping-mask')
     .append('rect')
     .attr('width', xScaleFocus.range()[1] - xScaleFocus.range()[0])
