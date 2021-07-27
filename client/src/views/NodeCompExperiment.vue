@@ -34,6 +34,7 @@
         :relative-to="relativeTo"
         :breakdown-option="breakdownOption"
         :baseline-metadata="baselineMetadata"
+        :selected-timeseries-points="selectedTimeseriesPoints"
         @set-selected-scenario-ids="setSelectedScenarioIds"
         @select-timestamp="setSelectedTimestamp"
         @set-drilldown-data="setDrilldownData"
@@ -205,7 +206,9 @@ export default defineComponent({
     // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
     const indicatorId = computed(() => store.getters['app/indicatorId']);
 
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const metadata = useModelMetadata(indicatorId);
 
@@ -349,6 +352,7 @@ export default defineComponent({
       setAllRegionsSelected,
       outputs,
       currentOutputIndex,
+      datacubeCurrentOutputsMap,
       setSelectedTimestamp,
       visibleTimeseriesData,
       baselineMetadata,
@@ -368,12 +372,6 @@ export default defineComponent({
     clearInterval(this.timerHandler);
   },
   mounted() {
-    // reset to 0 when any analysis loads
-    //  to avoid the shared store state from conflicting when a different datacube/analysis is loaded
-    // FIXME: actually read the value of the default output variable from the metadata
-    // later, this value will be persisted per analysis
-    this.setCurrentOutputIndex(0);
-
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
@@ -391,7 +389,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
     }),
 
     onBack() {
@@ -469,10 +467,13 @@ export default defineComponent({
       });
     },
 
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      this.setCurrentOutputIndex(selectedOutputIndex);
+      const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+      updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
+      this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
