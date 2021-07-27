@@ -259,7 +259,7 @@ export default defineComponent({
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
         if (currentOutputEntry !== undefined) {
-          // we have a store entry for the default output of the current model
+          // we have a store entry for the selected output of the current model
           initialOutputIndex = currentOutputEntry;
         } else {
           initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
