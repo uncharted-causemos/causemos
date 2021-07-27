@@ -152,9 +152,6 @@ export default {
   mounted() {
     this.refresh();
   },
-  beforeUnmount() {
-    this.setSelectedScenarioId(null);
-  },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',

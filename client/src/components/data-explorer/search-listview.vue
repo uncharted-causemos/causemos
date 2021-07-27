@@ -5,55 +5,69 @@
       <table>
         <thead>
           <tr>
-            <th> <span class="left-cover" /> OUTPUT VARIABLE</th>
-            <th>INPUT KNOBS</th>
-            <th>REGION</th>
+            <th><span class="left-cover" />VARIABLE and SOURCE</th>
+            <th>DESCRIPTION</th>
             <th>PERIOD</th>
+            <th>REGION</th>
             <th><!-- Timeseries chart--> <span class="right-cover" /></th>
           </tr>
         </thead>
         <tbody>
-          <tr
-            v-for="d in datacubes"
-            :key="d.id"
-            class="tr-item"
-            :class="{ selected: isSelected(d), deactive: !d.isAvailable }"
-            @click="updateSelection(d)">
-            <td class="output-col">
-              <!-- in case of requesting multiple selection -->
-              <template v-if="enableMultipleSelection">
-                <i
-                  class="fa fa-lg fa-fw radio"
-                  :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d) }"
-                />
-                <div class="text-bold">{{ formatOutputVariables(d) }}</div>
-              </template>
-              <template v-else>
-                <i
-                  class="fa fa-lg fa-fw radio"
-                  :class="{ 'fa-circle': isSelected(d), 'fa-circle-o': !isSelected(d) }"
-                />
-                <div class="text-bold">{{ formatOutputVariables(d) }}</div>
-              </template>
-              <div>{{ d.source }}</div>
-            </td>
-            <td class="param-col">
-              <div> {{ formatParameters(d) }} </div>
-            </td>
-            <td class="region-col">
-              <div class="text-bold">{{ formatRegion(d) }}</div>
-              <div> {{ formatAdminLevels(d) }} </div>
-            </td>
-            <td class="period-col">
-              <div class="text-bold">{{ formatPeriod(d) }}</div>
-              <div> {{ formatTimeStep(d) }} </div>
-            </td>
-            <td class="timeseries-col">
-              <div class="timeseries-container">
-                <sparkline :data="formatTimeSeries(d)" />
-              </div>
-            </td>
-          </tr>
+            <tr
+              class="tr-item"
+              v-for="d in datacubes"
+              :key="d.id"
+              :class="{ selected: isSelected(d), deactive: !d.isAvailable }"
+              @click="updateExpandedRow(d)"
+            >
+              <td class="output-col">
+                <div class="output-layout">
+                  <!-- in case of requesting multiple selection -->
+                  <div @click.stop="updateSelection(d)" class="radio">
+                    <template v-if="enableMultipleSelection">
+                      <i
+                        class="fa fa-lg fa-fw"
+                        :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d) }"
+                      />
+                    </template>
+                    <template v-else>
+                      <i
+                        class="fa fa-lg fa-fw"
+                        :class="{ 'fa-circle': isSelected(d), 'fa-circle-o': !isSelected(d) }"
+                      />
+                    </template>
+                    <i
+                      class="fa fa-lg fa-fw"
+                      :class="getTypeIcon(d)"
+                    />
+                  </div>
+                  <div class="content">
+                      <div class="text-bold">{{ d.outputs[0].display_name }}</div>
+                      <div>{{ d.name }}</div>
+                      <div>{{ d.source }}</div>
+                      <div v-if="isExpanded(d) && d.parameters?.length > 0" class="knobs">
+                        Input Knobs:<br/>
+                        {{ formatParameters(d) }}
+                      </div>
+                  </div>
+                </div>
+              </td>
+              <td class="desc-col">
+                <div>{{ formatDescription(d) }}</div>
+              </td>
+              <td class="period-col">
+                <div class="text-bold">{{ formatPeriod(d) }}</div>
+                <div> {{ formatTimeStep(d) }} </div>
+              </td>
+              <td class="region-col">
+                <div> {{ formatCountry(d) }} </div>
+              </td>
+              <td class="timeseries-col">
+                <div class="timeseries-container">
+                  <sparkline :data="formatTimeSeries(d)" />
+                </div>
+              </td>
+            </tr>
         </tbody>
       </table>
     </div>
@@ -81,6 +95,11 @@ export default {
       default: false
     }
   },
+  data() {
+    return {
+      expandedRowId: ''
+    };
+  },
   computed: {
     ...mapGetters({
       selectedDatacubes: 'dataSearch/selectedDatacubes',
@@ -91,34 +110,37 @@ export default {
     ...mapActions({
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
+    isExpanded(datacube) {
+      return this.expandedRowId === datacube.id;
+    },
+    updateExpandedRow(datacube) {
+      this.expandedRowId === datacube.id ? this.expandedRowId = '' : this.expandedRowId = datacube.id;
+    },
     isSelected(datacube) {
-      return this.selectedDatacubes.find(dId => dId === datacube.data_id) !== undefined;
+      return this.selectedDatacubes.find(sd => sd.id === datacube.id) !== undefined;
     },
     updateSelection(datacube) {
+      const item = {
+        datacubeId: datacube.data_id,
+        feature: datacube.default_feature,
+        id: datacube.id
+      };
       if (this.enableMultipleSelection) {
         // if the datacube is not in the list add it, otherwise remove it
         if (this.isSelected(datacube)) {
-          const newSelectedDatacubes = this.selectedDatacubes.filter(dId => dId !== datacube.data_id);
+          const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
           this.setSelectedDatacubes(newSelectedDatacubes);
         } else {
-          this.setSelectedDatacubes([...this.selectedDatacubes, datacube.data_id]);
+          this.setSelectedDatacubes([...this.selectedDatacubes, item]);
         }
       } else {
-        // only one selection is alloed, so replace the selected datacubes array
-        this.setSelectedDatacubes([datacube.data_id]);
+        // only one selection is allowed, so replace the selected datacubes array
+        this.setSelectedDatacubes([item]);
       }
-    },
-    formatOutputVariables(datacube) {
-      const modelName = datacube.name;
-      const outputName = datacube.outputs[0].name;
-      return `${modelName}/${outputName}`;
     },
     formatParameters({ parameters }) {
       const params = parameters || [];
       return params.map(p => p.name).join(', ');
-    },
-    formatRegion({ country = [] }) {
-      return (country && country.length) ? country[0] : '';
     },
     formatAdminLevels() {
       return 'Admin L1 - L2';
@@ -136,14 +158,28 @@ export default {
       }
       return sparklineData;
     },
-    formatPeriod({ period = [] }) {
-      if (!period) {
+    formatPeriod(d) {
+      if (!d.period) {
         return '';
       }
-      const min = Number(period.gte);
-      const max = Number(period.lte);
+      const min = Number(d.period.gte);
+      const max = Number(d.period.lte);
       const years = [min, max].map(t => moment(t).format('YYYY'));
-      return period.length ? `${years[0]} - ${years[1]}` : '';
+      return `${years[0]} - ${years[1]}`;
+    },
+    formatCountry(d) {
+      const country = d.geography.country;
+      return this.isExpanded(d) || country.length < 4
+        ? country.join(', ')
+        : `${country.slice(0, 3).join(', ')} and ${country.length - 4} more.`;
+    },
+    formatDescription(d) {
+      return this.isExpanded(d) || d.description.length < 140
+        ? d.description
+        : `${d.description.substring(0, 140)}...`;
+    },
+    getTypeIcon(d) {
+      return 'fa ' + (d.type === 'model' ? 'fa-connectdevelop' : 'fa-table');
     }
   }
 };
@@ -156,9 +192,11 @@ $selected-background: #EBF1FC;
 .search-listview-container {
   background: $background-light-2;
   padding: 0 10px;
+  width: 100%;
   table  {
     border-collapse: collapse;
     width: 100%;
+    vertical-align: top;
   }
   th, td {
     padding: 8px 16px;
@@ -178,6 +216,7 @@ $selected-background: #EBF1FC;
   }
   td {
     background: $background-light-1;
+    vertical-align: top;
   }
   tr th {
     font-size: $font-size-small;
@@ -187,6 +226,7 @@ $selected-background: #EBF1FC;
     overflow-y: auto;
     overflow-x: hidden;
     height: 100%;
+    width: 100%;
   }
   .table-fixed-head thead th {
     position: sticky;
@@ -208,7 +248,7 @@ $selected-background: #EBF1FC;
   }
 
   .tr-item {
-    height: 74px;
+    height: 50px;
   }
   .tr-item.selected {
     border: 2px double $selected-border;
@@ -229,25 +269,41 @@ $selected-background: #EBF1FC;
     margin-bottom: 5px;
   }
   .output-col {
-    padding-left: 50px;
     width: 33%;
-    .radio {
-      margin: 0;
-      top: 19px;
-      left: -35px;
+    .output-layout {
+      display: flex;
+      align-content: stretch;
+      align-items: stretch;
+      .radio {
+        flex: 0 0 auto;
+        align-self: flex-start;
+        margin: 15px 10px 0 0;
+      }
+      .content {
+        flex: 1 1 auto;
+        .knobs {
+          margin-top: 10px;
+        }
+      }
     }
   }
   .region-col {
+    width: 200px;
+  }
+  .period-col {
     width: 120px;
   }
+  // time series hidden until actually put into use
   .timeseries-col {
     padding-left: 5px;
     padding-right: 10px;
+    display: none;
   }
   .timeseries-container {
     background-color: #f1f1f1;
     width: 110px;
     height: 50px;
+    display: none;
   }
 }
 </style>

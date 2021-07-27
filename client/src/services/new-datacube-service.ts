@@ -35,7 +35,7 @@ export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
  */
 export const getDatacubeById = async (datacubeId: string) => {
   const filters = fu.newFilters();
-  fu.setClause(filters, 'dataId', [datacubeId], 'or', false);
+  fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
   return cubes && cubes[0];
 };

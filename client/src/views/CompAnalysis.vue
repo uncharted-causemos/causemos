@@ -1,20 +1,24 @@
 <template>
   <div class="comp-analysis-container">
     <action-bar />
+    <main>
+    <analytical-questions-and-insights-panel />
     <div class="flex-row column">
       <div v-if="analysisItems.length">
         <datacube-comparative-card
-          v-for="datacubeId in allDatacubeIDs"
-          :key="datacubeId"
+          v-for="item in analysisItems"
+          :key="item.id"
           class="datacube-comparative-card"
-          :class="{ 'selected': selectedDatacubeId === datacubeId }"
-          :datacubeId="datacubeId"
-          :isSelected="selectedDatacubeId === datacubeId"
-          @click="selectedDatacubeId = datacubeId"
+          :class="{ 'selected': selectedDatacubeId === item.id }"
+          :datacubeId="item.datacubeId"
+          :id="item.id"
+          :isSelected="selectedDatacubeId === item.datacubeId"
+          @click="selectedDatacubeId = item.datacubeId"
         />
       </div>
       <empty-state-instructions v-else />
     </div>
+    </main>
   </div>
 </template>
 
@@ -24,29 +28,27 @@ import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 export default defineComponent({
   name: 'CompAnalysis',
   components: {
     DatacubeComparativeCard,
     ActionBar,
-    EmptyStateInstructions
+    EmptyStateInstructions,
+    AnalyticalQuestionsAndInsightsPanel
   },
   setup() {
     const store = useStore();
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
 
-    const allDatacubeIDs = ref([]);
-
     const selectedDatacubeId = ref('');
 
     if (analysisItems.value && analysisItems.value.length > 0) {
-      allDatacubeIDs.value = analysisItems.value.map((analysisItem: any) => analysisItem.id);
-      selectedDatacubeId.value = allDatacubeIDs.value[0]; // @FIXME: select first one by default
+      selectedDatacubeId.value = analysisItems.value[0].id; // @FIXME: select first one by default
     }
 
     return {
-      allDatacubeIDs,
       selectedDatacubeId,
       analysisItems
     };
@@ -83,6 +85,12 @@ export default defineComponent({
 .flex-row {
   display: flex;
   flex: 1;
+  min-height: 0;
+}
+
+main {
+  flex: 1;
+  display: flex;
   min-height: 0;
 }
 

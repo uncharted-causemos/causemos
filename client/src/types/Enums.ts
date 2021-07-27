@@ -37,7 +37,11 @@ export enum DatacubeAttributeVariableType {
   Boolean = 'boolean',
   Datetime = 'datetime',
   Latitude = 'lat',
-  Longitude = 'lng'
+  Longitude = 'lng',
+  Country = 'country',
+  Admin1 = 'admin1',
+  Admin2 = 'admin2',
+  Admin3 = 'admin3'
 }
 
 export enum ModelParameterDataType {
