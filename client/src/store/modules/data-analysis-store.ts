@@ -195,11 +195,11 @@ const actions: ActionTree<AnalysisState, any> = {
     commit('setAnalysisItemsNew', updatedAnalysisItems);
   },
   async updateAnalysisItemsNewPreview({ commit }, { datacubeIDs }: { datacubeIDs: string[]}) {
-    const datacubeInfo: AnalysisItemNew = {
-      id: datacubeIDs[0],
-      datacubeId: datacubeIDs[0]
-    };
-    commit('setAnalysisItemsNewPreview', [datacubeInfo]);
+    const updatedAnalysisItems = [{
+      id: datacubeIDs[0]
+    }];
+    // only one datacube is being previewed here, so store its 'id' as the analysisItem detail
+    commit('setAnalysisItemsNewPreview', updatedAnalysisItems);
   },
   setMapBounds({ commit }, bounds: [[number, number], [number, number]]) {
     commit('setMapBounds', bounds);
