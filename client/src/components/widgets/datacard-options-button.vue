@@ -49,6 +49,12 @@ export default defineComponent({
 });
 </script>
 
+<style lang="scss">
+.datacard-options-button-container .dropdown-container .dropdown-option {
+  border: 1px solid darkgray;
+}
+</style>
+
 <style lang="scss" scoped>
 .datacard-options-button-container {
   border-radius: 50%;
@@ -59,15 +65,13 @@ export default defineComponent({
   .dropdown-container {
     display: none;
     position: relative;
-    right: 50px;
+    right: 60px;
     padding: 0;
     width: fit-content;
+    border-radius: 0;
+    box-shadow: none;
     // Clip children overflowing the border-radius at the corners
     overflow: hidden;
-
-    &.below {
-      top: 5px;
-    }
 
     &.visible {
       display: block;

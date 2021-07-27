@@ -328,13 +328,12 @@ export default defineComponent({
 .datacube-header {
   flex: 1;
   margin-left: 20px;
-  margin-right: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 
   .drilldown-btn {
     padding: 5px;
+    margin-left:auto;
   }
 }
 
