@@ -11,13 +11,23 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
   const store = useStore();
   const contextIds = computed(() => store.getters['insightPanel/contextId']);
   const project = computed(() => store.getters['app/project']);
-  // const currentView = computed(() => store.getters['app/currentView']);
   const projectType = computed(() => store.getters['app/projectType']);
+
+  const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
 
   watchEffect(onInvalidate => {
     console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function getInsights() {
+      // @HACK: ignore context-id(s) when the insight explorer is open
+      //  (i.e., when clicking 'Review All Insights')
+      // NOTE: this only makes sense for analysis projects
+      //
+      // a more proper solution would be to store all context-id(s) for an analysis project,
+      // and set those everytime prior to opening the insight explorer,
+      // and finally restore that specific context-id once the insight explorer is closed!
+      const ignoreContextId = isPanelOpen.value && projectType.value === ProjectType.Analysis;
+
       //
       // fetch public insights
       //
@@ -28,7 +38,6 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
         publicInsightsSearchFields.project_id = project.value;
       }
       const publicFilterArray = [];
-      const ignoreContextId = false; // currentView.value === 'domainDatacubeOverview' || currentView.value === 'overview';
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
         contextIds.value.forEach((contextId: string) => {
           // context-id must be ignored when fetching insights at the project landing page
@@ -51,7 +60,7 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
       }
       contextInsightsSearchFields.visibility = 'private';
       const contextFilterArray = [];
-      if (contextIds.value && contextIds.value.length > 0) {
+      if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
         contextIds.value.forEach((contextId: string) => {
           const searchFilter = _.clone(contextInsightsSearchFields);
           searchFilter.context_id = contextId;
