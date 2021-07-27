@@ -9,7 +9,7 @@ interface AppState {
   ontologySet: Set<string>;
   projectMetadata: any; // FIXME
   conceptDefinitions: { [key: string]: string };
-  datacubeCurrentOutputsMap: {}; // map for datacubes' default features; each key is the datacube-id and the value is the current/default output index
+  datacubeCurrentOutputsMap: {}; // map for datacubes' currently selected features; each key is the datacube-id and the value is the selected output's index
 }
 
 const state: AppState = {
