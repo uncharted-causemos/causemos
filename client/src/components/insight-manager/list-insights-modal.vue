@@ -5,9 +5,6 @@
       nav-back-label="Exit Saved Insights"
       @close="closeInsightPanel"
     >
-      <template #trailing>
-        <insight-control-menu />
-      </template>
     </full-screen-modal-header>
 
     <div class="tab-controls">
@@ -67,7 +64,7 @@
           </div>
           <div class="pane-wrapper">
             <div
-              v-if="countInsights > 0"
+              v-if="searchedInsights.length > 0"
               class="pane-content"
             >
               <insight-card
@@ -143,7 +140,6 @@ import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
 import TabBar from '@/components/widgets/tab-bar';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
-import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
@@ -171,7 +167,6 @@ export default {
     DropdownControl,
     FullScreenModalHeader,
     InsightCard,
-    InsightControlMenu,
     MessageDisplay,
     TabBar,
     AnalyticalQuestionsPanel
