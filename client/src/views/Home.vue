@@ -167,6 +167,7 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { defineComponent } from 'vue';
 import { mapActions } from 'vuex';
 import projectService from '@/services/project-service';
@@ -213,7 +214,7 @@ export default defineComponent({
     },
     filteredDomainProjects(): DomainProject[] {
       return this.projectsListDomainDatacubes.filter(project => {
-        const filteredProject = project.name.toLowerCase().includes(this.searchDomainDatacubes.toLowerCase());
+        const filteredProject = _.get(project, 'name', '').toLowerCase().includes(this.searchDomainDatacubes.toLowerCase());
 
         if (project.type === DatacubeType.Indicator) {
           return filteredProject && this.addDomainIndicators;
