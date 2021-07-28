@@ -128,7 +128,7 @@ const updateDomainProjects = async (metadata) => {
     // update the count of draft_instances
     //  (since another instance of the same family is being registered)
     //
-    const matchingExistingProject = existingProjects.find(p => p.name === metadata.family_name);
+    const matchingExistingProject = existingProjects.find(p => p.name === familyName);
     if (matchingExistingProject) {
       if (metadata.status === 'REGISTERED' && !matchingExistingProject.draft_instances.includes(instanceName)) {
         // this is a new model instance datacube, so we need to increase the registered instances of this project
