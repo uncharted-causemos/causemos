@@ -433,11 +433,16 @@ export default {
       if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
         this.previousScenarioId = this.selectedScenarioId;
       }
-      this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
+      await this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
 
 
       // 2. Update
       await this.updateDrafScenariotConstraints({ concept, values });
+
+      // Cycle the scenarios to force reactive to trigger
+      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
+      temp.push(this.draftScenario);
+      this.scenarios = temp;
     },
     async runDraftScenario() {
       if (_.isEmpty(this.draftScenario)) return;
