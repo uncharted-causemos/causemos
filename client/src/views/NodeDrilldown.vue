@@ -59,10 +59,10 @@
             values by clicking on the chart. To remove a point, click on it
             again.
           </p>
-          <hr>
-          <div>
-            Variable type
-          </div>
+
+          <h5 class="indicator-section-header">
+            Parameterization for <span class="node-name">{{ nodeConceptName }}</span>
+          </h5>
           <div>
             <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
             &nbsp;
@@ -585,4 +585,13 @@ h5 {
   margin: 0;
   @include header-secondary;
 }
+
+.indicator-section-header {
+  margin: 20px 0 10px;
+
+  .node-name {
+    color: $text-color-dark;
+  }
+}
+
 </style>
