@@ -49,18 +49,17 @@ const mutations: MutationTree<ModelState> = {
       state.draftScenarioDirty = false;
     }
   },
-  updateDrafScenariotConstraints(state, c: ConceptProjectionConstraints) {
+  updateDrafScenariotConstraints(state, newCPC: ConceptProjectionConstraints) {
     if (state.draftScenario && state.draftScenario.parameter) {
       const constraints = state.draftScenario.parameter?.constraints;
       if (!constraints || constraints.length === 0) {
-        state.draftScenario.parameter.constraints = [c];
+        state.draftScenario.parameter.constraints = [newCPC];
       } else {
-        for (let i = 0; i < constraints.length; i++) {
-          const cpc: ConceptProjectionConstraints = constraints[i];
-          if (cpc.concept === c.concept) {
-            cpc.values = c.values;
-            state.draftScenarioDirty = true;
-          }
+        const cpc = constraints.find(c => c.concept === newCPC.concept);
+        if (!cpc) {
+          constraints.push(newCPC);
+        } else {
+          cpc.values = newCPC.values;
         }
       }
     }

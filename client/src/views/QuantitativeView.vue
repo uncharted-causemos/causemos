@@ -1,7 +1,11 @@
 <template>
   <div class="quantitative-view-container">
-    <button @click="testDraft()">!</button>
     <analytical-questions-and-insights-panel />
+    <div>
+      <button @click="testDraft1()">1</button>
+      <button @click="testDraft2()">2</button>
+      <button @click="testDraft3()">3</button>
+    </div>
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -494,7 +498,7 @@ export default {
     setSensitivityAnalysisType(newValue) {
       this.sensitivityAnalysisType = newValue;
     },
-    async testDraft() {
+    async testDraft1() {
       await this.saveDraft({
         concept: 'wm/process/conflict/attack',
         values: [
@@ -504,7 +508,24 @@ export default {
           { step: 10, value: -240 }
         ]
       });
-      // await this.runDraftScenario();
+    },
+    async testDraft3() {
+      await this.saveDraft({
+        concept: 'wm/process/conflict/attack',
+        values: [
+          { step: 0, value: 50 },
+          { step: 4, value: 900 }
+        ]
+      });
+    },
+    async testDraft2() {
+      await this.saveDraft({
+        concept: 'wm/concept/crisis_or_disaster/environmental/flood',
+        values: [
+          { step: 0, value: 50 },
+          { step: 5, value: 20 }
+        ]
+      });
     }
   }
 };
