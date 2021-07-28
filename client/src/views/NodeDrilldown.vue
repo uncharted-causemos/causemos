@@ -107,9 +107,7 @@
                   class="form-control input-sm"
                   type="number"
                 >
-                <select disabled="true">
-                  <option selected :value='temporalResolution' :label="temporalResolution + (indicatorPeriod === 1 ? '' : 's')" />
-                </select>
+                <span>{{ temporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
               </div>
               <div class="indicator-control-row">
                 <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
