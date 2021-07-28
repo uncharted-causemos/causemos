@@ -51,8 +51,8 @@
     </div>
     <hr />
     <div class="col-md-12">
-      <div class="col-md-3" style="backgroundColor: white; height: 75vh">
-        <list-context-insight-pane />
+      <div class="col-md-3 max-content-height" style="backgroundColor: white; padding-top: 1rem">
+        <list-context-insight-pane :allow-new-insights="false" />
       </div>
       <div class="col-md-9">
         <div class="row">
@@ -93,7 +93,7 @@
           </div>
         </div>
         <div class="row projects-list">
-          <div class="instances-list-elements">
+          <div class="instances-list-elements max-content-height">
             <div
               v-for="instance in filteredDatacubeInstances"
               :key="instance.id">
@@ -194,7 +194,7 @@ export default {
       this.datacubeInstances = await getDatacubes(newFilters);
 
       // set context id as the current family name
-      this.setContextId(this.projectMetadata.name);
+      this.setContextId('');
       // reset to avoid invalid data fetch when a given instance it loaded
       //  while the info of a previous instance is cached in the store
       this.setSelectedScenarioIds([]);
@@ -280,8 +280,11 @@ $padding-size: 3vh;
   font-size: x-large;
 }
 
+.max-content-height {
+  height: 60vh;
+}
+
 .instances-list-elements {
-  height: 75vh;
   overflow-y: auto;
 }
 

@@ -74,9 +74,8 @@ const updateProject = async(projectName, projectFields) => {
 /**
  * Returns a list of all projects
  */
-const getAllProjects = async () => {
+const getAllProjects = async (searchFilters) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
-  const searchFilters = [];
   const results = await domainProjectConnection.find(searchFilters, { size: MAX_NUMBER_PROJECTS });
   return results;
 };
@@ -113,9 +112,10 @@ const updateDomainProjects = async (metadata) => {
   const existingProjects = await getAllProjects();
   const modelFamilyNames = existingProjects.map(p => p.name);
 
-  if (!modelFamilyNames.includes(metadata.family_name)) {
+  const familyName = metadata.family_name || metadata.name || uuid();
+  if (!modelFamilyNames.includes(familyName)) {
     await createProject(
-      metadata.family_name,
+      familyName,
       metadata.description,
       metadata.maintainer.organization,
       metadata.type,

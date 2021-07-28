@@ -43,7 +43,8 @@ const _findAllWithoutIndicators = async (modelId) => {
       },
       must_not: {
         exists: {
-          field: 'parameter.id'
+          // field: 'parameter.id'
+          field: 'parameter.name'
         }
       }
     }
@@ -251,6 +252,7 @@ const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
 const setDefaultIndicators = async (modelId) => {
   Logger.info(`Setting default indicators for: ${modelId}`);
   const nodeParameters = await _findAllWithoutIndicators(modelId);
+
   // Remove node parameters without concepts
   const filteredNodeParameters = nodeParameters.filter(n => !_.isNil(n.concept));
 

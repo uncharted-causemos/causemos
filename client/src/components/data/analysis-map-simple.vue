@@ -2,13 +2,6 @@
   <div class="analysis-map-container">
     <div class="value-filter">
       <map-legend :ramp="legendData" />
-      <div
-        class="layer-toggle-button"
-        @click="clickLayerToggle">
-        <i
-          :class="layerButtonClass"
-        />
-      </div>
     </div>
     <wm-map
       v-bind="mapFixedOptions"
@@ -17,9 +10,11 @@
       @move="onMapMove"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
+      @styledata="onStyleChange"
     >
       <wm-map-vector
         v-if="vectorSource"
+        :key="baseLayerTrigger"
         :source-id="vectorSourceId"
         :source="vectorSource"
         :source-layer="vectorSourceLayer"
@@ -32,6 +27,7 @@
       />
       <wm-map-vector
         v-if="vectorSource"
+        :key="baseLayerTrigger"
         :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
         :promote-id="idPropName"
@@ -54,7 +50,15 @@ import _ from 'lodash';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
-import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX, isLayerLoaded, createDivergingColorStops, createColorStops } from '@/utils/map-util';
+import {
+  BASE_MAP_OPTIONS,
+  createHeatmapLayerStyle,
+  ETHIOPIA_BOUNDING_BOX,
+  isLayerLoaded,
+  createDivergingColorStops,
+  createColorStops,
+  STYLE_URL_PREFIX
+} from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import MapLegend from '@/components/widgets/map-legend';
 
@@ -136,7 +140,7 @@ const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
 };
 
 export default {
-  name: 'AnalysisMap',
+  name: 'AnalysisMapSimple',
   components: {
     WmMap,
     WmMapVector,
@@ -147,8 +151,7 @@ export default {
     'on-map-load',
     'aggregation-level-change',
     'slide-handle-change',
-    'sync-bounds',
-    'click-layer-toggle'
+    'sync-bounds'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -186,10 +189,15 @@ export default {
     regionData: {
       type: Object,
       default: () => undefined
+    },
+    selectedBaseLayer: {
+      type: String,
+      required: true
     }
   },
   data: () => ({
     baseLayer: undefined,
+    baseLayerTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
@@ -197,6 +205,15 @@ export default {
     legendData: []
   }),
   computed: {
+    mapFixedOptions() {
+      const options = {
+        minZoom: 1,
+        ...BASE_MAP_OPTIONS
+      };
+      options.style = this.selectedBaseLayerEndpoint;
+      options.mapStyle = this.selectedBaseLayerEndpoint;
+      return options;
+    },
     selection() {
       return this.outputSourceSpecs.find(spec => spec.id === this.outputSelection);
     },
@@ -254,6 +271,9 @@ export default {
       }
       return extent;
     },
+    selectedBaseLayerEndpoint() {
+      return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
+    },
     valueProp() {
       // Name of the value property of the feature to be rendered
       return (this.selection && this.selection.id) || '';
@@ -277,12 +297,6 @@ export default {
       } else {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
-    },
-    layerButtonClass() {
-      if (this.isGridMap) {
-        return 'fa fa-th-large';
-      }
-      return 'fa fa-globe';
     },
     colorOption() {
       return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
@@ -318,11 +332,6 @@ export default {
     }
   },
   created() {
-    this.mapFixedOptions = {
-      minZoom: 1,
-      ...BASE_MAP_OPTIONS
-    };
-
     this.vectorSourceId = 'maas-vector-source';
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
@@ -425,9 +434,6 @@ export default {
         component.enableCamera();
       });
     },
-    clickLayerToggle() {
-      this.$emit('click-layer-toggle', { isGridMap: this.isGridMap });
-    },
     updateLayerFilter() {
       if (!this.colorLayer) return;
       // Merge filter for the current map and all globally applied filters together
@@ -475,6 +481,11 @@ export default {
       if (!this.showTooltip) return;
       // reset hover feature state when mouse moves out of the map
       this._unsetHover(event.map);
+    },
+    onStyleChange() {
+      // This line of code must be executed after map style is changed so that the data layer shows up.
+      // The data layer only shows up if wm-map-vector is re-rendered using :key after the style change.
+      this.baseLayerTrigger = this.selectedBaseLayerEndpoint;
     },
     popupValueFormatter(feature) {
       const prop = this.isGridMap ? feature?.properties : feature?.state;
@@ -539,15 +550,6 @@ export default {
   align-items: flex-end;
   cursor: pointer;
   .filter-toggle-button {
-    padding: 5px;
-    border: 1px solid #888;
-    border-radius: 3px;
-    background-color: #ccc;
-    &.active {
-      background-color: #6FC5DE;
-    }
-  }
-  .layer-toggle-button {
     padding: 5px;
     border: 1px solid #888;
     border-radius: 3px;

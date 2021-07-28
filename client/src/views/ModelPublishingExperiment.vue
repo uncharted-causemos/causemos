@@ -23,6 +23,7 @@
       </div>
     </div>
     <main>
+      <analytical-questions-and-insights-panel />
     <!-- TODO: whether a card is actually expanded or not will
     be dynamic later -->
     <datacube-card
@@ -44,6 +45,7 @@
       :relative-to="relativeTo"
       :breakdown-option="breakdownOption"
       :baseline-metadata="baselineMetadata"
+      :selected-timeseries-points="selectedTimeseriesPoints"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="updateSelectedTimestamp"
       @set-drilldown-data="setDrilldownData"
@@ -148,6 +150,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { updateDatacube } from '@/services/new-datacube-service';
 import _ from 'lodash';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 const DRILLDOWN_TABS = [
   {
@@ -167,7 +170,8 @@ export default defineComponent({
     DatacubeModelHeader,
     ModelPublishingChecklist,
     ModelDescription,
-    DropdownButton
+    DropdownButton,
+    AnalyticalQuestionsAndInsightsPanel
   },
   computed: {
     ...mapGetters({
@@ -179,7 +183,8 @@ export default defineComponent({
     const store = useStore();
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
 
-    const currentOutputIndex: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
     const selectedTemporalAggregation: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedTemporalAggregation']);
     const selectedTemporalResolution: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedTemporalResolution']);
@@ -254,10 +259,16 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value) {
-        store.dispatch('insightPanel/setContextId', metadata.value.name);
+        store.dispatch('insightPanel/setContextId', metadata.value.id);
+
         // set initial output variable index
-        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature);
-        store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+        // create a default feature object as a map entry that saves the initial output index for the current model instance
+        //  and note we overwrite the store content since we can only have one model being published by a given user at a time
+        const defaultFeature = {
+          [metadata.value.id]: initialOutputIndex
+        };
+        store.dispatch('app/setDatacubeCurrentOutputsMap', defaultFeature);
       }
     });
 

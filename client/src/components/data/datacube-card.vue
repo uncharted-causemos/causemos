@@ -168,32 +168,43 @@
           </div>
           <div
             v-if="mapReady && !isDescriptionView && regionalData !== null"
-            class="card-map-container">
-            <data-analysis-map
+            class="card-maps-container">
+            <div
               v-for="(spec, indx) in outputSourceSpecs"
               :key="spec.id"
-              class="card-map"
+              class="card-map-container"
               :class="[
                 `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
               ]"
-              :style="{ borderColor: colorFromIndex(indx) }"
-              :output-source-specs="outputSourceSpecs"
-              :output-selection=spec.id
-              :relative-to="relativeTo"
-              :show-tooltip="true"
-              :selected-layer-id="mapSelectedLayer"
-              :filters="mapFilters"
-              :map-bounds="mapBounds"
-              :region-data="regionalData"
-              @sync-bounds="onSyncMapBounds"
-              @click-layer-toggle="onClickMapLayerToggle"
-              @on-map-load="onMapLoad"
-              @slide-handle-change="updateMapFilters"
-            />
+            >
+              <span
+                v-if="outputSourceSpecs.length > 1"
+                :style="{ color: colorFromIndex(indx)}"
+              >
+                {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
+              </span>
+              <data-analysis-map
+                class="card-map"
+                :style="{ borderColor: colorFromIndex(indx) }"
+                :output-source-specs="outputSourceSpecs"
+                :output-selection=spec.id
+                :relative-to="relativeTo"
+                :show-tooltip="true"
+                :selected-layer-id="mapSelectedLayer"
+                :filters="mapFilters"
+                :map-bounds="mapBounds"
+                :region-data="regionalData"
+                :selectedBaseLayer="selectedBaseLayer"
+                :selectedDataLayer="selectedDataLayer"
+                @sync-bounds="onSyncMapBounds"
+                @on-map-load="onMapLoad"
+                @slide-handle-change="updateMapFilters"
+              />
+            </div>
           </div>
           <div
             v-else-if="!isDescriptionView"
-            class="card-map-container"
+            class="card-maps-container"
           >
             <!-- Empty div to reduce jumpiness when the maps are loading -->
             <div class="card-map" />
@@ -225,9 +236,10 @@ import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCachi
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
-import { Timeseries } from '@/types/Timeseries';
+import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestamp } from '@/utils/date-util';
+import { DATA_LAYER } from '@/utils/map-util-new';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -294,6 +306,18 @@ export default defineComponent({
     baselineMetadata: {
       type: Object as PropType<{name: string; color: string} | null>,
       default: null
+    },
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      default: []
+    },
+    selectedBaseLayer: {
+      type: String,
+      required: true
+    },
+    selectedDataLayer: {
+      type: String,
+      required: true
     }
   },
   components: {
@@ -308,7 +332,8 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const store = useStore();
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const {
       selectedScenarioIds,
@@ -409,8 +434,7 @@ export default defineComponent({
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
     ],
-    mapReady: false,
-    isGridMap: false
+    mapReady: false
   }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
@@ -420,7 +444,7 @@ export default defineComponent({
   },
   computed: {
     mapSelectedLayer(): number {
-      return this.isGridMap ? 4 : this.selectedAdminLevel;
+      return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
@@ -429,9 +453,6 @@ export default defineComponent({
     },
     onSyncMapBounds(mapBounds: Array<Array<number>>) {
       this.mapBounds = mapBounds;
-    },
-    onClickMapLayerToggle(data: { isGridMap: boolean }) {
-      this.isGridMap = !data.isGridMap;
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
@@ -575,28 +596,30 @@ header {
 }
 
 
-.card-map-container {
+.card-maps-container {
   min-height: 0;
   flex: 3;
-  width: 70%;
-
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  overflow-y: scroll;
+  overflow-y: auto;
   width: 100%;
+  position: relative;
 }
 
-.card-map {
-  flex-grow: 1;
-  width: auto;
-  height: inherit;
+$marginSize: 5px;
+
+.card-map-container {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+
   ::v-deep(.wm-map) {
     border-style: solid;
     border-color: inherit;
   }
   &.card-count-1 {
-    flex-grow: 1;
     ::v-deep(.wm-map) {
       border: none;
     }
@@ -604,14 +627,19 @@ header {
   &.card-count-3,
   &.card-count-4 {
     height: 50%;
-    width: 50%;
-    max-width: 50%;
+    min-width: calc(50% - #{$marginSize / 2});
+    max-width: calc(50% - #{$marginSize / 2});
   }
   &.card-count-n {
     height: 50%;
-    width: calc(100% / 3);
-    max-width: calc(100% / 3);
+    min-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
+    max-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
   }
+}
+
+.card-map {
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .button-row {
