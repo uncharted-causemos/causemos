@@ -154,23 +154,6 @@ const DRILLDOWN_TABS = [
   }
 ];
 
-
-const projectionValueRange = (values: number[]) => {
-  if (_.isEmpty(values)) return { max: 1, min: 0 };
-
-  let max = _.max(values) || 0;
-  let min = _.min(values) || 0;
-
-  if (max === min && max === 0) {
-    max += 1;
-  } else if (max === min) {
-    max += Math.abs(max);
-    min -= Math.abs(min);
-  }
-  return { max, min };
-};
-
-
 export default defineComponent({
   name: 'NodeCompExperiment',
   components: {
@@ -430,7 +413,6 @@ export default defineComponent({
         }
       ];
 
-      const { max, min } = projectionValueRange(timeseries.map(d => d.value));
       const nodeParameters = {
         id: this.selectedNode.id,
         concept: this.selectedNode.concept,
@@ -449,12 +431,12 @@ export default defineComponent({
           temporal_aggregation: this.outputSpecs[this.currentOutputIndex].temporalAggregation,
           temporal_resolution: this.outputSpecs[this.currentOutputIndex].temporalResolution,
           period: 12,
-          max: max,
-          min: min
+          timeseries,
+          max: null, // filled in by server
+          min: null // filled in by server
         }
       };
       modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
-
 
       this.$router.push({
         name: 'nodeDrilldown',
