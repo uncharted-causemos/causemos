@@ -259,7 +259,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value) {
-        store.dispatch('insightPanel/setContextId', metadata.value.id);
+        store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
         // set initial output variable index
         const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;

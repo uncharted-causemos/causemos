@@ -264,7 +264,7 @@ export default defineComponent({
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
         // note: this value of metadata may be undefined while model is still being loaded
-        store.dispatch('insightPanel/setContextId', metadata.value?.id);
+        store.dispatch('insightPanel/setContextId', [metadata.value?.id]);
 
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];

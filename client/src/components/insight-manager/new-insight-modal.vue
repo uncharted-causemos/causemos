@@ -95,7 +95,6 @@ import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
-import API from '@/api/api';
 import DrilldownPanel from '@/components/drilldown-panel';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
@@ -105,6 +104,7 @@ import { VIEWS_LIST } from '@/utils/views-util';
 import { INSIGHTS } from '@/utils/messages-util';
 import { ProjectType } from '@/types/Enums';
 import Disclaimer from '@/components/widgets/disclaimer';
+import { addInsight } from '@/services/insight-service';
 
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
@@ -296,20 +296,21 @@ export default {
         view_state: this.viewState,
         data_state: this.dataState
       };
-      API.post('insights', newInsight).then((result) => {
-        const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
-        if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
-          this.toaster(message, 'success', false);
-          const count = this.countInsights + 1;
-          this.setCountInsights(count);
-        } else {
-          this.toaster(message, 'error', true);
-        }
-        this.closeInsightPanel();
-        this.initInsight();
-        // also hide the context insight panel if opened, to force refresh upon re-open
-        this.closeContextInsightPanel();
-      });
+      addInsight(newInsight)
+        .then((result) => {
+          const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
+          if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
+            this.toaster(message, 'success', false);
+            const count = this.countInsights + 1;
+            this.setCountInsights(count);
+          } else {
+            this.toaster(message, 'error', true);
+          }
+          this.closeInsightPanel();
+          this.initInsight();
+          // also hide the context insight panel if opened, to force refresh upon re-open
+          this.closeContextInsightPanel();
+        });
     },
     closeContextInsightPanel() {
       this.hideContextInsightPanel();
