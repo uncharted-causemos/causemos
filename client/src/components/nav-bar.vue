@@ -85,9 +85,6 @@
           </a>
         </li>
       </ul>
-
-      <!-- Insighting (ALL) -->
-      <insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment' || currentView === 'overview'" />
     </div>
   </nav>
 </template>
@@ -96,13 +93,11 @@
 import { mapGetters } from 'vuex';
 import { defineComponent } from 'vue';
 
-import InsightControls from '@/components/insight-manager/insight-controls.vue';
 import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'NavBar',
   components: {
-    InsightControls
   },
   data: () => ({
     ProjectType

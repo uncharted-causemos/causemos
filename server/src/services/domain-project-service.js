@@ -112,15 +112,33 @@ const updateDomainProjects = async (metadata) => {
   const existingProjects = await getAllProjects();
   const modelFamilyNames = existingProjects.map(p => p.name);
 
+  const instanceName = metadata.name;
   const familyName = metadata.family_name || metadata.name || uuid();
+
   if (!modelFamilyNames.includes(familyName)) {
     await createProject(
       familyName,
       metadata.description,
       metadata.maintainer.organization,
       metadata.type,
-      [], // FIXME: initial stats need to be set // ready_instances
-      []); // FIXME: initial stats need to be set // draft_instances
+      [], // initial stats need to be set // ready_instances
+      [instanceName]); // initial stats need to be set // draft_instances
+  } else {
+    //
+    // update the count of draft_instances
+    //  (since another instance of the same family is being registered)
+    //
+    const matchingExistingProject = existingProjects.find(p => p.name === familyName);
+    if (matchingExistingProject) {
+      if (metadata.status === 'REGISTERED' && !matchingExistingProject.draft_instances.includes(instanceName)) {
+        // this is a new model instance datacube, so we need to increase the registered instances of this project
+        matchingExistingProject.draft_instances.push(instanceName);
+
+        await updateProject(
+          matchingExistingProject.name,
+          { draft_instances: matchingExistingProject.draft_instances });
+      }
+    }
   }
 };
 

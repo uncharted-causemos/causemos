@@ -194,7 +194,12 @@ export default {
       this.datacubeInstances = await getDatacubes(newFilters);
 
       // set context id as the current family name
-      this.setContextId('');
+      if (this.datacubeInstances.length > 0) {
+        // context-id should be an array to fetch insights for each and every model instance
+        const contextIDs = this.datacubeInstances.map(dc => dc.id);
+        this.setContextId(contextIDs);
+      }
+
       // reset to avoid invalid data fetch when a given instance it loaded
       //  while the info of a previous instance is cached in the store
       this.setSelectedScenarioIds([]);
@@ -208,6 +213,24 @@ export default {
       // unpublish the datacube instance
       instance.status = DatacubeStatus.Registered;
       await updateDatacube(instance.id, instance);
+
+      // also, update the project stats count
+      const domainProject = await domainProjectService.getProject(this.projectMetadata.name);
+      // add the instance to list of draft instances
+      const updatedDraftInstances = domainProject.draft_instances;
+      if (!updatedDraftInstances.includes(instance.name)) {
+        updatedDraftInstances.push(instance.name);
+      }
+      // remove the instance from the list of ready/published instances
+      const updatedReadyInstances = domainProject.ready_instances.filter(n => n !== instance.name);
+      // update the project doc at the server
+      domainProjectService.updateDomainProject(
+        this.projectMetadata.name,
+        {
+          draft_instances: updatedDraftInstances,
+          ready_instances: updatedReadyInstances
+        }
+      );
     },
     toggleSortingDropdownDatacubeInstances() {
       this.showSortingDropdownDatacubeInstances = !this.showSortingDropdownDatacubeInstances;

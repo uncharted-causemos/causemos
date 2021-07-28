@@ -3,7 +3,7 @@
 FROM mhart/alpine-node:12
 # ENV LOG_LEVEL="warn"
 
-RUN apk update && apk add curl -y
+RUN apk update && apk add curl
 
 ADD ./package.json /package.json
 ADD ./yarn.lock /yarn.lock

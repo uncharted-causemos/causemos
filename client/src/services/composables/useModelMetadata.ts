@@ -7,7 +7,7 @@ import { getValidatedOutputs } from '@/utils/datacube-util';
  * Takes an id then fetches and returns the metadata associated
  * with that model/indicator.
  */
-export default function useModelMetadata(id: Ref<string>): Ref<Model | Indicator | null> {
+export default function useModelMetadata(id: Ref<string | null>): Ref<Model | Indicator | null> {
   const metadata = ref<Model | Indicator | null>(null);
 
   watchEffect(onInvalidate => {
