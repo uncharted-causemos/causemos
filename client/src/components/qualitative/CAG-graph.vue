@@ -618,6 +618,7 @@ class CAGRenderer extends SVGRenderer {
       ? d3.select('.ambiguous-edge-warning') // select it
       : foregroundLayer.append('text') // or create it if it hasn't been already
         .attr('x', parseInt(svg.style('width')) - 310)
+        .style('text-anchor', 'right')
         .attr('y', 20)
         .attr('opacity', 0)
         .attr('fill', 'red')
@@ -649,6 +650,7 @@ class CAGRenderer extends SVGRenderer {
 
     const squareSize = 26;
     let statsGroup = null;
+    let hoverGroup = null;
 
     if (d3.select('.graph-stats-info').node()) {
       statsGroup = d3.select('.graph-stats-info');
@@ -658,7 +660,10 @@ class CAGRenderer extends SVGRenderer {
         .classed('graph-stats-info', true)
         .style('cursor', 'pointer');
 
-      statsGroup
+      hoverGroup = statsGroup.append('g')
+        .classed('hoverGroup', true);
+
+      hoverGroup
         .append('rect')
         .style('width', squareSize.toString())
         .style('height', squareSize.toString())
@@ -667,7 +672,7 @@ class CAGRenderer extends SVGRenderer {
         .style('fill-opacity', '0')
         .style('stroke', '#545353');
 
-      statsGroup
+      hoverGroup
         .append('text')
         .style('font-family', 'FontAwesome')
         .style('font-size', '20px')
@@ -679,15 +684,28 @@ class CAGRenderer extends SVGRenderer {
         .attr('x', (squareSize / 2).toString())
         .attr('y', ((squareSize / 2) + 1).toString())
         .text('\uf05a');
+
+      statsGroup
+        .append('text')
+        .classed('graph-stats-text', true)
+        .style('font-size', '18px')
+        .style('stroke', 'none')
+        .style('fill', '#545353')
+        .style('text-anchor', 'left')
+        .style('alignment-baseline', 'middle')
+        // .attr('x', (squareSize / 2).toString())
+        .attr('y', (squareSize + 15).toString())
+        .text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`)
+        .style('opacity', 0)
+        .attr('pointer-events', 'none');
     }
 
-    statsGroup
+    hoverGroup
       .on('mouseover', function() {
-        svgUtil.showSvgTooltip(statsGroup, `Nodes: ${nodeCount}\nEdges: ${edgeCount}`, [squareSize, squareSize / 2], 0);
-        statsGroup.selectAll('.svg-tooltip').style('fill', '#545353');
+        statsGroup.selectAll('.graph-stats-text').style('opacity', 1);
       })
       .on('mouseout', function() {
-        statsGroup.selectAll('.svg-tooltip').remove();
+        statsGroup.selectAll('.graph-stats-text').style('opacity', 0);
       });
   }
 
