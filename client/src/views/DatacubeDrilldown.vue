@@ -547,7 +547,7 @@ export default defineComponent({
         if (loadedInsight.view_state?.selectedMapDataLayer) {
           this.setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
         }
-        if (loadedInsight.view_state?.breakdownOption) {
+        if (loadedInsight.view_state?.breakdownOption !== undefined) {
           this.setBreakdownOption(loadedInsight.view_state?.breakdownOption);
         }
       }

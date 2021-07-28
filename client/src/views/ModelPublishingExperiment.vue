@@ -482,6 +482,9 @@ export default defineComponent({
             };
             this.setDatacubeCurrentOutputsMap(defaultFeature);
           }
+          if (viewConfig.breakdownOption !== undefined) {
+            this.setBreakdownOption(viewConfig.breakdownOption);
+          }
 
           // @TODO:
           //  need to support applying an insight by both domain modeler as well as analyst
