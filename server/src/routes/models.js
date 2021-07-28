@@ -585,6 +585,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   ];
 
   const indicatorMatch = await indicatorMatchHistoryAdapter.findOne(indicatorMatchPayload, {});
+  // if indicator has been matched by user to this concept, need to update frequency
   if (!_.isNil(indicatorMatch)) {
     const updateIndicatorMatchPayload = {
       id: indicatorMatch.id,
