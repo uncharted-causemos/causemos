@@ -267,7 +267,7 @@ export default {
       this.setSelectedScenarioId(this.previousScenarioId);
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
 
-      this.draftScenario = null;
+      this.newDraftScenario(null);
       this.scenarios = temp;
     },
     async recalculateScenario(scenario) {
@@ -406,7 +406,6 @@ export default {
     },
     async saveDraft({ concept, values }) {
       this.isEditConstraintsOpen = false;
-      this.enableOverlay('Running experiment');
 
       // 1. If no draft scenario we need to create one
       if (_.isNil(this.draftScenario)) {
@@ -435,6 +434,7 @@ export default {
     async runDraftScenario() {
       if (_.isEmpty(this.draftScenario)) return;
 
+      this.enableOverlay('Running experiment');
       // Run experiment
       let experimentId = 0;
       let result = null;
@@ -487,16 +487,14 @@ export default {
       this.sensitivityAnalysisType = newValue;
     },
     async testDraft() {
-      console.log('hihi');
-
       await this.saveDraft({
         concept: 'wm/process/conflict/attack',
         values: [
-          { step: 2, value: 20 },
-          { step: 8, value: 31 }
+          { step: 0, value: 20 },
+          { step: 2, value: 40 },
+          { step: 8, value: 51 }
         ]
       });
-
       await this.runDraftScenario();
     }
   }

@@ -40,7 +40,9 @@ const mutations: MutationTree<ModelState> = {
   },
   newDraftScenario(state, draft) {
     state.draftScenario = draft;
-    state.draftScenarioDirty = true;
+    if (state.draftScenario !== null) {
+      state.draftScenarioDirty = true;
+    }
   },
   updateDrafScenariotConstraints(state, c: ConceptProjectionConstraints) {
     console.log('update draft constraints');
