@@ -28,7 +28,7 @@
             class="neighbor-node"
           />
         </div>
-        <div class="selected-node">
+        <div class="selected-node-column">
           <dropdown-button
             class="scenario-selector"
             :inner-button-label="'Scenario'"
@@ -51,7 +51,8 @@
               :selected-scenario-id="selectedScenarioId"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
-              :projection-start-timestamp="modelSummary?.parameter?.projection_start"
+              :min-value="indicatorMin"
+              :max-value="indicatorMax"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
           </div>
@@ -65,7 +66,7 @@
             Variable type
           </div>
           <div>
-            <span><strong>(Indicator name goes here)</strong></span>
+            <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
             &nbsp;
             <button
               v-tooltip.top-center="'Edit datacube'"
@@ -83,21 +84,35 @@
             </button>
           </div>
           <div>
-            (Indicator description goes here ...........................)
+            {{ indicatorDescription }}
           </div>
-          <div style="display: flex; align-items: center">
-            <table>
-              <tr>
-                <td>From</td>
-                <td><input class="form-control input-sm" type="text"/></td>
-                <td>to</td>
-                <td><input class="form-control input-sm" type="text"/></td>
-              </tr>
-            </table>
-            <div style="display: flex; align-items: center">
+          <div class="indicator-controls">
+            <div class="indicator-control-column">
+              <span>Minimum value</span>
+              <input class="form-control input-sm" v-model.number="indicatorMin"/>
+            </div>
+            <span class="from-to-separator">to</span>
+            <div class="indicator-control-column">
+              <span>Maximum value</span>
+              <input class="form-control input-sm" v-model.number="indicatorMax"/>
+            </div>
+            <div class=" indicator-control-column seasonality">
               Seasonality
-              <i class="fa fa-fw fa-lg fa-toggle-off"/>
-              <input class="form-control input-sm" type="number"/>
+              <div class="indicator-control-row">
+                <input type="radio" id="seasonality-true" :value="true" v-model="isSeasonalityActive">
+                <label for="seasonality-true">Yes</label>
+                <input
+                  v-model.number="indicatorPeriod"
+                  :disabled="isSeasonalityActive === false"
+                  class="form-control input-sm"
+                  type="number"
+                >
+                <span>{{ temporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
+              </div>
+              <div class="indicator-control-row">
+                <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
+                <label for="seasonality-false">No</label>
+              </div>
             </div>
           </div>
         </div>
@@ -148,6 +163,7 @@ import modelService from '@/services/model-service';
 import { CAGGraph, CAGModelSummary, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -256,23 +272,25 @@ export default defineComponent({
         });
       });
 
+      // TODO: remove dummy data
+      // [
+      //   { timestamp: 1483228800000, value: 0.5 },
+      //   { timestamp: 1485907200000, value: 0.5906666666666667 },
+      //   { timestamp: 1488326400000, value: 0.642 },
+      //   { timestamp: 1491004800000, value: 0.6903333333333334 },
+      //   { timestamp: 1493596800000, value: 0.7603333333333333 },
+      //   { timestamp: 1496275200000, value: 0.8 },
+      //   { timestamp: 1498867200000, value: 0.8236666666666668 },
+      //   { timestamp: 1501545600000, value: 0.85 },
+      //   { timestamp: 1504224000000, value: 0.8786666666666667 },
+      //   { timestamp: 1506816000000, value: 0.901 },
+      //   { timestamp: 1509494400000, value: 0.9283333333333335 },
+      //   { timestamp: 1514764800000, value: 0.9476666666666667 }
+      // ]
+
       return {
         indicatorName: selectedNodeScenarioData.indicator_name ?? 'Missing indicator name',
-        historicalTimeseries: [
-          { timestamp: 1483228800000, value: 0.5 },
-          { timestamp: 1485907200000, value: 0.5906666666666667 },
-          { timestamp: 1488326400000, value: 0.642 },
-          { timestamp: 1491004800000, value: 0.6903333333333334 },
-          { timestamp: 1493596800000, value: 0.7603333333333333 },
-          { timestamp: 1496275200000, value: 0.8 },
-          { timestamp: 1498867200000, value: 0.8236666666666668 },
-          { timestamp: 1501545600000, value: 0.85 },
-          { timestamp: 1504224000000, value: 0.8786666666666667 },
-          { timestamp: 1506816000000, value: 0.901 },
-          { timestamp: 1509494400000, value: 0.9283333333333335 },
-          { timestamp: 1514764800000, value: 0.9476666666666667 }
-        ], // TODO: replace dummy data with:
-        // selectedNodeScenarioData.indicator_time_series ?? [],
+        historicalTimeseries: selectedNodeScenarioData.indicator_time_series ?? [],
         historicalConstraints: [],
         projections
       };
@@ -287,8 +305,6 @@ export default defineComponent({
       historicalTimeseries.value = newPoints;
     };
 
-    // FIXME: Adjust quantitative view so that it clears selected scenarioID when modelID changes,
-    //  not when the view unmounts. Then we'll be able get the selectedScenarioId straight from the store
     const selectedScenarioId = computed<string | null>(() => {
       const scenarioId = store.getters['model/selectedScenarioId'];
       if (scenarios.value.filter(d => d.id === scenarioId).length === 0) {
@@ -354,6 +370,37 @@ export default defineComponent({
       });
     };
 
+    const indicatorId = computed(() => {
+      return selectedNode.value?.parameter?.id ?? null;
+    });
+    const indicatorData = useModelMetadata(indicatorId);
+    const indicatorDescription = computed(() => {
+      if (indicatorData.value === null) return '';
+      return indicatorData.value.outputs[0].description;
+    });
+    const indicatorMin = ref(0);
+    const indicatorMax = ref(1);
+    const temporalResolution = ref<string|null>(null);
+    const indicatorPeriod = ref(1);
+    const isSeasonalityActive = ref(false);
+    watchEffect(() => {
+      // if isSeasonalityActive is toggled on, indicatorPeriod should be at least 2,
+      //  since a period of 1 is equivalent to no seasonality
+      if (isSeasonalityActive.value === true && indicatorPeriod.value < 2) {
+        indicatorPeriod.value = 2;
+      }
+    });
+    watchEffect(() => {
+      const indicator = selectedNode.value?.parameter;
+      if (indicator !== null && indicator !== undefined) {
+        indicatorMin.value = indicator.min;
+        indicatorMax.value = indicator.max;
+        temporalResolution.value = indicator.temporal_resolution;
+        indicatorPeriod.value = indicator.period;
+        isSeasonalityActive.value = indicatorPeriod.value > 1;
+      }
+    });
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -368,7 +415,13 @@ export default defineComponent({
       modelSummary,
       scenarioSelectDropdownItems,
       historicalTimeseries,
-      setHistoricalTimeseries
+      setHistoricalTimeseries,
+      indicatorDescription,
+      indicatorMin,
+      indicatorMax,
+      isSeasonalityActive,
+      indicatorPeriod,
+      temporalResolution
     };
   },
   methods: {
@@ -425,13 +478,13 @@ h4 {
   margin-bottom: 10px;
 }
 
-.selected-node {
+.selected-node-column {
   flex: 1;
   min-width: 0;
-  max-height: 500px;
   display: flex;
   flex-direction: column;
   margin: 0 15px;
+  overflow-y: auto;
 }
 
 .scenario-selector {
@@ -445,18 +498,55 @@ h6 {
   font-weight: normal;
 }
 
+.indicator-controls {
+  display: flex;
+  align-items: flex-start;
+}
+
+.indicator-control-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.from-to-separator {
+  align-self: baseline;
+  margin: 2.25rem 5px 0 5px;
+}
+
+.seasonality {
+  margin-left: 10px;
+  flex: 1;
+  min-width: 0;
+
+  label {
+    font-weight: normal;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+}
+
 input[type=text] {
   width: 80px;
   margin: 0px 5px;
 }
 input[type=number] {
-  width: 40px;
+  width: 60px;
   margin: 0px 5px;
+  display: inline-block;
+}
+
+input[type="radio"] {
+  appearance: radio;
+  margin: 0;
+  margin-right: 5px;
+  cursor: pointer;
+  position: relative;
+  bottom: -2px;
 }
 
 .expanded-node {
-  flex: 1;
-  min-height: 0;
+  height: 350px;
+  flex-shrink: 0;
   border: 1px solid black;
   border-radius: 4px;
   overflow: hidden;

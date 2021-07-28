@@ -146,8 +146,8 @@ export default {
   },
   created() {
     // update insight related state
-    // FIXME: use contextId to store cag-id, reflected context-specific-id; TO BE REFACTORED
-    this.setContextId(this.currentCAG);
+    // use contextId to store cag-id
+    this.setContextId([this.currentCAG]);
   },
   mounted() {
     this.refresh();

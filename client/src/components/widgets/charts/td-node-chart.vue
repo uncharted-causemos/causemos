@@ -10,6 +10,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import {
+  computed,
   defineComponent,
   nextTick,
   onMounted,
@@ -40,15 +41,32 @@ export default defineComponent({
       type: Array as PropType<ScenarioProjection[]>,
       default: []
     },
-    projectionStartTimestamp: {
+    minValue: {
       type: Number,
-      default: 0
+      required: true
+    },
+    maxValue: {
+      type: Number,
+      required: true
     }
   },
   setup(props, { emit }) {
-    const { historicalTimeseries, projections, selectedScenarioId } = toRefs(
-      props
-    );
+    const {
+      historicalTimeseries,
+      projections,
+      selectedScenarioId,
+      minValue,
+      maxValue
+    } = toRefs(props);
+    const historicalTimeseriesBeforeStart = computed(() => {
+      const projectionStartTimestamp =
+        projections.value.length === 0
+          ? 0
+          : projections.value[0].values[0].timestamp;
+      return historicalTimeseries.value.filter(
+        point => point.timestamp < projectionStartTimestamp
+      );
+    });
     const chartRef = ref<HTMLElement | null>(null);
     const chartSize = ref({ width: 0, height: 0 });
     const constraints = ref<ProjectionConstraint[]>([]);
@@ -76,6 +94,8 @@ export default defineComponent({
       const _projections = projections.value;
       const { width, height } = chartSize.value;
       const _constraints = constraints.value;
+      const min = minValue.value;
+      const max = maxValue.value;
       if (
         svg === null ||
         _selectedScenarioId === null ||
@@ -91,7 +111,9 @@ export default defineComponent({
         height === 0 ? parentElement.clientHeight : height,
         _projections,
         _selectedScenarioId,
-        _constraints
+        _constraints,
+        min,
+        max
       );
     });
     onMounted(() => {
@@ -122,7 +144,9 @@ export default defineComponent({
       height: number,
       projections: ScenarioProjection[],
       selectedScenarioId: string,
-      constraints: ProjectionConstraint[]
+      constraints: ProjectionConstraint[],
+      min: number,
+      max: number
     ) => {
       // Set new size
       svg.attr('width', width).attr('height', height);
@@ -132,10 +156,12 @@ export default defineComponent({
         svg,
         width,
         height,
-        historicalTimeseries.value,
+        historicalTimeseriesBeforeStart.value,
         projections,
         selectedScenarioId,
         constraints,
+        min,
+        max,
         setConstraints,
         setHistoricalTimeseries
       );

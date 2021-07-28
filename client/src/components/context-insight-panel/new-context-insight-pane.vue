@@ -66,13 +66,13 @@ import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
-import API from '@/api/api';
 import CloseButton from '@/components/widgets/close-button';
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import modelService from '@/services/model-service';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { INSIGHTS } from '@/utils/messages-util';
+import { addInsight } from '@/services/insight-service';
 
 
 const MSG_EMPTY_CONTEXT_INSIGHT_NAME = 'Insight name cannot be blank';
@@ -184,7 +184,7 @@ export default {
         view_state: this.viewState,
         data_state: this.dataState
       };
-      API.post('insights', newInsight)
+      addInsight(newInsight)
         .then((result) => {
           const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
           if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
