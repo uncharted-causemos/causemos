@@ -26,11 +26,14 @@ const actions: ActionTree<ModelState, any> = {
   setSelectedScenarioId({ commit }, id) {
     commit('setSelectedScenarioId', id);
   },
-  newDraftScenario({ commit }, draft) {
-    commit('newDraftScenario', draft);
+  setDraftScenario({ commit }, draft) {
+    commit('setDraftScenario', draft);
   },
   updateDrafScenariotConstraints({ commit }, c: ConceptProjectionConstraints) {
     commit('updateDrafScenariotConstraints', c);
+  },
+  setDraftScenarioDirty({ commit }, v) {
+    commit('setDraftScenarioDirty', v);
   }
 };
 
@@ -38,19 +41,19 @@ const mutations: MutationTree<ModelState> = {
   setSelectedScenarioId(state, id) {
     state.selectedScenarioId = id;
   },
-  newDraftScenario(state, draft) {
+  setDraftScenario(state, draft) {
     state.draftScenario = draft;
     if (state.draftScenario !== null) {
       state.draftScenarioDirty = true;
+    } else {
+      state.draftScenarioDirty = false;
     }
   },
   updateDrafScenariotConstraints(state, c: ConceptProjectionConstraints) {
-    console.log('update draft constraints');
     if (state.draftScenario && state.draftScenario.parameter) {
       const constraints = state.draftScenario.parameter?.constraints;
       if (!constraints || constraints.length === 0) {
         state.draftScenario.parameter.constraints = [c];
-        console.log('......setting up empty constraints', state.draftScenario.parameter);
       } else {
         for (let i = 0; i < constraints.length; i++) {
           const cpc: ConceptProjectionConstraints = constraints[i];
@@ -61,6 +64,9 @@ const mutations: MutationTree<ModelState> = {
         }
       }
     }
+  },
+  setDraftScenarioDirty(state, v) {
+    state.draftScenarioDirty = v;
   }
 };
 

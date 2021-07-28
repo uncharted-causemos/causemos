@@ -28,7 +28,7 @@
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
             @save-new-scenario="saveNewScenario"
-            @run-model="runModel"
+            @run-model="runDraftScenario"
           />
         </template>
       </tab-panel>
@@ -159,8 +159,9 @@ export default {
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
-      newDraftScenario: 'model/newDraftScenario',
+      setDraftScenario: 'model/setDraftScenario',
       updateDrafScenariotConstraints: 'model/updateDrafScenariotConstraints',
+      setDraftScenarioDirty: 'model/setDraftScenarioDirty',
       setContextId: 'insightPanel/setContextId'
     }),
     runModel() {
@@ -206,7 +207,7 @@ export default {
         console.log('restoring draft');
         scenarios.push(this.draftScenario);
       } else {
-        this.newDraftScenario(null);
+        this.setDraftScenario(null);
       }
 
       this.scenarios = scenarios;
@@ -267,7 +268,7 @@ export default {
       this.setSelectedScenarioId(this.previousScenarioId);
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
 
-      this.newDraftScenario(null);
+      this.setDraftScenario(null);
       this.scenarios = temp;
     },
     async recalculateScenario(scenario) {
@@ -425,8 +426,15 @@ export default {
           },
           engine: this.currentEngine
         };
-        await this.newDraftScenario(draft);
+        await this.setDraftScenario(draft);
       }
+
+      // Switch to draft
+      if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
+        this.previousScenarioId = this.selectedScenarioId;
+      }
+      this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
+
 
       // 2. Update
       await this.updateDrafScenariotConstraints({ concept, values });
@@ -448,6 +456,7 @@ export default {
         return;
       }
       this.disableOverlay();
+      this.setDraftScenarioDirty(false);
 
       this.draftScenario.experimentId = experimentId;
       this.draftScenario.result = result.results.data;
@@ -456,12 +465,6 @@ export default {
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
       temp.push(this.draftScenario);
       this.scenarios = temp;
-
-      // Switch to draft
-      if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
-        this.previousScenarioId = this.selectedScenarioId;
-      }
-      this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
     },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
@@ -490,12 +493,13 @@ export default {
       await this.saveDraft({
         concept: 'wm/process/conflict/attack',
         values: [
-          { step: 0, value: 20 },
-          { step: 2, value: 40 },
-          { step: 8, value: 51 }
+          { step: 0, value: 50 },
+          { step: 2, value: 140 },
+          { step: 7, value: 240 },
+          { step: 10, value: -240 }
         ]
       });
-      await this.runDraftScenario();
+      // await this.runDraftScenario();
     }
   }
 };
