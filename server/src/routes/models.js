@@ -553,7 +553,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   // Recalculate min/max if not specified
   if (_.isNil(parameter.min) || _.isNil(parameter.max)) {
     Logger.info('Resetting min / max');
-    const { min, max } = modelUtil.projectionValueRange(parameter.timeseries);
+    const { min, max } = modelUtil.projectionValueRange(parameter.timeseries.map(d => d.value));
     parameter.min = min;
     parameter.max = max;
   }

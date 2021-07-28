@@ -28,6 +28,7 @@ function isEdgeAmbiguous(polarities) {
  * Get "available" max and min ranges. This is for the engine to
  * interpret a usable range during projections
  */
+/*
 const projectionValueRange = (values) => {
   if (_.isEmpty(values)) return { max: 1, min: 0 };
 
@@ -48,6 +49,23 @@ const projectionValueRange = (values) => {
   }
   return { max, min };
 };
+*/
+
+const projectionValueRange = (values) => {
+  if (_.isEmpty(values)) return { max: 1, min: 0 };
+
+  let max = _.max(values);
+  let min = _.min(values);
+
+  if (max === min && max === 0) {
+    max += 1;
+  } else if (max === min) {
+    max += Math.abs(max);
+    min -= Math.abs(min);
+  }
+  return { max, min };
+};
+
 
 const MODEL_STATUS = {
   UNSYNCED: 0,
