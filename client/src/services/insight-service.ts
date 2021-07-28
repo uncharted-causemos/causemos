@@ -55,7 +55,7 @@ export const fetchInsights = async (fetchParamsArray: InsightFilterFields[]) => 
   */
 
   // but we may also run the loop in parallel; map the array to promises
-  const promises = fetchParamsArray.map(async (fetchParams) => {
+  const promises = fetchParamsArray.map((fetchParams) => {
     return API.get('insights', { params: fetchParams });
   });
   // wait until all promises are resolved

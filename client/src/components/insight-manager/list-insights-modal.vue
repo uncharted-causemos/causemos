@@ -145,7 +145,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 import router from '@/router';
 import { deleteInsight } from '@/services/insight-service';
-import { ref, computed } from 'vue';
+import { computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
 import useInsightsData from '@/services/composables/useInsightsData';
@@ -198,14 +198,13 @@ export default {
       return result;
     };
 
-    const insightsFetchedAt = ref(0);
-    const listInsights = useInsightsData(insightsFetchedAt);
+    const { insights: listInsights, reFetchInsights } = useInsightsData();
 
     return {
       listInsights,
       questions,
       fullLinkedInsights,
-      insightsFetchedAt
+      reFetchInsights
     };
   },
   computed: {
@@ -292,7 +291,7 @@ export default {
           this.setCountInsights(count);
           this.removeCuration(id);
           // refresh the latest list from the server
-          this.insightsFetchedAt = Date.now();
+          this.reFetchInsights();
           this.toaster(message, 'error', true);
         }
       });

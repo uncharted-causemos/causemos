@@ -271,7 +271,7 @@ export default {
 
       if (this.quantitativeAnalyses.length) {
         // save context-id(s) for all data-analyses
-        const promises = this.quantitativeAnalyses.map(async (analysis) => {
+        const promises = this.quantitativeAnalyses.map((analysis) => {
           return getAnalysisState(analysis.analysisId);
         });
         const allRawResponses = await Promise.all(promises);

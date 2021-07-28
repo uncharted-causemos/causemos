@@ -21,8 +21,6 @@
       of {{ numberFormatter(filteredEdgesCount) }}
       {{ areEdgesDrawn ? '': '(hidden) ' }} relationships
     </span>
-    <template #trailing>
-    </template>
   </full-screen-modal-header>
 </template>
 

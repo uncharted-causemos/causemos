@@ -98,7 +98,6 @@ import stringFormatter from '@/formatters/string-formatter';
 
 import router from '@/router';
 import { deleteInsight } from '@/services/insight-service';
-import { ref } from 'vue';
 import useInsightsData from '@/services/composables/useInsightsData';
 
 export default {
@@ -121,11 +120,10 @@ export default {
     selectedContextInsight: null
   }),
   setup() {
-    const insightsFetchedAt = ref(0);
-    const listContextInsights = useInsightsData(insightsFetchedAt);
+    const { insights: listContextInsights, reFetchInsights } = useInsightsData();
     return {
       listContextInsights,
-      insightsFetchedAt
+      reFetchInsights
     };
   },
   computed: {
@@ -194,7 +192,7 @@ export default {
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
           // refresh the latest list from the server
-          this.insightsFetchedAt = Date.now();
+          this.reFetchInsights();
         } else {
           this.toaster(message, 'error', true);
         }

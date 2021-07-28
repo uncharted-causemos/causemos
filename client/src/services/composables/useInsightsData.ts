@@ -5,8 +5,14 @@ import { useStore } from 'vuex';
 import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
 
-export default function useInsightsData(insightsFetchedAt: Ref<number>) {
-  const listContextInsights = ref([]) as Ref<Insight[]>;
+export default function useInsightsData() {
+  const insights = ref([]) as Ref<Insight[]>;
+
+  const insightsFetchedAt = ref(0);
+
+  const reFetchInsights = () => {
+    insightsFetchedAt.value = Date.now();
+  };
 
   const store = useStore();
   const contextIds = computed(() => store.getters['insightPanel/contextId']);
@@ -71,14 +77,13 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
       }
       const contextInsights = await fetchInsights(contextFilterArray);
 
-      const insights = [...publicInsights, ...contextInsights];
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
         return;
       }
-      listContextInsights.value = _.uniqBy(insights, 'id');
-      store.dispatch('contextInsightPanel/setCountContextInsights', listContextInsights.value.length);
+      insights.value = _.uniqBy([...publicInsights, ...contextInsights], 'id');
+      store.dispatch('contextInsightPanel/setCountContextInsights', insights.value.length);
     }
     onInvalidate(() => {
       isCancelled = true;
@@ -86,5 +91,8 @@ export default function useInsightsData(insightsFetchedAt: Ref<number>) {
     getInsights();
   });
 
-  return listContextInsights;
+  return {
+    insights,
+    reFetchInsights
+  };
 }
