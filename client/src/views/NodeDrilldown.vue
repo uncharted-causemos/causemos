@@ -397,6 +397,7 @@ export default defineComponent({
         indicatorMax.value = indicator.max;
         temporalResolution.value = indicator.temporal_resolution;
         indicatorPeriod.value = indicator.period;
+        isSeasonalityActive.value = indicatorPeriod.value > 1;
       }
     });
 
