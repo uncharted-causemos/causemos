@@ -2,13 +2,6 @@
   <div class="node-drilldown-container">
     <main>
       <header>
-        <h4>{{ nodeConceptName }}</h4>
-        <radio-button-group
-          :buttons="chartModes"
-          :selected-button-value="selectedChartMode"
-          @button-clicked="setSelectedChartMode"
-        />
-
         <button
           v-tooltip="'Collapse node'"
           class="btn btn-default"
@@ -40,8 +33,12 @@
           <div class="expanded-node">
             <div class="expanded-node-header">
               {{ nodeConceptName }}
+              <radio-button-group
+                :buttons="chartModes"
+                :selected-button-value="selectedChartMode"
+                @button-clicked="setSelectedChartMode"
+              />
               <div class="button-group">
-                (buttons go here)
                 <!-- TODO: New scenario button -->
                 <!-- TODO: Set goal button -->
               </div>
@@ -130,31 +127,21 @@
         </div>
       </div>
     </main>
-    <drilldown-panel
+    <!-- TODO: Panes go here -->
+    <!-- <drilldown-panel
       class="drilldown-panel"
       :tabs="drilldownPanelTabs"
       :active-tab-id="'only-tab'"
     >
       <template #content>
-
         (Panes go here)
-        <!-- TODO: Panes go here -->
-        <!-- <indicator-summary
-          v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
-          :node="selectedNode"
-          :model-summary="modelSummary"
-          @function-selected="onFunctionSelected"
-          @edit-indicator="editIndicator"
-          @remove-indicator="removeIndicator"
-        /> -->
       </template>
-    </drilldown-panel>
+    </drilldown-panel> -->
   </div>
 </template>
 
 <script lang="ts">
 import { computed, defineComponent, ref, watchEffect } from 'vue';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
@@ -183,7 +170,6 @@ const CHART_MODES: RadioButtonSpec[] = [
 export default defineComponent({
   name: 'NodeDrilldown',
   components: {
-    DrilldownPanel,
     NeighborNode,
     TdNodeChart,
     DropdownButton,
@@ -487,8 +473,7 @@ header {
   padding: 5px 0;
   margin-bottom: 5px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-end;
 }
 
 h4 {
@@ -583,7 +568,8 @@ input[type="radio"] {
   background: #eee;
   display: flex;
   justify-content: space-between;
-  padding: 10px;
+  align-items: center;
+  padding: 5px;
 }
 
 .scenario-chart {

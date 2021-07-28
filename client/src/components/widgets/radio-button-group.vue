@@ -52,5 +52,8 @@ export default defineComponent({
 <style lang="scss" scoped>
 .radio-button-group-container {
   display: flex;
+  border: 1px solid grey;
+  border-radius: 3px;
+  overflow: hidden;
 }
 </style>
