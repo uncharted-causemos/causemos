@@ -100,7 +100,7 @@
               Seasonality
               <div class="indicator-control-row">
                 <input type="radio" id="seasonality-true" :value="true" v-model="isSeasonalityActive">
-                <label for="seasonality-false">Yes</label>
+                <label for="seasonality-true">Yes</label>
                 <input
                   v-model.number="indicatorPeriod"
                   :disabled="isSeasonalityActive === false"
@@ -522,6 +522,7 @@ h6 {
   label {
     font-weight: normal;
     margin-right: 10px;
+    cursor: pointer;
   }
 }
 
