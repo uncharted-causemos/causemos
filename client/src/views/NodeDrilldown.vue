@@ -3,10 +3,11 @@
     <main>
       <header>
         <h4>{{ nodeConceptName }}</h4>
-        <!-- TODO: toggles go here -->
-        <div class="toggle-container">
-          (toggles go here)
-        </div>
+        <radio-button-group
+          :buttons="chartModes"
+          :selected-button-value="selectedChartMode"
+          @button-clicked="setSelectedChartMode"
+        />
 
         <button
           v-tooltip="'Collapse node'"
@@ -164,6 +165,20 @@ import { CAGGraph, CAGModelSummary, Scenario, ScenarioProjection } from '@/types
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import RadioButtonGroup, { RadioButtonSpec } from '@/components/widgets/radio-button-group.vue';
+
+const CHART_MODES: RadioButtonSpec[] = [
+  {
+    value: 'edit',
+    label: 'Edit',
+    tooltip: 'Modify historical data and projection constraints.'
+  },
+  {
+    value: 'compare',
+    label: 'Compare scenarios',
+    tooltip: 'Plot scenarios relative to each other.'
+  }
+];
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -171,7 +186,8 @@ export default defineComponent({
     DrilldownPanel,
     NeighborNode,
     TdNodeChart,
-    DropdownButton
+    DropdownButton,
+    RadioButtonGroup
   },
   props: {},
   computed: {
@@ -401,6 +417,11 @@ export default defineComponent({
       }
     });
 
+    const selectedChartMode = ref(CHART_MODES[0].value);
+    const setSelectedChartMode = (newValue: any) => {
+      selectedChartMode.value = newValue;
+    };
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -421,7 +442,10 @@ export default defineComponent({
       indicatorMax,
       isSeasonalityActive,
       indicatorPeriod,
-      temporalResolution
+      temporalResolution,
+      chartModes: CHART_MODES,
+      selectedChartMode,
+      setSelectedChartMode
     };
   },
   methods: {
