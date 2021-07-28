@@ -56,7 +56,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
       projection_start: defaultProjectionStartDate
     };
   }
-  modelFields.is_quantified = true;
+  // modelFields.is_quantified = true;
   modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
@@ -403,6 +403,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   const modelPayload = {
     id: modelId,
     status: status,
+    is_quantified: true,
     parameter: {
       engine: engine
     },

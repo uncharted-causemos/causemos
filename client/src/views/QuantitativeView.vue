@@ -175,12 +175,14 @@ export default {
     },
     async refresh() {
       // Basic model data
-      await this.refreshModel();
+      this.modelSummary = await modelService.getSummary(this.currentCAG);
 
       let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
-      // If we have no scenarios at all, then we must sync with inference engines
-      if (scenarios.length === 0) {
+      console.log('check quantified', this.modelSummary.is_quantified);
+      // 1. If we have no scenarios at all, then we must sync with inference engines
+      // 2. If we have topology changes, then we should sync with inference engines
+      if (scenarios.length === 0 || this.modelSummary.is_quantified === false) {
         // Check model is ready to be used for experiments
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
@@ -189,7 +191,11 @@ export default {
           console.error(errors);
           return;
         }
+      }
+      await this.refreshModel();
 
+
+      if (scenarios.length === 0) {
         // Now we are up to date, create base scenario
         await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
         scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
@@ -199,6 +205,8 @@ export default {
       if (!_.isNil(this.draftScenario) && this.draftScenario.model_id === this.currentCAG) {
         console.log('restoring draft');
         scenarios.push(this.draftScenario);
+      } else {
+        this.newDraftScenario(null);
       }
 
       this.scenarios = scenarios;
