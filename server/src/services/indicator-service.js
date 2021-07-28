@@ -81,7 +81,7 @@ const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, fil
               },
               {
                 term: {
-                  node_id: node.id
+                  concept: node.concept
                 }
               }
             ]
@@ -89,7 +89,7 @@ const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, fil
         },
         sort: [
           {
-            timestamp: {
+            frequency: {
               order: 'desc'
             }
           }

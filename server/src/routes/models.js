@@ -578,14 +578,33 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   }
 
   const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
-  const insertIndicatorMatchPayload = {
-    id: uuid(),
-    project_id: model.project_id,
-    node_id: nodeParameter.id,
-    indicator_id: nodeParameter.parameter.id,
-    timestamp: Date.now()
-  };
-  r = await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
+  const indicatorMatchPayload = [
+    { field: 'project_id', value: model.project_id },
+    { field: 'concept', value: nodeParameter.concept },
+    { field: 'indicator_id', value: nodeParameter.parameter.id }
+  ];
+
+  const indicatorMatch = await indicatorMatchHistoryAdapter.findOne(indicatorMatchPayload, {});
+  if (!_.isNil(indicatorMatch)) {
+    const updateIndicatorMatchPayload = {
+      id: indicatorMatch.id,
+      frequency: indicatorMatch.frequency + 1
+    };
+    r = await indicatorMatchHistoryAdapter.update([updateIndicatorMatchPayload], d => d.id);
+    if (r.errors) {
+      Logger.warn(JSON.stringify(r));
+      throw new Error('Failed to update indicator-match-history');
+    }
+  } else {
+    const insertIndicatorMatchPayload = {
+      id: uuid(),
+      project_id: model.project_id,
+      concept: nodeParameter.concept,
+      indicator_id: nodeParameter.parameter.id,
+      frequency: 1
+    };
+    await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
+  }
 
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
   res.status(200).send({ updateToken: moment().valueOf() });
