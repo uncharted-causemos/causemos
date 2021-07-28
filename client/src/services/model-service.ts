@@ -458,11 +458,11 @@ const runSensitivityAnalysis = async (
 };
 
 
-const createBaselineScenario = async (modelSummary: CAGModelSummary, nodes: NodeParameter[]) => {
+const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const modelId = modelSummary.id;
   const numSteps = modelSummary.parameter.num_steps;
   try {
-    const experimentId = await runProjectionExperiment(modelId, numSteps, injectStepZero(nodes, []));
+    const experimentId = await runProjectionExperiment(modelId, numSteps, []);
     const result: any = await getExperimentResult(modelId, experimentId);
 
     const scenario: NewScenario = {
@@ -670,31 +670,31 @@ export const expandExtentForDyseProjections = (yExtent: [number, number], numLev
 
 // FIXME: Inject step=0 initial value constraints per node, we shouldn't need to do this,
 // engine should handle this quirky case. Sep 2020
-const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptProjectionConstraints[]) => {
-  const result = _.cloneDeep(constraints);
-  nodeParameters.forEach(n => {
-    const concept = n.concept;
-    const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
-
-    const current = result.find(c => c.concept === concept);
-    if (!_.isNil(current)) {
-      if (!_.some(current.values, v => v.step === 0)) {
-        current.values.push({ step: 0, value: initialValue });
-      }
-    } else {
-      result.push({
-        concept: concept,
-        values: [{ step: 0, value: initialValue }]
-      });
-    }
-  });
-
-  result.forEach(r => {
-    r.values = _.orderBy(r.values, v => v.step);
-  });
-
-  return result;
-};
+// const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptProjectionConstraints[]) => {
+//   const result = _.cloneDeep(constraints);
+//   nodeParameters.forEach(n => {
+//     const concept = n.concept;
+//     const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+//
+//     const current = result.find(c => c.concept === concept);
+//     if (!_.isNil(current)) {
+//       if (!_.some(current.values, v => v.step === 0)) {
+//         current.values.push({ step: 0, value: initialValue });
+//       }
+//     } else {
+//       result.push({
+//         concept: concept,
+//         values: [{ step: 0, value: initialValue }]
+//       });
+//     }
+//   });
+//
+//   result.forEach(r => {
+//     r.values = _.orderBy(r.values, v => v.step);
+//   });
+//
+//   return result;
+// };
 
 
 export default {
@@ -742,7 +742,6 @@ export default {
 
   calculateScenarioPercentageChange,
   expandExtentForDyseProjections,
-  injectStepZero,
 
   ENGINE_OPTIONS,
   MODEL_STATUS

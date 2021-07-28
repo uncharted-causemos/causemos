@@ -191,7 +191,7 @@ export default {
         }
 
         // Now we are up to date, create base scenario
-        await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+        await modelService.createBaselineScenario(this.modelSummary);
         scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
       }
       this.scenarios = scenarios;
@@ -221,7 +221,7 @@ export default {
 
       // Create a base scenario if none existed
       if (scenarios.length === 0) {
-        await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+        await modelService.createBaselineScenario(this.modelSummary);
         scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
       }
 
@@ -265,7 +265,7 @@ export default {
       let experimentId = 0;
       let result = null;
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, scenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, scenario.parameter.constraints);
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         this.toaster(error.response.data, 'error', true);
@@ -424,7 +424,7 @@ export default {
       let experimentId = 0;
       let result = null;
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, this.draftScenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, this.draftScenario.parameter.constraints);
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         console.error(error);
@@ -475,9 +475,8 @@ export default {
       console.log('hihi');
 
       await this.saveDraft({
-        concept: 'wm/concept/crisis_or_disaster/environmental/flood',
+        concept: 'wm/concept/clusters/humanitarian_assistance',
         values: [
-          { step: 0, value: 1 },
           { step: 2, value: 0 },
           { step: 4, value: 1 },
           { step: 6, value: 0 },

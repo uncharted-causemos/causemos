@@ -48,7 +48,6 @@ const mutations: MutationTree<ModelState> = {
       const constraints = state.draftScenario.parameter?.constraints;
       if (!constraints || constraints.length === 0) {
         state.draftScenario.parameter.constraints = [c];
-        console.log('......setting up empty constraints', state.draftScenario.parameter);
       } else {
         for (let i = 0; i < constraints.length; i++) {
           const cpc: ConceptProjectionConstraints = constraints[i];
