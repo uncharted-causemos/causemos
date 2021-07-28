@@ -151,6 +151,7 @@ import { updateDatacube } from '@/services/new-datacube-service';
 import _ from 'lodash';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import domainProjectService from '@/services/domain-project-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -176,7 +177,8 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       countInsights: 'insightPanel/countInsights',
-      project: 'app/project'
+      project: 'app/project',
+      projectMetadata: 'app/projectMetadata'
     })
   },
   setup() {
@@ -432,8 +434,28 @@ export default defineComponent({
         // remove newly-added fields such as 'validatedOutputs' so that ES can update
         const modelToUpdate = _.cloneDeep(this.metadata);
         delete modelToUpdate.validatedOutputs;
+        //
         // update server data
+        //
         await updateDatacube(modelToUpdate.id, modelToUpdate);
+        // also, update the project stats count
+        const domainProject = await domainProjectService.getProject(this.projectMetadata.name);
+        // add the instance to list of published instances
+        const updatedReadyInstances = domainProject.ready_instances;
+        if (!updatedReadyInstances.includes(modelToUpdate.name)) {
+          updatedReadyInstances.push(modelToUpdate.name);
+        }
+        // remove the instance from the list of ready/published instances
+        const updatedDraftInstances = domainProject.ready_instances.filter((n: string) => n !== modelToUpdate.name);
+        // update the project doc at the server
+        domainProjectService.updateDomainProject(
+          this.projectMetadata.name,
+          {
+            draft_instances: updatedDraftInstances,
+            ready_instances: updatedReadyInstances
+          }
+        );
+
         // redirect to model family page
         this.$router.push({
           name: 'domainDatacubeOverview',
