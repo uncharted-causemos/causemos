@@ -197,7 +197,6 @@
                 :selectedBaseLayer="selectedBaseLayer"
                 :selectedDataLayer="selectedDataLayer"
                 @sync-bounds="onSyncMapBounds"
-                @click-layer-toggle="onClickMapLayerToggle"
                 @on-map-load="onMapLoad"
                 @slide-handle-change="updateMapFilters"
               />

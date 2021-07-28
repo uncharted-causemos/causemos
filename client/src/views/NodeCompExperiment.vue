@@ -39,6 +39,8 @@
         :breakdown-option="breakdownOption"
         :baseline-metadata="baselineMetadata"
         :selected-timeseries-points="selectedTimeseriesPoints"
+        :selected-base-layer="selectedBaseLayer"
+        :selected-data-layer="selectedDataLayer"
         @set-selected-scenario-ids="setSelectedScenarioIds"
         @select-timestamp="setSelectedTimestamp"
         @set-drilldown-data="setDrilldownData"
@@ -82,6 +84,12 @@
             :items="['mean', 'sum']"
             :selected-item="selectedSpatialAggregation"
             @item-selected="item => selectedSpatialAggregation = item"
+          />
+          <map-dropdown
+            :selectedBaseLayer="selectedBaseLayer"
+            :selectedDataLayer="selectedDataLayer"
+            @set-base-layer="setBaseLayer"
+            @set-data-layer="setDataLayer"
           />
         </template>
 
@@ -134,6 +142,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
+import MapDropdown from '@/components/data/map-dropdown.vue';
 
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
@@ -144,6 +153,7 @@ import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { DatacubeType, ProjectType } from '@/types/Enums';
 
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
@@ -184,7 +194,8 @@ export default defineComponent({
     Disclaimer,
     DatacubeDescription,
     DropdownButton,
-    FullScreenModalHeader
+    FullScreenModalHeader,
+    MapDropdown
   },
   data: () => ({
     modelComponents: {
@@ -341,6 +352,9 @@ export default defineComponent({
 
     const selectLabel = 'Quantify Node';
     const navBackLabel = 'Select A Different Datacube';
+
+    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -386,7 +400,11 @@ export default defineComponent({
       currentCAG,
       nodeId,
       project,
-      stepsBeforeCanConfirm
+      stepsBeforeCanConfirm,
+      selectedBaseLayer,
+      selectedDataLayer,
+      setBaseLayer: (val: BASE_LAYER) => { selectedBaseLayer.value = val; },
+      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; }
     };
   },
   unmounted(): void {
