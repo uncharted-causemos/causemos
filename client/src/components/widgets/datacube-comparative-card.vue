@@ -11,6 +11,20 @@
         @click="openDrilldown">
         <i class="fa fa-fw fa-expand" />
       </button>
+      <datacard-options-button
+        class="menu"
+        :dropdown-below="true"
+        :wider-dropdown-options="true"
+      >
+        <template #content>
+          <div
+            class="dropdown-option"
+            @click="clickRemove"
+          >
+            Remove
+          </div>
+        </template>
+      </datacard-options-button>
     </header>
     <div>
       <div class="col-md-9 timeseries-chart">
@@ -46,12 +60,14 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
 import { colorFromIndex } from '@/utils/colors-util';
+import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import _ from 'lodash';
 
 const DRILLDOWN_TABS = [
   {
@@ -65,6 +81,7 @@ const DRILLDOWN_TABS = [
 export default defineComponent({
   name: 'DatacubeComparativeCard',
   components: {
+    DatacardOptionsButton,
     TimeseriesChart
   },
   props: {
@@ -109,20 +126,26 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     watchEffect(() => {
       if (metadata.value) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
-        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+        let initialOutputIndex = 0;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        if (currentOutputEntry !== undefined) {
+          // we have a store entry for the default output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
-        mainModelOutput.value = outputs.value[initialOutputIndex];
-
-        // FIXME: BUG HERE if multiple models are selected and each one is overwoverwriting the store's currentOutputIndex
-        // save the initial output variable index
-        if (metadata.value.type === DatacubeType.Model) {
-          store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+          // update the store
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
+        mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
 
@@ -255,6 +278,9 @@ export default defineComponent({
     };
   },
   methods: {
+    ...mapActions({
+      removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
+    }),
     async openDrilldown() {
       // NOTE: instead of replacing the datacubeIDs array,
       // ensure that the current datacubeId is at 0 index
@@ -277,6 +303,9 @@ export default defineComponent({
           projectType: ProjectType.Analysis
         }
       }).catch(() => {});
+    },
+    clickRemove() {
+      this.removeAnalysisItems([this.id]);
     }
   }
 });
@@ -303,13 +332,12 @@ export default defineComponent({
 .datacube-header {
   flex: 1;
   margin-left: 20px;
-  margin-right: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 
   .drilldown-btn {
     padding: 5px;
+    margin-left:auto;
   }
 }
 

@@ -107,11 +107,13 @@ export default {
 @import "~styles/variables";
 .search-container {
   min-height: 0px;
+  width: 100%;
   .search-panel {
     display: flex;
     flex-direction: column;
     align-content: stretch;
     align-self: stretch;
+    width: 100%;
     .search-bar-section {
       padding: 6px 8px 0px;
       flex: 0 0 auto;
@@ -125,6 +127,7 @@ export default {
       flex-direction: column;
       align-content: stretch;
       overflow: hidden;
+      width: 100%;
       .tab-bar {
         margin-left: 10px;
         flex: 0 0 auto;
