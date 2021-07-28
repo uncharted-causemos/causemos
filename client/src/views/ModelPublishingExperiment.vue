@@ -162,7 +162,7 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
-import { Insight } from '@/types/Insight';
+import { Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
 
 const DRILLDOWN_TABS = [
@@ -216,6 +216,11 @@ export default defineComponent({
     }
 
     const typeBreakdownData: NamedBreakdownData[] = [];
+
+    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+
+    const breakdownOption = ref<string | null>(null);
 
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
@@ -300,18 +305,21 @@ export default defineComponent({
         selectedScenarioIds: selectedScenarioIds.value,
         selectedTimestamp: selectedTimestamp.value
       };
-      const viewState = {
+      const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
         temporalAggregation: selectedTemporalAggregation.value,
         temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value
       };
 
       store.dispatch('insightPanel/setViewState', viewState);
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
@@ -360,8 +368,6 @@ export default defineComponent({
       selectedTimeseriesPoints
     );
 
-    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
-    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -454,12 +460,30 @@ export default defineComponent({
         if (viewConfig) {
           (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
-          this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
-          this.setSelectedTemporalResolution(viewConfig.temporalResolution);
-          this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
+          if (viewConfig.temporalAggregation) {
+            this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
+          }
+          if (viewConfig.temporalResolution) {
+            this.setSelectedTemporalResolution(viewConfig.temporalResolution);
+          }
+          if (viewConfig.spatialAggregation) {
+            this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
+          }
+          if (viewConfig.selectedMapBaseLayer) {
+            this.setBaseLayer(viewConfig.selectedMapBaseLayer);
+          }
+          if (viewConfig.selectedMapDataLayer) {
+            this.setDataLayer(viewConfig.selectedMapDataLayer);
+          }
+          if (viewConfig.selectedOutputIndex) {
+            const modelId = this.metadata?.id as string;
+            const defaultFeature = {
+              [modelId]: viewConfig.selectedOutputIndex
+            };
+            this.setDatacubeCurrentOutputsMap(defaultFeature);
+          }
 
           // @TODO:
-          //  need to also capture selected output feature, breakdown option, and the map layer
           //  need to support applying an insight by both domain modeler as well as analyst
 
           // ensure that all publication steps are marked as complete
@@ -486,7 +510,8 @@ export default defineComponent({
       setSelectedTemporalAggregation: 'modelPublishStore/setSelectedTemporalAggregation',
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
       setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution',
-      hideInsightPanel: 'insightPanel/hideInsightPanel'
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
     }),
     setBaseLayer(val: BASE_LAYER) {
       this.selectedBaseLayer = val;

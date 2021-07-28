@@ -211,6 +211,10 @@ export default defineComponent({
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
+    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+    const breakdownOption = ref<string | null>(null);
+
     const store = useStore();
     const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
     // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
@@ -305,7 +309,11 @@ export default defineComponent({
         spatialAggregation: selectedSpatialAggregation.value,
         temporalAggregation: selectedTemporalAggregation.value,
         temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value
       };
 
       store.dispatch('insightPanel/setViewState', viewState);
@@ -326,7 +334,6 @@ export default defineComponent({
       clearRouteParam();
     };
 
-    const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
@@ -414,14 +421,14 @@ export default defineComponent({
       temporalBreakdownData,
       AggregationOption,
       TemporalResolutionOption,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      selectedBaseLayer,
+      selectedDataLayer
     };
   },
   data: () => ({
     analysis: undefined,
-    ProjectType,
-    selectedBaseLayer: BASE_LAYER.DEFAULT,
-    selectedDataLayer: DATA_LAYER.ADMIN
+    ProjectType
   }),
   watch: {
     $route: {
@@ -528,6 +535,20 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
           this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+        }
+        if (loadedInsight.view_state?.selectedOutputIndex) {
+          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.view_state?.selectedMapBaseLayer) {
+          this.setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
+        }
+        if (loadedInsight.view_state?.selectedMapDataLayer) {
+          this.setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
+        }
+        if (loadedInsight.view_state?.breakdownOption) {
+          this.setBreakdownOption(loadedInsight.view_state?.breakdownOption);
         }
       }
     },
