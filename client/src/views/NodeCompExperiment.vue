@@ -5,15 +5,19 @@
       :nav-back-label="navBackLabel"
       @close="onBack"
     >
-      <button
-        v-tooltip.top-center="selectLabel"
-        type="button"
-        class="btn btn-primary btn-call-for-action"
-        @click="onSelection"
-      >
-        <i class="fa fa-fw fa-plus-circle" />
-        {{selectLabel}}
-      </button>
+      <div class="header-content">
+        <button
+          v-tooltip.top-center="selectLabel"
+          :disabled="stepsBeforeCanConfirm.length > 0"
+          type="button"
+          class="btn btn-primary btn-call-for-action"
+          @click="onSelection"
+        >
+          <i class="fa fa-fw fa-plus-circle" />
+          {{selectLabel}}
+        </button>
+        <span v-if="stepsBeforeCanConfirm.length > 0">{{ stepsBeforeCanConfirm[0] }}</span>
+      </div>
     </full-screen-modal-header>
     <main>
       <datacube-card
@@ -35,6 +39,8 @@
         :breakdown-option="breakdownOption"
         :baseline-metadata="baselineMetadata"
         :selected-timeseries-points="selectedTimeseriesPoints"
+        :selected-base-layer="selectedBaseLayer"
+        :selected-data-layer="selectedDataLayer"
         @set-selected-scenario-ids="setSelectedScenarioIds"
         @select-timestamp="setSelectedTimestamp"
         @set-drilldown-data="setDrilldownData"
@@ -78,6 +84,12 @@
             :items="['mean', 'sum']"
             :selected-item="selectedSpatialAggregation"
             @item-selected="item => selectedSpatialAggregation = item"
+          />
+          <map-dropdown
+            :selectedBaseLayer="selectedBaseLayer"
+            :selectedDataLayer="selectedDataLayer"
+            @set-base-layer="setBaseLayer"
+            @set-data-layer="setDataLayer"
           />
         </template>
 
@@ -130,6 +142,7 @@ import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
+import MapDropdown from '@/components/data/map-dropdown.vue';
 
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
@@ -140,6 +153,7 @@ import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { DatacubeType, ProjectType } from '@/types/Enums';
 
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
@@ -163,7 +177,8 @@ export default defineComponent({
     Disclaimer,
     DatacubeDescription,
     DropdownButton,
-    FullScreenModalHeader
+    FullScreenModalHeader,
+    MapDropdown
   },
   data: () => ({
     modelComponents: {
@@ -302,8 +317,27 @@ export default defineComponent({
       selectedTimeseriesPoints
     );
 
+    const stepsBeforeCanConfirm = computed(() => {
+      const steps = [];
+      if (metadata.value === null) {
+        steps.push('Loading...');
+      }
+      if (selectedScenarioIds.value.length < 1) {
+        steps.push('Please select a scenario.');
+      } else if (selectedScenarioIds.value.length > 1) {
+        steps.push('Please select exactly one scenario.');
+      }
+      if (breakdownOption.value !== null) {
+        steps.push('Please set "split by" to "none".');
+      }
+      return steps;
+    });
+
     const selectLabel = 'Quantify Node';
     const navBackLabel = 'Select A Different Datacube';
+
+    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -348,7 +382,12 @@ export default defineComponent({
       selectedTimeseriesPoints,
       currentCAG,
       nodeId,
-      project
+      project,
+      stepsBeforeCanConfirm,
+      selectedBaseLayer,
+      selectedDataLayer,
+      setBaseLayer: (val: BASE_LAYER) => { selectedBaseLayer.value = val; },
+      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; }
     };
   },
   unmounted(): void {
@@ -386,57 +425,40 @@ export default defineComponent({
         }
       });
     },
-
-    onSelection () {
-      // FIXME: to do get actual timeseries data here
-      const timeseries = [
-        {
-          timestamp: 1527811200000, value: 10.5
-        },
-        {
-          timestamp: 1530403200000, value: 13.5
-        },
-        {
-          timestamp: 1533081600000, value: 24.5
-        },
-        {
-          timestamp: 1535760000000, value: 15.2
-        },
-        {
-          timestamp: 1538352000000, value: 24.9
-        },
-        {
-          timestamp: 1541030400000, value: 30.2
-        },
-        {
-          timestamp: 1543622400000, value: 11.2
-        }
-      ];
-
+    async onSelection() {
+      if (this.metadata === null) {
+        console.error('Confirm should not be clickable until metadata is loaded.');
+        return;
+      }
+      if (this.visibleTimeseriesData.length !== 1) {
+        console.error('There should be exactly one timeseries visible.', this.visibleTimeseriesData);
+        return;
+      }
+      const timeseries = this.visibleTimeseriesData[0].points;
       const nodeParameters = {
         id: this.selectedNode.id,
         concept: this.selectedNode.concept,
         label: this.selectedNode.label,
         model_id: this.selectedNode.model_id,
         parameter: {
-          id: this.outputSpecs[this.currentOutputIndex].id,
-          name: this.mainModelOutput?.display_name,
-          unit: this.mainModelOutput?.unit,
-          // to do respect selections made by users in the experiment view
+          id: this.metadata.id,
+          name: this.metadata.name,
+          unit: this.unit,
+          // TODO: respect regional selections made by users in the experiment view
           country: '',
           admin1: '',
           admin2: '',
           admin3: '',
-          geospatial_aggregation: this.outputSpecs[this.currentOutputIndex].spatialAggregation,
-          temporal_aggregation: this.outputSpecs[this.currentOutputIndex].temporalAggregation,
-          temporal_resolution: this.outputSpecs[this.currentOutputIndex].temporalResolution,
+          geospatial_aggregation: this.selectedSpatialAggregation,
+          temporal_aggregation: this.selectedTemporalAggregation,
+          temporal_resolution: this.selectedTemporalResolution,
           period: 12,
           timeseries,
           max: null, // filled in by server
           min: null // filled in by server
         }
       };
-      modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
+      await modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
 
       this.$router.push({
         name: 'nodeDrilldown',
@@ -516,6 +538,10 @@ export default defineComponent({
   display: flex;
   flex-direction: column;
   overflow: hidden;
+}
+
+.header-content > *:not(:first-child) {
+  margin-left: 5px;
 }
 
 main {
