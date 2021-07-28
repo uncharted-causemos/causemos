@@ -194,6 +194,13 @@ export default {
         await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
         scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
       }
+
+      // Check if draft scenario is in play
+      if (!_.isNil(this.draftScenario) && this.draftScenario.model_id === this.currentCAG) {
+        console.log('restoring draft');
+        scenarios.push(this.draftScenario);
+      }
+
       this.scenarios = scenarios;
 
       let scenarioId = this.selectedScenarioId;
@@ -475,13 +482,10 @@ export default {
       console.log('hihi');
 
       await this.saveDraft({
-        concept: 'wm/concept/crisis_or_disaster/environmental/flood',
+        concept: 'wm/process/conflict/attack',
         values: [
-          { step: 0, value: 1 },
-          { step: 2, value: 0 },
-          { step: 4, value: 1 },
-          { step: 6, value: 0 },
-          { step: 8, value: 1 }
+          { step: 2, value: 20 },
+          { step: 8, value: 31 }
         ]
       });
 
