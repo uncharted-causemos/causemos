@@ -23,24 +23,30 @@
           />
         </div>
         <div class="selected-node-column">
-          <dropdown-button
-            class="scenario-selector"
-            :inner-button-label="'Scenario'"
-            :items="scenarioSelectDropdownItems"
-            :selected-item="selectedScenarioId"
-            @item-selected="setSelectedScenarioId"
-          />
+          <div class="scenario-selector-row">
+            <div>
+              <span>Selected scenario</span>
+              <dropdown-button
+                :items="scenarioSelectDropdownItems"
+                :selected-item="selectedScenarioId"
+                @item-selected="setSelectedScenarioId"
+              />
+            </div>
+            <div>
+              <span v-if="comparisonDropdownOptions.length > 1">
+                Compare scenarios relative to
+              </span>
+              <dropdown-button
+                v-if="comparisonDropdownOptions.length > 1"
+                :items="comparisonDropdownOptions"
+                :selected-item="comparisonBaselineId"
+                @item-selected="(value) => comparisonBaselineId = value"
+              />
+            </div>
+          </div>
           <div class="expanded-node">
             <div class="expanded-node-header">
               {{ nodeConceptName }}
-              <div v-if="comparisonDropdownOptions.length > 1" class="comparison-dropdown">
-                <span>Compare scenarios relative to</span>
-                <dropdown-button
-                  :items="comparisonDropdownOptions"
-                  :selected-item="comparisonBaselineId"
-                  @item-selected="(value) => comparisonBaselineId = value"
-                />
-              </div>
               <div class="button-group">
                 <!-- TODO: New scenario button -->
                 <!-- TODO: Set goal button -->
@@ -161,7 +167,7 @@ import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import { colorFromIndex } from '@/utils/colors-util';
+import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 
 export default defineComponent({
@@ -398,12 +404,15 @@ export default defineComponent({
       const { projections: _projections } = selectedNodeScenarioData.value;
       if (_projections.length < 2) return null;
       // Convert projections to the Timeseries data structure
-      const timeseries = _projections.map((projection, index) => {
+      const timeseries = _projections.map(projection => {
         const { scenarioName, scenarioId, values } = projection;
+        const color = scenarioId === selectedScenarioId.value
+          ? SELECTED_COLOR_DARK
+          : 'black';
         return {
           name: scenarioName,
           id: scenarioId,
-          color: colorFromIndex(index),
+          color,
           points: values
         };
       });
@@ -512,19 +521,19 @@ h4 {
   overflow-y: auto;
 }
 
-.comparison-dropdown {
+.scenario-selector-row {
   display: flex;
-  align-items: center;
+  justify-content: space-between;
 
-  & > *:first-child {
-    margin-right: 5px;
+  & > div {
+    display: flex;
+    align-items: center;
+
+    & > span {
+      margin-right: 5px;
+    }
+
   }
-}
-
-// Stop scenario-selector from expanding to fill width,
-//  which causes dropdown to appear on the far right
-.scenario-selector {
-  align-self: flex-start;
 }
 
 h6 {
