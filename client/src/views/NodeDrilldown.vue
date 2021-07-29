@@ -33,18 +33,21 @@
           <div class="expanded-node">
             <div class="expanded-node-header">
               {{ nodeConceptName }}
-              <radio-button-group
-                :buttons="chartModes"
-                :selected-button-value="selectedChartMode"
-                @button-clicked="setSelectedChartMode"
-              />
+              <div v-if="comparisonDropdownOptions.length > 1" class="comparison-dropdown">
+                <span>Compare scenarios relative to</span>
+                <dropdown-button
+                  :items="comparisonDropdownOptions"
+                  :selected-item="comparisonBaselineId"
+                  @item-selected="(value) => comparisonBaselineId = value"
+                />
+              </div>
               <div class="button-group">
                 <!-- TODO: New scenario button -->
                 <!-- TODO: Set goal button -->
               </div>
             </div>
             <td-node-chart
-              v-if="selectedNodeScenarioData !== null"
+              v-if="comparisonBaselineId === null && selectedNodeScenarioData !== null"
               class="scenario-chart"
               :selected-scenario-id="selectedScenarioId"
               :historical-timeseries="historicalTimeseries"
@@ -52,6 +55,11 @@
               :min-value="indicatorMin"
               :max-value="indicatorMax"
               @set-historical-timeseries="setHistoricalTimeseries"
+            />
+            <timeseries-chart
+              v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
+              class="scenario-chart"
+              :timeseriesData="comparisonTimeseries.timeseriesData"
             />
           </div>
           <p>
@@ -150,22 +158,11 @@ import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
 import { CAGGraph, CAGModelSummary, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { TimeseriesPoint } from '@/types/Timeseries';
+import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import RadioButtonGroup, { RadioButtonSpec } from '@/components/widgets/radio-button-group.vue';
-
-const CHART_MODES: RadioButtonSpec[] = [
-  {
-    value: 'edit',
-    label: 'Edit',
-    tooltip: 'Modify historical data and projection constraints.'
-  },
-  {
-    value: 'compare',
-    label: 'Compare scenarios',
-    tooltip: 'Plot scenarios relative to each other.'
-  }
-];
+import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
+import { colorFromIndex } from '@/utils/colors-util';
+import { applyRelativeTo } from '@/utils/timeseries-util';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -173,7 +170,7 @@ export default defineComponent({
     NeighborNode,
     TdNodeChart,
     DropdownButton,
-    RadioButtonGroup
+    TimeseriesChart
   },
   props: {},
   computed: {
@@ -273,22 +270,6 @@ export default defineComponent({
           constraints: constraints ?? []
         });
       });
-
-      // TODO: remove dummy data
-      // [
-      //   { timestamp: 1483228800000, value: 0.5 },
-      //   { timestamp: 1485907200000, value: 0.5906666666666667 },
-      //   { timestamp: 1488326400000, value: 0.642 },
-      //   { timestamp: 1491004800000, value: 0.6903333333333334 },
-      //   { timestamp: 1493596800000, value: 0.7603333333333333 },
-      //   { timestamp: 1496275200000, value: 0.8 },
-      //   { timestamp: 1498867200000, value: 0.8236666666666668 },
-      //   { timestamp: 1501545600000, value: 0.85 },
-      //   { timestamp: 1504224000000, value: 0.8786666666666667 },
-      //   { timestamp: 1506816000000, value: 0.901 },
-      //   { timestamp: 1509494400000, value: 0.9283333333333335 },
-      //   { timestamp: 1514764800000, value: 0.9476666666666667 }
-      // ]
 
       return {
         indicatorName: selectedNodeScenarioData.indicator_name ?? 'Missing indicator name',
@@ -403,10 +384,45 @@ export default defineComponent({
       }
     });
 
-    const selectedChartMode = ref(CHART_MODES[0].value);
-    const setSelectedChartMode = (newValue: any) => {
-      selectedChartMode.value = newValue;
-    };
+    const comparisonBaselineId = ref(null);
+    const comparisonTimeseries = computed<{
+      baselineMetadata: { name: string; color: string} | null;
+      timeseriesData: Timeseries[];
+    } | null>(() => {
+      if (
+        comparisonBaselineId.value === null ||
+        selectedNodeScenarioData.value === null
+      ) {
+        return null;
+      }
+      const { projections: _projections } = selectedNodeScenarioData.value;
+      if (_projections.length < 2) return null;
+      // Convert projections to the Timeseries data structure
+      const timeseries = _projections.map((projection, index) => {
+        const { scenarioName, scenarioId, values } = projection;
+        return {
+          name: scenarioName,
+          id: scenarioId,
+          color: colorFromIndex(index),
+          points: values
+        };
+      });
+      // Rescale timeseries relative to the baseline
+      return applyRelativeTo(timeseries, comparisonBaselineId.value);
+    });
+    const comparisonDropdownOptions = computed<DropdownItem[]>(() => {
+      const _projections = selectedNodeScenarioData.value?.projections ?? [];
+      if (_projections.length < 2) {
+        return [];
+      }
+      return [
+        { displayName: 'none', value: null },
+        ..._projections.map(({ scenarioId, scenarioName }) => ({
+          value: scenarioId,
+          displayName: scenarioName
+        }))
+      ];
+    });
 
     return {
       nodeConceptName,
@@ -429,9 +445,9 @@ export default defineComponent({
       isSeasonalityActive,
       indicatorPeriod,
       temporalResolution,
-      chartModes: CHART_MODES,
-      selectedChartMode,
-      setSelectedChartMode
+      comparisonBaselineId,
+      comparisonTimeseries,
+      comparisonDropdownOptions
     };
   },
   methods: {
@@ -496,8 +512,13 @@ h4 {
   overflow-y: auto;
 }
 
-.scenario-selector {
-  align-self: flex-start;
+.comparison-dropdown {
+  display: flex;
+  align-items: center;
+
+  & > *:first-child {
+    margin-right: 5px;
+  }
 }
 
 h6 {
