@@ -521,6 +521,12 @@ h4 {
   }
 }
 
+// Stop scenario-selector from expanding to fill width,
+//  which causes dropdown to appear on the far right
+.scenario-selector {
+  align-self: flex-start;
+}
+
 h6 {
   margin: 0;
   font-size: $font-size-medium;
