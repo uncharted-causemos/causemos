@@ -185,7 +185,7 @@ export default function useTimeseriesData(
     () => [modelRunIds.value],
     () => {
       relativeTo.value = null;
-      breakdownOption.value = null;
+      // breakdownOption.value = null;
     },
     {
       immediate: true

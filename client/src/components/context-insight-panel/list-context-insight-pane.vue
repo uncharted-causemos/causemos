@@ -85,8 +85,7 @@
 import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
-import { mapGetters, mapActions, useStore } from 'vuex';
-import API from '@/api/api';
+import { mapGetters, mapActions } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
@@ -98,8 +97,8 @@ import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
 import router from '@/router';
-import { getContextSpecificInsights, getAllInsights } from '@/services/insight-service';
-import { ref, watchEffect, computed } from 'vue';
+import { deleteInsight } from '@/services/insight-service';
+import useInsightsData from '@/services/composables/useInsightsData';
 
 export default {
   name: 'ListContextInsightPane',
@@ -121,41 +120,10 @@ export default {
     selectedContextInsight: null
   }),
   setup() {
-    const listContextInsights = ref([]);
-    const store = useStore();
-    const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['app/project']);
-    const currentView = computed(() => store.getters['app/currentView']);
-
-    // FIXME: refactor into a composable
-    watchEffect(onInvalidate => {
-      let isCancelled = false;
-      async function fetchInsights() {
-        let insights;
-        // if contextId.value is '' then contextId must be ignored; fetch project insights rather than context insights
-        if (contextId.value === '') {
-          insights = await getAllInsights(project.value, contextId.value);
-        } else {
-          insights = await getContextSpecificInsights(project.value, contextId.value, currentView.value);
-        }
-        if (isCancelled) {
-          // Dependencies have changed since the fetch started, so ignore the
-          //  fetch results to avoid a race condition.
-          return;
-        }
-        listContextInsights.value = insights;
-        store.dispatch('contextInsightPanel/setCountContextInsights', listContextInsights.value.length);
-      }
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      fetchInsights();
-    });
+    const { insights: listContextInsights, reFetchInsights } = useInsightsData();
     return {
       listContextInsights,
-      contextId,
-      currentView,
-      project
+      reFetchInsights
     };
   },
   computed: {
@@ -172,16 +140,10 @@ export default {
   },
   methods: {
     ...mapActions({
-      setCountContextInsights: 'contextInsightPanel/setCountContextInsights',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
     }),
     stringFormatter,
-    async refresh() {
-      const listContextInsights = await getContextSpecificInsights(this.project, this.contextId, this.currentView);
-      this.listContextInsights = listContextInsights;
-      this.setCountContextInsights(listContextInsights.length);
-    },
     newInsight() {
       this.showInsightPanel();
       this.setCurrentPane('new-insight');
@@ -225,13 +187,12 @@ export default {
       }).catch(() => {});
     },
     deleteContextInsight(id) {
-      API.delete(`insights/${id}`).then(result => {
+      deleteInsight(id).then(result => {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
-          const count = this.countContextInsights - 1;
-          this.setCountContextInsights(count);
-          this.refresh();
+          // refresh the latest list from the server
+          this.reFetchInsights();
         } else {
           this.toaster(message, 'error', true);
         }

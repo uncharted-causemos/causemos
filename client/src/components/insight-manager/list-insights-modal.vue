@@ -5,9 +5,6 @@
       nav-back-label="Exit Saved Insights"
       @close="closeInsightPanel"
     >
-      <template #trailing>
-        <insight-control-menu />
-      </template>
     </full-screen-modal-header>
 
     <div class="tab-controls">
@@ -67,7 +64,7 @@
           </div>
           <div class="pane-wrapper">
             <div
-              v-if="countInsights > 0"
+              v-if="searchedInsights.length > 0"
               class="pane-content"
             >
               <insight-card
@@ -77,7 +74,7 @@
                 :curated="isCuratedInsight(insight.id)"
                 :key="insight.id"
                 :insight="insight"
-                @delete-insight="deleteInsight(insight.id)"
+                @delete-insight="removeInsight(insight.id)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
                 @update-curation="updateCuration(insight.id)"
@@ -113,7 +110,7 @@
                 :insight="insight"
                 :show-description="true"
                 :show-question="false"
-                @delete-insight="deleteInsight(insight.id)"
+                @delete-insight="removeInsight(insight.id)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
               />
@@ -135,7 +132,6 @@ import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
 import { mapGetters, mapActions, useStore } from 'vuex';
-import API from '@/api/api';
 
 import { INSIGHTS } from '@/utils/messages-util';
 
@@ -144,16 +140,15 @@ import DropdownControl from '@/components/dropdown-control';
 import MessageDisplay from '@/components/widgets/message-display';
 import TabBar from '@/components/widgets/tab-bar';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
-import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 import router from '@/router';
-import { getAllInsights } from '@/services/insight-service';
-import { ref, watchEffect, computed } from 'vue';
+import { deleteInsight } from '@/services/insight-service';
+import { computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
-
+import useInsightsData from '@/services/composables/useInsightsData';
 
 const INSIGHT_TABS = [
   {
@@ -172,7 +167,6 @@ export default {
     DropdownControl,
     FullScreenModalHeader,
     InsightCard,
-    InsightControlMenu,
     MessageDisplay,
     TabBar,
     AnalyticalQuestionsPanel
@@ -188,11 +182,7 @@ export default {
     tabs: INSIGHT_TABS
   }),
   setup() {
-    const listInsights = ref([]);
     const store = useStore();
-    const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['app/project']);
-
     const questions = computed(() => store.getters['analysisChecklist/questions']);
 
     const insightsById = (id) => listInsights.value.find(i => i.id === id);
@@ -208,30 +198,13 @@ export default {
       return result;
     };
 
-    // FIXME: refactor into a composable
-    watchEffect(onInvalidate => {
-      let isCancelled = false;
-      async function fetchInsights() {
-        const insights = await getAllInsights(project.value, contextId.value);
-        if (isCancelled) {
-          // Dependencies have changed since the fetch started, so ignore the
-          //  fetch results to avoid a race condition.
-          return;
-        }
-        listInsights.value = insights;
-        store.dispatch('insightPanel/setCountInsights', listInsights.value.length);
-      }
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      fetchInsights();
-    });
+    const { insights: listInsights, reFetchInsights } = useInsightsData();
+
     return {
       listInsights,
-      contextId,
-      project,
       questions,
-      fullLinkedInsights
+      fullLinkedInsights,
+      reFetchInsights
     };
   },
   computed: {
@@ -309,16 +282,16 @@ export default {
 
       evt.currentTarget.style.border = 'none';
     },
-    deleteInsight(id) {
-      API.delete(`insights/${id}`).then(result => {
+    removeInsight(id) {
+      deleteInsight(id).then(result => {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
           const count = this.countInsights - 1;
           this.setCountInsights(count);
           this.removeCuration(id);
-          this.refresh();
-        } else {
+          // refresh the latest list from the server
+          this.reFetchInsights();
           this.toaster(message, 'error', true);
         }
       });
@@ -554,11 +527,6 @@ export default {
     },
     openExport() {
       this.exportActive = true;
-    },
-    async refresh() {
-      const listInsights = await getAllInsights(this.project, this.contextId);
-      this.listInsights = listInsights;
-      this.setCountInsights(listInsights.length);
     },
     removeCuration(id) {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);

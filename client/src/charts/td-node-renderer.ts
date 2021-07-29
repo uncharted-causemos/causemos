@@ -29,6 +29,7 @@ const PADDING_RIGHT = 40;
 
 const CONFIDENCE_BAND_OPACITY = 0.2;
 const CONSTRAINT_RADIUS = 4;
+const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
 
 /** How many positions on the Y axis the user's mouse position will
   be snapped to. */
@@ -44,13 +45,17 @@ export default function(
   projections: ScenarioProjection[],
   selectedScenarioId: string,
   constraints: ProjectionConstraint[],
+  minValue: number,
+  maxValue: number,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) {
   if (projections.length === 0) return;
   const [xExtent, yExtent] = calculateExtents(
     historicalTimeseries,
-    projections
+    projections,
+    minValue,
+    maxValue
   );
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('TD Node Renderer: unable to derive extent from data');
@@ -62,7 +67,7 @@ export default function(
   const focusHeight = totalHeight * 0.75;
   const [xScaleFocus, yScaleFocus] = calculateScales(
     totalWidth - PADDING_RIGHT,
-    focusHeight - PADDING_TOP,
+    focusHeight - PADDING_TOP - X_AXIS_HEIGHT,
     PADDING_TOP,
     Y_AXIS_WIDTH,
     xExtent,
@@ -76,7 +81,7 @@ export default function(
   const contextHeight = totalHeight - focusHeight;
   const [xScaleContext, yScaleContext] = calculateScales(
     totalWidth - PADDING_RIGHT,
-    contextHeight,
+    contextHeight - X_AXIS_HEIGHT,
     0,
     Y_AXIS_WIDTH,
     xExtent,
@@ -131,12 +136,7 @@ export default function(
     .brushX()
     .extent([
       [xScaleContext.range()[0], yScaleContext.range()[1]],
-      [
-        xScaleContext.range()[0] +
-          xScaleContext.range()[1] -
-          xScaleContext.range()[0],
-        yScaleContext.range()[1] + contextHeight - X_AXIS_HEIGHT
-      ]
+      [xScaleContext.range()[1], yScaleContext.range()[0]]
     ])
     .on('brush', brushed);
   contextGroupElement
@@ -229,9 +229,10 @@ export default function(
 
 const calculateExtents = (
   historicalTimeseries: TimeseriesPoint[],
-  projections: ScenarioProjection[]
+  projections: ScenarioProjection[],
+  minValue: number,
+  maxValue: number
 ) => {
-  const getValueFromPoint = (point: TimeseriesPoint) => point.value;
   const getTimestampFromPoint = (point: TimeseriesPoint) => point.timestamp;
   const projectedPoints = projections.flatMap(projection => projection.values);
   const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
@@ -239,16 +240,7 @@ const calculateExtents = (
     ...historicalTimeseries.map(getTimestampFromPoint),
     ...projectedTimestamps
   ]);
-  const minValue = Math.min(
-    ...projectedPoints.map(getValueFromPoint),
-    ...historicalTimeseries.map(getValueFromPoint)
-  );
-  const maxValue = Math.max(
-    ...projectedPoints.map(getValueFromPoint),
-    ...historicalTimeseries.map(getValueFromPoint)
-  );
-  const yDiff = Math.abs(maxValue - minValue); // buffer for adding points above and below
-  const yExtent = d3.extent([minValue - yDiff, maxValue + yDiff]);
+  const yExtent = d3.extent([minValue, maxValue]);
   return [xExtent, yExtent];
 };
 
@@ -281,7 +273,7 @@ const renderStaticElements = (
 ) => {
   const stepTimestamps = projections[0].values.map(point => point.timestamp);
   // Draw a vertical line at each step
-  const bottomYValue = offsetFromTop + yScale.range()[0] - yScale.range()[1] - X_AXIS_HEIGHT;
+  const bottomYValue = offsetFromTop + yScale.range()[0] - yScale.range()[1];
   const lineGenerator = d3
     .line<{ timestamp: number; isBottom: boolean }>()
     .x(d => xScale(d.timestamp))
@@ -434,7 +426,7 @@ const generateClickableAreas = (
   const endTimestamp =
     scenarios[0].values[scenarios[0].values.length - 1].timestamp;
   const timelineRectWidth = xScale(endTimestamp) - xScale(startTimestamp);
-  const timelineRectHeight = yScale.range()[0] - yScale.range()[1] - X_AXIS_HEIGHT;
+  const timelineRectHeight = yScale.range()[0] - yScale.range()[1];
   const timelineRect = parentGroupElement
     .append('rect')
     .classed('projection-rect', true)
@@ -481,7 +473,7 @@ const generateClickableAreas = (
       .classed('constraint-selector', true)
       .attr('cx', discreteXPosition)
       .attr('cy', discreteYPosition)
-      .attr('r', Math.min(spaceBetweenDiscreteYValues, spaceBetweenSteps))
+      .attr('r', CONSTRAINT_HOVER_RADIUS)
       .style('pointer-events', 'none')
       .style('fill', 'none')
       .style('stroke', SELECTED_COLOR);

@@ -84,34 +84,9 @@ const updateInsight = async(id, insight) => {
 /**
  * Returns a list of insights
  */
-const getAllInsights = async (projectId, contextId, targetView, visibility) => {
+const getAllInsights = async (filterParams) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const searchFilters = [];
-  // FIXME: add support for analysisId field
-  if (projectId) {
-    searchFilters.push({
-      field: 'project_id',
-      value: projectId
-    });
-  }
-  if (contextId !== undefined) {
-    searchFilters.push({
-      field: 'context_id',
-      value: contextId
-    });
-  }
-  if (targetView) {
-    searchFilters.push({
-      field: 'target_view',
-      value: targetView
-    });
-  }
-  if (visibility) {
-    searchFilters.push({
-      field: 'visibility',
-      value: visibility
-    });
-  }
+  const searchFilters = getFilterFields(filterParams);
   const results = await insightsConnection.find(searchFilters, { size: 50 });
   return results;
 };
@@ -130,33 +105,9 @@ const getInsight = async (insightId) => {
  *
  * @param {string} projectId
  */
-const counts = async (projectId, contextId, targetView, visibility) => {
+const counts = async (filterParams) => {
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
-  const searchFilters = [];
-  if (projectId) {
-    searchFilters.push({
-      field: 'project_id',
-      value: projectId
-    });
-  }
-  if (contextId !== undefined) {
-    searchFilters.push({
-      field: 'context_id',
-      value: contextId
-    });
-  }
-  if (targetView) {
-    searchFilters.push({
-      field: 'target_view',
-      value: targetView
-    });
-  }
-  if (visibility) {
-    searchFilters.push({
-      field: 'visibility',
-      value: visibility
-    });
-  }
+  const searchFilters = getFilterFields(filterParams);
   const count = await insightsConnection.count(searchFilters);
   return count;
 };
@@ -174,6 +125,26 @@ const remove = async (insightId) => {
   return stats;
 };
 
+const getFilterFields = (filterParams) => {
+  // NOTE: supported filter fields are listed also in the client service; InsightFilterFields
+  const supportedSearchFields = [
+    'project_id',
+    'context_id',
+    'target_view',
+    'visibility',
+    'analysis_id'
+  ];
+  const searchFilters = [];
+  supportedSearchFields.forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(filterParams, key)) {
+      searchFilters.push({
+        field: key,
+        value: filterParams[key]
+      });
+    }
+  });
+  return searchFilters;
+};
 
 module.exports = {
   createInsight,

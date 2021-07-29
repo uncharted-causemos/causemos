@@ -60,8 +60,8 @@ router.put('/:id', asyncHandler(async (req, res) => {
  * GET a list of insights
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const { project_id, context_id, target_view, visibility } = req.query;
-  const result = await insightService.getAllInsights(project_id, context_id, target_view, visibility);
+  const filterParams = req.query;
+  const result = await insightService.getAllInsights(filterParams);
   res.json(result);
 }));
 
@@ -69,8 +69,8 @@ router.get('/', asyncHandler(async (req, res) => {
  * GET a count of insights
  **/
 router.get('/counts', asyncHandler(async (req, res) => {
-  const { project_id, context_id, target_view, visibility } = req.query;
-  const result = await insightService.counts(project_id, context_id, target_view, visibility);
+  const filterParams = req.query;
+  const result = await insightService.counts(filterParams);
   res.json(result);
 }));
 
