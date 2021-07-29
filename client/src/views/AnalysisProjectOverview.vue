@@ -185,7 +185,7 @@ const toQuantitative = analysis => ({
   previewImageSrc: analysis.thumbnail_source || null,
   title: analysis.title,
   subtitle: dateFormatter(analysis.modified_at, 'MMM DD, YYYY'),
-  description: analysis.analysis,
+  description: analysis.description || '',
   type: 'quantitative'
 });
 
@@ -194,7 +194,7 @@ const toQualitative = cag => ({
   previewImageSrc: cag.thumbnail_source ?? null,
   title: cag.name,
   subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY'),
-  description: '',
+  description: cag.description || '',
   type: 'qualitative'
 });
 
@@ -339,9 +339,9 @@ export default {
       const projectKB_id = project.kb_id;
       const projectKB = KBlist.find(kb => kb.id === projectKB_id);
 
-      projectKB.corpus_parameter.num_documents ? this.numDocuments = projectKB.corpus_parameter.num_documents : this.numDocuments = '-';
-      projectKB.corpus_parameter.num_statements ? this.numStatements = projectKB.corpus_parameter.num_statements : this.numStatements = '-';
-      projectKB.name ? this.KBname = projectKB.name : this.KBname = '-';
+      this.numDocuments = _.get(projectKB.corpus_parameter, 'num_documents', 0);
+      this.numStatements = _.get(projectKB.corpus_parameter, 'num_statements', 0);
+      this.KBname = _.get(projectKB, 'name', '-');
     },
     onRename(analysis) {
       this.showRenameModal = true;

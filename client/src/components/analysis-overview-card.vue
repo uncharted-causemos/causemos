@@ -18,7 +18,7 @@
     <div
       class="row project-card-header"
       @click="toggleShowMore()">
-      <div class="col-sm-3 instance-header no-padding">
+      <div class="col-sm-2 instance-header no-padding">
         <i
           :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
         />
@@ -30,11 +30,11 @@
           <span class="overflow-ellipsis project-name"><b>{{analysis.title}}</b></span>
         </button>
       </div>
-      <div class="col-sm-2 instance-header">
-        {{analysis.description}}
-        <br>
-        <div style="fontWeight: normal; fontSize: x-small">Last updated:</div>
-        <div style="fontSize: smaller">{{analysis.subtitle}}</div>
+      <div class="col-sm-3">
+        <div style="fontWeight: normal; fontSize: smaller">{{analysis.description}}</div>
+        <div class="instance-header" style="margin-left: 0px">
+          <div style="fontWeight: normal; fontSize: x-small; left-margin: 0px">Last updated: {{analysis.subtitle}}</div>
+        </div>
       </div>
       <div class="col-sm-1 instance-header">
         {{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}
