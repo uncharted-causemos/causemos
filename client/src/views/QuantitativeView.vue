@@ -1,6 +1,11 @@
 <template>
   <div class="quantitative-view-container">
     <analytical-questions-and-insights-panel />
+    <div>
+      <button @click="testDraft1()">1</button>
+      <button @click="testDraft2()">2</button>
+      <button @click="testDraft3()">3</button>
+    </div>
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -27,7 +32,7 @@
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
             @save-new-scenario="saveNewScenario"
-            @run-model="runModel"
+            @run-model="runScenario"
           />
         </template>
       </tab-panel>
@@ -68,7 +73,7 @@ import ModalEditConstraints from '@/components/modals/modal-edit-constraints';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
-const DRAFT_SCENARIO_ID = null; // ID for draft scenario
+const DRAFT_SCENARIO_ID = 'draft';
 
 const isIndicatorChanged = (n, o) => {
   if (o.indicator_name !== n.indicator_name ||
@@ -109,14 +114,15 @@ export default {
     sensitivityDataTimestamp: null,
 
     // Tracking draft scenario
-    previousScenarioId: null,
-    draftScenario: null
+    previousScenarioId: null
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
-      selectedScenarioId: 'model/selectedScenarioId'
+      selectedScenarioId: 'model/selectedScenarioId',
+      draftScenario: 'model/draftScenario',
+      draftScenarioDirty: 'model/draftScenarioDirty'
     }),
     ready() {
       return this.modelSummary && this.modelComponents && this.scenarios;
@@ -129,20 +135,20 @@ export default {
     }
   },
   watch: {
-    selectedScenarioId() {
-      if (_.isNil(this.scenarios)) return;
-      this.fetchSensitivityAnalysisResults();
-      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-      if (scenario && scenario.is_valid === false) {
-        this.recalculateScenario(scenario);
-      }
-    },
+    // selectedScenarioId() {
+    //   if (_.isNil(this.scenarios)) return;
+    //   this.fetchSensitivityAnalysisResults();
+    //   const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+    //   if (scenario && scenario.is_valid === false) {
+    //     this.recalculateScenario(scenario);
+    //   }
+    // },
     sensitivityAnalysisType() {
       this.fetchSensitivityAnalysisResults();
-    },
-    scenarios() {
-      this.fetchSensitivityAnalysisResults();
     }
+    // scenarios() {
+    //   this.fetchSensitivityAnalysisResults();
+    // }
   },
   created() {
     // update insight related state
@@ -157,12 +163,11 @@ export default {
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
+      setDraftScenario: 'model/setDraftScenario',
+      updateDrafScenariotConstraints: 'model/updateDrafScenariotConstraints',
+      setDraftScenarioDirty: 'model/setDraftScenarioDirty',
       setContextId: 'insightPanel/setContextId'
     }),
-    runModel() {
-      console.log('running model');
-      this.refresh();
-    },
     async refreshModel() {
       this.enableOverlay();
       this.modelSummary = await modelService.getSummary(this.currentCAG);
@@ -170,6 +175,51 @@ export default {
       this.disableOverlay();
     },
     async refresh() {
+      // Basic model data
+      this.modelSummary = await modelService.getSummary(this.currentCAG);
+
+      let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+
+      console.log('check quantified', this.modelSummary.is_quantified);
+      // 1. If we have no scenarios at all, then we must sync with inference engines
+      // 2. If we have topology changes, then we should sync with inference engines
+      if (scenarios.length === 0 || this.modelSummary.is_quantified === false) {
+        // Check model is ready to be used for experiments
+        const errors = await modelService.initializeModel(this.currentCAG);
+        if (errors.length) {
+          this.disableOverlay();
+          this.toaster(errors[0], 'error', true);
+          console.error(errors);
+          return;
+        }
+      }
+      await this.refreshModel();
+
+
+      if (scenarios.length === 0) {
+        // Now we are up to date, create base scenario
+        await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+        scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      }
+
+      // Check if draft scenario is in play
+      if (!_.isNil(this.draftScenario) && this.draftScenario.model_id === this.currentCAG) {
+        console.log('restoring draft');
+        scenarios.push(this.draftScenario);
+      } else {
+        this.setDraftScenario(null);
+      }
+
+      this.scenarios = scenarios;
+
+      let scenarioId = this.selectedScenarioId;
+      if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
+        scenarioId = scenarios.find(d => d.is_baseline).id;
+      }
+      this.setSelectedScenarioId(scenarioId);
+    },
+    /*
+    async refreshX() {
       this.enableOverlay();
 
       // Check model is ready to be used for experiments
@@ -215,13 +265,20 @@ export default {
         this.fetchSensitivityAnalysisResults();
       }
     },
+    */
     revertDraftChanges() {
-      this.setSelectedScenarioId(this.previousScenarioId);
+      if (!_.isNil(this.previousScenarioId)) {
+        this.setSelectedScenarioId(this.previousScenarioId);
+      } else {
+        const id = this.scenarios.find(s => s.is_baseline === true).id;
+        this.setSelectedScenarioId(id);
+      }
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
 
-      this.draftScenario = null;
+      this.setDraftScenario(null);
       this.scenarios = temp;
     },
+    /*
     async recalculateScenario(scenario) {
       this.enableOverlay(`Rerunning: ${scenario.name}`);
 
@@ -260,6 +317,7 @@ export default {
 
       this.disableOverlay();
     },
+    */
     async overwriteScenario(id) {
       // Transfer draft data to overwrite existing scenario
       const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
@@ -356,71 +414,98 @@ export default {
     closeModelParameters() {
       this.isModelParametersOpen = false;
     },
-    async saveDraft({ concept, constraints }) {
-      // FIXME: remove reliance on timestamp
-      constraints.forEach(c => {
-        delete c.timestamp;
-      });
-
+    async saveDraft({ concept, values }) {
       this.isEditConstraintsOpen = false;
-      this.enableOverlay('Running experiment');
 
-      // Set draft scenario if none existed
+      // 1. If no draft scenario we need to create one
       if (_.isNil(this.draftScenario)) {
         const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-
-        this.draftScenario = {
-          id: DRAFT_SCENARIO_ID,
-          modelId: this.currentCAG,
+        const draft = {
+          id: 'draft',
+          name: 'Draft',
+          model_id: this.currentCAG,
+          description: '',
+          is_valid: true,
+          is_baseline: false,
           parameter: {
             constraints: _.cloneDeep(selectedScenario.parameter.constraints),
             num_steps: this.projectionSteps,
             indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
             projection_start: this.modelSummary.parameter.projection_start
           },
-          engine: this.currentEngine,
-          is_baseline: false,
-          is_valid: true
+          engine: this.currentEngine
         };
+        await this.setDraftScenario(draft);
       }
-
-      // Overwrite
-      _.remove(this.draftScenario.parameter.constraints, d => d.concept === concept);
-      if (!_.isEmpty(constraints)) {
-        this.draftScenario.parameter.constraints.push({
-          concept,
-          values: constraints
-        });
-      }
-      await this.runDraftScenario();
-    },
-    async runDraftScenario() {
-      // Run experiment
-      let experimentId = 0;
-      let result = null;
-      try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, this.draftScenario.parameter.constraints));
-        result = await modelService.getExperimentResult(this.currentCAG, experimentId);
-      } catch (error) {
-        this.toaster(error.response.data, 'error', true);
-        this.disableOverlay();
-        return;
-      }
-      this.disableOverlay();
-
-      this.draftScenario.experimentId = experimentId;
-      this.draftScenario.result = result.results.data;
-
-      // Cycle the scenarios to force reactive to trigger
-      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
-      temp.push(this.draftScenario);
-      this.scenarios = temp;
 
       // Switch to draft
       if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
         this.previousScenarioId = this.selectedScenarioId;
       }
-      this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
+      await this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
+
+      // 2. Update
+      await this.updateDrafScenariotConstraints({ concept, values });
+
+      // Cycle the scenarios to force reactive to trigger
+      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
+      temp.push(this.draftScenario);
+      this.scenarios = temp;
+    },
+    async runScenario() {
+      const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+
+      if (_.isEmpty(selectedScenario)) return;
+
+      this.enableOverlay('Running experiment');
+
+      // 0. Refresh
+      if (this.modelSummary.status === 0) {
+        await modelService.initializeModel(this.currentCAG);
+        await this.refreshModel();
+      }
+
+      // 1. Adjust unmatched constraints, if any
+      if (selectedScenario.is_valid === false) {
+        modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
+      }
+
+      // 2. Run experiment and wait for results
+      let experimentId = 0;
+      let result = null;
+      try {
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints));
+        result = await modelService.getExperimentResult(this.currentCAG, experimentId);
+      } catch (error) {
+        console.error(error);
+        this.toaster(error, 'error', true);
+        this.disableOverlay();
+        return;
+      }
+      this.setDraftScenarioDirty(false);
+
+      // FIXME: Not great to directly write into draft
+      selectedScenario.experimentId = experimentId;
+      selectedScenario.result = result.results.data;
+      selectedScenario.is_valid = true;
+
+      // 3. We have rerun an existing scenario, need to update
+      if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
+        this.enableOverlay('Writing result');
+        await modelService.updateScenario({
+          id: selectedScenario.id,
+          model_id: this.currentCAG,
+          is_valid: true,
+          experiment_id: selectedScenario.experimentId,
+          parameter: selectedScenario.parameter,
+          result: selectedScenario.result
+        });
+      }
+
+      this.disableOverlay();
+
+      // 4. Cycle the scenarios to force reactive to trigger
+      this.scenarios = [...this.scenarios];
     },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
@@ -444,6 +529,35 @@ export default {
     },
     setSensitivityAnalysisType(newValue) {
       this.sensitivityAnalysisType = newValue;
+    },
+    async testDraft1() {
+      await this.saveDraft({
+        concept: 'wm/process/conflict/attack',
+        values: [
+          { step: 0, value: 50 },
+          { step: 2, value: 140 },
+          { step: 7, value: 240 },
+          { step: 10, value: -240 }
+        ]
+      });
+    },
+    async testDraft3() {
+      await this.saveDraft({
+        concept: 'wm/process/conflict/attack',
+        values: [
+          { step: 0, value: 50 },
+          { step: 4, value: 900 }
+        ]
+      });
+    },
+    async testDraft2() {
+      await this.saveDraft({
+        concept: 'wm/concept/crisis_or_disaster/environmental/flood',
+        values: [
+          { step: 0, value: 50 },
+          { step: 5, value: 20 }
+        ]
+      });
     }
   }
 };

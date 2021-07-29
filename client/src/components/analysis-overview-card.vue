@@ -41,16 +41,8 @@
         <div style="color: black">{{analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}</div>
       </div>
       <div class="col-sm-1 instance-header">
-        {{analysis.type === 'quantitative' ? 'Models': 'Relations'}}
-        <div style="color: black">{{analysis.type === 'quantitative' ? '-' : analysis.edgeCount }}</div>
-      </div>
-      <div class="col-sm-1 instance-header">
-        Insights
-        <div style="color: black">12</div>
-      </div>
-      <div class="col-sm-1 instance-header">
-        Comments
-        <div style="color: black">7</div>
+        {{analysis.type === 'quantitative' ? '': 'Relations'}}
+        <div style="color: black">{{analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
       </div>
     </div>
     <div
@@ -58,8 +50,9 @@
       class="project-card-footer"
     >
       <div class="row">
-        <div class="col-sm-5"></div>
-        <div class="col-sm-1">
+        <div class="col-sm-3 instance-header"></div>
+        <div class="col-sm-2 instance-header"></div>
+        <div class="col-sm-1 instance-header">
           <button
             v-tooltip.top-center="'Open analysis'"
             type="button"

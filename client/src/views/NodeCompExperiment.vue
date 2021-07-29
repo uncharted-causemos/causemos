@@ -168,23 +168,6 @@ const DRILLDOWN_TABS = [
   }
 ];
 
-
-const projectionValueRange = (values: number[]) => {
-  if (_.isEmpty(values)) return { max: 1, min: 0 };
-
-  let max = _.max(values) || 0;
-  let min = _.min(values) || 0;
-
-  if (max === min && max === 0) {
-    max += 1;
-  } else if (max === min) {
-    max += Math.abs(max);
-    min -= Math.abs(min);
-  }
-  return { max, min };
-};
-
-
 export default defineComponent({
   name: 'NodeCompExperiment',
   components: {
@@ -442,7 +425,6 @@ export default defineComponent({
         }
       });
     },
-
     async onSelection() {
       if (this.metadata === null) {
         console.error('Confirm should not be clickable until metadata is loaded.');
@@ -453,7 +435,6 @@ export default defineComponent({
         return;
       }
       const timeseries = this.visibleTimeseriesData[0].points;
-      const { max, min } = projectionValueRange(timeseries.map(d => d.value));
       const nodeParameters = {
         id: this.selectedNode.id,
         concept: this.selectedNode.concept,
@@ -472,8 +453,9 @@ export default defineComponent({
           temporal_aggregation: this.selectedTemporalAggregation,
           temporal_resolution: this.selectedTemporalResolution,
           period: 12,
-          max: max,
-          min: min
+          timeseries,
+          max: null, // filled in by server
+          min: null // filled in by server
         }
       };
       await modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);

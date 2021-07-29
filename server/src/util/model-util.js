@@ -35,13 +35,20 @@ const projectionValueRange = (values) => {
   let min = _.min(values);
 
   if (max === min && max === 0) {
-    max += 1;
+    max = 1;
+    min = -1;
   } else if (max === min) {
-    max += Math.abs(max);
-    min -= Math.abs(min);
+    const magnitude = Math.abs(max);
+    max += magnitude;
+    min -= magnitude;
+  } else {
+    const magnitude = Math.abs(max - min);
+    max += magnitude;
+    min -= magnitude;
   }
   return { max, min };
 };
+
 
 const MODEL_STATUS = {
   UNSYNCED: 0,

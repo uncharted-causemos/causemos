@@ -84,6 +84,7 @@ export default function useInsightsData() {
       }
       insights.value = _.uniqBy([...publicInsights, ...contextInsights], 'id');
       store.dispatch('contextInsightPanel/setCountContextInsights', insights.value.length);
+      store.dispatch('insightPanel/setCountInsights', insights.value.length);
     }
     onInvalidate(() => {
       isCancelled = true;
