@@ -15,9 +15,9 @@ interface ModelPublishState {
  */
 const state: ModelPublishState = {
   currentPublishStep: ModelPublishingStepID.Enrich_Description,
-  selectedTemporalAggregation: AggregationOption.Mean,
-  selectedTemporalResolution: TemporalResolutionOption.Month,
-  selectedSpatialAggregation: AggregationOption.Mean,
+  selectedTemporalAggregation: AggregationOption.None,
+  selectedTemporalResolution: TemporalResolutionOption.None,
+  selectedSpatialAggregation: AggregationOption.None,
   selectedTimestamp: null,
   selectedScenarioIds: []
 };

@@ -14,63 +14,41 @@
               >
             </a>
           </li>
-          <li class="nav-item nav-item--label">
-            <span v-if="projectMetadata !== null && projectMetadata.name !== ''">{{ projectMetadata.name }}</span>
-            <span v-else>{{ project }}</span>
-            <span v-if="currentView === 'home'">
-              All Projects
-            </span>
+          <li v-if="currentView === 'home'" class="nav-item nav-item--label">
+            All Projects
           </li>
-          <li
-            v-if="project !== null && projectMetadata !== null && projectType !== ProjectType.Analysis"
-            class="nav-item"
-            :class="{underlined: currentView === 'overview'}">
-            <router-link
-              class="nav-link"
-              :to="{name:'domainDatacubeOverview', params:{project: projectMetadata.name}}"
-            ><i class="fa fa-connectdevelop" />
-              Family Page</router-link>
-          </li>
-          <li
-            v-if="project !== null && projectType === ProjectType.Analysis"
-            class="nav-item"
-            :class="{underlined: currentView === 'overview'}">
-            <router-link
-              class="nav-link"
-              :to="{name:'overview', params:{project: project}}"
-            ><i class="fa fa-search" />
-              Overview</router-link>
-          </li>
-          <li
-            v-if="project !== null && projectType === ProjectType.Analysis"
-            class="nav-item"
-            :class="{underlined: currentView === 'dataStart' || currentView === 'data'}">
-            <router-link
-              class="nav-link"
-              :to="{name:'dataStart', params:{project: project}}"
-            ><i class="fa fa-table" />
-              Data</router-link>
-          </li>
-          <li
-            v-if="project !== null && projectType === ProjectType.Analysis"
-            class="nav-item"
-            :class="{underlined: currentView === 'qualitative' || currentView === 'qualitativeStart'}">
-            <router-link
-              class="nav-link"
-              :to="{name:'qualitativeStart', params:{project: project} }"
-            ><i class="fa fa-book" />
-              Knowledge</router-link>
-          </li>
-          <li
-            v-if="project !== null && projectType === ProjectType.Analysis"
-            class="nav-item"
-            :class="{underlined: currentView === 'quantitativeStart' || currentView === 'quantitative'}">
-            <router-link
-              class="nav-link"
-              :to="{name: 'quantitativeStart', params:{project}}"
-            > <i class="fa fa-connectdevelop" />
-              Models</router-link>
-          </li>
+          <template v-if="project !== null && projectMetadata !== null && projectMetadata.name !== ''">
+            <li
+              v-if="projectType !== ProjectType.Analysis"
+              class="nav-item"
+              :class="{underlined: currentView === 'domainDatacubeOverview'}">
+              <router-link
+                class="nav-link"
+                :to="{name:'domainDatacubeOverview', params:{project: projectMetadata.name}}"
+              >
+                <i class="fa fa-connectdevelop" />
+                {{ projectMetadata.name }}
+              </router-link>
+            </li>
+            <li
+              v-if="projectType === ProjectType.Analysis"
+              class="nav-item"
+              :class="{underlined: currentView === 'overview'}">
+              <router-link
+                class="nav-link"
+                :to="{name:'overview', params:{project: project}}"
+              >
+                <i class="fa fa-search" />
+                {{ projectMetadata.name }}
+              </router-link>
+            </li>
+            <li
+              v-if="projectType === ProjectType.Analysis && currentView !== 'overview'"
+              class="nav-item nav-item--label"
+              :class="{underlined: currentView === 'dataComparative' || currentView === 'qualitative' || currentView === 'quantitative'}">
+              {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+            </li>
+          </template>
         </ul>
       </div>
 

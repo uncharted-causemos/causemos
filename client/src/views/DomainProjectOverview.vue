@@ -165,12 +165,17 @@ export default {
   },
   async mounted() {
     this.fetchDatacubeInstances();
+
+    // ensure the insight explorer panel is closed in case the user has
+    //  previously opened it and clicked the browser back button
+    this.hideInsightPanel();
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setContextId: 'insightPanel/setContextId',
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds'
     }),
     updateDesc() {
