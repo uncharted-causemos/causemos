@@ -330,7 +330,6 @@ export default defineComponent({
       selectedScenarioIds,
       allModelRunData,
       metadata,
-      timeseriesData,
       breakdownOption
     } = toRefs(props);
 
@@ -377,17 +376,6 @@ export default defineComponent({
       }
     );
 
-    const hasSingleTimestamp = computed(() => {
-      const allPoints = timeseriesData.value.flatMap(timeseries => timeseries.points);
-      if (allPoints.length === 0) return false;
-      const allTimestamps = allPoints.map(point => point.timestamp);
-      const timestamp = allTimestamps[0];
-      for (const other of allTimestamps.slice(1)) {
-        if (other !== timestamp) return false;
-      }
-      return true;
-    });
-
     const timestampFormatter = (timestamp: number) => {
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
         const month = timestamp;
@@ -409,8 +397,7 @@ export default defineComponent({
       mainModelOutput,
       isModelMetadata,
       emitRelativeToSelection,
-      timestampFormatter,
-      hasSingleTimestamp
+      timestampFormatter
     };
   },
   data: () => ({

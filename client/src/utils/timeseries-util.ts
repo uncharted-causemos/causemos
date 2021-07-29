@@ -129,7 +129,7 @@ export function renderPoint(
     .classed('circle', true)
     .attr('r', 5)
     .attr('cx', d => xScale(d.timestamp))
-    .attr('cy', d => yScale(d.timestamp))
+    .attr('cy', d => yScale(d.value))
     .style('stroke', color || DEFAULT_LINE_COLOR)
     .style('stroke-width', 1.5)
     .style('fill', color || DEFAULT_LINE_COLOR);
