@@ -218,6 +218,7 @@ export default {
       }
       this.setSelectedScenarioId(scenarioId);
     },
+    /*
     async refreshX() {
       this.enableOverlay();
 
@@ -264,6 +265,7 @@ export default {
         this.fetchSensitivityAnalysisResults();
       }
     },
+    */
     revertDraftChanges() {
       this.setSelectedScenarioId(this.previousScenarioId);
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
@@ -271,6 +273,7 @@ export default {
       this.setDraftScenario(null);
       this.scenarios = temp;
     },
+    /*
     async recalculateScenario(scenario) {
       this.enableOverlay(`Rerunning: ${scenario.name}`);
 
@@ -309,6 +312,7 @@ export default {
 
       this.disableOverlay();
     },
+    */
     async overwriteScenario(id) {
       // Transfer draft data to overwrite existing scenario
       const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
