@@ -334,9 +334,8 @@ export default {
       this.disableOverlay();
     },
     async fetchKbStats() {
-      const project = await projectService.getProject(this.project);
-      const KBlist = await projectService.getKBs();
-      const projectKB_id = project.kb_id;
+      const KBlist = await projectService.getKBs(); // FIXME this is more expensive than it needs to be, we fetch the whole list of KBs then only use one
+      const projectKB_id = this.projectMetadata.kb_id;
       const projectKB = KBlist.find(kb => kb.id === projectKB_id);
 
       this.numDocuments = _.get(projectKB.corpus_parameter, 'num_documents', 0);
