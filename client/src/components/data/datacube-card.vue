@@ -147,22 +147,13 @@
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && timeseriesData.length > 0 && !hasSingleTimestamp"
+            v-if="!isDescriptionView && timeseriesData.length > 0"
             class="timeseries-chart"
             :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
             :breakdown-option="breakdownOption"
             @select-timestamp="emitTimestampSelection"
           />
-          <p
-            v-else-if="hasSingleTimestamp"
-            class="hidden-timeseries-message"
-          >
-            Data only exists for
-            <span class="timestamp">
-              {{ timestampFormatter(timeseriesData[0].points[0].timestamp) }}
-            </span>.
-          </p>
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
