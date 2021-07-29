@@ -25,18 +25,19 @@ describe('model-util', function() {
 
   it('min/max range - regular case', function() {
     const normal = modelUtil.projectionValueRange([1, 2, 3]);
-    expect(normal).to.deep.equal({ max: 3, min: 1 });
+    expect(normal).to.deep.equal({ max: 5, min: -1 });
 
     const negative = modelUtil.projectionValueRange([-1, -2, -3]);
-    expect(negative).to.deep.equal({ max: -1, min: -3 });
+    expect(negative).to.deep.equal({ max: 1, min: -5 });
 
     const flat = modelUtil.projectionValueRange([3, 3, 3, 3]);
     expect(flat).to.deep.equal({ max: 6, min: 0 });
   });
 
+
   it('min/max range - degenerate case', function() {
     const zero = modelUtil.projectionValueRange([0, 0]);
-    expect(zero).to.deep.equal({ max: 1, min: 0 });
+    expect(zero).to.deep.equal({ max: 1, min: -1 });
 
     const singular = modelUtil.projectionValueRange([-3]);
     expect(singular).to.deep.equal({ max: 0, min: -6 });

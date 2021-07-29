@@ -18,7 +18,8 @@ import {
 const MODEL_STATUS = {
   UNSYNCED: 0,
   TRAINING: 1,
-  READY: 2
+  READY: 2,
+  UNSYNCED_TOPOLOGY: 3
 };
 
 const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
@@ -222,9 +223,9 @@ const initializeModel = async (modelId: string) => {
   if (model.is_stale === true) {
     errors.push('Model is stale');
   }
-  if (model.is_quantified === false) {
-    errors.push('Model is not quantified');
-  }
+  // if (model.is_quantified === false) {
+  //   errors.push('Model is not quantified');
+  // }
   if (!_.isEmpty((errors))) {
     return errors;
   }
@@ -345,6 +346,8 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
         end: modelParameter.indicator_time_series_range.end
       },
       projection_start: modelParameter.projection_start,
+      min: indicatorData.min,
+      max: indicatorData.max,
       scenarios: []
     };
 
