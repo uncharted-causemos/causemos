@@ -267,7 +267,12 @@ export default {
     },
     */
     revertDraftChanges() {
-      this.setSelectedScenarioId(this.previousScenarioId);
+      if (!_.isNil(this.previousScenarioId)) {
+        this.setSelectedScenarioId(this.previousScenarioId);
+      } else {
+        const id = this.scenarios.find(s => s.is_baseline === true).id;
+        this.setSelectedScenarioId(id);
+      }
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
 
       this.setDraftScenario(null);
