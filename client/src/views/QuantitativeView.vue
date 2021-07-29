@@ -32,7 +32,7 @@
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
             @save-new-scenario="saveNewScenario"
-            @run-model="runDraftScenario"
+            @run-model="runScenario"
           />
         </template>
       </tab-panel>
@@ -168,10 +168,6 @@ export default {
       setDraftScenarioDirty: 'model/setDraftScenarioDirty',
       setContextId: 'insightPanel/setContextId'
     }),
-    runModel() {
-      console.log('running model');
-      this.refresh();
-    },
     async refreshModel() {
       this.enableOverlay();
       this.modelSummary = await modelService.getSummary(this.currentCAG);
@@ -439,7 +435,6 @@ export default {
       }
       await this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
 
-
       // 2. Update
       await this.updateDrafScenariotConstraints({ concept, values });
 
@@ -448,15 +443,22 @@ export default {
       temp.push(this.draftScenario);
       this.scenarios = temp;
     },
-    async runDraftScenario() {
-      if (_.isEmpty(this.draftScenario)) return;
+    async runScenario() {
+      const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+
+      if (_.isEmpty(selectedScenario)) return;
+
+      if (this.modelSummary.status === 0) {
+        await modelService.initializeModel(this.currentCAG);
+        await this.refreshModel();
+      }
 
       this.enableOverlay('Running experiment');
       // Run experiment
       let experimentId = 0;
       let result = null;
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, this.draftScenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints));
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         console.error(error);
@@ -467,13 +469,12 @@ export default {
       this.disableOverlay();
       this.setDraftScenarioDirty(false);
 
-      this.draftScenario.experimentId = experimentId;
-      this.draftScenario.result = result.results.data;
+      // FIXME: draft
+      selectedScenario.experimentId = experimentId;
+      selectedScenario.result = result.results.data;
 
       // Cycle the scenarios to force reactive to trigger
-      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
-      temp.push(this.draftScenario);
-      this.scenarios = temp;
+      this.scenarios = [...this.scenarios];
     },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
