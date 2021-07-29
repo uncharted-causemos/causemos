@@ -424,7 +424,8 @@ export default defineComponent({
       TemporalResolutionOption,
       selectedTimeseriesPoints,
       selectedBaseLayer,
-      selectedDataLayer
+      selectedDataLayer,
+      datacubeCurrentOutputsMap
     };
   },
   data: () => ({
@@ -461,8 +462,7 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       analysisId: 'dataAnalysis/analysisId',
-      projectType: 'app/projectType',
-      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
+      projectType: 'app/projectType'
     }),
     navBackLabel(): string {
       if (this.analysis) {
