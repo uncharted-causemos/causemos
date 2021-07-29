@@ -585,7 +585,7 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
             field: 'wm.edge',
             include: {
               partition: partition,
-              num_partitions: 20
+              num_partitions: totalPartitions
             }
           },
           aggs: {
@@ -621,7 +621,7 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
  * @param {object} filters    - statement filters
  */
 const getProjectEdges = async(projectId, filters) => {
-  const totalPartitions = 20;
+  const totalPartitions = 100;
   const partitionsOfEdges = (await Promise.all([...Array(totalPartitions).keys()].map(partition =>
     getProjectEdgesByPartition(projectId, filters, totalPartitions, partition)
   )));
