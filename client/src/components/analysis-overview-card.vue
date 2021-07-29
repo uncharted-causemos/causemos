@@ -27,7 +27,7 @@
           class="btn btn-link no-padding"
           style="color: black; margin-bottom: 1rem"
           @click="openAnalysis">
-          <span class="overflow-ellipsis project-name"><b>{{analysis.title}}</b></span>
+          <span class="overflow-ellipsis"><b>{{analysis.title}}</b></span>
         </button>
       </div>
       <div class="col-sm-3">
