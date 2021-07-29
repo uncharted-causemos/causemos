@@ -31,9 +31,9 @@
         </button>
       </div>
       <div class="col-sm-3">
-        <div style="fontWeight: normal; fontSize: smaller">{{analysis.description}}</div>
+        <div style="fontWeight: normal;">{{analysis.description}}</div>
         <div class="instance-header" style="margin-left: 0px">
-          <div style="fontWeight: normal; fontSize: x-small; left-margin: 0px">Last updated: {{analysis.subtitle}}</div>
+          <div style="fontWeight: normal; left-margin: 0px">Last updated: {{analysis.subtitle}}</div>
         </div>
       </div>
       <div class="col-sm-1 instance-header">
