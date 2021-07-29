@@ -24,6 +24,7 @@
         @save-indicator-edits="saveIndicatorEdits"
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
         @refresh-model="refreshModel"
+        @tab-click="tabClick"
       >
         <template #action-bar>
           <action-bar
@@ -516,11 +517,16 @@ export default {
       const now = Date.now();
       this.sensitivityDataTimestamp = now;
       const constraints = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId).parameter.constraints;
-      const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
+
+      const constraints2 = modelService.injectStepZero(this.modelComponents.nodes, constraints);
+
+      const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints2);
+
       // If another sensitivity analysis started running before this one returns an ID,
       //  then don't bother fetching/processing the results to avoid a race condition
       if (this.sensitivityDataTimestamp !== now) return;
       const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId);
+
       if (this.sensitivityDataTimestamp !== now) return;
       const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
       csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
@@ -529,6 +535,11 @@ export default {
     },
     setSensitivityAnalysisType(newValue) {
       this.sensitivityAnalysisType = newValue;
+    },
+    tabClick(tab) {
+      if (tab === 'matrix') {
+        this.fetchSensitivityAnalysisResults();
+      }
     },
     async testDraft1() {
       await this.saveDraft({
