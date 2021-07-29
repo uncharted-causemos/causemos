@@ -55,7 +55,7 @@
           </div>
         </div>
       </div>
-      <div class="col-md-3 KBstats-container">
+      <div class="col-md-2 KBstats-container">
         <b style="flex-basis: 100%">KNOWLEDGE BASE:</b>
         <div>{{ KBname }}</div>
         <br>
@@ -73,7 +73,12 @@
           v-if="showDocumentModal === true"
           @close="showDocumentModal = false" />
       </div>
-      <div class="col-md-2" style="backgroundColor: darkgray; height: 100%">
+      <div class="col-md-3" style="height: 100%; padding-left: 0px; padding-right: 0px">
+        <img
+                class="map-image"
+                src="../assets/GenericWorld.png"
+                alt="Generic world map"
+          >
         <!-- placeholder for area-of-interest image -->
       </div>
     </div>
@@ -497,6 +502,11 @@ export default {
 $padding-size: 2vh;
 .project-overview-container {
   padding-top: 0;
+}
+
+.map-image {
+  height: 100%;
+  width: 100%;
 }
 
 .insight-container {
