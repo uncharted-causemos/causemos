@@ -45,6 +45,20 @@
           <span v-for="analyst in ['Analyst 1', 'Analyst 2']"
           :key="analyst" class="maintainer">{{analyst}}</span>
         </div>
+        <div class="tags-container">
+          <b style="flex-basis: 100%">Tags:</b>
+          <div
+            v-for="tag in tags"
+            :key="tag"
+            class="tag">
+            {{ tag }}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-3 KBstats-container">
+        <b style="flex-basis: 100%">Knowledge Base</b>
+        <div><b>{{ numDocuments }}</b> documents</div>
+        <div><b>{{ numStatements }}</b> causal relationships</div>
         <div>
           <button
             class="button"
@@ -56,15 +70,6 @@
         <modal-upload-document
           v-if="showDocumentModal === true"
           @close="showDocumentModal = false" />
-      </div>
-      <div class="col-md-3 tags-container">
-        <b style="flex-basis: 100%">Tags:</b>
-        <div
-          v-for="tag in tags"
-          :key="tag"
-          class="tag">
-          {{ tag }}
-        </div>
       </div>
       <div class="col-md-2" style="backgroundColor: darkgray; height: 100%">
         <!-- placeholder for area-of-interest image -->
@@ -199,6 +204,8 @@ export default {
     analyses: [],
     qualitativeAnalyses: [],
     quantitativeAnalyses: [],
+    numDocuments: '-',
+    numStatements: '-',
     searchText: '',
     showSortingDropdownAnalyses: false,
     analysisSortingOptions: ['Most recent', 'Earliest'],
@@ -230,6 +237,7 @@ export default {
   },
   async mounted() {
     this.fetchAnalyses();
+    this.fetchKbStats();
   },
   methods: {
     ...mapActions({
@@ -316,6 +324,15 @@ export default {
       this.sortAnalysesByMostRecentDate();
 
       this.disableOverlay();
+    },
+    async fetchKbStats() {
+      const project = await projectService.getProject(this.project);
+      const KBlist = await projectService.getKBs();
+      const projectKB_id = project.kb_id;
+      const projectKB = KBlist.find(kb => kb.id === projectKB_id);
+
+      projectKB.corpus_parameter.num_documents ? this.numDocuments = projectKB.corpus_parameter.num_documents : this.numDocuments = '-';
+      projectKB.corpus_parameter.num_statements ? this.numStatements = projectKB.corpus_parameter.num_statements : this.numStatements = '-';
     },
     onRename(analysis) {
       this.showRenameModal = true;
