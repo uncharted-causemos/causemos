@@ -56,7 +56,9 @@
         </div>
       </div>
       <div class="col-md-3 KBstats-container">
-        <b style="flex-basis: 100%">Knowledge Base</b>
+        <b style="flex-basis: 100%">KNOWLEDGE BASE:</b>
+        <div>{{ KBname }}</div>
+        <br>
         <div><b>{{ numDocuments }}</b> documents</div>
         <div><b>{{ numStatements }}</b> causal relationships</div>
         <div>
@@ -206,6 +208,7 @@ export default {
     quantitativeAnalyses: [],
     numDocuments: '-',
     numStatements: '-',
+    KBname: '-',
     searchText: '',
     showSortingDropdownAnalyses: false,
     analysisSortingOptions: ['Most recent', 'Earliest'],
@@ -333,6 +336,7 @@ export default {
 
       projectKB.corpus_parameter.num_documents ? this.numDocuments = projectKB.corpus_parameter.num_documents : this.numDocuments = '-';
       projectKB.corpus_parameter.num_statements ? this.numStatements = projectKB.corpus_parameter.num_statements : this.numStatements = '-';
+      projectKB.name ? this.KBname = projectKB.name : this.KBname = '-';
     },
     onRename(analysis) {
       this.showRenameModal = true;
