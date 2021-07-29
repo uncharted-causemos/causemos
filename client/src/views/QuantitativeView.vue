@@ -448,13 +448,20 @@ export default {
 
       if (_.isEmpty(selectedScenario)) return;
 
+      this.enableOverlay('Running experiment');
+
+      // 0. Refresh
       if (this.modelSummary.status === 0) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
       }
 
-      this.enableOverlay('Running experiment');
-      // Run experiment
+      // 1. Adjust unmatched constraints, if any
+      if (selectedScenario.is_valid === false) {
+        modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
+      }
+
+      // 2. Run experiment and wait for results
       let experimentId = 0;
       let result = null;
       try {
@@ -466,14 +473,29 @@ export default {
         this.disableOverlay();
         return;
       }
-      this.disableOverlay();
       this.setDraftScenarioDirty(false);
 
-      // FIXME: draft
+      // FIXME: Not great to directly write into draft
       selectedScenario.experimentId = experimentId;
       selectedScenario.result = result.results.data;
+      selectedScenario.is_valid = true;
 
-      // Cycle the scenarios to force reactive to trigger
+      // 3. We have rerun an existing scenario, need to update
+      if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
+        this.enableOverlay('Writing result');
+        await modelService.updateScenario({
+          id: selectedScenario.id,
+          model_id: this.currentCAG,
+          is_valid: true,
+          experiment_id: selectedScenario.experimentId,
+          parameter: selectedScenario.parameter,
+          result: selectedScenario.result
+        });
+      }
+
+      this.disableOverlay();
+
+      // 4. Cycle the scenarios to force reactive to trigger
       this.scenarios = [...this.scenarios];
     },
     closeEditConstraints() {
