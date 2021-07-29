@@ -23,8 +23,6 @@ async function runStartup() {
 
   Logger.info('=== Running causemos start up jobs ===');
 
-  await projectService.getProjectEdges(Adapter.get(RESOURCE.MODEL).getFacets('project_id'), {});
-
   // List all of the projects
   Logger.info('Caching projects metadata');
   const projects = await projectService.listProjects();

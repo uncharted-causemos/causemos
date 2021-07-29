@@ -622,9 +622,10 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
  */
 const getProjectEdges = async(projectId, filters) => {
   const totalPartitions = 20;
-  return (await Promise.all([...Array(totalPartitions).keys()].map(partition =>
+  const partitionsOfEdges = (await Promise.all([...Array(totalPartitions).keys()].map(partition =>
     getProjectEdgesByPartition(projectId, filters, totalPartitions, partition)
-  ))).flat();
+  )));
+  return partitionsOfEdges.flat();
 };
 
 /**
