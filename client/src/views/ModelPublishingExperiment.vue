@@ -313,7 +313,8 @@ export default defineComponent({
         selectedOutputIndex: currentOutputIndex.value,
         selectedMapBaseLayer: selectedBaseLayer.value,
         selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
       };
 
       store.dispatch('insightPanel/setViewState', viewState);
@@ -468,6 +469,9 @@ export default defineComponent({
           }
           if (viewConfig.spatialAggregation) {
             this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
+          }
+          if (viewConfig.selectedAdminLevel !== undefined) {
+            this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
           }
           if (viewConfig.selectedMapBaseLayer) {
             this.setBaseLayer(viewConfig.selectedMapBaseLayer);

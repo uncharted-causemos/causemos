@@ -172,13 +172,13 @@ import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType 
 import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
-import { Insight } from '@/types/Insight';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { Insight, ViewState } from '@/types/Insight';
 
 const DRILLDOWN_TABS = [
   {
@@ -305,7 +305,7 @@ export default defineComponent({
         selectedScenarioIds: selectedScenarioIds.value,
         selectedTimestamp: selectedTimestamp.value
       };
-      const viewState = {
+      const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
         temporalAggregation: selectedTemporalAggregation.value,
         temporalResolution: selectedTemporalResolution.value,
@@ -313,7 +313,8 @@ export default defineComponent({
         selectedOutputIndex: currentOutputIndex.value,
         selectedMapBaseLayer: selectedBaseLayer.value,
         selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
       };
 
       store.dispatch('insightPanel/setViewState', viewState);
@@ -549,6 +550,9 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.breakdownOption !== undefined) {
           this.setBreakdownOption(loadedInsight.view_state?.breakdownOption);
+        }
+        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
+          this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
       }
     },

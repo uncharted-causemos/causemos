@@ -48,7 +48,7 @@ export interface ViewState {
   temporalAggregation?: string;
   spatialResolution?: string;
   temporalResolution?: string;
-  selectedAdminLevel?: string;
+  selectedAdminLevel?: number;
   isDescriptionView?: boolean;
   selectedOutputIndex?: number;
   selectedMapBaseLayer?: BASE_LAYER;
