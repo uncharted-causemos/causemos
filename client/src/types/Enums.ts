@@ -41,7 +41,8 @@ export enum DatacubeAttributeVariableType {
   Country = 'country',
   Admin1 = 'admin1',
   Admin2 = 'admin2',
-  Admin3 = 'admin3'
+  Admin3 = 'admin3',
+  Freeform = 'freeform'
 }
 
 export enum ModelParameterDataType {
