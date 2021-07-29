@@ -8,7 +8,7 @@
   />
   <div class="project-overview-container">
     <div class="row row-header" style="height: 20vh; margin-bottom: 1rem">
-      <div class="col-md-7">
+      <div class="col-md-8">
         <h3>
           {{projectMetadata.name}}
           <span
@@ -73,7 +73,7 @@
           v-if="showDocumentModal === true"
           @close="showDocumentModal = false" />
       </div>
-      <div class="col-md-3" style="height: 100%; padding-left: 0px; padding-right: 0px">
+      <div class="col-md-2" style="height: 100%; padding-left: 0px; padding-right: 0px">
         <img
                 class="map-image"
                 src="../assets/GenericWorld.png"
@@ -505,7 +505,7 @@ $padding-size: 2vh;
 
 .map-image {
   height: 100%;
-  width: 100%;
+  float: right;
 }
 
 .insight-container {
