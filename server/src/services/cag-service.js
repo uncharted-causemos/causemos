@@ -10,6 +10,8 @@ const { get, set } = rootRequire('/cache/node-lru-cache');
 
 const modelUtil = rootRequire('/util/model-util');
 
+const MODEL_STATUS = modelUtil.MODEL_STATUS;
+
 
 // TODO
 // 0 - not ready
@@ -141,7 +143,7 @@ const createCAG = async (modelFields, edges, nodes) => {
     ...modelFields,
     is_stale: false,
     is_quantified: false,
-    status: 0,
+    status: MODEL_STATUS.UNSYNCED,
     created_at: now,
     modified_at: now
   }, keyFn);
@@ -291,7 +293,8 @@ const updateCAG = async(modelId, edges, nodes) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
-    status: 0,
+    is_quantified: false,
+    status: MODEL_STATUS.UNSYNCED,
     modified_at: moment().valueOf()
   }, d => d.id);
   if (results.errors) {
@@ -319,7 +322,8 @@ const pruneCAG = async(modelId, edges, nodes) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
-    status: 0,
+    is_quantified: false,
+    status: MODEL_STATUS.UNSYNCED,
     modified_at: moment().valueOf()
   }, d => d.id);
   if (results.errors) {
@@ -556,7 +560,7 @@ const recalculateCAG = async (modelId) => {
       {
         id: cag.id,
         is_stale: false,
-        status: 0,
+        status: MODEL_STATUS.UNSYNCED,
         is_ambiguous: isAmbiguous,
         modified_at: timestamp
       }
