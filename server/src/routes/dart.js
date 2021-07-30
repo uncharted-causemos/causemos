@@ -50,7 +50,12 @@ router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) =
   for (let i = 0; i < req.files.length; i++) {
     const file = req.files[i];
 
-    const r = await dartService.uploadDocument(file, metadata);
+    let r = null;
+    try {
+      r = await dartService.uploadDocument(file, JSON.stringify(metadata));
+    } catch (err) {
+      console.log(err);
+    }
     console.log(r);
     const documentId = JSON.parse(r).document_id;
     Logger.info(`\t${i} ${file.originalname} ${documentId}`);
