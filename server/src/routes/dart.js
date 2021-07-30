@@ -4,9 +4,9 @@ const multer = require('multer');
 const upload = multer({ storage: multer.memoryStorage() });
 const router = express.Router();
 const Logger = rootRequire('/config/logger');
+const projectService = rootRequire('/services/project-service');
 
 const dartService = rootRequire('/services/external/dart-service');
-const projectService = rootRequire('/services/project-service');
 
 /**
  * GET DART document from the docker service used for managing dart documents
@@ -28,17 +28,24 @@ router.get('/:docId/raw', asyncHandler(async (req, res, next) => {
  * Upload a set of documents
  */
 router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) => {
-  const metadata = req.body.metadata;
-  const project = req.body.project;
+  let metadata = req.body.metadata;
+  metadata = JSON.parse(metadata);
+  const projectId = req.body.project;
 
-  // FIXME: Inject tenant information
-  // - ata
-  // - new-america
-  metadata.tenants = [
-    'new-america'
-  ];
+  const project = await projectService.findProject(projectId);
 
-  Logger.info(`Extending project: ${project}`);
+  // Tenant information
+  if (project.corpus_id === 'august_embed_ata') {
+    metadata.tenants = ['ata'];
+  } else if (project.corpus_id === 'august_embed_new-america') {
+    metadata.tenants = ['new-america'];
+  } else {
+    throw new Error(`Unable to recognize corpus ${project.corpus_id}`);
+  }
+
+  console.log(metadata);
+
+  Logger.info(`Extending project: ${projectId}`);
   const results = [];
   for (let i = 0; i < req.files.length; i++) {
     const file = req.files[i];
@@ -54,7 +61,7 @@ router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) =
   }
 
   // Write to project-extension
-  await projectService.extendProject(project, results);
+  await projectService.extendProject(projectId, results);
   res.json(results);
 }));
 
