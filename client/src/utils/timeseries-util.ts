@@ -127,7 +127,7 @@ export function renderPoint(
     .data(points)
     .append('circle')
     .classed('circle', true)
-    .attr('r', 5)
+    .attr('r', 2.5)
     .attr('cx', d => xScale(d.timestamp))
     .attr('cy', d => yScale(d.value))
     .style('stroke', color || DEFAULT_LINE_COLOR)
