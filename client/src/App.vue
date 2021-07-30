@@ -24,6 +24,7 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
 
+import filtersUtil from '@/utils/filters-util';
 
 const viewsWithNoNavbar = [
   'nodeCompExperiment',
@@ -83,11 +84,23 @@ export default {
       setProjectMetadata: 'app/setProjectMetadata',
       setConceptDefinitions: 'app/setConceptDefinitions'
     }),
-    refreshDomainProject() {
+    async refreshDomainProject() {
       if (_.isEmpty(this.project)) {
         return;
       }
-      domainProjectService.getProject(this.project).then(project => {
+
+      let projectId = this.project;
+
+      const projectsSearchFilters = filtersUtil.newFilters();
+      filtersUtil.addSearchTerm(projectsSearchFilters, 'type', 'model', 'and', false); // NOTE: only domain-model projects are supported
+      const existingProjects = await domainProjectService.getProjects(projectsSearchFilters);
+      const domainProjectNames = existingProjects.map(p => p.name);
+      if (domainProjectNames.includes(this.project)) {
+        // this is a special case where Jataware has redirected to a given domain-project page
+        projectId = existingProjects.find(p => p.name === this.project).id;
+      }
+
+      domainProjectService.getProject(projectId).then(project => {
         this.setProjectMetadata(project);
       });
     },
