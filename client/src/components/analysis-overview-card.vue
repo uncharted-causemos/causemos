@@ -1,5 +1,5 @@
 <template>
-  <div class="project-card-container">
+  <div :class="{ 'project-card-container': !showMore, 'project-card-container selected': showMore }">
     <modal-confirmation
       v-if="showModal"
       :autofocus-confirm="false"
@@ -15,14 +15,26 @@
         />
       </template>
     </modal-confirmation>
-    <div class="row">
-      <div class="col-sm-3 instance-header">
-        <div style="color: black; margin-bottom: 1rem"><b>{{analysis.title}}</b></div>
-        <div style="fontWeight: normal; fontSize: x-small">Last updated:</div>
-        <div style="fontSize: smaller">{{analysis.subtitle}}</div>
+    <div
+      class="row project-card-header"
+      @click="toggleShowMore()">
+      <div class="col-sm-2 instance-header no-padding">
+        <i
+          :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
+        />
+        <button
+          type="button"
+          class="btn btn-link no-padding"
+          style="color: black; margin-bottom: 1rem"
+          @click="openAnalysis">
+          <span class="overflow-ellipsis"><b>{{analysis.title}}</b></span>
+        </button>
       </div>
-      <div class="col-sm-2 instance-header">
-        {{analysis.description}}
+      <div class="col-sm-3">
+        <div style="fontWeight: normal;">{{analysis.description}}</div>
+        <div class="instance-header" style="margin-left: 0px">
+          <div style="fontWeight: normal; left-margin: 0px">Last updated: {{analysis.subtitle}}</div>
+        </div>
       </div>
       <div class="col-sm-1 instance-header">
         {{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}
@@ -33,46 +45,50 @@
         <div style="color: black">{{analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
       </div>
     </div>
-
-    <div class="row">
-      <div class="col-sm-3 instance-header"></div>
-      <div class="col-sm-2 instance-header"></div>
-      <div class="col-sm-1 instance-header">
-        <button
-          v-tooltip.top-center="'Open analysis'"
-          type="button"
-          class="btn btn-primary button-spacing btn-call-for-action"
-          @click="openAnalysis"
-          ><i class="fa fa-folder-open-o" />
-            Open
-        </button>
-      </div>
-      <div class="col-sm-3">
-        <button
-          v-tooltip.top-center="'Rename analysis'"
-          type="button"
-          class="btn btn-primary button-spacing"
-          @click="editAnalysis"
-          >
-          <i class="fa fa-edit" />Rename
-        </button>
-        <button
-          v-tooltip.top-center="'Duplicate analysis'"
-          type="button"
-          class="btn btn-primary button-spacing"
-          @click="duplicateAnalysis"
-          >
-          <i class="fa fa-copy" />Duplicate
-        </button>
-      </div>
-      <div class="col-sm-2">
-        <button
-          v-tooltip.top-center="'delete analysis'"
-          type="button"
-          class="remove-button button-spacing"
-          @click.stop="showWarningModal"
-        ><i class="fa fa-trash" />
-          Delete</button>
+    <div
+      v-if="showMore"
+      class="project-card-footer"
+    >
+      <div class="row">
+        <div class="col-sm-3 instance-header"></div>
+        <div class="col-sm-2 instance-header"></div>
+        <div class="col-sm-1 instance-header">
+          <button
+            v-tooltip.top-center="'Open analysis'"
+            type="button"
+            class="btn btn-primary button-spacing btn-call-for-action"
+            @click="openAnalysis"
+            ><i class="fa fa-folder-open-o" />
+              Open
+          </button>
+        </div>
+        <div class="col-sm-3">
+          <button
+            v-tooltip.top-center="'Rename analysis'"
+            type="button"
+            class="btn btn-primary button-spacing"
+            @click="editAnalysis"
+            >
+            <i class="fa fa-edit" />Rename
+          </button>
+          <button
+            v-tooltip.top-center="'Duplicate analysis'"
+            type="button"
+            class="btn btn-primary button-spacing"
+            @click="duplicateAnalysis"
+            >
+            <i class="fa fa-copy" />Duplicate
+          </button>
+        </div>
+        <div class="col-sm-2">
+          <button
+            v-tooltip.top-center="'delete analysis'"
+            type="button"
+            class="remove-button button-spacing"
+            @click.stop="showWarningModal"
+          ><i class="fa fa-trash" />
+            Delete</button>
+        </div>
       </div>
     </div>
   </div>
@@ -119,9 +135,11 @@ export default defineComponent({
   },
   setup() {
     const showModal = ref(false);
+    const showMore = ref(false);
 
     return {
-      showModal
+      showModal,
+      showMore
     };
   },
   methods: {
@@ -153,6 +171,9 @@ export default defineComponent({
       // Reset filters every time we edit
       this.clearLastQuery();
       this.$emit('duplicate');
+    },
+    toggleShowMore() {
+      this.showMore = !this.showMore;
     }
   }
 });
