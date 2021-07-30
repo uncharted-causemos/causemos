@@ -22,7 +22,7 @@ const createEdges = (edges) => {
 };
 
 /* Convert graph.nodes to cytoscape node construct */
-const createNodes = (nodes, depth = 100) => {
+const createNodes = (ontologyFormatter, nodes, depth = 100) => {
   const registry = {};
   const result = [];
   const orderedNodes = _.orderBy(nodes, n => n.id);
@@ -44,9 +44,9 @@ const createNodes = (nodes, depth = 100) => {
         }
 
         if (i === 1) {
-          result.push(_createNode(property));
+          result.push(_createNode(ontologyFormatter, property));
         } else {
-          result.push(_createNode(property, last));
+          result.push(_createNode(ontologyFormatter, property, last));
         }
         registry[pid] = 1;
       }
@@ -57,19 +57,21 @@ const createNodes = (nodes, depth = 100) => {
   return result;
 };
 
-const getLabelForNode = (node) => {
-  let label = _.last(node.id.split('/'));
+// const getLabelForNode = (node) => {
+//   console.log(node);
+//   let label = _.last(node.id.split('/'));
 
-  if (node.count > 0) {
-    label += ` (${node.count})`;
-  }
-  label = label.replace(/_/g, ' ');
-  return label;
-};
+//   if (node.count > 0) {
+//     label += ` (${node.count})`;
+//   }
+//   label = label.replace(/_/g, ' ');
+//   return label;
+// };
 
 
-const _createNode = (d, parent) => {
-  const label = getLabelForNode(d);
+const _createNode = (ontologyFormatter, d, parent) => {
+  // console.log(ontologyFormatter);
+  const label = ontologyFormatter(d.id);
   return {
     data: {
       id: d.id,
