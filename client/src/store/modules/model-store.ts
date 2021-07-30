@@ -29,8 +29,8 @@ const actions: ActionTree<ModelState, any> = {
   setDraftScenario({ commit }, draft) {
     commit('setDraftScenario', draft);
   },
-  updateDrafScenariotConstraints({ commit }, c: ConceptProjectionConstraints) {
-    commit('updateDrafScenariotConstraints', c);
+  updateDraftScenarioConstraints({ commit }, c: ConceptProjectionConstraints) {
+    commit('updateDraftScenarioConstraints', c);
   },
   setDraftScenarioDirty({ commit }, v) {
     commit('setDraftScenarioDirty', v);
@@ -49,7 +49,7 @@ const mutations: MutationTree<ModelState> = {
       state.draftScenarioDirty = false;
     }
   },
-  updateDrafScenariotConstraints(state, newCPC: ConceptProjectionConstraints) {
+  updateDraftScenarioConstraints(state, newCPC: ConceptProjectionConstraints) {
     if (state.draftScenario && state.draftScenario.parameter) {
       const constraints = state.draftScenario.parameter?.constraints;
       if (!constraints || constraints.length === 0) {
