@@ -45,7 +45,7 @@
               />
             </div>
           </div>
-          <div class="expanded-node">
+          <div class="expanded-node insight-capture">
             <div class="expanded-node-header">
               {{ nodeConceptName }}
               <div class="button-group">
@@ -178,7 +178,7 @@ export default defineComponent({
     NeighborNode,
     TdNodeChart,
     DropdownButton,
-    TimeseriesChart
+    TimeseriesChart,
     AnalyticalQuestionsAndInsightsPanel
   },
   props: {},
