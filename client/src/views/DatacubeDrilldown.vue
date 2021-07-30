@@ -228,8 +228,6 @@ export default defineComponent({
 
     const metadata = useModelMetadata(selectedModelId);
 
-    console.log(ADMIN_LEVEL_KEYS);
-
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);

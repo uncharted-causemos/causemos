@@ -164,6 +164,7 @@ import MapDropdown from '@/components/data/map-dropdown.vue';
 import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
 import { Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 
 const DRILLDOWN_TABS = [
   {
@@ -288,6 +289,9 @@ export default defineComponent({
         const defaultFeature = {
           [metadata.value.id]: initialOutputIndex
         };
+        const selectedAdminLevel = ref((ADMIN_LEVEL_KEYS as string[])
+          .findIndex(level => (metadata.value?.geography as any)[level].length > 0));
+        setSelectedAdminLevel(selectedAdminLevel.value);
         store.dispatch('app/setDatacubeCurrentOutputsMap', defaultFeature);
       }
     });
