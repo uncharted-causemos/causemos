@@ -59,8 +59,8 @@
         <b style="flex-basis: 100%">KNOWLEDGE BASE:</b>
         <div>{{ KBname }}</div>
         <br>
-        <div><b>{{ numDocuments }}</b> documents</div>
-        <div><b>{{ numStatements }}</b> causal relationships</div>
+        <div><b>{{ numberFormatter(numDocuments) }}</b> documents</div>
+        <div><b>{{ numberFormatter(numStatements) }}</b> causal relationships</div>
         <div>
           <button
             class="button"
@@ -179,6 +179,7 @@ import { ANALYSIS, CAG } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import projectService from '@/services/project-service';
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
+import numberFormatter from '@/formatters/number-formatter';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -256,6 +257,7 @@ export default {
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
     }),
+    numberFormatter,
     openInsightsExplorer() {
       this.showInsightPanel();
       this.setCurrentPane('list-insights');
