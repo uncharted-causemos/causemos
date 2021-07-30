@@ -1,11 +1,6 @@
 <template>
   <div class="quantitative-view-container">
     <analytical-questions-and-insights-panel />
-    <div>
-      <button @click="testDraft1()">1</button>
-      <button @click="testDraft2()">2</button>
-      <button @click="testDraft3()">3</button>
-    </div>
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -24,6 +19,7 @@
         @save-indicator-edits="saveIndicatorEdits"
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
         @refresh-model="refreshModel"
+        @tab-click="tabClick"
       >
         <template #action-bar>
           <action-bar
@@ -218,54 +214,6 @@ export default {
       }
       this.setSelectedScenarioId(scenarioId);
     },
-    /*
-    async refreshX() {
-      this.enableOverlay();
-
-      // Check model is ready to be used for experiments
-      const errors = await modelService.initializeModel(this.currentCAG);
-      if (errors.length) {
-        this.disableOverlay();
-        this.toaster(errors[0], 'error', true);
-        console.error(errors);
-        return;
-      }
-
-      // Fetch core data that will run this view and children components
-      this.modelSummary = await modelService.getSummary(this.currentCAG);
-      this.modelComponents = await modelService.getComponents(this.currentCAG);
-      let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-
-      // Create a base scenario if none existed
-      if (scenarios.length === 0) {
-        await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
-        scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-      }
-
-      // Set selected scenario if necessary
-      let scenarioId = this.selectedScenarioId;
-      if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
-        scenarioId = scenarios.find(d => d.is_baseline).id;
-      }
-
-      // Check if scenario is still valid
-      // Fixme: This is awkward wiring, we need to force a scenario recalculation, but the
-      // watcher won't fire if there is not change to the selectedScenarioId.
-      const scenario = scenarios.find(d => d.id === scenarioId);
-      if (scenario && scenario.is_valid === false) {
-        this.recalculateScenario(scenario);
-      } else {
-        this.scenarios = scenarios;
-        this.disableOverlay();
-      }
-      this.setSelectedScenarioId(scenarioId);
-
-      // Cache sensitivity in the background
-      if (this.currentEngine === 'dyse') {
-        this.fetchSensitivityAnalysisResults();
-      }
-    },
-    */
     revertDraftChanges() {
       if (!_.isNil(this.previousScenarioId)) {
         this.setSelectedScenarioId(this.previousScenarioId);
@@ -278,46 +226,6 @@ export default {
       this.setDraftScenario(null);
       this.scenarios = temp;
     },
-    /*
-    async recalculateScenario(scenario) {
-      this.enableOverlay(`Rerunning: ${scenario.name}`);
-
-      // 1. Adjust constraints, if any
-      modelService.resetScenarioParameter(scenario, this.modelSummary, this.modelComponents.nodes);
-
-      // 2. Run experiment
-      let experimentId = 0;
-      let result = null;
-      try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, scenario.parameter.constraints));
-        result = await modelService.getExperimentResult(this.currentCAG, experimentId);
-      } catch (error) {
-        this.toaster(error.response.data, 'error', true);
-        this.disableOverlay();
-        return;
-      }
-
-      // 3. Save and revert invalid state
-      scenario.experimentId = experimentId;
-      scenario.result = result.results.data;
-      scenario.is_valid = true;
-
-      await modelService.updateScenario({
-        id: scenario.id,
-        model_id: this.currentCAG,
-        is_valid: true,
-        experiment_id: scenario.experimentId,
-        parameter: scenario.parameter,
-        result: scenario.result
-      });
-
-      // 4.Reload scenarios data
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-      this.scenarios = scenarios;
-
-      this.disableOverlay();
-    },
-    */
     async overwriteScenario(id) {
       // Transfer draft data to overwrite existing scenario
       const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
@@ -512,15 +420,30 @@ export default {
     },
     async fetchSensitivityAnalysisResults() {
       if (this.currentEngine !== 'dyse' || _.isNil(this.scenarios) || this.scenarios.length === 0) return;
+
+      const selectedScenario = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId);
+
+      // Ensure we are ready to run, sync up with engines if necessary
+      if (this.modelSummary.status === 0) {
+        await modelService.initializeModel(this.currentCAG);
+        await this.refreshModel();
+      }
+      if (selectedScenario.is_valid === false) {
+        modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
+      }
+
       this.sensitivityMatrixData = null;
       const now = Date.now();
       this.sensitivityDataTimestamp = now;
-      const constraints = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId).parameter.constraints;
+      const constraints = modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints);
+
       const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
+
       // If another sensitivity analysis started running before this one returns an ID,
       //  then don't bother fetching/processing the results to avoid a race condition
       if (this.sensitivityDataTimestamp !== now) return;
       const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId);
+
       if (this.sensitivityDataTimestamp !== now) return;
       const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
       csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
@@ -529,6 +452,11 @@ export default {
     },
     setSensitivityAnalysisType(newValue) {
       this.sensitivityAnalysisType = newValue;
+    },
+    tabClick(tab) {
+      if (tab === 'matrix') {
+        this.fetchSensitivityAnalysisResults();
+      }
     },
     async testDraft1() {
       await this.saveDraft({

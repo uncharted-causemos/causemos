@@ -114,3 +114,23 @@ export function renderLine(
     .style('fill', 'none')
     .style('stroke', color || DEFAULT_LINE_COLOR);
 }
+
+
+export function renderPoint(
+  parentGroupElement: D3GElementSelection,
+  points: TimeseriesPoint[],
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  color?: string
+) {
+  parentGroupElement
+    .data(points)
+    .append('circle')
+    .classed('circle', true)
+    .attr('r', 5)
+    .attr('cx', d => xScale(d.timestamp))
+    .attr('cy', d => yScale(d.value))
+    .style('stroke', color || DEFAULT_LINE_COLOR)
+    .style('stroke-width', 1.5)
+    .style('fill', color || DEFAULT_LINE_COLOR);
+}

@@ -120,7 +120,7 @@
               <option
                 v-for="relatedFeature in qualifier.related_features"
                 :key="relatedFeature"
-              >{{relatedFeature.name}}</option>
+              >{{relatedFeature}}</option>
             </select>
           </td>
           <td>
@@ -134,7 +134,9 @@
           </td>
           <td>
             <div>Role</div>
-            <div class="role-list"
+            <div
+              v-if="qualifier.roles"
+              class="role-list"
               :class="{ 'attribute-invalid': !(qualifier.roles.length > 0) }"
             >
               <div
