@@ -23,7 +23,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from 'vue';
+import { computed, defineComponent, ref, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
@@ -41,12 +41,18 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
-
     const selectedDatacubeId = ref('');
 
-    if (analysisItems.value && analysisItems.value.length > 0) {
-      selectedDatacubeId.value = analysisItems.value[0].id; // @FIXME: select first one by default
-    }
+    watchEffect(() => {
+      if (analysisItems.value && analysisItems.value.length > 0) {
+        // @FIXME: select first one by default
+        selectedDatacubeId.value = analysisItems.value[0].id;
+
+        // set context-ids to fetch insights correctly for all datacubes in this analysis
+        const contextIDs = analysisItems.value.map((dc: any) => dc.id);
+        store.dispatch('insightPanel/setContextId', contextIDs);
+      }
+    });
 
     return {
       selectedDatacubeId,

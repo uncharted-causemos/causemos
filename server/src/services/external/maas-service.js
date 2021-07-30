@@ -178,6 +178,9 @@ const startIndicatorPostProcessing = async (metadata) => {
     metadata.period.lte = 0;
   }
 
+  metadata.type = 'indicator';
+  metadata.family_name = metadata.family_name || metadata.name;
+
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
   //        the following function would be called at:
@@ -221,9 +224,9 @@ const startIndicatorPostProcessing = async (metadata) => {
       clonedMetadata.data_id = metadata.id;
       clonedMetadata.id = uuid();
       clonedMetadata.outputs = [output];
-      clonedMetadata.family_name = metadata.family_name || metadata.name;
+      clonedMetadata.family_name = metadata.family_name;
       clonedMetadata.default_feature = output.name;
-      clonedMetadata.type = 'indicator';
+      clonedMetadata.type = metadata.type;
       clonedMetadata.status = 'PROCESSING';
 
       let qualifierMatches = [];

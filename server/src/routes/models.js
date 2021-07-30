@@ -14,6 +14,7 @@ const modelService = rootRequire('/services/model-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
 const { MODEL_STATUS } = rootRequire('/util/model-util');
+const modelUtil = rootRequire('util/model-util');
 
 const HISTORY_START_DATE = '2015-01-01';
 const HISTORY_END_DATE = '2017-12-01';
@@ -55,7 +56,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
       projection_start: defaultProjectionStartDate
     };
   }
-  modelFields.is_quantified = true;
+  // modelFields.is_quantified = true;
   modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
@@ -402,6 +403,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   const modelPayload = {
     id: modelId,
     status: status,
+    is_quantified: true,
     parameter: {
       engine: engine
     },
@@ -549,6 +551,14 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   const engine = parameter.engine;
   const payload = modelService.buildNodeParametersPayload([nodeParameter]);
 
+  // Recalculate min/max if not specified
+  if (_.isNil(parameter.min) || _.isNil(parameter.max)) {
+    Logger.info('Resetting min / max');
+    const { min, max } = modelUtil.projectionValueRange(parameter.timeseries.map(d => d.value));
+    parameter.min = min;
+    parameter.max = max;
+  }
+
   // Register update with engine and retrieve new value
   let engineUpdateResult = null;
   if (engine === DYSE) {
@@ -557,6 +567,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     Logger.warn(`Update node-parameter is undefined for ${engine}`);
   }
 
+  // FIXME: initial_value not needed
   if (engine === DYSE) {
     const initialValue = engineUpdateResult.conceptIndicators[nodeParameter.concept].initialValue;
     Logger.info(`Setting ${nodeParameter.concept} to initialValue ${initialValue}`);

@@ -5,6 +5,7 @@ import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
+import { applyRelativeTo } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
@@ -42,50 +43,6 @@ const applyBreakdown = (
     });
 };
 
-const applyRelativeTo = (
-  timeseriesData: Timeseries[],
-  relativeTo: string | null
-) => {
-  const baselineData = timeseriesData.find(
-    timeseries => timeseries.id === relativeTo
-  );
-  if (
-    relativeTo === null ||
-    timeseriesData.length < 2 ||
-    baselineData === undefined
-  ) {
-    return {
-      baselineMetadata: null,
-      timeseriesData
-    };
-  }
-  // User wants to display data relative to one run
-  const returnValue: Timeseries[] = [];
-  timeseriesData.forEach(timeseries => {
-    // Adjust values
-    const { id, name, color, points } = timeseries;
-    const adjustedPoints = points.map(({ timestamp, value }) => {
-      const baselineValue =
-        baselineData.points.find(point => point.timestamp === timestamp)
-          ?.value ?? 0;
-      return {
-        timestamp,
-        value: value - baselineValue
-      };
-    });
-    returnValue.push({
-      id,
-      name,
-      color,
-      points: adjustedPoints
-    });
-  });
-  const baselineMetadata = {
-    name: baselineData.name,
-    color: baselineData.color
-  };
-  return { baselineMetadata, timeseriesData: returnValue };
-};
 
 /**
  * Takes a data ID, a list of model run IDs, and a colouring function,
@@ -185,7 +142,7 @@ export default function useTimeseriesData(
     () => [modelRunIds.value],
     () => {
       relativeTo.value = null;
-      breakdownOption.value = null;
+      // breakdownOption.value = null;
     },
     {
       immediate: true

@@ -29,7 +29,7 @@
     <div>
       <div class="col-md-9 timeseries-chart">
         <timeseries-chart
-          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
+          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
           :timeseries-data="visibleTimeseriesData"
           :selected-timestamp="selectedTimestamp"
           :breakdown-option="breakdownOption"

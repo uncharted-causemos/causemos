@@ -172,13 +172,13 @@ import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType 
 import { mapActions, mapGetters, useStore } from 'vuex';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
-import { Insight } from '@/types/Insight';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { Insight, ViewState } from '@/types/Insight';
 
 const DRILLDOWN_TABS = [
   {
@@ -210,6 +210,10 @@ export default defineComponent({
 
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
+
+    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+    const breakdownOption = ref<string | null>(null);
 
     const store = useStore();
     const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
@@ -264,7 +268,7 @@ export default defineComponent({
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
         // note: this value of metadata may be undefined while model is still being loaded
-        store.dispatch('insightPanel/setContextId', metadata.value?.id);
+        store.dispatch('insightPanel/setContextId', [metadata.value?.id]);
 
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
@@ -301,11 +305,16 @@ export default defineComponent({
         selectedScenarioIds: selectedScenarioIds.value,
         selectedTimestamp: selectedTimestamp.value
       };
-      const viewState = {
+      const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
         temporalAggregation: selectedTemporalAggregation.value,
         temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
       };
 
       store.dispatch('insightPanel/setViewState', viewState);
@@ -326,7 +335,6 @@ export default defineComponent({
       clearRouteParam();
     };
 
-    const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
@@ -414,14 +422,15 @@ export default defineComponent({
       temporalBreakdownData,
       AggregationOption,
       TemporalResolutionOption,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      selectedBaseLayer,
+      selectedDataLayer,
+      datacubeCurrentOutputsMap
     };
   },
   data: () => ({
     analysis: undefined,
-    ProjectType,
-    selectedBaseLayer: BASE_LAYER.DEFAULT,
-    selectedDataLayer: DATA_LAYER.ADMIN
+    ProjectType
   }),
   watch: {
     $route: {
@@ -453,8 +462,7 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       analysisId: 'dataAnalysis/analysisId',
-      projectType: 'app/projectType',
-      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
+      projectType: 'app/projectType'
     }),
     navBackLabel(): string {
       if (this.analysis) {
@@ -528,6 +536,23 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
           this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+        }
+        if (loadedInsight.view_state?.selectedOutputIndex) {
+          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.view_state?.selectedMapBaseLayer) {
+          this.setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
+        }
+        if (loadedInsight.view_state?.selectedMapDataLayer) {
+          this.setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
+        }
+        if (loadedInsight.view_state?.breakdownOption !== undefined) {
+          this.setBreakdownOption(loadedInsight.view_state?.breakdownOption);
+        }
+        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
+          this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
       }
     },

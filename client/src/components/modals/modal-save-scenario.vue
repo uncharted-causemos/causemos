@@ -100,7 +100,7 @@ export default defineComponent({
       return !_.isEmpty(nonBaselineScenarios);
     },
     overwritableScenarios(): Scenario[] {
-      return this.scenarios.filter(scenario => !scenario.is_baseline && scenario.id);
+      return this.scenarios.filter(scenario => !scenario.is_baseline && scenario.id !== 'draft');
     }
   },
   methods: {
