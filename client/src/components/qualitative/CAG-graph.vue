@@ -693,7 +693,6 @@ class CAGRenderer extends SVGRenderer {
         .style('fill', '#545353')
         .style('text-anchor', 'left')
         .style('alignment-baseline', 'middle')
-        // .attr('x', (squareSize / 2).toString())
         .attr('y', (squareSize + 15).toString())
         .text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`)
         .style('opacity', 0)
