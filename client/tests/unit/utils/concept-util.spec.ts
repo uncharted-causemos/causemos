@@ -27,9 +27,9 @@ describe('concept-util', () => {
       'agriculture'
     ]);
     const r1 = ConceptUtil.conceptHumanName('agriculture_drought', set);
-    expect(r1).to.equal('drought of agriculture');
+    expect(r1).to.equal('agriculture drought');
 
     const r2 = ConceptUtil.conceptHumanName('livestock_price_or_cost', set);
-    expect(r2).to.equal('price or cost of livestock');
+    expect(r2).to.equal('livestock price or cost');
   });
 });
