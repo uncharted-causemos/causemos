@@ -43,7 +43,6 @@ import ColorLegend from '@/components/graph/color-legend';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 
 import projectService from '@/services/project-service';
-import { opacity } from 'html2canvas/dist/types/css/property-descriptors/opacity';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
@@ -651,20 +650,23 @@ class CAGRenderer extends SVGRenderer {
 
     const squareSize = 26;
     let statsGroup = null;
-    let hoverGroup = null;
+    let clickGroup = null;
 
     if (d3.select('.graph-stats-info').node()) {
       statsGroup = d3.select('.graph-stats-info');
+      const selection = statsGroup.selectAll('.graph-stats-text');
+      selection.text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`);
+      clickGroup = statsGroup.selectAll('clickGroup');
     } else {
       statsGroup = foregroundLayer.append('g')
         .attr('transform', svgUtil.translate(5, 10))
         .classed('graph-stats-info', true)
         .style('cursor', 'pointer');
 
-      hoverGroup = statsGroup.append('g')
-        .classed('hoverGroup', true);
+      clickGroup = statsGroup.append('g')
+        .classed('clickGroup', true);
 
-      hoverGroup
+      clickGroup
         .append('rect')
         .style('width', squareSize.toString())
         .style('height', squareSize.toString())
@@ -673,7 +675,7 @@ class CAGRenderer extends SVGRenderer {
         .style('fill-opacity', '0')
         .style('stroke', '#545353');
 
-      hoverGroup
+      clickGroup
         .append('text')
         .style('font-family', 'FontAwesome')
         .style('font-size', '20px')
@@ -700,13 +702,16 @@ class CAGRenderer extends SVGRenderer {
         .attr('pointer-events', 'none');
     }
 
-    hoverGroup
+    clickGroup
       .on('click', function() {
         const selection = statsGroup.selectAll('.graph-stats-text');
         const active = selection.style('opacity');
-        const newOpacity = active ? 0 : 1;
+        const newOpacity = parseInt(active) ? 0 : 1;
 
-        selection.style('opacity', newOpacity);
+        selection
+          .transition()
+          .duration(300)
+          .style('opacity', newOpacity);
       });
   }
 
