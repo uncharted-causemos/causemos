@@ -24,7 +24,7 @@
               :class="{underlined: currentView === 'domainDatacubeOverview'}">
               <router-link
                 class="nav-link"
-                :to="{name:'domainDatacubeOverview', params:{project: projectMetadata.name}}"
+                :to="{name:'domainDatacubeOverview', params:{project: project}}"
               >
                 <i class="fa fa-connectdevelop" />
                 {{ projectMetadata.name }}
