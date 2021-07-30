@@ -1,5 +1,6 @@
 <template>
   <div class="node-drilldown-container">
+    <analytical-questions-and-insights-panel />
     <main>
       <header>
         <button
@@ -44,7 +45,7 @@
               />
             </div>
           </div>
-          <div class="expanded-node">
+          <div class="expanded-node insight-capture">
             <div class="expanded-node-header">
               {{ nodeConceptName }}
               <div class="button-group">
@@ -169,6 +170,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -176,7 +178,8 @@ export default defineComponent({
     NeighborNode,
     TdNodeChart,
     DropdownButton,
-    TimeseriesChart
+    TimeseriesChart,
+    AnalyticalQuestionsAndInsightsPanel
   },
   props: {},
   computed: {
@@ -199,6 +202,11 @@ export default defineComponent({
       () => modelSummary.value?.parameter?.engine ?? null
     );
 
+    // TODO: to properly apply an insight to this view,
+    //  one may need to utilize view-state and/or data-state
+    //  similarly to how they are being utilied in the data (quantitative analyses)
+    // The same comment applies also to both the TD qualitative/quantitative views
+
     watchEffect(onInvalidate => {
       // Fetch model summary and components
       if (currentCAG.value === null) return;
@@ -206,6 +214,9 @@ export default defineComponent({
       onInvalidate(() => {
         isCancelled = true;
       });
+
+      store.dispatch('insightPanel/setContextId', [currentCAG.value]);
+
       modelService.getSummary(currentCAG.value).then(_modelSummary => {
         if (isCancelled) return;
         modelSummary.value = _modelSummary;

@@ -44,9 +44,26 @@
             </li>
             <li
               v-if="projectType === ProjectType.Analysis && currentView !== 'overview'"
+              class="nav-item"
+              :class="{'nav-item--label': currentView !== 'nodeDrilldown', underlined: currentView === 'dataComparative' || currentView === 'qualitative' || currentView === 'quantitative'}">
+              <router-link
+                v-if="currentView === 'nodeDrilldown'"
+                class="nav-link"
+                :to="{name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}"
+              >
+                {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+              </router-link>
+              <template v-else>
+                <i v-if="currentView !== 'qualitative'" class="fa fa-connectdevelop" />
+                <i v-if="currentView !== 'quantitative'" class="fa fa-book" />
+                {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+              </template>
+            </li>
+            <li
+              v-if="projectType === ProjectType.Analysis && currentView === 'nodeDrilldown'"
               class="nav-item nav-item--label"
-              :class="{underlined: currentView === 'dataComparative' || currentView === 'qualitative' || currentView === 'quantitative'}">
-              {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+              :class="{underlined: currentView === 'nodeDrilldown'}">
+              Node Drilldown
             </li>
           </template>
         </ul>
@@ -84,6 +101,7 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       currentView: 'app/currentView',
+      currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
       selectedModel: 'model/selectedModel',
       lastQuery: 'query/lastQuery',

@@ -76,7 +76,7 @@
           </button>
         </div>
       </div>
-      <div class="column">
+      <div class="column insight-capture">
         <div class="button-row">
           <!-- TODO: extract button-group to its own component -->
           <div class="button-group">
@@ -141,7 +141,7 @@
             :color-from-index="colorFromIndex"
           />
         </header>
-        <div class="insight-capture">
+        <div class="column">
           <div style="display: flex; flex-direction: row;">
             <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
@@ -559,13 +559,6 @@ header {
     cursor: pointer;
     margin: 0;
   }
-}
-
-.insight-capture {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  flex: 1;
 }
 
 .timeseries-chart {

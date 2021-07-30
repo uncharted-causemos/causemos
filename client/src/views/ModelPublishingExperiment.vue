@@ -161,7 +161,7 @@ import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimes
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import MapDropdown from '@/components/data/map-dropdown.vue';
-import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
 import { Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
 
@@ -302,6 +302,7 @@ export default defineComponent({
 
     watchEffect(() => {
       const dataState = {
+        selectedModelId: selectedModelId.value,
         selectedScenarioIds: selectedScenarioIds.value,
         selectedTimestamp: selectedTimestamp.value
       };
@@ -409,7 +410,8 @@ export default defineComponent({
       TemporalResolutionOption,
       selectedTimeseriesPoints,
       selectedBaseLayer,
-      selectedDataLayer
+      selectedDataLayer,
+      datacubeCurrentOutputsMap
     };
   },
   watch: {
@@ -417,11 +419,17 @@ export default defineComponent({
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'model publishing experiment' space
         if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
-          const datacubeid = this.$route.query.datacubeid as any;
-          if (datacubeid !== undefined) {
-            // re-fetch model data
-            this.setSelectedTimestamp(null);
-            this.selectedModelId = datacubeid;
+          // check for 'insight_id' first to apply insight, then if not found, then 'datacubeid'
+          const insight_id = this.$route.query.insight_id as any;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
+          } else {
+            const datacubeid = this.$route.query.datacubeid as any;
+            if (datacubeid !== undefined) {
+              // re-fetch model data
+              this.setSelectedTimestamp(null);
+              this.selectedModelId = datacubeid;
+            }
           }
         }
       },
@@ -525,6 +533,60 @@ export default defineComponent({
     },
     setDataLayer(val: DATA_LAYER) {
       this.selectedDataLayer = val;
+    },
+    async updateStateFromInsight(insight_id: string) {
+      const loadedInsight: Insight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedModelId) {
+          // this will reload datacube metadata as well as scenario runs
+          this.selectedModelId = loadedInsight.data_state?.selectedModelId;
+        }
+        if (loadedInsight.data_state?.selectedScenarioIds) {
+          // this would only be valid and effective if/after datacube runs are reloaded
+          this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+          this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        // view state
+        if (loadedInsight.view_state?.spatialAggregation) {
+          this.setSelectedSpatialAggregation(loadedInsight.view_state?.spatialAggregation);
+        }
+        if (loadedInsight.view_state?.temporalAggregation) {
+          this.setSelectedTemporalAggregation(loadedInsight.view_state?.temporalAggregation);
+        }
+        if (loadedInsight.view_state?.temporalResolution) {
+          this.setSelectedTemporalResolution(loadedInsight.view_state?.temporalResolution);
+        }
+        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
+          this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+        }
+        if (loadedInsight.view_state?.selectedOutputIndex) {
+          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.view_state?.selectedMapBaseLayer) {
+          this.setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
+        }
+        if (loadedInsight.view_state?.selectedMapDataLayer) {
+          this.setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
+        }
+        if (loadedInsight.view_state?.breakdownOption !== undefined) {
+          this.setBreakdownOption(loadedInsight.view_state?.breakdownOption);
+        }
+        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
+          this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+      }
     },
     async publishModel() {
       // call the backend to update model metadata and finalize model publication
