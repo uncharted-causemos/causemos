@@ -269,6 +269,7 @@ export default {
 
       this.scenarios = scenarios;
       this.previousScenarioId = null;
+      this.setDraftScenario(null);
       this.setSelectedScenarioId(response.id);
       this.disableOverlay();
     },
