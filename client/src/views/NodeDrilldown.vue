@@ -244,9 +244,9 @@ export default defineComponent({
         currentEngine.value
       );
       if (isCancelled) return;
-      // Check if draft scenario is in play
+      // Draft scenario won't be returned by getScenarios, so we need to append
+      //  it to the local scenario list for it to be considered along with them
       if (draftScenario.value !== null && draftScenario.value.model_id === currentCAG.value) {
-        console.log('restoring draft');
         _scenarios.push(draftScenario.value);
       }
       scenarios.value = _scenarios;
