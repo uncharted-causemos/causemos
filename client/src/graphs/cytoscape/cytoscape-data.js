@@ -57,21 +57,8 @@ const createNodes = (ontologyFormatter, nodes, depth = 100) => {
   return result;
 };
 
-// const getLabelForNode = (node) => {
-//   console.log(node);
-//   let label = _.last(node.id.split('/'));
-
-//   if (node.count > 0) {
-//     label += ` (${node.count})`;
-//   }
-//   label = label.replace(/_/g, ' ');
-//   return label;
-// };
-
-
 const _createNode = (ontologyFormatter, d, parent) => {
-  // console.log(ontologyFormatter);
-  const label = ontologyFormatter(d.id);
+  const label = ontologyFormatter(d.id); // same formatter that CAG uses
   return {
     data: {
       id: d.id,
