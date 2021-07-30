@@ -108,6 +108,7 @@ import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { AggregationOption, TemporalAggregationLevel } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { getTimestamp } from '@/utils/date-util';
+import _ from 'lodash';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
@@ -194,8 +195,30 @@ export default defineComponent({
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
-      emit('set-breakdown-option', breakdownOption);
+      if (breakdownOption === 'region') {
+        const ids = selectedLevelIds.value;
+        emit('set-breakdown-option', {
+          breakdownOption,
+          adminLevel: props.selectedAdminLevel,
+          adminLevelIds: ids
+        });
+      } else {
+        console.log('No admin level detected.');
+        emit('set-breakdown-option', { breakdownOption, adminLevel: null, adminLevelIds: [] });
+      }
     };
+
+    const selectedLevelIds = computed(() => {
+      console.log('computing ids...');
+      if (props && _.has(props, 'regionalData') && props.regionalData !== null) {
+        const admlvl = ADMIN_LEVEL_KEYS[props.selectedAdminLevel];
+        const regional = (props.regionalData[admlvl] !== null) ? props.regionalData[admlvl] : [];
+        const ids = regional.map((item) => item.id);
+        console.log(`Found ids: ${ids}`);
+        return ids;
+      }
+      return [];
+    });
 
     const availableAdminLevelTitles = computed(() => {
       if (regionalData.value === null) return [];
