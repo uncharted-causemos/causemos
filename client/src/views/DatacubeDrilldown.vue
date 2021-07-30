@@ -147,7 +147,7 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { computed, defineComponent, Ref, ref, watchEffect, watch } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
@@ -309,8 +309,16 @@ export default defineComponent({
     };
 
     const breakdownOption = ref<string | null>(null);
-    const setBreakdownOption = (newValue: string | null) => {
-      breakdownOption.value = newValue;
+    const selectedRegionIds = ref<Array<string>>();
+    const setBreakdownOption = (newValue: { breakdownOption: string; adminLevel: number; adminLevelIds: Array<string> } | null) => {
+      console.log(`SELECTING: ${JSON.stringify(newValue)}`);
+      if (newValue) {
+        breakdownOption.value = newValue.breakdownOption;
+        selectedRegionIds.value = newValue.adminLevelIds;
+      } else {
+        breakdownOption.value = null;
+        selectedRegionIds.value = [];
+      }
     };
 
     const {
@@ -329,7 +337,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp // ,
+      // regionId
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -353,6 +362,10 @@ export default defineComponent({
       metadata,
       selectedTimeseriesPoints
     );
+
+    watch(() => breakdownOption, (option) => {
+      console.log(`Change detected in regionalData (breakdownOption): ${option}`);
+    });
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -447,6 +460,9 @@ export default defineComponent({
       setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex',
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
+    optionChanged() {
+      console.log('Option Change detected.');
+    },
     async onClose() {
       this.$router.push({
         name: 'dataComparative',
