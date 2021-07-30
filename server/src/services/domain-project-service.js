@@ -144,7 +144,6 @@ const updateDomainProjects = async (metadata) => {
 
 
 module.exports = {
-  createProject,
   getAllProjects,
   getProject,
   remove,

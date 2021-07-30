@@ -6,29 +6,6 @@ const router = express.Router();
 const domainProjectService = rootRequire('/services/domain-project-service');
 
 /**
- * POST commit for a new project
- */
-router.post('/', asyncHandler(async (req, res) => {
-  const {
-    name,
-    description,
-    // modified_at -> automatically added inside the function createProject()
-    source,
-    type,
-    ready_instances,
-    draft_instances
-  } = req.body;
-  const result = await domainProjectService.createProject(
-    name,
-    description,
-    source,
-    type,
-    ready_instances,
-    draft_instances);
-  res.json(result);
-}));
-
-/**
  * PUT update an existing project
  */
 router.put('/:id', asyncHandler(async (req, res) => {
