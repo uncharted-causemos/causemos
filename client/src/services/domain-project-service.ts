@@ -8,8 +8,8 @@ const getProjects = async (filters: Filters) => {
   return result.data;
 };
 
-const getProject = async (projectName: string) => {
-  const result = await API.get(`domain-projects/${projectName}`);
+const getProject = async (projectId: string) => {
+  const result = await API.get(`domain-projects/${projectId}`);
   return result.data;
 };
 
@@ -25,8 +25,8 @@ const createDomainProject = async (projectName: string, projectDescription: stri
   return result.data.id;
 };
 
-const updateDomainProject = async (projectName: string, fields: { [key: string]: any }) => {
-  const result = await API.put(`domain-projects/${projectName}`, fields);
+const updateDomainProject = async (projectId: string, fields: { [key: string]: any }) => {
+  const result = await API.put(`domain-projects/${projectId}`, fields);
   return result.data;
 };
 

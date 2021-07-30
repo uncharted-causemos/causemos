@@ -31,9 +31,9 @@ router.post('/', asyncHandler(async (req, res) => {
 /**
  * PUT update an existing project
  */
-router.put('/:name', asyncHandler(async (req, res) => {
-  const projectName = req.params.name;
-  await domainProjectService.updateProject(projectName, req.body);
+router.put('/:id', asyncHandler(async (req, res) => {
+  const projectId = req.params.id;
+  await domainProjectService.updateProject(projectId, req.body);
   res.status(200).send({});
 }));
 
@@ -46,11 +46,11 @@ router.get('/', asyncHandler(async (req, res) => {
 }));
 
 /**
- * GET project by (family) name
+ * GET project by id
  */
-router.get('/:name', asyncHandler(async (req, res) => {
-  const projectName = req.params.name;
-  const result = await domainProjectService.getProject(projectName);
+router.get('/:id', asyncHandler(async (req, res) => {
+  const projectId = req.params.id;
+  const result = await domainProjectService.getProject(projectId);
   res.status(200);
   res.json(result);
 }));
