@@ -210,7 +210,7 @@ export default defineComponent({
       this.$router.push({
         name: 'dataPreview',
         params: {
-          project: this.datacube.family_name,
+          project: this.project,
           projectType: this.projectMetadata.type
         }
       });
@@ -223,7 +223,7 @@ export default defineComponent({
         name: 'modelPublishingExperiment',
         query: { datacubeid: id },
         params: {
-          project: this.datacube.family_name,
+          project: this.project,
           projectType: this.projectMetadata.type
         }
       });
