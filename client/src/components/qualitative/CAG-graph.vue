@@ -43,6 +43,7 @@ import ColorLegend from '@/components/graph/color-legend';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 
 import projectService from '@/services/project-service';
+import { opacity } from 'html2canvas/dist/types/css/property-descriptors/opacity';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
@@ -700,11 +701,12 @@ class CAGRenderer extends SVGRenderer {
     }
 
     hoverGroup
-      .on('mouseover', function() {
-        statsGroup.selectAll('.graph-stats-text').style('opacity', 1);
-      })
-      .on('mouseout', function() {
-        statsGroup.selectAll('.graph-stats-text').style('opacity', 0);
+      .on('click', function() {
+        const selection = statsGroup.selectAll('.graph-stats-text');
+        const active = selection.style('opacity');
+        const newOpacity = active ? 0 : 1;
+
+        selection.style('opacity', newOpacity);
       });
   }
 
