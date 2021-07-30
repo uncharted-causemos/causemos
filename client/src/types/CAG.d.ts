@@ -76,6 +76,8 @@ export interface NodeScenarioData {
     start: number;
     end: number;
   };
+  min: number;
+  max: number;
   projection_start: number;
   scenarios: {
     id: string;

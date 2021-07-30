@@ -211,7 +211,8 @@ export default {
   },
   emits: [
     'background-click', 'show-indicator', 'show-constraints', 'show-model-parameters',
-    'refresh-model', 'set-sensitivity-analysis-type', 'save-indicator-edits', 'edit-indicator'
+    'refresh-model', 'set-sensitivity-analysis-type', 'save-indicator-edits', 'edit-indicator',
+    'tab-click'
   ],
   data: () => ({
     tabs: [
@@ -284,6 +285,7 @@ export default {
     },
     setActive (activeTab) {
       router.push({ query: { activeTab } }).catch(() => {});
+      this.$emit('tab-click', activeTab);
     },
     onAugmentCAG() {
       this.$router.push({

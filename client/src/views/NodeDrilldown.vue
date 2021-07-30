@@ -1,13 +1,8 @@
 <template>
   <div class="node-drilldown-container">
+    <analytical-questions-and-insights-panel />
     <main>
       <header>
-        <h4>{{ nodeConceptName }}</h4>
-        <!-- TODO: toggles go here -->
-        <div class="toggle-container">
-          (toggles go here)
-        </div>
-
         <button
           v-tooltip="'Collapse node'"
           class="btn btn-default"
@@ -28,31 +23,50 @@
             class="neighbor-node"
           />
         </div>
-        <div class="selected-node">
-          <dropdown-button
-            class="scenario-selector"
-            :inner-button-label="'Scenario'"
-            :items="scenarioSelectDropdownItems"
-            :selected-item="selectedScenarioId"
-            @item-selected="setSelectedScenarioId"
-          />
-          <div class="expanded-node">
+        <div class="selected-node-column">
+          <div class="scenario-selector-row">
+            <div>
+              <span>Selected scenario</span>
+              <dropdown-button
+                :items="scenarioSelectDropdownItems"
+                :selected-item="selectedScenarioId"
+                @item-selected="setSelectedScenarioId"
+              />
+            </div>
+            <div>
+              <span v-if="comparisonDropdownOptions.length > 1">
+                Compare scenarios relative to
+              </span>
+              <dropdown-button
+                v-if="comparisonDropdownOptions.length > 1"
+                :items="comparisonDropdownOptions"
+                :selected-item="comparisonBaselineId"
+                @item-selected="(value) => comparisonBaselineId = value"
+              />
+            </div>
+          </div>
+          <div class="expanded-node insight-capture">
             <div class="expanded-node-header">
               {{ nodeConceptName }}
               <div class="button-group">
-                (buttons go here)
                 <!-- TODO: New scenario button -->
                 <!-- TODO: Set goal button -->
               </div>
             </div>
             <td-node-chart
-              v-if="selectedNodeScenarioData !== null"
+              v-if="comparisonBaselineId === null && selectedNodeScenarioData !== null"
               class="scenario-chart"
               :selected-scenario-id="selectedScenarioId"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
-              :projection-start-timestamp="modelSummary?.parameter?.projection_start"
+              :min-value="indicatorMin"
+              :max-value="indicatorMax"
               @set-historical-timeseries="setHistoricalTimeseries"
+            />
+            <timeseries-chart
+              v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
+              class="scenario-chart"
+              :timeseriesData="comparisonTimeseries.timeseriesData"
             />
           </div>
           <p>
@@ -60,12 +74,12 @@
             values by clicking on the chart. To remove a point, click on it
             again.
           </p>
-          <hr>
+
+          <h5 class="indicator-section-header">
+            Parameterization for <span class="node-name">{{ nodeConceptName }}</span>
+          </h5>
           <div>
-            Variable type
-          </div>
-          <div>
-            <span><strong>(Indicator name goes here)</strong></span>
+            <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
             &nbsp;
             <button
               v-tooltip.top-center="'Edit datacube'"
@@ -83,21 +97,35 @@
             </button>
           </div>
           <div>
-            (Indicator description goes here ...........................)
+            {{ indicatorDescription }}
           </div>
-          <div style="display: flex; align-items: center">
-            <table>
-              <tr>
-                <td>From</td>
-                <td><input class="form-control input-sm" type="text"/></td>
-                <td>to</td>
-                <td><input class="form-control input-sm" type="text"/></td>
-              </tr>
-            </table>
-            <div style="display: flex; align-items: center">
+          <div class="indicator-controls">
+            <div class="indicator-control-column">
+              <span>Minimum value</span>
+              <input class="form-control input-sm" v-model.number="indicatorMin"/>
+            </div>
+            <span class="from-to-separator">to</span>
+            <div class="indicator-control-column">
+              <span>Maximum value</span>
+              <input class="form-control input-sm" v-model.number="indicatorMax"/>
+            </div>
+            <div class=" indicator-control-column seasonality">
               Seasonality
-              <i class="fa fa-fw fa-lg fa-toggle-off"/>
-              <input class="form-control input-sm" type="number"/>
+              <div class="indicator-control-row">
+                <input type="radio" id="seasonality-true" :value="true" v-model="isSeasonalityActive">
+                <label for="seasonality-true">Yes</label>
+                <input
+                  v-model.number="indicatorPeriod"
+                  :disabled="isSeasonalityActive === false"
+                  class="form-control input-sm"
+                  type="number"
+                >
+                <span>{{ temporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
+              </div>
+              <div class="indicator-control-row">
+                <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
+                <label for="seasonality-false">No</label>
+              </div>
             </div>
           </div>
         </div>
@@ -114,31 +142,21 @@
         </div>
       </div>
     </main>
-    <drilldown-panel
+    <!-- TODO: Panes go here -->
+    <!-- <drilldown-panel
       class="drilldown-panel"
       :tabs="drilldownPanelTabs"
       :active-tab-id="'only-tab'"
     >
       <template #content>
-
         (Panes go here)
-        <!-- TODO: Panes go here -->
-        <!-- <indicator-summary
-          v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
-          :node="selectedNode"
-          :model-summary="modelSummary"
-          @function-selected="onFunctionSelected"
-          @edit-indicator="editIndicator"
-          @remove-indicator="removeIndicator"
-        /> -->
       </template>
-    </drilldown-panel>
+    </drilldown-panel> -->
   </div>
 </template>
 
 <script lang="ts">
 import { computed, defineComponent, ref, watchEffect } from 'vue';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
@@ -147,15 +165,21 @@ import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
 import { CAGGraph, CAGModelSummary, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { TimeseriesPoint } from '@/types/Timeseries';
+import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
+import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
+import { applyRelativeTo } from '@/utils/timeseries-util';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 export default defineComponent({
   name: 'NodeDrilldown',
   components: {
-    DrilldownPanel,
     NeighborNode,
     TdNodeChart,
-    DropdownButton
+    DropdownButton,
+    TimeseriesChart,
+    AnalyticalQuestionsAndInsightsPanel
   },
   props: {},
   computed: {
@@ -178,6 +202,11 @@ export default defineComponent({
       () => modelSummary.value?.parameter?.engine ?? null
     );
 
+    // TODO: to properly apply an insight to this view,
+    //  one may need to utilize view-state and/or data-state
+    //  similarly to how they are being utilied in the data (quantitative analyses)
+    // The same comment applies also to both the TD qualitative/quantitative views
+
     watchEffect(onInvalidate => {
       // Fetch model summary and components
       if (currentCAG.value === null) return;
@@ -185,6 +214,9 @@ export default defineComponent({
       onInvalidate(() => {
         isCancelled = true;
       });
+
+      store.dispatch('insightPanel/setContextId', [currentCAG.value]);
+
       modelService.getSummary(currentCAG.value).then(_modelSummary => {
         if (isCancelled) return;
         modelSummary.value = _modelSummary;
@@ -258,21 +290,7 @@ export default defineComponent({
 
       return {
         indicatorName: selectedNodeScenarioData.indicator_name ?? 'Missing indicator name',
-        historicalTimeseries: [
-          { timestamp: 1483228800000, value: 0.5 },
-          { timestamp: 1485907200000, value: 0.5906666666666667 },
-          { timestamp: 1488326400000, value: 0.642 },
-          { timestamp: 1491004800000, value: 0.6903333333333334 },
-          { timestamp: 1493596800000, value: 0.7603333333333333 },
-          { timestamp: 1496275200000, value: 0.8 },
-          { timestamp: 1498867200000, value: 0.8236666666666668 },
-          { timestamp: 1501545600000, value: 0.85 },
-          { timestamp: 1504224000000, value: 0.8786666666666667 },
-          { timestamp: 1506816000000, value: 0.901 },
-          { timestamp: 1509494400000, value: 0.9283333333333335 },
-          { timestamp: 1514764800000, value: 0.9476666666666667 }
-        ], // TODO: replace dummy data with:
-        // selectedNodeScenarioData.indicator_time_series ?? [],
+        historicalTimeseries: selectedNodeScenarioData.indicator_time_series ?? [],
         historicalConstraints: [],
         projections
       };
@@ -287,8 +305,6 @@ export default defineComponent({
       historicalTimeseries.value = newPoints;
     };
 
-    // FIXME: Adjust quantitative view so that it clears selected scenarioID when modelID changes,
-    //  not when the view unmounts. Then we'll be able get the selectedScenarioId straight from the store
     const selectedScenarioId = computed<string | null>(() => {
       const scenarioId = store.getters['model/selectedScenarioId'];
       if (scenarios.value.filter(d => d.id === scenarioId).length === 0) {
@@ -354,6 +370,80 @@ export default defineComponent({
       });
     };
 
+    const indicatorId = computed(() => {
+      return selectedNode.value?.parameter?.id ?? null;
+    });
+    const indicatorData = useModelMetadata(indicatorId);
+    const indicatorDescription = computed(() => {
+      if (indicatorData.value === null) return '';
+      return indicatorData.value.outputs[0].description;
+    });
+    const indicatorMin = ref(0);
+    const indicatorMax = ref(1);
+    const temporalResolution = ref<string|null>(null);
+    const indicatorPeriod = ref(1);
+    const isSeasonalityActive = ref(false);
+    watchEffect(() => {
+      // if isSeasonalityActive is toggled on, indicatorPeriod should be at least 2,
+      //  since a period of 1 is equivalent to no seasonality
+      if (isSeasonalityActive.value === true && indicatorPeriod.value < 2) {
+        indicatorPeriod.value = 2;
+      }
+    });
+    watchEffect(() => {
+      const indicator = selectedNode.value?.parameter;
+      if (indicator !== null && indicator !== undefined) {
+        indicatorMin.value = indicator.min;
+        indicatorMax.value = indicator.max;
+        temporalResolution.value = indicator.temporal_resolution;
+        indicatorPeriod.value = indicator.period;
+        isSeasonalityActive.value = indicatorPeriod.value > 1;
+      }
+    });
+
+    const comparisonBaselineId = ref(null);
+    const comparisonTimeseries = computed<{
+      baselineMetadata: { name: string; color: string} | null;
+      timeseriesData: Timeseries[];
+    } | null>(() => {
+      if (
+        comparisonBaselineId.value === null ||
+        selectedNodeScenarioData.value === null
+      ) {
+        return null;
+      }
+      const { projections: _projections } = selectedNodeScenarioData.value;
+      if (_projections.length < 2) return null;
+      // Convert projections to the Timeseries data structure
+      const timeseries = _projections.map(projection => {
+        const { scenarioName, scenarioId, values } = projection;
+        const color = scenarioId === selectedScenarioId.value
+          ? SELECTED_COLOR_DARK
+          : 'black';
+        return {
+          name: scenarioName,
+          id: scenarioId,
+          color,
+          points: values
+        };
+      });
+      // Rescale timeseries relative to the baseline
+      return applyRelativeTo(timeseries, comparisonBaselineId.value);
+    });
+    const comparisonDropdownOptions = computed<DropdownItem[]>(() => {
+      const _projections = selectedNodeScenarioData.value?.projections ?? [];
+      if (_projections.length < 2) {
+        return [];
+      }
+      return [
+        { displayName: 'none', value: null },
+        ..._projections.map(({ scenarioId, scenarioName }) => ({
+          value: scenarioId,
+          displayName: scenarioName
+        }))
+      ];
+    });
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -368,7 +458,16 @@ export default defineComponent({
       modelSummary,
       scenarioSelectDropdownItems,
       historicalTimeseries,
-      setHistoricalTimeseries
+      setHistoricalTimeseries,
+      indicatorDescription,
+      indicatorMin,
+      indicatorMax,
+      isSeasonalityActive,
+      indicatorPeriod,
+      temporalResolution,
+      comparisonBaselineId,
+      comparisonTimeseries,
+      comparisonDropdownOptions
     };
   },
   methods: {
@@ -410,8 +509,7 @@ header {
   padding: 5px 0;
   margin-bottom: 5px;
   display: flex;
-  justify-content: space-between;
-  align-items: center;
+  justify-content: flex-end;
 }
 
 h4 {
@@ -425,17 +523,28 @@ h4 {
   margin-bottom: 10px;
 }
 
-.selected-node {
+.selected-node-column {
   flex: 1;
   min-width: 0;
-  max-height: 500px;
   display: flex;
   flex-direction: column;
   margin: 0 15px;
+  overflow-y: auto;
 }
 
-.scenario-selector {
-  align-self: flex-start;
+.scenario-selector-row {
+  display: flex;
+  justify-content: space-between;
+
+  & > div {
+    display: flex;
+    align-items: center;
+
+    & > span {
+      margin-right: 5px;
+    }
+
+  }
 }
 
 h6 {
@@ -445,18 +554,55 @@ h6 {
   font-weight: normal;
 }
 
+.indicator-controls {
+  display: flex;
+  align-items: flex-start;
+}
+
+.indicator-control-column {
+  display: flex;
+  flex-direction: column;
+}
+
+.from-to-separator {
+  align-self: baseline;
+  margin: 2.25rem 5px 0 5px;
+}
+
+.seasonality {
+  margin-left: 10px;
+  flex: 1;
+  min-width: 0;
+
+  label {
+    font-weight: normal;
+    margin-right: 10px;
+    cursor: pointer;
+  }
+}
+
 input[type=text] {
   width: 80px;
   margin: 0px 5px;
 }
 input[type=number] {
-  width: 40px;
+  width: 60px;
   margin: 0px 5px;
+  display: inline-block;
+}
+
+input[type="radio"] {
+  appearance: radio;
+  margin: 0;
+  margin-right: 5px;
+  cursor: pointer;
+  position: relative;
+  bottom: -2px;
 }
 
 .expanded-node {
-  flex: 1;
-  min-height: 0;
+  height: 350px;
+  flex-shrink: 0;
   border: 1px solid black;
   border-radius: 4px;
   overflow: hidden;
@@ -469,7 +615,8 @@ input[type=number] {
   background: #eee;
   display: flex;
   justify-content: space-between;
-  padding: 10px;
+  align-items: center;
+  padding: 5px;
 }
 
 .scenario-chart {
@@ -485,4 +632,13 @@ h5 {
   margin: 0;
   @include header-secondary;
 }
+
+.indicator-section-header {
+  margin: 20px 0 10px;
+
+  .node-name {
+    color: $text-color-dark;
+  }
+}
+
 </style>

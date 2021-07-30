@@ -120,7 +120,7 @@
               <option
                 v-for="relatedFeature in qualifier.related_features"
                 :key="relatedFeature"
-              >{{relatedFeature.name}}</option>
+              >{{relatedFeature}}</option>
             </select>
           </td>
           <td>
@@ -134,7 +134,9 @@
           </td>
           <td>
             <div>Role</div>
-            <div class="role-list"
+            <div
+              v-if="qualifier.roles"
+              class="role-list"
               :class="{ 'attribute-invalid': !(qualifier.roles.length > 0) }"
             >
               <div
@@ -184,7 +186,8 @@ export default defineComponent({
 
     // NOTE: this index is mostly driven from the component 'datacube-model-header'
     //       which may list either all outputs or only the validated ones
-    const currentOutputIndex: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
