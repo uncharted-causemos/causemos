@@ -7,6 +7,15 @@ export interface OutputSpecWithId extends OutputSpec {
   id: string; // User defined id for identifying the output for this spec
 }
 
+export interface OutputStat {
+  min: number;
+  max: number;
+}
+
+export interface OutputStatWithZoom extends OutputStat {
+  zoom: number;
+}
+
 export interface OutputSpec {
   modelId: string;
   runId: string;
