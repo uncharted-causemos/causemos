@@ -441,9 +441,9 @@ const buildNodeParametersPayload = (nodeParameters) => {
       if (_.isEmpty(indicatorTimeSeries)) {
         // FIXME: Temporary fallback so engines don't blow up - July 2021
         indicatorTimeSeries = [
+          { value: 0.0, timestamp: Date.UTC(2017, 0) },
           { value: 0.0, timestamp: Date.UTC(2017, 1) },
-          { value: 0.0, timestamp: Date.UTC(2017, 2) },
-          { value: 0.0, timestamp: Date.UTC(2017, 3) }
+          { value: 0.0, timestamp: Date.UTC(2017, 2) }
         ];
       }
 

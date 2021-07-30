@@ -276,7 +276,13 @@ const setDefaultIndicators = async (modelId) => {
           temporal_aggregation: 'mean',
           temporal_resolution: 'month',
           period: 12,
-          timeseries: []
+          timeseries: [
+            { value: 0.5, timestamp: Date.UTC(2017, 0) },
+            { value: 0.5, timestamp: Date.UTC(2017, 1) },
+            { value: 0.5, timestamp: Date.UTC(2017, 2) }
+          ],
+          min: 0,
+          max: 1
         }
       };
       patchedCount += 1;
