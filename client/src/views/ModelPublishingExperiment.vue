@@ -159,12 +159,11 @@ import { updateDatacube } from '@/services/new-datacube-service';
 import _ from 'lodash';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER, selectAdminLevel } from '@/utils/map-util-new';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
 import { Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
-import { selectAdminLevel } from '@/utils/map-util';
 
 const DRILLDOWN_TABS = [
   {

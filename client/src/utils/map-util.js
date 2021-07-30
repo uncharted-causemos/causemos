@@ -1,8 +1,7 @@
 import _ from 'lodash';
 import mapboxgl from 'mapbox-gl';
 import { BASE_LAYER } from '@/utils/map-util-new';
-import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
-import { ref } from 'vue';
+
 
 export const ETHIOPIA_BOUNDING_BOX = {
   TOP: 18,
@@ -62,15 +61,6 @@ export async function enableConcurrentTileRequestsCaching() {
   // Use single global worker for background tasks (tile fetching, loading, processing etc). Since we share same data across multiple maps,
   // single worker would be sufficient
   mapboxgl.workerCount = 1;
-}
-
-export function selectAdminLevel(metadata) {
-  const chosenLevel = ref((ADMIN_LEVEL_KEYS)
-    .filter(level => _.has(metadata.value?.geography, level))
-    .findIndex(level => {
-      return Object.keys((metadata.value?.geography)[level]).length > 1;
-    }));
-  return chosenLevel.value === -1 ? 0 : chosenLevel.value;
 }
 
 /**
