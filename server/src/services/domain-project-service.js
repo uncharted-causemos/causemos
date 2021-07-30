@@ -135,7 +135,7 @@ const updateDomainProjects = async (metadata) => {
         matchingExistingProject.draft_instances.push(instanceName);
 
         await updateProject(
-          matchingExistingProject.name,
+          matchingExistingProject.id,
           { draft_instances: matchingExistingProject.draft_instances });
       }
     }
