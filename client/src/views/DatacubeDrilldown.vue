@@ -315,7 +315,7 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
 
     const setBreakdownOption = (newValue: string | null) => {
-      if (breakdownOption.value !== newValue) { // ingnore non-change.
+      if (breakdownOption.value !== newValue) {
         breakdownOption.value = newValue;
         console.log(`CURRENT REGIONAL IDS (setBreakdown): ${JSON.stringify(selectedLevelIds.value)}`);
       }
