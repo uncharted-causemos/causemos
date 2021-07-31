@@ -170,6 +170,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 
 const DRILLDOWN_TABS = [
   {
@@ -194,8 +195,11 @@ export default defineComponent({
   },
   setup() {
     const selectedAdminLevel = ref(2);
+
     function setSelectedAdminLevel(newValue: number) {
+      breakdownOption.value = null; // fixme: workaround workaround to be removed regionalData disappears if this isn't reset to null on level change.
       selectedAdminLevel.value = newValue;
+      console.log(`CURRENT REGIONAL IDS (setAdmin): ${JSON.stringify(selectedLevelIds.value)}`);
     }
 
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
@@ -309,17 +313,25 @@ export default defineComponent({
     };
 
     const breakdownOption = ref<string | null>(null);
-    const selectedRegionIds = ref<Array<string>>();
-    const setBreakdownOption = (newValue: { breakdownOption: string; adminLevel: number; adminLevelIds: Array<string> } | null) => {
-      console.log(`SELECTING: ${JSON.stringify(newValue)}`);
-      if (newValue) {
-        breakdownOption.value = newValue.breakdownOption;
-        selectedRegionIds.value = newValue.adminLevelIds;
-      } else {
-        breakdownOption.value = null;
-        selectedRegionIds.value = [];
+
+    const setBreakdownOption = (newValue: string | null) => {
+      if (breakdownOption.value !== newValue) { // ingnore non-change.
+        breakdownOption.value = newValue;
+        console.log(`CURRENT REGIONAL IDS (setBreakdown): ${JSON.stringify(selectedLevelIds.value)}`);
       }
     };
+
+    const selectedLevelIds = computed(() => {
+      console.log(`REGIONAL DATA : ${JSON.stringify(regionalData.value)}`);
+      const admlvl = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
+      const regional = (regionalData.value !== null) ? regionalData.value[admlvl] : [];
+      if (regional) {
+        const ids = regional.map((item) => item.id);
+        console.log(`Found ids: ${ids}`);
+        return ids;
+      }
+      return [];
+    });
 
     const {
       timeseriesData,
