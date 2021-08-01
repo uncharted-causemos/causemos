@@ -42,13 +42,12 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
    * @param {array} options.styles - cytoscape styles definition array
    * @param {boolean} options.ctrlInteractions - use control+zoom and ctrl+pan instead of defaults
    */
-  constructor(ontologyFormatter, options) {
+  constructor(options) {
     super();
     this.options = options || {};
     this.queue = [];
     this.remaining = 0;
     this.depth = 1000;
-    this.ontologyFormatter = ontologyFormatter;
 
     this.postRenderFn = null; // A function to run after all stages have finished
 
@@ -265,7 +264,8 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
   _calculate() {
     const cy = this.cy;
     const data = this.data;
-    const nodes = CytoscapeData.createNodes(this.ontologyFormatter, data.nodes, this.depth);
+    const options = this.options;
+    const nodes = CytoscapeData.createNodes(data.nodes, this.depth, options.formatter);
     const edges = CytoscapeData.createEdges(data.edges);
 
     // To be rendered in layout

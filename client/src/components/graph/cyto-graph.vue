@@ -128,7 +128,7 @@ export default {
     this.currentLayout = 'cose-bilkent';
   },
   mounted() {
-    this.graphRenderer = new CytoscapeGraphRenderer(this.ontologyFormatter);
+    this.graphRenderer = new CytoscapeGraphRenderer({ formatter: this.ontologyFormatter });
     this.graphRenderer.initialize(this.$refs.graph);
     this.graphRenderer.setDepth(1);
     this.graphRenderer.setStrategy(coseBilkentLayout());
