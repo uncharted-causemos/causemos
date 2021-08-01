@@ -36,7 +36,7 @@
           <div style="fontWeight: normal; left-margin: 0px">Last updated: {{analysis.subtitle}}</div>
         </div>
       </div>
-      <div class="col-sm-1 instance-header float-right">
+      <div class="col-sm-1 instance-header">
         {{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}
         <div style="color: black">{{analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}</div>
       </div>
@@ -187,12 +187,7 @@ export default defineComponent({
   font-weight: bold;
   color: darkgrey;
   padding-bottom: 5px;
-  margin-left: 2rem;
-}
-
-.fixed-height-column {
-  height: 12vh;
-  overflow: auto;
+  margin-left: 1rem;
 }
 
 .project-card-container {
