@@ -37,7 +37,11 @@ router.post('/corpus', upload.array('file'), [], asyncHandler(async (req, res) =
   // Tenant information
   if (project.corpus_id === 'august_embed_ata') {
     metadata.tenants = ['ata'];
+  } else if (project.corpus_id === 'august_embed_ata_v2') {
+    metadata.tenants = ['ata'];
   } else if (project.corpus_id === 'august_embed_new-america') {
+    metadata.tenants = ['new-america'];
+  } else if (project.corpus_id === 'august_embed_new-america_v2') {
     metadata.tenants = ['new-america'];
   } else {
     throw new Error(`Unable to recognize corpus ${project.corpus_id}`);
