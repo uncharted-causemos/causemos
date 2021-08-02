@@ -18,7 +18,7 @@
     <div
       class="row project-card-header"
       @click="toggleShowMore()">
-      <div class="col-sm-2 instance-header no-padding">
+      <div class="col-sm-4 instance-header no-padding">
         <i
           :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
         />
@@ -30,7 +30,7 @@
           <span class="overflow-ellipsis"><b>{{analysis.title}}</b></span>
         </button>
       </div>
-      <div class="col-sm-3">
+      <div class="col-sm-4">
         <div style="fontWeight: normal;">{{analysis.description}}</div>
         <div class="instance-header" style="margin-left: 0px">
           <div style="fontWeight: normal; left-margin: 0px">Last updated: {{analysis.subtitle}}</div>
@@ -187,12 +187,7 @@ export default defineComponent({
   font-weight: bold;
   color: darkgrey;
   padding-bottom: 5px;
-  margin-left: 2rem;
-}
-
-.fixed-height-column {
-  height: 12vh;
-  overflow: auto;
+  margin-left: 1rem;
 }
 
 .project-card-container {
