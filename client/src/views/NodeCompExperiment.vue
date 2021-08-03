@@ -158,7 +158,6 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import modelService from '@/services/model-service';
-import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 
 const DRILLDOWN_TABS = [
   {
@@ -251,11 +250,6 @@ export default defineComponent({
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     watchEffect(() => {
-      if (metadata.value) {
-        const selectedAdminLevel = ref((ADMIN_LEVEL_KEYS as string[])
-          .findIndex(level => (metadata.value?.geography as any)[level].length > 0));
-        setSelectedAdminLevel(selectedAdminLevel.value);
-      }
       if (metadata.value && currentOutputIndex.value >= 0) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
