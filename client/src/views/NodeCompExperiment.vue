@@ -251,7 +251,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value) {
-        setSelectedAdminLevel(selectAdminLevel(metadata));
+        setSelectedAdminLevel(selectAdminLevel(metadata.value));
       }
       if (metadata.value && currentOutputIndex.value >= 0) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;

@@ -288,7 +288,7 @@ export default defineComponent({
         const defaultFeature = {
           [metadata.value.id]: initialOutputIndex
         };
-        setSelectedAdminLevel(selectAdminLevel(metadata));
+        setSelectedAdminLevel(selectAdminLevel(metadata.value));
         store.dispatch('app/setDatacubeCurrentOutputsMap', defaultFeature);
       }
     });

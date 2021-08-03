@@ -284,7 +284,7 @@ export default defineComponent({
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
         mainModelOutput.value = outputs.value[initialOutputIndex];
-        setSelectedAdminLevel(selectAdminLevel(metadata));
+        setSelectedAdminLevel(selectAdminLevel(metadata.value));
       }
     });
 
