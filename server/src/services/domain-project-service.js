@@ -28,7 +28,7 @@ const createProject = async (
   Logger.info('Creating project entry: ' + newId);
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const keyFn = (doc) => {
-    return doc.name; // prevent duplicate doc based on the name field instead of id
+    return doc.id; // prevent duplicate doc based on the id field
   };
   await domainProjectConnection.insert({
     id: newId,
@@ -52,15 +52,15 @@ const createProject = async (
  * @param {string} projectId - project id
  * @param {object} projectFields - project fields
  */
-const updateProject = async(projectName, projectFields) => {
+const updateProject = async(projectId, projectFields) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
 
   const keyFn = (doc) => {
-    return doc.name;
+    return doc.id;
   };
 
   const results = await domainProjectConnection.update({
-    name: projectName,
+    id: projectId,
     ...projectFields
   }, keyFn);
 
@@ -83,9 +83,9 @@ const getAllProjects = async (searchFilters) => {
 /**
  * Returns a project
  */
-const getProject = async (projectName) => {
+const getProject = async (projectId) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
-  const result = await domainProjectConnection.findOne([{ field: 'name', value: projectName }], {});
+  const result = await domainProjectConnection.findOne([{ field: 'id', value: projectId }], {});
   return result;
 };
 
@@ -112,20 +112,38 @@ const updateDomainProjects = async (metadata) => {
   const existingProjects = await getAllProjects();
   const modelFamilyNames = existingProjects.map(p => p.name);
 
-  if (!modelFamilyNames.includes(metadata.family_name)) {
+  const instanceName = metadata.name;
+  const familyName = metadata.family_name || metadata.name || uuid();
+
+  if (!modelFamilyNames.includes(familyName)) {
     await createProject(
-      metadata.family_name,
+      familyName,
       metadata.description,
       metadata.maintainer.organization,
       metadata.type,
-      [], // FIXME: initial stats need to be set // ready_instances
-      []); // FIXME: initial stats need to be set // draft_instances
+      [], // initial stats need to be set // ready_instances
+      [instanceName]); // initial stats need to be set // draft_instances
+  } else {
+    //
+    // update the count of draft_instances
+    //  (since another instance of the same family is being registered)
+    //
+    const matchingExistingProject = existingProjects.find(p => p.name === familyName);
+    if (matchingExistingProject) {
+      if (metadata.status === 'REGISTERED' && !matchingExistingProject.draft_instances.includes(instanceName)) {
+        // this is a new model instance datacube, so we need to increase the registered instances of this project
+        matchingExistingProject.draft_instances.push(instanceName);
+
+        await updateProject(
+          matchingExistingProject.id,
+          { draft_instances: matchingExistingProject.draft_instances });
+      }
+    }
   }
 };
 
 
 module.exports = {
-  createProject,
   getAllProjects,
   getProject,
   remove,

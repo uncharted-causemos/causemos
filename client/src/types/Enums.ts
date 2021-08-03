@@ -81,11 +81,13 @@ export enum TemporalAggregationLevel {
 }
 
 export enum AggregationOption {
+  None = '',
   Mean = 'mean',
   Sum = 'sum'
 }
 
 export enum TemporalResolutionOption {
+  None = '',
   Year = 'year',
   Month = 'month'
 }

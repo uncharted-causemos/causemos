@@ -21,9 +21,6 @@
       of {{ numberFormatter(filteredEdgesCount) }}
       {{ areEdgesDrawn ? '': '(hidden) ' }} relationships
     </span>
-    <template #trailing>
-      <insight-controls />
-    </template>
   </full-screen-modal-header>
 </template>
 
@@ -35,13 +32,10 @@ import { SUBGRAPH, ADD_TO_CAG_THRESHOLD } from '@/utils/messages-util';
 import fullScreenModalHeader from '../widgets/full-screen-modal-header.vue';
 import numberFormatter from '@/formatters/number-formatter';
 
-import InsightControls from '@/components/insight-manager/insight-controls.vue';
-
 export default defineComponent({
   name: 'KbExplorerModalHeader',
   components: {
-    fullScreenModalHeader,
-    InsightControls
+    fullScreenModalHeader
   },
   props: {
     navBackLabel: {

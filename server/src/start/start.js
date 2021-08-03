@@ -81,9 +81,11 @@ async function runStartup() {
           return documentIds.includes(readerDocumentId);
         });
         if (matchingExtension === undefined) {
-          Logger.error(
-            `Unable to find extension for record with document_id ${readerDocumentId}.`
-          );
+          // FIXME: this error is being printed for thousands of records, we should investigate why
+          //  so many records without matching extensions are being found every 20 minutes.
+          // Logger.error(
+          //   `Unable to find extension for record with document_id ${readerDocumentId}.`
+          // );
           return;
         }
         const { project_id } = matchingExtension;

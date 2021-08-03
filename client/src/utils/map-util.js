@@ -1,5 +1,6 @@
 import _ from 'lodash';
 import mapboxgl from 'mapbox-gl';
+import { BASE_LAYER } from '@/utils/map-util-new';
 
 export const ETHIOPIA_BOUNDING_BOX = {
   TOP: 18,
@@ -11,7 +12,8 @@ export const ETHIOPIA_BOUNDING_BOX = {
 const ORIGINAL_WORKER_URL = mapboxgl.workerUrl;
 const ORIGINAL_WORKER_COUNT = mapboxgl.workerCount;
 
-export const STYLE_URL = '/api/map/styles';
+export const STYLE_URL_PREFIX = '/api/map/styles/';
+export const STYLE_URL = `${STYLE_URL_PREFIX}${BASE_LAYER.DEFAULT}`;
 export const BASE_MAP_OPTIONS = {
   style: STYLE_URL,
   mapStyle: STYLE_URL, // alias for 'style' for wm-map component

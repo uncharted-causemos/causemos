@@ -10,7 +10,7 @@
 rm -rf _causemos
 
 ### Openstack host
-HOST="centos@10.64.16.209"
+HOST="centos@10.65.18.69"
 
 
 # Specify branches here if needed

@@ -96,9 +96,13 @@
           v-tooltip.top-center="'Unpublish the datacube instance'"
           type="button"
           class="remove-button button-spacing"
+          :class="{ 'disabled': datacube.status === DatacubeStatus.Registered}"
+          :disabled="datacube.status === DatacubeStatus.Registered"
           @click.stop="showWarningModal"
-        ><i class="fa fa-trash" />
-          Unpublish</button>
+        >
+          <i class="fa fa-trash" />
+          Unpublish
+        </button>
       </div>
     </div>
   </div>
@@ -177,7 +181,8 @@ export default defineComponent({
     const showModal = ref(false);
 
     return {
-      showModal
+      showModal,
+      DatacubeStatus
     };
   },
   methods: {
@@ -205,7 +210,7 @@ export default defineComponent({
       this.$router.push({
         name: 'dataPreview',
         params: {
-          project: this.datacube.family_name,
+          project: this.project,
           projectType: this.projectMetadata.type
         }
       });
@@ -218,7 +223,7 @@ export default defineComponent({
         name: 'modelPublishingExperiment',
         query: { datacubeid: id },
         params: {
-          project: this.datacube.family_name,
+          project: this.project,
           projectType: this.projectMetadata.type
         }
       });
@@ -276,5 +281,19 @@ export default defineComponent({
   font-weight: 600;
   border: none;
   user-select: none;
+
+  &.disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: all;
+
+    button {
+      opacity: 1;
+    }
+
+    &::before {
+      cursor: not-allowed;
+    }
+  }
 }
 </style>

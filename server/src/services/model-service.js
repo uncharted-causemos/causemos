@@ -441,11 +441,22 @@ const buildNodeParametersPayload = (nodeParameters) => {
       if (_.isEmpty(indicatorTimeSeries)) {
         // FIXME: Temporary fallback so engines don't blow up - July 2021
         indicatorTimeSeries = [
+          { value: 0.0, timestamp: Date.UTC(2017, 0) },
           { value: 0.0, timestamp: Date.UTC(2017, 1) },
-          { value: 0.0, timestamp: Date.UTC(2017, 2) },
-          { value: 0.0, timestamp: Date.UTC(2017, 3) }
+          { value: 0.0, timestamp: Date.UTC(2017, 2) }
         ];
       }
+
+      // More hack: DySE needs at least 2 data points
+      if (indicatorTimeSeries.length === 1) {
+        const timestamp = indicatorTimeSeries[0].timestamp;
+        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
+        indicatorTimeSeries.unshift({
+          value: indicatorTimeSeries[0].value,
+          timestamp: prevTimestamp
+        });
+      }
+
 
       r[np.concept] = {
         name: np.parameter.name,

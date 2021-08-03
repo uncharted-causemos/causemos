@@ -264,7 +264,8 @@ export default class CytoscapeGraphRenderer extends GraphRenderer {
   _calculate() {
     const cy = this.cy;
     const data = this.data;
-    const nodes = CytoscapeData.createNodes(data.nodes, this.depth);
+    const options = this.options;
+    const nodes = CytoscapeData.createNodes(data.nodes, this.depth, options.formatter);
     const edges = CytoscapeData.createEdges(data.edges);
 
     // To be rendered in layout
