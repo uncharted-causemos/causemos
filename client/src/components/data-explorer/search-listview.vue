@@ -169,11 +169,13 @@ export default {
     },
     formatCountry(d) {
       const country = d.geography.country;
+      if (!country) return '';
       return this.isExpanded(d) || country.length < 4
         ? country.join(', ')
         : `${country.slice(0, 3).join(', ')} and ${country.length - 4} more.`;
     },
     formatDescription(d) {
+      if (!d.description) return '';
       return this.isExpanded(d) || d.description.length < 140
         ? d.description
         : `${d.description.substring(0, 140)}...`;

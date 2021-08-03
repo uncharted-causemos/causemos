@@ -38,6 +38,7 @@ export interface DatacubeAttribute {
   choices?: string[];
   min?: number;
   max?: number;
+  is_visible?: boolean;
 }
 
 export type DimensionInfo = ModelParameter | DatacubeFeature;

@@ -8,6 +8,7 @@ import { readonly } from 'vue';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import { useStore } from 'vuex';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -23,6 +24,9 @@ export default function useRegionalData(
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
 ) {
+  const store = useStore();
+  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
@@ -33,7 +37,16 @@ export default function useRegionalData(
     ) {
       return [];
     }
-    const activeFeature = modelMetadata.default_feature ?? '';
+
+    let activeFeature = '';
+    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
+    if (currentOutputEntry !== undefined) {
+      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
+      activeFeature = outputs[currentOutputEntry].name;
+    } else {
+      activeFeature = modelMetadata.default_feature ?? '';
+    }
+
     const activeModelId = modelMetadata.data_id ?? '';
 
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({

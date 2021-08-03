@@ -50,8 +50,9 @@
       <li class="nav-item">
         <button
           class="btn btn-primary"
+          :style="{background: isModelDirty? '#2A5': '#222'}"
           @click="runModel">
-          {{ isModelDirty === 0 ? '*' : '' }} Run
+          Run (debug: {{ modelSummary.status }} {{ draftScenarioDirty }})
         </button>
       </li>
     </ul>
@@ -67,8 +68,6 @@
 </template>
 
 <script>
-
-import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
 import SaveScenarioModal from '../modals/modal-save-scenario';
@@ -99,10 +98,11 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId'
+      selectedScenarioId: 'model/selectedScenarioId',
+      draftScenarioDirty: 'model/draftScenarioDirty'
     }),
     isInDraftState() {
-      return _.isNil(this.selectedScenarioId);
+      return this.selectedScenarioId === 'draft';
     },
     selectedScenario() {
       if (this.isInDraftState) return null;
@@ -119,7 +119,7 @@ export default {
       };
     },
     isModelDirty() {
-      return _.get(this.modelSummary, 'status', true);
+      return this.modelSummary.status === 0 || this.draftScenarioDirty === true;
     }
   },
   methods: {

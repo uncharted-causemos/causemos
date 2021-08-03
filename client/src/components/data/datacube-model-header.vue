@@ -70,14 +70,6 @@ export default defineComponent({
         tweakable: false,
         type: 'text'
       });
-      /*
-      attributes.push({
-        name: 'Model instance',
-        value: modelMetadata.version,
-        tweakable: false,
-        type: 'text'
-      });
-      */
       const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
       attributes.push({
         name: 'Default output variable',
@@ -95,7 +87,8 @@ export default defineComponent({
     });
 
     const store = useStore();
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     return {
       modelAttributes,
@@ -104,7 +97,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      setCurrentOutputIndex: 'modelPublishStore/setCurrentOutputIndex'
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
     }),
     updateAttributeValue(attr: ModelAttribute) {
       console.log(attr.value);
@@ -113,7 +106,10 @@ export default defineComponent({
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
-      this.setCurrentOutputIndex(selectedOutputIndex);
+      const defaultFeature = {
+        [this.metadata?.id ?? '']: selectedOutputIndex
+      };
+      this.setDatacubeCurrentOutputsMap(defaultFeature);
     }
   }
 });

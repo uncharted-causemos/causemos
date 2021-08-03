@@ -76,7 +76,7 @@
           </button>
         </div>
       </div>
-      <div class="column">
+      <div class="column insight-capture">
         <div class="button-row">
           <!-- TODO: extract button-group to its own component -->
           <div class="button-group">
@@ -141,28 +141,19 @@
             :color-from-index="colorFromIndex"
           />
         </header>
-        <div class="insight-capture">
+        <div class="column">
           <div style="display: flex; flex-direction: row;">
             <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && timeseriesData.length > 0 && !hasSingleTimestamp"
+            v-if="!isDescriptionView && timeseriesData.length > 0"
             class="timeseries-chart"
             :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
             :breakdown-option="breakdownOption"
             @select-timestamp="emitTimestampSelection"
           />
-          <p
-            v-else-if="hasSingleTimestamp"
-            class="hidden-timeseries-message"
-          >
-            Data only exists for
-            <span class="timestamp">
-              {{ timestampFormatter(timeseriesData[0].points[0].timestamp) }}
-            </span>.
-          </p>
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
@@ -197,7 +188,6 @@
                 :selectedBaseLayer="selectedBaseLayer"
                 :selectedDataLayer="selectedDataLayer"
                 @sync-bounds="onSyncMapBounds"
-                @click-layer-toggle="onClickMapLayerToggle"
                 @on-map-load="onMapLoad"
                 @slide-handle-change="updateMapFilters"
               />
@@ -333,13 +323,13 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const store = useStore();
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const {
       selectedScenarioIds,
       allModelRunData,
       metadata,
-      timeseriesData,
       breakdownOption
     } = toRefs(props);
 
@@ -386,17 +376,6 @@ export default defineComponent({
       }
     );
 
-    const hasSingleTimestamp = computed(() => {
-      const allPoints = timeseriesData.value.flatMap(timeseries => timeseries.points);
-      if (allPoints.length === 0) return false;
-      const allTimestamps = allPoints.map(point => point.timestamp);
-      const timestamp = allTimestamps[0];
-      for (const other of allTimestamps.slice(1)) {
-        if (other !== timestamp) return false;
-      }
-      return true;
-    });
-
     const timestampFormatter = (timestamp: number) => {
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
         const month = timestamp;
@@ -418,8 +397,7 @@ export default defineComponent({
       mainModelOutput,
       isModelMetadata,
       emitRelativeToSelection,
-      timestampFormatter,
-      hasSingleTimestamp
+      timestampFormatter
     };
   },
   data: () => ({
@@ -581,13 +559,6 @@ header {
     cursor: pointer;
     margin: 0;
   }
-}
-
-.insight-capture {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  flex: 1;
 }
 
 .timeseries-chart {
