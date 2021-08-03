@@ -88,8 +88,11 @@ export default defineComponent({
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
     },
     ...mapGetters({
-      currentOutputIndex: 'modelPublishStore/currentOutputIndex'
-    })
+      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
+    }),
+    currentOutputIndex(): number {
+      return this.metadata.id !== undefined ? this.datacubeCurrentOutputsMap[this.metadata.id] : 0;
+    }
   },
   data: () => ({
     potentialRuns: [] as Array<ScenarioData>
@@ -122,6 +125,7 @@ export default defineComponent({
             value: p.default
           });
         });
+
         return API.post('maas/model-runs', {
           model_id: this.metadata.data_id,
           model_name: this.metadata?.name,

@@ -24,7 +24,7 @@
               :class="{underlined: currentView === 'domainDatacubeOverview'}">
               <router-link
                 class="nav-link"
-                :to="{name:'domainDatacubeOverview', params:{project: projectMetadata.name}}"
+                :to="{name:'domainDatacubeOverview', params:{project: project}}"
               >
                 <i class="fa fa-connectdevelop" />
                 {{ projectMetadata.name }}
@@ -74,7 +74,7 @@
         class="nav navbar-nav navbar-right help-holder">
         <li class="nav-item nav-item--help">
           <a
-            href="https://docs.google.com/presentation/d/1DvixJx4bTkaaIC1mvN26Mf-ykfPzS1NWEmOMMyDWI3E/edit?usp=sharing"
+            href="https://docs.google.com/presentation/d/1WnIXxAd639IFMOKEAu3E3C1SUgfzsCO6oLLbKOvAZkI/edit#slide=id.g8c51928f8f_0_200"
             target="_blank"
           > <i class="fa fa-question" />
           </a>

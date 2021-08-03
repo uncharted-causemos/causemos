@@ -606,7 +606,7 @@ export default defineComponent({
         //
         await updateDatacube(modelToUpdate.id, modelToUpdate);
         // also, update the project stats count
-        const domainProject = await domainProjectService.getProject(this.projectMetadata.name);
+        const domainProject = await domainProjectService.getProject(this.project);
         // add the instance to list of published instances
         const updatedReadyInstances = domainProject.ready_instances;
         if (!updatedReadyInstances.includes(modelToUpdate.name)) {
@@ -616,7 +616,7 @@ export default defineComponent({
         const updatedDraftInstances = domainProject.ready_instances.filter((n: string) => n !== modelToUpdate.name);
         // update the project doc at the server
         domainProjectService.updateDomainProject(
-          this.projectMetadata.name,
+          this.project,
           {
             draft_instances: updatedDraftInstances,
             ready_instances: updatedReadyInstances
@@ -627,7 +627,7 @@ export default defineComponent({
         this.$router.push({
           name: 'domainDatacubeOverview',
           params: {
-            project: this.metadata.family_name,
+            project: this.project,
             projectType: modelToUpdate.type
           }
         });

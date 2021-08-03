@@ -28,7 +28,7 @@ const createProject = async (
   Logger.info('Creating project entry: ' + newId);
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const keyFn = (doc) => {
-    return doc.name; // prevent duplicate doc based on the name field instead of id
+    return doc.id; // prevent duplicate doc based on the id field
   };
   await domainProjectConnection.insert({
     id: newId,
@@ -52,15 +52,15 @@ const createProject = async (
  * @param {string} projectId - project id
  * @param {object} projectFields - project fields
  */
-const updateProject = async(projectName, projectFields) => {
+const updateProject = async(projectId, projectFields) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
 
   const keyFn = (doc) => {
-    return doc.name;
+    return doc.id;
   };
 
   const results = await domainProjectConnection.update({
-    name: projectName,
+    id: projectId,
     ...projectFields
   }, keyFn);
 
@@ -83,9 +83,9 @@ const getAllProjects = async (searchFilters) => {
 /**
  * Returns a project
  */
-const getProject = async (projectName) => {
+const getProject = async (projectId) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
-  const result = await domainProjectConnection.findOne([{ field: 'name', value: projectName }], {});
+  const result = await domainProjectConnection.findOne([{ field: 'id', value: projectId }], {});
   return result;
 };
 
@@ -135,7 +135,7 @@ const updateDomainProjects = async (metadata) => {
         matchingExistingProject.draft_instances.push(instanceName);
 
         await updateProject(
-          matchingExistingProject.name,
+          matchingExistingProject.id,
           { draft_instances: matchingExistingProject.draft_instances });
       }
     }
@@ -144,7 +144,6 @@ const updateDomainProjects = async (metadata) => {
 
 
 module.exports = {
-  createProject,
   getAllProjects,
   getProject,
   remove,

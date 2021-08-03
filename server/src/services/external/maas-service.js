@@ -76,6 +76,7 @@ const startModelOutputPostProcessing = async (metadata) => {
 
   // Remove extra fields from Jataware
   metadata.attributes = undefined;
+  metadata.default_run = undefined;
 
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
   const result = await connection.update({

@@ -206,7 +206,16 @@ export default defineComponent({
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = computed(() => {
+      if (
+        metadata.value?.id !== undefined &&
+        datacubeCurrentOutputsMap.value[metadata.value?.id] !== undefined
+      ) {
+        return datacubeCurrentOutputsMap.value[metadata.value?.id];
+      } else {
+        return 0;
+      }
+    });
 
     const metadata = useModelMetadata(indicatorId);
 
