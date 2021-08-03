@@ -1,8 +1,7 @@
 import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
-import { getValidatedOutputs } from '@/utils/datacube-util';
-import { DatacubeType } from '@/types/Enums';
+import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
 
 /**
  * Takes an id then fetches and returns the metadata associated
@@ -48,8 +47,8 @@ export default function useModelMetadata(id: Ref<string | null>): Ref<Model | In
           output.is_visible = rawMetadata.validatedOutputs?.find((o: DatacubeFeature) => o.name === output.name) !== undefined;
         }
       });
-      if (rawMetadata.type === DatacubeType.Model) {
-        const modelMetadata = rawMetadata as Model;
+      if (isModel(rawMetadata)) {
+        const modelMetadata = rawMetadata;
         modelMetadata.parameters.forEach(param => {
           if (param.is_visible === undefined) {
             param.is_visible = true;

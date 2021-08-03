@@ -75,7 +75,7 @@
           <tr>
               <th class="name-col">
                 Output Features
-                <div v-if="outputVariables.length > 0 && currentOutputFeature.name !== ''">
+                <div v-if="outputVariables.length > 0">
                   <span style="fontWeight: normal; fontStyle: italic">
                     Default: {{ currentOutputFeature.display_name }}
                   </span>
@@ -241,17 +241,12 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
-        const outputs = metadata.value.outputs;
-        return outputs;
-      }
-      return [];
+      return metadata.value ? metadata.value.outputs : [];
     });
 
     const validatedOutputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
-        const outputs = metadata.value.validatedOutputs ?? metadata.value.outputs;
-        return outputs;
+      if (metadata.value) {
+        return metadata.value.validatedOutputs ?? metadata.value.outputs;
       }
       return [];
     });
@@ -263,6 +258,7 @@ export default defineComponent({
     return {
       datacubeCurrentOutputsMap,
       currentOutputIndex,
+      validatedOutputVariables,
       currentOutputFeature,
       outputVariables,
       FeatureQualifierRoles,
@@ -319,6 +315,12 @@ export default defineComponent({
       };
       elm.scrollIntoView(scrollViewOptions);
     },
+    visibleOutputsCount() {
+      return this.validatedOutputVariables.filter(o => o.is_visible).length;
+    },
+    isValidatedOutput(output: DatacubeFeature) {
+      return this.validatedOutputVariables.findIndex(o => o.name === output.name) >= 0;
+    },
     updateQualifierRole(qualifier: FeatureQualifier, role: FeatureQualifierRoles) {
       if (qualifier.roles.includes(role)) {
         qualifier.roles = qualifier.roles.filter(r => r !== role);
@@ -357,15 +359,23 @@ export default defineComponent({
       this.$emit('update-attribute-visibility');
     },
     updateOutputVisibility(output: DatacubeFeature) {
+      // at least one validated output must be visible
+      if (this.visibleOutputsCount() === 1 &&
+          this.isValidatedOutput(output) && output.is_visible) {
+        return;
+      }
+
       output.is_visible = !output.is_visible;
       // need to emit an event for the metadata to refresh the sync with all components
       //  for example to filter the outputs dropdown list based on the updated visibility
 
-      // are we toggling the 'currentOutputFeature'?
-      // if so, then update currentOutputIndex
+      // if we are not toggling the 'currentOutputFeature', then update the currentOutputIndex
+      // so that the currentOutputFeature would still be the same
       if (output.name !== this.currentOutputFeature.name) {
         const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-        updatedCurrentOutputsMap[this.metadata?.id ?? ''] = this.currentOutputIndex - 1;
+        if (this.currentOutputIndex > 0) {
+          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = this.currentOutputIndex - 1;
+        }
         this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
       }
 
