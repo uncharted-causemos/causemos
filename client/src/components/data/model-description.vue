@@ -250,7 +250,7 @@ export default defineComponent({
 
     const validatedOutputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
-        const outputs = metadata.value.validatedOutputs ? metadata.value.validatedOutputs : metadata.value.outputs;
+        const outputs = metadata.value.validatedOutputs ?? metadata.value.outputs;
         return outputs;
       }
       return [];
