@@ -27,6 +27,6 @@ export const roundToNearestMonth = (timestamp: number) => {
 };
 
 /** Returns a unix timestamp in seconds */
-export const getTimestamp = (year: number, month: number) => {
-  return new Date(Date.UTC(year, month)).getTime() / 1000;
+export const getTimestampMillis = (year: number, month: number) => {
+  return new Date(Date.UTC(year, month)).getTime();
 };
