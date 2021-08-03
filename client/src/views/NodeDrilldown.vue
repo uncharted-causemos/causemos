@@ -75,31 +75,31 @@
             again.
           </p>
 
-          <h5 class="indicator-section-header">
+          <h5 class="indicator-section-header restrict-max-width">
             Parameterization for <span class="node-name">{{ nodeConceptName }}</span>
           </h5>
-          <div>
+          <div class="restrict-max-width indicator-title-row">
             <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
-            &nbsp;
-            <button
-              v-tooltip.top-center="'Edit datacube'"
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="openDataDrilldown">
-              Edit datacube
-            </button>
-            &nbsp;
-            <button
-              v-tooltip.top-center="'Change datacube'"
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="openDataExplorer">
-              Change datacube
-            </button>
+            <div class="indicator-buttons">
+              <button
+                v-tooltip.top-center="'Edit datacube'"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="openDataDrilldown">
+                Edit datacube
+              </button>
+              <button
+                v-tooltip.top-center="'Change datacube'"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="openDataExplorer">
+                Change datacube
+              </button>
+            </div>
           </div>
-          <div>
+          <p class="restrict-max-width">
             {{ indicatorDescription }}
-          </div>
+          </p>
           <div class="indicator-controls">
             <div class="indicator-control-column">
               <span>Minimum value</span>
@@ -653,6 +653,22 @@ h5 {
   .node-name {
     color: $text-color-dark;
   }
+}
+
+.indicator-title-row {
+  display: flex;
+  align-items: center;
+
+  .indicator-buttons {
+    margin-left: 20px;
+    & > button:not(:first-child) {
+      margin-left: 5px;
+    }
+  }
+}
+
+.restrict-max-width {
+  max-width: 90ch;
 }
 
 </style>
