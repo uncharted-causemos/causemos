@@ -339,8 +339,6 @@ export default defineComponent({
       clearRouteParam();
     };
 
-    const breakdownOption = ref<string | null>(null);
-
     const setBreakdownOption = (newValue: string | null) => {
       if (breakdownOption.value !== newValue) {
         breakdownOption.value = newValue;
