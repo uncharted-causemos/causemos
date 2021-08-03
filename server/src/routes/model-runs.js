@@ -11,7 +11,8 @@ router.post('/', asyncHandler(async (req, res) => {
   const {
     model_id,
     model_name,
-    parameters
+    parameters,
+    is_default_run = false
   } = req.body;
 
   const metadata = {
@@ -20,7 +21,7 @@ router.post('/', asyncHandler(async (req, res) => {
     model_name,
     parameters,
     data_paths: [],
-    is_default_run: false,
+    is_default_run,
     created_at: Date.now(),
     tags: []
   };
