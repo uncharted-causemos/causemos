@@ -84,7 +84,8 @@
             <button
               v-tooltip.top-center="'Edit datacube'"
               type="button"
-              class="btn btn-primary btn-sm">
+              class="btn btn-primary btn-sm"
+              @click="openDataDrilldown">
               Edit datacube
             </button>
             &nbsp;
@@ -459,6 +460,7 @@ export default defineComponent({
       scenarioSelectDropdownItems,
       historicalTimeseries,
       setHistoricalTimeseries,
+      indicatorId,
       indicatorDescription,
       indicatorMin,
       indicatorMax,
@@ -476,6 +478,18 @@ export default defineComponent({
         name: 'nodeDataExplorer',
         params: {
           currentCAG: this.currentCAG,
+          nodeId: this.nodeId,
+          project: this.project,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
+    openDataDrilldown() {
+      this.$router.push({
+        name: 'nodeCompExperiment',
+        params: {
+          currentCAG: this.currentCAG,
+          indicatorId: this.indicatorId,
           nodeId: this.nodeId,
           project: this.project,
           projectType: ProjectType.Analysis
