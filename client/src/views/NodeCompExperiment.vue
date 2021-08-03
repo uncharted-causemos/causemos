@@ -186,7 +186,7 @@ export default defineComponent({
     }
   }),
   setup() {
-    const selectedAdminLevel = ref(2);
+    const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }

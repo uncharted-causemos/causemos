@@ -211,7 +211,7 @@ export default defineComponent({
     // reset on init:
     store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Enrich_Description);
 
-    const selectedAdminLevel = ref(2);
+    const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
