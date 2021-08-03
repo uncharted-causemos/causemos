@@ -44,40 +44,4 @@ describe('map-util', () => {
     };
     expect(selectAdminLevel(testMetadata)).to.equal(0);
   });
-  it('Every region category contains more than 1 value', () => {
-    const testMetadata = {
-      ...metadata,
-      geography: {
-        country: ['country_1'],
-        admin1: ['admin1_1', 'admin1_2'],
-        admin2: ['admin2_2', 'admin2_2'],
-        admin3: ['admin3_1', 'admin3_2']
-      }
-    };
-    expect(selectAdminLevel(testMetadata)).to.equal(1);
-  });
-  it('Every region category contains more than 1 value', () => {
-    const testMetadata = {
-      ...metadata,
-      geography: {
-        country: ['country_1'],
-        admin1: ['admin1_1'],
-        admin2: ['admin2_2'],
-        admin3: ['admin3_1']
-      }
-    };
-    expect(selectAdminLevel(testMetadata)).to.equal(0);
-  });
-  it('Every region category contains more than 1 value', () => {
-    const testMetadata = {
-      ...metadata,
-      geography: {
-        country: [],
-        admin1: ['admin1_1', 'admin1_2', 'admin1_3'],
-        admin2: [],
-        admin3: ['admin3_1']
-      }
-    };
-    expect(selectAdminLevel(testMetadata)).to.equal(1);
-  });
 });
