@@ -62,6 +62,7 @@ const mutations: MutationTree<ModelState> = {
           cpc.values = newCPC.values;
         }
       }
+      state.draftScenarioDirty = true;
     }
   },
   setDraftScenarioDirty(state, v) {
