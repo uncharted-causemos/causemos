@@ -149,7 +149,8 @@ export const NODE_FACET_FIELDS: string [] = [
 
 export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
   // FIXME: only numeric outputs are currently supported
-  return outputs.filter(o => o.type === 'int' || o.type === 'float' || o.type === 'boolean');
+  const validOutputs = outputs.filter(o => o.type === 'int' || o.type === 'float' || o.type === 'boolean');
+  return validOutputs.filter(o => o.is_visible);
 };
 
 export function isModel(datacube: Datacube): datacube is Model {

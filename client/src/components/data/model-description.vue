@@ -11,14 +11,16 @@
     </a>
   </div>
   <div class="model-description-container">
+    <!-- inputs -->
     <table id="inputknobs" class="table model-table">
       <thead>
           <tr>
               <th class="name-col">Input Knobs</th>
               <th class="desc-col">Description</th>
+              <th class="additional-col">Flags</th>
           </tr>
       </thead>
-      <tbody v-if="metadata && metadata.parameters">
+      <tbody v-if="metadata && inputParameters">
         <tr v-for="param in inputParameters" :key="param.id">
           <td class="model-attribute-pair">
             <input
@@ -42,28 +44,52 @@
               :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
           </td>
+          <td style="padding-right: 0">
+            <div class="checkbox">
+              <label
+                @click="updateInputKnobVisibility(param)"
+                style="cursor: pointer; color: black;">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': param.is_visible, 'fa-square-o': !param.is_visible }"
+                />
+                Visibility
+              </label>
+            </div>
+            <div class="checkbox">
+              <label>
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': param.data_type === ModelParameterDataType.Freeform, 'fa-square-o': param.data_type !== ModelParameterDataType.Freeform }"
+                />
+                Freeform
+              </label>
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
+    <!-- outputs -->
     <table id="outputknobs" class="table model-table">
       <thead>
           <tr>
               <th class="name-col">
                 Output Features
-                <div v-if="outputVariables.length > 0 && currentOutputName !== ''">
+                <div v-if="outputVariables.length > 0 && currentOutputFeature.name !== ''">
                   <span style="fontWeight: normal; fontStyle: italic">
-                    Default: {{ outputVariables[currentOutputIndex].display_name }}
+                    Default: {{ currentOutputFeature.display_name }}
                   </span>
                 </div>
               </th>
               <th class="desc-col">Description</th>
+              <th class="additional-col">Flags</th>
           </tr>
       </thead>
       <tbody v-if="metadata && metadata.outputs">
         <tr
           v-for="param in outputVariables"
           :key="param.id"
-          :class="{'primary-output': param.name === currentOutputName}">
+          :class="{'primary-output': param.name === currentOutputFeature.name}">
           <td class="model-attribute-pair">
             <input
               v-model="param.display_name"
@@ -86,6 +112,19 @@
               :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
           </td>
+          <td style="padding-right: 0">
+            <div class="checkbox">
+              <label
+                @click="updateOutputVisibility(param)"
+                style="cursor: pointer; color: black;">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': param.is_visible, 'fa-square-o': !param.is_visible }"
+                />
+                Visibility
+              </label>
+            </div>
+          </td>
         </tr>
       </tbody>
     </table>
@@ -98,9 +137,9 @@
               <th class="additional-col"></th>
           </tr>
       </thead>
-      <tbody v-if="metadata && metadata.qualifier_outputs">
+      <tbody v-if="metadata && qualifiers">
         <tr
-          v-for="qualifier in metadata.qualifier_outputs"
+          v-for="qualifier in qualifiers"
           :key="qualifier.id">
           <td class="model-attribute-pair">
             <input
@@ -131,6 +170,17 @@
               class="model-attribute-desc"
               :class="{ 'attribute-invalid': !isValid(qualifier.description) }"
             />
+            <div class="checkbox">
+              <label
+                @click="updateDrilldownVisibility(qualifier)"
+                style="cursor: pointer; color: black;">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': qualifier.is_visible, 'fa-square-o': !qualifier.is_visible }"
+                />
+                Visibility
+              </label>
+            </div>
           </td>
           <td>
             <div>Role</div>
@@ -140,7 +190,7 @@
               :class="{ 'attribute-invalid': !(qualifier.roles.length > 0) }"
             >
               <div
-                v-for="role in Object.keys(FeatureQualifierRoles)"
+                v-for="role in Object.values(FeatureQualifierRoles)"
                 :key="role"
                 @click="updateQualifierRole(qualifier, role)"
               >
@@ -164,8 +214,8 @@
 import { computed, defineComponent, PropType, ComputedRef, toRefs } from 'vue';
 import _ from 'lodash';
 import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
-import { useStore } from 'vuex';
-import { FeatureQualifierRoles } from '@/types/Enums';
+import { mapActions, useStore } from 'vuex';
+import { FeatureQualifierRoles, ModelParameterDataType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'ModelDescription',
@@ -178,7 +228,8 @@ export default defineComponent({
     }
   },
   emits: [
-    'check-model-metadata-validity'
+    'check-model-metadata-validity',
+    'update-attribute-visibility'
   ],
   setup(props) {
     const { metadata } = toRefs(props);
@@ -191,29 +242,59 @@ export default defineComponent({
 
     const outputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
+        const outputs = metadata.value.outputs;
+        return outputs;
+      }
+      return [];
+    });
+
+    const validatedOutputVariables: ComputedRef<DatacubeFeature[]> = computed(() => {
+      if (metadata.value && currentOutputIndex.value >= 0) {
         const outputs = metadata.value.validatedOutputs ? metadata.value.validatedOutputs : metadata.value.outputs;
         return outputs;
       }
       return [];
     });
 
-    const currentOutputName = computed(() => {
-      if (outputVariables.value) {
-        return outputVariables.value[currentOutputIndex.value].name;
-      }
-      return '';
+    const currentOutputFeature = computed(() => {
+      return validatedOutputVariables.value[currentOutputIndex.value];
     });
 
     return {
+      datacubeCurrentOutputsMap,
       currentOutputIndex,
-      currentOutputName,
+      currentOutputFeature,
       outputVariables,
-      FeatureQualifierRoles
+      FeatureQualifierRoles,
+      ModelParameterDataType
     };
   },
   computed: {
     inputParameters(): Array<any> {
       return this.metadata && this.metadata.parameters ? this.metadata.parameters.filter((p: ModelParameter) => !p.is_drilldown) : [];
+    },
+    qualifiers(): Array<any> {
+      // includes both drilldown-inputs and output-qualifiers
+      const qualifiers = [];
+      // first, add actual output qualifiers
+      qualifiers.push(...this.metadata?.qualifier_outputs ?? []);
+      // then, add all drilldown params as qualifiers
+      const drilldownParams = this.metadata?.parameters.filter((p: ModelParameter) => p.is_drilldown) ?? [];
+      drilldownParams.forEach((p: any) => {
+        // since ModelParameter does not share the same structure as FeatureQualifier,
+        //  we need to add the missing FeatureQualifier attributes
+        if (!p.roles) {
+          p.roles = [];
+        }
+        if (!p.roles.includes(FeatureQualifierRoles.Breakdown)) {
+          p.roles.push(FeatureQualifierRoles.Breakdown);
+        }
+        if (!p.related_features) {
+          p.related_features = [(this.currentOutputFeature as DatacubeFeature).name];
+        }
+      });
+      qualifiers.push(...drilldownParams);
+      return qualifiers;
     }
   },
   watch: {
@@ -226,6 +307,9 @@ export default defineComponent({
     }
   },
   methods: {
+    ...mapActions({
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
+    }),
     scrollToSection(sectionName: string) {
       const elm = document.getElementById(sectionName) as HTMLElement;
       const scrollViewOptions: ScrollIntoViewOptions = {
@@ -255,13 +339,44 @@ export default defineComponent({
       let isValid = true;
       const invalidInputs = this.inputParameters.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
       const invalidOutputs = this.outputVariables.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
-      if (invalidInputs.length > 0 || invalidOutputs.length > 0) {
+      const outputQualifiers = this.qualifiers.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
+
+      if (invalidInputs.length > 0 || invalidOutputs.length > 0 || outputQualifiers.length > 0) {
         isValid = false;
       }
       const parentComp = this.$parent;
       if (parentComp) {
         parentComp.$emit('check-model-metadata-validity', { valid: isValid });
       }
+    },
+    updateInputKnobVisibility(param: ModelParameter) {
+      param.is_visible = !param.is_visible;
+      // need to emit an event for the metadata to refresh the sync with all components
+      //  for example to allow the PC to show/hide
+      //   the relevant dimension based on the updated visibility
+      this.$emit('update-attribute-visibility');
+    },
+    updateOutputVisibility(output: DatacubeFeature) {
+      output.is_visible = !output.is_visible;
+      // need to emit an event for the metadata to refresh the sync with all components
+      //  for example to filter the outputs dropdown list based on the updated visibility
+
+      // are we toggling the 'currentOutputFeature'?
+      // if so, then update currentOutputIndex
+      if (output.name !== this.currentOutputFeature.name) {
+        const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+        updatedCurrentOutputsMap[this.metadata?.id ?? ''] = this.currentOutputIndex - 1;
+        this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+      }
+
+      this.$emit('update-attribute-visibility');
+    },
+    updateDrilldownVisibility(param: ModelParameter) {
+      param.is_visible = !param.is_visible;
+      // need to emit an event for the metadata to refresh the sync with all components
+      //  for example to allow the Breakdown panel to show/hide
+      //  the relevant drilldown-dimension based on the updated visibility
+      this.$emit('update-attribute-visibility');
     }
   }
 });
@@ -357,6 +472,20 @@ table.model-table thead tr th {
   flex-direction: column;
   overflow: auto;
   position: relative;
+}
+
+.checkbox {
+  user-select: none; /* Standard syntax */
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  label {
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    cursor: auto;
+    color: gray;
+  }
 }
 
 </style>
