@@ -61,6 +61,8 @@
               :projections="selectedNodeScenarioData.projections"
               :min-value="indicatorMin"
               :max-value="indicatorMax"
+              :constraints="constraints"
+              @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
             <timeseries-chart
@@ -164,10 +166,11 @@ import router from '@/router';
 import { useStore, mapGetters } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
-import { CAGGraph, CAGModelSummary, Scenario, ScenarioProjection } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import useDraftScenario from '@/services/composables/useDraftScenario';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
@@ -242,6 +245,11 @@ export default defineComponent({
         currentEngine.value
       );
       if (isCancelled) return;
+      // Draft scenario won't be returned by getScenarios, so we need to append
+      //  it to the local scenario list for it to be considered along with them
+      if (draftScenario.value !== null && draftScenario.value.model_id === currentCAG.value) {
+        _scenarios.push(draftScenario.value);
+      }
       scenarios.value = _scenarios;
     });
 
@@ -279,12 +287,12 @@ export default defineComponent({
 
       const projections: ScenarioProjection[] = [];
       selectedNodeScenarioData.scenarios.forEach(({ id, name, result, constraints }) => {
-        if (result === undefined) return;
+        // `result` is undefined for the draft scenario
         projections.push({
           scenarioName: name,
           scenarioId: id,
-          values: result.values,
-          confidenceInterval: result.confidenceInterval,
+          values: result?.values ?? [],
+          confidenceInterval: result?.confidenceInterval ?? { upper: [], lower: [] },
           constraints: constraints ?? []
         });
       });
@@ -445,6 +453,35 @@ export default defineComponent({
       ];
     });
 
+    const constraints = ref<ProjectionConstraint[]>([]);
+    const modifyConstraints = (newConstraints: ProjectionConstraint[]) => {
+      constraints.value = newConstraints;
+      saveDraft();
+    };
+
+    watchEffect(() => {
+      // When the selectedScenario changes, grab the constraints from that scenario
+      //  and store them in the `constraints` ref to be displayed
+      const projections = (selectedNodeScenarioData.value?.projections ?? []);
+      const selectedScenario = projections.find(
+        scenario => scenario.scenarioId === selectedScenarioId.value
+      );
+      if (selectedScenario !== undefined) {
+        constraints.value = selectedScenario.constraints;
+      }
+    });
+
+    const { draftScenario, saveDraft } = useDraftScenario(
+      selectedNode,
+      scenarios,
+      selectedScenarioId,
+      setSelectedScenarioId,
+      constraints,
+      currentEngine,
+      modelSummary,
+      currentCAG
+    );
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -469,7 +506,9 @@ export default defineComponent({
       temporalResolution,
       comparisonBaselineId,
       comparisonTimeseries,
-      comparisonDropdownOptions
+      comparisonDropdownOptions,
+      constraints,
+      modifyConstraints
     };
   },
   methods: {
