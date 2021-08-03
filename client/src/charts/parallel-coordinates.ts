@@ -135,9 +135,10 @@ function renderParallelCoordinates(
   const height = options.height - margin.top - margin.bottom;
 
   //
-  // exclude drilldown/filter axes from being rendered in the PCs
+  // exclude drilldown/filter and freeform axes from being rendered in the PCs
   //
   dimensions = filterDrilldownDimensionData(dimensions as ModelParameter[]);
+  dimensions = filterInvisibleDimensionData(dimensions as ModelParameter[]);
 
   const detectTypeFromData = false;
   // process data and detect data type for each dimension
@@ -1070,11 +1071,6 @@ function colorFunc(this: SVGPathElement) {
   }
 }
 
-function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
-  // FIXME: only the last dimension is the output dimension
-  return dimensions[dimensions.length - 1].name === dimName;
-}
-
 function renderBaselineMarkers(showBaselineDefaults: boolean) {
   if (!renderedAxes) {
     console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
@@ -1432,13 +1428,26 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
 //
 // utility functions
 //
-
 // exclude drilldown parameters from the input dimensions
 // @REVIEW this may better be done external to the PC component
 const filterDrilldownDimensionData = (dimensions: Array<ModelParameter>) => {
   return dimensions
     .filter(d => { return !d.is_drilldown; });
 };
+
+const filterInvisibleDimensionData = (dimensions: Array<ModelParameter>) => {
+  // this should only filter input parameters
+  return dimensions
+    .filter(d => {
+      if (isOutputDimension(dimensions, d.name)) return true;
+      return d.is_visible;
+    });
+};
+
+function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
+  // FIXME: only the last dimension is the output dimension
+  return dimensions[dimensions.length - 1].name === dimName;
+}
 
 // attempt to determine types of each dimension based on first row of data
 const toType = (v: string | number) => {
@@ -1612,6 +1621,11 @@ const createScales = (
       // ensure we return a default categorical scale
       if (dataExtent.length > 0) {
         // NOTE: these are mostly string-based axes but not with valid choices, i.e., freeform axes --> should have been annotated as such
+        const dim = dimensions.find(d => d.name === name) as ModelParameter;
+        const defValue = dim.default;
+        if (!dataExtent.includes(defValue)) {
+          dataExtent.push(defValue);
+        }
       } else {
         dataExtent.push('dummay-last');
         dataExtent.unshift('dummy-first');
