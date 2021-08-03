@@ -177,8 +177,9 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
-import { BASE_LAYER, DATA_LAYER, selectAdminLevel } from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState } from '@/types/Insight';
+import { selectAdminLevel } from '@/utils/map-util';
 
 const DRILLDOWN_TABS = [
   {

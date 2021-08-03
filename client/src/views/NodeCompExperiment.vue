@@ -153,11 +153,12 @@ import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { DatacubeType, ProjectType } from '@/types/Enums';
 
-import { BASE_LAYER, DATA_LAYER, selectAdminLevel } from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import modelService from '@/services/model-service';
+import { selectAdminLevel } from '@/utils/map-util';
 
 const DRILLDOWN_TABS = [
   {
