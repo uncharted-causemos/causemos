@@ -16,6 +16,8 @@ export enum DATA_LAYER {
 export function selectAdminLevel(metadata: Ref<Model | Indicator | null>) {
   const chosenLevel = ref((ADMIN_LEVEL_KEYS).slice().reverse()
     .filter(level => _.has(metadata.value?.geography, level))
-    .findIndex(level => Object.keys((metadata.value?.geography as any)[level]).length > 1));
+    .findIndex(level => {
+      return Object.keys((metadata.value?.geography as any)[level]).length > 1;
+    }));
   return chosenLevel.value === -1 ? 0 : ADMIN_LEVEL_KEYS.length - chosenLevel.value - 1;
 }
