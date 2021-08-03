@@ -178,8 +178,8 @@ import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { Insight, ViewState } from '@/types/Insight';
-import { selectAdminLevel } from '@/utils/map-util';
 
 const DRILLDOWN_TABS = [
   {
@@ -285,7 +285,10 @@ export default defineComponent({
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
         mainModelOutput.value = outputs.value[initialOutputIndex];
-        setSelectedAdminLevel(selectAdminLevel(metadata));
+
+        const selectedAdminLevel = ref((ADMIN_LEVEL_KEYS as string[])
+          .findIndex(level => (metadata.value?.geography as any)[level].length > 0));
+        setSelectedAdminLevel(selectedAdminLevel.value);
       }
     });
 
