@@ -27,7 +27,7 @@
                     <template v-if="enableMultipleSelection">
                       <i
                         class="fa fa-lg fa-fw"
-                        :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d) }"
+                        :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d), 'disabled': d.status !== DatacubeStatus.ready }"
                       />
                     </template>
                     <template v-else>
@@ -43,7 +43,7 @@
                   </div>
                   <div class="content">
                       <button
-                        v-if="d.status !== DatacubeStatus.Ready"
+                        v-if="d.status !== DatacubeStatus.ready"
                         class="not-published-button"
                         style="margin-top: 5px"
                       >
@@ -86,6 +86,7 @@
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
+import { DatacubeStatus } from '@/types/Enums';
 
 export default {
   name: 'SearchListview',
@@ -113,6 +114,11 @@ export default {
       filters: 'dataSearch/filters'
     })
   },
+  setup() {
+    return {
+      DatacubeStatus
+    };
+  },
   methods: {
     ...mapActions({
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
@@ -127,22 +133,24 @@ export default {
       return this.selectedDatacubes.find(sd => sd.id === datacube.id) !== undefined;
     },
     updateSelection(datacube) {
-      const item = {
-        datacubeId: datacube.data_id,
-        feature: datacube.default_feature,
-        id: datacube.id
-      };
-      if (this.enableMultipleSelection) {
-        // if the datacube is not in the list add it, otherwise remove it
-        if (this.isSelected(datacube)) {
-          const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
-          this.setSelectedDatacubes(newSelectedDatacubes);
+      if (datacube.status === DatacubeStatus.ready) {
+        const item = {
+          datacubeId: datacube.data_id,
+          feature: datacube.default_feature,
+          id: datacube.id
+        };
+        if (this.enableMultipleSelection) {
+          // if the datacube is not in the list add it, otherwise remove it
+          if (this.isSelected(datacube)) {
+            const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
+            this.setSelectedDatacubes(newSelectedDatacubes);
+          } else {
+            this.setSelectedDatacubes([...this.selectedDatacubes, item]);
+          }
         } else {
-          this.setSelectedDatacubes([...this.selectedDatacubes, item]);
+          // only one selection is allowed, so replace the selected datacubes array
+          this.setSelectedDatacubes([item]);
         }
-      } else {
-        // only one selection is allowed, so replace the selected datacubes array
-        this.setSelectedDatacubes([item]);
       }
     },
     formatParameters({ parameters }) {
@@ -287,6 +295,9 @@ $selected-background: #EBF1FC;
         flex: 0 0 auto;
         align-self: flex-start;
         margin: 15px 10px 0 0;
+        .disabled {
+          color: $background-light-3;
+        }
       }
       .content {
         flex: 1 1 auto;
