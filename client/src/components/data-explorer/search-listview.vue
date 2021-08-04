@@ -42,6 +42,12 @@
                     />
                   </div>
                   <div class="content">
+                      <button
+                        class="not-published-button"
+                        style="margin-top: 5px"
+                      >
+                        Not Published
+                      </button>
                       <div class="text-bold">{{ d.outputs[0].display_name }}</div>
                       <div>{{ d.name }}</div>
                       <div>{{ d.source }}</div>
@@ -283,6 +289,12 @@ $selected-background: #EBF1FC;
       }
       .content {
         flex: 1 1 auto;
+        .not-published-button {
+          font-weight: bold;
+          border: none;
+          border-radius: 5px;
+          background-color: $background-light-3;
+        }
         .knobs {
           margin-top: 10px;
         }
