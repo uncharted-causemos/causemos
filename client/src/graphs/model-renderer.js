@@ -306,6 +306,8 @@ export default class ModelRenderer extends SVGRenderer {
       const nodeBodyGroup = d3.select(node).select('.node-body-group');
       const nodeHeaderGroup = d3.select(node).select('.node-header-group');
 
+      d3.select(node).style('cursor', 'pointer');
+
       // Create historical/projection chart
       const nodeScenarioData = this.scenarioData[datum.concept];
 
@@ -491,7 +493,6 @@ export default class ModelRenderer extends SVGRenderer {
     const chart = this.chart;
     const nodesHeader = chart.selectAll('.node-header-group');
     const nodesBody = chart.selectAll('.node-body-group');
-    const registry = this.registry;
 
     this.chart.selectAll('.node-ui').on('mouseenter', function (evt, d) {
       // if some of the label name was shortened, tooltip the whole label (so helpful)
@@ -500,57 +501,6 @@ export default class ModelRenderer extends SVGRenderer {
       }
     }).on('mouseleave', function () {
       hideSvgTooltip(chart);
-    });
-
-    nodesHeader.on('mouseenter', function(evt) {
-      evt.stopPropagation();
-
-      const node = d3.select(this);
-      const width = node.datum().width;
-      if (node.datum().minimized === true) return;
-
-      node.append('text')
-        .classed('indicator-edit-icon', true)
-        .attr('x', width - 18) // fitting icon
-        .attr('y', 15) // fitting icon
-        .style('font-family', 'FontAwesome')
-        .style('font-size', '12px')
-        .style('stroke', 'none')
-        .style('fill', 'black')
-        .style('cursor', 'pointer')
-        .text('\uf044')
-        .on('click', function(evt) {
-          evt.stopPropagation();
-          if (registry.has('nodeClick')) {
-            registry.get('nodeClick')(evt, d3.select(this), self);
-          }
-          d3.select(this).remove();
-        });
-    });
-
-    nodesBody.on('mouseenter', function(evt) {
-      evt.stopPropagation();
-
-      const node = d3.select(this);
-      const width = node.datum().width;
-      if (node.datum().minimized === true) return;
-      node.append('text')
-        .classed('projection-edit-icon', true)
-        .attr('x', width - 18) // fitting icon
-        .attr('y', GRAPH_HEIGHT + 15) // fitting icon
-        .style('font-family', 'FontAwesome')
-        .style('font-size', '12px')
-        .style('stroke', 'none')
-        .style('fill', 'black')
-        .style('cursor', 'pointer')
-        .text('\uf044')
-        .on('click', function(evt) {
-          evt.stopPropagation();
-          if (registry.has('nodeClick')) {
-            registry.get('nodeClick')(evt, d3.select(this), self);
-          }
-          d3.select(this).remove();
-        });
     });
 
     nodesHeader.on('mouseleave', function(evt) {

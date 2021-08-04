@@ -76,13 +76,13 @@ export default {
       this.renderer.showNeighborhood(neighborhood);
       this.renderer.selectNode(node);
 
-      if (node.classed('projection-edit-icon')) {
-        this.$emit('node-body-click', node.datum().data);
-      } else if (node.classed('indicator-edit-icon')) {
-        this.$emit('node-header-click', node.datum().data);
-      }
+      // if (node.classed('projection-edit-icon')) {
+      //   this.$emit('node-body-click', node.datum().data);
+      // } else if (node.classed('indicator-edit-icon')) {
+      //   this.$emit('node-header-click', node.datum().data);
+      // }
     });
-    this.renderer.setCallback('nodeDblClick', (event, node) => {
+    this.renderer.setCallback('nodeClick', (event, node) => {
       this.$emit('node-double-click', node.datum().data);
     });
     this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {

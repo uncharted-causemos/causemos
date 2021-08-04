@@ -9,14 +9,8 @@
         :sensitivity-matrix-data="sensitivityMatrixData"
         :sensitivity-analysis-type="sensitivityAnalysisType"
         :scenarios="scenarios"
-        :selected-node="selectedNode"
         :current-engine="currentEngine"
-        @background-click="onBackgroundClick"
-        @show-indicator="showIndicator"
-        @show-constraints="showConstraints"
         @show-model-parameters="showModelParameters"
-        @edit-indicator="editIndicator"
-        @save-indicator-edits="saveIndicatorEdits"
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
         @refresh-model="refreshModel"
         @tab-click="tabClick"
@@ -33,21 +27,6 @@
         </template>
       </tab-panel>
     </div>
-    <edit-indicator-modal
-      v-if="isEditIndicatorModalOpen"
-      :node-data="selectedNode"
-      :model-summary="modelSummary"
-      @close="closeEditIndicatorModal"
-      @save="saveIndicatorEdits"
-    />
-    <modal-edit-constraints
-      v-if="isEditConstraintsOpen"
-      :node="selectedNode"
-      :node-scenarios="scenariosForSelectedNode"
-      :projection-steps="projectionSteps"
-      @close="closeEditConstraints"
-      @run-projection="saveDraft"
-    />
     <modal-edit-parameters
       v-if="isModelParametersOpen"
       :model-summary="modelSummary"
@@ -64,29 +43,16 @@ import TabPanel from '@/components/quantitative/tab-panel';
 import modelService from '@/services/model-service';
 import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar';
-import EditIndicatorModal from '@/components/indicator/modal-edit-indicator';
-import ModalEditConstraints from '@/components/modals/modal-edit-constraints';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
-
-const isIndicatorChanged = (n, o) => {
-  if (o.indicator_name !== n.indicator_name ||
-    o.initial_value_parameter.func !== n.initial_value_parameter.func ||
-    !_.isEqual(o.indicator_time_series_parameter, n.indicator_time_series_parameter)) {
-    return true;
-  }
-  return false;
-};
 
 export default {
   name: 'QuantitativeView',
   components: {
     TabPanel,
     ActionBar,
-    EditIndicatorModal,
-    ModalEditConstraints,
     ModalEditParameters,
     AnalyticalQuestionsAndInsightsPanel
   },
@@ -97,7 +63,6 @@ export default {
     isModelParametersOpen: false,
 
     // Data for drilldown
-    selectedNode: null,
     selectedStatements: [],
 
     // Core data relating to model and projections
@@ -273,44 +238,8 @@ export default {
       this.setSelectedScenarioId(response.id);
       this.disableOverlay();
     },
-    onBackgroundClick() {
-      this.selectedNode = null;
-    },
-    showIndicator(nodeData) {
-      this.selectedNode = nodeData;
-    },
-    editIndicator() {
-      this.isEditIndicatorModalOpen = true;
-    },
     closeEditIndicatorModal() {
       this.isEditIndicatorModalOpen = false;
-    },
-    async saveIndicatorEdits(newParameter) {
-      // Check if we actually changed something
-      const parameter = this.selectedNode.parameter;
-      if (isIndicatorChanged(parameter, newParameter) === false) {
-        return;
-      }
-
-      this.selectedNode.parameter = newParameter;
-
-      // FIXME: Strip off month/year, ideally this should be done upstream at API (indicator-data)
-      this.selectedNode.parameter.indicator_time_series.forEach(v => {
-        delete v.month;
-        delete v.year;
-        delete v.missing;
-      });
-
-      // update and save
-      // FIXME: Reset all selection state to have a clean start - we should try to preserve states when things are stable - Sept 2020.
-      await modelService.updateNodeParameter(this.currentCAG, this.selectedNode);
-      this.selectedNode = null;
-      this.refreshModel();
-    },
-    showConstraints(nodeData, scenarios) {
-      this.selectedNode = nodeData;
-      this.scenariosForSelectedNode = scenarios;
-      this.isEditConstraintsOpen = true;
     },
     showModelParameters() {
       this.isModelParametersOpen = true;
@@ -458,35 +387,6 @@ export default {
       if (tab === 'matrix') {
         this.fetchSensitivityAnalysisResults();
       }
-    },
-    async testDraft1() {
-      await this.saveDraft({
-        concept: 'wm/process/conflict/attack',
-        values: [
-          { step: 0, value: 50 },
-          { step: 2, value: 140 },
-          { step: 7, value: 240 },
-          { step: 10, value: -240 }
-        ]
-      });
-    },
-    async testDraft3() {
-      await this.saveDraft({
-        concept: 'wm/process/conflict/attack',
-        values: [
-          { step: 0, value: 50 },
-          { step: 4, value: 900 }
-        ]
-      });
-    },
-    async testDraft2() {
-      await this.saveDraft({
-        concept: 'wm/concept/crisis_or_disaster/environmental/flood',
-        values: [
-          { step: 0, value: 50 },
-          { step: 5, value: 20 }
-        ]
-      });
     }
   }
 };
