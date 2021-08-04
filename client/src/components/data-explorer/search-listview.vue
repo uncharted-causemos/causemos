@@ -45,7 +45,6 @@
                       <button
                         v-if="isDisabled(d)"
                         class="not-published-button"
-                        style="margin-top: 5px"
                       >
                         Not Published
                       </button>
@@ -309,6 +308,7 @@ $selected-background: #EBF1FC;
           border: none;
           border-radius: 5px;
           background-color: $background-light-3;
+          margin-top: 5px;
         }
         .knobs {
           margin-top: 10px;
