@@ -168,14 +168,15 @@ import { computed, defineComponent, ref, watchEffect } from 'vue';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
-import { useStore, mapGetters } from 'vuex';
+import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
-import { CAGGraph, CAGModelSummary, ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
+import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDraftScenario from '@/services/composables/useDraftScenario';
+import useQualitativeModel from '@/services/composables/useQualitativeModel';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
@@ -191,22 +192,19 @@ export default defineComponent({
     AnalyticalQuestionsAndInsightsPanel
   },
   props: {},
-  computed: {
-    ...mapGetters({
-      currentCAG: 'app/currentCAG',
-      nodeId: 'app/nodeId',
-      project: 'app/project'
-    })
-  },
   setup() {
     // Get CAG and selected node from route
     const store = useStore();
     const project = computed(() => store.getters['app/project']);
-    const currentCAG = computed(() => store.getters['app/currentCAG']);
     const nodeId = computed(() => store.getters['app/nodeId']);
 
-    const modelSummary = ref<CAGModelSummary | null>(null);
-    const modelComponents = ref<CAGGraph | null>(null);
+    const {
+      modelSummary,
+      modelComponents,
+      currentCAG,
+      refreshModelData
+    } = useQualitativeModel();
+
     const currentEngine = computed(
       () => modelSummary.value?.parameter?.engine ?? null
     );
@@ -216,24 +214,10 @@ export default defineComponent({
     //  similarly to how they are being utilied in the data (quantitative analyses)
     // The same comment applies also to both the TD qualitative/quantitative views
 
-    watchEffect(onInvalidate => {
+    watchEffect(() => {
       // Fetch model summary and components
       if (currentCAG.value === null) return;
-      let isCancelled = false;
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-
       store.dispatch('insightPanel/setContextId', [currentCAG.value]);
-
-      modelService.getSummary(currentCAG.value).then(_modelSummary => {
-        if (isCancelled) return;
-        modelSummary.value = _modelSummary;
-      });
-      modelService.getComponents(currentCAG.value).then(_modelComponents => {
-        if (isCancelled) return;
-        modelComponents.value = _modelComponents;
-      });
     });
 
     const scenarios = ref<Scenario[]>([]);
@@ -440,7 +424,12 @@ export default defineComponent({
           period: isSeasonalityActive.value ? indicatorPeriod.value : 1
         })
       };
-      await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+      try {
+        await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+        refreshModelData();
+      } catch {
+        console.error('Failed to update node parameter', nodeParameters);
+      }
     };
 
     const comparisonBaselineId = ref(null);
@@ -543,7 +532,10 @@ export default defineComponent({
       comparisonTimeseries,
       comparisonDropdownOptions,
       constraints,
-      modifyConstraints
+      modifyConstraints,
+      nodeId,
+      project,
+      currentCAG
     };
   },
   methods: {
