@@ -221,6 +221,7 @@ export default defineComponent({
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const datacubeId = analysisItems.value[0].id;
@@ -334,19 +335,6 @@ export default defineComponent({
         selectedScenarioIds: selectedScenarioIds.value,
         selectedTimestamp: selectedTimestamp.value
       };
-      const viewState: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value
-      };
-
-      store.dispatch('insightPanel/setViewState', viewState);
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
@@ -405,6 +393,28 @@ export default defineComponent({
       selectedTimeseriesPoints
     );
 
+    watchEffect(() => {
+      const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems[0];
+      if (currentAnalysisItem.viewConfig === undefined) {
+        currentAnalysisItem.viewConfig = {} as ViewState;
+      }
+      const viewState: ViewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
+      };
+      store.dispatch('insightPanel/setViewState', viewState);
+      currentAnalysisItem.viewConfig = viewState;
+      store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+    });
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -449,7 +459,8 @@ export default defineComponent({
       selectedBaseLayer,
       selectedDataLayer,
       datacubeCurrentOutputsMap,
-      analysisItems
+      analysisItems,
+      analysisId
     };
   },
   data: () => ({
@@ -485,7 +496,6 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       project: 'app/project',
-      analysisId: 'dataAnalysis/analysisId',
       projectType: 'app/projectType'
     }),
     navBackLabel(): string {
@@ -498,24 +508,19 @@ export default defineComponent({
   methods: {
     ...mapActions({
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems'
+      hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     setSelectedAdminLevel(newValue: number) {
       this.selectedAdminLevel = newValue;
-      this.updateAnalysisItemViewConfig();
     },
     setBaseLayer(val: BASE_LAYER) {
       this.selectedBaseLayer = val;
-      this.updateAnalysisItemViewConfig();
     },
     setDataLayer(val: DATA_LAYER) {
       this.selectedDataLayer = val;
-      this.updateAnalysisItemViewConfig();
     },
     setBreakdownOption(newValue: string | null) {
       this.breakdownOption = newValue;
-      this.updateAnalysisItemViewConfig();
     },
     async onClose() {
       this.$router.push({
@@ -533,8 +538,6 @@ export default defineComponent({
       const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
       updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
       this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
-
-      this.updateAnalysisItemViewConfig();
     },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
@@ -595,31 +598,12 @@ export default defineComponent({
     },
     setTemporalAggregationSelection(temporalAgg: string) {
       this.selectedTemporalAggregation = temporalAgg;
-      this.updateAnalysisItemViewConfig();
     },
     setSpatialAggregationSelection(spatialAgg: string) {
       this.selectedSpatialAggregation = spatialAgg;
-      this.updateAnalysisItemViewConfig();
     },
     setTemporalResolutionSelection(temporalRes: string) {
       this.selectedTemporalResolution = temporalRes;
-      this.updateAnalysisItemViewConfig();
-    },
-    updateAnalysisItemViewConfig() {
-      const analysisItems = _.cloneDeep(this.analysisItems);
-      const currentAnalysisItem: AnalysisItem = analysisItems[0];
-      if (currentAnalysisItem.viewConfig === undefined) {
-        currentAnalysisItem.viewConfig = {} as ViewState;
-      }
-      currentAnalysisItem.viewConfig.temporalResolution = this.selectedTemporalResolution;
-      currentAnalysisItem.viewConfig.temporalAggregation = this.selectedTemporalAggregation;
-      currentAnalysisItem.viewConfig.spatialAggregation = this.selectedSpatialAggregation;
-      currentAnalysisItem.viewConfig.selectedOutputIndex = this.currentOutputIndex;
-      currentAnalysisItem.viewConfig.selectedMapBaseLayer = this.selectedBaseLayer;
-      currentAnalysisItem.viewConfig.selectedMapDataLayer = this.selectedDataLayer;
-      currentAnalysisItem.viewConfig.breakdownOption = this.breakdownOption;
-      currentAnalysisItem.viewConfig.selectedAdminLevel = this.selectedAdminLevel;
-      this.updateAnalysisItems({ currentAnalysisId: this.analysisId, analysisItems: analysisItems });
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {
