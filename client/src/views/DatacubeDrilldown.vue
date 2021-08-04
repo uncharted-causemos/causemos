@@ -154,7 +154,7 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { computed, defineComponent, Ref, ref, watchEffect, watch } from 'vue';
+import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
@@ -208,7 +208,6 @@ export default defineComponent({
     function setSelectedAdminLevel(newValue: number) {
       breakdownOption.value = null; // fixme: workaround workaround to be removed regionalData disappears if this isn't reset to null on level change.
       selectedAdminLevel.value = newValue;
-      console.log(`CURRENT REGIONAL IDS (setAdmin): ${JSON.stringify(selectedLevelIds.value)}`);
     }
 
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
@@ -217,6 +216,7 @@ export default defineComponent({
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
+    // const selectedRegionIds = ref<string[]>([]);
 
     const store = useStore();
     const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
@@ -339,19 +339,15 @@ export default defineComponent({
     };
 
     const setBreakdownOption = (newValue: string | null) => {
-      if (breakdownOption.value !== newValue) {
-        breakdownOption.value = newValue;
-        console.log(`CURRENT REGIONAL IDS (setBreakdown): ${JSON.stringify(selectedLevelIds.value)}`);
-      }
+      breakdownOption.value = newValue;
     };
 
     const selectedLevelIds = computed(() => {
-      console.log(`REGIONAL DATA : ${JSON.stringify(regionalData.value)}`);
       const admlvl = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
-      const regional = (regionalData.value !== null) ? regionalData.value[admlvl] : [];
-      if (regional) {
-        const ids = regional.map((item) => item.id);
-        console.log(`Found ids: ${ids}`);
+      const d0 = _.get(regionalData, '_rawValue');
+      const d1 = _.get(d0, admlvl, []);
+      if (d1) {
+        const ids = d1.map((item: { id: string; values: any}) => item.id);
         return ids;
       }
       return [];
@@ -373,8 +369,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp // ,
-      // regionId
+      setSelectedTimestamp,
+      selectedLevelIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -398,10 +394,6 @@ export default defineComponent({
       metadata,
       selectedTimeseriesPoints
     );
-
-    watch(() => breakdownOption, (option) => {
-      console.log(`Change detected in regionalData (breakdownOption): ${option}`);
-    });
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
