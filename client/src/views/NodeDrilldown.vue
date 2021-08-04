@@ -182,6 +182,7 @@ import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import _ from 'lodash';
+import useToaster from '@/services/composables/useToaster';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -196,6 +197,7 @@ export default defineComponent({
   setup() {
     // Get CAG and selected node from route
     const store = useStore();
+    const toaster = useToaster();
     const project = computed(() => store.getters['app/project']);
     const nodeId = computed(() => store.getters['app/nodeId']);
 
@@ -432,6 +434,7 @@ export default defineComponent({
         refreshModelData();
       } catch {
         console.error('Failed to update node parameter', nodeParameters);
+        toaster('Unable to save node parameter changes.', 'error', true);
       }
     };
 
