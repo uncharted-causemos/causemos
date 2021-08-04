@@ -85,7 +85,8 @@
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
-import { DatacubeStatus, DatacubeType } from '@/types/Enums';
+import { DatacubeStatus } from '@/types/Enums';
+import { isModel } from '../../utils/datacube-util';
 
 export default {
   name: 'SearchListview',
@@ -113,17 +114,12 @@ export default {
       filters: 'dataSearch/filters'
     })
   },
-  setup() {
-    return {
-      DatacubeStatus
-    };
-  },
   methods: {
     ...mapActions({
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
     isDisabled(datacube) {
-      return datacube.status !== DatacubeStatus.ready && datacube.type === DatacubeType.Model;
+      return datacube.status !== DatacubeStatus.Ready && isModel(datacube);
     },
     isExpanded(datacube) {
       return this.expandedRowId === datacube.id;
