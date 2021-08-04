@@ -2,15 +2,6 @@
   <div class="node-drilldown-container">
     <analytical-questions-and-insights-panel />
     <main>
-      <header>
-        <button
-          v-tooltip="'Collapse node'"
-          class="btn btn-default"
-          @click="collapseNode"
-        >
-          <i class="fa fa-fw fa-compress" />
-        </button>
-      </header>
       <div class="nodes-container">
         <div class="drivers">
           <h5>Top Drivers</h5>
@@ -49,6 +40,20 @@
             <div class="expanded-node-header">
               {{ nodeConceptName }}
               <div class="button-group">
+                <button
+                  v-if="areParameterValuesChanged"
+                  class="btn btn-primary btn-call-for-action save-parameter-button"
+                  @click="saveParameterValueChanges"
+                >
+                  Save parameterization changes
+                </button>
+                <button
+                  v-tooltip="'Collapse node'"
+                  class="btn btn-default"
+                  @click="collapseNode"
+                >
+                  <i class="fa fa-fw fa-compress" />
+                </button>
                 <!-- TODO: New scenario button -->
                 <!-- TODO: Set goal button -->
               </div>
@@ -402,13 +407,41 @@ export default defineComponent({
     watchEffect(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator !== null && indicator !== undefined) {
-        indicatorMin.value = indicator.min;
-        indicatorMax.value = indicator.max;
-        temporalResolution.value = indicator.temporal_resolution;
-        indicatorPeriod.value = indicator.period;
-        isSeasonalityActive.value = indicatorPeriod.value > 1;
+        const { min, max, temporal_resolution, period } = indicator;
+        indicatorMin.value = min;
+        indicatorMax.value = max;
+        temporalResolution.value = temporal_resolution;
+        indicatorPeriod.value = period;
+        isSeasonalityActive.value = period > 1;
       }
     });
+    const areParameterValuesChanged = computed(() => {
+      const indicator = selectedNode.value?.parameter;
+      if (indicator === null || indicator === undefined) return false;
+      const { min, max, temporal_resolution, period } = indicator;
+      return indicatorMin.value !== min ||
+        indicatorMax.value !== max ||
+        temporalResolution.value !== temporal_resolution ||
+        indicatorPeriod.value !== period ||
+        isSeasonalityActive.value !== (period > 1);
+    });
+    const saveParameterValueChanges = async () => {
+      if (selectedNode.value === null) return;
+      const { id, concept, label, model_id, parameter } = selectedNode.value;
+      const nodeParameters = {
+        id,
+        concept,
+        label,
+        model_id,
+        parameter: Object.assign({}, parameter, {
+          min: indicatorMin.value,
+          max: indicatorMax.value,
+          temporal_resolution: temporalResolution.value,
+          period: isSeasonalityActive.value ? indicatorPeriod.value : 1
+        })
+      };
+      await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+    };
 
     const comparisonBaselineId = ref(null);
     const comparisonTimeseries = computed<{
@@ -503,6 +536,8 @@ export default defineComponent({
       indicatorMax,
       isSeasonalityActive,
       indicatorPeriod,
+      areParameterValuesChanged,
+      saveParameterValueChanges,
       temporalResolution,
       comparisonBaselineId,
       comparisonTimeseries,
@@ -553,16 +588,8 @@ main {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: white;
   margin: 10px;
   padding: 0 10px;
-}
-
-header {
-  padding: 5px 0;
-  margin-bottom: 5px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 h4 {
@@ -634,14 +661,15 @@ h6 {
   }
 }
 
-input[type=text] {
-  width: 80px;
-  margin: 0px 5px;
+input {
+  background: white;
 }
+
 input[type=number] {
   width: 60px;
   margin: 0px 5px;
   display: inline-block;
+  background: white;
 }
 
 input[type="radio"] {
@@ -662,6 +690,7 @@ input[type="radio"] {
   margin: 10px 0;
   display: flex;
   flex-direction: column;
+  background: white;
 }
 
 .expanded-node-header {
@@ -672,6 +701,10 @@ input[type="radio"] {
   padding: 5px;
 }
 
+.button-group > *:not(:first-child) {
+  margin-left: 5px;
+}
+
 .scenario-chart {
   flex: 1;
   min-height: 0;
@@ -679,6 +712,7 @@ input[type="radio"] {
 
 .neighbor-node {
   margin-top: 10px;
+  background: white;
 }
 
 h5 {
@@ -698,8 +732,14 @@ h5 {
   display: flex;
   align-items: center;
 
+  & > span {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
   .indicator-buttons {
     margin-left: 20px;
+    flex-shrink: 0;
     & > button:not(:first-child) {
       margin-left: 5px;
     }
@@ -708,6 +748,10 @@ h5 {
 
 .restrict-max-width {
   max-width: 90ch;
+}
+
+.save-parameter-button {
+  align-self: flex-start;
 }
 
 </style>
