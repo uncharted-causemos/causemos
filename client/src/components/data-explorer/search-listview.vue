@@ -27,7 +27,7 @@
                     <template v-if="enableMultipleSelection">
                       <i
                         class="fa fa-lg fa-fw"
-                        :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d), 'disabled': d.status !== DatacubeStatus.ready }"
+                        :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d), 'disabled': isDisabled(d)}"
                       />
                     </template>
                     <template v-else>
@@ -43,7 +43,7 @@
                   </div>
                   <div class="content">
                       <button
-                        v-if="d.status !== DatacubeStatus.ready"
+                        v-if="isDisabled(d)"
                         class="not-published-button"
                         style="margin-top: 5px"
                       >
@@ -86,7 +86,7 @@
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
-import { DatacubeStatus } from '@/types/Enums';
+import { DatacubeStatus, DatacubeType } from '@/types/Enums';
 
 export default {
   name: 'SearchListview',
@@ -123,6 +123,9 @@ export default {
     ...mapActions({
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
+    isDisabled(datacube) {
+      return datacube.status !== DatacubeStatus.ready && datacube.type === DatacubeType.Model;
+    },
     isExpanded(datacube) {
       return this.expandedRowId === datacube.id;
     },
@@ -133,7 +136,7 @@ export default {
       return this.selectedDatacubes.find(sd => sd.id === datacube.id) !== undefined;
     },
     updateSelection(datacube) {
-      if (datacube.status === DatacubeStatus.ready) {
+      if (!this.isDisabled(datacube)) {
         const item = {
           datacubeId: datacube.data_id,
           feature: datacube.default_feature,
