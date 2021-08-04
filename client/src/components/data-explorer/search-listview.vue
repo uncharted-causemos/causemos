@@ -43,10 +43,16 @@
                   </div>
                   <div class="content">
                       <button
-                        v-if="isDisabled(d)"
-                        class="not-published-button"
+                        v-if="isNotPublished(d)"
+                        class="not-ready-label"
                       >
                         Not Published
+                      </button>
+                      <button
+                        v-if="isProcessing(d)"
+                        class="not-ready-label"
+                      >
+                        Processing
                       </button>
                       <div class="text-bold">{{ d.outputs[0].display_name }}</div>
                       <div>{{ d.name }}</div>
@@ -120,6 +126,12 @@ export default {
     }),
     isDisabled(datacube) {
       return datacube.status !== DatacubeStatus.Ready && isModel(datacube);
+    },
+    isProcessing(datacube) {
+      return datacube.status === DatacubeStatus.Processing && isModel(datacube);
+    },
+    isNotPublished(datacube) {
+      return datacube.status === DatacubeStatus.Registered && isModel(datacube);
     },
     isExpanded(datacube) {
       return this.expandedRowId === datacube.id;
@@ -299,7 +311,7 @@ $selected-background: #EBF1FC;
       }
       .content {
         flex: 1 1 auto;
-        .not-published-button {
+        .not-ready-label {
           font-weight: 600;
           border: none;
           border-radius: 5px;
