@@ -27,7 +27,7 @@
                     <template v-if="enableMultipleSelection">
                       <i
                         class="fa fa-lg fa-fw"
-                        :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d) }"
+                        :class="{ 'fa-check-square-o': isSelected(d), 'fa-square-o': !isSelected(d), 'disabled': isDisabled(d)}"
                       />
                     </template>
                     <template v-else>
@@ -42,6 +42,18 @@
                     />
                   </div>
                   <div class="content">
+                      <button
+                        v-if="isNotPublished(d)"
+                        class="not-ready-label"
+                      >
+                        Not Published
+                      </button>
+                      <button
+                        v-if="isProcessing(d)"
+                        class="not-ready-label"
+                      >
+                        Processing
+                      </button>
                       <div class="text-bold">{{ d.outputs[0].display_name }}</div>
                       <div>{{ d.name }}</div>
                       <div>{{ d.source }}</div>
@@ -79,6 +91,8 @@
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
+import { DatacubeStatus } from '@/types/Enums';
+import { isModel } from '../../utils/datacube-util';
 
 export default {
   name: 'SearchListview',
@@ -110,6 +124,15 @@ export default {
     ...mapActions({
       setSelectedDatacubes: 'dataSearch/setSelectedDatacubes'
     }),
+    isDisabled(datacube) {
+      return datacube.status !== DatacubeStatus.Ready && isModel(datacube);
+    },
+    isProcessing(datacube) {
+      return datacube.status === DatacubeStatus.Processing && isModel(datacube);
+    },
+    isNotPublished(datacube) {
+      return datacube.status === DatacubeStatus.Registered && isModel(datacube);
+    },
     isExpanded(datacube) {
       return this.expandedRowId === datacube.id;
     },
@@ -120,22 +143,24 @@ export default {
       return this.selectedDatacubes.find(sd => sd.id === datacube.id) !== undefined;
     },
     updateSelection(datacube) {
-      const item = { // AnalysisItem
-        datacubeId: datacube.data_id,
-        id: datacube.id,
-        viewConfig: {}
-      };
-      if (this.enableMultipleSelection) {
-        // if the datacube is not in the list add it, otherwise remove it
-        if (this.isSelected(datacube)) {
-          const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
-          this.setSelectedDatacubes(newSelectedDatacubes);
+      if (!this.isDisabled(datacube)) {
+        const item = { // AnalysisItem
+          datacubeId: datacube.data_id,
+          id: datacube.id,
+          viewConfig: {}
+        };
+        if (this.enableMultipleSelection) {
+          // if the datacube is not in the list add it, otherwise remove it
+          if (this.isSelected(datacube)) {
+            const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
+            this.setSelectedDatacubes(newSelectedDatacubes);
+          } else {
+            this.setSelectedDatacubes([...this.selectedDatacubes, item]);
+          }
         } else {
-          this.setSelectedDatacubes([...this.selectedDatacubes, item]);
+          // only one selection is allowed, so replace the selected datacubes array
+          this.setSelectedDatacubes([item]);
         }
-      } else {
-        // only one selection is allowed, so replace the selected datacubes array
-        this.setSelectedDatacubes([item]);
       }
     },
     formatParameters({ parameters }) {
@@ -280,9 +305,19 @@ $selected-background: #EBF1FC;
         flex: 0 0 auto;
         align-self: flex-start;
         margin: 15px 10px 0 0;
+        .disabled {
+          color: $background-light-3;
+        }
       }
       .content {
         flex: 1 1 auto;
+        .not-ready-label {
+          font-weight: 600;
+          border: none;
+          border-radius: 5px;
+          background-color: $background-light-3;
+          margin-top: 5px;
+        }
         .knobs {
           margin-top: 10px;
         }
