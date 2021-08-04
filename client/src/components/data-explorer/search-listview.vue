@@ -43,6 +43,7 @@
                   </div>
                   <div class="content">
                       <button
+                        v-if="d.status !== DatacubeStatus.Ready"
                         class="not-published-button"
                         style="margin-top: 5px"
                       >
