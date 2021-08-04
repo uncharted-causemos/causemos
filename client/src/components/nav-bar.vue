@@ -26,7 +26,7 @@
                 class="nav-link"
                 :to="{name:'domainDatacubeOverview', params:{project: project}}"
               >
-                <i class="fa fa-connectdevelop" />
+                <i class="fa fa-fw fa-connectdevelop" />
                 {{ projectMetadata.name }}
               </router-link>
             </li>
@@ -38,7 +38,7 @@
                 class="nav-link"
                 :to="{name:'overview', params:{project: project}}"
               >
-                <i class="fa fa-search" />
+                <i class="fa fa-fw fa-clone" />
                 {{ projectMetadata.name }}
               </router-link>
             </li>
@@ -54,8 +54,9 @@
                 {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
               </router-link>
               <template v-else>
-                <i v-if="currentView !== 'qualitative'" class="fa fa-connectdevelop" />
-                <i v-if="currentView !== 'quantitative'" class="fa fa-book" />
+                <i v-if="currentView === 'quantitative'" class="fa fa-fw fa-connectdevelop" />
+                <i v-if="currentView === 'qualitative'" class="fa fa-fw fa-book" />
+                <i v-if="currentView === 'dataComparative'" class="fa fa-fw fa-line-chart" />
                 {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
               </template>
             </li>
