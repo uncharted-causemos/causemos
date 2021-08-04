@@ -229,7 +229,7 @@ import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
-import { getTimestamp } from '@/utils/date-util';
+import { getTimestampMillis } from '@/utils/date-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
 
 export default defineComponent({
@@ -380,7 +380,7 @@ export default defineComponent({
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
         const month = timestamp;
         // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestamp(1970, month), 'MMMM');
+        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
       }
       return dateFormatter(timestamp, 'MMMM YYYY');
     };

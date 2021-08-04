@@ -111,7 +111,7 @@ import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { getTimestamp } from '@/utils/date-util';
+import { getTimestampMillis } from '@/utils/date-util';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
@@ -224,7 +224,7 @@ export default defineComponent({
       if (selectedBreakdownOption.value === TemporalAggregationLevel.Year) {
         const month = timestamp;
         // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestamp(1970, month), 'MMMM');
+        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
       }
       return dateFormatter(timestamp, 'MMMM YYYY');
     };
