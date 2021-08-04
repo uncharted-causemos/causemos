@@ -204,8 +204,7 @@ export default defineComponent({
     MapDropdown
   },
   setup() {
-    const selectedAdminLevel = ref(2);
-
+    const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
       breakdownOption.value = null; // fixme: workaround workaround to be removed regionalData disappears if this isn't reset to null on level change.
       selectedAdminLevel.value = newValue;

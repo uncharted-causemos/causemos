@@ -223,11 +223,13 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
     return;
   }
 
+  const model = await modelService.findOne(modelId);
+
   // 2. create payload for model creation in the modelling engine
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters),
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model),
     edges: edgeParameters.map(d => ({
       source: d.source,
       target: d.target,
@@ -276,11 +278,13 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     return;
   }
 
+  const model = await modelService.findOne(modelId);
+
   // 2. create payload for model creation in the modelling engine
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters)
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model)
   };
 
   // 3. register model to engine
@@ -545,19 +549,21 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     return;
   }
 
+  // Recalculate min/max if not specified
+  if (_.isNil(nodeParameter.parameter.min) || _.isNil(nodeParameter.parameter.max)) {
+    Logger.info('Resetting min / max');
+    const { min, max } = modelUtil.projectionValueRange(nodeParameter.parameter.timeseries.map(d => d.value));
+    nodeParameter.parameter.min = min;
+    nodeParameter.parameter.max = max;
+  }
+
+
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
   const parameter = model.parameter;
   const engine = parameter.engine;
-  const payload = modelService.buildNodeParametersPayload([nodeParameter]);
+  const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
 
-  // Recalculate min/max if not specified
-  if (_.isNil(parameter.min) || _.isNil(parameter.max)) {
-    Logger.info('Resetting min / max');
-    const { min, max } = modelUtil.projectionValueRange(parameter.timeseries.map(d => d.value));
-    parameter.min = min;
-    parameter.max = max;
-  }
 
   // Register update with engine and retrieve new value
   let engineUpdateResult = null;

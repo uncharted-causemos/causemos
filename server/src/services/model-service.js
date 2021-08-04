@@ -427,8 +427,10 @@ const clearNodeParameter = async (modelId, nodeId) => {
 /**
  *
  */
-const buildNodeParametersPayload = (nodeParameters) => {
+const buildNodeParametersPayload = (nodeParameters, model) => {
   const r = {};
+
+  const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
   nodeParameters.forEach(np => {
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
@@ -437,6 +439,7 @@ const buildNodeParametersPayload = (nodeParameters) => {
       throw new Error(`${np.concept} is not parameterized`);
     } else {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
       if (_.isEmpty(indicatorTimeSeries)) {
         // FIXME: Temporary fallback so engines don't blow up - July 2021

@@ -4,7 +4,7 @@ import {
   TimeseriesPoint,
   TimeseriesPointSelection
 } from '@/types/Timeseries';
-import { getTimestamp } from '@/utils/date-util';
+import { getTimestampMillis } from '@/utils/date-util';
 import { computed, Ref } from 'vue';
 
 const isTimestampInPoints = (timestamp: number, points: TimeseriesPoint[]) => {
@@ -33,7 +33,7 @@ export default function useSelectedTimeseriesPoints(
         // If split by year is active, each timeseries' ID is the year it represents
         const year = parseInt(id);
         const month = _selectedTimestamp;
-        timestamp = getTimestamp(year, month);
+        timestamp = getTimestampMillis(year, month);
         // Each timeseries represents a year of the same scenario
         // ASSUMPTION: breakdown by year can only be active when exactly 1 scenario
         //  is selected.

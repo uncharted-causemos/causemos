@@ -160,7 +160,7 @@ export default {
       disableOverlay: 'app/disableOverlay',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setDraftScenario: 'model/setDraftScenario',
-      updateDrafScenariotConstraints: 'model/updateDrafScenariotConstraints',
+      updateDraftScenarioConstraints: 'model/updateDraftScenarioConstraints',
       setDraftScenarioDirty: 'model/setDraftScenarioDirty',
       setContextId: 'insightPanel/setContextId'
     }),
@@ -269,6 +269,7 @@ export default {
 
       this.scenarios = scenarios;
       this.previousScenarioId = null;
+      this.setDraftScenario(null);
       this.setSelectedScenarioId(response.id);
       this.disableOverlay();
     },
@@ -353,7 +354,7 @@ export default {
       await this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
 
       // 2. Update
-      await this.updateDrafScenariotConstraints({ concept, values });
+      await this.updateDraftScenarioConstraints({ concept, values });
 
       // Cycle the scenarios to force reactive to trigger
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
