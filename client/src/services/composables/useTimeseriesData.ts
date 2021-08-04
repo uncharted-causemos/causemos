@@ -59,11 +59,11 @@ export default function useTimeseriesData(
   selectedSpatialAggregation: Ref<string>,
   breakdownOption: Ref<string | null>,
   selectedTimestamp: Ref<number | null>,
-  onNewLastTimestamp: (lastTimestamp: number) => void
+  onNewLastTimestamp: (lastTimestamp: number) => void,
+  regionIds: Ref<string[]>
 ) {
   const store = useStore();
   const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-
   const rawTimeseriesData = ref<Timeseries[]>([]);
 
   watchEffect(onInvalidate => {
@@ -100,18 +100,36 @@ export default function useTimeseriesData(
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
 
-      const promises = modelRunIds.value.map(runId =>
-        API.get('maas/output/timeseries', {
-          params: {
-            data_id: activeDataId,
-            run_id: runId,
-            feature: activeFeature,
-            resolution: temporalRes,
-            temporal_agg: temporalAgg,
-            spatial_agg: spatialAgg
-          }
-        })
-      );
+      let promises = [];
+      if (breakdownOption.value === 'region') {
+        promises = regionIds.value.map((regionId) => {
+          return API.get('maas/output/timeseries', {
+            params: {
+              data_id: activeDataId,
+              run_id: modelRunIds.value[0],
+              feature: activeFeature,
+              resolution: temporalRes,
+              temporal_agg: temporalAgg,
+              spatial_agg: spatialAgg,
+              region_id: regionId
+            }
+          });
+        });
+      } else {
+        console.log(`MODEL RUN IDS: ${modelRunIds.value}`);
+        promises = modelRunIds.value.map((runId) => {
+          return API.get('maas/output/timeseries', {
+            params: {
+              data_id: activeDataId,
+              run_id: runId,
+              feature: activeFeature,
+              resolution: temporalRes,
+              temporal_agg: temporalAgg,
+              spatial_agg: spatialAgg
+            }
+          });
+        });
+      }
       const fetchResults = (await Promise.all(promises)).map(response =>
         Array.isArray(response.data) ? response.data : JSON.parse(response.data)
       );
@@ -122,16 +140,27 @@ export default function useTimeseriesData(
       }
       // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
-      rawTimeseriesData.value = fetchResults.map((points, index) => {
-        const name = `Run ${index}`;
-        const id = modelRunIds.value[index];
-        const color = colorFromIndex(index);
-        return { name, id, color, points };
-      });
+      if (breakdownOption.value === 'region') {
+        rawTimeseriesData.value = fetchResults.map((points, index) => {
+          const name = `Run ${index}`;
+          const id = modelRunIds.value[0];
+          const color = colorFromIndex(index);
+          const regionId = regionIds.value[index];
+          return { name, id, regionId, color, points };
+        });
+      } else {
+        rawTimeseriesData.value = fetchResults.map((points, index) => {
+          const name = `Run ${index}`;
+          const id = modelRunIds.value[index];
+          const color = colorFromIndex(index);
+          return { name, id, color, points };
+        });
+      }
     }
     onInvalidate(() => {
       isCancelled = true;
     });
+
     fetchTimeseries();
   });
 
