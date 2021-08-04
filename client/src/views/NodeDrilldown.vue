@@ -181,6 +181,7 @@ import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import _ from 'lodash';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -402,12 +403,13 @@ export default defineComponent({
     const areParameterValuesChanged = computed(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator === null || indicator === undefined) return false;
-      const { min, max, temporal_resolution, period } = indicator;
+      const { min, max, temporal_resolution, period, timeseries } = indicator;
       return indicatorMin.value !== min ||
         indicatorMax.value !== max ||
         temporalResolution.value !== temporal_resolution ||
         indicatorPeriod.value !== period ||
-        isSeasonalityActive.value !== (period > 1);
+        isSeasonalityActive.value !== (period > 1) ||
+        !_.isEqual(timeseries, historicalTimeseries.value);
     });
     const saveParameterValueChanges = async () => {
       if (selectedNode.value === null) return;
@@ -421,7 +423,8 @@ export default defineComponent({
           min: indicatorMin.value,
           max: indicatorMax.value,
           temporal_resolution: temporalResolution.value,
-          period: isSeasonalityActive.value ? indicatorPeriod.value : 1
+          period: isSeasonalityActive.value ? indicatorPeriod.value : 1,
+          timeseries: historicalTimeseries.value
         })
       };
       try {
