@@ -128,7 +128,7 @@
                   class="form-control input-sm"
                   type="number"
                 >
-                <span>{{ temporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
+                <span>{{ selectedTemporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
               </div>
               <div class="indicator-control-row">
                 <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
@@ -379,7 +379,7 @@ export default defineComponent({
     });
     const indicatorMin = ref(0);
     const indicatorMax = ref(1);
-    const temporalResolution = ref<string|null>(null);
+    const selectedTemporalResolution = ref<string|null>(null);
     const indicatorPeriod = ref(1);
     const isSeasonalityActive = ref(false);
     watchEffect(() => {
@@ -392,10 +392,10 @@ export default defineComponent({
     watchEffect(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator !== null && indicator !== undefined) {
-        const { min, max, temporal_resolution, period } = indicator;
+        const { min, max, temporalResolution, period } = indicator;
         indicatorMin.value = min;
         indicatorMax.value = max;
-        temporalResolution.value = temporal_resolution;
+        selectedTemporalResolution.value = temporalResolution;
         indicatorPeriod.value = period;
         isSeasonalityActive.value = period > 1;
       }
@@ -403,10 +403,10 @@ export default defineComponent({
     const areParameterValuesChanged = computed(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator === null || indicator === undefined) return false;
-      const { min, max, temporal_resolution, period, timeseries } = indicator;
+      const { min, max, temporalResolution, period, timeseries } = indicator;
       return indicatorMin.value !== min ||
         indicatorMax.value !== max ||
-        temporalResolution.value !== temporal_resolution ||
+        selectedTemporalResolution.value !== temporalResolution ||
         indicatorPeriod.value !== period ||
         isSeasonalityActive.value !== (period > 1) ||
         !_.isEqual(timeseries, historicalTimeseries.value);
@@ -422,7 +422,7 @@ export default defineComponent({
         parameter: Object.assign({}, parameter, {
           min: indicatorMin.value,
           max: indicatorMax.value,
-          temporal_resolution: temporalResolution.value,
+          temporalResolution: selectedTemporalResolution.value,
           period: isSeasonalityActive.value ? indicatorPeriod.value : 1,
           timeseries: historicalTimeseries.value
         })
@@ -530,7 +530,7 @@ export default defineComponent({
       indicatorPeriod,
       areParameterValuesChanged,
       saveParameterValueChanges,
-      temporalResolution,
+      selectedTemporalResolution,
       comparisonBaselineId,
       comparisonTimeseries,
       comparisonDropdownOptions,

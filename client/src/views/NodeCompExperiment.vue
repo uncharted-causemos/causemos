@@ -158,6 +158,7 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import modelService from '@/services/model-service';
+import { ViewState } from '@/types/Insight';
 
 const DRILLDOWN_TABS = [
   {
@@ -406,6 +407,39 @@ export default defineComponent({
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
+
+      if (this.selectedNode !== null) {
+        // restore view config options, if any
+        const initialViewConfig = this.selectedNode.parameter;
+        if (initialViewConfig) {
+          if (initialViewConfig.temporalResolution !== undefined) {
+            this.selectedTemporalResolution = initialViewConfig.temporalResolution;
+          }
+          if (initialViewConfig.temporalAggregation !== undefined) {
+            this.selectedTemporalAggregation = initialViewConfig.temporalAggregation;
+          }
+          if (initialViewConfig.spatialAggregation !== undefined) {
+            this.selectedSpatialAggregation = initialViewConfig.spatialAggregation;
+          }
+          if (initialViewConfig.selectedOutputIndex !== undefined) {
+            const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+            updatedCurrentOutputsMap[this.metadata?.id ?? ''] = initialViewConfig.selectedOutputIndex;
+            this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+          }
+          if (initialViewConfig.selectedMapBaseLayer !== undefined) {
+            this.selectedBaseLayer = initialViewConfig.selectedMapBaseLayer;
+          }
+          if (initialViewConfig.selectedMapDataLayer !== undefined) {
+            this.selectedDataLayer = initialViewConfig.selectedMapDataLayer;
+          }
+          if (initialViewConfig.breakdownOption !== undefined) {
+            this.breakdownOption = initialViewConfig.breakdownOption;
+          }
+          if (initialViewConfig.selectedAdminLevel !== undefined) {
+            this.selectedAdminLevel = initialViewConfig.selectedAdminLevel;
+          }
+        }
+      }
     });
   },
 
@@ -453,20 +487,30 @@ export default defineComponent({
           id: this.metadata.id,
           name: this.metadata.name,
           unit: this.unit,
-          // TODO: respect regional selections made by users in the experiment view
           country: '',
           admin1: '',
           admin2: '',
           admin3: '',
-          geospatial_aggregation: this.selectedSpatialAggregation,
-          temporal_aggregation: this.selectedTemporalAggregation,
-          temporal_resolution: this.selectedTemporalResolution,
           period: 12,
           timeseries,
           max: null, // filled in by server
           min: null // filled in by server
         }
       };
+      // save view config options when quantifying the node along with the node parameters
+      const viewConfig: ViewState = {
+        spatialAggregation: this.selectedSpatialAggregation,
+        temporalAggregation: this.selectedTemporalAggregation,
+        temporalResolution: this.selectedTemporalResolution,
+        breakdownOption: this.breakdownOption,
+        selectedAdminLevel: this.selectedAdminLevel,
+        selectedOutputIndex: this.currentOutputIndex,
+        selectedMapBaseLayer: this.selectedBaseLayer,
+        selectedMapDataLayer: this.selectedDataLayer
+      };
+      Object.keys(viewConfig).forEach(key => {
+        (nodeParameters.parameter as any)[key] = viewConfig[key];
+      });
       await modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
 
       this.$router.push({
