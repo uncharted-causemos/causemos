@@ -204,7 +204,7 @@ export default defineComponent({
     MapDropdown
   },
   setup() {
-    const selectedAdminLevel = ref(2);
+    const selectedAdminLevel = ref(0);
 
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
