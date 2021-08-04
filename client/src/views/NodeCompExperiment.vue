@@ -424,15 +424,19 @@ export default defineComponent({
     }),
 
     onBack() {
-      this.$router.push({
-        name: 'nodeDataExplorer',
-        params: {
-          currentCAG: this.currentCAG,
-          nodeId: this.nodeId,
-          project: this.project,
-          projectType: ProjectType.Analysis
-        }
-      });
+      if (window.history.length > 1) {
+        window.history.go(-1);
+      } else {
+        this.$router.push({
+          name: 'nodeDataExplorer',
+          params: {
+            currentCAG: this.currentCAG,
+            nodeId: this.nodeId,
+            project: this.project,
+            projectType: ProjectType.Analysis
+          }
+        });
+      }
     },
     async onSelection() {
       if (this.metadata === null) {
