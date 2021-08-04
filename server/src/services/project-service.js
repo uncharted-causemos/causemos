@@ -621,7 +621,7 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
  * @param {object} filters    - statement filters
  */
 const getProjectEdges = async(projectId, filters) => {
-  const totalPartitions = 100;
+  const totalPartitions = 50;
   const partitionsOfEdges = (await Promise.all([...Array(totalPartitions).keys()].map(partition =>
     getProjectEdgesByPartition(projectId, filters, totalPartitions, partition)
   )));
