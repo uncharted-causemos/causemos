@@ -52,7 +52,7 @@
               :scenario-data="scenarioData"
               :current-engine="currentEngine"
               @background-click="onBackgroundClick"
-              @node-double-click="onNodeDrilldown"
+              @node-drilldown="onNodeDrilldown"
               @edge-click="showRelation"
             />
             <color-legend
@@ -328,23 +328,6 @@ export default {
     onDrilldownTabClick(tab) {
       this.activeDrilldownTab = tab;
     },
-    // async removeIndicator() {
-    //   // FIXME: Needs a bit of thought, how to properly clean out values in ES vs empty vs nulls
-    //   const payload = { id: this.selectedNode.id, concept: this.selectedNode.concept };
-    //   payload.parameter = {
-    //     indicator_time_series: [],
-    //     indicator_time_series_parameter: null,
-    //     indicator_name: null,
-    //     indicator_score: null,
-    //     indicator_id: null,
-    //     initial_value_parameter: { func: 'last' },
-    //     initial_value: null,
-    //     indicator_source: null
-    //   };
-    //   await modelService.updateNodeParameter(this.currentCAG, payload);
-    //   this.closeDrilldown();
-    //   this.$emit('refresh-model');
-    // },
     async setEdgeUserPolarity(edge, polarity) {
       await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
       this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
