@@ -252,7 +252,7 @@ export default {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
+      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems',
       setContextId: 'insightPanel/setContextId',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
@@ -457,7 +457,7 @@ export default {
         title: `untitled at ${dateFormatter(Date.now())}`,
         projectId: this.project
       });
-      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, analysisItems: [] });
+      await this.updateAnalysisItems({ currentAnalysisId: analysis.id, analysisItems: [] });
       this.$router.push({
         name: 'dataComparative',
         params: {

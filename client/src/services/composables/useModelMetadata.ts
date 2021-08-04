@@ -24,11 +24,6 @@ export default function useModelMetadata(id: Ref<string | null>): Ref<Model | In
       // filter outputs and remove invalid/unsupported ones
       //  For now, saved the validated output in a new attribute.
       // @Review: Later, we could just replace the 'outputs' attribute with the validated list
-      rawMetadata.outputs.forEach(output => {
-        if (output.is_visible === undefined) {
-          output.is_visible = true;
-        }
-      });
       rawMetadata.validatedOutputs = getValidatedOutputs(rawMetadata.outputs);
 
       // for every loaded datacube, we may enable extended annotation of qualifiers

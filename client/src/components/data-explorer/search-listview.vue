@@ -144,10 +144,10 @@ export default {
     },
     updateSelection(datacube) {
       if (!this.isDisabled(datacube)) {
-        const item = {
+        const item = { // AnalysisItem
           datacubeId: datacube.data_id,
-          feature: datacube.default_feature,
-          id: datacube.id
+          id: datacube.id,
+          viewConfig: {}
         };
         if (this.enableMultipleSelection) {
           // if the datacube is not in the list add it, otherwise remove it
