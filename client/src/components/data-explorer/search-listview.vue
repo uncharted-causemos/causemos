@@ -302,7 +302,7 @@ $selected-background: #EBF1FC;
       .content {
         flex: 1 1 auto;
         .not-published-button {
-          font-weight: bold;
+          font-weight: 600;
           border: none;
           border-radius: 5px;
           background-color: $background-light-3;
