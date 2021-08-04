@@ -84,7 +84,7 @@
             :inner-button-label="'Temporal Aggregation'"
             :items="Object.values(AggregationOption)"
             :selected-item="selectedTemporalAggregation"
-            @item-selected="item => selectedTemporalAggregation = item"
+            @item-selected="setTemporalAggregationSelection"
           />
         </template>
 
@@ -94,7 +94,7 @@
             :inner-button-label="'Temporal Resolution'"
             :items="Object.values(TemporalResolutionOption)"
             :selected-item="selectedTemporalResolution"
-            @item-selected="item => selectedTemporalResolution = item"
+            @item-selected="setTemporalResolutionSelection"
           />
         </template>
 
@@ -104,7 +104,7 @@
             :inner-button-label="'Spatial Aggregation'"
             :items="Object.values(AggregationOption)"
             :selected-item="selectedSpatialAggregation"
-            @item-selected="item => selectedSpatialAggregation = item"
+            @item-selected="setSpatialAggregationSelection"
           />
           <map-dropdown
             :selectedBaseLayer="selectedBaseLayer"
@@ -179,6 +179,7 @@ import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState } from '@/types/Insight';
+import { AnalysisItem } from '@/types/Analysis';
 
 const DRILLDOWN_TABS = [
   {
@@ -203,10 +204,7 @@ export default defineComponent({
     MapDropdown
   },
   setup() {
-    const selectedAdminLevel = ref(0);
-    function setSelectedAdminLevel(newValue: number) {
-      selectedAdminLevel.value = newValue;
-    }
+    const selectedAdminLevel = ref(2);
 
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
@@ -215,13 +213,48 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
 
-    const store = useStore();
-    const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
-    // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
-    const datacubeId = analysisItem.value[0].id;
+    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
+    const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+
+    // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
+    const datacubeId = analysisItems.value[0].id;
+    const initialViewConfig: ViewState = analysisItems.value[0].viewConfig;
+
+    // aply view config for this datacube
+    if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
+      if (initialViewConfig.temporalResolution !== undefined) {
+        selectedTemporalResolution.value = initialViewConfig.temporalResolution;
+      }
+      if (initialViewConfig.temporalAggregation !== undefined) {
+        selectedTemporalAggregation.value = initialViewConfig.temporalAggregation;
+      }
+      if (initialViewConfig.spatialAggregation !== undefined) {
+        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation;
+      }
+      if (initialViewConfig.selectedOutputIndex !== undefined) {
+        const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+        defaultOutputMap[datacubeId] = initialViewConfig.selectedOutputIndex;
+        store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+      }
+      if (initialViewConfig.selectedMapBaseLayer !== undefined) {
+        selectedBaseLayer.value = initialViewConfig.selectedMapBaseLayer;
+      }
+      if (initialViewConfig.selectedMapDataLayer !== undefined) {
+        selectedDataLayer.value = initialViewConfig.selectedMapDataLayer;
+      }
+      if (initialViewConfig.breakdownOption !== undefined) {
+        breakdownOption.value = initialViewConfig.breakdownOption;
+      }
+      if (initialViewConfig.selectedAdminLevel !== undefined) {
+        selectedAdminLevel.value = initialViewConfig.selectedAdminLevel;
+      }
+    }
 
     const selectedModelId = ref(datacubeId);
 
@@ -295,10 +328,6 @@ export default defineComponent({
       }
     });
 
-    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
-
     watchEffect(() => {
       const dataState = {
         selectedModelId: selectedModelId.value,
@@ -333,10 +362,6 @@ export default defineComponent({
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
       clearRouteParam();
-    };
-
-    const setBreakdownOption = (newValue: string | null) => {
-      breakdownOption.value = newValue;
     };
 
     const {
@@ -387,7 +412,6 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedAdminLevel,
-      setSelectedAdminLevel,
       selectedModelId,
       selectedScenarioIds,
       typeBreakdownData,
@@ -418,14 +442,14 @@ export default defineComponent({
       relativeTo,
       setRelativeTo,
       breakdownOption,
-      setBreakdownOption,
       temporalBreakdownData,
       AggregationOption,
       TemporalResolutionOption,
       selectedTimeseriesPoints,
       selectedBaseLayer,
       selectedDataLayer,
-      datacubeCurrentOutputsMap
+      datacubeCurrentOutputsMap,
+      analysisItems
     };
   },
   data: () => ({
@@ -474,13 +498,24 @@ export default defineComponent({
   methods: {
     ...mapActions({
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
-      hideInsightPanel: 'insightPanel/hideInsightPanel'
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
+      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems'
     }),
+    setSelectedAdminLevel(newValue: number) {
+      this.selectedAdminLevel = newValue;
+      this.updateAnalysisItemViewConfig();
+    },
     setBaseLayer(val: BASE_LAYER) {
       this.selectedBaseLayer = val;
+      this.updateAnalysisItemViewConfig();
     },
     setDataLayer(val: DATA_LAYER) {
       this.selectedDataLayer = val;
+      this.updateAnalysisItemViewConfig();
+    },
+    setBreakdownOption(newValue: string | null) {
+      this.breakdownOption = newValue;
+      this.updateAnalysisItemViewConfig();
     },
     async onClose() {
       this.$router.push({
@@ -498,6 +533,8 @@ export default defineComponent({
       const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
       updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
       this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+
+      this.updateAnalysisItemViewConfig();
     },
     updateDescView(val: boolean) {
       this.isDescriptionView = val;
@@ -555,6 +592,34 @@ export default defineComponent({
           this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
       }
+    },
+    setTemporalAggregationSelection(temporalAgg: string) {
+      this.selectedTemporalAggregation = temporalAgg;
+      this.updateAnalysisItemViewConfig();
+    },
+    setSpatialAggregationSelection(spatialAgg: string) {
+      this.selectedSpatialAggregation = spatialAgg;
+      this.updateAnalysisItemViewConfig();
+    },
+    setTemporalResolutionSelection(temporalRes: string) {
+      this.selectedTemporalResolution = temporalRes;
+      this.updateAnalysisItemViewConfig();
+    },
+    updateAnalysisItemViewConfig() {
+      const analysisItems = _.cloneDeep(this.analysisItems);
+      const currentAnalysisItem: AnalysisItem = analysisItems[0];
+      if (currentAnalysisItem.viewConfig === undefined) {
+        currentAnalysisItem.viewConfig = {} as ViewState;
+      }
+      currentAnalysisItem.viewConfig.temporalResolution = this.selectedTemporalResolution;
+      currentAnalysisItem.viewConfig.temporalAggregation = this.selectedTemporalAggregation;
+      currentAnalysisItem.viewConfig.spatialAggregation = this.selectedSpatialAggregation;
+      currentAnalysisItem.viewConfig.selectedOutputIndex = this.currentOutputIndex;
+      currentAnalysisItem.viewConfig.selectedMapBaseLayer = this.selectedBaseLayer;
+      currentAnalysisItem.viewConfig.selectedMapDataLayer = this.selectedDataLayer;
+      currentAnalysisItem.viewConfig.breakdownOption = this.breakdownOption;
+      currentAnalysisItem.viewConfig.selectedAdminLevel = this.selectedAdminLevel;
+      this.updateAnalysisItems({ currentAnalysisId: this.analysisId, analysisItems: analysisItems });
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {

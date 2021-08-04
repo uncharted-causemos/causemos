@@ -99,7 +99,7 @@ export default {
   },
   methods: {
     ...mapActions({
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
+      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems',
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setSearchResultsCount: 'dataSearch/setSearchResultsCount'
@@ -148,7 +148,7 @@ export default {
     async addToAnalysis() {
       try {
         // save the selected datacubes in the analysis object in the store/server
-        await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, analysisItems: this.selectedDatacubes });
+        await this.updateAnalysisItems({ currentAnalysisId: this.analysisId, analysisItems: this.selectedDatacubes });
 
         if (this.enableMultipleSelection) {
           this.$router.push({
