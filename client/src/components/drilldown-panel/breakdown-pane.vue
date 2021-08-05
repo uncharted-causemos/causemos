@@ -9,7 +9,7 @@
     <dropdown-button
       v-else
       class="breakdown-option-dropdown"
-      :items="BREAKDOWN_OPTIONS"
+      :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
       @item-selected="emitBreakdownOptionSelection"
     />
@@ -241,6 +241,16 @@ export default defineComponent({
     };
   },
   computed: {
+    breakdownOptions() {
+      const options: DropdownItem[] = [];
+      options.push({ value: null, displayName: 'none' });
+      if (this.selectedScenarioIds.length === 1) {
+        options.push({ value: TemporalAggregationLevel.Region, displayName: 'Split by region' });
+      }
+      options.push({ value: selectedTemporalAggregationLevel, displayName: 'Split by year' });
+
+      return options;
+    },
     visibleTypeBreakdownData(): NamedBreakdownData[] {
       // HACK: Filter out any breakdown parameters that duplicate
       //  an admin level, since they will already be shown in the
