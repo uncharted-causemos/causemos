@@ -76,7 +76,10 @@ export enum AdminLevel {
 }
 
 export enum TemporalAggregationLevel {
-  Year = 'year',
+  Year = 'year'
+}
+
+export enum SpacialAggregationLevel {
   Region = 'region'
 }
 
