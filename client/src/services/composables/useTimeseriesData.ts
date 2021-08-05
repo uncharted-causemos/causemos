@@ -36,7 +36,7 @@ const applyBreakdown = (
       }));
       return {
         name: year,
-        id: year,
+        id: year, // FIXME: this should be timeseriesData[0].id and the rest of the code should be updated for that
         color: colorFromIndex(index),
         points: mappedToBreakdownDomain
       };
