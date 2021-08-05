@@ -116,7 +116,6 @@ export default function useTimeseriesData(
           });
         });
       } else {
-        console.log(`MODEL RUN IDS: ${modelRunIds.value}`);
         promises = modelRunIds.value.map((runId) => {
           return API.get('maas/output/timeseries', {
             params: {
