@@ -209,6 +209,17 @@ export default defineComponent({
         Object.keys(temporalBreakdownData.value).length !== 0
     );
 
+    const breakdownOptions = computed(() => {
+      const options: DropdownItem[] = [];
+      options.push({ value: null, displayName: 'none' });
+      if (props.selectedScenarioIds.length === 1) {
+        options.push({ value: TemporalAggregationLevel.Region, displayName: 'Split by region' });
+      }
+      options.push({ value: selectedTemporalAggregationLevel, displayName: 'Split by year' });
+
+      return options;
+    });
+
     const timestampFormatter = (timestamp: number) => {
       if (selectedBreakdownOption.value === TemporalAggregationLevel.Year) {
         const month = timestamp;
@@ -226,23 +237,13 @@ export default defineComponent({
       ADMIN_LEVEL_KEYS,
       setAllRegionsSelected,
       emitBreakdownOptionSelection,
-      BREAKDOWN_OPTIONS,
+      breakdownOptions,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
       AggregationOption
     };
   },
   computed: {
-    breakdownOptions() {
-      const options: DropdownItem[] = [];
-      options.push({ value: null, displayName: 'none' });
-      if (this.selectedScenarioIds.length === 1) {
-        options.push({ value: TemporalAggregationLevel.Region, displayName: 'Split by region' });
-      }
-      options.push({ value: selectedTemporalAggregationLevel, displayName: 'Split by year' });
-
-      return options;
-    },
     visibleTypeBreakdownData(): NamedBreakdownData[] {
       // HACK: Filter out any breakdown parameters that duplicate
       //  an admin level, since they will already be shown in the
