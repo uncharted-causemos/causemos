@@ -468,7 +468,7 @@ const buildNodeParametersPayload = (nodeParameters, model) => {
         func: valueFunc,
         values: indicatorTimeSeries,
         numLevels: NUM_LEVELS,
-        resolution: _.get(np.parameter, 'temporal_resolution', 'month'),
+        resolution: _.get(np.parameter, 'temporalResolution', 'month'),
         period: _.get(np.parameter, 'period', 12)
       };
     }
