@@ -179,6 +179,7 @@ import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState } from '@/types/Insight';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { AnalysisItem } from '@/types/Analysis';
 
 const DRILLDOWN_TABS = [
@@ -205,7 +206,6 @@ export default defineComponent({
   },
   setup() {
     const selectedAdminLevel = ref(0);
-
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
@@ -352,6 +352,17 @@ export default defineComponent({
       clearRouteParam();
     };
 
+    const selectedLevelIds = computed(() => {
+      const admlvl = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
+      const d0 = _.get(regionalData, '_rawValue');
+      const d1 = _.get(d0, admlvl, []);
+      if (d1) {
+        const ids = d1.map((item: { id: string; values: any}) => item.id);
+        return ids;
+      }
+      return [];
+    });
+
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -368,7 +379,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp,
+      selectedLevelIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -511,6 +523,7 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     setSelectedAdminLevel(newValue: number) {
+      this.breakdownOption = null; // fixme: workaround workaround to be removed regionalData disappears if this isn't reset to null on level change.
       this.selectedAdminLevel = newValue;
     },
     setBaseLayer(val: BASE_LAYER) {

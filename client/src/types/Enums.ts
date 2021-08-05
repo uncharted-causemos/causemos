@@ -79,6 +79,10 @@ export enum TemporalAggregationLevel {
   Year = 'year'
 }
 
+export enum SpacialAggregationLevel {
+  Region = 'region'
+}
+
 export enum AggregationOption {
   None = '',
   Mean = 'mean',

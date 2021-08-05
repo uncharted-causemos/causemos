@@ -302,7 +302,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp,
+      ref([]) // region breakdown
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
