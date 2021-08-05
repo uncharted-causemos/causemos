@@ -18,7 +18,7 @@ const modelUtil = rootRequire('util/model-util');
 
 const HISTORY_START_DATE = '2015-01-01';
 const HISTORY_END_DATE = '2017-12-01';
-const PROJECTION_START_DATE = '2018-01-01';
+const PROJECTION_START_DATE = '2021-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
 
