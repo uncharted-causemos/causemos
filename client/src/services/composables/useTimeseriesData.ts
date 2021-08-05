@@ -14,11 +14,13 @@ const applyBreakdown = (
   timeseriesData: Timeseries[],
   breakdownOption: string | null
 ): Timeseries[] => {
-  if (breakdownOption === null || timeseriesData.length !== 1) {
+  if (
+    breakdownOption === null ||
+    breakdownOption === SpacialAggregationLevel.Region ||
+    timeseriesData.length !== 1
+  ) {
     return timeseriesData;
   }
-  // FIXME: Still need to add logic for breaking down timeseries by other
-  //  temporal aggregation levels and by other facets of the data
   const onlyTimeseries = timeseriesData[0].points;
   const brokenDownByYear = _.groupBy(onlyTimeseries, point =>
     getYearFromTimestamp(point.timestamp)
@@ -113,6 +115,11 @@ export default function useTimeseriesData(
               spatial_agg: spatialAgg,
               region_id: regionId
             }
+          }).catch(() => {
+            // FIXME: we're getting way more regions back from the hierarchy endpoint
+            //  than we seemingly have data for
+            console.error(`Failed to fetch timeseries for ${regionId}`);
+            return null;
           });
         });
       } else {
@@ -129,9 +136,11 @@ export default function useTimeseriesData(
           });
         });
       }
-      const fetchResults = (await Promise.all(promises)).map(response =>
-        Array.isArray(response.data) ? response.data : JSON.parse(response.data)
-      );
+      const fetchResults = (await Promise.all(promises))
+        .filter(response => response !== null)
+        .map((response: any) =>
+          Array.isArray(response.data) ? response.data : JSON.parse(response.data)
+        );
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
@@ -141,7 +150,8 @@ export default function useTimeseriesData(
       //  `rawTimeseriesData` ref
       if (breakdownOption.value === SpacialAggregationLevel.Region) {
         rawTimeseriesData.value = fetchResults.map((points, index) => {
-          const name = regionIds.value[index];
+          // Take the last segment of the region ID to get its display name
+          const name = regionIds.value[index].split('__').pop() ?? regionIds.value[index];
           const id = modelRunIds.value[0];
           const color = colorFromIndex(index);
           return { name, id, color, points };

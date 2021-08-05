@@ -174,6 +174,7 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
@@ -273,6 +274,8 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
+    const { allRegions } = useDatacubeHierarchy(selectedScenarioIds, metadata);
+
     const timeInterval = 10000;
 
     function fetchData() {
@@ -353,14 +356,9 @@ export default defineComponent({
     };
 
     const selectedLevelIds = computed(() => {
-      const admlvl = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
-      const d0 = _.get(regionalData, '_rawValue');
-      const d1 = _.get(d0, admlvl, []);
-      if (d1) {
-        const ids = d1.map((item: { id: string; values: any}) => item.id);
-        return ids;
-      }
-      return [];
+      const selectedAdminLevelKey = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
+      if (selectedAdminLevelKey === 'admin4' || selectedAdminLevelKey === 'admin5') return [];
+      return allRegions.value[selectedAdminLevelKey];
     });
 
     const {
@@ -402,7 +400,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      breakdownOption
     );
 
     watchEffect(() => {
@@ -523,7 +522,6 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     setSelectedAdminLevel(newValue: number) {
-      this.breakdownOption = null; // fixme: workaround workaround to be removed regionalData disappears if this isn't reset to null on level change.
       this.selectedAdminLevel = newValue;
     },
     setBaseLayer(val: BASE_LAYER) {
