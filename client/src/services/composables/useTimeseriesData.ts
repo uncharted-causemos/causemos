@@ -38,7 +38,7 @@ const applyBreakdown = (
         name: year,
         id: year,
         color: colorFromIndex(index),
-        points: mappedToBreakdownDomain
+        points: mappedToBreakdownDomain,
       };
     });
 };
@@ -142,11 +142,10 @@ export default function useTimeseriesData(
       //  `rawTimeseriesData` ref
       if (breakdownOption.value === 'region') {
         rawTimeseriesData.value = fetchResults.map((points, index) => {
-          const name = `Run ${index}`;
+          const name = regionIds.value[index];
           const id = modelRunIds.value[0];
           const color = colorFromIndex(index);
-          const regionId = regionIds.value[index];
-          return { name, id, regionId, color, points };
+          return { name, id, color, points };
         });
       } else {
         rawTimeseriesData.value = fetchResults.map((points, index) => {
