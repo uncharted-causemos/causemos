@@ -88,6 +88,7 @@
             <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
             <div class="indicator-buttons">
               <button
+                v-if="indicatorId !== null"
                 v-tooltip.top-center="'Edit datacube'"
                 type="button"
                 class="btn btn-primary btn-sm"
@@ -95,11 +96,27 @@
                 Edit datacube
               </button>
               <button
+                v-if="indicatorId !== null"
                 v-tooltip.top-center="'Change datacube'"
                 type="button"
                 class="btn btn-primary btn-sm"
                 @click="openDataExplorer">
-                Change datacube
+                <i class="fa fa-fw fa-search" /> Change datacube
+              </button>
+              <button
+                v-else
+                v-tooltip.top-center="'Find datacube'"
+                type="button"
+                class="btn btn-primary btn-call-for-action btn-sm"
+                @click="openDataExplorer">
+                <i class="fa fa-fw fa-search" /> Find datacube
+              </button>
+              <button
+                v-tooltip.top-center="'Clear parameterization'"
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="clearParameterization">
+                Clear parameterization
               </button>
             </div>
           </div>
@@ -168,7 +185,7 @@ import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
 import { useStore } from 'vuex';
-import { ProjectType } from '@/types/Enums';
+import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import modelService from '@/services/model-service';
 import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
@@ -182,6 +199,8 @@ import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import _ from 'lodash';
 import useToaster from '@/services/composables/useToaster';
+import { ViewState } from '@/types/Insight';
+import { QUANTIFICATION } from '@/utils/messages-util';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -401,6 +420,51 @@ export default defineComponent({
         isSeasonalityActive.value = period > 1;
       }
     });
+    const clearParameterization = async () => {
+      if (selectedNode.value === null) return;
+      const { id, concept, label, model_id } = selectedNode.value;
+      const nodeParameters = {
+        id,
+        concept,
+        label,
+        model_id,
+        parameter: {
+          id: null,
+          name: 'Abstract',
+          unit: '',
+          country: '',
+          admin1: '',
+          admin2: '',
+          admin3: '',
+          period: 12,
+          timeseries: [
+            { value: 0.5, timestamp: Date.UTC(2017, 0) },
+            { value: 0.5, timestamp: Date.UTC(2017, 1) },
+            { value: 0.5, timestamp: Date.UTC(2017, 2) }
+          ],
+          max: null, // filled in by server
+          min: null // filled in by server
+        }
+      };
+
+      // save view config options when quantifying the node along with the node parameters
+      const viewConfig: ViewState = {
+        spatialAggregation: AggregationOption.Mean,
+        temporalAggregation: AggregationOption.Mean,
+        temporalResolution: TemporalResolutionOption.Month,
+        breakdownOption: null
+      };
+      Object.keys(viewConfig).forEach(key => {
+        (nodeParameters.parameter as any)[key] = viewConfig[key];
+      });
+      try {
+        await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+        refreshModelData();
+      } catch {
+        console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
+        toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, 'error', true);
+      }
+    };
     const areParameterValuesChanged = computed(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator === null || indicator === undefined) return false;
@@ -432,8 +496,8 @@ export default defineComponent({
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
         refreshModelData();
       } catch {
-        console.error('Failed to update node parameter', nodeParameters);
-        toaster('Unable to save node parameter changes.', 'error', true);
+        console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
+        toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, 'error', true);
       }
     };
 
@@ -540,7 +604,8 @@ export default defineComponent({
       modifyConstraints,
       nodeId,
       project,
-      currentCAG
+      currentCAG,
+      clearParameterization
     };
   },
   methods: {
