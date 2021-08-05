@@ -48,7 +48,7 @@ export default function useRegionalData(
     }
 
     const activeModelId = modelMetadata.data_id ?? '';
-    console.log(`useRegionalData: modelId=${activeModelId}, timeseries=${JSON.stringify(selectedTimeseriesPoints.value)}`);
+
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
       modelId: activeModelId,
