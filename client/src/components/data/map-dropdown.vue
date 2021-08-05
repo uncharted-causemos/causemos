@@ -1,5 +1,8 @@
 <template>
-  <div class="map-dropdown">
+  <div
+    class="map-dropdown"
+    @mouseleave="showDropdownOptions = false"
+  >
     <button
       type="button"
       class="btn btn-new-cag"
@@ -20,20 +23,32 @@
       <template #content>
         <map-dropdown-category :text="'BASE LAYERS'"/>
         <map-dropdown-option
-          :id="baseLayers.DEFAULT" :name="'base'" :text="'Default'" :startChecked="baseLayers.DEFAULT === selectedBaseLayer"
+          :id="baseLayers.DEFAULT"
+          :name="'base'"
+          :text="'Default'"
+          :start-checked="selectedBaseLayer === baseLayers.DEFAULT"
           @click="clickDefaultOption"
         />
         <map-dropdown-option
-          :id="baseLayers.SATELLITE" :name="'base'" :text="'Satellite'" :startChecked="baseLayers.SATELLITE === selectedBaseLayer"
+          :id="baseLayers.SATELLITE"
+          :name="'base'"
+          :text="'Satellite'"
+          :start-checked="selectedBaseLayer === baseLayers.SATELLITE"
           @click="clickSatelliteOption"
         />
         <map-dropdown-category :text="'DATA LAYERS'"/>
         <map-dropdown-option
-          :id="firstLayers.ADMIN" :name="'first-layer'" :text="'Admin Regions'" :startChecked="firstLayers.ADMIN === selectedDataLayer"
+          :id="firstLayers.ADMIN"
+          :name="'first-layer'"
+          :text="'Admin Regions'"
+          :start-checked="selectedDataLayer === firstLayers.ADMIN"
           @click="clickAdminOption"
         />
         <map-dropdown-option
-          :id="firstLayers.TILES" :name="'first-layer'" :text="'Tiles'" :startChecked="firstLayers.TILES === selectedDataLayer"
+          :id="firstLayers.TILES"
+          :name="'first-layer'"
+          :text="'Tiles'"
+          :start-checked="selectedDataLayer === firstLayers.TILES"
           @click="clickTilesOption"
         />
       </template>
@@ -70,10 +85,6 @@ export default defineComponent({
     selectedDataLayer: {
       type: String,
       required: true
-    },
-    viewAfterDeletion: {
-      type: String,
-      default: 'qualitativeView'
     }
   },
   emits: ['rename', 'set-base-layer', 'set-data-layer'],
