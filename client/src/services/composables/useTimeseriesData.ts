@@ -1,7 +1,7 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, SpacialAggregationLevel } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
@@ -101,7 +101,7 @@ export default function useTimeseriesData(
           : AggregationOption.Mean;
 
       let promises = [];
-      if (breakdownOption.value === 'region') {
+      if (breakdownOption.value === SpacialAggregationLevel.Region) {
         promises = regionIds.value.map((regionId) => {
           return API.get('maas/output/timeseries', {
             params: {
@@ -139,7 +139,7 @@ export default function useTimeseriesData(
       }
       // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
-      if (breakdownOption.value === 'region') {
+      if (breakdownOption.value === SpacialAggregationLevel.Region) {
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           const name = regionIds.value[index];
           const id = modelRunIds.value[0];
