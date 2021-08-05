@@ -2,15 +2,6 @@
   <div class="node-drilldown-container">
     <analytical-questions-and-insights-panel />
     <main>
-      <header>
-        <button
-          v-tooltip="'Collapse node'"
-          class="btn btn-default"
-          @click="collapseNode"
-        >
-          <i class="fa fa-fw fa-compress" />
-        </button>
-      </header>
       <div class="nodes-container">
         <div class="drivers">
           <h5>Top Drivers</h5>
@@ -49,6 +40,20 @@
             <div class="expanded-node-header">
               {{ nodeConceptName }}
               <div class="button-group">
+                <button
+                  v-if="areParameterValuesChanged"
+                  class="btn btn-primary btn-call-for-action save-parameter-button"
+                  @click="saveParameterValueChanges"
+                >
+                  Save parameterization changes
+                </button>
+                <button
+                  v-tooltip="'Collapse node'"
+                  class="btn btn-default"
+                  @click="collapseNode"
+                >
+                  <i class="fa fa-fw fa-compress" />
+                </button>
                 <!-- TODO: New scenario button -->
                 <!-- TODO: Set goal button -->
               </div>
@@ -72,9 +77,8 @@
             />
           </div>
           <p>
-            <i class="fa fa-fw fa-info-circle" />To create a scenario, set some
-            values by clicking on the chart. To remove a point, click on it
-            again.
+            <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
+              by clicking on the chart. To remove a point, click on it again.
           </p>
 
           <h5 class="indicator-section-header restrict-max-width">
@@ -123,7 +127,7 @@
                   class="form-control input-sm"
                   type="number"
                 >
-                <span>{{ temporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
+                <span>{{ selectedTemporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
               </div>
               <div class="indicator-control-row">
                 <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
@@ -163,18 +167,21 @@ import { computed, defineComponent, ref, watchEffect } from 'vue';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
-import { useStore, mapGetters } from 'vuex';
+import { useStore } from 'vuex';
 import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
-import { CAGGraph, CAGModelSummary, ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
+import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDraftScenario from '@/services/composables/useDraftScenario';
+import useQualitativeModel from '@/services/composables/useQualitativeModel';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import _ from 'lodash';
+import useToaster from '@/services/composables/useToaster';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -186,22 +193,20 @@ export default defineComponent({
     AnalyticalQuestionsAndInsightsPanel
   },
   props: {},
-  computed: {
-    ...mapGetters({
-      currentCAG: 'app/currentCAG',
-      nodeId: 'app/nodeId',
-      project: 'app/project'
-    })
-  },
   setup() {
     // Get CAG and selected node from route
     const store = useStore();
+    const toaster = useToaster();
     const project = computed(() => store.getters['app/project']);
-    const currentCAG = computed(() => store.getters['app/currentCAG']);
     const nodeId = computed(() => store.getters['app/nodeId']);
 
-    const modelSummary = ref<CAGModelSummary | null>(null);
-    const modelComponents = ref<CAGGraph | null>(null);
+    const {
+      modelSummary,
+      modelComponents,
+      currentCAG,
+      refreshModelData
+    } = useQualitativeModel();
+
     const currentEngine = computed(
       () => modelSummary.value?.parameter?.engine ?? null
     );
@@ -211,24 +216,10 @@ export default defineComponent({
     //  similarly to how they are being utilied in the data (quantitative analyses)
     // The same comment applies also to both the TD qualitative/quantitative views
 
-    watchEffect(onInvalidate => {
+    watchEffect(() => {
       // Fetch model summary and components
       if (currentCAG.value === null) return;
-      let isCancelled = false;
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-
       store.dispatch('insightPanel/setContextId', [currentCAG.value]);
-
-      modelService.getSummary(currentCAG.value).then(_modelSummary => {
-        if (isCancelled) return;
-        modelSummary.value = _modelSummary;
-      });
-      modelService.getComponents(currentCAG.value).then(_modelComponents => {
-        if (isCancelled) return;
-        modelComponents.value = _modelComponents;
-      });
     });
 
     const scenarios = ref<Scenario[]>([]);
@@ -389,7 +380,7 @@ export default defineComponent({
     });
     const indicatorMin = ref(0);
     const indicatorMax = ref(1);
-    const temporalResolution = ref<string|null>(null);
+    const selectedTemporalResolution = ref<string|null>(null);
     const indicatorPeriod = ref(1);
     const isSeasonalityActive = ref(false);
     watchEffect(() => {
@@ -402,13 +393,49 @@ export default defineComponent({
     watchEffect(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator !== null && indicator !== undefined) {
-        indicatorMin.value = indicator.min;
-        indicatorMax.value = indicator.max;
-        temporalResolution.value = indicator.temporal_resolution;
-        indicatorPeriod.value = indicator.period;
-        isSeasonalityActive.value = indicatorPeriod.value > 1;
+        const { min, max, temporalResolution, period } = indicator;
+        indicatorMin.value = min;
+        indicatorMax.value = max;
+        selectedTemporalResolution.value = temporalResolution;
+        indicatorPeriod.value = period;
+        isSeasonalityActive.value = period > 1;
       }
     });
+    const areParameterValuesChanged = computed(() => {
+      const indicator = selectedNode.value?.parameter;
+      if (indicator === null || indicator === undefined) return false;
+      const { min, max, temporalResolution, period, timeseries } = indicator;
+      return indicatorMin.value !== min ||
+        indicatorMax.value !== max ||
+        selectedTemporalResolution.value !== temporalResolution ||
+        indicatorPeriod.value !== period ||
+        isSeasonalityActive.value !== (period > 1) ||
+        !_.isEqual(timeseries, historicalTimeseries.value);
+    });
+    const saveParameterValueChanges = async () => {
+      if (selectedNode.value === null) return;
+      const { id, concept, label, model_id, parameter } = selectedNode.value;
+      const nodeParameters = {
+        id,
+        concept,
+        label,
+        model_id,
+        parameter: Object.assign({}, parameter, {
+          min: indicatorMin.value,
+          max: indicatorMax.value,
+          temporalResolution: selectedTemporalResolution.value,
+          period: isSeasonalityActive.value ? indicatorPeriod.value : 1,
+          timeseries: historicalTimeseries.value
+        })
+      };
+      try {
+        await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+        refreshModelData();
+      } catch {
+        console.error('Failed to update node parameter', nodeParameters);
+        toaster('Unable to save node parameter changes.', 'error', true);
+      }
+    };
 
     const comparisonBaselineId = ref(null);
     const comparisonTimeseries = computed<{
@@ -503,12 +530,17 @@ export default defineComponent({
       indicatorMax,
       isSeasonalityActive,
       indicatorPeriod,
-      temporalResolution,
+      areParameterValuesChanged,
+      saveParameterValueChanges,
+      selectedTemporalResolution,
       comparisonBaselineId,
       comparisonTimeseries,
       comparisonDropdownOptions,
       constraints,
-      modifyConstraints
+      modifyConstraints,
+      nodeId,
+      project,
+      currentCAG
     };
   },
   methods: {
@@ -553,16 +585,8 @@ main {
   min-width: 0;
   display: flex;
   flex-direction: column;
-  background: white;
   margin: 10px;
   padding: 0 10px;
-}
-
-header {
-  padding: 5px 0;
-  margin-bottom: 5px;
-  display: flex;
-  justify-content: flex-end;
 }
 
 h4 {
@@ -634,14 +658,15 @@ h6 {
   }
 }
 
-input[type=text] {
-  width: 80px;
-  margin: 0px 5px;
+input {
+  background: white;
 }
+
 input[type=number] {
   width: 60px;
   margin: 0px 5px;
   display: inline-block;
+  background: white;
 }
 
 input[type="radio"] {
@@ -656,12 +681,13 @@ input[type="radio"] {
 .expanded-node {
   height: 350px;
   flex-shrink: 0;
-  border: 1px solid black;
+  border: 1px solid #bbb;
   border-radius: 4px;
   overflow: hidden;
   margin: 10px 0;
   display: flex;
   flex-direction: column;
+  background: white;
 }
 
 .expanded-node-header {
@@ -672,6 +698,10 @@ input[type="radio"] {
   padding: 5px;
 }
 
+.button-group > *:not(:first-child) {
+  margin-left: 5px;
+}
+
 .scenario-chart {
   flex: 1;
   min-height: 0;
@@ -679,6 +709,7 @@ input[type="radio"] {
 
 .neighbor-node {
   margin-top: 10px;
+  background: white;
 }
 
 h5 {
@@ -698,8 +729,14 @@ h5 {
   display: flex;
   align-items: center;
 
+  & > span {
+    flex-shrink: 1;
+    min-width: 0;
+  }
+
   .indicator-buttons {
     margin-left: 20px;
+    flex-shrink: 0;
     & > button:not(:first-child) {
       margin-left: 5px;
     }
@@ -708,6 +745,10 @@ h5 {
 
 .restrict-max-width {
   max-width: 90ch;
+}
+
+.save-parameter-button {
+  align-self: flex-start;
 }
 
 </style>

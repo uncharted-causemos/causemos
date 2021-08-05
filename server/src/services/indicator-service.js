@@ -231,9 +231,9 @@ const setDefaultIndicators = async (modelId) => {
         admin1: '',
         admin2: '',
         admin3: '',
-        geospatial_aggregation: geospatialAgg,
-        temporal_aggregation: temporalAgg,
-        temporal_resolution: resolution,
+        spatialAggregation: geospatialAgg,
+        temporalAggregation: temporalAgg,
+        temporalResolution: resolution,
         period: 12
       }
     };
@@ -272,9 +272,9 @@ const setDefaultIndicators = async (modelId) => {
           admin1: '',
           admin2: '',
           admin3: '',
-          geospatial_aggregation: 'mean',
-          temporal_aggregation: 'mean',
-          temporal_resolution: 'month',
+          spatialAggregation: 'mean',
+          temporalAggregation: 'mean',
+          temporalResolution: 'month',
           period: 12,
           timeseries: [
             { value: 0.5, timestamp: Date.UTC(2017, 0) },

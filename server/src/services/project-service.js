@@ -570,14 +570,7 @@ const getProjectStatementsScores = async(projectId, ids) => {
   return results;
 };
 
-
-/**
- * Retrieve statements and transform them to edge like format
- *
- * @param {string} projectId  - project identifier
- * @param {object} filters    - statement filters
- */
-const getProjectEdges = async(projectId, filters) => {
+const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, partition) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
   const filterQuery = queryUtil.buildQuery(filters);
   // Filter statements and retrieve by unique edge ids
@@ -587,10 +580,21 @@ const getProjectEdges = async(projectId, filters) => {
       size: 0,
       query: filterQuery.query,
       aggs: {
-        edges: {
+        edgePartitions: {
           terms: {
             field: 'wm.edge',
-            size: MAX_ES_BUCKET_SIZE
+            include: {
+              partition: partition,
+              num_partitions: totalPartitions
+            }
+          },
+          aggs: {
+            edges: {
+              terms: {
+                field: 'wm.edge',
+                size: MAX_ES_BUCKET_SIZE
+              }
+            }
           }
         }
       }
@@ -598,7 +602,7 @@ const getProjectEdges = async(projectId, filters) => {
   });
 
   // tranform to simple edge format (source and target)
-  const statementEdges = result.body.aggregations.edges.buckets;
+  const statementEdges = result.body.aggregations.edgePartitions.buckets;
   const edges = statementEdges.map(s => {
     const [source, target] = s.key.split('///');
     return {
@@ -608,6 +612,20 @@ const getProjectEdges = async(projectId, filters) => {
   });
 
   return edges;
+};
+
+/**
+ * Retrieve statements and transform them to edge like format
+ *
+ * @param {string} projectId  - project identifier
+ * @param {object} filters    - statement filters
+ */
+const getProjectEdges = async(projectId, filters) => {
+  const totalPartitions = 50;
+  const partitionsOfEdges = (await Promise.all([...Array(totalPartitions).keys()].map(partition =>
+    getProjectEdgesByPartition(projectId, filters, totalPartitions, partition)
+  )));
+  return partitionsOfEdges.flat();
 };
 
 /**

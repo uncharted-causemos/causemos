@@ -92,7 +92,7 @@
             <i class="fa fa-fw fa-star fa-lg" />
             Review Analysis Checklist
         </button>
-        <analytical-questions-panel />
+        <list-analytical-questions-pane />
       </div>
       <div class="col-md-9">
         <div class="row">
@@ -178,7 +178,7 @@ import { ProjectType } from '@/types/Enums';
 import { ANALYSIS, CAG } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import projectService from '@/services/project-service';
-import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
+import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import numberFormatter from '@/formatters/number-formatter';
 
 const toQuantitative = analysis => ({
@@ -203,7 +203,7 @@ export default {
   name: 'AnalysisProjectOverview',
   components: {
     AnalysisOverviewCard,
-    AnalyticalQuestionsPanel,
+    ListAnalyticalQuestionsPane,
     DropdownControl,
     ModalUploadDocument,
     RenameModal
@@ -252,7 +252,7 @@ export default {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
+      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems',
       setContextId: 'insightPanel/setContextId',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
@@ -457,7 +457,7 @@ export default {
         title: `untitled at ${dateFormatter(Date.now())}`,
         projectId: this.project
       });
-      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, analysisItems: [] });
+      await this.updateAnalysisItems({ currentAnalysisId: analysis.id, analysisItems: [] });
       this.$router.push({
         name: 'dataComparative',
         params: {
