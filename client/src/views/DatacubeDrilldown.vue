@@ -329,15 +329,6 @@ export default defineComponent({
       }
     });
 
-    watchEffect(() => {
-      const dataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value
-      };
-      store.dispatch('insightPanel/setDataState', dataState);
-    });
-
     const clearRouteParam = () => {
       router.push({
         query: {
@@ -392,6 +383,16 @@ export default defineComponent({
       metadata,
       selectedTimeseriesPoints
     );
+
+    watchEffect(() => {
+      const dataState = {
+        selectedModelId: selectedModelId.value,
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value,
+        relativeTo: relativeTo.value
+      };
+      store.dispatch('insightPanel/setDataState', dataState);
+    });
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
@@ -563,6 +564,9 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          this.setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {

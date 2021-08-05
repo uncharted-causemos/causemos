@@ -73,12 +73,13 @@ export interface DataState {
 
   filters?: any; // any filter options applied
   breakdownOptions?: any; // any grouping options applied
+  transform?: number; // i.e., relative to a specific run index
 
   // data space specific
   selectedModelId?: string;
   selectedScenarioIds?: string[];
   selectedTimestamp?: number;
-  transform?: number; // i.e., relative to a specific run index
+  relativeTo?: string;
 
   // knowledge/model space specific
   cagNode?: any;
