@@ -38,7 +38,7 @@ const applyBreakdown = (
         name: year,
         id: year,
         color: colorFromIndex(index),
-        points: mappedToBreakdownDomain,
+        points: mappedToBreakdownDomain
       };
     });
 };
