@@ -237,14 +237,22 @@ export default function useTimeseriesData(
   // Whenever the selected runs change, reset "relative to" state
   //  and selected breakdown option
   watch(
-    () => [modelRunIds.value],
+    () => [modelRunIds.value, timeseriesData.value],
     () => {
-      if (timeseriesData.value &&
-        timeseriesData.value.length > 0 &&
-        timeseriesData.value.findIndex(t => t.name === relativeTo.value) < 0) {
+      if (modelRunIds.value && modelRunIds.value.length === 0) {
         relativeTo.value = null;
       }
-      // breakdownOption.value = null;
+
+      if (timeseriesData.value && modelRunIds.value) {
+        // check that both corresponds to each other
+        const timeseriesIDs = timeseriesData.value.map(t => t.id);
+        if (_.isEqual(timeseriesIDs, modelRunIds.value)) {
+          if (timeseriesData.value.findIndex(t => t.id === relativeTo.value) < 0) {
+            relativeTo.value = null;
+          }
+          // breakdownOption.value = null;
+        }
+      }
     },
     {
       immediate: true
