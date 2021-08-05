@@ -234,6 +234,21 @@ export default function useTimeseriesData(
     () => processedTimeseriesData.value.timeseriesData
   );
 
+  // Whenever the selected runs change, reset "relative to" state
+  //  and selected breakdown option
+  watch(
+    () => [modelRunIds.value],
+    () => {
+      if (timeseriesData.value && timeseriesData.value.length > 0) {
+        relativeTo.value = null;
+      }
+      // breakdownOption.value = null;
+    },
+    {
+      immediate: true
+    }
+  );
+
   return {
     timeseriesData,
     visibleTimeseriesData: computed(() =>
