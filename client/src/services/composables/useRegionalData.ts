@@ -1,14 +1,10 @@
 import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
-import { computed, watch, watchEffect } from '@vue/runtime-core';
-import { Indicator, Model } from '@/types/Datacube';
+import { watch, watchEffect } from '@vue/runtime-core';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
 import { AdminRegionSets } from '@/types/Datacubes';
-import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { useStore } from 'vuex';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -18,48 +14,10 @@ const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
 };
 export default function useRegionalData(
   selectedModelId: Ref<string>,
-  selectedSpatialAggregation: Ref<string>,
-  selectedTemporalAggregation: Ref<string>,
-  selectedTemporalResolution: Ref<string>,
-  metadata: Ref<Model | Indicator | null>,
-  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
+  outputSpecs: Ref<OutputSpecWithId[]>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
-  const outputSpecs = computed<OutputSpecWithId[]>(() => {
-    const modelMetadata = metadata.value;
-    if (
-      selectedModelId.value === null ||
-      modelMetadata === null
-    ) {
-      return [];
-    }
-
-    let activeFeature = '';
-    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
-    if (currentOutputEntry !== undefined) {
-      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
-      activeFeature = outputs[currentOutputEntry].name;
-    } else {
-      activeFeature = modelMetadata.default_feature ?? '';
-    }
-
-    const activeModelId = modelMetadata.data_id ?? '';
-
-    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
-      id: timeseriesId,
-      modelId: activeModelId,
-      runId: scenarioId,
-      outputVariable: activeFeature,
-      timestamp,
-      temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
-      temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,
-      spatialAggregation: selectedSpatialAggregation.value || AggregationOption.Mean
-    }));
-  });
   watchEffect(async onInvalidate => {
     regionalData.value = null;
     if (outputSpecs.value.length === 0) return;

@@ -185,6 +185,7 @@
                 :filters="mapFilters"
                 :map-bounds="mapBounds"
                 :region-data="regionalData"
+                :grid-layer-stats="{}"
                 :selectedBaseLayer="selectedBaseLayer"
                 :selectedDataLayer="selectedDataLayer"
                 @sync-bounds="onSyncMapBounds"

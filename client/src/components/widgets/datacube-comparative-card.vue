@@ -62,6 +62,7 @@ import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
@@ -243,12 +244,8 @@ export default defineComponent({
     });
 
     const {
-      outputSpecs,
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
-    } = useRegionalData(
+      outputSpecs
+    } = useOutputSpecs(
       datacubeId,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
@@ -257,6 +254,15 @@ export default defineComponent({
       selectedTimeseriesPoints
     );
 
+    const {
+      regionalData,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
+      datacubeId,
+      outputSpecs
+    );
 
     watchEffect(() => {
       if (regionalData.value && props.isSelected) {

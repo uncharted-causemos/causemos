@@ -47,6 +47,7 @@
 <script>
 
 import _ from 'lodash';
+// import { getOutputStats } from '@/services/runoutput-service';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
@@ -187,6 +188,10 @@ export default {
       ]
     },
     regionData: {
+      type: Object,
+      default: () => undefined
+    },
+    gridLayerStats: {
       type: Object,
       default: () => undefined
     },
@@ -345,6 +350,7 @@ export default {
   methods: {
     refresh() {
       if (!this.map || !this.selection) return;
+      console.log('map refreshed');
 
       this.setFeatureStates();
       this.refreshLayers();
@@ -389,6 +395,9 @@ export default {
           ...row.values
         });
       });
+    },
+    fetchGridMapStats() {
+
     },
     onAddLayer() {
       if (!this.regionData) return;

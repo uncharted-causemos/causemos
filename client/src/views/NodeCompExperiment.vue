@@ -146,6 +146,7 @@ import MapDropdown from '@/components/data/map-dropdown.vue';
 
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
@@ -313,18 +314,24 @@ export default defineComponent({
     );
 
     const {
-      outputSpecs,
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
-    } = useRegionalData(
+      outputSpecs
+    } = useOutputSpecs(
       selectedModelId,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
       selectedTimeseriesPoints
+    );
+
+    const {
+      regionalData,
+      deselectedRegionIds,
+      toggleIsRegionSelected,
+      setAllRegionsSelected
+    } = useRegionalData(
+      selectedModelId,
+      outputSpecs
     );
 
     const stepsBeforeCanConfirm = computed(() => {
