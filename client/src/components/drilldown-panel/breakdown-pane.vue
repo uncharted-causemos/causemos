@@ -112,14 +112,6 @@ import { getTimestampMillis } from '@/utils/date-util';
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
 
-// Breakdown options are hardcoded, but eventually should be dynamically populated
-// based on the various "breakdownData" types that the selected datacube includes
-const BREAKDOWN_OPTIONS: DropdownItem[] = [
-  { value: null, displayName: 'none' },
-  { value: TemporalAggregationLevel.Region, displayName: 'Split by region' },
-  { value: selectedTemporalAggregationLevel, displayName: 'Split by year' }
-];
-
 export default defineComponent({
   components: { aggregationChecklistPane, DropdownButton },
   name: 'BreakdownPane',
