@@ -10,7 +10,7 @@
           <td
             v-for="(dim, idx) in inputParameters"
             :key="idx">
-            <span style="font-weight: bold;">{{ dim.name }}</span>
+            <div class="params-header">{{ dim.name }}</div>
           </td>
           <td>&nbsp;</td>
         </tr>
@@ -19,7 +19,8 @@
           :key="sidx">
           <td>{{ sidx }}</td>
           <td v-for="(dimName, idx) in Object.keys(run)"
-            :key="idx">
+            :key="idx"
+            class="params-value">
             <label>{{ run[dimName] }}</label>
           </td>
           <td>
@@ -36,6 +37,9 @@
       </table>
     </template>
     <template #footer>
+      <div class="row estimated-runtime">
+        Estimated execution time: {{ potentialScenarios.length * 2 }} {{ metadata.name.toLowerCase().includes('wash') ? 'hours' : 'minutes' }}
+      </div>
       <ul class="unstyled-list">
         <button
           type="button"
@@ -162,10 +166,29 @@ export default defineComponent({
 @import "~styles/variables";
 
 ::v-deep(.modal-container) {
+  width: max-content;
+  max-width: 80vw;
   .modal-body {
     height: 300px;
     overflow-y: scroll;
   }
+}
+
+.params-header {
+  font-weight: bold;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.params-value {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  align-content: center;
+}
+
+.estimated-runtime {
+  display: flex;
+  padding: 1rem;
 }
 
 .title {
