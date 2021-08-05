@@ -50,7 +50,6 @@
             <model-graph
               :data="graphData"
               :scenario-data="scenarioData"
-              :current-engine="currentEngine"
               @background-click="onBackgroundClick"
               @node-drilldown="onNodeDrilldown"
               @edge-click="showRelation"
