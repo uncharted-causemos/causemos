@@ -135,9 +135,10 @@ function renderParallelCoordinates(
   const height = options.height - margin.top - margin.bottom;
 
   //
-  // exclude drilldown/filter axes from being rendered in the PCs
+  // exclude drilldown/filter and freeform axes from being rendered in the PCs
   //
   dimensions = filterDrilldownDimensionData(dimensions as ModelParameter[]);
+  dimensions = filterInvisibleDimensionData(dimensions as ModelParameter[]);
 
   const detectTypeFromData = false;
   // process data and detect data type for each dimension
@@ -1070,11 +1071,6 @@ function colorFunc(this: SVGPathElement) {
   }
 }
 
-function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
-  // FIXME: only the last dimension is the output dimension
-  return dimensions[dimensions.length - 1].name === dimName;
-}
-
 function renderBaselineMarkers(showBaselineDefaults: boolean) {
   if (!renderedAxes) {
     console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
@@ -1432,14 +1428,26 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
 //
 // utility functions
 //
-
 // exclude drilldown parameters from the input dimensions
 // @REVIEW this may better be done external to the PC component
 const filterDrilldownDimensionData = (dimensions: Array<ModelParameter>) => {
-  return dimensions.filter(function(d) {
-    return !d.is_drilldown;
-  });
+  return dimensions
+    .filter(d => { return !d.is_drilldown; });
 };
+
+const filterInvisibleDimensionData = (dimensions: Array<ModelParameter>) => {
+  // this should only filter input parameters
+  return dimensions
+    .filter(d => {
+      if (isOutputDimension(dimensions, d.name)) return true;
+      return d.is_visible;
+    });
+};
+
+function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
+  // FIXME: only the last dimension is the output dimension
+  return dimensions[dimensions.length - 1].name === dimName;
+}
 
 // attempt to determine types of each dimension based on first row of data
 const toType = (v: string | number) => {
@@ -1567,7 +1575,7 @@ const createScales = (
     } else {
       dataExtent = d3.extent(data.map(point => +point[name]));
     }
-    if (dataExtent[0] === undefined || dataExtent[0] === undefined) {
+    if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
       console.error('Unable to derive extent from data. A default linear scale will be created!', data);
 
       // this dimension should have an undefined scale:
@@ -1595,22 +1603,33 @@ const createScales = (
     let dataExtent: string[] = [];
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dimensions.find(d => d.name === name)?.choices ?? [''];
-    } else {
+      dataExtent = dimensions.find(d => d.name === name)?.choices ?? [];
+    }
+
+    if (dataExtent.length === 0) {
       dataExtent = data.map(function(p) { return p[name]; }) as Array<string>; // note this will return an array of values for all runs
     }
 
-    if (dataExtent[0] === undefined || dataExtent[0] === undefined) {
-      console.error('Unable to derive extent from data. A default linear scale will be created!', data);
+    if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
+      console.warn('Unable to derive extent from data. A default linear scale will be created!', data);
 
       // this dimension should have an undefined scale:
       //  e.g., an output dimension where ALL runs have non-ready status
+      //        a parameter that is a freeform dimension with no valid list of choices
       //  i.e., no line will ever have a value for this dimension axis, but we still want to render its axis
 
       // ensure we return a default categorical scale
-      dataExtent = [];
-      dataExtent.push('dummay-last');
-      dataExtent.unshift('dummy-first');
+      if (dataExtent.length > 0) {
+        // NOTE: these are mostly string-based axes but not with valid choices, i.e., freeform axes --> should have been annotated as such
+        const dim = dimensions.find(d => d.name === name) as ModelParameter;
+        const defValue = dim.default;
+        if (!dataExtent.includes(defValue)) {
+          dataExtent.push(defValue);
+        }
+      } else {
+        dataExtent.push('dummay-last');
+        dataExtent.unshift('dummy-first');
+      }
     }
 
     // extend the domain of each axis to ensure a nice scale rendering
@@ -1640,7 +1659,8 @@ const createScales = (
     int: numberFunc,
     float: numberFunc,
     string: stringFunc,
-    str: stringFunc
+    str: stringFunc,
+    boolean: numberFunc
   };
 
   // force some dimensions to be ordinal, if requested

@@ -8,7 +8,9 @@
     <template #body>
       <p>
         There is no evidence to support the edge <strong>{{ ontologyFormatter(source) }}</strong>
-        to <strong>{{ ontologyFormatter(target) }}</strong>. You can still use it, or select from the indirect paths listed below.
+        to <strong>{{ ontologyFormatter(target) }}</strong>. You can still use it
+        <span v-if="suggestions.length === 1">.</span>
+        <span v-else>, or select from the indirect paths listed below.</span>
       </p>
       <div>
         <div v-if="suggestions.length === 0">
@@ -90,9 +92,13 @@ export default {
       suggestionService.getPathSuggestions(this.project, this.source, this.target).then(paths => {
         const sortedPaths = _.orderBy(paths, p => p.length);
         this.suggestions = [[this.source, this.target], ..._.take(sortedPaths, 5)];
-        this.suggestions.forEach(s => {
-          s.selected = false;
-        });
+        if (this.suggestions.length === 1) {
+          this.suggestions[0].selected = true;
+        } else {
+          this.suggestions.forEach(s => {
+            s.selected = false;
+          });
+        }
       });
     },
     close() {

@@ -188,7 +188,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       clearLastQuery: 'query/clearLastQuery',
-      updateAnalysisItemsNewPreview: 'dataAnalysis/updateAnalysisItemsNewPreview'
+      updateAnalysisItemsPreview: 'dataAnalysis/updateAnalysisItemsPreview'
     }),
     dateFormatter,
     unpublish() {
@@ -206,11 +206,11 @@ export default defineComponent({
       this.clearLastQuery();
       // redirect
       // open the datacube page similar to the data space
-      await this.updateAnalysisItemsNewPreview({ datacubeIDs: [id] });
+      await this.updateAnalysisItemsPreview({ datacubeIDs: [id] });
       this.$router.push({
         name: 'dataPreview',
         params: {
-          project: this.datacube.family_name,
+          project: this.project,
           projectType: this.projectMetadata.type
         }
       });
@@ -223,7 +223,7 @@ export default defineComponent({
         name: 'modelPublishingExperiment',
         query: { datacubeid: id },
         params: {
-          project: this.datacube.family_name,
+          project: this.project,
           projectType: this.projectMetadata.type
         }
       });

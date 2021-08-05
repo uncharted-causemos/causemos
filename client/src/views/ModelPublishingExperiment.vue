@@ -64,6 +64,7 @@
       <template v-slot:datacube-description>
         <model-description
           :metadata="metadata"
+          @update-attribute-visibility="refreshMetadata"
         />
       </template>
       <template #temporal-aggregation-config>
@@ -146,7 +147,7 @@ import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
 import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
-import { isModel } from '@/utils/datacube-util';
+import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
@@ -161,7 +162,7 @@ import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimes
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import MapDropdown from '@/components/data/map-dropdown.vue';
-import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
 import { Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
 
@@ -210,7 +211,7 @@ export default defineComponent({
     // reset on init:
     store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Enrich_Description);
 
-    const selectedAdminLevel = ref(2);
+    const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
@@ -282,7 +283,11 @@ export default defineComponent({
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
         // set initial output variable index
-        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+        let initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+        if (initialOutputIndex < 0) {
+          // this would be the case when the use toggles the visibility of the default feature
+          initialOutputIndex = 0;
+        }
         // create a default feature object as a map entry that saves the initial output index for the current model instance
         //  and note we overwrite the store content since we can only have one model being published by a given user at a time
         const defaultFeature = {
@@ -302,6 +307,7 @@ export default defineComponent({
 
     watchEffect(() => {
       const dataState = {
+        selectedModelId: selectedModelId.value,
         selectedScenarioIds: selectedScenarioIds.value,
         selectedTimestamp: selectedTimestamp.value
       };
@@ -409,7 +415,8 @@ export default defineComponent({
       TemporalResolutionOption,
       selectedTimeseriesPoints,
       selectedBaseLayer,
-      selectedDataLayer
+      selectedDataLayer,
+      datacubeCurrentOutputsMap
     };
   },
   watch: {
@@ -417,22 +424,31 @@ export default defineComponent({
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'model publishing experiment' space
         if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
-          const datacubeid = this.$route.query.datacubeid as any;
-          if (datacubeid !== undefined) {
-            // re-fetch model data
-            this.setSelectedTimestamp(null);
-            this.selectedModelId = datacubeid;
+          // check for 'insight_id' first to apply insight, then if not found, then 'datacubeid'
+          const insight_id = this.$route.query.insight_id as any;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
+          } else {
+            const datacubeid = this.$route.query.datacubeid as any;
+            if (datacubeid !== undefined) {
+              // re-fetch model data
+              this.setSelectedTimestamp(null);
+              this.selectedModelId = datacubeid;
+            }
           }
         }
       },
       immediate: true
     },
     countInsights: {
-      handler(/* newValue, oldValue */) {
+      async handler(/* newValue, oldValue */) {
         if (this.countInsights > 0) {
-          // we have at least one insight, so mark the relevant step as completed
-          const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Capture_Insight);
-          if (ps) { ps.completed = true; }
+          const publicInsights = await this.getPublicInsights();
+          if (publicInsights.length > 0) {
+            // we have at least one insight, so mark the relevant step as completed
+            const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+            if (ps) { ps.completed = true; }
+          }
         }
       },
       immediate: true
@@ -449,11 +465,7 @@ export default defineComponent({
       // we have some insights, some/all of which relates to the current model instance
 
       // first, fetch public insights to load the publication status, as needed
-      const publicInsightsSearchFields: InsightFilterFields = {};
-      publicInsightsSearchFields.visibility = 'public';
-      publicInsightsSearchFields.project_id = this.project;
-      publicInsightsSearchFields.context_id = this.metadata?.id;
-      const publicInsights = await fetchInsights([publicInsightsSearchFields]);
+      const publicInsights = await this.getPublicInsights();
       if (publicInsights.length > 0) {
         // we have at least one public insight, which we should use to fetch view configurations
         const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
@@ -520,11 +532,83 @@ export default defineComponent({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
     }),
+    async getPublicInsights() {
+      const publicInsightsSearchFields: InsightFilterFields = {};
+      publicInsightsSearchFields.visibility = 'public';
+      publicInsightsSearchFields.project_id = this.project;
+      publicInsightsSearchFields.context_id = this.metadata?.id;
+      const publicInsights = await fetchInsights([publicInsightsSearchFields]);
+      return publicInsights as Insight[];
+    },
+    refreshMetadata() {
+      if (this.metadata !== null) {
+        const cloneMetadata = _.cloneDeep(this.metadata);
+
+        // re-create the validatedOutputs array
+        cloneMetadata.validatedOutputs = getValidatedOutputs(cloneMetadata.outputs);
+
+        this.metadata = cloneMetadata;
+      }
+    },
     setBaseLayer(val: BASE_LAYER) {
       this.selectedBaseLayer = val;
     },
     setDataLayer(val: DATA_LAYER) {
       this.selectedDataLayer = val;
+    },
+    async updateStateFromInsight(insight_id: string) {
+      const loadedInsight: Insight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedModelId) {
+          // this will reload datacube metadata as well as scenario runs
+          this.selectedModelId = loadedInsight.data_state?.selectedModelId;
+        }
+        if (loadedInsight.data_state?.selectedScenarioIds) {
+          // this would only be valid and effective if/after datacube runs are reloaded
+          this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+          this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        // view state
+        if (loadedInsight.view_state?.spatialAggregation) {
+          this.setSelectedSpatialAggregation(loadedInsight.view_state?.spatialAggregation);
+        }
+        if (loadedInsight.view_state?.temporalAggregation) {
+          this.setSelectedTemporalAggregation(loadedInsight.view_state?.temporalAggregation);
+        }
+        if (loadedInsight.view_state?.temporalResolution) {
+          this.setSelectedTemporalResolution(loadedInsight.view_state?.temporalResolution);
+        }
+        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
+          this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+        }
+        if (loadedInsight.view_state?.selectedOutputIndex) {
+          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.view_state?.selectedMapBaseLayer) {
+          this.setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
+        }
+        if (loadedInsight.view_state?.selectedMapDataLayer) {
+          this.setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
+        }
+        if (loadedInsight.view_state?.breakdownOption !== undefined) {
+          this.setBreakdownOption(loadedInsight.view_state?.breakdownOption);
+        }
+        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
+          this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+      }
     },
     async publishModel() {
       // call the backend to update model metadata and finalize model publication
@@ -539,12 +623,22 @@ export default defineComponent({
         // remove newly-added fields such as 'validatedOutputs' so that ES can update
         const modelToUpdate = _.cloneDeep(this.metadata);
         delete modelToUpdate.validatedOutputs;
+        const drilldownParams = modelToUpdate.parameters.filter(p => p.is_drilldown);
+        drilldownParams.forEach((p: any) => {
+          if (p.roles) {
+            delete p.roles;
+          }
+          if (p.related_features) {
+            delete p.related_features;
+          }
+        });
         //
         // update server data
         //
-        await updateDatacube(modelToUpdate.id, modelToUpdate);
+        const updateResult = await updateDatacube(modelToUpdate.id, modelToUpdate);
+        console.log('model update status: ' + JSON.stringify(updateResult));
         // also, update the project stats count
-        const domainProject = await domainProjectService.getProject(this.projectMetadata.name);
+        const domainProject = await domainProjectService.getProject(this.project);
         // add the instance to list of published instances
         const updatedReadyInstances = domainProject.ready_instances;
         if (!updatedReadyInstances.includes(modelToUpdate.name)) {
@@ -554,7 +648,7 @@ export default defineComponent({
         const updatedDraftInstances = domainProject.ready_instances.filter((n: string) => n !== modelToUpdate.name);
         // update the project doc at the server
         domainProjectService.updateDomainProject(
-          this.projectMetadata.name,
+          this.project,
           {
             draft_instances: updatedDraftInstances,
             ready_instances: updatedReadyInstances
@@ -565,7 +659,7 @@ export default defineComponent({
         this.$router.push({
           name: 'domainDatacubeOverview',
           params: {
-            project: this.metadata.family_name,
+            project: this.project,
             projectType: modelToUpdate.type
           }
         });

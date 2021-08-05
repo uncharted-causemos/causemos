@@ -14,7 +14,7 @@ import {
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { roundToNearestMonth } from '@/utils/date-util';
 
-const HISTORICAL_DATA_COLOR = 'black';
+const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.025;
 const CONTEXT_RANGE_FILL = SELECTED_COLOR;
 const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;

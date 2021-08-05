@@ -149,7 +149,15 @@ export const NODE_FACET_FIELDS: string [] = [
 
 export const getValidatedOutputs = (outputs: DatacubeFeature[]) => {
   // FIXME: only numeric outputs are currently supported
-  return outputs.filter(o => o.type === 'int' || o.type === 'float');
+  const validOutputs = outputs.filter(o => o.type === 'int' || o.type === 'float' || o.type === 'boolean');
+  // some datacubes do not have this flag being set initially (i.e., out of date metadata)
+  // so ensure it is initialized first
+  validOutputs.forEach(o => {
+    if (o.is_visible === undefined) {
+      o.is_visible = true;
+    }
+  });
+  return validOutputs.filter(o => o.is_visible);
 };
 
 export function isModel(datacube: Datacube): datacube is Model {

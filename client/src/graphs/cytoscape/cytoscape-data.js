@@ -22,7 +22,7 @@ const createEdges = (edges) => {
 };
 
 /* Convert graph.nodes to cytoscape node construct */
-const createNodes = (nodes, depth = 100) => {
+const createNodes = (nodes, depth = 100, formatter) => {
   const registry = {};
   const result = [];
   const orderedNodes = _.orderBy(nodes, n => n.id);
@@ -44,9 +44,9 @@ const createNodes = (nodes, depth = 100) => {
         }
 
         if (i === 1) {
-          result.push(_createNode(property));
+          result.push(_createNode(property, null, formatter));
         } else {
-          result.push(_createNode(property, last));
+          result.push(_createNode(property, last, formatter));
         }
         registry[pid] = 1;
       }
@@ -57,19 +57,8 @@ const createNodes = (nodes, depth = 100) => {
   return result;
 };
 
-const getLabelForNode = (node) => {
-  let label = _.last(node.id.split('/'));
-
-  if (node.count > 0) {
-    label += ` (${node.count})`;
-  }
-  label = label.replace(/_/g, ' ');
-  return label;
-};
-
-
-const _createNode = (d, parent) => {
-  const label = getLabelForNode(d);
+const _createNode = (d, parent, formatter) => {
+  const label = formatter ? formatter(d.id) : d.id;
   return {
     data: {
       id: d.id,

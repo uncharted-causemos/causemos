@@ -7,7 +7,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
-import { renderAxes, renderLine } from '@/utils/timeseries-util';
+import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -90,7 +90,11 @@ export default function(
     X_AXIS_HEIGHT
   );
   timeseriesList.forEach(timeseries => {
-    renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    if (timeseries.points.length > 1) { // draw a line for time series longer than 1
+      renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    } else { // draw a spot for timeseries that are only 1 long
+      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    }
   });
 
   generateSelectableTimestamps(

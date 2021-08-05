@@ -105,6 +105,9 @@ export default defineComponent({
   max-height: 400px;
   overflow-y: auto;
 }
+.dropdown-option {
+  white-space: nowrap;
+}
 .dropdown-option-selected {
   color: $selected-dark;
 }
