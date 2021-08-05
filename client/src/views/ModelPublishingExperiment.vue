@@ -305,29 +305,6 @@ export default defineComponent({
       }
     });
 
-    watchEffect(() => {
-      const dataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value,
-        relativeTo: relativeTo.value
-      };
-      const viewState: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value
-      };
-
-      store.dispatch('insightPanel/setViewState', viewState);
-      store.dispatch('insightPanel/setDataState', dataState);
-    });
-
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
@@ -375,6 +352,29 @@ export default defineComponent({
       metadata,
       selectedTimeseriesPoints
     );
+
+    watchEffect(() => {
+      const dataState = {
+        selectedModelId: selectedModelId.value,
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value,
+        relativeTo: relativeTo.value
+      };
+      const viewState: ViewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
+      };
+
+      store.dispatch('insightPanel/setViewState', viewState);
+      store.dispatch('insightPanel/setDataState', dataState);
+    });
 
 
     return {
