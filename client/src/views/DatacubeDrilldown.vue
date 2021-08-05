@@ -358,7 +358,9 @@ export default defineComponent({
     const selectedLevelIds = computed(() => {
       const selectedAdminLevelKey = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
       if (selectedAdminLevelKey === 'admin4' || selectedAdminLevelKey === 'admin5') return [];
-      return allRegions.value[selectedAdminLevelKey];
+      const regionsAtSelectedLevel = allRegions.value[selectedAdminLevelKey];
+      const deselected = deselectedRegionIds.value[selectedAdminLevelKey];
+      return regionsAtSelectedLevel.filter(region => !deselected.has(region));
     });
 
     const {
