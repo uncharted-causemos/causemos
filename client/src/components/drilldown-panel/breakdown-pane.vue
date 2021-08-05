@@ -214,9 +214,8 @@ export default defineComponent({
       options.push({ value: null, displayName: 'none' });
       if (props.selectedScenarioIds.length === 1) {
         options.push({ value: TemporalAggregationLevel.Region, displayName: 'Split by region' });
+        options.push({ value: selectedTemporalAggregationLevel, displayName: 'Split by year' });
       }
-      options.push({ value: selectedTemporalAggregationLevel, displayName: 'Split by year' });
-
       return options;
     });
 
