@@ -77,9 +77,8 @@
             />
           </div>
           <p>
-            <i class="fa fa-fw fa-info-circle" />To create a scenario, set some
-            values by clicking on the chart. To remove a point, click on it
-            again.
+            <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
+              by clicking on the chart. To remove a point, click on it again.
           </p>
 
           <h5 class="indicator-section-header restrict-max-width">
@@ -682,7 +681,7 @@ input[type="radio"] {
 .expanded-node {
   height: 350px;
   flex-shrink: 0;
-  border: 1px solid black;
+  border: 1px solid #bbb;
   border-radius: 4px;
   overflow: hidden;
   margin: 10px 0;
