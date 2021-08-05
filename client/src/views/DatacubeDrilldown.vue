@@ -216,7 +216,6 @@ export default defineComponent({
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
-    // const selectedRegionIds = ref<string[]>([]);
 
     const store = useStore();
     const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
