@@ -239,7 +239,9 @@ export default function useTimeseriesData(
   watch(
     () => [modelRunIds.value],
     () => {
-      if (timeseriesData.value && timeseriesData.value.length > 0) {
+      if (timeseriesData.value &&
+        timeseriesData.value.length > 0 &&
+        timeseriesData.value.findIndex(t => t.name === relativeTo.value) < 0) {
         relativeTo.value = null;
       }
       // breakdownOption.value = null;
