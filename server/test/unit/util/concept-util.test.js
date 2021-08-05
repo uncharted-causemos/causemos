@@ -11,20 +11,15 @@ describe('concept-util', function () {
           foo: [{
             name: 'y',
             definition: 'bar'
-          }],
-          fi: [{
-            fie: [{
-              name: 'x',
-              definition: 'fo'
-            }]
           }]
         }],
         b: [{
-          fizz: [{
-            buzz: [{
-              fazz: [{
-                name: 'z',
-                definition: 'bass'
+          b_1: [{
+            b_2: [{
+              b_3: [{
+                name: 'b_4',
+                definition: 'bass',
+                examples: ['hello', 'world']
               }]
             }]
           }]
@@ -33,14 +28,12 @@ describe('concept-util', function () {
     });
     it('flattens nested structure', function () {
       const flattened = {};
-      conceptUtil.extractConceptDefinition(flattened, nestedMeta, '');
+      conceptUtil.extractConceptMetadata(flattened, nestedMeta, '');
       const expected = {
-        'a/foo/y': 'bar',
-        'a/fi/fie': '',
-        'a/fi/fie/x': 'fo',
-        'b/fizz/buzz': '',
-        'b/fizz/buzz/fazz': '',
-        'b/fizz/buzz/fazz/z': 'bass'
+        'a/foo/y': { definition: 'bar', examples: [] },
+        'b/b_1/b_2': { definition: '', examples: [] },
+        'b/b_1/b_2/b_3': { definition: '', examples: [] },
+        'b/b_1/b_2/b_3/b_4': { definition: 'bass', examples: ['hello', 'world'] }
       };
       expect(flattened).to.eql(expected);
     });

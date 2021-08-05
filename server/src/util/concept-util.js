@@ -6,19 +6,21 @@ const _ = require('lodash');
  * @param {Number} depth  ontology hierarchy depth
  *
  */
-const extractConceptDefinition = (result = {}, input, parent = '', depth = 0) => {
+const extractConceptMetadata = (result = {}, input, parent = '', depth = 0) => {
   // leaf node
   if (input.name !== undefined) {
     const key = parent + input.name;
-    result[key] = input.definition || '';
+    result[key] = {};
+    result[key].definition = input.definition || '';
+    result[key].examples = input.examples || [];
   } else {
     Object.keys(input).forEach(k => {
       const key = parent + k;
       if (depth > 1) {
-        result[key] = '';
+        result[key] = { definition: '', examples: [] };
       }
       input[k].forEach(obj => {
-        extractConceptDefinition(result, obj, key + '/', depth + 1);
+        extractConceptMetadata(result, obj, key + '/', depth + 1);
       });
     });
   }
@@ -33,6 +35,6 @@ const getOntologyShortName = (name) => {
 };
 
 module.exports = {
-  extractConceptDefinition,
+  extractConceptMetadata,
   getOntologyShortName
 };
