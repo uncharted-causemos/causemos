@@ -139,10 +139,10 @@ export default defineComponent({
     save() {
       this.$emit('save', {
         // FIXME: not needed anymore, remove when update mapping
-        indicator_time_series_range: {
-          start: 0,
-          end: 1
-        },
+        // indicator_time_series_range: {
+        //   start: 0,
+        //   end: 1
+        // },
         projection_start: this.selectedProjectionStartDate,
         num_steps: this.selectedNumSteps,
         engine: this.selectedEngine
