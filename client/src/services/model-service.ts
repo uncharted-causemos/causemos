@@ -487,6 +487,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary, nodes: Node
     await createScenario(scenario);
   } catch (error) {
     console.log(error);
+    throw new Error(`Failed creating baseline scenario ${modelSummary.parameter.engine}`);
   }
 };
 
@@ -677,7 +678,12 @@ const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptPro
   const result = _.cloneDeep(constraints);
   nodeParameters.forEach(n => {
     const concept = n.concept;
-    const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+    // const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+    const timeseries: any = _.get(n.parameter, 'timeseries', []);
+    let initialValue = 0;
+    if (timeseries.length > 0) {
+      initialValue = timeseries[timeseries.length - 1].value;
+    }
 
     const current = result.find(c => c.concept === concept);
     if (!_.isNil(current)) {

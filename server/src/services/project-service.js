@@ -90,7 +90,7 @@ const createProject = async (kbId, name, description) => {
   const processed = yaml.safeLoad(response);
   const definitions = {};
   processed.forEach(conceptObj => {
-    conceptUtil.extractConceptDefinition(definitions, conceptObj, '');
+    conceptUtil.extractConceptMetadata(definitions, conceptObj, '');
   });
 
   const conceptsPayload = Object.keys(definitions).map(key => {
@@ -98,7 +98,8 @@ const createProject = async (kbId, name, description) => {
       project_id: projectId,
       id: uuid(),
       label: key,
-      definition: definitions[key]
+      definition: definitions[key].definition,
+      examples: definitions[key].examples
     };
   });
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);

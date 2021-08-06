@@ -147,7 +147,8 @@ export default defineComponent({
       // Set new size
       svg.attr('width', width).attr('height', height);
       // (Re-)render
-      svg.selectAll('*').remove();
+      // svg.selectAll('*').remove();
+
       renderChart(
         svg,
         width,

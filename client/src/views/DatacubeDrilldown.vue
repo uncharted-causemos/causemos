@@ -175,11 +175,13 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState } from '@/types/Insight';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { AnalysisItem } from '@/types/Analysis';
 
 const DRILLDOWN_TABS = [
@@ -206,7 +208,6 @@ export default defineComponent({
   },
   setup() {
     const selectedAdminLevel = ref(0);
-
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
@@ -273,6 +274,8 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
+
+    const { allRegions } = useDatacubeHierarchy(selectedScenarioIds, metadata);
 
     const timeInterval = 10000;
 
@@ -353,6 +356,15 @@ export default defineComponent({
       clearRouteParam();
     };
 
+    const selectedLevelIds = computed(() => {
+      const selectedAdminLevelKey = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
+      if (selectedAdminLevelKey === 'admin4' || selectedAdminLevelKey === 'admin5') return [];
+      const regionsAtSelectedLevel = allRegions.value[selectedAdminLevelKey];
+      const deselected = deselectedRegionIds.value[selectedAdminLevelKey];
+      return regionsAtSelectedLevel.filter(region => !deselected.has(region))
+        .slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
+    });
+
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -369,7 +381,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp,
+      selectedLevelIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -387,7 +400,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      breakdownOption
     );
 
     const {

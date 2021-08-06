@@ -3,7 +3,7 @@ import { computed } from '@vue/runtime-core';
 import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import { SpatialAggregationLevel } from '@/types/Enums';
 import { useStore } from 'vuex';
 
 export default function useOutputSpecs(
@@ -12,7 +12,8 @@ export default function useOutputSpecs(
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | Indicator | null>,
-  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
+  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
+  breakdownOption: Ref<string | null>
 ) {
   const store = useStore();
   const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -37,15 +38,24 @@ export default function useOutputSpecs(
 
     const activeModelId = modelMetadata.data_id ?? '';
 
-    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
+    // It doesn't make sense to do a separate fetch and display a separate map
+    //  for each region when "split by region" is active.
+    //  Just return a single outputSpec for all of them.
+    const pointsToConvertToOutputSpecs =
+      breakdownOption.value === SpatialAggregationLevel.Region &&
+      selectedTimeseriesPoints.value.length > 0
+        ? [selectedTimeseriesPoints.value[0]]
+        : selectedTimeseriesPoints.value;
+
+    return pointsToConvertToOutputSpecs.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
       modelId: activeModelId,
       runId: scenarioId,
       outputVariable: activeFeature,
       timestamp,
-      temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
-      temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,
-      spatialAggregation: selectedSpatialAggregation.value || AggregationOption.Mean
+      temporalResolution: selectedTemporalResolution.value,
+      temporalAggregation: selectedTemporalAggregation.value,
+      spatialAggregation: selectedSpatialAggregation.value
     }));
   });
   return { outputSpecs };

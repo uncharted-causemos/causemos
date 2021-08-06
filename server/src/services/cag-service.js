@@ -176,20 +176,44 @@ const createCAG = async (modelFields, edges, nodes) => {
  */
 const updateCAGMetadata = async(modelId, modelFields) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
+  const modelData = await _getModel(modelId);
+
+  let currentStatus = modelData.status;
+  let currentQuantified = _.get(modelData, 'is_quantified', false);
+
+  const currentEngine = _.get(modelData.parameter, 'engine', '');
+  const engine = _.get(modelFields.parameter, 'engine', '');
+
+  if (engine !== '' && engine !== currentEngine) {
+    Logger.info(`Engine changed from ${currentEngine} to ${engine} on ${modelId}`);
+    currentStatus = MODEL_STATUS.UNSYNCED;
+    currentQuantified = false;
+  }
+
   const keyFn = (doc) => {
     return doc.id;
   };
 
   const nonNullKeys = Object.keys(modelFields).filter(d => !_.isNil(modelFields[d]));
-  const results = nonNullKeys.includes('thumbnail_source') && nonNullKeys.length <= 2 ? await CAGConnection.update({
-    id: modelId,
-    ...modelFields
-  }, keyFn)
-    : await CAGConnection.update({
+  let results = null;
+
+
+  if (nonNullKeys.includes('thumbnail_source') && nonNullKeys.length <= 2) {
+    results = await CAGConnection.update({
       id: modelId,
+      status: currentStatus,
+      is_quantified: currentQuantified,
+      ...modelFields
+    }, keyFn);
+  } else {
+    results = await CAGConnection.update({
+      id: modelId,
+      status: currentStatus,
+      is_quantified: currentQuantified,
       modified_at: moment().valueOf(),
       ...modelFields
     }, keyFn);
+  }
 
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
