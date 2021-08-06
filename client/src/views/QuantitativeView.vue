@@ -316,9 +316,9 @@ export default {
 
       if (_.isEmpty(selectedScenario)) return;
 
-      this.enableOverlay('Running experiment');
 
       // 0. Refresh
+      this.enableOverlay('Synchronizing model');
       if (this.modelSummary.status === 0) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
@@ -328,8 +328,10 @@ export default {
       if (selectedScenario.is_valid === false) {
         modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
       }
+      this.disableOverlay();
 
       // 2. Run experiment and wait for results
+      this.enableOverlay(`Running experiment on ${this.currentEngine}`);
       let experimentId = 0;
       let result = null;
       try {
