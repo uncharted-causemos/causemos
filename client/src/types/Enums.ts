@@ -79,7 +79,7 @@ export enum TemporalAggregationLevel {
   Year = 'year'
 }
 
-export enum SpacialAggregationLevel {
+export enum SpatialAggregationLevel {
   Region = 'region'
 }
 

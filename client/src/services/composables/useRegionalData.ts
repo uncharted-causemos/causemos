@@ -7,7 +7,7 @@ import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { SpacialAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel } from '@/types/Enums';
 import { useStore } from 'vuex';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
@@ -54,7 +54,7 @@ export default function useRegionalData(
     //  for each region when "split by region" is active.
     //  Just return a single outputSpec for all of them.
     const pointsToConvertToOutputSpecs =
-      breakdownOption.value === SpacialAggregationLevel.Region &&
+      breakdownOption.value === SpatialAggregationLevel.Region &&
       selectedTimeseriesPoints.value.length > 0
         ? [selectedTimeseriesPoints.value[0]]
         : selectedTimeseriesPoints.value;
