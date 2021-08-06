@@ -21,6 +21,11 @@ export default function useDatacubeHierarchy(
   selectedScenarioIds: Ref<string[]>,
   metadata: Ref<Model | Indicator | null>
 ) {
+  /**
+   * Contains the lists of regions at each admin level across all timestamps
+   * in the selected model run(s) / indicator. Each entry in the list is a
+   * string of the form 'Ethiopia__Oromia__Oromia Sub-Region'
+   */
   const allRegions = ref<DatacubeGeography>({
     country: [],
     admin1: [],
@@ -42,11 +47,10 @@ export default function useDatacubeHierarchy(
     if (datacubeMetadata === null || _modelRunIds.length === 0) {
       return;
     }
-    // FIXME: this should run once for the whole model,
-    //  rather than arbitrarily for the first scenario
-    // Note that this will only be an issue when we're using these hierarchy
-    //  results to populate the breakdown pane, since currently we're only
-    //  using them when split by region is active (exactly one run is selected)
+    // FIXME: Some planned improvements to this endpoint:
+    //  - pass a list of run IDs to fetch the combined hierarchy at once
+    //  - return hierarchy in DatacubeGeography format (will require a new 'region-list' endpoint)
+    // Ben, August 2021
     const runId = _modelRunIds[0];
 
     let activeFeature = '';
@@ -67,7 +71,6 @@ export default function useDatacubeHierarchy(
         activeFeature
       );
       if (isCancelled) return;
-      // FIXME: would be nice if hierarchy endpoint returned this already in the DatacubeGeography format
       const newValue = {
         country: [] as string[],
         admin1: [] as string[],
