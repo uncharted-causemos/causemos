@@ -152,7 +152,7 @@ export default function useTimeseriesData(
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           // Take the last segment of the region ID to get its display name
           const name = regionIds.value[index].split('__').pop() ?? regionIds.value[index];
-          const id = modelRunIds.value[0];
+          const id = regionIds.value[index];
           const color = colorFromIndex(index);
           return { name, id, color, points };
         });
