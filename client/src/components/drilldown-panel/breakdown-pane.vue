@@ -102,10 +102,19 @@
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import {
+  AdminRegionSets,
+  BreakdownData,
+  NamedBreakdownData
+} from '@/types/Datacubes';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { AggregationOption, TemporalAggregationLevel, SpatialAggregationLevel } from '@/types/Enums';
+import {
+  AggregationOption,
+  TemporalAggregationLevel,
+  SpatialAggregationLevel,
+  AdminLevel
+} from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { getTimestampMillis } from '@/utils/date-util';
 
@@ -172,7 +181,11 @@ export default defineComponent({
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
-    const { regionalData, temporalBreakdownData, selectedBreakdownOption } = toRefs(props);
+    const {
+      regionalData,
+      temporalBreakdownData,
+      selectedBreakdownOption
+    } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
     };
@@ -190,11 +203,15 @@ export default defineComponent({
     };
 
     const availableAdminLevelTitles = computed(() => {
-      if (regionalData.value === null) return [];
-      const adminLevelCount = Object.keys(regionalData.value).length;
-      return ADMIN_LEVEL_KEYS.slice(0, adminLevelCount).map(
-        adminLevel => ADMIN_LEVEL_TITLES[adminLevel]
-      );
+      const _regionalData = regionalData.value;
+      if (_regionalData === null) return [];
+      return Object.values(AdminLevel)
+        .filter(
+          adminLevelKey =>
+            _regionalData[adminLevelKey] !== undefined &&
+            _regionalData[adminLevelKey].length > 0
+        )
+        .map(adminLevel => ADMIN_LEVEL_TITLES[adminLevel]);
     });
 
     const isRegionalDataValid = computed(
@@ -213,8 +230,14 @@ export default defineComponent({
       const options: DropdownItem[] = [];
       options.push({ value: null, displayName: 'none' });
       if (props.selectedScenarioIds.length === 1) {
-        options.push({ value: SpatialAggregationLevel.Region, displayName: 'Split by region' });
-        options.push({ value: selectedTemporalAggregationLevel, displayName: 'Split by year' });
+        options.push({
+          value: SpatialAggregationLevel.Region,
+          displayName: 'Split by region'
+        });
+        options.push({
+          value: selectedTemporalAggregationLevel,
+          displayName: 'Split by year'
+        });
       }
       return options;
     });
