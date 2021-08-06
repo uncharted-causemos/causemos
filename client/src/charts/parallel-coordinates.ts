@@ -608,7 +608,7 @@ function renderParallelCoordinates(
 
       // notify external listeners
       if (notifyExternalListeners) {
-        onLinesSelection(selectedLineData ? [selectedLineData] : []);
+        onLinesSelection(currentLineSelection);
       }
     }
   }
