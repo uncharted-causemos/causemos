@@ -44,6 +44,9 @@ export default function useDatacubeHierarchy(
     }
     // FIXME: this should run once for the whole model,
     //  rather than arbitrarily for the first scenario
+    // Note that this will only be an issue when we're using these hierarchy
+    //  results to populate the breakdown pane, since currently we're only
+    //  using them when split by region is active (exactly one run is selected)
     const runId = _modelRunIds[0];
 
     let activeFeature = '';
@@ -64,7 +67,7 @@ export default function useDatacubeHierarchy(
         activeFeature
       );
       if (isCancelled) return;
-      // FIXME: would be nice if hierarchy endpoint returns this already in the DatacubeGeography form
+      // FIXME: would be nice if hierarchy endpoint returned this already in the DatacubeGeography format
       const newValue = {
         country: [] as string[],
         admin1: [] as string[],
