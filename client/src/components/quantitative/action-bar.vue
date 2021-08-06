@@ -52,7 +52,7 @@
           class="btn btn-primary"
           :style="{background: isModelDirty? '#2A5': '#222'}"
           @click="runModel">
-          Run (debug: {{ modelSummary.status }} {{ draftScenarioDirty }})
+          Run
         </button>
       </li>
     </ul>
