@@ -297,11 +297,15 @@ export default {
         // the assumption here is that each response in the allRawResponses refers to a specific quantitativeAnalyses
         // so we could utilize that to update the stats count
         allRawResponses.forEach((analysesState, indx) => {
-          const analysisContextIDs = analysesState.analysisItems.map(dc => dc.id);
-          contextIDs.push(...analysisContextIDs);
-
-          // save the datacube count
-          this.quantitativeAnalyses[indx].datacubesCount = analysisContextIDs.length;
+          if (analysesState.analysisItems !== undefined) {
+            const analysisContextIDs = analysesState.analysisItems.map(dc => dc.id);
+            contextIDs.push(...analysisContextIDs);
+            // save the datacube count
+            this.quantitativeAnalyses[indx].datacubesCount = analysisContextIDs.length;
+          } else {
+            // save the datacube count
+            this.quantitativeAnalyses[indx].datacubesCount = 0;
+          }
         });
       }
 
@@ -453,11 +457,17 @@ export default {
       });
     },
     async onCreateDataAnalysis() {
+      const initialAnalysisState = { // AnalysisState
+        currentAnalysisId: '',
+        analysisItems: []
+      };
       const analysis = await createAnalysis({
         title: `untitled at ${dateFormatter(Date.now())}`,
-        projectId: this.project
+        projectId: this.project,
+        state: initialAnalysisState
       });
-      await this.updateAnalysisItems({ currentAnalysisId: analysis.id, analysisItems: [] });
+      initialAnalysisState.currentAnalysisId = analysis.id;
+      await this.updateAnalysisItems(initialAnalysisState);
       this.$router.push({
         name: 'dataComparative',
         params: {

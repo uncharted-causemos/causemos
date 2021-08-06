@@ -39,9 +39,9 @@ export const saveAnalysisState = async (analysisId, state) => {
  * @param {string} payload.description Analysis description
  * @param {string} payload.projectId Project Id
  */
-export const createAnalysis = async({ title = '', description = '', projectId } = {}) => {
+export const createAnalysis = async({ title = '', description = '', projectId, state = {} } = {}) => {
   if (!projectId) return console.error(new Error('projectId must be provided'));
-  const result = await API.post('analyses', { title, description, project_id: projectId }, {
+  const result = await API.post('analyses', { title, description, project_id: projectId, state }, {
     headers: {
       'Content-Type': 'application/json'
     }
