@@ -105,7 +105,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { AggregationOption, TemporalAggregationLevel, SpacialAggregationLevel } from '@/types/Enums';
+import { AggregationOption, TemporalAggregationLevel, SpatialAggregationLevel } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { getTimestampMillis } from '@/utils/date-util';
 
@@ -213,7 +213,7 @@ export default defineComponent({
       const options: DropdownItem[] = [];
       options.push({ value: null, displayName: 'none' });
       if (props.selectedScenarioIds.length === 1) {
-        options.push({ value: SpacialAggregationLevel.Region, displayName: 'Split by region' });
+        options.push({ value: SpatialAggregationLevel.Region, displayName: 'Split by region' });
         options.push({ value: selectedTemporalAggregationLevel, displayName: 'Split by year' });
       }
       return options;
