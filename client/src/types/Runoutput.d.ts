@@ -16,6 +16,11 @@ export interface OutputStatWithZoom extends OutputStat {
   zoom: number;
 }
 
+export interface OutputStatsResult {
+  outputSpecId: string;
+  stats: OutputStatWithZoom[];
+}
+
 export interface OutputSpec {
   modelId: string;
   runId: string;

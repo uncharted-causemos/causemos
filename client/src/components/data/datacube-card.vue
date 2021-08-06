@@ -362,6 +362,19 @@ export default defineComponent({
       return metadata.value !== null && isModel(metadata.value);
     });
 
+    // const gridLayerStats = ref<OutputStatsResult[]>([]);
+
+    // watchEffect(async onInvalidate => {
+    //   if (outputSourceSpecs.value.length === 0) return;
+    //   let isCancelled = false;
+    //   onInvalidate(() => {
+    //     isCancelled = true;
+    //   });
+    //   const result = await getRegionAggregations(outputSpecs.value);
+    //   if (isCancelled) return;
+    //   regionalData.value = result;
+    // });
+
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
