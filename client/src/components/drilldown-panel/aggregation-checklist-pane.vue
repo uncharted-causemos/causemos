@@ -315,6 +315,23 @@ export default defineComponent({
           });
         });
       });
+      // Sort top level children (i.e. countries) without values to the bottom
+      //  of the list, since if they had descendants with values, they would
+      //  have values themselves, aggregated up from their descendants
+      const hasOneOrMoreValues = (node: StatefulDataNode) => {
+        return node.values.some(value => value !== null);
+      };
+      newStatefulData.children.sort((nodeA, nodeB) => {
+        if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
+          // A should be sorted after B
+          return 1;
+        } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
+          // B should be sorted after A
+          return -1;
+        }
+        // Don't change their order
+        return 0;
+      });
       statefulData.value = newStatefulData;
     });
 
