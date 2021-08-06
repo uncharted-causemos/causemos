@@ -1,8 +1,17 @@
 import API from '@/api/api';
+import { DatacubeGeography } from '@/types/Common';
 import { AdminLevel } from '@/types/Enums';
-import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation } from '@/types/Runoutput';
+import {
+  OutputSpec,
+  OutputSpecWithId,
+  RegionalAggregations,
+  RegionAgg,
+  RegionalAggregation
+} from '@/types/Runoutput';
 
-export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
+export const getRegionAggregation = async (
+  spec: OutputSpec
+): Promise<RegionalAggregation> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
   //       Meanwhile just ignore the error.
   try {
@@ -23,23 +32,54 @@ export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAg
   }
 };
 
-export const getRegionAggregations = async (specs: OutputSpecWithId[]): Promise<RegionalAggregations> => {
+export const getRegionAggregations = async (
+  specs: OutputSpecWithId[],
+  allRegions: DatacubeGeography
+): Promise<RegionalAggregations> => {
   // Fetch and restructure the result
   const results = await Promise.all(specs.map(getRegionAggregation));
 
+  // FIXME: we have to do a bunch of Typescript shenanigans because in some
+  //  parts of the app we go up to admin level 6, and in others just to admin
+  //  level 3.
   const dict = {
     country: {},
     admin1: {},
     admin2: {},
     admin3: {}
   } as {
-    [key in AdminLevel]: {[key: string]: RegionAgg };
+    [key in AdminLevel]: { [key: string]: RegionAgg };
   };
+  // FIXME: cast to make compatible with objects indexed by AdminLevel
+  const _allRegions = allRegions as { [key in AdminLevel]: string[] };
+  // Initialize dict with an entry for each region in the entire hierarchy,
+  //  regardless of whether it exists in the fetched results
+  Object.values(AdminLevel).forEach(adminLevel => {
+    const selectedDictEntry = dict[adminLevel];
+    if (_allRegions[adminLevel] !== undefined) {
+      _allRegions[adminLevel].forEach(regionId => {
+        // Sanity check
+        if (selectedDictEntry[regionId] !== undefined) {
+          console.error(
+            `Hierarchy data contains duplicate entry for "${regionId}"`
+          );
+          return;
+        }
+        selectedDictEntry[regionId] = { id: regionId, values: {} };
+      });
+    }
+  });
+  // Insert results into the hierarchy
   results.forEach((result, index) => {
     Object.values(AdminLevel).forEach(level => {
       (result[level] || []).forEach(item => {
         if (!dict[level][item.id]) {
-          dict[level][item.id] = { id: item.id, values: {} };
+          console.error(
+            "getRegionAggregation returned a region that doesn't exist in the hierarchy",
+            item.id,
+            allRegions
+          );
+          return;
         }
         dict[level][item.id].values[specs[index].id] = item.value;
       });

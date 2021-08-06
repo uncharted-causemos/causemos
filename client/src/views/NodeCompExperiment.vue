@@ -326,7 +326,8 @@ export default defineComponent({
       selectedTemporalResolution,
       metadata,
       selectedTimeseriesPoints,
-      breakdownOption
+      breakdownOption,
+      ref(null)
     );
 
     const stepsBeforeCanConfirm = computed(() => {

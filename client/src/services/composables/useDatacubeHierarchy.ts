@@ -26,12 +26,7 @@ export default function useDatacubeHierarchy(
    * in the selected model run(s) / indicator. Each entry in the list is a
    * string of the form 'Ethiopia__Oromia__Oromia Sub-Region'
    */
-  const allRegions = ref<DatacubeGeography>({
-    country: [],
-    admin1: [],
-    admin2: [],
-    admin3: []
-  });
+  const datacubeHierarchy = ref<DatacubeGeography | null>(null);
   const store = useStore();
   const datacubeCurrentOutputsMap = computed(
     () => store.getters['app/datacubeCurrentOutputsMap']
@@ -91,11 +86,11 @@ export default function useDatacubeHierarchy(
           newValue.admin3.push(regionId);
         }
       });
-      allRegions.value = newValue;
+      datacubeHierarchy.value = newValue;
     } catch {}
   });
 
   return {
-    allRegions
+    datacubeHierarchy
   };
 }

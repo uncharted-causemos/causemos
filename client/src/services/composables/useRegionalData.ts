@@ -9,6 +9,7 @@ import { AdminRegionSets } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { SpatialAggregationLevel } from '@/types/Enums';
 import { useStore } from 'vuex';
+import { DatacubeGeography } from '@/types/Common';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -23,7 +24,8 @@ export default function useRegionalData(
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
-  breakdownOption: Ref<string | null>
+  breakdownOption: Ref<string | null>,
+  datacubeHierarchy: Ref<DatacubeGeography | null>
 ) {
   const store = useStore();
   const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -72,12 +74,17 @@ export default function useRegionalData(
   });
   watchEffect(async onInvalidate => {
     regionalData.value = null;
-    if (outputSpecs.value.length === 0) return;
+    // FIXME: OPTIMIZATION: if we're careful, we can rearrange things so that the
+    //  getRegionAggregations call doesn't have to wait until the datacubeHierarchy is ready
+    if (outputSpecs.value.length === 0 || datacubeHierarchy.value === null) return;
     let isCancelled = false;
     onInvalidate(() => {
       isCancelled = true;
     });
-    const result = await getRegionAggregations(outputSpecs.value);
+    const result = await getRegionAggregations(
+      outputSpecs.value,
+      datacubeHierarchy.value
+    );
     if (isCancelled) return;
     regionalData.value = result;
   });

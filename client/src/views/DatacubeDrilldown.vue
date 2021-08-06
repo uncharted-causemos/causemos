@@ -274,7 +274,7 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
-    const { allRegions } = useDatacubeHierarchy(selectedScenarioIds, metadata);
+    const { datacubeHierarchy } = useDatacubeHierarchy(selectedScenarioIds, metadata);
 
     const timeInterval = 10000;
 
@@ -357,8 +357,12 @@ export default defineComponent({
 
     const selectedLevelIds = computed(() => {
       const selectedAdminLevelKey = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
-      if (selectedAdminLevelKey === 'admin4' || selectedAdminLevelKey === 'admin5') return [];
-      const regionsAtSelectedLevel = allRegions.value[selectedAdminLevelKey];
+      if (
+        datacubeHierarchy.value === null ||
+        selectedAdminLevelKey === 'admin4' ||
+        selectedAdminLevelKey === 'admin5'
+      ) return [];
+      const regionsAtSelectedLevel = datacubeHierarchy.value[selectedAdminLevelKey];
       const deselected = deselectedRegionIds.value[selectedAdminLevelKey];
       return regionsAtSelectedLevel.filter(region => !deselected.has(region))
         .slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
@@ -404,7 +408,8 @@ export default defineComponent({
       selectedTemporalResolution,
       metadata,
       selectedTimeseriesPoints,
-      breakdownOption
+      breakdownOption,
+      datacubeHierarchy
     );
 
     watchEffect(() => {
