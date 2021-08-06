@@ -130,18 +130,18 @@ export default {
       setContextId: 'insightPanel/setContextId'
     }),
     async refreshModel() {
-      this.enableOverlay();
+      this.enableOverlay('Getting model data');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
       this.modelComponents = await modelService.getComponents(this.currentCAG);
       this.disableOverlay();
     },
     async refresh() {
       // Basic model data
+      this.enableOverlay('Loading');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
       let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
-      console.log('check quantified', this.modelSummary.is_quantified);
       // 1. If we have no scenarios at all, then we must sync with inference engines
       // 2. If we have topology changes, then we should sync with inference engines
       if (scenarios.length === 0 || this.modelSummary.is_quantified === false) {
@@ -153,14 +153,29 @@ export default {
           console.error(errors);
           return;
         }
-      }
-      await this.refreshModel();
 
+        // FIXME: Quickie hack to set scenarios to invalid because of resync
+        scenarios.forEach(s => {
+          s.is_valid = false;
+        });
+      }
+      this.disableOverlay();
+
+      await this.refreshModel();
 
       if (scenarios.length === 0) {
         // Now we are up to date, create base scenario
-        await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
-        scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+        this.enableOverlay('Creating baseline scenario');
+        try {
+          await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+          scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+        } catch (error) {
+          console.error(error);
+          this.toaster(error, 'error', true);
+          this.disableOverlay();
+          return;
+        }
+        this.disableOverlay();
       }
 
       // Check if draft scenario is in play
@@ -178,6 +193,12 @@ export default {
         scenarioId = scenarios.find(d => d.is_baseline).id;
       }
       this.setSelectedScenarioId(scenarioId);
+
+
+      const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      if (selectedScenario && selectedScenario.is_valid === false) {
+        this.runScenario();
+      }
     },
     revertDraftChanges() {
       if (!_.isNil(this.previousScenarioId)) {
@@ -295,9 +316,9 @@ export default {
 
       if (_.isEmpty(selectedScenario)) return;
 
-      this.enableOverlay('Running experiment');
 
       // 0. Refresh
+      this.enableOverlay('Synchronizing model');
       if (this.modelSummary.status === 0) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
@@ -307,8 +328,10 @@ export default {
       if (selectedScenario.is_valid === false) {
         modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
       }
+      this.disableOverlay();
 
       // 2. Run experiment and wait for results
+      this.enableOverlay(`Running experiment on ${this.currentEngine}`);
       let experimentId = 0;
       let result = null;
       try {
