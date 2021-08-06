@@ -171,7 +171,7 @@ export default {
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
-          this.toaster(error, 'error', true);
+          this.toaster(error && error.message ? error.message : error, 'error', true);
           this.disableOverlay();
           return;
         }
