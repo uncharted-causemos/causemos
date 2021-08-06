@@ -1,22 +1,26 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, SpatialAggregationLevel } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
+import { applyRelativeTo } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
+import { useStore } from 'vuex';
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
   breakdownOption: string | null
 ): Timeseries[] => {
-  if (breakdownOption === null || timeseriesData.length !== 1) {
+  if (
+    breakdownOption === null ||
+    breakdownOption === SpatialAggregationLevel.Region ||
+    timeseriesData.length !== 1
+  ) {
     return timeseriesData;
   }
-  // FIXME: Still need to add logic for breaking down timeseries by other
-  //  temporal aggregation levels and by other facets of the data
   const onlyTimeseries = timeseriesData[0].points;
   const brokenDownByYear = _.groupBy(onlyTimeseries, point =>
     getYearFromTimestamp(point.timestamp)
@@ -41,50 +45,6 @@ const applyBreakdown = (
     });
 };
 
-const applyRelativeTo = (
-  timeseriesData: Timeseries[],
-  relativeTo: string | null
-) => {
-  const baselineData = timeseriesData.find(
-    timeseries => timeseries.id === relativeTo
-  );
-  if (
-    relativeTo === null ||
-    timeseriesData.length < 2 ||
-    baselineData === undefined
-  ) {
-    return {
-      baselineMetadata: null,
-      timeseriesData
-    };
-  }
-  // User wants to display data relative to one run
-  const returnValue: Timeseries[] = [];
-  timeseriesData.forEach(timeseries => {
-    // Adjust values
-    const { id, name, color, points } = timeseries;
-    const adjustedPoints = points.map(({ timestamp, value }) => {
-      const baselineValue =
-        baselineData.points.find(point => point.timestamp === timestamp)
-          ?.value ?? 0;
-      return {
-        timestamp,
-        value: value - baselineValue
-      };
-    });
-    returnValue.push({
-      id,
-      name,
-      color,
-      points: adjustedPoints
-    });
-  });
-  const baselineMetadata = {
-    name: baselineData.name,
-    color: baselineData.color
-  };
-  return { baselineMetadata, timeseriesData: returnValue };
-};
 
 /**
  * Takes a data ID, a list of model run IDs, and a colouring function,
@@ -101,23 +61,31 @@ export default function useTimeseriesData(
   selectedSpatialAggregation: Ref<string>,
   breakdownOption: Ref<string | null>,
   selectedTimestamp: Ref<number | null>,
-  onNewLastTimestamp: (lastTimestamp: number) => void
+  onNewLastTimestamp: (lastTimestamp: number) => void,
+  regionIds: Ref<string[]>
 ) {
+  const store = useStore();
+  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
   const rawTimeseriesData = ref<Timeseries[]>([]);
 
   watchEffect(onInvalidate => {
+    const modelMetadata = metadata.value;
     if (
       modelRunIds.value.length === 0 ||
-      metadata.value === null
+      modelMetadata === null
     ) {
       // Don't have the information needed to fetch the data
       return;
     }
-    const outputs = metadata.value.validatedOutputs
-      ? metadata.value.validatedOutputs
-      : metadata.value.outputs;
-    const defaultOutputIndex = metadata?.value.validatedOutputs?.findIndex(
-      o => o.name === metadata.value?.default_feature) ?? 0;
+    let activeFeature = '';
+    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
+    if (currentOutputEntry !== undefined) {
+      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
+      activeFeature = outputs[currentOutputEntry].name;
+    } else {
+      activeFeature = modelMetadata.default_feature ?? '';
+    }
+    const activeDataId = modelMetadata.data_id;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
@@ -133,23 +101,46 @@ export default function useTimeseriesData(
         selectedSpatialAggregation.value !== ''
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
-      const mainFeatureName = outputs[defaultOutputIndex].name;
 
-      const promises = modelRunIds.value.map(runId =>
-        API.get('maas/output/timeseries', {
-          params: {
-            data_id: dataId.value,
-            run_id: runId,
-            feature: mainFeatureName,
-            resolution: temporalRes,
-            temporal_agg: temporalAgg,
-            spatial_agg: spatialAgg
-          }
-        })
-      );
-      const fetchResults = (await Promise.all(promises)).map(response =>
-        Array.isArray(response.data) ? response.data : JSON.parse(response.data)
-      );
+      let promises = [];
+      if (breakdownOption.value === SpatialAggregationLevel.Region) {
+        promises = regionIds.value.map((regionId) => {
+          return API.get('maas/output/timeseries', {
+            params: {
+              data_id: activeDataId,
+              run_id: modelRunIds.value[0],
+              feature: activeFeature,
+              resolution: temporalRes,
+              temporal_agg: temporalAgg,
+              spatial_agg: spatialAgg,
+              region_id: regionId
+            }
+          }).catch(() => {
+            // FIXME: we're getting way more regions back from the hierarchy endpoint
+            //  than we seemingly have data for
+            console.error(`Failed to fetch timeseries for ${regionId}`);
+            return null;
+          });
+        });
+      } else {
+        promises = modelRunIds.value.map((runId) => {
+          return API.get('maas/output/timeseries', {
+            params: {
+              data_id: activeDataId,
+              run_id: runId,
+              feature: activeFeature,
+              resolution: temporalRes,
+              temporal_agg: temporalAgg,
+              spatial_agg: spatialAgg
+            }
+          });
+        });
+      }
+      const fetchResults = (await Promise.all(promises))
+        .filter(response => response !== null)
+        .map((response: any) =>
+          Array.isArray(response.data) ? response.data : JSON.parse(response.data)
+        );
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
@@ -157,16 +148,27 @@ export default function useTimeseriesData(
       }
       // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
-      rawTimeseriesData.value = fetchResults.map((points, index) => {
-        const name = `Run ${index}`;
-        const id = modelRunIds.value[index];
-        const color = colorFromIndex(index);
-        return { name, id, color, points };
-      });
+      if (breakdownOption.value === SpatialAggregationLevel.Region) {
+        rawTimeseriesData.value = fetchResults.map((points, index) => {
+          // Take the last segment of the region ID to get its display name
+          const name = regionIds.value[index].split('__').pop() ?? regionIds.value[index];
+          const id = regionIds.value[index];
+          const color = colorFromIndex(index);
+          return { name, id, color, points };
+        });
+      } else {
+        rawTimeseriesData.value = fetchResults.map((points, index) => {
+          const name = `Run ${index}`;
+          const id = modelRunIds.value[index];
+          const color = colorFromIndex(index);
+          return { name, id, color, points };
+        });
+      }
     }
     onInvalidate(() => {
       isCancelled = true;
     });
+
     fetchTimeseries();
   });
 
@@ -177,7 +179,7 @@ export default function useTimeseriesData(
     () => [modelRunIds.value],
     () => {
       relativeTo.value = null;
-      breakdownOption.value = null;
+      // breakdownOption.value = null;
     },
     {
       immediate: true

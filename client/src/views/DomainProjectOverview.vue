@@ -51,8 +51,8 @@
     </div>
     <hr />
     <div class="col-md-12">
-      <div class="col-md-3" style="backgroundColor: white; height: 75vh">
-        <list-context-insight-pane />
+      <div class="col-md-3 max-content-height" style="backgroundColor: white; padding-top: 1rem">
+        <list-context-insight-pane :allow-new-insights="false" />
       </div>
       <div class="col-md-9">
         <div class="row">
@@ -93,7 +93,7 @@
           </div>
         </div>
         <div class="row projects-list">
-          <div class="instances-list-elements">
+          <div class="instances-list-elements max-content-height">
             <div
               v-for="instance in filteredDatacubeInstances"
               :key="instance.id">
@@ -165,18 +165,23 @@ export default {
   },
   async mounted() {
     this.fetchDatacubeInstances();
+
+    // ensure the insight explorer panel is closed in case the user has
+    //  previously opened it and clicked the browser back button
+    this.hideInsightPanel();
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setContextId: 'insightPanel/setContextId',
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds'
     }),
     updateDesc() {
       if (this.isEditingDesc) {
         // we may have just modified the desc text, so update the server value
-        domainProjectService.updateDomainProject(this.projectMetadata.name, { description: this.projectMetadata.description });
+        domainProjectService.updateDomainProject(this.project, { description: this.projectMetadata.description });
       }
       this.isEditingDesc = !this.isEditingDesc;
     },
@@ -194,7 +199,12 @@ export default {
       this.datacubeInstances = await getDatacubes(newFilters);
 
       // set context id as the current family name
-      this.setContextId(this.projectMetadata.name);
+      if (this.datacubeInstances.length > 0) {
+        // context-id should be an array to fetch insights for each and every model instance
+        const contextIDs = this.datacubeInstances.map(dc => dc.id);
+        this.setContextId(contextIDs);
+      }
+
       // reset to avoid invalid data fetch when a given instance it loaded
       //  while the info of a previous instance is cached in the store
       this.setSelectedScenarioIds([]);
@@ -208,6 +218,24 @@ export default {
       // unpublish the datacube instance
       instance.status = DatacubeStatus.Registered;
       await updateDatacube(instance.id, instance);
+
+      // also, update the project stats count
+      const domainProject = await domainProjectService.getProject(this.project);
+      // add the instance to list of draft instances
+      const updatedDraftInstances = domainProject.draft_instances;
+      if (!updatedDraftInstances.includes(instance.name)) {
+        updatedDraftInstances.push(instance.name);
+      }
+      // remove the instance from the list of ready/published instances
+      const updatedReadyInstances = domainProject.ready_instances.filter(n => n !== instance.name);
+      // update the project doc at the server
+      domainProjectService.updateDomainProject(
+        this.project,
+        {
+          draft_instances: updatedDraftInstances,
+          ready_instances: updatedReadyInstances
+        }
+      );
     },
     toggleSortingDropdownDatacubeInstances() {
       this.showSortingDropdownDatacubeInstances = !this.showSortingDropdownDatacubeInstances;
@@ -280,8 +308,11 @@ $padding-size: 3vh;
   font-size: x-large;
 }
 
+.max-content-height {
+  height: 60vh;
+}
+
 .instances-list-elements {
-  height: 75vh;
   overflow-y: auto;
 }
 

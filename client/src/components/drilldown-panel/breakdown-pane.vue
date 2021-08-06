@@ -9,7 +9,7 @@
     <dropdown-button
       v-else
       class="breakdown-option-dropdown"
-      :items="BREAKDOWN_OPTIONS"
+      :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
       @item-selected="emitBreakdownOptionSelection"
     />
@@ -102,26 +102,15 @@
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import dateFormatter from '@/formatters/date-formatter';
-import {
-  AdminRegionSets,
-  BreakdownData,
-  NamedBreakdownData
-} from '@/types/Datacubes';
-import { ADMIN_LEVEL_TITLES, ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { AdminRegionSets, BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { TemporalAggregationLevel, AggregationOption } from '@/types/Enums';
+import { AggregationOption, TemporalAggregationLevel, SpatialAggregationLevel } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { getTimestamp } from '@/utils/date-util';
+import { getTimestampMillis } from '@/utils/date-util';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
-
-// Breakdown options are hardcoded, but eventually should be dynamically populated
-// based on the various "breakdownData" types that the selected datacube includes
-const BREAKDOWN_OPTIONS: DropdownItem[] = [
-  { value: null, displayName: 'none' },
-  { value: selectedTemporalAggregationLevel, displayName: 'Split by year' }
-];
 
 export default defineComponent({
   components: { aggregationChecklistPane, DropdownButton },
@@ -220,15 +209,23 @@ export default defineComponent({
         Object.keys(temporalBreakdownData.value).length !== 0
     );
 
+    const breakdownOptions = computed(() => {
+      const options: DropdownItem[] = [];
+      options.push({ value: null, displayName: 'none' });
+      if (props.selectedScenarioIds.length === 1) {
+        options.push({ value: SpatialAggregationLevel.Region, displayName: 'Split by region' });
+        options.push({ value: selectedTemporalAggregationLevel, displayName: 'Split by year' });
+      }
+      return options;
+    });
+
     const timestampFormatter = (timestamp: number) => {
-      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
-      //  and be consistent.
       if (selectedBreakdownOption.value === TemporalAggregationLevel.Year) {
         const month = timestamp;
         // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestamp(1970, month) * 1000, 'MMMM');
+        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
       }
-      return dateFormatter(timestamp * 1000, 'MMMM YYYY');
+      return dateFormatter(timestamp, 'MMMM YYYY');
     };
 
     return {
@@ -239,7 +236,7 @@ export default defineComponent({
       ADMIN_LEVEL_KEYS,
       setAllRegionsSelected,
       emitBreakdownOptionSelection,
-      BREAKDOWN_OPTIONS,
+      breakdownOptions,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
       AggregationOption

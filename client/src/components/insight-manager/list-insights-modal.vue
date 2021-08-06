@@ -5,10 +5,23 @@
       nav-back-label="Exit Saved Insights"
       @close="closeInsightPanel"
     >
-      <template #trailing>
-        <insight-control-menu />
-      </template>
     </full-screen-modal-header>
+
+    <modal-confirmation
+      v-if="showModal"
+      :autofocus-confirm="false"
+      @confirm="redirectToAnalysisInsight"
+      @close="showModal = false"
+    >
+      <template #title>Applying Analysis Insight</template>
+      <template #message>
+        <p>Are you sure you want to redirect to the relevant analysis project and apply the insight?</p>
+        <message-display
+          :message="'Warning: This action will take you out of the current flow.'"
+          :message-type="'alert-warning'"
+        />
+      </template>
+    </modal-confirmation>
 
     <div class="tab-controls">
       <tab-bar
@@ -67,7 +80,7 @@
           </div>
           <div class="pane-wrapper">
             <div
-              v-if="countInsights > 0"
+              v-if="searchedInsights.length > 0"
               class="pane-content"
             >
               <insight-card
@@ -77,7 +90,7 @@
                 :curated="isCuratedInsight(insight.id)"
                 :key="insight.id"
                 :insight="insight"
-                @delete-insight="deleteInsight(insight.id)"
+                @delete-insight="removeInsight(insight.id)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
                 @update-curation="updateCuration(insight.id)"
@@ -108,14 +121,14 @@
               style="margin-bottom: 5rem;">
               <h3 class="analysis-question">{{questionItem.question}}</h3>
               <insight-card
-                v-for="insightId in questionItem.linked_insights"
-                :key="insightId"
-                :insight="insightsById(insightId)"
+                v-for="insight in fullLinkedInsights(questionItem.linked_insights)"
+                :key="insight.id"
+                :insight="insight"
                 :show-description="true"
                 :show-question="false"
-                @delete-insight="deleteInsight(insightId)"
-                @open-editor="openEditor(insightId)"
-                @select-insight="selectInsight(insightsById(insightId))"
+                @delete-insight="removeInsight(insight.id)"
+                @open-editor="openEditor(insight.id)"
+                @select-insight="selectInsight(insight)"
               />
             </div>
           </div>
@@ -135,25 +148,25 @@ import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
 import { mapGetters, mapActions, useStore } from 'vuex';
-import API from '@/api/api';
 
 import { INSIGHTS } from '@/utils/messages-util';
 
 import InsightCard from '@/components/insight-manager/insight-card';
 import DropdownControl from '@/components/dropdown-control';
-import MessageDisplay from '@/components/widgets/message-display';
 import TabBar from '@/components/widgets/tab-bar';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
-import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 import router from '@/router';
-import { getAllInsights } from '@/services/insight-service';
-import { ref, watchEffect, computed } from 'vue';
+import { deleteInsight } from '@/services/insight-service';
+import { computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
-
+import useInsightsData from '@/services/composables/useInsightsData';
+import { ProjectType } from '@/types/Enums';
+import ModalConfirmation from '@/components/modals/modal-confirmation';
+import MessageDisplay from '@/components/widgets/message-display';
 
 const INSIGHT_TABS = [
   {
@@ -172,8 +185,8 @@ export default {
     DropdownControl,
     FullScreenModalHeader,
     InsightCard,
-    InsightControlMenu,
     MessageDisplay,
+    ModalConfirmation,
     TabBar,
     AnalyticalQuestionsPanel
   },
@@ -185,48 +198,41 @@ export default {
     messageNoData: INSIGHTS.NO_DATA,
     search: '',
     selectedInsight: null,
-    tabs: INSIGHT_TABS
+    tabs: INSIGHT_TABS,
+    showModal: false,
+    redirectInsightUrl: ''
   }),
   setup() {
-    const listInsights = ref([]);
     const store = useStore();
-    const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['app/project']);
-
     const questions = computed(() => store.getters['analysisChecklist/questions']);
 
     const insightsById = (id) => listInsights.value.find(i => i.id === id);
 
-    // FIXME: refactor into a composable
-    watchEffect(onInvalidate => {
-      let isCancelled = false;
-      async function fetchInsights() {
-        const insights = await getAllInsights(project.value, contextId.value);
-        if (isCancelled) {
-          // Dependencies have changed since the fetch started, so ignore the
-          //  fetch results to avoid a race condition.
-          return;
+    const fullLinkedInsights = (linked_insights) => {
+      const result = [];
+      linked_insights.forEach(insightId => {
+        const ins = insightsById(insightId);
+        if (ins) {
+          result.push(ins);
         }
-        listInsights.value = insights;
-        store.dispatch('insightPanel/setCountInsights', listInsights.value.length);
-      }
-      onInvalidate(() => {
-        isCancelled = true;
       });
-      fetchInsights();
-    });
+      return result;
+    };
+
+    const { insights: listInsights, reFetchInsights } = useInsightsData();
+
     return {
       listInsights,
-      contextId,
-      project,
       questions,
-      insightsById
+      fullLinkedInsights,
+      reFetchInsights
     };
   },
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countInsights: 'insightPanel/countInsights'
+      countInsights: 'insightPanel/countInsights',
+      projectType: 'app/projectType'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -268,6 +274,13 @@ export default {
       this.activeInsight = null;
       this.selectedInsight = null;
     },
+    redirectToAnalysisInsight() {
+      if (this.redirectInsightUrl !== '') {
+        this.$router.push(this.redirectInsightUrl);
+      }
+      this.showModal = false;
+      this.redirectInsightUrl = '';
+    },
     startDrag(evt, insight) {
       evt.currentTarget.style.border = '3px dashed black';
 
@@ -298,16 +311,16 @@ export default {
 
       evt.currentTarget.style.border = 'none';
     },
-    deleteInsight(id) {
-      API.delete(`insights/${id}`).then(result => {
+    removeInsight(id) {
+      deleteInsight(id).then(result => {
         const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
         if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
           const count = this.countInsights - 1;
           this.setCountInsights(count);
           this.removeCuration(id);
-          this.refresh();
-        } else {
+          // refresh the latest list from the server
+          this.reFetchInsights();
           this.toaster(message, 'error', true);
         }
       });
@@ -321,8 +334,15 @@ export default {
         return this.listInsights;
       }
     },
-    getSourceUrlForExport(i) {
-      return i.url + '?insight_id=' + i.id;
+    getSourceUrlForExport(insightURL, insightId) {
+      if (insightURL.includes('insight_id')) return insightURL;
+      // is the url has some params already at its end?
+      if (insightURL.includes('?') && insightURL.includes('=')) {
+        // append
+        return insightURL + '&insight_id=' + insightId;
+      }
+      // add
+      return insightURL + '?insight_id=' + insightId;
     },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexingly uses pixels
@@ -401,7 +421,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(this.getSourceUrlForExport(i))
+                  link: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
                 })
               ]
             })
@@ -468,7 +488,7 @@ export default {
               bold: true,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i))
+                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
               }
             }
           },
@@ -490,7 +510,7 @@ export default {
               break: false,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i))
+                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
               }
             }
           },
@@ -544,11 +564,6 @@ export default {
     openExport() {
       this.exportActive = true;
     },
-    async refresh() {
-      const listInsights = await getAllInsights(this.project, this.contextId);
-      this.listInsights = listInsights;
-      this.setCountInsights(listInsights.length);
-    },
     removeCuration(id) {
       this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
     },
@@ -576,8 +591,22 @@ export default {
       const savedURL = insight.url;
       const currentURL = this.$route.fullPath;
       if (savedURL !== currentURL) {
-        // FIXME: refactor and use getSourceUrlForExport() to retrive final url with insight_id appended
-        const finalURL = savedURL.includes('insight_id') ? savedURL : savedURL + '?insight_id=' + this.selectedInsight.id;
+        // FIXME: applying (private) insights that belong to analyses that no longer exist
+        // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
+
+        // add 'insight_id' as a URL param so that the target page can apply it
+        const finalURL = this.getSourceUrlForExport(savedURL, this.selectedInsight.id);
+
+        // special case
+        if (this.projectType !== ProjectType.Analysis && this.selectedInsight.visibility === 'private') {
+          // this is a private insight created by an analyst:
+          // when applying this insight from within a domain project, it will redirect to the relevant analysis project
+          // so show a warning before leaving
+          this.redirectInsightUrl = finalURL;
+          this.showWarningModal();
+          return;
+        }
+
         this.$router.push(finalURL);
       } else {
         router.push({
@@ -587,6 +616,9 @@ export default {
         }).catch(() => {});
       }
       this.closeInsightPanel();
+    },
+    showWarningModal() {
+      this.showModal = true;
     },
     slideURL(slideURL) {
       return `${window.location.protocol}//${window.location.host}/#${slideURL}`;

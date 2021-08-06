@@ -98,6 +98,10 @@ export const CAG = {
   ERRONEOUS_DUPLICATE: 'There was an error in duplicating the CAG. Try again'
 };
 
+export const QUANTIFICATION = {
+  ERRONEOUS_PARAMETER_CHANGE: 'Unable to save node parameter changes.'
+};
+
 export const ANALYSIS = {
   SUCCESSFUL_DELETION: 'Analysis succesfully deleted',
   ERRONEOUS_DELETION: 'There was an error in deleting the Analysis. Try again',

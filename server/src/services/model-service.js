@@ -2,7 +2,6 @@ const _ = require('lodash');
 const moment = require('moment');
 const delphiUtil = require('../util/delphi-util');
 const Logger = rootRequire('/config/logger');
-const uuid = require('uuid');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const modelUtil = rootRequire('/util/model-util');
@@ -47,6 +46,42 @@ const findOne = async (modelId) => {
   });
 
   return model;
+};
+
+/**
+ * Get the number of Edges and Nodes for each model passed in
+ *
+ * @param {Array<String>} modelIDs - a list of model ID's for which stats will be returned for
+ */
+const getModelStats = async (modelIDs) => {
+  const dict = {};
+
+  const nodesAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+  const nodeResult = await nodesAdapter.getFacets('model_id', [
+    {
+      field: 'model_id',
+      value: modelIDs
+    }
+  ]);
+  // dict[pair.key] = { edgeCount: pair.doc_count };
+  nodeResult.forEach(pair => {
+    dict[pair.key] = { nodeCount: pair.doc_count };
+  });
+
+  const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  const edgeResult = await edgeAdapter.getFacets('model_id', [
+    {
+      field: 'model_id',
+      value: modelIDs
+    }
+  ]);
+
+  // dict[pair.key].nodeCount = pair.doc_count;
+  edgeResult.forEach(pair => {
+    dict[pair.key].edgeCount = pair.doc_count;
+  });
+
+  return dict;
 };
 
 
@@ -251,7 +286,10 @@ const buildProjectionPayload = async (modelId, engine, projectionStart, numTimeS
 
   let payload = {};
   const startTime = projectionStartDate.valueOf();
-  const endTime = projectionStartDate.add(numTimeSteps, 'M').valueOf();
+  // Subtract 1 from numTimeSteps here so, for example, if the start date is Jan 1
+  //  and numTimeSteps is 2, the last timestamp will be on Feb 1 instead of Mar 1.
+  // endTime should be thought of as the last timestamp that will be returned.
+  const endTime = projectionStartDate.add(numTimeSteps - 1, 'M').valueOf();
   const constraints = _.isEmpty(parameters) ? [] : parameters;
   payload = {
     experimentType: EXPERIMENT_TYPE.PROJECTION,
@@ -386,73 +424,53 @@ const clearNodeParameter = async (modelId, nodeId) => {
   }
 };
 
-
-/**
- * Technically speaking we need to request initial_value from the engines
- *
- * @param {string} modeLId,
- * @param {object} nodeParameter
- * @param {array} nodeParameter.indicator_time_series
- * @param {string} nodeParameter.indicator_name
- * @param {object} nodeParameter.indicator_time_series_parameter
- * @param {float} nodeParameter.initial_value
- */
-// const updateNodeParameter = async(modelId, nodeParameter) => {
-//   const model = await findOne(modelId);
-//   const parameter = model.parameter;
-//   const timeSeriesStart = parameter.indicator_time_series_range.start;
-//   const timeSeriesEnd = parameter.indicator_time_series_range.end;
-//   const engine = parameter.engine;
-//
-//   // Register update with engine and retrieve new value
-//   if (engine === 'dyse') {
-//     dyseS
-//   } else {
-//     throw new Error(`updateNodeParameter not implemented for ${engine}`);
-//   }
-// };
-
-
 /**
  *
  */
-const buildNodeParametersPayload = (nodeParameters, startTime, endTime) => {
+const buildNodeParametersPayload = (nodeParameters, model) => {
   const r = {};
 
-  const NO_INDICATOR_DEFAULT = () => ({
-    numLevels: NUM_LEVELS,
-    minValue: 0,
-    maxValue: 1,
-    name: 'dummy indicator ' + uuid(),
-    values: []
-  });
+  const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
   nodeParameters.forEach(np => {
-    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func') || 'last';
+    const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
 
     if (_.isEmpty(np.parameter)) {
-      r[np.concept] = NO_INDICATOR_DEFAULT();
+      throw new Error(`${np.concept} is not parameterized`);
     } else {
-      const indicatorTimeSeries = _.get(np.parameter, 'indicator_time_series', []);
-      const filteredTimeSeries = indicatorTimeSeries.filter(d => d.timestamp >= startTime && d.timestamp <= endTime);
+      let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
-      if (_.isEmpty(filteredTimeSeries)) {
-        r[np.concept] = NO_INDICATOR_DEFAULT();
-      } else {
-        const values = filteredTimeSeries.map(d => d.value);
-        const { max, min } = modelUtil.projectionValueRange(values);
-
-        r[np.concept] = {
-          name: np.parameter.indicator_name,
-          minValue: min,
-          maxValue: max,
-          func: valueFunc,
-          values: filteredTimeSeries,
-          numLevels: NUM_LEVELS,
-          resolution: _.get(np.parameter, 'resolution', 'month'),
-          period: _.get(np.parameter, 'period', 12)
-        };
+      if (_.isEmpty(indicatorTimeSeries)) {
+        // FIXME: Temporary fallback so engines don't blow up - July 2021
+        indicatorTimeSeries = [
+          { value: 0.0, timestamp: Date.UTC(2017, 0) },
+          { value: 0.0, timestamp: Date.UTC(2017, 1) },
+          { value: 0.0, timestamp: Date.UTC(2017, 2) }
+        ];
       }
+
+      // More hack: DySE needs at least 2 data points
+      if (indicatorTimeSeries.length === 1) {
+        const timestamp = indicatorTimeSeries[0].timestamp;
+        const prevTimestamp = moment.utc(timestamp).subtract(1, 'months').valueOf();
+        indicatorTimeSeries.unshift({
+          value: indicatorTimeSeries[0].value,
+          timestamp: prevTimestamp
+        });
+      }
+
+
+      r[np.concept] = {
+        name: np.parameter.name,
+        minValue: _.get(np.parameter, 'min', 0),
+        maxValue: _.get(np.parameter, 'max', 1),
+        func: valueFunc,
+        values: indicatorTimeSeries,
+        numLevels: NUM_LEVELS,
+        resolution: _.get(np.parameter, 'temporalResolution', 'month'),
+        period: _.get(np.parameter, 'period', 12)
+      };
     }
   });
   return r;
@@ -474,18 +492,10 @@ const buildEdgeParametersPayload = (edgeParameters) => {
   return r;
 };
 
-
-/**
- * TODO: Check if model validation check is required for Delphi or DySE:
- * Previous validation rules for Delphi engine were:
- * 1. check that there are no unknowns
- *
- * September 3rd 2020 Tom Choi
- */
-
 module.exports = {
   find,
   findOne,
+  getModelStats,
   buildModelStatements,
   setInitialParameters,
   buildProjectionPayload,

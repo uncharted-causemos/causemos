@@ -1,3 +1,4 @@
+const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const domainProjectService = rootRequire('/services/domain-project-service');
 
@@ -32,12 +33,61 @@ const countDatacubes = async (filter) => {
  * Insert a new datacube
  */
 const insertDatacube = async(metadata) => {
+  // TODO: Fix all this copypasta from maas-service startIndicatorPostProcessing
+
+  // Remove some unused Jataware fields
+  metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
+  metadata.stochastic = undefined;
+  metadata.attributes = undefined;
+  metadata.image = undefined;
+  if (metadata.geography) {
+    metadata.geography.coordinates = undefined;
+  }
+
+  // Apparently ES can't support negative timestamps
+  if (metadata.period && metadata.period.gte < 0) {
+    metadata.period.gte = 0;
+  }
+  if (metadata.period && metadata.period.lte < 0) {
+    metadata.period.lte = 0;
+  }
+
+  metadata.data_id = metadata.id;
+  metadata.type = metadata.type || 'model'; // Assume these ar all models for now
+  metadata.status = 'REGISTERED';
+  metadata.family_name = metadata.family_name || metadata.name;
+
+  // Take the first numeric output, others are not currently supported
+  const validOutput = metadata.outputs.filter(o =>
+    o.type === 'int' || o.type === 'float' || o.type === 'boolean'
+  )[0] || metadata.outputs[0];
+  metadata.default_feature = validOutput.name;
+  metadata.outputs.forEach(output => { output.id = undefined; });
+  metadata.parameters.forEach(param => { param.id = undefined; });
+
+  // Combine all concept matches into one list at the root
+  const fields = [metadata.outputs, metadata.parameters];
+  if (metadata.qualifier_outputs) {
+    fields.push(metadata.qualifier_outputs);
+  }
+
+  const ontologyMatches = fields.map(field => {
+    return field.filter(variable => variable.ontologies)
+      .map(variable => [
+        ...variable.ontologies.concepts,
+        ...variable.ontologies.processes,
+        ...variable.ontologies.properties
+      ]);
+  }).flat(2);
+
+  metadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+
   // a new datacube (model or indicator) is being added
   // ensure for each newly registered datacube a corresponding domain project
   await domainProjectService.updateDomainProjects(metadata);
 
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.insert(metadata);
+  return await connection.insert([metadata]);
 };
 
 /**

@@ -144,7 +144,7 @@ export default defineComponent({
       this.$router.push({
         name: 'domainDatacubeOverview',
         params: {
-          project: this.project.name,
+          project: this.project.id as string,
           projectType: this.project.type
         }
       });

@@ -35,9 +35,10 @@ export interface DatacubeAttribute {
   };
   additional_options: {};
   tags: string[];
-  choices?: string[];
+  choices?: string[]; // FIXME: this should be of type that match the 'type'
   min?: number;
   max?: number;
+  is_visible?: boolean;
 }
 
 export type DimensionInfo = ModelParameter | DatacubeFeature;

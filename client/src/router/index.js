@@ -43,15 +43,9 @@ function formatter(item) {
 }
 
 // Load analysis state for dataAnalysis store before route enter
+// NOTE: this is specific to the new data space (and the new data explorer)
 async function loadAnalysisState(to, from, next) {
   await store.dispatch('dataAnalysis/loadState', to.params.analysisId);
-  next();
-}
-
-// Load analysis state for dataAnalysis store before route enter
-// NOTE: this is specific to the new data space (and the new data explorer)
-async function loadAnalysisStateNew(to, from, next) {
-  await store.dispatch('dataAnalysis/loadStateNew', to.params.analysisId);
   next();
 }
 
@@ -85,13 +79,13 @@ const routes = [
     path: '/:projectType/:project/data/:analysisId',
     name: 'data',
     component: DatacubeDrilldown,
-    beforeEnter: loadAnalysisStateNew
+    beforeEnter: loadAnalysisState
   },
   {
     path: '/:projectType/:project/dataComparative/:analysisId',
     name: 'dataComparative',
     component: CompAnalysis,
-    beforeEnter: loadAnalysisStateNew
+    beforeEnter: loadAnalysisState
   },
   {
     // @HACK: a special route to view the a domain model instance (or datacube) using the same way an analyst would see it
@@ -151,7 +145,7 @@ const routes = [
     component: QuantitativeView
   },
   {
-    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/data/:datacubeId',
+    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/indicator/:indicatorId',
     name: 'nodeCompExperiment',
     component: NodeCompExperiment
   },

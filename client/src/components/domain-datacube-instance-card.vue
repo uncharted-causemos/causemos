@@ -17,7 +17,7 @@
     </modal-confirmation>
     <div class="row project-card-header">
       <b>
-      {{primaryOutput.display_name}} : <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+      {{datacube.name}} : <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
       </b>
     </div>
     <div class="row">
@@ -96,9 +96,13 @@
           v-tooltip.top-center="'Unpublish the datacube instance'"
           type="button"
           class="remove-button button-spacing"
+          :class="{ 'disabled': datacube.status === DatacubeStatus.Registered}"
+          :disabled="datacube.status === DatacubeStatus.Registered"
           @click.stop="showWarningModal"
-        ><i class="fa fa-trash" />
-          Unpublish</button>
+        >
+          <i class="fa fa-trash" />
+          Unpublish
+        </button>
       </div>
     </div>
   </div>
@@ -148,9 +152,6 @@ export default defineComponent({
     validatedOutputs(): any[] {
       return getValidatedOutputs(this.datacube.outputs);
     },
-    primaryOutput(): any {
-      return this.validatedOutputs.find(o => o.name === this.datacube.default_feature);
-    },
     statusColor(): string {
       let color = '';
       switch (this.datacube.status) {
@@ -177,13 +178,14 @@ export default defineComponent({
     const showModal = ref(false);
 
     return {
-      showModal
+      showModal,
+      DatacubeStatus
     };
   },
   methods: {
     ...mapActions({
       clearLastQuery: 'query/clearLastQuery',
-      updateAnalysisItemsNewPreview: 'dataAnalysis/updateAnalysisItemsNewPreview'
+      updateAnalysisItemsPreview: 'dataAnalysis/updateAnalysisItemsPreview'
     }),
     dateFormatter,
     unpublish() {
@@ -201,11 +203,11 @@ export default defineComponent({
       this.clearLastQuery();
       // redirect
       // open the datacube page similar to the data space
-      await this.updateAnalysisItemsNewPreview({ datacubeIDs: [id] });
+      await this.updateAnalysisItemsPreview({ datacubeIDs: [id] });
       this.$router.push({
         name: 'dataPreview',
         params: {
-          project: this.datacube.family_name,
+          project: this.project,
           projectType: this.projectMetadata.type
         }
       });
@@ -218,7 +220,7 @@ export default defineComponent({
         name: 'modelPublishingExperiment',
         query: { datacubeid: id },
         params: {
-          project: this.datacube.family_name,
+          project: this.project,
           projectType: this.projectMetadata.type
         }
       });
@@ -276,5 +278,19 @@ export default defineComponent({
   font-weight: 600;
   border: none;
   user-select: none;
+
+  &.disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+    pointer-events: all;
+
+    button {
+      opacity: 1;
+    }
+
+    &::before {
+      cursor: not-allowed;
+    }
+  }
 }
 </style>

@@ -42,7 +42,7 @@
 
 <script>
 import { mapActions, mapGetters, useStore } from 'vuex';
-import { getAllInsightsCount } from '@/services/insight-service';
+import { fetchInsightsCount } from '@/services/insight-service';
 import { watchEffect, computed } from 'vue';
 
 export default {
@@ -66,7 +66,11 @@ export default {
         // @REVIEW @FIXME: when contextId was a computed property it didn't return an updated value when the store value was changed
         const contextId = store.getters['insightPanel/contextId'];
         // all insights count = project-insights count + context (i.e., datacube-id, cag-id) insights count
-        const allInsightsCount = await getAllInsightsCount(project.value, contextId);
+        const insightSearchFields = {
+          project_id: project.value,
+          context_id: contextId
+        };
+        const allInsightsCount = await fetchInsightsCount([insightSearchFields]);
         if (isCancelled) {
           // Dependencies have changed since the fetch started, so ignore the
           //  fetch results to avoid a race condition.

@@ -11,7 +11,8 @@ router.post('/', asyncHandler(async (req, res) => {
   const {
     model_id,
     model_name,
-    parameters
+    parameters,
+    is_default_run = false
   } = req.body;
 
   const metadata = {
@@ -20,7 +21,7 @@ router.post('/', asyncHandler(async (req, res) => {
     model_name,
     parameters,
     data_paths: [],
-    is_default_run: false,
+    is_default_run,
     created_at: Date.now(),
     tags: []
   };
@@ -45,8 +46,8 @@ router.post('/:runId/post-process', asyncHandler(async (req, res) => {
   const metadata = req.body;
 
   try {
-    const result = await maasService.startModelOutputPostProcessing(metadata);
-    res.status(200).json(result.data || {});
+    await maasService.startModelOutputPostProcessing(metadata);
+    res.status(200).json({});
   } catch (err) {
     console.log(err);
     res.status(500).send('Internal request returned: ' + err.message);

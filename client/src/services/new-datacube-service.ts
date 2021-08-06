@@ -7,9 +7,15 @@ import fu from '@/utils/filters-util';
 /**
  * Get datacubes
  * @param {Filters} filters
+ * @param {object} options - ES options
  */
 export const getDatacubes = async (filters: Filters, options = {}) => {
-  const { data } = await API.get('maas/new-datacubes', { params: { filters: filters, options: options } });
+  const { data } = await API.get('maas/new-datacubes', {
+    params: {
+      filters: filters,
+      options: options
+    }
+  });
   return data;
 };
 
@@ -29,7 +35,7 @@ export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
  */
 export const getDatacubeById = async (datacubeId: string) => {
   const filters = fu.newFilters();
-  fu.setClause(filters, 'dataId', [datacubeId], 'or', false);
+  fu.setClause(filters, 'id', [datacubeId], 'or', false);
   const cubes = await getDatacubes(filters);
   return cubes && cubes[0];
 };
@@ -87,6 +93,62 @@ export const getModelRunMetadata = async (dataId: string) => {
   return data;
 };
 
+/**
+ * Find suggested terms for the specified string, looking in the provided field
+ *
+ * @param {string} field - field which should be searched
+ * @param {string} queryString - string to use to get suggestions
+ */
+export const getSuggestions = async (field: string, queryString: string) => {
+  const { data } = await API.get('maas/new-datacubes/suggestions', {
+    params: {
+      field,
+      q: queryString
+    }
+  });
+  return data;
+};
+
+/**
+ * Fetches the hierarchy for a given model or indicator
+ * @param dataId indicator or model ID
+ * @param runId the ID of the model run. If this is an indicator, should be 'indicator'
+ * @param feature the output feature
+ */
+export const getHierarchy = async (
+  dataId: string,
+  runId: string,
+  feature: string
+) => {
+  const { data } = await API.get('maas/output/hierarchy', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature
+    }
+  });
+  return data;
+};
+
+// DEPRECATED - NO LONGER WORK
+// TODO: REMOVE
+
+/**
+ * @deprecated
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const getModelRuns = async (modelId: any) => {
+  return [];
+};
+
+/**
+ * @deprecated
+ */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+export const getModelParameters = async (modelId: any) => {
+  return [];
+};
+
 export default {
   updateDatacube,
   getDatacubes,
@@ -95,5 +157,9 @@ export default {
   getDatacubeFacets,
   getModelDatacubesCount,
   getIndicatorDatacubesCount,
-  getModelRunMetadata
+  getModelRunMetadata,
+  getSuggestions,
+
+  getModelRuns,
+  getModelParameters
 };

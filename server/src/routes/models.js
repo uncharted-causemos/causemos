@@ -14,10 +14,11 @@ const modelService = rootRequire('/services/model-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
 const { MODEL_STATUS } = rootRequire('/util/model-util');
+const modelUtil = rootRequire('util/model-util');
 
 const HISTORY_START_DATE = '2015-01-01';
-const HISTORY_END_DATE = '2017-12-01';
-const PROJECTION_START_DATE = '2018-01-01';
+const HISTORY_END_DATE = '2020-12-01';
+const PROJECTION_START_DATE = '2021-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
 
@@ -55,7 +56,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
       projection_start: defaultProjectionStartDate
     };
   }
-  modelFields.is_quantified = true;
+  // modelFields.is_quantified = true;
   modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
@@ -148,6 +149,13 @@ router.get('/', asyncHandler(async (req, res) => {
   });
 }));
 
+/* GET get model stats */
+router.get('/model-stats', asyncHandler(async (req, res) => {
+  const { modelIds } = req.query;
+  const modelStats = await modelService.getModelStats(modelIds);
+  res.json(modelStats);
+}));
+
 
 /* GET retrieve single model */
 router.get('/:modelId', asyncHandler(async (req, res) => {
@@ -215,14 +223,18 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
     return;
   }
 
-  // 2. create payload for model creation in the modelling engine
   const model = await modelService.findOne(modelId);
-  const timeSeriesStart = _.get(model, 'parameter.indicator_time_series_range.start', 0);
-  const timeSeriesEnd = _.get(model, 'parameter.indicator_time_series_range.end', 1);
+
+  // 2. create payload for model creation in the modelling engine
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, timeSeriesStart, timeSeriesEnd)
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model),
+    edges: edgeParameters.map(d => ({
+      source: d.source,
+      target: d.target,
+      weights: _.get(d.parameter, 'weights', [0.5, 0.5])
+    }))
   };
 
   res.setHeader('Content-disposition', `attachment; filename=${modelId}.json`);
@@ -266,14 +278,13 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     return;
   }
 
-  // 2. create payload for model creation in the modelling engine
   const model = await modelService.findOne(modelId);
-  const timeSeriesStart = model.parameter.indicator_time_series_range.start;
-  const timeSeriesEnd = model.parameter.indicator_time_series_range.end;
+
+  // 2. create payload for model creation in the modelling engine
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, timeSeriesStart, timeSeriesEnd)
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model)
   };
 
   // 3. register model to engine
@@ -396,6 +407,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   const modelPayload = {
     id: modelId,
     status: status,
+    is_quantified: true,
     parameter: {
       engine: engine
     },
@@ -537,13 +549,21 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     return;
   }
 
+  // Recalculate min/max if not specified
+  if (_.isNil(nodeParameter.parameter.min) || _.isNil(nodeParameter.parameter.max)) {
+    Logger.info('Resetting min / max');
+    const { min, max } = modelUtil.projectionValueRange(nodeParameter.parameter.timeseries.map(d => d.value));
+    nodeParameter.parameter.min = min;
+    nodeParameter.parameter.max = max;
+  }
+
+
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
   const parameter = model.parameter;
-  const timeSeriesStart = parameter.indicator_time_series_range.start;
-  const timeSeriesEnd = parameter.indicator_time_series_range.end;
   const engine = parameter.engine;
-  const payload = modelService.buildNodeParametersPayload([nodeParameter], timeSeriesStart, timeSeriesEnd);
+  const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
+
 
   // Register update with engine and retrieve new value
   let engineUpdateResult = null;
@@ -553,6 +573,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     Logger.warn(`Update node-parameter is undefined for ${engine}`);
   }
 
+  // FIXME: initial_value not needed
   if (engine === DYSE) {
     const initialValue = engineUpdateResult.conceptIndicators[nodeParameter.concept].initialValue;
     Logger.info(`Setting ${nodeParameter.concept} to initialValue ${initialValue}`);

@@ -37,14 +37,18 @@ export enum DatacubeAttributeVariableType {
   Boolean = 'boolean',
   Datetime = 'datetime',
   Latitude = 'lat',
-  Longitude = 'lng'
+  Longitude = 'lng',
+  Country = 'country',
+  Admin1 = 'admin1',
+  Admin2 = 'admin2',
+  Admin3 = 'admin3'
 }
 
 export enum ModelParameterDataType {
-  Nominal = 'nominal',
-  Ordinal = 'ordinal',
-  Numerical = 'numerical',
-  Freeform = 'freeform'
+  Nominal = 'nominal', // discrete
+  Ordinal = 'ordinal', // discrete
+  Numerical = 'numerical', // continuous
+  Freeform = 'freeform' // discrete, dynmaic choices
 }
 
 export enum TemporalResolution {
@@ -75,12 +79,18 @@ export enum TemporalAggregationLevel {
   Year = 'year'
 }
 
+export enum SpatialAggregationLevel {
+  Region = 'region'
+}
+
 export enum AggregationOption {
+  None = '',
   Mean = 'mean',
   Sum = 'sum'
 }
 
 export enum TemporalResolutionOption {
+  None = '',
   Year = 'year',
   Month = 'month'
 }

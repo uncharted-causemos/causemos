@@ -8,7 +8,7 @@
   />
   <div class="project-overview-container">
     <div class="row row-header" style="height: 20vh; margin-bottom: 1rem">
-      <div class="col-md-7">
+      <div class="col-md-8">
         <h3>
           {{projectMetadata.name}}
           <span
@@ -45,6 +45,22 @@
           <span v-for="analyst in ['Analyst 1', 'Analyst 2']"
           :key="analyst" class="maintainer">{{analyst}}</span>
         </div>
+        <div class="tags-container">
+          <b style="flex-basis: 100%">Tags:</b>
+          <div
+            v-for="tag in tags"
+            :key="tag"
+            class="tag">
+            {{ tag }}
+          </div>
+        </div>
+      </div>
+      <div class="col-md-2 KBstats-container">
+        <b style="flex-basis: 100%">KNOWLEDGE BASE:</b>
+        <div>{{ KBname }}</div>
+        <br>
+        <div><b>{{ numberFormatter(numDocuments) }}</b> documents</div>
+        <div><b>{{ numberFormatter(numStatements) }}</b> causal relationships</div>
         <div>
           <button
             class="button"
@@ -57,16 +73,12 @@
           v-if="showDocumentModal === true"
           @close="showDocumentModal = false" />
       </div>
-      <div class="col-md-3 tags-container">
-        <b style="flex-basis: 100%">Tags:</b>
-        <div
-          v-for="tag in tags"
-          :key="tag"
-          class="tag">
-          {{ tag }}
-        </div>
-      </div>
-      <div class="col-md-2" style="backgroundColor: darkgray; height: 100%">
+      <div class="col-md-2" style="height: 100%; padding-left: 0px; padding-right: 0px">
+        <img
+                class="map-image"
+                src="../assets/GenericWorld.png"
+                alt="Generic world map"
+          >
         <!-- placeholder for area-of-interest image -->
       </div>
     </div>
@@ -80,7 +92,7 @@
             <i class="fa fa-fw fa-star fa-lg" />
             Review Analysis Checklist
         </button>
-        <list-context-insight-pane />
+        <list-analytical-questions-pane />
       </div>
       <div class="col-md-9">
         <div class="row">
@@ -157,9 +169,8 @@
 import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
-import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
-import { getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
+import { getAnalysisState, getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
 import ModalUploadDocument from '@/components/modals/modal-upload-document';
@@ -167,13 +178,15 @@ import { ProjectType } from '@/types/Enums';
 import { ANALYSIS, CAG } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import projectService from '@/services/project-service';
+import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
+import numberFormatter from '@/formatters/number-formatter';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
   previewImageSrc: analysis.thumbnail_source || null,
   title: analysis.title,
   subtitle: dateFormatter(analysis.modified_at, 'MMM DD, YYYY'),
-  description: analysis.analysis,
+  description: analysis.description || '',
   type: 'quantitative'
 });
 
@@ -182,7 +195,7 @@ const toQualitative = cag => ({
   previewImageSrc: cag.thumbnail_source ?? null,
   title: cag.name,
   subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY'),
-  description: '',
+  description: cag.description || '',
   type: 'qualitative'
 });
 
@@ -190,7 +203,7 @@ export default {
   name: 'AnalysisProjectOverview',
   components: {
     AnalysisOverviewCard,
-    ListContextInsightPane,
+    ListAnalyticalQuestionsPane,
     DropdownControl,
     ModalUploadDocument,
     RenameModal
@@ -199,6 +212,9 @@ export default {
     analyses: [],
     qualitativeAnalyses: [],
     quantitativeAnalyses: [],
+    numDocuments: '-',
+    numStatements: '-',
+    KBname: '-',
     searchText: '',
     showSortingDropdownAnalyses: false,
     analysisSortingOptions: ['Most recent', 'Earliest'],
@@ -230,16 +246,18 @@ export default {
   },
   async mounted() {
     this.fetchAnalyses();
+    this.fetchKbStats();
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew',
+      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems',
       setContextId: 'insightPanel/setContextId',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
     }),
+    numberFormatter,
     openInsightsExplorer() {
       this.showInsightPanel();
       this.setCurrentPane('list-insights');
@@ -262,23 +280,69 @@ export default {
 
       this.enableOverlay('Loading analyses...');
 
+      // context-id should be an array to fetch insights for each and every datacube/cag in all project analyses
+      const contextIDs = [];
+
       // fetch data space analyses
       const result1 = await getAnalysesByProjectId(this.project);
       this.quantitativeAnalyses = result1.map(toQuantitative);
+
+      if (this.quantitativeAnalyses.length) {
+        // save context-id(s) for all data-analyses
+        const promises = this.quantitativeAnalyses.map((analysis) => {
+          return getAnalysisState(analysis.analysisId);
+        });
+        const allRawResponses = await Promise.all(promises);
+        // @REVIEW
+        // the assumption here is that each response in the allRawResponses refers to a specific quantitativeAnalyses
+        // so we could utilize that to update the stats count
+        allRawResponses.forEach((analysesState, indx) => {
+          const analysisContextIDs = analysesState.analysisItems.map(dc => dc.id);
+          contextIDs.push(...analysisContextIDs);
+
+          // save the datacube count
+          this.quantitativeAnalyses[indx].datacubesCount = analysisContextIDs.length;
+        });
+      }
 
       // knowledge and model space analyses
       const result2 = await modelService.getProjectModels(this.project);
       this.qualitativeAnalyses = result2.models.map(toQualitative);
 
+      if (this.qualitativeAnalyses.length) {
+        const modelIDs = this.qualitativeAnalyses.map(model => model.id);
+        const stats = await modelService.getModelStats(modelIDs);
+
+        this.qualitativeAnalyses.forEach(analysis => { // merge edge and node counts into analysis objects
+          analysis.nodeCount = _.get(stats[analysis.id], 'nodeCount', 0);
+          analysis.edgeCount = _.get(stats[analysis.id], 'edgeCount', 0);
+        });
+
+        // save context-id(s) for all CAG-analyses
+        this.qualitativeAnalyses.forEach(qualitativeAnalysis => {
+          contextIDs.push(qualitativeAnalysis.id);
+        });
+      }
+
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
-      // clear context id to hint the insight manager to show ALL project insights
-      this.setContextId('');
+      // FIXME: this will fetch insights for all datacubes and CAGs in all project analyses
+      // however, the breakdown of such info is missing, and thus we cannot easily update the number of insights in each analysis
+      this.setContextId(contextIDs);
 
       // Sort by modified_at date with latest on top
       this.sortAnalysesByMostRecentDate();
 
       this.disableOverlay();
+    },
+    async fetchKbStats() {
+      const KBlist = await projectService.getKBs(); // FIXME this is more expensive than it needs to be, we fetch the whole list of KBs then only use one
+      const projectKB_id = this.projectMetadata.kb_id;
+      const projectKB = KBlist.find(kb => kb.id === projectKB_id);
+
+      this.numDocuments = _.get(projectKB.corpus_parameter, 'num_documents', 0);
+      this.numStatements = _.get(projectKB.corpus_parameter, 'num_statements', 0);
+      this.KBname = _.get(projectKB, 'name', '-');
     },
     onRename(analysis) {
       this.showRenameModal = true;
@@ -393,7 +457,7 @@ export default {
         title: `untitled at ${dateFormatter(Date.now())}`,
         projectId: this.project
       });
-      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [] });
+      await this.updateAnalysisItems({ currentAnalysisId: analysis.id, analysisItems: [] });
       this.$router.push({
         name: 'dataComparative',
         params: {
@@ -439,6 +503,11 @@ export default {
 $padding-size: 2vh;
 .project-overview-container {
   padding-top: 0;
+}
+
+.map-image {
+  height: 100%;
+  float: right;
 }
 
 .insight-container {

@@ -7,7 +7,8 @@ import { getRegionAggregations } from '../runoutput-service';
 import { readonly } from 'vue';
 import { AdminRegionSets } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import { SpatialAggregationLevel } from '@/types/Enums';
+import { useStore } from 'vuex';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -21,8 +22,12 @@ export default function useRegionalData(
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | Indicator | null>,
-  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
+  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
+  breakdownOption: Ref<string | null>
 ) {
+  const store = useStore();
+  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
@@ -33,23 +38,36 @@ export default function useRegionalData(
     ) {
       return [];
     }
-    const outputs = modelMetadata.validatedOutputs
-      ? modelMetadata.validatedOutputs
-      : modelMetadata.outputs;
 
-    const defaultOutputIndex = modelMetadata.validatedOutputs?.findIndex(
-        o => o.name === metadata.value?.default_feature) ?? 0;
-    const mainFeatureName = outputs[defaultOutputIndex].name;
+    let activeFeature = '';
+    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
+    if (currentOutputEntry !== undefined) {
+      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
+      activeFeature = outputs[currentOutputEntry].name;
+    } else {
+      activeFeature = modelMetadata.default_feature ?? '';
+    }
 
-    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
+    const activeModelId = modelMetadata.data_id ?? '';
+
+    // It doesn't make sense to do a separate fetch and display a separate map
+    //  for each region when "split by region" is active.
+    //  Just return a single outputSpec for all of them.
+    const pointsToConvertToOutputSpecs =
+      breakdownOption.value === SpatialAggregationLevel.Region &&
+      selectedTimeseriesPoints.value.length > 0
+        ? [selectedTimeseriesPoints.value[0]]
+        : selectedTimeseriesPoints.value;
+
+    return pointsToConvertToOutputSpecs.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
-      modelId: selectedModelId.value,
+      modelId: activeModelId,
       runId: scenarioId,
-      outputVariable: mainFeatureName || '',
+      outputVariable: activeFeature,
       timestamp,
-      temporalResolution: selectedTemporalResolution.value || TemporalResolutionOption.Month,
-      temporalAggregation: selectedTemporalAggregation.value || AggregationOption.Mean,
-      spatialAggregation: selectedSpatialAggregation.value || AggregationOption.Mean
+      temporalResolution: selectedTemporalResolution.value,
+      temporalAggregation: selectedTemporalAggregation.value,
+      spatialAggregation: selectedSpatialAggregation.value
     }));
   });
   watchEffect(async onInvalidate => {

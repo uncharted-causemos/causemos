@@ -62,10 +62,9 @@ router.get('/facets', asyncHandler(async (req, res) => {
  * GET Search fields based on partial matches
  **/
 router.get('/suggestions', asyncHandler(async (req, res) => {
-  const projectId = req.params.projectId;
   const field = req.query.field;
   const queryString = req.query.q;
-  const results = await datacubeService.searchFields(projectId, field, queryString);
+  const results = await datacubeService.searchFields(field, queryString);
   res.json(results);
 }));
 

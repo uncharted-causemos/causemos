@@ -38,7 +38,6 @@
           </div>
         </div>
         <parallel-coordinates-chart
-          v-if="runParameterValues"
           class="pc-chart"
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
@@ -76,7 +75,7 @@
           </button>
         </div>
       </div>
-      <div class="column">
+      <div class="column insight-capture">
         <div class="button-row">
           <!-- TODO: extract button-group to its own component -->
           <div class="button-group">
@@ -141,59 +140,61 @@
             :color-from-index="colorFromIndex"
           />
         </header>
-        <div class="insight-capture">
+        <div class="column">
           <div style="display: flex; flex-direction: row;">
             <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
             <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
           </div>
           <timeseries-chart
-            v-if="!isDescriptionView && timeseriesData.length > 0 && !hasSingleTimestamp"
+            v-if="!isDescriptionView && timeseriesData.length > 0"
             class="timeseries-chart"
             :timeseries-data="timeseriesData"
             :selected-timestamp="selectedTimestamp"
             :breakdown-option="breakdownOption"
             @select-timestamp="emitTimestampSelection"
           />
-          <p
-            v-else-if="hasSingleTimestamp"
-            class="hidden-timeseries-message"
-          >
-            Data only exists for
-            <span class="timestamp">
-              {{ timestampFormatter(timeseriesData[0].points[0].timestamp) }}
-            </span>.
-          </p>
           <div style="display: flex; flex-direction: row;">
             <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
           </div>
           <div
             v-if="mapReady && !isDescriptionView && regionalData !== null"
-            class="card-map-container">
-            <data-analysis-map
+            class="card-maps-container">
+            <div
               v-for="(spec, indx) in outputSourceSpecs"
               :key="spec.id"
-              class="card-map"
+              class="card-map-container"
               :class="[
                 `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
               ]"
-              :style="{ borderColor: colorFromIndex(indx) }"
-              :output-source-specs="outputSourceSpecs"
-              :output-selection=spec.id
-              :relative-to="relativeTo"
-              :show-tooltip="true"
-              :selected-layer-id="mapSelectedLayer"
-              :filters="mapFilters"
-              :map-bounds="mapBounds"
-              :region-data="regionalData"
-              @sync-bounds="onSyncMapBounds"
-              @click-layer-toggle="onClickMapLayerToggle"
-              @on-map-load="onMapLoad"
-              @slide-handle-change="updateMapFilters"
-            />
+            >
+              <span
+                v-if="outputSourceSpecs.length > 1"
+                :style="{ color: colorFromIndex(indx)}"
+              >
+                {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
+              </span>
+              <data-analysis-map
+                class="card-map"
+                :style="{ borderColor: colorFromIndex(indx) }"
+                :output-source-specs="outputSourceSpecs"
+                :output-selection=spec.id
+                :relative-to="relativeTo"
+                :show-tooltip="true"
+                :selected-layer-id="mapSelectedLayer"
+                :filters="mapFilters"
+                :map-bounds="mapBounds"
+                :region-data="regionalData"
+                :selectedBaseLayer="selectedBaseLayer"
+                :selectedDataLayer="selectedDataLayer"
+                @sync-bounds="onSyncMapBounds"
+                @on-map-load="onMapLoad"
+                @slide-handle-change="updateMapFilters"
+              />
+            </div>
           </div>
           <div
             v-else-if="!isDescriptionView"
-            class="card-map-container"
+            class="card-maps-container"
           >
             <!-- Empty div to reduce jumpiness when the maps are loading -->
             <div class="card-map" />
@@ -225,9 +226,10 @@ import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCachi
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
-import { Timeseries } from '@/types/Timeseries';
+import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
-import { getTimestamp } from '@/utils/date-util';
+import { getTimestampMillis } from '@/utils/date-util';
+import { DATA_LAYER } from '@/utils/map-util-new';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -294,6 +296,18 @@ export default defineComponent({
     baselineMetadata: {
       type: Object as PropType<{name: string; color: string} | null>,
       default: null
+    },
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      default: []
+    },
+    selectedBaseLayer: {
+      type: String,
+      required: true
+    },
+    selectedDataLayer: {
+      type: String,
+      required: true
     }
   },
   components: {
@@ -308,13 +322,13 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const store = useStore();
-    const currentOutputIndex = computed(() => store.getters['modelPublishStore/currentOutputIndex']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const {
       selectedScenarioIds,
       allModelRunData,
       metadata,
-      timeseriesData,
       breakdownOption
     } = toRefs(props);
 
@@ -361,26 +375,13 @@ export default defineComponent({
       }
     );
 
-    const hasSingleTimestamp = computed(() => {
-      const allPoints = timeseriesData.value.flatMap(timeseries => timeseries.points);
-      if (allPoints.length === 0) return false;
-      const allTimestamps = allPoints.map(point => point.timestamp);
-      const timestamp = allTimestamps[0];
-      for (const other of allTimestamps.slice(1)) {
-        if (other !== timestamp) return false;
-      }
-      return true;
-    });
-
     const timestampFormatter = (timestamp: number) => {
-      // FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
-      //  and be consistent.
       if (breakdownOption.value === TemporalAggregationLevel.Year) {
         const month = timestamp;
         // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestamp(1970, month) * 1000, 'MMMM');
+        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
       }
-      return dateFormatter(timestamp * 1000, 'MMMM YYYY');
+      return dateFormatter(timestamp, 'MMMM YYYY');
     };
 
     return {
@@ -395,8 +396,7 @@ export default defineComponent({
       mainModelOutput,
       isModelMetadata,
       emitRelativeToSelection,
-      timestampFormatter,
-      hasSingleTimestamp
+      timestampFormatter
     };
   },
   data: () => ({
@@ -411,8 +411,7 @@ export default defineComponent({
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
     ],
-    mapReady: false,
-    isGridMap: false
+    mapReady: false
   }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
@@ -422,7 +421,7 @@ export default defineComponent({
   },
   computed: {
     mapSelectedLayer(): number {
-      return this.isGridMap ? 4 : this.selectedAdminLevel;
+      return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
@@ -431,9 +430,6 @@ export default defineComponent({
     },
     onSyncMapBounds(mapBounds: Array<Array<number>>) {
       this.mapBounds = mapBounds;
-    },
-    onClickMapLayerToggle(data: { isGridMap: boolean }) {
-      this.isGridMap = !data.isGridMap;
     },
     toggleBaselineDefaultsVisibility() {
       this.showBaselineDefaults = !this.showBaselineDefaults;
@@ -564,41 +560,36 @@ header {
   }
 }
 
-.insight-capture {
-  display: flex;
-  flex-direction: column;
-  min-height: 0;
-  flex: 1;
-}
-
 .timeseries-chart {
   flex: 1;
   min-height: 0;
 }
 
 
-.card-map-container {
+.card-maps-container {
   min-height: 0;
   flex: 3;
-  width: 70%;
-
   display: flex;
   justify-content: space-between;
   flex-wrap: wrap;
-  overflow-y: scroll;
+  overflow-y: auto;
   width: 100%;
+  position: relative;
 }
 
-.card-map {
-  flex-grow: 1;
-  width: auto;
-  height: inherit;
+$marginSize: 5px;
+
+.card-map-container {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+
   ::v-deep(.wm-map) {
     border-style: solid;
     border-color: inherit;
   }
   &.card-count-1 {
-    flex-grow: 1;
     ::v-deep(.wm-map) {
       border: none;
     }
@@ -606,14 +597,19 @@ header {
   &.card-count-3,
   &.card-count-4 {
     height: 50%;
-    width: 50%;
-    max-width: 50%;
+    min-width: calc(50% - #{$marginSize / 2});
+    max-width: calc(50% - #{$marginSize / 2});
   }
   &.card-count-n {
     height: 50%;
-    width: calc(100% / 3);
-    max-width: calc(100% / 3);
+    min-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
+    max-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
   }
+}
+
+.card-map {
+  flex-grow: 1;
+  min-height: 0;
 }
 
 .button-row {

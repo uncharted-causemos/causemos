@@ -112,7 +112,12 @@
                 }"
                 @mousedown.stop.prevent
               />
-              <span @mousedown.stop.prevent class="checklist-item-text">{{ questionItem.question }}</span>
+              <span
+                @mousedown.stop.prevent
+                class="checklist-item-text"
+                :class="{ 'private-question-title': questionItem.visibility === 'private' }">
+                  {{ questionItem.question }}
+              </span>
             </div>
             <!-- second row display a list of linked insights -->
             <div class="checklist-item-insights">
@@ -136,7 +141,7 @@
 <script lang="ts">
 import { mapActions, mapGetters, useStore } from 'vuex';
 
-import { getInsightById, updateInsight, getAllInsights } from '@/services/insight-service';
+import { getInsightById, updateInsight, InsightFilterFields, fetchInsights } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight } from '@/types/Insight';
 import { computed, defineComponent, ref, watchEffect } from 'vue';
 import _ from 'lodash';
@@ -195,7 +200,11 @@ export default defineComponent({
 
         // save a local copy of all insights for quick reference whenever needed
         // FIXME: ideally this should be from a store so that changes to the insight list externally are captured
-        allInsights.value = await getAllInsights(project.value, contextId.value);
+        const insightSearchFields: InsightFilterFields = {
+          project_id: project.value,
+          context_id: contextId.value
+        };
+        allInsights.value = await fetchInsights([insightSearchFields]);
 
         // update the store to facilitate questions consumption in other UI places
         store.dispatch('analysisChecklist/setQuestions', allQuestions);
@@ -559,6 +568,10 @@ export default defineComponent({
             padding: 0 10px;
             width: 170px;
             display: inline-block;
+            color: gray;
+          }
+          .private-question-title {
+            color: black;
           }
         }
 

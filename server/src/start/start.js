@@ -1,5 +1,5 @@
 const Logger = rootRequire('/config/logger');
-
+const serverConfiguration = rootRequire('/config/yargs-wrapper');
 const { set } = rootRequire('/cache/node-lru-cache');
 const projectService = rootRequire('/services/project-service');
 const dartService = rootRequire('/services/external/dart-service');
@@ -11,7 +11,17 @@ const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
  * Runs start up jobs, e.g. any type of prefetching of sanity checks
  */
 async function runStartup() {
-  Logger.info('=== Running server up jobs ===');
+  Logger.info('Causemos configuration');
+  Logger.info(`\tCache size: ${serverConfiguration.cacheSize}`);
+  Logger.info(`\tLog level: ${serverConfiguration.logLevel}`);
+  Logger.info(`\tTD_DATA_URL: ${process.env.TD_DATA_URL}`);
+  Logger.info(`\tWM GO URL: ${process.env.WM_GO_URL}`);
+  Logger.info(`\tPipeline URL: ${process.env.WM_PIPELINE_URL}`);
+  Logger.info(`\tDELPHI_URL: ${process.env.DELPHI_URL}`);
+  Logger.info(`\tDYSE_URL: ${process.env.DYSE_URL}`);
+  Logger.info(`\tWM_CURATION_SERVICE_URL: ${process.env.WM_CURATION_SERVICE_URL}`);
+
+  Logger.info('=== Running causemos start up jobs ===');
 
   // List all of the projects
   Logger.info('Caching projects metadata');
@@ -71,9 +81,11 @@ async function runStartup() {
           return documentIds.includes(readerDocumentId);
         });
         if (matchingExtension === undefined) {
-          Logger.error(
-            `Unable to find extension for record with document_id ${readerDocumentId}.`
-          );
+          // FIXME: this error is being printed for thousands of records, we should investigate why
+          //  so many records without matching extensions are being found every 20 minutes.
+          // Logger.error(
+          //   `Unable to find extension for record with document_id ${readerDocumentId}.`
+          // );
           return;
         }
         const { project_id } = matchingExtension;
@@ -101,6 +113,6 @@ async function runStartup() {
     }
   }, READER_OUTPUT_POLL_INTERVAL);
 
-  Logger.info('=== Done server start up jobs ===');
+  Logger.info('=== Done causemos start up jobs ===');
 }
 module.exports = { runStartup };

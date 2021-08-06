@@ -11,11 +11,25 @@
         @click="openDrilldown">
         <i class="fa fa-fw fa-expand" />
       </button>
+      <datacard-options-button
+        class="menu"
+        :dropdown-below="true"
+        :wider-dropdown-options="true"
+      >
+        <template #content>
+          <div
+            class="dropdown-option"
+            @click="clickRemove"
+          >
+            Remove
+          </div>
+        </template>
+      </datacard-options-button>
     </header>
     <div>
       <div class="col-md-9 timeseries-chart">
         <timeseries-chart
-          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
+          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
           :timeseries-data="visibleTimeseriesData"
           :selected-timestamp="selectedTimestamp"
           :breakdown-option="breakdownOption"
@@ -40,17 +54,20 @@
 <script lang="ts">
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
 import { colorFromIndex } from '@/utils/colors-util';
+import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import _ from 'lodash';
 
 const DRILLDOWN_TABS = [
   {
@@ -64,10 +81,15 @@ const DRILLDOWN_TABS = [
 export default defineComponent({
   name: 'DatacubeComparativeCard',
   components: {
+    DatacardOptionsButton,
     TimeseriesChart
   },
   props: {
     datacubeId: {
+      type: String,
+      required: true
+    },
+    id: {
       type: String,
       required: true
     },
@@ -79,12 +101,13 @@ export default defineComponent({
   emits: ['temporal-breakdown-data', 'regional-data', 'selected-scenario-ids', 'select-timestamp'],
   setup(props, { emit }) {
     const {
-      datacubeId
+      datacubeId,
+      id
     } = toRefs(props);
 
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
 
-    const metadata = useModelMetadata(datacubeId);
+    const metadata = useModelMetadata(id);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -103,20 +126,26 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     watchEffect(() => {
       if (metadata.value) {
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
-        const initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+        let initialOutputIndex = 0;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        if (currentOutputEntry !== undefined) {
+          // we have a store entry for the default output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
 
-        mainModelOutput.value = outputs.value[initialOutputIndex];
-
-        // FIXME: BUG HERE if multiple models are selected and each one is overwoverwriting the store's currentOutputIndex
-        // save the initial output variable index
-        if (metadata.value.type === DatacubeType.Model) {
-          store.dispatch('modelPublishStore/setCurrentOutputIndex', initialOutputIndex);
+          // update the store
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
+        mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
 
@@ -148,6 +177,29 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
+    // apply the view-config for this datacube
+    const indx = analysisItems.value.findIndex((ai: any) => ai.id === props.id);
+    if (indx >= 0) {
+      const initialViewConfig = analysisItems.value[indx].viewConfig;
+
+      if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
+        if (initialViewConfig.temporalResolution !== undefined) {
+          selectedTemporalResolution.value = initialViewConfig.temporalResolution;
+        }
+        if (initialViewConfig.temporalAggregation !== undefined) {
+          selectedTemporalAggregation.value = initialViewConfig.temporalAggregation;
+        }
+        if (initialViewConfig.spatialAggregation !== undefined) {
+          selectedSpatialAggregation.value = initialViewConfig.spatialAggregation;
+        }
+        if (initialViewConfig.selectedOutputIndex !== undefined) {
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[props.datacubeId] = initialViewConfig.selectedOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+      }
+    }
+
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
@@ -174,7 +226,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp,
+      ref([]) // region breakdown
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -202,7 +255,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      breakdownOption
     );
 
 
@@ -211,29 +265,6 @@ export default defineComponent({
         emit('regional-data', regionalData.value);
       }
     });
-
-    async function openDrilldown() {
-      // NOTE: instead of replacing the datacubeIDs array,
-      //  ensure that the current datacubeId is at 0 index
-      let datacubeIDs: string[] = analysisItems.value.map((item: any) => item.datacubeId);
-      const indx = datacubeIDs.findIndex((datacubeId: string) => datacubeId === props.datacubeId);
-      if (indx > 0) {
-        // move to 0-index
-        datacubeIDs = datacubeIDs.filter(datacubeId => datacubeId !== props.datacubeId);
-        datacubeIDs.unshift(props.datacubeId);
-      }
-      const updatedAnalysisInfo = { currentAnalysisId: analysisId.value, datacubeIDs: datacubeIDs };
-      await store.dispatch('dataAnalysis/updateAnalysisItemsNew', updatedAnalysisInfo);
-
-      router.push({
-        name: 'data',
-        params: {
-          project: project.value,
-          analysisId: analysisId.value,
-          projectType: ProjectType.Analysis
-        }
-      }).catch(() => {});
-    }
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -263,9 +294,44 @@ export default defineComponent({
       deselectedRegionIds,
       setAllRegionsSelected,
       toggleIsRegionSelected,
-      openDrilldown,
-      visibleTimeseriesData
+      visibleTimeseriesData,
+      analysisItems,
+      project,
+      analysisId,
+      props,
+      store
     };
+  },
+  methods: {
+    ...mapActions({
+      removeAnalysisItems: 'dataAnalysis/removeAnalysisItems'
+    }),
+    async openDrilldown() {
+      // NOTE: instead of replacing the datacubeIDs array,
+      // ensure that the current datacubeId is at 0 index
+      let workingAnalysisItems = this.analysisItems.map((item: AnalysisItem): AnalysisItem => item);
+      const indx = workingAnalysisItems.findIndex((ai: any) => ai.id === this.props.id);
+      if (indx > 0) {
+        // move to 0-index
+        const targetItem = workingAnalysisItems[indx];
+        workingAnalysisItems = workingAnalysisItems.filter((ai: any) => ai.id !== this.props.id);
+        workingAnalysisItems.unshift(targetItem);
+      }
+      const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
+      await this.store.dispatch('dataAnalysis/updateAnalysisItems', updatedAnalysisInfo);
+
+      router.push({
+        name: 'data',
+        params: {
+          project: this.project,
+          analysisId: this.analysisId,
+          projectType: ProjectType.Analysis
+        }
+      }).catch(() => {});
+    },
+    clickRemove() {
+      this.removeAnalysisItems([this.id]);
+    }
   }
 });
 </script>
@@ -291,13 +357,12 @@ export default defineComponent({
 .datacube-header {
   flex: 1;
   margin-left: 20px;
-  margin-right: 20px;
   display: flex;
   align-items: center;
-  justify-content: space-between;
 
   .drilldown-btn {
     padding: 5px;
+    margin-left:auto;
   }
 }
 
