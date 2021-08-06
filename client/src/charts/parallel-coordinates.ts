@@ -104,6 +104,7 @@ let pcTypes: {[key: string]: string} = {};
 const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
+const currentLineSelection: Array<ScenarioData> = [];
 
 const isOrdinalAxis = (name: string) => {
   return pcTypes[name].startsWith('str');
@@ -587,13 +588,17 @@ function renderParallelCoordinates(
       });
     if (brushesCount === 0) {
       // cancel any previous selection; turn every line into grey
-      cancelPrevLineSelection(svgElement);
+      if (event && !event.shiftKey) {
+        currentLineSelection.splice(0, currentLineSelection.length);
+        cancelPrevLineSelection(svgElement);
+      }
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
 
       selectLine(selectedLine, event, d, lineStrokeWidthSelected);
 
       const selectedLineData = selectedLine.datum() as ScenarioData;
+      currentLineSelection.push(selectedLineData);
 
       // if we have valid selection (either by direct click on a line or through brushing)
       //  then update the tooltips
