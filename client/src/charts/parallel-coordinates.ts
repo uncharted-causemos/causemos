@@ -600,7 +600,11 @@ function renderParallelCoordinates(
       selectLine(selectedLine, event, d, lineStrokeWidthSelected);
 
       const selectedLineData = selectedLine.datum() as ScenarioData;
-      currentLineSelection.push(selectedLineData);
+      if (selectedLineData) {
+        currentLineSelection.push(selectedLineData);
+      } else {
+        currentLineSelection.length = 0;
+      }
 
       // if we have valid selection (either by direct click on a line or through brushing)
       //  then update the tooltips
