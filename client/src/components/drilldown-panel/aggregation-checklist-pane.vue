@@ -280,22 +280,21 @@ export default defineComponent({
           );
         valuesAtThisLevel.forEach(({ id, values }) => {
           const path = id.split(PATH_DELIMETER);
+          const ancestors = path.slice(0, -1);
           const name = path[path.length - 1];
           // Find where in the tree this item should be inserted
-          let _path = id.split('__');
           let pointer = newStatefulData.children;
-          while (_path.length > 1) {
-            const nextNode = pointer.find(node => node.name === _path[0]);
+          ancestors.forEach(ancestor => {
+            const nextNode = pointer.find(node => node.name === ancestor);
             if (nextNode === undefined) {
               throw new Error(
                 `Invalid path: ${path.toString()}. Node with name "${
-                  _path[0]
+                  ancestor
                 }" not found.`
               );
             }
             pointer = nextNode.children;
-            _path = _path.splice(1);
-          }
+          });
           // Initialize values for every model run to null
           const valueArray = new Array(timeseriesCount).fill(null);
           // Convert values from { [timeseriesId]: value } to an array where
