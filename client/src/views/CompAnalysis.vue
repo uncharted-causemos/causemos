@@ -3,7 +3,7 @@
     <action-bar />
     <main>
     <analytical-questions-and-insights-panel />
-    <div class="flex-row column">
+    <div class="flex-row column insight-capture">
       <div v-if="analysisItems.length">
         <datacube-comparative-card
           v-for="item in analysisItems"
