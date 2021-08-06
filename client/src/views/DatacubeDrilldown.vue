@@ -360,7 +360,8 @@ export default defineComponent({
       if (selectedAdminLevelKey === 'admin4' || selectedAdminLevelKey === 'admin5') return [];
       const regionsAtSelectedLevel = allRegions.value[selectedAdminLevelKey];
       const deselected = deselectedRegionIds.value[selectedAdminLevelKey];
-      return regionsAtSelectedLevel.filter(region => !deselected.has(region));
+      return regionsAtSelectedLevel.filter(region => !deselected.has(region))
+        .slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
     });
 
     const {
