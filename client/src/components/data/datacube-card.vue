@@ -38,7 +38,6 @@
           </div>
         </div>
         <parallel-coordinates-chart
-          v-if="runParameterValues"
           class="pc-chart"
           :dimensions-data="runParameterValues"
           :selected-dimensions="dimensions"
