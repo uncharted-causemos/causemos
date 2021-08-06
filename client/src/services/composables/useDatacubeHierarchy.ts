@@ -64,7 +64,6 @@ export default function useDatacubeHierarchy(
         activeFeature
       );
       if (isCancelled) return;
-      console.log('hierarchy', hierarchy);
       // FIXME: would be nice if hierarchy endpoint returns this already in the DatacubeGeography form
       const newValue = {
         country: [] as string[],
