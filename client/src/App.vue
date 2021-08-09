@@ -24,8 +24,6 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
 
-import filtersUtil from '@/utils/filters-util';
-
 const viewsWithNoNavbar = [
   'nodeCompExperiment',
   'nodeDataExplorer',
