@@ -176,7 +176,6 @@ import DomainDatacubeProjectCard from '@/components/domain-datacube-project-card
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { Project, DomainProject, KnowledgeBase } from '@/types/Common';
-import filtersUtil from '@/utils/filters-util';
 import domainProjectService from '@/services/domain-project-service';
 import { DatacubeType } from '@/types/Enums';
 
