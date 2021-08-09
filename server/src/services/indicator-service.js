@@ -70,7 +70,7 @@ const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, fil
   for (const node of filteredNodeParameters) {
     const searchPayload = {
       index: RESOURCE.INDICATOR_MATCH_HISTORY,
-      size: DEFAULT_SIZE,
+      size: 1,
       body: {
         query: {
           bool: {
@@ -102,12 +102,7 @@ const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, fil
     if (conceptPreviousMatches.length > 0) {
 
       const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
-      const indicatorMetadata = await datacubeAdapter.findOne([{ field: 'id', value: conceptPreviousMatches[0]._source.indicator_id }], {});
-      ontologyCandidates[node.concept] = {
-        ...indicatorMetadata,
-        // since match score doesn't exist, as a user picked this, I default to 1 for now
-        _match_score: 1
-      };
+      ontologyCandidates[node.concept] = await datacubeAdapter.findOne([{ field: 'id', value: conceptPreviousMatches[0]._source.indicator_id }], {});
     } else {
       conceptsWithoutHistory.push(node.concept);
     }
@@ -236,10 +231,7 @@ const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
     const foundIndicatorMetadata = response.body.hits.hits;
 
     if (!_.isEmpty(foundIndicatorMetadata)) {
-      ontologyCandidates[concept] = {
-        ...foundIndicatorMetadata[0]._source,
-        _match_score: foundIndicatorMetadata[0]._score
-      };
+      ontologyCandidates[concept] = foundIndicatorMetadata[0]._source
     }
   }
   return ontologyCandidates;

@@ -567,6 +567,11 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   }
 
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+  const getNodePayload = {
+    id: nodeParameter.id
+  };
+  const nodeBeforeUpdate = await nodeParameterAdapter.findOne(getNodePayload, {});
+
   const updateNodePayload = {
     id: nodeParameter.id,
     parameter: nodeParameter.parameter
@@ -577,34 +582,36 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update node-parameter');
   }
 
-  const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
-  const indicatorMatchPayload = [
-    { field: 'project_id', value: model.project_id },
-    { field: 'concept', value: nodeParameter.concept },
-    { field: 'indicator_id', value: nodeParameter.parameter.id }
-  ];
+  if (!_.isNil(nodeBeforeUpdate.parameter) && !_.isNil(nodeBeforeUpdate.parameter.id) && nodeBeforeUpdate.parameter.id != nodeParameter.id) {
+    const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
+    const indicatorMatchPayload = [
+      { field: 'project_id', value: model.project_id },
+      { field: 'concept', value: nodeParameter.concept },
+      { field: 'indicator_id', value: nodeParameter.parameter.id }
+    ];
 
-  const indicatorMatch = await indicatorMatchHistoryAdapter.findOne(indicatorMatchPayload, {});
-  // if indicator has been matched by user to this concept, need to update frequency
-  if (!_.isNil(indicatorMatch)) {
-    const updateIndicatorMatchPayload = {
-      id: indicatorMatch.id,
-      frequency: indicatorMatch.frequency + 1
-    };
-    r = await indicatorMatchHistoryAdapter.update([updateIndicatorMatchPayload], d => d.id);
-    if (r.errors) {
-      Logger.warn(JSON.stringify(r));
-      throw new Error('Failed to update indicator-match-history');
+    const indicatorMatch = await indicatorMatchHistoryAdapter.findOne(indicatorMatchPayload, {});
+    // if indicator has been matched by user to this concept, need to update frequency
+    if (!_.isNil(indicatorMatch)) {
+      const updateIndicatorMatchPayload = {
+        id: indicatorMatch.id,
+        frequency: indicatorMatch.frequency + 1
+      };
+      r = await indicatorMatchHistoryAdapter.update([updateIndicatorMatchPayload], d => d.id);
+      if (r.errors) {
+        Logger.warn(JSON.stringify(r));
+        throw new Error('Failed to update indicator-match-history');
+      }
+    } else {
+      const insertIndicatorMatchPayload = {
+        id: uuid(),
+        project_id: model.project_id,
+        concept: nodeParameter.concept,
+        indicator_id: nodeParameter.parameter.id,
+        frequency: 1
+      };
+      await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
     }
-  } else {
-    const insertIndicatorMatchPayload = {
-      id: uuid(),
-      project_id: model.project_id,
-      concept: nodeParameter.concept,
-      indicator_id: nodeParameter.parameter.id,
-      frequency: 1
-    };
-    await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
   }
 
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
