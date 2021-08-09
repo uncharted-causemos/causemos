@@ -62,11 +62,9 @@ import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
 import router from '@/router';
-import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import _ from 'lodash';
 
 const DRILLDOWN_TABS = [
@@ -98,7 +96,7 @@ export default defineComponent({
       default: false
     }
   },
-  emits: ['temporal-breakdown-data', 'regional-data', 'selected-scenario-ids', 'select-timestamp'],
+  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp'],
   setup(props, { emit }) {
     const {
       datacubeId,
@@ -230,37 +228,9 @@ export default defineComponent({
       ref([]) // region breakdown
     );
 
-    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
-      breakdownOption,
-      timeseriesData,
-      selectedTimestamp,
-      selectedScenarioIds
-    );
-
     watchEffect(() => {
       if (temporalBreakdownData.value && props.isSelected) {
         emit('temporal-breakdown-data', temporalBreakdownData.value);
-      }
-    });
-
-    const {
-      outputSpecs,
-      regionalData
-    } = useRegionalData(
-      datacubeId,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      metadata,
-      selectedTimeseriesPoints,
-      breakdownOption,
-      ref(null)
-    );
-
-
-    watchEffect(() => {
-      if (regionalData.value && props.isSelected) {
-        emit('regional-data', regionalData.value);
       }
     });
 
@@ -287,8 +257,6 @@ export default defineComponent({
       temporalBreakdownData,
       AggregationOption,
       emitTimestampSelection,
-      regionalData,
-      outputSpecs,
       visibleTimeseriesData,
       analysisItems,
       project,
