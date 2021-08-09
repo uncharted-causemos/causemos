@@ -64,7 +64,6 @@ export default function useRegionalData(
     }));
   });
   watchEffect(async onInvalidate => {
-    // regionalData.value = null;
     // FIXME: OPTIMIZATION: if we're careful, we can rearrange things so that the
     //  getRegionAggregations call doesn't have to wait until the datacubeHierarchy is ready
     if (outputSpecs.value.length === 0 || datacubeHierarchy.value === null) return;
