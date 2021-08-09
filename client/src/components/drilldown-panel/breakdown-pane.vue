@@ -24,7 +24,7 @@
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
-      :is-radio-button-mode-active="selectedBreakdownOption !== 'region'"
+      :is-radio-button-mode-active="selectedBreakdownOption !== SpatialAggregationLevel.Region"
       @toggle-is-item-selected="toggleIsRegionSelected"
       @aggregation-level-change="setSelectedAdminLevel"
     >
@@ -246,7 +246,8 @@ export default defineComponent({
       breakdownOptions,
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
-      AggregationOption
+      AggregationOption,
+      SpatialAggregationLevel
     };
   },
   computed: {
