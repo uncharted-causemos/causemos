@@ -10,8 +10,8 @@
       :class="{
         'fa-circle': isRadioButtonModeActive && itemData.isChecked,
         'fa-circle-o': isRadioButtonModeActive && !itemData.isChecked,
-        'fa-check-square-o': itemData.isChecked,
-        'fa-square-o': !itemData.isChecked
+        'fa-check-square-o': !isRadioButtonModeActive && itemData.isChecked,
+        'fa-square-o': !isRadioButtonModeActive && !itemData.isChecked
       }"
       @click.stop="toggleChecked"
     />
