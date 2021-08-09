@@ -54,7 +54,9 @@ export default function useInsightsData() {
       } else {
         publicFilterArray.push(publicInsightsSearchFields);
       }
-      const publicInsights = await fetchInsights(publicFilterArray);
+      // Note that when 'ignoreContextId' is true, this means we are fetching insights for the insight explorer within an analysis project
+      // For this case, public insights should not be listed
+      const publicInsights = ignoreContextId ? [] : await fetchInsights(publicFilterArray);
 
       //
       // fetch project-specific insights
@@ -84,6 +86,7 @@ export default function useInsightsData() {
       }
       insights.value = _.uniqBy([...publicInsights, ...contextInsights], 'id');
       store.dispatch('contextInsightPanel/setCountContextInsights', insights.value.length);
+      store.dispatch('insightPanel/setCountInsights', insights.value.length);
     }
     onInvalidate(() => {
       isCancelled = true;

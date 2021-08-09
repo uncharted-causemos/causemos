@@ -3,14 +3,11 @@ import * as d3 from 'd3';
 import moment from 'moment';
 
 import initialize from '@/charts/initialize';
-import { timeseriesLine, confidenceArea, translate, showSvgTooltip, hideSvgTooltip } from '@/utils/svg-util';
-import { DEFAULT_COLOR, SELECTED_COLOR, MARKER_COLOR } from '@/utils/colors-util';
-import dateFormatter from '@/formatters/date-formatter';
-import modelService from '@/services/model-service';
+import { timeseriesLine, confidenceArea, translate } from '@/utils/svg-util';
+import { DEFAULT_COLOR, SELECTED_COLOR } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
 
 const CONFIDENCE_BAND_OPACITY = 0.2;
-const DEFAULT_NUM_LEVELS = 31;
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 
@@ -18,11 +15,6 @@ export default function(selection, data, renderOptions, runOptions) {
   const chart = initialize(selection, renderOptions);
   render(chart, data, runOptions);
 }
-
-// Get month intervals
-const monthRange = (start, end) => {
-  return d3.utcMonths(start, end).map(d => d.getTime()).concat(end);
-};
 
 /**
  * Draws the historic and projection graphs from the prepared 'data'.
@@ -36,9 +28,9 @@ const monthRange = (start, end) => {
 function render(chart, data, runOptions) {
   // const selectedScenarioId = runOptions.selectedScenarioId;
   const miniGraph = runOptions.miniGraph;
-  const updateCallback = runOptions.updateCallback;
   const selectedScenario = data.scenarios.find(s => s.id === runOptions.selectedScenarioId);
   const constraints = _.cloneDeep(selectedScenario.constraints);
+
 
   // Figure out the [start, end] ranges
   let globalStart = Number.POSITIVE_INFINITY;
@@ -77,8 +69,9 @@ function render(chart, data, runOptions) {
     yExtent = [yExtent[0] - Math.abs(yExtent[0]), yExtent[0] + Math.abs(yExtent[0])];
   }
 
+  yExtent = [data.min, data.max];
   // FIXME: this is clearly not going to work for Delphi
-  yExtent = modelService.expandExtentForDyseProjections(yExtent, DEFAULT_NUM_LEVELS);
+  // yExtent = modelService.expandExtentForDyseProjections(yExtent, DEFAULT_NUM_LEVELS);
 
   const formatter = chartValueFormatter(...yExtent);
   const xscale = d3.scaleLinear().domain(xExtent).range([0, width]);
@@ -99,86 +92,10 @@ function render(chart, data, runOptions) {
     .attr('fill', HISTORY_BACKGROUND_COLOR)
     .attr('fill-opacity', 0.6);
 
-  const projectionGroupWidth = width - xscale(selectedScenario.parameter.projection_start);
-  const projectionGroup = svgGroup
-    .append('rect')
-    .classed('projection-rect', true)
-    .attr('y', 0)
-    .attr('x', xscale(selectedScenario.parameter.projection_start))
-    .attr('height', height)
-    .attr('width', projectionGroupWidth)
-    .attr('fill', '#FFF')
-    .attr('stroke', 'none');
-
+  /*
   const projectionStart = selectedScenario.parameter.projection_start;
   const projectionEnd = _.last(selectedScenario.result.values.map(d => d.timestamp));
-
-
-  if (miniGraph === false) {
-    const numSteps = selectedScenario.parameter.num_steps;
-    const MMMYYYY = 'MMM, YYYY';
-
-    projectionGroup.on('mousemove', function(evt) {
-      let [x, y] = d3.pointer(evt);
-      const time = xscale.invert(x);
-
-      x -= xscale(selectedScenario.parameter.projection_start);
-
-      const step = Math.round((x / projectionGroupWidth) * (numSteps - 1));
-      const value = Math.round((y / height) * (DEFAULT_NUM_LEVELS - 1));
-
-      const w = projectionGroupWidth / (numSteps - 1);
-      const h = height / (DEFAULT_NUM_LEVELS - 1);
-
-      svgGroup.select('.constraint-selector').remove();
-      svgGroup.append('rect')
-        .classed('constraint-selector', true)
-        .attr('x', xscale(projectionStart) + step * w - 0.5 * w)
-        .attr('y', value * h - 0.5 * h)
-        .attr('width', w)
-        .attr('height', h)
-        .style('pointer-events', 'none')
-        .style('fill', 'none')
-        .style('stroke', SELECTED_COLOR);
-
-      const valueUndiscretized = ((DEFAULT_NUM_LEVELS - 1) - value) * ((yExtent[1] - yExtent[0]) / (DEFAULT_NUM_LEVELS - 1)) + yExtent[0];
-
-      const toolTipText = dateFormatter(time, MMMYYYY) + ': ' + formatter(valueUndiscretized) + '\n';
-      const tooltip = [toolTipText];
-      data.scenarios.map(scenario => {
-        const datapoint = scenario.result.values.find(v => dateFormatter(v.timestamp, MMMYYYY) === dateFormatter(time, MMMYYYY));
-        if (datapoint) {
-          const text = scenario.name + ' : ' + formatter(datapoint.value);
-          tooltip.push(text);
-        }
-      });
-      showSvgTooltip(svgGroup, tooltip.join('\n'), [xscale(time), y], 0, true);
-    });
-    projectionGroup.on('mouseleave', function() {
-      svgGroup.select('.constraint-selector').remove();
-      hideSvgTooltip(svgGroup);
-    });
-    projectionGroup.on('click', function(evt) {
-      let [x, y] = d3.pointer(evt);
-      x -= xscale(selectedScenario.parameter.projection_start);
-      const step = Math.round((x / projectionGroupWidth) * (numSteps - 1));
-      const value = Math.round((y / height) * (DEFAULT_NUM_LEVELS - 1));
-      const valueUndiscretized = ((DEFAULT_NUM_LEVELS - 1) - value) * ((yExtent[1] - yExtent[0]) / (DEFAULT_NUM_LEVELS - 1)) + yExtent[0];
-
-      const constraint = constraints.find(c => c.step === step);
-      if (_.isNil(constraint)) {
-        constraints.push({ step: step, value: valueUndiscretized }); // new
-      } else {
-        if (constraint.value === valueUndiscretized) {
-          _.remove(constraints, c => c.step === step); // remove
-        } else {
-          constraint.value = valueUndiscretized; // update
-        }
-      }
-      updateCallback(constraints);
-      renderScenarioProjections(svgGroup, data.scenarios, runOptions, xscale, yscale, formatter, constraints);
-    });
-  }
+  */
 
   const historicG = svgGroup.append('g');
   historicG.append('path')
@@ -204,38 +121,13 @@ function render(chart, data, runOptions) {
       .style('fill', DEFAULT_COLOR);
   }
 
-  // Above 0
-  // historicG.append('path')
-  //   .attr('class', 'historical')
-  //   .attr('d', timeseriesArea(xscale, yscale, true)(filteredTimeSeries))
-  //   .style('stroke', 'none')
-  //   .style('fill', '#CCC');
-
-  // Below 0
-  // historicG.append('path')
-  //   .attr('class', 'historical')
-  //   .attr('d', timeseriesArea(xscale, yscale, false)(filteredTimeSeries))
-  //   .style('stroke', 'none')
-  //   .style('fill', '#CCC');
-
-  if (runOptions.shouldDrawInitialValue) {
-    // Initial value line
-    historicG.append('line')
-      .attr('x1', xscale(historyRange.start))
-      .attr('y1', yscale(data.initial_value))
-      .attr('x2', xscale(historyRange.end))
-      .attr('y2', yscale(data.initial_value))
-      .style('stroke-width', 1.0)
-      .style('stroke', MARKER_COLOR)
-      .style('opacity', 0.5);
-  }
-
   // Render scenario projections - stale scenarios may appear weird due to different time ranges
   renderScenarioProjections(svgGroup, data.scenarios, runOptions, xscale, yscale, formatter, constraints);
 
   // Axes
-  const xValues = monthRange(globalStart, globalEnd);
-  const importantXValues = [historyRange.start, historyRange.end, projectionStart, projectionEnd];
+  // const xValues = monthRange(globalStart, globalEnd);
+  // const importantXValues = [historyRange.start, historyRange.end, projectionStart, projectionEnd];
+  const importantXValues = [historyRange.start, historyRange.end];
 
   let xaxis = null;
   if (miniGraph) {
@@ -244,16 +136,6 @@ function render(chart, data, runOptions) {
       .tickValues(importantXValues)
       .tickSize(0)
       .tickFormat('');
-  } else {
-    xaxis = d3.axisBottom()
-      .scale(xscale)
-      .tickValues(xValues)
-      .tickFormat(d => {
-        if (importantXValues.includes(d)) {
-          return dateFormatter(d, 'MMM, YYYY');
-        }
-        return '';
-      });
   }
   const yaxis = d3.axisLeft().scale(yscale).ticks(2).tickSize(miniGraph ? 1 : 2).tickFormat(formatter);
 
@@ -275,29 +157,6 @@ function render(chart, data, runOptions) {
     .style('opacity', miniGraph ? 0.5 : null)
     .selectAll('text')
     .attr('transform', miniGraph ? translate(2, 0) : null);
-
-  // Enhance important dates
-  if (!miniGraph) {
-    svgGroup.select('.xaxis').selectAll('.tick line').attr('y2', d => {
-      if (importantXValues.includes(d)) {
-        return 10;
-      } else {
-        return 3;
-      }
-    });
-
-    svgGroup.select('.xaxis').selectAll('.tick text').attr('y', d => {
-      if (importantXValues.includes(d)) {
-        return 12;
-      } else {
-        return 5;
-      }
-    });
-
-    // Adjust the usual occlusion case were historical-end and projection-start are right next to each other
-    svgGroup.select('.xaxis').selectAll('.tick text').filter(d => d === historyRange.end).attr('y', -12).attr('x', -15);
-    svgGroup.select('.xaxis').selectAll('.tick text').filter(d => d === projectionStart).attr('x', 15);
-  }
 }
 
 function renderScenarioProjections(svgGroup, scenarios, runOptions, xscale, yscale, formatter, constraints) {
@@ -309,39 +168,44 @@ function renderScenarioProjections(svgGroup, scenarios, runOptions, xscale, ysca
   sortedScenarios.push(selectedScenario);
 
   sortedScenarios.forEach(scenario => {
-    if (_.isEmpty(scenario.result)) return;
+    // if (_.isEmpty(scenario.result)) return;
 
     const param = scenario.parameter;
     const xExtent = xscale.domain();
     const stepSize = (xExtent[1] - param.projection_start) / (param.num_steps - 1);
 
     const scenarioG = svgGroup.append('g').attr('class', 'scenario');
-    scenarioG.append('path')
-      .attr('class', 'scenario-path')
-      .attr('d', timeseriesLine(xscale, yscale)(scenario.result.values))
-      .style('stroke', () => {
-        if (scenario.is_baseline) {
-          return '#222';
-        } else if (scenario.id === runOptions.selectedScenarioId) {
-          return SELECTED_COLOR;
-        } else {
-          return '#BBB';
-        }
-      })
-      .style('pointer-events', 'none')
-      .style('fill', 'none');
+    if (!_.isEmpty(scenario.result)) {
+      scenarioG.append('path')
+        .attr('class', 'scenario-path')
+        .attr('d', timeseriesLine(xscale, yscale)(scenario.result.values))
+        .style('stroke', () => {
+          if (scenario.is_baseline) {
+            return '#222';
+          } else if (scenario.id === runOptions.selectedScenarioId) {
+            return SELECTED_COLOR;
+          } else {
+            return '#BBB';
+          }
+        })
+        .style('pointer-events', 'none')
+        .style('fill', 'none');
+    }
 
     // Show show confidence interval and constraint for selectedScenario to avoid cluttering
     if (scenario.id === runOptions.selectedScenarioId) {
       scenarioG.classed('selected-scenario', true);
-      scenarioG
-        .append('path')
-        .attr('class', 'confidence-band')
-        .attr('d', confidenceArea(xscale, yscale, scenario.result)(scenario.result.values))
-        .style('stroke', 'none')
-        .style('fill-opacity', CONFIDENCE_BAND_OPACITY)
-        .style('fill', SELECTED_COLOR)
-        .style('pointer-events', 'none');
+
+      if (!_.isEmpty(scenario.result)) {
+        scenarioG
+          .append('path')
+          .attr('class', 'confidence-band')
+          .attr('d', confidenceArea(xscale, yscale, scenario.result)(scenario.result.values))
+          .style('stroke', 'none')
+          .style('fill-opacity', CONFIDENCE_BAND_OPACITY)
+          .style('fill', SELECTED_COLOR)
+          .style('pointer-events', 'none');
+      }
 
       scenarioG.selectAll('.constraint')
         .data(constraints)

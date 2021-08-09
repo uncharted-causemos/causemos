@@ -18,7 +18,8 @@ import {
 const MODEL_STATUS = {
   UNSYNCED: 0,
   TRAINING: 1,
-  READY: 2
+  READY: 2,
+  UNSYNCED_TOPOLOGY: 3
 };
 
 const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
@@ -222,9 +223,9 @@ const initializeModel = async (modelId: string) => {
   if (model.is_stale === true) {
     errors.push('Model is stale');
   }
-  if (model.is_quantified === false) {
-    errors.push('Model is not quantified');
-  }
+  // if (model.is_quantified === false) {
+  //   errors.push('Model is not quantified');
+  // }
   if (!_.isEmpty((errors))) {
     return errors;
   }
@@ -345,6 +346,8 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
         end: modelParameter.indicator_time_series_range.end
       },
       projection_start: modelParameter.projection_start,
+      min: indicatorData.min,
+      max: indicatorData.max,
       scenarios: []
     };
 
@@ -484,6 +487,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary, nodes: Node
     await createScenario(scenario);
   } catch (error) {
     console.log(error);
+    throw new Error(`Failed creating baseline scenario ${modelSummary.parameter.engine}`);
   }
 };
 
@@ -674,7 +678,12 @@ const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptPro
   const result = _.cloneDeep(constraints);
   nodeParameters.forEach(n => {
     const concept = n.concept;
-    const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+    // const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+    const timeseries: any = _.get(n.parameter, 'timeseries', []);
+    let initialValue = 0;
+    if (timeseries.length > 0) {
+      initialValue = timeseries[timeseries.length - 1].value;
+    }
 
     const current = result.find(c => c.concept === concept);
     if (!_.isNil(current)) {

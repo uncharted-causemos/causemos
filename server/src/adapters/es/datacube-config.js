@@ -105,7 +105,7 @@ const FIELDS = Object.freeze({
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.DATACUBE
   },
-  timePeriod: {
+  period: {
     fields: ['period.gte', 'period.lte'],
     type: FIELD_TYPES.RANGED,
     level: FIELD_LEVELS.DATACUBE

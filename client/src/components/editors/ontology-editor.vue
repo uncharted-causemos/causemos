@@ -110,10 +110,6 @@ export default defineComponent({
     suggestions: {
       type: Array,
       default: () => ([])
-    },
-    project: {
-      type: String,
-      default: ''
     }
   },
   emits: [
@@ -133,7 +129,8 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      ontologyConcepts: 'app/ontologyConcepts'
+      ontologyConcepts: 'app/ontologyConcepts',
+      project: 'app/project'
     })
   },
   methods: {

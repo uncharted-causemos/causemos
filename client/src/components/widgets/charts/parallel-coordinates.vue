@@ -66,6 +66,9 @@ export default defineComponent({
     dimensionsData(): void {
       this.render(undefined);
     },
+    selectedDimensions(): void {
+      this.render(undefined);
+    },
     showBaselineDefaults(): void {
       // do not re-render everything, just update markers visibility
       renderBaselineMarkers(this.showBaselineDefaults);
@@ -108,7 +111,7 @@ export default defineComponent({
         width = size.width;
         height = size.height;
       }
-      if (this.dimensionsData === null || this.dimensionsData.length === 0) return;
+      if (this.selectedDimensions === null || this.selectedDimensions.length === 0) return;
       const options: ParallelCoordinatesOptions = {
         width,
         height,

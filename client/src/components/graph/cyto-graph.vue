@@ -33,6 +33,7 @@ import Controls from '@/components/graph/controls';
 import { createLinearScale } from '@/utils/scales-util';
 import { FADED_COLOR } from '@/utils/colors-util';
 import { calculateNeighborhood } from '@/utils/graphs-util';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 export const EDGE_THRESHOLD = 2000;
 
@@ -60,6 +61,11 @@ export default {
   emits: [
     'clear-selection'
   ],
+  setup() {
+    return {
+      ontologyFormatter: useOntologyFormatter()
+    };
+  },
   data: () => ({
     showEdges: false,
     showExpandControls: false,
@@ -122,7 +128,7 @@ export default {
     this.currentLayout = 'cose-bilkent';
   },
   mounted() {
-    this.graphRenderer = new CytoscapeGraphRenderer();
+    this.graphRenderer = new CytoscapeGraphRenderer({ formatter: this.ontologyFormatter });
     this.graphRenderer.initialize(this.$refs.graph);
     this.graphRenderer.setDepth(1);
     this.graphRenderer.setStrategy(coseBilkentLayout());

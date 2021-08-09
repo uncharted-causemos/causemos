@@ -15,10 +15,11 @@ const modelService = rootRequire('/services/model-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
 const { MODEL_STATUS } = rootRequire('/util/model-util');
+const modelUtil = rootRequire('util/model-util');
 
 const HISTORY_START_DATE = '2015-01-01';
-const HISTORY_END_DATE = '2017-12-01';
-const PROJECTION_START_DATE = '2018-01-01';
+const HISTORY_END_DATE = '2020-12-01';
+const PROJECTION_START_DATE = '2021-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
 
@@ -56,7 +57,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
       projection_start: defaultProjectionStartDate
     };
   }
-  modelFields.is_quantified = true;
+  // modelFields.is_quantified = true;
   modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
@@ -223,11 +224,13 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
     return;
   }
 
+  const model = await modelService.findOne(modelId);
+
   // 2. create payload for model creation in the modelling engine
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters),
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model),
     edges: edgeParameters.map(d => ({
       source: d.source,
       target: d.target,
@@ -276,11 +279,13 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     return;
   }
 
+  const model = await modelService.findOne(modelId);
+
   // 2. create payload for model creation in the modelling engine
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters)
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model)
   };
 
   // 3. register model to engine
@@ -403,6 +408,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   const modelPayload = {
     id: modelId,
     status: status,
+    is_quantified: true,
     parameter: {
       engine: engine
     },
@@ -544,11 +550,21 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     return;
   }
 
+  // Recalculate min/max if not specified
+  if (_.isNil(nodeParameter.parameter.min) || _.isNil(nodeParameter.parameter.max)) {
+    Logger.info('Resetting min / max');
+    const { min, max } = modelUtil.projectionValueRange(nodeParameter.parameter.timeseries.map(d => d.value));
+    nodeParameter.parameter.min = min;
+    nodeParameter.parameter.max = max;
+  }
+
+
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
   const parameter = model.parameter;
   const engine = parameter.engine;
-  const payload = modelService.buildNodeParametersPayload([nodeParameter]);
+  const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
+
 
   // Register update with engine and retrieve new value
   let engineUpdateResult = null;
@@ -558,6 +574,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     Logger.warn(`Update node-parameter is undefined for ${engine}`);
   }
 
+  // FIXME: initial_value not needed
   if (engine === DYSE) {
     const initialValue = engineUpdateResult.conceptIndicators[nodeParameter.concept].initialValue;
     Logger.info(`Setting ${nodeParameter.concept} to initialValue ${initialValue}`);

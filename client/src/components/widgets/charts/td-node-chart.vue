@@ -27,7 +27,7 @@ const RESIZE_DELAY = 15;
 
 export default defineComponent({
   name: 'TDNodeChart',
-  emits: ['set-historical-timeseries'],
+  emits: ['set-historical-timeseries', 'set-constraints'],
   props: {
     historicalTimeseries: {
       type: Array as PropType<TimeseriesPoint[]>,
@@ -48,6 +48,10 @@ export default defineComponent({
     maxValue: {
       type: Number,
       required: true
+    },
+    constraints: {
+      type: Array as PropType<ProjectionConstraint[]>,
+      required: true
     }
   },
   setup(props, { emit }) {
@@ -56,7 +60,8 @@ export default defineComponent({
       projections,
       selectedScenarioId,
       minValue,
-      maxValue
+      maxValue,
+      constraints
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
       const projectionStartTimestamp =
@@ -69,18 +74,9 @@ export default defineComponent({
     });
     const chartRef = ref<HTMLElement | null>(null);
     const chartSize = ref({ width: 0, height: 0 });
-    const constraints = ref<ProjectionConstraint[]>([]);
     const setConstraints = (newConstraints: ProjectionConstraint[]) => {
-      constraints.value = newConstraints;
+      emit('set-constraints', newConstraints);
     };
-    watchEffect(() => {
-      const selectedScenario = projections.value.find(
-        scenario => scenario.scenarioId === selectedScenarioId.value
-      );
-      if (selectedScenario !== undefined) {
-        constraints.value = selectedScenario.constraints;
-      }
-    });
     const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
       emit('set-historical-timeseries', newPoints);
     };
@@ -151,7 +147,8 @@ export default defineComponent({
       // Set new size
       svg.attr('width', width).attr('height', height);
       // (Re-)render
-      svg.selectAll('*').remove();
+      // svg.selectAll('*').remove();
+
       renderChart(
         svg,
         width,
