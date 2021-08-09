@@ -25,11 +25,11 @@
     <div class="flex-row">
       <div
         v-if="isRadioButtonModeActive"
-        style="cursor: pointer"
+        class="all-radio-button"
         @click="setAllChecked"
       >
         <i
-          class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
+          class="fa fa-lg fa-fw icon-centered"
           :class="{
             'fa-circle': isAllSelected,
             'fa-circle-o': !isAllSelected
@@ -523,10 +523,10 @@ h5 {
   margin-top: 5px;
 }
 
-.select-all-buttons {
-  margin: 0;
-  margin-top: 5px;
-  > *:first-child {
+.all-radio-button {
+  cursor: pointer;
+  i {
+    width: 16px;
     margin-right: 5px;
   }
 }
