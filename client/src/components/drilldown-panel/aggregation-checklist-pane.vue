@@ -23,7 +23,11 @@
       />
     </div>
     <div class="flex-row">
-      <div v-if="isRadioButtonModeActive">
+      <div
+        v-if="isRadioButtonModeActive"
+        style="cursor: pointer"
+        @click="setAllChecked"
+      >
         <i
           class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
           :class="{
@@ -251,7 +255,7 @@ export default defineComponent({
     'aggregation-level-change',
     'toggle-is-item-selected'
   ],
-  setup(props) {
+  setup(props, { emit }) {
     const {
       rawData,
       aggregationLevel,
@@ -397,11 +401,39 @@ export default defineComponent({
       return selectedItemIds.value === null || selectedItemIds.value.length === 0;
     });
 
+
+    const toggleChecked = (path: string[]) => {
+      const aggregationLevel = orderedAggregationLevelKeys.value[
+        path.length - 1
+      ];
+      const itemId = path.join(PATH_DELIMETER);
+      emit('toggle-is-item-selected', aggregationLevel, itemId);
+    };
+
+    const setAllChecked = () => {
+      // ASSUMPTION: the "All" option is only showed when "radio button" mode
+      //  is active, meaning there is no more than one item
+      if (
+        selectedItemIds.value === null ||
+        selectedItemIds.value.length === 0
+      ) {
+        return;
+      }
+      if (selectedItemIds.value.length > 1) {
+        console.error(
+          'setAllSelected should only be called when radio button mode is' +
+          ' active, but multiple items are selected.', selectedItemIds.value);
+      }
+      toggleChecked(selectedItemIds.value[0].split(PATH_DELIMETER));
+    };
+
     return {
       statefulData,
       maxVisibleBarValue,
       visibleRows,
-      isAllSelected
+      isAllSelected,
+      toggleChecked,
+      setAllChecked
     };
   },
   methods: {
@@ -439,13 +471,6 @@ export default defineComponent({
       if (isStatefulDataNode(currentNode)) {
         currentNode.isExpanded = !currentNode.isExpanded;
       }
-    },
-    toggleChecked(path: string[]) {
-      const aggregationLevel = this.orderedAggregationLevelKeys[
-        path.length - 1
-      ];
-      const itemId = path.join(PATH_DELIMETER);
-      this.$emit('toggle-is-item-selected', aggregationLevel, itemId);
     }
   }
 });
