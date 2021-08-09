@@ -40,6 +40,8 @@
       <div v-if="units !== null" class="units">
         {{ units }}
       </div>
+      <!-- Render an empty div so the 'all-radio-button' stays left-aligned -->
+      <div v-else />
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
