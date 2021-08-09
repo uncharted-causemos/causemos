@@ -104,6 +104,7 @@ let pcTypes: {[key: string]: string} = {};
 const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
+const currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
 const isCategoricalAxis = (name: string) => {
@@ -589,13 +590,21 @@ function renderParallelCoordinates(
       });
     if (brushesCount === 0) {
       // cancel any previous selection; turn every line into grey
-      cancelPrevLineSelection(svgElement);
+      if (event && !event.shiftKey) {
+        currentLineSelection.length = 0;
+        cancelPrevLineSelection(svgElement);
+      }
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
 
       selectLine(selectedLine, event, d, lineStrokeWidthSelected);
 
       const selectedLineData = selectedLine.datum() as ScenarioData;
+      if (selectedLineData) {
+        currentLineSelection.push(selectedLineData);
+      } else {
+        currentLineSelection.length = 0;
+      }
 
       // if we have valid selection (either by direct click on a line or through brushing)
       //  then update the tooltips
@@ -605,7 +614,7 @@ function renderParallelCoordinates(
 
       // notify external listeners
       if (notifyExternalListeners) {
-        onLinesSelection(selectedLineData ? [selectedLineData] : []);
+        onLinesSelection(currentLineSelection);
       }
     }
   }
