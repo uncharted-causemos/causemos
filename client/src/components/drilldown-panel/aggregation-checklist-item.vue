@@ -5,7 +5,7 @@
     @click="toggleExpanded"
   >
     <i
-      v-if="itemData.isSelectedAggregationLevel && !isRadioButtonModeActive"
+      v-if="itemData.isSelectedAggregationLevel"
       class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
       :class="{
         'fa-circle': isRadioButtonModeActive && itemData.isChecked,
