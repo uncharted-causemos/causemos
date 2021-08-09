@@ -119,7 +119,7 @@ const extractVisibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
   selectedLevel: number,
-  selectedItemIds: { [aggregationLevel: string]: Set<string> } | null,
+  selectedItemIds: string[] | null,
   orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
@@ -157,12 +157,10 @@ const extractVisibleRows = (
   if (!isNodeVisible || !isStatefulDataNode(metadataNode)) {
     return visibleChildren;
   }
-  const aggregationLevel = orderedAggregationLevelKeys[depthLevel];
   const itemId = metadataNode.path.join(PATH_DELIMETER);
   const isChecked =
     selectedItemIds === null ||
-    selectedItemIds[aggregationLevel] === undefined ||
-    selectedItemIds[aggregationLevel].has(itemId);
+    selectedItemIds.includes(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
@@ -241,9 +239,7 @@ export default defineComponent({
       required: true
     },
     selectedItemIds: {
-      type: Object as PropType<{
-        [aggregationLevel: string]: Set<string>;
-      } | null>,
+      type: Object as PropType<string[] | null>,
       default: null
     },
     isRadioButtonModeActive: {
@@ -398,10 +394,7 @@ export default defineComponent({
     });
 
     const isAllSelected = computed(() => {
-      const aggregationLevelKey = orderedAggregationLevelKeys.value[aggregationLevel.value];
-      return selectedItemIds.value === null ||
-        selectedItemIds.value[aggregationLevelKey] === undefined ||
-        selectedItemIds.value[aggregationLevelKey].size === 0;
+      return selectedItemIds.value === null || selectedItemIds.value.length === 0;
     });
 
     return {
