@@ -245,10 +245,7 @@ export default defineComponent({
 
     const {
       outputSpecs,
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
+      regionalData
     } = useRegionalData(
       datacubeId,
       selectedSpatialAggregation,
@@ -292,9 +289,6 @@ export default defineComponent({
       emitTimestampSelection,
       regionalData,
       outputSpecs,
-      deselectedRegionIds,
-      setAllRegionsSelected,
-      toggleIsRegionSelected,
       visibleTimeseriesData,
       analysisItems,
       project,

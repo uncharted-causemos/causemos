@@ -27,8 +27,8 @@
         <i
           class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
           :class="{
-            'fa-check-circle-o': deselectedItemIds === null,
-            'fa-circle-o': deselectedItemIds !== null
+            'fa-check-circle-o': isAllSelected,
+            'fa-circle-o': !isAllSelected
           }"
         />
         <span>All</span>
@@ -119,7 +119,7 @@ const extractVisibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
   selectedLevel: number,
-  deselectedItemIds: { [aggregationLevel: string]: Set<string> } | null,
+  selectedItemIds: { [aggregationLevel: string]: Set<string> } | null,
   orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
@@ -141,7 +141,7 @@ const extractVisibleRows = (
         child,
         _hiddenAncestorNames,
         selectedLevel,
-        deselectedItemIds,
+        selectedItemIds,
         orderedAggregationLevelKeys
       )
     ];
@@ -160,9 +160,9 @@ const extractVisibleRows = (
   const aggregationLevel = orderedAggregationLevelKeys[depthLevel];
   const itemId = metadataNode.path.join(PATH_DELIMETER);
   const isChecked =
-    deselectedItemIds === null ||
-    deselectedItemIds[aggregationLevel] === undefined ||
-    !deselectedItemIds[aggregationLevel].has(itemId);
+    selectedItemIds === null ||
+    selectedItemIds[aggregationLevel] === undefined ||
+    selectedItemIds[aggregationLevel].has(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
@@ -240,7 +240,7 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
     },
-    deselectedItemIds: {
+    selectedItemIds: {
       type: Object as PropType<{
         [aggregationLevel: string]: Set<string>;
       } | null>,
@@ -261,7 +261,7 @@ export default defineComponent({
       aggregationLevel,
       orderedAggregationLevelKeys,
       selectedTimeseriesPoints,
-      deselectedItemIds
+      selectedItemIds
     } = toRefs(props);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
@@ -392,15 +392,23 @@ export default defineComponent({
         statefulData.value,
         [],
         aggregationLevel.value,
-        deselectedItemIds.value,
+        selectedItemIds.value,
         orderedAggregationLevelKeys.value
       );
+    });
+
+    const isAllSelected = computed(() => {
+      const aggregationLevelKey = orderedAggregationLevelKeys.value[aggregationLevel.value];
+      return selectedItemIds.value === null ||
+        selectedItemIds.value[aggregationLevelKey] === undefined ||
+        selectedItemIds.value[aggregationLevelKey].size === 0;
     });
 
     return {
       statefulData,
       maxVisibleBarValue,
-      visibleRows
+      visibleRows,
+      isAllSelected
     };
   },
   methods: {

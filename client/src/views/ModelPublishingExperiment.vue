@@ -122,7 +122,6 @@
             :selected-temporal-aggregation="selectedTemporalAggregation"
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
-            :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
             :temporal-breakdown-data="temporalBreakdownData"
             :selected-timeseries-points="selectedTimeseriesPoints"
@@ -363,10 +362,7 @@ export default defineComponent({
 
     const {
       regionalData,
-      outputSpecs,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
+      outputSpecs
     } = useRegionalData(
       selectedModelId,
       selectedSpatialAggregation,
@@ -401,9 +397,6 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected,
       currentOutputIndex,
       setSelectedTimestamp,
       visibleTimeseriesData,

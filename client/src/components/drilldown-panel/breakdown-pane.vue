@@ -23,7 +23,7 @@
       :raw-data="regionalData"
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
-      :deselected-item-ids="deselectedRegionIds"
+      :selected-item-ids="selectedRegionIds"
       :is-radio-button-mode-active="true"
       @toggle-is-item-selected="toggleIsRegionSelected"
       @aggregation-level-change="setSelectedAdminLevel"
@@ -81,11 +81,6 @@
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
     >
-      <!-- TODO:
-      :deselected-item-ids="deselectedRegionIds"
-      @toggle-is-item-selected="toggleIsRegionSelected"
-      @aggregation-level-change="setSelectedAdminLevel"
-      -->
       <template #aggregation-description>
         <p class="aggregation-description">
           Aggregated by
@@ -160,7 +155,7 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: []
     },
-    deselectedRegionIds: {
+    selectedRegionIds: {
       type: Object as PropType<AdminRegionSets | null>,
       default: null
     },

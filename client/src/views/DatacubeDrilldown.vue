@@ -137,7 +137,7 @@
               :selected-temporal-aggregation="selectedTemporalAggregation"
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
-              :deselected-region-ids="deselectedRegionIds"
+              :selected-region-ids="selectedRegionIds"
               :selected-breakdown-option="breakdownOption"
               :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
@@ -273,7 +273,11 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
-    const { datacubeHierarchy } = useDatacubeHierarchy(selectedScenarioIds, metadata);
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(selectedScenarioIds, metadata);
 
     const timeInterval = 10000;
 
@@ -361,10 +365,11 @@ export default defineComponent({
         selectedAdminLevelKey === 'admin4' ||
         selectedAdminLevelKey === 'admin5'
       ) return [];
-      const regionsAtSelectedLevel = datacubeHierarchy.value[selectedAdminLevelKey];
-      const deselected = deselectedRegionIds.value[selectedAdminLevelKey];
-      return regionsAtSelectedLevel.filter(region => !deselected.has(region))
-        .slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
+      const selectedRegionsAtSelectedLevel = Array.from(selectedRegionIds.value[selectedAdminLevelKey]);
+      const regionsAtSelectedLevel = selectedRegionsAtSelectedLevel.length > 0
+        ? selectedRegionsAtSelectedLevel
+        : datacubeHierarchy.value[selectedAdminLevelKey];
+      return regionsAtSelectedLevel.slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
     });
 
     const {
@@ -396,10 +401,7 @@ export default defineComponent({
 
     const {
       outputSpecs,
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
+      regionalData
     } = useRegionalData(
       selectedModelId,
       selectedSpatialAggregation,
@@ -458,9 +460,8 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
-      deselectedRegionIds,
+      selectedRegionIds,
       toggleIsRegionSelected,
-      setAllRegionsSelected,
       outputs,
       currentOutputIndex,
       setSelectedTimestamp,

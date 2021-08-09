@@ -1,8 +1,17 @@
 import { DatacubeGeography } from '@/types/Common';
 import { Indicator, Model } from '@/types/Datacube';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { AdminRegionSets } from '@/types/Datacubes';
+import _ from 'lodash';
+import { computed, readonly, ref, Ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { getHierarchy } from '../new-datacube-service';
+
+const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
+  country: new Set(),
+  admin1: new Set(),
+  admin2: new Set(),
+  admin3: new Set()
+};
 
 interface HierarchyNode {
   [key: string]: null | HierarchyNode;
@@ -90,7 +99,39 @@ export default function useDatacubeHierarchy(
     } catch {}
   });
 
+  const selectedRegionIds = ref<AdminRegionSets>(
+    _.clone(EMPTY_ADMIN_REGION_SETS)
+  );
+  const resetSelection = () => {
+    selectedRegionIds.value = _.clone(EMPTY_ADMIN_REGION_SETS);
+  };
+  watch(datacubeHierarchy, () => {
+    // Reset the selected region list when the list of all regions changes
+    resetSelection();
+  });
+  const toggleIsRegionSelected = (
+    adminLevel: keyof AdminRegionSets,
+    regionId: string
+  ) => {
+    const currentlySelected = selectedRegionIds.value[adminLevel];
+    const isRegionSelected = currentlySelected.has(regionId);
+    // If region is currently selected, remove it from the list of selected regions.
+    //  Otherwise, add it to the list of selected regions.
+    const updatedList = _.clone(currentlySelected);
+    if (isRegionSelected) {
+      updatedList.delete(regionId);
+    } else {
+      updatedList.add(regionId);
+    }
+    // Assign new object to selectedRegionIds.value to trigger reactivity updates.
+    selectedRegionIds.value = Object.assign({}, selectedRegionIds.value, {
+      [adminLevel]: updatedList
+    });
+  };
+
   return {
-    datacubeHierarchy
+    datacubeHierarchy,
+    selectedRegionIds: readonly(selectedRegionIds),
+    toggleIsRegionSelected
   };
 }
