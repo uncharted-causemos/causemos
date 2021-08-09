@@ -27,7 +27,7 @@
         <i
           class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
           :class="{
-            'fa-check-circle-o': isAllSelected,
+            'fa-circle': isAllSelected,
             'fa-circle-o': !isAllSelected
           }"
         />
