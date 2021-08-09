@@ -5,7 +5,16 @@
     @click="toggleExpanded"
   >
     <i
-      v-if="itemData.isSelectedAggregationLevel"
+      v-if="itemData.isSelectedAggregationLevel && isRadioButtonModeActive"
+      class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
+      :class="{
+        'fa-check-circle-o': itemData.isChecked,
+        'fa-circle-o': !itemData.isChecked
+      }"
+      @click.stop="toggleChecked"
+    />
+    <i
+      v-if="itemData.isSelectedAggregationLevel && !isRadioButtonModeActive"
       class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
       :class="{
         'fa-check-square-o': itemData.isChecked,
@@ -122,6 +131,10 @@ export default defineComponent({
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
+    },
+    isRadioButtonModeActive: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {

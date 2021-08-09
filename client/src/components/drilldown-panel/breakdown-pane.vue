@@ -24,8 +24,8 @@
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :deselected-item-ids="deselectedRegionIds"
+      :is-radio-button-mode-active="true"
       @toggle-is-item-selected="toggleIsRegionSelected"
-      @set-all-selected="setAllRegionsSelected"
       @aggregation-level-change="setSelectedAdminLevel"
     >
       <template #aggregation-description>
@@ -84,7 +84,6 @@
       <!-- TODO:
       :deselected-item-ids="deselectedRegionIds"
       @toggle-is-item-selected="toggleIsRegionSelected"
-      @set-all-selected="setAllRegionsSelected"
       @aggregation-level-change="setSelectedAdminLevel"
       -->
       <template #aggregation-description>
@@ -177,7 +176,6 @@ export default defineComponent({
   emits: [
     'set-selected-admin-level',
     'toggle-is-region-selected',
-    'set-all-regions-selected',
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
@@ -192,10 +190,6 @@ export default defineComponent({
 
     const toggleIsRegionSelected = (adminLevel: string, regionId: string) => {
       emit('toggle-is-region-selected', adminLevel, regionId);
-    };
-
-    const setAllRegionsSelected = (isSelected: boolean) => {
-      emit('set-all-regions-selected', isSelected);
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
@@ -257,7 +251,6 @@ export default defineComponent({
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
-      setAllRegionsSelected,
       emitBreakdownOptionSelection,
       breakdownOptions,
       isRegionalDataValid,

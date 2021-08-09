@@ -142,7 +142,6 @@
               :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
-              @set-all-regions-selected="setAllRegionsSelected"
               @set-breakdown-option="setBreakdownOption"
             />
           </template>

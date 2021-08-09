@@ -23,15 +23,15 @@
       />
     </div>
     <div class="flex-row">
-      <div class="select-all-buttons">
-        <small-text-button
-          :label="'Select All'"
-          @click="setAllSelected(true)"
+      <div v-if="isRadioButtonModeActive">
+        <i
+          class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
+          :class="{
+            'fa-check-circle-o': deselectedItemIds === null,
+            'fa-circle-o': deselectedItemIds !== null
+          }"
         />
-        <small-text-button
-          :label="'Deselect All'"
-          @click="setAllSelected(false)"
-        />
+        <span>All</span>
       </div>
       <div v-if="units !== null" class="units">
         {{ units }}
@@ -44,6 +44,7 @@
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
         :selected-timeseries-points="selectedTimeseriesPoints"
+        :is-radio-button-mode-active="isRadioButtonModeActive"
         @toggle-expanded="toggleExpanded(row.path)"
         @toggle-checked="toggleChecked(row.path)"
       />
@@ -57,7 +58,6 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
-import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import { BreakdownData } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
@@ -206,8 +206,7 @@ const PATH_DELIMETER = '__';
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
-    AggregationChecklistItem,
-    SmallTextButton
+    AggregationChecklistItem
   },
   props: {
     aggregationLevelCount: {
@@ -246,12 +245,15 @@ export default defineComponent({
         [aggregationLevel: string]: Set<string>;
       } | null>,
       default: null
+    },
+    isRadioButtonModeActive: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [
     'aggregation-level-change',
-    'toggle-is-item-selected',
-    'set-all-selected'
+    'toggle-is-item-selected'
   ],
   setup(props) {
     const {
@@ -443,9 +445,6 @@ export default defineComponent({
       ];
       const itemId = path.join(PATH_DELIMETER);
       this.$emit('toggle-is-item-selected', aggregationLevel, itemId);
-    },
-    setAllSelected(isSelected: boolean) {
-      this.$emit('set-all-selected', isSelected);
     }
   }
 });
@@ -514,6 +513,9 @@ h5 {
 .flex-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  // If there's only one item, right-align it
+  & *:only-child {
+    margin-left: auto;
+  }
 }
 </style>
