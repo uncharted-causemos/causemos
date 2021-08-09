@@ -271,9 +271,10 @@ export default defineComponent({
     async refreshDomainProjects() {
       this.enableOverlay('Loading projects');
 
-      const projectsSearchFilters = filtersUtil.newFilters();
-      filtersUtil.addSearchTerm(projectsSearchFilters, 'type', 'model', 'and', false); // NOTE: only domain-model projects are supported
-      const existingProjects: DomainProject[] = await domainProjectService.getProjects(projectsSearchFilters);
+      const domainProjectSearchFields = {
+        type: 'model'
+      };
+      const existingProjects: DomainProject[] = await domainProjectService.getProjects(domainProjectSearchFields);
 
       this.projectsListDomainDatacubes = existingProjects;
 
