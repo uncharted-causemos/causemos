@@ -1,8 +1,19 @@
 import { DatacubeGeography } from '@/types/Common';
 import { Indicator, Model } from '@/types/Datacube';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { AdminRegionSets } from '@/types/Datacubes';
+import _ from 'lodash';
+import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { getHierarchy } from '../new-datacube-service';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { SpatialAggregationLevel } from '@/types/Enums';
+
+const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
+  country: new Set(),
+  admin1: new Set(),
+  admin2: new Set(),
+  admin3: new Set()
+};
 
 interface HierarchyNode {
   [key: string]: null | HierarchyNode;
@@ -19,17 +30,23 @@ const flattenRegions = (node: HierarchyNode | null) => {
 
 export default function useDatacubeHierarchy(
   selectedScenarioIds: Ref<string[]>,
-  metadata: Ref<Model | Indicator | null>
+  metadata: Ref<Model | Indicator | null>,
+  selectedAdminLevel: Ref<number>,
+  breakdownOption: Ref<string | null>
 ) {
-  const allRegions = ref<DatacubeGeography>({
-    country: [],
-    admin1: [],
-    admin2: [],
-    admin3: []
-  });
+  /**
+   * Contains the lists of regions at each admin level across all timestamps
+   * in the selected model run(s) / indicator. Each entry in the list is a
+   * string of the form 'Ethiopia__Oromia__Oromia Sub-Region'
+   */
+  const datacubeHierarchy = ref<DatacubeGeography | null>(null);
   const store = useStore();
   const datacubeCurrentOutputsMap = computed(
     () => store.getters['app/datacubeCurrentOutputsMap']
+  );
+
+  const isMultiSelectionAllowed = computed(
+    () => breakdownOption.value === SpatialAggregationLevel.Region
   );
 
   watchEffect(async onInvalidate => {
@@ -42,11 +59,10 @@ export default function useDatacubeHierarchy(
     if (datacubeMetadata === null || _modelRunIds.length === 0) {
       return;
     }
-    // FIXME: this should run once for the whole model,
-    //  rather than arbitrarily for the first scenario
-    // Note that this will only be an issue when we're using these hierarchy
-    //  results to populate the breakdown pane, since currently we're only
-    //  using them when split by region is active (exactly one run is selected)
+    // FIXME: Some planned improvements to this endpoint:
+    //  - pass a list of run IDs to fetch the combined hierarchy at once
+    //  - return hierarchy in DatacubeGeography format (will require a new 'region-list' endpoint)
+    // Ben, August 2021
     const runId = _modelRunIds[0];
 
     let activeFeature = '';
@@ -67,7 +83,6 @@ export default function useDatacubeHierarchy(
         activeFeature
       );
       if (isCancelled) return;
-      // FIXME: would be nice if hierarchy endpoint returned this already in the DatacubeGeography format
       const newValue = {
         country: [] as string[],
         admin1: [] as string[],
@@ -88,11 +103,83 @@ export default function useDatacubeHierarchy(
           newValue.admin3.push(regionId);
         }
       });
-      allRegions.value = newValue;
+      datacubeHierarchy.value = newValue;
     } catch {}
   });
 
+  const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>(
+    _.clone(EMPTY_ADMIN_REGION_SETS)
+  );
+  watch([datacubeHierarchy], () => {
+    // Reset the selected region list when the list of all regions changes
+    selectedRegionIdsAtAllLevels.value = _.clone(EMPTY_ADMIN_REGION_SETS);
+  });
+  watchEffect(() => {
+    // If multiselection is no longer allowed, truncate the list of selected
+    //  regions to a maximum length of one
+    if (isMultiSelectionAllowed.value === false) {
+      const truncateSet = (set: Set<any>) => {
+        const newSet = _.clone(set);
+        Array.from(newSet.keys())
+          .slice(1)
+          .forEach(key => newSet.delete(key));
+        return newSet;
+      };
+      const { country, admin1, admin2, admin3 } = selectedRegionIdsAtAllLevels.value;
+      selectedRegionIdsAtAllLevels.value = {
+        country: truncateSet(country),
+        admin1: truncateSet(admin1),
+        admin2: truncateSet(admin2),
+        admin3: truncateSet(admin3)
+      };
+    }
+  });
+  const toggleIsRegionSelected = (
+    adminLevel: keyof AdminRegionSets,
+    regionId: string
+  ) => {
+    const currentlySelected = selectedRegionIdsAtAllLevels.value[adminLevel];
+    const isRegionSelected = currentlySelected.has(regionId);
+    const updatedList = _.clone(currentlySelected);
+    if (isRegionSelected) {
+      // If region is currently selected, remove it from the list of selected regions.
+      updatedList.delete(regionId);
+    } else if (isMultiSelectionAllowed.value) {
+      // Else if multiple regions can be selected add it to the list of selected regions.
+      updatedList.add(regionId);
+    } else {
+      // Otherwise, replace the list of selected regions with this region.
+      updatedList.clear();
+      updatedList.add(regionId);
+    }
+    // Assign new object to selectedRegionIdsAtAllLevels.value to trigger reactivity updates.
+    selectedRegionIdsAtAllLevels.value = Object.assign(
+      {},
+      selectedRegionIdsAtAllLevels.value,
+      {
+        [adminLevel]: updatedList
+      }
+    );
+  };
+
+  const selectedRegionIds = computed(() => {
+    const selectedAdminLevelKey = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
+    if (
+      datacubeHierarchy.value === null ||
+      selectedAdminLevelKey === 'admin4' ||
+      selectedAdminLevelKey === 'admin5'
+    ) {
+      return [];
+    }
+    const selectedRegionsAtSelectedLevel = Array.from(
+      selectedRegionIdsAtAllLevels.value[selectedAdminLevelKey]
+    );
+    return selectedRegionsAtSelectedLevel.slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
+  });
+
   return {
-    allRegions
+    datacubeHierarchy,
+    selectedRegionIds,
+    toggleIsRegionSelected
   };
 }
