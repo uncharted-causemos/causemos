@@ -1,3 +1,5 @@
+import numberFormatter from '@/formatters/number-formatter';
+
 const cleanTextFragment = (text: string) => {
   return text
     // New lines
@@ -39,8 +41,23 @@ export const chartValueFormatter = (...range: number[]) => {
   }
 
   // Guard against skewed ranges. e.g. [0.103, 888888]
-  if (range[0].toString().length < 7 && range[1].toString().length < 7) {
-    return (v: number) => v.toString();
+  if (Math.abs(range[0]) < 1000000 && Math.abs(range[1]) > 0.00001) {
+    return (v: number) => {
+      const preDecimalLength = v.toString().split('.')[0].length;
+      const lengthCap = 5;
+      let num = v;
+      // given that we have display room for about 7 characters including
+      // formatting like commas and decimals, change the truncation of data
+      // such that we always maximize use of that space without adding 0s.
+      if (preDecimalLength < 5) {
+        num = +v.toFixed(lengthCap - preDecimalLength);
+      } else {
+        num = +v.toFixed(0);
+      }
+
+      // format truncated number with the usual number formatter
+      return numberFormatter(num);
+    };
   }
   return defaultValueFormatter;
 };

@@ -120,7 +120,7 @@ const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
     : createColorStops(domain, colors, scaleFn);
   const labels = [];
   // process with color stops (e.g [c1, v1, c2, v2, c3]) where cn is color and vn is value.
-  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 3])(v);
+  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 2])(v);
   stops.forEach((item, index) => {
     if (index === 1) {
       labels.push(`< ${format(item)}`);
