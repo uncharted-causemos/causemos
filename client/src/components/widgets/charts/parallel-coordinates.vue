@@ -120,16 +120,22 @@ export default defineComponent({
         newRunsMode: this.newRunsMode
       };
       const refSelection = d3.select((this.$refs as any).pcsvg);
-      refSelection.selectAll('*').remove();
-      renderParallelCoordinates(
-        refSelection,
-        options,
-        this.dimensionsData,
-        this.selectedDimensions,
-        this.ordinalDimensions,
-        this.onLinesSelection,
-        this.onGeneratedRuns
-      );
+
+      const rerenderChart = () => {
+        refSelection.selectAll('*').remove();
+        renderParallelCoordinates(
+          refSelection,
+          options,
+          this.dimensionsData,
+          this.selectedDimensions,
+          this.ordinalDimensions,
+          this.onLinesSelection,
+          this.onGeneratedRuns,
+          rerenderChart
+        );
+      };
+
+      rerenderChart();
     },
     onLinesSelection(selectedLines?: Array<ScenarioData> /* array of selected lines on the PCs plot */): void {
       if (selectedLines && Array.isArray(selectedLines)) {

@@ -1,10 +1,7 @@
 import API from '@/api/api';
-import { Filters } from '@/types/Filters';
 
-const PROJECT_LIMIT = 500;
-
-const getProjects = async (filters: Filters) => {
-  const result = await API.get('domain-projects', { params: { filters: filters, size: PROJECT_LIMIT } });
+const getProjects = async (fetchParams: {type?: string}) => {
+  const result = await API.get('domain-projects', { params: fetchParams });
   return result.data;
 };
 

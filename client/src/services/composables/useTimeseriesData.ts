@@ -123,6 +123,14 @@ export default function useTimeseriesData(
           });
         });
       } else {
+        // If no regions are selected, pass "undefined" as the region_id
+        //  to get the aggregated timeseries for all regions. Otherwise,
+        //  fetch the timeseries for the selected region
+        // ASSUMPTION: when split by region is not active, only one
+        //  region is selected at a time
+        const regionId = regionIds.value.length > 0
+          ? regionIds.value[0]
+          : undefined;
         promises = modelRunIds.value.map((runId) => {
           return API.get('maas/output/timeseries', {
             params: {
@@ -131,7 +139,8 @@ export default function useTimeseriesData(
               feature: activeFeature,
               resolution: temporalRes,
               temporal_agg: temporalAgg,
-              spatial_agg: spatialAgg
+              spatial_agg: spatialAgg,
+              region_id: regionId
             }
           });
         });
