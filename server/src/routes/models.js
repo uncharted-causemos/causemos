@@ -602,7 +602,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   // only update indicatory match history if setting new indicator and not in the same "session"
   // e.g in the current CAG, a indicator was manually added to a concept
   // so it will only increment frequency if an indicator is being added in multiple CAGs
-  if ((!_.isNil(nodeBeforeUpdate.parameter) && !_.isNil(nodeBeforeUpdate.parameter.id) && nodeBeforeUpdate.parameter.id != nodeParameter.parameter.id) || _.isNil(nodeBeforeUpdate.parameter)) {
+  if ((!_.isNil(nodeBeforeUpdate.parameter) && !_.isNil(nodeBeforeUpdate.parameter.id) && nodeBeforeUpdate.parameter.id !== nodeParameter.parameter.id) || _.isNil(nodeBeforeUpdate.parameter)) {
     const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
     const indicatorMatchPayload = [
       { field: 'project_id', value: model.project_id },
