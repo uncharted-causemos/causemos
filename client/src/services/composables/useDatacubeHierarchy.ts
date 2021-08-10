@@ -110,12 +110,9 @@ export default function useDatacubeHierarchy(
   const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>(
     _.clone(EMPTY_ADMIN_REGION_SETS)
   );
-  const resetSelection = () => {
-    selectedRegionIdsAtAllLevels.value = _.clone(EMPTY_ADMIN_REGION_SETS);
-  };
   watch([datacubeHierarchy], () => {
     // Reset the selected region list when the list of all regions changes
-    resetSelection();
+    selectedRegionIdsAtAllLevels.value = _.clone(EMPTY_ADMIN_REGION_SETS);
   });
   watchEffect(() => {
     // If multiselection is no longer allowed, truncate the list of selected
