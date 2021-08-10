@@ -244,6 +244,12 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
     },
+    /**
+     * An optional parameter for the components that don't have a "selected" state.
+     * TODO: use it to hide the checkboxes for those components, so:
+     * - null means "no item will ever be selected", and
+     * - [] means "no item is currently selected".
+     */
     selectedItemIds: {
       type: Object as PropType<string[] | null>,
       default: null
@@ -283,11 +289,15 @@ export default defineComponent({
             point => point.timeseriesId === timeseriesId
           );
         valuesAtThisLevel.forEach(({ id, values }) => {
+          // e.g. ['Canada', 'Ontario', 'Toronto']
           const path = id.split(PATH_DELIMETER);
+          // e.g. ['Canada', 'Ontario']
           const ancestors = path.slice(0, -1);
+          // e.g. 'Toronto'
           const name = path[path.length - 1];
-          // Find where in the tree this item should be inserted
+          // Initialize pointer to the root of the tree
           let pointer = newStatefulData.children;
+          // Find where in the tree this item should be inserted
           ancestors.forEach(ancestor => {
             const nextNode = pointer.find(node => node.name === ancestor);
             if (nextNode === undefined) {
