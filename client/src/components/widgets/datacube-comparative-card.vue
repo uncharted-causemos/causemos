@@ -32,8 +32,8 @@
           v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
           :timeseries-data="visibleTimeseriesData"
           :selected-timestamp="selectedTimestamp"
+          :selected-timestamp-range="selectedTimestampRange"
           :breakdown-option="breakdownOption"
-          @select-timestamp="emitTimestampSelection"
         />
       </div>
       <div class="datacube-map-placeholder col-md-3">
@@ -58,7 +58,7 @@ import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
-import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -94,13 +94,22 @@ export default defineComponent({
     isSelected: {
       type: Boolean,
       default: false
+    },
+    selectedTimestamp: {
+      type: Number,
+      default: 0
+    },
+    selectedTimestampRange: {
+      type: Object as PropType<{timestamp1: number; timestamp2: number} | null>,
+      default: null
     }
   },
-  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp'],
+  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp', 'loaded-timeseries'],
   setup(props, { emit }) {
     const {
       datacubeId,
-      id
+      id,
+      selectedTimestamp
     } = toRefs(props);
 
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
@@ -110,12 +119,6 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
-
-    const selectedTimestamp = ref(null) as Ref<number | null>;
-
-    const emitTimestampSelection = (newTimestamp: number) => {
-      emit('select-timestamp', newTimestamp);
-    };
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
@@ -154,20 +157,12 @@ export default defineComponent({
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const allScenarioIds = allModelRunData.value.map(run => run.id);
         selectedScenarioIds.value = [allScenarioIds[0]];
-
-        if (props.isSelected) {
-          emit('selected-scenario-ids', selectedScenarioIds.value);
-        }
       }
     });
 
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
-
-        if (props.isSelected) {
-          emit('selected-scenario-ids', selectedScenarioIds.value);
-        }
       }
     });
 
@@ -199,8 +194,11 @@ export default defineComponent({
     }
 
     const setSelectedTimestamp = (value: number) => {
-      if (selectedTimestamp.value === value) return;
-      selectedTimestamp.value = value;
+      if (selectedTimestamp.value === value) {
+        // return;
+      }
+      // do not emit or set the timestamp since it can only be set/updated from the parent component
+      // selectedTimestamp.value = value;
     };
 
     const breakdownOption = ref<string | null>(null);
@@ -229,8 +227,8 @@ export default defineComponent({
     );
 
     watchEffect(() => {
-      if (temporalBreakdownData.value && props.isSelected) {
-        emit('temporal-breakdown-data', temporalBreakdownData.value);
+      if (visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
+        emit('loaded-timeseries', { datacubeId: datacubeId.value, timeseriesList: visibleTimeseriesData.value });
       }
     });
 
@@ -242,7 +240,6 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedScenarioIds,
       typeBreakdownData,
-      selectedTimestamp,
       colorFromIndex,
       metadata,
       mainModelOutput,
@@ -256,7 +253,6 @@ export default defineComponent({
       setBreakdownOption,
       temporalBreakdownData,
       AggregationOption,
-      emitTimestampSelection,
       visibleTimeseriesData,
       analysisItems,
       project,

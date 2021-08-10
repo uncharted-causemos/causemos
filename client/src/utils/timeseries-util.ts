@@ -4,6 +4,8 @@ import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
 
 const DEFAULT_LINE_COLOR = '#000';
+const DEFAULT_LINE_WIDTH = 2;
+
 
 export function applyRelativeTo(
   timeseriesData: Timeseries[],
@@ -100,7 +102,8 @@ export function renderLine(
   points: TimeseriesPoint[],
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
-  color?: string
+  color?: string,
+  width?: number
 ) {
   // Draw a line connecting all points in this segment
   const line = d3
@@ -112,7 +115,8 @@ export function renderLine(
     .classed('segment-line', true)
     .attr('d', () => line(points))
     .style('fill', 'none')
-    .style('stroke', color || DEFAULT_LINE_COLOR);
+    .style('stroke', color || DEFAULT_LINE_COLOR)
+    .style('stroke-width', width || DEFAULT_LINE_WIDTH);
 }
 
 

@@ -8,15 +8,15 @@
 <script lang="ts">
 import * as d3 from 'd3';
 import _ from 'lodash';
-import renderTimeseries from '@/charts/timeseries-renderer';
+import renderTimeline from '@/charts/timeline-renderer';
 import { Timeseries } from '@/types/Timeseries';
 import { defineComponent, PropType, onMounted, ref, watch, toRefs } from 'vue';
 
 const RESIZE_DELAY = 15;
 
 export default defineComponent({
-  name: 'TimeseriesChart',
-  emits: ['select-timestamp'],
+  name: 'TimelineChart',
+  emits: ['select-timestamp', 'select-timestamp-range'],
   props: {
     timeseriesData: {
       type: Array as PropType<Timeseries[]>,
@@ -26,22 +26,21 @@ export default defineComponent({
       type: Number,
       default: 0
     },
-    selectedTimestampRange: {
-      type: Object as PropType<{timestamp1: number; timestamp2: number} | null>,
-      default: null
-    },
     breakdownOption: {
       type: String as PropType<string | null>,
       default: null
     }
   },
   setup(props, { emit }) {
-    const { timeseriesData, breakdownOption, selectedTimestamp, selectedTimestampRange } = toRefs(
+    const { timeseriesData, breakdownOption, selectedTimestamp } = toRefs(
       props
     );
     const lineChart = ref<HTMLElement | null>(null);
     function selectTimestamp(newValue: number) {
       emit('select-timestamp', newValue);
+    }
+    function selectTimestampRange(timestamp1: number, timestamp2: number) {
+      emit('select-timestamp-range', { timestamp1, timestamp2 });
     }
     let updateTimestampElements:
       | ((timestamp: number | null) => void)
@@ -54,15 +53,15 @@ export default defineComponent({
       svg.attr('width', width).attr('height', height);
       // (Re-)render
       svg.selectAll('*').remove();
-      updateTimestampElements = renderTimeseries(
+      updateTimestampElements = renderTimeline(
         svg,
         timeseriesData.value,
         width,
         height,
         selectedTimestamp.value,
-        selectTimestamp,
         breakdownOption.value,
-        selectedTimestampRange.value
+        selectTimestamp,
+        selectTimestampRange
       );
     }, RESIZE_DELAY);
     watch(
@@ -74,7 +73,7 @@ export default defineComponent({
       }
     );
     watch(
-      () => [timeseriesData.value, breakdownOption.value, selectedTimestampRange.value],
+      () => [timeseriesData.value, breakdownOption.value],
       () => {
         // Underlying data has changed, so rerender chart
         const parentElement = lineChart.value?.parentElement;
@@ -102,7 +101,7 @@ export default defineComponent({
 .timeseries-chart-container {
   position: relative;
   width: 100%;
-  height: 140px;
+  height: 100px;
 }
 
 ::v-deep(.xAxis .domain) {

@@ -14,6 +14,11 @@ const Y_AXIS_WIDTH = 40;
 const PADDING_TOP = 10;
 const PADDING_RIGHT = 40;
 
+const CONTEXT_RANGE_FILL = SELECTED_COLOR;
+const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
+const CONTEXT_RANGE_OPACITY = 0.4;
+const CONTEXT_TIMESERIES_OPACITY = 0.2;
+
 // The type of value can't be more specific than `any`
 //  because under the hood d3.tickFormat requires d3.NumberType.
 // It correctly converts, but its TypeScript definitions don't
@@ -52,12 +57,16 @@ export default function(
   width: number,
   height: number,
   selectedTimestamp: number,
-  onTimestampSelected: (timestamp: number) => void,
   breakdownOption: string | null,
-  selectedTimestampRange: {timestamp1: number; timestamp2: number} | null
+  onTimestampSelected: (timestamp: number) => void,
+  onTimestampRangeSelected: (timestamp1: number, timestamp2: number) => void
 ) {
-  const groupElement = selection.append('g');
-  const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
+  selection.selectAll('*').remove();
+
+  const groupElement = selection.append('g')
+    .classed('groupElement', true);
+
+  const [xExtent, yExtent] = calculateExtents(timeseriesList);
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('Unable to derive extent from data', timeseriesList);
     // This function must always return a function to call when
@@ -92,11 +101,49 @@ export default function(
   );
   timeseriesList.forEach(timeseries => {
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1
-      renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+      renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);
     } else { // draw a spot for timeseries that are only 1 long
       renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
     }
   });
+
+  //
+  // render brush
+  //
+  groupElement.selectAll('.yAxis').remove();
+  groupElement
+    .selectAll('.segment-line')
+    .attr('opacity', CONTEXT_TIMESERIES_OPACITY);
+
+  const brushHeight = height - X_AXIS_HEIGHT; // the brush would be placed on the x-axis
+
+  // Create brush object and position over context axis
+  const brush = d3
+    .brushX()
+    .extent([
+      [xScale.range()[0], 0],
+      [xScale.range()[1], X_AXIS_HEIGHT]
+    ])
+    .on('brush', brushed);
+
+  groupElement
+    .append('g') // create brush element and move to default
+    .attr('transform', translate(0, brushHeight)) // move brush overlay to bottom
+    .classed('brush', true)
+    .call(brush)
+    // set initial brush selection to entire context
+    .call(brush.move, xScale.range())
+  ;
+  selection
+    .selectAll('.brush > .selection')
+    .attr('fill', CONTEXT_RANGE_FILL)
+    .attr('stroke', CONTEXT_RANGE_STROKE)
+    .attr('opacity', CONTEXT_RANGE_OPACITY);
+
+  function brushed({ selection }: { selection: number[] }) {
+    const [x0, x1] = selection.map(xScale.invert);
+    onTimestampRangeSelected(x0, x1);
+  }
 
   generateSelectableTimestamps(
     groupElement,
@@ -139,19 +186,9 @@ export default function(
   };
 }
 
-function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {timestamp1: number; timestamp2: number} | null) {
+function calculateExtents(timeseriesList: Timeseries[]) {
   const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
-  const allTimestampDataPoints = allPoints.map(point => point.timestamp);
-  let xExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
-  if (selectedTimestampRange !== null) {
-    // the user requested to render the timeseries chart within a specific range
-    // so we should respect that and enlarge the extent to include the selectedTimestampRange, as needed
-    //  this would enable the zooming effect
-    xExtent = [selectedTimestampRange.timestamp1, selectedTimestampRange.timestamp2];
-  } else {
-    xExtent = d3.extent(allTimestampDataPoints);
-  }
-
+  const xExtent = d3.extent(allPoints.map(point => point.timestamp));
   const yExtent = d3.extent(allPoints.map(point => point.value));
   return [xExtent, yExtent];
 }
@@ -225,8 +262,7 @@ function generateSelectableTimestamps(
       .style('cursor', 'pointer')
       .on('mouseenter', () => timestampMarker.attr('visibility', 'visible'))
       .on('mouseleave', () => timestampMarker.attr('visibility', 'hidden'))
-      .on('mousedown', () => onTimestampSelected(timestamp))
-    ;
+      .on('mousedown', () => onTimestampSelected(timestamp));
   });
 }
 
@@ -341,20 +377,6 @@ function updateTimestampElements(
     valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
     return;
   }
-  // check if the selectedTimestamp is out of the timeseries range
-  const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
-  const xExtent = d3.extent(allPoints.map(point => point.timestamp));
-  if (xExtent[0] === undefined || xExtent[1] === undefined) {
-    console.error('Unable to derive extent from data', timeseriesList);
-  } else {
-    if (timestamp < xExtent[0] || timestamp > xExtent[1]) {
-      // Hide everything
-      selectedTimestampGroup.attr('visibility', 'hidden');
-      valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
-      return;
-    }
-  }
-
   // Move selectedTimestamp elements horizontally to the right position
   const selectedXPosition = xScale(timestamp);
   selectedTimestampGroup
