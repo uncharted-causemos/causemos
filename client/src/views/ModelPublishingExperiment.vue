@@ -122,12 +122,11 @@
             :selected-temporal-aggregation="selectedTemporalAggregation"
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
-            :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
             :temporal-breakdown-data="temporalBreakdownData"
             :selected-timeseries-points="selectedTimeseriesPoints"
+            :selected-region-ids="selectedRegionIds"
             @toggle-is-region-selected="toggleIsRegionSelected"
-            @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
             @set-breakdown-option="setBreakdownOption"
           />
@@ -166,6 +165,7 @@ import MapDropdown from '@/components/data/map-dropdown.vue';
 import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
 import { Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 
 const DRILLDOWN_TABS = [
   {
@@ -226,6 +226,17 @@ export default defineComponent({
 
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
+
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption
+    );
 
     const modelRunsFetchedAt = ref(0);
 
@@ -352,7 +363,7 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      ref([]) // region breakdown
+      selectedRegionIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -375,13 +386,10 @@ export default defineComponent({
     );
 
     const {
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
+      regionalData
     } = useRegionalData(
-      selectedModelId,
-      outputSpecs
+      outputSpecs,
+      datacubeHierarchy
     );
 
     return {
@@ -406,9 +414,6 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected,
       currentOutputIndex,
       setSelectedTimestamp,
       visibleTimeseriesData,
@@ -424,7 +429,9 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedBaseLayer,
       selectedDataLayer,
-      datacubeCurrentOutputsMap
+      datacubeCurrentOutputsMap,
+      toggleIsRegionSelected,
+      selectedRegionIds
     };
   },
   watch: {

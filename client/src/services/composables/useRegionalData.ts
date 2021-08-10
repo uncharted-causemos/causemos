@@ -1,88 +1,33 @@
-import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
-import { watch, watchEffect } from '@vue/runtime-core';
+import { watchEffect } from '@vue/runtime-core';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
-import { readonly } from 'vue';
-import { AdminRegionSets } from '@/types/Datacubes';
+import { DatacubeGeography } from '@/types/Common';
 
-const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
-  country: new Set(),
-  admin1: new Set(),
-  admin2: new Set(),
-  admin3: new Set()
-};
 export default function useRegionalData(
-  selectedModelId: Ref<string>,
-  outputSpecs: Ref<OutputSpecWithId[]>
+  outputSpecs: Ref<OutputSpecWithId[]>,
+  datacubeHierarchy: Ref<DatacubeGeography | null>
 ) {
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
   watchEffect(async onInvalidate => {
-    regionalData.value = null;
-    if (outputSpecs.value.length === 0) return;
+    // FIXME: OPTIMIZATION: if we're careful, we can rearrange things so that the
+    //  getRegionAggregations call doesn't have to wait until the datacubeHierarchy is ready
+    if (outputSpecs.value.length === 0 || datacubeHierarchy.value === null) return;
     let isCancelled = false;
     onInvalidate(() => {
       isCancelled = true;
     });
-    const result = await getRegionAggregations(outputSpecs.value);
+    const result = await getRegionAggregations(
+      outputSpecs.value,
+      datacubeHierarchy.value
+    );
     if (isCancelled) return;
     regionalData.value = result;
   });
-  const deselectedRegionIds = ref<AdminRegionSets>(
-    _.cloneDeep(EMPTY_ADMIN_REGION_SETS)
-  );
-  const resetSelection = () => {
-    deselectedRegionIds.value = _.cloneDeep(EMPTY_ADMIN_REGION_SETS);
-  };
-  watch(selectedModelId, () => {
-    // Reset the deselected region list when the selected model changes
-    resetSelection();
-  });
-  const toggleIsRegionSelected = (
-    adminLevel: keyof AdminRegionSets,
-    regionId: string
-  ) => {
-    const currentlyDeselected = deselectedRegionIds.value[adminLevel];
-    const isRegionSelected = !currentlyDeselected.has(regionId);
-    // If region is currently selected, add it to list of deselected regions.
-    //  Otherwise, remove from the list of deselected regions.
-    const updatedList = _.clone(currentlyDeselected);
-    if (isRegionSelected) {
-      updatedList.add(regionId);
-    } else {
-      updatedList.delete(regionId);
-    }
-    // Assign new object to deselectedRegionIds.value to trigger reactivity updates.
-    deselectedRegionIds.value = Object.assign({}, deselectedRegionIds.value, {
-      [adminLevel]: updatedList
-    });
-  };
-  const setAllRegionsSelected = (isSelectingAll: boolean) => {
-    if (isSelectingAll) {
-      resetSelection();
-      return;
-    }
-    deselectedRegionIds.value = {
-      country: new Set(
-        (regionalData.value?.country ?? []).map(entry => entry.id) ?? []
-      ),
-      admin1: new Set(
-        (regionalData.value?.admin1 ?? []).map(entry => entry.id) ?? []
-      ),
-      admin2: new Set(
-        (regionalData.value?.admin2 ?? []).map(entry => entry.id) ?? []
-      ),
-      admin3: new Set(
-        (regionalData.value?.admin3 ?? []).map(entry => entry.id) ?? []
-      )
-    };
-  };
+
   return {
     outputSpecs,
-    regionalData,
-    deselectedRegionIds: readonly(deselectedRegionIds),
-    toggleIsRegionSelected,
-    setAllRegionsSelected
+    regionalData
   };
 }

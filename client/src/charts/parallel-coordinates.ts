@@ -104,6 +104,7 @@ let pcTypes: {[key: string]: string} = {};
 const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
+const currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
 const isCategoricalAxis = (name: string) => {
@@ -126,7 +127,9 @@ function renderParallelCoordinates(
   // callback function that is called with one or more lines are selected
   onLinesSelection: (selectedLines: Array<ScenarioData>) => void,
   // callback function that is called when one or more markers are added in the new-runs mode
-  onNewRuns: (generatedLines: Array<ScenarioData>) => void
+  onNewRuns: (generatedLines: Array<ScenarioData>) => void,
+  // request re-render of the whole PC
+  rerenderChart: () => void
 ) {
   //
   // set graph configurations
@@ -204,7 +207,7 @@ function renderParallelCoordinates(
   //
   // axis labels
   //
-  renderAxesLabels(dimensions);
+  renderAxesLabels(svgElement, options, dimensions, rerenderChart);
 
   //
   // hover tooltips
@@ -565,6 +568,7 @@ function renderParallelCoordinates(
   // or deselect all lines when the svg element is clicked
   function handleLineSelection(this: SVGPathElement | HTMLElement, event: PointerEvent | undefined, d: ScenarioData, notifyExternalListeners = true) {
     if (options.newRunsMode) {
+      deleteFreeformInputs(svgElement);
       return;
     }
     // when the user have an active brush,
@@ -589,13 +593,21 @@ function renderParallelCoordinates(
       });
     if (brushesCount === 0) {
       // cancel any previous selection; turn every line into grey
-      cancelPrevLineSelection(svgElement);
+      if (event && !event.shiftKey) {
+        currentLineSelection.length = 0;
+        cancelPrevLineSelection(svgElement);
+      }
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
 
       selectLine(selectedLine, event, d, lineStrokeWidthSelected);
 
       const selectedLineData = selectedLine.datum() as ScenarioData;
+      if (selectedLineData) {
+        currentLineSelection.push(selectedLineData);
+      } else {
+        currentLineSelection.length = 0;
+      }
 
       // if we have valid selection (either by direct click on a line or through brushing)
       //  then update the tooltips
@@ -605,7 +617,7 @@ function renderParallelCoordinates(
 
       // notify external listeners
       if (notifyExternalListeners) {
-        onLinesSelection(selectedLineData ? [selectedLineData] : []);
+        onLinesSelection(currentLineSelection);
       }
     }
   }
@@ -1178,7 +1190,7 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
   return axes;
 }
 
-function renderAxesLabels(dimensions: Array<DimensionInfo>) {
+function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesOptions, dimensions: Array<DimensionInfo>, rerenderChart: () => void) {
   // Add label for each axis name
   const axesLabels = renderedAxes
     .append('text')
@@ -1231,6 +1243,54 @@ function renderAxesLabels(dimensions: Array<DimensionInfo>) {
         .attr('height', textBBox.height);
       text.raise();
     });
+
+  axesLabels
+    .on('click', function(event: PointerEvent) {
+      if (options.newRunsMode) {
+        const d3text = d3.select(this);
+        const d = d3text.datum() as ModelParameter;
+        if (d.data_type === ModelParameterDataType.Freeform) {
+          event.stopPropagation();
+          const inputField = d3.select(this.parentElement)
+            .append('foreignObject')
+            .attr('class', 'freeform-input')
+            .attr('width', axisRange[1])
+            .attr('height', 25)
+            .attr('x', axisLabelOffsetX)
+            .attr('y', axisLabelOffsetY)
+            .append('xhtml:input')
+            .attr('placeholder', 'type new value')
+            .attr('type', 'text')
+            .attr('width', 'inherit')
+            .style('border-width', 'thin')
+            .on('keyup', function(keyEvent) {
+              if (keyEvent.keyCode === 13) {
+                // Enter key pressed
+                const inputElement = this as HTMLInputElement;
+                const newInputValue = inputElement.value;
+                const currentChoices = d.choices as Array<string | number>;
+                if (!currentChoices.includes(newInputValue)) {
+                  // note that by adding the value, we have modified the metadata of the datacube
+                  // and that change will be discarded unless a model run is issued with this value
+                  currentChoices.push(newInputValue);
+                  // re-render (and possible add a marker)
+                  rerenderChart();
+                }
+                // clear the input box
+                deleteFreeformInputs(svgElement);
+              }
+            })
+            .on('click', function(event: PointerEvent) {
+              event.stopPropagation();
+            });
+          (inputField.node() as any).focus();
+        }
+      }
+    });
+}
+
+function deleteFreeformInputs(svgElement: D3Selection) {
+  svgElement.selectAll('.freeform-input').remove();
 }
 
 function renderHoverTooltips() {
@@ -1625,14 +1685,24 @@ const createScales = (
 
   const stringFunc = function(name: string) {
     let dataExtent: Array<string | number> = [];
+    const dim = dimensions.find(d => d.name === name);
+
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dimensions.find(d => d.name === name)?.choices ?? [];
+      dataExtent = dim?.choices ?? [];
     }
 
+    const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs
     if (dataExtent.length === 0) {
-      dataExtent = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs
+      dataExtent = dataChoices;
     }
+
+    // ensure that dataExtent and dataChoices are merged as one list (including the default value)
+    const outputVarName = getOutputDimension(dimensions).name;
+    if (outputVarName !== name) {
+      dataChoices.push((dim as ModelParameter).default);
+    }
+    dataExtent = _.uniq(_.union(dataExtent, dataChoices));
 
     if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
       console.warn('Unable to derive extent from data for ' + name + '. A default point scale will be created!', data);

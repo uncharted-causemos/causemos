@@ -271,8 +271,8 @@ export default {
     gridStats() {
       const result = {};
       if (!this.gridLayerStats.length) return result;
-      const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection).stats;
-      stats.forEach(stat => {
+      const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection)?.stats;
+      (stats || []).forEach(stat => {
         // NOTE: stat data is stored in the backend with subtile (grid cell) precision level instead of the tile zoom level.
         // The difference is 6 so we subtract the difference to make the lowest level 0.
         result[stat.zoom - 6] = { min: stat.min, max: stat.max };
@@ -370,7 +370,6 @@ export default {
   methods: {
     refresh() {
       if (!this.map || !this.selection) return;
-      console.log('map refreshed');
 
       this.setFeatureStates();
       this.refreshLayers();

@@ -346,12 +346,13 @@ export default {
     display: flex;
     flex-direction: column;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: hidden;
     padding: 1em 0 0;
     .pane-row {
       flex: 1 1 auto;
       display: flex;
       flex-direction: row;
+      height: 100%;
       .fields {
         flex: 1 1 auto;
         display: flex;
@@ -359,8 +360,9 @@ export default {
         overflow: hidden;
         padding-left: 1rem;
         padding-right: 1rem;
+        height: 100%;
         .preview {
-          flex: 0 0 auto;
+          flex: 1 1 auto;
           margin: 0 0 1rem;
           overflow: hidden;
           align-self: center;
@@ -370,7 +372,7 @@ export default {
           }
         }
         .form-group {
-          flex: 1 1 auto;
+          flex: 0 0 auto;
           margin-bottom: 3px;
           form {
             display: flex;
@@ -385,7 +387,7 @@ export default {
           }
         }
         .controls {
-          flex: 0 1 auto;
+          flex: 0 0 auto;
           display: flex;
           justify-content: flex-end;
           padding: 1rem;

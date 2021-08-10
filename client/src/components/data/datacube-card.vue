@@ -1,203 +1,206 @@
 <template>
   <div class="datacube-card-container">
-    <header>
-      <slot name="datacube-model-header" />
-      <slot name="datacube-model-header-collapse" />
-    </header>
-    <modal-new-scenario-runs
-      v-if="isModelMetadata && showNewRunsModal === true"
-      :metadata="metadata"
-      :potential-scenarios="potentialScenarios"
-      @close="onNewScenarioRunsModalClose" />
-    <modal-check-runs-execution-status
-      v-if="isModelMetadata & showModelRunsExecutionStatus === true"
-      :metadata="metadata"
-      :potential-scenarios="runParameterValues"
-      @close="showModelRunsExecutionStatus = false" />
-    <div class="flex-row">
-      <!-- if has multiple scenarios -->
-      <div v-if="isModelMetadata" class="scenario-selector">
-        <div>
-          <div class="checkbox">
-            <label @click="toggleBaselineDefaultsVisibility()">
-              <i
-                class="fa fa-lg fa-fw"
-                :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
-              />
-              Default Values
-            </label>
-          </div>
-          <div class="checkbox">
-            <label @click="toggleNewRunsMode()">
-              <i
-                class="fa fa-lg fa-fw"
-                :class="{ 'fa-toggle-on': showNewRunsMode, 'fa-toggle-off': !showNewRunsMode }"
-              />
-              New Runs Mode
-            </label>
-          </div>
-        </div>
-        <parallel-coordinates-chart
-          class="pc-chart"
-          :dimensions-data="runParameterValues"
-          :selected-dimensions="dimensions"
-          :ordinal-dimensions="ordinalDimensionNames"
-          :initial-data-selection="isDescriptionView ? [] : selectedScenarioIds"
-          :show-baseline-defaults="showBaselineDefaults"
-          :new-runs-mode="showNewRunsMode"
-          @select-scenario="updateScenarioSelection"
-          @generated-scenarios="updateGeneratedScenarios"
-        />
-        <div v-if="showNewRunsMode">
-          <disclaimer
-            :message="
-              potentialScenarioCount +
-                ' scenario(s) can be generated'
-            "
-          />
-          <button
-            class="search-button btn btn-primary btn-call-for-action"
-            :class="{ 'disabled': potentialScenarioCount === 0}"
-            @click="requestNewModelRuns()"
-          >
-            Review
-          </button>
-        </div>
-        <div v-else>
-          <disclaimer
-            :message="'check execution status'"
-          />
-          <button
-            class="search-button btn btn-primary btn-call-for-action"
-            @click="showModelExecutionStatus()"
-          >
-            Check execution status
-          </button>
-        </div>
-      </div>
-      <div class="column insight-capture">
-        <div class="button-row">
-          <!-- TODO: extract button-group to its own component -->
-          <div class="button-group">
-            <button class="btn btn-default"
-                    :class="{'btn-primary':isDescriptionView}"
-                    @click="$emit('update-desc-view', true)">
-              Descriptions
-            </button>
-            <!-- make 'Data' tab disabled when no scenario selection -->
-            <button class="btn btn-default"
-                    :class="{'btn-primary':!isDescriptionView}"
-                    :disabled="selectedScenarioIds.length === 0"
-                    @click="$emit('update-desc-view', false)">
-              Data
-            </button>
-          </div>
-          <div
-            v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
-            class="relative-box"
-          >
-            Relative to:
-            <button
-              class="btn btn-default"
-              @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
-              :style="{ color: baselineMetadata?.color ?? 'black' }"
-            >
-              {{baselineMetadata?.name ?? 'none'}}</button
-            >
-            <dropdown-control
-              v-if="isRelativeDropdownOpen"
-              class="relative-dropdown">
-              <template #content>
-                <div
-                  v-if="relativeTo !== null"
-                  class="dropdown-option"
-                  @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
-                >
-                  none
-                </div>
-                <div
-                  v-for="(timeseries, index) in timeseriesData"
-                  class="dropdown-option"
-                  :style="{ color: timeseries.color }"
-                  :key="index"
-                  @click="emitRelativeToSelection(timeseries.id); isRelativeDropdownOpen = false;"
-                >
-                  {{timeseries.name}}
-                </div>
-              </template>
-            </dropdown-control>
-          </div>
-        </div>
-        <slot name="datacube-description" v-if="isDescriptionView" />
-        <header v-if="isExpanded && !isDescriptionView">
-          <datacube-scenario-header
-            v-if="mainModelOutput && isModelMetadata"
-            class="scenario-header"
-            :outputVariable="mainModelOutput.display_name"
-            :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
-            :metadata="metadata"
-            :selected-scenario-ids="selectedScenarioIds"
-            :color-from-index="colorFromIndex"
-          />
-        </header>
-        <div class="column">
-          <div style="display: flex; flex-direction: row;">
-            <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
-            <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
-          </div>
-          <timeseries-chart
-            v-if="!isDescriptionView && timeseriesData.length > 0"
-            class="timeseries-chart"
-            :timeseries-data="timeseriesData"
-            :selected-timestamp="selectedTimestamp"
-            :breakdown-option="breakdownOption"
-            @select-timestamp="emitTimestampSelection"
-          />
-          <div style="display: flex; flex-direction: row;">
-            <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
-          </div>
-          <div
-            v-if="mapReady && !isDescriptionView && regionalData !== null"
-            class="card-maps-container">
-            <div
-              v-for="(spec, indx) in outputSourceSpecs"
-              :key="spec.id"
-              class="card-map-container"
-              :class="[
-                `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
-              ]"
-            >
-              <span
-                v-if="outputSourceSpecs.length > 1"
-                :style="{ color: colorFromIndex(indx)}"
-              >
-                {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
-              </span>
-              <data-analysis-map
-                class="card-map"
-                :style="{ borderColor: colorFromIndex(indx) }"
-                :output-source-specs="outputSourceSpecs"
-                :output-selection=spec.id
-                :relative-to="relativeTo"
-                :show-tooltip="true"
-                :selected-layer-id="mapSelectedLayer"
-                :filters="mapFilters"
-                :map-bounds="mapBounds"
-                :region-data="regionalData"
-                :grid-layer-stats="gridLayerStats"
-                :selected-base-layer="selectedBaseLayer"
-                @sync-bounds="onSyncMapBounds"
-                @on-map-load="onMapLoad"
-                @slide-handle-change="updateMapFilters"
-              />
+    <div class="insight-capture capture-box">
+      <header>
+        <slot name="datacube-model-header" />
+        <slot name="datacube-model-header-collapse" />
+      </header>
+      <modal-new-scenario-runs
+        v-if="isModelMetadata && showNewRunsModal === true"
+        :metadata="metadata"
+        :potential-scenarios="potentialScenarios"
+        @close="onNewScenarioRunsModalClose" />
+      <modal-check-runs-execution-status
+        v-if="isModelMetadata & showModelRunsExecutionStatus === true"
+        :metadata="metadata"
+        :potential-scenarios="runParameterValues"
+        @close="showModelRunsExecutionStatus = false" />
+      <div class="flex-row">
+        <!-- if has multiple scenarios -->
+        <div v-if="isModelMetadata" class="scenario-selector">
+          <div>
+            <div class="checkbox">
+              <label @click="toggleBaselineDefaultsVisibility()">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
+                />
+                Default Values
+              </label>
+            </div>
+            <div class="checkbox">
+              <label @click="toggleNewRunsMode()">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-toggle-on': showNewRunsMode, 'fa-toggle-off': !showNewRunsMode }"
+                />
+                New Runs Mode
+              </label>
             </div>
           </div>
-          <div
-            v-else-if="!isDescriptionView"
-            class="card-maps-container"
-          >
-            <!-- Empty div to reduce jumpiness when the maps are loading -->
-            <div class="card-map" />
+          <parallel-coordinates-chart
+            class="pc-chart"
+            :dimensions-data="runParameterValues"
+            :selected-dimensions="dimensions"
+            :ordinal-dimensions="ordinalDimensionNames"
+            :initial-data-selection="isDescriptionView ? [] : selectedScenarioIds"
+            :show-baseline-defaults="showBaselineDefaults"
+            :new-runs-mode="showNewRunsMode"
+            @select-scenario="updateScenarioSelection"
+            @generated-scenarios="updateGeneratedScenarios"
+          />
+          <div v-if="showNewRunsMode">
+            <disclaimer
+              :message="
+                potentialScenarioCount +
+                  ' scenario(s) can be generated'
+              "
+            />
+            <button
+              class="search-button btn btn-primary btn-call-for-action"
+              :class="{ 'disabled': potentialScenarioCount === 0}"
+              @click="requestNewModelRuns()"
+            >
+              Review
+            </button>
+          </div>
+          <div v-else>
+            <disclaimer
+              :message="'check execution status'"
+            />
+            <button
+              class="search-button btn btn-primary btn-call-for-action"
+              @click="showModelExecutionStatus()"
+            >
+              Check execution status
+            </button>
+          </div>
+        </div>
+        <div class="column">
+          <div class="button-row">
+            <!-- TODO: extract button-group to its own component -->
+            <div class="button-group">
+              <button class="btn btn-default"
+                      :class="{'btn-primary':isDescriptionView}"
+                      @click="$emit('update-desc-view', true)">
+                Descriptions
+              </button>
+              <!-- make 'Data' tab disabled when no scenario selection -->
+              <button class="btn btn-default"
+                      :class="{'btn-primary':!isDescriptionView}"
+                      :disabled="selectedScenarioIds.length === 0"
+                      @click="$emit('update-desc-view', false)">
+                Data
+              </button>
+            </div>
+            <div
+              v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
+              class="relative-box"
+            >
+              Relative to:
+              <button
+                class="btn btn-default"
+                @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
+                :style="{ color: baselineMetadata?.color ?? 'black' }"
+              >
+                {{baselineMetadata?.name ?? 'none'}}</button
+              >
+              <dropdown-control
+                v-if="isRelativeDropdownOpen"
+                class="relative-dropdown">
+                <template #content>
+                  <div
+                    v-if="relativeTo !== null"
+                    class="dropdown-option"
+                    @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
+                  >
+                    none
+                  </div>
+                  <div
+                    v-for="(timeseries, index) in timeseriesData"
+                    class="dropdown-option"
+                    :style="{ color: timeseries.color }"
+                    :key="index"
+                    @click="emitRelativeToSelection(timeseries.id); isRelativeDropdownOpen = false;"
+                  >
+                    {{timeseries.name}}
+                  </div>
+                </template>
+              </dropdown-control>
+            </div>
+          </div>
+          <slot name="datacube-description" v-if="isDescriptionView" />
+          <header v-if="isExpanded && !isDescriptionView">
+            <datacube-scenario-header
+              v-if="mainModelOutput && isModelMetadata"
+              class="scenario-header"
+              :outputVariable="mainModelOutput.display_name"
+              :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
+              :metadata="metadata"
+              :selected-scenario-ids="selectedScenarioIds"
+              :color-from-index="colorFromIndex"
+            />
+          </header>
+          <div class="column">
+            <div style="display: flex; flex-direction: row;">
+              <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
+              <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
+            </div>
+            <timeseries-chart
+              v-if="!isDescriptionView && timeseriesData.length > 0"
+              class="timeseries-chart"
+              :timeseries-data="timeseriesData"
+              :selected-timestamp="selectedTimestamp"
+              :breakdown-option="breakdownOption"
+              @select-timestamp="emitTimestampSelection"
+            />
+            <div style="display: flex; flex-direction: row;">
+              <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
+            </div>
+            <div
+              v-if="mapReady && !isDescriptionView && regionalData !== null"
+              class="card-maps-container">
+              <div
+                v-for="(spec, indx) in outputSourceSpecs"
+                :key="spec.id"
+                class="card-map-container"
+                :class="[
+                  `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                ]"
+              >
+                <span
+                  v-if="outputSourceSpecs.length > 1"
+                  :style="{ color: colorFromIndex(indx)}"
+                >
+                  {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
+                </span>
+
+                <data-analysis-map
+                  class="card-map"
+                  :style="{ borderColor: colorFromIndex(indx) }"
+                  :output-source-specs="outputSourceSpecs"
+                  :output-selection=spec.id
+                  :relative-to="relativeTo"
+                  :show-tooltip="true"
+                  :selected-layer-id="mapSelectedLayer"
+                  :filters="mapFilters"
+                  :map-bounds="mapBounds"
+                  :region-data="regionalData"
+                  :grid-layer-stats="gridLayerStats"
+                  :selected-base-layer="selectedBaseLayer"
+                  @sync-bounds="onSyncMapBounds"
+                  @on-map-load="onMapLoad"
+                  @slide-handle-change="updateMapFilters"
+                />
+              </div>
+            </div>
+            <div
+              v-else-if="!isDescriptionView"
+              class="card-maps-container"
+            >
+              <!-- Empty div to reduce jumpiness when the maps are loading -->
+              <div class="card-map" />
+            </div>
           </div>
         </div>
       </div>
@@ -507,11 +510,15 @@ export default defineComponent({
 $fullscreenTransition: all 0.5s ease-in-out;
 
 .datacube-card-container {
-  background: $background-light-1;
+  background-color: $background-light-1;
   box-shadow: $shadow-level-1;
-  padding: 10px;
   border-radius: 3px;
   display: flex;
+}
+.capture-box {
+  padding: 10px;
+  display: flex;
+  width: 100%;
   flex-direction: column;
 }
 

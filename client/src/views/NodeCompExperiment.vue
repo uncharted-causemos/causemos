@@ -116,12 +116,11 @@
               :selected-spatial-aggregation="selectedSpatialAggregation"
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
-              :deselected-region-ids="deselectedRegionIds"
+              :selected-region-ids="selectedRegionIds"
               :selected-breakdown-option="breakdownOption"
               :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
-              @set-all-regions-selected="setAllRegionsSelected"
               @set-breakdown-option="setBreakdownOption"
             />
           </template>
@@ -160,6 +159,7 @@ import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import modelService from '@/services/model-service';
 import { ViewState } from '@/types/Insight';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 
 const DRILLDOWN_TABS = [
   {
@@ -235,6 +235,22 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
+    const breakdownOption = ref<string | null>(null);
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
+    };
+
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption
+    );
+
     const timeInterval = 10000;
 
     function fetchData() {
@@ -283,11 +299,6 @@ export default defineComponent({
       selectedTimestamp.value = value;
     };
 
-    const breakdownOption = ref<string | null>(null);
-    const setBreakdownOption = (newValue: string | null) => {
-      breakdownOption.value = newValue;
-    };
-
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -304,7 +315,7 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      ref([]) // region breakdown
+      selectedRegionIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -327,13 +338,10 @@ export default defineComponent({
     );
 
     const {
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
+      regionalData
     } = useRegionalData(
-      selectedModelId,
-      outputSpecs
+      outputSpecs,
+      datacubeHierarchy
     );
 
     const stepsBeforeCanConfirm = computed(() => {
@@ -383,9 +391,6 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected,
       outputs,
       currentOutputIndex,
       datacubeCurrentOutputsMap,
@@ -406,7 +411,9 @@ export default defineComponent({
       selectedBaseLayer,
       selectedDataLayer,
       setBaseLayer: (val: BASE_LAYER) => { selectedBaseLayer.value = val; },
-      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; }
+      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; },
+      toggleIsRegionSelected,
+      selectedRegionIds
     };
   },
   unmounted(): void {
