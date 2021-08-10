@@ -548,7 +548,7 @@ export default defineComponent({
       .checklist-item {
         flex-direction: column;
         display: flex;
-        font-size: 14px;
+        font-size: $font-size-medium;
         margin-bottom: 10px;
         padding: 5px;
 
