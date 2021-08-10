@@ -192,8 +192,8 @@ export default {
       default: () => undefined
     },
     gridLayerStats: {
-      type: Object,
-      default: () => undefined
+      type: Array,
+      default: () => []
     },
     selectedBaseLayer: {
       type: String,
@@ -206,8 +206,8 @@ export default {
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
-    gridStats: undefined,
-    legendData: []
+    legendData: [],
+    curZoom: 0
   }),
   computed: {
     mapFixedOptions() {
@@ -268,8 +268,25 @@ export default {
       }
       return stats;
     },
+    gridStats() {
+      const result = {};
+      if (!this.gridLayerStats.length) return result;
+      const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection).stats;
+      stats.forEach(stat => {
+        // NOTE: stat data is stored in the backend with subtile (grid cell) precision level instead of the tile zoom level.
+        // The difference is 6 so we subtract the difference to make the lowest level 0.
+        result[stat.zoom - 6] = { min: stat.min, max: stat.max };
+      });
+      return result;
+    },
+    gridStatsForCurZoom() {
+      const zoomLevels = Object.keys(this.gridStats).map(Number);
+      const maxZoom = Math.max(...zoomLevels);
+      const zoom = Math.min(maxZoom, this.curZoom);
+      return this.gridStats[zoom];
+    },
     extent() {
-      const extent = this.stats[this.adminLevel] || this.gridStats;
+      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom;
       if (!extent) return { min: 0, max: 1 };
       if (extent.min === extent.max) {
         extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
@@ -334,6 +351,9 @@ export default {
     },
     selectedLayer() {
       this.refreshLayers();
+    },
+    curZoom() {
+      this.refreshGridMap();
     }
   },
   created() {
@@ -406,8 +426,15 @@ export default {
     onUpdateSource() {
       setTimeout(() => {
         // Hack: give enough time to map to render features from updated source
-        this.reevaluateColourScale();
+        this.refreshGridMap();
       }, 1000);
+    },
+    updateCurrentZoomLevel() {
+      if (!this.map) return;
+      const zoom = Math.floor(this.map.getZoom());
+      if (this.curZoom !== zoom) {
+        this.curZoom = zoom;
+      }
     },
     onMapLoad(event) {
       const map = event.map;
@@ -417,11 +444,12 @@ export default {
       // disable tilt and rotation of the map since theses are not working nicely with bound syncing
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
+      this.updateCurrentZoomLevel();
       this.$emit('on-map-load');
     },
     onMapMove(event) {
-      this.throttledReevaluateColourScale();
       this.syncBounds(event);
+      this.updateCurrentZoomLevel();
     },
     syncBounds(event) {
       // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
@@ -511,32 +539,12 @@ export default {
       if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll('__', '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
     },
-    throttledReevaluateColourScale: _.throttle(
-      function() { this.reevaluateColourScale(); },
-      100,
-      { trailing: true, leading: true }
-    ),
-    // Dynamically calculate min max stats for grid map
-    // TODO: Use precomputed stats for each zoom level (espcially for 'sum') when backend api is ready since this is performance intensive
-    reevaluateColourScale() {
+    refreshGridMap() {
       if (!this.map) return;
       // Exit early if the layer hasn't finished loading
       if (!isLayerLoaded(this.map, this.baseLayerId)) return;
       // This only applies to grid map
       if (!this.isGridMap) return;
-      const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });
-      const values = [];
-      for (const feature of features) {
-        const value = feature.properties[this.valueProp];
-        if (value !== undefined) values.push(value);
-      }
-      if (values.length === 0) {
-        this.gridStats = { min: 0, max: 1 };
-      } else {
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        this.gridStats = { min, max };
-      }
       this.refreshColorLayer();
       this.updateLayerFilter();
     }

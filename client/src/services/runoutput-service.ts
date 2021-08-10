@@ -1,6 +1,6 @@
 import API from '@/api/api';
 import { AdminLevel } from '@/types/Enums';
-import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation, OutputStatWithZoom } from '@/types/Runoutput';
+import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation, OutputStatWithZoom, OutputStatsResult } from '@/types/Runoutput';
 
 export const getRegionAggregation = async (spec: OutputSpec): Promise<RegionalAggregation> => {
   // TODO: Handle http error properly in the backend and respond with correct error code if necessary.
@@ -53,7 +53,7 @@ export const getRegionAggregations = async (specs: OutputSpecWithId[]): Promise<
   };
 };
 
-export const getOutputStats = async (spec: OutputSpec): Promise<OutputStatWithZoom[]> => {
+export const getOutputStat = async (spec: OutputSpec): Promise<OutputStatWithZoom[]> => {
   try {
     const { data } = await API.get('/maas/output/stats', {
       params: {
@@ -72,8 +72,20 @@ export const getOutputStats = async (spec: OutputSpec): Promise<OutputStatWithZo
   }
 };
 
+export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputStatsResult[]> => {
+  const results = await Promise.all(specs.map(getOutputStat));
+  const stats = results.map((result, index) => {
+    return {
+      outputSpecId: specs[index].id,
+      stats: result
+    };
+  });
+  return stats;
+};
+
 export default {
   getRegionAggregation,
   getRegionAggregations,
+  getOutputStat,
   getOutputStats
 };
