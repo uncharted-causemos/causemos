@@ -237,6 +237,29 @@ const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
   return ontologyCandidates;
 };
 
+
+const ABSTRACT_INDICATOR = {
+  id: null,
+  name: 'Abstract',
+  unit: '',
+  country: '',
+  admin1: '',
+  admin2: '',
+  admin3: '',
+  spatialAggregation: 'mean',
+  temporalAggregation: 'mean',
+  temporalResolution: 'month',
+  period: 12,
+  timeseries: [
+    { value: 0.5, timestamp: Date.UTC(2017, 0) },
+    { value: 0.5, timestamp: Date.UTC(2017, 1) },
+    { value: 0.5, timestamp: Date.UTC(2017, 2) }
+  ],
+  min: 0,
+  max: 1
+};
+
+
 /**
  * Attempt to set or reset default indicators for concepts
  * @param {string} modelId - model id
@@ -285,21 +308,27 @@ const setDefaultIndicators = async (modelId) => {
     };
 
     // Time series, min, max
-    const feature = topMatch.default_feature;
-    const dataId = topMatch.data_id;
-    const parameter = conceptMatches[conceptKey].parameter;
+    try {
+      const feature = topMatch.default_feature;
+      const dataId = topMatch.data_id;
+      const parameter = conceptMatches[conceptKey].parameter;
 
-    const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
-    if (_.isEmpty(timeseries)) {
-      parameter.timeseries = [];
-      parameter.min = 0;
-      parameter.max = 1;
-    } else {
-      parameter.timeseries = timeseries;
-      const values = timeseries.map(d => d.value);
-      const { max, min } = modelUtil.projectionValueRange(values);
-      parameter.min = min;
-      parameter.max = max;
+      const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+      if (_.isEmpty(timeseries)) {
+        parameter.timeseries = [];
+        parameter.min = 0;
+        parameter.max = 1;
+      } else {
+        parameter.timeseries = timeseries;
+        const values = timeseries.map(d => d.value);
+        const { max, min } = modelUtil.projectionValueRange(values);
+        parameter.min = min;
+        parameter.max = max;
+      }
+    } catch (err) {
+      Logger.warn(err);
+      Logger.warn(`Failed getting data, reset ${conceptKey} to abstract`);
+      conceptMatches[conceptKey].parameter = _.cloneDeep(ABSTRACT_INDICATOR);
     }
   }
 
@@ -310,26 +339,7 @@ const setDefaultIndicators = async (modelId) => {
     if (_.isEmpty(conceptMatches[concept])) {
       conceptMatches[concept] = {
         modified_at: editTime,
-        parameter: {
-          id: null,
-          name: 'Abstract',
-          unit: '',
-          country: '',
-          admin1: '',
-          admin2: '',
-          admin3: '',
-          spatialAggregation: 'mean',
-          temporalAggregation: 'mean',
-          temporalResolution: 'month',
-          period: 12,
-          timeseries: [
-            { value: 0.5, timestamp: Date.UTC(2017, 0) },
-            { value: 0.5, timestamp: Date.UTC(2017, 1) },
-            { value: 0.5, timestamp: Date.UTC(2017, 2) }
-          ],
-          min: 0,
-          max: 1
-        }
+        parameter: _.cloneDeep(ABSTRACT_INDICATOR)
       };
       patchedCount += 1;
     }
