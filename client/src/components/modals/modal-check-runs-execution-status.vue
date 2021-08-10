@@ -121,7 +121,7 @@ export default defineComponent({
   margin-top: 2rem;
   padding-left: 2rem;
   font-weight: bold;
-  font-size: x-large !important;
+  font-size: $font-size-large !important;
 }
 
 .run-status {
