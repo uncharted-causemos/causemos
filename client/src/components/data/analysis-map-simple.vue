@@ -61,6 +61,7 @@ import {
 } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import MapLegend from '@/components/widgets/map-legend';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -499,7 +500,7 @@ export default {
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
         rows.push(text);
       }
-      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll('__', '/'));
+      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
     },
     throttledReevaluateColourScale: _.throttle(

@@ -74,6 +74,7 @@ import {
   ref,
   computed
 } from '@vue/runtime-core';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 interface StatefulDataNode {
   name: string;
@@ -163,7 +164,7 @@ const extractVisibleRows = (
   if (!isNodeVisible || !isStatefulDataNode(metadataNode)) {
     return visibleChildren;
   }
-  const itemId = metadataNode.path.join(PATH_DELIMETER);
+  const itemId = metadataNode.path.join(REGION_ID_DELIMETER);
   const isChecked =
     selectedItemIds === null || selectedItemIds.includes(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
@@ -203,8 +204,6 @@ const checklistRowDataFromNode = (
     path
   };
 };
-
-const PATH_DELIMETER = '__';
 
 export default defineComponent({
   name: 'AggregationChecklistPane',
@@ -285,7 +284,7 @@ export default defineComponent({
           )?.color ?? '#000';
         valuesAtThisLevel.forEach(({ id, values }) => {
           // e.g. ['Canada', 'Ontario', 'Toronto']
-          const path = id.split(PATH_DELIMETER);
+          const path = id.split(REGION_ID_DELIMETER);
           // e.g. ['Canada', 'Ontario']
           const ancestors = path.slice(0, -1);
           // e.g. 'Toronto'
@@ -411,7 +410,7 @@ export default defineComponent({
     const toggleChecked = (path: string[]) => {
       const aggregationLevel =
         orderedAggregationLevelKeys.value[path.length - 1];
-      const itemId = path.join(PATH_DELIMETER);
+      const itemId = path.join(REGION_ID_DELIMETER);
       emit('toggle-is-item-selected', aggregationLevel, itemId);
     };
 
@@ -431,7 +430,7 @@ export default defineComponent({
           selectedItemIds.value
         );
       }
-      toggleChecked(selectedItemIds.value[0].split(PATH_DELIMETER));
+      toggleChecked(selectedItemIds.value[0].split(REGION_ID_DELIMETER));
     };
 
     return {
