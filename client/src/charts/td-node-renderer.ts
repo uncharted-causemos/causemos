@@ -1,3 +1,4 @@
+import _ from 'lodash';
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
@@ -14,7 +15,7 @@ import {
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { roundToNearestMonth } from '@/utils/date-util';
 
-const HISTORICAL_DATA_COLOR = 'black';
+const HISTORICAL_DATA_COLOR = '#888';
 const HISTORICAL_RANGE_OPACITY = 0.025;
 const CONTEXT_RANGE_FILL = SELECTED_COLOR;
 const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
@@ -50,6 +51,14 @@ export default function(
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) {
+  // FIXME: Tie data to group element, should make renderer stateful instead of a single function
+  let oldCoords: number[] = [];
+  const oldG = selection.select('.contextGroupElement');
+  if (oldG.size() === 1 && !_.isEmpty(oldG.datum())) {
+    oldCoords = oldG.datum();
+  }
+  selection.selectAll('*').remove();
+
   if (projections.length === 0) return;
   const [xExtent, yExtent] = calculateExtents(
     historicalTimeseries,
@@ -144,7 +153,7 @@ export default function(
     .classed('brush', true)
     .call(brush)
     // set initial brush selection to entire context
-    .call(brush.move, xScaleFocus.range());
+    .call(brush.move, oldCoords.length === 2 ? oldCoords : xScaleFocus.range());
   selection
     .selectAll('.brush > .selection')
     .attr('fill', CONTEXT_RANGE_FILL)
@@ -164,6 +173,9 @@ export default function(
   // Redraw chart whenever axis is brushed
   //  Also gets called with "initialBrushSelection"
   function brushed({ selection }: { selection: number[] }) {
+    // FIXME: Tie data to group element, should make renderer stateful instead of a single function
+    contextGroupElement.datum(selection);
+
     const [x0, x1] = selection.map(xScaleContext.invert);
     xScaleFocus.domain([x0, x1]);
     focusGroupElement.selectAll('*').remove();

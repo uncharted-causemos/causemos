@@ -29,7 +29,7 @@
     <div>
       <div class="col-md-9 timeseries-chart">
         <timeseries-chart
-          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 1"
+          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
           :timeseries-data="visibleTimeseriesData"
           :selected-timestamp="selectedTimestamp"
           :breakdown-option="breakdownOption"
@@ -54,7 +54,7 @@
 <script lang="ts">
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
-import { AnalysisItemNew } from '@/types/Analysis';
+import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
@@ -62,11 +62,9 @@ import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
 import { colorFromIndex } from '@/utils/colors-util';
 import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import useRegionalData from '@/services/composables/useRegionalData';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
 import router from '@/router';
-import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import _ from 'lodash';
 
 const DRILLDOWN_TABS = [
@@ -98,7 +96,7 @@ export default defineComponent({
       default: false
     }
   },
-  emits: ['temporal-breakdown-data', 'regional-data', 'selected-scenario-ids', 'select-timestamp'],
+  emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp'],
   setup(props, { emit }) {
     const {
       datacubeId,
@@ -177,6 +175,29 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
+    // apply the view-config for this datacube
+    const indx = analysisItems.value.findIndex((ai: any) => ai.id === props.id);
+    if (indx >= 0) {
+      const initialViewConfig = analysisItems.value[indx].viewConfig;
+
+      if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
+        if (initialViewConfig.temporalResolution !== undefined) {
+          selectedTemporalResolution.value = initialViewConfig.temporalResolution;
+        }
+        if (initialViewConfig.temporalAggregation !== undefined) {
+          selectedTemporalAggregation.value = initialViewConfig.temporalAggregation;
+        }
+        if (initialViewConfig.spatialAggregation !== undefined) {
+          selectedSpatialAggregation.value = initialViewConfig.spatialAggregation;
+        }
+        if (initialViewConfig.selectedOutputIndex !== undefined) {
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[props.datacubeId] = initialViewConfig.selectedOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+      }
+    }
+
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
@@ -203,41 +224,13 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
-    );
-
-    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
-      breakdownOption,
-      timeseriesData,
-      selectedTimestamp,
-      selectedScenarioIds
+      setSelectedTimestamp,
+      ref([]) // region breakdown
     );
 
     watchEffect(() => {
       if (temporalBreakdownData.value && props.isSelected) {
         emit('temporal-breakdown-data', temporalBreakdownData.value);
-      }
-    });
-
-    const {
-      outputSpecs,
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
-    } = useRegionalData(
-      datacubeId,
-      selectedSpatialAggregation,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      metadata,
-      selectedTimeseriesPoints
-    );
-
-
-    watchEffect(() => {
-      if (regionalData.value && props.isSelected) {
-        emit('regional-data', regionalData.value);
       }
     });
 
@@ -264,11 +257,6 @@ export default defineComponent({
       temporalBreakdownData,
       AggregationOption,
       emitTimestampSelection,
-      regionalData,
-      outputSpecs,
-      deselectedRegionIds,
-      setAllRegionsSelected,
-      toggleIsRegionSelected,
       visibleTimeseriesData,
       analysisItems,
       project,
@@ -284,7 +272,7 @@ export default defineComponent({
     async openDrilldown() {
       // NOTE: instead of replacing the datacubeIDs array,
       // ensure that the current datacubeId is at 0 index
-      let workingAnalysisItems = this.analysisItems.map((item: AnalysisItemNew): AnalysisItemNew => item);
+      let workingAnalysisItems = this.analysisItems.map((item: AnalysisItem): AnalysisItem => item);
       const indx = workingAnalysisItems.findIndex((ai: any) => ai.id === this.props.id);
       if (indx > 0) {
         // move to 0-index
@@ -293,7 +281,7 @@ export default defineComponent({
         workingAnalysisItems.unshift(targetItem);
       }
       const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
-      await this.store.dispatch('dataAnalysis/updateAnalysisItemsNew', updatedAnalysisInfo);
+      await this.store.dispatch('dataAnalysis/updateAnalysisItems', updatedAnalysisInfo);
 
       router.push({
         name: 'data',

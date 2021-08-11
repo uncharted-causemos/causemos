@@ -111,6 +111,7 @@ class CAGRenderer extends SVGRenderer {
   async render() {
     await super.render();
     this.displayAmbiguousEdgeWarning();
+    this.displayGraphStats();
   }
 
   renderNodeUpdated() {
@@ -607,7 +608,8 @@ class CAGRenderer extends SVGRenderer {
 
   displayAmbiguousEdgeWarning() {
     const graph = this.layout;
-    const foregroundLayer = d3.select(this.svgEl).select('.foreground-layer');
+    const svg = d3.select(this.svgEl);
+    const foregroundLayer = svg.select('.foreground-layer');
 
     const highlightFunction = this.highlight;
     const highlightAmbiguousEdgesFunction = this.highlightAmbiguousEdges;
@@ -615,7 +617,8 @@ class CAGRenderer extends SVGRenderer {
     const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
       ? d3.select('.ambiguous-edge-warning') // select it
       : foregroundLayer.append('text') // or create it if it hasn't been already
-        .attr('x', 10)
+        .attr('x', parseInt(svg.style('width')) - 310)
+        .style('text-anchor', 'right')
         .attr('y', 20)
         .attr('opacity', 0)
         .attr('fill', 'red')
@@ -629,11 +632,87 @@ class CAGRenderer extends SVGRenderer {
     for (const edge of graph.edges) {
       const polarity = edge.data.polarity;
       if (polarity !== 1 && polarity !== -1) {
-        warning.attr('opacity', 1);
+        warning
+          .attr('opacity', 1)
+          .attr('x', parseInt(svg.style('width')) - 310); // FIXME this doesn't move the warning if the window resizes, svg size doesnt change
         return;
       }
     }
     warning.attr('opacity', 0);
+  }
+
+  displayGraphStats() {
+    const graph = this.layout;
+    const svg = d3.select(this.svgEl);
+    const foregroundLayer = svg.select('.foreground-layer');
+    const edgeCount = graph.edges.length;
+    const nodeCount = graph.nodes.length;
+
+    const squareSize = 26;
+    let statsGroup = null;
+    let clickGroup = null;
+
+    if (d3.select('.graph-stats-info').node()) {
+      statsGroup = d3.select('.graph-stats-info');
+      const selection = statsGroup.selectAll('.graph-stats-text');
+      selection.text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`);
+      clickGroup = statsGroup.selectAll('clickGroup');
+    } else {
+      statsGroup = foregroundLayer.append('g')
+        .attr('transform', svgUtil.translate(5, 10))
+        .classed('graph-stats-info', true)
+        .style('cursor', 'pointer');
+
+      clickGroup = statsGroup.append('g')
+        .classed('clickGroup', true);
+
+      clickGroup
+        .append('rect')
+        .style('width', squareSize.toString())
+        .style('height', squareSize.toString())
+        .style('rx', '6')
+        .style('fill', 'white')
+        .style('fill-opacity', '0')
+        .style('stroke', '#545353');
+
+      clickGroup
+        .append('text')
+        .style('font-family', 'FontAwesome')
+        .style('font-size', '20px')
+        .style('stroke', 'none')
+        .style('fill', '#545353')
+        .style('cursor', 'pointer')
+        .style('text-anchor', 'middle')
+        .style('alignment-baseline', 'middle')
+        .attr('x', (squareSize / 2).toString())
+        .attr('y', ((squareSize / 2) + 1).toString())
+        .text('\uf05a');
+
+      statsGroup
+        .append('text')
+        .classed('graph-stats-text', true)
+        .style('font-size', '18px')
+        .style('stroke', 'none')
+        .style('fill', '#545353')
+        .style('text-anchor', 'left')
+        .style('alignment-baseline', 'middle')
+        .attr('y', (squareSize + 15).toString())
+        .text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`)
+        .style('opacity', 0)
+        .attr('pointer-events', 'none');
+    }
+
+    clickGroup
+      .on('click', function() {
+        const selection = statsGroup.selectAll('.graph-stats-text');
+        const active = selection.style('opacity');
+        const newOpacity = parseInt(active) ? 0 : 1;
+
+        selection
+          .transition()
+          .duration(300)
+          .style('opacity', newOpacity);
+      });
   }
 
   highlightAmbiguousEdges(graph, highlight) {
@@ -744,7 +823,7 @@ export default {
       this.$emit('background-dbl-click');
     });
 
-    this.renderer.setCallback('nodeClick', (evt, node) => {
+    this.renderer.setCallback('nodeClick', (_evt, node) => {
       const concept = node.datum().concept;
       const neighborhood = calculateNeighborhood(this.data, concept);
 
@@ -769,7 +848,7 @@ export default {
       this.renderer.selectEdge(evt, edge);
     });
 
-    this.renderer.setCallback('nodeMouseEnter', (evt, node, renderer) => {
+    this.renderer.setCallback('nodeMouseEnter', (_evt, node, renderer) => {
       if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.enableNodeHandles(node);
       const data = node.datum();
@@ -778,7 +857,7 @@ export default {
       }
     });
 
-    this.renderer.setCallback('nodeMouseLeave', (evt, node, renderer) => {
+    this.renderer.setCallback('nodeMouseLeave', (_evt, node, renderer) => {
       if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.disableNodeHandles();
 
@@ -811,7 +890,7 @@ export default {
       }
     });
 
-    this.renderer.setCallback('edgeMouseLeave', (evt, edge) => {
+    this.renderer.setCallback('edgeMouseLeave', (_evt, edge) => {
       edge.selectAll('.edge-mouseover-handle').remove();
     });
 
@@ -822,7 +901,12 @@ export default {
   },
   methods: {
     saveCustomConcept(value) {
-      console.log(`Emitted custom grounding: ${JSON.stringify(value)}`);
+      this.$emit('suggestion-selected', {
+        concept: value.theme,
+        shortName: value.theme,
+        label: value.theme,
+        hasEvidence: false
+      });
     },
     async refresh() {
       if (_.isEmpty(this.data)) return;

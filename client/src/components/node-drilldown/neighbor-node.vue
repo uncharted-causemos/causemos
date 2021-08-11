@@ -5,7 +5,6 @@
     </header>
     <div class="graph">
       <!-- TODO: draw a little chart here -->
-      (Little chart goes here)
     </div>
     <svg
       class="arrow"

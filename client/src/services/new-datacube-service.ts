@@ -109,6 +109,27 @@ export const getSuggestions = async (field: string, queryString: string) => {
   return data;
 };
 
+/**
+ * Fetches the hierarchy for a given model or indicator
+ * @param dataId indicator or model ID
+ * @param runId the ID of the model run. If this is an indicator, should be 'indicator'
+ * @param feature the output feature
+ */
+export const getHierarchy = async (
+  dataId: string,
+  runId: string,
+  feature: string
+) => {
+  const { data } = await API.get('maas/output/hierarchy', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature
+    }
+  });
+  return data;
+};
+
 // DEPRECATED - NO LONGER WORK
 // TODO: REMOVE
 

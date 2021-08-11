@@ -109,7 +109,7 @@ export default defineComponent({
         padding-right: 5px;
         flex-direction: row;
         cursor: pointer;
-        font-size: 16px;
+        font-size: $font-size-medium;
 
         .checklist-item-text {
           padding: 0 10px;

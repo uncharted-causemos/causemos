@@ -165,18 +165,23 @@ export default {
   },
   async mounted() {
     this.fetchDatacubeInstances();
+
+    // ensure the insight explorer panel is closed in case the user has
+    //  previously opened it and clicked the browser back button
+    this.hideInsightPanel();
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
       setContextId: 'insightPanel/setContextId',
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
       setSelectedScenarioIds: 'modelPublishStore/setSelectedScenarioIds'
     }),
     updateDesc() {
       if (this.isEditingDesc) {
         // we may have just modified the desc text, so update the server value
-        domainProjectService.updateDomainProject(this.projectMetadata.name, { description: this.projectMetadata.description });
+        domainProjectService.updateDomainProject(this.project, { description: this.projectMetadata.description });
       }
       this.isEditingDesc = !this.isEditingDesc;
     },
@@ -215,7 +220,7 @@ export default {
       await updateDatacube(instance.id, instance);
 
       // also, update the project stats count
-      const domainProject = await domainProjectService.getProject(this.projectMetadata.name);
+      const domainProject = await domainProjectService.getProject(this.project);
       // add the instance to list of draft instances
       const updatedDraftInstances = domainProject.draft_instances;
       if (!updatedDraftInstances.includes(instance.name)) {
@@ -225,7 +230,7 @@ export default {
       const updatedReadyInstances = domainProject.ready_instances.filter(n => n !== instance.name);
       // update the project doc at the server
       domainProjectService.updateDomainProject(
-        this.projectMetadata.name,
+        this.project,
         {
           draft_instances: updatedDraftInstances,
           ready_instances: updatedReadyInstances

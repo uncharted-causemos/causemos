@@ -7,6 +7,22 @@
     >
     </full-screen-modal-header>
 
+    <modal-confirmation
+      v-if="showModal"
+      :autofocus-confirm="false"
+      @confirm="redirectToAnalysisInsight"
+      @close="showModal = false"
+    >
+      <template #title>Applying Analysis Insight</template>
+      <template #message>
+        <p>Are you sure you want to redirect to the relevant analysis project and apply the insight?</p>
+        <message-display
+          :message="'Warning: This action will take you out of the current flow.'"
+          :message-type="'alert-warning'"
+        />
+      </template>
+    </modal-confirmation>
+
     <div class="tab-controls">
       <tab-bar
         class="tabs"
@@ -137,7 +153,6 @@ import { INSIGHTS } from '@/utils/messages-util';
 
 import InsightCard from '@/components/insight-manager/insight-card';
 import DropdownControl from '@/components/dropdown-control';
-import MessageDisplay from '@/components/widgets/message-display';
 import TabBar from '@/components/widgets/tab-bar';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 
@@ -149,6 +164,9 @@ import { computed } from 'vue';
 
 import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
 import useInsightsData from '@/services/composables/useInsightsData';
+import { ProjectType } from '@/types/Enums';
+import ModalConfirmation from '@/components/modals/modal-confirmation';
+import MessageDisplay from '@/components/widgets/message-display';
 
 const INSIGHT_TABS = [
   {
@@ -168,6 +186,7 @@ export default {
     FullScreenModalHeader,
     InsightCard,
     MessageDisplay,
+    ModalConfirmation,
     TabBar,
     AnalyticalQuestionsPanel
   },
@@ -179,7 +198,9 @@ export default {
     messageNoData: INSIGHTS.NO_DATA,
     search: '',
     selectedInsight: null,
-    tabs: INSIGHT_TABS
+    tabs: INSIGHT_TABS,
+    showModal: false,
+    redirectInsightUrl: ''
   }),
   setup() {
     const store = useStore();
@@ -210,7 +231,8 @@ export default {
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countInsights: 'insightPanel/countInsights'
+      countInsights: 'insightPanel/countInsights',
+      projectType: 'app/projectType'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -251,6 +273,13 @@ export default {
       this.hideInsightPanel();
       this.activeInsight = null;
       this.selectedInsight = null;
+    },
+    redirectToAnalysisInsight() {
+      if (this.redirectInsightUrl !== '') {
+        this.$router.push(this.redirectInsightUrl);
+      }
+      this.showModal = false;
+      this.redirectInsightUrl = '';
     },
     startDrag(evt, insight) {
       evt.currentTarget.style.border = '3px dashed black';
@@ -305,8 +334,15 @@ export default {
         return this.listInsights;
       }
     },
-    getSourceUrlForExport(i) {
-      return i.url + '?insight_id=' + i.id;
+    getSourceUrlForExport(insightURL, insightId) {
+      if (insightURL.includes('insight_id')) return insightURL;
+      // is the url has some params already at its end?
+      if (insightURL.includes('?') && insightURL.includes('=')) {
+        // append
+        return insightURL + '&insight_id=' + insightId;
+      }
+      // add
+      return insightURL + '?insight_id=' + insightId;
     },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexingly uses pixels
@@ -324,7 +360,7 @@ export default {
                   alignment: AlignmentType.CENTER,
                   children: [
                     new TextRun({
-                      size: 16,
+                      size: 14,
                       text: this.metadataSummary
                     })
                   ]
@@ -385,7 +421,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(this.getSourceUrlForExport(i))
+                  link: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
                 })
               ]
             })
@@ -452,7 +488,7 @@ export default {
               bold: true,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i))
+                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
               }
             }
           },
@@ -474,7 +510,7 @@ export default {
               break: false,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i))
+                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
               }
             }
           },
@@ -555,8 +591,22 @@ export default {
       const savedURL = insight.url;
       const currentURL = this.$route.fullPath;
       if (savedURL !== currentURL) {
-        // FIXME: refactor and use getSourceUrlForExport() to retrive final url with insight_id appended
-        const finalURL = savedURL.includes('insight_id') ? savedURL : savedURL + '?insight_id=' + this.selectedInsight.id;
+        // FIXME: applying (private) insights that belong to analyses that no longer exist
+        // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
+
+        // add 'insight_id' as a URL param so that the target page can apply it
+        const finalURL = this.getSourceUrlForExport(savedURL, this.selectedInsight.id);
+
+        // special case
+        if (this.projectType !== ProjectType.Analysis && this.selectedInsight.visibility === 'private') {
+          // this is a private insight created by an analyst:
+          // when applying this insight from within a domain project, it will redirect to the relevant analysis project
+          // so show a warning before leaving
+          this.redirectInsightUrl = finalURL;
+          this.showWarningModal();
+          return;
+        }
+
         this.$router.push(finalURL);
       } else {
         router.push({
@@ -566,6 +616,9 @@ export default {
         }).catch(() => {});
       }
       this.closeInsightPanel();
+    },
+    showWarningModal() {
+      this.showModal = true;
     },
     slideURL(slideURL) {
       return `${window.location.protocol}//${window.location.host}/#${slideURL}`;

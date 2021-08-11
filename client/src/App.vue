@@ -24,7 +24,6 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
 
-
 const viewsWithNoNavbar = [
   'nodeCompExperiment',
   'nodeDataExplorer',
@@ -83,11 +82,27 @@ export default {
       setProjectMetadata: 'app/setProjectMetadata',
       setConceptDefinitions: 'app/setConceptDefinitions'
     }),
-    refreshDomainProject() {
+    async refreshDomainProject() {
       if (_.isEmpty(this.project)) {
         return;
       }
-      domainProjectService.getProject(this.project).then(project => {
+
+      let projectId = this.project;
+
+      // TODO: an ideal solution would be to have some sort of dispatcher page
+      //  that just takes the datacubeId and sends the domain-modeler user to the proper place
+      //  This will allow cleaner redirection from Jataware side once a model registration is complete
+      const domainProjectSearchFields = {
+        type: 'model'
+      };
+      const existingProjects = await domainProjectService.getProjects(domainProjectSearchFields);
+      const domainProjectNames = existingProjects.map(p => p.name);
+      if (domainProjectNames.includes(this.project)) {
+        // this is a special case where Jataware has redirected to a given domain-project page
+        projectId = existingProjects.find(p => p.name === this.project).id;
+      }
+
+      domainProjectService.getProject(projectId).then(project => {
         this.setProjectMetadata(project);
       });
     },

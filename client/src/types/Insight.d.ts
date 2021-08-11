@@ -1,3 +1,4 @@
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 // @base/abstract type
 export interface Snapshot {
@@ -47,8 +48,12 @@ export interface ViewState {
   temporalAggregation?: string;
   spatialResolution?: string;
   temporalResolution?: string;
-  selectedAdminLevel?: string;
+  selectedAdminLevel?: number;
   isDescriptionView?: boolean;
+  selectedOutputIndex?: number;
+  selectedMapBaseLayer?: BASE_LAYER;
+  selectedMapDataLayer?: DATA_LAYER;
+  breakdownOption?: string | null;
 
   // knowledge/model space specific
   sensitivityToggle?: any;
