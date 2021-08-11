@@ -26,6 +26,7 @@ describe('string-util', () => {
     expect(formatter(ht)).to.equal('1.00e-5');
     expect(formatter(0.0001)).to.equal('0.0001');
     expect(formatter(0.001)).to.equal('0.001');
+    expect(formatter(0.00123)).to.equal('0.0012');
   });
 });
 
