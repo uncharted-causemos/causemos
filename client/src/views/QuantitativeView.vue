@@ -47,7 +47,7 @@ import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
-const POLLING_DELAY = 3000;
+
 export default {
   name: 'QuantitativeView',
   components: {
@@ -75,9 +75,7 @@ export default {
     sensitivityDataTimestamp: null,
 
     // Tracking draft scenario
-    previousScenarioId: null,
-    // interval timers
-    pollingTimer_modelRebuild: null
+    previousScenarioId: null
   }),
   computed: {
     ...mapGetters({
@@ -151,6 +149,7 @@ export default {
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
           this.disableOverlay();
+          this.enableOverlay(modelService.MODEL_MSG_RETRAINING_BLOCK);
           this.toaster(errors[0], 'error', true);
           console.error(errors);
           return;
@@ -262,26 +261,13 @@ export default {
       this.setSelectedScenarioId(response.id);
       this.disableOverlay();
     },
-    closeEditIndicatorModal() {
-      this.isEditIndicatorModalOpen = false;
-    },
     showModelParameters() {
       this.isModelParametersOpen = true;
-    },
-    checkModel() {
-      this.refresh().then(modelStatus => {
-        if (modelStatus) {
-          this.disableOverlay();
-          clearInterval(this.pollingTimer_modelRebuild);
-        }
-      });
     },
     saveModelParameter(newParameter) {
       this.enableOverlay(modelService.MODEL_MSG_RETRAINING_BLOCK);
       this.isModelParametersOpen = false;
-      modelService.updateModelParameter(this.currentCAG, newParameter).then(() => {
-        this.pollingTimer_modelRebuild = setInterval(this.checkModel, POLLING_DELAY); // model rebuild should take a while.
-      });
+      modelService.updateModelParameter(this.currentCAG, newParameter);
     },
     closeModelParameters() {
       this.isModelParametersOpen = false;
