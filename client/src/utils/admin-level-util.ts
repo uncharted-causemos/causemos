@@ -11,3 +11,5 @@ export const ADMIN_LEVEL_TITLES: { [key in AdminLevel]: string } = {
 
 // Ordered list of the admin region levels
 export const ADMIN_LEVEL_KEYS = Object.values(AdminLevel);
+
+export const REGION_ID_DELIMETER = '__';

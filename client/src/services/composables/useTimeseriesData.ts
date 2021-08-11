@@ -3,6 +3,7 @@ import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, SpatialAggregationLevel } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
@@ -160,7 +161,9 @@ export default function useTimeseriesData(
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           // Take the last segment of the region ID to get its display name
-          const name = regionIds.value[index].split('__').pop() ?? regionIds.value[index];
+          const name =
+            regionIds.value[index].split(REGION_ID_DELIMETER).pop() ??
+            regionIds.value[index];
           const id = regionIds.value[index];
           const color = colorFromIndex(index);
           return { name, id, color, points };
