@@ -155,7 +155,7 @@ export default {
             const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
             this.setSelectedDatacubes(newSelectedDatacubes);
           } else {
-            this.setSelectedDatacubes([...this.selectedDatacubes, item]);
+            this.setSelectedDatacubes([item, ...this.selectedDatacubes]);
           }
         } else {
           // only one selection is allowed, so replace the selected datacubes array
