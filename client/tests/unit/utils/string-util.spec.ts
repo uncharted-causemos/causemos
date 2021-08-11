@@ -20,7 +20,7 @@ describe('string-util', () => {
     expect(formatter(100)).to.equal('100');
   });
 
-  it('should return scientific notation for numbers under 0.0001 when the range buttom number 1,000,000 or greater', () => {
+  it('should return scientific notation for numbers under 0.00001 when the range buttom number is 0.00001 or less', () => {
     const ht = 0.00001;
     const formatter = StringUtil.chartValueFormatter(ht, 100);
     expect(formatter(ht)).to.equal('1.00e-5');
