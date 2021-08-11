@@ -137,12 +137,11 @@
               :selected-temporal-aggregation="selectedTemporalAggregation"
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
-              :deselected-region-ids="deselectedRegionIds"
+              :selected-region-ids="selectedRegionIds"
               :selected-breakdown-option="breakdownOption"
               :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
-              @set-all-regions-selected="setAllRegionsSelected"
               @set-breakdown-option="setBreakdownOption"
             />
           </template>
@@ -180,7 +179,6 @@ import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState } from '@/types/Insight';
-import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { AnalysisItem } from '@/types/Analysis';
 
 const DRILLDOWN_TABS = [
@@ -274,7 +272,16 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
-    const { allRegions } = useDatacubeHierarchy(selectedScenarioIds, metadata);
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption
+    );
 
     const timeInterval = 10000;
 
@@ -355,15 +362,6 @@ export default defineComponent({
       clearRouteParam();
     };
 
-    const selectedLevelIds = computed(() => {
-      const selectedAdminLevelKey = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
-      if (selectedAdminLevelKey === 'admin4' || selectedAdminLevelKey === 'admin5') return [];
-      const regionsAtSelectedLevel = allRegions.value[selectedAdminLevelKey];
-      const deselected = deselectedRegionIds.value[selectedAdminLevelKey];
-      return regionsAtSelectedLevel.filter(region => !deselected.has(region))
-        .slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
-    });
-
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -381,7 +379,7 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      selectedLevelIds
+      selectedRegionIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -393,10 +391,7 @@ export default defineComponent({
 
     const {
       outputSpecs,
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
+      regionalData
     } = useRegionalData(
       selectedModelId,
       selectedSpatialAggregation,
@@ -404,7 +399,8 @@ export default defineComponent({
       selectedTemporalResolution,
       metadata,
       selectedTimeseriesPoints,
-      breakdownOption
+      breakdownOption,
+      datacubeHierarchy
     );
 
     watchEffect(() => {
@@ -454,9 +450,8 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
-      deselectedRegionIds,
+      selectedRegionIds,
       toggleIsRegionSelected,
-      setAllRegionsSelected,
       outputs,
       currentOutputIndex,
       setSelectedTimestamp,

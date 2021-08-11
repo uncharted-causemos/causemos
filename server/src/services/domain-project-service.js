@@ -74,7 +74,8 @@ const updateProject = async(projectId, projectFields) => {
 /**
  * Returns a list of all projects
  */
-const getAllProjects = async (searchFilters) => {
+const getAllProjects = async (filterParams) => {
+  const searchFilters = getFilterFields(filterParams);
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const results = await domainProjectConnection.find(searchFilters, { size: MAX_NUMBER_PROJECTS });
   return results;
@@ -140,6 +141,22 @@ const updateDomainProjects = async (metadata) => {
       }
     }
   }
+};
+
+const getFilterFields = (filterParams) => {
+  const supportedSearchFields = [
+    'type'
+  ];
+  const searchFilters = [];
+  supportedSearchFields.forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(filterParams, key)) {
+      searchFilters.push({
+        field: key,
+        value: filterParams[key]
+      });
+    }
+  });
+  return searchFilters;
 };
 
 
