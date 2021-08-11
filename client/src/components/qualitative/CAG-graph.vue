@@ -823,7 +823,7 @@ export default {
       this.$emit('background-dbl-click');
     });
 
-    this.renderer.setCallback('nodeClick', (evt, node) => {
+    this.renderer.setCallback('nodeClick', (_evt, node) => {
       const concept = node.datum().concept;
       const neighborhood = calculateNeighborhood(this.data, concept);
 
@@ -848,7 +848,7 @@ export default {
       this.renderer.selectEdge(evt, edge);
     });
 
-    this.renderer.setCallback('nodeMouseEnter', (evt, node, renderer) => {
+    this.renderer.setCallback('nodeMouseEnter', (_evt, node, renderer) => {
       if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.enableNodeHandles(node);
       const data = node.datum();
@@ -857,7 +857,7 @@ export default {
       }
     });
 
-    this.renderer.setCallback('nodeMouseLeave', (evt, node, renderer) => {
+    this.renderer.setCallback('nodeMouseLeave', (_evt, node, renderer) => {
       if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.disableNodeHandles();
 
@@ -890,7 +890,7 @@ export default {
       }
     });
 
-    this.renderer.setCallback('edgeMouseLeave', (evt, edge) => {
+    this.renderer.setCallback('edgeMouseLeave', (_evt, edge) => {
       edge.selectAll('.edge-mouseover-handle').remove();
     });
 
@@ -901,7 +901,12 @@ export default {
   },
   methods: {
     saveCustomConcept(value) {
-      console.log(`Emitted custom grounding: ${JSON.stringify(value)}`);
+      this.$emit('suggestion-selected', {
+        concept: value.theme,
+        shortName: value.theme,
+        label: value.theme,
+        hasEvidence: false
+      });
     },
     async refresh() {
       if (_.isEmpty(this.data)) return;
