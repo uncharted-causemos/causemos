@@ -270,7 +270,7 @@ export default defineComponent({
     async refreshDomainProjects() {
       this.enableOverlay('Loading projects');
 
-      const domainProjectSearchFields: DomainProjectFilterFields = {
+      const domainProjectSearchFields = { // DomainProjectFilterFields
         type: 'model'
       };
       const existingProjects: DomainProject[] = await domainProjectService.getProjects(domainProjectSearchFields);
