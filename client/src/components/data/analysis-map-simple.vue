@@ -8,7 +8,6 @@
       :bounds="mapBounds"
       @load="onMapLoad"
       @move="onMapMove"
-      @moveend="onMapMoveEnd"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
       @styledata="onStyleChange"
@@ -383,9 +382,6 @@ export default {
     },
     selectedLayer() {
       this.refreshLayers();
-    },
-    curZoom() {
-      this.refreshGridMap();
     }
   },
   created() {
@@ -393,6 +389,11 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+
+    this.debouncedRefreshGridMap = _.debounce(function() {
+      this.refreshGridMap();
+    }, 50);
+
     // Init layer objects
     this.refreshLayers();
   },
@@ -447,9 +448,6 @@ export default {
         });
       });
     },
-    fetchGridMapStats() {
-
-    },
     onAddLayer() {
       if (!this.regionData) return;
       this.setFeatureStates();
@@ -479,8 +477,9 @@ export default {
       this.$emit('on-map-load');
     },
     onMapMove(event) {
-      this.syncBounds(event);
       this.updateCurrentZoomLevel();
+      this.debouncedRefreshGridMap();
+      this.syncBounds(event);
     },
     syncBounds(event) {
       // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
