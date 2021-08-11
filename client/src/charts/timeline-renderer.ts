@@ -59,7 +59,7 @@ export default function(
   selectedTimestamp: number,
   breakdownOption: string | null,
   onTimestampSelected: (timestamp: number) => void,
-  onTimestampRangeSelected: (timestamp1: number, timestamp2: number) => void
+  onTimestampRangeSelected: (start: number, end: number) => void
 ) {
   selection.selectAll('*').remove();
 

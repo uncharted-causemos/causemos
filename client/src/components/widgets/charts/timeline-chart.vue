@@ -39,8 +39,8 @@ export default defineComponent({
     function selectTimestamp(newValue: number) {
       emit('select-timestamp', newValue);
     }
-    function selectTimestampRange(timestamp1: number, timestamp2: number) {
-      emit('select-timestamp-range', { timestamp1, timestamp2 });
+    function selectTimestampRange(start: number, end: number) {
+      emit('select-timestamp-range', { start, end });
     }
     let updateTimestampElements:
       | ((timestamp: number | null) => void)

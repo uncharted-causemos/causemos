@@ -54,7 +54,7 @@ export default function(
   selectedTimestamp: number,
   onTimestampSelected: (timestamp: number) => void,
   breakdownOption: string | null,
-  selectedTimestampRange: {timestamp1: number; timestamp2: number} | null
+  selectedTimestampRange: {start: number; end: number} | null
 ) {
   const groupElement = selection.append('g');
   const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
@@ -139,7 +139,7 @@ export default function(
   };
 }
 
-function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {timestamp1: number; timestamp2: number} | null) {
+function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {start: number; end: number} | null) {
   const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
   const allTimestampDataPoints = allPoints.map(point => point.timestamp);
   let xExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
@@ -147,7 +147,7 @@ function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: 
     // the user requested to render the timeseries chart within a specific range
     // so we should respect that and enlarge the extent to include the selectedTimestampRange, as needed
     //  this would enable the zooming effect
-    xExtent = [selectedTimestampRange.timestamp1, selectedTimestampRange.timestamp2];
+    xExtent = [selectedTimestampRange.start, selectedTimestampRange.end];
   } else {
     xExtent = d3.extent(allTimestampDataPoints);
   }

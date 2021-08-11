@@ -76,25 +76,25 @@ export default defineComponent({
     const reCalculateGlobalTimeseries = ref(true);
 
     const selectedTimestamp = ref(null) as Ref<number | null>;
-    const selectedTimestampRange = ref(null) as Ref<{timestamp1: number; timestamp2: number} | null>;
+    const selectedTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
     const initialSelectedTimestamp = ref(0) as Ref<number>;
-    const initialSelectedTimestampRange = ref({}) as Ref<{timestamp1: number; timestamp2: number}>;
+    const initialSelectedTimestampRange = ref({}) as Ref<{start: number; end: number}>;
 
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value || timeSelectionSyncing.value === false) return;
       selectedTimestamp.value = value;
     };
 
-    const handleTimestampRangeSelection = (newTimestampRange: {timestamp1: number; timestamp2: number}) => {
+    const handleTimestampRangeSelection = (newTimestampRange: {start: number; end: number}) => {
       // we should pass the incoming (global) range to all datacube-comparative-card components
       //  so that they may zoom accordingly
       if (!timeSelectionSyncing.value) {
         // if time-sync is disabled do nothing
         return;
       }
-      if (selectedTimestampRange.value?.timestamp1 === newTimestampRange.timestamp1 &&
-        selectedTimestampRange.value?.timestamp2 === newTimestampRange.timestamp2) {
+      if (selectedTimestampRange.value?.start === newTimestampRange.start &&
+        selectedTimestampRange.value?.end === newTimestampRange.end) {
         return;
       }
       selectedTimestampRange.value = newTimestampRange;
@@ -184,7 +184,7 @@ export default defineComponent({
           const firstTimestamp = _.min(allTimestamps);
           if (lastTimestamp !== undefined && firstTimestamp !== undefined) {
             // set initial timestamp selection range
-            const newTimestampRange = { timestamp1: firstTimestamp, timestamp2: lastTimestamp };
+            const newTimestampRange = { start: firstTimestamp, end: lastTimestamp };
             // this.handleTimestampRangeSelection(newTimestampRange);
             this.initialSelectedTimestampRange = newTimestampRange;
           }

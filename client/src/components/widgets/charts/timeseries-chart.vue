@@ -27,7 +27,7 @@ export default defineComponent({
       default: 0
     },
     selectedTimestampRange: {
-      type: Object as PropType<{timestamp1: number; timestamp2: number} | null>,
+      type: Object as PropType<{start: number; end: number} | null>,
       default: null
     },
     breakdownOption: {
