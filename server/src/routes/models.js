@@ -562,6 +562,9 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
   const parameter = model.parameter;
+  if (_.isNil(parameter)) {
+    throw new Error('Model does not contain parameter');
+  }
   const engine = parameter.engine;
   const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
 
