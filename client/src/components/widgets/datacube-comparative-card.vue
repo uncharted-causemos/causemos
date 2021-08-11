@@ -228,7 +228,7 @@ export default defineComponent({
 
     watchEffect(() => {
       if (visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
-        emit('loaded-timeseries', { datacubeId: datacubeId.value, timeseriesList: visibleTimeseriesData.value });
+        emit('loaded-timeseries', { id: id.value, timeseriesList: visibleTimeseriesData.value });
       }
     });
 

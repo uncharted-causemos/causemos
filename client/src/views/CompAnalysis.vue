@@ -144,13 +144,13 @@ export default defineComponent({
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
-    onLoadedTimeseries(timeseriesInfo: {datacubeId: string; timeseriesList: Timeseries[]}) {
+    onLoadedTimeseries(timeseriesInfo: {id: string; timeseriesList: Timeseries[]}) {
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
 
       // save the incoming timeseries in the map object where all timeseries lists will be saved
-      this.allTimeseriesMap[timeseriesInfo.datacubeId] = timeseriesInfo.timeseriesList;
+      this.allTimeseriesMap[timeseriesInfo.id] = timeseriesInfo.timeseriesList;
       //
       // calculate (the global timeseries)
       //
