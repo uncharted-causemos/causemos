@@ -95,9 +95,10 @@ export default function useRegionalData(
     }));
   });
   watchEffect(async onInvalidate => {
-    // FIXME: OPTIMIZATION: if we're careful, we can rearrange things so that the
-    //  getRegionAggregations call doesn't have to wait until the datacubeHierarchy is ready
-    if (outputSpecs.value.length === 0 || datacubeHierarchy.value === null) return;
+    // FIXME: OPTIMIZATION: with some careful refactoring, we can adjust things
+    //  so that the getRegionAggregations call doesn't have to wait until the
+    //  datacubeHierarchy is ready
+    if (datacubeHierarchy.value === null) return;
     let isCancelled = false;
     onInvalidate(() => {
       isCancelled = true;
