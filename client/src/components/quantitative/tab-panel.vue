@@ -50,6 +50,7 @@
             <model-graph
               :data="graphData"
               :scenario-data="scenarioData"
+              ref="modelGraph"
               @background-click="onBackgroundClick"
               @node-drilldown="onNodeDrilldown"
               @edge-click="showRelation"
@@ -190,6 +191,10 @@ export default {
     scenarios: {
       type: Array,
       required: true
+    },
+    resetLayoutToken: {
+      type: Number,
+      required: true
     }
   },
   emits: [
@@ -245,6 +250,9 @@ export default {
     },
     modelComponents() {
       this.refresh();
+    },
+    resetLayoutToken() {
+      this.resetCAGLayout();
     }
   },
   created() {
@@ -341,6 +349,15 @@ export default {
     },
     setSensitivityAnalysisType(analysisType) {
       this.$emit('set-sensitivity-analysis-type', analysisType);
+    },
+    async resetCAGLayout() {
+      const modelGraph = this.$refs.modelGraph;
+      if (modelGraph === undefined) return;
+      const graphOptions = modelGraph.renderer.options;
+      const prevStabilitySetting = graphOptions.useStableLayout;
+      graphOptions.useStableLayout = false;
+      await modelGraph.refresh();
+      graphOptions.useStableLayout = prevStabilitySetting;
     }
   }
 };

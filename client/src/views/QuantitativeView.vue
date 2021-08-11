@@ -10,6 +10,7 @@
         :sensitivity-analysis-type="sensitivityAnalysisType"
         :scenarios="scenarios"
         :current-engine="currentEngine"
+        :reset-layout-token='resetLayoutToken'
         @show-model-parameters="showModelParameters"
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
         @refresh-model="refreshModel"
@@ -19,6 +20,7 @@
           <action-bar
             :model-summary="modelSummary"
             :scenarios="scenarios"
+            @reset-cag="resetCAGLayout()"
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
             @save-new-scenario="saveNewScenario"
@@ -75,7 +77,9 @@ export default {
     sensitivityDataTimestamp: null,
 
     // Tracking draft scenario
-    previousScenarioId: null
+    previousScenarioId: null,
+
+    resetLayoutToken: 0
   }),
   computed: {
     ...mapGetters({
@@ -410,6 +414,9 @@ export default {
       if (tab === 'matrix') {
         this.fetchSensitivityAnalysisResults();
       }
+    },
+    resetCAGLayout() {
+      this.resetLayoutToken = Date.now();
     }
   }
 };
