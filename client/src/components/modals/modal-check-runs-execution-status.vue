@@ -1,7 +1,9 @@
 <template>
   <modal @close="close()">
     <template #header>
-      <h4 class="title"><i class="fa fa-fw fa-book" /> Model Execution Status</h4>
+      <div class="modal-header">
+        <h4><i class="fa fa-fw fa-book" /> Model Execution Status</h4>
+      </div>
     </template>
     <template #body>
       <table class="table">
@@ -114,14 +116,6 @@ export default defineComponent({
     height: 300px;
     overflow-y: scroll;
   }
-}
-
-.title {
-  text-transform: initial !important;
-  margin-top: 2rem;
-  padding-left: 2rem;
-  font-weight: bold;
-  font-size: x-large !important;
 }
 
 .run-status {

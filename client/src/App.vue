@@ -92,7 +92,7 @@ export default {
       // TODO: an ideal solution would be to have some sort of dispatcher page
       //  that just takes the datacubeId and sends the domain-modeler user to the proper place
       //  This will allow cleaner redirection from Jataware side once a model registration is complete
-      const domainProjectSearchFields = {
+      const domainProjectSearchFields = { // DomainProjectFilterFields
         type: 'model'
       };
       const existingProjects = await domainProjectService.getProjects(domainProjectSearchFields);

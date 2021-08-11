@@ -5,7 +5,7 @@ import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { getHierarchy } from '../new-datacube-service';
-import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
@@ -91,7 +91,7 @@ export default function useDatacubeHierarchy(
       };
       const regions = flattenRegions(hierarchy);
       regions.forEach(regionId => {
-        const path = regionId.split('__');
+        const path = regionId.split(REGION_ID_DELIMETER);
         if (path[path.length - 1] === 'None') return;
         if (path.length === 1) {
           newValue.country.push(regionId);
