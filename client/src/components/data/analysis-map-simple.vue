@@ -8,6 +8,7 @@
       :bounds="mapBounds"
       @load="onMapLoad"
       @move="onMapMove"
+      @moveend="onMapMoveEnd"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
       @styledata="onStyleChange"
@@ -247,6 +248,7 @@ export default {
       const stats = {};
       if (!this.regionData) return stats;
       if (this.baselineSpec) {
+        // Stats relative to the baseline. (min/max of the difference relative to the baseline)
         const baselineProp = this.baselineSpec.id;
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = [];
@@ -258,9 +260,21 @@ export default {
             stats[key] = { min: Math.min(...values), max: Math.max(...values) };
           }
         }
-      } else {
+      } else if (this.relativeTo === this.outputSelection) {
+        // Stats for the baseline map
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = data.filter(v => v.values[this.valueProp] !== undefined).map(v => v.values[this.valueProp]);
+          if (values.length) {
+            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          }
+        }
+      } else {
+        // Stats globally across all maps
+        for (const [key, data] of Object.entries(this.regionData)) {
+          const values = [];
+          for (const v of data) {
+            values.push(...Object.values(v.values));
+          }
           if (values.length) {
             stats[key] = { min: Math.min(...values), max: Math.max(...values) };
           }
@@ -270,13 +284,31 @@ export default {
     },
     gridStats() {
       const result = {};
+      // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
+      // The difference is 6 so we subtract the difference to make the lowest level 0.
+      const Z_DIFF = 6;
       if (!this.gridLayerStats.length) return result;
-      const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection)?.stats;
-      (stats || []).forEach(stat => {
-        // NOTE: stat data is stored in the backend with subtile (grid cell) precision level instead of the tile zoom level.
-        // The difference is 6 so we subtract the difference to make the lowest level 0.
-        result[stat.zoom - 6] = { min: stat.min, max: stat.max };
-      });
+      if (this.baselineSpec) {
+        // Do nothing. computeGridRelativeStats method capture this case.
+      } else if (this.relativeTo === this.outputSelection) {
+        // Stats for the baseline map
+        const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection)?.stats;
+        (stats || []).forEach(stat => {
+          result[stat.zoom - Z_DIFF] = { min: stat.min, max: stat.max };
+        });
+      } else {
+        // Stats globally across all maps
+        for (const item of this.gridLayerStats) {
+          for (const stat of item.stats) {
+            const zoom = stat.zoom - Z_DIFF;
+            if (result[zoom]) {
+              result[zoom] = { min: Math.min(result[zoom].min, stat.min), max: Math.max(result[zoom].max, stat.max) };
+            } else {
+              result[zoom] = { min: stat.min, max: stat.max };
+            }
+          }
+        }
+      }
       return result;
     },
     gridStatsForCurZoom() {
@@ -286,7 +318,7 @@ export default {
       return this.gridStats[zoom];
     },
     extent() {
-      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom;
+      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom || this.computeGridRelativeStats();
       if (!extent) return { min: 0, max: 1 };
       if (extent.min === extent.max) {
         extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
@@ -546,6 +578,20 @@ export default {
       if (!this.isGridMap) return;
       this.refreshColorLayer();
       this.updateLayerFilter();
+    },
+    computeGridRelativeStats() {
+      if (!this.map || !this.baselineSpec) return;
+      // Stats relative to the baseline. (min/max of the difference relative to the baseline)
+      const baselineProp = this.baselineSpec.id;
+      const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });
+      const values = [];
+      for (const feature of features) {
+        for (const item of this.outputSourceSpecs) {
+          const diff = feature.properties[item.id] - feature.properties[baselineProp];
+          if (_.isNumber(diff)) values.push(diff);
+        }
+      }
+      return { min: Math.min(...values), max: Math.max(...values) };
     }
   }
 };
