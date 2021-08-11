@@ -179,7 +179,7 @@ const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
 
     const searchPayload = {
       index: RESOURCE.DATA_DATACUBE,
-      size: DEFAULT_SIZE,
+      size: 1,
       body: {
         query: {
           bool: {
