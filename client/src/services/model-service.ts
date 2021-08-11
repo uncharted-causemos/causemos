@@ -23,7 +23,7 @@ const MODEL_STATUS = {
 };
 
 const MODEL_MSG_RETRAINING_INFO = 'Model training is in progress, please check back in a few minutes';
-export const MODEL_MSG_RETRAINING_BLOCK = 'Model training is in progress, please wait...';
+export const MODEL_MSG_RETRAINING_BLOCK = 'Model training is in progress, refresh in a few minutes to check status.';
 
 const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
   const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
