@@ -109,9 +109,7 @@ export default defineComponent({
 .card-mode {
   max-width: 300px;
 }
-.private-insight-title {
-  color: black;
-}
+
 .insight {
   cursor: pointer;
   padding: 5px 5px 10px;
@@ -126,6 +124,12 @@ export default defineComponent({
       display: flex;
       flex-direction: column;
       justify-content: flex-end;
+      color: gray;
+      font-style: italic;
+    }
+    .private-insight-title {
+      color: black;
+      font-style: normal;
     }
     .insight-description {
       flex: 1 1 auto;
