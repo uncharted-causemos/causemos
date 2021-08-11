@@ -58,7 +58,7 @@ import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
-import { computed, defineComponent, Ref, ref, toRefs, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
 import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
@@ -239,7 +239,6 @@ export default defineComponent({
       selectedSpatialAggregation,
       selectedScenarioIds,
       typeBreakdownData,
-      selectedTimestamp,
       metadata,
       mainModelOutput,
       outputs,
