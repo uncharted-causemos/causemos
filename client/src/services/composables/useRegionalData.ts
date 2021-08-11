@@ -7,6 +7,46 @@ import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { SpatialAggregationLevel } from '@/types/Enums';
 import { useStore } from 'vuex';
 import { DatacubeGeography } from '@/types/Common';
+import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import _ from 'lodash';
+
+const applySplitByRegion = (
+  regionalData: RegionalAggregations,
+  specs: OutputSpecWithId[]
+) => {
+  if (specs.length === 0) return regionalData;
+  const ancestorCount = specs[0].id.split(REGION_ID_DELIMETER).length - 1;
+  const selectedAdminLevel = ADMIN_LEVEL_KEYS[ancestorCount];
+  const clonedData = _.cloneDeep(regionalData);
+  const valuesAtSelectedLevel = clonedData[selectedAdminLevel];
+  if (valuesAtSelectedLevel === undefined) return regionalData;
+  // Since "split by region" is active, each output spec's ID is the ID of a
+  //  timeseries, and there is one timeseries for each selected region.
+  const timeseriesIds = specs.map(spec => spec.id);
+  // Assign the value for each selected region to the the corresponding
+  //  timeseries ID (eventually this will be used to color it), and assign
+  //  the other values to an arbitrary 'unselected region' ID.
+  clonedData[selectedAdminLevel] = valuesAtSelectedLevel.map(
+    ({ id: regionId, values }) => {
+      const filteredValues = {} as any;
+      // ASSUMPTION: this processing step only occurs when a single outputSpec
+      //  was fed into getRegionAggregations, so there is at most one key-value
+      //  pair in `values`
+      Object.values(values).forEach(value => {
+        if (timeseriesIds.includes(regionId)) {
+          filteredValues[regionId] = value;
+        } else {
+          filteredValues['unselected region'] = value;
+        }
+      });
+      return {
+        id: regionId,
+        values: filteredValues
+      };
+    }
+  );
+  return clonedData;
+};
 
 export default function useRegionalData(
   selectedModelId: Ref<string>,
@@ -43,16 +83,7 @@ export default function useRegionalData(
 
     const activeModelId = modelMetadata.data_id ?? '';
 
-    // It doesn't make sense to do a separate fetch and display a separate map
-    //  for each region when "split by region" is active.
-    //  Just return a single outputSpec for all of them.
-    const pointsToConvertToOutputSpecs =
-      breakdownOption.value === SpatialAggregationLevel.Region &&
-      selectedTimeseriesPoints.value.length > 0
-        ? [selectedTimeseriesPoints.value[0]]
-        : selectedTimeseriesPoints.value;
-
-    return pointsToConvertToOutputSpecs.map(({ timeseriesId, scenarioId, timestamp }) => ({
+    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
       modelId: activeModelId,
       runId: scenarioId,
@@ -71,12 +102,20 @@ export default function useRegionalData(
     onInvalidate(() => {
       isCancelled = true;
     });
+    // If split by region is active, only one fetch is needed to get the data
+    //  for all regions
+    const _outputSpecs = breakdownOption.value === SpatialAggregationLevel.Region
+      ? outputSpecs.value.slice(0, 1)
+      : outputSpecs.value;
     const result = await getRegionAggregations(
-      outputSpecs.value,
+      _outputSpecs,
       datacubeHierarchy.value
     );
     if (isCancelled) return;
-    regionalData.value = result;
+
+    regionalData.value = breakdownOption.value === SpatialAggregationLevel.Region
+      ? applySplitByRegion(result, outputSpecs.value)
+      : result;
   });
 
   return {
