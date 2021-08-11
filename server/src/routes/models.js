@@ -562,6 +562,9 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
   const parameter = model.parameter;
+  if (_.isNil(parameter)) {
+    throw new Error('Model does not contain parameter');
+  }
   const engine = parameter.engine;
   const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
 
@@ -584,6 +587,11 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   }
 
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+  const getNodePayload = [
+    { field: "id", value: nodeParameter.id }
+  ];
+  const nodeBeforeUpdate = await nodeParameterAdapter.findOne(getNodePayload, {});
+
   const updateNodePayload = {
     id: nodeParameter.id,
     parameter: nodeParameter.parameter
@@ -594,34 +602,39 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     throw new Error('Failed to update node-parameter');
   }
 
-  const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
-  const indicatorMatchPayload = [
-    { field: 'project_id', value: model.project_id },
-    { field: 'concept', value: nodeParameter.concept },
-    { field: 'indicator_id', value: nodeParameter.parameter.id }
-  ];
+  // only update indicatory match history if setting new indicator and not in the same "session"
+  // e.g in the current CAG, a indicator was manually added to a concept
+  // so it will only increment frequency if an indicator is being added in multiple CAGs
+  if ((!_.isNil(nodeBeforeUpdate.parameter) && !_.isNil(nodeBeforeUpdate.parameter.id) && nodeBeforeUpdate.parameter.id !== nodeParameter.parameter.id) || _.isNil(nodeBeforeUpdate.parameter)) {
+    const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
+    const indicatorMatchPayload = [
+      { field: 'project_id', value: model.project_id },
+      { field: 'concept', value: nodeParameter.concept },
+      { field: 'indicator_id', value: nodeParameter.parameter.id }
+    ];
 
-  const indicatorMatch = await indicatorMatchHistoryAdapter.findOne(indicatorMatchPayload, {});
-  // if indicator has been matched by user to this concept, need to update frequency
-  if (!_.isNil(indicatorMatch)) {
-    const updateIndicatorMatchPayload = {
-      id: indicatorMatch.id,
-      frequency: indicatorMatch.frequency + 1
-    };
-    r = await indicatorMatchHistoryAdapter.update([updateIndicatorMatchPayload], d => d.id);
-    if (r.errors) {
-      Logger.warn(JSON.stringify(r));
-      throw new Error('Failed to update indicator-match-history');
+    const indicatorMatch = await indicatorMatchHistoryAdapter.findOne(indicatorMatchPayload, {});
+    // if indicator has been matched by user to this concept, need to update frequency
+    if (!_.isNil(indicatorMatch)) {
+      const updateIndicatorMatchPayload = {
+        id: indicatorMatch.id,
+        frequency: indicatorMatch.frequency + 1
+      };
+      r = await indicatorMatchHistoryAdapter.update([updateIndicatorMatchPayload], d => d.id);
+      if (r.errors) {
+        Logger.warn(JSON.stringify(r));
+        throw new Error('Failed to update indicator-match-history');
+      }
+    } else {
+      const insertIndicatorMatchPayload = {
+        id: uuid(),
+        project_id: model.project_id,
+        concept: nodeParameter.concept,
+        indicator_id: nodeParameter.parameter.id,
+        frequency: 1
+      };
+      await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
     }
-  } else {
-    const insertIndicatorMatchPayload = {
-      id: uuid(),
-      project_id: model.project_id,
-      concept: nodeParameter.concept,
-      indicator_id: nodeParameter.parameter.id,
-      frequency: 1
-    };
-    await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
   }
 
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
