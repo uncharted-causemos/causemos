@@ -158,7 +158,6 @@ import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
-import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
@@ -398,14 +397,14 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints,
-      breakdownOption
+      selectedTimeseriesPoints
     );
 
     const {
       regionalData
     } = useRegionalData(
       outputSpecs,
+      breakdownOption,
       datacubeHierarchy
     );
 
@@ -443,7 +442,6 @@ export default defineComponent({
       typeBreakdownData,
       selectedTimestamp,
       isExpanded,
-      colorFromIndex,
       metadata,
       mainModelOutput,
       allModelRunData,

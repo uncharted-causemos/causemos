@@ -1,6 +1,11 @@
 import API from '@/api/api';
 
-const getProjects = async (fetchParams: {type?: string}) => {
+export interface DomainProjectFilterFields {
+  type?: string;
+  name?: string;
+}
+
+const getProjects = async (fetchParams: DomainProjectFilterFields) => {
   const result = await API.get('domain-projects', { params: fetchParams });
   return result.data;
 };

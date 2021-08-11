@@ -154,7 +154,6 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { DatacubeType, ProjectType } from '@/types/Enums';
 
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import modelService from '@/services/model-service';
@@ -333,14 +332,14 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints,
-      breakdownOption
+      selectedTimeseriesPoints
     );
 
     const {
       regionalData
     } = useRegionalData(
       outputSpecs,
+      breakdownOption,
       datacubeHierarchy
     );
 
@@ -378,7 +377,6 @@ export default defineComponent({
       typeBreakdownData,
       selectedTimestamp,
       isExpanded,
-      colorFromIndex,
       metadata,
       mainModelOutput,
       allModelRunData,

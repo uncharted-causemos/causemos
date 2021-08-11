@@ -107,14 +107,14 @@ const remove = async (projectId) => {
  */
 const updateDomainProjects = async (metadata) => {
   // check if there is an existing (domain) project that match the current metadata
-  // ideally, there shouldn't be such a project since this fucntion would only be called once on the registration of a new indicator family
-  // if such a project already exist, we probably should overwite it
-
-  const existingProjects = await getAllProjects();
-  const modelFamilyNames = existingProjects.map(p => p.name);
+  // ideally, there shouldn't be such a project since this function would only be called once on the registration of a new indicator family
+  // if such a project already exist, we probably should overwrite it
 
   const instanceName = metadata.name;
   const familyName = metadata.family_name || metadata.name || uuid();
+
+  const existingProjects = await getAllProjects({ name: familyName });
+  const modelFamilyNames = existingProjects.map(p => p.name);
 
   if (!modelFamilyNames.includes(familyName)) {
     await createProject(
@@ -144,8 +144,13 @@ const updateDomainProjects = async (metadata) => {
 };
 
 const getFilterFields = (filterParams) => {
+  if (!filterParams) {
+    return [];
+  }
+
   const supportedSearchFields = [
-    'type'
+    'type',
+    'name'
   ];
   const searchFilters = [];
   supportedSearchFields.forEach(key => {

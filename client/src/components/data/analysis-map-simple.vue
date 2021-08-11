@@ -62,6 +62,7 @@ import {
 } from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import MapLegend from '@/components/widgets/map-legend';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -121,7 +122,7 @@ const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
     : createColorStops(domain, colors, scaleFn);
   const labels = [];
   // process with color stops (e.g [c1, v1, c2, v2, c3]) where cn is color and vn is value.
-  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 3])(v);
+  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 2])(v);
   stops.forEach((item, index) => {
     if (index === 1) {
       labels.push(`< ${format(item)}`);
@@ -566,7 +567,7 @@ export default {
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
         rows.push(text);
       }
-      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll('__', '/'));
+      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
     },
     refreshGridMap() {

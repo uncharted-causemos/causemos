@@ -381,14 +381,14 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints,
-      breakdownOption
+      selectedTimeseriesPoints
     );
 
     const {
       regionalData
     } = useRegionalData(
       outputSpecs,
+      breakdownOption,
       datacubeHierarchy
     );
 

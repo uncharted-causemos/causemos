@@ -14,4 +14,5 @@ export interface AnalysisItem extends AnalysisItemState {
 export interface AnalysisState {
   currentAnalysisId: string;
   analysisItems: AnalysisItem[];
+  timeSelectionSyncing?: boolean;
 }
