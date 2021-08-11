@@ -69,7 +69,8 @@
             </div>
             <div
               v-if="contextInsight.description.length > 0"
-              class="context-insight-description">
+              class="context-insight-description"
+              :class="{ 'private-insight-description': contextInsight.visibility === 'private' }">
               {{ contextInsight.description }}
             </div>
             <div
@@ -541,13 +542,23 @@ export default {
         font-style: normal;
       }
     }
-    .context-insight-empty-description {
-      color: #D6DBDF;
-    }
-    .context-insight-thumbnail {
-      .thumbnail {
-        width:  100%;
-        min-height: 100px;
+    .context-insight-content {
+      .context-insight-thumbnail {
+        .thumbnail {
+          width:  100%;
+          min-height: 100px;
+        }
+      }
+      .context-insight-description {
+        color: gray;
+        font-style: italic;
+      }
+      .private-insight-description {
+        color: black;
+        font-style: normal;
+      }
+      .context-insight-empty-description {
+        color: #D6DBDF;
       }
     }
   }

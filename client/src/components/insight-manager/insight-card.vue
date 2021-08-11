@@ -133,6 +133,8 @@ export default defineComponent({
     }
     .insight-description {
       flex: 1 1 auto;
+      color: gray;
+      font-style: italic;
     }
     .insight-footer {
       display: flex;
