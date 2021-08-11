@@ -166,7 +166,6 @@ export default defineComponent({
         // set timeseries data
         this.globalTimeseries = flatMap.flat();
         // also, set the initial global selectedTimestamp and range
-        // /*
         if (this.globalTimeseries && this.globalTimeseries.length > 0) {
           const allTimestamps = this.globalTimeseries
             .map(timeseries => timeseries.points)
@@ -189,7 +188,6 @@ export default defineComponent({
             this.initialSelectedTimestampRange = newTimestampRange;
           }
         }
-        // */
       }
     }
   }

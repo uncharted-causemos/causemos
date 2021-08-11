@@ -122,7 +122,8 @@ export default function(
     xScale,
     yScale,
     valueFormatter,
-    timestampFormatter
+    timestampFormatter,
+    selectedTimestampRange
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -134,7 +135,8 @@ export default function(
       xScale,
       yScale,
       valueFormatter,
-      timestampFormatter
+      timestampFormatter,
+      selectedTimestampRange
     );
   };
 }
@@ -333,7 +335,8 @@ function updateTimestampElements(
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
   valueFormatter: (value: any) => string,
-  timestampFormatter: (timestamp: number) => string
+  timestampFormatter: (timestamp: number) => string,
+  selectedTimestampRange: {start: number; end: number} | null
 ) {
   if (timestamp === null) {
     // Hide everything
@@ -342,8 +345,7 @@ function updateTimestampElements(
     return;
   }
   // check if the selectedTimestamp is out of the timeseries range
-  const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
-  const xExtent = d3.extent(allPoints.map(point => point.timestamp));
+  const [xExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
   if (xExtent[0] === undefined || xExtent[1] === undefined) {
     console.error('Unable to derive extent from data', timeseriesList);
   } else {
