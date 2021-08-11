@@ -78,7 +78,7 @@ export default defineComponent({
     const selectedTimestamp = ref(null) as Ref<number | null>;
     const selectedTimestampRange = ref(null) as Ref<{start: number; end: number} | null>;
 
-    const initialSelectedTimestamp = ref(0) as Ref<number>;
+    const initialSelectedTimestamp = ref(0);
     const initialSelectedTimestampRange = ref({}) as Ref<{start: number; end: number}>;
 
     const setSelectedTimestamp = (value: number) => {
