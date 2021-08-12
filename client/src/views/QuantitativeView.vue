@@ -153,7 +153,7 @@ export default {
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
           this.disableOverlay();
-          this.enableOverlay(modelService.MODEL_MSG_RETRAINING_BLOCK);
+          this.enableOverlay(modelService.MODEL_STATUS_MESSAGES[modelService.MODEL_STATUS.TRAINING]);
           this.toaster(errors[0], 'error', true);
           console.error(errors);
           return;
@@ -268,9 +268,9 @@ export default {
     showModelParameters() {
       this.isModelParametersOpen = true;
     },
-    saveModelParameter(newParameter) {
+    async saveModelParameter(newParameter) {
       this.isModelParametersOpen = false;
-      modelService.updateModelParameter(this.currentCAG, newParameter);
+      await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.refresh();
     },
     closeModelParameters() {
