@@ -97,23 +97,20 @@ export default {
     },
     projectionSteps() {
       return this.modelSummary.parameter.num_steps;
+    },
+    onMatrixTab() {
+      return this.$route.query.activeTab === 'matrix';
     }
   },
   watch: {
-    // selectedScenarioId() {
-    //   if (_.isNil(this.scenarios)) return;
-    //   this.fetchSensitivityAnalysisResults();
-    //   const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-    //   if (scenario && scenario.is_valid === false) {
-    //     this.recalculateScenario(scenario);
-    //   }
-    // },
     sensitivityAnalysisType() {
       this.fetchSensitivityAnalysisResults();
+    },
+    selectedScenarioId() {
+      if (this.onMatrixTab) {
+        this.fetchSensitivityAnalysisResults();
+      }
     }
-    // scenarios() {
-    //   this.fetchSensitivityAnalysisResults();
-    // }
   },
   created() {
     // update insight related state
@@ -202,6 +199,10 @@ export default {
       const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
       if (selectedScenario && selectedScenario.is_valid === false) {
         this.runScenario();
+      }
+
+      if (this.onMatrixTab) {
+        this.fetchSensitivityAnalysisResults();
       }
     },
     revertDraftChanges() {
