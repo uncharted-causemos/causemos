@@ -19,11 +19,19 @@ const MODEL_STATUS = {
   UNSYNCED: 0,
   TRAINING: 1,
   READY: 2,
-  UNSYNCED_TOPOLOGY: 3
+  UNSYNCED_TOPOLOGY: 3,
+  STALE: 4
 };
 
-const MODEL_MSG_RETRAINING_INFO = 'Model training is in progress, please check back in a few minutes';
-export const MODEL_MSG_RETRAINING_BLOCK = 'Model training is in progress, refresh in a few minutes to check status.';
+const MODEL_STATUS_MESSAGES = [
+  'Model is not yet synced',
+  'Model training is in progress, please check back in a few minutes',
+  'Model is ready.',
+  'Model topology is unsynced',
+  'Model is stale'
+];
+
+// export const MODEL_MSG_RETRAINING_BLOCK = 'Model training is in progress, refresh in a few minutes to check status.';
 
 const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
   const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
@@ -224,7 +232,7 @@ const initializeModel = async (modelId: string) => {
   const errors = [];
 
   if (model.is_stale === true) {
-    errors.push('Model is stale');
+    errors.push(MODEL_STATUS_MESSAGES[MODEL_STATUS.STALE]);
   }
   // if (model.is_quantified === false) {
   //   errors.push('Model is not quantified');
@@ -238,7 +246,7 @@ const initializeModel = async (modelId: string) => {
     try {
       const r = await syncModelWithEngine(modelId, engine);
       if (r.status === MODEL_STATUS.TRAINING) {
-        errors.push(MODEL_MSG_RETRAINING_INFO);
+        errors.push(MODEL_STATUS_MESSAGES[MODEL_STATUS.TRAINING]);
       }
     } catch (error) {
       errors.push(error.response.data);
@@ -250,7 +258,7 @@ const initializeModel = async (modelId: string) => {
   if (model.status === MODEL_STATUS.TRAINING) {
     const r = await checkAndUpdateRegisteredStatus(modelId, engine);
     if (r === MODEL_STATUS.TRAINING) {
-      errors.push(MODEL_MSG_RETRAINING_INFO);
+      errors.push(MODEL_STATUS_MESSAGES[MODEL_STATUS.TRAINING]);
     }
     return errors;
   }
@@ -757,5 +765,5 @@ export default {
   injectStepZero,
   ENGINE_OPTIONS,
   MODEL_STATUS,
-  MODEL_MSG_RETRAINING_BLOCK
+  MODEL_STATUS_MESSAGES
 };
