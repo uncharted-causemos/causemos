@@ -265,9 +265,9 @@ export default {
       this.isModelParametersOpen = true;
     },
     saveModelParameter(newParameter) {
-      this.enableOverlay(modelService.MODEL_MSG_RETRAINING_BLOCK);
       this.isModelParametersOpen = false;
       modelService.updateModelParameter(this.currentCAG, newParameter);
+      this.refresh();
     },
     closeModelParameters() {
       this.isModelParametersOpen = false;
