@@ -10,12 +10,11 @@
           :key="item.id"
           class="datacube-comparative-card"
           :class="{ 'selected': selectedDatacubeId === item.id }"
-          :datacubeId="item.datacubeId"
           :id="item.id"
-          :isSelected="selectedDatacubeId === item.datacubeId"
+          :isSelected="selectedDatacubeId === item.id"
           :selected-timestamp="selectedTimestamp"
           :selected-timestamp-range="selectedTimestampRange"
-          @click="selectedDatacubeId = item.datacubeId"
+          @click="selectedDatacubeId = item.id"
           @loaded-timeseries="onLoadedTimeseries"
         />
       </div>
@@ -149,8 +148,9 @@ export default defineComponent({
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
 
-      // save the incoming timeseries in the map object where all timeseries lists will be saved
-      this.allTimeseriesMap[timeseriesInfo.id] = timeseriesInfo.timeseriesList;
+      // clone and save the incoming timeseries in the map object
+      //  where all timeseries lists will be saved
+      this.allTimeseriesMap[timeseriesInfo.id] = _.cloneDeep(timeseriesInfo.timeseriesList);
       //
       // calculate (the global timeseries)
       //
@@ -160,12 +160,37 @@ export default defineComponent({
         const flatMap: Array<Timeseries[]> = [];
         Object.keys(this.allTimeseriesMap).forEach(key => {
           const timeseriesList: Timeseries[] = this.allTimeseriesMap[key];
+
+          // normalize the timeseries values for better y-axis scaling when multiple
+          //  timeseries from different datacubes are shown together
+          // i.e., re-map all timestamp point values to a range of [0: 1]
+          const allTimestampsPoints = timeseriesList
+            .map(timeseries => timeseries.points)
+            .flat();
+          const allTimestampsValues = allTimestampsPoints
+            .map(point => point.value);
+          const minValue = _.min(allTimestampsValues) as number;
+          const maxValue = _.max(allTimestampsValues) as number;
+          if (allTimestampsValues.length === 1) { // minValue === maxValue
+            // only a single data point exist, so vertically align its value in the center
+            allTimestampsPoints[0].value = 0.5;
+          } else {
+            allTimestampsPoints.forEach(p => {
+              p.value = (p.value - minValue) / (maxValue - minValue);
+            });
+          }
+
+          // add to the global list of timeseries
           flatMap.push(timeseriesList);
         });
 
+        //
         // set timeseries data
+        //
         this.globalTimeseries = flatMap.flat();
+        //
         // also, set the initial global selectedTimestamp and range
+        //
         if (this.globalTimeseries && this.globalTimeseries.length > 0) {
           const allTimestamps = this.globalTimeseries
             .map(timeseries => timeseries.points)
