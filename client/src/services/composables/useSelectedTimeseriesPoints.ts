@@ -1,4 +1,4 @@
-import { TemporalAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import {
   Timeseries,
   TimeseriesPoint,
@@ -38,6 +38,14 @@ export default function useSelectedTimeseriesPoints(
         // ASSUMPTION: breakdown by year can only be active when exactly 1 scenario
         //  is selected.
         scenarioId = selectedScenarioIds.value[0];
+      } else if (breakdownOption.value === SpatialAggregationLevel.Region) {
+        // If split by region is active, each timeseries' ID is the region it represents
+        // Each timeseries represents a region from the same scenario
+        // ASSUMPTION: breakdown by region can only be active when exactly 1 scenario
+        //  is selected.
+        scenarioId = selectedScenarioIds.value[0];
+        // Each timeseries uses the same timestamp
+        timestamp = _selectedTimestamp;
       } else {
         // Split by year is not active
         // Each timeseries' ID is the scenario it represents

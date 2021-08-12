@@ -16,14 +16,16 @@ const saveState = _.debounce((state: AnalysisState) => {
 // Default state for state that can be saved/loaded
 const DEFAULT_STATE: AnalysisState = {
   currentAnalysisId: '',
-  analysisItems: []
+  analysisItems: [],
+  timeSelectionSyncing: false
 };
 
 const state = { ...DEFAULT_STATE };
 
 const getters: GetterTree<AnalysisState, any> = {
   analysisItems: state => state.analysisItems,
-  analysisId: state => state.currentAnalysisId
+  analysisId: state => state.currentAnalysisId,
+  timeSelectionSyncing: state => state.timeSelectionSyncing
 };
 
 const actions: ActionTree<AnalysisState, any> = {
@@ -55,6 +57,9 @@ const actions: ActionTree<AnalysisState, any> = {
   },
   updateViewConfig({ commit }, analysisItem: AnalysisItem) {
     commit('setViewConfig', analysisItem);
+  },
+  setTimeSelectionSyncing({ commit }, newValue: boolean) {
+    commit('setTimeSelectionSyncing', newValue);
   }
 };
 
@@ -82,6 +87,9 @@ const mutations: MutationTree<AnalysisState> = {
     }
     state.analysisItems = updatedAnalysisItems;
     saveState(state);
+  },
+  setTimeSelectionSyncing(state, newValue: boolean) {
+    state.timeSelectionSyncing = newValue;
   }
 };
 

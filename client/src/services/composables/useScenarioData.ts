@@ -16,7 +16,7 @@ export default function useScenarioData(
     console.log('refetching data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function fetchRunData() {
-      if (dataId.value === null) return;
+      if (dataId.value === null || dataId.value === undefined) return;
       const newMetadata = await getModelRunMetadata(dataId.value);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the

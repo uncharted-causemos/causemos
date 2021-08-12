@@ -143,8 +143,14 @@
           </header>
           <div class="column">
             <div style="display: flex; flex-direction: row;">
-              <slot name="temporal-aggregation-config" v-if="!isDescriptionView" />
-              <slot name="temporal-resolution-config" v-if="!isDescriptionView" />
+              <slot
+                name="temporal-aggregation-config"
+                v-if="!isDescriptionView && timeseriesData.length > 0"
+              />
+              <slot
+                name="temporal-resolution-config"
+                v-if="!isDescriptionView && timeseriesData.length > 0"
+              />
             </div>
             <timeseries-chart
               v-if="!isDescriptionView && timeseriesData.length > 0"
@@ -154,7 +160,19 @@
               :breakdown-option="breakdownOption"
               @select-timestamp="emitTimestampSelection"
             />
-            <div style="display: flex; flex-direction: row;">
+            <p
+              v-if="
+                !isDescriptionView &&
+                breakdownOption === SpatialAggregationLevel.Region &&
+                timeseriesData.length === 0
+              "
+            >
+              Please select one or more regions, or choose 'Split by none'.
+            </p>
+            <div
+              v-if="!isDescriptionView && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
+              style="display: flex; flex-direction: row;"
+            >
               <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
             </div>
             <div
@@ -223,7 +241,7 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { ModelRunStatus, TemporalAggregationLevel } from '@/types/Enums';
+import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
@@ -398,7 +416,8 @@ export default defineComponent({
       mainModelOutput,
       isModelMetadata,
       emitRelativeToSelection,
-      timestampFormatter
+      timestampFormatter,
+      SpatialAggregationLevel
     };
   },
   data: () => ({
