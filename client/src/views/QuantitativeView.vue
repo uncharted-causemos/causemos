@@ -99,7 +99,7 @@ export default {
       return this.modelSummary.parameter.num_steps;
     },
     onMatrixTab() {
-      return this.$route.query.activeTab === 'matrix';
+      return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
     }
   },
   watch: {
