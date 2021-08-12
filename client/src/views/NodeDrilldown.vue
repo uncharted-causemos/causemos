@@ -317,8 +317,9 @@ export default defineComponent({
 
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
     watchEffect(() => {
-      historicalTimeseries.value =
-        selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+      if (_.isEmpty(historicalTimeseries.value)) {
+        historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+      }
     });
     const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
       historicalTimeseries.value = newPoints;
