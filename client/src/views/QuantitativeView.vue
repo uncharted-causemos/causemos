@@ -149,17 +149,11 @@ export default {
         // Check model is ready to be used for experiments
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
-          if (errors[0] < modelService.MODEL_STATUS_MESSAGES.length) {
-            this.disableOverlay();
-            this.enableOverlay(modelService.MODEL_STATUS_MESSAGES[errors[0]]);
-            this.toaster(errors[0], 'error', true);
-            console.error(errors);
-            return;
-          } else {
-            this.enableOverlay('Unknown status code.');
-            this.toaster(errors[0], 'error', true);
-            console.error(errors);
-          }
+          this.disableOverlay();
+          this.enableOverlay(errors[0]);
+          this.toaster(errors[0], 'error', true);
+          console.error(errors);
+          return;
         }
 
         // FIXME: Quickie hack to set scenarios to invalid because of resync
