@@ -37,7 +37,7 @@
         />
         <span>All</span>
       </div>
-      <div v-if="units !== null" class="units" @click="sortByPPP = !sortByPPP">
+      <div v-if="units !== null" class="units" @click="sortByValue = !sortByValue">
         {{ units }}
       </div>
       <!-- Render an empty div so the 'all-radio-button' stays left-aligned -->
@@ -266,7 +266,7 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
-    const sortByPPP = ref<boolean>(false);
+    const sortByValue = ref<boolean>(false);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
@@ -326,7 +326,7 @@ export default defineComponent({
       const hasOneOrMoreValues = (node: StatefulDataNode) => {
         return node.bars.length > 0;
       };
-      if (sortByPPP.value) {
+      if (sortByValue.value) {
         newStatefulData.children.sort((nodeA, nodeB) => {
           const nodeAValue = nodeA.values[0];
           const nodeBValue = nodeB.values[0];
@@ -457,7 +457,7 @@ export default defineComponent({
       isAllSelected,
       toggleChecked,
       setAllChecked,
-      sortByPPP
+      sortByValue
     };
   },
   methods: {
