@@ -49,6 +49,7 @@ import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
+const MODEL_MSGS = modelService.MODEL_MSGS;
 
 export default {
   name: 'QuantitativeView',
@@ -150,6 +151,9 @@ export default {
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
           this.disableOverlay();
+          if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
+            this.enableOverlay(errors[0]);
+          }
           this.toaster(errors[0], 'error', true);
           console.error(errors);
           return;
