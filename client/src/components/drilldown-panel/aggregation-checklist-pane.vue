@@ -37,7 +37,7 @@
         />
         <span>All</span>
       </div>
-      <div v-if="units !== null" class="units">
+      <div v-if="units !== null" class="units" @click="sortByPPP = !sortByPPP">
         {{ units }}
       </div>
       <!-- Render an empty div so the 'all-radio-button' stays left-aligned -->
@@ -266,6 +266,7 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
+    const sortByPPP = ref<boolean>(false);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
@@ -325,17 +326,33 @@ export default defineComponent({
       const hasOneOrMoreValues = (node: StatefulDataNode) => {
         return node.bars.length > 0;
       };
-      newStatefulData.children.sort((nodeA, nodeB) => {
-        if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
-          // A should be sorted after B
-          return 1;
-        } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
-          // B should be sorted after A
-          return -1;
-        }
-        // Don't change their order
-        return 0;
-      });
+      if (sortByPPP.value) {
+        newStatefulData.children.sort((nodeA, nodeB) => {
+          const nodeAValue = nodeA.values[0];
+          const nodeBValue = nodeB.values[0];
+          if (_.isNull(nodeAValue) && !_.isNull(nodeBValue)) {
+            // A should be sorted after B
+            return 1;
+          } else if (_.isNull(nodeBValue)) {
+            // B should be sorted after A
+            return -1;
+          }
+          // Sort based on value
+          return nodeAValue! <= nodeBValue! ? -1 : 1;
+        });
+      } else {
+        newStatefulData.children.sort((nodeA, nodeB) => {
+          if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
+            // A should be sorted after B
+            return 1;
+          } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
+            // B should be sorted after A
+            return -1;
+          }
+          // Don't change their order
+          return 0;
+        });
+      }
       statefulData.value = newStatefulData;
     });
 
@@ -439,7 +456,8 @@ export default defineComponent({
       visibleRows,
       isAllSelected,
       toggleChecked,
-      setAllChecked
+      setAllChecked,
+      sortByPPP
     };
   },
   methods: {
@@ -540,6 +558,7 @@ h5 {
 .units {
   color: $text-color-medium;
   font-weight: bold;
+  cursor: pointer;
 }
 
 .flex-row {
