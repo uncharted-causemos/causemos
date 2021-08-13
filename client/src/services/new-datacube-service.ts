@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Model } from '@/types/Datacube';
+import { Model, QualifierBreakdownResponse, QualifierTimeseriesResponse } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
@@ -128,6 +128,99 @@ export const getHierarchy = async (
     }
   });
   return data;
+};
+
+export const getQualifierTimeseries = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  qualifiers: string[]
+) => {
+  console.log(
+    'getQualifierTimeseries',
+    dataId,
+    runId,
+    feature,
+    temporalAggregation,
+    spatialAggregation,
+    qualifiers
+  );
+  // const { data } = await API.get('maas/output/qualifier-timeseries', {
+  //   params: {
+  //     data_id: dataId,
+  //     run_id: runId,
+  //     feature,
+  //     temporal_agg: temporalAggregation,
+  //     spatial_agg: spatialAggregation,
+  //     qualifiers
+  //   }
+  // });
+  // return data as QualifierTimeseriesResponse[];
+  return [
+    {
+      name: 'Cause of death',
+      options: [
+        {
+          name: 'slipping',
+          timeseries: [{ timestamp: 0, value: 25 }, { timestamp: 1000, value: 50 }]
+        },
+        {
+          name: 'regicide',
+          timeseries: [{ timestamp: 0, value: 15 }, { timestamp: 1000, value: 10 }]
+        }
+      ]
+    },
+    {
+      name: 'Age range',
+      options: [
+        {
+          name: 'under 25',
+          timeseries: [{ timestamp: 0, value: 35 }, { timestamp: 1000, value: 30 }]
+        },
+        {
+          name: '25 and over',
+          timeseries: [{ timestamp: 0, value: 145 }, { timestamp: 1000, value: 140 }]
+        }
+      ]
+    }
+  ] as QualifierTimeseriesResponse[];
+};
+
+export const getQualifierBreakdown = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  timestamp: number
+) => {
+  console.log(
+    'getQualifierBreakdown',
+    dataId,
+    runId,
+    feature,
+    temporalAggregation,
+    spatialAggregation,
+    timestamp
+  );
+  return [
+    {
+      name: 'Cause of death',
+      options: [
+        { name: 'slipping', value: 15 },
+        { name: 'regicide', value: 8 }
+      ]
+    },
+    {
+      name: 'Age range',
+      options: [
+        { name: 'under 25', value: 3 },
+        { name: '25 and over', value: 20 }
+      ]
+    }
+  ] as QualifierBreakdownResponse[];
 };
 
 // DEPRECATED - NO LONGER WORK

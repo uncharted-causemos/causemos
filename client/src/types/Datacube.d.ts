@@ -8,6 +8,7 @@ import {
   ModelPublishingStepID,
   FeatureQualifierRoles
 } from '@/types/Enums';
+import { TimeseriesPoint } from './Timeseries';
 
 export interface DatacubeMaintainer {
   name: string;
@@ -99,4 +100,14 @@ export interface ModelPublishingStep {
   id: ModelPublishingStepID;
   completed: boolean;
   text: string;
+}
+
+export interface QualifierTimeseriesResponse {
+  name: string;
+  options: { name: string; timeseries: TimeseriesPoint[] }[];
+}
+
+export interface QualifierBreakdownResponse {
+  name: string;
+  options: { name: string; value: number }[];
 }

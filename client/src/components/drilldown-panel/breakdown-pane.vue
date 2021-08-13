@@ -52,9 +52,9 @@
       v-for="type in visibleTypeBreakdownData"
       :key="type.name"
       :aggregation-level-count="1"
-      :aggregation-level="1"
+      :aggregation-level="0"
       :aggregation-level-title="type.name"
-      :ordered-aggregation-level-keys="['Total', type.name]"
+      :ordered-aggregation-level-keys="[type.name]"
       :raw-data="type.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :units="unit"
@@ -66,7 +66,13 @@
           Showing <strong>placeholder</strong> data.
         </p>
         <p class="aggregation-description">
-          Aggregated by <strong>sum</strong>.
+          Aggregated by
+          <strong>{{
+            selectedSpatialAggregation === ''
+              ? AggregationOption.Mean
+              : selectedSpatialAggregation
+          }}</strong
+          >.
         </p>
       </template>
     </aggregation-checklist-pane>

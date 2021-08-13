@@ -129,7 +129,7 @@
             <breakdown-pane
               v-if="activeDrilldownTab ==='breakdown'"
               :selected-admin-level="selectedAdminLevel"
-              :type-breakdown-data="typeBreakdownData"
+              :type-breakdown-data="qualifierBreakdownData"
               :regional-data="regionalData"
               :temporal-breakdown-data="temporalBreakdownData"
               :unit="unit"
@@ -179,6 +179,7 @@ import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimes
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
+import useQualifiers from '@/services/composables/useQualifiers';
 
 const DRILLDOWN_TABS = [
   {
@@ -212,8 +213,8 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
 
     const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
 
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -231,10 +232,10 @@ export default defineComponent({
         selectedTemporalResolution.value = initialViewConfig.temporalResolution;
       }
       if (initialViewConfig.temporalAggregation !== undefined) {
-        selectedTemporalAggregation.value = initialViewConfig.temporalAggregation;
+        selectedTemporalAggregation.value = initialViewConfig.temporalAggregation as AggregationOption;
       }
       if (initialViewConfig.spatialAggregation !== undefined) {
-        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation;
+        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation as AggregationOption;
       }
       if (initialViewConfig.selectedOutputIndex !== undefined) {
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
@@ -361,6 +362,15 @@ export default defineComponent({
       clearRouteParam();
     };
 
+    const { qualifierBreakdownData } = useQualifiers(
+      metadata,
+      breakdownOption,
+      selectedScenarioIds,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      selectedTimestamp
+    );
+
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -467,7 +477,8 @@ export default defineComponent({
       selectedDataLayer,
       datacubeCurrentOutputsMap,
       analysisItems,
-      analysisId
+      analysisId,
+      qualifierBreakdownData
     };
   },
   data: () => ({
@@ -573,10 +584,10 @@ export default defineComponent({
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
-          this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation;
+          this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation as AggregationOption;
         }
         if (loadedInsight.view_state?.temporalAggregation) {
-          this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation;
+          this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation as AggregationOption;
         }
         if (loadedInsight.view_state?.temporalResolution) {
           this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution;
@@ -603,10 +614,10 @@ export default defineComponent({
         }
       }
     },
-    setTemporalAggregationSelection(temporalAgg: string) {
+    setTemporalAggregationSelection(temporalAgg: AggregationOption) {
       this.selectedTemporalAggregation = temporalAgg;
     },
-    setSpatialAggregationSelection(spatialAgg: string) {
+    setSpatialAggregationSelection(spatialAgg: AggregationOption) {
       this.selectedSpatialAggregation = spatialAgg;
     },
     setTemporalResolutionSelection(temporalRes: string) {
