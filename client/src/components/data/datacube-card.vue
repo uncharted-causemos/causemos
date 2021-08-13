@@ -92,6 +92,13 @@
                       @click="$emit('update-desc-view', false)">
                 Data
               </button>
+              <button
+                class="btn btn-default"
+                @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
+                :style="{ color: baselineMetadata?.color ?? 'black' }"
+              >
+                Show Datasets
+              </button>
             </div>
             <div
               v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
@@ -141,6 +148,17 @@
               :color-from-index="colorFromIndex"
             />
           </header>
+          <modal :use-green-header="true">
+            <template #header>
+              <h4> Test header </h4>
+            </template>
+            <template #body>
+              <h6> Test Body </h6>
+              <div v-for="dataPath in dataPaths" :key="dataPath.id">
+                dataPath
+              </div>
+            </template>
+          </modal>
           <div class="column">
             <div style="display: flex; flex-direction: row;">
               <slot
@@ -239,6 +257,7 @@ import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
+import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
@@ -338,7 +357,8 @@ export default defineComponent({
     DataAnalysisMap,
     DropdownControl,
     ModalNewScenarioRuns,
-    ModalCheckRunsExecutionStatus
+    ModalCheckRunsExecutionStatus,
+    Modal
   },
   setup(props, { emit }) {
     const store = useStore();
