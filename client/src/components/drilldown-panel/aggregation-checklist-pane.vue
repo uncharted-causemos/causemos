@@ -24,7 +24,7 @@
     </div>
     <div class="flex-row">
       <div
-        v-if="isRadioButtonModeActive"
+        v-if="checkboxType === 'radio'"
         class="all-radio-button"
         @click="setAllChecked"
       >
@@ -50,7 +50,7 @@
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
         :selected-timeseries-points="selectedTimeseriesPoints"
-        :is-radio-button-mode-active="isRadioButtonModeActive"
+        :checkbox-type="checkboxType"
         @toggle-expanded="toggleExpanded(row.path)"
         @toggle-checked="toggleChecked(row.path)"
       />
@@ -252,9 +252,9 @@ export default defineComponent({
       type: Object as PropType<string[] | null>,
       default: null
     },
-    isRadioButtonModeActive: {
-      type: Boolean,
-      default: false
+    checkboxType: {
+      type: String as PropType<'checkbox' | 'radio' | null>,
+      default: null
     }
   },
   emits: ['aggregation-level-change', 'toggle-is-item-selected'],

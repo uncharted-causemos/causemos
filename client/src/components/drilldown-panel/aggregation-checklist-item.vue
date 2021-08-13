@@ -5,16 +5,17 @@
     @click="toggleExpanded"
   >
     <i
-      v-if="itemData.isSelectedAggregationLevel"
+      v-if="checkboxType !== null && itemData.isSelectedAggregationLevel"
       class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
       :class="{
-        'fa-circle': isRadioButtonModeActive && itemData.isChecked,
-        'fa-circle-o': isRadioButtonModeActive && !itemData.isChecked,
-        'fa-check-square-o': !isRadioButtonModeActive && itemData.isChecked,
-        'fa-square-o': !isRadioButtonModeActive && !itemData.isChecked
+        'fa-circle': checkboxType === 'radio' && itemData.isChecked,
+        'fa-circle-o': checkboxType === 'radio' && !itemData.isChecked,
+        'fa-check-square-o': checkboxType === 'checkbox' && itemData.isChecked,
+        'fa-square-o': checkboxType === 'checkbox' && !itemData.isChecked
       }"
       @click.stop="toggleChecked"
     />
+    <!-- TODO: checkboxType === null -->
     <div v-for="i in itemData.indentationCount" :key="i" class="indentation" />
     <i
       v-if="itemData.showExpandToggle"
@@ -124,9 +125,9 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
     },
-    isRadioButtonModeActive: {
-      type: Boolean,
-      default: false
+    checkboxType: {
+      type: String as PropType<'checkbox' | 'radio' | null>,
+      default: null
     }
   },
   computed: {

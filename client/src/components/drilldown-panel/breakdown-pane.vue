@@ -24,7 +24,11 @@
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
-      :is-radio-button-mode-active="selectedBreakdownOption !== SpatialAggregationLevel.Region"
+      :checkbox-type="
+        selectedBreakdownOption === SpatialAggregationLevel.Region
+          ? 'checkbox'
+          : 'radio'
+      "
       @toggle-is-item-selected="toggleIsRegionSelected"
       @aggregation-level-change="setSelectedAdminLevel"
     >
@@ -58,6 +62,7 @@
       :raw-data="type.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :units="unit"
+      :checkbox-type="breakdownOption === type.name ? 'checkbox' : null"
     >
       <template #aggregation-description>
         <!-- TODO: highlighted value should be dynamically populated based
