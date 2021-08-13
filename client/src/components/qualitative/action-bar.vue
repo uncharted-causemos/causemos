@@ -6,6 +6,7 @@
         :cag-name="cagNameToDisplay"
         :view-after-deletion="'qualitativeStart'"
         @rename="openRenameModal"
+        @duplicate="duplicateRename"
       />
 
       <!-- Actions -->
@@ -121,7 +122,8 @@ export default {
     newCagName: '',
     isRunningModel: false,
     savedComment: null,
-    isCommentOpen: false
+    isCommentOpen: false,
+    duplicateCagId: null
   }),
   computed: {
     ...mapGetters({
@@ -155,14 +157,33 @@ export default {
       this.$emit('reset-cag');
     },
     onRenameModalConfirm(newCagNameInput) {
-      // Optimistically set new name
-      this.newCagName = newCagNameInput;
+      // Optimistically set new name if we're not doing a duplication rename
+      if (this.duplicateCagId) {
+        this.newCagName = newCagNameInput;
+      }
       this.saveNewCagName();
       this.closeRenameModal();
     },
+    duplicateRename(id) {
+      this.duplicateCagId = id;
+      this.openRenameModal();
+    },
     async saveNewCagName() {
-      modelService.updateModelMetadata(this.currentCAG, { name: this.newCagName }).then(() => {
+      const targetCagId = this.duplicateCagId ? this.duplicateCagId : this.currentCAG;
+      modelService.updateModelMetadata(targetCagId, { name: this.newCagName }).then(() => {
         this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
+        // if we're updating a duplicate name, navigate to it.
+        if (this.duplicateCagId) {
+          this.duplicateCagId = null;
+          this.$router.push({
+            name: 'qualitative',
+            params: {
+              project: this.project,
+              currentCAG: targetCagId,
+              projectType: ProjectType.Analysis
+            }
+          });
+        }
       }).catch(() => {
         this.newCagName = '';
         this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);

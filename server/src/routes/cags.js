@@ -82,7 +82,7 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
     is_quantified: CAG.is_quantified
   });
 
-  res.status(200).send({ updateToken: editTime });
+  res.status(200).send({ updateToken: editTime, id: newId });
 }));
 
 /**
