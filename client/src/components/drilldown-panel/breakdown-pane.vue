@@ -11,6 +11,7 @@
       class="breakdown-option-dropdown"
       :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
+      :is-dropdown-left-aligned="true"
       @item-selected="emitBreakdownOptionSelection"
     />
     <aggregation-checklist-pane
@@ -186,7 +187,8 @@ export default defineComponent({
     const {
       regionalData,
       temporalBreakdownData,
-      selectedBreakdownOption
+      selectedBreakdownOption,
+      qualifierBreakdownData
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
@@ -236,6 +238,12 @@ export default defineComponent({
           value: selectedTemporalAggregationLevel,
           displayName: 'Split by year'
         });
+        options.push(
+          ...qualifierBreakdownData.value.map(({ name }) => ({
+            value: name,
+            displayName: `Split by ${name}`
+          }))
+        );
       }
       return options;
     });
@@ -289,7 +297,7 @@ export default defineComponent({
 
 .breakdown-option-dropdown {
   display: inline-block;
-  min-width: 100px;
+  width: 100%;
 }
 
 .disabled-dropdown-instructions {
