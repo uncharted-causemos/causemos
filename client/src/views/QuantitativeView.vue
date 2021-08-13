@@ -125,6 +125,9 @@ export default {
           const insight_id = this.$route.query.insight_id;
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
+            this.$router.push({
+              query: { insight_id: undefined }
+            });
           }
         }
       },
