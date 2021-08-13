@@ -53,7 +53,7 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       class="checklist-section"
-      v-for="type in visibleTypeBreakdownData"
+      v-for="type in typeBreakdownData"
       :key="type.name"
       :aggregation-level-count="1"
       :aggregation-level="0"
@@ -62,7 +62,7 @@
       :raw-data="type.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :units="unit"
-      :checkbox-type="breakdownOption === type.name ? 'checkbox' : null"
+      :checkbox-type="selectedBreakdownOption === type.name ? 'checkbox' : null"
     >
       <template #aggregation-description>
         <!-- TODO: highlighted value should be dynamically populated based
@@ -260,23 +260,6 @@ export default defineComponent({
       AggregationOption,
       SpatialAggregationLevel
     };
-  },
-  computed: {
-    visibleTypeBreakdownData(): NamedBreakdownData[] {
-      // HACK: Filter out any breakdown parameters that duplicate
-      //  an admin level, since they will already be shown in the
-      //  standard admin level breakdown above.
-      // Eventually we will need to disallow models from including
-      //  admin regions as parameters, but this will require some
-      //  thought since some models (e.g. MaxHop) require the user
-      //  to request data for a specific admin region.
-      return this.typeBreakdownData.filter(breakdownParameter => {
-        const isAdminLevelDuplicate = (ADMIN_LEVEL_KEYS as string[]).includes(
-          breakdownParameter.name
-        );
-        return !isAdminLevelDuplicate;
-      });
-    }
   }
 });
 </script>

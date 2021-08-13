@@ -2,6 +2,7 @@ import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
+import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import {
   getQualifierBreakdown,
@@ -10,11 +11,8 @@ import {
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const QUALIFIERS_TO_EXCLUDE = [
+  ...ADMIN_LEVEL_KEYS,
   'timestamp',
-  'country',
-  'admin1',
-  'admin2',
-  'admin3',
   'lat',
   'lng',
   'feature',
