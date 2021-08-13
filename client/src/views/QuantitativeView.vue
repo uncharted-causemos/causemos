@@ -126,7 +126,10 @@ export default {
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
             this.$router.push({
-              query: { insight_id: undefined }
+              query: {
+                insight_id: undefined,
+                activeTab: this.$route.query.activeTab || undefined
+              }
             });
           }
         }
