@@ -347,7 +347,9 @@ function renderParallelCoordinates(
         } else {
           // no markers were added for this dim,
           //  so use the (baseline) default as the marker value
-          dimData.push(getValueInCorrectType(dimName, dimDefault));
+          // @NOTE: Jataware now supports parameter values as string
+          dimData.push(dimDefault);
+          // dimData.push(getValueInCorrectType(dimName, dimDefault));
         }
         allBrushesMap[dimName] = dimData;
       }
@@ -1689,7 +1691,7 @@ const createScales = (
 
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dim?.choices ?? [];
+      dataExtent = dim?.choices_labels ?? dim?.choices ?? [];
     }
 
     const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs

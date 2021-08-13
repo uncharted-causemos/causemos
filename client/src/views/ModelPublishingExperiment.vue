@@ -64,7 +64,7 @@
       <template v-slot:datacube-description>
         <model-description
           :metadata="metadata"
-          @update-attribute-visibility="refreshMetadata"
+          @refresh-metadata="refreshMetadata"
         />
       </template>
       <template #temporal-aggregation-config>
@@ -642,6 +642,13 @@ export default defineComponent({
             delete p.related_features;
           }
         });
+        // @NOTE: remove this section once ES mapping is updated to include 'choices_labels'
+        modelToUpdate.parameters.forEach(param => {
+          if (param.choices_labels !== undefined) {
+            delete param.choices_labels;
+          }
+        });
+
         //
         // update server data
         //
