@@ -53,16 +53,18 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       class="checklist-section"
-      v-for="type in typeBreakdownData"
-      :key="type.name"
+      v-for="qualifierVariable in qualifierBreakdownData"
+      :key="qualifierVariable.name"
       :aggregation-level-count="1"
       :aggregation-level="0"
-      :aggregation-level-title="type.name"
-      :ordered-aggregation-level-keys="[type.name]"
-      :raw-data="type.data"
+      :aggregation-level-title="qualifierVariable.name"
+      :ordered-aggregation-level-keys="[qualifierVariable.name]"
+      :raw-data="qualifierVariable.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :units="unit"
-      :checkbox-type="selectedBreakdownOption === type.name ? 'checkbox' : null"
+      :checkbox-type="
+        selectedBreakdownOption === qualifierVariable.name ? 'checkbox' : null
+      "
     >
       <template #aggregation-description>
         <!-- TODO: highlighted value should be dynamically populated based
@@ -130,7 +132,7 @@ export default defineComponent({
       type: Number,
       required: true
     },
-    typeBreakdownData: {
+    qualifierBreakdownData: {
       type: Array as PropType<NamedBreakdownData[]>,
       default: () => []
     },

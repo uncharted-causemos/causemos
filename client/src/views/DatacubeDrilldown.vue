@@ -128,7 +128,7 @@
             <breakdown-pane
               v-if="activeDrilldownTab ==='breakdown'"
               :selected-admin-level="selectedAdminLevel"
-              :type-breakdown-data="qualifierBreakdownData"
+              :qualifier-breakdown-data="qualifierBreakdownData"
               :regional-data="regionalData"
               :temporal-breakdown-data="temporalBreakdownData"
               :unit="unit"
