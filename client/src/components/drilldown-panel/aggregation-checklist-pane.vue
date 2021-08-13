@@ -126,7 +126,7 @@ const extractVisibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
   selectedLevel: number,
-  selectedItemIds: string[] | null,
+  selectedItemIds: string[],
   orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
@@ -165,8 +165,7 @@ const extractVisibleRows = (
     return visibleChildren;
   }
   const itemId = metadataNode.path.join(REGION_ID_DELIMETER);
-  const isChecked =
-    selectedItemIds === null || selectedItemIds.includes(itemId);
+  const isChecked = selectedItemIds.includes(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
@@ -242,15 +241,9 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
     },
-    /**
-     * An optional parameter for the components that don't have a "selected" state.
-     * TODO: use it to hide the checkboxes for those components, so:
-     * - null means "no item will ever be selected", and
-     * - [] means "no item is currently selected".
-     */
     selectedItemIds: {
-      type: Object as PropType<string[] | null>,
-      default: null
+      type: Object as PropType<string[]>,
+      default: []
     },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
@@ -402,9 +395,7 @@ export default defineComponent({
     });
 
     const isAllSelected = computed(() => {
-      return (
-        selectedItemIds.value === null || selectedItemIds.value.length === 0
-      );
+      return selectedItemIds.value.length === 0;
     });
 
     const toggleChecked = (path: string[]) => {
@@ -417,10 +408,7 @@ export default defineComponent({
     const setAllChecked = () => {
       // ASSUMPTION: the "All" option is only showed when "radio button" mode
       //  is active, meaning there is no more than one item
-      if (
-        selectedItemIds.value === null ||
-        selectedItemIds.value.length === 0
-      ) {
+      if (selectedItemIds.value.length === 0) {
         return;
       }
       if (selectedItemIds.value.length > 1) {
