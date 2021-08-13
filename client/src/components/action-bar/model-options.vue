@@ -111,12 +111,7 @@ export default defineComponent({
       window.location.href = this.downloadURL;
     },
     onDuplicate() {
-      modelService.duplicateModel(this.currentCAG).then((response) => {
-        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
-        this.$emit('duplicate', response.id);
-      }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
-      });
+      this.$emit('duplicate');
     }
   }
 });

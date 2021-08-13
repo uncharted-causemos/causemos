@@ -6,7 +6,7 @@
         :cag-name="cagNameToDisplay"
         :view-after-deletion="'qualitativeStart'"
         @rename="openRenameModal"
-        @duplicate="duplicateRename"
+        @duplicate="openDuplicateModal"
       />
 
       <!-- Actions -->
@@ -81,6 +81,14 @@
       @confirm="onRenameModalConfirm"
       @cancel="closeRenameModal"
     />
+    <duplicate-modal
+      v-if="showDuplicateModal"
+      :current-name="cagNameToDisplay"
+      :id-to-duplicate="currentCAG"
+      @success="onDuplicateSuccess"
+      @fail="closeDuplicateModal"
+      @cancel="closeDuplicateModal"
+    />
   </nav>
 </template>
 
@@ -89,6 +97,7 @@ import _ from 'lodash';
 import { mapGetters } from 'vuex';
 
 import modelService from '@/services/model-service';
+import DuplicateModal from '@/components/action-bar/duplicate-modal';
 import RenameModal from '@/components/action-bar/rename-modal';
 import ModelOptions from '@/components/action-bar/model-options';
 import TextAreaCard from '../cards/text-area-card';
@@ -99,6 +108,7 @@ import { ProjectType } from '@/types/Enums';
 export default {
   name: 'ActionBar',
   components: {
+    DuplicateModal,
     RenameModal,
     ModelOptions,
     TextAreaCard,
@@ -118,12 +128,12 @@ export default {
     'add-concept', 'import-cag', 'reset-cag'
   ],
   data: () => ({
+    showDuplicateModal: false,
     showRenameModal: false,
     newCagName: '',
     isRunningModel: false,
     savedComment: null,
-    isCommentOpen: false,
-    duplicateCagId: null
+    isCommentOpen: false
   }),
   computed: {
     ...mapGetters({
@@ -157,33 +167,15 @@ export default {
       this.$emit('reset-cag');
     },
     onRenameModalConfirm(newCagNameInput) {
-      // Optimistically set new name if we're not doing a duplication rename
-      if (this.duplicateCagId) {
-        this.newCagName = newCagNameInput;
-      }
+      // Optimistically set new name
+      this.newCagName = newCagNameInput;
       this.saveNewCagName();
       this.closeRenameModal();
-    },
-    duplicateRename(id) {
-      this.duplicateCagId = id;
-      this.openRenameModal();
     },
     async saveNewCagName() {
       const targetCagId = this.duplicateCagId ? this.duplicateCagId : this.currentCAG;
       modelService.updateModelMetadata(targetCagId, { name: this.newCagName }).then(() => {
         this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
-        // if we're updating a duplicate name, navigate to it.
-        if (this.duplicateCagId) {
-          this.duplicateCagId = null;
-          this.$router.push({
-            name: 'qualitative',
-            params: {
-              project: this.project,
-              currentCAG: targetCagId,
-              projectType: ProjectType.Analysis
-            }
-          });
-        }
       }).catch(() => {
         this.newCagName = '';
         this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);
@@ -194,6 +186,24 @@ export default {
     },
     closeRenameModal() {
       this.showRenameModal = false;
+    },
+    onDuplicateSuccess(name, id) {
+      this.newCagName = name;
+      this.closeDuplicateModal();
+      this.$router.push({
+        name: 'qualitative',
+        params: {
+          project: this.project,
+          currentCAG: id,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
+    openDuplicateModal() {
+      this.showDuplicateModal = true;
+    },
+    closeDuplicateModal() {
+      this.showDuplicateModal = false;
     },
     toggleComments() {
       this.isCommentOpen = !this.isCommentOpen;

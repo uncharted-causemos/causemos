@@ -111,6 +111,9 @@ export default {
       if (this.onMatrixTab) {
         this.fetchSensitivityAnalysisResults();
       }
+    },
+    currentCAG() {
+      this.refresh();
     }
   },
   created() {
