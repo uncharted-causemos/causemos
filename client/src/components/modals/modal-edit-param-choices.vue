@@ -9,6 +9,10 @@
         {{updatedParameter.display_name !== '' ? updatedParameter.display_name : updatedParameter.name}}
       </label>
       <div v-if="updatedParameter" class="param-choices-container">
+        <div class="row">
+          <label class="col-md-3">Value(s)</label>
+          <label>Label(s)</label>
+        </div>
         <div
           v-for="(choice, indx) in updatedParameter.choices"
           :key="choice"
@@ -70,6 +74,12 @@ export default defineComponent({
   },
   methods: {
     async saveUpdatedParamChoices() {
+      // optimization: do not save if nothing has changed
+      //  compare 'updatedParameter' against 'selectedParameter'
+      if (_.isEqual(this.updatedParameter?.choices_labels, this.selectedParameter?.choices_labels)) {
+        this.close();
+      }
+
       // save updated parameter choices (i.e., save metadata)
       this.$emit('close', { cancel: false, updatedParameter: this.updatedParameter });
     },
