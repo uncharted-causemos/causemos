@@ -117,6 +117,18 @@ export default {
         selectedScenarioId: this.selectedScenarioId
       };
       this.setDataState(dataState);
+    },
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'data' space
+        if (this.$route.name === 'quantitative' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
+          }
+        }
+      },
+      immediate: true
     }
   },
   created() {
@@ -231,14 +243,6 @@ export default {
 
       if (this.onMatrixTab) {
         this.fetchSensitivityAnalysisResults();
-      }
-
-      // apply insight config, if any
-      if (this.$route.name === 'quantitative' && this.$route.query) {
-        const insight_id = this.$route.query.insight_id;
-        if (insight_id !== undefined) {
-          this.updateStateFromInsight(insight_id);
-        }
       }
     },
     revertDraftChanges() {
