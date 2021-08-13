@@ -332,7 +332,6 @@ export default defineComponent({
           const nodeBFirstValue = nodeB.bars.map(bar => bar.value)[0];
           const nodeAValue = _.isNull(nodeAFirstValue) || _.isUndefined(nodeAFirstValue) ? null : nodeAFirstValue;
           const nodeBValue = _.isNull(nodeBFirstValue) || _.isUndefined(nodeBFirstValue) ? null : nodeBFirstValue;
-          console.log(nodeAValue);
           if (_.isNull(nodeAValue) && !_.isNull(nodeBValue)) {
             // A should be sorted after B
             return 1;
