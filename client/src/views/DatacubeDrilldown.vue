@@ -34,7 +34,6 @@
         :selectedDataLayer="selectedDataLayer"
         @set-selected-scenario-ids="setSelectedScenarioIds"
         @select-timestamp="setSelectedTimestamp"
-        @set-drilldown-data="setDrilldownData"
         @set-relative-to="setRelativeTo"
         @refetch-data="fetchData"
         @new-runs-mode="newRunsMode=!newRunsMode"
@@ -155,8 +154,7 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
-import { getRandomNumber } from '@/utils/random';
+import { DatacubeFeature } from '@/types/Datacube';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
@@ -168,7 +166,6 @@ import router from '@/router';
 import _ from 'lodash';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { mapActions, mapGetters, useStore } from 'vuex';
-import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
@@ -205,7 +202,6 @@ export default defineComponent({
   },
   setup() {
     const selectedAdminLevel = ref(0);
-    const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
@@ -443,7 +439,6 @@ export default defineComponent({
       selectedAdminLevel,
       selectedModelId,
       selectedScenarioIds,
-      typeBreakdownData,
       selectedTimestamp,
       isExpanded,
       metadata,
@@ -629,45 +624,6 @@ export default defineComponent({
       }
       this.selectedScenarioIds = newIds;
       this.clearRouteParam();
-    },
-    setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      this.typeBreakdownData = [];
-      if (this.selectedScenarioIds.length === 0) return;
-      // typeBreakdownData array contains an entry for each drilldown dimension
-      //  (e.g. 'crop type')
-      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
-        // Initialize total for each scenarioId to 0
-        const totals = {} as { [scenarioId: string]: number };
-        this.selectedScenarioIds.forEach(scenarioId => {
-          totals[scenarioId] = 0;
-        });
-        // Randomly assign values for each option in the dimension (e.g. 'maize', 'corn)
-        //  to each scenario, and keep track of the sum totals for each scenario
-        const choices = dimension.choices ?? [];
-        const drilldownChildren = choices.map(choice => {
-          const values = {} as { [scenarioId: string]: number };
-          this.selectedScenarioIds.forEach(scenarioId => {
-            // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
-            //  from (selected scenarios) data
-            const randomValue = getRandomNumber(0, 5000);
-            values[scenarioId] = randomValue;
-            totals[scenarioId] += randomValue;
-          });
-          return {
-            // Breakdown data IDs are written as the hierarchical path delimited by '__'
-            id: 'All__' + choice,
-            values
-          };
-        });
-
-        return {
-          name: dimension.name,
-          data: {
-            Total: [{ id: 'All', values: totals }],
-            [dimension.name]: drilldownChildren
-          }
-        };
-      });
     }
   }
 });
