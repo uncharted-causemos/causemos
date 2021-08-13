@@ -76,8 +76,8 @@ export default function useQualifiers(
 
   const filteredQualifierVariables = computed(() => {
     if (metadata.value === null) return [];
-    const { qualifier_outputs = [] } = metadata.value;
-    return qualifier_outputs
+    const { qualifier_outputs } = metadata.value;
+    return (qualifier_outputs ?? [])
       .filter(qualifier => qualifier.is_visible)
       .filter(qualifier => !QUALIFIERS_TO_EXCLUDE.includes(qualifier.name));
   });
