@@ -97,7 +97,6 @@
                 class="btn btn-default"
                 :class="{'btn-primary':isDescriptionView}"
                 @click="showDatasets = true"
-                :style="{ color: baselineMetadata?.color ?? 'white' }"
               >
                 Show Datasets
               </button>
