@@ -94,7 +94,7 @@
               </button>
               <button
                 class="btn btn-default"
-                @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
+                @click="showDatasets = true"
                 :style="{ color: baselineMetadata?.color ?? 'black' }"
               >
                 Show Datasets
@@ -148,14 +148,23 @@
               :color-from-index="colorFromIndex"
             />
           </header>
-          <modal :use-green-header="true">
+          <modal v-if="showDatasets">
             <template #header>
-              <h4> Test header </h4>
+              <h4 class="header"> Datasets </h4>
             </template>
             <template #body>
-              <h6> Test Body </h6>
-              <div v-for="dataPath in dataPaths" :key="dataPath.id">
-                dataPath
+              <ul>
+                <div v-for="dataPath in metadata.data_paths" :key="dataPath">
+                  <li>{{ dataPath }}</li>
+                </div>
+              </ul>
+            </template>
+            <template #footer>
+              <div
+                class="btn btn-primary btn-call-for-action"
+                @click="showDatasets = false"
+              >
+                Close
               </div>
             </template>
           </modal>
@@ -442,6 +451,7 @@ export default defineComponent({
   },
   data: () => ({
     showBaselineDefaults: true,
+    showDatasets: false,
     showNewRunsMode: false,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
@@ -560,6 +570,10 @@ header {
     margin: 0;
     font-weight: normal;
   }
+}
+
+.header {
+  text-align: center;
 }
 
 .scenario-header {
