@@ -1,7 +1,7 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { AggregationOption, TemporalResolutionOption, SpatialAggregationLevel } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
@@ -16,8 +16,7 @@ const applyBreakdown = (
   breakdownOption: string | null
 ): Timeseries[] => {
   if (
-    breakdownOption === null ||
-    breakdownOption === SpatialAggregationLevel.Region ||
+    breakdownOption !== TemporalAggregationLevel.Year ||
     timeseriesData.length !== 1
   ) {
     return timeseriesData;
