@@ -54,7 +54,7 @@
         {{ itemData.name }}
       </span>
       <div
-        v-for="(bar, index) in itemData.values"
+        v-for="(bar, index) in itemData.bars"
         :key="index"
         class="value-on-same-line"
       >

@@ -47,6 +47,7 @@ import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import { getInsightById } from '@/services/insight-service';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -114,6 +115,29 @@ export default {
     },
     currentCAG() {
       this.refresh();
+      // save the scenario-id in the insight store so that it will be part of any saved captured of this view
+      const dataState = {
+        selectedScenarioId: this.selectedScenarioId
+      };
+      this.setDataState(dataState);
+    },
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'data' space
+        if (this.$route.name === 'quantitative' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
+            this.$router.push({
+              query: {
+                insight_id: undefined,
+                activeTab: this.$route.query.activeTab || undefined
+              }
+            });
+          }
+        }
+      },
+      immediate: true
     }
   },
   created() {
@@ -132,8 +156,26 @@ export default {
       setDraftScenario: 'model/setDraftScenario',
       updateDraftScenarioConstraints: 'model/updateDraftScenarioConstraints',
       setDraftScenarioDirty: 'model/setDraftScenarioDirty',
-      setContextId: 'insightPanel/setContextId'
+      setContextId: 'insightPanel/setContextId',
+      setDataState: 'insightPanel/setDataState'
     }),
+    async updateStateFromInsight(insight_id) {
+      const loadedInsight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedScenarioId) {
+          // this will reload datacube metadata as well as scenario runs
+          this.setSelectedScenarioId(loadedInsight.data_state?.selectedScenarioId);
+        }
+      }
+    },
     async refreshModel() {
       this.enableOverlay('Getting model data');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
