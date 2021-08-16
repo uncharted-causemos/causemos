@@ -43,7 +43,7 @@
             :dimensions-data="runParameterValues"
             :selected-dimensions="dimensions"
             :ordinal-dimensions="ordinalDimensionNames"
-            :initial-data-selection="isDescriptionView ? [] : selectedScenarioIds"
+            :initial-data-selection="initialSelectionData"
             :show-baseline-defaults="showBaselineDefaults"
             :new-runs-mode="showNewRunsMode"
             @select-scenario="updateScenarioSelection"
@@ -441,6 +441,10 @@ export default defineComponent({
     disableConcurrentTileRequestsCaching();
   },
   computed: {
+    initialSelectionData(): Array<string> {
+      const firstDataIfExists = this.allModelRunData.map(run => run.id).slice(0, 1);
+      return this.isDescriptionView ? firstDataIfExists : this.selectedScenarioIds;
+    },
     mapSelectedLayer(): number {
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
