@@ -3,6 +3,7 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption } from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import {
   getQualifierBreakdown,
@@ -85,6 +86,21 @@ export default function useQualifiers(
     // Reset the selected qualifier value list when the selected qualifier changes
     selectedQualifierValues.value = new Set();
   });
+  const toggleIsQualifierSelected = (qualifierValue: string) => {
+    const isQualifierValueSelected = selectedQualifierValues.value.has(qualifierValue);
+    const updatedList = _.clone(selectedQualifierValues.value);
+    if (isQualifierValueSelected) {
+      // If qualifier value is currently selected, remove it from the list of
+      //  selected qualifier values.
+      updatedList.delete(qualifierValue);
+    } else {
+      // Else add it to the list of selected qualifier values.
+      updatedList.add(qualifierValue);
+    }
+
+    // Assign new object to selectedRegionIdsAtAllLevels.value to trigger reactivity updates.
+    selectedQualifierValues.value = updatedList;
+  };
 
   watchEffect(async onInvalidate => {
     if (filteredQualifierVariables.value === null || metadata.value === null) {
@@ -142,6 +158,7 @@ export default function useQualifiers(
   return {
     qualifierTimeseriesList,
     qualifierBreakdownData,
-    selectedQualifierValues
+    selectedQualifierValues,
+    toggleIsQualifierSelected
   };
 }

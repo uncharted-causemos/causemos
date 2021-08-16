@@ -66,6 +66,12 @@
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.name ? 'checkbox' : null
       "
+      :selected-item-ids="
+        selectedBreakdownOption === qualifierVariable.name
+          ? Array.from(selectedQualifierValues)
+          : []
+      "
+      @toggle-is-item-selected="toggleIsQualifierSelected"
     >
       <template #aggregation-description>
         <!-- TODO: highlighted value should be dynamically populated based
@@ -169,6 +175,10 @@ export default defineComponent({
       type: Object as PropType<string[] | null>,
       default: null
     },
+    selectedQualifierValues: {
+      type: Object as PropType<Set<string>>,
+      default: () => new Set()
+    },
     selectedBreakdownOption: {
       type: String as PropType<string | null>,
       default: null
@@ -181,6 +191,7 @@ export default defineComponent({
   emits: [
     'set-selected-admin-level',
     'toggle-is-region-selected',
+    'toggle-is-qualifier-selected',
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
@@ -196,6 +207,13 @@ export default defineComponent({
 
     const toggleIsRegionSelected = (adminLevel: string, regionId: string) => {
       emit('toggle-is-region-selected', adminLevel, regionId);
+    };
+
+    const toggleIsQualifierSelected = (
+      variableName: string,
+      qualifierValue: string
+    ) => {
+      emit('toggle-is-qualifier-selected', qualifierValue);
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
@@ -260,6 +278,7 @@ export default defineComponent({
     return {
       setSelectedAdminLevel,
       toggleIsRegionSelected,
+      toggleIsQualifierSelected,
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,

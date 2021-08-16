@@ -137,9 +137,11 @@
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
               :selected-region-ids="selectedRegionIds"
+              :selected-qualifier-values="selectedQualifierValues"
               :selected-breakdown-option="breakdownOption"
               :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
+              @toggle-is-qualifier-selected="toggleIsQualifierSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
               @set-breakdown-option="setBreakdownOption"
             />
@@ -358,7 +360,11 @@ export default defineComponent({
       clearRouteParam();
     };
 
-    const { qualifierBreakdownData } = useQualifiers(
+    const {
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues
+    } = useQualifiers(
       metadata,
       breakdownOption,
       selectedScenarioIds,
@@ -473,7 +479,9 @@ export default defineComponent({
       datacubeCurrentOutputsMap,
       analysisItems,
       analysisId,
-      qualifierBreakdownData
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues
     };
   },
   data: () => ({
