@@ -165,10 +165,7 @@ export default function(
   updateTimestampElements(
     selectedTimestamp,
     timestampElements,
-    timeseriesList,
     xScale,
-    yScale,
-    valueFormatter,
     timestampFormatter
   );
   // Return function to update the timestamp elements when
@@ -177,10 +174,7 @@ export default function(
     updateTimestampElements(
       timestamp,
       timestampElements,
-      timeseriesList,
       xScale,
-      yScale,
-      valueFormatter,
       timestampFormatter
     );
   };
@@ -365,10 +359,7 @@ function generateSelectedTimestampElements(
 function updateTimestampElements(
   timestamp: number | null,
   { selectedTimestampGroup, valueGroups }: TimestampElements,
-  timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  valueFormatter: (value: any) => string,
   timestampFormatter: (timestamp: number) => string
 ) {
   if (timestamp === null) {
@@ -392,32 +383,8 @@ function updateTimestampElements(
     .select('.label-background')
     .attr('width', labelWidth)
     .attr('transform', translate(-labelWidth / 2, 0));
-
-  valueGroups.forEach((valueGroup, index) => {
-    valueGroup.attr('visibility', 'visible');
-    // Adjust the length and vertical position of each dashed line
-    const timeseries = timeseriesList[index];
-    const point = timeseries.points.find(
-      point => point.timestamp === timestamp
-    );
-    if (point === undefined) {
-      // This line doesn't have a value at the selected timestamp,
-      // so hide it and move on
-      valueGroup.attr('visibility', 'hidden');
-      return;
-    }
-    const yPosition = yScale(point.value);
-    const rightEdge = xScale.range()[1];
-    valueGroup
-      .attr('transform', translate(rightEdge, yPosition))
-      .select<SVGLineElement>('line')
-      .attr('x2', -(rightEdge - selectedXPosition));
-    // Display the run's value at this timestamp
-    const labelText = valueGroup
-      .select<SVGTextElement>('text')
-      .text(valueFormatter(point.value));
-    // Resize background to match
-    const { labelWidth } = calculateLabelDimensions(labelText);
-    valueGroup.select('.label-background').attr('width', labelWidth);
-  });
+  // @REVIEW we should not display the value of the marker in the global timeline
+  //  since all timeseries values are normalized between 0 and 1
+  /// for now, just hide the valueGroups
+  valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
 }

@@ -122,6 +122,7 @@ export default defineComponent({
     ModalConfirmation,
     MessageDisplay
   },
+  emits: ['open', 'rename', 'delete', 'duplicate'],
   props: {
     analysis: {
       type: Object as PropType<AnalysisOverviewCard>,

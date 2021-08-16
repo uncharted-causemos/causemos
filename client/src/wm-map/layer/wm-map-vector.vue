@@ -12,7 +12,7 @@ export default {
   name: 'WmMapVector',
   mixins: [layerBase, layerUtils, eventEmitter],
   emits: [
-    'add-layer'
+    'add-layer', 'update-source'
   ],
   props: {
     /**

@@ -82,10 +82,6 @@ export default defineComponent({
     TimeseriesChart
   },
   props: {
-    datacubeId: {
-      type: String,
-      required: true
-    },
     id: {
       type: String,
       required: true
@@ -106,7 +102,6 @@ export default defineComponent({
   emits: ['temporal-breakdown-data', 'selected-scenario-ids', 'select-timestamp', 'loaded-timeseries'],
   setup(props, { emit }) {
     const {
-      datacubeId,
       id,
       selectedTimestamp
     } = toRefs(props);
@@ -150,7 +145,7 @@ export default defineComponent({
     });
 
     const modelRunsFetchedAt = ref(0);
-    const allModelRunData = useScenarioData(datacubeId, modelRunsFetchedAt);
+    const allModelRunData = useScenarioData(id, modelRunsFetchedAt);
 
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
@@ -186,7 +181,7 @@ export default defineComponent({
         }
         if (initialViewConfig.selectedOutputIndex !== undefined) {
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
-          defaultOutputMap[props.datacubeId] = initialViewConfig.selectedOutputIndex;
+          defaultOutputMap[props.id] = initialViewConfig.selectedOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
       }
@@ -214,7 +209,7 @@ export default defineComponent({
       temporalBreakdownData
     } = useTimeseriesData(
       metadata,
-      datacubeId,
+      id,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
