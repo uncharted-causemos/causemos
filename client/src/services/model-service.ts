@@ -22,6 +22,11 @@ const MODEL_STATUS = {
   UNSYNCED_TOPOLOGY: 3
 };
 
+const MODEL_MSGS = {
+  MODEL_STALE: 'Model is stale',
+  MODEL_TRAINING: 'Model training is in progress, please check back in a few minutes'
+};
+
 const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
   const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
   return result.data;
@@ -129,8 +134,8 @@ const removeModel = async (modelId: string) => {
   return result.data;
 };
 
-const duplicateModel = async (modelId: string) => {
-  const result = await API.post(`cags/${modelId}`);
+const duplicateModel = async (modelId: string, name: string) => {
+  const result = await API.post(`cags/${modelId}`, { name });
   return result.data;
 };
 
@@ -221,7 +226,7 @@ const initializeModel = async (modelId: string) => {
   const errors = [];
 
   if (model.is_stale === true) {
-    errors.push('Model is stale');
+    errors.push(MODEL_MSGS.MODEL_STALE);
   }
   // if (model.is_quantified === false) {
   //   errors.push('Model is not quantified');
@@ -235,7 +240,7 @@ const initializeModel = async (modelId: string) => {
     try {
       const r = await syncModelWithEngine(modelId, engine);
       if (r.status === MODEL_STATUS.TRAINING) {
-        errors.push('Model training is in progress, please check back in a few minutes');
+        errors.push(MODEL_MSGS.MODEL_TRAINING);
       }
     } catch (error) {
       errors.push(error.response.data);
@@ -247,7 +252,7 @@ const initializeModel = async (modelId: string) => {
   if (model.status === MODEL_STATUS.TRAINING) {
     const r = await checkAndUpdateRegisteredStatus(modelId, engine);
     if (r === MODEL_STATUS.TRAINING) {
-      errors.push('Model training is in progress, please check back in a few minutes');
+      errors.push(MODEL_MSGS.MODEL_TRAINING);
     }
     return errors;
   }
@@ -754,5 +759,6 @@ export default {
   injectStepZero,
 
   ENGINE_OPTIONS,
-  MODEL_STATUS
+  MODEL_STATUS,
+  MODEL_MSGS
 };
