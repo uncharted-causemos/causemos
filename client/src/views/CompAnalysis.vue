@@ -171,7 +171,7 @@ export default defineComponent({
             .map(point => point.value);
           const minValue = _.min(allTimestampsValues) as number;
           const maxValue = _.max(allTimestampsValues) as number;
-          if (allTimestampsValues.length === 1) { // minValue === maxValue
+          if (allTimestampsValues.length === 1 || minValue === maxValue) { // minValue === maxValue
             // only a single data point exist, so vertically align its value in the center
             allTimestampsPoints[0].value = 0.5;
           } else {
