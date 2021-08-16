@@ -106,11 +106,10 @@ export interface ModelPublishingStep {
 }
 
 export interface QualifierTimeseriesResponse {
-  name: string;
-  options: { name: string; timeseries: TimeseriesPoint[] }[];
+  name: string; timeseries: TimeseriesPoint[];
 }
 
 export interface QualifierBreakdownResponse {
   name: string;
-  options: { name: string; value: number }[];
+  options: { name: string; value: number? }[];
 }

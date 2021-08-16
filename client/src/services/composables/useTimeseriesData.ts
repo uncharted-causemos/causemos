@@ -1,7 +1,12 @@
 import API from '@/api/api';
-import { Datacube } from '@/types/Datacube';
+import { Datacube, QualifierTimeseriesResponse } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { AggregationOption, TemporalResolutionOption, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import {
+  AggregationOption,
+  TemporalResolutionOption,
+  SpatialAggregationLevel,
+  TemporalAggregationLevel
+} from '@/types/Enums';
 import { Timeseries } from '@/types/Timeseries';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
@@ -9,7 +14,8 @@ import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import { useStore } from 'vuex';
+import { getQualifierTimeseries } from '../new-datacube-service';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
@@ -45,7 +51,6 @@ const applyBreakdown = (
     });
 };
 
-
 /**
  * Takes a data ID, a list of model run IDs, and a colouring function,
  * fetches the timeseries data for each run, then assigns a colour to
@@ -54,7 +59,6 @@ const applyBreakdown = (
  */
 export default function useTimeseriesData(
   metadata: Ref<Datacube | null>,
-  dataId: Ref<string>,
   modelRunIds: Ref<string[]>,
   selectedTemporalResolution: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
@@ -62,30 +66,19 @@ export default function useTimeseriesData(
   breakdownOption: Ref<string | null>,
   selectedTimestamp: Ref<number | null>,
   onNewLastTimestamp: (lastTimestamp: number) => void,
-  regionIds: Ref<string[]>
+  regionIds: Ref<string[]>,
+  selectedQualifierValues: Ref<Set<string>>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
   const rawTimeseriesData = ref<Timeseries[]>([]);
+  const { activeFeature } = useActiveDatacubeFeature(metadata);
 
   watchEffect(onInvalidate => {
-    const modelMetadata = metadata.value;
-    if (
-      modelRunIds.value.length === 0 ||
-      modelMetadata === null
-    ) {
+    const datacubeMetadata = metadata.value;
+    if (modelRunIds.value.length === 0 || datacubeMetadata === null) {
       // Don't have the information needed to fetch the data
       return;
     }
-    let activeFeature = '';
-    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
-    if (currentOutputEntry !== undefined) {
-      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
-      activeFeature = outputs[currentOutputEntry].name;
-    } else {
-      activeFeature = modelMetadata.default_feature ?? '';
-    }
-    const activeDataId = modelMetadata.data_id;
+    const dataId = datacubeMetadata.data_id;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
@@ -102,14 +95,14 @@ export default function useTimeseriesData(
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
 
-      let promises = [];
+      let promises: Promise<{ data: any } | null>[] = [];
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
-        promises = regionIds.value.map((regionId) => {
+        promises = regionIds.value.map(regionId => {
           return API.get('maas/output/timeseries', {
             params: {
-              data_id: activeDataId,
+              data_id: dataId,
               run_id: modelRunIds.value[0],
-              feature: activeFeature,
+              feature: activeFeature.value,
               resolution: temporalRes,
               temporal_agg: temporalAgg,
               spatial_agg: spatialAgg,
@@ -122,21 +115,23 @@ export default function useTimeseriesData(
             return null;
           });
         });
-      } else {
+      } else if (
+        breakdownOption.value === null ||
+        breakdownOption.value === TemporalAggregationLevel.Year
+      ) {
         // If no regions are selected, pass "undefined" as the region_id
         //  to get the aggregated timeseries for all regions. Otherwise,
         //  fetch the timeseries for the selected region
         // ASSUMPTION: when split by region is not active, only one
         //  region is selected at a time
-        const regionId = regionIds.value.length > 0
-          ? regionIds.value[0]
-          : undefined;
-        promises = modelRunIds.value.map((runId) => {
+        const regionId =
+          regionIds.value.length > 0 ? regionIds.value[0] : undefined;
+        promises = modelRunIds.value.map(runId => {
           return API.get('maas/output/timeseries', {
             params: {
-              data_id: activeDataId,
+              data_id: dataId,
               run_id: runId,
-              feature: activeFeature,
+              feature: activeFeature.value,
               resolution: temporalRes,
               temporal_agg: temporalAgg,
               spatial_agg: spatialAgg,
@@ -144,12 +139,25 @@ export default function useTimeseriesData(
             }
           });
         });
+      } else {
+        // Breakdown by qualifier
+        // ASSUMPTION: we'll only need to fetch the qualifier timeseries when
+        //  exactly one model run is selected
+        promises = [
+          getQualifierTimeseries(
+            dataId,
+            modelRunIds.value[0],
+            activeFeature.value,
+            temporalRes,
+            temporalAgg,
+            spatialAgg,
+            Array.from(selectedQualifierValues.value)
+          )
+        ];
       }
       const fetchResults = (await Promise.all(promises))
         .filter(response => response !== null)
-        .map((response: any) =>
-          Array.isArray(response.data) ? response.data : JSON.parse(response.data)
-        );
+        .map((response: any) => response.data);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
@@ -167,12 +175,26 @@ export default function useTimeseriesData(
           const color = colorFromIndex(index);
           return { name, id, color, points };
         });
-      } else {
+      } else if (
+        breakdownOption.value === TemporalAggregationLevel.Year ||
+        breakdownOption.value === null
+      ) {
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           const name = `Run ${index}`;
           const id = modelRunIds.value[index];
           const color = colorFromIndex(index);
           return { name, id, color, points };
+        });
+      } else {
+        // Breakdown by qualifier
+        const options: QualifierTimeseriesResponse[] = fetchResults[0];
+        rawTimeseriesData.value = options.map(({ name, timeseries }, index) => {
+          return {
+            name, // TODO: look up display name
+            id: name,
+            color: colorFromIndex(index),
+            points: timeseries
+          };
         });
       }
     }

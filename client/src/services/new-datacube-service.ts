@@ -1,5 +1,9 @@
 import API from '@/api/api';
-import { Model, QualifierBreakdownResponse, QualifierTimeseriesResponse } from '@/types/Datacube';
+import {
+  Model,
+  QualifierBreakdownResponse,
+  QualifierTimeseriesResponse
+} from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
@@ -25,7 +29,11 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
  * @param {Filters} filters
  */
 export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
-  const { data } = await API.get(`maas/new-datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`);
+  const { data } = await API.get(
+    `maas/new-datacubes/facets?facets=${JSON.stringify(
+      facets
+    )}&filters=${JSON.stringify(filters)}`
+  );
   return data;
 };
 
@@ -46,7 +54,9 @@ export const getDatacubeById = async (datacubeId: string) => {
  * @returns {Promise<number>}
  */
 export const getDatacubesCount = async (filters: Filters) => {
-  const { data } = await API.get('maas/new-datacubes/count', { params: { filters: filters } });
+  const { data } = await API.get('maas/new-datacubes/count', {
+    params: { filters: filters }
+  });
   return data || 0;
 };
 
@@ -134,6 +144,7 @@ export const getQualifierTimeseries = async (
   dataId: string,
   runId: string,
   feature: string,
+  temporalResolution: string,
   temporalAggregation: string,
   spatialAggregation: string,
   qualifiers: string[]
@@ -143,6 +154,7 @@ export const getQualifierTimeseries = async (
     dataId,
     runId,
     feature,
+    temporalResolution,
     temporalAggregation,
     spatialAggregation,
     qualifiers
@@ -158,34 +170,24 @@ export const getQualifierTimeseries = async (
   //   }
   // });
   // return data as QualifierTimeseriesResponse[];
-  return [
-    {
-      name: 'Cause of death',
-      options: [
-        {
-          name: 'slipping',
-          timeseries: [{ timestamp: 0, value: 25 }, { timestamp: 1000, value: 50 }]
-        },
-        {
-          name: 'regicide',
-          timeseries: [{ timestamp: 0, value: 15 }, { timestamp: 1000, value: 10 }]
-        }
-      ]
-    },
-    {
-      name: 'Age range',
-      options: [
-        {
-          name: 'under 25',
-          timeseries: [{ timestamp: 0, value: 35 }, { timestamp: 1000, value: 30 }]
-        },
-        {
-          name: '25 and over',
-          timeseries: [{ timestamp: 0, value: 145 }, { timestamp: 1000, value: 140 }]
-        }
-      ]
-    }
-  ] as QualifierTimeseriesResponse[];
+  return {
+    data: [
+      {
+        name: 'slipping',
+        timeseries: [
+          { timestamp: 0, value: 25 },
+          { timestamp: 1000, value: 50 }
+        ]
+      },
+      {
+        name: 'regicide',
+        timeseries: [
+          { timestamp: 0, value: 15 },
+          { timestamp: 1000, value: 10 }
+        ]
+      }
+    ] as QualifierTimeseriesResponse[]
+  };
 };
 
 export const getQualifierBreakdown = async (

@@ -354,7 +354,6 @@ export default defineComponent({
       temporalBreakdownData
     } = useTimeseriesData(
       metadata,
-      selectedModelId,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -362,7 +361,8 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      selectedRegionIds
+      selectedRegionIds,
+      ref(new Set())
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(

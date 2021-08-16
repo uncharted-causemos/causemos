@@ -1,14 +1,10 @@
 import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption } from '@/types/Enums';
-import { Timeseries } from '@/types/Timeseries';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import {
-  getQualifierBreakdown,
-  getQualifierTimeseries
-} from '../new-datacube-service';
+import { getQualifierBreakdown } from '../new-datacube-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const QUALIFIERS_TO_EXCLUDE = [
@@ -54,7 +50,13 @@ const convertResponsesToBreakdownData = (
             potentiallyExistingOption
           );
         }
-        potentiallyExistingOption.values[runId] = value;
+        // Value is null if a qualifier option doesn't have a value at the
+        //  selected timestamp. We still include an entry in the breakdown
+        //  data list so that the user can select that qualifier option to see
+        //  its timeseries.
+        if (value !== null) {
+          potentiallyExistingOption.values[runId] = value;
+        }
       });
     });
   });
@@ -69,7 +71,6 @@ export default function useQualifiers(
   spatialAggregation: Ref<AggregationOption>,
   selectedTimestamp: Ref<number | null>
 ) {
-  const qualifierTimeseriesList = ref<Timeseries[]>([]);
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
 
@@ -105,33 +106,6 @@ export default function useQualifiers(
   };
 
   watchEffect(async onInvalidate => {
-    if (filteredQualifierVariables.value === null || metadata.value === null) {
-      return;
-    }
-    let isCancelled = false;
-    onInvalidate(() => {
-      isCancelled = true;
-    });
-    const { data_id } = metadata.value;
-    const qualifierVariableIds = filteredQualifierVariables.value.map(
-      qualifier => qualifier.name
-    );
-    // ASSUMPTION: we'll only need to fetch the qualifier timeseries when
-    //  exactly one model run is selected
-    const result = await getQualifierTimeseries(
-      data_id,
-      selectedScenarioIds.value[0],
-      activeFeature.value,
-      temporalAggregation.value,
-      spatialAggregation.value,
-      qualifierVariableIds
-    );
-    console.log(result);
-    if (isCancelled) return;
-    qualifierTimeseriesList.value = [];
-  });
-
-  watchEffect(async onInvalidate => {
     const timestamp = selectedTimestamp.value;
     if (metadata.value === null || timestamp === null) return;
     let isCancelled = false;
@@ -162,7 +136,6 @@ export default function useQualifiers(
   });
 
   return {
-    qualifierTimeseriesList,
     qualifierBreakdownData,
     selectedQualifierValues,
     toggleIsQualifierSelected

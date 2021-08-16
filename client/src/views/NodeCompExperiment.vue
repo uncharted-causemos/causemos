@@ -305,7 +305,6 @@ export default defineComponent({
       setRelativeTo
     } = useTimeseriesData(
       metadata,
-      selectedModelId,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -313,7 +312,8 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      selectedRegionIds
+      selectedRegionIds,
+      ref(new Set())
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(

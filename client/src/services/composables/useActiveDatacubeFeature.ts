@@ -1,9 +1,9 @@
-import { Indicator, Model } from '@/types/Datacube';
+import { Datacube } from '@/types/Datacube';
 import { computed, Ref } from 'vue';
 import { useStore } from 'vuex';
 
 export default function useActiveDatacubeFeature(
-  metadata: Ref<Model | Indicator | null>
+  metadata: Ref<Datacube | null>
 ) {
   const store = useStore();
   const datacubeCurrentOutputsMap = computed(
