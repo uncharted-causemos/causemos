@@ -67,11 +67,13 @@ const startModelOutputPostProcessing = async (metadata) => {
   }))[0];
 
   const qualifierMap = {};
-  modelMetadata.outputs.forEach(output => {
-    qualifierMap[output.name] = modelMetadata.qualifier_outputs.filter(
-      q => !IMPLICIT_QUALIFIERS.includes(q.name)
-    ).map(q => q.name);
-  });
+  if (modelMetadata.qualifier_outputs) {
+    modelMetadata.outputs.forEach(output => {
+      qualifierMap[output.name] = modelMetadata.qualifier_outputs.filter(
+        q => !IMPLICIT_QUALIFIERS.includes(q.name)
+      ).map(q => q.name);
+    });
+  }
 
   const flowParameters = {
     model_id: metadata.model_id,
