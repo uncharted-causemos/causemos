@@ -192,6 +192,7 @@ export const getQualifierBreakdown = async (
   dataId: string,
   runId: string,
   feature: string,
+  qualifierVariableIds: string[],
   temporalAggregation: string,
   spatialAggregation: string,
   timestamp: number
@@ -203,7 +204,8 @@ export const getQualifierBreakdown = async (
     feature,
     temporalAggregation,
     spatialAggregation,
-    timestamp
+    timestamp,
+    qualifierVariableIds
   );
   return [
     {

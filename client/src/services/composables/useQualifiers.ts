@@ -87,7 +87,9 @@ export default function useQualifiers(
     selectedQualifierValues.value = new Set();
   });
   const toggleIsQualifierSelected = (qualifierValue: string) => {
-    const isQualifierValueSelected = selectedQualifierValues.value.has(qualifierValue);
+    const isQualifierValueSelected = selectedQualifierValues.value.has(
+      qualifierValue
+    );
     const updatedList = _.clone(selectedQualifierValues.value);
     if (isQualifierValueSelected) {
       // If qualifier value is currently selected, remove it from the list of
@@ -137,11 +139,15 @@ export default function useQualifiers(
       isCancelled = true;
     });
     const { data_id } = metadata.value;
+    const qualifierVariableIds = filteredQualifierVariables.value.map(
+      variable => variable.name
+    );
     const promises = selectedScenarioIds.value.map(runId =>
       getQualifierBreakdown(
         data_id,
         runId,
         activeFeature.value,
+        qualifierVariableIds,
         temporalAggregation.value,
         spatialAggregation.value,
         timestamp
