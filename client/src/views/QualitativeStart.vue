@@ -12,9 +12,17 @@
     />
     <rename-modal
       v-if="showRenameModal"
-      :current-name="cardToRename.title"
+      :current-name="selectedCard.title"
       @confirm="onRenameModalConfirm"
       @cancel="onRenameModalClose"
+    />
+    <duplicate-modal
+      v-if="showDuplicateModal"
+      :current-name="selectedCard.title"
+      :id-to-duplicate="selectedCard.id"
+      @success="onDuplicateSuccess"
+      @fail="closeDuplicateModal"
+      @cancel="closeDuplicateModal"
     />
   </div>
 </template>
@@ -25,6 +33,7 @@ import { mapGetters, mapActions } from 'vuex';
 import { defineComponent, ref } from 'vue';
 
 import StartScreen from '@/components/start-screen.vue';
+import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import { CAG } from '@/utils/messages-util';
 import dateFormatter from '@/formatters/date-formatter';
@@ -43,17 +52,20 @@ export default defineComponent({
   name: 'QualitativeStart',
   components: {
     StartScreen,
-    RenameModal
+    RenameModal,
+    DuplicateModal
   },
   setup() {
     const recentCards = ref([] as RecentCard[]);
-    const cardToRename = ref({} as RecentCard);
+    const selectedCard = ref({} as RecentCard);
     const showRenameModal = ref(false);
+    const showDuplicateModal = ref(false);
 
     return {
       recentCards,
-      cardToRename,
+      selectedCard,
       showRenameModal,
+      showDuplicateModal,
 
       toaster: useToaster()
     };
@@ -110,11 +122,11 @@ export default defineComponent({
     },
     onRename(recentCard: RecentCard) {
       this.showRenameModal = true;
-      this.cardToRename = recentCard;
+      this.selectedCard = recentCard;
     },
     onRenameModalConfirm(newCagNameInput: string) {
-      if (newCagNameInput !== null && newCagNameInput !== this.cardToRename.title) {
-        modelService.updateModelMetadata(this.cardToRename.id, { name: newCagNameInput }).then(r => {
+      if (newCagNameInput !== null && newCagNameInput !== this.selectedCard.title) {
+        modelService.updateModelMetadata(this.selectedCard.id, { name: newCagNameInput }).then(r => {
           this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
           this.setUpdateToken(r.updateToken);
         });
@@ -125,12 +137,8 @@ export default defineComponent({
       this.showRenameModal = false;
     },
     onDuplicate(recentCard: RecentCard) {
-      modelService.duplicateModel(recentCard.id).then(result => {
-        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
-        this.setUpdateToken(result.updateToken);
-      }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
-      });
+      this.selectedCard = recentCard;
+      this.openDuplicateModal();
     },
     onDelete(recentCard: RecentCard) {
       modelService.removeModel(recentCard.id).then(result => {
@@ -139,6 +147,16 @@ export default defineComponent({
       }).catch(() => {
         this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
       });
+    },
+    onDuplicateSuccess() {
+      this.refresh();
+      this.closeDuplicateModal();
+    },
+    openDuplicateModal() {
+      this.showDuplicateModal = true;
+    },
+    closeDuplicateModal() {
+      this.showDuplicateModal = false;
     }
   }
 });
