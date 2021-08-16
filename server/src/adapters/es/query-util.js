@@ -94,7 +94,8 @@ class QueryUtil {
         queries.push({
           query_string: { // case insensitive search
             query: `${value}*`,
-            fields: [field]
+            fields: [field],
+            default_operator: 'AND'
           }
         });
       });
