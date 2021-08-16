@@ -19,22 +19,20 @@
       class="row project-card-header"
       @click="toggleShowMore()">
       <div class="col-sm-4 instance-header no-padding">
-        <i
-          :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
-        />
-        <button
-          type="button"
-          class="btn btn-link no-padding"
-          style="color: black; margin-bottom: 1rem"
+        <div class="analysis-title"
           @click="openAnalysis">
-          <span class="overflow-ellipsis"><b>{{analysis.title}}</b></span>
-        </button>
+          <i :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }" />
+          <span>&nbsp;{{analysis.title}}</span>
+        </div>
+        <div>
+          <img :src="analysis.previewImageSrc" style="height: 70px; border: 1px solid #eee">
+        </div>
       </div>
       <div class="col-sm-4">
-        <div style="fontWeight: normal;">{{analysis.description}}</div>
         <div class="instance-header" style="margin-left: 0px">
-          <div style="fontWeight: normal; left-margin: 0px">Last updated: {{analysis.subtitle}}</div>
+          <div style="left-margin: 0px">{{analysis.subtitle}}</div>
         </div>
+        <div>{{analysis.description}}</div>
       </div>
       <div class="col-sm-1 instance-header">
         {{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}
@@ -50,16 +48,14 @@
       class="project-card-footer"
     >
       <div class="row">
-        <div class="col-sm-3 instance-header"></div>
-        <div class="col-sm-2 instance-header"></div>
+        <div class="col-sm-5 instance-header"></div>
         <div class="col-sm-1 instance-header">
           <button
             v-tooltip.top-center="'Open analysis'"
             type="button"
             class="btn btn-primary button-spacing btn-call-for-action"
-            @click="openAnalysis"
-            ><i class="fa fa-folder-open-o" />
-              Open
+            @click="openAnalysis">
+            <i class="fa fa-folder-open-o" /> Open
           </button>
         </div>
         <div class="col-sm-3">
@@ -67,17 +63,15 @@
             v-tooltip.top-center="'Rename analysis'"
             type="button"
             class="btn btn-primary button-spacing"
-            @click="editAnalysis"
-            >
-            <i class="fa fa-edit" />Rename
+            @click="editAnalysis">
+            <i class="fa fa-edit" /> Rename
           </button>
           <button
             v-tooltip.top-center="'Duplicate analysis'"
             type="button"
             class="btn btn-primary button-spacing"
-            @click="duplicateAnalysis"
-            >
-            <i class="fa fa-copy" />Duplicate
+            @click="duplicateAnalysis">
+            <i class="fa fa-copy" /> Duplicate
           </button>
         </div>
         <div class="col-sm-2">
@@ -85,9 +79,9 @@
             v-tooltip.top-center="'delete analysis'"
             type="button"
             class="remove-button button-spacing"
-            @click.stop="showWarningModal"
-          ><i class="fa fa-trash" />
-            Delete</button>
+            @click.stop="showWarningModal">
+            <i class="fa fa-trash" /> Delete
+          </button>
         </div>
       </div>
     </div>
@@ -183,10 +177,14 @@ export default defineComponent({
 <style scoped lang="scss">
 @import "~styles/variables";
 
+.analysis-title {
+  text-decoration: underline;
+  cursor: pointer;
+}
+
 .instance-header {
   @include header-secondary;
-  font-weight: bold;
-  color: darkgrey;
+  color: #222;
   padding-bottom: 5px;
   margin-left: 1rem;
 }
@@ -216,7 +214,6 @@ export default defineComponent({
 .button-spacing {
   padding: 4px;
   margin: 2px;
-  border-radius: 8px;
 }
 
 .remove-button {
