@@ -93,7 +93,7 @@ class QueryUtil {
       values.forEach(value => {
         queries.push({
           query_string: { // case insensitive search
-            query: `*${value}*`,
+            query: `${value}*`,
             fields: [field]
           }
         });
