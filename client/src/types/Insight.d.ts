@@ -83,6 +83,7 @@ export interface DataState {
   // knowledge/model space specific
   cagNode?: any;
   cagID?: any;
+  selectedScenarioId?: string;
 
   // others
   // ...
