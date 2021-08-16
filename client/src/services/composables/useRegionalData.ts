@@ -5,10 +5,10 @@ import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { SpatialAggregationLevel } from '@/types/Enums';
-import { useStore } from 'vuex';
 import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import _ from 'lodash';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const applySplitByRegion = (
   regionalData: RegionalAggregations,
@@ -58,8 +58,7 @@ export default function useRegionalData(
   breakdownOption: Ref<string | null>,
   datacubeHierarchy: Ref<DatacubeGeography | null>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+  const { activeFeature } = useActiveDatacubeFeature(metadata);
 
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
@@ -72,14 +71,6 @@ export default function useRegionalData(
       return [];
     }
 
-    let activeFeature = '';
-    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
-    if (currentOutputEntry !== undefined) {
-      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
-      activeFeature = outputs[currentOutputEntry].name;
-    } else {
-      activeFeature = modelMetadata.default_feature ?? '';
-    }
 
     const activeModelId = modelMetadata.data_id ?? '';
 
@@ -87,7 +78,7 @@ export default function useRegionalData(
       id: timeseriesId,
       modelId: activeModelId,
       runId: scenarioId,
-      outputVariable: activeFeature,
+      outputVariable: activeFeature.value,
       timestamp,
       temporalResolution: selectedTemporalResolution.value,
       temporalAggregation: selectedTemporalAggregation.value,
