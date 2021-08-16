@@ -60,6 +60,8 @@ export default {
       adapter: new Adapter({ nodeWidth: 120, nodeHeight: 60, layout: layered }),
       renderMode: 'delta',
       useEdgeControl: true,
+      useStableZoomPan: true,
+      useStableLayout: true,
       addons: [highlight, nodeDrag, panZoom]
     });
 
