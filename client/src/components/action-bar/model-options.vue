@@ -112,6 +112,7 @@ export default defineComponent({
     },
     onDuplicate() {
       this.$emit('duplicate');
+      this.showModelOptionsDropdown = false;
     }
   }
 });
