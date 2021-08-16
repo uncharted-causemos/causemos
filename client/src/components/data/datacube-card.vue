@@ -93,9 +93,11 @@
                 Data
               </button>
               <button
+                v-if="showDatasetButton"
                 class="btn btn-default"
+                :class="{'btn-primary':isDescriptionView}"
                 @click="showDatasets = true"
-                :style="{ color: baselineMetadata?.color ?? 'black' }"
+                :style="{ color: baselineMetadata?.color ?? 'white' }"
               >
                 Show Datasets
               </button>
@@ -269,7 +271,7 @@ import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import { DatacubeType, ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
@@ -473,6 +475,9 @@ export default defineComponent({
   computed: {
     mapSelectedLayer(): number {
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
+    },
+    showDatasetButton(): boolean {
+      return this.metadata.type === DatacubeType.Indicator;
     }
   },
   methods: {
