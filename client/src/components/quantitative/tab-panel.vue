@@ -220,6 +220,7 @@ export default {
     isDrilldownOpen: false,
     isFetchingStatements: false,
     selectedEdge: null,
+    edgeParameterChanged: false,
 
     savedComment: '',
     isCommentOpen: false
@@ -270,7 +271,7 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
-      this.closeDrilldown();
+      // this.closeDrilldown();
     },
     setActive (activeTab) {
       router.push({ query: { activeTab } }).catch(() => {});
@@ -316,6 +317,11 @@ export default {
     },
     closeDrilldown() {
       this.isDrilldownOpen = false;
+      if (this.edgeParameterChanged) {
+        // console.log('close drilldown');
+        this.$emit('refresh-model');
+        this.edgeParameterChanged = false;
+      }
     },
     showModelParameters() {
       this.$emit('show-model-parameters');
@@ -342,10 +348,12 @@ export default {
       this.$emit('refresh-model');
     },
     async setEdgeWeights(edgeData) {
+      console.log('I am here');
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
-      this.closeDrilldown();
-      this.$emit('refresh-model');
+      this.edgeParameterChanged = true;
+      // this.closeDrilldown();
+      // this.$emit('refresh-model');
     },
     setSensitivityAnalysisType(analysisType) {
       this.$emit('set-sensitivity-analysis-type', analysisType);
