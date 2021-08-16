@@ -94,7 +94,7 @@
 
 <script>
 import _ from 'lodash';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 
 import modelService from '@/services/model-service';
 import DuplicateModal from '@/components/action-bar/duplicate-modal';
@@ -154,6 +154,10 @@ export default {
     this.savedComment = _.get(this.modelSummary, 'description', null);
   },
   methods: {
+    ...mapActions({
+      enableOverlay: 'app/enableOverlay',
+      disableOverlay: 'app/disableOverlay'
+    }),
     openKBExplorer() {
       this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG } });
     },
@@ -216,6 +220,7 @@ export default {
     },
     async onRunModel() {
       this.isRunningModel = true;
+      this.enableOverlay('Preparing & Initializing CAG nodes');
       // Quantify the model on the back end
       try {
         await modelService.quantifyModelNodes(this.currentCAG);
@@ -233,6 +238,7 @@ export default {
         return;
       } finally {
         this.isRunningModel = false;
+        this.disableOverlay();
       }
     }
   }
