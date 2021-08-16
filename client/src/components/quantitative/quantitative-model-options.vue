@@ -5,12 +5,21 @@
       :cag-name="cagNameToDisplay"
       :view-after-deletion="'quantitativeStart'"
       @rename="openRenameModal"
+      @duplicate="openDuplicateModal"
     />
     <rename-modal
       v-if="showRenameModal"
       :current-name="cagNameToDisplay"
       @confirm="onRenameModalConfirm"
       @cancel="closeRenameModal"
+    />
+    <duplicate-modal
+      v-if="showDuplicateModal"
+      :current-name="cagNameToDisplay"
+      :id-to-duplicate="currentCAG"
+      @success="onDuplicateSuccess"
+      @fail="closeDuplicateModal"
+      @cancel="closeDuplicateModal"
     />
   </ul>
 </template>
@@ -20,32 +29,39 @@ import _ from 'lodash';
 import { defineComponent, ref, computed } from 'vue';
 import { useStore } from 'vuex';
 import modelService from '@/services/model-service';
+import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import ModelOptions from '@/components/action-bar/model-options.vue';
 import { CAG } from '@/utils/messages-util';
 import useToaster from '@/services/composables/useToaster';
+import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'QuantitativeModelOptions',
   components: {
     RenameModal,
-    ModelOptions
+    ModelOptions,
+    DuplicateModal
   },
   setup() {
     const store = useStore();
     const showRenameModal = ref(false);
+    const showDuplicateModal = ref(false);
     const cagName = ref('');
     const newCagName = ref('');
 
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const cagNameToDisplay = computed(() => !_.isEmpty(newCagName.value) ? newCagName.value : cagName.value);
+    const project = computed(() => store.getters['app/project']);
 
     return {
+      showDuplicateModal,
       showRenameModal,
       cagName,
       newCagName,
       currentCAG,
       cagNameToDisplay,
+      project,
 
       toaster: useToaster()
     };
@@ -69,6 +85,24 @@ export default defineComponent({
         this.newCagName = '';
         this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);
       });
+    },
+    onDuplicateSuccess(name: string, id: string) {
+      this.newCagName = name;
+      this.closeDuplicateModal();
+      this.$router.push({
+        name: 'quantitative',
+        params: {
+          project: this.project,
+          currentCAG: id,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
+    openDuplicateModal() {
+      this.showDuplicateModal = true;
+    },
+    closeDuplicateModal() {
+      this.showDuplicateModal = false;
     },
     openRenameModal() {
       this.showRenameModal = true;

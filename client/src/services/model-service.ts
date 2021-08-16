@@ -134,8 +134,8 @@ const removeModel = async (modelId: string) => {
   return result.data;
 };
 
-const duplicateModel = async (modelId: string) => {
-  const result = await API.post(`cags/${modelId}`);
+const duplicateModel = async (modelId: string, name: string) => {
+  const result = await API.post(`cags/${modelId}`, { name });
   return result.data;
 };
 
