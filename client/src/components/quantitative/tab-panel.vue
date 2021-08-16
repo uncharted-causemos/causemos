@@ -220,7 +220,6 @@ export default {
     isDrilldownOpen: false,
     isFetchingStatements: false,
     selectedEdge: null,
-    edgeParameterChanged: false,
 
     savedComment: '',
     isCommentOpen: false
@@ -271,7 +270,6 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
-      this.closeDrilldown();
     },
     setActive (activeTab) {
       router.push({ query: { activeTab } }).catch(() => {});
@@ -317,10 +315,6 @@ export default {
     },
     closeDrilldown() {
       this.isDrilldownOpen = false;
-      if (this.edgeParameterChanged) {
-        this.$emit('refresh-model');
-        this.edgeParameterChanged = false;
-      }
     },
     showModelParameters() {
       this.$emit('show-model-parameters');
@@ -343,11 +337,13 @@ export default {
     async setEdgeUserPolarity(edge, polarity) {
       await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
       this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
+      this.closeDrilldown();
+      this.$emit('refresh-model');
     },
-    async setEdgeWeights(edgeData) { // FIXME we dont need to hit the model API every time the slider moves, only when the drilldown is closed and we are going to refresh the model
+    async setEdgeWeights(edgeData) {
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
-      this.edgeParameterChanged = true;
+      this.$emit('refresh-model');
     },
     setSensitivityAnalysisType(analysisType) {
       this.$emit('set-sensitivity-analysis-type', analysisType);
