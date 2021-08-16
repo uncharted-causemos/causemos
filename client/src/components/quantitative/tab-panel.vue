@@ -318,7 +318,6 @@ export default {
     closeDrilldown() {
       this.isDrilldownOpen = false;
       if (this.edgeParameterChanged) {
-        // console.log('close drilldown');
         this.$emit('refresh-model');
         this.edgeParameterChanged = false;
       }
@@ -344,16 +343,11 @@ export default {
     async setEdgeUserPolarity(edge, polarity) {
       await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
       this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
-      this.closeDrilldown();
-      this.$emit('refresh-model');
     },
     async setEdgeWeights(edgeData) {
-      console.log('I am here');
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
       this.edgeParameterChanged = true;
-      // this.closeDrilldown();
-      // this.$emit('refresh-model');
     },
     setSensitivityAnalysisType(analysisType) {
       this.$emit('set-sensitivity-analysis-type', analysisType);
