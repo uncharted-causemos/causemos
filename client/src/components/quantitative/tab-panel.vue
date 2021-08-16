@@ -271,7 +271,7 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
-      // this.closeDrilldown();
+      this.closeDrilldown();
     },
     setActive (activeTab) {
       router.push({ query: { activeTab } }).catch(() => {});
@@ -344,7 +344,7 @@ export default {
       await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
       this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
     },
-    async setEdgeWeights(edgeData) {
+    async setEdgeWeights(edgeData) { // FIXME we dont need to hit the model API every time the slider moves, only when the drilldown is closed and we are going to refresh the model
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
       this.edgeParameterChanged = true;
