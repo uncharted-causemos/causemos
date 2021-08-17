@@ -211,6 +211,16 @@ export default {
       }
       this.disableOverlay();
 
+      // Check if model is still training
+      if (this.modelSummary.status === modelService.MODEL_STATUS.TRAINING) {
+        const r = await modelService.checkAndUpdateRegisteredStatus(this.model.id, this.currentEngine);
+        if (r === modelService.MODEL_STATUS.TRAINING) {
+          this.enableOverlay(MODEL_MSGS.MODEL_TRAINING);
+          this.toaster(MODEL_MSGS.MODEL_TRAINING, 'error', true);
+          return;
+        }
+      }
+
       await this.refreshModel();
 
       if (scenarios.length === 0) {
