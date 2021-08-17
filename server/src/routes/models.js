@@ -523,7 +523,6 @@ router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
   let result;
   if (engine === DELPHI) {
     result = await delphiService.findExperiment(modelId, experimentId);
-    // modelService.postProcessDelphiExperiment(result);
   } else if (engine === DYSE) {
     result = await dyseService.findExperiment(modelId, experimentId);
   }

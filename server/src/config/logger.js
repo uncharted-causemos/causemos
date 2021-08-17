@@ -1,13 +1,13 @@
 const { createLogger, format, transports } = require('winston');
-const fs = require('fs');
+// const fs = require('fs');
 const argv = require('./yargs-wrapper');
 const loglevel = (argv.logLevel || 'info').toLowerCase();
 
 // ensure the logs directory exists or nothing will be logged to the file.
-const logDir = 'logs';
-if (!fs.existsSync(logDir)) {
-  fs.mkdirSync(logDir);
-}
+// const logDir = 'logs';
+// if (!fs.existsSync(logDir)) {
+//   fs.mkdirSync(logDir);
+// }
 
 // Configure the default logger
 // let appLogger = new winston.Logger({});
@@ -30,14 +30,14 @@ appLogger.add(new transports.Console({
 }));
 
 // log to file as well as console.
-appLogger.add(new transports.File({
-  timestamp: true,
-  filename: logDir + '/server.log',
-  json: false,
-  prettyPrint: true,
-  zippedArchive: true,
-  level: loglevel
-}));
+// appLogger.add(new transports.File({
+//   timestamp: true,
+//   filename: logDir + '/server.log',
+//   json: false,
+//   prettyPrint: true,
+//   zippedArchive: true,
+//   level: loglevel
+// }));
 
 
 module.exports = appLogger;
