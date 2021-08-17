@@ -211,7 +211,7 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
 
-    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
 
@@ -228,7 +228,7 @@ export default defineComponent({
     // aply view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
       if (initialViewConfig.temporalResolution !== undefined) {
-        selectedTemporalResolution.value = initialViewConfig.temporalResolution;
+        selectedTemporalResolution.value = initialViewConfig.temporalResolution as TemporalResolutionOption;
       }
       if (initialViewConfig.temporalAggregation !== undefined) {
         selectedTemporalAggregation.value = initialViewConfig.temporalAggregation as AggregationOption;
@@ -369,6 +369,7 @@ export default defineComponent({
       metadata,
       breakdownOption,
       selectedScenarioIds,
+      selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedTimestamp
@@ -599,7 +600,7 @@ export default defineComponent({
           this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation as AggregationOption;
         }
         if (loadedInsight.view_state?.temporalResolution) {
-          this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution;
+          this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
         }
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
           this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
@@ -629,7 +630,7 @@ export default defineComponent({
     setSpatialAggregationSelection(spatialAgg: AggregationOption) {
       this.selectedSpatialAggregation = spatialAgg;
     },
-    setTemporalResolutionSelection(temporalRes: string) {
+    setTemporalResolutionSelection(temporalRes: TemporalResolutionOption) {
       this.selectedTemporalResolution = temporalRes;
     },
     setSelectedScenarioIds(newIds: string[]) {

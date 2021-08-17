@@ -1,6 +1,6 @@
 import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
-import { AggregationOption } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
@@ -67,6 +67,7 @@ export default function useQualifiers(
   metadata: Ref<Model | Indicator | null>,
   breakdownOption: Ref<string | null>,
   selectedScenarioIds: Ref<string[]>,
+  temporalResolution: Ref<TemporalResolutionOption>,
   temporalAggregation: Ref<AggregationOption>,
   spatialAggregation: Ref<AggregationOption>,
   selectedTimestamp: Ref<number | null>
@@ -122,6 +123,7 @@ export default function useQualifiers(
         runId,
         activeFeature.value,
         qualifierVariableIds,
+        temporalResolution.value,
         temporalAggregation.value,
         spatialAggregation.value,
         timestamp

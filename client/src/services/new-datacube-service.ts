@@ -195,36 +195,24 @@ export const getQualifierBreakdown = async (
   runId: string,
   feature: string,
   qualifierVariableIds: string[],
+  temporalResolution: string,
   temporalAggregation: string,
   spatialAggregation: string,
   timestamp: number
 ) => {
-  console.log(
-    'getQualifierBreakdown',
-    dataId,
-    runId,
-    feature,
-    temporalAggregation,
-    spatialAggregation,
-    timestamp,
-    qualifierVariableIds
-  );
-  return [
-    {
-      name: 'Cause of death',
-      options: [
-        { name: 'slipping', value: 15 },
-        { name: 'regicide', value: 8 }
-      ]
-    },
-    {
-      name: 'Age range',
-      options: [
-        { name: 'under 25', value: 3 },
-        { name: '25 and over', value: 20 }
-      ]
+  const { data } = await API.get('maas/output/qualifier-data', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature: feature,
+      resolution: temporalResolution,
+      temporal_agg: temporalAggregation,
+      spatial_agg: spatialAggregation,
+      timestamp,
+      qlf: qualifierVariableIds
     }
-  ] as QualifierBreakdownResponse[];
+  });
+  return data as QualifierBreakdownResponse[];
 };
 
 // DEPRECATED - NO LONGER WORK
