@@ -47,6 +47,7 @@
 <script>
 
 import _ from 'lodash';
+// import { getOutputStats } from '@/services/runoutput-service';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
@@ -191,6 +192,10 @@ export default {
       type: Object,
       default: () => undefined
     },
+    gridLayerStats: {
+      type: Array,
+      default: () => []
+    },
     selectedBaseLayer: {
       type: String,
       required: true
@@ -202,8 +207,8 @@ export default {
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
-    gridStats: undefined,
-    legendData: []
+    legendData: [],
+    curZoom: 0
   }),
   computed: {
     mapFixedOptions() {
@@ -243,6 +248,7 @@ export default {
       const stats = {};
       if (!this.regionData) return stats;
       if (this.baselineSpec) {
+        // Stats relative to the baseline. (min/max of the difference relative to the baseline)
         const baselineProp = this.baselineSpec.id;
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = [];
@@ -254,9 +260,21 @@ export default {
             stats[key] = { min: Math.min(...values), max: Math.max(...values) };
           }
         }
-      } else {
+      } else if (this.relativeTo === this.outputSelection) {
+        // Stats for the baseline map
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = data.filter(v => v.values[this.valueProp] !== undefined).map(v => v.values[this.valueProp]);
+          if (values.length) {
+            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          }
+        }
+      } else {
+        // Stats globally across all maps
+        for (const [key, data] of Object.entries(this.regionData)) {
+          const values = [];
+          for (const v of data) {
+            values.push(...Object.values(v.values));
+          }
           if (values.length) {
             stats[key] = { min: Math.min(...values), max: Math.max(...values) };
           }
@@ -264,8 +282,43 @@ export default {
       }
       return stats;
     },
+    gridStats() {
+      const result = {};
+      // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
+      // The difference is 6 so we subtract the difference to make the lowest level 0.
+      const Z_DIFF = 6;
+      if (!this.gridLayerStats.length) return result;
+      if (this.baselineSpec) {
+        // Do nothing. computeGridRelativeStats method capture this case.
+      } else if (this.relativeTo === this.outputSelection) {
+        // Stats for the baseline map
+        const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection)?.stats;
+        (stats || []).forEach(stat => {
+          result[stat.zoom - Z_DIFF] = { min: stat.min, max: stat.max };
+        });
+      } else {
+        // Stats globally across all maps
+        for (const item of this.gridLayerStats) {
+          for (const stat of item.stats) {
+            const zoom = stat.zoom - Z_DIFF;
+            if (result[zoom]) {
+              result[zoom] = { min: Math.min(result[zoom].min, stat.min), max: Math.max(result[zoom].max, stat.max) };
+            } else {
+              result[zoom] = { min: stat.min, max: stat.max };
+            }
+          }
+        }
+      }
+      return result;
+    },
+    gridStatsForCurZoom() {
+      const zoomLevels = Object.keys(this.gridStats).map(Number);
+      const maxZoom = Math.max(...zoomLevels);
+      const zoom = Math.min(maxZoom, this.curZoom);
+      return this.gridStats[zoom];
+    },
     extent() {
-      const extent = this.stats[this.adminLevel] || this.gridStats;
+      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom || this.computeGridRelativeStats();
       if (!extent) return { min: 0, max: 1 };
       if (extent.min === extent.max) {
         extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
@@ -337,6 +390,11 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+
+    this.debouncedRefreshGridMap = _.debounce(function() {
+      this.refreshGridMap();
+    }, 50);
+
     // Init layer objects
     this.refreshLayers();
   },
@@ -398,8 +456,15 @@ export default {
     onUpdateSource() {
       setTimeout(() => {
         // Hack: give enough time to map to render features from updated source
-        this.reevaluateColourScale();
+        this.refreshGridMap();
       }, 1000);
+    },
+    updateCurrentZoomLevel() {
+      if (!this.map) return;
+      const zoom = Math.floor(this.map.getZoom());
+      if (this.curZoom !== zoom) {
+        this.curZoom = zoom;
+      }
     },
     onMapLoad(event) {
       const map = event.map;
@@ -409,10 +474,12 @@ export default {
       // disable tilt and rotation of the map since theses are not working nicely with bound syncing
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
+      this.updateCurrentZoomLevel();
       this.$emit('on-map-load');
     },
     onMapMove(event) {
-      this.throttledReevaluateColourScale();
+      this.updateCurrentZoomLevel();
+      this.debouncedRefreshGridMap();
       this.syncBounds(event);
     },
     syncBounds(event) {
@@ -503,34 +570,28 @@ export default {
       if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
     },
-    throttledReevaluateColourScale: _.throttle(
-      function() { this.reevaluateColourScale(); },
-      100,
-      { trailing: true, leading: true }
-    ),
-    // Dynamically calculate min max stats for grid map
-    // TODO: Use precomputed stats for each zoom level (espcially for 'sum') when backend api is ready since this is performance intensive
-    reevaluateColourScale() {
+    refreshGridMap() {
       if (!this.map) return;
       // Exit early if the layer hasn't finished loading
       if (!isLayerLoaded(this.map, this.baseLayerId)) return;
       // This only applies to grid map
       if (!this.isGridMap) return;
+      this.refreshColorLayer();
+      this.updateLayerFilter();
+    },
+    computeGridRelativeStats() {
+      if (!this.map || !this.baselineSpec) return;
+      // Stats relative to the baseline. (min/max of the difference relative to the baseline)
+      const baselineProp = this.baselineSpec.id;
       const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });
       const values = [];
       for (const feature of features) {
-        const value = feature.properties[this.valueProp];
-        if (value !== undefined) values.push(value);
+        for (const item of this.outputSourceSpecs) {
+          const diff = feature.properties[item.id] - feature.properties[baselineProp];
+          if (_.isNumber(diff)) values.push(diff);
+        }
       }
-      if (values.length === 0) {
-        this.gridStats = { min: 0, max: 1 };
-      } else {
-        const min = Math.min(...values);
-        const max = Math.max(...values);
-        this.gridStats = { min, max };
-      }
-      this.refreshColorLayer();
-      this.updateLayerFilter();
+      return { min: Math.min(...values), max: Math.max(...values) };
     }
   }
 };

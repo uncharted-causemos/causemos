@@ -189,6 +189,7 @@
                 >
                   {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
                 </span>
+
                 <data-analysis-map
                   class="card-map"
                   :style="{ borderColor: colorFromIndex(indx) }"
@@ -200,8 +201,8 @@
                   :filters="mapFilters"
                   :map-bounds="mapBounds"
                   :region-data="regionalData"
-                  :selectedBaseLayer="selectedBaseLayer"
-                  :selectedDataLayer="selectedDataLayer"
+                  :grid-layer-stats="gridLayerStats"
+                  :selected-base-layer="selectedBaseLayer"
                   @sync-bounds="onSyncMapBounds"
                   @on-map-load="onMapLoad"
                   @slide-handle-change="updateMapFilters"
@@ -234,13 +235,14 @@ import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
+import { getOutputStats } from '@/services/runoutput-service';
 import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
-import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations, OutputStatsResult } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
@@ -346,7 +348,8 @@ export default defineComponent({
       selectedScenarioIds,
       allModelRunData,
       metadata,
-      breakdownOption
+      breakdownOption,
+      outputSourceSpecs
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -377,6 +380,19 @@ export default defineComponent({
       return metadata.value !== null && isModel(metadata.value);
     });
 
+    const gridLayerStats = ref<OutputStatsResult[]>([]);
+
+    watchEffect(async onInvalidate => {
+      if (outputSourceSpecs.value.length === 0) return;
+      let isCancelled = false;
+      onInvalidate(() => {
+        isCancelled = true;
+      });
+      const result = await getOutputStats(outputSourceSpecs.value);
+      if (isCancelled) return;
+      gridLayerStats.value = result;
+    });
+
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
@@ -402,6 +418,7 @@ export default defineComponent({
     };
 
     return {
+      gridLayerStats,
       updateMapFilters,
       mapFilters,
       colorFromIndex,

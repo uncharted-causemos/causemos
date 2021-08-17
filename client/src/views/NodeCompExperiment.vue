@@ -145,6 +145,7 @@ import MapDropdown from '@/components/data/map-dropdown.vue';
 
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
@@ -324,15 +325,20 @@ export default defineComponent({
     );
 
     const {
-      outputSpecs,
-      regionalData
-    } = useRegionalData(
+      outputSpecs
+    } = useOutputSpecs(
       selectedModelId,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints,
+      selectedTimeseriesPoints
+    );
+
+    const {
+      regionalData
+    } = useRegionalData(
+      outputSpecs,
       breakdownOption,
       datacubeHierarchy
     );
