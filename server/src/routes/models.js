@@ -135,6 +135,9 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     throw new Error(JSON.stringify(result.items[0]));
   }
 
+  // 4. Invalidate existing scenarios
+  await scenarioService.invalidateByModel(modelId);
+
   res.status(200).send({ updateToken: editTime });
 }));
 
@@ -591,6 +594,8 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     }
   }
 
+  await scenarioService.invalidateByModel(modelId);
+
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
   res.status(200).send({ updateToken: moment().valueOf() });
 
@@ -638,6 +643,8 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
     Logger.warn(JSON.stringify(r));
     throw new Error('Failed to update edge-parameter');
   }
+
+  await scenarioService.invalidateByModel(modelId);
 
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
   res.status(200).send({ updateToken: moment().valueOf() });
