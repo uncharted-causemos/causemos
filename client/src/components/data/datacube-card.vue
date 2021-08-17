@@ -85,8 +85,7 @@
               <!-- make 'Data' tab disabled when no scenario selection -->
               <button class="btn btn-default"
                       :class="{'btn-primary':!isDescriptionView}"
-                      :disabled="selectedScenarioIds.length === 0"
-                      @click="$emit('update-desc-view', false)">
+                      @click="clickData">
                 Data
               </button>
             </div>
@@ -439,14 +438,18 @@ export default defineComponent({
   },
   computed: {
     initialSelectionData(): Array<string> {
-      const firstDataIfExists = this.allModelRunData.map(run => run.id).slice(0, 1);
-      return this.isDescriptionView ? firstDataIfExists : this.selectedScenarioIds;
+      return this.isDescriptionView ? [] : this.selectedScenarioIds;
     },
     mapSelectedLayer(): number {
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
+    clickData() {
+      const newIds = this.allModelRunData.map(run => run.id).slice(0, 1);
+      this.$emit('set-selected-scenario-ids', newIds);
+      this.$emit('update-desc-view', false);
+    },
     onMapLoad() {
       this.$emit('on-map-load');
     },
