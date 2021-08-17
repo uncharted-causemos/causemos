@@ -10,14 +10,18 @@ const client = new Client({ node: `${process.env.TD_DATA_URL}` });
  */
 const getBulkErrors = (body, num = 2) => {
   const errors = [];
+  let counter = 0;
   for (let i = 0; i < body.items.length; i++) {
-    if (i > num - 1) break;
-    const item = body.items[0];
+    const item = body.items[i];
     const operation = Object.keys(item)[0];
-    errors.push(JSON.stringify({
-      status: item[operation].status,
-      ...item[operation].error
-    }));
+    if (item[operation].error) {
+      errors.push(JSON.stringify({
+        status: item[operation].status,
+        ...item[operation].error
+      }));
+      counter++;
+      if (counter >= num) break;
+    }
   }
   return errors;
 };
