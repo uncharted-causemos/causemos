@@ -2,31 +2,27 @@
   <full-screen-modal-header
     icon="angle-left"
     :nav-back-label="navBackLabel"
-    @close="onClose"
+    @close="onBack"
   >
     <button
-      v-tooltip.top-center="'Add to analysis'"
+      v-tooltip.top-center="selectLabel"
       type="button"
       class="btn btn-primary btn-call-for-action"
       :disabled="selectedDatacubes.length < 1"
-      @click="addToAnalysis"
+      @click="onSelection"
     >
       <i class="fa fa-fw fa-plus-circle" />
-      Add to Analysis
+      {{selectLabel}}
     </button>
     <span>
       <span class="selected">{{ selectedDatacubes.length }} selected</span>
-      of {{ searchResultsCount }} data cubes (select 1)
+      of {{ searchResultsCount }} data cubes
     </span>
   </full-screen-modal-header>
 </template>
 
 <script>
-import { mapGetters, mapActions } from 'vuex';
-
-import { deleteAnalysis } from '@/services/analysis-service';
-import { ANALYSIS } from '@/utils/messages-util';
-
+import { mapGetters } from 'vuex';
 import FullScreenModalHeader from '../widgets/full-screen-modal-header';
 
 export default {
@@ -35,12 +31,20 @@ export default {
     FullScreenModalHeader
   },
   props: {
+    selectLabel: {
+      type: String,
+      default: 'Add'
+    },
     navBackLabel: {
       type: String,
       default: ''
+    },
+    showNamingModal: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['close'],
+  emits: ['close', 'selection'],
   computed: {
     ...mapGetters({
       analysisId: 'dataAnalysis/analysisId',
@@ -50,41 +54,11 @@ export default {
     })
   },
   methods: {
-    ...mapActions({
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew'
-    }),
-    async addToAnalysis() {
-      await this.updateAnalysisItemsNew({ currentAnalysisId: this.analysisId, datacubeIDs: this.selectedDatacubes });
-      this.$router.push({
-        name: 'data',
-        params: {
-          collection: this.project,
-          analysisID: this.analysisId
-        }
-      });
+    onSelection() {
+      this.$emit('selection');
     },
-
-    async onClose() {
-      this.clear();
-      await new Promise((resolve) => {
-        setTimeout(() => { resolve(); }, 500);
-      });
-      this.$router.push({
-        name: 'dataStart',
-        params: {
-          project: this.project
-        }
-      });
+    onBack() {
       this.$emit('close');
-    },
-
-    async clear() {
-      try {
-        await deleteAnalysis(this.analysisId);
-        this.toaster(ANALYSIS.SUCCESSFUL_DELETION_UNINITIALIZED, 'success', false);
-      } catch (e) {
-        this.toaster(ANALYSIS.ERRONEOUS_DELETION_UNINITIALIZED, 'error', true);
-      }
     }
   }
 };

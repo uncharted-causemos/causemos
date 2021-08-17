@@ -4,24 +4,25 @@ import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import dateFormatter from '@/formatters/date-formatter';
-import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
+import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
+import { TemporalAggregationLevel } from '@/types/Enums';
+import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
 const PADDING_TOP = 10;
 const PADDING_RIGHT = 40;
 
-const X_AXIS_TICK_COUNT = 4;
-const Y_AXIS_TICK_COUNT = 2;
-const X_AXIS_TICK_SIZE_PX = 2;
 // The type of value can't be more specific than `any`
 //  because under the hood d3.tickFormat requires d3.NumberType.
 // It correctly converts, but its TypeScript definitions don't
 //  seem to reflect that.
-// FIXME: we need to decide whether we want our timestamps to be stored in millis or seconds
-//  and be consistent.
-const DATE_FORMATTER = (value: any) => dateFormatter(value * 1000, 'MMM DD, YYYY');
+
+const DATE_FORMATTER = (value: any) =>
+  dateFormatter(value, 'MMM DD, YYYY');
+const BY_YEAR_DATE_FORMATTER = (value: any) =>
+  dateFormatter(new Date(0, value), 'MMM');
 
 const DEFAULT_LINE_COLOR = '#000';
 const LABEL_BACKGROUND_COLOR = 'white';
@@ -51,10 +52,12 @@ export default function(
   width: number,
   height: number,
   selectedTimestamp: number,
-  onTimestampSelected: (timestamp: number) => void
+  onTimestampSelected: (timestamp: number) => void,
+  breakdownOption: string | null,
+  selectedTimestampRange: {start: number; end: number} | null
 ) {
   const groupElement = selection.append('g');
-  const [xExtent, yExtent] = calculateExtents(timeseriesList);
+  const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('Unable to derive extent from data', timeseriesList);
     // This function must always return a function to call when
@@ -64,10 +67,37 @@ export default function(
   }
 
   const valueFormatter = chartValueFormatter(...yExtent);
-  const [xScale, yScale] = calculateScales(width, height, xExtent, yExtent);
-  renderAxes(groupElement, xScale, yScale, valueFormatter, width, height);
-  timeseriesList.forEach(timeSeries => {
-    renderLine(groupElement, timeSeries, xScale, yScale);
+  const [xScale, yScale] = calculateScales(
+    width,
+    height,
+    xExtent,
+    yExtent,
+    breakdownOption
+  );
+  const timestampFormatter =
+    breakdownOption === TemporalAggregationLevel.Year
+      ? BY_YEAR_DATE_FORMATTER
+      : DATE_FORMATTER;
+  renderAxes(
+    groupElement,
+    xScale,
+    yScale,
+    valueFormatter,
+    width,
+    height,
+    timestampFormatter,
+    Y_AXIS_WIDTH,
+    PADDING_RIGHT,
+    X_AXIS_HEIGHT
+  );
+  timeseriesList.forEach(timeseries => {
+    if (timeseries.points.length > 1) { // draw a line for time series longer than 1
+      renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+      // also, draw dots for all the timeseries points
+      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    } else { // draw a spot for timeseries that are only 1 long
+      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    }
   });
 
   generateSelectableTimestamps(
@@ -93,7 +123,9 @@ export default function(
     timeseriesList,
     xScale,
     yScale,
-    valueFormatter
+    valueFormatter,
+    timestampFormatter,
+    selectedTimestampRange
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -104,14 +136,26 @@ export default function(
       timeseriesList,
       xScale,
       yScale,
-      valueFormatter
+      valueFormatter,
+      timestampFormatter,
+      selectedTimestampRange
     );
   };
 }
 
-function calculateExtents(timeseriesList: Timeseries[]) {
+function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {start: number; end: number} | null) {
   const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
-  const xExtent = d3.extent(allPoints.map(point => point.timestamp));
+  const allTimestampDataPoints = allPoints.map(point => point.timestamp);
+  let xExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
+  if (selectedTimestampRange !== null) {
+    // the user requested to render the timeseries chart within a specific range
+    // so we should respect that and enlarge the extent to include the selectedTimestampRange, as needed
+    //  this would enable the zooming effect
+    xExtent = [selectedTimestampRange.start, selectedTimestampRange.end];
+  } else {
+    xExtent = d3.extent(allTimestampDataPoints);
+  }
+
   const yExtent = d3.extent(allPoints.map(point => point.value));
   return [xExtent, yExtent];
 }
@@ -120,75 +164,22 @@ function calculateScales(
   width: number,
   height: number,
   xExtent: [number, number],
-  yExtent: [number, number]
+  yExtent: [number, number],
+  breakdownOption: string | null
 ) {
+  const xScaleDomain =
+    breakdownOption === TemporalAggregationLevel.Year
+      ? [0, 11] // January === 0, December === 11
+      : xExtent;
   const xScale = d3
     .scaleLinear()
-    .domain(xExtent)
+    .domain(xScaleDomain)
     .range([Y_AXIS_WIDTH, width - PADDING_RIGHT]);
   const yScale = d3
     .scaleLinear()
     .domain(yExtent)
     .range([height - X_AXIS_HEIGHT, PADDING_TOP]);
   return [xScale, yScale];
-}
-
-function renderLine(
-  parentGroupElement: D3GElementSelection,
-  timeseries: Timeseries,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>
-) {
-  // Draw a line connecting all points in this segment
-  const line = d3
-    .line<TimeseriesPoint>()
-    .x(d => xScale(d.timestamp))
-    .y(d => yScale(d.value));
-  const groupElement = parentGroupElement.append('g');
-  groupElement
-    .append('path')
-    .classed('segment-line', true)
-    .attr('d', () => line(timeseries.points))
-    .style('fill', 'none')
-    .style('stroke', timeseries.color || DEFAULT_LINE_COLOR);
-}
-
-function renderAxes(
-  selection: D3GElementSelection,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  // The type of value can't be more specific than `any`
-  //  because under the hood d3.tickFormat requires d3.NumberType.
-  // It correctly converts, but its TypeScript definitions don't
-  //  seem to reflect that.
-  valueFormatter: (value: any) => string,
-  width: number,
-  height: number
-) {
-  const xAxis = d3
-    .axisBottom(xScale)
-    .tickSize(X_AXIS_TICK_SIZE_PX)
-    .tickFormat(DATE_FORMATTER)
-    .ticks(X_AXIS_TICK_COUNT);
-  const yAxis = d3
-    .axisLeft(yScale)
-    .tickSize(width - Y_AXIS_WIDTH - PADDING_RIGHT)
-    .tickFormat(valueFormatter)
-    .ticks(Y_AXIS_TICK_COUNT);
-  selection
-    .append('g')
-    .classed('xAxis', true)
-    .style('pointer-events', 'none')
-    .call(xAxis)
-    .style('font-size', '10px')
-    .attr('transform', translate(0, height - X_AXIS_HEIGHT));
-  selection
-    .append('g')
-    .classed('yAxis', true)
-    .style('pointer-events', 'none')
-    .call(yAxis)
-    .style('font-size', '10px')
-    .attr('transform', translate(width - PADDING_RIGHT, 0));
 }
 
 function generateSelectableTimestamps(
@@ -204,13 +195,14 @@ function generateSelectableTimestamps(
     .flat()
     .map(point => point.timestamp);
   const uniqueTimestamps = _.uniq(allTimestamps);
+  // FIXME: We assume that all timestamps are evenly spaced when determining
+  //  how wide the hover/click hitbox should be. This may not always be the case.
+
+  // Arbitrarily choose how wide the hitbox should be if there's only one unique
+  //  timestamp
   const hitboxWidth =
     uniqueTimestamps.length > 1
-      // FIXME: We assume that all timestamps are evenly spaced when determining
-      //  how wide the hover/click hitbox should be. This may not always be the case.
       ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
-      // Arbitrarily choose how wide the hitbox should be if there's only one unique
-      //  timestamp
       : SELECTED_TIMESTAMP_WIDTH * 5;
   uniqueTimestamps.forEach(timestamp => {
     const timestampMarker = timestampGroup
@@ -237,7 +229,8 @@ function generateSelectableTimestamps(
       .style('cursor', 'pointer')
       .on('mouseenter', () => timestampMarker.attr('visibility', 'visible'))
       .on('mouseleave', () => timestampMarker.attr('visibility', 'hidden'))
-      .on('mousedown', () => onTimestampSelected(timestamp));
+      .on('mousedown', () => onTimestampSelected(timestamp))
+    ;
   });
 }
 
@@ -326,7 +319,10 @@ function generateSelectedTimestampElements(
       .attr('y2', 0);
     const label = generateLabel(gElement, color, '[value]');
     const height = label.node()?.getBBox().height ?? 0;
-    label.attr('transform', translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2));
+    label.attr(
+      'transform',
+      translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2)
+    );
     label.select('text').style('text-anchor', 'start');
     label.select('rect').attr('transform', translate(0, 0));
     return gElement;
@@ -340,14 +336,29 @@ function updateTimestampElements(
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
-  valueFormatter: (value: any) => string
+  valueFormatter: (value: any) => string,
+  timestampFormatter: (timestamp: number) => string,
+  selectedTimestampRange: {start: number; end: number} | null
 ) {
   if (timestamp === null) {
     // Hide everything
     selectedTimestampGroup.attr('visibility', 'hidden');
-    valueGroups.forEach(valueGroup => valueGroup.attr('visibility, hidden'));
+    valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
     return;
   }
+  // check if the selectedTimestamp is out of the timeseries range
+  const [xExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
+  if (xExtent[0] === undefined || xExtent[1] === undefined) {
+    console.error('Unable to derive extent from data', timeseriesList);
+  } else {
+    if (timestamp < xExtent[0] || timestamp > xExtent[1]) {
+      // Hide everything
+      selectedTimestampGroup.attr('visibility', 'hidden');
+      valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
+      return;
+    }
+  }
+
   // Move selectedTimestamp elements horizontally to the right position
   const selectedXPosition = xScale(timestamp);
   selectedTimestampGroup
@@ -356,7 +367,7 @@ function updateTimestampElements(
   // Display the newly selected timestamp
   const labelText = selectedTimestampGroup
     .select<SVGTextElement>('text')
-    .text(DATE_FORMATTER(timestamp));
+    .text(timestampFormatter(timestamp));
   // Resize background to match
   const { labelWidth } = calculateLabelDimensions(labelText);
   selectedTimestampGroup

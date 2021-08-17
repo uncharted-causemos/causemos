@@ -2,6 +2,14 @@
   <div class="action-bar-container">
     <ul class="unstyled-list">
       <li class="nav-item">
+        <button
+          v-tooltip.top-center="'reset CAG positioning'"
+          type="button"
+          class="btn btn-primary"
+          @click="resetCAG"
+        ><i class="fa fa-fw fa-undo" />Reset Layout</button>
+      </li>
+      <li class="nav-item">
         Scenario:
         <button
           v-if="isInDraftState"
@@ -47,6 +55,14 @@
           <i class="fa fa-fw fa-refresh" />
         </button>
       </li>
+      <li class="nav-item">
+        <button
+          class="btn btn-primary"
+          :style="{background: isModelDirty? '#2A5': '#222'}"
+          @click="runModel">
+          Run
+        </button>
+      </li>
     </ul>
 
     <save-scenario-modal
@@ -60,8 +76,6 @@
 </template>
 
 <script>
-
-import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
 import SaveScenarioModal from '../modals/modal-save-scenario';
@@ -74,21 +88,29 @@ export default {
     DropdownControl
   },
   props: {
+    modelSummary: {
+      type: Object,
+      required: true
+    },
     scenarios: {
       type: Array,
       default: () => []
     }
   },
+  emits: [
+    'run-model', 'revert-draft-changes', 'overwrite-scenario', 'save-new-scenario', 'reset-cag'
+  ],
   data: () => ({
     isModalOpen: false,
     isScendarioDropdownOpen: false
   }),
   computed: {
     ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId'
+      selectedScenarioId: 'model/selectedScenarioId',
+      draftScenarioDirty: 'model/draftScenarioDirty'
     }),
     isInDraftState() {
-      return _.isNil(this.selectedScenarioId);
+      return this.selectedScenarioId === 'draft';
     },
     selectedScenario() {
       if (this.isInDraftState) return null;
@@ -103,12 +125,18 @@ export default {
       return {
         name: '[No Scenarios Exist]'
       };
+    },
+    isModelDirty() {
+      return this.modelSummary.status === 0 || this.draftScenarioDirty === true;
     }
   },
   methods: {
     ...mapActions({
       setSelectedScenarioId: 'model/setSelectedScenarioId'
     }),
+    runModel() {
+      this.$emit('run-model');
+    },
     revertDraftChanges() {
       this.$emit('revert-draft-changes');
     },
@@ -117,6 +145,9 @@ export default {
     },
     closeModal() {
       this.isModalOpen = false;
+    },
+    resetCAG() {
+      this.$emit('reset-cag');
     },
     toggleScenarioDropdownOpen() {
       this.isScendarioDropdownOpen = !this.isScendarioDropdownOpen;

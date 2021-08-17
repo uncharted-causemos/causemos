@@ -22,21 +22,24 @@
           rows="2"
           :class="{ 'disabled': !attr.tweakable }"
         />
-        <select name="cars" id="cars"
+        <select name="outputs" id="outputs"
           v-if="attr.type === 'select'"
+          @change="onOutputSelectionChange($event)"
         >
           <option
-            v-for="selectValue in attr.value"
-            :key="selectValue" >{{selectValue}}</option>
+            v-for="(selectValue, indx) in attr.value"
+            :key="selectValue"
+            :selected="indx === currentOutputIndex"
+          >{{selectValue}}</option>
         </select>
     </div>
   </div>
 </template>
 
 <script lang="ts">
-import API from '@/api/api';
 import { Model } from '@/types/Datacube';
-import { defineComponent, ref, watch } from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { mapActions, useStore } from 'vuex';
 
 interface ModelAttribute {
   name: string;
@@ -48,65 +51,65 @@ interface ModelAttribute {
 export default defineComponent({
   name: 'DatacubeModelHeader',
   props: {
-    selectedModelId: {
-      type: String,
-      required: true
+    metadata: {
+      type: Object as PropType<Model | null>,
+      default: null
     }
   },
   setup(props) {
-    const modelAttributes = ref<ModelAttribute[]>([]);
+    const { metadata } = toRefs(props);
 
-    // FIXME: to really support proper data handling, do not fetch data locally at every component
-    //         instead, fetch at parent and pass to children as needed, so updating one will update the others
-    async function fetchModelInfo() {
-      if (props.selectedModelId === null) return;
-
-      const result = await API.get(`/maas/new-datacubes/${props.selectedModelId}`, {
-        params: {
-        }
-      });
-      const modelMetadata: Model = result.data;
-
+    const modelAttributes = computed<ModelAttribute[]>(() => {
+      const attributes: ModelAttribute[] = [];
+      if (metadata.value === null) return attributes;
       // fill in the model attribute
       // TODO: how spacing and label names are used
-      modelAttributes.value.push({
+      attributes.push({
         name: 'Model family',
-        value: modelMetadata.name,
+        value: metadata.value.name,
         tweakable: false,
         type: 'text'
       });
-      /*
-      modelAttributes.value.push({
-        name: 'Model instance',
-        value: modelMetadata.version,
-        tweakable: false,
-        type: 'text'
-      });
-      */
-      modelAttributes.value.push({
+      const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+      attributes.push({
         name: 'Default output variable',
-        value: modelMetadata.outputs.map(o => o.display_name),
+        value: outputs.map(o => o.display_name),
         tweakable: true,
         type: 'select'
       });
-      modelAttributes.value.push({
+      attributes.push({
         name: 'Model description',
-        value: modelMetadata.description,
+        value: metadata.value.description,
         tweakable: true,
         type: 'textarea'
       });
-    }
+      return attributes;
+    });
 
-    watch(() => props.selectedModelId, fetchModelInfo, { immediate: true });
+    const store = useStore();
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     return {
-      modelAttributes
+      modelAttributes,
+      currentOutputIndex
     };
   },
   methods: {
+    ...mapActions({
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
+    }),
     updateAttributeValue(attr: ModelAttribute) {
       console.log(attr.value);
       // TODO: update the local data or the back end to ensure other components are synced up
+    },
+    onOutputSelectionChange(event: any) {
+      const selectedOutputIndex = event.target.selectedIndex;
+      // update the store so that other components can sync
+      const defaultFeature = {
+        [this.metadata?.id ?? '']: selectedOutputIndex
+      };
+      this.setDatacubeCurrentOutputsMap(defaultFeature);
     }
   }
 });

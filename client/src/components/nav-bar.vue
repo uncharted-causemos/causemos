@@ -14,80 +14,73 @@
               >
             </a>
           </li>
-          <li class="nav-item nav-item--label">
-            <span>{{ projectMetadata.name || project }}</span>
-            <span v-if="currentView === 'home'">
-              All Projects
-            </span>
+          <li v-if="currentView === 'home'" class="nav-item nav-item--label">
+            All Projects
           </li>
-          <li
-            v-if="project !== null"
-            class="nav-item"
-            :class="{underlined: currentView === 'overview'}">
-            <router-link
-              class="nav-link"
-              :to="{name:'overview', params:{project: project}}"
-            ><i class="fa fa-search" />
-              Overview</router-link>
-          </li>
-          <li
-            v-if="project!== null"
-            class="nav-item"
-            :class="{underlined: currentView === 'dataStart' || currentView === 'data'}">
-            <router-link
-              class="nav-link"
-              :to="{name:'dataStart', params:{project: project}}"
-            ><i class="fa fa-table" />
-              Data</router-link>
-          </li>
-          <li
-            v-if="project!== null"
-            class="nav-item"
-            :class="{underlined: currentView === 'qualitative' || currentView === 'qualitativeStart'}">
-            <router-link
-              class="nav-link"
-              :to="{name:'qualitativeStart', params:{project: project} }"
-            ><i class="fa fa-book" />
-              Knowledge</router-link>
-          </li>
-          <li
-            v-if="project!== null"
-            class="nav-item"
-            :class="{underlined: currentView === 'quantitativeStart' || currentView === 'quantitative'}">
-            <router-link
-              class="nav-link"
-              :to="{name: 'quantitativeStart', params:{project}}"
-            > <i class="fa fa-connectdevelop" />
-              Models</router-link>
-          </li>
+          <template v-if="project !== null && projectMetadata !== null && projectMetadata.name !== ''">
+            <li
+              v-if="projectType !== ProjectType.Analysis"
+              class="nav-item"
+              :class="{underlined: currentView === 'domainDatacubeOverview'}">
+              <router-link
+                class="nav-link"
+                :to="{name:'domainDatacubeOverview', params:{project: project}}"
+              >
+                <i class="fa fa-fw fa-connectdevelop" />
+                {{ projectMetadata.name }}
+              </router-link>
+            </li>
+            <li
+              v-if="projectType === ProjectType.Analysis"
+              class="nav-item"
+              :class="{underlined: currentView === 'overview'}">
+              <router-link
+                class="nav-link"
+                :to="{name:'overview', params:{project: project}}"
+              >
+                <i class="fa fa-fw fa-clone" />
+                {{ projectMetadata.name }}
+              </router-link>
+            </li>
+            <li
+              v-if="projectType === ProjectType.Analysis && currentView !== 'overview'"
+              class="nav-item"
+              :class="{'nav-item--label': currentView !== 'nodeDrilldown', underlined: currentView === 'dataComparative' || currentView === 'qualitative' || currentView === 'quantitative'}">
+              <router-link
+                v-if="currentView === 'nodeDrilldown'"
+                class="nav-link"
+                :to="{name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}"
+              >
+                {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+              </router-link>
+              <template v-else>
+                <i v-if="currentView === 'quantitative'" class="fa fa-fw fa-connectdevelop" />
+                <i v-if="currentView === 'qualitative'" class="fa fa-fw fa-book" />
+                <i v-if="currentView === 'dataComparative'" class="fa fa-fw fa-line-chart" />
+                {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+              </template>
+            </li>
+            <li
+              v-if="projectType === ProjectType.Analysis && currentView === 'nodeDrilldown'"
+              class="nav-item nav-item--label"
+              :class="{underlined: currentView === 'nodeDrilldown'}">
+              Node Drilldown
+            </li>
+          </template>
         </ul>
       </div>
 
       <!-- Help button -->
       <ul
         class="nav navbar-nav navbar-right help-holder">
-        <!-- @REVIEW: link to navigate to the model publishing view (this view must be attached to a project for the insight panel to work) -->
-        <li
-            v-if="project!== null"
-            class="nav-item"
-            :class="{underlined: currentView === 'modelPublishingExperiment'}">
-            <router-link
-              class="nav-link"
-              :to="{name: 'modelPublishingExperiment', params:{project}}"
-            > <i class="fa fa-cubes" />
-              Publish Model</router-link>
-        </li>
         <li class="nav-item nav-item--help">
           <a
-            href="https://docs.google.com/presentation/d/1DvixJx4bTkaaIC1mvN26Mf-ykfPzS1NWEmOMMyDWI3E/edit?usp=sharing"
+            href="https://docs.google.com/presentation/d/1WnIXxAd639IFMOKEAu3E3C1SUgfzsCO6oLLbKOvAZkI/edit#slide=id.g8c51928f8f_0_200"
             target="_blank"
           > <i class="fa fa-question" />
           </a>
         </li>
       </ul>
-
-      <!-- Insighting -->
-      <insight-controls v-if="currentView === 'data' || currentView === 'qualitative' || currentView === 'quantitative' || currentView === 'modelPublishingExperiment'" />
     </div>
   </nav>
 </template>
@@ -96,20 +89,24 @@
 import { mapGetters } from 'vuex';
 import { defineComponent } from 'vue';
 
-import InsightControls from '@/components/insight-manager/insight-controls.vue';
+import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'NavBar',
   components: {
-    InsightControls
   },
+  data: () => ({
+    ProjectType
+  }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentView: 'app/currentView',
+      currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
       selectedModel: 'model/selectedModel',
-      lastQuery: 'query/lastQuery'
+      lastQuery: 'query/lastQuery',
+      projectType: 'app/projectType'
     })
   }
 });

@@ -6,6 +6,7 @@
         :cag-name="cagNameToDisplay"
         :view-after-deletion="'qualitativeStart'"
         @rename="openRenameModal"
+        @duplicate="openDuplicateModal"
       />
 
       <!-- Actions -->
@@ -32,6 +33,14 @@
           class="btn btn-primary"
           @click="importCAG"
         ><i class="fa fa-fw fa-connectdevelop" />Import CAG</button>
+      </li>
+      <li class="nav-item">
+        <button
+          v-tooltip.top-center="'reset CAG positioning'"
+          type="button"
+          class="btn btn-primary"
+          @click="resetCAG"
+        ><i class="fa fa-fw fa-undo" />Reset Layout</button>
       </li>
 
     </ul>
@@ -72,22 +81,34 @@
       @confirm="onRenameModalConfirm"
       @cancel="closeRenameModal"
     />
+    <duplicate-modal
+      v-if="showDuplicateModal"
+      :current-name="cagNameToDisplay"
+      :id-to-duplicate="currentCAG"
+      @success="onDuplicateSuccess"
+      @fail="closeDuplicateModal"
+      @cancel="closeDuplicateModal"
+    />
   </nav>
 </template>
 
 <script>
 import _ from 'lodash';
-import { mapGetters } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 
 import modelService from '@/services/model-service';
+import DuplicateModal from '@/components/action-bar/duplicate-modal';
 import RenameModal from '@/components/action-bar/rename-modal';
 import ModelOptions from '@/components/action-bar/model-options';
 import TextAreaCard from '../cards/text-area-card';
 import { CAG, EXPORT_MESSAGES } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
+import { ProjectType } from '@/types/Enums';
+
 export default {
   name: 'ActionBar',
   components: {
+    DuplicateModal,
     RenameModal,
     ModelOptions,
     TextAreaCard,
@@ -104,9 +125,10 @@ export default {
     }
   },
   emits: [
-    'add-concept', 'import-cag'
+    'add-concept', 'import-cag', 'reset-cag'
   ],
   data: () => ({
+    showDuplicateModal: false,
     showRenameModal: false,
     newCagName: '',
     isRunningModel: false,
@@ -132,6 +154,10 @@ export default {
     this.savedComment = _.get(this.modelSummary, 'description', null);
   },
   methods: {
+    ...mapActions({
+      enableOverlay: 'app/enableOverlay',
+      disableOverlay: 'app/disableOverlay'
+    }),
     openKBExplorer() {
       this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG } });
     },
@@ -141,6 +167,9 @@ export default {
     importCAG() {
       this.$emit('import-cag');
     },
+    resetCAG() {
+      this.$emit('reset-cag');
+    },
     onRenameModalConfirm(newCagNameInput) {
       // Optimistically set new name
       this.newCagName = newCagNameInput;
@@ -148,7 +177,8 @@ export default {
       this.closeRenameModal();
     },
     async saveNewCagName() {
-      modelService.updateModelMetadata(this.currentCAG, { name: this.newCagName }).then(() => {
+      const targetCagId = this.duplicateCagId ? this.duplicateCagId : this.currentCAG;
+      modelService.updateModelMetadata(targetCagId, { name: this.newCagName }).then(() => {
         this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
       }).catch(() => {
         this.newCagName = '';
@@ -161,6 +191,24 @@ export default {
     closeRenameModal() {
       this.showRenameModal = false;
     },
+    onDuplicateSuccess(name, id) {
+      this.newCagName = name;
+      this.closeDuplicateModal();
+      this.$router.push({
+        name: 'qualitative',
+        params: {
+          project: this.project,
+          currentCAG: id,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
+    openDuplicateModal() {
+      this.showDuplicateModal = true;
+    },
+    closeDuplicateModal() {
+      this.showDuplicateModal = false;
+    },
     toggleComments() {
       this.isCommentOpen = !this.isCommentOpen;
     },
@@ -172,6 +220,7 @@ export default {
     },
     async onRunModel() {
       this.isRunningModel = true;
+      this.enableOverlay('Preparing & Initializing CAG nodes');
       // Quantify the model on the back end
       try {
         await modelService.quantifyModelNodes(this.currentCAG);
@@ -180,7 +229,8 @@ export default {
           name: 'quantitative',
           params: {
             project: this.project,
-            currentCAG: this.currentCAG
+            currentCAG: this.currentCAG,
+            projectType: ProjectType.Analysis
           }
         });
       } catch {
@@ -188,6 +238,7 @@ export default {
         return;
       } finally {
         this.isRunningModel = false;
+        this.disableOverlay();
       }
     }
   }

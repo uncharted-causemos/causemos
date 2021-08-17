@@ -1,5 +1,6 @@
 <template>
   <div class="quantitative-view-container">
+    <analytical-questions-and-insights-panel />
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -8,23 +9,22 @@
         :sensitivity-matrix-data="sensitivityMatrixData"
         :sensitivity-analysis-type="sensitivityAnalysisType"
         :scenarios="scenarios"
-        :selected-node="selectedNode"
         :current-engine="currentEngine"
-        @background-click="onBackgroundClick"
-        @show-indicator="showIndicator"
-        @show-constraints="showConstraints"
+        :reset-layout-token='resetLayoutToken'
         @show-model-parameters="showModelParameters"
-        @edit-indicator="editIndicator"
-        @save-indicator-edits="saveIndicatorEdits"
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
-        @refresh="refresh"
+        @refresh-model="refreshModel"
+        @tab-click="tabClick"
       >
         <template #action-bar>
           <action-bar
+            :model-summary="modelSummary"
             :scenarios="scenarios"
+            @reset-cag="resetCAGLayout()"
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
             @save-new-scenario="saveNewScenario"
+            @run-model="runScenario"
           />
         </template>
       </tab-panel>
@@ -61,61 +61,20 @@ import TabPanel from '@/components/quantitative/tab-panel';
 import modelService from '@/services/model-service';
 import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar';
-import EditIndicatorModal from '@/components/indicator/modal-edit-indicator';
-import ModalEditConstraints from '@/components/modals/modal-edit-constraints';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import { getInsightById } from '@/services/insight-service';
 
-const DRAFT_SCENARIO_ID = null; // ID for draft scenario
-
-const isIndicatorChanged = (n, o) => {
-  if (o.indicator_name !== n.indicator_name ||
-    o.initial_value_parameter.func !== n.initial_value_parameter.func ||
-    !_.isEqual(o.indicator_time_series_parameter, n.indicator_time_series_parameter)) {
-    return true;
-  }
-  return false;
-};
-
-// FIXME: Inject step=0 initial value constraints per node, we shouldn't need to do this,
-// engine should handle this quirky case. Sep 2020
-//
-// @param {array} nodeParameters - nodes
-// @param {array} constraints - the current scenario constraints
-const injectStepZero = (nodeParameters, constraints) => {
-  const result = _.cloneDeep(constraints);
-  nodeParameters.forEach(n => {
-    const concept = n.concept;
-    const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
-
-    const current = result.find(c => c.concept === concept);
-    if (!_.isNil(current)) {
-      if (!_.some(current.values, v => v.step === 0)) {
-        current.values.push({ step: 0, value: initialValue });
-      }
-    } else {
-      result.push({
-        concept: concept,
-        values: [{ step: 0, value: initialValue }]
-      });
-    }
-  });
-
-  result.forEach(r => {
-    r.values = _.orderBy(r.values, v => v.step);
-  });
-
-  return result;
-};
-
+const DRAFT_SCENARIO_ID = 'draft';
+const MODEL_MSGS = modelService.MODEL_MSGS;
 
 export default {
   name: 'QuantitativeView',
   components: {
     TabPanel,
     ActionBar,
-    EditIndicatorModal,
-    ModalEditConstraints,
-    ModalEditParameters
+    ModalEditParameters,
+    AnalyticalQuestionsAndInsightsPanel
   },
   data: () => ({
     // States
@@ -124,7 +83,6 @@ export default {
     isModelParametersOpen: false,
 
     // Data for drilldown
-    selectedNode: null,
     selectedStatements: [],
 
     // Core data relating to model and projections
@@ -138,13 +96,16 @@ export default {
 
     // Tracking draft scenario
     previousScenarioId: null,
-    draftScenario: null
+
+    resetLayoutToken: 0
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG',
-      selectedScenarioId: 'model/selectedScenarioId'
+      selectedScenarioId: 'model/selectedScenarioId',
+      draftScenario: 'model/draftScenario',
+      draftScenarioDirty: 'model/draftScenarioDirty'
     }),
     ready() {
       return this.modelSummary && this.modelComponents && this.scenarios;
@@ -154,153 +115,182 @@ export default {
     },
     projectionSteps() {
       return this.modelSummary.parameter.num_steps;
+    },
+    onMatrixTab() {
+      return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
     }
   },
   watch: {
-    selectedScenarioId() {
-      if (_.isNil(this.scenarios)) return;
-      this.fetchSensitivityAnalysisResults();
-      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-      if (scenario && scenario.is_valid === false) {
-        this.recalculateScenario(scenario);
-      }
-    },
     sensitivityAnalysisType() {
       this.fetchSensitivityAnalysisResults();
     },
-    scenarios() {
-      this.fetchSensitivityAnalysisResults();
+    selectedScenarioId() {
+      if (this.onMatrixTab) {
+        this.fetchSensitivityAnalysisResults();
+      }
+    },
+    currentCAG() {
+      this.refresh();
+      // save the scenario-id in the insight store so that it will be part of any saved captured of this view
+      const dataState = {
+        selectedScenarioId: this.selectedScenarioId
+      };
+      this.setDataState(dataState);
+    },
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'data' space
+        if (this.$route.name === 'quantitative' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
+            this.$router.push({
+              query: {
+                insight_id: undefined,
+                activeTab: this.$route.query.activeTab || undefined
+              }
+            });
+          }
+        }
+      },
+      immediate: true
     }
+  },
+  created() {
+    // update insight related state
+    // use contextId to store cag-id
+    this.setContextId([this.currentCAG]);
   },
   mounted() {
     this.refresh();
-  },
-  beforeUnmount() {
-    this.setSelectedScenarioId(null);
   },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
-      setSelectedScenarioId: 'model/setSelectedScenarioId'
+      setSelectedScenarioId: 'model/setSelectedScenarioId',
+      setDraftScenario: 'model/setDraftScenario',
+      updateDraftScenarioConstraints: 'model/updateDraftScenarioConstraints',
+      setDraftScenarioDirty: 'model/setDraftScenarioDirty',
+      setContextId: 'insightPanel/setContextId',
+      setDataState: 'insightPanel/setDataState'
     }),
-    async refresh() {
-      this.enableOverlay();
-
-      // Check model is ready to be used for experiments
-      const errors = await modelService.initializeModel(this.currentCAG);
-      if (errors.length) {
-        this.disableOverlay();
-        this.toaster(errors[0], 'error', true);
-        console.error(errors);
-        return;
+    async updateStateFromInsight(insight_id) {
+      const loadedInsight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedScenarioId) {
+          // this will reload datacube metadata as well as scenario runs
+          this.setSelectedScenarioId(loadedInsight.data_state?.selectedScenarioId);
+        }
       }
-
-      // Fetch core data that will run this view and children components
+    },
+    async refreshModel() {
+      this.enableOverlay('Getting model data');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
       this.modelComponents = await modelService.getComponents(this.currentCAG);
+      this.disableOverlay();
+    },
+    async refresh() {
+      // Basic model data
+      this.enableOverlay('Loading');
+      this.modelSummary = await modelService.getSummary(this.currentCAG);
+
       let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
-      // Create a base scenario if none existed
-      if (scenarios.length === 0) {
-        let experimentId = 0;
-        let result = null;
-        try {
-          experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, injectStepZero(this.modelComponents.nodes, []));
-          result = await modelService.getExperimentResult(this.currentCAG, experimentId);
-        } catch (error) {
-          this.toaster(error.response.data, 'error', true);
+      // 1. If we have no scenarios at all, then we must sync with inference engines
+      // 2. If we have topology changes, then we should sync with inference engines
+      if (scenarios.length === 0 || this.modelSummary.is_quantified === false) {
+        // Check model is ready to be used for experiments
+        const errors = await modelService.initializeModel(this.currentCAG);
+        if (errors.length) {
           this.disableOverlay();
+          if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
+            this.enableOverlay(errors[0]);
+          }
+          this.toaster(errors[0], 'error', true);
+          console.error(errors);
           return;
         }
 
-        const scenario = {
-          modelId: this.currentCAG,
-          experimentId: experimentId,
-          result: result.results.data,
-          name: 'Baseline scenario',
-          description: 'Baseline scenario',
-          parameter: {
-            constraints: [],
-            num_steps: this.projectionSteps,
-            indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
-            projection_start: this.modelSummary.parameter.projection_start
-          },
-          engine: this.currentEngine,
-          is_baseline: true,
-          is_valid: true
-        };
-        await modelService.createScenario(scenario);
-        scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+        // FIXME: Quickie hack to set scenarios to invalid because of resync
+        scenarios.forEach(s => {
+          s.is_valid = false;
+        });
+      }
+      this.disableOverlay();
+
+      // Check if model is still training
+      if (this.modelSummary.status === modelService.MODEL_STATUS.TRAINING) {
+        const r = await modelService.checkAndUpdateRegisteredStatus(this.model.id, this.currentEngine);
+        if (r === modelService.MODEL_STATUS.TRAINING) {
+          this.enableOverlay(MODEL_MSGS.MODEL_TRAINING);
+          this.toaster(MODEL_MSGS.MODEL_TRAINING, 'error', true);
+          return;
+        }
       }
 
-      // Set selected scenario if necessary
+      await this.refreshModel();
+
+      if (scenarios.length === 0) {
+        // Now we are up to date, create base scenario
+        this.enableOverlay('Creating baseline scenario');
+        try {
+          await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+          scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+        } catch (error) {
+          console.error(error);
+          this.toaster(error && error.message ? error.message : error, 'error', true);
+          this.disableOverlay();
+          return;
+        }
+        this.disableOverlay();
+      }
+
+      // Check if draft scenario is in play
+      if (!_.isNil(this.draftScenario) && this.draftScenario.model_id === this.currentCAG) {
+        console.log('restoring draft');
+        scenarios.push(this.draftScenario);
+      } else {
+        this.setDraftScenario(null);
+      }
+
+      this.scenarios = scenarios;
+
       let scenarioId = this.selectedScenarioId;
       if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
         scenarioId = scenarios.find(d => d.is_baseline).id;
       }
-
-      // Check if scenario is still valid
-      // Fixme: This is awkward wiring, we need to force a scenario recalculation, but the
-      // watcher won't fire if there is not change to the selectedScenarioId.
-      const scenario = scenarios.find(d => d.id === scenarioId);
-      if (scenario && scenario.is_valid === false) {
-        this.recalculateScenario(scenario);
-      } else {
-        this.scenarios = scenarios;
-        this.disableOverlay();
-      }
       this.setSelectedScenarioId(scenarioId);
 
-      // Cache sensitivity in the background
-      if (this.currentEngine === 'dyse') {
+
+      const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      if (selectedScenario && selectedScenario.is_valid === false) {
+        this.runScenario();
+      }
+
+      if (this.onMatrixTab) {
         this.fetchSensitivityAnalysisResults();
       }
     },
     revertDraftChanges() {
-      this.setSelectedScenarioId(this.previousScenarioId);
+      if (!_.isNil(this.previousScenarioId)) {
+        this.setSelectedScenarioId(this.previousScenarioId);
+      } else {
+        const id = this.scenarios.find(s => s.is_baseline === true).id;
+        this.setSelectedScenarioId(id);
+      }
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
 
-      this.draftScenario = null;
+      this.setDraftScenario(null);
       this.scenarios = temp;
-    },
-    async recalculateScenario(scenario) {
-      this.enableOverlay(`Rerunning: ${scenario.name}`);
-
-      // 1. Adjust constraints, if any
-      modelService.resetScenarioParameter(scenario, this.modelSummary, this.modelComponents.nodes);
-
-      // 2. Run experiment
-      let experimentId = 0;
-      let result = null;
-      try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, injectStepZero(this.modelComponents.nodes, scenario.parameter.constraints));
-        result = await modelService.getExperimentResult(this.currentCAG, experimentId);
-      } catch (error) {
-        this.toaster(error.response.data, 'error', true);
-        this.disableOverlay();
-        return;
-      }
-
-      // 3. Save and revert invalid state
-      scenario.experimentId = experimentId;
-      scenario.result = result.results.data;
-      scenario.is_valid = true;
-
-      await modelService.updateScenario({
-        id: scenario.id,
-        model_id: this.currentCAG,
-        is_valid: true,
-        experiment_id: scenario.experimentId,
-        parameter: scenario.parameter,
-        result: scenario.result
-      });
-
-      // 4.Reload scenarios data
-      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-      this.scenarios = scenarios;
-
-      this.disableOverlay();
     },
     async overwriteScenario(id) {
       // Transfer draft data to overwrite existing scenario
@@ -328,8 +318,8 @@ export default {
       // Transfer draft data
       const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
       const newScenario = {
-        modelId: this.currentCAG,
-        experimentId: draft.experimentId,
+        model_id: this.currentCAG,
+        experiment_id: draft.experimentId,
         result: draft.result,
         name: name,
         description: description,
@@ -345,47 +335,12 @@ export default {
 
       this.scenarios = scenarios;
       this.previousScenarioId = null;
+      this.setDraftScenario(null);
       this.setSelectedScenarioId(response.id);
       this.disableOverlay();
     },
-    onBackgroundClick() {
-      this.selectedNode = null;
-    },
-    showIndicator(nodeData) {
-      this.selectedNode = nodeData;
-    },
-    editIndicator() {
-      this.isEditIndicatorModalOpen = true;
-    },
     closeEditIndicatorModal() {
       this.isEditIndicatorModalOpen = false;
-    },
-    async saveIndicatorEdits(newParameter) {
-      // Check if we actually changed something
-      const parameter = this.selectedNode.parameter;
-      if (isIndicatorChanged(parameter, newParameter) === false) {
-        return;
-      }
-
-      this.selectedNode.parameter = newParameter;
-
-      // FIXME: Strip off month/year, ideally this should be done upstream at API (indicator-data)
-      this.selectedNode.parameter.indicator_time_series.forEach(v => {
-        delete v.month;
-        delete v.year;
-        delete v.missing;
-      });
-
-      // update and save
-      // FIXME: Reset all selection state to have a clean start - we should try to preserve states when things are stable - Sept 2020.
-      await modelService.updateNodeParameter(this.currentCAG, this.selectedNode);
-      this.selectedNode = null;
-      this.refresh();
-    },
-    showConstraints(nodeData, scenarios) {
-      this.selectedNode = nodeData;
-      this.scenariosForSelectedNode = scenarios;
-      this.isEditConstraintsOpen = true;
     },
     showModelParameters() {
       this.isModelParametersOpen = true;
@@ -398,69 +353,100 @@ export default {
     closeModelParameters() {
       this.isModelParametersOpen = false;
     },
-    async runProjection({ concept, constraints }) {
-      // FIXME: remove reliance on timestamp
-      constraints.forEach(c => {
-        delete c.timestamp;
-      });
-
+    async saveDraft({ concept, values }) {
       this.isEditConstraintsOpen = false;
-      this.enableOverlay('Running experiment');
 
-      // Set draft scenario if none existed
+      // 1. If no draft scenario we need to create one
       if (_.isNil(this.draftScenario)) {
         const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-
-        this.draftScenario = {
-          id: DRAFT_SCENARIO_ID,
-          modelId: this.currentCAG,
+        const draft = {
+          id: 'draft',
+          name: 'Draft',
+          model_id: this.currentCAG,
+          description: '',
+          is_valid: true,
+          is_baseline: false,
           parameter: {
             constraints: _.cloneDeep(selectedScenario.parameter.constraints),
             num_steps: this.projectionSteps,
             indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
             projection_start: this.modelSummary.parameter.projection_start
           },
-          engine: this.currentEngine,
-          is_baseline: false,
-          is_valid: true
+          engine: this.currentEngine
         };
+        await this.setDraftScenario(draft);
       }
-
-      // Overwrite
-      _.remove(this.draftScenario.parameter.constraints, d => d.concept === concept);
-      if (!_.isEmpty(constraints)) {
-        this.draftScenario.parameter.constraints.push({
-          concept,
-          values: constraints
-        });
-      }
-
-      // Run experiment
-      let experimentId = 0;
-      let result = null;
-      try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, injectStepZero(this.modelComponents.nodes, this.draftScenario.parameter.constraints));
-        result = await modelService.getExperimentResult(this.currentCAG, experimentId);
-      } catch (error) {
-        this.toaster(error.response.data, 'error', true);
-        this.disableOverlay();
-        return;
-      }
-      this.disableOverlay();
-
-      this.draftScenario.experimentId = experimentId;
-      this.draftScenario.result = result.results.data;
-
-      // Cycle the scenarios to force reactive to trigger
-      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
-      temp.push(this.draftScenario);
-      this.scenarios = temp;
 
       // Switch to draft
       if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
         this.previousScenarioId = this.selectedScenarioId;
       }
-      this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
+      await this.setSelectedScenarioId(DRAFT_SCENARIO_ID);
+
+      // 2. Update
+      await this.updateDraftScenarioConstraints({ concept, values });
+
+      // Cycle the scenarios to force reactive to trigger
+      const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
+      temp.push(this.draftScenario);
+      this.scenarios = temp;
+    },
+    async runScenario() {
+      const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+
+      if (_.isEmpty(selectedScenario)) return;
+
+
+      // 0. Refresh
+      this.enableOverlay('Synchronizing model');
+      if (this.modelSummary.status === 0) {
+        await modelService.initializeModel(this.currentCAG);
+        await this.refreshModel();
+      }
+
+      // 1. Adjust unmatched constraints, if any
+      if (selectedScenario.is_valid === false) {
+        modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
+      }
+      this.disableOverlay();
+
+      // 2. Run experiment and wait for results
+      this.enableOverlay(`Running experiment on ${this.currentEngine}`);
+      let experimentId = 0;
+      let result = null;
+      try {
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints));
+        result = await modelService.getExperimentResult(this.currentCAG, experimentId);
+      } catch (error) {
+        console.error(error);
+        this.toaster(error, 'error', true);
+        this.disableOverlay();
+        return;
+      }
+      this.setDraftScenarioDirty(false);
+
+      // FIXME: Not great to directly write into draft
+      selectedScenario.experimentId = experimentId;
+      selectedScenario.result = result.results.data;
+      selectedScenario.is_valid = true;
+
+      // 3. We have rerun an existing scenario, need to update
+      if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
+        this.enableOverlay('Writing result');
+        await modelService.updateScenario({
+          id: selectedScenario.id,
+          model_id: this.currentCAG,
+          is_valid: true,
+          experiment_id: selectedScenario.experimentId,
+          parameter: selectedScenario.parameter,
+          result: selectedScenario.result
+        });
+      }
+
+      this.disableOverlay();
+
+      // 4. Cycle the scenarios to force reactive to trigger
+      this.scenarios = [...this.scenarios];
     },
     clearConstraints({ concept }) {
       const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
@@ -481,15 +467,30 @@ export default {
     },
     async fetchSensitivityAnalysisResults() {
       if (this.currentEngine !== 'dyse' || _.isNil(this.scenarios) || this.scenarios.length === 0) return;
+
+      const selectedScenario = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId);
+
+      // Ensure we are ready to run, sync up with engines if necessary
+      if (this.modelSummary.status === 0) {
+        await modelService.initializeModel(this.currentCAG);
+        await this.refreshModel();
+      }
+      if (selectedScenario.is_valid === false) {
+        modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
+      }
+
       this.sensitivityMatrixData = null;
       const now = Date.now();
       this.sensitivityDataTimestamp = now;
-      const constraints = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId).parameter.constraints;
+      const constraints = modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints);
+
       const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
+
       // If another sensitivity analysis started running before this one returns an ID,
       //  then don't bother fetching/processing the results to avoid a race condition
       if (this.sensitivityDataTimestamp !== now) return;
       const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId);
+
       if (this.sensitivityDataTimestamp !== now) return;
       const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
       csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
@@ -498,6 +499,14 @@ export default {
     },
     setSensitivityAnalysisType(newValue) {
       this.sensitivityAnalysisType = newValue;
+    },
+    tabClick(tab) {
+      if (tab === 'matrix') {
+        this.fetchSensitivityAnalysisResults();
+      }
+    },
+    resetCAGLayout() {
+      this.resetLayoutToken = Date.now();
     }
   }
 };

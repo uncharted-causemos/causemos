@@ -56,30 +56,36 @@
             :label="'Search All Concepts'"
             @click="selectOption('pick')"
           />
+          <small-text-button
+            :label="'Create Concept'"
+            @click="showCustomConcept = true"
+          />
         </div>
       </template>
     </dropdown-control>
+    <modal-custom-concept
+      v-if="showCustomConcept === true"
+      @close="showCustomConcept = false"
+      @save-custom-concept="saveCustomConcept"
+    />
   </div>
 </template>
 
 <script lang="ts">
 import _ from 'lodash';
-import { useStore } from 'vuex';
+import { mapGetters, useStore } from 'vuex';
 import { defineComponent, ref, computed } from 'vue';
 
 import DropdownControl from '@/components/dropdown-control.vue';
 import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
 import ConceptDisplay from '@/components/widgets/autocomplete/concept-display.vue';
 import CloseButton from '@/components/widgets/close-button.vue';
-import { UNKNOWN } from '@/utils/concept-util';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import precisionFormatter from '@/formatters/precision-formatter';
+import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
+import modelService from '@/services/model-service';
 
-function _matchedConcepts(target: string, str: string) {
-  return target.toLowerCase().replace(/_/g, ' ').includes(
-    str.toLowerCase().replace(/_/g, ' ')
-  );
-}
+const CONCEPT_SUGGESTION_COUNT = 15;
 
 /**
  * Concept picker, pick from either:
@@ -93,7 +99,8 @@ export default defineComponent({
     ConceptDisplay,
     DropdownControl,
     CloseButton,
-    SmallTextButton
+    SmallTextButton,
+    ModalCustomConcept
   },
   props: {
     concept: {
@@ -112,32 +119,36 @@ export default defineComponent({
     const store = useStore();
     const selectedOption = ref('suggestions');
     const ontologyConcepts = computed(() => store.getters['app/ontologyConcepts']);
-
-    const croppedOntologyConcepts = computed(() => {
-      let croppedOntologyConcepts = ontologyConcepts.value.filter((concept: string) => concept !== UNKNOWN);
-      croppedOntologyConcepts = croppedOntologyConcepts.map((concept: string) => {
-        const splitted = concept.split('/');
-        return splitted.slice(0, splitted.length - 1).join('/');
-      });
-      return _.uniq(croppedOntologyConcepts);
-    });
+    const showCustomConcept = ref(false);
 
     return {
       selectedOption,
       ontologyConcepts,
-      croppedOntologyConcepts
+      showCustomConcept
     };
+  },
+  computed: {
+    ...mapGetters({
+      ontologyConcepts: 'app/ontologyConcepts',
+      project: 'app/project'
+    })
   },
   methods: {
     precisionFormatter,
     async searchConcept(searchTerm: string) {
-      const suggestions = this.ontologyConcepts.filter((item: string) => _matchedConcepts(item, searchTerm));
-      return suggestions;
+      if (_.isEmpty(searchTerm)) {
+        return this.ontologyConcepts;
+      }
+      const suggestions = await modelService.getConceptSuggestions(this.project, searchTerm, this.ontologyConcepts);
+      return suggestions.slice(0, CONCEPT_SUGGESTION_COUNT).map(suggestion => suggestion.concept);
     },
     select(suggestion: string) {
       if (!_.isEmpty(suggestion) && (this.concept !== suggestion)) {
         this.$emit('select', suggestion);
       }
+    },
+    saveCustomConcept(v: { [key: string]: string }) {
+      this.select(v.theme);
     },
     close() {
       this.$emit('close');

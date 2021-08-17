@@ -35,7 +35,7 @@
         <div
           class="dropdown-option"
           @click="onDownload">
-          <a :href="downloadURL"> Download </a>
+          Download
         </div>
       </template>
     </dropdown-control>
@@ -51,6 +51,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import { CAG } from '@/utils/messages-util';
 import modelService from '@/services/model-service';
 import useToaster from '@/services/composables/useToaster';
+import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'ModelOptions',
@@ -82,7 +83,7 @@ export default defineComponent({
       default: 'qualitativeView'
     }
   },
-  emits: ['rename'],
+  emits: ['rename', 'duplicate'],
   methods: {
     onShowModelOptionsDropdown() {
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
@@ -98,26 +99,20 @@ export default defineComponent({
         this.$router.push({
           name: this.viewAfterDeletion,
           params: {
-            project: this.project
+            project: this.project,
+            projectType: ProjectType.Analysis
           }
         });
       }).catch(() => {
         this.toaster(CAG.ERRONEOUS_DELETION, 'error', true);
       });
     },
+    onDownload() {
+      window.location.href = this.downloadURL;
+    },
     onDuplicate() {
-      modelService.duplicateModel(this.currentCAG).then(() => {
-        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
-        // Back to splash page
-        this.$router.push({
-          name: this.viewAfterDeletion,
-          params: {
-            project: this.project
-          }
-        });
-      }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
-      });
+      this.$emit('duplicate');
+      this.showModelOptionsDropdown = false;
     }
   }
 });

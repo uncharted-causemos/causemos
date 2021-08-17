@@ -15,33 +15,33 @@
 
 <script>
 import _ from 'lodash';
-import API from '@/api/api';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 import { mapActions, mapGetters } from 'vuex';
 
 import TextPill from '@/search/pills/text-pill';
 import RangePill from '@/search/pills/range-pill';
+import ValuePill from '@/search/pills/value-pill';
 import DynamicValuePill from '@/search/pills/dynamic-value-pill';
 import SingleRelationState from '@/search/single-relation-state';
 
 import datacubeUtil from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
+import suggestionService from '@/services/suggestion-service';
 
 const CODE_TABLE = datacubeUtil.CODE_TABLE;
-const CONCEPTS_MSG = 'Select one or more ontological concepts';
+const SUGGESTION_CODE_TABLE = datacubeUtil.SUGGESTION_CODE_TABLE;
 
 export default {
   name: 'SearchBar',
   props: {
-    datacubes: {
-      type: Array,
-      default: () => []
+    facets: {
+      type: Object,
+      default: () => {}
     }
   },
   computed: {
     ...mapGetters({
-      filters: 'dataSearch/filters',
-      ontologyConcepts: 'dataSearch/ontologyConcepts'
+      filters: 'dataSearch/filters'
     })
   },
   watch: {
@@ -56,23 +56,41 @@ export default {
   },
   mounted() {
     // Generates lex pills from select datacube columns
-    const keys = datacubeUtil.datacubeKeys(this.datacubes[0]);
-    const datacubePills = keys.map(k => new TextPill({
-      field: k,
-      display: k,
-      icon: '',
-      iconText: '',
-      searchDisplay: datacubeUtil.DISPLAY_NAMES[k]
-    }));
+    const excludedFields = Object.values(SUGGESTION_CODE_TABLE).map(v => v.field);
+    const keys = _.difference(Object.keys(this.facets), excludedFields);
+    const basicPills = keys.map(k => {
+      const dcField = {
+        field: k,
+        display: k,
+        icon: '',
+        iconText: '',
+        searchDisplay: datacubeUtil.DISPLAY_NAMES[k]
+      };
+      const dcOptions = this.facets[k].map(f => f.key);
+
+      return new ValuePill(dcField, dcOptions);
+    });
+
+    const suggestionPills = Object.values(SUGGESTION_CODE_TABLE).map(suggestInfo =>
+      new DynamicValuePill(suggestInfo,
+        suggestionService.getDatacubeSuggestionFunction(
+          suggestInfo.field, suggestInfo.filterFunc),
+        suggestInfo.searchMessage,
+        true,
+        SingleRelationState)
+    );
 
     // Defines a list of searchable fields for LEX
     this.pills = [
       new TextPill(CODE_TABLE.SEARCH),
-      new DynamicValuePill(CODE_TABLE.CONCEPT_NAME, () => this.ontologyConcepts, CONCEPTS_MSG, true, SingleRelationState),
+      new DynamicValuePill(CODE_TABLE.ONTOLOGY_MATCH,
+        suggestionService.getDatacubeSuggestionFunction(CODE_TABLE.ONTOLOGY_MATCH.field),
+        'Select one or more ontological concepts',
+        true,
+        SingleRelationState),
       new RangePill(CODE_TABLE.PERIOD),
-      // TODO: Will add when there's support for location
-      // new ValuePill(CODE_TABLE.GEO_LOCATION_NAME, GeoUtil.GEO_LOCATION_NAMES, 'Select one or more geospatial context'),
-      ...datacubePills
+      ...suggestionPills,
+      ...basicPills
     ];
 
     const filteredPills = _.reject(this.pills, (pill) => _.find(this.filters.clauses, { field: pill.searchKey }));
@@ -123,12 +141,10 @@ export default {
 
     this.lexRef.render(this.$refs.lexContainer);
     this.setQuery();
-    this.updateOntologyConcepts();
   },
   methods: {
     ...mapActions({
-      setSearchFilters: 'dataSearch/setSearchFilters',
-      setOntologyConcepts: 'dataSearch/setOntologyConcepts'
+      setSearchFilters: 'dataSearch/setSearchFilters'
     }),
     setQuery() {
       if (!this.lexRef) return;
@@ -144,10 +160,6 @@ export default {
     },
     clearSearch() {
       this.lexRef.reset();
-    },
-    async updateOntologyConcepts() {
-      const { data } = await API.get('maas/concepts');
-      this.setOntologyConcepts(data);
     }
   }
 };

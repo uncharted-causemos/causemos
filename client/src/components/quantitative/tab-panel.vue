@@ -50,10 +50,9 @@
             <model-graph
               :data="graphData"
               :scenario-data="scenarioData"
-              :current-engine="currentEngine"
+              ref="modelGraph"
               @background-click="onBackgroundClick"
-              @node-body-click="showConstraints"
-              @node-header-click="showIndicator"
+              @node-drilldown="onNodeDrilldown"
               @edge-click="showRelation"
             />
             <color-legend
@@ -76,14 +75,6 @@
           @tab-click="onDrilldownTabClick">
 
           <template #content>
-            <indicator-summary
-              v-if="activeDrilldownTab === PANE_ID.INDICATOR && selectedNode && isDrilldownOpen"
-              :node="selectedNode"
-              :model-summary="modelSummary"
-              @function-selected="onFunctionSelected"
-              @edit-indicator="editIndicator"
-              @remove-indicator="removeIndicator"
-            />
             <evidence-pane
               v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
               :show-curation-actions="false"
@@ -125,10 +116,10 @@ import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
-import IndicatorSummary from '@/components/indicator/indicator-summary';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
+import { ProjectType } from '@/types/Enums';
 
 const PANE_ID = {
   INDICATOR: 'indicator',
@@ -174,7 +165,6 @@ export default {
     EdgePolaritySwitcher,
     EdgeWeightSlider,
     EvidencePane,
-    IndicatorSummary,
     ArrowButton
   },
   props: {
@@ -202,14 +192,13 @@ export default {
       type: Array,
       required: true
     },
-    selectedNode: {
-      type: Object,
-      default: null
+    resetLayoutToken: {
+      type: Number,
+      required: true
     }
   },
   emits: [
-    'background-click', 'show-indicator', 'show-constraints', 'show-model-parameters',
-    'refresh', 'set-sensitivity-analysis-type', 'save-indicator-edits', 'edit-indicator'
+    'background-click', 'show-model-parameters', 'refresh-model', 'set-sensitivity-analysis-type', 'tab-click'
   ],
   data: () => ({
     tabs: [
@@ -258,6 +247,12 @@ export default {
   watch: {
     scenarios() {
       this.refresh();
+    },
+    modelComponents() {
+      this.refresh();
+    },
+    resetLayoutToken() {
+      this.resetCAGLayout();
     }
   },
   created() {
@@ -275,17 +270,29 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
-      this.closeDrilldown();
     },
     setActive (activeTab) {
       router.push({ query: { activeTab } }).catch(() => {});
+      this.$emit('tab-click', activeTab);
     },
     onAugmentCAG() {
       this.$router.push({
         name: 'qualitative',
         params: {
           project: this.project,
-          currentCAG: this.currentCAG
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
+    onNodeDrilldown(node) {
+      this.$router.push({
+        name: 'nodeDrilldown',
+        params: {
+          project: this.project,
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis,
+          nodeId: node.id
         }
       });
     },
@@ -303,24 +310,11 @@ export default {
       this.closeDrilldown();
       this.selectedEdge = null;
     },
-    showIndicator(nodeData) {
-      this.$emit('show-indicator', nodeData);
-      this.drilldownTabs = NODE_DRILLDOWN_TABS;
-      this.activeDrilldownTab = PANE_ID.INDICATOR;
-      const indicatorTab = this.drilldownTabs.find(tab => tab.id === PANE_ID.INDICATOR);
-      if (indicatorTab !== undefined) {
-        indicatorTab.name = `Data to quantify ${nodeData.label}`;
-      }
-      this.openDrilldown();
-    },
     openDrilldown() {
       this.isDrilldownOpen = true;
     },
     closeDrilldown() {
       this.isDrilldownOpen = false;
-    },
-    showConstraints(nodeData) {
-      this.$emit('show-constraints', nodeData, this.scenarioData[nodeData.concept]);
     },
     showModelParameters() {
       this.$emit('show-model-parameters');
@@ -340,45 +334,28 @@ export default {
     onDrilldownTabClick(tab) {
       this.activeDrilldownTab = tab;
     },
-    async removeIndicator() {
-      // FIXME: Needs a bit of thought, how to properly clean out values in ES vs empty vs nulls
-      const payload = { id: this.selectedNode.id, concept: this.selectedNode.concept };
-      payload.parameter = {
-        indicator_time_series: [],
-        indicator_time_series_parameter: null,
-        indicator_name: null,
-        indicator_score: null,
-        indicator_id: null,
-        initial_value_parameter: { func: 'last' },
-        initial_value: null,
-        indicator_source: null
-      };
-      await modelService.updateNodeParameter(this.currentCAG, payload);
-      this.closeDrilldown();
-      this.$emit('refresh');
-    },
-    onFunctionSelected(newProperties) {
-      const newParameter = Object.assign({}, this.selectedNode.parameter, newProperties);
-      this.closeDrilldown();
-      this.$emit('save-indicator-edits', newParameter);
-    },
     async setEdgeUserPolarity(edge, polarity) {
       await modelService.updateEdgePolarity(this.currentCAG, edge.id, polarity);
       this.selectedEdge.user_polarity = this.selectedEdge.polarity = polarity;
       this.closeDrilldown();
-      this.$emit('refresh');
+      this.$emit('refresh-model');
     },
     async setEdgeWeights(edgeData) {
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
-      this.closeDrilldown();
-      this.$emit('refresh');
-    },
-    editIndicator() {
-      this.$emit('edit-indicator');
+      this.$emit('refresh-model');
     },
     setSensitivityAnalysisType(analysisType) {
       this.$emit('set-sensitivity-analysis-type', analysisType);
+    },
+    async resetCAGLayout() {
+      const modelGraph = this.$refs.modelGraph;
+      if (modelGraph === undefined) return;
+      const graphOptions = modelGraph.renderer.options;
+      const prevStabilitySetting = graphOptions.useStableLayout;
+      graphOptions.useStableLayout = false;
+      await modelGraph.refresh();
+      graphOptions.useStableLayout = prevStabilitySetting;
     }
   }
 };

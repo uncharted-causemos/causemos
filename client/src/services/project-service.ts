@@ -2,6 +2,7 @@ import API from '@/api/api';
 import { startPolling } from '@/api/poller';
 import { Filters, FiltersOptions } from '@/types/Filters';
 import { ReaderOutputRecord } from '@/types/Dart';
+import { SourceTargetPair } from '@/types/CAG';
 
 const KB_LIMIT = 200;
 const PROJECT_LIMIT = 500;
@@ -67,6 +68,18 @@ const deleteProject = async (projectId: string) => {
   return result.data;
 };
 
+/**
+ * Update a project with given ID
+ * @param {string} projectId Project ID
+ * @param {string} description project description
+ */
+const updateProjectMetadata = async(projectId: string, metadata: any) => {
+  const result = await API.put(`/projects/${projectId}/metadata`, {
+    metadata
+  });
+  return result.data;
+};
+
 const getProjectStats = async (projectId: string, filters: Filters) => {
   const result = await API.get(`projects/${projectId}/count-stats`, { params: { filters: filters } });
   return result.data;
@@ -97,11 +110,7 @@ const getProjectEdges = async (projectId: string, filters: Filters) => {
 };
 
 // Given a list of source/target pair and filters, get corresponding statements
-interface Edge {
-  source: string;
-  target: string;
-}
-const getProjectStatementIdsByEdges = async (projectId: string, edges: Edge[], filters: Filters) => {
+const getProjectStatementIdsByEdges = async (projectId: string, edges: SourceTargetPair[], filters: Filters) => {
   const result = await API.post(`projects/${projectId}/edge-data`, { edges, filters: filters });
   return result.data;
 };
@@ -127,6 +136,7 @@ export default {
   getProjectFacetsPromise,
   createProject,
   deleteProject,
+  updateProjectMetadata,
 
   getProjectStats,
   getProjectStatements,

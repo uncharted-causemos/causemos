@@ -25,7 +25,8 @@ const MAPBOX_EVENTS = [
   'mousemove',
   'mouseout',
   'render',
-  'sourcedata'
+  'sourcedata',
+  'styledata'
   // More events can be added in the future
 ];
 
@@ -66,6 +67,9 @@ export default {
       if (!this.cameraMoveEnabled) return;
       // duration 0 to diable animation
       this.map.fitBounds(value, { duration: 0 });
+    },
+    mapStyle(value) {
+      this.map.setStyle(value);
     }
   },
   created() {

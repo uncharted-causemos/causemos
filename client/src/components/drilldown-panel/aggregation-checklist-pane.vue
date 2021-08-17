@@ -23,13 +23,25 @@
       />
     </div>
     <div class="flex-row">
-      <div class="select-all-buttons">
-        <small-text-button :label="'Select All'" @click="selectAll" />
-        <small-text-button :label="'Deselect All'" @click="deselectAll" />
+      <div
+        v-if="isRadioButtonModeActive"
+        class="all-radio-button"
+        @click="setAllChecked"
+      >
+        <i
+          class="fa fa-lg fa-fw icon-centered"
+          :class="{
+            'fa-circle': isAllSelected,
+            'fa-circle-o': !isAllSelected
+          }"
+        />
+        <span>All</span>
       </div>
       <div v-if="units !== null" class="units">
         {{ units }}
       </div>
+      <!-- Render an empty div so the 'all-radio-button' stays left-aligned -->
+      <div v-else />
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
@@ -37,6 +49,8 @@
         :key="rowIndex"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
+        :selected-timeseries-points="selectedTimeseriesPoints"
+        :is-radio-button-mode-active="isRadioButtonModeActive"
         @toggle-expanded="toggleExpanded(row.path)"
         @toggle-checked="toggleChecked(row.path)"
       />
@@ -50,8 +64,8 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
-import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import { BreakdownData } from '@/types/Datacubes';
+import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
   defineComponent,
   PropType,
@@ -60,19 +74,34 @@ import {
   ref,
   computed
 } from '@vue/runtime-core';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 interface StatefulDataNode {
   name: string;
   children: StatefulDataNode[];
-  values: (number | null)[];
+  bars: { color: string; value: number }[];
   path: string[];
   isExpanded: boolean;
-  isChecked: boolean;
+}
+
+// The root of the tree. Imitates the structure of a real node
+//  to simplify the recursive functions used to traverse the tree
+interface RootStatefulDataNode {
+  children: StatefulDataNode[];
+}
+
+// A helper function to allow TypeScript to distinguish between
+//  the the root node (that is missing several properties) and
+//  full nodes.
+function isStatefulDataNode(
+  node: RootStatefulDataNode | StatefulDataNode
+): node is StatefulDataNode {
+  return (node as StatefulDataNode).name !== undefined;
 }
 
 interface ChecklistRowData {
   name: string;
-  values: (number | null)[];
+  bars: { color: string; value: number }[];
   isExpanded: boolean;
   isChecked: boolean;
   path: string[];
@@ -94,38 +123,58 @@ interface ChecklistRowData {
  * @return {Array} An array of objects with all info necessary to render the associated list item.
  */
 const extractVisibleRows = (
-  metadataNode: StatefulDataNode,
+  metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
-  selectedLevel: number
+  selectedLevel: number,
+  selectedItemIds: string[] | null,
+  orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
-  const depthLevel = metadataNode.path.length - 1; // 0-indexed
+  // The root node is at depth level "-1" since it isn't selectable
+  const depthLevel = isStatefulDataNode(metadataNode)
+    ? metadataNode.path.length - 1
+    : -1;
   // Parents of selected level keep track of their ancestors' names
   const _hiddenAncestorNames =
     depthLevel >= selectedLevel ? [] : _.clone(hiddenAncestorNames);
   const isHiddenAncestor = depthLevel < selectedLevel - 1;
-  if (isHiddenAncestor) {
+  if (isHiddenAncestor && isStatefulDataNode(metadataNode)) {
     _hiddenAncestorNames.push(metadataNode.name);
   }
   // Recursively concatenate the node's visible descendants into an array
   const children = metadataNode.children.reduce((accumulator, child) => {
     return [
       ...accumulator,
-      ...extractVisibleRows(child, _hiddenAncestorNames, selectedLevel)
+      ...extractVisibleRows(
+        child,
+        _hiddenAncestorNames,
+        selectedLevel,
+        selectedItemIds,
+        orderedAggregationLevelKeys
+      )
     ];
   }, [] as ChecklistRowData[]);
-  const visibleChildren = metadataNode.isExpanded ? children : [];
+  const isExpanded = isStatefulDataNode(metadataNode)
+    ? metadataNode.isExpanded
+    : true;
+  const visibleChildren = isExpanded ? children : [];
   const hasChildrenAtSelectedLevel =
     depthLevel === selectedLevel - 1 && children.length > 0;
   const isNodeVisible =
     depthLevel >= selectedLevel || hasChildrenAtSelectedLevel;
-  if (!isNodeVisible) return visibleChildren;
+  if (!isNodeVisible || !isStatefulDataNode(metadataNode)) {
+    return visibleChildren;
+  }
+  const itemId = metadataNode.path.join(REGION_ID_DELIMETER);
+  const isChecked =
+    selectedItemIds === null || selectedItemIds.includes(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
       metadataNode,
       depthLevel,
       _hiddenAncestorNames,
-      selectedLevel
+      selectedLevel,
+      isChecked
     ),
     ...visibleChildren
   ];
@@ -135,16 +184,17 @@ const checklistRowDataFromNode = (
   node: StatefulDataNode,
   depthLevel: number,
   hiddenAncestorNames: string[],
-  selectedLevel: number
+  selectedLevel: number,
+  isChecked: boolean
 ): ChecklistRowData => {
-  const { name, values, children, isExpanded, isChecked, path } = node;
+  const { name, bars, children, isExpanded, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
   const showExpandToggle = children.length > 0;
   const indentationCount =
     depthLevel > selectedLevel ? depthLevel - selectedLevel + 1 : 0;
   return {
     name,
-    values,
+    bars,
     isSelectedAggregationLevel,
     showExpandToggle,
     isExpanded,
@@ -158,8 +208,7 @@ const checklistRowDataFromNode = (
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
-    AggregationChecklistItem,
-    SmallTextButton
+    AggregationChecklistItem
   },
   props: {
     aggregationLevelCount: {
@@ -182,89 +231,112 @@ export default defineComponent({
       default: '[Aggregation Level Title]'
     },
     rawData: {
-      type: Object as PropType<BreakdownData[]>,
-      default: () => {
-        return [] as BreakdownData[];
-      }
+      type: Object as PropType<BreakdownData | null>,
+      default: null
     },
     units: {
       type: String,
       default: null
+    },
+    selectedTimeseriesPoints: {
+      type: Array as PropType<TimeseriesPointSelection[]>,
+      required: true
+    },
+    /**
+     * An optional parameter for the components that don't have a "selected" state.
+     * TODO: use it to hide the checkboxes for those components, so:
+     * - null means "no item will ever be selected", and
+     * - [] means "no item is currently selected".
+     */
+    selectedItemIds: {
+      type: Object as PropType<string[] | null>,
+      default: null
+    },
+    isRadioButtonModeActive: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: ['aggregation-level-change', 'toggle-checked'],
-  setup(props) {
-    const { rawData, aggregationLevel, orderedAggregationLevelKeys } = toRefs(
-      props
-    );
-    const statefulData = ref<StatefulDataNode | null>(null);
+  emits: ['aggregation-level-change', 'toggle-is-item-selected'],
+  setup(props, { emit }) {
+    const {
+      rawData,
+      aggregationLevel,
+      orderedAggregationLevelKeys,
+      selectedTimeseriesPoints,
+      selectedItemIds
+    } = toRefs(props);
+    const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
-      //  out of it, augmented with 'expanded' and 'checked' properties to keep
+      //  out of it, augmented with a boolean 'expanded' property to keep
       //  track of the state of the component.
       const newStatefulData = { children: [] as StatefulDataNode[] };
-
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
+        if (rawData.value === null) return;
         // Get the list of values at this aggregation level for each selected
         //  model run
-        const modelRunsAtThisLevel = rawData.value.map(
-          modelRun => modelRun[aggregationLevelKey] ?? []
-        );
-        // Flatten values into one array and inject the index of the model run
-        //  that each value belongs to
-        const valuesAtThisLevel = _.flatten(
-          modelRunsAtThisLevel.map((modelRun, modelRunIndex) => {
-            return modelRun.map(({ id, value }) => ({
-              id,
-              value,
-              modelRunIndex
-            }));
-          })
-        );
-        if (valuesAtThisLevel.length === 0) return;
-        const modelRunCount = modelRunsAtThisLevel.length;
-        valuesAtThisLevel.forEach(({ id, value, modelRunIndex }) => {
-          const path = id.split('__');
+        const valuesAtThisLevel = rawData.value[aggregationLevelKey];
+        if (valuesAtThisLevel === undefined) return;
+        const getColorFromTimeseriesId = (timeseriesId: string) =>
+          selectedTimeseriesPoints.value.find(
+            point => point.timeseriesId === timeseriesId
+          )?.color ?? '#000';
+        valuesAtThisLevel.forEach(({ id, values }) => {
+          // e.g. ['Canada', 'Ontario', 'Toronto']
+          const path = id.split(REGION_ID_DELIMETER);
+          // e.g. ['Canada', 'Ontario']
+          const ancestors = path.slice(0, -1);
+          // e.g. 'Toronto'
           const name = path[path.length - 1];
-          // Find where in the tree this region should be inserted
-          let _path = id.split('__');
+          // Initialize pointer to the root of the tree
           let pointer = newStatefulData.children;
-          while (_path.length > 1) {
-            const nextNode = pointer.find(node => node.name === _path[0]);
+          // Find where in the tree this item should be inserted
+          ancestors.forEach(ancestor => {
+            const nextNode = pointer.find(node => node.name === ancestor);
             if (nextNode === undefined) {
               throw new Error(
-                `Invalid path: ${path.toString()}. Node with name "${
-                  _path[0]
-                }" not found.`
+                `Invalid path: ${path.toString()}. Node with name "${ancestor}" not found.`
               );
             }
             pointer = nextNode.children;
-            _path = _path.splice(1);
-          }
-          // Check if a previous model run already added this node
-          const existingNode = pointer.find(node => node.name === name);
-          if (existingNode !== undefined) {
-            // Node exists, so add this model run's value to the node's list
-            existingNode.values[modelRunIndex] = value;
-          } else {
-            // Initialize values for every model run to null
-            const values = new Array(modelRunCount).fill(null);
-            // Set this model run's value
-            values[modelRunIndex] = value;
-            // Create stateful node and insert it into its place in the tree
-            pointer.push({
-              name,
-              values,
-              path,
-              isExpanded: false,
-              // TODO: isChecked functionality still needs to be implemented
-              isChecked: true,
-              children: []
-            });
-          }
+          });
+          // Convert values from { [timeseriesId]: value } to an array where
+          //  the value of each timeseries is augmented with its color
+          const valueArray = Object.keys(values).map(timeseriesId => {
+            return {
+              color: getColorFromTimeseriesId(timeseriesId),
+              value: values[timeseriesId]
+            };
+          });
+          // Create stateful node and insert it into its place in the tree
+          pointer.push({
+            name,
+            bars: valueArray,
+            path,
+            isExpanded: false,
+            children: []
+          });
         });
       });
-      statefulData.value = newStatefulData.children[0];
+      // Sort top level children (i.e. countries) without values to the bottom
+      //  of the list, since if they had descendants with values, they would
+      //  have values themselves, aggregated up from their descendants
+      const hasOneOrMoreValues = (node: StatefulDataNode) => {
+        return node.bars.length > 0;
+      };
+      newStatefulData.children.sort((nodeA, nodeB) => {
+        if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
+          // A should be sorted after B
+          return 1;
+        } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
+          // B should be sorted after A
+          return -1;
+        }
+        // Don't change their order
+        return 0;
+      });
+      statefulData.value = newStatefulData;
     });
 
     // Ensure all entries with an aggregation level before the
@@ -273,23 +345,30 @@ export default defineComponent({
     watchEffect(() => {
       if (statefulData.value === null) return;
       const computeExpanded = (
-        metadataNode: StatefulDataNode,
+        metadataNode: RootStatefulDataNode | StatefulDataNode,
         depthLevel: number
       ) => {
-        metadataNode.isExpanded = depthLevel < aggregationLevel.value;
+        if (isStatefulDataNode(metadataNode)) {
+          metadataNode.isExpanded = depthLevel < aggregationLevel.value;
+        }
         metadataNode.children.forEach(child => {
           computeExpanded(child, depthLevel + 1);
         });
       };
-      computeExpanded(statefulData.value, 0);
+      // Start with -1 because an aggregationLevel of 0 corresponds
+      //  to a depthLevel of 1
+      computeExpanded(statefulData.value, -1);
     });
 
     const findMaxVisibleBarValue = (
-      node: StatefulDataNode,
+      node: RootStatefulDataNode | StatefulDataNode,
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        return _.max(node.values) ?? Number.MIN_VALUE;
+        const values = isStatefulDataNode(node)
+          ? node.bars.map(bar => bar.value)
+          : [];
+        return _.max(values) ?? Number.MIN_VALUE;
       }
       let maxValue = Number.MIN_VALUE;
       node.children.forEach(child => {
@@ -303,18 +382,64 @@ export default defineComponent({
 
     const maxVisibleBarValue = computed(() => {
       if (_.isNil(statefulData.value)) return 0;
-      return findMaxVisibleBarValue(statefulData.value, aggregationLevel.value);
+      // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
+      //  the root level.
+      return findMaxVisibleBarValue(
+        statefulData.value,
+        aggregationLevel.value + 1
+      );
     });
 
     const visibleRows = computed(() => {
       if (_.isNil(statefulData.value)) return [];
-      return extractVisibleRows(statefulData.value, [], aggregationLevel.value);
+      return extractVisibleRows(
+        statefulData.value,
+        [],
+        aggregationLevel.value,
+        selectedItemIds.value,
+        orderedAggregationLevelKeys.value
+      );
     });
+
+    const isAllSelected = computed(() => {
+      return (
+        selectedItemIds.value === null || selectedItemIds.value.length === 0
+      );
+    });
+
+    const toggleChecked = (path: string[]) => {
+      const aggregationLevel =
+        orderedAggregationLevelKeys.value[path.length - 1];
+      const itemId = path.join(REGION_ID_DELIMETER);
+      emit('toggle-is-item-selected', aggregationLevel, itemId);
+    };
+
+    const setAllChecked = () => {
+      // ASSUMPTION: the "All" option is only showed when "radio button" mode
+      //  is active, meaning there is no more than one item
+      if (
+        selectedItemIds.value === null ||
+        selectedItemIds.value.length === 0
+      ) {
+        return;
+      }
+      if (selectedItemIds.value.length > 1) {
+        console.error(
+          'setAllSelected should only be called when radio button mode is' +
+            ' active, but multiple items are selected.',
+          selectedItemIds.value
+        );
+      }
+      toggleChecked(selectedItemIds.value[0].split(REGION_ID_DELIMETER));
+    };
 
     return {
       statefulData,
       maxVisibleBarValue,
-      visibleRows
+      visibleRows,
+      isAllSelected,
+      toggleChecked,
+      setAllChecked
     };
   },
   methods: {
@@ -338,44 +463,20 @@ export default defineComponent({
     },
     toggleExpanded(path: string[]) {
       if (this.statefulData === null) return;
-      // Nest top level elements under a dummy parent node
-      //  so that each entry in `path` describes one step
-      //  in the traversal.
-      const temp = {
-        name: '',
-        path: [],
-        values: [0],
-        isExpanded: false,
-        isChecked: false,
-        children: [this.statefulData]
-      };
       // Traverse the tree to find the node in question
-      let currentNode: StatefulDataNode | undefined = temp;
-      for (const regionName of path) {
+      let currentNode:
+        | RootStatefulDataNode
+        | StatefulDataNode
+        | undefined = this.statefulData;
+      for (const itemName of path) {
         currentNode = currentNode.children.find(
-          child => child.name === regionName
+          child => child.name === itemName
         );
         if (currentNode === undefined) return;
       }
-      currentNode.isExpanded = !currentNode.isExpanded;
-    },
-    toggleChecked(path: string[]) {
-      // TODO: this may need to be updated depending on how we choose to store
-      //  and share the checked state of nodes (see isNodeChecked below)
-      this.$emit('toggle-checked', path);
-    },
-    isNodeChecked() {
-      // TODO: We'll need to determine some way for node selected states to be stored
-      //  in a parent or ancestor of this component and passed in as a prop, so that
-      //  it can be queried here, something like
-      //  return checkedNodes.find(pathToNode.join('-')) !== undefined;
-      return true;
-    },
-    deselectAll() {
-      console.log('deselectAll');
-    },
-    selectAll() {
-      console.log('selectAll');
+      if (isStatefulDataNode(currentNode)) {
+        currentNode.isExpanded = !currentNode.isExpanded;
+      }
     }
   }
 });
@@ -428,10 +529,10 @@ h5 {
   margin-top: 5px;
 }
 
-.select-all-buttons {
-  margin: 0;
-  margin-top: 5px;
-  > *:first-child {
+.all-radio-button {
+  cursor: pointer;
+  i {
+    width: 16px;
     margin-right: 5px;
   }
 }
@@ -444,6 +545,9 @@ h5 {
 .flex-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  // If there's only one item, right-align it
+  & *:only-child {
+    margin-left: auto;
+  }
 }
 </style>

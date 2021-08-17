@@ -2,7 +2,7 @@
   <div class="container-fluid">
     <modal-document
       v-if="!!documentModalData"
-      :document-data="documentModalData"
+      :document-id="documentModalData.doc_id"
       @close="documentModalData = null"
     />
     <div class="row container-row">
@@ -54,7 +54,7 @@
               Author
             </div>
             <div class="col-sm-3">
-              Organization
+              Publisher
             </div>
           </div>
           <div class="document-list-elements">
@@ -77,20 +77,21 @@
   </div>
 </template>
 
-<script>
-import * as _ from 'lodash';
-import DocumentsListItem from '@/components/kb-explorer/documents-list-item';
-import DropdownControl from '@/components/dropdown-control';
-import Pagination from '@/components/pagination';
-import ModalDocument from '@/components/modals/modal-document';
+<script lang="ts">
+import _ from 'lodash';
+import { defineComponent } from 'vue';
 import { mapGetters } from 'vuex';
+import DocumentsListItem from '@/components/kb-explorer/documents-list-item.vue';
+import DropdownControl from '@/components/dropdown-control.vue';
+import Pagination from '@/components/pagination.vue';
+import ModalDocument from '@/components/modals/modal-document.vue';
 
 const SORTING_OPTIONS = {
   MOST_RECENT: 'Most recent',
   EARLIEST: 'Earliest'
 };
 
-export default {
+export default defineComponent({
   name: 'DocumentsListTableview',
   components: {
     DocumentsListItem,
@@ -109,7 +110,7 @@ export default {
     }
   },
   data: () => ({
-    documentModalData: null,
+    documentModalData: null as any,
     showSortingDropdown: false,
     sortingOptions: [SORTING_OPTIONS.MOST_RECENT, SORTING_OPTIONS.EARLIEST],
     selectedSortingOption: SORTING_OPTIONS.MOST_RECENT
@@ -121,16 +122,7 @@ export default {
       project: 'app/project',
       documentsCount: 'kb/documentsCount'
     }),
-    pageFrom() {
-      return this.documentsQuery.from;
-    },
-    pageSize() {
-      return this.documentsQuery.size;
-    },
-    sort() {
-      return this.documentsQuery.sort;
-    },
-    sortedDocuments() {
+    sortedDocuments(): any {
       if (this.selectedSortingOption === SORTING_OPTIONS.MOST_RECENT) {
         return _.orderBy(this.documentData, ['publication_date.date'], ['desc']);
       } else if (this.selectedSortingOption === SORTING_OPTIONS.EARLIEST) {
@@ -141,28 +133,24 @@ export default {
     }
   },
   methods: {
-    formatMeta(data) {
-      if (data) {
-        const metaDocument = {
-          doc_id: data.id,
-          title: data.title
-        };
-        return metaDocument;
-      }
-      return null;
+    formatMeta(data: { [key: string]: any }) {
+      const metaDocument = {
+        doc_id: data.id
+      };
+      return metaDocument;
     },
-    sortRows(option) {
+    sortRows(option: any) {
       this.selectedSortingOption = option;
       this.showSortingDropdown = false;
     },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
-    onDocumentClick(targetData) {
+    onDocumentClick(targetData: { [key: string]: any }) {
       this.documentModalData = this.formatMeta(targetData.docmeta);
     }
   }
-};
+});
 </script>
 
 <style scoped lang="scss">

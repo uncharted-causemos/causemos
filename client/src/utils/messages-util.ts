@@ -68,7 +68,7 @@ export const DATE_SELECTION = {
 
 export const EMPTY_INPUT_PARAMS = 'There are no input parameters for this emulator';
 
-export const BOOKMARKS = {
+export const INSIGHTS = {
   SUCCESSFUL_ADDITION: 'New insight succesfully added',
   ERRONEOUS_ADDITION: 'There was an error in creating a new insight',
   SUCCESSFUL_REMOVAL: 'Insight succesfully removed',
@@ -76,6 +76,16 @@ export const BOOKMARKS = {
   SUCCESFUL_UPDATE: 'Insight succesfully updated',
   ERRONEOUS_UPDATE: 'There was an error in updating the insight',
   NO_DATA: 'No insights have been saved'
+};
+
+export const QUESTIONS = {
+  SUCCESSFUL_ADDITION: 'New question succesfully added',
+  ERRONEOUS_ADDITION: 'There was an error in creating a new question',
+  SUCCESSFUL_REMOVAL: 'Question succesfully removed',
+  ERRONEOUS_REMOVAL: 'There was an error in removing the question',
+  SUCCESFUL_UPDATE: 'Question succesfully updated',
+  ERRONEOUS_UPDATE: 'There was an error in updating the question',
+  NO_DATA: 'No questions have been saved'
 };
 
 export const CAG = {
@@ -86,6 +96,10 @@ export const CAG = {
   ERRONEOUS_MODEL_RUN: 'There was an error when running the model. Try again',
   SUCCESSFUL_DUPLICATE: 'CAG succesfully duplicated',
   ERRONEOUS_DUPLICATE: 'There was an error in duplicating the CAG. Try again'
+};
+
+export const QUANTIFICATION = {
+  ERRONEOUS_PARAMETER_CHANGE: 'Unable to save node parameter changes.'
 };
 
 export const ANALYSIS = {
@@ -118,7 +132,7 @@ export default {
   MODEL_CREATION,
   DATE_SELECTION,
   EMPTY_INPUT_PARAMS,
-  BOOKMARKS,
+  INSIGHTS,
   CAG,
   SUBGRAPH
 };

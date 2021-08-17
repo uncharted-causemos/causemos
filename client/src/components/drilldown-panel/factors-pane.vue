@@ -2,7 +2,7 @@
   <div class="factors-container">
     <modal-document
       v-if="!!documentModalData"
-      :document-data="documentModalData"
+      :document-id="documentModalData.doc_id"
       @close="documentModalData = null"
     />
     <div class="pane-summary">
@@ -231,6 +231,7 @@ export default {
       return this.summaryData.children.length;
     }
   },
+  emits: ['updated-relations'],
   watch: {
     statements(n, o) {
       if (_.isEqual(n, o)) return;
@@ -373,14 +374,44 @@ export default {
         newValue: newGrounding
       };
 
+      const edgeMap = new Map();
+      const keyFn = (s, t) => `${s}///${t}`;
+      const process = (statements) => {
+        statements.forEach(statement => {
+          let key = '';
+          if (statement.subj.concept === curGrounding) {
+            key = keyFn(newGrounding, statement.obj.concept);
+          } else {
+            key = keyFn(statement.subj.concept, newGrounding);
+          }
+          if (!edgeMap.has(key)) {
+            edgeMap.set(key, []);
+          }
+          edgeMap.get(key).push(statement.id);
+        });
+      };
+
       if (item !== null) {
         statementIds = item.dataArray.map(statement => statement.id);
+        process(item.dataArray);
       } else {
         const selectedItems = this.summaryData.children.filter(d => d.meta.checked === true);
         selectedItems.forEach(d => {
           statementIds = statementIds.concat(d.dataArray.map(statement => statement.id));
+          process(d.dataArray);
         });
       }
+
+      const updatedRelations = [];
+      for (const [k, v] of edgeMap) {
+        const [source, target] = k.split('///');
+        updatedRelations.push({
+          source,
+          target,
+          reference_ids: v
+        });
+      }
+      this.$emit('updated-relations', updatedRelations);
 
       // Get factor recommendations first
       if (item !== null) { // FIXME: Just show factor recommendations for a single factor regrounding for now.
@@ -399,8 +430,9 @@ export default {
         this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
       }
 
+
       if (item !== null && !_.isEmpty(recommendations)) {
-        this.$emit('show-factor-recommendations', { regrounding: { factor: item.key, curGrounding, newGrounding }, recommendations });
+        this.$emit('show-factor-recommendations', item.key, curGrounding, newGrounding, recommendations);
       }
     },
     openConfirmCurationModal(confirmedCallback) {

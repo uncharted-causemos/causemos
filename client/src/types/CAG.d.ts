@@ -1,6 +1,13 @@
-export interface ScenarioConstraint {
+import { TimeseriesPoint } from './Timeseries';
+
+export interface ConceptProjectionConstraints {
   concept: string;
-  values: { step: number; value: number }[];
+  values: ProjectionConstraint[];
+}
+
+export interface ProjectionConstraint {
+  step: number;
+  value: number;
 }
 
 export interface ScenarioParameter {
@@ -10,17 +17,40 @@ export interface ScenarioParameter {
     start: number;
     end: number;
   };
-  constraints: ScenarioConstraint[];
+  // A list of constraints across all concepts
+  constraints: ConceptProjectionConstraints[];
 }
 
+export interface ScenarioProjection {
+  scenarioName: string;
+  scenarioId: string;
+  values: TimeseriesPoint[];
+  confidenceInterval: {
+    upper: TimeseriesPoint[];
+    lower: TimeseriesPoint[];
+  };
+  constraints: { step: number; value: number }[];
+}
 
 export interface ScenarioResult {
   concept: string;
-  values: { timestamp: number; value: number } [];
+  values: TimeseriesPoint[];
   confidenceInterval: {
-    upper: { timestamp: number; value: number } [];
-    lower: { timestamp: number; value: number } [];
+    upper: TimeseriesPoint[];
+    lower: TimeseriesPoint[];
   };
+}
+
+export interface NewScenario {
+  name: string;
+  description: string;
+  model_id: string;
+  engine: string;
+  is_valid: boolean;
+  is_baseline: boolean;
+  parameter?: ScenarioParameter;
+  result?: ScenarioResult[];
+  experiment_id?: string;
 }
 
 export interface Scenario {
@@ -41,31 +71,33 @@ export interface Scenario {
 export interface NodeScenarioData {
   initial_value: number;
   indicator_name?: string;
-  indicator_time_series?: { timestamp: number; value: number }[];
+  indicator_time_series?: TimeseriesPoint[];
   indicator_time_series_range: {
     start: number;
     end: number;
   };
+  min: number;
+  max: number;
   projection_start: number;
   scenarios: {
     id: string;
-    is_baseline: string;
+    is_baseline: boolean;
     is_valid: boolean;
     name: string;
     parameter?: ScenarioParameter;
+    // A list of constraints for this one node in this one scenario
     constraints?: { step: number; value: number }[];
     result?: {
-      values: { timestamp: number; value: number } [];
+      values: TimeseriesPoint[];
       confidenceInterval: {
-        upper: { timestamp: number; value: number } [];
-        lower: { timestamp: number; value: number } [];
+        upper: TimeseriesPoint[];
+        lower: TimeseriesPoint[];
       };
     };
   }[];
 }
-
 export interface NodeParameter {
-  id?: string;
+  id: string;
   concept: string;
   label: string;
   model_id?: string;
@@ -74,7 +106,7 @@ export interface NodeParameter {
 }
 
 export interface EdgeParameter {
-  id?: string;
+  id: string;
   source: string;
   target: string;
   model_id?: string;
@@ -83,8 +115,15 @@ export interface EdgeParameter {
   parameter?: {
     weights: number[];
   };
+  // User polarity is taken into account when the user sets an edge's polarity manually
   user_polarity: number | null; // FIXME: need better ways to handle special case nulls
+  // Polarity is not stored on the backend, but computed locally from the fetched statements
   polarity?: number;
+}
+
+export interface SourceTargetPair {
+  source: string;
+  target: string;
 }
 
 export interface CAGModelParameter {

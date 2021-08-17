@@ -1,4 +1,6 @@
-export const ADMIN_LEVEL_TITLES = {
+import { AdminLevel } from '@/types/Enums';
+
+export const ADMIN_LEVEL_TITLES: { [key in AdminLevel]: string } = {
   country: 'Country',
   admin1: 'L1 admin region',
   admin2: 'L2 admin region',
@@ -8,11 +10,6 @@ export const ADMIN_LEVEL_TITLES = {
 };
 
 // Ordered list of the admin region levels
-export const ADMIN_LEVEL_KEYS: (keyof typeof ADMIN_LEVEL_TITLES)[] = [
-  'country',
-  'admin1',
-  'admin2',
-  'admin3',
-  'admin4',
-  'admin5'
-];
+export const ADMIN_LEVEL_KEYS = Object.values(AdminLevel);
+
+export const REGION_ID_DELIMETER = '__';

@@ -3,7 +3,7 @@
     class="empty-state-instructions-container"
   >
     <img
-      v-if="currentView === 'data'"
+      v-if="currentView === 'data' || currentView === 'dataComparative'"
       src="../assets/empty-state-instructions/data-empty-state.png"
       alt="Data search instructions"
     >

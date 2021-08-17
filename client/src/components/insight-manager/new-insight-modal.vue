@@ -4,16 +4,21 @@
       <h5>New Insight</h5>
     </full-screen-modal-header>
     <div class="pane-wrapper">
-      <div class="pane-row" v-if="imagePreview !== null">
+      <div class="pane-row">
         <div class="fields">
-          <div class="preview">
+          <div class="preview" v-if="imagePreview !== null">
             <img :src="imagePreview">
           </div>
+          <disclaimer
+            v-else
+            style="text-align: center; color: black"
+            :message="'No image preview!'"
+          />
           <div class="form-group">
             <form>
-              <label> Title* </label>
+              <label> Name* </label>
               <input
-                v-model="title"
+                v-model="name"
                 v-focus
                 type="text"
                 class="form-control"
@@ -27,7 +32,7 @@
               </div>
               <label>Description</label>
               <textarea
-                rows="5"
+                rows="2"
                 v-model="description"
                 class="form-control" />
             </form>
@@ -49,7 +54,7 @@
             <button
               type="button"
               class="btn btn-primary"
-              :class="{ 'disabled': title.length === 0}"
+              :class="{ 'disabled': name.length === 0}"
               @click="saveInsight"
             >
               Save
@@ -70,23 +75,10 @@
                 <li>
                   <i :class="iconToDisplay" /> {{ viewName }}
                 </li>
-                <li>
-                  <b>Project Name:</b> {{ projectMetadata.name }}
-                </li>
-                <li>
-                  <b>Ontology:</b> {{ projectMetadata.ontology }}
-                </li>
-                <li>
-                  <b>Created:</b> {{ projectMetadata.created_at }}
-                </li>
-                <li>
-                  <b>Modifed:</b> {{ projectMetadata.modified_at }}
-                </li>
-                <li>
-                  <b>Corpus:</b> {{ projectMetadata.corpus_id }}
-                </li>
-                <li v-if="formattedFilterString.length > 0">
-                  <b>Filters:</b> {{ formattedFilterString }}
+                <li
+                  v-for="metadataAttr in metadataDetails"
+                  :key="metadataAttr.key">
+                  <b>{{metadataAttr.key}}</b> {{ metadataAttr.value }}
                 </li>
               </ul>
             </div>
@@ -103,17 +95,19 @@ import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
-import API from '@/api/api';
 import DrilldownPanel from '@/components/drilldown-panel';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import modelService from '@/services/model-service';
 import { VIEWS_LIST } from '@/utils/views-util';
-import { BOOKMARKS } from '@/utils/messages-util';
+import { INSIGHTS } from '@/utils/messages-util';
+import { ProjectType } from '@/types/Enums';
+import Disclaimer from '@/components/widgets/disclaimer';
+import { addInsight } from '@/services/insight-service';
 
 
-const MSG_EMPTY_BOOKMARK_TITLE = 'Insight title cannot be blank';
+const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 
 const METDATA_DRILLDOWN_TABS = [
   {
@@ -127,27 +121,33 @@ export default {
   name: 'NewInsightModal',
   components: {
     DrilldownPanel,
-    FullScreenModalHeader
+    FullScreenModalHeader,
+    Disclaimer
   },
   data: () => ({
     description: '',
     drilldownTabs: METDATA_DRILLDOWN_TABS,
-    errorMsg: MSG_EMPTY_BOOKMARK_TITLE,
+    errorMsg: MSG_EMPTY_INSIGHT_NAME,
     hasError: false,
     imagePreview: null,
     metadata: '',
-    title: ''
+    name: ''
   }),
   computed: {
     ...mapGetters({
-      project: 'app/project',
       currentView: 'app/currentView',
+      projectType: 'app/projectType',
       currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
 
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
       countInsights: 'insightPanel/countInsights',
+
+      dataState: 'insightPanel/dataState',
+      viewState: 'insightPanel/viewState',
+      contextId: 'insightPanel/contextId',
+      project: 'app/project',
 
       filters: 'dataSearch/filters',
       ontologyConcepts: 'dataSearch/ontologyConcepts',
@@ -173,13 +173,73 @@ export default {
           `${c.values.map(v => FilterValueFormatter(v)).join(', ')}`;
       }, '');
       return `${filterString.length > 0 ? filterString : ''}`;
+    },
+    insightVisibility() {
+      return this.projectType === ProjectType.Analysis ? 'private' : 'public';
+      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
+    },
+    insightTargetView() {
+      // an insight created during model publication should be listed either
+      //  in the full list of insights,
+      //  or as a context specific insight when opening the page of the corresponding model family instance
+      //  (the latter is currently supported via a special route named dataPreview)
+      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+    },
+    metadataDetails() {
+      const arr = [];
+      // @HACK: The content of this function needs to be revised and cleaned
+      arr.push({
+        key: 'Project Name:',
+        value: this.projectMetadata.name
+      });
+      if (this.currentView === 'modelPublishingExperiment' || this.currentView === 'data') {
+        // FIXME: additional metadata attributes should be defined and sent down based on the source page
+        arr.push({
+          key: 'Model ID:',
+          value: this.contextId
+        });
+        arr.push({
+          key: 'Target View:',
+          value: this.insightTargetView
+        });
+        arr.push({
+          key: 'Visibility:',
+          value: this.insightVisibility
+        });
+      } else {
+        arr.push({
+          key: 'Ontology:',
+          value: this.projectMetadata.ontology
+        });
+        arr.push({
+          key: 'Created:',
+          value: this.projectMetadata.created_at
+        });
+        arr.push({
+          key: 'Modified:',
+          value: this.projectMetadata.modified_at
+        });
+        arr.push({
+          key: 'Corpus:',
+          value: this.projectMetadata.corpus_id
+        });
+        if (this.formattedFilterString.length > 0) {
+          arr.push({
+            key: 'Filters:',
+            value: this.formattedFilterString
+          });
+        }
+      }
+
+      return arr;
     }
   },
   watch: {
-    title(n) {
+    name(n) {
       if (_.isEmpty(n) && this.isPanelOpen) {
         this.hasError = true;
-        this.errorMsg = MSG_EMPTY_BOOKMARK_TITLE;
+        this.errorMsg = MSG_EMPTY_INSIGHT_NAME;
       } else {
         this.hasError = false;
         this.errorMsg = null;
@@ -195,48 +255,66 @@ export default {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCountInsights: 'insightPanel/setCountInsights',
-      setCurrentPane: 'insightPanel/setCurrentPane'
+      setCurrentPane: 'insightPanel/setCurrentPane',
+      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
+      setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane'
     }),
     closeInsightPanel() {
       this.hideInsightPanel();
       this.setCurrentPane('');
     },
     initInsight() {
-      this.title = '';
+      this.name = '';
       this.description = '';
       this.hasError = false;
     },
     async autofillInsight() {
       this.modelSummary = this.currentCAG ? await modelService.getSummary(this.currentCAG) : null;
 
-      this.title = (this.projectMetadata ? this.projectMetadata.name : '') +
+      this.name = (this.projectMetadata ? this.projectMetadata.name : '') +
         (this.modelSummary ? (' - ' + this.modelSummary.name) : '') +
         (this.currentView ? (' - ' + this.currentView) : '');
 
       this.description = this.formattedFilterString.length > 0 && `Filters: ${this.formattedFilterString} `;
     },
     async saveInsight() {
-      if (this.hasError || _.isEmpty(this.title)) return;
+      if (this.hasError || _.isEmpty(this.name)) return;
       const url = this.$route.fullPath;
-      API.post('bookmarks', {
+      const newInsight = {
+        name: this.name,
         description: this.description,
+        visibility: this.insightVisibility,
         project_id: this.project,
-        title: this.title,
-        thumbnailSource: this.imagePreview,
+        context_id: this.contextId,
         url,
-        view: this.currentView
-      }).then((result) => {
-        const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_ADDITION : BOOKMARKS.ERRONEOUS_ADDITION;
-        if (message === BOOKMARKS.SUCCESSFUL_ADDITION) {
-          this.toaster(message, 'success', false);
-          const count = this.countInsights + 1;
-          this.setCountInsights(count);
-        } else {
-          this.toaster(message, 'error', true);
-        }
-        this.hideInsightPanel();
-        this.initInsight();
-      });
+        target_view: this.insightTargetView,
+        pre_actions: null,
+        post_actions: null,
+        is_default: true,
+        analytical_question: [],
+        thumbnail: this.imagePreview,
+        view_state: this.viewState,
+        data_state: this.dataState
+      };
+      addInsight(newInsight)
+        .then((result) => {
+          const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
+          if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
+            this.toaster(message, 'success', false);
+            const count = this.countInsights + 1;
+            this.setCountInsights(count);
+          } else {
+            this.toaster(message, 'error', true);
+          }
+          this.closeInsightPanel();
+          this.initInsight();
+          // also hide the context insight panel if opened, to force refresh upon re-open
+          this.closeContextInsightPanel();
+        });
+    },
+    closeContextInsightPanel() {
+      this.hideContextInsightPanel();
+      this.setCurrentContextInsightPane('');
     },
     async takeSnapshot() {
       const el = document.getElementsByClassName('insight-capture')[0];
@@ -268,29 +346,34 @@ export default {
     display: flex;
     flex-direction: column;
     overflow-x: hidden;
-    overflow-y: auto;
+    overflow-y: hidden;
     padding: 1em 0 0;
     .pane-row {
       flex: 1 1 auto;
       display: flex;
       flex-direction: row;
+      height: 100%;
       .fields {
-        flex: 0 1 auto;
+        flex: 1 1 auto;
         display: flex;
         flex-direction: column;
         overflow: hidden;
-        padding: 1rem;
+        padding-left: 1rem;
+        padding-right: 1rem;
+        height: 100%;
         .preview {
-          flex: 0 0 auto;
+          flex: 1 1 auto;
           margin: 0 0 1rem;
           overflow: hidden;
+          align-self: center;
           img {
             max-height: 100%;
             max-width: 100%;
           }
         }
         .form-group {
-          flex: 1 1 auto;
+          flex: 0 0 auto;
+          margin-bottom: 3px;
           form {
             display: flex;
             flex-direction: column;
@@ -304,7 +387,7 @@ export default {
           }
         }
         .controls {
-          flex: 0 1 auto;
+          flex: 0 0 auto;
           display: flex;
           justify-content: flex-end;
           padding: 1rem;

@@ -5,18 +5,31 @@
       nav-back-label="Exit Saved Insights"
       @close="closeInsightPanel"
     >
-      <template #trailing>
-        <insight-control-menu />
-      </template>
     </full-screen-modal-header>
-    <div class="search">
-      <input
-        v-model="search"
-        v-focus
-        type="text"
-        class="form-control"
-        placeholder="Search insights"
-      >
+
+    <modal-confirmation
+      v-if="showModal"
+      :autofocus-confirm="false"
+      @confirm="redirectToAnalysisInsight"
+      @close="showModal = false"
+    >
+      <template #title>Applying Analysis Insight</template>
+      <template #message>
+        <p>Are you sure you want to redirect to the relevant analysis project and apply the insight?</p>
+        <message-display
+          :message="'Warning: This action will take you out of the current flow.'"
+          :message-type="'alert-warning'"
+        />
+      </template>
+    </modal-confirmation>
+
+    <div class="tab-controls">
+      <tab-bar
+        class="tabs"
+        :active-tab-id="activeTabId"
+        :tabs="tabs"
+        @tab-click="switchTab"
+      />
       <div class="export">
         <button
           type="button"
@@ -47,49 +60,124 @@
         </dropdown-control>
       </div>
     </div>
-    <div class="pane-wrapper">
-      <div
-        v-if="listInsights.length > 0"
-        class="pane-content">
-        <insight-card
-          v-for="insight in searchedInsights"
-          :key="insight.id"
-          :active-insight="activeInsight"
-          :insight="insight"
-          :curated="isCuratedInsight(insight.id)"
-          @delete-insight="deleteInsight(insight.id)"
-          @open-editor="openEditor(insight.id)"
-          @select-insight="selectInsight(insight)"
-          @update-curation="updateCuration(insight.id)"
-        />
+    <div class="body flex">
+      <analytical-questions-panel />
+
+      <!-- body -->
+      <div class="body-main-content flex-col">
+        <div
+          v-if="activeTabId === tabs[0].id"
+          class="cards"
+        >
+          <div class="search">
+            <input
+              v-model="search"
+              v-focus
+              type="text"
+              class="form-control"
+              placeholder="Search insights"
+            >
+          </div>
+          <div class="pane-wrapper">
+            <div
+              v-if="searchedInsights.length > 0"
+              class="pane-content"
+            >
+              <insight-card
+                v-for="insight in searchedInsights"
+                :active-insight="activeInsight"
+                :card-mode="true"
+                :curated="isCuratedInsight(insight.id)"
+                :key="insight.id"
+                :insight="insight"
+                @delete-insight="removeInsight(insight.id)"
+                @open-editor="openEditor(insight.id)"
+                @select-insight="selectInsight(insight)"
+                @update-curation="updateCuration(insight.id)"
+                draggable='true'
+                @dragstart="startDrag($event, insight)"
+                @dragend="dragEnd($event)"
+              />
+            </div>
+            <message-display
+              class="pane-content"
+              v-else
+              :message="messageNoData"
+            />
+          </div>
+        </div>
+
+        <div
+          v-else-if="activeTabId === tabs[1].id"
+          class="list"
+        >
+          <div
+            v-if="questions.length > 0"
+            class="pane-content"
+          >
+            <div
+              v-for="questionItem in questions"
+              :key="questionItem.id"
+              style="margin-bottom: 5rem;">
+              <h3 class="analysis-question">{{questionItem.question}}</h3>
+              <insight-card
+                v-for="insight in fullLinkedInsights(questionItem.linked_insights)"
+                :key="insight.id"
+                :insight="insight"
+                :show-description="true"
+                :show-question="false"
+                @delete-insight="removeInsight(insight.id)"
+                @open-editor="openEditor(insight.id)"
+                @select-insight="selectInsight(insight)"
+              />
+            </div>
+          </div>
+          <message-display
+            class="pane-content"
+            v-else
+            :message="messageNoData"
+          />
+        </div>
       </div>
-      <message-display
-        class="pane-content"
-        v-else
-        :message="messageNoData"
-      />
     </div>
   </div>
 </template>
 
 <script>
-import _ from 'lodash';
 import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
-import { mapGetters, mapActions } from 'vuex';
-import API from '@/api/api';
+import { mapGetters, mapActions, useStore } from 'vuex';
 
-import { BOOKMARKS } from '@/utils/messages-util';
+import { INSIGHTS } from '@/utils/messages-util';
 
 import InsightCard from '@/components/insight-manager/insight-card';
 import DropdownControl from '@/components/dropdown-control';
-import MessageDisplay from '@/components/widgets/message-display';
+import TabBar from '@/components/widgets/tab-bar';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
-import InsightControlMenu from '@/components/insight-manager/insight-control-menu';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
+import router from '@/router';
+import { deleteInsight } from '@/services/insight-service';
+import { computed } from 'vue';
+
+import AnalyticalQuestionsPanel from '@/components/analytical-questions/analytical-questions-panel';
+import useInsightsData from '@/services/composables/useInsightsData';
+import { ProjectType } from '@/types/Enums';
+import ModalConfirmation from '@/components/modals/modal-confirmation';
+import MessageDisplay from '@/components/widgets/message-display';
+
+const INSIGHT_TABS = [
+  {
+    id: 'cards',
+    name: 'Cards'
+  }, {
+    id: 'list',
+    name: 'List'
+  }
+];
+
 
 export default {
   name: 'ListInsightsModal',
@@ -97,24 +185,54 @@ export default {
     DropdownControl,
     FullScreenModalHeader,
     InsightCard,
-    InsightControlMenu,
-    MessageDisplay
+    MessageDisplay,
+    ModalConfirmation,
+    TabBar,
+    AnalyticalQuestionsPanel
   },
   data: () => ({
     activeInsight: null,
+    activeTabId: INSIGHT_TABS[0].id,
     curatedInsights: [],
     exportActive: false,
-    listInsights: [],
-    messageNoData: BOOKMARKS.NO_DATA,
+    messageNoData: INSIGHTS.NO_DATA,
     search: '',
-    selectedInsight: null
+    selectedInsight: null,
+    tabs: INSIGHT_TABS,
+    showModal: false,
+    redirectInsightUrl: ''
   }),
+  setup() {
+    const store = useStore();
+    const questions = computed(() => store.getters['analysisChecklist/questions']);
+
+    const insightsById = (id) => listInsights.value.find(i => i.id === id);
+
+    const fullLinkedInsights = (linked_insights) => {
+      const result = [];
+      linked_insights.forEach(insightId => {
+        const ins = insightsById(insightId);
+        if (ins) {
+          result.push(ins);
+        }
+      });
+      return result;
+    };
+
+    const { insights: listInsights, reFetchInsights } = useInsightsData();
+
+    return {
+      listInsights,
+      questions,
+      fullLinkedInsights,
+      reFetchInsights
+    };
+  },
   computed: {
     ...mapGetters({
-      project: 'app/project',
       projectMetadata: 'app/projectMetadata',
-      currentView: 'app/currentView',
-      countInsights: 'insightPanel/countInsights'
+      countInsights: 'insightPanel/countInsights',
+      projectType: 'app/projectType'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -125,16 +243,23 @@ export default {
     searchedInsights() {
       if (this.search.length > 0) {
         const result = this.listInsights.filter((insight) => {
-          return insight.title.toLowerCase().includes(this.search.toLowerCase());
+          return insight.name.toLowerCase().includes(this.search.toLowerCase());
         });
         return result;
+      } else {
+        return this.listInsights;
+      }
+    },
+    selectedInsights() {
+      if (this.curatedInsights.length > 0) {
+        const curatedSet = this.listInsights.filter(i => this.curatedInsights.find(e => e === i.id));
+        return curatedSet;
       } else {
         return this.listInsights;
       }
     }
   },
   mounted() {
-    this.refresh();
     this.curatedInsights = [];
   },
   methods: {
@@ -144,25 +269,62 @@ export default {
     }),
     dateFormatter,
     stringFormatter,
-
     closeInsightPanel() {
       this.hideInsightPanel();
       this.activeInsight = null;
       this.selectedInsight = null;
     },
-    deleteInsight(id) {
-      API.delete(`bookmarks/${id}`).then(result => {
-        const message = result.status === 200 ? BOOKMARKS.SUCCESSFUL_REMOVAL : BOOKMARKS.ERRONEOUS_REMOVAL;
-        if (message === BOOKMARKS.SUCCESSFUL_REMOVAL) {
+    redirectToAnalysisInsight() {
+      if (this.redirectInsightUrl !== '') {
+        this.$router.push(this.redirectInsightUrl);
+      }
+      this.showModal = false;
+      this.redirectInsightUrl = '';
+    },
+    startDrag(evt, insight) {
+      evt.currentTarget.style.border = '3px dashed black';
+
+      evt.dataTransfer.dropEffect = 'move';
+      evt.dataTransfer.effectAllowed = 'move';
+      evt.dataTransfer.setData('insight_id', insight.id);
+
+      const img = document.createElement('img');
+      const canvas = document.createElement('canvas');
+      const ctx = canvas.getContext('2d');
+      // Setting img src
+      img.src = insight.thumbnail;
+
+      // Drawing to canvas with a smaller size
+      canvas.width = img.width * 0.2;
+      canvas.height = img.height * 0.2;
+      ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+
+      // add to ensure visibility
+      document.body.append(canvas);
+
+      // Setting drag image with drawn canvas image
+      evt.dataTransfer.setDragImage(canvas, 0, 0);
+    },
+    dragEnd(evt) {
+      const matches = document.querySelectorAll('canvas');
+      matches.forEach(c => c.remove());
+
+      evt.currentTarget.style.border = 'none';
+    },
+    removeInsight(id) {
+      deleteInsight(id).then(result => {
+        const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_REMOVAL : INSIGHTS.ERRONEOUS_REMOVAL;
+        if (message === INSIGHTS.SUCCESSFUL_REMOVAL) {
           this.toaster(message, 'success', false);
           const count = this.countInsights - 1;
           this.setCountInsights(count);
-          this.updateCuration(id);
-          this.refresh();
-        } else {
+          this.removeCuration(id);
+          // refresh the latest list from the server
+          this.reFetchInsights();
           this.toaster(message, 'error', true);
         }
       });
+      // FIXME: delete any reference to this insight from its list of analytical_questions
     },
     getInsightSet() {
       if (this.curatedInsights.length > 0) {
@@ -172,13 +334,23 @@ export default {
         return this.listInsights;
       }
     },
+    getSourceUrlForExport(insightURL, insightId) {
+      if (insightURL.includes('insight_id')) return insightURL;
+      // is the url has some params already at its end?
+      if (insightURL.includes('?') && insightURL.includes('=')) {
+        // append
+        return insightURL + '&insight_id=' + insightId;
+      }
+      // add
+      return insightURL + '?insight_id=' + insightId;
+    },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexingly uses pixels
       // same height as width so that we can attempt to be consistent with the layout.
       const docxMaxImageSize = 612;
-      const insightSet = this.getInsightSet();
+      const insightSet = this.selectedInsights;
       const sections = insightSet.map((i) => {
-        const imageSize = this.scaleImage(i.thumbnail_source, docxMaxImageSize, docxMaxImageSize);
+        const imageSize = this.scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(i.modified_at);
         return {
           footers: {
@@ -188,7 +360,7 @@ export default {
                   alignment: AlignmentType.CENTER,
                   children: [
                     new TextRun({
-                      size: 16,
+                      size: 14,
                       text: this.metadataSummary
                     })
                   ]
@@ -203,14 +375,14 @@ export default {
             new Paragraph({
               alignment: AlignmentType.CENTER,
               heading: HeadingLevel.HEADING_2,
-              text: `${i.title}`
+              text: `${i.name}`
             }),
             new Paragraph({
               break: 1,
               alignment: AlignmentType.CENTER,
               children: [
                 new ImageRun({
-                  data: i.thumbnail_source,
+                  data: i.thumbnail,
                   transformation: {
                     height: imageSize.height,
                     width: imageSize.width
@@ -249,7 +421,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(i.url)
+                  link: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
                 })
               ]
             })
@@ -282,12 +454,12 @@ export default {
         background: { fill: 'FFFFFF' },
         slideNumber: { x: 9.75, y: 5.375, color: '000000', fontSize: 8, align: pres.AlignH.right }
       });
-      const insightSet = this.getInsightSet();
+      const insightSet = this.selectedInsights;
       insightSet.forEach((i) => {
-        const imageSize = this.scaleImage(i.thumbnail_source, widthLimitImage, heightLimitImage);
+        const imageSize = this.scaleImage(i.thumbnail, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(i.modified_at);
         const slide = pres.addSlide();
-        const notes = `Title: ${i.title}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
+        const notes = `Title: ${i.name}\nDescription: ${i.description}\nCaptured on: ${insightDate}\n${this.metadataSummary}`;
 
         /*
           PPTXGEN BUG WORKAROUND - library level function slide.addNotes(notes) doesn't insert notes
@@ -301,7 +473,7 @@ export default {
         });
 
         slide.addImage({
-          data: i.thumbnail_source,
+          data: i.thumbnail,
           // centering image code for x & y limited by consts for max content size
           // plus base offsets needed to stay clear of other elements
           x: (widthLimitImage - imageSize.width) / 2,
@@ -311,11 +483,12 @@ export default {
         });
         slide.addText([
           {
-            text: `${i.title}: `,
+            text: `${i.name}: `,
             options: {
               bold: true,
+              color: '000088',
               hyperlink: {
-                url: this.slideURL(i.url)
+                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
               }
             }
           },
@@ -326,7 +499,23 @@ export default {
             }
           },
           {
-            text: `\n(Captured on: ${insightDate} - ${this.metadataSummary})`,
+            text: `\n(Captured on: ${insightDate} - ${this.metadataSummary} `,
+            options: {
+              break: false
+            }
+          },
+          {
+            text: 'View On Causemos',
+            options: {
+              break: false,
+              color: '000088',
+              hyperlink: {
+                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
+              }
+            }
+          },
+          {
+            text: '.)',
             options: {
               break: false
             }
@@ -375,12 +564,8 @@ export default {
     openExport() {
       this.exportActive = true;
     },
-    refresh() {
-      API.get('bookmarks', { params: { project_id: this.project } }).then(d => {
-        const listInsights = _.orderBy(d.data, d => d.modified_at, ['desc']);
-        this.listInsights = listInsights;
-        this.setCountInsights(listInsights.length);
-      });
+    removeCuration(id) {
+      this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
     },
     scaleImage(base64png, widthLimit, heightLimit) {
       const imageSize = this.getPngDimensionsInPixels(base64png);
@@ -403,23 +588,54 @@ export default {
         return;
       }
       this.selectedInsight = insight;
-      // Restore the state
       const savedURL = insight.url;
       const currentURL = this.$route.fullPath;
       if (savedURL !== currentURL) {
-        this.$router.push(savedURL);
+        // FIXME: applying (private) insights that belong to analyses that no longer exist
+        // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
+
+        // add 'insight_id' as a URL param so that the target page can apply it
+        const finalURL = this.getSourceUrlForExport(savedURL, this.selectedInsight.id);
+
+        // special case
+        if (this.projectType !== ProjectType.Analysis && this.selectedInsight.visibility === 'private') {
+          // this is a private insight created by an analyst:
+          // when applying this insight from within a domain project, it will redirect to the relevant analysis project
+          // so show a warning before leaving
+          this.redirectInsightUrl = finalURL;
+          this.showWarningModal();
+          return;
+        }
+
+        this.$router.push(finalURL);
+      } else {
+        router.push({
+          query: {
+            insight_id: this.selectedInsight.id
+          }
+        }).catch(() => {});
       }
       this.closeInsightPanel();
     },
+    showWarningModal() {
+      this.showModal = true;
+    },
     slideURL(slideURL) {
       return `${window.location.protocol}//${window.location.host}/#${slideURL}`;
+    },
+    switchTab(id) {
+      this.activeInsight = null;
+      this.selectedInsight = null;
+      this.activeTabId = id;
+
+      // FIXME: reload insights since questions most recent question stuff may not be up to date
     },
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
     },
     updateCuration(id) {
       if (this.isCuratedInsight(id)) {
-        this.curatedInsights = this.curatedInsights.filter((ci) => ci !== id);
+        this.removeCuration(id);
       } else {
         this.curatedInsights.push(id);
       }
@@ -433,17 +649,18 @@ export default {
 .list-insights-modal-container {
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  justify-content: top;
   align-items: stretch;
   height: 100vh;
-  .search {
-    padding: 1rem;
+  .tab-controls {
     display: flex;
-    .form-control {
+    flex: 0 0 auto;
+    padding: 0 1rem;
+    .tabs {
       flex: 1 1 auto;
     }
     .export {
-      padding: 0 0 0 1rem;
+      padding: 0.75rem 0 0 ;
       flex: 0 0 auto;
       .dropdown-container {
         position: absolute;
@@ -451,6 +668,7 @@ export default {
         padding: 0;
         width: auto;
         height: fit-content;
+        text-align: left;
         // Clip children overflowing the border-radius at the corners
         overflow: hidden;
 
@@ -460,16 +678,55 @@ export default {
       }
     }
   }
-  .pane-wrapper {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    padding: 1rem;
+  .cards {
+    background-color: $background-light-2;
+    display: inline-block;
+    height: 100%;
     overflow: auto;
-    .pane-content {
+    padding: 1rem;
+    .search {
       display: flex;
-      flex-direction: row;
-      flex-wrap: wrap;
+      padding: 0 0 1rem;
+      .form-control {
+        flex: 1 1 auto;
+      }
+    }
+    .pane-wrapper {
+      flex: 1 1 auto;
+      display: flex;
+      flex-direction: column;
+      overflow: auto;
+      .pane-content {
+        display: flex;
+        flex-direction: row;
+        flex-wrap: wrap;
+      }
+    }
+  }
+  .list {
+    background-color: $background-light-2;
+    display: inline-block;
+    height: 100%;
+    overflow: auto;
+    padding: 1rem;
+  }
+}
+
+.body {
+  flex: 1;
+  min-height: 0;
+  background: $background-light-3;
+
+  .body-main-content {
+    flex: 1;
+    min-width: 0;
+    isolation: isolate;
+
+    .analysis-question {
+      padding: 5px 5px 10px;
+      border: 1px solid #e5e5e5;
+      margin: 0px 1rem 1rem 0px;
+      background-color: white;
     }
   }
 }

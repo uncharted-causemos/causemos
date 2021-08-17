@@ -32,7 +32,8 @@ import ColorLegend from '@/components/graph/color-legend';
 import Controls from '@/components/graph/controls';
 import { createLinearScale } from '@/utils/scales-util';
 import { FADED_COLOR } from '@/utils/colors-util';
-import arcDiagramUtil from '@/utils/arc-diagram-util';
+import { calculateNeighborhood } from '@/utils/graphs-util';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 export const EDGE_THRESHOLD = 2000;
 
@@ -60,6 +61,11 @@ export default {
   emits: [
     'clear-selection'
   ],
+  setup() {
+    return {
+      ontologyFormatter: useOntologyFormatter()
+    };
+  },
   data: () => ({
     showEdges: false,
     showExpandControls: false,
@@ -122,7 +128,7 @@ export default {
     this.currentLayout = 'cose-bilkent';
   },
   mounted() {
-    this.graphRenderer = new CytoscapeGraphRenderer();
+    this.graphRenderer = new CytoscapeGraphRenderer({ formatter: this.ontologyFormatter });
     this.graphRenderer.initialize(this.$refs.graph);
     this.graphRenderer.setDepth(1);
     this.graphRenderer.setStrategy(coseBilkentLayout());
@@ -221,7 +227,7 @@ export default {
       }
 
       const nodesSelectedIds = nodesSelected.toArray().map(d => d.id());
-      const neighborhood = nodesSelectedIds.map(id => arcDiagramUtil.calculateNeighborhood(this.graphData, id)); // Calculate neighborhood for each selected node.
+      const neighborhood = nodesSelectedIds.map(id => calculateNeighborhood(this.graphData, id)); // Calculate neighborhood for each selected node.
       const merged = { edges: [] }; // Group neighborhood by nodes and edges
       neighborhood.forEach(n => {
         merged.edges.push(n.edges);

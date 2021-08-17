@@ -5,7 +5,7 @@ const NODE_AGGREGATION_QUERY = {
     subjects: {
       terms: {
         size: MAX_ES_BUCKET_SIZE,
-        field: 'subj.concept'
+        field: 'subj.concept.raw'
       },
       aggs: {
         grounding_score: {
@@ -18,7 +18,7 @@ const NODE_AGGREGATION_QUERY = {
     objects: {
       terms: {
         size: MAX_ES_BUCKET_SIZE,
-        field: 'obj.concept'
+        field: 'obj.concept.raw'
       },
       aggs: {
         grounding_score: {

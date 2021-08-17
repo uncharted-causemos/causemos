@@ -8,7 +8,15 @@
       v-if="showNewNode"
       ref="newNode"
       :concepts-in-cag="conceptsInCag"
+      :placement="{ x: newNodeX, y: newNodeY }"
       @suggestion-selected="onSuggestionSelected"
+      @show-custom-concept="showCustomConcept = true"
+    />
+    <modal-custom-concept
+      v-if="showCustomConcept"
+      ref="customGrounding"
+      @close="showCustomConcept = false"
+      @save-custom-concept="saveCustomConcept"
     />
     <color-legend
       :show-cag-encodings="true" />
@@ -32,6 +40,9 @@ import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
+import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
+
+import projectService from '@/services/project-service';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 
@@ -66,58 +77,41 @@ const DEFAULT_STYLE = {
 };
 
 const FADED_OPACITY = 0.2;
-const GRAPH_HEIGHT = 40;
+// const GRAPH_HEIGHT = 40;
 const THRESHOLD_TIME = 1;
+
+let temporaryNewEdge = null;
 
 class CAGRenderer extends SVGRenderer {
   renderNodeAdded(nodeSelection) {
-    nodeSelection.each(function() {
-      const selection = d3.select(this);
+    nodeSelection.append('g').classed('node-handles', true);
+    nodeSelection.append('rect')
+      .classed('node-header', true)
+      .attr('x', 0)
+      .attr('y', 0)
+      .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
+      .attr('width', d => d.width)
+      .attr('height', d => d.height)
+      .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+      .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth)
+      .style('cursor', 'pointer')
+      .style('fill', DEFAULT_STYLE.nodeHeader.fill);
 
-      // container node
-      if (selection.datum().nodes) {
-        selection.append('rect')
-          .attr('x', 0)
-          .attr('y', 0)
-          .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
-          .attr('width', d => d.width)
-          .attr('height', d => d.height)
-          .style('fill', '#FAFAFA')
-          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke);
+    nodeSelection
+      .append('text')
+      .classed('node-label', true)
+      .attr('x', 10)
+      .attr('y', 20)
+      .style('pointer-events', 'none')
+      .text(d => d.label)
+      .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
+  }
 
-        selection.append('text')
-          .classed('node-label', true)
-          .attr('transform', svgUtil.translate(20, GRAPH_HEIGHT * 0.5 - 6))
-          .style('stroke', 'none')
-          .style('fill', '#888')
-          .style('font-weight', '600')
-          .text(d => d.label)
-          .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 30); });
-      } else {
-        selection.append('g').classed('node-handles', true);
-
-        selection.append('rect')
-          .classed('node-header', true)
-          .attr('x', 0)
-          .attr('y', 0)
-          .attr('rx', DEFAULT_STYLE.nodeHeader.borderRadius)
-          .attr('width', d => d.width)
-          .attr('height', d => d.height)
-          .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
-          .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth)
-          .style('cursor', 'pointer')
-          .style('fill', DEFAULT_STYLE.nodeHeader.fill);
-
-        selection
-          .append('text')
-          .classed('node-label', true)
-          .attr('x', 10)
-          .attr('y', 20)
-          .style('pointer-events', 'none')
-          .text(d => d.label)
-          .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
-      }
-    });
+  // Override render function to also check for ambigous edges and highlight them
+  async render() {
+    await super.render();
+    this.displayAmbiguousEdgeWarning();
+    this.displayGraphStats();
   }
 
   renderNodeUpdated() {
@@ -130,7 +124,9 @@ class CAGRenderer extends SVGRenderer {
       .transition()
       .duration(1000)
       .style('opacity', 0)
-      .remove();
+      .on('end', function() {
+        d3.select(this.parentNode).remove();
+      });
   }
 
   buildDefs() {
@@ -221,7 +217,18 @@ class CAGRenderer extends SVGRenderer {
       .style('stroke', 'none');
   }
 
-  renderEdgeAdded(selection) {
+  renderEdgeAdded(selection, renderer) {
+    // If we manually drew a new edge, we need to inject the path points back in, as positions are not stored.
+    if (temporaryNewEdge) {
+      const sourceNode = temporaryNewEdge.sourceNode;
+      const targetNode = temporaryNewEdge.targetNode;
+      const edge = renderer.layout.edges.find(d => d.source === sourceNode.concept && d.target === targetNode.concept);
+      if (edge) {
+        edge.points = renderer.getPathBetweenNodes(sourceNode, targetNode);
+      }
+      temporaryNewEdge = null;
+    }
+
     selection
       .append('path')
       .classed('edge-path-bg', true)
@@ -438,14 +445,53 @@ class CAGRenderer extends SVGRenderer {
       .style('fill', 'white')
       .style('pointer-events', 'none')
       .text('\uf061');
-
     const getLayoutNodeById = id => this.layout.nodes.find(n => n.id === id);
     const getNodeExit = (node, offset = 0) => ({ x: node.x + node.width + offset, y: node.y + 0.5 * node.height });
     const distance = (a, b) => Math.hypot(a.x - b.x, a.y - b.y);
-
     const drag = d3.drag()
-      .on('start', (evt) => {
+      .on('start', async (evt) => {
         this.newEdgeSourceId = evt.subject.id; // Refers to datum, use id because layout position can change
+        const graph = evt.subject.parent.data; // FIXME - we should avoid this kind of data access, we should probably pass projectID into the renderer directly
+
+        // Begin processing to highlight nodes that have evidence for an edge originating from the source
+        const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
+        const project_id = graph.project_id;
+        const nodesInGraph = graph.nodes;
+
+        const edgesInGraph = graph.edges;
+        const edgesFromSource = edgesInGraph.filter(edge => edge.source === sourceNode.concept);
+        const conceptsInGraph = nodesInGraph.map(node => node.concept);
+
+        const svg = this.svgEl;
+        const foregroundLayer = d3.select(svg).select('.data-layer');
+
+        const filters = {
+          clauses: [
+            { field: 'subjConcept', values: [sourceNode.concept], isNot: false, operand: 'or' },
+            { field: 'objConcept', values: conceptsInGraph, isNot: false, operand: 'or' }]
+        };
+
+        projectService.getProjectGraph(project_id, filters).then(d => {
+          const resultEdges = d.edges; // contains all possible edges in the project originating from the source
+          const resultEdgesTrimmed = resultEdges.filter(edge => !edgesFromSource.some(edgeFromSource => edge.target === edgeFromSource.target)); // trim nodes that already have edge from this source
+
+          resultEdgesTrimmed.forEach(edge => {
+            const targetNode = getLayoutNodeById(edge.target);
+            const pointerX = targetNode.x;
+            const pointerY = targetNode.y + (targetNode.height * 0.5);
+            foregroundLayer
+              .append('svg:path')
+              .attr('d', svgUtil.ARROW)
+              .classed('edge-possibility-indicator', true)
+              .attr('transform', `translate(${pointerX}, ${pointerY}) scale(1.5)`)
+              .attr('fill', calcEdgeColor(edge))
+              .attr('opactiy', 0)
+              .style('pointer-events', 'none')
+              .transition()
+              .duration(300)
+              .attr('opacity', 1);
+          });
+        });
       })
       .on('drag', (evt) => {
         chart.selectAll('.new-edge').remove();
@@ -478,7 +524,24 @@ class CAGRenderer extends SVGRenderer {
           .style('fill', 'none');
       })
       .on('end', () => {
-        this.options.newEdgeFn(getLayoutNodeById(this.newEdgeSourceId), getLayoutNodeById(this.newEdgeTargetId));
+        const sourceNode = getLayoutNodeById(this.newEdgeSourceId);
+        const targetNode = getLayoutNodeById(this.newEdgeTargetId);
+
+        this.disableNodeHandles();
+        this.resetDragState();
+
+        // remove edge indicators
+        const indicators = d3.selectAll('.edge-possibility-indicator');
+        indicators
+          .transition()
+          .duration(300)
+          .style('opacity', 0)
+          .remove();
+
+        if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
+        temporaryNewEdge = { sourceNode, targetNode };
+
+        this.options.newEdgeFn(sourceNode, targetNode);
       });
     handles.call(drag);
   }
@@ -542,6 +605,162 @@ class CAGRenderer extends SVGRenderer {
       .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
       .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
   }
+
+  displayAmbiguousEdgeWarning() {
+    const graph = this.layout;
+    const svg = d3.select(this.svgEl);
+    const foregroundLayer = svg.select('.foreground-layer');
+
+    const highlightFunction = this.highlight;
+    const highlightAmbiguousEdgesFunction = this.highlightAmbiguousEdges;
+
+    const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
+      ? d3.select('.ambiguous-edge-warning') // select it
+      : foregroundLayer.append('text') // or create it if it hasn't been already
+        .attr('x', parseInt(svg.style('width')) - 310)
+        .style('text-anchor', 'right')
+        .attr('y', 20)
+        .attr('opacity', 0)
+        .attr('fill', 'red')
+        .attr('font-size', '1.6rem')
+        .classed('ambiguous-edge-warning', true)
+        .text('Warning: ambiguous edges detected in graph') // not very pretty, could update in the future
+        .on('mouseover', function () {
+          highlightAmbiguousEdgesFunction(graph, highlightFunction);
+        });
+
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        warning
+          .attr('opacity', 1)
+          .attr('x', parseInt(svg.style('width')) - 310); // FIXME this doesn't move the warning if the window resizes, svg size doesnt change
+        return;
+      }
+    }
+    warning.attr('opacity', 0);
+  }
+
+  displayGraphStats() {
+    const graph = this.layout;
+    const svg = d3.select(this.svgEl);
+    const foregroundLayer = svg.select('.foreground-layer');
+    const edgeCount = graph.edges.length;
+    const nodeCount = graph.nodes.length;
+
+    const squareSize = 26;
+    let statsGroup = null;
+    let clickGroup = null;
+
+    if (d3.select('.graph-stats-info').node()) {
+      statsGroup = d3.select('.graph-stats-info');
+      const selection = statsGroup.selectAll('.graph-stats-text');
+      selection.text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`);
+      clickGroup = statsGroup.selectAll('clickGroup');
+    } else {
+      statsGroup = foregroundLayer.append('g')
+        .attr('transform', svgUtil.translate(5, 10))
+        .classed('graph-stats-info', true)
+        .style('cursor', 'pointer');
+
+      clickGroup = statsGroup.append('g')
+        .classed('clickGroup', true);
+
+      clickGroup
+        .append('rect')
+        .style('width', squareSize.toString())
+        .style('height', squareSize.toString())
+        .style('rx', '6')
+        .style('fill', 'white')
+        .style('fill-opacity', '0')
+        .style('stroke', '#545353');
+
+      clickGroup
+        .append('text')
+        .style('font-family', 'FontAwesome')
+        .style('font-size', '20px')
+        .style('stroke', 'none')
+        .style('fill', '#545353')
+        .style('cursor', 'pointer')
+        .style('text-anchor', 'middle')
+        .style('alignment-baseline', 'middle')
+        .attr('x', (squareSize / 2).toString())
+        .attr('y', ((squareSize / 2) + 1).toString())
+        .text('\uf05a');
+
+      statsGroup
+        .append('text')
+        .classed('graph-stats-text', true)
+        .style('font-size', '18px')
+        .style('stroke', 'none')
+        .style('fill', '#545353')
+        .style('text-anchor', 'left')
+        .style('alignment-baseline', 'middle')
+        .attr('y', (squareSize + 15).toString())
+        .text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`)
+        .style('opacity', 0)
+        .attr('pointer-events', 'none');
+    }
+
+    clickGroup
+      .on('click', function() {
+        const selection = statsGroup.selectAll('.graph-stats-text');
+        const active = selection.style('opacity');
+        const newOpacity = parseInt(active) ? 0 : 1;
+
+        selection
+          .transition()
+          .duration(300)
+          .style('opacity', newOpacity);
+      });
+  }
+
+  highlightAmbiguousEdges(graph, highlight) {
+    const highlightOptions = {
+      color: 'red',
+      duration: 1000
+    };
+    const ambigEdges = [];
+
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        ambigEdges.push(edge);
+      }
+    }
+
+    if (ambigEdges.length > 0) {
+      highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
+    }
+  }
+
+  /**
+   * Used for creating new CAG node and retain existing xy-position.
+   * We are building a blueprint, so the next iteration, when we have actual
+   * data we can bind to it without losing prior position placements
+   */
+  createNewNode(x, y, { concept, label }) {
+    const chart = this.chart;
+    const node = chart.append('g').classed('node', true).attr('transform', svgUtil.translate(x, y));
+
+    node.datum({
+      id: concept,
+      concept: concept,
+      label: label,
+      x: x,
+      y: y,
+      height: 30,
+      width: 130,
+      type: 'normal',
+      data: {},
+      nodes: []
+    });
+
+    const nodeUI = node.append('g').classed('node-ui', true);
+
+    this.renderNodeAdded(nodeUI);
+    nodeUI.call(this.enableNodeInteraction, this);
+  }
 }
 
 
@@ -549,7 +768,8 @@ export default {
   name: 'CAGGraph',
   components: {
     NewNodeConceptSelect,
-    ColorLegend
+    ColorLegend,
+    ModalCustomConcept
   },
   props: {
     data: {
@@ -562,10 +782,16 @@ export default {
     }
   },
   emits: [
+    'delete', 'refresh',
     'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click'
   ],
   data: () => ({
-    selectedNode: ''
+    selectedNode: '',
+    newNodeX: 0,
+    newNodeY: 0,
+    svgX: 0,
+    svgY: 0,
+    showCustomConcept: false
   }),
   computed: {
     ...mapGetters({
@@ -577,58 +803,7 @@ export default {
   },
   watch: {
     data() {
-      const layout = this.renderer.layout;
-
-      if (layout.nodes === undefined || layout.edges === undefined) {
-        this.refresh();
-        return;
-      }
-
-      // TODO: smart add node, instead of this
-      const nodesAdded = this.data.nodes.filter(node => !layout.nodes.some(layoutNode => node.id === layoutNode.data.id));
-      if (nodesAdded.length > 0) {
-        this.refresh();
-        return;
-      }
-
-      const edgesAdded = this.data.edges.filter(edge => !layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
-      edgesAdded.forEach(edge => {
-        const source = layout.nodes.filter(layoutNode => layoutNode.concept === edge.source)[0];
-        const target = layout.nodes.filter(layoutNode => layoutNode.concept === edge.target)[0];
-
-        // lets add edges
-        layout.edges.push(Object.assign({}, {
-          id: edge.source + ':' + edge.target,
-          data: edge,
-          points: this.renderer.getPathBetweenNodes(source, target),
-          source: edge.source,
-          target: edge.target
-        }));
-      });
-
-      // FIXME: This block was added to update the data backing an edge without needing to refresh.
-      //  Ideally, svg-flowgraph should be able to update data and refresh without jiggling layout
-      //  positions and becoming an unresponsive loading screen for a few seconds.
-      const existingEdges = this.data.edges.filter(edge => layout.edges.some(layoutEdge => edge.id === layoutEdge.data.id));
-      existingEdges.forEach(edge => {
-        // Update each edge in the existing layout with the most recent data from this.data
-        //  in case the statements list (and resulting polarity) has changed
-        const layoutEdge = layout.edges.find(layoutEdge => edge.id === layoutEdge.data.id);
-        layoutEdge.data = edge;
-      });
-
-      this.renderer.buildDefs();
-
-      // don't forget to deal with deleted nodes/edges too
-      layout.nodes = layout.nodes.filter(layoutNode => this.data.nodes.some(node => node.id === layoutNode.data.id));
-      layout.edges = layout.edges.filter(layoutEdge => this.data.edges.some(edge => edge.id === layoutEdge.data.id));
-
-      this.selectedNode = null;
-      this.renderer.hideNeighbourhood();
-      this.renderer.enableDrag(true);
-
-      this.renderer.renderNodesDelta();
-      this.renderer.renderEdgesDelta();
+      this.refresh();
     },
     showNewNode(newValue) {
       if (newValue) {
@@ -636,10 +811,16 @@ export default {
           // Wait a tick for NewNodeConceptSelect to be shown, then focus it
           this.focusNewNodeInput();
         });
+      } else {
+        this.newNodeX = 20;
+        this.newNodeY = 20;
       }
     }
   },
   created() {
+    // renderer is intentionally left out of `data` to avoid
+    //  making it deeply reactive, since it contains a very
+    //  large tree of references
     this.renderer = null;
   },
   mounted() {
@@ -649,11 +830,8 @@ export default {
       renderMode: 'delta',
       addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
+      useStableLayout: true,
       newEdgeFn: (source, target) => {
-        this.renderer.disableNodeHandles();
-        this.renderer.resetDragState();
-
-        if (_.isNil(source) || _.isNil(target)) return;
         this.$emit('new-edge', { source, target });
       },
       ontologyConcepts: this.ontologyConcepts
@@ -669,11 +847,15 @@ export default {
       this.deselectNodeAndEdge();
     });
 
-    this.renderer.setCallback('backgroundDblClick', () => {
+    this.renderer.setCallback('backgroundDblClick', (evt, _target, _renderer, coord) => {
+      this.newNodeX = evt.offsetX;
+      this.newNodeY = evt.offsetY;
+      this.svgX = coord.x;
+      this.svgY = coord.y;
       this.$emit('background-dbl-click');
     });
 
-    this.renderer.setCallback('nodeClick', (evt, node) => {
+    this.renderer.setCallback('nodeClick', (_evt, node) => {
       const concept = node.datum().concept;
       const neighborhood = calculateNeighborhood(this.data, concept);
 
@@ -698,7 +880,7 @@ export default {
       this.renderer.selectEdge(evt, edge);
     });
 
-    this.renderer.setCallback('nodeMouseEnter', (evt, node, renderer) => {
+    this.renderer.setCallback('nodeMouseEnter', (_evt, node, renderer) => {
       if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.enableNodeHandles(node);
       const data = node.datum();
@@ -707,7 +889,7 @@ export default {
       }
     });
 
-    this.renderer.setCallback('nodeMouseLeave', (evt, node, renderer) => {
+    this.renderer.setCallback('nodeMouseLeave', (_evt, node, renderer) => {
       if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.disableNodeHandles();
 
@@ -740,7 +922,7 @@ export default {
       }
     });
 
-    this.renderer.setCallback('edgeMouseLeave', (evt, edge) => {
+    this.renderer.setCallback('edgeMouseLeave', (_evt, edge) => {
       edge.selectAll('.edge-mouseover-handle').remove();
     });
 
@@ -750,9 +932,17 @@ export default {
     this.mouseTrap.reset();
   },
   methods: {
+    saveCustomConcept(value) {
+      this.$emit('suggestion-selected', {
+        concept: value.theme,
+        shortName: value.theme,
+        label: value.theme,
+        hasEvidence: false
+      });
+    },
     async refresh() {
       if (_.isEmpty(this.data)) return;
-      this.renderer.setData(this.data, []);
+      this.renderer.setData(this.data);
       await this.renderer.render();
 
       this.highlight();
@@ -771,7 +961,6 @@ export default {
         duration: 4000,
         color: SELECTED_COLOR
       };
-
       // Check if the subgraph was added less than 1 min ago
       const thresholdTime = moment().subtract(THRESHOLD_TIME, 'minutes').valueOf();
       const nodes = this.data.nodes.filter(n => n.modified_at >= thresholdTime).map(n => n.concept);
@@ -779,6 +968,16 @@ export default {
       this.renderer.highlight({ nodes, edges }, options);
     },
     onSuggestionSelected(suggestion) {
+      // HACK This is leveraing the svg-flowgraph internals.
+      //
+      // We inject the node-blueprint into the DOM with createNewNode, then when the
+      // graph itself re-renders it will detect the node-blueprint, rebinds the data and
+      // thus retaining the original layout.
+      this.renderer.createNewNode(this.svgX, this.svgY, {
+        concept: suggestion.concept,
+        label: suggestion.label
+      });
+
       this.$emit('suggestion-selected', suggestion);
     },
     focusNewNodeInput() {

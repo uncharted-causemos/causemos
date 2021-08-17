@@ -1,12 +1,25 @@
 <template>
-  <div class="new-node-container">
-    <input
-      ref="input"
-      v-model="userInput"
-      type="text"
-      placeholder="Type a concept"
-      @keydown="onKeyDown"
-    >
+  <div class="new-node-container" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
+    <div class="new-node-top">
+      <input
+        ref="input"
+        v-model="userInput"
+        type="text"
+        placeholder="Type a concept"
+        style="height: 2.5rem;"
+        @keydown="onKeyDown"
+      >
+      <button
+        v-if="userInput.length < 1"
+        class="mx-2"
+        style="border: none; background-color: white;"
+        @click="$emit('show-custom-concept')"
+      >
+        <span style="color: #255DCC; font-size: 1.5rem;">
+          <i class="fa fa-plus-circle"></i>
+        </span>
+      </button>
+    </div>
     <dropdown-control class="suggestion-dropdown">
       <template #content>
         <div
@@ -47,10 +60,15 @@ export default {
     conceptsInCag: {
       type: Array,
       default: () => []
+    },
+    placement: {
+      type: Object,
+      default: () => ({ x: 0, y: 0 })
     }
   },
   emits: [
-    'suggestion-selected'
+    'suggestion-selected',
+    'show-custom-concept'
   ],
   data: () => ({
     userInput: '',
@@ -161,6 +179,11 @@ export default {
     border: none;
     border-radius: 4px;
   }
+}
+
+.new-node-top {
+  display: flex;
+  flex-direction: row;
 }
 
 .suggestion-dropdown {

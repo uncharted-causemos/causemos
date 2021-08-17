@@ -5,18 +5,26 @@ import { conceptShortName } from '@/utils/concept-util';
 import { startPolling } from '@/api/poller';
 import {
   Scenario,
-  ScenarioConstraint,
+  ConceptProjectionConstraints,
+  NewScenario,
   NodeParameter,
   EdgeParameter,
   CAGModelSummary,
   CAGGraph,
-  ScenarioResult
+  ScenarioResult,
+  NodeScenarioData
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
   UNSYNCED: 0,
   TRAINING: 1,
-  READY: 2
+  READY: 2,
+  UNSYNCED_TOPOLOGY: 3
+};
+
+const MODEL_MSGS = {
+  MODEL_STALE: 'Model is stale',
+  MODEL_TRAINING: 'Model training is in progress, please check back in a few minutes'
 };
 
 const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
@@ -31,6 +39,15 @@ const getSummary = async (modelId: string) => {
   const result = await API.get(`models/${modelId}`);
   return result.data;
 };
+
+/**
+ * Get the number of edges and nodes for each model passed in
+ */
+const getModelStats = async (modelIds: Array<string>) => {
+  const result = await API.get('models/model-stats', { params: { modelIds: modelIds } });
+  return result.data;
+};
+
 
 /**
  * Get model data
@@ -107,7 +124,7 @@ const addComponents = async (modelId: string, nodes: NodeParameter[], edges: Edg
   return result.data;
 };
 
-const removeComponents = async (modelId: string, nodes: NodeParameter[], edges: EdgeParameter[]) => {
+const removeComponents = async (modelId: string, nodes: { id: string }[], edges: { id: string }[]) => {
   const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', nodes, edges });
   return result.data;
 };
@@ -117,8 +134,8 @@ const removeModel = async (modelId: string) => {
   return result.data;
 };
 
-const duplicateModel = async (modelId: string) => {
-  const result = await API.post(`cags/${modelId}`);
+const duplicateModel = async (modelId: string, name: string) => {
+  const result = await API.post(`cags/${modelId}`, { name });
   return result.data;
 };
 
@@ -181,7 +198,7 @@ const getNodeStatements = async (modelId: string, concept: string) => {
  * @param {string} scenario.experimentId - the identifier used ty the engine
  * @param {array} result - array of projections, one per node in the model graph
  */
-const createScenario = async (scenario: Scenario) => {
+const createScenario = async (scenario: NewScenario) => {
   const result = await API.post('scenarios', scenario);
   return result.data;
 };
@@ -209,11 +226,11 @@ const initializeModel = async (modelId: string) => {
   const errors = [];
 
   if (model.is_stale === true) {
-    errors.push('Model is stale');
+    errors.push(MODEL_MSGS.MODEL_STALE);
   }
-  if (model.is_quantified === false) {
-    errors.push('Model is not quantified');
-  }
+  // if (model.is_quantified === false) {
+  //   errors.push('Model is not quantified');
+  // }
   if (!_.isEmpty((errors))) {
     return errors;
   }
@@ -223,19 +240,10 @@ const initializeModel = async (modelId: string) => {
     try {
       const r = await syncModelWithEngine(modelId, engine);
       if (r.status === MODEL_STATUS.TRAINING) {
-        errors.push('Model training is in progress, please check back in a few minutes');
+        errors.push(MODEL_MSGS.MODEL_TRAINING);
       }
     } catch (error) {
       errors.push(error.response.data);
-    }
-    return errors;
-  }
-
-  // Model is still training, check and upate the status
-  if (model.status === MODEL_STATUS.TRAINING) {
-    const r = await checkAndUpdateRegisteredStatus(modelId, engine);
-    if (r === MODEL_STATUS.TRAINING) {
-      errors.push('Model training is in progress, please check back in a few minutes');
     }
     return errors;
   }
@@ -253,7 +261,7 @@ const initializeModel = async (modelId: string) => {
 const runProjectionExperiment = async (
   modelId: string,
   steps: number,
-  constraints: ScenarioConstraint[]) => {
+  constraints: ConceptProjectionConstraints[]) => {
   const model = await getSummary(modelId);
   const result = await API.post(`models/${modelId}/projection`, {
     engine: model.parameter.engine,
@@ -294,10 +302,10 @@ const getExperimentResult = async (modelId: string, experimentId: string, thresh
  * @param {array} scenarios - array of scenario objects
  */
 const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[], scenarios: Scenario[]) => {
-  const result: any = {};
+  const result: {[concept: string]: NodeScenarioData} = {};
   const modelParameter = modelSummary.parameter;
 
-  const getScenarioConstraints = (scenario: Scenario, concept: string) => {
+  const getConceptProjectionConstraints = (scenario: Scenario, concept: string) => {
     if (_.isEmpty(scenario.parameter) || _.isNil(scenario.parameter)) return [];
 
     const constraints = scenario.parameter.constraints.find(d => d.concept === concept);
@@ -305,13 +313,13 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
   };
 
   const getScenarioResult = (scenario: Scenario, concept: string) => {
-    if (!scenario.result) return {};
+    if (!scenario.result) return null;
 
     const result = scenario.result.find(d => d.concept === concept);
 
     // Scenario may be stale/invalid
     if (!result) {
-      return {};
+      return null;
     }
 
     return {
@@ -320,37 +328,40 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
     };
   };
 
-  // FIXME: types
   nodes.forEach(nodeData => {
-    const graphData: any = {};
-
     // 1. indicator and model information
     const indicatorData = nodeData.parameter || {};
     const concept = nodeData.concept;
 
-    graphData.initial_value = indicatorData.initial_value;
-    graphData.indicator_name = indicatorData.indicator_name || null;
-    graphData.indicator_time_series = indicatorData.indicator_time_series || [];
-    graphData.indicator_time_series_range = {
-      start: modelParameter.indicator_time_series_range.start,
-      end: modelParameter.indicator_time_series_range.end
+    const graphData: NodeScenarioData = {
+      initial_value: indicatorData.initial_value,
+      indicator_name: indicatorData.name || '',
+      indicator_time_series: indicatorData.timeseries || [],
+      indicator_time_series_range: {
+        start: modelParameter.indicator_time_series_range.start,
+        end: modelParameter.indicator_time_series_range.end
+      },
+      projection_start: modelParameter.projection_start,
+      min: indicatorData.min,
+      max: indicatorData.max,
+      scenarios: []
     };
-    graphData.projection_start = modelParameter.projection_start;
-
-    graphData.scenarios = [];
 
     // 2. grab relevant data for this node from each scenario, if applicable
-    scenarios.forEach(scenario => {
-      const scenarioData: any = {};
-      scenarioData.id = scenario.id;
-      scenarioData.is_baseline = scenario.is_baseline;
-      scenarioData.is_valid = scenario.is_valid;
-      scenarioData.parameter = scenario.parameter;
-      scenarioData.name = scenario.name;
-      scenarioData.constraints = getScenarioConstraints(scenario, concept);
-      scenarioData.result = getScenarioResult(scenario, concept);
-      graphData.scenarios.push(scenarioData);
+    const scenarioDataForThisNode = scenarios.map(scenario => {
+      const { id, is_baseline, is_valid, parameter, name } = scenario;
+      return {
+        id,
+        is_baseline,
+        is_valid,
+        parameter,
+        name,
+        constraints: getConceptProjectionConstraints(scenario, concept),
+        result: getScenarioResult(scenario, concept) || undefined
+      };
     });
+
+    graphData.scenarios = scenarioDataForThisNode;
 
     result[concept] = graphData;
   });
@@ -384,7 +395,8 @@ const _markConceptHasEvidence = (hasEvidence: boolean) =>
     return {
       concept,
       hasEvidence,
-      shortName: conceptShortName(concept) || ''
+      shortName: conceptShortName(concept) || '',
+      label: ''
     };
   };
 
@@ -416,7 +428,7 @@ const runSensitivityAnalysis = async (
   modelSummary: CAGModelSummary,
   analysisType: string,
   analysisMode: string,
-  constraints: ScenarioConstraint[]
+  constraints: ConceptProjectionConstraints[]
 ) => {
   const { id: modelId } = modelSummary;
   const { engine, num_steps: numTimeSteps, projection_start: experimentStart } = modelSummary.parameter;
@@ -442,6 +454,37 @@ const runSensitivityAnalysis = async (
   );
 
   return result.data.experimentId;
+};
+
+
+const createBaselineScenario = async (modelSummary: CAGModelSummary, nodes: NodeParameter[]) => {
+  const modelId = modelSummary.id;
+  const numSteps = modelSummary.parameter.num_steps;
+  try {
+    const experimentId = await runProjectionExperiment(modelId, numSteps, injectStepZero(nodes, []));
+    const result: any = await getExperimentResult(modelId, experimentId);
+
+    const scenario: NewScenario = {
+      model_id: modelId,
+      experiment_id: experimentId,
+      result: result.results.data,
+      name: 'Baseline scenario',
+      description: 'Baseline scenario',
+      parameter: {
+        constraints: [],
+        num_steps: numSteps,
+        indicator_time_series_range: modelSummary.parameter.indicator_time_series_range,
+        projection_start: modelSummary.parameter.projection_start
+      },
+      engine: modelSummary.parameter.engine,
+      is_baseline: true,
+      is_valid: true
+    };
+    await createScenario(scenario);
+  } catch (error) {
+    console.log(error);
+    throw new Error(`Failed creating baseline scenario ${modelSummary.parameter.engine}`);
+  }
 };
 
 
@@ -491,6 +534,7 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
     const targetNode = cagA.nodes.find(d => d.concept === node.concept);
     if (_.isNil(targetNode)) {
       cagA.nodes.push({
+        id: '',
         concept: node.concept,
         label: node.label,
         parameter: node.parameter
@@ -526,6 +570,7 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
       }
     } else {
       cagA.edges.push({
+        id: '',
         source: edge.source,
         target: edge.target,
         reference_ids: edge.reference_ids,
@@ -622,11 +667,47 @@ export const expandExtentForDyseProjections = (yExtent: [number, number], numLev
   ];
 };
 
+
+// FIXME: Inject step=0 initial value constraints per node, we shouldn't need to do this,
+// engine should handle this quirky case. Sep 2020
+const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptProjectionConstraints[]) => {
+  const result = _.cloneDeep(constraints);
+  nodeParameters.forEach(n => {
+    const concept = n.concept;
+    // const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+    const timeseries: any = _.get(n.parameter, 'timeseries', []);
+    let initialValue = 0;
+    if (timeseries.length > 0) {
+      initialValue = timeseries[timeseries.length - 1].value;
+    }
+
+    const current = result.find(c => c.concept === concept);
+    if (!_.isNil(current)) {
+      if (!_.some(current.values, v => v.step === 0)) {
+        current.values.push({ step: 0, value: initialValue });
+      }
+    } else {
+      result.push({
+        concept: concept,
+        values: [{ step: 0, value: initialValue }]
+      });
+    }
+  });
+
+  result.forEach(r => {
+    r.values = _.orderBy(r.values, v => v.step);
+  });
+
+  return result;
+};
+
+
 export default {
   getProjectModels,
   getSummary,
   checkAndUpdateRegisteredStatus,
   getComponents,
+  getModelStats,
   getEdgeStatements,
   getNodeStatements,
 
@@ -634,6 +715,7 @@ export default {
   runProjectionExperiment,
   runSensitivityAnalysis,
   getExperimentResult,
+  createBaselineScenario,
 
   getScenarios,
   createScenario,
@@ -665,5 +747,9 @@ export default {
 
   calculateScenarioPercentageChange,
   expandExtentForDyseProjections,
-  ENGINE_OPTIONS
+  injectStepZero,
+
+  ENGINE_OPTIONS,
+  MODEL_STATUS,
+  MODEL_MSGS
 };

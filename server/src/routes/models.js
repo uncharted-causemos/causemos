@@ -2,6 +2,7 @@ const _ = require('lodash');
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const moment = require('moment');
+const uuid = require('uuid');
 const router = express.Router();
 const Logger = rootRequire('/config/logger');
 const { setLock, releaseLock } = rootRequire('/cache/node-lru-cache');
@@ -14,10 +15,11 @@ const modelService = rootRequire('/services/model-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
 const { MODEL_STATUS } = rootRequire('/util/model-util');
+const modelUtil = rootRequire('util/model-util');
 
 const HISTORY_START_DATE = '2015-01-01';
-const HISTORY_END_DATE = '2017-12-01';
-const PROJECTION_START_DATE = '2018-01-01';
+const HISTORY_END_DATE = '2020-12-01';
+const PROJECTION_START_DATE = '2021-01-01';
 const DEFAULT_NUM_STEPS = 12;
 
 
@@ -55,7 +57,7 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
       projection_start: defaultProjectionStartDate
     };
   }
-  modelFields.is_quantified = true;
+  // modelFields.is_quantified = true;
   modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
@@ -148,6 +150,13 @@ router.get('/', asyncHandler(async (req, res) => {
   });
 }));
 
+/* GET get model stats */
+router.get('/model-stats', asyncHandler(async (req, res) => {
+  const { modelIds } = req.query;
+  const modelStats = await modelService.getModelStats(modelIds);
+  res.json(modelStats);
+}));
+
 
 /* GET retrieve single model */
 router.get('/:modelId', asyncHandler(async (req, res) => {
@@ -215,14 +224,18 @@ router.get('/:modelId/register-payload', asyncHandler(async (req, res) => {
     return;
   }
 
-  // 2. create payload for model creation in the modelling engine
   const model = await modelService.findOne(modelId);
-  const timeSeriesStart = model.parameter.indicator_time_series_range.start;
-  const timeSeriesEnd = model.parameter.indicator_time_series_range.end;
+
+  // 2. create payload for model creation in the modelling engine
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, timeSeriesStart, timeSeriesEnd)
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model),
+    edges: edgeParameters.map(d => ({
+      source: d.source,
+      target: d.target,
+      weights: _.get(d.parameter, 'weights', [0.5, 0.5])
+    }))
   };
 
   res.setHeader('Content-disposition', `attachment; filename=${modelId}.json`);
@@ -266,14 +279,13 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     return;
   }
 
-  // 2. create payload for model creation in the modelling engine
   const model = await modelService.findOne(modelId);
-  const timeSeriesStart = model.parameter.indicator_time_series_range.start;
-  const timeSeriesEnd = model.parameter.indicator_time_series_range.end;
+
+  // 2. create payload for model creation in the modelling engine
   const enginePayload = {
     id: modelId,
     statements: modelStatements,
-    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, timeSeriesStart, timeSeriesEnd)
+    conceptIndicators: modelService.buildNodeParametersPayload(nodeParameters, model)
   };
 
   // 3. register model to engine
@@ -293,25 +305,10 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   // FIXME: move into service
   // When the topology is changed the model is recreated, but we want to retain any prior custom
   // parameterizations on nodes, edges if possible.
+  const ts = Date.now();
   if (engine === DYSE) {
-    const nodesUpdate = [];
     const edgesUpdate = [];
     const edgesOverride = [];
-
-    nodeParameters.forEach(node => {
-      const nodeInit = initialParameters.nodes[node.concept];
-      const fn = _.get(node, 'parameter.initial_value_parameter.func', null);
-
-      nodesUpdate.push({
-        id: node.id,
-        parameter: {
-          initial_value: nodeInit.initialValue,
-          initial_value_parameter: {
-            func: fn || 'last'
-          }
-        }
-      });
-    });
 
     edgeParameters.forEach(edge => {
       const edgeInit = initialParameters.edges[`${edge.source}///${edge.target}`];
@@ -330,6 +327,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
       } else {
         edgesUpdate.push({
           id: edge.id,
+          modified_at: ts,
           parameter: {
             weights: edgeInit.weights
           }
@@ -340,13 +338,6 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     if (!_.isEmpty(edgesOverride)) {
       await dyseService.updateEdgeParameter(modelId, modelService.buildEdgeParametersPayload(edgesOverride));
     }
-    if (!_.isEmpty(nodesUpdate)) {
-      const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
-      const r = await nodeParameterAdapter.update(nodesUpdate, d => d.id, 'wait_for');
-      if (r.errors) {
-        throw new Error(JSON.stringify(r.items[0]));
-      }
-    }
     if (!_.isEmpty(edgesUpdate)) {
       const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
       const r = await edgeParameterAdapter.update(edgesUpdate, d => d.id, 'wait_for');
@@ -356,29 +347,12 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
     }
   } else if (engine === DELPHI) {
     let r = null;
-    const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
-    const updateNodes = [];
-    nodeParameters.forEach(node => {
-      updateNodes.push({
-        id: node.id,
-        parameter: {
-          initial_value: 0,
-          initial_value_parameter: {
-            func: 'last'
-          }
-        }
-      });
-    });
-    r = await nodeParameterAdapter.update(updateNodes, d => d.id, 'wait_for');
-    if (r.errors) {
-      throw new Error(JSON.stringify(r.items[0]));
-    }
-
     const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
     const updateEdges = [];
     edgeParameters.forEach(edge => {
       updateEdges.push({
         id: edge.id,
+        modified_at: ts,
         parameter: {
           weights: initialParameters.edges[`${edge.source}///${edge.target}`].weights
         }
@@ -396,6 +370,7 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   const modelPayload = {
     id: modelId,
     status: status,
+    is_quantified: true,
     parameter: {
       engine: engine
     },
@@ -537,39 +512,83 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
     return;
   }
 
+  // Recalculate min/max if not specified
+  if (_.isNil(nodeParameter.parameter.min) || _.isNil(nodeParameter.parameter.max)) {
+    Logger.info('Resetting min / max');
+    const { min, max } = modelUtil.projectionValueRange(nodeParameter.parameter.timeseries.map(d => d.value));
+    nodeParameter.parameter.min = min;
+    nodeParameter.parameter.max = max;
+  }
+
   // Parse and get meta data
   const model = await modelService.findOne(modelId);
   const parameter = model.parameter;
-  const timeSeriesStart = parameter.indicator_time_series_range.start;
-  const timeSeriesEnd = parameter.indicator_time_series_range.end;
+  if (_.isNil(parameter)) {
+    throw new Error('Model does not contain parameter');
+  }
   const engine = parameter.engine;
-  const payload = modelService.buildNodeParametersPayload([nodeParameter], timeSeriesStart, timeSeriesEnd);
+  const payload = modelService.buildNodeParametersPayload([nodeParameter], model);
 
   // Register update with engine and retrieve new value
-  let engineUpdateResult = null;
   if (engine === DYSE) {
-    engineUpdateResult = await dyseService.updateNodeParameter(modelId, payload);
+    await dyseService.updateNodeParameter(modelId, payload);
   } else {
     Logger.warn(`Update node-parameter is undefined for ${engine}`);
   }
 
-  if (engine === DYSE) {
-    const initialValue = engineUpdateResult.conceptIndicators[nodeParameter.concept].initialValue;
-    Logger.info(`Setting ${nodeParameter.concept} to initialValue ${initialValue}`);
-
-    // Write raw data back to datastore
-    nodeParameter.parameter.initial_value = initialValue;
-  }
-
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+  const getNodePayload = [
+    { field: 'id', value: nodeParameter.id }
+  ];
+  const nodeBeforeUpdate = await nodeParameterAdapter.findOne(getNodePayload, {});
+
   const updateNodePayload = {
     id: nodeParameter.id,
+    modified_at: Date.now(),
     parameter: nodeParameter.parameter
   };
-  const r = await nodeParameterAdapter.update([updateNodePayload], d => d.id, 'wait_for');
+  let r = await nodeParameterAdapter.update([updateNodePayload], d => d.id, 'wait_for');
   if (r.errors) {
     Logger.warn(JSON.stringify(r));
     throw new Error('Failed to update node-parameter');
+  }
+
+
+  // only update indicatory match history if setting new indicator and not in the same "session"
+  // e.g in the current CAG, a indicator was manually added to a concept
+  // so it will only increment frequency if an indicator is being added in multiple CAGs
+  const beforeIndicatorId = _.get(nodeBeforeUpdate.parameter, 'id', null);
+  const currentIndicatorId = _.get(nodeBeforeUpdate.parameter, 'id', null);
+  if (beforeIndicatorId === null || (currentIndicatorId !== beforeIndicatorId && currentIndicatorId !== null)) {
+    const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
+    const indicatorMatchPayload = [
+      { field: 'project_id', value: model.project_id },
+      { field: 'concept', value: nodeParameter.concept },
+      { field: 'indicator_id', value: nodeParameter.parameter.id }
+    ];
+
+    const indicatorMatch = await indicatorMatchHistoryAdapter.findOne(indicatorMatchPayload, {});
+    // if indicator has been matched by user to this concept, need to update frequency
+    if (!_.isNil(indicatorMatch)) {
+      const updateIndicatorMatchPayload = {
+        id: indicatorMatch.id,
+        frequency: indicatorMatch.frequency + 1
+      };
+      r = await indicatorMatchHistoryAdapter.update([updateIndicatorMatchPayload], d => d.id);
+      if (r.errors) {
+        Logger.warn(JSON.stringify(r));
+        throw new Error('Failed to update indicator-match-history');
+      }
+    } else {
+      const insertIndicatorMatchPayload = {
+        id: uuid(),
+        project_id: model.project_id,
+        concept: nodeParameter.concept,
+        indicator_id: nodeParameter.parameter.id,
+        frequency: 1
+      };
+      await indicatorMatchHistoryAdapter.insert([insertIndicatorMatchPayload], d => d.id);
+    }
   }
 
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
@@ -607,7 +626,14 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
   }
 
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-  const r = await edgeParameterAdapter.update([{ id, source, target, parameter }], d => d.id, 'wait_for');
+  const r = await edgeParameterAdapter.update([{
+    id,
+    source,
+    target,
+    modified_at: Date.now(),
+    parameter
+  }], d => d.id, 'wait_for');
+
   if (r.errors) {
     Logger.warn(JSON.stringify(r));
     throw new Error('Failed to update edge-parameter');

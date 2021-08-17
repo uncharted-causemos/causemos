@@ -1,31 +1,20 @@
 <template>
   <div class="analysis-map-container">
     <div class="value-filter">
-      <slider-continuous-range
-        v-if="extent"
-        v-model="range"
-        :min="extent.min"
-        :max="extent.max"
-        :color-option="colorOption"
-      />
-      <div
-        class="layer-toggle-button"
-        @click="clickLayerToggle">
-        <i
-          :class="layerButtonClass"
-        />
-      </div>
+      <map-legend :ramp="legendData" />
     </div>
     <wm-map
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
       @load="onMapLoad"
-      @move="syncBounds"
+      @move="onMapMove"
       @mousemove="onMouseMove"
       @mouseout="onMouseOut"
+      @styledata="onStyleChange"
     >
       <wm-map-vector
         v-if="vectorSource"
+        :key="baseLayerTrigger"
         :source-id="vectorSourceId"
         :source="vectorSource"
         :source-layer="vectorSourceLayer"
@@ -34,9 +23,11 @@
         :layer-id="colorLayerId"
         :layer="colorLayer"
         @add-layer="onAddLayer"
+        @update-source="onUpdateSource"
       />
       <wm-map-vector
         v-if="vectorSource"
+        :key="baseLayerTrigger"
         :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
         :promote-id="idPropName"
@@ -56,16 +47,22 @@
 <script>
 
 import _ from 'lodash';
-import API from '@/api/api';
+// import { getOutputStats } from '@/services/runoutput-service';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
-import { getColors } from '@/utils/colors-util';
-import { BASE_MAP_OPTIONS, createHeatmapLayerStyle, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { COLOR_SCHEME } from '@/utils/colors-util';
+import {
+  BASE_MAP_OPTIONS,
+  createHeatmapLayerStyle,
+  ETHIOPIA_BOUNDING_BOX,
+  isLayerLoaded,
+  createDivergingColorStops,
+  createColorStops,
+  STYLE_URL_PREFIX
+} from '@/utils/map-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import SliderContinuousRange from '@/components/widgets/slider-continuous-range';
-
-// Map filter animation fps rate (Use lower value if there's a performance issue)
-const FILTER_ANIMATION_FPS = 5;
+import MapLegend from '@/components/widgets/map-legend';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -82,38 +79,81 @@ const createRangeFilter = ({ min, max }, prop) => {
   return [lowerBound, upperBound];
 };
 
-const baseLayer = (property, useFeatureState = false) => {
-  return Object.freeze({
-    type: 'fill',
-    paint: {
-      'fill-antialias': useFeatureState,
-      'fill-color': 'grey',
-      'fill-opacity': [
-        'case',
-        ['==', ['number', [(useFeatureState ? 'feature-state' : 'get'), property], -10000], -10000],
-        0.1,
-        ['boolean', ['feature-state', 'hover'], false],
-        0.4, // opacity to 0.4 on hover
-        0.1 // default
-      ]
+const baseLayer = (property, useFeatureState = false, relativeTo) => {
+  const caseRelativeToMissing = [];
+  const getter = useFeatureState ? 'feature-state' : 'get';
+  relativeTo && caseRelativeToMissing.push(['all', ['==', null, [getter, relativeTo]]], 1);
+  if (useFeatureState) {
+    return Object.freeze({
+      type: 'fill',
+      paint: {
+        'fill-antialias': true,
+        'fill-color': 'grey',
+        'fill-opacity': [
+          'case',
+          ['==', null, ['feature-state', property]], 0.0,
+          ...caseRelativeToMissing,
+          ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
+          0.1 // default
+        ]
+      }
+    });
+  } else {
+    return Object.freeze({
+      type: 'fill',
+      paint: {
+        'fill-antialias': false,
+        'fill-color': 'grey',
+        'fill-opacity': [
+          'case',
+          ...caseRelativeToMissing,
+          ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
+          0.1 // default
+        ]
+      },
+      filter: ['all', ['has', property]]
+    });
+  }
+};
+
+const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
+  const stops = !_.isNil(relativeTo)
+    ? createDivergingColorStops(domain, colors, scaleFn)
+    : createColorStops(domain, colors, scaleFn);
+  const labels = [];
+  // process with color stops (e.g [c1, v1, c2, v2, c3]) where cn is color and vn is value.
+  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 2])(v);
+  stops.forEach((item, index) => {
+    if (index === 1) {
+      labels.push(`< ${format(item)}`);
+    } else if (index % 2 !== 0) {
+      labels.push(`${format(stops[index - 2])} - ${format(item)}`);
+    }
+    // if last stop value
+    if (index === stops.length - 2) {
+      labels.push(`> ${format(item)}`);
     }
   });
+  const data = [];
+  colors.forEach((item, index) => {
+    data.push({ color: item, label: labels[index] });
+  });
+  return data.reverse();
 };
 
 export default {
-  name: 'AnalysisMap',
+  name: 'AnalysisMapSimple',
   components: {
     WmMap,
     WmMapVector,
     WmMapPopup,
-    SliderContinuousRange
+    MapLegend
   },
   emits: [
     'on-map-load',
     'aggregation-level-change',
     'slide-handle-change',
-    'sync-bounds',
-    'click-layer-toggle'
+    'sync-bounds'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -122,14 +162,18 @@ export default {
       default: () => []
     },
     outputSelection: {
-      type: Number,
-      default: () => 0
+      type: String,
+      default: null
+    },
+    relativeTo: {
+      type: String,
+      default: null
     },
     showTooltip: {
       type: Boolean,
       default: false
     },
-    selectedAdminLevel: {
+    selectedLayerId: {
       type: Number,
       default: 0
     },
@@ -137,77 +181,160 @@ export default {
       type: Array,
       default: () => []
     },
-    isGridMap: {
-      type: Boolean,
-      default: () => false
-    },
     mapBounds: {
       type: Array,
       default: () => [ // Default bounds to Ethiopia
         [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
         [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
       ]
+    },
+    regionData: {
+      type: Object,
+      default: () => undefined
+    },
+    gridLayerStats: {
+      type: Array,
+      default: () => []
+    },
+    selectedBaseLayer: {
+      type: String,
+      required: true
     }
   },
   data: () => ({
     baseLayer: undefined,
+    baseLayerTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
     colorLayer: undefined,
     hoverId: undefined,
-    lookupData: undefined,
-    range: undefined,
-    featuresDrawn: undefined,
     map: undefined,
-    selectedLayer: undefined
+    legendData: [],
+    curZoom: 0
   }),
   computed: {
-    outputSourceSpecsValidated() {
-      return this.outputSourceSpecs.map(spec => {
-        // Set default resolution and aggregation
-        return {
-          ...spec,
-          temporalResolution: spec.temporalResolution || 'month',
-          temporalAggregation: spec.temporalAggregation || 'mean',
-          spatialAggregation: spec.spatialAggregation || 'mean'
-        };
-      }).filter(spec => {
-        const { modelId, runId, outputVariable, timestamp, id, temporalResolution, temporalAggregation, spatialAggregation } = spec || {};
-        return modelId && runId && outputVariable && timestamp && id && temporalResolution && temporalAggregation && spatialAggregation;
-      });
+    mapFixedOptions() {
+      const options = {
+        minZoom: 1,
+        ...BASE_MAP_OPTIONS
+      };
+      options.style = this.selectedBaseLayerEndpoint;
+      options.mapStyle = this.selectedBaseLayerEndpoint;
+      return options;
     },
     selection() {
-      return this.outputSourceSpecsValidated[this.outputSelection];
+      return this.outputSourceSpecs.find(spec => spec.id === this.outputSelection);
+    },
+    baselineSpec() {
+      return _.isNil(this.relativeTo) || this.relativeTo === this.outputSelection
+        ? undefined
+        : this.outputSourceSpecs.find(spec => spec.id === this.relativeTo);
+    },
+    selectedLayer() {
+      return layers[this.selectedLayerId];
+    },
+    vectorSourceLayer() {
+      return this.selectedLayer?.vectorSourceLayer;
+    },
+    idPropName() {
+      return this.selectedLayer?.idPropName;
+    },
+    isGridMap() {
+      return this.vectorSourceLayer === 'maas';
+    },
+    adminLevel() {
+      if (this.selectedLayerId > 3) return undefined;
+      return this.selectedLayerId === 0 ? 'country' : 'admin' + this.selectedLayerId;
     },
     stats() {
-      if (!this.lookupData) return;
       const stats = {};
-      for (const [key, data] of Object.entries(this.lookupData)) {
-        const values = data.map(v => v.value);
-        stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+      if (!this.regionData) return stats;
+      if (this.baselineSpec) {
+        // Stats relative to the baseline. (min/max of the difference relative to the baseline)
+        const baselineProp = this.baselineSpec.id;
+        for (const [key, data] of Object.entries(this.regionData)) {
+          const values = [];
+          data.filter(v => v.values[baselineProp] !== undefined).forEach(v => {
+            const diffs = Object.values(v.values).map(value => value - v.values[baselineProp]);
+            values.push(...diffs);
+          });
+          if (values.length) {
+            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          }
+        }
+      } else if (this.relativeTo === this.outputSelection) {
+        // Stats for the baseline map
+        for (const [key, data] of Object.entries(this.regionData)) {
+          const values = data.filter(v => v.values[this.valueProp] !== undefined).map(v => v.values[this.valueProp]);
+          if (values.length) {
+            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          }
+        }
+      } else {
+        // Stats globally across all maps
+        for (const [key, data] of Object.entries(this.regionData)) {
+          const values = [];
+          for (const v of data) {
+            values.push(...Object.values(v.values));
+          }
+          if (values.length) {
+            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
+          }
+        }
       }
       return stats;
     },
-    extent() {
-      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
-      if (!this.stats) return { min: 0, max: 1 };
-      const extent = this.stats[adminLevel];
-      if (extent.min === extent.max) {
-        extent.min = 0;
+    gridStats() {
+      const result = {};
+      // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
+      // The difference is 6 so we subtract the difference to make the lowest level 0.
+      const Z_DIFF = 6;
+      if (!this.gridLayerStats.length) return result;
+      if (this.baselineSpec) {
+        // Do nothing. computeGridRelativeStats method capture this case.
+      } else if (this.relativeTo === this.outputSelection) {
+        // Stats for the baseline map
+        const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection)?.stats;
+        (stats || []).forEach(stat => {
+          result[stat.zoom - Z_DIFF] = { min: stat.min, max: stat.max };
+        });
+      } else {
+        // Stats globally across all maps
+        for (const item of this.gridLayerStats) {
+          for (const stat of item.stats) {
+            const zoom = stat.zoom - Z_DIFF;
+            if (result[zoom]) {
+              result[zoom] = { min: Math.min(result[zoom].min, stat.min), max: Math.max(result[zoom].max, stat.max) };
+            } else {
+              result[zoom] = { min: stat.min, max: stat.max };
+            }
+          }
+        }
       }
-      return this.stats[adminLevel];
+      return result;
+    },
+    gridStatsForCurZoom() {
+      const zoomLevels = Object.keys(this.gridStats).map(Number);
+      const maxZoom = Math.max(...zoomLevels);
+      const zoom = Math.min(maxZoom, this.curZoom);
+      return this.gridStats[zoom];
+    },
+    extent() {
+      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom || this.computeGridRelativeStats();
+      if (!extent) return { min: 0, max: 1 };
+      if (extent.min === extent.max) {
+        extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
+      }
+      return extent;
+    },
+    selectedBaseLayerEndpoint() {
+      return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
     },
     valueProp() {
       // Name of the value property of the feature to be rendered
       return (this.selection && this.selection.id) || '';
     },
     vectorSource() {
-      if (this.selectedLayer.vectorSourceLayer !== 'maas') {
-        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
-      } else {
-        const outputSpecs = this.outputSourceSpecsValidated
-          .filter(spec => {
-            const { runId, outputVariable, modelId, timestamp } = spec || {};
-            return modelId && runId && outputVariable && timestamp;
-          })
+      if (this.isGridMap) {
+        const outputSpecs = this.outputSourceSpecs
           .map(spec => {
             return {
               modelId: spec.modelId,
@@ -221,28 +348,24 @@ export default {
             };
           });
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/grid-output/{z}/{x}/{y}?specs=${JSON.stringify(outputSpecs)}`;
+      } else {
+        return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
-    },
-    layerButtonClass() {
-      if (this.isGridMap) {
-        return 'fa fa-th-large';
-      }
-      return 'fa fa-globe';
     },
     colorOption() {
       return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
+    },
+    colorScheme() {
+      if (!_.isNil(this.relativeTo)) {
+        return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
+      }
+      return COLOR_SCHEME.PURPLES_7;
     },
     filter() {
       return this.filters.find(filter => filter.id === this.valueProp);
     },
     isFilterGlobal() {
       return this.filter && this.filter.global;
-    },
-    filterRange() {
-      if (this.filter === undefined) {
-        return this.extent;
-      }
-      return this.filter && this.filter.range;
     }
   },
   watch: {
@@ -252,99 +375,96 @@ export default {
     selection() {
       this.refresh();
     },
-    range: {
-      handler() {
-        this.updateFilterRange();
-      },
-      deep: true
+    relativeTo() {
+      this.refresh();
+    },
+    regionData() {
+      this.refresh();
     },
     selectedLayer() {
-      Object.assign(this, this.selectedLayer);
       this.refreshLayers();
-    },
-    isGridMap() {
-      this.setSelectedLayer();
-    },
-    selectedAdminLevel() {
-      this.setSelectedLayer();
     }
   },
   created() {
-    this.mapFixedOptions = {
-      minZoom: 1,
-      ...BASE_MAP_OPTIONS
-    };
-
     this.vectorSourceId = 'maas-vector-source';
-    this.selectedLayer = layers[this.selectedAdminLevel];
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+
+    this.debouncedRefreshGridMap = _.debounce(function() {
+      this.refreshGridMap();
+    }, 50);
+
+    // Init layer objects
+    this.refreshLayers();
   },
   mounted() {
     this.refresh();
   },
   methods: {
     refresh() {
-      this.range = this.filterRange;
+      if (!this.map || !this.selection) return;
 
-      // Intilaize min max boundary value and data
-      this.refreshData().then(() => {
-        this.refreshLayers();
-        this.updateLayerFilter();
-      });
+      this.setFeatureStates();
+      this.refreshLayers();
+      this.updateLayerFilter();
     },
     refreshLayers() {
       if (this.extent === undefined || this.colorOption === undefined) return;
-      const useFeatureState = this.selectedLayer.vectorSourceLayer !== 'maas';
-      this.baseLayer = baseLayer(this.valueProp, useFeatureState);
-      const { min, max } = this.extent;
-      const { color, scaleFn } = this.colorOption;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], this.filterRange, getColors(color, 20), scaleFn, useFeatureState);
+      const useFeatureState = !this.isGridMap;
+      this.baseLayer = baseLayer(this.valueProp, useFeatureState, this.baselineSpec?.id);
+      this.refreshColorLayer(useFeatureState);
     },
-    async refreshData() {
-      if (!this.selection) return;
-      const { runId, outputVariable, modelId, temporalResolution, temporalAggregation, spatialAggregation, timestamp } = this.selection;
-      // TODO: Move this api request to service layer
-      try {
-        const data = (await API.get('/maas/output/regional-data', {
-          params: {
-            model_id: modelId,
-            run_id: runId,
-            feature: outputVariable,
-            resolution: temporalResolution,
-            temporal_agg: temporalAggregation,
-            spatial_agg: spatialAggregation,
-            timestamp
-          }
-        })).data;
-        this.lookupData = data;
-        if (this.map) this.setFeatureStates();
-      } catch (e) {
-        // failed fetching data with given params
-      }
+    refreshColorLayer(useFeatureState = false) {
+      const { min, max } = this.extent;
+      const { scaleFn } = this.colorOption;
+      const relativeToProp = this.baselineSpec?.id;
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
+      this.legendData = createMapLegendData([min, max], this.colorScheme, scaleFn, relativeToProp);
     },
     setFeatureStates() {
-      const adminLevel = this.selectedAdminLevel === 0 ? 'country' : 'admin' + this.selectedAdminLevel;
+      if (!this.adminLevel) return;
 
+      // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
         source: this.vectorSourceId,
         sourceLayer: this.vectorSourceLayer
       });
+      // Note: RemoveFeatureState doesn't seem very reliable.
+      // For example, for prvious state, { id: 'Ethiopia', state: {a: 1, b:2, c:3 } }, removeFeatureState seems to remove the state and make it undefined
+      // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
+      // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
+      // To work around above issue, explitly set undefined to each output value by default since removeFeatureState doesn't seem very reliable.
+      const featureStateBase = {};
+      this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
-      this.lookupData[adminLevel].forEach(row => {
+      this.regionData[this.adminLevel].forEach(row => {
         this.map.setFeatureState({
           id: row.id,
           source: this.vectorSourceId,
           sourceLayer: this.vectorSourceLayer
         }, {
-          [this.valueProp]: row.value // > 29000 ? 29000 : row.value
+          ...featureStateBase,
+          ...row.values
         });
       });
     },
     onAddLayer() {
-      if (!this.lookupData) return;
+      if (!this.regionData) return;
       this.setFeatureStates();
+    },
+    onUpdateSource() {
+      setTimeout(() => {
+        // Hack: give enough time to map to render features from updated source
+        this.refreshGridMap();
+      }, 1000);
+    },
+    updateCurrentZoomLevel() {
+      if (!this.map) return;
+      const zoom = Math.floor(this.map.getZoom());
+      if (this.curZoom !== zoom) {
+        this.curZoom = zoom;
+      }
     },
     onMapLoad(event) {
       const map = event.map;
@@ -354,7 +474,13 @@ export default {
       // disable tilt and rotation of the map since theses are not working nicely with bound syncing
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
+      this.updateCurrentZoomLevel();
       this.$emit('on-map-load');
+    },
+    onMapMove(event) {
+      this.updateCurrentZoomLevel();
+      this.debouncedRefreshGridMap();
+      this.syncBounds(event);
     },
     syncBounds(event) {
       // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
@@ -376,17 +502,16 @@ export default {
         component.enableCamera();
       });
     },
-    clickLayerToggle() {
-      this.$emit('click-layer-toggle', { isGridMap: this.isGridMap });
-    },
     updateLayerFilter() {
       if (!this.colorLayer) return;
       // Merge filter for the current map and all globally applied filters together
-      if (this.selectedLayer.vectorSourceLayer === 'maas') {
+      if (this.isGridMap) {
         const filter = this.filters.reduce((prev, cur) => {
           if (cur.id !== this.valueProp && !cur.global) return prev;
           return [...prev, ...createRangeFilter(cur.range, cur.id)];
         }, []);
+        const relativeToProp = this.baselineSpec && this.baselineSpec.id;
+        if (relativeToProp) filter.unshift(['has', relativeToProp]);
         this.colorLayer.filter = ['all', ['has', this.valueProp], ...filter];
       } else {
         this.refreshLayers();
@@ -425,25 +550,49 @@ export default {
       // reset hover feature state when mouse moves out of the map
       this._unsetHover(event.map);
     },
+    onStyleChange() {
+      // This line of code must be executed after map style is changed so that the data layer shows up.
+      // The data layer only shows up if wm-map-vector is re-rendered using :key after the style change.
+      this.baseLayerTrigger = this.selectedBaseLayerEndpoint;
+    },
     popupValueFormatter(feature) {
-      if (_.isNil(feature)) return null;
-      if (_.isNil(feature.properties[this.valueProp]) && _.isNil(feature.state[this.valueProp])) return null;
+      const prop = this.isGridMap ? feature?.properties : feature?.state;
+      if (_.isNil(prop && prop[this.valueProp])) return null;
 
-      if (this.selectedLayer.vectorSourceLayer === 'maas') {
-        return chartValueFormatter(this.extent.min, this.extent.max)(feature.properties[this.valueProp]);
-      } else {
-        const fields = [chartValueFormatter(this.extent.min, this.extent.max)(feature.state[this.valueProp])];
-        [3, 2, 1, 0].forEach(i => fields.push(feature.properties['NAME_' + i]));
-        return fields.filter(field => !_.isNil(field)).join('<br />');
+      const value = prop[this.valueProp];
+      const format = v => chartValueFormatter(this.extent.min, this.extent.max)(v);
+      const rows = [format(value)];
+      if (this.baselineSpec) {
+        const diff = prop[this.valueProp] - prop[this.baselineSpec.id];
+        const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
+        rows.push(text);
       }
+      if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
+      return rows.filter(field => !_.isNil(field)).join('<br />');
     },
-    setSelectedLayer() {
-      this.selectedLayer = this.isGridMap ? layers[4] : layers[this.selectedAdminLevel];
+    refreshGridMap() {
+      if (!this.map) return;
+      // Exit early if the layer hasn't finished loading
+      if (!isLayerLoaded(this.map, this.baseLayerId)) return;
+      // This only applies to grid map
+      if (!this.isGridMap) return;
+      this.refreshColorLayer();
+      this.updateLayerFilter();
     },
-    updateFilterRange: _.throttle(function () {
-      if (!this.range || !this.valueProp) return;
-      this.$emit('slide-handle-change', { id: this.valueProp, range: this.range });
-    }, 1000 / FILTER_ANIMATION_FPS)
+    computeGridRelativeStats() {
+      if (!this.map || !this.baselineSpec) return;
+      // Stats relative to the baseline. (min/max of the difference relative to the baseline)
+      const baselineProp = this.baselineSpec.id;
+      const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });
+      const values = [];
+      for (const feature of features) {
+        for (const item of this.outputSourceSpecs) {
+          const diff = feature.properties[item.id] - feature.properties[baselineProp];
+          if (_.isNumber(diff)) values.push(diff);
+        }
+      }
+      return { min: Math.min(...values), max: Math.max(...values) };
+    }
   }
 };
 </script>
@@ -463,15 +612,6 @@ export default {
   align-items: flex-end;
   cursor: pointer;
   .filter-toggle-button {
-    padding: 5px;
-    border: 1px solid #888;
-    border-radius: 3px;
-    background-color: #ccc;
-    &.active {
-      background-color: #6FC5DE;
-    }
-  }
-  .layer-toggle-button {
     padding: 5px;
     border: 1px solid #888;
     border-radius: 3px;

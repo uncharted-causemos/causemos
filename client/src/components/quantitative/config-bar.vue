@@ -1,17 +1,6 @@
 <template>
   <div class="config-bar-container">
     <p>
-      <!-- FIXME: range will need to be configurable -->
-      <i class="fa fa-fw fa-calendar label-icon" />
-      <strong>Historical Data:</strong>
-      <a
-        @click.stop="editParameters"
-      >{{ dateFormatter(historicalRange.start, 'MMM YYYY') }} -
-        {{ dateFormatter(historicalRange.end, 'MMM YYYY') }}
-      </a>
-    </p>
-    <p>
-      <!-- FIXME: engine and lengths will need to be configurable -->
       <strong>Projection:</strong>
       <a
         @click.stop="editParameters"
@@ -23,7 +12,6 @@
 
 <script lang="ts">
 import { defineComponent } from 'vue';
-import dateFormatter from '@/formatters/date-formatter';
 
 export default defineComponent({
   name: 'QuantitativeConfigBar',
@@ -37,9 +25,6 @@ export default defineComponent({
     'edit-parameters'
   ],
   computed: {
-    historicalRange(): { start: number; end: number } {
-      return this.modelSummary.parameter.indicator_time_series_range;
-    },
     projectionSteps(): number {
       return this.modelSummary.parameter.num_steps;
     },
@@ -48,7 +33,6 @@ export default defineComponent({
     }
   },
   methods: {
-    dateFormatter,
     async editParameters() {
       this.$emit('edit-parameters');
     }

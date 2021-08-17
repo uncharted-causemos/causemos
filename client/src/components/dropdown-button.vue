@@ -7,22 +7,22 @@
     >
       <span>
         {{ innerButtonLabel ? `${innerButtonLabel}: ` : '' }}
-        <strong>{{ selectedItem }}</strong>
+        <strong>{{ selectedItemDisplayName }}</strong>
       </span>
       <i class="fa fa-fw fa-angle-down" />
     </button>
     <dropdown-control v-if="isDropdownOpen" class="dropdown-control">
       <template #content>
         <div
-          v-for="item in items"
+          v-for="item in dropdownItems"
           :key="item"
           class="dropdown-option"
           :class="{
-            'dropdown-option-selected': selectedItem === item
+            'dropdown-option-selected': selectedItem === item.value
           }"
-          @click="emitItemSelection(item)"
+          @click="emitItemSelection(item.value)"
         >
-          {{ item }}
+          {{ item.displayName }}
         </div>
       </template>
     </dropdown-control>
@@ -30,8 +30,13 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref } from 'vue';
+import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
+
+export interface DropdownItem {
+  displayName: string;
+  value: any;
+}
 
 export default defineComponent({
   name: 'DropdownButton',
@@ -40,12 +45,11 @@ export default defineComponent({
   },
   props: {
     items: {
-      type: Array as PropType<string[]>,
+      type: Array as PropType<(string | DropdownItem)[]>,
       default: []
     },
     selectedItem: {
-      type: String as PropType<string | null>,
-      default: null
+      default: null as any
     },
     innerButtonLabel: {
       type: String as PropType<string | null>,
@@ -54,16 +58,35 @@ export default defineComponent({
   },
   emits: ['item-selected'],
   setup(props, { emit }) {
+    const { items, selectedItem } = toRefs(props);
+
     const isDropdownOpen = ref(false);
 
-    const emitItemSelection = (item: string | null) => {
+    // This component can accept a list of strings or a list of DropdownItems.
+    //  This computed property standardizes by converting strings to DropdownItems.
+    const dropdownItems = computed<DropdownItem[]>(() =>
+      items.value.map(item =>
+        typeof item === 'string' ? { displayName: item, value: item } : item
+      )
+    );
+
+    const selectedItemDisplayName = computed(() => {
+      return (
+        dropdownItems.value.find(item => item.value === selectedItem.value)
+          ?.displayName ?? selectedItem.value
+      );
+    });
+
+    const emitItemSelection = (item: any) => {
       isDropdownOpen.value = false;
       emit('item-selected', item);
     };
 
     return {
       isDropdownOpen,
-      emitItemSelection
+      emitItemSelection,
+      dropdownItems,
+      selectedItemDisplayName
     };
   }
 });
@@ -81,6 +104,9 @@ export default defineComponent({
   top: 90%; // Overlap the button slightly
   max-height: 400px;
   overflow-y: auto;
+}
+.dropdown-option {
+  white-space: nowrap;
 }
 .dropdown-option-selected {
   color: $selected-dark;

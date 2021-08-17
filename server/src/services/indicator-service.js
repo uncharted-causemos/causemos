@@ -2,97 +2,33 @@ const _ = require('lodash');
 const moment = require('moment');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
+const modelUtil = rootRequire('/util/model-util');
 
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
-const AggregationsUtil = rootRequire('/util/aggregations-util');
 
 const DEFAULT_SIZE = 10000;
 
-/**
- * @param {object} parameter - parameter
- * @param {string} parameter.indicator_id - indicator variable
- * @param {string} parameter.indicator_source - dataset/model
- *
- * Extend the object passed in with the time series data and other associated data
- * for the given indicator_name
- */
-const _setIndicatorProperties = async (parameter) => {
-  if (_.isNil(parameter.indicator_id)) throw new Error('No indicator_id specified in parameter object');
-  const indicatorMatch = await getIndicatorData(parameter.indicator_id, parameter.indicator_source);
-  if (_.isEmpty(indicatorMatch)) {
-    return null;
-  }
-
-  // FIXME: more intelligent defaults
-  const unit = Object.keys(indicatorMatch)[0];
-  const countryLevelData = indicatorMatch[unit][0];
-  const admin1LevelData = countryLevelData.children[0];
-  const admin2LevelData = admin1LevelData.children[0];
-  const indicatorTimeSeries = admin2LevelData.meta.timeseries.map(d => {
-    return { value: d.value, timestamp: d.timestamp };
-  });
-
-  parameter.indicator_time_series = indicatorTimeSeries;
-  parameter.indicator_time_series_parameter = {
-    unit: unit,
-    country: countryLevelData.key,
-    admin1: admin1LevelData.key,
-    admin2: admin2LevelData.key
-  };
-};
-
-/**
- * @param {string} variable - indicator name
- * @param {string} model - dataset/model name
- *
- * Returns an array of indicator data points for the specified indicator
- */
-const getIndicatorData = async (variable, model) => {
-  Logger.info(`Get indicator data from wm-go:  ${variable}`);
+const getIndicatorData = async (dataId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
+  Logger.info(`Get indicator data from wm-go: ${dataId} ${feature}`);
 
   const options = {
     method: 'GET',
     url: process.env.WM_GO_URL +
-      // Get data for all units
-      `/maas/indicator-data?indicator=${encodeURI(variable)}&model=${encodeURI(model)}`
+      `/maas/output/timeseries?data_id=${encodeURI(dataId)}&run_id=indicator&feature=${encodeURI(feature)}&resolution=${temporalResolution}&temporal_agg=${temporalAggregation}&spatial_agg=${geospatialAggregation}`,
+    headers: {
+      'Content-type': 'application/json',
+      'Accept': 'application/json'
+    },
+    json: {}
   };
-
   const response = await requestAsPromise(options);
-  const rawResult = JSON.parse(response);
-
-  const pipeline = [
-    {
-      keyFn: (d) => d.country,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    },
-    {
-      keyFn: (d) => d.admin1,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    },
-    {
-      keyFn: (d) => d.admin2,
-      metaFn: (c) => {
-        return { timeseries: c.dataArray };
-      }
-    }
-  ];
-
-  const result = {};
-  const groupedByUnit = _.groupBy(rawResult, d => d.value_unit);
-  Object.keys(groupedByUnit).forEach(unitKey => {
-    result[unitKey] = AggregationsUtil.groupDataArray(groupedByUnit[unitKey], _.cloneDeep(pipeline));
-  });
-  return result;
+  return response;
 };
+
 
 /**
  * Find all node parameters (concepts) without indicators
  * @param {string} modelId - model id
- *
  */
 const _findAllWithoutIndicators = async (modelId) => {
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
@@ -106,7 +42,8 @@ const _findAllWithoutIndicators = async (modelId) => {
       },
       must_not: {
         exists: {
-          field: 'parameter.indicator_name'
+          // field: 'parameter.id'
+          field: 'parameter.name'
         }
       }
     }
@@ -124,28 +61,57 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
-const getOntologyCandidates = async (modelId, concepts) => {
+/**
+ * Match against previous user selected indicator groundings in the same project
+ */
+const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, filteredNodeParameters) => {
+  const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
+  const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
+  const conceptsWithoutHistory = [];
+
+  for (const node of filteredNodeParameters) {
+    const topUsedIndicator = await indicatorMatchHistoryAdapter.findOne([
+      { field: 'project_id', value: model.project_id },
+      { field: 'concept', value: node.concept }
+    ], {
+      sort: [{ frequency: { order: 'desc' } }]
+    });
+
+    if (!_.isNil(topUsedIndicator)) {
+      Logger.info(`Using previous selection ${node.concept} => ${topUsedIndicator.indicator_id}`);
+      ontologyCandidates[node.concept] = await datacubeAdapter.findOne([{ field: 'id', value: topUsedIndicator.indicator_id }], {});
+    } else {
+      conceptsWithoutHistory.push(node.concept);
+    }
+  }
+  return conceptsWithoutHistory;
+};
+
+const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
   const ontologyCandidates = {};
-  const indicatorMetadataAdapter = Adapter.get(RESOURCE.INDICATOR_METADATA);
+
+  const indicatorMetadataAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
   const esClient = indicatorMetadataAdapter.client;
 
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const modelData = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
 
-  for (const concept of concepts) {
+  const conceptsWithoutIndicators = await checkAndApplyIndicatorMatchHistory(ontologyCandidates, modelData, filteredNodeParameters);
+
+  for (const concept of conceptsWithoutIndicators) {
     let compositionalConcepts = [];
     const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, modelData.project_id);
-    let query = {
+    const query = {
       bool: {
         should: [
           {
             term: {
-              'subj.candidates.name': concept
+              'subj.concept': concept
             }
           },
           {
             term: {
-              'obj.candidates.name': concept
+              'obj.concept': concept
             }
           }
         ]
@@ -157,34 +123,78 @@ const getOntologyCandidates = async (modelId, concepts) => {
         size: 1, query
       }
     });
-    if (_.isEmpty(projectData.body.hits.hits)) {
+    const results = projectData.body.hits.hits;
+    if (_.isEmpty(results)) {
       compositionalConcepts = [concept];
     } else {
-      // grab the subj/obj candidate names, and flatten them all into one array
-      compositionalConcepts = projectData.body.hits.hits.map(
-        pd => pd._source.subj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm')).concat(
-          pd._source.obj.candidates.map(cand => cand.name.replace('wm_compositional', 'wm'))
-        )).flat(1);
+      results.forEach(r => {
+        const source = r._source;
+        if (source.subj.concept === concept) {
+          compositionalConcepts = [
+            source.subj.theme,
+            source.subj.theme_property,
+            source.subj.process,
+            source.subj.process_property
+          ].filter(d => d !== '');
+        } else {
+          compositionalConcepts = [
+            source.obj.theme,
+            source.obj.theme_property,
+            source.obj.process,
+            source.obj.process_property
+          ].filter(d => d !== '');
+        }
+      });
     }
     // make sure array contains unique values
     compositionalConcepts = [...new Set(compositionalConcepts)];
-    query = {
-      bool: {
-        should: [
-          {
-            terms: {
-              ontology_components: compositionalConcepts
-            }
-          }
-        ],
-        minimum_should_match: 1
-      }
-    };
+
+    const compositionalKeywords = [...new Set(compositionalConcepts.map(comp => {
+      const words = comp.split('/').slice(2);
+      return words.map(word => word.split('_')).flat(1);
+    }).flat(1))];
+
     const searchPayload = {
-      index: RESOURCE.INDICATOR_METADATA,
-      size: DEFAULT_SIZE,
+      index: RESOURCE.DATA_DATACUBE,
+      size: 1,
       body: {
-        query,
+        query: {
+          bool: {
+            must: [
+              {
+                bool: {
+                  should: [
+                    {
+                      nested: {
+                        path: 'ontology_matches',
+                        query: {
+                          terms: {
+                            'ontology_matches.name': compositionalConcepts
+                          }
+                        }
+                      }
+                    },
+                    {
+                      terms: {
+                        description: compositionalKeywords
+                      }
+                    },
+                    {
+                      terms: {
+                        'outputs.description': compositionalKeywords
+                      }
+                    }
+                  ]
+                }
+              },
+              {
+                match: {
+                  type: 'indicator'
+                }
+              }
+            ]
+          }
+        },
         sort: [
           {
             _score: {
@@ -196,15 +206,36 @@ const getOntologyCandidates = async (modelId, concepts) => {
     };
     const response = await esClient.search(searchPayload);
     const foundIndicatorMetadata = response.body.hits.hits;
+
     if (!_.isEmpty(foundIndicatorMetadata)) {
-      ontologyCandidates[concept] = {
-        ...foundIndicatorMetadata[0]._source,
-        _match_score: foundIndicatorMetadata[0]._score
-      };
+      ontologyCandidates[concept] = foundIndicatorMetadata[0]._source;
     }
   }
   return ontologyCandidates;
 };
+
+
+const ABSTRACT_INDICATOR = {
+  id: null,
+  name: 'Abstract',
+  unit: '',
+  country: '',
+  admin1: '',
+  admin2: '',
+  admin3: '',
+  spatialAggregation: 'mean',
+  temporalAggregation: 'mean',
+  temporalResolution: 'month',
+  period: 12,
+  timeseries: [
+    { value: 0.5, timestamp: Date.UTC(2017, 0) },
+    { value: 0.5, timestamp: Date.UTC(2017, 1) },
+    { value: 0.5, timestamp: Date.UTC(2017, 2) }
+  ],
+  min: 0,
+  max: 1
+};
+
 
 /**
  * Attempt to set or reset default indicators for concepts
@@ -213,60 +244,85 @@ const getOntologyCandidates = async (modelId, concepts) => {
 const setDefaultIndicators = async (modelId) => {
   Logger.info(`Setting default indicators for: ${modelId}`);
   const nodeParameters = await _findAllWithoutIndicators(modelId);
+
   // Remove node parameters without concepts
   const filteredNodeParameters = nodeParameters.filter(n => !_.isNil(n.concept));
 
-  const concepts = filteredNodeParameters.map(n => n.concept);
-  const ontologyCandidates = await getOntologyCandidates(modelId, concepts);
+  const ontologyCandidates = await getOntologyCandidates(modelId, filteredNodeParameters);
 
   // All of these indicators are set by the same action, so they should
   // all have the same modified_at time
   const editTime = moment.valueOf();
 
+
   // Set default candidates
   const conceptMatches = {};
   const matchedKeys = Object.keys(ontologyCandidates);
-  matchedKeys.forEach(conceptKey => {
+  // params that will be hard coded for the time being
+  const geospatialAgg = 'mean';
+  const temporalAgg = 'mean';
+  const resolution = 'month';
+
+  for (const conceptKey of matchedKeys) {
     const topMatch = ontologyCandidates[conceptKey];
+
+    // Medata and default configuration
     conceptMatches[conceptKey] = {
       modified_at: editTime,
       parameter: {
-        indicator_id: topMatch.variable,
-        indicator_name: topMatch.output_name,
-        indicator_source: topMatch.model,
-        indicator_score: topMatch._match_score
-        // Added in _setIndicatorProperties below
-        // indicator_time_series,
-        // indicator_time_series_parameter: {
-        //   unit,
-        //   country,
-        //   admin1,
-        //   admin2
-        // }
+        id: topMatch.id,
+        name: topMatch.outputs[0].display_name,
+        unit: topMatch.outputs[0].unit,
+        country: '',
+        admin1: '',
+        admin2: '',
+        admin3: '',
+        spatialAggregation: geospatialAgg,
+        temporalAggregation: temporalAgg,
+        temporalResolution: resolution,
+        period: 12
       }
     };
-  });
 
-  // Enrich conceptMatches
-  for (const conceptKey of matchedKeys) {
-    const matched = conceptMatches[conceptKey];
-    await _setIndicatorProperties(matched.parameter);
+    // Time series, min, max
+    try {
+      const feature = topMatch.default_feature;
+      const dataId = topMatch.data_id;
+      const parameter = conceptMatches[conceptKey].parameter;
+
+      const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+      if (_.isEmpty(timeseries)) {
+        parameter.timeseries = [];
+        parameter.min = 0;
+        parameter.max = 1;
+      } else {
+        parameter.timeseries = timeseries;
+        const values = timeseries.map(d => d.value);
+        const { max, min } = modelUtil.projectionValueRange(values);
+        parameter.min = min;
+        parameter.max = max;
+      }
+    } catch (err) {
+      Logger.warn(err);
+      Logger.warn(`Failed getting data, reset ${conceptKey} to abstract`);
+      conceptMatches[conceptKey].parameter = _.cloneDeep(ABSTRACT_INDICATOR);
+    }
   }
 
-  // Go through concept without indicator association and set default
+  // Go through concept without indicator association and set default abstract indicators
   let patchedCount = 0;
-  filteredNodeParameters.forEach(n => {
-    const concept = n.concept;
+  filteredNodeParameters.forEach(node => {
+    const concept = node.concept;
     if (_.isEmpty(conceptMatches[concept])) {
       conceptMatches[concept] = {
         modified_at: editTime,
-        parameter: null
+        parameter: _.cloneDeep(ABSTRACT_INDICATOR)
       };
       patchedCount += 1;
     }
 
     // Set id for ES update
-    conceptMatches[concept].id = n.id;
+    conceptMatches[concept].id = node.id;
   });
   Logger.info('Patched unmatched concepts ' + patchedCount);
 

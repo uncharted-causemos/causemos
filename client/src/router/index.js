@@ -1,6 +1,7 @@
 import { createRouter, createWebHashHistory } from 'vue-router';
 import Home from '@/views/Home.vue';
-import ProjectOverview from '@/views/ProjectOverview.vue';
+import DomainProjectOverview from '@/views/DomainProjectOverview.vue';
+import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import DataStart from '@/views/DataStart.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
@@ -14,8 +15,12 @@ import QuantitativeStart from '@/views/QuantitativeStart.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
-import CompAnalysisExperiment from '@/views/CompAnalysisExperiment';
+import DatacubeDrilldown from '@/views/DatacubeDrilldown';
+import CompAnalysis from '@/views/CompAnalysis';
 import ModelPublishingExperiment from '@/views/ModelPublishingExperiment';
+import NodeCompExperiment from '@/views/NodeCompExperiment';
+import NodeDrilldown from '@/views/NodeDrilldown';
+import NodeDataExplorer from '@/views/NodeDataExplorer.vue';
 import qs from 'qs';
 import _ from 'lodash';
 import store from '@/store';
@@ -38,15 +43,9 @@ function formatter(item) {
 }
 
 // Load analysis state for dataAnalysis store before route enter
-async function loadAnalysisState(to, from, next) {
-  await store.dispatch('dataAnalysis/loadState', to.params.analysisID);
-  next();
-}
-
-// Load analysis state for dataAnalysis store before route enter
 // NOTE: this is specific to the new data space (and the new data explorer)
-async function loadAnalysisStateNew(to, from, next) {
-  await store.dispatch('dataAnalysis/loadStateNew', to.params.analysisID);
+async function loadAnalysisState(to, from, next) {
+  await store.dispatch('dataAnalysis/loadState', to.params.analysisId);
   next();
 }
 
@@ -62,29 +61,46 @@ const routes = [
     component: NewProject
   },
   {
-    path: '/:project/overview',
+    path: '/:projectType/:project/overview',
     name: 'overview',
-    component: ProjectOverview
+    component: AnalysisProjectOverview
   },
   {
-    path: '/:project/data',
+    path: '/:projectType/:project/domainDatacubeOverview',
+    name: 'domainDatacubeOverview',
+    component: DomainProjectOverview
+  },
+  {
+    path: '/:projectType/:project/data',
     name: 'dataStart',
     component: DataStart
   },
   {
-    path: '/:project/data/:analysisID',
+    path: '/:projectType/:project/data/:analysisId',
     name: 'data',
-    component: CompAnalysisExperiment,
-    beforeEnter: loadAnalysisStateNew
+    component: DatacubeDrilldown,
+    beforeEnter: loadAnalysisState
   },
   {
-    path: '/:project/data/:analysisID/explorer',
+    path: '/:projectType/:project/dataComparative/:analysisId',
+    name: 'dataComparative',
+    component: CompAnalysis,
+    beforeEnter: loadAnalysisState
+  },
+  {
+    // @HACK: a special route to view the a domain model instance (or datacube) using the same way an analyst would see it
+    path: '/:projectType/:project/domainDatacubeOverview',
+    name: 'dataPreview',
+    component: DatacubeDrilldown
+  },
+  {
+    path: '/:projectType/:project/data/:analysisId/explorer',
     name: 'dataExplorer',
     component: DataExplorer,
     beforeEnter: loadAnalysisState
   },
   {
-    path: '/:project/data/:analysisID/create-data-cube',
+    path: '/:projectType/:project/data/:analysisId/create-data-cube',
     name: 'createDataCube',
     component: CreateDataCube
   },
@@ -94,7 +110,7 @@ const routes = [
     component: TileExperiment
   },
   {
-    path: '/:project/model-publishing-experiment',
+    path: '/:projectType/:project/model-publishing-experiment',
     name: 'modelPublishingExperiment',
     component: ModelPublishingExperiment
   },
@@ -104,32 +120,47 @@ const routes = [
     component: GraphExperiment
   },
   {
-    path: '/:project/qualitative',
+    path: '/:projectType/:project/qualitative',
     name: 'qualitativeStart',
     component: QualitativeStart
   },
   {
-    path: '/:project/qualitative/:currentCAG',
+    path: '/:projectType/:project/qualitative/:currentCAG',
     name: 'qualitative',
     component: QualitativeView
   },
   {
-    path: '/:project/kb-explorer',
+    path: '/:projectType/:project/kb-explorer',
     name: 'kbExplorer',
     component: KnowledgeBaseExplorer
   },
   {
-    path: '/:project/quantitative',
+    path: '/:projectType/:project/quantitative',
     name: 'quantitativeStart',
     component: QuantitativeStart
   },
   {
-    path: '/:project/quantitative/:currentCAG',
+    path: '/:projectType/:project/quantitative/:currentCAG',
     name: 'quantitative',
     component: QuantitativeView
   },
   {
-    path: '/:project/audit-trail',
+    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/indicator/:indicatorId',
+    name: 'nodeCompExperiment',
+    component: NodeCompExperiment
+  },
+  {
+    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId',
+    name: 'nodeDrilldown',
+    component: NodeDrilldown
+  },
+  {
+    path: '/:projectType/:project/quantitative/:currentCAG/:nodeId/explorer',
+    name: 'nodeDataExplorer',
+    component: NodeDataExplorer
+  },
+  {
+    path: '/:projectType/:project/audit-trail',
     name: 'auditTrail',
     component: AuditTrail
   },

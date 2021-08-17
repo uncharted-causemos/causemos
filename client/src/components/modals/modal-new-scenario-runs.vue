@@ -10,7 +10,7 @@
           <td
             v-for="(dim, idx) in inputParameters"
             :key="idx">
-            <span style="font-weight: bold;">{{ dim.name }}</span>
+            <div class="params-header">{{ dim.name }}</div>
           </td>
           <td>&nbsp;</td>
         </tr>
@@ -19,7 +19,8 @@
           :key="sidx">
           <td>{{ sidx }}</td>
           <td v-for="(dimName, idx) in Object.keys(run)"
-            :key="idx">
+            :key="idx"
+            class="params-value">
             <label>{{ run[dimName] }}</label>
           </td>
           <td>
@@ -36,6 +37,9 @@
       </table>
     </template>
     <template #footer>
+      <div class="row estimated-runtime">
+        Estimated execution time: {{ potentialScenarios.length * 2 }} {{ metadata.name.toLowerCase().includes('wash') ? 'hours' : 'minutes' }}
+      </div>
       <ul class="unstyled-list">
         <button
           type="button"
@@ -62,6 +66,8 @@ import { ScenarioData } from '@/types/Common';
 import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
+import { mapGetters } from 'vuex';
+import { ModelParameterDataType } from '@/types/Enums';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -85,6 +91,12 @@ export default defineComponent({
   computed: {
     inputParameters(): Array<any> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
+    },
+    ...mapGetters({
+      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
+    }),
+    currentOutputIndex(): number {
+      return this.metadata.id !== undefined ? this.datacubeCurrentOutputsMap[this.metadata.id] : 0;
     }
   },
   data: () => ({
@@ -94,41 +106,49 @@ export default defineComponent({
     this.potentialRuns = _.cloneDeep(this.potentialScenarios);
   },
   methods: {
-    startExecution() {
+    async startExecution() {
       // FIXME: cast to 'any' since typescript cannot see mixins yet!
       (this as any).toaster('New runs requested\nPlease check back later!');
 
-      // FIXME: only submitting ONE sceanrio is supported at this time
-      const firstScenario = this.potentialRuns[0];
-      const paramArray: any[] = [];
-      Object.keys(firstScenario).forEach(key => {
-        // exclude output variable values since they will be undefined for potential runs
-        if (key !== this.metadata.outputs[0].name) {
-          paramArray.push({
-            name: key,
-            value: firstScenario[key]
-          });
-        }
-      });
+      const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
-      drilldownParams.forEach(p => {
-        paramArray.push({
-          name: p.name,
-          value: p.default
+      const freeformParams = this.metadata.parameters.filter(d => d.data_type === ModelParameterDataType.Freeform);
+
+      const promises = this.potentialRuns.map(async (modelRun) => {
+        const paramArray: any[] = [];
+        Object.keys(modelRun).forEach(key => {
+          // exclude output variable values since they will be undefined for potential runs
+          if (key !== outputs[this.currentOutputIndex].name) {
+            paramArray.push({
+              name: key,
+              value: modelRun[key]
+            });
+          }
         });
-      });
-      const modelId = this.metadata.id;
-      // FIXME: only max-hop model is executable at this time
-      if (modelId.includes('maxhop')) {
-        API.post('maas/model-runs', {
-          model_id: modelId,
+        // add drilldown/freeform params since they are still inputs
+        //  although hidden in the parallel coordinates
+        drilldownParams.forEach(p => {
+          paramArray.push({
+            name: p.name,
+            value: p.default
+          });
+        });
+        freeformParams.forEach(p => {
+          paramArray.push({
+            name: p.name,
+            value: p.default
+          });
+        });
+
+        // send the request to the server
+        return API.post('maas/model-runs', {
+          model_id: this.metadata.data_id,
           model_name: this.metadata?.name,
           parameters: paramArray
         });
-      } else {
-        // FIXME: currently other models are not executable
-        console.warn('Current model is not executable!');
-      }
+      });
+      // wait until all promises are resolved
+      await Promise.all(promises);
 
       this.close(false);
     },
@@ -146,10 +166,29 @@ export default defineComponent({
 @import "~styles/variables";
 
 ::v-deep(.modal-container) {
+  width: max-content;
+  max-width: 80vw;
   .modal-body {
     height: 300px;
     overflow-y: scroll;
   }
+}
+
+.params-header {
+  font-weight: bold;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.params-value {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  align-content: center;
+}
+
+.estimated-runtime {
+  display: flex;
+  padding: 1rem;
 }
 
 .title {

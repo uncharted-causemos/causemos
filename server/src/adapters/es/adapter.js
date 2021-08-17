@@ -1,6 +1,7 @@
 const { Project } = require('./project');
 const { DocumentContext } = require('./document-context');
 const { Statement } = require('./statement');
+const { Datacube } = require('./datacube');
 const { Base } = require('./base');
 
 const SEARCH_LIMIT = 10000;
@@ -14,11 +15,12 @@ const RESOURCE = Object.freeze({
   ANALYSIS: 'analysis',
   CAG: 'model', // Duplicate for the time being
 
+  DOMAIN_PROJECT: 'domain-project',
+
   // Qualitative data
   STATEMENT: 'statement',
   DOCUMENT: 'corpus',
   DOCUMENT_CONTEXT: 'document-context',
-  PROJECT_EXTENSION: 'project-extension',
 
   // Quantitative data
   NODE_PARAMETER: 'node-parameter',
@@ -31,10 +33,17 @@ const RESOURCE = Object.freeze({
 
   // Misc
   AUDIT: 'audit',
-  BOOKMARK: 'bookmark',
+  INSIGHT: 'insight',
+  QUESTION: 'question',
   ONTOLOGY: 'ontology',
   SESSION_LOG: 'session-log',
-  INDICATOR_METADATA: 'indicator-metadata'
+  INDICATOR_METADATA: 'indicator-metadata',
+  INDICATOR_MATCH_HISTORY: 'indicator-match-history',
+
+
+  // Tracking
+  ASSEMBLY_REQUEST: 'assembly-request',
+  PROJECT_EXTENSION: 'project-extension'
 });
 
 class Adapter {
@@ -45,6 +54,8 @@ class Adapter {
       return new DocumentContext(id, 'corpus');
     } else if (type === RESOURCE.PROJECT) {
       return new Project(type);
+    } else if (type === RESOURCE.DATA_DATACUBE) {
+      return new Datacube(type);
     } else {
       return new Base(type);
     }

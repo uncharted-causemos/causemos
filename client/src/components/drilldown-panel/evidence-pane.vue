@@ -2,7 +2,7 @@
   <div class="evidence-container">
     <modal-document
       v-if="!!documentModalData"
-      :document-data="documentModalData"
+      :document-id="documentModalData.doc_id"
       @close="documentModalData = null"
     />
     <div class="pane-summary">
@@ -117,14 +117,14 @@
                 :concept="selectedRelationship.source"
                 :suggestions="suggestions"
                 @select="confirmUpdateGrounding(item, selectedRelationship.source, $event, CORRECTION_TYPES.ONTOLOGY_SUBJ)"
-                @close="closeEditor" />
+                @close="closeEditor"/>
 
               <ontology-editor
                 v-if="activeItem === item && activeCorrection === CORRECTION_TYPES.ONTOLOGY_OBJ"
                 :concept="selectedRelationship.target"
                 :suggestions="suggestions"
                 @select="confirmUpdateGrounding(item, selectedRelationship.target, $event, CORRECTION_TYPES.ONTOLOGY_OBJ)"
-                @close="closeEditor" />
+                @close="closeEditor"/>
             </div>
           </template>
         </collapsible-item>
@@ -272,6 +272,7 @@ export default {
       return statementPolarityColor(this.polarity);
     }
   },
+  emits: ['updated-relations'],
   watch: {
     statements(n, o) {
       if (_.isEqual(n, o)) return;
@@ -467,6 +468,19 @@ export default {
       }
       const statementIds = item.dataArray.map(statement => statement.id);
       const result = await updateStatementsFactorGrounding(this.project, statementIds, subj, obj);
+
+      // Emit the updated relations - use in CAG space to retain newly grounded data
+      const relation = { id: '' };
+      if (resourceType === CORRECTION_TYPES.ONTOLOGY_SUBJ) {
+        relation.source = newGrounding;
+        relation.target = item.dataArray[0].obj.concept;
+      } else {
+        relation.source = item.dataArray[0].subj.concept;
+        relation.target = newGrounding;
+      }
+      relation.reference_ids = statementIds;
+      this.$emit('updated-relations', [relation]);
+
       this.checkResult(result, CORRECTIONS.SUCCESSFUL_CORRECTION, CORRECTIONS.ERRONEOUS_CORRECTION);
     },
     confirmVet(item) {

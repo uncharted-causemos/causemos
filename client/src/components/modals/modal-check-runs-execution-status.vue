@@ -1,7 +1,9 @@
 <template>
   <modal @close="close()">
     <template #header>
-      <h4 class="title"><i class="fa fa-fw fa-book" /> Model Execution Status</h4>
+      <div class="modal-header">
+        <h4><i class="fa fa-fw fa-book" /> Model Execution Status</h4>
+      </div>
     </template>
     <template #body>
       <table class="table">
@@ -9,7 +11,7 @@
           <td
             v-for="(dim, idx) in potentialRunsParameters"
             :key="idx">
-            <span style="font-weight: bold;">{{ dim }}</span>
+            <div class="params-header">{{ dim }}</div>
           </td>
           <td>&nbsp;</td>
         </tr>
@@ -17,7 +19,8 @@
           v-for="(run, sidx) in potentialRuns"
           :key="sidx">
           <td v-for="(dimName, idx) in Object.keys(run)"
-            :key="idx">
+            :key="idx"
+            class="params-value">
             <label>{{ run[dimName] }}</label>
           </td>
           <td>
@@ -26,7 +29,7 @@
               :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
               >
               <i
-                v-if="run['status'] === 'SUBMITTED'"
+                v-if="run['status'] === ModelRunStatus.Submitted"
                 class="fa fa-fw fa-spinner"
               />
               <i
@@ -110,18 +113,12 @@ export default defineComponent({
 @import "~styles/variables";
 
 ::v-deep(.modal-container) {
+  max-width: 80vw;
+  width: max-content;
   .modal-body {
     height: 300px;
     overflow-y: scroll;
   }
-}
-
-.title {
-  text-transform: initial !important;
-  margin-top: 2rem;
-  padding-left: 2rem;
-  font-weight: bold;
-  font-size: x-large !important;
 }
 
 .run-status {
@@ -132,5 +129,17 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   border-radius: 3px;
+}
+
+.params-header {
+  font-weight: bold;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.params-value {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  align-content: center;
 }
 </style>

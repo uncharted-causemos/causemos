@@ -73,6 +73,7 @@ export default defineComponent({
       default: false
     }
   },
+  emits: ['set-active'],
   computed: {
     isPanelOpen() {
       for (let i = 0; i < this.tabs.length; i++) {
@@ -111,7 +112,7 @@ $large-width: 380px;
     }
   }
 
-  .side-panel-body.slide-fade-enter,
+  .side-panel-body.slide-fade-enter-from,
   .side-panel-body.slide-fade-leave-to {
     width: 0;
 

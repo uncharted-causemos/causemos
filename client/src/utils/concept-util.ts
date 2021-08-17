@@ -10,11 +10,11 @@ export function conceptShortName(name: string) {
 }
 
 export function conceptPrefix(concept: string) {
-  return concept.split('/').splice(0, 3).join('/').replace(/_/g, ' ');
+  return _.split(concept, '/').splice(0, 3).join('/').replace(/_/g, ' ');
 }
 
 export function conceptSuffix(concept: string) {
-  return concept.split('/').splice(3).join('/').replace(/_/g, ' ');
+  return _.split(concept, '/').splice(3).join('/').replace(/_/g, ' ');
 }
 
 export function conceptHumanName(name: string, set: Set<string>) {
@@ -46,8 +46,13 @@ export function conceptHumanName(name: string, set: Set<string>) {
     }
   }
 
+  // Old heuristic - Robyn, Ben G., Becky said to use natural ordering instead July 2021
+  // if (concepts.length > 0) {
+  //   return _.reverse(concepts).join(' of ').replace(/_/g, ' ');
+  // }
+
   if (concepts.length > 0) {
-    return _.reverse(concepts).join(' of ').replace(/_/g, ' ');
+    return concepts.join(' ').replace(/_/g, ' ');
   }
   return token;
 }

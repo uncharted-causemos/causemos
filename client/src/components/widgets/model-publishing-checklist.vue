@@ -8,7 +8,7 @@
           v-for="step in publishingSteps"
           :key="step.id"
           class="checklist-item"
-          :class="{'step-selected': step.id === currentPublishingStep}"
+          :class="{'step-selected': step.id === currentPublishStep}"
           @click="navToPublishingStep(step)">
             <i
               class="step-icon-common fa fa-lg fa-border"
@@ -36,7 +36,7 @@
 
 <script lang="ts">
 import { ModelPublishingStepID } from '@/types/Enums';
-import { ModelPublishingStep } from '@/types/UseCase';
+import { ModelPublishingStep } from '@/types/Datacube';
 import { defineComponent, PropType } from 'vue';
 
 export default defineComponent({
@@ -46,7 +46,7 @@ export default defineComponent({
       type: Array as PropType<ModelPublishingStep[]>,
       default: []
     },
-    currentPublishingStep: {
+    currentPublishStep: {
       // type: Number,
       default: ModelPublishingStepID.Enrich_Description
     }
@@ -70,6 +70,7 @@ export default defineComponent({
     publishModel() {
       (this as any).toaster('Publishing model ...');
       // TODO: redirect to another view where the published model can be seen
+      this.$emit('publish-model');
     }
   }
 });
@@ -108,7 +109,7 @@ export default defineComponent({
         padding-right: 5px;
         flex-direction: row;
         cursor: pointer;
-        font-size: 16px;
+        font-size: $font-size-medium;
 
         .checklist-item-text {
           padding: 0 10px;

@@ -41,7 +41,6 @@
           @click="openDataExplorer"
         > <i class="fa fa-fw fa-search" />Search Data Cubes</button>
       </div>
-
       <div
         class="nav-item time-sync"
         :class="{ 'disabled': emptyDataAnalysis }"
@@ -97,6 +96,7 @@ import { ANALYSIS, EXPORT_MESSAGES } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import DropdownControl from '@/components/dropdown-control';
 import TextAreaCard from '@/components/cards/text-area-card';
+import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'ActionBar',
@@ -157,7 +157,8 @@ export default {
         this.$router.push({
           name: 'dataStart',
           params: {
-            project: this.project
+            project: this.project,
+            projectType: ProjectType.Analysis
           }
         });
       } catch (e) {

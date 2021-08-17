@@ -9,6 +9,7 @@ interface AppState {
   ontologySet: Set<string>;
   projectMetadata: any; // FIXME
   conceptDefinitions: { [key: string]: string };
+  datacubeCurrentOutputsMap: {}; // map for datacubes' currently selected features; each key is the datacube-id and the value is the selected output's index
 }
 
 const state: AppState = {
@@ -18,11 +19,15 @@ const state: AppState = {
   ontologyConcepts: [],
   ontologySet: new Set<string>(),
   projectMetadata: {},
-  conceptDefinitions: {}
+  conceptDefinitions: {},
+  datacubeCurrentOutputsMap: {}
 };
 
 
 const getters: GetterTree<AppState, any> = {
+  projectType: (state, getters, rootState /*, rootGetters */) => {
+    return rootState.route.params.projectType || null;
+  },
   project: (state, getters, rootState /*, rootGetters */) => {
     return rootState.route.params.project || null;
   },
@@ -33,13 +38,23 @@ const getters: GetterTree<AppState, any> = {
   currentCAG: (state, getters, rootState /*, rootGetters */) => {
     return rootState.route.params.currentCAG || null;
   },
+  datacubeId: (state, getters, rootState) => {
+    return rootState.route.params.datacubeId || null;
+  },
+  indicatorId: (state, getters, rootState) => {
+    return rootState.route.params.indicatorId || null;
+  },
+  nodeId: (state, getters, rootState) => {
+    return rootState.route.params.nodeId || null;
+  },
   overlayActivated: state => state.overlayActivated,
   overlayMessage: state => state.overlayMessage,
   updateToken: state => state.updateToken,
   ontologyConcepts: state => state.ontologyConcepts,
   ontologySet: state => state.ontologySet,
   projectMetadata: state => state.projectMetadata,
-  conceptDefinitions: state => state.conceptDefinitions
+  conceptDefinitions: state => state.conceptDefinitions,
+  datacubeCurrentOutputsMap: state => state.datacubeCurrentOutputsMap
 };
 
 
@@ -61,6 +76,9 @@ const actions: ActionTree<AppState, any> = {
   },
   setConceptDefinitions: ({ commit }, examples) => {
     commit('setConceptDefinitions', examples);
+  },
+  setDatacubeCurrentOutputsMap: ({ commit }, value) => {
+    commit('setDatacubeCurrentOutputsMap', value);
   }
 };
 
@@ -87,6 +105,9 @@ const mutations: MutationTree<AppState> = {
   },
   setConceptDefinitions(state, definitions) {
     state.conceptDefinitions = definitions;
+  },
+  setDatacubeCurrentOutputsMap(state, value) {
+    state.datacubeCurrentOutputsMap = value;
   }
 };
 

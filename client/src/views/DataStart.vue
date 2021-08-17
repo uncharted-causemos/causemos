@@ -27,6 +27,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { ANALYSIS } from '@/utils/messages-util';
 import RenameModal from '@/components/action-bar/rename-modal';
 import StartScreen from '@/components/start-screen';
+import { ProjectType } from '@/types/Enums';
 
 const toCardData = analysis => ({
   analysisId: analysis.id,
@@ -55,7 +56,7 @@ export default {
   },
   methods: {
     ...mapActions({
-      updateAnalysisItemsNew: 'dataAnalysis/updateAnalysisItemsNew'
+      updateAnalysisItems: 'dataAnalysis/updateAnalysisItems'
     }),
     async fetchRecentCards() {
       this.recentCards = (await getAnalysesByProjectId(this.project)).map(toCardData);
@@ -65,21 +66,23 @@ export default {
         title: `untitled at ${dateFormatter(Date.now())}`,
         projectId: this.project
       });
-      await this.updateAnalysisItemsNew({ currentAnalysisId: analysis.id, datacubeIDs: [] });
+      await this.updateAnalysisItems({ currentAnalysisId: analysis.id, analysisItems: [] });
       this.$router.push({
-        name: 'dataExplorer',
+        name: 'dataComparative',
         params: {
-          collection: this.project,
-          analysisID: analysis.id
+          project: this.project,
+          analysisId: analysis.id,
+          projectType: ProjectType.Analysis
         }
       });
     },
     onRecent(recentCard) {
       this.$router.push({
-        name: 'data',
+        name: 'dataComparative',
         params: {
-          collection: this.project,
-          analysisID: recentCard.analysisId
+          project: this.project,
+          analysisId: recentCard.analysisId,
+          projectType: ProjectType.Analysis
         }
       });
     },

@@ -4,20 +4,6 @@
       <h4> Model Parameters </h4>
     </template>
     <template #body>
-      <div class="row">
-        <div class="col-sm-4">
-          <label>Historical Start:</label>
-          <date-dropdown
-            :data="startDate"
-            @updated="onUpdateStartDate" />
-        </div>
-        <div class="col-sm-4">
-          <label>Historical End:</label>
-          <date-dropdown
-            :data="endDate"
-            @updated="onUpdateEndDate" />
-        </div>
-      </div>
       <div
         v-if="hasErrorStartDate"
         class="error-format-message">
@@ -113,8 +99,6 @@ export default defineComponent({
   ],
   setup(props) {
     const selectedEngine = ref('dyse');
-    const selectedStartDate = ref(0);
-    const selectedEndDate = ref(0);
     const selectedNumSteps = ref(0);
     const selectedProjectionStartDate = ref(0);
 
@@ -130,8 +114,6 @@ export default defineComponent({
 
       // reactive
       selectedEngine,
-      selectedStartDate,
-      selectedEndDate,
       selectedNumSteps,
       selectedProjectionStartDate,
       engineOptions: modelService.ENGINE_OPTIONS,
@@ -139,8 +121,6 @@ export default defineComponent({
       hasErrorEndDate,
       hasErrorProjectionStartDate,
 
-      startDate: computed(() => props.modelSummary.parameter.indicator_time_series_range.start),
-      endDate: computed(() => props.modelSummary.parameter.indicator_time_series_range.end),
       projectionStartDate: computed(() => props.modelSummary.parameter.projection_start)
     };
   },
@@ -149,8 +129,6 @@ export default defineComponent({
   mounted() {
     if (_.isEmpty(this.modelSummary)) return;
     this.selectedEngine = this.modelSummary.parameter.engine;
-    this.selectedStartDate = this.modelSummary.parameter.indicator_time_series_range.start;
-    this.selectedEndDate = this.modelSummary.parameter.indicator_time_series_range.end;
     this.selectedProjectionStartDate = this.modelSummary.parameter.projection_start;
     this.selectedNumSteps = this.modelSummary.parameter.num_steps;
   },
@@ -160,29 +138,18 @@ export default defineComponent({
     },
     save() {
       this.$emit('save', {
-        indicator_time_series_range: {
-          start: this.selectedStartDate,
-          end: this.selectedEndDate
-        },
+        // FIXME: not needed anymore, remove when update mapping
+        // indicator_time_series_range: {
+        //   start: 0,
+        //   end: 1
+        // },
         projection_start: this.selectedProjectionStartDate,
         num_steps: this.selectedNumSteps,
         engine: this.selectedEngine
       });
     },
-    onUpdateStartDate(newTimeStamp: number) {
-      this.selectedStartDate = newTimeStamp;
-      this.hasErrorEndDate = false; // Reset so we don't get both messages at the same time
-      this.hasErrorStartDate = this.selectedStartDate > this.selectedEndDate;
-      this.hasErrorProjectionStartDate = this.selectedProjectionStartDate < this.selectedStartDate;
-    },
-    onUpdateEndDate(newTimeStamp: number) {
-      this.selectedEndDate = newTimeStamp;
-      this.hasErrorStartDate = false;
-      this.hasErrorEndDate = this.selectedEndDate < this.selectedStartDate;
-    },
     onUpdateProjectionStartDate(newTimeStamp: number) {
       this.selectedProjectionStartDate = newTimeStamp;
-      this.hasErrorProjectionStartDate = this.selectedProjectionStartDate < this.selectedStartDate;
     }
   }
 });

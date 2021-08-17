@@ -6,8 +6,14 @@ const Logger = rootRequire('/config/logger');
 
 const basicAuthToken = auth.getBasicAuthToken(process.env.DART_SERVICE_USERNAME, process.env.DART_SERVICE_PASSWORD);
 
+
 const DART_SERVICE_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
 const DART_READER_URL = 'https://wm-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
+
+// UAT DART - for testing only
+// const DART_SERVICE_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1';
+// const DART_READER_URL = 'https://uat-ingest-pipeline-rest-1.prod.dart.worldmodelers.com/dart/api/v1/readers';
+
 const TIMEOUT = 3 * 1000;
 
 /**
@@ -43,6 +49,7 @@ const uploadDocument = async (fileToUpload, metadata = {}) => {
     },
     metadata: metadata
   };
+
   const options = {
     url: DART_SERVICE_URL + '/forklift/upload',
     method: 'POST',
@@ -86,91 +93,8 @@ const queryReadersStatus = async (timestamp) => {
   return result;
 };
 
-
-/**
- * Sends a file to the DART server for parsing and returns document meta text.
- */
-// const sendFileForExtraction = async (fileToUpload) => {
-//   const formData = {
-//     file: {
-//       value: fileToUpload.buffer,
-//       options: {
-//         filename: fileToUpload.originalname,
-//         contentType: fileToUpload.mimeType
-//       }
-//     }
-//   };
-//   const options = {
-//     url: process.env.DART_SERVICE_URL + '/extract',
-//     method: 'POST',
-//     headers: {
-//       'Authorization': basicAuthToken,
-//       'Content-type': 'application/json'
-//     },
-//     formData: formData
-//   };
-//   const result = await requestAsPromise(options);
-//   return result;
-// };
-
-/**
- * Uploads the triaged document to DART S3 storage.
- *
- * @param {Object}  payload       triaged CDR document.
- *
- * @return {string} DART document id
- */
-// const submitCdrExtractionToDart = async (payload) => {
-//   const options = {
-//     url: process.env.DART_SERVICE_URL + '/submit/cdr',
-//     method: 'POST',
-//     headers: {
-//       'Authorization': basicAuthToken,
-//       'Content-type': 'application/json'
-//     },
-//     json: payload
-//   };
-//   const result = await requestAsPromise(options);
-//   return result;
-// };
-
-/**
- * Uploads the triaged document to DART S3 storage.
- *
- * @param {Object}   file          multiform uploaded file.
- * @param {String}   documentId    DART document id.
- *
- * @return {string} stored document file name
- */
-// const uploadToDart = async (file, documentId) => {
-//   const fileExt = file.originalname.split('.').pop();
-//   const formData = {
-//     file: {
-//       value: file.buffer,
-//       options: {
-//         filename: file.originalname,
-//         contentType: file.mimeType
-//       }
-//     }
-//   };
-//   const options = {
-//     url: process.env.DART_SERVICE_URL + `/dart/api/v1/rawdocs/${documentId}.${fileExt}`, // name of file stored in DART S3
-//     method: 'POST',
-//     headers: {
-//       'Authorization': basicAuthToken,
-//       'Content-type': 'application/json'
-//     },
-//     formData
-//   };
-//   const result = await requestAsPromise(options);
-//   return result;
-// };
-
 module.exports = {
   getRawDoc,
   uploadDocument,
   queryReadersStatus
-  // sendFileForExtraction,
-  // submitCdrExtractionToDart,
-  // uploadToDart
 };
