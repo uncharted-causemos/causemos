@@ -128,7 +128,9 @@ export function renderPoint(
   color?: string
 ) {
   parentGroupElement
+    .selectAll('circle')
     .data(points)
+    .enter()
     .append('circle')
     .classed('circle', true)
     .attr('r', 2.5)

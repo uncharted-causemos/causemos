@@ -29,7 +29,6 @@ const getIndicatorData = async (dataId, feature, temporalResolution, temporalAgg
 /**
  * Find all node parameters (concepts) without indicators
  * @param {string} modelId - model id
- *
  */
 const _findAllWithoutIndicators = async (modelId) => {
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
@@ -62,47 +61,25 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
+/**
+ * Match against previous user selected indicator groundings in the same project
+ */
 const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, filteredNodeParameters) => {
-
   const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
-  const esClient = indicatorMatchHistoryAdapter.client;
+  const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
   const conceptsWithoutHistory = [];
-  for (const node of filteredNodeParameters) {
-    const searchPayload = {
-      index: RESOURCE.INDICATOR_MATCH_HISTORY,
-      size: 1,
-      body: {
-        query: {
-          bool: {
-            must: [
-              {
-                term: {
-                  project_id: model.project_id
-                }
-              },
-              {
-                term: {
-                  concept: node.concept
-                }
-              }
-            ]
-          }
-        },
-        sort: [
-          {
-            frequency: {
-              order: 'desc'
-            }
-          }
-        ]
-      }
-    };
-    const response = await esClient.search(searchPayload);
-    const conceptPreviousMatches = response.body.hits.hits;
-    if (conceptPreviousMatches.length > 0) {
 
-      const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
-      ontologyCandidates[node.concept] = await datacubeAdapter.findOne([{ field: 'id', value: conceptPreviousMatches[0]._source.indicator_id }], {});
+  for (const node of filteredNodeParameters) {
+    const topUsedIndicator = await indicatorMatchHistoryAdapter.findOne([
+      { field: 'project_id', value: model.project_id },
+      { field: 'concept', value: node.concept }
+    ], {
+      sort: [{ frequency: { order: 'desc' } }]
+    });
+
+    if (!_.isNil(topUsedIndicator)) {
+      Logger.info(`Using previous selection ${node.concept} => ${topUsedIndicator.indicator_id}`);
+      ontologyCandidates[node.concept] = await datacubeAdapter.findOne([{ field: 'id', value: topUsedIndicator.indicator_id }], {});
     } else {
       conceptsWithoutHistory.push(node.concept);
     }
@@ -231,7 +208,7 @@ const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
     const foundIndicatorMetadata = response.body.hits.hits;
 
     if (!_.isEmpty(foundIndicatorMetadata)) {
-      ontologyCandidates[concept] = foundIndicatorMetadata[0]._source
+      ontologyCandidates[concept] = foundIndicatorMetadata[0]._source;
     }
   }
   return ontologyCandidates;

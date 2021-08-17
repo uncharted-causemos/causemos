@@ -82,6 +82,7 @@ class QueryUtil {
   /**
    * Wildcard builder
    * @param {Object} clause
+   *
    */
   _regexBuilder(clause) {
     const { field, values } = clause;
@@ -91,8 +92,10 @@ class QueryUtil {
     esFields.forEach(field => {
       values.forEach(value => {
         queries.push({
-          wildcard: { // case insensitive search
-            [field]: `*${value}*`
+          query_string: { // case insensitive search
+            query: `${value}*`,
+            fields: [field],
+            default_operator: 'AND'
           }
         });
       });

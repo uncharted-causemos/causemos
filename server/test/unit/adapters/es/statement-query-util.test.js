@@ -338,23 +338,31 @@ describe('query-util', function() {
                       bool: {
                         should: [
                           {
-                            wildcard: {
-                              'subj.concept': '*parent*'
+                            query_string: {
+                              query: 'parent*',
+                              fields: ['subj.concept'],
+                              default_operator: 'AND'
                             }
                           },
                           {
-                            wildcard: {
-                              'obj.concept': '*parent*'
+                            query_string: {
+                              query: 'parent*',
+                              fields: ['obj.concept'],
+                              default_operator: 'AND'
                             }
                           },
                           {
-                            wildcard: {
-                              'subj.factor': '*parent*'
+                            query_string: {
+                              query: 'parent*',
+                              fields: ['subj.factor'],
+                              default_operator: 'AND'
                             }
                           },
                           {
-                            wildcard: {
-                              'obj.factor': '*parent*'
+                            query_string: {
+                              query: 'parent*',
+                              fields: ['obj.factor'],
+                              default_operator: 'AND'
                             }
                           }
                         ]

@@ -270,7 +270,6 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
-      this.closeDrilldown();
     },
     setActive (activeTab) {
       router.push({ query: { activeTab } }).catch(() => {});
@@ -344,7 +343,6 @@ export default {
     async setEdgeWeights(edgeData) {
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
-      this.closeDrilldown();
       this.$emit('refresh-model');
     },
     setSensitivityAnalysisType(analysisType) {
