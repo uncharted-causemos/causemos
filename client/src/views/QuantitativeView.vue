@@ -209,8 +209,9 @@ export default {
 
       // Check if model is still training
       if (this.modelSummary.status === modelService.MODEL_STATUS.TRAINING) {
-        const r = await modelService.checkAndUpdateRegisteredStatus(this.model.id, this.currentEngine);
-        if (r === modelService.MODEL_STATUS.TRAINING) {
+        const r = await modelService.checkAndUpdateRegisteredStatus(this.modelSummary.id, this.currentEngine);
+        // FIXME: use status code
+        if (r.status === 'training') {
           this.enableOverlay(MODEL_MSGS.MODEL_TRAINING);
           this.toaster(MODEL_MSGS.MODEL_TRAINING, 'error', true);
           return;
