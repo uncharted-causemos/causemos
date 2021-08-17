@@ -247,15 +247,6 @@ const initializeModel = async (modelId: string) => {
     }
     return errors;
   }
-
-  // Model is still training, check and upate the status
-  if (model.status === MODEL_STATUS.TRAINING) {
-    const r = await checkAndUpdateRegisteredStatus(modelId, engine);
-    if (r === MODEL_STATUS.TRAINING) {
-      errors.push(MODEL_MSGS.MODEL_TRAINING);
-    }
-    return errors;
-  }
   return [];
 };
 
