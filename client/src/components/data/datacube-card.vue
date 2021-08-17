@@ -65,9 +65,6 @@
             </button>
           </div>
           <div v-else>
-            <disclaimer
-              :message="'check execution status'"
-            />
             <button
               class="search-button btn btn-primary btn-call-for-action"
               @click="showModelExecutionStatus()"
