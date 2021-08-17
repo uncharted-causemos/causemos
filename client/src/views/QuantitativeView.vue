@@ -13,7 +13,7 @@
         :reset-layout-token='resetLayoutToken'
         @show-model-parameters="showModelParameters"
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
-        @refresh-model="refreshModel"
+        @refresh-model="refreshModelAndScenarios"
         @tab-click="tabClick"
       >
         <template #action-bar>
@@ -182,16 +182,17 @@ export default {
       this.modelComponents = await modelService.getComponents(this.currentCAG);
       this.disableOverlay();
     },
+    async refreshModelAndScenarios() {
+      this.refreshModel();
+      this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+    },
     async refresh() {
       // Basic model data
       this.enableOverlay('Loading');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
-      let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-
-      // 1. If we have no scenarios at all, then we must sync with inference engines
-      // 2. If we have topology changes, then we should sync with inference engines
-      if (scenarios.length === 0 || this.modelSummary.is_quantified === false) {
+      // If we have topology changes, then we should sync with inference engines
+      if (this.modelSummary.is_quantified === false) {
         // Check model is ready to be used for experiments
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
@@ -203,11 +204,6 @@ export default {
           console.error(errors);
           return;
         }
-
-        // FIXME: Quickie hack to set scenarios to invalid because of resync
-        scenarios.forEach(s => {
-          s.is_valid = false;
-        });
       }
       this.disableOverlay();
 
@@ -220,6 +216,8 @@ export default {
           return;
         }
       }
+
+      let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
       await this.refreshModel();
 
@@ -240,7 +238,6 @@ export default {
 
       // Check if draft scenario is in play
       if (!_.isNil(this.draftScenario) && this.draftScenario.model_id === this.currentCAG) {
-        console.log('restoring draft');
         scenarios.push(this.draftScenario);
       } else {
         this.setDraftScenario(null);
@@ -255,10 +252,10 @@ export default {
       this.setSelectedScenarioId(scenarioId);
 
 
-      const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-      if (selectedScenario && selectedScenario.is_valid === false) {
-        this.runScenario();
-      }
+      // const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      // if (selectedScenario && selectedScenario.is_valid === false) {
+      //   this.runScenario();
+      // }
 
       if (this.onMatrixTab) {
         this.fetchSensitivityAnalysisResults();
