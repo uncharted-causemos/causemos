@@ -64,7 +64,7 @@
       <template v-slot:datacube-description>
         <model-description
           :metadata="metadata"
-          @update-attribute-visibility="refreshMetadata"
+          @refresh-metadata="refreshMetadata"
         />
       </template>
       <template #temporal-aggregation-config>
@@ -642,6 +642,7 @@ export default defineComponent({
             delete p.related_features;
           }
         });
+
         //
         // update server data
         //
