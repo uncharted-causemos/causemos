@@ -180,7 +180,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, watchEffect } from 'vue';
+import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
@@ -316,10 +316,12 @@ export default defineComponent({
     });
 
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
-    watchEffect(() => {
-      historicalTimeseries.value =
-        selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+    watch([selectedNodeScenarioData], () => {
+      if (_.isEmpty(historicalTimeseries.value)) {
+        historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+      }
     });
+
     const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
       historicalTimeseries.value = newPoints;
     };
