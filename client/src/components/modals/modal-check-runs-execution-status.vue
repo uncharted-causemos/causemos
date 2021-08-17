@@ -11,7 +11,7 @@
           <td
             v-for="(dim, idx) in potentialRunsParameters"
             :key="idx">
-            <span style="font-weight: bold;">{{ dim }}</span>
+            <div class="params-header">{{ dim }}</div>
           </td>
           <td>&nbsp;</td>
         </tr>
@@ -19,7 +19,8 @@
           v-for="(run, sidx) in potentialRuns"
           :key="sidx">
           <td v-for="(dimName, idx) in Object.keys(run)"
-            :key="idx">
+            :key="idx"
+            class="params-value">
             <label>{{ run[dimName] }}</label>
           </td>
           <td>
@@ -112,6 +113,8 @@ export default defineComponent({
 @import "~styles/variables";
 
 ::v-deep(.modal-container) {
+  max-width: 80vw;
+  width: max-content;
   .modal-body {
     height: 300px;
     overflow-y: scroll;
@@ -126,5 +129,17 @@ export default defineComponent({
   align-items: center;
   justify-content: center;
   border-radius: 3px;
+}
+
+.params-header {
+  font-weight: bold;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.params-value {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  align-content: center;
 }
 </style>

@@ -112,6 +112,9 @@ export default {
       if (this.onMatrixTab) {
         this.fetchSensitivityAnalysisResults();
       }
+    },
+    currentCAG() {
+      this.refresh();
       // save the scenario-id in the insight store so that it will be part of any saved captured of this view
       const dataState = {
         selectedScenarioId: this.selectedScenarioId
@@ -126,7 +129,10 @@ export default {
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
             this.$router.push({
-              query: { insight_id: undefined }
+              query: {
+                insight_id: undefined,
+                activeTab: this.$route.query.activeTab || undefined
+              }
             });
           }
         }

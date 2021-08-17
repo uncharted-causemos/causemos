@@ -2,6 +2,8 @@ import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
+import { ModelParameterDataType } from '@/types/Enums';
+import _ from 'lodash';
 
 /**
  * Takes an id then fetches and returns the metadata associated
@@ -54,6 +56,23 @@ export default function useModelMetadata(id: Ref<string | null>): Ref<Model | In
         rawMetadata.qualifier_outputs.forEach(qualifier => {
           if (qualifier.is_visible === undefined) {
             qualifier.is_visible = false;
+          }
+        });
+      }
+
+      // add initial labels for params with a valid list of choices
+      if (isModel(rawMetadata)) {
+        const modelMetadata = rawMetadata;
+        modelMetadata.parameters.forEach(param => {
+          // ignore qualifiers (i.e., drilldown params)
+          // ignore freeform params
+          // only applicable to tweakable input params with a valid list of choices
+          if (param.data_type !== ModelParameterDataType.Freeform &&
+              param.choices !== null && param.choices !== undefined && param.choices.length > 0 &&
+              (param.is_drilldown === null || param.is_drilldown === false)) {
+            if (param.choices_labels === undefined) {
+              param.choices_labels = _.cloneDeep(param.choices);
+            }
           }
         });
       }

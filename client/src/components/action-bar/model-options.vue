@@ -83,7 +83,7 @@ export default defineComponent({
       default: 'qualitativeView'
     }
   },
-  emits: ['rename'],
+  emits: ['rename', 'duplicate'],
   methods: {
     onShowModelOptionsDropdown() {
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
@@ -111,19 +111,8 @@ export default defineComponent({
       window.location.href = this.downloadURL;
     },
     onDuplicate() {
-      modelService.duplicateModel(this.currentCAG).then(() => {
-        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
-        // Back to splash page
-        this.$router.push({
-          name: this.viewAfterDeletion,
-          params: {
-            project: this.project,
-            projectType: ProjectType.Analysis
-          }
-        });
-      }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
-      });
+      this.$emit('duplicate');
+      this.showModelOptionsDropdown = false;
     }
   }
 });

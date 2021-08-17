@@ -1,14 +1,11 @@
 import { Ref, ref } from '@vue/reactivity';
-import { computed, watchEffect } from '@vue/runtime-core';
-import { Indicator, Model } from '@/types/Datacube';
+import { watchEffect } from '@vue/runtime-core';
+import { SpatialAggregationLevel } from '@/types/Enums';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
-import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { SpatialAggregationLevel } from '@/types/Enums';
 import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import _ from 'lodash';
-import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const applySplitByRegion = (
   regionalData: RegionalAggregations,
@@ -49,42 +46,12 @@ const applySplitByRegion = (
 };
 
 export default function useRegionalData(
-  selectedModelId: Ref<string>,
-  selectedSpatialAggregation: Ref<string>,
-  selectedTemporalAggregation: Ref<string>,
-  selectedTemporalResolution: Ref<string>,
-  metadata: Ref<Model | Indicator | null>,
-  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
+  outputSpecs: Ref<OutputSpecWithId[]>,
   breakdownOption: Ref<string | null>,
   datacubeHierarchy: Ref<DatacubeGeography | null>
 ) {
-  const { activeFeature } = useActiveDatacubeFeature(metadata);
-
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
-  const outputSpecs = computed<OutputSpecWithId[]>(() => {
-    const modelMetadata = metadata.value;
-    if (
-      selectedModelId.value === null ||
-      modelMetadata === null
-    ) {
-      return [];
-    }
-
-
-    const activeModelId = modelMetadata.data_id ?? '';
-
-    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
-      id: timeseriesId,
-      modelId: activeModelId,
-      runId: scenarioId,
-      outputVariable: activeFeature.value,
-      timestamp,
-      temporalResolution: selectedTemporalResolution.value,
-      temporalAggregation: selectedTemporalAggregation.value,
-      spatialAggregation: selectedSpatialAggregation.value
-    }));
-  });
   watchEffect(async onInvalidate => {
     // FIXME: OPTIMIZATION: with some careful refactoring, we can adjust things
     //  so that the getRegionAggregations call doesn't have to wait until the
