@@ -830,7 +830,7 @@ h5 {
 }
 
 .restrict-max-width {
-  max-width: 90ch;
+  max-width: 110ch;
 }
 
 .save-parameter-button {
