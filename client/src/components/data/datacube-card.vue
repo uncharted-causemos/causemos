@@ -93,7 +93,7 @@
                 Data
               </button>
               <button
-                v-if="showDatasetButton"
+                v-if="dataPaths.length > 0"
                 class="btn btn-default"
                 :class="{'btn-primary':isDescriptionView}"
                 @click="showDatasets = true"
@@ -160,7 +160,7 @@
                 contains code used to process the parquet files.
               </p>
               <ul>
-                <div v-for="dataPath in metadata.data_paths" :key="dataPath">
+                <div v-for="dataPath in dataPaths" :key="dataPath">
                   <li><a :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a></li>
                 </div>
               </ul>
@@ -275,7 +275,7 @@ import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { DatacubeType, ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
@@ -477,14 +477,13 @@ export default defineComponent({
     disableConcurrentTileRequestsCaching();
   },
   computed: {
+    dataPaths(): string[] {
+      return _.compact(this.allModelRunData
+        .filter(modelRun => this.selectedScenarioIds.indexOf(modelRun.id) >= 0)
+        .flatMap(modelRun => _.head(modelRun.data_paths)));
+    },
     mapSelectedLayer(): number {
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
-    },
-    showDatasetButton(): boolean {
-      if (!_.isNull(this.metadata)) {
-        return this.metadata.type === DatacubeType.Indicator;
-      }
-      return false;
     }
   },
   methods: {
