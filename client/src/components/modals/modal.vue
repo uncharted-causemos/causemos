@@ -111,6 +111,7 @@ export default defineComponent({
 .modal-container {
   position: relative;
   width: 500px;
+  max-height: 80vh;
   margin: 0px auto;
   background-color: #fff;
   border-radius: 2px;

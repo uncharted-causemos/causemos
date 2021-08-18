@@ -85,8 +85,8 @@
               <!-- make 'Data' tab disabled when no scenario selection -->
               <button class="btn btn-default"
                       :class="{'btn-primary':!isDescriptionView}"
-                      :disabled="selectedScenarioIds.length === 0"
-                      @click="$emit('update-desc-view', false)">
+                      :disabled="!validModelRunsAvailable"
+                      @click="clickData">
                 Data
               </button>
             </div>
@@ -244,7 +244,7 @@ import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } fro
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations, OutputStatsResult } from '@/types/Runoutput';
 import { useStore } from 'vuex';
-import { isModel } from '@/utils/datacube-util';
+import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestampMillis } from '@/utils/date-util';
@@ -380,6 +380,12 @@ export default defineComponent({
       return metadata.value !== null && isModel(metadata.value);
     });
 
+    const validModelRunsAvailable = computed(() => {
+      return (!_.isNull(metadata.value) && isIndicator(metadata.value)) || (!_.isNull(allModelRunData.value) &&
+        !_.isNull(metadata.value) && isModel(metadata.value) &&
+        _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
+    });
+
     const gridLayerStats = ref<OutputStatsResult[]>([]);
 
     watchEffect(async onInvalidate => {
@@ -431,7 +437,8 @@ export default defineComponent({
       isModelMetadata,
       emitRelativeToSelection,
       timestampFormatter,
-      SpatialAggregationLevel
+      SpatialAggregationLevel,
+      validModelRunsAvailable
     };
   },
   data: () => ({
@@ -460,6 +467,11 @@ export default defineComponent({
     }
   },
   methods: {
+    clickData() {
+      const newIds = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready).map(run => run.id).slice(0, 1);
+      this.$emit('set-selected-scenario-ids', newIds);
+      this.$emit('update-desc-view', false);
+    },
     onMapLoad() {
       this.$emit('on-map-load');
     },

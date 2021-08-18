@@ -118,6 +118,14 @@
                 @click="clearParameterization">
                 Clear parameterization
               </button>
+              <button
+                v-if="hasConstraints"
+                v-tooltip.top-center="'Clear constraints'"
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="clearConstraints">
+                Clear constraints
+              </button>
             </div>
           </div>
           <p class="restrict-max-width">
@@ -344,6 +352,10 @@ export default defineComponent({
       })
     );
 
+    const hasConstraints = computed(() => {
+      return constraints.value.length > 0;
+    });
+
     // TODO: Filter top drivers and top impacts
     //  CLARIFICATION REQUIRED:
     //    is this taken from the sensitivity analysis?
@@ -552,6 +564,11 @@ export default defineComponent({
       saveDraft();
     };
 
+    const clearConstraints = () => {
+      constraints.value = [];
+      saveDraft();
+    };
+
     watchEffect(() => {
       // When the selectedScenario changes, grab the constraints from that scenario
       //  and store them in the `constraints` ref to be displayed
@@ -607,7 +624,9 @@ export default defineComponent({
       nodeId,
       project,
       currentCAG,
-      clearParameterization
+      clearParameterization,
+      hasConstraints,
+      clearConstraints
     };
   },
   methods: {
@@ -811,7 +830,7 @@ h5 {
 }
 
 .restrict-max-width {
-  max-width: 90ch;
+  max-width: 110ch;
 }
 
 .save-parameter-button {
