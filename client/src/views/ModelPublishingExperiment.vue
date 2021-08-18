@@ -64,7 +64,7 @@
       <template v-slot:datacube-description>
         <model-description
           :metadata="metadata"
-          @update-attribute-visibility="refreshMetadata"
+          @refresh-metadata="refreshMetadata"
         />
       </template>
       <template #temporal-aggregation-config>
@@ -153,6 +153,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { updateDatacube } from '@/services/new-datacube-service';
@@ -373,19 +374,23 @@ export default defineComponent({
     );
 
     const {
-      regionalData,
       outputSpecs
-    } = useRegionalData(
+    } = useOutputSpecs(
       selectedModelId,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints,
+      selectedTimeseriesPoints
+    );
+
+    const {
+      regionalData
+    } = useRegionalData(
+      outputSpecs,
       breakdownOption,
       datacubeHierarchy
     );
-
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -642,6 +647,7 @@ export default defineComponent({
             delete p.related_features;
           }
         });
+
         //
         // update server data
         //

@@ -1,13 +1,7 @@
 import API from '@/api/api';
 import { DatacubeGeography } from '@/types/Common';
 import { AdminLevel } from '@/types/Enums';
-import {
-  OutputSpec,
-  OutputSpecWithId,
-  RegionalAggregations,
-  RegionAgg,
-  RegionalAggregation
-} from '@/types/Runoutput';
+import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation, OutputStatWithZoom, OutputStatsResult } from '@/types/Runoutput';
 
 export const getRegionAggregation = async (
   spec: OutputSpec
@@ -93,7 +87,39 @@ export const getRegionAggregations = async (
   };
 };
 
+export const getOutputStat = async (spec: OutputSpec): Promise<OutputStatWithZoom[]> => {
+  try {
+    const { data } = await API.get('/maas/output/stats', {
+      params: {
+        data_id: spec.modelId,
+        run_id: spec.runId,
+        feature: spec.outputVariable,
+        resolution: spec.temporalResolution,
+        temporal_agg: spec.temporalAggregation,
+        spatial_agg: spec.spatialAggregation,
+        timestamp: spec.timestamp
+      }
+    });
+    return data;
+  } catch (e) {
+    return [];
+  }
+};
+
+export const getOutputStats = async (specs: OutputSpecWithId[]): Promise<OutputStatsResult[]> => {
+  const results = await Promise.all(specs.map(getOutputStat));
+  const stats = results.map((result, index) => {
+    return {
+      outputSpecId: specs[index].id,
+      stats: result
+    };
+  });
+  return stats;
+};
+
 export default {
   getRegionAggregation,
-  getRegionAggregations
+  getRegionAggregations,
+  getOutputStat,
+  getOutputStats
 };
