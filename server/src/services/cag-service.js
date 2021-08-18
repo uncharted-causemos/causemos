@@ -13,12 +13,6 @@ const modelUtil = rootRequire('/util/model-util');
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
 
 
-// TODO
-// 0 - not ready
-// 1 - training
-// 2 - done
-
-
 // Get model with no thumbnail
 const _getModel = async (modelId) => {
   const connection = Adapter.get(RESOURCE.CAG);
