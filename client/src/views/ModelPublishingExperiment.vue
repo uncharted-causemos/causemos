@@ -139,13 +139,13 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { computed, ComputedRef, defineComponent, ref, watchEffect } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
-import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
+import { DatacubeFeature, DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
@@ -163,7 +163,7 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
-import { Insight, ViewState } from '@/types/Insight';
+import { DataState, Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 
@@ -289,10 +289,14 @@ export default defineComponent({
     ]);
 
     const isDescriptionView = ref<boolean>(true);
+    const outputs = ref([]) as Ref<DatacubeFeature[]>;
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     watchEffect(() => {
       if (metadata.value) {
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
+
+        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
         // set initial output variable index
         let initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
@@ -306,6 +310,7 @@ export default defineComponent({
           [metadata.value.id]: initialOutputIndex
         };
         store.dispatch('app/setDatacubeCurrentOutputsMap', defaultFeature);
+        mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
 
@@ -318,10 +323,15 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      const dataState = {
+      const dataState: DataState = {
         selectedModelId: selectedModelId.value,
         selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value
+        selectedTimestamp: selectedTimestamp.value,
+        datacubeTitles: [{
+          datacubeName: metadata.value?.name ?? '',
+          datacubeOutputName: mainModelOutput.value?.display_name ?? ''
+        }],
+        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
       };
       const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
