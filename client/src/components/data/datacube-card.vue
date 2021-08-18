@@ -85,7 +85,7 @@
               <!-- make 'Data' tab disabled when no scenario selection -->
               <button class="btn btn-default"
                       :class="{'btn-primary':!isDescriptionView}"
-                      :disabled="allModelRunData.length === 0"
+                      :disabled="!validModelRunsAvailable"
                       @click="clickData">
                 Data
               </button>
@@ -242,7 +242,7 @@ import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } fro
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
-import { isModel } from '@/utils/datacube-util';
+import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestampMillis } from '@/utils/date-util';
@@ -377,6 +377,11 @@ export default defineComponent({
       return metadata.value !== null && isModel(metadata.value);
     });
 
+    const validModelRunsAvailable = computed(() => {
+      return (!_.isNull(metadata.value) && isIndicator(metadata.value)) || (!_.isNull(allModelRunData.value) &&
+        _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
+    });
+
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
       mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
@@ -414,7 +419,8 @@ export default defineComponent({
       isModelMetadata,
       emitRelativeToSelection,
       timestampFormatter,
-      SpatialAggregationLevel
+      SpatialAggregationLevel,
+      validModelRunsAvailable
     };
   },
   data: () => ({
@@ -440,9 +446,6 @@ export default defineComponent({
   computed: {
     mapSelectedLayer(): number {
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
-    },
-    validModelRunsAvailable(): boolean {
-      return !_.isNull(this.allModelRunData) && _.some(this.allModelRunData, r => r.status === ModelRunStatus.Ready);
     }
   },
   methods: {
