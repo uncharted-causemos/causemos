@@ -74,10 +74,12 @@
       @toggle-is-item-selected="toggleIsQualifierSelected"
     >
       <template #aggregation-description>
-        <!-- TODO: highlighted value should be dynamically populated based
-        on the selected timestamp -->
         <p class="aggregation-description">
-          Showing <strong>placeholder</strong> data.
+          Showing data for
+          <span class="highlighted">{{
+            timestampFormatter(selectedTimestamp)
+          }}</span
+          >.
         </p>
         <p class="aggregation-description">
           Aggregated by
