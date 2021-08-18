@@ -42,6 +42,7 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import _ from 'lodash';
+import { DataState } from '@/types/Insight';
 
 export default defineComponent({
   name: 'CompAnalysis',
@@ -71,6 +72,7 @@ export default defineComponent({
     });
 
     const allTimeseriesMap: {[key: string]: Timeseries[]} = {};
+    const allDatacubesMetadataMap: {[key: string]: {datacubeName: string; datacubeOutputName: string; region: string[]}} = {};
     const globalTimeseries = ref([]) as Ref<Timeseries[]>;
     const reCalculateGlobalTimeseries = ref(true);
 
@@ -116,6 +118,7 @@ export default defineComponent({
       selectedDatacubeId,
       analysisItems,
       allTimeseriesMap,
+      allDatacubesMetadataMap,
       globalTimeseries,
       selectedTimestamp,
       setSelectedTimestamp,
@@ -141,9 +144,10 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
-      hideInsightPanel: 'insightPanel/hideInsightPanel'
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
+      setDataState: 'insightPanel/setDataState'
     }),
-    onLoadedTimeseries(timeseriesInfo: {id: string; timeseriesList: Timeseries[]}) {
+    onLoadedTimeseries(timeseriesInfo: {id: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; region: string[]}) {
       // we should only set the global timeseries one time
       //  once all individual datacubes' timeseries have been loaded
       if (!this.reCalculateGlobalTimeseries) return;
@@ -151,12 +155,20 @@ export default defineComponent({
       // clone and save the incoming timeseries in the map object
       //  where all timeseries lists will be saved
       this.allTimeseriesMap[timeseriesInfo.id] = _.cloneDeep(timeseriesInfo.timeseriesList);
+
+      this.allDatacubesMetadataMap[timeseriesInfo.id] = {
+        datacubeName: timeseriesInfo.datacubeName,
+        datacubeOutputName: timeseriesInfo.datacubeOutputName,
+        region: timeseriesInfo.region
+      };
       //
       // calculate (the global timeseries)
       //
       if (this.analysisItems.length === Object.keys(this.allTimeseriesMap).length) {
         this.reCalculateGlobalTimeseries = false;
+        //
         // all time series data for all datacubes have been loaded
+        //
         const flatMap: Array<Timeseries[]> = [];
         Object.keys(this.allTimeseriesMap).forEach(key => {
           const timeseriesList: Timeseries[] = this.allTimeseriesMap[key];
@@ -215,6 +227,28 @@ export default defineComponent({
             this.initialSelectedTimestampRange = newTimestampRange;
           }
         }
+
+        //
+        // use the loaded metadata for all analysis-items
+        //  and update the data-state object in the store for future insight capture
+        //
+        const datacubeTitles: any = [];
+        const regions: string[] = [];
+        Object.keys(this.allDatacubesMetadataMap).forEach(key => {
+          const title = {
+            datacubeName: this.allDatacubesMetadataMap[key].datacubeName,
+            datacubeOutputName: this.allDatacubesMetadataMap[key].datacubeOutputName
+          };
+          // for each datacube, save its name and output-name
+          datacubeTitles.push(title);
+          // also, save a list of all regions (into a big list for all datacubes)
+          regions.push(...this.allDatacubesMetadataMap[key].region);
+        });
+        const dataState: DataState = {
+          datacubeTitles: datacubeTitles,
+          datacubeRegions: _.unionBy(_.sortBy(regions)) // FIXME: rank repeated countries from all datacubes and show top 5
+        };
+        this.setDataState(dataState);
       }
     }
   }

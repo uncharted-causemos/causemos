@@ -72,9 +72,11 @@
           <template #content>
             <div>
               <ul>
+                <!--
                 <li>
                   <i :class="iconToDisplay" /> {{ viewName }}
                 </li>
+                -->
                 <li
                   v-for="metadataAttr in metadataDetails"
                   :key="metadataAttr.key">
@@ -131,7 +133,8 @@ export default {
     hasError: false,
     imagePreview: null,
     metadata: '',
-    name: ''
+    name: '',
+    currentDatacubes: []
   }),
   computed: {
     ...mapGetters({
@@ -186,28 +189,103 @@ export default {
       // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
       return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
     },
+    isQuantitativeView() {
+      return this.currentView === 'modelPublishingExperiment' ||
+      this.currentView === 'data' ||
+      this.currentView === 'dataPreview' ||
+      this.currentView === 'dataComparative';
+    },
     metadataDetails() {
+      //
+      // currentView dictates what kind of metadata should be visible
+      //
+      // common (from projectMetadata)
+      //  - project name
+      //  - analysis name
+      //
+      // datacube drilldown:
+      //  - datacube titles
+      //  - selected scenario counts
+      //  - region(s): top 5
+      //
+      // comparative analysis
+      //  - datacube titles
+      //  - region(s): top 5
+      //
+      // CAG-based views
+      //  - corpus
+      //  - ontology
+      //  - selected scenario id (if any)
+      //  - selected node/edge (if any)
+      //  - last modified date
+      //  - filters (if any)
+
       const arr = [];
-      // @HACK: The content of this function needs to be revised and cleaned
+      // @Review: The content of this function needs to be revised and cleaned
       arr.push({
         key: 'Project Name:',
         value: this.projectMetadata.name
       });
-      if (this.currentView === 'modelPublishingExperiment' || this.currentView === 'data') {
-        // FIXME: additional metadata attributes should be defined and sent down based on the source page
-        arr.push({
-          key: 'Model ID:',
-          value: this.contextId
-        });
-        arr.push({
-          key: 'Target View:',
-          value: this.insightTargetView
-        });
-        arr.push({
-          key: 'Visibility:',
-          value: this.insightVisibility
-        });
-      } else {
+      if (this.dataState) {
+        if (this.dataState.datacubeTitles) {
+          this.dataState.datacubeTitles.forEach((title, indx) => {
+            arr.push({
+              key: 'Name(' + indx.toString() + '):',
+              value: title.datacubeOutputName + ' | ' + title.datacubeName
+            });
+          });
+        }
+        if (this.dataState.selectedScenarioIds) {
+          arr.push({
+            key: 'Selected Scenarios: ',
+            value: this.dataState.selectedScenarioIds.length
+          });
+        }
+        if (this.dataState.datacubeRegions) {
+          arr.push({
+            key: 'Region(s): ',
+            value: this.dataState.datacubeRegions
+          });
+        }
+        if (this.dataState.modelName) {
+          arr.push({
+            key: 'CAG: ',
+            value: this.dataState.modelName
+          });
+        }
+        if (this.dataState.nodesCount) {
+          arr.push({
+            key: 'Nodes Count: ',
+            value: this.dataState.nodesCount
+          });
+        }
+        if (this.dataState.selectedNode) {
+          arr.push({
+            key: 'Selected Node: ',
+            value: this.dataState.selectedNode
+          });
+        }
+        if (this.dataState.selectedEdge) {
+          arr.push({
+            key: 'Selected Edge: ',
+            value: this.dataState.selectedEdge
+          });
+        }
+        if (this.dataState.selectedScenarioId) {
+          arr.push({
+            key: 'Selected Scenario: ',
+            value: this.dataState.selectedScenarioId
+          });
+        }
+        if (this.dataState.currentEngine) {
+          arr.push({
+            key: 'Engine: ',
+            value: this.dataState.currentEngine
+          });
+        }
+      }
+
+      if (!this.isQuantitativeView) {
         arr.push({
           key: 'Ontology:',
           value: this.projectMetadata.ontology
@@ -275,7 +353,7 @@ export default {
         (this.modelSummary ? (' - ' + this.modelSummary.name) : '') +
         (this.currentView ? (' - ' + this.currentView) : '');
 
-      this.description = this.formattedFilterString.length > 0 && `Filters: ${this.formattedFilterString} `;
+      this.description = this.formattedFilterString.length > 0 ? `Filters: ${this.formattedFilterString} ` : '';
     },
     async saveInsight() {
       if (this.hasError || _.isEmpty(this.name)) return;
