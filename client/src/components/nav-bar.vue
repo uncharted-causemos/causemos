@@ -24,9 +24,9 @@
               :class="{underlined: currentView === 'domainDatacubeOverview'}">
               <router-link
                 class="nav-link"
-                :to="{name:'domainDatacubeOverview', params:{project: projectMetadata.name}}"
+                :to="{name:'domainDatacubeOverview', params:{project: project}}"
               >
-                <i class="fa fa-connectdevelop" />
+                <i class="fa fa-fw fa-connectdevelop" />
                 {{ projectMetadata.name }}
               </router-link>
             </li>
@@ -38,15 +38,33 @@
                 class="nav-link"
                 :to="{name:'overview', params:{project: project}}"
               >
-                <i class="fa fa-search" />
+                <i class="fa fa-fw fa-clone" />
                 {{ projectMetadata.name }}
               </router-link>
             </li>
             <li
               v-if="projectType === ProjectType.Analysis && currentView !== 'overview'"
+              class="nav-item"
+              :class="{'nav-item--label': currentView !== 'nodeDrilldown', underlined: currentView === 'dataComparative' || currentView === 'qualitative' || currentView === 'quantitative'}">
+              <router-link
+                v-if="currentView === 'nodeDrilldown'"
+                class="nav-link"
+                :to="{name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}"
+              >
+                {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+              </router-link>
+              <template v-else>
+                <i v-if="currentView === 'quantitative'" class="fa fa-fw fa-connectdevelop" />
+                <i v-if="currentView === 'qualitative'" class="fa fa-fw fa-book" />
+                <i v-if="currentView === 'dataComparative'" class="fa fa-fw fa-line-chart" />
+                {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+              </template>
+            </li>
+            <li
+              v-if="projectType === ProjectType.Analysis && currentView === 'nodeDrilldown'"
               class="nav-item nav-item--label"
-              :class="{underlined: currentView === 'dataComparative' || currentView === 'qualitative' || currentView === 'quantitative'}">
-              {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
+              :class="{underlined: currentView === 'nodeDrilldown'}">
+              Node Drilldown
             </li>
           </template>
         </ul>
@@ -57,7 +75,7 @@
         class="nav navbar-nav navbar-right help-holder">
         <li class="nav-item nav-item--help">
           <a
-            href="https://docs.google.com/presentation/d/1DvixJx4bTkaaIC1mvN26Mf-ykfPzS1NWEmOMMyDWI3E/edit?usp=sharing"
+            href="https://docs.google.com/presentation/d/1WnIXxAd639IFMOKEAu3E3C1SUgfzsCO6oLLbKOvAZkI/edit#slide=id.g8c51928f8f_0_200"
             target="_blank"
           > <i class="fa fa-question" />
           </a>
@@ -84,6 +102,7 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       currentView: 'app/currentView',
+      currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
       selectedModel: 'model/selectedModel',
       lastQuery: 'query/lastQuery',

@@ -26,13 +26,17 @@ export default defineComponent({
       type: Number,
       default: 0
     },
+    selectedTimestampRange: {
+      type: Object as PropType<{start: number; end: number} | null>,
+      default: null
+    },
     breakdownOption: {
       type: String as PropType<string | null>,
       default: null
     }
   },
   setup(props, { emit }) {
-    const { timeseriesData, breakdownOption, selectedTimestamp } = toRefs(
+    const { timeseriesData, breakdownOption, selectedTimestamp, selectedTimestampRange } = toRefs(
       props
     );
     const lineChart = ref<HTMLElement | null>(null);
@@ -57,7 +61,8 @@ export default defineComponent({
         height,
         selectedTimestamp.value,
         selectTimestamp,
-        breakdownOption.value
+        breakdownOption.value,
+        selectedTimestampRange.value
       );
     }, RESIZE_DELAY);
     watch(
@@ -69,7 +74,7 @@ export default defineComponent({
       }
     );
     watch(
-      () => [timeseriesData.value, breakdownOption.value],
+      () => [timeseriesData.value, breakdownOption.value, selectedTimestampRange.value],
       () => {
         // Underlying data has changed, so rerender chart
         const parentElement = lineChart.value?.parentElement;

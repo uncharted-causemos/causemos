@@ -10,6 +10,8 @@ const datacubeService = rootRequire('/services/datacube-service');
 const QUEUE_SERVICE_URL = 'http://10.65.18.52:4040/data-pipeline/enqueue';
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
+const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
+
 /**
  * Submit a new model run to Jataware and store information about it in ES.
  *
@@ -54,11 +56,31 @@ const startModelOutputPostProcessing = async (metadata) => {
     return;
   }
 
+  const filters = {
+    clauses: [
+      { field: 'id', operand: 'or', isNot: false, values: [metadata.model_id] }
+    ]
+  };
+  const modelMetadata = (await datacubeService.getDatacubes(filters, {
+    includes: ['outputs', 'qualifier_outputs'],
+    size: 1
+  }))[0];
+
+  const qualifierMap = {};
+  if (modelMetadata.qualifier_outputs) {
+    modelMetadata.outputs.forEach(output => {
+      qualifierMap[output.name] = modelMetadata.qualifier_outputs.filter(
+        q => !IMPLICIT_QUALIFIERS.includes(q.name)
+      ).map(q => q.name);
+    });
+  }
+
   const flowParameters = {
     model_id: metadata.model_id,
     run_id: metadata.id,
     doc_ids: [metadata.id],
     data_paths: metadata.data_paths,
+    qualifier_map: qualifierMap,
     compute_tiles: true
   };
 
@@ -76,6 +98,7 @@ const startModelOutputPostProcessing = async (metadata) => {
 
   // Remove extra fields from Jataware
   metadata.attributes = undefined;
+  metadata.default_run = undefined;
 
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
   const result = await connection.update({
@@ -178,6 +201,9 @@ const startIndicatorPostProcessing = async (metadata) => {
     metadata.period.lte = 0;
   }
 
+  metadata.type = 'indicator';
+  metadata.family_name = metadata.family_name || metadata.name;
+
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
   //        the following function would be called at:
@@ -205,6 +231,8 @@ const startIndicatorPostProcessing = async (metadata) => {
   const resolutions = ['annual', 'monthly', 'dekad', 'weekly', 'daily', 'other'];
   let highestRes = 0;
 
+  const qualifierMap = {};
+
   // Create data now to send to elasticsearch
   const newIndicatorMetadata = metadata.outputs
     .filter(output => acceptedTypes.includes(output.type)) // Don't process non-numeric data
@@ -221,9 +249,9 @@ const startIndicatorPostProcessing = async (metadata) => {
       clonedMetadata.data_id = metadata.id;
       clonedMetadata.id = uuid();
       clonedMetadata.outputs = [output];
-      clonedMetadata.family_name = metadata.family_name || metadata.name;
+      clonedMetadata.family_name = metadata.family_name;
       clonedMetadata.default_feature = output.name;
-      clonedMetadata.type = 'indicator';
+      clonedMetadata.type = metadata.type;
       clonedMetadata.status = 'PROCESSING';
 
       let qualifierMatches = [];
@@ -231,6 +259,10 @@ const startIndicatorPostProcessing = async (metadata) => {
         // Filter out unrelated qualifiers
         clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
           qualifier => qualifier.related_features.includes(output.name));
+
+        qualifierMap[output.name] = clonedMetadata.qualifier_outputs.filter(
+          q => !IMPLICIT_QUALIFIERS.includes(q.name)
+        ).map(q => q.name);
 
         // Combine all concepts from the qualifiers into one list
         qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
@@ -262,6 +294,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     run_id: 'indicator',
     data_paths: metadata.data_paths,
     temporal_resolution: resolutions[highestRes],
+    qualifier_map: qualifierMap,
     is_indicator: true
   };
 

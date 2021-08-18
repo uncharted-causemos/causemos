@@ -29,7 +29,6 @@ const getIndicatorData = async (dataId, feature, temporalResolution, temporalAgg
 /**
  * Find all node parameters (concepts) without indicators
  * @param {string} modelId - model id
- *
  */
 const _findAllWithoutIndicators = async (modelId) => {
   const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
@@ -62,7 +61,33 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
-const getOntologyCandidates = async (modelId, concepts) => {
+/**
+ * Match against previous user selected indicator groundings in the same project
+ */
+const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, filteredNodeParameters) => {
+  const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
+  const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
+  const conceptsWithoutHistory = [];
+
+  for (const node of filteredNodeParameters) {
+    const topUsedIndicator = await indicatorMatchHistoryAdapter.findOne([
+      { field: 'project_id', value: model.project_id },
+      { field: 'concept', value: node.concept }
+    ], {
+      sort: [{ frequency: { order: 'desc' } }]
+    });
+
+    if (!_.isNil(topUsedIndicator)) {
+      Logger.info(`Using previous selection ${node.concept} => ${topUsedIndicator.indicator_id}`);
+      ontologyCandidates[node.concept] = await datacubeAdapter.findOne([{ field: 'id', value: topUsedIndicator.indicator_id }], {});
+    } else {
+      conceptsWithoutHistory.push(node.concept);
+    }
+  }
+  return conceptsWithoutHistory;
+};
+
+const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
   const ontologyCandidates = {};
 
   const indicatorMetadataAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
@@ -71,7 +96,9 @@ const getOntologyCandidates = async (modelId, concepts) => {
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const modelData = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
 
-  for (const concept of concepts) {
+  const conceptsWithoutIndicators = await checkAndApplyIndicatorMatchHistory(ontologyCandidates, modelData, filteredNodeParameters);
+
+  for (const concept of conceptsWithoutIndicators) {
     let compositionalConcepts = [];
     const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, modelData.project_id);
     const query = {
@@ -129,7 +156,7 @@ const getOntologyCandidates = async (modelId, concepts) => {
 
     const searchPayload = {
       index: RESOURCE.DATA_DATACUBE,
-      size: DEFAULT_SIZE,
+      size: 1,
       body: {
         query: {
           bool: {
@@ -181,14 +208,34 @@ const getOntologyCandidates = async (modelId, concepts) => {
     const foundIndicatorMetadata = response.body.hits.hits;
 
     if (!_.isEmpty(foundIndicatorMetadata)) {
-      ontologyCandidates[concept] = {
-        ...foundIndicatorMetadata[0]._source,
-        _match_score: foundIndicatorMetadata[0]._score
-      };
+      ontologyCandidates[concept] = foundIndicatorMetadata[0]._source;
     }
   }
   return ontologyCandidates;
 };
+
+
+const ABSTRACT_INDICATOR = {
+  id: null,
+  name: 'Abstract',
+  unit: '',
+  country: '',
+  admin1: '',
+  admin2: '',
+  admin3: '',
+  spatialAggregation: 'mean',
+  temporalAggregation: 'mean',
+  temporalResolution: 'month',
+  period: 12,
+  timeseries: [
+    { value: 0.5, timestamp: Date.UTC(2017, 0) },
+    { value: 0.5, timestamp: Date.UTC(2017, 1) },
+    { value: 0.5, timestamp: Date.UTC(2017, 2) }
+  ],
+  min: 0,
+  max: 1
+};
+
 
 /**
  * Attempt to set or reset default indicators for concepts
@@ -201,8 +248,7 @@ const setDefaultIndicators = async (modelId) => {
   // Remove node parameters without concepts
   const filteredNodeParameters = nodeParameters.filter(n => !_.isNil(n.concept));
 
-  const concepts = filteredNodeParameters.map(n => n.concept);
-  const ontologyCandidates = await getOntologyCandidates(modelId, concepts);
+  const ontologyCandidates = await getOntologyCandidates(modelId, filteredNodeParameters);
 
   // All of these indicators are set by the same action, so they should
   // all have the same modified_at time
@@ -231,29 +277,35 @@ const setDefaultIndicators = async (modelId) => {
         admin1: '',
         admin2: '',
         admin3: '',
-        geospatial_aggregation: geospatialAgg,
-        temporal_aggregation: temporalAgg,
-        temporal_resolution: resolution,
+        spatialAggregation: geospatialAgg,
+        temporalAggregation: temporalAgg,
+        temporalResolution: resolution,
         period: 12
       }
     };
 
     // Time series, min, max
-    const feature = topMatch.default_feature;
-    const dataId = topMatch.data_id;
-    const parameter = conceptMatches[conceptKey].parameter;
+    try {
+      const feature = topMatch.default_feature;
+      const dataId = topMatch.data_id;
+      const parameter = conceptMatches[conceptKey].parameter;
 
-    const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
-    if (_.isEmpty(timeseries)) {
-      parameter.timeseries = [];
-      parameter.min = 0;
-      parameter.max = 1;
-    } else {
-      parameter.timeseries = timeseries;
-      const values = timeseries.map(d => d.value);
-      const { max, min } = modelUtil.projectionValueRange(values);
-      parameter.min = min;
-      parameter.max = max;
+      const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+      if (_.isEmpty(timeseries)) {
+        parameter.timeseries = [];
+        parameter.min = 0;
+        parameter.max = 1;
+      } else {
+        parameter.timeseries = timeseries;
+        const values = timeseries.map(d => d.value);
+        const { max, min } = modelUtil.projectionValueRange(values);
+        parameter.min = min;
+        parameter.max = max;
+      }
+    } catch (err) {
+      Logger.warn(err);
+      Logger.warn(`Failed getting data, reset ${conceptKey} to abstract`);
+      conceptMatches[conceptKey].parameter = _.cloneDeep(ABSTRACT_INDICATOR);
     }
   }
 
@@ -264,20 +316,7 @@ const setDefaultIndicators = async (modelId) => {
     if (_.isEmpty(conceptMatches[concept])) {
       conceptMatches[concept] = {
         modified_at: editTime,
-        parameter: {
-          id: null,
-          name: 'Abstract',
-          unit: '',
-          country: '',
-          admin1: '',
-          admin2: '',
-          admin3: '',
-          geospatial_aggregation: 'mean',
-          temporal_aggregation: 'mean',
-          temporal_resolution: 'month',
-          period: 12,
-          timeseries: []
-        }
+        parameter: _.cloneDeep(ABSTRACT_INDICATOR)
       };
       patchedCount += 1;
     }

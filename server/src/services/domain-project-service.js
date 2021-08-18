@@ -28,7 +28,7 @@ const createProject = async (
   Logger.info('Creating project entry: ' + newId);
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const keyFn = (doc) => {
-    return doc.name; // prevent duplicate doc based on the name field instead of id
+    return doc.id; // prevent duplicate doc based on the id field
   };
   await domainProjectConnection.insert({
     id: newId,
@@ -52,15 +52,15 @@ const createProject = async (
  * @param {string} projectId - project id
  * @param {object} projectFields - project fields
  */
-const updateProject = async(projectName, projectFields) => {
+const updateProject = async(projectId, projectFields) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
 
   const keyFn = (doc) => {
-    return doc.name;
+    return doc.id;
   };
 
   const results = await domainProjectConnection.update({
-    name: projectName,
+    id: projectId,
     ...projectFields
   }, keyFn);
 
@@ -74,7 +74,8 @@ const updateProject = async(projectName, projectFields) => {
 /**
  * Returns a list of all projects
  */
-const getAllProjects = async (searchFilters) => {
+const getAllProjects = async (filterParams) => {
+  const searchFilters = getFilterFields(filterParams);
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const results = await domainProjectConnection.find(searchFilters, { size: MAX_NUMBER_PROJECTS });
   return results;
@@ -83,9 +84,9 @@ const getAllProjects = async (searchFilters) => {
 /**
  * Returns a project
  */
-const getProject = async (projectName) => {
+const getProject = async (projectId) => {
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
-  const result = await domainProjectConnection.findOne([{ field: 'name', value: projectName }], {});
+  const result = await domainProjectConnection.findOne([{ field: 'id', value: projectId }], {});
   return result;
 };
 
@@ -106,14 +107,14 @@ const remove = async (projectId) => {
  */
 const updateDomainProjects = async (metadata) => {
   // check if there is an existing (domain) project that match the current metadata
-  // ideally, there shouldn't be such a project since this fucntion would only be called once on the registration of a new indicator family
-  // if such a project already exist, we probably should overwite it
-
-  const existingProjects = await getAllProjects();
-  const modelFamilyNames = existingProjects.map(p => p.name);
+  // ideally, there shouldn't be such a project since this function would only be called once on the registration of a new indicator family
+  // if such a project already exist, we probably should overwrite it
 
   const instanceName = metadata.name;
   const familyName = metadata.family_name || metadata.name || uuid();
+
+  const existingProjects = await getAllProjects({ name: familyName });
+  const modelFamilyNames = existingProjects.map(p => p.name);
 
   if (!modelFamilyNames.includes(familyName)) {
     await createProject(
@@ -135,16 +136,36 @@ const updateDomainProjects = async (metadata) => {
         matchingExistingProject.draft_instances.push(instanceName);
 
         await updateProject(
-          matchingExistingProject.name,
+          matchingExistingProject.id,
           { draft_instances: matchingExistingProject.draft_instances });
       }
     }
   }
 };
 
+const getFilterFields = (filterParams) => {
+  if (!filterParams) {
+    return [];
+  }
+
+  const supportedSearchFields = [
+    'type',
+    'name'
+  ];
+  const searchFilters = [];
+  supportedSearchFields.forEach(key => {
+    if (Object.prototype.hasOwnProperty.call(filterParams, key)) {
+      searchFilters.push({
+        field: key,
+        value: filterParams[key]
+      });
+    }
+  });
+  return searchFilters;
+};
+
 
 module.exports = {
-  createProject,
   getAllProjects,
   getProject,
   remove,

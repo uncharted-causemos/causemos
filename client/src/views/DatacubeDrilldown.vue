@@ -84,7 +84,7 @@
             :inner-button-label="'Temporal Aggregation'"
             :items="Object.values(AggregationOption)"
             :selected-item="selectedTemporalAggregation"
-            @item-selected="item => selectedTemporalAggregation = item"
+            @item-selected="setTemporalAggregationSelection"
           />
         </template>
 
@@ -94,7 +94,7 @@
             :inner-button-label="'Temporal Resolution'"
             :items="Object.values(TemporalResolutionOption)"
             :selected-item="selectedTemporalResolution"
-            @item-selected="item => selectedTemporalResolution = item"
+            @item-selected="setTemporalResolutionSelection"
           />
         </template>
 
@@ -104,7 +104,7 @@
             :inner-button-label="'Spatial Aggregation'"
             :items="Object.values(AggregationOption)"
             :selected-item="selectedSpatialAggregation"
-            @item-selected="item => selectedSpatialAggregation = item"
+            @item-selected="setSpatialAggregationSelection"
           />
           <map-dropdown
             :selectedBaseLayer="selectedBaseLayer"
@@ -137,12 +137,11 @@
               :selected-temporal-aggregation="selectedTemporalAggregation"
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
-              :deselected-region-ids="deselectedRegionIds"
+              :selected-region-ids="selectedRegionIds"
               :selected-breakdown-option="breakdownOption"
               :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
-              @set-all-regions-selected="setAllRegionsSelected"
               @set-breakdown-option="setBreakdownOption"
             />
           </template>
@@ -159,11 +158,11 @@ import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
 import { getRandomNumber } from '@/utils/random';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
-import { colorFromIndex } from '@/utils/colors-util';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
@@ -174,11 +173,13 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { Insight, ViewState } from '@/types/Insight';
+import { Insight, ViewState, DataState } from '@/types/Insight';
+import { AnalysisItem } from '@/types/Analysis';
 
 const DRILLDOWN_TABS = [
   {
@@ -203,11 +204,7 @@ export default defineComponent({
     MapDropdown
   },
   setup() {
-    const selectedAdminLevel = ref(2);
-    function setSelectedAdminLevel(newValue: number) {
-      selectedAdminLevel.value = newValue;
-    }
-
+    const selectedAdminLevel = ref(0);
     const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
@@ -215,13 +212,49 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
 
-    const store = useStore();
-    const analysisItem = computed(() => store.getters['dataAnalysis/analysisItems']);
-    // NOTE: only one datacube id (model or indicator) will be provided as a selection from the data explorer
-    const datacubeId = analysisItem.value[0].id;
+    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
 
+    const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+
+    // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
+    const datacubeId = analysisItems.value[0].id;
+    const initialViewConfig: ViewState = analysisItems.value[0].viewConfig;
+
+    // aply view config for this datacube
+    if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
+      if (initialViewConfig.temporalResolution !== undefined) {
+        selectedTemporalResolution.value = initialViewConfig.temporalResolution;
+      }
+      if (initialViewConfig.temporalAggregation !== undefined) {
+        selectedTemporalAggregation.value = initialViewConfig.temporalAggregation;
+      }
+      if (initialViewConfig.spatialAggregation !== undefined) {
+        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation;
+      }
+      if (initialViewConfig.selectedOutputIndex !== undefined) {
+        const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+        defaultOutputMap[datacubeId] = initialViewConfig.selectedOutputIndex;
+        store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+      }
+      if (initialViewConfig.selectedMapBaseLayer !== undefined) {
+        selectedBaseLayer.value = initialViewConfig.selectedMapBaseLayer;
+      }
+      if (initialViewConfig.selectedMapDataLayer !== undefined) {
+        selectedDataLayer.value = initialViewConfig.selectedMapDataLayer;
+      }
+      if (initialViewConfig.breakdownOption !== undefined) {
+        breakdownOption.value = initialViewConfig.breakdownOption;
+      }
+      if (initialViewConfig.selectedAdminLevel !== undefined) {
+        selectedAdminLevel.value = initialViewConfig.selectedAdminLevel;
+      }
+    }
 
     const selectedModelId = ref(datacubeId);
 
@@ -238,6 +271,17 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
+
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption
+    );
 
     const timeInterval = 10000;
 
@@ -295,29 +339,17 @@ export default defineComponent({
       }
     });
 
-    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
-
     watchEffect(() => {
-      const dataState = {
+      const dataState: DataState = {
         selectedModelId: selectedModelId.value,
         selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value
+        selectedTimestamp: selectedTimestamp.value,
+        datacubeTitles: [{
+          datacubeName: metadata.value?.name ?? '',
+          datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
+        }],
+        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
       };
-      const viewState: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value
-      };
-
-      store.dispatch('insightPanel/setViewState', viewState);
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
@@ -333,10 +365,6 @@ export default defineComponent({
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
       clearRouteParam();
-    };
-
-    const setBreakdownOption = (newValue: string | null) => {
-      breakdownOption.value = newValue;
     };
 
     const {
@@ -355,7 +383,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp,
+      selectedRegionIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -366,12 +395,8 @@ export default defineComponent({
     );
 
     const {
-      outputSpecs,
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
-    } = useRegionalData(
+      outputSpecs
+    } = useOutputSpecs(
       selectedModelId,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
@@ -380,6 +405,36 @@ export default defineComponent({
       selectedTimeseriesPoints
     );
 
+    const {
+      regionalData
+    } = useRegionalData(
+      outputSpecs,
+      breakdownOption,
+      datacubeHierarchy
+    );
+
+    watchEffect(() => {
+      const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems[0];
+      if (currentAnalysisItem.viewConfig === undefined) {
+        currentAnalysisItem.viewConfig = {} as ViewState;
+      }
+      const viewState: ViewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
+      };
+      store.dispatch('insightPanel/setViewState', viewState);
+      currentAnalysisItem.viewConfig = viewState;
+      store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+    });
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -387,13 +442,11 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedAdminLevel,
-      setSelectedAdminLevel,
       selectedModelId,
       selectedScenarioIds,
       typeBreakdownData,
       selectedTimestamp,
       isExpanded,
-      colorFromIndex,
       metadata,
       mainModelOutput,
       allModelRunData,
@@ -406,9 +459,8 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
-      deselectedRegionIds,
+      selectedRegionIds,
       toggleIsRegionSelected,
-      setAllRegionsSelected,
       outputs,
       currentOutputIndex,
       setSelectedTimestamp,
@@ -418,13 +470,15 @@ export default defineComponent({
       relativeTo,
       setRelativeTo,
       breakdownOption,
-      setBreakdownOption,
       temporalBreakdownData,
       AggregationOption,
       TemporalResolutionOption,
       selectedTimeseriesPoints,
       selectedBaseLayer,
-      selectedDataLayer
+      selectedDataLayer,
+      datacubeCurrentOutputsMap,
+      analysisItems,
+      analysisId
     };
   },
   data: () => ({
@@ -460,9 +514,7 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       project: 'app/project',
-      analysisId: 'dataAnalysis/analysisId',
-      projectType: 'app/projectType',
-      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
+      projectType: 'app/projectType'
     }),
     navBackLabel(): string {
       if (this.analysis) {
@@ -476,11 +528,17 @@ export default defineComponent({
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
+    setSelectedAdminLevel(newValue: number) {
+      this.selectedAdminLevel = newValue;
+    },
     setBaseLayer(val: BASE_LAYER) {
       this.selectedBaseLayer = val;
     },
     setDataLayer(val: DATA_LAYER) {
       this.selectedDataLayer = val;
+    },
+    setBreakdownOption(newValue: string | null) {
+      this.breakdownOption = newValue;
     },
     async onClose() {
       this.$router.push({
@@ -521,7 +579,7 @@ export default defineComponent({
           // this would only be valid and effective if/after datacube runs are reloaded
           this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
         }
-        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+        if (loadedInsight.data_state?.selectedTimestamp) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
         }
         // view state
@@ -555,6 +613,15 @@ export default defineComponent({
           this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
       }
+    },
+    setTemporalAggregationSelection(temporalAgg: string) {
+      this.selectedTemporalAggregation = temporalAgg;
+    },
+    setSpatialAggregationSelection(spatialAgg: string) {
+      this.selectedSpatialAggregation = spatialAgg;
+    },
+    setTemporalResolutionSelection(temporalRes: string) {
+      this.selectedTemporalResolution = temporalRes;
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {

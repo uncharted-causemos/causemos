@@ -41,7 +41,6 @@
           @click="openDataExplorer"
         > <i class="fa fa-fw fa-search" />Search Data Cubes</button>
       </div>
-
       <div
         class="nav-item time-sync"
         :class="{ 'disabled': emptyDataAnalysis }"

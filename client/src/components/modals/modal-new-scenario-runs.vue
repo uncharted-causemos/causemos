@@ -10,7 +10,7 @@
           <td
             v-for="(dim, idx) in inputParameters"
             :key="idx">
-            <span style="font-weight: bold;">{{ dim.name }}</span>
+            <div class="params-header">{{ dim.name }}</div>
           </td>
           <td>&nbsp;</td>
         </tr>
@@ -19,7 +19,8 @@
           :key="sidx">
           <td>{{ sidx }}</td>
           <td v-for="(dimName, idx) in Object.keys(run)"
-            :key="idx">
+            :key="idx"
+            class="params-value">
             <label>{{ run[dimName] }}</label>
           </td>
           <td>
@@ -36,6 +37,9 @@
       </table>
     </template>
     <template #footer>
+      <div class="row estimated-runtime">
+        Estimated execution time: {{ potentialScenarios.length * 2 }} {{ metadata.name.toLowerCase().includes('wash') ? 'hours' : 'minutes' }}
+      </div>
       <ul class="unstyled-list">
         <button
           type="button"
@@ -63,6 +67,7 @@ import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
 import { mapGetters } from 'vuex';
+import { ModelParameterDataType } from '@/types/Enums';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -88,8 +93,11 @@ export default defineComponent({
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
     },
     ...mapGetters({
-      currentOutputIndex: 'modelPublishStore/currentOutputIndex'
-    })
+      datacubeCurrentOutputsMap: 'app/datacubeCurrentOutputsMap'
+    }),
+    currentOutputIndex(): number {
+      return this.metadata.id !== undefined ? this.datacubeCurrentOutputsMap[this.metadata.id] : 0;
+    }
   },
   data: () => ({
     potentialRuns: [] as Array<ScenarioData>
@@ -104,6 +112,7 @@ export default defineComponent({
 
       const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
+      const freeformParams = this.metadata.parameters.filter(d => d.data_type === ModelParameterDataType.Freeform);
 
       const promises = this.potentialRuns.map(async (modelRun) => {
         const paramArray: any[] = [];
@@ -116,12 +125,22 @@ export default defineComponent({
             });
           }
         });
+        // add drilldown/freeform params since they are still inputs
+        //  although hidden in the parallel coordinates
         drilldownParams.forEach(p => {
           paramArray.push({
             name: p.name,
             value: p.default
           });
         });
+        freeformParams.forEach(p => {
+          paramArray.push({
+            name: p.name,
+            value: p.default
+          });
+        });
+
+        // send the request to the server
         return API.post('maas/model-runs', {
           model_id: this.metadata.data_id,
           model_name: this.metadata?.name,
@@ -147,10 +166,29 @@ export default defineComponent({
 @import "~styles/variables";
 
 ::v-deep(.modal-container) {
+  width: max-content;
+  max-width: 80vw;
   .modal-body {
     height: 300px;
     overflow-y: scroll;
   }
+}
+
+.params-header {
+  font-weight: bold;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.params-value {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  align-content: center;
+}
+
+.estimated-runtime {
+  display: flex;
+  padding: 1rem;
 }
 
 .title {

@@ -4,5 +4,5 @@ import _ from 'lodash';
 const defaultFormatter = d3.format(',');
 
 export default function (value: number) {
-  return _.isFinite(value) ? defaultFormatter(value) : 0;
+  return _.isFinite(value) ? defaultFormatter(value) : '0';
 }

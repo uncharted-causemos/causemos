@@ -23,19 +23,25 @@
       />
     </div>
     <div class="flex-row">
-      <div class="select-all-buttons">
-        <small-text-button
-          :label="'Select All'"
-          @click="setAllSelected(true)"
+      <div
+        v-if="isRadioButtonModeActive"
+        class="all-radio-button"
+        @click="setAllChecked"
+      >
+        <i
+          class="fa fa-lg fa-fw icon-centered"
+          :class="{
+            'fa-circle': isAllSelected,
+            'fa-circle-o': !isAllSelected
+          }"
         />
-        <small-text-button
-          :label="'Deselect All'"
-          @click="setAllSelected(false)"
-        />
+        <span>All</span>
       </div>
       <div v-if="units !== null" class="units">
         {{ units }}
       </div>
+      <!-- Render an empty div so the 'all-radio-button' stays left-aligned -->
+      <div v-else />
     </div>
     <div class="checklist-container">
       <aggregation-checklist-item
@@ -44,6 +50,7 @@
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
         :selected-timeseries-points="selectedTimeseriesPoints"
+        :is-radio-button-mode-active="isRadioButtonModeActive"
         @toggle-expanded="toggleExpanded(row.path)"
         @toggle-checked="toggleChecked(row.path)"
       />
@@ -57,7 +64,6 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
-import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import { BreakdownData } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
@@ -68,11 +74,12 @@ import {
   ref,
   computed
 } from '@vue/runtime-core';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 interface StatefulDataNode {
   name: string;
   children: StatefulDataNode[];
-  values: (number | null)[];
+  bars: { color: string; value: number }[];
   path: string[];
   isExpanded: boolean;
 }
@@ -94,7 +101,7 @@ function isStatefulDataNode(
 
 interface ChecklistRowData {
   name: string;
-  values: (number | null)[];
+  bars: { color: string; value: number }[];
   isExpanded: boolean;
   isChecked: boolean;
   path: string[];
@@ -119,7 +126,7 @@ const extractVisibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
   selectedLevel: number,
-  deselectedItemIds: { [aggregationLevel: string]: Set<string> } | null,
+  selectedItemIds: string[] | null,
   orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
@@ -141,7 +148,7 @@ const extractVisibleRows = (
         child,
         _hiddenAncestorNames,
         selectedLevel,
-        deselectedItemIds,
+        selectedItemIds,
         orderedAggregationLevelKeys
       )
     ];
@@ -157,12 +164,9 @@ const extractVisibleRows = (
   if (!isNodeVisible || !isStatefulDataNode(metadataNode)) {
     return visibleChildren;
   }
-  const aggregationLevel = orderedAggregationLevelKeys[depthLevel];
-  const itemId = metadataNode.path.join(PATH_DELIMETER);
+  const itemId = metadataNode.path.join(REGION_ID_DELIMETER);
   const isChecked =
-    deselectedItemIds === null ||
-    deselectedItemIds[aggregationLevel] === undefined ||
-    !deselectedItemIds[aggregationLevel].has(itemId);
+    selectedItemIds === null || selectedItemIds.includes(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
@@ -183,14 +187,14 @@ const checklistRowDataFromNode = (
   selectedLevel: number,
   isChecked: boolean
 ): ChecklistRowData => {
-  const { name, values, children, isExpanded, path } = node;
+  const { name, bars, children, isExpanded, path } = node;
   const isSelectedAggregationLevel = depthLevel === selectedLevel;
   const showExpandToggle = children.length > 0;
   const indentationCount =
     depthLevel > selectedLevel ? depthLevel - selectedLevel + 1 : 0;
   return {
     name,
-    values,
+    bars,
     isSelectedAggregationLevel,
     showExpandToggle,
     isExpanded,
@@ -201,13 +205,10 @@ const checklistRowDataFromNode = (
   };
 };
 
-const PATH_DELIMETER = '__';
-
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
-    AggregationChecklistItem,
-    SmallTextButton
+    AggregationChecklistItem
   },
   props: {
     aggregationLevelCount: {
@@ -241,25 +242,29 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
     },
-    deselectedItemIds: {
-      type: Object as PropType<{
-        [aggregationLevel: string]: Set<string>;
-      } | null>,
+    /**
+     * An optional parameter for the components that don't have a "selected" state.
+     * TODO: use it to hide the checkboxes for those components, so:
+     * - null means "no item will ever be selected", and
+     * - [] means "no item is currently selected".
+     */
+    selectedItemIds: {
+      type: Object as PropType<string[] | null>,
       default: null
+    },
+    isRadioButtonModeActive: {
+      type: Boolean,
+      default: false
     }
   },
-  emits: [
-    'aggregation-level-change',
-    'toggle-is-item-selected',
-    'set-all-selected'
-  ],
-  setup(props) {
+  emits: ['aggregation-level-change', 'toggle-is-item-selected'],
+  setup(props, { emit }) {
     const {
       rawData,
       aggregationLevel,
       orderedAggregationLevelKeys,
       selectedTimeseriesPoints,
-      deselectedItemIds
+      selectedItemIds
     } = toRefs(props);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
@@ -273,48 +278,63 @@ export default defineComponent({
         //  model run
         const valuesAtThisLevel = rawData.value[aggregationLevelKey];
         if (valuesAtThisLevel === undefined) return;
-        const timeseriesCount = selectedTimeseriesPoints.value.length;
-        const getIndexFromTimeseriesId = (timeseriesId: string) =>
-          selectedTimeseriesPoints.value.findIndex(
+        const getColorFromTimeseriesId = (timeseriesId: string) =>
+          selectedTimeseriesPoints.value.find(
             point => point.timeseriesId === timeseriesId
-          );
+          )?.color ?? '#000';
         valuesAtThisLevel.forEach(({ id, values }) => {
-          const path = id.split(PATH_DELIMETER);
+          // e.g. ['Canada', 'Ontario', 'Toronto']
+          const path = id.split(REGION_ID_DELIMETER);
+          // e.g. ['Canada', 'Ontario']
+          const ancestors = path.slice(0, -1);
+          // e.g. 'Toronto'
           const name = path[path.length - 1];
-          // Find where in the tree this item should be inserted
-          let _path = id.split('__');
+          // Initialize pointer to the root of the tree
           let pointer = newStatefulData.children;
-          while (_path.length > 1) {
-            const nextNode = pointer.find(node => node.name === _path[0]);
+          // Find where in the tree this item should be inserted
+          ancestors.forEach(ancestor => {
+            const nextNode = pointer.find(node => node.name === ancestor);
             if (nextNode === undefined) {
               throw new Error(
-                `Invalid path: ${path.toString()}. Node with name "${
-                  _path[0]
-                }" not found.`
+                `Invalid path: ${path.toString()}. Node with name "${ancestor}" not found.`
               );
             }
             pointer = nextNode.children;
-            _path = _path.splice(1);
-          }
-          // Initialize values for every model run to null
-          const valueArray = new Array(timeseriesCount).fill(null);
+          });
           // Convert values from { [timeseriesId]: value } to an array where
-          //  the index of each timeseries's value comes from the selectedTimeseriesPoints
-          //  array. This is necessary to have consistent colouring with other
-          //  components.
-          Object.keys(values).forEach(timeseriesId => {
-            const timeseriesIndex = getIndexFromTimeseriesId(timeseriesId);
-            valueArray[timeseriesIndex] = values[timeseriesId];
+          //  the value of each timeseries is augmented with its color
+          const valueArray = Object.keys(values).map(timeseriesId => {
+            return {
+              color: getColorFromTimeseriesId(timeseriesId),
+              value: values[timeseriesId]
+            };
           });
           // Create stateful node and insert it into its place in the tree
           pointer.push({
             name,
-            values: valueArray,
+            bars: valueArray,
             path,
             isExpanded: false,
             children: []
           });
         });
+      });
+      // Sort top level children (i.e. countries) without values to the bottom
+      //  of the list, since if they had descendants with values, they would
+      //  have values themselves, aggregated up from their descendants
+      const hasOneOrMoreValues = (node: StatefulDataNode) => {
+        return node.bars.length > 0;
+      };
+      newStatefulData.children.sort((nodeA, nodeB) => {
+        if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
+          // A should be sorted after B
+          return 1;
+        } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
+          // B should be sorted after A
+          return -1;
+        }
+        // Don't change their order
+        return 0;
       });
       statefulData.value = newStatefulData;
     });
@@ -345,7 +365,9 @@ export default defineComponent({
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        const values = isStatefulDataNode(node) ? node.values : [];
+        const values = isStatefulDataNode(node)
+          ? node.bars.map(bar => bar.value)
+          : [];
         return _.max(values) ?? Number.MIN_VALUE;
       }
       let maxValue = Number.MIN_VALUE;
@@ -374,15 +396,50 @@ export default defineComponent({
         statefulData.value,
         [],
         aggregationLevel.value,
-        deselectedItemIds.value,
+        selectedItemIds.value,
         orderedAggregationLevelKeys.value
       );
     });
 
+    const isAllSelected = computed(() => {
+      return (
+        selectedItemIds.value === null || selectedItemIds.value.length === 0
+      );
+    });
+
+    const toggleChecked = (path: string[]) => {
+      const aggregationLevel =
+        orderedAggregationLevelKeys.value[path.length - 1];
+      const itemId = path.join(REGION_ID_DELIMETER);
+      emit('toggle-is-item-selected', aggregationLevel, itemId);
+    };
+
+    const setAllChecked = () => {
+      // ASSUMPTION: the "All" option is only showed when "radio button" mode
+      //  is active, meaning there is no more than one item
+      if (
+        selectedItemIds.value === null ||
+        selectedItemIds.value.length === 0
+      ) {
+        return;
+      }
+      if (selectedItemIds.value.length > 1) {
+        console.error(
+          'setAllSelected should only be called when radio button mode is' +
+            ' active, but multiple items are selected.',
+          selectedItemIds.value
+        );
+      }
+      toggleChecked(selectedItemIds.value[0].split(REGION_ID_DELIMETER));
+    };
+
     return {
       statefulData,
       maxVisibleBarValue,
-      visibleRows
+      visibleRows,
+      isAllSelected,
+      toggleChecked,
+      setAllChecked
     };
   },
   methods: {
@@ -420,16 +477,6 @@ export default defineComponent({
       if (isStatefulDataNode(currentNode)) {
         currentNode.isExpanded = !currentNode.isExpanded;
       }
-    },
-    toggleChecked(path: string[]) {
-      const aggregationLevel = this.orderedAggregationLevelKeys[
-        path.length - 1
-      ];
-      const itemId = path.join(PATH_DELIMETER);
-      this.$emit('toggle-is-item-selected', aggregationLevel, itemId);
-    },
-    setAllSelected(isSelected: boolean) {
-      this.$emit('set-all-selected', isSelected);
     }
   }
 });
@@ -482,10 +529,10 @@ h5 {
   margin-top: 5px;
 }
 
-.select-all-buttons {
-  margin: 0;
-  margin-top: 5px;
-  > *:first-child {
+.all-radio-button {
+  cursor: pointer;
+  i {
+    width: 16px;
     margin-right: 5px;
   }
 }
@@ -498,6 +545,9 @@ h5 {
 .flex-row {
   display: flex;
   justify-content: space-between;
-  align-items: flex-end;
+  // If there's only one item, right-align it
+  & *:only-child {
+    margin-left: auto;
+  }
 }
 </style>

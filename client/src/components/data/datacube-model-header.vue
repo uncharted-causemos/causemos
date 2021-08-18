@@ -70,14 +70,6 @@ export default defineComponent({
         tweakable: false,
         type: 'text'
       });
-      /*
-      attributes.push({
-        name: 'Model instance',
-        value: modelMetadata.version,
-        tweakable: false,
-        type: 'text'
-      });
-      */
       const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
       attributes.push({
         name: 'Default output variable',

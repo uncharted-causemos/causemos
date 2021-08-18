@@ -1,5 +1,20 @@
 <template>
   <div class="list-context-insights-pane-container">
+    <modal-confirmation
+      v-if="showModal"
+      :autofocus-confirm="false"
+      @confirm="redirectToAnalysisInsight"
+      @close="showModal = false"
+    >
+      <template #title>Applying Analysis Insight</template>
+      <template #message>
+        <p>Are you sure you want to redirect to the relevant analysis project and apply the insight?</p>
+        <message-display
+          :message="'Warning: This action will take you out of the current flow.'"
+          :message-type="'alert-warning'"
+        />
+      </template>
+    </modal-confirmation>
     <div class="pane-header">
       <button
         v-if="allowNewInsights"
@@ -54,7 +69,8 @@
             </div>
             <div
               v-if="contextInsight.description.length > 0"
-              class="context-insight-description">
+              class="context-insight-description"
+              :class="{ 'private-insight-description': contextInsight.visibility === 'private' }">
               {{ contextInsight.description }}
             </div>
             <div
@@ -91,7 +107,6 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import { INSIGHTS } from '@/utils/messages-util';
 
 import ContextInsightEditor from '@/components/context-insight-panel/context-insight-editor';
-import MessageDisplay from '@/components/widgets/message-display';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
@@ -99,13 +114,17 @@ import stringFormatter from '@/formatters/string-formatter';
 import router from '@/router';
 import { deleteInsight } from '@/services/insight-service';
 import useInsightsData from '@/services/composables/useInsightsData';
+import { ProjectType } from '@/types/Enums';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
+import MessageDisplay from '@/components/widgets/message-display';
 
 export default {
   name: 'ListContextInsightPane',
   components: {
     ContextInsightEditor,
     DropdownButton,
-    MessageDisplay
+    MessageDisplay,
+    ModalConfirmation
   },
   props: {
     allowNewInsights: {
@@ -117,7 +136,9 @@ export default {
     activeContextInsight: null,
     exportActive: false,
     messageNoData: INSIGHTS.NO_DATA,
-    selectedContextInsight: null
+    selectedContextInsight: null,
+    showModal: false,
+    redirectInsightUrl: ''
   }),
   setup() {
     const { insights: listContextInsights, reFetchInsights } = useInsightsData();
@@ -129,7 +150,10 @@ export default {
   computed: {
     ...mapGetters({
       projectMetadata: 'app/projectMetadata',
-      countContextInsights: 'contextInsightPanel/countContextInsights'
+      countContextInsights: 'contextInsightPanel/countContextInsights',
+      projectType: 'app/projectType',
+      project: 'app/project',
+      analysisId: 'dataAnalysis/analysisId'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
@@ -144,6 +168,13 @@ export default {
       setCurrentPane: 'insightPanel/setCurrentPane'
     }),
     stringFormatter,
+    redirectToAnalysisInsight() {
+      if (this.redirectInsightUrl !== '') {
+        this.$router.push(this.redirectInsightUrl);
+      }
+      this.showModal = false;
+      this.redirectInsightUrl = '';
+    },
     newInsight() {
       this.showInsightPanel();
       this.setCurrentPane('new-insight');
@@ -174,17 +205,58 @@ export default {
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
     },
+    getSourceUrlForExport(insightURL, insightId) {
+      if (insightURL.includes('insight_id')) return insightURL;
+      // is the url has some params already at its end?
+      if (insightURL.includes('?') && insightURL.includes('=')) {
+        // append
+        return insightURL + '&insight_id=' + insightId;
+      }
+      // add
+      return insightURL + '?insight_id=' + insightId;
+    },
     selectContextInsight(contextInsight) {
       if (contextInsight === this.selectedContextInsight) {
         this.selectedContextInsight = null;
         return;
       }
       this.selectedContextInsight = contextInsight;
-      router.push({
-        query: {
-          insight_id: this.selectedContextInsight.id
+
+      let savedURL = this.selectedContextInsight.url;
+      const currentURL = this.$route.fullPath;
+      if (savedURL !== currentURL) {
+        // special case
+        if (this.projectType === ProjectType.Analysis && this.selectedContextInsight.visibility === 'public') {
+          // this is an insight created by the domain modeler during model publication:
+          // for applying this insight, do not redirect to the domain project page,
+          // instead use the current context and rehydrate the view
+          savedURL = '/analysis/' + this.project + '/data/' + this.analysisId;
         }
-      }).catch(() => {});
+
+        // add 'insight_id' as a URL param so that the target page can apply it
+        const finalURL = this.getSourceUrlForExport(savedURL, this.selectedContextInsight.id);
+
+        // special case
+        if (this.projectType !== ProjectType.Analysis && this.selectedContextInsight.visibility === 'private') {
+          // this is a private insight created by an analyst:
+          // when applying this insight from within a domain project, it will redirect to the relevant analysis project
+          // so show a warning before leaving
+          this.redirectInsightUrl = finalURL;
+          this.showWarningModal();
+          return;
+        }
+
+        this.$router.push(finalURL);
+      } else {
+        router.push({
+          query: {
+            insight_id: this.selectedContextInsight.id
+          }
+        }).catch(() => {});
+      }
+    },
+    showWarningModal() {
+      this.showModal = true;
     },
     deleteContextInsight(id) {
       deleteInsight(id).then(result => {
@@ -412,9 +484,7 @@ export default {
 
 <style lang="scss">
 @import "~styles/variables";
-.private-insight-title {
-  color: black;
-}
+
 .list-context-insights-pane-container {
   color: #707070;
   overflow-y: hidden;
@@ -464,15 +534,31 @@ export default {
       .context-insight-title {
         flex: 1 1 auto;
         font-weight: bold;
+        color: gray;
+        font-style: italic;
+      }
+      .private-insight-title {
+        color: black;
+        font-style: normal;
       }
     }
-    .context-insight-empty-description {
-      color: #D6DBDF;
-    }
-    .context-insight-thumbnail {
-      .thumbnail {
-        width:  100%;
-        min-height: 100px;
+    .context-insight-content {
+      .context-insight-thumbnail {
+        .thumbnail {
+          width:  100%;
+          min-height: 100px;
+        }
+      }
+      .context-insight-description {
+        color: gray;
+        font-style: italic;
+      }
+      .private-insight-description {
+        color: black;
+        font-style: normal;
+      }
+      .context-insight-empty-description {
+        color: #D6DBDF;
       }
     }
   }

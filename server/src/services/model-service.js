@@ -1,6 +1,5 @@
 const _ = require('lodash');
 const moment = require('moment');
-const delphiUtil = require('../util/delphi-util');
 const Logger = rootRequire('/config/logger');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
@@ -365,36 +364,6 @@ const buildGoalOptimizationPayload = async (modelId, engine, goals) => {
   return payload;
 };
 
-/**
- * Current Post processing steps for experiment result from delphi - Jul 30
- *  * Convert year/month in result to timestamp
- *
- * @param {object}  experiment
- *
- */
-const postProcessDelphiExperiment = (experiment) => {
-  const experimentResults = experiment.results;
-  const concepts = Object.keys(experimentResults);
-  const processedResults = {};
-  concepts.forEach(concept => {
-    const confidenceInterval = experimentResults[concept].confidenceInterval;
-    // convert upper
-    const transformedUpper = delphiUtil.convertToTimestamp(confidenceInterval.upper);
-    // convert lower
-    const transformedLower = delphiUtil.convertToTimestamp(confidenceInterval.lower);
-    // convert value
-    const transformedValues = delphiUtil.convertToTimestamp(experimentResults[concept].values);
-    processedResults[concept] = {
-      confidenceInterval: {
-        upper: transformedUpper,
-        lower: transformedLower
-      },
-      values: transformedValues
-    };
-  });
-  experiment.results = processedResults;
-};
-
 /* PUT clear node/edge parameter by ID */
 const clearNodeParameter = async (modelId, nodeId) => {
   Logger.info(`Resetting node's parameter with id ${nodeId} in model ${modelId}`);
@@ -427,8 +396,10 @@ const clearNodeParameter = async (modelId, nodeId) => {
 /**
  *
  */
-const buildNodeParametersPayload = (nodeParameters) => {
+const buildNodeParametersPayload = (nodeParameters, model) => {
   const r = {};
+
+  const projectionStart = _.get(model.parameter, 'projection_start', Date.UTC(2021, 0));
 
   nodeParameters.forEach(np => {
     const valueFunc = _.get(np.parameter, 'initial_value_parameter.func', 'last');
@@ -437,13 +408,14 @@ const buildNodeParametersPayload = (nodeParameters) => {
       throw new Error(`${np.concept} is not parameterized`);
     } else {
       let indicatorTimeSeries = _.get(np.parameter, 'timeseries');
+      indicatorTimeSeries = indicatorTimeSeries.filter(d => d.timestamp < projectionStart);
 
       if (_.isEmpty(indicatorTimeSeries)) {
         // FIXME: Temporary fallback so engines don't blow up - July 2021
         indicatorTimeSeries = [
+          { value: 0.0, timestamp: Date.UTC(2017, 0) },
           { value: 0.0, timestamp: Date.UTC(2017, 1) },
-          { value: 0.0, timestamp: Date.UTC(2017, 2) },
-          { value: 0.0, timestamp: Date.UTC(2017, 3) }
+          { value: 0.0, timestamp: Date.UTC(2017, 2) }
         ];
       }
 
@@ -465,7 +437,7 @@ const buildNodeParametersPayload = (nodeParameters) => {
         func: valueFunc,
         values: indicatorTimeSeries,
         numLevels: NUM_LEVELS,
-        resolution: _.get(np.parameter, 'temporal_resolution', 'month'),
+        resolution: _.get(np.parameter, 'temporalResolution', 'month'),
         period: _.get(np.parameter, 'period', 12)
       };
     }
@@ -500,6 +472,5 @@ module.exports = {
   buildGoalOptimizationPayload,
   buildNodeParametersPayload,
   buildEdgeParametersPayload,
-  postProcessDelphiExperiment,
   clearNodeParameter
 };

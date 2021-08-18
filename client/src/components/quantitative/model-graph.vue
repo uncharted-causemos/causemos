@@ -12,16 +12,12 @@ import { mapGetters } from 'vuex';
 import ModelRenderer from '@/graphs/model-renderer';
 import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
-import { calculateNeighborhood } from '@/utils/graphs-util';
+// import { calculateNeighborhood } from '@/utils/graphs-util';
 import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
 
 export default {
   name: 'ModelGraph',
   props: {
-    currentEngine: {
-      type: String,
-      default: null
-    },
     data: {
       type: Object,
       default: () => ({})
@@ -32,7 +28,7 @@ export default {
     }
   },
   emits: [
-    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-double-click'
+    'node-enter', 'node-leave', 'node-body-click', 'node-header-click', 'edge-click', 'background-click', 'node-drilldown'
   ],
   computed: {
     ...mapGetters({
@@ -64,26 +60,21 @@ export default {
       adapter: new Adapter({ nodeWidth: 120, nodeHeight: 60, layout: layered }),
       renderMode: 'delta',
       useEdgeControl: true,
+      useStableZoomPan: true,
+      useStableLayout: true,
       addons: [highlight, nodeDrag, panZoom]
-      // addons: [highlight, nodeDrag, panZoom, group]
     });
 
-    this.renderer.setCallback('nodeClick', (evt, node) => {
-      const concept = node.datum().concept;
-      const neighborhood = calculateNeighborhood(this.data.graph, concept);
-      this.renderer.hideNeighbourhood();
-      this.renderer.clearSelections();
-      this.renderer.showNeighborhood(neighborhood);
-      this.renderer.selectNode(node);
-
-      if (node.classed('projection-edit-icon')) {
-        this.$emit('node-body-click', node.datum().data);
-      } else if (node.classed('indicator-edit-icon')) {
-        this.$emit('node-header-click', node.datum().data);
-      }
-    });
-    this.renderer.setCallback('nodeDblClick', (event, node) => {
-      this.$emit('node-double-click', node.datum().data);
+    // this.renderer.setCallback('nodeClick', (evt, node) => {
+    //   const concept = node.datum().concept;
+    //   const neighborhood = calculateNeighborhood(this.data.graph, concept);
+    //   this.renderer.hideNeighbourhood();
+    //   this.renderer.clearSelections();
+    //   this.renderer.showNeighborhood(neighborhood);
+    //   this.renderer.selectNode(node);
+    // });
+    this.renderer.setCallback('nodeClick', (event, node) => {
+      this.$emit('node-drilldown', node.datum().data);
     });
     this.renderer.setCallback('nodeMouseEnter', (evt, node, g) => {
       this.$emit('node-enter', node, g);
@@ -126,7 +117,7 @@ export default {
       this.renderer.hideNeighbourhood();
       this.renderer.enableDrag(true);
       this.renderer.enableSubInteractions();
-      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId, this.currentEngine);
+      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
     }
   }
 };

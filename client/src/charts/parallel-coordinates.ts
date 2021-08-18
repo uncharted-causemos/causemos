@@ -10,7 +10,7 @@ import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
-import { ModelRunStatus } from '@/types/Enums';
+import { ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 
 import { colorFromIndex } from '@/utils/colors-util';
 
@@ -104,9 +104,12 @@ let pcTypes: {[key: string]: string} = {};
 const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
+const currentLineSelection: Array<ScenarioData> = [];
+let dimensions: Array<DimensionInfo> = [];
 
-const isOrdinalAxis = (name: string) => {
-  return pcTypes[name].startsWith('str');
+const isCategoricalAxis = (name: string) => {
+  const dim = dimensions.find(d => d.name === name) as ModelParameter;
+  return dim.type.startsWith('str') || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
 };
 
 
@@ -118,13 +121,15 @@ function renderParallelCoordinates(
   // input data which will be renderer as lines within the parallel coordinates
   data: Array<ScenarioData>,
   // (selected) dimensions list, which control shown dimensions as well as their order
-  dimensions: Array<DimensionInfo>,
+  dimensionsList: Array<DimensionInfo>,
   // list of dimensions (by name) that should be presented as ordinal axes regardless of their actual data type
   ordinalDimensions: Array<string>,
   // callback function that is called with one or more lines are selected
   onLinesSelection: (selectedLines: Array<ScenarioData>) => void,
   // callback function that is called when one or more markers are added in the new-runs mode
-  onNewRuns: (generatedLines: Array<ScenarioData>) => void
+  onNewRuns: (generatedLines: Array<ScenarioData>) => void,
+  // request re-render of the whole PC
+  rerenderChart: () => void
 ) {
   //
   // set graph configurations
@@ -135,9 +140,10 @@ function renderParallelCoordinates(
   const height = options.height - margin.top - margin.bottom;
 
   //
-  // exclude drilldown/filter axes from being rendered in the PCs
+  // exclude drilldown/filter and freeform axes from being rendered in the PCs
   //
-  dimensions = filterDrilldownDimensionData(dimensions as ModelParameter[]);
+  dimensions = filterDrilldownDimensionData(dimensionsList as ModelParameter[]);
+  dimensions = filterInvisibleDimensionData(dimensions as ModelParameter[]);
 
   const detectTypeFromData = false;
   // process data and detect data type for each dimension
@@ -201,7 +207,7 @@ function renderParallelCoordinates(
   //
   // axis labels
   //
-  renderAxesLabels(dimensions);
+  renderAxesLabels(svgElement, options, dimensions, rerenderChart);
 
   //
   // hover tooltips
@@ -269,7 +275,7 @@ function renderParallelCoordinates(
       const scaleX = getXScaleFromMap(dimName);
       const val = d[dimName];
       let xPos = scaleX(val as any) as number;
-      if (isOrdinalAxis(dimName)) {
+      if (isCategoricalAxis(dimName)) {
         // ordinal axis, so instead of mapping to one position in this segment,
         // lets attempt to distribute the values randomly on the segment
         // with the goal of improving lines visibility and reducing overlap
@@ -341,7 +347,9 @@ function renderParallelCoordinates(
         } else {
           // no markers were added for this dim,
           //  so use the (baseline) default as the marker value
-          dimData.push(getValueInCorrectType(dimName, dimDefault));
+          // @NOTE: Jataware now supports parameter values as string
+          dimData.push(dimDefault);
+          // dimData.push(getValueInCorrectType(dimName, dimDefault));
         }
         allBrushesMap[dimName] = dimData;
       }
@@ -462,7 +470,7 @@ function renderParallelCoordinates(
         const b = d3.select(this);
         const dimName = b.attr('id');
         let selection: [number | string, number | string] | undefined;
-        if (!isOrdinalAxis(dimName)) { // different axes types (e.g., ordinal) have different brushing techniques
+        if (!isCategoricalAxis(dimName)) { // different axes types (e.g., ordinal) have different brushing techniques
           selection = d3.brushSelection(this) as [number, number];
         } else {
           // find any selection on this ordinal axis
@@ -478,7 +486,7 @@ function renderParallelCoordinates(
           let start;
           let end;
           const skip = false;
-          if (!isOrdinalAxis(dimName)) {
+          if (!isCategoricalAxis(dimName)) {
             start = (xScale as D3ScaleLinear).invert(selection[0] as number).toFixed(2);
             end = (xScale as D3ScaleLinear).invert(selection[1] as number).toFixed(2);
           } else {
@@ -510,7 +518,7 @@ function renderParallelCoordinates(
 
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
-          if (!isOrdinalAxis(b.dimName)) {
+          if (!isCategoricalAxis(b.dimName)) {
             if (+lineData[b.dimName] < +b.start || +lineData[b.dimName] > +b.end) {
               isSelected = false;
             }
@@ -562,6 +570,7 @@ function renderParallelCoordinates(
   // or deselect all lines when the svg element is clicked
   function handleLineSelection(this: SVGPathElement | HTMLElement, event: PointerEvent | undefined, d: ScenarioData, notifyExternalListeners = true) {
     if (options.newRunsMode) {
+      deleteFreeformInputs(svgElement);
       return;
     }
     // when the user have an active brush,
@@ -574,7 +583,7 @@ function renderParallelCoordinates(
         const b = d3.select(this);
         const dimName = b.attr('id');
         let validBrushSelection;
-        if (!isOrdinalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName)) {
           validBrushSelection = d3.brushSelection(this) !== null;
         } else {
           const selectedBrush = b.select('.selection');
@@ -586,13 +595,21 @@ function renderParallelCoordinates(
       });
     if (brushesCount === 0) {
       // cancel any previous selection; turn every line into grey
-      cancelPrevLineSelection(svgElement);
+      if (event && !event.shiftKey) {
+        currentLineSelection.length = 0;
+        cancelPrevLineSelection(svgElement);
+      }
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
 
       selectLine(selectedLine, event, d, lineStrokeWidthSelected);
 
       const selectedLineData = selectedLine.datum() as ScenarioData;
+      if (selectedLineData) {
+        currentLineSelection.push(selectedLineData);
+      } else {
+        currentLineSelection.length = 0;
+      }
 
       // if we have valid selection (either by direct click on a line or through brushing)
       //  then update the tooltips
@@ -602,7 +619,7 @@ function renderParallelCoordinates(
 
       // notify external listeners
       if (notifyExternalListeners) {
-        onLinesSelection(selectedLineData ? [selectedLineData] : []);
+        onLinesSelection(currentLineSelection);
       }
     }
   }
@@ -633,7 +650,7 @@ function renderParallelCoordinates(
         const dimName = d.name;
         const value = selectedLineData[dimName];
         let formattedValue = value;
-        if (!isOrdinalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName)) {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
@@ -703,7 +720,7 @@ function renderParallelCoordinates(
         const segmentsY = -brushHeight;
         const segmentsHeight = brushHeight * 2;
 
-        if (!isOrdinalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName)) {
           //
           // markers on numerical axes
           //
@@ -962,7 +979,7 @@ function renderParallelCoordinates(
       .attr('id', function(d) { return d.name; })
       .each(function(d) {
         const dimName = d.name;
-        if (!isOrdinalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName)) {
           // a standard continuous brush
           d3.select(this).call(
             d3.brushX()
@@ -1070,11 +1087,6 @@ function colorFunc(this: SVGPathElement) {
   }
 }
 
-function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
-  // FIXME: only the last dimension is the output dimension
-  return dimensions[dimensions.length - 1].name === dimName;
-}
-
 function renderBaselineMarkers(showBaselineDefaults: boolean) {
   if (!renderedAxes) {
     console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
@@ -1096,7 +1108,7 @@ function renderBaselineMarkers(showBaselineDefaults: boolean) {
         const dimName = d.name;
         const scaleX = getXScaleFromMap(dimName);
         let xPos: number = scaleX(axisDefault as any) as number;
-        if (isOrdinalAxis(dimName)) {
+        if (isCategoricalAxis(dimName)) {
           const axisDefaultStr = axisDefault.toString();
           const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
           xPos = min + (max - min) / 2;
@@ -1123,7 +1135,7 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
       const dimName = d.name;
       const scale = getXScaleFromMap(dimName);
       let xAxis;
-      if (!isOrdinalAxis(dimName)) {
+      if (!isCategoricalAxis(dimName)) {
         //
         // numeric axes are built automatically utilizing d3 .call() function
         //
@@ -1180,7 +1192,7 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
   return axes;
 }
 
-function renderAxesLabels(dimensions: Array<DimensionInfo>) {
+function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesOptions, dimensions: Array<DimensionInfo>, rerenderChart: () => void) {
   // Add label for each axis name
   const axesLabels = renderedAxes
     .append('text')
@@ -1233,6 +1245,54 @@ function renderAxesLabels(dimensions: Array<DimensionInfo>) {
         .attr('height', textBBox.height);
       text.raise();
     });
+
+  axesLabels
+    .on('click', function(event: PointerEvent) {
+      if (options.newRunsMode) {
+        const d3text = d3.select(this);
+        const d = d3text.datum() as ModelParameter;
+        if (d.data_type === ModelParameterDataType.Freeform) {
+          event.stopPropagation();
+          const inputField = d3.select(this.parentElement)
+            .append('foreignObject')
+            .attr('class', 'freeform-input')
+            .attr('width', axisRange[1])
+            .attr('height', 25)
+            .attr('x', axisLabelOffsetX)
+            .attr('y', axisLabelOffsetY)
+            .append('xhtml:input')
+            .attr('placeholder', 'type new value')
+            .attr('type', 'text')
+            .attr('width', 'inherit')
+            .style('border-width', 'thin')
+            .on('keyup', function(keyEvent) {
+              if (keyEvent.keyCode === 13) {
+                // Enter key pressed
+                const inputElement = this as HTMLInputElement;
+                const newInputValue = inputElement.value;
+                const currentChoices = d.choices as Array<string | number>;
+                if (!currentChoices.includes(newInputValue)) {
+                  // note that by adding the value, we have modified the metadata of the datacube
+                  // and that change will be discarded unless a model run is issued with this value
+                  currentChoices.push(newInputValue);
+                  // re-render (and possible add a marker)
+                  rerenderChart();
+                }
+                // clear the input box
+                deleteFreeformInputs(svgElement);
+              }
+            })
+            .on('click', function(event: PointerEvent) {
+              event.stopPropagation();
+            });
+          (inputField.node() as any).focus();
+        }
+      }
+    });
+}
+
+function deleteFreeformInputs(svgElement: D3Selection) {
+  svgElement.selectAll('.freeform-input').remove();
 }
 
 function renderHoverTooltips() {
@@ -1314,7 +1374,7 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         const brushRange = brushes.find(b => b.dimName === dimName);
         if (brushRange) {
           /*
-          if (!isOrdinalAxis(dimName)) {
+          if (!isCategoricalAxis(dimName)) {
             // note that since brush is a (moving) range then it will mostly have float range
             // but we could check the axis domain to figure out a more accurate data type
             const xScaleDomain = xScale.domain();
@@ -1343,7 +1403,7 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
       } else {
         value = selectedLineData ? selectedLineData[dimName] : 'undefined';
         formattedValue = value;
-        if (!isOrdinalAxis(dimName)) {
+        if (!isCategoricalAxis(dimName)) {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         }
@@ -1432,14 +1492,30 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
 //
 // utility functions
 //
-
 // exclude drilldown parameters from the input dimensions
 // @REVIEW this may better be done external to the PC component
 const filterDrilldownDimensionData = (dimensions: Array<ModelParameter>) => {
-  return dimensions.filter(function(d) {
-    return !d.is_drilldown;
-  });
+  return dimensions
+    .filter(d => { return !d.is_drilldown; });
 };
+
+const filterInvisibleDimensionData = (dimensions: Array<ModelParameter>) => {
+  // this should only filter input parameters
+  return dimensions
+    .filter(d => {
+      if (isOutputDimension(dimensions, d.name)) return true;
+      return d.is_visible;
+    });
+};
+
+function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
+  // FIXME: only the last dimension is the output dimension
+  return getOutputDimension(dimensions).name === dimName;
+}
+
+function getOutputDimension(dimensions: Array<DimensionInfo>) {
+  return dimensions[dimensions.length - 1];
+}
 
 // attempt to determine types of each dimension based on first row of data
 const toType = (v: string | number) => {
@@ -1505,7 +1581,7 @@ const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
 
 // utility function to return the pixel positions for the start/end of a specific ordinal segment
 //  which is identified by the the segment value
-const getPositionRangeOnOrdinalAxis = (xPos: number, axisRange: Array<number>, axisDomain: number[] | string[], val: string | number) => {
+const getPositionRangeOnOrdinalAxis = (xPos: number, axisRange: Array<number>, axisDomain: Array<string | number>, val: string | number) => {
   const totalDashesAndGaps = (axisDomain.length * 2) - 1;
   const dashSize = (axisRange[1] - axisRange[0]) / totalDashesAndGaps;
   let min;
@@ -1513,7 +1589,13 @@ const getPositionRangeOnOrdinalAxis = (xPos: number, axisRange: Array<number>, a
     min = axisRange[0];
   } else {
     // need to get the dash offset based on value index
-    const valIndx = axisDomain.findIndex((v: string | number) => v === val);
+    let valIndx = axisDomain.findIndex((v: string | number) => v === val);
+    if (valIndx === -1) {
+      // value was not found.
+      //  this is a special case where perhaps comparing
+      //  numerical values as string (e.g., '1' vs '1.0') caused a not-found situation
+      valIndx = axisDomain.findIndex((v: string | number) => parseFloat(v as string) === parseFloat(val as string));
+    }
     min = axisRange[0] + valIndx * dashSize * 2;
   }
   const max = min + dashSize;
@@ -1558,17 +1640,29 @@ const createScales = (
 
   const numberFunc = function(name: string) {
     let dataExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
-    const outputVarName = dimensions[dimensions.length - 1].name;
+    const outputVarName = getOutputDimension(dimensions).name;
+    const dim = dimensions.find(d => d.name === name);
+
     if (useAxisRangeFromData && outputVarName !== name) {
       // this is only valid for input variables
-      const min = dimensions.find(d => d.name === name)?.min;
-      const max = dimensions.find(d => d.name === name)?.max;
-      dataExtent = [min ?? 0, max ?? 0];
+      if (isCategoricalAxis(name)) {
+        // a categorical dimension (i.e., discrete-based axis)
+        //  can have a list of choices as numbers or strings
+        if (!dim?.type.startsWith('str')) {
+          // note that if 'type' is string then the stringFunc would have been used automatically
+          return stringFunc(name);
+        }
+      } else {
+        // a numerical continuous dimensions
+        const min = dim?.min;
+        const max = dim?.max;
+        dataExtent = [min ?? 0, max ?? 0];
+      }
     } else {
       dataExtent = d3.extent(data.map(point => +point[name]));
     }
-    if (dataExtent[0] === undefined || dataExtent[0] === undefined) {
-      console.error('Unable to derive extent from data. A default linear scale will be created!', data);
+    if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
+      console.warn('Unable to derive extent from data for ' + name + '. A default linear scale will be created!', data);
 
       // this dimension should have an undefined scale:
       //  e.g., an output dimension where ALL runs have non-ready status
@@ -1592,25 +1686,46 @@ const createScales = (
   };
 
   const stringFunc = function(name: string) {
-    let dataExtent: string[] = [];
+    let dataExtent: Array<string | number> = [];
+    const dim = dimensions.find(d => d.name === name);
+
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dimensions.find(d => d.name === name)?.choices ?? [''];
-    } else {
-      dataExtent = data.map(function(p) { return p[name]; }) as Array<string>; // note this will return an array of values for all runs
+      dataExtent = dim?.choices_labels ?? dim?.choices ?? [];
     }
 
-    if (dataExtent[0] === undefined || dataExtent[0] === undefined) {
-      console.error('Unable to derive extent from data. A default linear scale will be created!', data);
+    const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs
+    if (dataExtent.length === 0) {
+      dataExtent = dataChoices;
+    }
+
+    // ensure that dataExtent and dataChoices are merged as one list (including the default value)
+    const outputVarName = getOutputDimension(dimensions).name;
+    if (outputVarName !== name) {
+      dataChoices.push((dim as ModelParameter).default);
+    }
+    dataExtent = _.uniq(_.union(dataExtent, dataChoices));
+
+    if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
+      console.warn('Unable to derive extent from data for ' + name + '. A default point scale will be created!', data);
 
       // this dimension should have an undefined scale:
       //  e.g., an output dimension where ALL runs have non-ready status
+      //        a parameter that is a freeform dimension with no valid list of choices
       //  i.e., no line will ever have a value for this dimension axis, but we still want to render its axis
 
       // ensure we return a default categorical scale
-      dataExtent = [];
-      dataExtent.push('dummay-last');
-      dataExtent.unshift('dummy-first');
+      if (dataExtent.length > 0) {
+        // NOTE: these are mostly string-based axes but not with valid choices, i.e., freeform axes --> should have been annotated as such
+        const dim = dimensions.find(d => d.name === name) as ModelParameter;
+        const defValue = dim.default;
+        if (!dataExtent.includes(defValue)) {
+          dataExtent.push(defValue);
+        }
+      } else {
+        dataExtent.push('dummay-last');
+        dataExtent.unshift('dummy-first');
+      }
     }
 
     // extend the domain of each axis to ensure a nice scale rendering
@@ -1618,7 +1733,7 @@ const createScales = (
       dataExtent.push('dummay-last');
       dataExtent.unshift('dummy-first');
     }
-    return d3.scalePoint()
+    return d3.scalePoint<string | number>()
       .domain(dataExtent)
       .range(axisRange)
       // .padding(0.25) // a percet of the axis step() (i.e., segment)
@@ -1640,7 +1755,8 @@ const createScales = (
     int: numberFunc,
     float: numberFunc,
     string: stringFunc,
-    str: stringFunc
+    str: stringFunc,
+    boolean: numberFunc
   };
 
   // force some dimensions to be ordinal, if requested
@@ -1654,7 +1770,11 @@ const createScales = (
   for (const i in dimensions) {
     const name = dimensions[i].name;
     const scaleFuncParameterized = defaultScales[pcTypes[name]];
-    xScaleMap[name] = scaleFuncParameterized(name);
+    if (scaleFuncParameterized === undefined) {
+      console.error('unsupported parameter type: ' + dimensions[i].type + ' for ' + name);
+    } else {
+      xScaleMap[name] = scaleFuncParameterized(name);
+    }
   }
 
   // Build the y scale -> it find the best position (vertically) for each x axis

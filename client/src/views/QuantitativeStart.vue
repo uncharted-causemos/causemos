@@ -16,6 +16,14 @@
       @confirm="onRenameModalConfirm"
       @cancel="closeRenameModal"
     />
+    <duplicate-modal
+      v-if="showDuplicateModal"
+      :current-name="selectedCard.title"
+      :id-to-duplicate="selectedCard.id"
+      @success="onDuplicateSuccess"
+      @fail="closeDuplicateModal"
+      @cancel="closeDuplicateModal"
+    />
   </div>
 </template>
 
@@ -23,6 +31,7 @@
 import { useStore } from 'vuex';
 import { defineComponent, ref, computed } from 'vue';
 import StartScreen from '@/components/start-screen.vue';
+import DuplicateModal from '@/components/action-bar/duplicate-modal.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import { CAG } from '@/utils/messages-util';
@@ -44,13 +53,15 @@ export default defineComponent({
   components: {
     StartScreen,
     RenameModal,
-    EmptyStateInstructions
+    EmptyStateInstructions,
+    DuplicateModal
   },
   setup() {
     const store = useStore();
     const recentCards = ref([] as RecentCard[]);
     const selectedCard = ref({} as RecentCard);
     const showRenameModal = ref(false);
+    const showDuplicateModal = ref(false);
 
     const project = computed(() => store.getters['app/project']);
     const showEmptyStateInstructions = computed(() => {
@@ -61,6 +72,7 @@ export default defineComponent({
       recentCards,
       selectedCard,
       showRenameModal,
+      showDuplicateModal,
 
       project,
       showEmptyStateInstructions,
@@ -96,12 +108,8 @@ export default defineComponent({
       this.openRenameModal();
     },
     onDuplicate(recentCard: RecentCard) {
-      modelService.duplicateModel(recentCard.id).then(() => {
-        this.toaster(CAG.SUCCESSFUL_DUPLICATE, 'success', false);
-        this.refresh();
-      }).catch(() => {
-        this.toaster(CAG.ERRONEOUS_DUPLICATE, 'error', true);
-      });
+      this.selectedCard = recentCard;
+      this.openDuplicateModal();
     },
     onDelete(recentCard: RecentCard) {
       modelService.removeModel(recentCard.id).then(() => {
@@ -125,6 +133,16 @@ export default defineComponent({
         });
       }
       this.closeRenameModal();
+    },
+    onDuplicateSuccess() {
+      this.refresh();
+      this.closeDuplicateModal();
+    },
+    openDuplicateModal() {
+      this.showDuplicateModal = true;
+    },
+    closeDuplicateModal() {
+      this.showDuplicateModal = false;
     }
   }
 });

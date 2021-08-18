@@ -116,12 +116,11 @@
               :selected-spatial-aggregation="selectedSpatialAggregation"
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
-              :deselected-region-ids="deselectedRegionIds"
+              :selected-region-ids="selectedRegionIds"
               :selected-breakdown-option="breakdownOption"
               :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
-              @set-all-regions-selected="setAllRegionsSelected"
               @set-breakdown-option="setBreakdownOption"
             />
           </template>
@@ -146,6 +145,7 @@ import MapDropdown from '@/components/data/map-dropdown.vue';
 
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
@@ -154,10 +154,11 @@ import { NamedBreakdownData } from '@/types/Datacubes';
 import { DatacubeType, ProjectType } from '@/types/Enums';
 
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { colorFromIndex } from '@/utils/colors-util';
 import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import modelService from '@/services/model-service';
+import { ViewState } from '@/types/Insight';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 
 const DRILLDOWN_TABS = [
   {
@@ -186,7 +187,7 @@ export default defineComponent({
     }
   }),
   setup() {
-    const selectedAdminLevel = ref(2);
+    const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
@@ -206,7 +207,16 @@ export default defineComponent({
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = computed(() => {
+      if (
+        metadata.value?.id !== undefined &&
+        datacubeCurrentOutputsMap.value[metadata.value?.id] !== undefined
+      ) {
+        return datacubeCurrentOutputsMap.value[metadata.value?.id];
+      } else {
+        return 0;
+      }
+    });
 
     const metadata = useModelMetadata(indicatorId);
 
@@ -223,6 +233,22 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
+
+    const breakdownOption = ref<string | null>(null);
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
+    };
+
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption
+    );
 
     const timeInterval = 10000;
 
@@ -272,11 +298,6 @@ export default defineComponent({
       selectedTimestamp.value = value;
     };
 
-    const breakdownOption = ref<string | null>(null);
-    const setBreakdownOption = (newValue: string | null) => {
-      breakdownOption.value = newValue;
-    };
-
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -292,7 +313,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp,
+      selectedRegionIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -303,18 +325,22 @@ export default defineComponent({
     );
 
     const {
-      outputSpecs,
-      regionalData,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
-    } = useRegionalData(
+      outputSpecs
+    } = useOutputSpecs(
       selectedModelId,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
       selectedTimeseriesPoints
+    );
+
+    const {
+      regionalData
+    } = useRegionalData(
+      outputSpecs,
+      breakdownOption,
+      datacubeHierarchy
     );
 
     const stepsBeforeCanConfirm = computed(() => {
@@ -351,7 +377,6 @@ export default defineComponent({
       typeBreakdownData,
       selectedTimestamp,
       isExpanded,
-      colorFromIndex,
       metadata,
       mainModelOutput,
       allModelRunData,
@@ -364,9 +389,6 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected,
       outputs,
       currentOutputIndex,
       datacubeCurrentOutputsMap,
@@ -387,7 +409,9 @@ export default defineComponent({
       selectedBaseLayer,
       selectedDataLayer,
       setBaseLayer: (val: BASE_LAYER) => { selectedBaseLayer.value = val; },
-      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; }
+      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; },
+      toggleIsRegionSelected,
+      selectedRegionIds
     };
   },
   unmounted(): void {
@@ -397,6 +421,39 @@ export default defineComponent({
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
+
+      if (this.selectedNode !== null) {
+        // restore view config options, if any
+        const initialViewConfig = this.selectedNode.parameter;
+        if (initialViewConfig) {
+          if (initialViewConfig.temporalResolution !== undefined) {
+            this.selectedTemporalResolution = initialViewConfig.temporalResolution;
+          }
+          if (initialViewConfig.temporalAggregation !== undefined) {
+            this.selectedTemporalAggregation = initialViewConfig.temporalAggregation;
+          }
+          if (initialViewConfig.spatialAggregation !== undefined) {
+            this.selectedSpatialAggregation = initialViewConfig.spatialAggregation;
+          }
+          if (initialViewConfig.selectedOutputIndex !== undefined) {
+            const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+            updatedCurrentOutputsMap[this.metadata?.id ?? ''] = initialViewConfig.selectedOutputIndex;
+            this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+          }
+          if (initialViewConfig.selectedMapBaseLayer !== undefined) {
+            this.selectedBaseLayer = initialViewConfig.selectedMapBaseLayer;
+          }
+          if (initialViewConfig.selectedMapDataLayer !== undefined) {
+            this.selectedDataLayer = initialViewConfig.selectedMapDataLayer;
+          }
+          if (initialViewConfig.breakdownOption !== undefined) {
+            this.breakdownOption = initialViewConfig.breakdownOption;
+          }
+          if (initialViewConfig.selectedAdminLevel !== undefined) {
+            this.selectedAdminLevel = initialViewConfig.selectedAdminLevel;
+          }
+        }
+      }
     });
   },
 
@@ -415,15 +472,19 @@ export default defineComponent({
     }),
 
     onBack() {
-      this.$router.push({
-        name: 'nodeDataExplorer',
-        params: {
-          currentCAG: this.currentCAG,
-          nodeId: this.nodeId,
-          project: this.project,
-          projectType: ProjectType.Analysis
-        }
-      });
+      if (window.history.length > 1) {
+        window.history.go(-1);
+      } else {
+        this.$router.push({
+          name: 'nodeDataExplorer',
+          params: {
+            currentCAG: this.currentCAG,
+            nodeId: this.nodeId,
+            project: this.project,
+            projectType: ProjectType.Analysis
+          }
+        });
+      }
     },
     async onSelection() {
       if (this.metadata === null) {
@@ -444,20 +505,30 @@ export default defineComponent({
           id: this.metadata.id,
           name: this.metadata.name,
           unit: this.unit,
-          // TODO: respect regional selections made by users in the experiment view
           country: '',
           admin1: '',
           admin2: '',
           admin3: '',
-          geospatial_aggregation: this.selectedSpatialAggregation,
-          temporal_aggregation: this.selectedTemporalAggregation,
-          temporal_resolution: this.selectedTemporalResolution,
           period: 12,
           timeseries,
           max: null, // filled in by server
           min: null // filled in by server
         }
       };
+      // save view config options when quantifying the node along with the node parameters
+      const viewConfig: ViewState = {
+        spatialAggregation: this.selectedSpatialAggregation,
+        temporalAggregation: this.selectedTemporalAggregation,
+        temporalResolution: this.selectedTemporalResolution,
+        breakdownOption: this.breakdownOption,
+        selectedAdminLevel: this.selectedAdminLevel,
+        selectedOutputIndex: this.currentOutputIndex,
+        selectedMapBaseLayer: this.selectedBaseLayer,
+        selectedMapDataLayer: this.selectedDataLayer
+      };
+      Object.keys(viewConfig).forEach(key => {
+        (nodeParameters.parameter as any)[key] = viewConfig[key];
+      });
       await modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
 
       this.$router.push({

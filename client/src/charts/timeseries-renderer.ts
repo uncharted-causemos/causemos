@@ -7,7 +7,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
-import { renderAxes, renderLine } from '@/utils/timeseries-util';
+import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -53,10 +53,11 @@ export default function(
   height: number,
   selectedTimestamp: number,
   onTimestampSelected: (timestamp: number) => void,
-  breakdownOption: string | null
+  breakdownOption: string | null,
+  selectedTimestampRange: {start: number; end: number} | null
 ) {
   const groupElement = selection.append('g');
-  const [xExtent, yExtent] = calculateExtents(timeseriesList);
+  const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('Unable to derive extent from data', timeseriesList);
     // This function must always return a function to call when
@@ -90,7 +91,13 @@ export default function(
     X_AXIS_HEIGHT
   );
   timeseriesList.forEach(timeseries => {
-    renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    if (timeseries.points.length > 1) { // draw a line for time series longer than 1
+      renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+      // also, draw dots for all the timeseries points
+      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    } else { // draw a spot for timeseries that are only 1 long
+      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+    }
   });
 
   generateSelectableTimestamps(
@@ -117,7 +124,8 @@ export default function(
     xScale,
     yScale,
     valueFormatter,
-    timestampFormatter
+    timestampFormatter,
+    selectedTimestampRange
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -129,14 +137,25 @@ export default function(
       xScale,
       yScale,
       valueFormatter,
-      timestampFormatter
+      timestampFormatter,
+      selectedTimestampRange
     );
   };
 }
 
-function calculateExtents(timeseriesList: Timeseries[]) {
+function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {start: number; end: number} | null) {
   const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
-  const xExtent = d3.extent(allPoints.map(point => point.timestamp));
+  const allTimestampDataPoints = allPoints.map(point => point.timestamp);
+  let xExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
+  if (selectedTimestampRange !== null) {
+    // the user requested to render the timeseries chart within a specific range
+    // so we should respect that and enlarge the extent to include the selectedTimestampRange, as needed
+    //  this would enable the zooming effect
+    xExtent = [selectedTimestampRange.start, selectedTimestampRange.end];
+  } else {
+    xExtent = d3.extent(allTimestampDataPoints);
+  }
+
   const yExtent = d3.extent(allPoints.map(point => point.value));
   return [xExtent, yExtent];
 }
@@ -210,7 +229,8 @@ function generateSelectableTimestamps(
       .style('cursor', 'pointer')
       .on('mouseenter', () => timestampMarker.attr('visibility', 'visible'))
       .on('mouseleave', () => timestampMarker.attr('visibility', 'hidden'))
-      .on('mousedown', () => onTimestampSelected(timestamp));
+      .on('mousedown', () => onTimestampSelected(timestamp))
+    ;
   });
 }
 
@@ -317,7 +337,8 @@ function updateTimestampElements(
   xScale: d3.ScaleLinear<number, number>,
   yScale: d3.ScaleLinear<number, number>,
   valueFormatter: (value: any) => string,
-  timestampFormatter: (timestamp: number) => string
+  timestampFormatter: (timestamp: number) => string,
+  selectedTimestampRange: {start: number; end: number} | null
 ) {
   if (timestamp === null) {
     // Hide everything
@@ -325,6 +346,19 @@ function updateTimestampElements(
     valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
     return;
   }
+  // check if the selectedTimestamp is out of the timeseries range
+  const [xExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
+  if (xExtent[0] === undefined || xExtent[1] === undefined) {
+    console.error('Unable to derive extent from data', timeseriesList);
+  } else {
+    if (timestamp < xExtent[0] || timestamp > xExtent[1]) {
+      // Hide everything
+      selectedTimestampGroup.attr('visibility', 'hidden');
+      valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
+      return;
+    }
+  }
+
   // Move selectedTimestamp elements horizontally to the right position
   const selectedXPosition = xScale(timestamp);
   selectedTimestampGroup

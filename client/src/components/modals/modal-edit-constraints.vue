@@ -20,6 +20,12 @@
     <template #footer>
       <ul class="unstyled-list">
         <button
+          v-if="hasConstraints"
+          type="button"
+          class="btn first-button"
+          @click="clearConstraints()">Clear Constraints
+        </button>
+        <button
           type="button"
           class="btn first-button"
           @click.stop="close()">Cancel
@@ -66,7 +72,7 @@ export default defineComponent({
     }
   },
   emits: [
-    'run-projection', 'close'
+    'run-projection', 'close', 'clear-constraints'
   ],
   setup(props) {
     const store = useStore();
@@ -77,11 +83,16 @@ export default defineComponent({
       return _.get(props.node, 'parameter.indicator_time_series_parameter.unit', 'unknown');
     });
 
+    const hasConstraints = computed(() => {
+      return constraints.value.length > 0;
+    });
+
     return {
       ontologyFormatter: useOntologyFormatter(),
       constraints,
       selectedScenarioId,
-      indicatorUnit
+      indicatorUnit,
+      hasConstraints
     };
   },
   watch: {
@@ -93,6 +104,9 @@ export default defineComponent({
     this.render();
   },
   methods: {
+    clearConstraints() {
+      this.$emit('clear-constraints', { concept: this.node.concept });
+    },
     formatted_concept_name() {
       return this.ontologyFormatter(this.node.concept);
     },
