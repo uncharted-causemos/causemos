@@ -221,8 +221,16 @@ export default defineComponent({
     );
 
     watchEffect(() => {
-      if (visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
-        emit('loaded-timeseries', { id: id.value, timeseriesList: visibleTimeseriesData.value });
+      if (metadata.value && visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
+        emit('loaded-timeseries', {
+          id: id.value,
+          timeseriesList: visibleTimeseriesData.value,
+          //
+          datacubeName: metadata.value.name,
+          datacubeOutputName: mainModelOutput.value?.display_name,
+          //
+          region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
+        });
       }
     });
 

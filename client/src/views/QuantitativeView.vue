@@ -115,11 +115,6 @@ export default {
     },
     currentCAG() {
       this.refresh();
-      // save the scenario-id in the insight store so that it will be part of any saved captured of this view
-      const dataState = {
-        selectedScenarioId: this.selectedScenarioId
-      };
-      this.setDataState(dataState);
     },
     $route: {
       handler(/* newValue, oldValue */) {
@@ -261,6 +256,18 @@ export default {
       if (this.onMatrixTab) {
         this.fetchSensitivityAnalysisResults();
       }
+
+      this.updateDataState();
+    },
+    updateDataState() {
+      // save the scenario-id in the insight store so that it will be part of any insight captured from this view
+      const dataState = {
+        selectedScenarioId: this.selectedScenarioId,
+        currentEngine: this.currentEngine,
+        modelName: this.modelSummary.name,
+        nodesCount: this.modelComponents.nodes.length
+      };
+      this.setDataState(dataState);
     },
     revertDraftChanges() {
       if (!_.isNil(this.previousScenarioId)) {

@@ -192,12 +192,14 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import { defineComponent, ref } from '@vue/runtime-core';
 import {
   CAGGraph as CAGGraphInterface,
+  CAGModelSummary,
   EdgeParameter,
   NodeParameter,
   SourceTargetPair
 } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
+import { DataState } from '@/types/Insight';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -261,7 +263,7 @@ export default defineComponent({
     };
   },
   data: () => ({
-    modelSummary: null,
+    modelSummary: null as CAGModelSummary | null,
     modelComponents: {} as CAGGraphInterface,
 
     // State flags
@@ -365,6 +367,13 @@ export default defineComponent({
         }
         this.selectedEdge = updatedSelectedEdge;
       }
+      this.updateDataState();
+    },
+    selectedNode() {
+      this.updateDataState();
+    },
+    selectedEdge() {
+      this.updateDataState();
     }
   },
   created() {
@@ -381,7 +390,8 @@ export default defineComponent({
   methods: {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken',
-      setContextId: 'insightPanel/setContextId'
+      setContextId: 'insightPanel/setContextId',
+      setDataState: 'insightPanel/setDataState'
     }),
     async refresh() {
       // Get CAG data
@@ -397,6 +407,22 @@ export default defineComponent({
         }
         this.edgeToSelectOnNextRefresh = null;
       }
+    },
+    updateDataState() {
+      // save the scenario-id in the insight store so that it will be part of any insight captured from this view
+      const dataState: DataState = {
+        modelName: this.modelSummary?.name,
+        nodesCount: this.modelComponents.nodes.length
+      };
+      if (this.selectedNode !== null) {
+        dataState.selectedNode = this.selectedNode.label;
+      }
+      if (this.selectedEdge !== null) {
+        const source = this.selectedEdge.source.substring(this.selectedEdge.source.lastIndexOf('/') + 1);
+        const target = this.selectedEdge.target.substring(this.selectedEdge.target.lastIndexOf('/') + 1);
+        dataState.selectedEdge = source + ' : ' + target;
+      }
+      this.setDataState(dataState);
     },
     async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[]) {
       return modelService.addComponents(this.currentCAG, nodes, edges);
