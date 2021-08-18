@@ -567,7 +567,6 @@ export default defineComponent({
     const clearConstraints = () => {
       constraints.value = [];
       saveDraft();
-      // this.$emit('clear-constraints', { concept: this.node.concept });
     };
 
     watchEffect(() => {
