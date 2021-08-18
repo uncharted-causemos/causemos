@@ -379,6 +379,7 @@ export default defineComponent({
 
     const validModelRunsAvailable = computed(() => {
       return (!_.isNull(metadata.value) && isIndicator(metadata.value)) || (!_.isNull(allModelRunData.value) &&
+        !_.isNull(metadata.value) && isModel(metadata.value) &&
         _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
     });
 
