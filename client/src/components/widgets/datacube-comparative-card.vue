@@ -1,7 +1,11 @@
 <template>
   <div class="row datacube-card-container">
     <header class="datacube-header" >
-      <h5 v-if="metadata && mainModelOutput" style="display: inline-block">
+      <h5
+        v-if="metadata && mainModelOutput"
+        class="datacube-title-area"
+        @click="openDrilldown"
+      >
         <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
         <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
       </h5>
@@ -320,6 +324,10 @@ export default defineComponent({
   display: flex;
   align-items: center;
 
+  .datacube-title-area {
+    display: inline-block;
+    cursor: pointer;
+  }
   .drilldown-btn {
     padding: 5px;
     margin-left:auto;
