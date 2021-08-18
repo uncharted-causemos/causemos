@@ -48,6 +48,7 @@ export default function(
   constraints: ProjectionConstraint[],
   minValue: number,
   maxValue: number,
+  viewingExtent: number[] | null,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) {
@@ -148,6 +149,13 @@ export default function(
       [xScaleContext.range()[1], yScaleContext.range()[0]]
     ])
     .on('brush', brushed);
+
+  // Use viewingExtent to constrain focus if applicable
+  if (oldCoords.length === 0 && viewingExtent !== null) {
+    oldCoords.push(xScaleFocus(viewingExtent[0]));
+    oldCoords.push(xScaleFocus(viewingExtent[1]));
+  }
+
   contextGroupElement
     .append('g') // create brush element and move to default
     .classed('brush', true)
