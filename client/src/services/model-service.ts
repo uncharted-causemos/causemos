@@ -651,22 +651,6 @@ export const calculateScenarioPercentageChange = (experiment: ScenarioResult, in
 };
 
 
-// Dyse projections previously could not exlend above/below historic min/max, this code fixs that by placing the historic data into the middle third of the levels, adding space
-// above and below historic min/max so that Dyse CAN project above/below the historic min/max.
-// the padding above and below is equal to the range between min and max.  There's some tweaking to make it work with numLevels.
-
-export const expandExtentForDyseProjections = (yExtent: [number, number], numLevels: number) => {
-  const scalingFactor = ((yExtent[1] - yExtent[0]) / ((1 / 3.0) * (numLevels - 1)));
-  const averageExtent = 0.5 * (yExtent[0] + yExtent[1]);
-  const dyseOffset = 0.25 * ((numLevels + 1) % 2);
-
-  return [
-    -scalingFactor * Math.floor(0.5 * numLevels) + averageExtent + dyseOffset,
-    scalingFactor * (Math.ceil(0.5 * numLevels) - 1) + averageExtent + dyseOffset
-  ];
-};
-
-
 // FIXME: Inject step=0 initial value constraints per node, we shouldn't need to do this,
 // engine should handle this quirky case. Sep 2020
 const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptProjectionConstraints[]) => {
@@ -745,7 +729,6 @@ export default {
   hasMergeConflictEdges,
 
   calculateScenarioPercentageChange,
-  expandExtentForDyseProjections,
   injectStepZero,
 
   ENGINE_OPTIONS,
