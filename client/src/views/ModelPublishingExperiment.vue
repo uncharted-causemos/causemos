@@ -50,7 +50,6 @@
       :selectedDataLayer="selectedDataLayer"
       @set-selected-scenario-ids="setSelectedScenarioIds"
       @select-timestamp="updateSelectedTimestamp"
-      @set-drilldown-data="setDrilldownData"
       @check-model-metadata-validity="checkModelMetadataValidity"
       @update-desc-view="updateDescView"
       @set-relative-to="setRelativeTo"
@@ -114,7 +113,7 @@
           <breakdown-pane
             v-if="activeDrilldownTab ==='breakdown'"
             :selected-admin-level="selectedAdminLevel"
-            :type-breakdown-data="typeBreakdownData"
+            :qualifier-breakdown-data="qualifierBreakdownData"
             :selected-model-id="selectedModelId"
             :selected-scenario-ids="selectedScenarioIds"
             :selected-timestamp="selectedTimestamp"
@@ -126,7 +125,9 @@
             :temporal-breakdown-data="temporalBreakdownData"
             :selected-timeseries-points="selectedTimeseriesPoints"
             :selected-region-ids="selectedRegionIds"
+            :selected-qualifier-values="selectedQualifierValues"
             @toggle-is-region-selected="toggleIsRegionSelected"
+            @toggle-is-qualifier-selected="toggleIsQualifierSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
             @set-breakdown-option="setBreakdownOption"
           />
@@ -145,13 +146,11 @@ import ModelPublishingChecklist from '@/components/widgets/model-publishing-chec
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
-import { DatacubeFeature, DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
+import { DatacubeFeature, ModelPublishingStep } from '@/types/Datacube';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
-import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
@@ -166,6 +165,7 @@ import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/i
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
+import useQualifiers from '@/services/composables/useQualifiers';
 
 const DRILLDOWN_TABS = [
   {
@@ -203,9 +203,9 @@ export default defineComponent({
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
-    const selectedTemporalAggregation: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedTemporalAggregation']);
-    const selectedTemporalResolution: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedTemporalResolution']);
-    const selectedSpatialAggregation: ComputedRef<string> = computed(() => store.getters['modelPublishStore/selectedSpatialAggregation']);
+    const selectedTemporalAggregation: ComputedRef<AggregationOption> = computed(() => store.getters['modelPublishStore/selectedTemporalAggregation']);
+    const selectedTemporalResolution: ComputedRef<TemporalResolutionOption> = computed(() => store.getters['modelPublishStore/selectedTemporalResolution']);
+    const selectedSpatialAggregation: ComputedRef<AggregationOption> = computed(() => store.getters['modelPublishStore/selectedSpatialAggregation']);
     const selectedTimestamp: ComputedRef<number> = computed(() => store.getters['modelPublishStore/selectedTimestamp']);
     const selectedScenarioIds: ComputedRef<string[]> = computed(() => store.getters['modelPublishStore/selectedScenarioIds']);
 
@@ -216,8 +216,6 @@ export default defineComponent({
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
-
-    const typeBreakdownData: NamedBreakdownData[] = [];
 
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
@@ -356,6 +354,21 @@ export default defineComponent({
     const setSelectedTimestamp = (timestamp: number | null) =>
       store.dispatch('modelPublishStore/setSelectedTimestamp', timestamp);
 
+
+    const {
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues
+    } = useQualifiers(
+      metadata,
+      breakdownOption,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      selectedTimestamp
+    );
+
     const {
       timeseriesData,
       visibleTimeseriesData,
@@ -373,7 +386,7 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      ref(new Set())
+      selectedQualifierValues
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -412,7 +425,6 @@ export default defineComponent({
       allModelRunData,
       selectedScenarioIds,
       setSelectedScenarioIds,
-      typeBreakdownData,
       selectedTimestamp,
       openPublishAccordion,
       publishingSteps,
@@ -441,7 +453,10 @@ export default defineComponent({
       selectedDataLayer,
       datacubeCurrentOutputsMap,
       toggleIsRegionSelected,
-      selectedRegionIds
+      selectedRegionIds,
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues
     };
   },
   watch: {
@@ -742,45 +757,6 @@ export default defineComponent({
           this.selectedTemporalResolution !== '') {
         this.updatePublishingStep(true);
       }
-    },
-    setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      this.typeBreakdownData = [];
-      if (this.selectedScenarioIds.length === 0) return;
-      // typeBreakdownData array contains an entry for each drilldown dimension
-      //  (e.g. 'crop type')
-      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
-        // Initialize total for each scenarioId to 0
-        const totals = {} as { [scenarioId: string]: number };
-        this.selectedScenarioIds.forEach(scenarioId => {
-          totals[scenarioId] = 0;
-        });
-        // Randomly assign values for each option in the dimension (e.g. 'maize', 'corn)
-        //  to each scenario, and keep track of the sum totals for each scenario
-        const choices = dimension.choices ?? [];
-        const drilldownChildren = choices.map(choice => {
-          const values = {} as { [scenarioId: string]: number };
-          this.selectedScenarioIds.forEach(scenarioId => {
-            // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
-            //  from (selected scenarios) data
-            const randomValue = getRandomNumber(0, 5000);
-            values[scenarioId] = randomValue;
-            totals[scenarioId] += randomValue;
-          });
-          return {
-            // Breakdown data IDs are written as the hierarchical path delimited by '__'
-            id: 'All__' + choice,
-            values
-          };
-        });
-
-        return {
-          name: dimension.name,
-          data: {
-            Total: [{ id: 'All', values: totals }],
-            [dimension.name]: drilldownChildren
-          }
-        };
-      });
     },
     checkModelMetadataValidity(info: { valid: boolean }) {
       const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Enrich_Description);
