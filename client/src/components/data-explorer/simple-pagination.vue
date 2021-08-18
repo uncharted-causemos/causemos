@@ -49,7 +49,7 @@ export default defineComponent({
       return this.pageSize > this.currentPageLength;
     },
     currentStart(): string {
-      return (this.pageCount * this.pageSize).toLocaleString();
+      return ((this.pageCount * this.pageSize) + 1).toLocaleString();
     },
     currentFinish(): string {
       return (this.pageCount * this.pageSize + this.currentPageLength).toLocaleString();
