@@ -418,8 +418,8 @@ export default defineComponent({
         dataState.selectedNode = this.selectedNode.label;
       }
       if (this.selectedEdge !== null) {
-        const source = this.selectedEdge.source.substring(this.selectedEdge.source.lastIndexOf('/') + 1);
-        const target = this.selectedEdge.target.substring(this.selectedEdge.target.lastIndexOf('/') + 1);
+        const source = this.ontologyFormatter(this.selectedEdge.source);
+        const target = this.ontologyFormatter(this.selectedEdge.target);
         dataState.selectedEdge = source + ' : ' + target;
       }
       this.setDataState(dataState);
