@@ -156,7 +156,7 @@
             <template #body>
               <ul>
                 <div v-for="dataPath in metadata.data_paths" :key="dataPath">
-                  <li>{{ dataPath }}</li>
+                  <li><a :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a></li>
                 </div>
               </ul>
             </template>
