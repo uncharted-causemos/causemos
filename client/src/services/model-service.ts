@@ -18,8 +18,7 @@ import {
 const MODEL_STATUS = {
   UNSYNCED: 0,
   TRAINING: 1,
-  READY: 2,
-  UNSYNCED_TOPOLOGY: 3
+  READY: 2
 };
 
 const MODEL_MSGS = {
@@ -244,15 +243,6 @@ const initializeModel = async (modelId: string) => {
       }
     } catch (error) {
       errors.push(error.response.data);
-    }
-    return errors;
-  }
-
-  // Model is still training, check and upate the status
-  if (model.status === MODEL_STATUS.TRAINING) {
-    const r = await checkAndUpdateRegisteredStatus(modelId, engine);
-    if (r === MODEL_STATUS.TRAINING) {
-      errors.push(MODEL_MSGS.MODEL_TRAINING);
     }
     return errors;
   }

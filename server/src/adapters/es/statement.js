@@ -406,7 +406,12 @@ class Statement {
         refresh: refreshOption,
         body: bulk
       });
-      return response.body;
+      const body = response.body;
+      if (body.errors) {
+        const errors = ES.getBulkErrors(body);
+        errors.forEach(Logger.error);
+      }
+      return body;
     } catch (err) {
       Logger.error(err);
       return null;

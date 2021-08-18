@@ -162,6 +162,7 @@ import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import router from '@/router';
@@ -177,7 +178,7 @@ import { getAnalysis } from '@/services/analysis-service';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { Insight, ViewState } from '@/types/Insight';
+import { Insight, ViewState, DataState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
 
 const DRILLDOWN_TABS = [
@@ -339,10 +340,15 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      const dataState = {
+      const dataState: DataState = {
         selectedModelId: selectedModelId.value,
         selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value
+        selectedTimestamp: selectedTimestamp.value,
+        datacubeTitles: [{
+          datacubeName: metadata.value?.name ?? '',
+          datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
+        }],
+        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
       };
       store.dispatch('insightPanel/setDataState', dataState);
     });
@@ -389,15 +395,20 @@ export default defineComponent({
     );
 
     const {
-      outputSpecs,
-      regionalData
-    } = useRegionalData(
+      outputSpecs
+    } = useOutputSpecs(
       selectedModelId,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints,
+      selectedTimeseriesPoints
+    );
+
+    const {
+      regionalData
+    } = useRegionalData(
+      outputSpecs,
       breakdownOption,
       datacubeHierarchy
     );
@@ -568,7 +579,7 @@ export default defineComponent({
           // this would only be valid and effective if/after datacube runs are reloaded
           this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
         }
-        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+        if (loadedInsight.data_state?.selectedTimestamp) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
         }
         // view state

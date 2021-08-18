@@ -25,7 +25,7 @@
           @click="toggleScenarioDropdownOpen"
         >
           <i class="fa fa-fw fa-sign-in" />
-          {{ selectedScenario.name }}
+          {{ selectedScenario.is_valid ? selectedScenario.name : selectedScenario.name + " (Stale)  " }}
           <i class="fa fa-fw fa-angle-down" />
           <dropdown-control
             v-if="isScendarioDropdownOpen"
