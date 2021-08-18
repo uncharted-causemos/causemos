@@ -118,6 +118,14 @@
                 @click="clearParameterization">
                 Clear parameterization
               </button>
+              <button
+                v-if="hasConstraints"
+                v-tooltip.top-center="'Clear constraints'"
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="clearConstraints">
+                Clear constraints
+              </button>
             </div>
           </div>
           <p class="restrict-max-width">
@@ -180,7 +188,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, watchEffect } from 'vue';
+import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
@@ -316,10 +324,12 @@ export default defineComponent({
     });
 
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
-    watchEffect(() => {
-      historicalTimeseries.value =
-        selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+    watch([selectedNodeScenarioData], () => {
+      if (_.isEmpty(historicalTimeseries.value)) {
+        historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+      }
     });
+
     const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
       historicalTimeseries.value = newPoints;
     };
@@ -341,6 +351,10 @@ export default defineComponent({
         return { displayName: scenario.name, value: scenario.id };
       })
     );
+
+    const hasConstraints = computed(() => {
+      return constraints.value.length > 0;
+    });
 
     // TODO: Filter top drivers and top impacts
     //  CLARIFICATION REQUIRED:
@@ -550,6 +564,11 @@ export default defineComponent({
       saveDraft();
     };
 
+    const clearConstraints = () => {
+      constraints.value = [];
+      saveDraft();
+    };
+
     watchEffect(() => {
       // When the selectedScenario changes, grab the constraints from that scenario
       //  and store them in the `constraints` ref to be displayed
@@ -605,7 +624,9 @@ export default defineComponent({
       nodeId,
       project,
       currentCAG,
-      clearParameterization
+      clearParameterization,
+      hasConstraints,
+      clearConstraints
     };
   },
   methods: {
@@ -809,7 +830,7 @@ h5 {
 }
 
 .restrict-max-width {
-  max-width: 90ch;
+  max-width: 110ch;
 }
 
 .save-parameter-button {
