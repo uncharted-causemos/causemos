@@ -154,6 +154,11 @@
               <h4 class="header"> Datasets </h4>
             </template>
             <template #body>
+              <p>
+                This modal contains links to the parquet files that are used to generate the data on this webpage.
+                <a href="https://github.com/uncharted-causemos/parquet-to-csv">https://github.com/uncharted-causemos/parquet-to-csv</a>
+                contains code used to process the parquet files.
+              </p>
               <ul>
                 <div v-for="dataPath in metadata.data_paths" :key="dataPath">
                   <li><a :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a></li>
