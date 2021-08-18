@@ -1770,7 +1770,11 @@ const createScales = (
   for (const i in dimensions) {
     const name = dimensions[i].name;
     const scaleFuncParameterized = defaultScales[pcTypes[name]];
-    xScaleMap[name] = scaleFuncParameterized(name);
+    if (scaleFuncParameterized === undefined) {
+      console.error('unsupported parameter type: ' + dimensions[i].type + ' for ' + name);
+    } else {
+      xScaleMap[name] = scaleFuncParameterized(name);
+    }
   }
 
   // Build the y scale -> it find the best position (vertically) for each x axis

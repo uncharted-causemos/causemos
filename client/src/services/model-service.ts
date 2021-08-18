@@ -18,8 +18,7 @@ import {
 const MODEL_STATUS = {
   UNSYNCED: 0,
   TRAINING: 1,
-  READY: 2,
-  UNSYNCED_TOPOLOGY: 3
+  READY: 2
 };
 
 const MODEL_MSGS = {
