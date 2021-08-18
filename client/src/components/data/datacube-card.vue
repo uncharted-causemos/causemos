@@ -476,7 +476,10 @@ export default defineComponent({
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     },
     showDatasetButton(): boolean {
-      return this.metadata.type === DatacubeType.Indicator;
+      if (!_.isNull(this.metadata)) {
+        return this.metadata.type === DatacubeType.Indicator;
+      }
+      return false;
     }
   },
   methods: {
@@ -541,6 +544,7 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+
 @import '~styles/variables';
 
 $fullscreenTransition: all 0.5s ease-in-out;
