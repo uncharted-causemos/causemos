@@ -1,9 +1,5 @@
 import API from '@/api/api';
-import {
-  Model,
-  QualifierBreakdownResponse,
-  QualifierTimeseriesResponse
-} from '@/types/Datacube';
+import { Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
@@ -147,47 +143,21 @@ export const getQualifierTimeseries = async (
   temporalResolution: string,
   temporalAggregation: string,
   spatialAggregation: string,
-  qualifiers: string[]
+  qualifierVariableId: string,
+  qualifierOptions: string[]
 ) => {
-  console.log(
-    'getQualifierTimeseries',
-    dataId,
-    runId,
-    feature,
-    temporalResolution,
-    temporalAggregation,
-    spatialAggregation,
-    qualifiers
-  );
-  // const { data } = await API.get('maas/output/qualifier-timeseries', {
-  //   params: {
-  //     data_id: dataId,
-  //     run_id: runId,
-  //     feature,
-  //     temporal_agg: temporalAggregation,
-  //     spatial_agg: spatialAggregation,
-  //     qualifiers
-  //   }
-  // });
-  // return data as QualifierTimeseriesResponse[];
-  return {
-    data: [
-      {
-        name: 'slipping',
-        timeseries: [
-          { timestamp: 0, value: 25 },
-          { timestamp: 1000, value: 50 }
-        ]
-      },
-      {
-        name: 'regicide',
-        timeseries: [
-          { timestamp: 0, value: 15 },
-          { timestamp: 1000, value: 10 }
-        ]
-      }
-    ] as QualifierTimeseriesResponse[]
-  };
+  return await API.get('maas/output/qualifier-timeseries', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature: feature,
+      resolution: temporalResolution,
+      temporal_agg: temporalAggregation,
+      spatial_agg: spatialAggregation,
+      qualifier: qualifierVariableId,
+      q_opt: qualifierOptions
+    }
+  });
 };
 
 export const getQualifierBreakdown = async (

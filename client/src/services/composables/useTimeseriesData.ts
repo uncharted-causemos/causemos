@@ -151,6 +151,7 @@ export default function useTimeseriesData(
             temporalRes,
             temporalAgg,
             spatialAgg,
+            breakdownOption.value,
             Array.from(selectedQualifierValues.value)
           )
         ];
