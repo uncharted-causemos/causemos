@@ -83,27 +83,17 @@ export default defineComponent({
       return _.get(props.node, 'parameter.indicator_time_series_parameter.unit', 'unknown');
     });
 
+    const hasConstraints = computed(() => {
+      return constraints.value.length > 0;
+    });
+
     return {
       ontologyFormatter: useOntologyFormatter(),
       constraints,
       selectedScenarioId,
-      indicatorUnit
+      indicatorUnit,
+      hasConstraints
     };
-  },
-  data: () => ({
-    constraints: []
-  }),
-  computed: {
-    ...mapGetters({
-      selectedScenarioId: 'model/selectedScenarioId'
-    }),
-    hasConstraints() {
-      return this.constraints.length > 0;
-    },
-    indicatorUnit() {
-      const unit = _.get(this.node, 'parameter.indicator_time_series_parameter.unit', 'unknown');
-      return `unit: ${unit}`;
-    }
   },
   watch: {
     selectedScenarioId() {
