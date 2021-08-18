@@ -29,22 +29,6 @@
         </template>
       </tab-panel>
     </div>
-    <edit-indicator-modal
-      v-if="isEditIndicatorModalOpen"
-      :node-data="selectedNode"
-      :model-summary="modelSummary"
-      @close="closeEditIndicatorModal"
-      @save="saveIndicatorEdits"
-    />
-    <modal-edit-constraints
-      v-if="isEditConstraintsOpen"
-      :node="selectedNode"
-      :node-scenarios="scenariosForSelectedNode"
-      :projection-steps="projectionSteps"
-      @clear-constraints="clearConstraints"
-      @close="closeEditConstraints"
-      @run-projection="runProjection"
-    />
     <modal-edit-parameters
       v-if="isModelParametersOpen"
       :model-summary="modelSummary"
@@ -448,22 +432,8 @@ export default {
       // 4. Cycle the scenarios to force reactive to trigger
       this.scenarios = [...this.scenarios];
     },
-    clearConstraints({ concept }) {
-      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-
-      if (_.get(scenario, 'parameter.constraints')) {
-        _.remove(scenario.parameter.constraints, d => d.concept === concept);
-      }
-
-      this.closeEditConstraints();
-      this.refresh();
-      this.openEditConstraints();
-    },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
-    },
-    openEditConstraints() {
-      this.isEditConstraintsOpen = true;
     },
     async fetchSensitivityAnalysisResults() {
       if (this.currentEngine !== 'dyse' || _.isNil(this.scenarios) || this.scenarios.length === 0) return;
