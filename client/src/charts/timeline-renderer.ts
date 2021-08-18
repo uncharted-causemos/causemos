@@ -102,6 +102,7 @@ export default function(
   timeseriesList.forEach(timeseries => {
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1
       renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);
+      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
     } else { // draw a spot for timeseries that are only 1 long
       renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
     }
