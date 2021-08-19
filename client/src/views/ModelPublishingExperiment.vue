@@ -331,7 +331,8 @@ export default defineComponent({
           datacubeName: metadata.value?.name ?? '',
           datacubeOutputName: mainModelOutput.value?.display_name ?? ''
         }],
-        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
+        relativeTo: relativeTo.value
       };
       const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
@@ -401,28 +402,6 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy
     );
-    watchEffect(() => {
-      const dataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value,
-        relativeTo: relativeTo.value
-      };
-      const viewState: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value
-      };
-
-      store.dispatch('insightPanel/setViewState', viewState);
-      store.dispatch('insightPanel/setDataState', dataState);
-    });
 
 
     return {
