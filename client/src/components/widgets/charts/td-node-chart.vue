@@ -49,6 +49,10 @@ export default defineComponent({
       type: Number,
       required: true
     },
+    viewingExtent: {
+      type: Array as PropType<number[]>,
+      default: null
+    },
     constraints: {
       type: Array as PropType<ProjectionConstraint[]>,
       required: true
@@ -61,6 +65,7 @@ export default defineComponent({
       selectedScenarioId,
       minValue,
       maxValue,
+      viewingExtent,
       constraints
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
@@ -159,6 +164,7 @@ export default defineComponent({
         constraints,
         min,
         max,
+        viewingExtent.value,
         setConstraints,
         setHistoricalTimeseries
       );
