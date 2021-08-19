@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Datacube, QualifierTimeseriesResponse } from '@/types/Datacube';
+import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
 import {
   AggregationOption,
@@ -7,7 +7,7 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel
 } from '@/types/Enums';
-import { Timeseries } from '@/types/Timeseries';
+import { QualifierTimeseriesResponse, Timeseries } from '@/types/Timeseries';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
