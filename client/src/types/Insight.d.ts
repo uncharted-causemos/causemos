@@ -8,7 +8,7 @@ export interface Snapshot {
   project_id?: string;
 
   // e.g., datacube-id, CAG-id, etc.
-  context_id?: string;
+  context_id?: string[];
 
   url: string;
 

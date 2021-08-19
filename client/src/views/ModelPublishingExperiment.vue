@@ -495,7 +495,7 @@ export default defineComponent({
         // we have at least one public insight, which we should use to fetch view configurations
         const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
         const viewConfig = defaultInsight.view_state;
-        if (viewConfig && defaultInsight.id === this.metadata?.id) {
+        if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
           (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
           if (viewConfig.temporalAggregation) {
