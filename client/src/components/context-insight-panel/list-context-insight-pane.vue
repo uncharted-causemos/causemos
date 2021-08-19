@@ -50,7 +50,7 @@
               class="context-insight-title"
               :class="{ 'private-insight-title': contextInsight.visibility === 'private' }">
               <i class="fa fa-star"></i>
-              {{ stringFormatter(contextInsight.name, 25) }}
+              {{ contextInsight.name }}
             </div>
             <div class="context-insight-action" @click.stop="openEditor(contextInsight.id)">
               <i class="fa fa-ellipsis-h context-insight-header-btn" />
