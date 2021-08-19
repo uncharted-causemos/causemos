@@ -1,7 +1,11 @@
 <template>
   <div class="row datacube-card-container">
     <header class="datacube-header" >
-      <h5 v-if="metadata && mainModelOutput" style="display: inline-block">
+      <h5
+        v-if="metadata && mainModelOutput"
+        class="datacube-title-area"
+        @click="openDrilldown"
+      >
         <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
         <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
       </h5>
@@ -56,7 +60,6 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
 import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
@@ -105,8 +108,6 @@ export default defineComponent({
       id,
       selectedTimestamp
     } = toRefs(props);
-
-    const typeBreakdownData = ref([] as NamedBreakdownData[]);
 
     const metadata = useModelMetadata(id);
 
@@ -209,7 +210,6 @@ export default defineComponent({
       temporalBreakdownData
     } = useTimeseriesData(
       metadata,
-      id,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -217,7 +217,8 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      ref([]) // region breakdown
+      ref([]), // region breakdown
+      ref(new Set())
     );
 
     watchEffect(() => {
@@ -241,7 +242,6 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
-      typeBreakdownData,
       metadata,
       mainModelOutput,
       outputs,
@@ -320,6 +320,10 @@ export default defineComponent({
   display: flex;
   align-items: center;
 
+  .datacube-title-area {
+    display: inline-block;
+    cursor: pointer;
+  }
   .drilldown-btn {
     padding: 5px;
     margin-left:auto;

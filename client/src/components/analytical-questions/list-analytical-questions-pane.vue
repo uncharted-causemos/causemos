@@ -252,7 +252,7 @@ export default defineComponent({
       if (this.selectedQuestion) {
         this.selectedQuestion.visibility = 'public';
         this.selectedQuestion.project_id = '';
-        this.selectedQuestion.context_id = '';
+        this.selectedQuestion.context_id = [''];
         this.selectedQuestion.url = '';
         updateQuestion(this.selectedQuestion.id as string, this.selectedQuestion).then(result => {
           const message = result.status === 200 ? QUESTIONS.SUCCESFUL_UPDATE : QUESTIONS.ERRONEOUS_UPDATE;
