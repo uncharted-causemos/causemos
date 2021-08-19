@@ -348,7 +348,8 @@ export default defineComponent({
           datacubeName: metadata.value?.name ?? '',
           datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
         }],
-        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
+        relativeTo: relativeTo.value
       };
       store.dispatch('insightPanel/setDataState', dataState);
     });
@@ -412,16 +413,6 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy
     );
-
-    watchEffect(() => {
-      const dataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value,
-        relativeTo: relativeTo.value
-      };
-      store.dispatch('insightPanel/setDataState', dataState);
-    });
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
