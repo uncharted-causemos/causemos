@@ -148,7 +148,7 @@ export default function(
       [xScaleContext.range()[0], yScaleContext.range()[1]],
       [xScaleContext.range()[1], yScaleContext.range()[0]]
     ])
-    .on('brush', brushed);
+    .on('start brush end', brushed);
 
   // Use viewingExtent to constrain focus if applicable
   if (oldCoords.length === 0 && viewingExtent !== null) {
@@ -178,11 +178,51 @@ export default function(
     .attr('height', yScaleFocus.range()[0] - yScaleFocus.range()[1])
     .attr('transform', translate(PADDING_RIGHT, PADDING_TOP));
 
+
+  function brushHandle(g: D3GElementSelection, selection: number[]) {
+    const enterFn = (enter: D3Selection) => {
+      const handleW = 9;
+      const handleWGap = -2;
+      const handleHGap = 4;
+      const handleH = contextHeight - X_AXIS_HEIGHT - 2 * handleHGap;
+
+      const container = enter.append('g')
+        .attr('class', 'custom-handle')
+        .attr('cursor', 'ew-resize');
+
+      container.append('rect')
+        .attr('fill', '#f8f8f8')
+        .attr('stroke', '#888888')
+        .attr('y', handleHGap)
+        .attr('x', (d, i) => i === 0 ? -(handleW + handleWGap) : handleWGap)
+        .attr('rx', 4)
+        .attr('ry', 4)
+        .attr('width', handleW)
+        .attr('height', handleH);
+
+      // Vertical dots
+      [0.3, 0.4, 0.5, 0.6, 0.7].forEach(value => {
+        container.append('circle')
+          .attr('cx', (d, i) => i === 0 ? -(0.5 * handleW + handleWGap) : 0.5 * handleW + handleWGap)
+          .attr('cy', handleHGap + handleH * value)
+          .attr('r', 1.25)
+          .attr('fill', '#888888');
+      });
+    };
+
+    g.selectAll('.custom-handle')
+      .data([{ type: 'w' }, { type: 'e' }])
+      .join(enterFn as any)
+      .attr('transform', (d, i) => translate(selection[i], 0));
+  }
+
+
   // Redraw chart whenever axis is brushed
   //  Also gets called with "initialBrushSelection"
   function brushed({ selection }: { selection: number[] }) {
     // FIXME: Tie data to group element, should make renderer stateful instead of a single function
     contextGroupElement.datum(selection);
+    contextGroupElement.select('.brush').call(brushHandle as any, selection);
 
     const [x0, x1] = selection.map(xScaleContext.invert);
     xScaleFocus.domain([x0, x1]);
