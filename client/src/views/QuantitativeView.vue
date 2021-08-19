@@ -337,11 +337,6 @@ export default {
     async saveModelParameter(newParameter) {
       this.isModelParametersOpen = false;
       await modelService.updateModelParameter(this.currentCAG, newParameter);
-
-      // Just update parameter in place to save a call
-      Object.keys(newParameter).forEach(key => {
-        this.modelSummary.parameter[key] = newParameter[key];
-      });
       this.refresh();
     },
     closeModelParameters() {
