@@ -126,7 +126,12 @@
                 :key="insight.id"
                 class="checklist-item-insight">
                   <i @mousedown.stop.prevent class="fa fa-star" style="color: orange" />
-                  <span @mousedown.stop.prevent style="padding-left: 1rem; padding-right: 1rem;">{{ insight.name }}</span>
+                  <span
+                    @mousedown.stop.prevent
+                    class="insight-style"
+                    :class="{ 'insight-style-private': insight.visibility === 'private' }">
+                    {{ insight.name }}
+                  </span>
                   <i class="fa fa-fw fa-close"
                     style="pointer-events: all; cursor: pointer; margin-left: auto;"
                     @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
@@ -141,13 +146,14 @@
 <script lang="ts">
 import { mapActions, mapGetters, useStore } from 'vuex';
 
-import { getInsightById, updateInsight, InsightFilterFields, fetchInsights } from '@/services/insight-service';
+import { getInsightById, updateInsight } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight } from '@/types/Insight';
 import { computed, defineComponent, ref, watchEffect } from 'vue';
 import _ from 'lodash';
 import { QUESTIONS } from '@/utils/messages-util';
 import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion, getContextSpecificQuestions } from '@/services/question-service';
 import DropdownControl from '@/components/dropdown-control.vue';
+import useInsightsData from '@/services/composables/useInsightsData';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -156,7 +162,6 @@ export default defineComponent({
   },
   setup() {
     const questionsList = ref<AnalyticalQuestion[]>([]);
-    const allInsights = ref<Insight[]>([]);
 
     const store = useStore();
     const contextId = computed(() => store.getters['insightPanel/contextId']);
@@ -164,6 +169,10 @@ export default defineComponent({
     const currentView = computed(() => store.getters['app/currentView']);
 
     const questionsFetchedAt = ref(0);
+
+    // save a local copy of all insights for quick reference whenever needed
+    // FIXME: ideally this should be from a store so that changes to the insight list externally are captured
+    const { insights: allInsights } = useInsightsData();
 
     const insightsById = (id: string) => allInsights.value.find(i => i.id === id);
 
@@ -198,14 +207,6 @@ export default defineComponent({
           return;
         }
 
-        // save a local copy of all insights for quick reference whenever needed
-        // FIXME: ideally this should be from a store so that changes to the insight list externally are captured
-        const insightSearchFields: InsightFilterFields = {
-          project_id: project.value,
-          context_id: contextId.value
-        };
-        allInsights.value = await fetchInsights([insightSearchFields]);
-
         // update the store to facilitate questions consumption in other UI places
         store.dispatch('analysisChecklist/setQuestions', allQuestions);
 
@@ -221,7 +222,6 @@ export default defineComponent({
       contextId,
       project,
       questionsFetchedAt,
-      allInsights,
       insightsById,
       fullLinkedInsights
     };
@@ -548,7 +548,7 @@ export default defineComponent({
       .checklist-item {
         flex-direction: column;
         display: flex;
-        font-size: 16px;
+        font-size: $font-size-medium;
         margin-bottom: 10px;
         padding: 5px;
 
@@ -590,6 +590,16 @@ export default defineComponent({
             justify-content: space-between;
             align-items: center;
             user-select: none;
+            .insight-style {
+              padding-left: 1rem;
+              padding-right: 1rem;
+              color: gray;
+              font-style: italic;
+            }
+            .insight-style-private {
+              color: black;
+              font-style: normal;
+            }
           }
         }
       }

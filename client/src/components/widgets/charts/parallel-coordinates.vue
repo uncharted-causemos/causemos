@@ -66,6 +66,9 @@ export default defineComponent({
     dimensionsData(): void {
       this.render(undefined);
     },
+    selectedDimensions(): void {
+      this.render(undefined);
+    },
     showBaselineDefaults(): void {
       // do not re-render everything, just update markers visibility
       renderBaselineMarkers(this.showBaselineDefaults);
@@ -108,7 +111,7 @@ export default defineComponent({
         width = size.width;
         height = size.height;
       }
-      if (this.dimensionsData === null || this.dimensionsData.length === 0) return;
+      if (this.selectedDimensions === null || this.selectedDimensions.length === 0) return;
       const options: ParallelCoordinatesOptions = {
         width,
         height,
@@ -117,16 +120,22 @@ export default defineComponent({
         newRunsMode: this.newRunsMode
       };
       const refSelection = d3.select((this.$refs as any).pcsvg);
-      refSelection.selectAll('*').remove();
-      renderParallelCoordinates(
-        refSelection,
-        options,
-        this.dimensionsData,
-        this.selectedDimensions,
-        this.ordinalDimensions,
-        this.onLinesSelection,
-        this.onGeneratedRuns
-      );
+
+      const rerenderChart = () => {
+        refSelection.selectAll('*').remove();
+        renderParallelCoordinates(
+          refSelection,
+          options,
+          this.dimensionsData,
+          this.selectedDimensions,
+          this.ordinalDimensions,
+          this.onLinesSelection,
+          this.onGeneratedRuns,
+          rerenderChart
+        );
+      };
+
+      rerenderChart();
     },
     onLinesSelection(selectedLines?: Array<ScenarioData> /* array of selected lines on the PCs plot */): void {
       if (selectedLines && Array.isArray(selectedLines)) {
@@ -136,6 +145,21 @@ export default defineComponent({
     },
     onGeneratedRuns(generatedLines?: Array<ScenarioData> /* array of generated lines on the PCs plot */): void {
       if (generatedLines && Array.isArray(generatedLines)) {
+        //
+        // ensure that any choice label is mapped back to its underlying value
+        this.selectedDimensions.forEach(d => {
+          if (d.choices_labels && d.choices !== undefined) {
+            // update all generatedLines accordingly
+            generatedLines.forEach(gl => {
+              const currLabelValue = (gl[d.name]).toString();
+              const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
+              if (d.choices !== undefined) {
+                gl[d.name] = d.choices[labelIndex];
+              }
+            });
+          }
+        });
+
         this.$emit('generated-scenarios', { scenarios: generatedLines });
       }
     }

@@ -50,7 +50,7 @@
             <model-graph
               :data="graphData"
               :scenario-data="scenarioData"
-              :current-engine="currentEngine"
+              ref="modelGraph"
               @background-click="onBackgroundClick"
               @node-drilldown="onNodeDrilldown"
               @edge-click="showRelation"
@@ -191,6 +191,10 @@ export default {
     scenarios: {
       type: Array,
       required: true
+    },
+    resetLayoutToken: {
+      type: Number,
+      required: true
     }
   },
   emits: [
@@ -246,6 +250,9 @@ export default {
     },
     modelComponents() {
       this.refresh();
+    },
+    resetLayoutToken() {
+      this.resetCAGLayout();
     }
   },
   created() {
@@ -263,7 +270,6 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
-      this.closeDrilldown();
     },
     setActive (activeTab) {
       router.push({ query: { activeTab } }).catch(() => {});
@@ -337,11 +343,19 @@ export default {
     async setEdgeWeights(edgeData) {
       await modelService.updateEdgeParameter(this.currentCAG, edgeData);
       this.selectedEdge.parameter.weights = edgeData.parameter.weights;
-      this.closeDrilldown();
       this.$emit('refresh-model');
     },
     setSensitivityAnalysisType(analysisType) {
       this.$emit('set-sensitivity-analysis-type', analysisType);
+    },
+    async resetCAGLayout() {
+      const modelGraph = this.$refs.modelGraph;
+      if (modelGraph === undefined) return;
+      const graphOptions = modelGraph.renderer.options;
+      const prevStabilitySetting = graphOptions.useStableLayout;
+      graphOptions.useStableLayout = false;
+      await modelGraph.refresh();
+      graphOptions.useStableLayout = prevStabilitySetting;
     }
   }
 };

@@ -10,15 +10,17 @@
         :sensitivity-analysis-type="sensitivityAnalysisType"
         :scenarios="scenarios"
         :current-engine="currentEngine"
+        :reset-layout-token='resetLayoutToken'
         @show-model-parameters="showModelParameters"
         @set-sensitivity-analysis-type="setSensitivityAnalysisType"
-        @refresh-model="refreshModel"
+        @refresh-model="refreshModelAndScenarios"
         @tab-click="tabClick"
       >
         <template #action-bar>
           <action-bar
             :model-summary="modelSummary"
             :scenarios="scenarios"
+            @reset-cag="resetCAGLayout()"
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
             @save-new-scenario="saveNewScenario"
@@ -45,8 +47,10 @@ import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import { getInsightById } from '@/services/insight-service';
 
 const DRAFT_SCENARIO_ID = 'draft';
+const MODEL_MSGS = modelService.MODEL_MSGS;
 
 export default {
   name: 'QuantitativeView',
@@ -75,7 +79,9 @@ export default {
     sensitivityDataTimestamp: null,
 
     // Tracking draft scenario
-    previousScenarioId: null
+    previousScenarioId: null,
+
+    resetLayoutToken: 0
   }),
   computed: {
     ...mapGetters({
@@ -93,23 +99,41 @@ export default {
     },
     projectionSteps() {
       return this.modelSummary.parameter.num_steps;
+    },
+    onMatrixTab() {
+      return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
     }
   },
   watch: {
-    // selectedScenarioId() {
-    //   if (_.isNil(this.scenarios)) return;
-    //   this.fetchSensitivityAnalysisResults();
-    //   const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-    //   if (scenario && scenario.is_valid === false) {
-    //     this.recalculateScenario(scenario);
-    //   }
-    // },
     sensitivityAnalysisType() {
       this.fetchSensitivityAnalysisResults();
+    },
+    selectedScenarioId() {
+      if (this.onMatrixTab) {
+        this.fetchSensitivityAnalysisResults();
+      }
+    },
+    currentCAG() {
+      this.refresh();
+    },
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'data' space
+        if (this.$route.name === 'quantitative' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
+            this.$router.push({
+              query: {
+                insight_id: undefined,
+                activeTab: this.$route.query.activeTab || undefined
+              }
+            });
+          }
+        }
+      },
+      immediate: true
     }
-    // scenarios() {
-    //   this.fetchSensitivityAnalysisResults();
-    // }
   },
   created() {
     // update insight related state
@@ -127,45 +151,89 @@ export default {
       setDraftScenario: 'model/setDraftScenario',
       updateDraftScenarioConstraints: 'model/updateDraftScenarioConstraints',
       setDraftScenarioDirty: 'model/setDraftScenarioDirty',
-      setContextId: 'insightPanel/setContextId'
+      setContextId: 'insightPanel/setContextId',
+      setDataState: 'insightPanel/setDataState'
     }),
+    async updateStateFromInsight(insight_id) {
+      const loadedInsight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedScenarioId) {
+          // this will reload datacube metadata as well as scenario runs
+          this.setSelectedScenarioId(loadedInsight.data_state?.selectedScenarioId);
+        }
+      }
+    },
     async refreshModel() {
-      this.enableOverlay();
+      this.enableOverlay('Getting model data');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
       this.modelComponents = await modelService.getComponents(this.currentCAG);
       this.disableOverlay();
     },
+    async refreshModelAndScenarios() {
+      this.refreshModel();
+      this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+    },
     async refresh() {
       // Basic model data
+      this.enableOverlay('Loading');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
-      let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
-
-      console.log('check quantified', this.modelSummary.is_quantified);
-      // 1. If we have no scenarios at all, then we must sync with inference engines
-      // 2. If we have topology changes, then we should sync with inference engines
-      if (scenarios.length === 0 || this.modelSummary.is_quantified === false) {
+      // If we have topology changes, then we should sync with inference engines
+      if (this.modelSummary.is_quantified === false) {
         // Check model is ready to be used for experiments
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
           this.disableOverlay();
+          if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
+            this.enableOverlay(errors[0]);
+          }
           this.toaster(errors[0], 'error', true);
           console.error(errors);
           return;
         }
       }
-      await this.refreshModel();
+      this.disableOverlay();
 
+      // Check if model is still training
+      if (this.modelSummary.status === modelService.MODEL_STATUS.TRAINING) {
+        const r = await modelService.checkAndUpdateRegisteredStatus(this.modelSummary.id, this.currentEngine);
+        // FIXME: use status code
+        if (r.status === 'training') {
+          this.enableOverlay(MODEL_MSGS.MODEL_TRAINING);
+          this.toaster(MODEL_MSGS.MODEL_TRAINING, 'error', true);
+          return;
+        }
+      }
+
+      let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+
+      await this.refreshModel();
 
       if (scenarios.length === 0) {
         // Now we are up to date, create base scenario
-        await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
-        scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+        this.enableOverlay('Creating baseline scenario');
+        try {
+          await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+          scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+        } catch (error) {
+          console.error(error);
+          this.toaster(error && error.message ? error.message : error, 'error', true);
+          this.disableOverlay();
+          return;
+        }
+        this.disableOverlay();
       }
 
       // Check if draft scenario is in play
       if (!_.isNil(this.draftScenario) && this.draftScenario.model_id === this.currentCAG) {
-        console.log('restoring draft');
         scenarios.push(this.draftScenario);
       } else {
         this.setDraftScenario(null);
@@ -178,6 +246,28 @@ export default {
         scenarioId = scenarios.find(d => d.is_baseline).id;
       }
       this.setSelectedScenarioId(scenarioId);
+
+
+      // const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      // if (selectedScenario && selectedScenario.is_valid === false) {
+      //   this.runScenario();
+      // }
+
+      if (this.onMatrixTab) {
+        this.fetchSensitivityAnalysisResults();
+      }
+
+      this.updateDataState();
+    },
+    updateDataState() {
+      // save the scenario-id in the insight store so that it will be part of any insight captured from this view
+      const dataState = {
+        selectedScenarioId: this.selectedScenarioId,
+        currentEngine: this.currentEngine,
+        modelName: this.modelSummary.name,
+        nodesCount: this.modelComponents.nodes.length
+      };
+      this.setDataState(dataState);
     },
     revertDraftChanges() {
       if (!_.isNil(this.previousScenarioId)) {
@@ -295,9 +385,9 @@ export default {
 
       if (_.isEmpty(selectedScenario)) return;
 
-      this.enableOverlay('Running experiment');
 
       // 0. Refresh
+      this.enableOverlay('Synchronizing model');
       if (this.modelSummary.status === 0) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
@@ -307,8 +397,10 @@ export default {
       if (selectedScenario.is_valid === false) {
         modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
       }
+      this.disableOverlay();
 
       // 2. Run experiment and wait for results
+      this.enableOverlay(`Running experiment on ${this.currentEngine}`);
       let experimentId = 0;
       let result = null;
       try {
@@ -387,6 +479,9 @@ export default {
       if (tab === 'matrix') {
         this.fetchSensitivityAnalysisResults();
       }
+    },
+    resetCAGLayout() {
+      this.resetLayoutToken = Date.now();
     }
   }
 };

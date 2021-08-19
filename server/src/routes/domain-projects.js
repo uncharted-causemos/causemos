@@ -15,10 +15,11 @@ router.put('/:id', asyncHandler(async (req, res) => {
 }));
 
 /**
- * GET a list of insights
+ * GET a list of domain projects
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const result = await domainProjectService.getAllProjects();
+  const filterParams = req.query;
+  const result = await domainProjectService.getAllProjects(filterParams);
   res.json(result);
 }));
 

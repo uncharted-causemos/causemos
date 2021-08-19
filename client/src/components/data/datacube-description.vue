@@ -32,7 +32,7 @@
         v-if="metadata.geography.country"
         class="metadata-row"
       >
-        <b>Country: </b> {{ metadata.geography.country[0] }}
+        <b>Country: </b> {{ metadata.geography.country.join(", ") }}
       </div>
       <div class="metadata-row">
         <b>Dataset/Model: </b> {{ metadata.name }}

@@ -1,10 +1,12 @@
 import API from '@/api/api';
-import { Filters } from '@/types/Filters';
 
-const PROJECT_LIMIT = 500;
+export interface DomainProjectFilterFields {
+  type?: string;
+  name?: string;
+}
 
-const getProjects = async (filters: Filters) => {
-  const result = await API.get('domain-projects', { params: { filters: filters, size: PROJECT_LIMIT } });
+const getProjects = async (fetchParams: DomainProjectFilterFields) => {
+  const result = await API.get('domain-projects', { params: fetchParams });
   return result.data;
 };
 

@@ -64,7 +64,7 @@
       <template v-slot:datacube-description>
         <model-description
           :metadata="metadata"
-          @update-attribute-visibility="refreshMetadata"
+          @refresh-metadata="refreshMetadata"
         />
       </template>
       <template #temporal-aggregation-config>
@@ -122,12 +122,11 @@
             :selected-temporal-aggregation="selectedTemporalAggregation"
             :regional-data="regionalData"
             :output-source-specs="outputSpecs"
-            :deselected-region-ids="deselectedRegionIds"
             :selected-breakdown-option="breakdownOption"
             :temporal-breakdown-data="temporalBreakdownData"
             :selected-timeseries-points="selectedTimeseriesPoints"
+            :selected-region-ids="selectedRegionIds"
             @toggle-is-region-selected="toggleIsRegionSelected"
-            @set-all-regions-selected="setAllRegionsSelected"
             @set-selected-admin-level="setSelectedAdminLevel"
             @set-breakdown-option="setBreakdownOption"
           />
@@ -140,13 +139,13 @@
 <script lang="ts">
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { computed, ComputedRef, defineComponent, ref, watchEffect } from 'vue';
+import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
-import { DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
+import { DatacubeFeature, DimensionInfo, ModelPublishingStep } from '@/types/Datacube';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import { getRandomNumber } from '@/utils/random';
 import { mapActions, mapGetters, useStore } from 'vuex';
@@ -154,6 +153,7 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import DropdownButton from '@/components/dropdown-button.vue';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { updateDatacube } from '@/services/new-datacube-service';
@@ -163,8 +163,9 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
-import { Insight, ViewState } from '@/types/Insight';
+import { DataState, Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 
 const DRILLDOWN_TABS = [
   {
@@ -226,6 +227,17 @@ export default defineComponent({
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption
+    );
+
     const modelRunsFetchedAt = ref(0);
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
@@ -277,10 +289,14 @@ export default defineComponent({
     ]);
 
     const isDescriptionView = ref<boolean>(true);
+    const outputs = ref([]) as Ref<DatacubeFeature[]>;
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     watchEffect(() => {
       if (metadata.value) {
         store.dispatch('insightPanel/setContextId', [metadata.value.id]);
+
+        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
         // set initial output variable index
         let initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
@@ -294,6 +310,7 @@ export default defineComponent({
           [metadata.value.id]: initialOutputIndex
         };
         store.dispatch('app/setDatacubeCurrentOutputsMap', defaultFeature);
+        mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
 
@@ -303,6 +320,33 @@ export default defineComponent({
       } else {
         isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
+    });
+
+    watchEffect(() => {
+      const dataState: DataState = {
+        selectedModelId: selectedModelId.value,
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value,
+        datacubeTitles: [{
+          datacubeName: metadata.value?.name ?? '',
+          datacubeOutputName: mainModelOutput.value?.display_name ?? ''
+        }],
+        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
+      };
+      const viewState: ViewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
+      };
+
+      store.dispatch('insightPanel/setViewState', viewState);
+      store.dispatch('insightPanel/setDataState', dataState);
     });
 
     const setBreakdownOption = (newValue: string | null) => {
@@ -328,7 +372,8 @@ export default defineComponent({
       selectedSpatialAggregation,
       breakdownOption,
       selectedTimestamp,
-      setSelectedTimestamp
+      setSelectedTimestamp,
+      selectedRegionIds
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -339,12 +384,8 @@ export default defineComponent({
     );
 
     const {
-      regionalData,
-      outputSpecs,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected
-    } = useRegionalData(
+      outputSpecs
+    } = useOutputSpecs(
       selectedModelId,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
@@ -353,6 +394,13 @@ export default defineComponent({
       selectedTimeseriesPoints
     );
 
+    const {
+      regionalData
+    } = useRegionalData(
+      outputSpecs,
+      breakdownOption,
+      datacubeHierarchy
+    );
     watchEffect(() => {
       const dataState = {
         selectedModelId: selectedModelId.value,
@@ -399,9 +447,6 @@ export default defineComponent({
       regionalData,
       outputSpecs,
       isDescriptionView,
-      deselectedRegionIds,
-      toggleIsRegionSelected,
-      setAllRegionsSelected,
       currentOutputIndex,
       setSelectedTimestamp,
       visibleTimeseriesData,
@@ -417,7 +462,9 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedBaseLayer,
       selectedDataLayer,
-      datacubeCurrentOutputsMap
+      datacubeCurrentOutputsMap,
+      toggleIsRegionSelected,
+      selectedRegionIds
     };
   },
   watch: {
@@ -471,7 +518,7 @@ export default defineComponent({
         // we have at least one public insight, which we should use to fetch view configurations
         const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
         const viewConfig = defaultInsight.view_state;
-        if (viewConfig) {
+        if (viewConfig && defaultInsight.id === this.metadata?.id) {
           (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
           if (viewConfig.temporalAggregation) {
@@ -636,6 +683,7 @@ export default defineComponent({
             delete p.related_features;
           }
         });
+
         //
         // update server data
         //

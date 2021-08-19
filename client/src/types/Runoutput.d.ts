@@ -2,9 +2,19 @@
 // Types related to model/indicator run outputs
 
 import { AdminLevel } from '@/types/Enums';
+import { AnalysisMapRange } from './Common';
 
 export interface OutputSpecWithId extends OutputSpec {
   id: string; // User defined id for identifying the output for this spec
+}
+
+export interface OutputStatWithZoom extends AnalysisMapRange {
+  zoom: number;
+}
+
+export interface OutputStatsResult {
+  outputSpecId: string;
+  stats: OutputStatWithZoom[];
 }
 
 export interface OutputSpec {

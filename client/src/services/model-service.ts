@@ -18,8 +18,12 @@ import {
 const MODEL_STATUS = {
   UNSYNCED: 0,
   TRAINING: 1,
-  READY: 2,
-  UNSYNCED_TOPOLOGY: 3
+  READY: 2
+};
+
+const MODEL_MSGS = {
+  MODEL_STALE: 'Model is stale',
+  MODEL_TRAINING: 'Model training is in progress, please check back in a few minutes'
 };
 
 const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSummary[]; size: number; from: number }> => {
@@ -129,8 +133,8 @@ const removeModel = async (modelId: string) => {
   return result.data;
 };
 
-const duplicateModel = async (modelId: string) => {
-  const result = await API.post(`cags/${modelId}`);
+const duplicateModel = async (modelId: string, name: string) => {
+  const result = await API.post(`cags/${modelId}`, { name });
   return result.data;
 };
 
@@ -221,7 +225,7 @@ const initializeModel = async (modelId: string) => {
   const errors = [];
 
   if (model.is_stale === true) {
-    errors.push('Model is stale');
+    errors.push(MODEL_MSGS.MODEL_STALE);
   }
   // if (model.is_quantified === false) {
   //   errors.push('Model is not quantified');
@@ -235,19 +239,10 @@ const initializeModel = async (modelId: string) => {
     try {
       const r = await syncModelWithEngine(modelId, engine);
       if (r.status === MODEL_STATUS.TRAINING) {
-        errors.push('Model training is in progress, please check back in a few minutes');
+        errors.push(MODEL_MSGS.MODEL_TRAINING);
       }
     } catch (error) {
       errors.push(error.response.data);
-    }
-    return errors;
-  }
-
-  // Model is still training, check and upate the status
-  if (model.status === MODEL_STATUS.TRAINING) {
-    const r = await checkAndUpdateRegisteredStatus(modelId, engine);
-    if (r === MODEL_STATUS.TRAINING) {
-      errors.push('Model training is in progress, please check back in a few minutes');
     }
     return errors;
   }
@@ -487,6 +482,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary, nodes: Node
     await createScenario(scenario);
   } catch (error) {
     console.log(error);
+    throw new Error(`Failed creating baseline scenario ${modelSummary.parameter.engine}`);
   }
 };
 
@@ -677,7 +673,12 @@ const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptPro
   const result = _.cloneDeep(constraints);
   nodeParameters.forEach(n => {
     const concept = n.concept;
-    const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+    // const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
+    const timeseries: any = _.get(n.parameter, 'timeseries', []);
+    let initialValue = 0;
+    if (timeseries.length > 0) {
+      initialValue = timeseries[timeseries.length - 1].value;
+    }
 
     const current = result.find(c => c.concept === concept);
     if (!_.isNil(current)) {
@@ -748,5 +749,6 @@ export default {
   injectStepZero,
 
   ENGINE_OPTIONS,
-  MODEL_STATUS
+  MODEL_STATUS,
+  MODEL_MSGS
 };

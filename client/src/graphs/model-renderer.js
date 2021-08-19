@@ -291,7 +291,7 @@ export default class ModelRenderer extends SVGRenderer {
       .text(d => controlStyles[d.data.polarity].text);
   }
 
-  renderHistoricalAndProjections(selectedScenarioId, currentEngine) {
+  renderHistoricalAndProjections(selectedScenarioId) {
     const chart = this.chart;
 
     chart.selectAll('.node-ui').each((datum, index, nodes) => {
@@ -359,9 +359,7 @@ export default class ModelRenderer extends SVGRenderer {
 
       const runOptions = {
         selectedScenarioId,
-        miniGraph: true,
-        // Delphi determines the initial value via sampling, not with aggregation functions
-        shouldDrawInitialValue: currentEngine !== 'delphi'
+        miniGraph: true
       };
       const renderOptions = {
         margin: {

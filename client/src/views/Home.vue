@@ -176,7 +176,6 @@ import DomainDatacubeProjectCard from '@/components/domain-datacube-project-card
 import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { Project, DomainProject, KnowledgeBase } from '@/types/Common';
-import filtersUtil from '@/utils/filters-util';
 import domainProjectService from '@/services/domain-project-service';
 import { DatacubeType } from '@/types/Enums';
 
@@ -271,9 +270,10 @@ export default defineComponent({
     async refreshDomainProjects() {
       this.enableOverlay('Loading projects');
 
-      const projectsSearchFilters = filtersUtil.newFilters();
-      filtersUtil.addSearchTerm(projectsSearchFilters, 'type', 'model', 'and', false); // NOTE: only domain-model projects are supported
-      const existingProjects: DomainProject[] = await domainProjectService.getProjects(projectsSearchFilters);
+      const domainProjectSearchFields = { // DomainProjectFilterFields
+        type: 'model'
+      };
+      const existingProjects: DomainProject[] = await domainProjectService.getProjects(domainProjectSearchFields);
 
       this.projectsListDomainDatacubes = existingProjects;
 

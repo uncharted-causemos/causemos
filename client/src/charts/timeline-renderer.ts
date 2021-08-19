@@ -14,6 +14,11 @@ const Y_AXIS_WIDTH = 40;
 const PADDING_TOP = 10;
 const PADDING_RIGHT = 40;
 
+const CONTEXT_RANGE_FILL = SELECTED_COLOR;
+const CONTEXT_RANGE_STROKE = SELECTED_COLOR_DARK;
+const CONTEXT_RANGE_OPACITY = 0.4;
+const CONTEXT_TIMESERIES_OPACITY = 0.2;
+
 // The type of value can't be more specific than `any`
 //  because under the hood d3.tickFormat requires d3.NumberType.
 // It correctly converts, but its TypeScript definitions don't
@@ -52,12 +57,16 @@ export default function(
   width: number,
   height: number,
   selectedTimestamp: number,
-  onTimestampSelected: (timestamp: number) => void,
   breakdownOption: string | null,
-  selectedTimestampRange: {start: number; end: number} | null
+  onTimestampSelected: (timestamp: number) => void,
+  onTimestampRangeSelected: (start: number, end: number) => void
 ) {
-  const groupElement = selection.append('g');
-  const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
+  selection.selectAll('*').remove();
+
+  const groupElement = selection.append('g')
+    .classed('groupElement', true);
+
+  const [xExtent, yExtent] = calculateExtents(timeseriesList);
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('Unable to derive extent from data', timeseriesList);
     // This function must always return a function to call when
@@ -92,13 +101,50 @@ export default function(
   );
   timeseriesList.forEach(timeseries => {
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1
-      renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
-      // also, draw dots for all the timeseries points
+      renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);
       renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
     } else { // draw a spot for timeseries that are only 1 long
       renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
     }
   });
+
+  //
+  // render brush
+  //
+  groupElement.selectAll('.yAxis').remove();
+  groupElement
+    .selectAll('.segment-line')
+    .attr('opacity', CONTEXT_TIMESERIES_OPACITY);
+
+  const brushHeight = height - X_AXIS_HEIGHT; // the brush would be placed on the x-axis
+
+  // Create brush object and position over context axis
+  const brush = d3
+    .brushX()
+    .extent([
+      [xScale.range()[0], 0],
+      [xScale.range()[1], X_AXIS_HEIGHT]
+    ])
+    .on('brush', brushed);
+
+  groupElement
+    .append('g') // create brush element and move to default
+    .attr('transform', translate(0, brushHeight)) // move brush overlay to bottom
+    .classed('brush', true)
+    .call(brush)
+    // set initial brush selection to entire context
+    .call(brush.move, xScale.range())
+  ;
+  selection
+    .selectAll('.brush > .selection')
+    .attr('fill', CONTEXT_RANGE_FILL)
+    .attr('stroke', CONTEXT_RANGE_STROKE)
+    .attr('opacity', CONTEXT_RANGE_OPACITY);
+
+  function brushed({ selection }: { selection: number[] }) {
+    const [x0, x1] = selection.map(xScale.invert);
+    onTimestampRangeSelected(x0, x1);
+  }
 
   generateSelectableTimestamps(
     groupElement,
@@ -120,12 +166,8 @@ export default function(
   updateTimestampElements(
     selectedTimestamp,
     timestampElements,
-    timeseriesList,
     xScale,
-    yScale,
-    valueFormatter,
-    timestampFormatter,
-    selectedTimestampRange
+    timestampFormatter
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
@@ -133,29 +175,15 @@ export default function(
     updateTimestampElements(
       timestamp,
       timestampElements,
-      timeseriesList,
       xScale,
-      yScale,
-      valueFormatter,
-      timestampFormatter,
-      selectedTimestampRange
+      timestampFormatter
     );
   };
 }
 
-function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {start: number; end: number} | null) {
+function calculateExtents(timeseriesList: Timeseries[]) {
   const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
-  const allTimestampDataPoints = allPoints.map(point => point.timestamp);
-  let xExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
-  if (selectedTimestampRange !== null) {
-    // the user requested to render the timeseries chart within a specific range
-    // so we should respect that and enlarge the extent to include the selectedTimestampRange, as needed
-    //  this would enable the zooming effect
-    xExtent = [selectedTimestampRange.start, selectedTimestampRange.end];
-  } else {
-    xExtent = d3.extent(allTimestampDataPoints);
-  }
-
+  const xExtent = d3.extent(allPoints.map(point => point.timestamp));
   const yExtent = d3.extent(allPoints.map(point => point.value));
   return [xExtent, yExtent];
 }
@@ -229,8 +257,7 @@ function generateSelectableTimestamps(
       .style('cursor', 'pointer')
       .on('mouseenter', () => timestampMarker.attr('visibility', 'visible'))
       .on('mouseleave', () => timestampMarker.attr('visibility', 'hidden'))
-      .on('mousedown', () => onTimestampSelected(timestamp))
-    ;
+      .on('mousedown', () => onTimestampSelected(timestamp));
   });
 }
 
@@ -333,12 +360,8 @@ function generateSelectedTimestampElements(
 function updateTimestampElements(
   timestamp: number | null,
   { selectedTimestampGroup, valueGroups }: TimestampElements,
-  timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  valueFormatter: (value: any) => string,
-  timestampFormatter: (timestamp: number) => string,
-  selectedTimestampRange: {start: number; end: number} | null
+  timestampFormatter: (timestamp: number) => string
 ) {
   if (timestamp === null) {
     // Hide everything
@@ -346,19 +369,6 @@ function updateTimestampElements(
     valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
     return;
   }
-  // check if the selectedTimestamp is out of the timeseries range
-  const [xExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
-  if (xExtent[0] === undefined || xExtent[1] === undefined) {
-    console.error('Unable to derive extent from data', timeseriesList);
-  } else {
-    if (timestamp < xExtent[0] || timestamp > xExtent[1]) {
-      // Hide everything
-      selectedTimestampGroup.attr('visibility', 'hidden');
-      valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
-      return;
-    }
-  }
-
   // Move selectedTimestamp elements horizontally to the right position
   const selectedXPosition = xScale(timestamp);
   selectedTimestampGroup
@@ -374,32 +384,8 @@ function updateTimestampElements(
     .select('.label-background')
     .attr('width', labelWidth)
     .attr('transform', translate(-labelWidth / 2, 0));
-
-  valueGroups.forEach((valueGroup, index) => {
-    valueGroup.attr('visibility', 'visible');
-    // Adjust the length and vertical position of each dashed line
-    const timeseries = timeseriesList[index];
-    const point = timeseries.points.find(
-      point => point.timestamp === timestamp
-    );
-    if (point === undefined) {
-      // This line doesn't have a value at the selected timestamp,
-      // so hide it and move on
-      valueGroup.attr('visibility', 'hidden');
-      return;
-    }
-    const yPosition = yScale(point.value);
-    const rightEdge = xScale.range()[1];
-    valueGroup
-      .attr('transform', translate(rightEdge, yPosition))
-      .select<SVGLineElement>('line')
-      .attr('x2', -(rightEdge - selectedXPosition));
-    // Display the run's value at this timestamp
-    const labelText = valueGroup
-      .select<SVGTextElement>('text')
-      .text(valueFormatter(point.value));
-    // Resize background to match
-    const { labelWidth } = calculateLabelDimensions(labelText);
-    valueGroup.select('.label-background').attr('width', labelWidth);
-  });
+  // @REVIEW we should not display the value of the marker in the global timeline
+  //  since all timeseries values are normalized between 0 and 1
+  /// for now, just hide the valueGroups
+  valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
 }
