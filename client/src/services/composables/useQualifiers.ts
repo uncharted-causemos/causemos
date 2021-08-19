@@ -35,17 +35,19 @@ const convertResponsesToBreakdownData = (
         };
         breakdownDataList.push(potentiallyExistingEntry);
       }
+      // We've confirmed that potentiallyExistingEntry is not undefined, so
+      //  rename and strengthen Typescript type
       const existingEntry = potentiallyExistingEntry;
       if (existingEntry.data[breakdownVariableName] === undefined) {
         existingEntry.data[breakdownVariableName] = [];
       }
       options.forEach(option => {
-        const { name: optionName, value } = option;
+        const { name: optionId, value } = option;
         let potentiallyExistingOption = existingEntry.data[
           breakdownVariableName
-        ].find(option => option.id === optionName);
+        ].find(option => option.id === optionId);
         if (potentiallyExistingOption === undefined) {
-          potentiallyExistingOption = { id: optionName, values: {} };
+          potentiallyExistingOption = { id: optionId, values: {} };
           existingEntry.data[breakdownVariableName].push(
             potentiallyExistingOption
           );
@@ -129,6 +131,10 @@ export default function useQualifiers(
         timestamp
       )
     );
+    // FIXME: OPTIMIZATION: Placing a separate request for each run eats into
+    //  the maximum number of concurrent requests, resulting in closer to
+    //  serial performance and slowing down other calls. We should update this
+    //  endpoint to accept a list of run IDs so only one request is necessary.
     const responses = await Promise.all(promises);
     if (isCancelled) return;
     qualifierBreakdownData.value = convertResponsesToBreakdownData(
