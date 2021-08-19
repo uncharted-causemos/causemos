@@ -8,7 +8,6 @@ import {
   ModelPublishingStepID,
   FeatureQualifierRoles
 } from '@/types/Enums';
-import { TimeseriesPoint } from './Timeseries';
 
 export interface DatacubeMaintainer {
   name: string;
