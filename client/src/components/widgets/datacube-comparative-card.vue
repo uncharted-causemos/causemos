@@ -60,7 +60,6 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
 import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
@@ -109,8 +108,6 @@ export default defineComponent({
       id,
       selectedTimestamp
     } = toRefs(props);
-
-    const typeBreakdownData = ref([] as NamedBreakdownData[]);
 
     const metadata = useModelMetadata(id);
 
@@ -213,7 +210,6 @@ export default defineComponent({
       temporalBreakdownData
     } = useTimeseriesData(
       metadata,
-      id,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -221,7 +217,8 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      ref([]) // region breakdown
+      ref([]), // region breakdown
+      ref(new Set())
     );
 
     watchEffect(() => {
@@ -245,7 +242,6 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
-      typeBreakdownData,
       metadata,
       mainModelOutput,
       outputs,

@@ -256,7 +256,6 @@ export default defineComponent({
     'on-map-load',
     'set-selected-scenario-ids',
     'select-timestamp',
-    'set-drilldown-data',
     'check-model-metadata-validity',
     'refetch-data',
     'new-runs-mode',
@@ -363,7 +362,6 @@ export default defineComponent({
     const {
       dimensions,
       ordinalDimensionNames,
-      drilldownDimensions,
       runParameterValues
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
@@ -431,7 +429,6 @@ export default defineComponent({
       emitTimestampSelection,
       dimensions,
       ordinalDimensionNames,
-      drilldownDimensions,
       runParameterValues,
       mainModelOutput,
       isModelMetadata,
@@ -521,8 +518,6 @@ export default defineComponent({
         // console.log('user selected: ' + e.scenarios.length);
         this.$emit('set-selected-scenario-ids', selectedScenarios.map(s => s.run_id));
       }
-      // we should emit to update the drilldown data everytime scenario selection changes
-      this.$emit('set-drilldown-data', { drilldownDimensions: this.drilldownDimensions });
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
       this.potentialScenarioCount = e.scenarios.length;

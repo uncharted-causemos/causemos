@@ -11,6 +11,7 @@
       class="breakdown-option-dropdown"
       :items="breakdownOptions"
       :selectedItem="selectedBreakdownOption"
+      :is-dropdown-left-aligned="true"
       @item-selected="emitBreakdownOptionSelection"
     />
     <aggregation-checklist-pane
@@ -24,7 +25,11 @@
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
-      :is-radio-button-mode-active="selectedBreakdownOption !== SpatialAggregationLevel.Region"
+      :checkbox-type="
+        selectedBreakdownOption === SpatialAggregationLevel.Region
+          ? 'checkbox'
+          : 'radio'
+      "
       @toggle-is-item-selected="toggleIsRegionSelected"
       @aggregation-level-change="setSelectedAdminLevel"
     >
@@ -49,24 +54,41 @@
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
       class="checklist-section"
-      v-for="type in visibleTypeBreakdownData"
-      :key="type.name"
+      v-for="qualifierVariable in qualifierBreakdownData"
+      :key="qualifierVariable.name"
       :aggregation-level-count="1"
-      :aggregation-level="1"
-      :aggregation-level-title="type.name"
-      :ordered-aggregation-level-keys="['Total', type.name]"
-      :raw-data="type.data"
+      :aggregation-level="0"
+      :aggregation-level-title="qualifierVariable.name"
+      :ordered-aggregation-level-keys="[qualifierVariable.name]"
+      :raw-data="qualifierVariable.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :units="unit"
+      :checkbox-type="
+        selectedBreakdownOption === qualifierVariable.name ? 'checkbox' : null
+      "
+      :selected-item-ids="
+        selectedBreakdownOption === qualifierVariable.name
+          ? Array.from(selectedQualifierValues)
+          : []
+      "
+      @toggle-is-item-selected="toggleIsQualifierSelected"
     >
       <template #aggregation-description>
-        <!-- TODO: highlighted value should be dynamically populated based
-        on the selected timestamp -->
         <p class="aggregation-description">
-          Showing <strong>placeholder</strong> data.
+          Showing data for
+          <span class="highlighted">{{
+            timestampFormatter(selectedTimestamp)
+          }}</span
+          >.
         </p>
         <p class="aggregation-description">
-          Aggregated by <strong>sum</strong>.
+          Aggregated by
+          <strong>{{
+            selectedSpatialAggregation === ''
+              ? AggregationOption.Mean
+              : selectedSpatialAggregation
+          }}</strong
+          >.
         </p>
       </template>
     </aggregation-checklist-pane>
@@ -119,7 +141,7 @@ export default defineComponent({
       type: Number,
       required: true
     },
-    typeBreakdownData: {
+    qualifierBreakdownData: {
       type: Array as PropType<NamedBreakdownData[]>,
       default: () => []
     },
@@ -155,6 +177,10 @@ export default defineComponent({
       type: Object as PropType<string[] | null>,
       default: null
     },
+    selectedQualifierValues: {
+      type: Object as PropType<Set<string>>,
+      default: () => new Set()
+    },
     selectedBreakdownOption: {
       type: String as PropType<string | null>,
       default: null
@@ -167,13 +193,15 @@ export default defineComponent({
   emits: [
     'set-selected-admin-level',
     'toggle-is-region-selected',
+    'toggle-is-qualifier-selected',
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
     const {
       regionalData,
       temporalBreakdownData,
-      selectedBreakdownOption
+      selectedBreakdownOption,
+      qualifierBreakdownData
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
       emit('set-selected-admin-level', level);
@@ -181,6 +209,13 @@ export default defineComponent({
 
     const toggleIsRegionSelected = (adminLevel: string, regionId: string) => {
       emit('toggle-is-region-selected', adminLevel, regionId);
+    };
+
+    const toggleIsQualifierSelected = (
+      variableName: string,
+      qualifierValue: string
+    ) => {
+      emit('toggle-is-qualifier-selected', qualifierValue);
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
@@ -223,6 +258,12 @@ export default defineComponent({
           value: selectedTemporalAggregationLevel,
           displayName: 'Split by year'
         });
+        options.push(
+          ...qualifierBreakdownData.value.map(({ name }) => ({
+            value: name,
+            displayName: `Split by ${name}`
+          }))
+        );
       }
       return options;
     });
@@ -239,6 +280,7 @@ export default defineComponent({
     return {
       setSelectedAdminLevel,
       toggleIsRegionSelected,
+      toggleIsQualifierSelected,
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
@@ -249,23 +291,6 @@ export default defineComponent({
       AggregationOption,
       SpatialAggregationLevel
     };
-  },
-  computed: {
-    visibleTypeBreakdownData(): NamedBreakdownData[] {
-      // HACK: Filter out any breakdown parameters that duplicate
-      //  an admin level, since they will already be shown in the
-      //  standard admin level breakdown above.
-      // Eventually we will need to disallow models from including
-      //  admin regions as parameters, but this will require some
-      //  thought since some models (e.g. MaxHop) require the user
-      //  to request data for a specific admin region.
-      return this.typeBreakdownData.filter(breakdownParameter => {
-        const isAdminLevelDuplicate = (ADMIN_LEVEL_KEYS as string[]).includes(
-          breakdownParameter.name
-        );
-        return !isAdminLevelDuplicate;
-      });
-    }
   }
 });
 </script>
@@ -293,7 +318,7 @@ export default defineComponent({
 
 .breakdown-option-dropdown {
   display: inline-block;
-  min-width: 100px;
+  width: 100%;
 }
 
 .disabled-dropdown-instructions {
