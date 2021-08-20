@@ -208,6 +208,50 @@ const checklistRowDataFromNode = (
   };
 };
 
+const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortByValue: boolean) => {
+  // Sort top level children (i.e. countries) without values to the bottom
+  //  of the list, since if they had descendants with values, they would
+  //  have values themselves, aggregated up from their descendants
+  const hasOneOrMoreValues = (node: StatefulDataNode) => {
+    return node.bars.length > 0;
+  };
+  if (sortByValue) {
+    newStatefulData.children.sort((nodeA, nodeB) => {
+      const nodeAFirstValue = nodeA.bars.map(bar => bar.value)[0];
+      const nodeBFirstValue = nodeB.bars.map(bar => bar.value)[0];
+      const nodeAValue = _.isNull(nodeAFirstValue) || _.isUndefined(nodeAFirstValue) ? null : nodeAFirstValue;
+      const nodeBValue = _.isNull(nodeBFirstValue) || _.isUndefined(nodeBFirstValue) ? null : nodeBFirstValue;
+      if (_.isNull(nodeAValue) && !_.isNull(nodeBValue)) {
+        // A should be sorted after B
+        return -1;
+      } else if (_.isNull(nodeBValue)) {
+        // B should be sorted after A
+        return 1;
+      }
+      // Sort based on value
+      return nodeAValue! <= nodeBValue! ? 1 : -1;
+    });
+  } else {
+    newStatefulData.children.sort((nodeA, nodeB) => {
+      if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
+        // A should be sorted after B
+        return 1;
+      } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
+        // B should be sorted after A
+        return -1;
+      }
+      // Don't change their order
+      return 0;
+    });
+  }
+  newStatefulData.children.forEach(node => {
+    if (_.has(node, 'children')) {
+      sortHierarchy(node, sortByValue);
+    }
+  });
+  return newStatefulData;
+};
+
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
@@ -275,7 +319,7 @@ export default defineComponent({
       // Whenever the raw data changes, construct a hierarchical data structure
       //  out of it, augmented with a boolean 'expanded' property to keep
       //  track of the state of the component.
-      const newStatefulData = { children: [] as StatefulDataNode[] };
+      const newStatefulData: RootStatefulDataNode = { children: [] as StatefulDataNode[] };
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
         if (rawData.value === null) return;
         // Get the list of values at this aggregation level for each selected
@@ -323,41 +367,7 @@ export default defineComponent({
           });
         });
       });
-      // Sort top level children (i.e. countries) without values to the bottom
-      //  of the list, since if they had descendants with values, they would
-      //  have values themselves, aggregated up from their descendants
-      const hasOneOrMoreValues = (node: StatefulDataNode) => {
-        return node.bars.length > 0;
-      };
-      if (sortByValue.value) {
-        newStatefulData.children.sort((nodeA, nodeB) => {
-          const nodeAFirstValue = nodeA.bars.map(bar => bar.value)[0];
-          const nodeBFirstValue = nodeB.bars.map(bar => bar.value)[0];
-          const nodeAValue = _.isNull(nodeAFirstValue) || _.isUndefined(nodeAFirstValue) ? null : nodeAFirstValue;
-          const nodeBValue = _.isNull(nodeBFirstValue) || _.isUndefined(nodeBFirstValue) ? null : nodeBFirstValue;
-          if (_.isNull(nodeAValue) && !_.isNull(nodeBValue)) {
-            // A should be sorted after B
-            return -1;
-          } else if (_.isNull(nodeBValue)) {
-            // B should be sorted after A
-            return 1;
-          }
-          // Sort based on value
-          return nodeAValue! <= nodeBValue! ? 1 : -1;
-        });
-      } else {
-        newStatefulData.children.sort((nodeA, nodeB) => {
-          if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
-            // A should be sorted after B
-            return 1;
-          } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
-            // B should be sorted after A
-            return -1;
-          }
-          // Don't change their order
-          return 0;
-        });
-      }
+      sortHierarchy(newStatefulData, sortByValue.value);
       statefulData.value = newStatefulData;
     });
 
