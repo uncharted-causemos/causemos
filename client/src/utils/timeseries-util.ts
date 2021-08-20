@@ -67,15 +67,23 @@ export function renderAxes(
   yAxisWidth: number,
   paddingRight: number,
   xAxisHeight: number,
-  xAxisTickCount = 4,
+  // xAxisTickCount = 4,
   yAxisTickCount = 2,
   xAxisTickSizePx = 2
 ) {
+  const firstTimestamp = xScale.domain()[0];
+  const lastTimestamp = xScale.domain()[1];
+  const firstYear = parseInt(timestampFormatter(firstTimestamp));
+  const lastYear = parseInt(timestampFormatter(lastTimestamp));
+  const yearsElapsed = lastYear - firstYear;
+
+  console.log(yearsElapsed);
+
   const xAxis = d3
     .axisBottom(xScale)
     .tickSize(xAxisTickSizePx)
     .tickFormat(timestampFormatter)
-    .ticks(xAxisTickCount);
+    .ticks(yearsElapsed);
   const yAxis = d3
     .axisLeft(yScale)
     .tickSize(width - yAxisWidth - paddingRight)
