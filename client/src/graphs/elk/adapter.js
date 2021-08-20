@@ -227,11 +227,11 @@ const postProcess = (layout) => {
     });
 
     // perfectly straight edges can be ugly - adding simple points to give the d3 spline function something to work with.
-    // if (bendPoints.length === 0 && edge.points[0].x < edge.points[1].x && Math.abs(edge.points[0].y - edge.points[1].y) > 10) {
-    //   edge.points.splice(1, 0, ..._.cloneDeep(edge.points));
-    //   edge.points[1].x += 10;
-    //   edge.points[2].x -= 10;
-    // }
+    if (bendPoints.length === 0 && edge.points[0].x < edge.points[1].x && Math.abs(edge.points[0].y - edge.points[1].y) > 10) {
+      edge.points.splice(1, 0, ..._.cloneDeep(edge.points));
+      edge.points[1].x += 10;
+      edge.points[2].x -= 10;
+    }
   };
 
   const splitLineSegments = (edge) => {
