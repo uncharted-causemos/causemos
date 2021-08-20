@@ -147,6 +147,7 @@ class TestRenderer extends SVGRenderer {
           return d.nodes ? '#F80' : '#2EF';
         })
         .style('stroke', '#888')
+        .style('stroke-opacity', 0.4)
         .style('stroke-width', 2);
 
       if (selection.datum().type === 'custom') {
@@ -171,7 +172,7 @@ class TestRenderer extends SVGRenderer {
       .attr('cursor', 'pointer')
       .attr('d', d => pathFn(d.points))
       .style('fill', 'none')
-      .style('stroke', '#000')
+      .style('stroke', '#02D')
       .style('stroke-width', 2)
       .attr('marker-end', d => {
         const source = d.data.source.replace(/\s/g, '');
@@ -234,7 +235,14 @@ export default {
                 {
                   ...nd('L3.2'),
                   nodes: [
-                    nd('L4.1')
+                    {
+                      ...nd('L4.1'),
+                      nodes: [
+                        {
+                          ...nd('L5.1')
+                        }
+                      ]
+                    }
                   ]
                 }
               ],
@@ -251,7 +259,9 @@ export default {
         { id: 'e1', source: 'L3.1', target: 'L3.2' },
         { id: 'e2', source: 'L1.2', target: 'L3.1' },
         { id: 'e3', source: 'L1.1', target: 'L3.2' },
-        { id: 'e4', source: 'L4.1', target: 'L3.1' }
+        { id: 'e4', source: 'L4.1', target: 'L3.1' },
+        { id: 'e5', source: 'L5.1', target: 'L3.1' },
+        { id: 'e6', source: 'L1.1', target: 'L4.1' }
       ]
     });
 
