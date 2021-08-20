@@ -1,6 +1,6 @@
 <template>
   <div class="datacube-card-container">
-    <div class="insight-capture capture-box">
+    <div class="capture-box">
       <header>
         <slot name="datacube-model-header" />
         <slot name="datacube-model-header-collapse" />

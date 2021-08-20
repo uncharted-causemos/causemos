@@ -22,117 +22,119 @@
         />
       </div>
     </div>
-    <main>
+    <main class="main">
       <analytical-questions-and-insights-panel />
-    <!-- TODO: whether a card is actually expanded or not will
-    be dynamic later -->
-    <datacube-card
-      :class="{ 'datacube-expanded': true }"
-      :isExpanded="false"
-      :selected-admin-level="selectedAdminLevel"
-      :selected-model-id="selectedModelId"
-      :all-model-run-data="allModelRunData"
-      :selected-scenario-ids="selectedScenarioIds"
-      :selected-timestamp="selectedTimestamp"
-      :selected-temporal-aggregation="selectedTemporalAggregation"
-      :selected-temporal-resolution="selectedTemporalResolution"
-      :selected-spatial-aggregation="selectedSpatialAggregation"
-      :regional-data="regionalData"
-      :output-source-specs="outputSpecs"
-      :is-description-view="isDescriptionView"
-      :metadata="metadata"
-      :timeseries-data="visibleTimeseriesData"
-      :relative-to="relativeTo"
-      :breakdown-option="breakdownOption"
-      :baseline-metadata="baselineMetadata"
-      :selected-timeseries-points="selectedTimeseriesPoints"
-      :selectedBaseLayer="selectedBaseLayer"
-      :selectedDataLayer="selectedDataLayer"
-      @set-selected-scenario-ids="setSelectedScenarioIds"
-      @select-timestamp="updateSelectedTimestamp"
-      @check-model-metadata-validity="checkModelMetadataValidity"
-      @update-desc-view="updateDescView"
-      @set-relative-to="setRelativeTo"
-    >
-      <template v-slot:datacube-model-header>
-        <datacube-model-header
-          class="scenario-header"
+      <!-- TODO: whether a card is actually expanded or not will
+      be dynamic later -->
+      <div class="main insight-capture">
+        <datacube-card
+          :class="{ 'datacube-expanded': true }"
+          :isExpanded="false"
+          :selected-admin-level="selectedAdminLevel"
+          :selected-model-id="selectedModelId"
+          :all-model-run-data="allModelRunData"
+          :selected-scenario-ids="selectedScenarioIds"
+          :selected-timestamp="selectedTimestamp"
+          :selected-temporal-aggregation="selectedTemporalAggregation"
+          :selected-temporal-resolution="selectedTemporalResolution"
+          :selected-spatial-aggregation="selectedSpatialAggregation"
+          :regional-data="regionalData"
+          :output-source-specs="outputSpecs"
+          :is-description-view="isDescriptionView"
           :metadata="metadata"
-        />
-      </template>
-      <template v-slot:datacube-description>
-        <model-description
-          :metadata="metadata"
-          @refresh-metadata="refreshMetadata"
-        />
-      </template>
-      <template #temporal-aggregation-config>
-        <dropdown-button
-          class="dropdown-config"
-          :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
-          :inner-button-label="'Temporal Aggregation'"
-          :items="Object.values(AggregationOption)"
-          :selected-item="selectedTemporalAggregation"
-          @item-selected="handleTemporalAggregationSelection"
-        />
-      </template>
-      <template #temporal-resolution-config>
-        <dropdown-button
-          class="dropdown-config"
-          :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
-          :inner-button-label="'Temporal Resolution'"
-          :items="Object.values(TemporalResolutionOption)"
-          :selected-item="selectedTemporalResolution"
-          @item-selected="handleTemporalResolutionSelection"
-        />
-      </template>
-      <template #spatial-aggregation-config>
-        <dropdown-button
-          class="dropdown-config"
-          :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
-          :inner-button-label="'Spatial Aggregation'"
-          :items="Object.values(AggregationOption)"
-          :selected-item="selectedSpatialAggregation"
-          @item-selected="handleSpatialAggregationSelection"
-        />
-        <map-dropdown
+          :timeseries-data="visibleTimeseriesData"
+          :relative-to="relativeTo"
+          :breakdown-option="breakdownOption"
+          :baseline-metadata="baselineMetadata"
+          :selected-timeseries-points="selectedTimeseriesPoints"
           :selectedBaseLayer="selectedBaseLayer"
           :selectedDataLayer="selectedDataLayer"
-          @set-base-layer="setBaseLayer"
-          @set-data-layer="setDataLayer"
-        />
-      </template>
-    </datacube-card>
-    <drilldown-panel
-        class="drilldown"
-        :is-open="activeDrilldownTab !== null"
-        :tabs="drilldownTabs"
-        :active-tab-id="activeDrilldownTab"
-      >
-        <template #content>
-          <breakdown-pane
-            v-if="activeDrilldownTab ==='breakdown'"
-            :selected-admin-level="selectedAdminLevel"
-            :qualifier-breakdown-data="qualifierBreakdownData"
-            :selected-model-id="selectedModelId"
-            :selected-scenario-ids="selectedScenarioIds"
-            :selected-timestamp="selectedTimestamp"
-            :selected-spatial-aggregation="selectedSpatialAggregation"
-            :selected-temporal-aggregation="selectedTemporalAggregation"
-            :regional-data="regionalData"
-            :output-source-specs="outputSpecs"
-            :selected-breakdown-option="breakdownOption"
-            :temporal-breakdown-data="temporalBreakdownData"
-            :selected-timeseries-points="selectedTimeseriesPoints"
-            :selected-region-ids="selectedRegionIds"
-            :selected-qualifier-values="selectedQualifierValues"
-            @toggle-is-region-selected="toggleIsRegionSelected"
-            @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-            @set-selected-admin-level="setSelectedAdminLevel"
-            @set-breakdown-option="setBreakdownOption"
-          />
-        </template>
-    </drilldown-panel>
+          @set-selected-scenario-ids="setSelectedScenarioIds"
+          @select-timestamp="updateSelectedTimestamp"
+          @check-model-metadata-validity="checkModelMetadataValidity"
+          @update-desc-view="updateDescView"
+          @set-relative-to="setRelativeTo"
+        >
+          <template v-slot:datacube-model-header>
+            <datacube-model-header
+              class="scenario-header"
+              :metadata="metadata"
+            />
+          </template>
+          <template v-slot:datacube-description>
+            <model-description
+              :metadata="metadata"
+              @refresh-metadata="refreshMetadata"
+            />
+          </template>
+          <template #temporal-aggregation-config>
+            <dropdown-button
+              class="dropdown-config"
+              :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
+              :inner-button-label="'Temporal Aggregation'"
+              :items="Object.values(AggregationOption)"
+              :selected-item="selectedTemporalAggregation"
+              @item-selected="handleTemporalAggregationSelection"
+            />
+          </template>
+          <template #temporal-resolution-config>
+            <dropdown-button
+              class="dropdown-config"
+              :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
+              :inner-button-label="'Temporal Resolution'"
+              :items="Object.values(TemporalResolutionOption)"
+              :selected-item="selectedTemporalResolution"
+              @item-selected="handleTemporalResolutionSelection"
+            />
+          </template>
+          <template #spatial-aggregation-config>
+            <dropdown-button
+              class="dropdown-config"
+              :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
+              :inner-button-label="'Spatial Aggregation'"
+              :items="Object.values(AggregationOption)"
+              :selected-item="selectedSpatialAggregation"
+              @item-selected="handleSpatialAggregationSelection"
+            />
+            <map-dropdown
+              :selectedBaseLayer="selectedBaseLayer"
+              :selectedDataLayer="selectedDataLayer"
+              @set-base-layer="setBaseLayer"
+              @set-data-layer="setDataLayer"
+            />
+          </template>
+        </datacube-card>
+        <drilldown-panel
+            class="drilldown"
+            :is-open="activeDrilldownTab !== null"
+            :tabs="drilldownTabs"
+            :active-tab-id="activeDrilldownTab"
+          >
+            <template #content>
+              <breakdown-pane
+                v-if="activeDrilldownTab ==='breakdown'"
+                :selected-admin-level="selectedAdminLevel"
+                :qualifier-breakdown-data="qualifierBreakdownData"
+                :selected-model-id="selectedModelId"
+                :selected-scenario-ids="selectedScenarioIds"
+                :selected-timestamp="selectedTimestamp"
+                :selected-spatial-aggregation="selectedSpatialAggregation"
+                :selected-temporal-aggregation="selectedTemporalAggregation"
+                :regional-data="regionalData"
+                :output-source-specs="outputSpecs"
+                :selected-breakdown-option="breakdownOption"
+                :temporal-breakdown-data="temporalBreakdownData"
+                :selected-timeseries-points="selectedTimeseriesPoints"
+                :selected-region-ids="selectedRegionIds"
+                :selected-qualifier-values="selectedQualifierValues"
+                @toggle-is-region-selected="toggleIsRegionSelected"
+                @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+                @set-selected-admin-level="setSelectedAdminLevel"
+                @set-breakdown-option="setBreakdownOption"
+              />
+            </template>
+        </drilldown-panel>
+      </div>
     </main>
   </div>
 </template>
@@ -798,7 +800,7 @@ export default defineComponent({
   border:1px solid red !important;
 }
 
-main {
+.main {
   flex: 1;
   display: flex;
   min-height: 0;

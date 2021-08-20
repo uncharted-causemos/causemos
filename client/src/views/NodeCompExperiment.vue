@@ -19,7 +19,7 @@
         <span v-if="stepsBeforeCanConfirm.length > 0">{{ stepsBeforeCanConfirm[0] }}</span>
       </div>
     </full-screen-modal-header>
-    <main>
+    <main class="insight-capture">
       <datacube-card
         :class="{ 'datacube-expanded': true }"
         :selected-admin-level="selectedAdminLevel"
