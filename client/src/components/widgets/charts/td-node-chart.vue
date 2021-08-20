@@ -69,10 +69,24 @@ export default defineComponent({
       constraints
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
-      const projectionStartTimestamp =
-        projections.value.length === 0
-          ? 0
-          : projections.value[0].values[0].timestamp;
+      let projectionStartTimestamp = 0;
+      if (projections.value.length > 0) {
+        // Get the first timestamp from one of the projections.
+        //  Prefer to check the selectedScenario since it's less likely to be
+        //  stale, and fallback to the first scenario if, for some reason, the
+        //  selectedScenario can't be found.
+        const selectedScenario =
+          projections.value.find(
+            ({ scenarioId }) => scenarioId === selectedScenarioId.value
+          ) ?? projections.value[0];
+        if (selectedScenario.values.length === 0) {
+          console.error(
+            `When deriving the projection start timestamp, scenario with ID ${selectedScenario.scenarioId} had no points.`
+          );
+        } else {
+          projectionStartTimestamp = selectedScenario.values[0].timestamp;
+        }
+      }
       return historicalTimeseries.value.filter(
         point => point.timestamp < projectionStartTimestamp
       );
