@@ -595,18 +595,18 @@ function renderParallelCoordinates(
       });
     if (brushesCount === 0) {
       // cancel any previous selection; turn every line into grey
-      if (event && !event.shiftKey) {
+      if (event && !event.shiftKey && !d) {
         currentLineSelection.length = 0;
         cancelPrevLineSelection(svgElement);
       }
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
-
       const selectedLineData = selectedLine.datum() as ScenarioData;
+
       if (selectedLineData) {
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
           deselectLine(selectedLine, event, lineStrokeWidthNormal);
-          currentLineSelection = _.remove(currentLineSelection, (data) => data.run_id === selectedLineData.run_id);
+          currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
         } else {
           selectLine(selectedLine, event, d, lineStrokeWidthSelected);
           currentLineSelection.push(selectedLineData);
