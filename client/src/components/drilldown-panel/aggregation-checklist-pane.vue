@@ -22,6 +22,9 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <button class="sort-by" @click="sortByValue = !sortByValue">
+      {{ sortByValue ? 'Sort By Name' : 'Sort By Value'}}
+    </button>
     <div class="flex-row">
       <div
         v-if="isRadioButtonModeActive"
@@ -37,7 +40,7 @@
         />
         <span>All</span>
       </div>
-      <div v-if="units !== null" class="units" @click="sortByValue = !sortByValue">
+      <div v-if="units !== null" class="units">
         {{ units }}
       </div>
       <!-- Render an empty div so the 'all-radio-button' stays left-aligned -->
@@ -570,5 +573,10 @@ h5 {
   & *:only-child {
     margin-left: auto;
   }
+}
+
+.sort-by {
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 </style>
