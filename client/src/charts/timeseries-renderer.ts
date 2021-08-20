@@ -33,7 +33,7 @@ const DASHED_LINE = {
   opacity: 0.5
 };
 
-const SELECTED_TIMESTAMP_WIDTH = 2;
+const SELECTED_TIMESTAMP_WIDTH = 1;
 const SELECTABLE_TIMESTAMP_OPACITY = 0.5;
 
 // A collection of elements that are used to dynamically show details about the selected
@@ -289,11 +289,15 @@ function generateSelectedTimestampElements(
 
   // Vertical line
   selectedTimestampGroup
-    .append('rect')
-    .attr('width', SELECTED_TIMESTAMP_WIDTH)
-    .attr('height', selectedTimestampHeight)
-    .attr('transform', translate(-(SELECTED_TIMESTAMP_WIDTH / 2), 0))
-    .style('fill', SELECTED_COLOR_DARK);
+    .append('line')
+    .attr('stroke', SELECTED_COLOR_DARK)
+    .attr('stroke-width', SELECTED_TIMESTAMP_WIDTH)
+    .attr('stroke-dasharray', `${DASHED_LINE.length},${DASHED_LINE.gap}`)
+    .attr('stroke-opacity', DASHED_LINE.opacity)
+    .attr('x1', 0)
+    .attr('x2', 0)
+    .attr('y1', 0)
+    .attr('y2', selectedTimestampHeight);
 
   generateLabel(
     selectedTimestampGroup,
