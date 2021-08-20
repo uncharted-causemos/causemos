@@ -22,9 +22,11 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
-    <button class="sort-by" @click="sortByValue = !sortByValue">
-      {{ sortByValue ? 'Sort By Name' : 'Sort By Value'}}
-    </button>
+    <radio-button-group
+      :selected-button-value="sortValue"
+      :buttons="sortOptions"
+      @button-clicked="sortValue"
+    />
     <div class="flex-row">
       <div
         v-if="isRadioButtonModeActive"
@@ -78,6 +80,11 @@ import {
   computed
 } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+
+const SortOptions = {
+  Name: { name: 'Name', value: 'name' },
+  Value: { name: 'Value', value: 'value' }
+};
 
 interface StatefulDataNode {
   name: string;
@@ -208,14 +215,14 @@ const checklistRowDataFromNode = (
   };
 };
 
-const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortByValue: boolean) => {
+const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string) => {
   // Sort top level children (i.e. countries) without values to the bottom
   //  of the list, since if they had descendants with values, they would
   //  have values themselves, aggregated up from their descendants
   const hasOneOrMoreValues = (node: StatefulDataNode) => {
     return node.bars.length > 0;
   };
-  if (sortByValue) {
+  if (sortValue === SortOptions.Value.value) {
     newStatefulData.children.sort((nodeA, nodeB) => {
       const nodeAFirstValue = nodeA.bars.map(bar => bar.value)[0];
       const nodeBFirstValue = nodeB.bars.map(bar => bar.value)[0];
@@ -246,7 +253,7 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortByValue: boole
   }
   newStatefulData.children.forEach(node => {
     if (_.has(node, 'children')) {
-      sortHierarchy(node, sortByValue);
+      sortHierarchy(node, sortValue);
     }
   });
   return newStatefulData;
@@ -256,6 +263,9 @@ export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
     AggregationChecklistItem
+  },
+  data: () => {
+    sortOptions: () => SortOptions;
   },
   props: {
     aggregationLevelCount: {
@@ -313,7 +323,7 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
-    const sortByValue = ref<boolean>(false);
+    const sortValue = ref<string>(SortOptions.Name.value);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
@@ -367,7 +377,7 @@ export default defineComponent({
           });
         });
       });
-      sortHierarchy(newStatefulData, sortByValue.value);
+      sortHierarchy(newStatefulData, sortValue.value);
       statefulData.value = newStatefulData;
     });
 
@@ -472,7 +482,7 @@ export default defineComponent({
       isAllSelected,
       toggleChecked,
       setAllChecked,
-      sortByValue
+      sortValue
     };
   },
   methods: {
@@ -583,10 +593,5 @@ h5 {
   & *:only-child {
     margin-left: auto;
   }
-}
-
-.sort-by {
-  margin-top: 10px;
-  margin-bottom: 10px;
 }
 </style>
