@@ -223,10 +223,10 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortByValue: boole
       const nodeBValue = _.isNull(nodeBFirstValue) || _.isUndefined(nodeBFirstValue) ? null : nodeBFirstValue;
       if (_.isNull(nodeAValue) && !_.isNull(nodeBValue)) {
         // A should be sorted after B
-        return -1;
+        return 1;
       } else if (_.isNull(nodeBValue)) {
         // B should be sorted after A
-        return 1;
+        return -1;
       }
       // Sort based on value
       return nodeAValue! <= nodeBValue! ? 1 : -1;
