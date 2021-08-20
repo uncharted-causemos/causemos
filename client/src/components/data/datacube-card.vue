@@ -465,8 +465,13 @@ export default defineComponent({
   },
   methods: {
     clickData() {
-      const newIds = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready).map(run => run.id).slice(0, 1);
-      this.$emit('set-selected-scenario-ids', newIds);
+      // FIXME: This code to select a model run when switching to the data tab
+      //  should be in a watcher on the parent component to be more robust,
+      //  rather than in this button's click handler.
+      if (this.isModelMetadata && this.selectedScenarioIds.length === 0) {
+        const newIds = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready).map(run => run.id).slice(0, 1);
+        this.$emit('set-selected-scenario-ids', newIds);
+      }
       this.$emit('update-desc-view', false);
     },
     onMapLoad() {
