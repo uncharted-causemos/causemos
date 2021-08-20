@@ -67,6 +67,7 @@
               :min-value="indicatorMin"
               :max-value="indicatorMax"
               :constraints="constraints"
+              :viewing-extent="viewingExtent"
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
@@ -323,6 +324,7 @@ export default defineComponent({
       };
     });
 
+    // FIXME
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
     watch([selectedNodeScenarioData], () => {
       if (_.isEmpty(historicalTimeseries.value)) {
@@ -473,6 +475,14 @@ export default defineComponent({
       });
       try {
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+
+        // FIXME: manually set historical for now because bad watcher
+        historicalTimeseries.value = [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2017, 1) },
+          { value: 0.5, timestamp: Date.UTC(2017, 2) }
+        ];
+
         refreshModelData();
       } catch {
         console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
@@ -592,6 +602,28 @@ export default defineComponent({
       currentCAG
     );
 
+    // Find out the default viewing window
+    const viewingExtent = computed<number[] | null>(() => {
+      const parameter = modelSummary.value?.parameter;
+      if (!parameter) {
+        return null;
+      } else {
+        const projections = selectedNodeScenarioData.value?.projections || [];
+        let max = Number.NEGATIVE_INFINITY;
+        for (let i = 0; i < projections.length; i++) {
+          for (let j = 0; j < projections[i].values.length; j++) {
+            if (max < projections[i].values[j].timestamp) {
+              max = projections[i].values[j].timestamp;
+            }
+          }
+        }
+        return [
+          Math.min(parameter.indicator_time_series_range.start, parameter.projection_start),
+          Math.max(parameter.indicator_time_series_range.end, max)
+        ];
+      }
+    });
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -625,6 +657,7 @@ export default defineComponent({
       project,
       currentCAG,
       clearParameterization,
+      viewingExtent,
       hasConstraints,
       clearConstraints
     };

@@ -34,7 +34,6 @@
         :selectedDataLayer="selectedDataLayer"
         @set-selected-scenario-ids="setSelectedScenarioIds"
         @select-timestamp="setSelectedTimestamp"
-        @set-drilldown-data="setDrilldownData"
         @set-relative-to="setRelativeTo"
         @refetch-data="fetchData"
         @new-runs-mode="newRunsMode=!newRunsMode"
@@ -129,7 +128,7 @@
             <breakdown-pane
               v-if="activeDrilldownTab ==='breakdown'"
               :selected-admin-level="selectedAdminLevel"
-              :type-breakdown-data="typeBreakdownData"
+              :qualifier-breakdown-data="qualifierBreakdownData"
               :regional-data="regionalData"
               :temporal-breakdown-data="temporalBreakdownData"
               :unit="unit"
@@ -138,9 +137,11 @@
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
               :selected-region-ids="selectedRegionIds"
+              :selected-qualifier-values="selectedQualifierValues"
               :selected-breakdown-option="breakdownOption"
               :selected-timeseries-points="selectedTimeseriesPoints"
               @toggle-is-region-selected="toggleIsRegionSelected"
+              @toggle-is-qualifier-selected="toggleIsQualifierSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
               @set-breakdown-option="setBreakdownOption"
             />
@@ -155,8 +156,7 @@ import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
-import { getRandomNumber } from '@/utils/random';
+import { DatacubeFeature } from '@/types/Datacube';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
@@ -169,7 +169,6 @@ import router from '@/router';
 import _ from 'lodash';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { mapActions, mapGetters, useStore } from 'vuex';
-import { NamedBreakdownData } from '@/types/Datacubes';
 import { getInsightById } from '@/services/insight-service';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
@@ -180,6 +179,7 @@ import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimes
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState, DataState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
+import useQualifiers from '@/services/composables/useQualifiers';
 
 const DRILLDOWN_TABS = [
   {
@@ -205,16 +205,15 @@ export default defineComponent({
   },
   setup() {
     const selectedAdminLevel = ref(0);
-    const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
 
-    const selectedTemporalResolution = ref<string>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<string>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<string>(AggregationOption.Mean);
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
 
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -229,13 +228,13 @@ export default defineComponent({
     // aply view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
       if (initialViewConfig.temporalResolution !== undefined) {
-        selectedTemporalResolution.value = initialViewConfig.temporalResolution;
+        selectedTemporalResolution.value = initialViewConfig.temporalResolution as TemporalResolutionOption;
       }
       if (initialViewConfig.temporalAggregation !== undefined) {
-        selectedTemporalAggregation.value = initialViewConfig.temporalAggregation;
+        selectedTemporalAggregation.value = initialViewConfig.temporalAggregation as AggregationOption;
       }
       if (initialViewConfig.spatialAggregation !== undefined) {
-        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation;
+        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation as AggregationOption;
       }
       if (initialViewConfig.selectedOutputIndex !== undefined) {
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
@@ -368,6 +367,20 @@ export default defineComponent({
     };
 
     const {
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues
+    } = useQualifiers(
+      metadata,
+      breakdownOption,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      selectedTimestamp
+    );
+
+    const {
       timeseriesData,
       visibleTimeseriesData,
       relativeTo,
@@ -376,7 +389,6 @@ export default defineComponent({
       temporalBreakdownData
     } = useTimeseriesData(
       metadata,
-      selectedModelId,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -384,7 +396,8 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      selectedRegionIds
+      selectedRegionIds,
+      selectedQualifierValues
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -444,7 +457,6 @@ export default defineComponent({
       selectedAdminLevel,
       selectedModelId,
       selectedScenarioIds,
-      typeBreakdownData,
       selectedTimestamp,
       isExpanded,
       metadata,
@@ -478,7 +490,10 @@ export default defineComponent({
       selectedDataLayer,
       datacubeCurrentOutputsMap,
       analysisItems,
-      analysisId
+      analysisId,
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues
     };
   },
   data: () => ({
@@ -584,13 +599,13 @@ export default defineComponent({
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
-          this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation;
+          this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation as AggregationOption;
         }
         if (loadedInsight.view_state?.temporalAggregation) {
-          this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation;
+          this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation as AggregationOption;
         }
         if (loadedInsight.view_state?.temporalResolution) {
-          this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution;
+          this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
         }
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
           this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
@@ -614,13 +629,13 @@ export default defineComponent({
         }
       }
     },
-    setTemporalAggregationSelection(temporalAgg: string) {
+    setTemporalAggregationSelection(temporalAgg: AggregationOption) {
       this.selectedTemporalAggregation = temporalAgg;
     },
-    setSpatialAggregationSelection(spatialAgg: string) {
+    setSpatialAggregationSelection(spatialAgg: AggregationOption) {
       this.selectedSpatialAggregation = spatialAgg;
     },
-    setTemporalResolutionSelection(temporalRes: string) {
+    setTemporalResolutionSelection(temporalRes: TemporalResolutionOption) {
       this.selectedTemporalResolution = temporalRes;
     },
     setSelectedScenarioIds(newIds: string[]) {
@@ -629,45 +644,6 @@ export default defineComponent({
       }
       this.selectedScenarioIds = newIds;
       this.clearRouteParam();
-    },
-    setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      this.typeBreakdownData = [];
-      if (this.selectedScenarioIds.length === 0) return;
-      // typeBreakdownData array contains an entry for each drilldown dimension
-      //  (e.g. 'crop type')
-      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
-        // Initialize total for each scenarioId to 0
-        const totals = {} as { [scenarioId: string]: number };
-        this.selectedScenarioIds.forEach(scenarioId => {
-          totals[scenarioId] = 0;
-        });
-        // Randomly assign values for each option in the dimension (e.g. 'maize', 'corn)
-        //  to each scenario, and keep track of the sum totals for each scenario
-        const choices = dimension.choices ?? [];
-        const drilldownChildren = choices.map(choice => {
-          const values = {} as { [scenarioId: string]: number };
-          this.selectedScenarioIds.forEach(scenarioId => {
-            // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
-            //  from (selected scenarios) data
-            const randomValue = getRandomNumber(0, 5000);
-            values[scenarioId] = randomValue;
-            totals[scenarioId] += randomValue;
-          });
-          return {
-            // Breakdown data IDs are written as the hierarchical path delimited by '__'
-            id: 'All__' + choice,
-            values
-          };
-        });
-
-        return {
-          name: dimension.name,
-          data: {
-            Total: [{ id: 'All', values: totals }],
-            [dimension.name]: drilldownChildren
-          }
-        };
-      });
     }
   }
 });

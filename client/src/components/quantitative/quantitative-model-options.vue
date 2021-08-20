@@ -3,7 +3,7 @@
     <!-- CAG rename/delete/duplicate dropdown -->
     <model-options
       :cag-name="cagNameToDisplay"
-      :view-after-deletion="'quantitativeStart'"
+      :view-after-deletion="'overview'"
       @rename="openRenameModal"
       @duplicate="openDuplicateModal"
     />

@@ -3,10 +3,10 @@ import { Indicator, Model } from '@/types/Datacube';
 import { AdminRegionSets } from '@/types/Datacubes';
 import _ from 'lodash';
 import { computed, ref, Ref, watch, watchEffect } from 'vue';
-import { useStore } from 'vuex';
 import { getHierarchy } from '../new-datacube-service';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { SpatialAggregationLevel } from '@/types/Enums';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const EMPTY_ADMIN_REGION_SETS: AdminRegionSets = {
   country: new Set(),
@@ -40,14 +40,12 @@ export default function useDatacubeHierarchy(
    * string of the form 'Ethiopia__Oromia__Oromia Sub-Region'
    */
   const datacubeHierarchy = ref<DatacubeGeography | null>(null);
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(
-    () => store.getters['app/datacubeCurrentOutputsMap']
-  );
 
   const isMultiSelectionAllowed = computed(
     () => breakdownOption.value === SpatialAggregationLevel.Region
   );
+
+  const { activeFeature } = useActiveDatacubeFeature(metadata);
 
   watchEffect(async onInvalidate => {
     let isCancelled = false;
@@ -64,23 +62,11 @@ export default function useDatacubeHierarchy(
     //  - return hierarchy in DatacubeGeography format (will require a new 'region-list' endpoint)
     // Ben, August 2021
     const runId = _modelRunIds[0];
-
-    let activeFeature = '';
-    const currentOutputEntry =
-      datacubeCurrentOutputsMap.value[datacubeMetadata.id];
-    if (currentOutputEntry !== undefined) {
-      const outputs = datacubeMetadata.validatedOutputs
-        ? datacubeMetadata.validatedOutputs
-        : datacubeMetadata.outputs;
-      activeFeature = outputs[currentOutputEntry].name;
-    } else {
-      activeFeature = datacubeMetadata.default_feature ?? '';
-    }
     try {
       const hierarchy = await getHierarchy(
         datacubeMetadata.data_id,
         runId,
-        activeFeature
+        activeFeature.value
       );
       if (isCancelled) return;
       const newValue = {
