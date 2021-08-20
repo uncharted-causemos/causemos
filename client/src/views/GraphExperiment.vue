@@ -226,12 +226,17 @@ export default {
     this.renderer.setData({
       id: 'root', concept: 'root',
       nodes: [
-        { ...nd('outside'),
+        { ...nd('L1.1'),
           nodes: [
-            { ...nd('inside'),
+            { ...nd('L2'),
               nodes: [
-                nd('n1'),
-                nd('n2')
+                nd('L3.1'),
+                {
+                  ...nd('L3.2'),
+                  nodes: [
+                    nd('L4.1')
+                  ]
+                }
               ],
               edges: [
               ]
@@ -240,12 +245,13 @@ export default {
           edges: [
           ]
         },
-        nd('hi')
+        nd('L1.2')
       ],
       edges: [
-        { id: 'e1', source: 'n1', target: 'n2' },
-        { id: 'e2', source: 'hi', target: 'n1' },
-        { id: 'e3', source: 'outside', target: 'n2' }
+        { id: 'e1', source: 'L3.1', target: 'L3.2' },
+        { id: 'e2', source: 'L1.2', target: 'L3.1' },
+        { id: 'e3', source: 'L1.1', target: 'L3.2' },
+        { id: 'e4', source: 'L4.1', target: 'L3.1' }
       ]
     });
 

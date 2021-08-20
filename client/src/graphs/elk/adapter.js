@@ -220,27 +220,31 @@ const postProcess = (layout) => {
     // }
 
     let sourceInTarget = false;
+    const sourceChain = [];
     let targetInSource = false;
+    const targetChain = [];
     let p = sourceNode;
     while (true) {
       p = p.parent;
       if (!p) break;
+      sourceChain.push(p.id);
       if (p.id === targetNode.id) {
         sourceInTarget = true;
-        break;
       }
     }
     p = targetNode;
     while (true) {
       p = p.parent;
       if (!p) break;
+      targetChain.push(p.id);
       if (p.id === sourceNode.id) {
         targetInSource = true;
-        break;
       }
     }
 
-    console.log(`Source in target ${sourceInTarget}, Target in source ${targetInSource}`);
+    console.log(`${sourceNode.id}-${targetNode.id} Source in target ${sourceInTarget}, Target in source ${targetInSource}`);
+    console.log('\tsource-chaing', sourceChain);
+    console.log('\ttarget-chaing', targetChain);
 
     if (sourceNode.id === targetNode.id) {
       const p = sourceNode.parent;
@@ -254,8 +258,23 @@ const postProcess = (layout) => {
         tx += nodeGlobalPosition.get(targetNode.id).x;
         ty += nodeGlobalPosition.get(targetNode.id).y;
       } else {
+        console.log('\thazzah');
+        // const common = _.intersection(sourceChain, targetChain);
+        // if (common.length > 0) {
+        //   console.log('\t', common[0]);
+        //   console.log('\t', nodeGlobalPosition.get(common[0]));
+        //   tx += nodeGlobalPosition.get(sourceNode.parent.id).x;
+        //   ty += nodeGlobalPosition.get(sourceNode.parent.id).y;
+        // }
+        if (sourceNode.parent.id === targetNode.parent.id) {
+          tx += nodeGlobalPosition.get(sourceNode.parent.id).x;
+          ty += nodeGlobalPosition.get(sourceNode.parent.id).y;
+        }
+
+        /*
         tx += nodeGlobalPosition.get(sourceNode.parent.id).x;
         ty += nodeGlobalPosition.get(sourceNode.parent.id).y;
+        */
       }
     }
 
@@ -364,36 +383,6 @@ const reshuffle = (renderGraph) => {
   }
   return renderGraph;
 };
-
-/*
-const reshuffle = (renderGraph) => {
-  const nodeMap = new Map();
-  const parentMap = new Map();
-
-  traverse(renderGraph, (node) => {
-    nodeMap.set(node.id, node);
-    if (!node.edges) node.edges = [];
-    if (node.nodes) {
-      node.nodes.forEach(n => {
-        parentMap.set(n.id, node);
-      });
-    }
-  });
-
-  const edges = renderGraph.edges;
-  renderGraph.edges = [];
-
-  for (let i = 0; i < edges.length; i++) {
-    const edge = edges[i];
-
-    console.log(edge, parentMap.get(edge.source).id);
-
-    // FIXME: common parent
-    // nodeMap.get(edge.source).edges.push(edge);
-    parentMap.get(edge.source).edges.push(edge);
-  }
-};
-*/
 
 
 /**
