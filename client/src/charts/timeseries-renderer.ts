@@ -12,7 +12,7 @@ import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
 const PADDING_TOP = 10;
-const PADDING_RIGHT = 40;
+const PADDING_RIGHT = 5;
 
 // The type of value can't be more specific than `any`
 //  because under the hood d3.tickFormat requires d3.NumberType.
@@ -24,9 +24,6 @@ const DATE_FORMATTER = (value: any) =>
 const BY_YEAR_DATE_FORMATTER = (value: any) =>
   dateFormatter(new Date(0, value), 'MMM');
 
-const DEFAULT_LINE_COLOR = '#000';
-const LABEL_BACKGROUND_COLOR = 'white';
-const LABEL_FONT_SIZE = '12px';
 const DASHED_LINE = {
   length: 4,
   gap: 2,
@@ -35,16 +32,6 @@ const DASHED_LINE = {
 
 const SELECTED_TIMESTAMP_WIDTH = 1;
 const SELECTABLE_TIMESTAMP_OPACITY = 0.5;
-
-// A collection of elements that are used to dynamically show details about the selected
-//  timestamp
-// - selectedTimestampGroup: the vertical line and label to show the timestamp itself
-// - valueGroups: an array of horizontal dashed lines and labels to show the value of
-//    each timeseries at the selected timestamp. One group of elements for each timeseries.
-interface TimestampElements {
-  selectedTimestampGroup: D3GElementSelection;
-  valueGroups: D3GElementSelection[];
-}
 
 export default function(
   selection: D3Selection,
@@ -108,23 +95,18 @@ export default function(
     onTimestampSelected
   );
 
-  const timestampElements = generateSelectedTimestampElements(
+  const timestampLineElement = generateSelectedTimestampLine(
     groupElement,
-    height,
-    width,
-    timeseriesList
+    height
   );
 
   // Set timestamp elements to reflect the initially selected
   //  timestamp
   updateTimestampElements(
     selectedTimestamp,
-    timestampElements,
+    timestampLineElement,
     timeseriesList,
     xScale,
-    yScale,
-    valueFormatter,
-    timestampFormatter,
     selectedTimestampRange
   );
   // Return function to update the timestamp elements when
@@ -132,12 +114,9 @@ export default function(
   return (timestamp: number | null) => {
     updateTimestampElements(
       timestamp,
-      timestampElements,
+      timestampLineElement,
       timeseriesList,
       xScale,
-      yScale,
-      valueFormatter,
-      timestampFormatter,
       selectedTimestampRange
     );
   };
@@ -234,60 +213,15 @@ function generateSelectableTimestamps(
   });
 }
 
-function calculateLabelDimensions(
-  labelText: d3.Selection<SVGTextElement, any, null, any>
-) {
-  const textBBox = labelText.node()?.getBBox() ?? { width: 0, height: 0 };
-  return {
-    labelWidth: textBBox.width,
-    labelHeight: textBBox.height
-  };
-}
-
-function generateLabel(
-  parentElement: D3GElementSelection,
-  color: string,
-  text: string
-) {
-  const labelGroup = parentElement.append('g');
-  // Label to display the timestamp
-  const labelText = labelGroup
-    .append('text')
-    .style('fill', color)
-    .style('text-anchor', 'middle')
-    .style('font-size', LABEL_FONT_SIZE)
-    .text(text);
-  const { labelWidth, labelHeight } = calculateLabelDimensions(labelText);
-  labelText.attr(
-    'transform',
-    // Nudge upwards to accomodate for the weird text bounding box sizing
-    translate(0, labelHeight - 3)
-  );
-  // Background for the label
-  labelGroup
-    .append('rect')
-    .classed('label-background', true)
-    .attr('width', labelWidth)
-    .attr('height', labelHeight)
-    .attr('transform', translate(-labelWidth / 2, 0))
-    .style('fill', LABEL_BACKGROUND_COLOR);
-  // Move text on top of background
-  labelText.raise();
-  return labelGroup;
-}
-
-function generateSelectedTimestampElements(
+function generateSelectedTimestampLine(
   selection: D3GElementSelection,
-  height: number,
-  width: number,
-  timeseriesList: Timeseries[]
+  height: number
 ) {
   const selectedTimestampGroup = selection
     .append('g')
     .attr('visibility', 'hidden');
   const selectedTimestampHeight = height - X_AXIS_HEIGHT - PADDING_TOP;
 
-  // Vertical line
   selectedTimestampGroup
     .append('line')
     .attr('stroke', SELECTED_COLOR_DARK)
@@ -299,55 +233,19 @@ function generateSelectedTimestampElements(
     .attr('y1', 0)
     .attr('y2', selectedTimestampHeight);
 
-  generateLabel(
-    selectedTimestampGroup,
-    SELECTED_COLOR_DARK,
-    '[selected timestamp]'
-  ).attr('transform', translate(0, selectedTimestampHeight));
-
-  // For each timeseries, add a dotted line and label
-  const valueGroups = timeseriesList.map(timeseries => {
-    const gElement = selection
-      .append('g')
-      .attr('visibility', 'hidden')
-      .attr('transform', translate(width - PADDING_RIGHT, PADDING_TOP));
-    const color = timeseries.color ?? DEFAULT_LINE_COLOR;
-    gElement
-      .append('line')
-      .attr('stroke', color)
-      .attr('stroke-dasharray', `${DASHED_LINE.length},${DASHED_LINE.gap}`)
-      .attr('stroke-opacity', DASHED_LINE.opacity)
-      .attr('x1', 0)
-      .attr('x2', 0)
-      .attr('y1', 0)
-      .attr('y2', 0);
-    const label = generateLabel(gElement, color, '[value]');
-    const height = label.node()?.getBBox().height ?? 0;
-    label.attr(
-      'transform',
-      translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2)
-    );
-    label.select('text').style('text-anchor', 'start');
-    label.select('rect').attr('transform', translate(0, 0));
-    return gElement;
-  });
-  return { selectedTimestampGroup, valueGroups };
+  return selectedTimestampGroup;
 }
 
 function updateTimestampElements(
   timestamp: number | null,
-  { selectedTimestampGroup, valueGroups }: TimestampElements,
+  selectedTimestampGroup: D3GElementSelection,
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  valueFormatter: (value: any) => string,
-  timestampFormatter: (timestamp: number) => string,
   selectedTimestampRange: {start: number; end: number} | null
 ) {
   if (timestamp === null) {
     // Hide everything
     selectedTimestampGroup.attr('visibility', 'hidden');
-    valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
     return;
   }
   // check if the selectedTimestamp is out of the timeseries range
@@ -358,7 +256,6 @@ function updateTimestampElements(
     if (timestamp < xExtent[0] || timestamp > xExtent[1]) {
       // Hide everything
       selectedTimestampGroup.attr('visibility', 'hidden');
-      valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
       return;
     }
   }
@@ -368,42 +265,4 @@ function updateTimestampElements(
   selectedTimestampGroup
     .attr('visibility', 'visible')
     .attr('transform', translate(selectedXPosition, PADDING_TOP));
-  // Display the newly selected timestamp
-  const labelText = selectedTimestampGroup
-    .select<SVGTextElement>('text')
-    .text(timestampFormatter(timestamp));
-  // Resize background to match
-  const { labelWidth } = calculateLabelDimensions(labelText);
-  selectedTimestampGroup
-    .select('.label-background')
-    .attr('width', labelWidth)
-    .attr('transform', translate(-labelWidth / 2, 0));
-
-  valueGroups.forEach((valueGroup, index) => {
-    valueGroup.attr('visibility', 'visible');
-    // Adjust the length and vertical position of each dashed line
-    const timeseries = timeseriesList[index];
-    const point = timeseries.points.find(
-      point => point.timestamp === timestamp
-    );
-    if (point === undefined) {
-      // This line doesn't have a value at the selected timestamp,
-      // so hide it and move on
-      valueGroup.attr('visibility', 'hidden');
-      return;
-    }
-    const yPosition = yScale(point.value);
-    const rightEdge = xScale.range()[1];
-    valueGroup
-      .attr('transform', translate(rightEdge, yPosition))
-      .select<SVGLineElement>('line')
-      .attr('x2', -(rightEdge - selectedXPosition));
-    // Display the run's value at this timestamp
-    const labelText = valueGroup
-      .select<SVGTextElement>('text')
-      .text(valueFormatter(point.value));
-    // Resize background to match
-    const { labelWidth } = calculateLabelDimensions(labelText);
-    valueGroup.select('.label-background').attr('width', labelWidth);
-  });
 }
