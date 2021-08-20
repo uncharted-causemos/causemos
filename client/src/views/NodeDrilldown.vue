@@ -324,6 +324,7 @@ export default defineComponent({
       };
     });
 
+    // FIXME
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
     watch([selectedNodeScenarioData], () => {
       if (_.isEmpty(historicalTimeseries.value)) {
@@ -474,6 +475,14 @@ export default defineComponent({
       });
       try {
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+
+        // FIXME: manually set historical for now because bad watcher
+        historicalTimeseries.value = [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2017, 1) },
+          { value: 0.5, timestamp: Date.UTC(2017, 2) }
+        ];
+
         refreshModelData();
       } catch {
         console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);

@@ -71,6 +71,13 @@ export default function(
     console.error('TD Node Renderer: unable to derive extent from data');
     return;
   }
+
+  if (viewingExtent != null) {
+    if (viewingExtent[0] < xExtent[0]) {
+      viewingExtent[0] = xExtent[0];
+    }
+  }
+
   const valueFormatter = chartValueFormatter(...yExtent);
 
   // Build main "focus" chart scales and group element
