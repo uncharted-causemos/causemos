@@ -301,8 +301,6 @@ export default defineComponent({
 
 .datacube-card-container {
   background: $background-light-1;
-  box-shadow: $shadow-level-1;
-  // padding: 10px;
   margin: 10px;
   border-radius: 3px;
 }

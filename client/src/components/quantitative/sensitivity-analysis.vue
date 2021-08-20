@@ -222,6 +222,7 @@ export default {
       'y-axis-label matrix';
     position: relative;
     overflow: hidden;
+    background-color: rgb(242, 242, 242);
   }
 
   .x-axis-label h5, .y-axis-label h5 {
