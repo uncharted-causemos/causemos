@@ -13,7 +13,7 @@
           class="selected-data-row"
           :style="{ color: timeseries.color }"
         >
-          <span>{{ timeseries.name }}</span>
+          <strong>{{ timeseries.name }}</strong>
           <span>{{ valueFormatter(timeseries.value) }}</span>
         </div>
       </div>
@@ -182,12 +182,14 @@ export default defineComponent({
   width: 120px; // FIXME: can we be smarter than this?
   display: flex;
   flex-direction: column;
+  align-items: flex-end;
 }
 
 .selected-data-rows {
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+  align-self: stretch;
 }
 
 .selected-data-row {
