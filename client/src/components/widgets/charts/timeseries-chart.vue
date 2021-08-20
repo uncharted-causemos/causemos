@@ -6,15 +6,18 @@
     </div>
     <div class="selected-data">
       <span class="units">{{ units }}</span>
-      <div
-        v-for="timeseries in dataAtSelectedTimestamp"
-        :key="timeseries.id"
-        class="selected-data-row"
-        :style="{ color: timeseries.color }"
-      >
-        <span>{{ timeseries.name }}</span>
-        <span>{{ timeseries.value }}</span>
+      <div class="selected-data-rows">
+        <div
+          v-for="timeseries in dataAtSelectedTimestamp"
+          :key="timeseries.id"
+          class="selected-data-row"
+          :style="{ color: timeseries.color }"
+        >
+          <span>{{ timeseries.name }}</span>
+          <span>{{ timeseries.value }}</span>
+        </div>
       </div>
+      <span class="timestamp">{{ dateFormatter(selectedTimestamp) }} </span>
     </div>
   </div>
 </template>
@@ -33,6 +36,7 @@ import {
   toRefs,
   computed
 } from 'vue';
+import dateFormatter from '@/formatters/date-formatter';
 
 const RESIZE_DELAY = 15;
 
@@ -141,14 +145,20 @@ export default defineComponent({
         height: parentElement.clientHeight
       });
     });
-    return { resize, lineChart, dataAtSelectedTimestamp };
+    return {
+      resize,
+      lineChart,
+      dataAtSelectedTimestamp,
+      dateFormatter: (value: any) => dateFormatter(value, 'MMMM YYYY')
+    };
   }
 });
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables';
+
 .timeseries-chart-container {
-  position: relative;
   width: 100%;
   height: 140px;
   display: flex;
@@ -157,6 +167,7 @@ export default defineComponent({
 .chart {
   flex: 1;
   min-width: 0;
+  position: relative;
 }
 
 .selected-data {
@@ -165,9 +176,23 @@ export default defineComponent({
   flex-direction: column;
 }
 
+.selected-data-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
 .selected-data-row {
   display: flex;
   justify-content: space-between;
+}
+
+.unit {
+  color: $text-color-medium;
+}
+
+.timestamp {
+  color: $selected-dark
 }
 
 ::v-deep(.xAxis .domain) {
