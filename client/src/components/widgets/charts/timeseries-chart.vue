@@ -5,7 +5,7 @@
       <resize-observer @notify="resize" />
     </div>
     <div class="selected-data">
-      <span class="units">{{ units }}</span>
+      <span class="unit">{{ unit }}</span>
       <div class="selected-data-rows">
         <div
           v-for="timeseries in dataAtSelectedTimestamp"
@@ -61,7 +61,7 @@ export default defineComponent({
       type: String as PropType<string | null>,
       default: null
     },
-    units: {
+    unit: {
       type: String,
       default: ''
     }
