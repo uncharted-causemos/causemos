@@ -14,7 +14,7 @@
           :style="{ color: timeseries.color }"
         >
           <span>{{ timeseries.name }}</span>
-          <span>{{ timeseries.value }}</span>
+          <span>{{ valueFormatter(timeseries.value) }}</span>
         </div>
       </div>
       <span class="timestamp">{{ dateFormatter(selectedTimestamp) }} </span>
@@ -37,6 +37,7 @@ import {
   computed
 } from 'vue';
 import dateFormatter from '@/formatters/date-formatter';
+import { chartValueFormatter } from '@/utils/string-util';
 
 const RESIZE_DELAY = 15;
 
@@ -122,6 +123,12 @@ export default defineComponent({
         });
       }
     );
+    const valueFormatter = computed(() => {
+      const allPoints = timeseriesData.value.map(timeSeries => timeSeries.points).flat();
+      const yExtent = d3.extent(allPoints.map(point => point.value));
+      if (yExtent[0] === undefined) { return chartValueFormatter(); }
+      return chartValueFormatter(...yExtent);
+    });
     const dataAtSelectedTimestamp = computed(() => {
       return timeseriesData.value
         .map(({ id, name, color, points }) => ({
@@ -149,7 +156,8 @@ export default defineComponent({
       resize,
       lineChart,
       dataAtSelectedTimestamp,
-      dateFormatter: (value: any) => dateFormatter(value, 'MMMM YYYY')
+      dateFormatter: (value: any) => dateFormatter(value, 'MMMM YYYY'),
+      valueFormatter
     };
   }
 });
