@@ -279,7 +279,7 @@ import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } fro
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
-import { isModel } from '@/utils/datacube-util';
+import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestampMillis } from '@/utils/date-util';
@@ -478,9 +478,17 @@ export default defineComponent({
   },
   computed: {
     dataPaths(): string[] {
-      return _.compact(this.allModelRunData
-        .filter(modelRun => this.selectedScenarioIds.indexOf(modelRun.id) >= 0)
-        .flatMap(modelRun => _.head(modelRun.data_paths)));
+      if (!_.isNull(this.metadata)) {
+        const isAModel: boolean = isModel(this.metadata);
+        return _.compact(isAModel
+          ? this.allModelRunData
+            .filter(modelRun => this.selectedScenarioIds.indexOf(modelRun.id) >= 0)
+            .flatMap(modelRun => _.head(modelRun.data_paths))
+          : isIndicator(this.metadata) ? this.metadata.data_paths : []
+        );
+      } else {
+        return [];
+      }
     },
     mapSelectedLayer(): number {
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
