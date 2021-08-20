@@ -213,10 +213,50 @@ const postProcess = (layout) => {
     const sourceNode = nodeMap.get(edge.source);
     const targetNode = nodeMap.get(edge.target);
 
-    const edgeContainerId = getEdgeContainerId(sourceNode, targetNode);
-    if (edgeContainerId) {
-      tx += nodeGlobalPosition.get(edgeContainerId).x;
-      ty += nodeGlobalPosition.get(edgeContainerId).y;
+    // const edgeContainerId = getEdgeContainerId(sourceNode, targetNode);
+    // if (edgeContainerId) {
+    //   tx += nodeGlobalPosition.get(edgeContainerId).x;
+    //   ty += nodeGlobalPosition.get(edgeContainerId).y;
+    // }
+
+    let sourceInTarget = false;
+    let targetInSource = false;
+    let p = sourceNode;
+    while (true) {
+      p = p.parent;
+      if (!p) break;
+      if (p.id === targetNode.id) {
+        sourceInTarget = true;
+        break;
+      }
+    }
+    p = targetNode;
+    while (true) {
+      p = p.parent;
+      if (!p) break;
+      if (p.id === sourceNode.id) {
+        targetInSource = true;
+        break;
+      }
+    }
+
+    console.log(`Source in target ${sourceInTarget}, Target in source ${targetInSource}`);
+
+    if (sourceNode.id === targetNode.id) {
+      const p = sourceNode.parent;
+      tx += nodeGlobalPosition.get(p.id).x;
+      ty += nodeGlobalPosition.get(p.id).y;
+    } else {
+      if (targetInSource) {
+        tx += nodeGlobalPosition.get(sourceNode.id).x;
+        ty += nodeGlobalPosition.get(sourceNode.id).y;
+      } else if (sourceInTarget) {
+        tx += nodeGlobalPosition.get(targetNode.id).x;
+        ty += nodeGlobalPosition.get(targetNode.id).y;
+      } else {
+        tx += nodeGlobalPosition.get(sourceNode.parent.id).x;
+        ty += nodeGlobalPosition.get(sourceNode.parent.id).y;
+      }
     }
 
     edge.points = [startPoint, ...bendPoints, endPoint].map(p => {
@@ -295,14 +335,14 @@ const changeKey = (obj, before, after) => {
 };
 
 
-const getEdgeContainerId = (sourceNode, targetNode) => {
-  if (sourceNode.parent === null || targetNode.parent === null) {
-    return null;
-  } else if (sourceNode.parent === targetNode.parent) {
-    return sourceNode.parent.id;
-  }
-  return getEdgeContainerId(sourceNode.parent, targetNode.parent);
-};
+// const getEdgeContainerId = (sourceNode, targetNode) => {
+//   if (sourceNode.parent === null || targetNode.parent === null) {
+//     return null;
+//   } else if (sourceNode.parent === targetNode.parent) {
+//     return sourceNode.parent.id;
+//   }
+//   return getEdgeContainerId(sourceNode.parent, targetNode.parent);
+// };
 
 
 // Reshuffle edges into the right compound nodes for layout
@@ -322,7 +362,39 @@ const reshuffle = (renderGraph) => {
     // FIXME: common parent
     nodeMap.get(renderGraph.id).edges.push(edge);
   }
+  return renderGraph;
 };
+
+/*
+const reshuffle = (renderGraph) => {
+  const nodeMap = new Map();
+  const parentMap = new Map();
+
+  traverse(renderGraph, (node) => {
+    nodeMap.set(node.id, node);
+    if (!node.edges) node.edges = [];
+    if (node.nodes) {
+      node.nodes.forEach(n => {
+        parentMap.set(n.id, node);
+      });
+    }
+  });
+
+  const edges = renderGraph.edges;
+  renderGraph.edges = [];
+
+  for (let i = 0; i < edges.length; i++) {
+    const edge = edges[i];
+
+    console.log(edge, parentMap.get(edge.source).id);
+
+    // FIXME: common parent
+    // nodeMap.get(edge.source).edges.push(edge);
+    parentMap.get(edge.source).edges.push(edge);
+  }
+};
+*/
+
 
 /**
  * Handles and transforms ELK layout engine

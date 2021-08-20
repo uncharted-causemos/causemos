@@ -234,15 +234,18 @@ export default {
                 nd('n2')
               ],
               edges: [
-                { id: 'e1', source: 'n1', target: 'n2' }
               ]
             }
+          ],
+          edges: [
           ]
         },
         nd('hi')
       ],
       edges: [
-        { id: 'e2', source: 'hi', target: 'n1' }
+        { id: 'e1', source: 'n1', target: 'n2' },
+        { id: 'e2', source: 'hi', target: 'n1' },
+        { id: 'e3', source: 'outside', target: 'n2' }
       ]
     });
 
