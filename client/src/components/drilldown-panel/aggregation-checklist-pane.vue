@@ -22,11 +22,14 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
-    <radio-button-group
-      :selected-button-value="sortValue"
-      :buttons="sortOptions"
-      @button-clicked="sortValue"
-    />
+    <div class="sort-selection">
+      <label>Sort By:</label>
+      <radio-button-group
+        :selected-button-value="sortValue"
+        :buttons="Object.values(SORT_OPTIONS)"
+        @button-clicked="clickRadioButton"
+      />
+    </div>
     <div class="flex-row">
       <div
         v-if="isRadioButtonModeActive"
@@ -69,6 +72,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
+import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BreakdownData } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
@@ -81,9 +85,9 @@ import {
 } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
-const SortOptions = {
-  Name: { name: 'Name', value: 'name' },
-  Value: { name: 'Value', value: 'value' }
+const SORT_OPTIONS = {
+  Name: { label: 'Name', value: 'name' },
+  Value: { label: 'Value', value: 'value' }
 };
 
 interface StatefulDataNode {
@@ -222,7 +226,7 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
   const hasOneOrMoreValues = (node: StatefulDataNode) => {
     return node.bars.length > 0;
   };
-  if (sortValue === SortOptions.Value.value) {
+  if (sortValue === SORT_OPTIONS.Value.value) {
     newStatefulData.children.sort((nodeA, nodeB) => {
       const nodeAFirstValue = nodeA.bars.map(bar => bar.value)[0];
       const nodeBFirstValue = nodeB.bars.map(bar => bar.value)[0];
@@ -262,10 +266,8 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
-    AggregationChecklistItem
-  },
-  data: () => {
-    sortOptions: () => SortOptions;
+    AggregationChecklistItem,
+    RadioButtonGroup
   },
   props: {
     aggregationLevelCount: {
@@ -314,6 +316,9 @@ export default defineComponent({
       default: false
     }
   },
+  created() {
+    this.SORT_OPTIONS = SORT_OPTIONS;
+  },
   emits: ['aggregation-level-change', 'toggle-is-item-selected'],
   setup(props, { emit }) {
     const {
@@ -323,7 +328,7 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
-    const sortValue = ref<string>(SortOptions.Name.value);
+    const sortValue = ref<string>(SORT_OPTIONS.Name.value);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
@@ -486,6 +491,9 @@ export default defineComponent({
     };
   },
   methods: {
+    clickRadioButton(value: string) {
+      this.sortValue = value;
+    },
     onRangeValueChanged(event: any) {
       this.changeAggregationLevel(event.target.valueAsNumber);
     },
@@ -537,6 +545,12 @@ $tick-size: 8px;
 h5 {
   margin: 0;
   margin-bottom: 5px;
+}
+
+.sort-selection {
+  width: fit-content;
+  margin-top: 10px;
+  margin-bottom: 10px;
 }
 
 .aggregation-level-range {
