@@ -591,7 +591,7 @@ export default {
       return Boolean(this.map?.getLayer(this.colorLayerId)?.sourceLayer === sourceLayer);
     },
     computeGridRelativeStats() {
-      if (!this.map || !this.baselineSpec || !this.isSourceLayerLoaded(this.vectorSourceLayer)) return;
+      if (!this.isSourceLayerLoaded(this.vectorSourceLayer) || !this.baselineSpec) return;
       // Stats relative to the baseline. (min/max of the difference relative to the baseline)
       const baselineProp = this.baselineSpec.id;
       const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });
