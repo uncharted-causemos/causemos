@@ -71,7 +71,8 @@ export default defineComponent({
       timeseriesData,
       breakdownOption,
       selectedTimestamp,
-      selectedTimestampRange
+      selectedTimestampRange,
+      unit
     } = toRefs(props);
     const lineChart = ref<HTMLElement | null>(null);
     function selectTimestamp(newValue: number) {
@@ -96,7 +97,8 @@ export default defineComponent({
         selectedTimestamp.value,
         selectTimestamp,
         breakdownOption.value,
-        selectedTimestampRange.value
+        selectedTimestampRange.value,
+        unit.value
       );
     }, RESIZE_DELAY);
     watch(

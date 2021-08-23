@@ -48,7 +48,8 @@ export default function(
   selectedTimestamp: number,
   onTimestampSelected: (timestamp: number) => void,
   breakdownOption: string | null,
-  selectedTimestampRange: {start: number; end: number} | null
+  selectedTimestampRange: {start: number; end: number} | null,
+  unit: string
 ) {
   const groupElement = selection.append('g');
   const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
@@ -104,6 +105,7 @@ export default function(
     timeseriesList,
     xScale,
     height,
+    unit,
     onTimestampSelected,
     valueFormatter,
     timestampFormatter
@@ -175,6 +177,7 @@ function generateSelectableTimestamps(
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
   height: number,
+  unit: string,
   onTimestampSelected: (timestamp: number) => void,
   valueFormatter: (value: number) => string,
   timestampFormatter: (value: number) => string
@@ -268,22 +271,34 @@ function generateSelectableTimestamps(
           : translate(-offset, markerHeight / 2) + 'rotate(-45)'
       )
       .attr('fill', TOOLTIP_BG_COLOUR);
+    // Display units
+    tooltip
+      .append('text')
+      .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, TOOLTIP_LINE_HEIGHT))
+      .style('text-anchor', 'end')
+      .style('fill', '#9C9D9E') // text-color-medium
+      .text(unit);
+    // Display a line for each value at this timestamp
     (valuesAtEachTimestamp.get(timestamp) ?? [])
       .sort(({ value: valueA }, { value: valueB }) => valueB - valueA)
       .forEach(({ color, name, value }, index) => {
+        // +1 line because the origin point for text elements is the bottom left corner
+        // +1 line because the units are displayed above
+        const yPosition = TOOLTIP_LINE_HEIGHT * (index + 2);
         tooltip
           .append('text')
-          .attr('transform', translate(TOOLTIP_PADDING, TOOLTIP_LINE_HEIGHT * (index + 1)))
+          .attr('transform', translate(TOOLTIP_PADDING, yPosition))
           .style('fill', color)
           .style('font-weight', 'bold')
           .text(name);
         tooltip
           .append('text')
-          .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, TOOLTIP_LINE_HEIGHT * (index + 1)))
+          .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition))
           .style('text-anchor', 'end')
           .style('fill', color)
           .text(valueFormatter(value));
       });
+    // Display hovered timestamp
     tooltip
       .append('text')
       .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, markerHeight - TOOLTIP_PADDING))
