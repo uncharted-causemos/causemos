@@ -49,6 +49,7 @@
         :key="rowIndex"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
+        :min-visible-bar-value="minVisibleBarValue"
         :selected-timeseries-points="selectedTimeseriesPoints"
         :checkbox-type="checkboxType"
         @toggle-expanded="toggleExpanded(row.path)"
@@ -353,6 +354,7 @@ export default defineComponent({
       computeExpanded(statefulData.value, -1);
     });
 
+    // Returns the maximum among bar values or zero, whichever is greater
     const findMaxVisibleBarValue = (
       node: RootStatefulDataNode | StatefulDataNode,
       levelsUntilSelectedDepth: number
@@ -361,9 +363,9 @@ export default defineComponent({
         const values = isStatefulDataNode(node)
           ? node.bars.map(bar => bar.value)
           : [];
-        return _.max(values) ?? Number.MIN_VALUE;
+        return _.max(values) ?? 0;
       }
-      let maxValue = Number.MIN_VALUE;
+      let maxValue = 0;
       node.children.forEach(child => {
         maxValue = Math.max(
           maxValue,
@@ -373,11 +375,42 @@ export default defineComponent({
       return maxValue;
     };
 
+    // Returns the minimum among bar values or zero, whichever is less
+    const findMinVisibleBarValue = (
+      node: RootStatefulDataNode | StatefulDataNode,
+      levelsUntilSelectedDepth: number
+    ) => {
+      if (levelsUntilSelectedDepth === 0) {
+        const values = isStatefulDataNode(node)
+          ? node.bars.map(bar => bar.value)
+          : [];
+        return _.min(values) ?? 0;
+      }
+      let minValue = 0;
+      node.children.forEach(child => {
+        minValue = Math.min(
+          minValue,
+          findMinVisibleBarValue(child, levelsUntilSelectedDepth - 1)
+        );
+      });
+      return minValue;
+    };
+
     const maxVisibleBarValue = computed(() => {
       if (_.isNil(statefulData.value)) return 0;
       // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
       //  the root level.
       return findMaxVisibleBarValue(
+        statefulData.value,
+        aggregationLevel.value + 1
+      );
+    });
+
+    const minVisibleBarValue = computed(() => {
+      if (_.isNil(statefulData.value)) return 0;
+      // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
+      //  the root level.
+      return findMinVisibleBarValue(
         statefulData.value,
         aggregationLevel.value + 1
       );
@@ -424,6 +457,7 @@ export default defineComponent({
     return {
       statefulData,
       maxVisibleBarValue,
+      minVisibleBarValue,
       visibleRows,
       isAllSelected,
       toggleChecked,

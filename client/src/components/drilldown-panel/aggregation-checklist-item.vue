@@ -121,6 +121,10 @@ export default defineComponent({
       type: Number,
       default: 0
     },
+    minVisibleBarValue: {
+      type: Number,
+      default: 0
+    },
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
@@ -157,9 +161,15 @@ export default defineComponent({
         content: tooltip,
         classes: 'agg-checklist-item-ancestor-tooltip'
       };
+    },
+    totalBarLength() {
+      return this.maxVisibleBarValue - this.minVisibleBarValue;
     }
   },
   methods: {
+    calculateWidth(value: number) {
+      return (value / this.totalBarLength) * 100;
+    },
     precisionFormatter,
     toggleExpanded() {
       this.$emit('toggle-expanded');
@@ -168,8 +178,14 @@ export default defineComponent({
       this.$emit('toggle-checked');
     },
     histogramBarStyle(value: number, color: string) {
-      const percentage = (value / this.maxVisibleBarValue) * 100;
-      return { width: `${percentage}%`, background: color };
+      const percentage = this.calculateWidth(Math.abs(value));
+      if (value < 0) {
+        const marginLeft = this.calculateWidth(value - this.minVisibleBarValue) + '%';
+        return { 'width': `${percentage}%`, 'background': color, 'margin-left': marginLeft };
+      } else {
+        const marginLeft = this.calculateWidth(-this.minVisibleBarValue) + '%';
+        return { 'width': `${percentage}%`, 'background': color, 'margin-left': marginLeft };
+      }
     },
     colorFromIndex(index: number) {
       return this.selectedTimeseriesPoints[index].color;
