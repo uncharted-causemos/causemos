@@ -595,7 +595,7 @@ function renderParallelCoordinates(
       });
     if (brushesCount === 0) {
       // cancel any previous selection; turn every line into grey
-      if (event && !event.shiftKey && !d) {
+      if (event && !event.shiftKey && (!d || currentLineSelection.length === 1)) {
         currentLineSelection.length = 0;
         cancelPrevLineSelection(svgElement);
       }
