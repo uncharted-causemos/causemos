@@ -3,8 +3,8 @@
     <header>
       {{ node.label }}
     </header>
-    <div class="graph">
-      <!-- TODO: draw a little chart here -->
+    <div style="flex-grow: 1">
+      <svg ref="chartRef" />
     </div>
     <svg
       class="arrow"
@@ -18,11 +18,13 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType } from 'vue';
+import { ref, computed, defineComponent, PropType } from 'vue';
+import * as d3 from 'd3';
 import { ARROW, MARKER_VIEWBOX } from '@/utils/svg-util';
 import { EdgeParameter, NodeParameter } from '@/types/CAG';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
+import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 
 const BASE_EDGE_WIDTH = 0.5;
 const NO_EVIDENCE_DASH = '2, 1';
@@ -41,6 +43,19 @@ export default defineComponent({
     isDriver: {
       type: Boolean,
       default: false
+    },
+    neighborhoodChartData: {
+      type: Object,
+      default: () => {}
+    },
+    selectedScenarioId: {
+      type: String,
+      required: true
+    }
+  },
+  watch: {
+    selectedScenarioId() {
+      this.refresh();
     }
   },
   setup(props) {
@@ -52,12 +67,46 @@ export default defineComponent({
         strokeWidth: scaleByWeight(BASE_EDGE_WIDTH, props.edge)
       };
     });
+
+    const chartRef = ref<HTMLElement | null>(null);
+    const nodeChartData = computed(() => {
+      return props.neighborhoodChartData[props.node.concept];
+    });
+
     return {
       ARROW,
       MARKER_VIEWBOX,
       edgeStyle,
-      edgeColor
+      edgeColor,
+      nodeChartData,
+      chartRef
     };
+  },
+  mounted() {
+    this.refresh();
+  },
+  methods: {
+    refresh() {
+      const el = d3.select(this.chartRef);
+      const renderOptions = {
+        margin: {
+          top: 3, bottom: 3, left: 3, right: 3
+        },
+        viewport: {
+          x1: 0,
+          y1: 0,
+          x2: 136,
+          y2: 55
+        },
+        width: 136,
+        height: 55
+      };
+
+      renderHistoricalProjectionsChart(el, this.nodeChartData, renderOptions, {
+        selectedScenarioId: this.selectedScenarioId,
+        miniGraph: true
+      });
+    }
   }
 });
 </script>
@@ -69,6 +118,8 @@ $border-width: 1px;
 
 // TODO: copy graph styles more exactly
 .neighbor-node-container {
+  display: flex;
+  flex-direction: column;
   height: 80px;
   width: 140px;
   border-radius: 3px;
