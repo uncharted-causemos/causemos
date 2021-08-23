@@ -1,6 +1,6 @@
 <template>
-  <svg style="width:2px; height:8px; top:-2px; position: relative; opacity: 100%">
-    <rect width="5px" height="15px" style="fill:rgb(0,0,0);opacity: 100%"/>
+  <svg class="svg">
+    <rect width="100%" height="100%"/>
   </svg>
 </template>
 
@@ -12,6 +12,18 @@ export default {
 
 </script>
 
-<style scoped>
+<style lang="scss" scoped>
+
+.svg {
+  width: 2px;
+  height: 8px;
+  top: -2px;
+  position: relative;
+  opacity: 100%;
+  & .rect {
+    fill: #000000;
+    opacity: 100%;
+  }
+}
 
 </style>
