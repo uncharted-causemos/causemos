@@ -503,57 +503,55 @@ export default defineComponent({
 
     let foundPublishedInsights = false;
 
-    if (this.countInsights > 0) {
-      // we have some insights, some/all of which relates to the current model instance
+    // we have some insights, some/all of which relates to the current model instance
 
-      // first, fetch public insights to load the publication status, as needed
-      const publicInsights = await this.getPublicInsights();
-      if (publicInsights.length > 0) {
-        // we have at least one public insight, which we should use to fetch view configurations
-        const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
-        const viewConfig = defaultInsight.view_state;
-        if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
-          (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
+    // first, fetch public insights to load the publication status, as needed
+    const publicInsights = await this.getPublicInsights();
+    if (publicInsights.length > 0) {
+      // we have at least one public insight, which we should use to fetch view configurations
+      const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
+      const viewConfig = defaultInsight.view_state;
+      if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
+        (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
-          if (viewConfig.temporalAggregation) {
-            this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
-          }
-          if (viewConfig.temporalResolution) {
-            this.setSelectedTemporalResolution(viewConfig.temporalResolution);
-          }
-          if (viewConfig.spatialAggregation) {
-            this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
-          }
-          if (viewConfig.selectedAdminLevel !== undefined) {
-            this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
-          }
-          if (viewConfig.selectedMapBaseLayer) {
-            this.setBaseLayer(viewConfig.selectedMapBaseLayer);
-          }
-          if (viewConfig.selectedMapDataLayer) {
-            this.setDataLayer(viewConfig.selectedMapDataLayer);
-          }
-          if (viewConfig.selectedOutputIndex) {
-            const modelId = this.metadata?.id as string;
-            const defaultFeature = {
-              [modelId]: viewConfig.selectedOutputIndex
-            };
-            this.setDatacubeCurrentOutputsMap(defaultFeature);
-          }
-          if (viewConfig.breakdownOption !== undefined) {
-            this.setBreakdownOption(viewConfig.breakdownOption);
-          }
-
-          // @TODO:
-          //  need to support applying an insight by both domain modeler as well as analyst
-
-          // ensure that all publication steps are marked as complete
-          this.publishingSteps.forEach(step => {
-            step.completed = true;
-          });
-
-          foundPublishedInsights = true;
+        if (viewConfig.temporalAggregation) {
+          this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
         }
+        if (viewConfig.temporalResolution) {
+          this.setSelectedTemporalResolution(viewConfig.temporalResolution);
+        }
+        if (viewConfig.spatialAggregation) {
+          this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
+        }
+        if (viewConfig.selectedAdminLevel !== undefined) {
+          this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
+        }
+        if (viewConfig.selectedMapBaseLayer) {
+          this.setBaseLayer(viewConfig.selectedMapBaseLayer);
+        }
+        if (viewConfig.selectedMapDataLayer) {
+          this.setDataLayer(viewConfig.selectedMapDataLayer);
+        }
+        if (viewConfig.selectedOutputIndex) {
+          const modelId = this.metadata?.id as string;
+          const defaultFeature = {
+            [modelId]: viewConfig.selectedOutputIndex
+          };
+          this.setDatacubeCurrentOutputsMap(defaultFeature);
+        }
+        if (viewConfig.breakdownOption !== undefined) {
+          this.setBreakdownOption(viewConfig.breakdownOption);
+        }
+
+        // @TODO:
+        //  need to support applying an insight by both domain modeler as well as analyst
+
+        // ensure that all publication steps are marked as complete
+        this.publishingSteps.forEach(step => {
+          step.completed = true;
+        });
+
+        foundPublishedInsights = true;
       }
     }
 
