@@ -92,6 +92,7 @@ export default defineComponent({
         margin: {
           top: 3, bottom: 3, left: 3, right: 3
         },
+        // FIXME: auto detect dimensions
         viewport: {
           x1: 0,
           y1: 0,
