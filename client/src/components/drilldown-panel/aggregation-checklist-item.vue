@@ -31,19 +31,28 @@
       v-tooltip.top-start="ancestorTooltip"
       class="content--single-row"
     >
-      <span class="title">
-        <span class="faded">{{ ancestorPrefix }}</span>
-        {{ itemData.name }}
-      </span>
-      <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
-        {{ precisionFormatter(itemData.bars[0].value) ?? 'missing' }}
-      </span>
-      <div
+      <div class="single-row-headings">
+        <span class="title">
+          <span class="faded">{{ ancestorPrefix }}</span>
+          {{ itemData.name }}
+        </span>
+        <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
+          {{ precisionFormatter(itemData.bars[0].value) ?? 'missing' }}
+        </span>
+      </div>
+      <div :style="histogramMarginStyle(itemData.bars[0].value)">
+        <svg v-if="itemData.bars[0].value >= 0" style="width:5px; height:15px; top:-5px; position: relative; opacity: 100%">
+          <rect width="5px" height="15px" style="fill:rgb(0,0,0);opacity: 100%"/>
+        </svg>
+        <div
         v-if="itemData.isSelectedAggregationLevel"
         class="histogram-bar"
         :class="{ faded: !itemData.isChecked }"
-        :style="histogramBarStyle(itemData.bars[0].value, itemData.bars[0].color)"
-      />
+        :style="histogramBarStyle(itemData.bars[0].value, itemData.bars[0].color)"/>
+        <svg v-if="itemData.bars[0].value < 0" style="width:5px; height:15px; top:-5px; position: relative; opacity: 100%">
+          <rect width="5px" height="15px" style="fill:rgb(0,0,0);opacity: 100%"/>
+        </svg>
+      </div>
     </div>
     <div
       v-else
@@ -177,15 +186,19 @@ export default defineComponent({
     toggleChecked() {
       this.$emit('toggle-checked');
     },
+    histogramMarginStyle(value: number) {
+      const DEFAULT_WIDTH = '100%';
+      if (value < 0) {
+        const marginLeft = `${this.calculateWidth(value - this.minVisibleBarValue)}%`;
+        return { 'margin-left': marginLeft, 'width': DEFAULT_WIDTH, 'display': 'flex', 'flex-direction': 'row' };
+      } else {
+        const marginLeft = `${this.calculateWidth(-this.minVisibleBarValue)}%`;
+        return { 'margin-left': marginLeft, 'width': DEFAULT_WIDTH, 'display': 'flex', 'flex-direction': 'row'  };
+      }
+    },
     histogramBarStyle(value: number, color: string) {
       const percentage = this.calculateWidth(Math.abs(value));
-      if (value < 0) {
-        const marginLeft = this.calculateWidth(value - this.minVisibleBarValue) + '%';
-        return { 'width': `${percentage}%`, 'background': color, 'margin-left': marginLeft };
-      } else {
-        const marginLeft = this.calculateWidth(-this.minVisibleBarValue) + '%';
-        return { 'width': `${percentage}%`, 'background': color, 'margin-left': marginLeft };
-      }
+      return { width: `${percentage}%`, background: color };
     },
     colorFromIndex(index: number) {
       return this.selectedTimeseriesPoints[index].color;
@@ -230,7 +243,11 @@ export default defineComponent({
   flex: 1;
   display: flex;
   position: relative;
-
+  flex-direction: column;
+  .single-row-headings {
+    display: flex;
+    flex-direction: row;
+  }
   .title {
     flex: 1;
   }
@@ -259,8 +276,7 @@ span.faded {
 }
 
 .histogram-bar {
-  position: absolute;
-  top: 100%;
+  position: relative;
   left: 0;
   width: 100%;
   height: 4px;
