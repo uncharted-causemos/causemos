@@ -345,7 +345,6 @@ router.post('/:projectId/ontology-concept', asyncHandler(async (req, res) => {
   const payload = {
     label,
     project_id: projectId,
-    label,
     examples: examples || [],
     definition: definition || '',
   };
