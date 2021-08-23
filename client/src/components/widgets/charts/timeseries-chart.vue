@@ -192,7 +192,7 @@ export default defineComponent({
 }
 
 .selected-data {
-  width: 120px; // FIXME: can we be smarter than this?
+  width: 120px;
   display: flex;
   flex-direction: column;
   align-items: flex-end;
