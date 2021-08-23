@@ -54,6 +54,7 @@
           @check-model-metadata-validity="checkModelMetadataValidity"
           @update-desc-view="updateDescView"
           @set-relative-to="setRelativeTo"
+          @new-runs-mode="newRunsMode=!newRunsMode"
         >
           <template v-slot:datacube-model-header>
             <datacube-model-header
@@ -239,6 +240,18 @@ export default defineComponent({
     );
 
     const modelRunsFetchedAt = ref(0);
+    const newRunsMode = ref(false);
+
+    const timeInterval = 10000;
+
+    function fetchData() {
+      if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
+        modelRunsFetchedAt.value = Date.now();
+      }
+    }
+
+    // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
+    const timerHandler = setInterval(fetchData, timeInterval);
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
     // so no external status need to be tracked
@@ -458,7 +471,9 @@ export default defineComponent({
       selectedRegionIds,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      timerHandler,
+      newRunsMode
     };
   },
   watch: {
@@ -495,6 +510,9 @@ export default defineComponent({
       },
       immediate: true
     }
+  },
+  unmounted(): void {
+    clearInterval(this.timerHandler);
   },
   async mounted() {
     // ensure the insight explorer panel is closed in case the user has
