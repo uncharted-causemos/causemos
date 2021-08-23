@@ -12,8 +12,6 @@
 
 <script lang="ts">
 
-
-// TODO: MOVE AggregationChecklistItemPropType BACK INTO AGG-CHECKLIST-ITEM
 import { defineComponent } from '@vue/runtime-core';
 import AggregationChecklistRectangle from '@/components/drilldown-panel/aggregation-checklist-rectangle.vue';
 
