@@ -316,9 +316,6 @@ export default defineComponent({
       default: false
     }
   },
-  created() {
-    this.SORT_OPTIONS = SORT_OPTIONS;
-  },
   emits: ['aggregation-level-change', 'toggle-is-item-selected'],
   setup(props, { emit }) {
     const {
@@ -487,6 +484,7 @@ export default defineComponent({
       isAllSelected,
       toggleChecked,
       setAllChecked,
+      SORT_OPTIONS,
       sortValue
     };
   },
