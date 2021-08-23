@@ -339,14 +339,14 @@ router.post('/:projectId/ontology-concept', asyncHandler(async (req, res) => {
   const ontology = Adapter.get(RESOURCE.ONTOLOGY);
   const doc = await ontology.findOne([
     { field: 'label', value: label },
-    { field: 'project_id', value: projectId}
+    { field: 'project_id', value: projectId }
   ], {});
 
   const payload = {
     label,
     project_id: projectId,
     examples: examples || [],
-    definition: definition || '',
+    definition: definition || ''
   };
 
   if (doc) {
