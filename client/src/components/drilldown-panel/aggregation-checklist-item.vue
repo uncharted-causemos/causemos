@@ -40,19 +40,14 @@
           {{ precisionFormatter(itemData.bars[0].value) ?? 'missing' }}
         </span>
       </div>
-      <div :style="histogramMarginStyle(itemData.bars[0].value)">
-        <svg v-if="itemData.isSelectedAggregationLevel && itemData.bars[0].value >= 0" style="width:2px; height:8px; top:-2px; position: relative; opacity: 100%">
-          <rect width="5px" height="15px" style="fill:rgb(0,0,0);opacity: 100%"/>
-        </svg>
-        <div
-        v-if="itemData.isSelectedAggregationLevel"
-        class="histogram-bar"
-        :class="{ faded: !itemData.isChecked }"
-        :style="histogramBarStyle(itemData.bars[0].value, itemData.bars[0].color)"/>
-        <svg v-if="itemData.isSelectedAggregationLevel && itemData.bars[0].value < 0" style="width:2px; height:8px; top:-2px; position: relative; opacity: 100%">
-          <rect width="5px" height="15px" style="fill:rgb(0,0,0);opacity: 100%"/>
-        </svg>
-      </div>
+      <aggregation-checklist-histogram
+        :barColor="itemData.bars[0].color"
+        :barValue="itemData.bars[0].value"
+        :isChecked="itemData.isChecked"
+        :maxVisibleBarValue="maxVisibleBarValue"
+        :minVisibleBarValue="minVisibleBarValue"
+        :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
+      />
     </div>
     <div
       v-else
@@ -95,23 +90,17 @@
 import precisionFormatter from '@/formatters/precision-formatter';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType } from '@vue/runtime-core';
+import { AggregationChecklistItemPropType } from '@/utils/aggregations-util';
+import AggregationChecklistHistogram from '@/components/drilldown-panel/aggregation-checklist-histogram.vue';
 
 const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
-
-interface AggregationChecklistItemPropType {
-  name: string;
-  bars: { color: string; value: number }[];
-  isSelectedAggregationLevel: boolean;
-  showExpandToggle: boolean;
-  isExpanded: boolean;
-  isChecked: boolean;
-  indentationCount: number;
-  hiddenAncestorNames: string[];
-}
 
 export default defineComponent({
   name: 'AggregationChecklistItem',
   emits: ['toggle-expanded', 'toggle-checked'],
+  components: {
+    AggregationChecklistHistogram
+  },
   props: {
     itemData: {
       type: Object as PropType<AggregationChecklistItemPropType>,
@@ -170,35 +159,15 @@ export default defineComponent({
         content: tooltip,
         classes: 'agg-checklist-item-ancestor-tooltip'
       };
-    },
-    totalBarLength() {
-      return this.maxVisibleBarValue - this.minVisibleBarValue;
     }
   },
   methods: {
-    calculateWidth(value: number) {
-      return (value / this.totalBarLength) * 100;
-    },
     precisionFormatter,
     toggleExpanded() {
       this.$emit('toggle-expanded');
     },
     toggleChecked() {
       this.$emit('toggle-checked');
-    },
-    histogramMarginStyle(value: number) {
-      const DEFAULT_WIDTH = '100%';
-      if (value < 0) {
-        const marginLeft = `${this.calculateWidth(value - this.minVisibleBarValue)}%`;
-        return { 'margin-left': marginLeft, 'width': DEFAULT_WIDTH, 'display': 'flex', 'flex-direction': 'row' };
-      } else {
-        const marginLeft = `${this.calculateWidth(-this.minVisibleBarValue)}%`;
-        return { 'margin-left': marginLeft, 'width': DEFAULT_WIDTH, 'display': 'flex', 'flex-direction': 'row'  };
-      }
-    },
-    histogramBarStyle(value: number, color: string) {
-      const percentage = this.calculateWidth(Math.abs(value));
-      return { width: `${percentage}%`, background: color };
     },
     colorFromIndex(index: number) {
       return this.selectedTimeseriesPoints[index].color;
@@ -271,28 +240,9 @@ export default defineComponent({
   display: flex;
 }
 
-span.faded {
-  opacity: 50%;
-}
-
-.histogram-bar {
-  position: relative;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: #8767c8;
-
-  &.faded {
-    opacity: 25%;
-  }
-}
-
 .histogram-bar-wrapper {
   flex: 1;
   position: relative;
-  .histogram-bar {
-    top: 50%;
-    transform: translateY(-50%);
-  }
 }
+
 </style>

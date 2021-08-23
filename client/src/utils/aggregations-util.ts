@@ -39,6 +39,17 @@ import _ from 'lodash';
  * ]
  */
 
+export interface AggregationChecklistItemPropType {
+  name: string;
+  bars: { color: string; value: number }[];
+  isSelectedAggregationLevel: boolean;
+  showExpandToggle: boolean;
+  isExpanded: boolean;
+  isChecked: boolean;
+  indentationCount: number;
+  hiddenAncestorNames: string[];
+}
+
 interface AggChild<T> {
   key: string;
   count: number;
