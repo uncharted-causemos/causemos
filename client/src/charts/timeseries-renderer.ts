@@ -205,7 +205,13 @@ function generateSelectableTimestamps(
       ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
       : SELECTED_TIMESTAMP_WIDTH * 5;
   const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
+  const [minTimestamp, maxTimestamp] = xScale.domain();
+  const centerTimestamp = minTimestamp + (maxTimestamp - minTimestamp) / 2;
   uniqueTimestamps.forEach(timestamp => {
+    // Display tooltip on the left of the hovered timestamp if that timestamp
+    //  is on the right side of the chart to avoid the tooltip overflowing
+    //  or being clipped.
+    const isRightOfCenter = timestamp > centerTimestamp;
     const markerAndTooltip = timestampGroup
       .append('g')
       .attr(
@@ -219,16 +225,21 @@ function generateSelectableTimestamps(
       .attr('height', markerHeight)
       .attr('fill', SELECTED_COLOR)
       .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY);
-    const tooltip = markerAndTooltip.append('g');
     // How far the tooltip is shifted horizontally from the hovered timestamp
     //  also the "radius" of the notch diamond
     const offset = 10;
     const notchSideLength = Math.sqrt(offset * offset + offset * offset);
+    const tooltip = markerAndTooltip.append('g')
+      .attr('transform', translate(
+        isRightOfCenter
+          ? -offset - TOOLTIP_WIDTH
+          : offset
+        , 0)
+      );
     tooltip
       .append('rect')
       .attr('width', TOOLTIP_WIDTH)
       .attr('height', markerHeight)
-      .attr('transform', translate(offset, 0))
       .attr('fill', TOOLTIP_BG_COLOUR)
       .attr('stroke', TOOLTIP_BORDER_COLOUR);
     // Notch border
@@ -238,37 +249,50 @@ function generateSelectableTimestamps(
       .attr('height', notchSideLength + TOOLTIP_BORDER_WIDTH)
       .attr(
         'transform',
-        `${translate(-TOOLTIP_BORDER_WIDTH, markerHeight / 2)} rotate(-45)`
+        isRightOfCenter
+          ? translate(TOOLTIP_WIDTH - offset - TOOLTIP_BORDER_WIDTH, markerHeight / 2) + 'rotate(-45)'
+          : translate(-TOOLTIP_BORDER_WIDTH - offset, markerHeight / 2) + 'rotate(-45)'
       )
       .attr('fill', TOOLTIP_BORDER_COLOUR);
     // Notch background
     // Extend side length of notch backgroundto make sure it covers the right
     //  half of the border rect
+    console.log(translate(-notchSideLength, -notchSideLength) + ' rotate(45) ' +
+    isRightOfCenter
+      ? translate(TOOLTIP_WIDTH, markerHeight / 2)
+      : translate(0, markerHeight / 2));
     tooltip
       .append('rect')
       .attr('width', notchSideLength * 2)
       .attr('height', notchSideLength * 2)
-      .attr('transform', `${translate(0, markerHeight / 2)} rotate(-45)`)
+      .attr('transform-origin', 'center')
+      .attr(
+        'transform',
+        translate(-notchSideLength, -notchSideLength) + ' rotate(45) ' +
+        isRightOfCenter
+          ? translate(TOOLTIP_WIDTH, markerHeight / 2)
+          : translate(0, markerHeight / 2)
+      )
       .attr('fill', TOOLTIP_BG_COLOUR);
     (valuesAtEachTimestamp.get(timestamp) ?? [])
       .sort(({ value: valueA }, { value: valueB }) => valueB - valueA)
       .forEach(({ color, name, value }, index) => {
         tooltip
           .append('text')
-          .attr('transform', translate(offset + TOOLTIP_PADDING, TOOLTIP_LINE_HEIGHT * (index + 1)))
+          .attr('transform', translate(TOOLTIP_PADDING, TOOLTIP_LINE_HEIGHT * (index + 1)))
           .style('fill', color)
           .style('font-weight', 'bold')
           .text(name);
         tooltip
           .append('text')
-          .attr('transform', translate(offset + TOOLTIP_WIDTH - TOOLTIP_PADDING, TOOLTIP_LINE_HEIGHT * (index + 1)))
+          .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, TOOLTIP_LINE_HEIGHT * (index + 1)))
           .style('text-anchor', 'end')
           .style('fill', color)
           .text(valueFormatter(value));
       });
     tooltip
       .append('text')
-      .attr('transform', translate(offset + TOOLTIP_WIDTH - TOOLTIP_PADDING, markerHeight - TOOLTIP_PADDING))
+      .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, markerHeight - TOOLTIP_PADDING))
       .style('text-anchor', 'end')
       .style('fill', SELECTED_COLOR_DARK)
       .text(timestampFormatter(timestamp));
