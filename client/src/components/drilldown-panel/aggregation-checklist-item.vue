@@ -64,11 +64,13 @@
         class="value-on-same-line"
       >
         <div class="histogram-bar-wrapper">
-          <div
-            v-if="itemData.isSelectedAggregationLevel"
-            class="histogram-bar"
-            :class="{ faded: !itemData.isChecked }"
-            :style="histogramBarStyle(bar.value, bar.color)"
+          <aggregation-checklist-histogram
+            :barColor="bar.color"
+            :barValue="bar.value"
+            :isChecked="itemData.isChecked"
+            :maxVisibleBarValue="maxVisibleBarValue"
+            :minVisibleBarValue="minVisibleBarValue"
+            :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
           />
         </div>
         <span
@@ -90,8 +92,18 @@
 import precisionFormatter from '@/formatters/precision-formatter';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType } from '@vue/runtime-core';
-import { AggregationChecklistItemPropType } from '@/utils/aggregations-util';
 import AggregationChecklistHistogram from '@/components/drilldown-panel/aggregation-checklist-histogram.vue';
+
+interface AggregationChecklistItemPropType {
+  name: string;
+  bars: { color: string; value: number }[];
+  isSelectedAggregationLevel: boolean;
+  showExpandToggle: boolean;
+  isExpanded: boolean;
+  isChecked: boolean;
+  indentationCount: number;
+  hiddenAncestorNames: string[];
+}
 
 const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
 

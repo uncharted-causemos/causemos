@@ -1,12 +1,12 @@
 <template>
   <div :class="{'wrapped': wrapped}" :style="histogramMarginStyle(barValue)">
-    <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && barValue >= 0"/>
+    <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue >= 0"/>
     <div
       v-if="isSelectedAggregationLevel"
       class="histogram-bar"
       :class="{ faded: !isChecked }"
       :style="histogramBarStyle(barValue, barColor)"/>
-    <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && barValue < 0"/>
+    <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue < 0"/>
   </div>
 </template>
 
