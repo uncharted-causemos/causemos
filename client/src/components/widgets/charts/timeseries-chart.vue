@@ -17,7 +17,7 @@
           <span>{{ valueFormatter(timeseries.value) }}</span>
         </div>
       </div>
-      <span class="timestamp">{{ dateFormatter(selectedTimestamp) }} </span>
+      <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
     </div>
   </div>
 </template>
@@ -38,6 +38,8 @@ import {
 } from 'vue';
 import dateFormatter from '@/formatters/date-formatter';
 import { chartValueFormatter } from '@/utils/string-util';
+import { getTimestampMillis } from '@/utils/date-util';
+import { TemporalAggregationLevel } from '@/types/Enums';
 
 const RESIZE_DELAY = 15;
 
@@ -81,6 +83,14 @@ export default defineComponent({
     let updateTimestampElements:
       | ((timestamp: number | null) => void)
       | undefined;
+    const timestampFormatter = (timestamp: number) => {
+      if (breakdownOption.value === TemporalAggregationLevel.Year) {
+        const month = timestamp;
+        // We're only displaying the month, so the year doesn't matter
+        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
+      }
+      return dateFormatter(timestamp, 'MMMM YYYY');
+    };
     const resize = _.debounce(function({ width, height }) {
       if (lineChart.value === null || timeseriesData.value.length === 0) return;
       const svg = d3.select<HTMLElement, null>(lineChart.value);
@@ -98,7 +108,8 @@ export default defineComponent({
         selectTimestamp,
         breakdownOption.value,
         selectedTimestampRange.value,
-        unit.value
+        unit.value,
+        timestampFormatter
       );
     }, RESIZE_DELAY);
     watch(
@@ -158,7 +169,7 @@ export default defineComponent({
       resize,
       lineChart,
       dataAtSelectedTimestamp,
-      dateFormatter: (value: any) => dateFormatter(value, 'MMMM YYYY'),
+      timestampFormatter,
       valueFormatter
     };
   }

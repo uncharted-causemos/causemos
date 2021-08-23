@@ -2,7 +2,6 @@ import * as d3 from 'd3';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
@@ -20,16 +19,6 @@ const TOOLTIP_BORDER_WIDTH = 1.5;
 const TOOLTIP_FONT_SIZE = 10;
 const TOOLTIP_PADDING = TOOLTIP_FONT_SIZE / 2;
 const TOOLTIP_LINE_HEIGHT = TOOLTIP_FONT_SIZE + TOOLTIP_PADDING;
-
-// The type of value can't be more specific than `any`
-//  because under the hood d3.tickFormat requires d3.NumberType.
-// It correctly converts, but its TypeScript definitions don't
-//  seem to reflect that.
-
-const DATE_FORMATTER = (value: any) =>
-  dateFormatter(value, 'MMM DD, YYYY');
-const BY_YEAR_DATE_FORMATTER = (value: any) =>
-  dateFormatter(new Date(0, value), 'MMM');
 
 const DASHED_LINE = {
   length: 4,
@@ -49,7 +38,8 @@ export default function(
   onTimestampSelected: (timestamp: number) => void,
   breakdownOption: string | null,
   selectedTimestampRange: {start: number; end: number} | null,
-  unit: string
+  unit: string,
+  timestampFormatter: (timestamp: number) => string
 ) {
   const groupElement = selection.append('g');
   const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
@@ -69,10 +59,6 @@ export default function(
     yExtent,
     breakdownOption
   );
-  const timestampFormatter =
-    breakdownOption === TemporalAggregationLevel.Year
-      ? BY_YEAR_DATE_FORMATTER
-      : DATE_FORMATTER;
   renderAxes(
     groupElement,
     xScale,
