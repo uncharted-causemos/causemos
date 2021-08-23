@@ -389,6 +389,7 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
+      updateOntologyCache: 'app/updateOntologyCache',
       setUpdateToken: 'app/setUpdateToken',
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
@@ -520,6 +521,10 @@ export default defineComponent({
         label: suggestion.label
       };
       this.saveNodeToGraph(node);
+
+      // Update
+      projectService.addNewConceptToOntology(this.project, suggestion.label, [], '');
+      this.updateOntologyCache(suggestion.label);
     },
     // Makes API call to store the new node on the backend
     async saveNodeToGraph(node: NodeParameter) {
