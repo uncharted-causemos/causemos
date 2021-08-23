@@ -41,7 +41,7 @@
         </span>
       </div>
       <div :style="histogramMarginStyle(itemData.bars[0].value)">
-        <svg v-if="itemData.bars[0].value >= 0" style="width:5px; height:15px; top:-5px; position: relative; opacity: 100%">
+        <svg v-if="itemData.isSelectedAggregationLevel && itemData.bars[0].value >= 0" style="width:5px; height:15px; top:-5px; position: relative; opacity: 100%">
           <rect width="5px" height="15px" style="fill:rgb(0,0,0);opacity: 100%"/>
         </svg>
         <div
@@ -49,7 +49,7 @@
         class="histogram-bar"
         :class="{ faded: !itemData.isChecked }"
         :style="histogramBarStyle(itemData.bars[0].value, itemData.bars[0].color)"/>
-        <svg v-if="itemData.bars[0].value < 0" style="width:5px; height:15px; top:-5px; position: relative; opacity: 100%">
+        <svg v-if="itemData.isSelectedAggregationLevel && itemData.bars[0].value < 0" style="width:5px; height:15px; top:-5px; position: relative; opacity: 100%">
           <rect width="5px" height="15px" style="fill:rgb(0,0,0);opacity: 100%"/>
         </svg>
       </div>
