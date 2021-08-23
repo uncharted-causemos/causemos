@@ -104,7 +104,7 @@ let pcTypes: {[key: string]: string} = {};
 const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
-const currentLineSelection: Array<ScenarioData> = [];
+let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
 const isCategoricalAxis = (name: string) => {
@@ -601,20 +601,19 @@ function renderParallelCoordinates(
       }
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
-
-      selectLine(selectedLine, event, d, lineStrokeWidthSelected);
-
       const selectedLineData = selectedLine.datum() as ScenarioData;
+
       if (selectedLineData) {
-        currentLineSelection.push(selectedLineData);
+        if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
+          deselectLine(selectedLine, event, lineStrokeWidthNormal);
+          currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
+        } else {
+          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
+          currentLineSelection.push(selectedLineData);
+          updateSelectionTooltips(svgElement, selectedLine);
+        }
       } else {
         currentLineSelection.length = 0;
-      }
-
-      // if we have valid selection (either by direct click on a line or through brushing)
-      //  then update the tooltips
-      if (selectedLineData) {
-        updateSelectionTooltips(svgElement, selectedLine);
       }
 
       // notify external listeners
@@ -1476,6 +1475,26 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
     // Use D3 to select the line, change color and size
     selectedLine
       .classed('selected', true)
+      .transition().duration(highlightDuration)
+      .style('stroke', colorFunc)
+      .style('opacity', lineOpacityVisible)
+      .attr('stroke-width', lineWidth);
+
+    // since a line is just select, prevent other higher up elements (e.g. svg) from cancelling this selection
+    if (event) {
+      event.stopPropagation();
+    }
+  }
+}
+
+// function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
+function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, lineWidth: number) {
+  const selectedLineData = selectedLine.datum();
+
+  if (selectedLineData) {
+    // Use D3 to select the line, change color and size
+    selectedLine
+      .classed('selected', false)
       .transition().duration(highlightDuration)
       .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible)
