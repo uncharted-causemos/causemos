@@ -257,21 +257,15 @@ function generateSelectableTimestamps(
     // Notch background
     // Extend side length of notch backgroundto make sure it covers the right
     //  half of the border rect
-    console.log(translate(-notchSideLength, -notchSideLength) + ' rotate(45) ' +
-    isRightOfCenter
-      ? translate(TOOLTIP_WIDTH, markerHeight / 2)
-      : translate(0, markerHeight / 2));
     tooltip
       .append('rect')
       .attr('width', notchSideLength * 2)
       .attr('height', notchSideLength * 2)
-      .attr('transform-origin', 'center')
       .attr(
         'transform',
-        translate(-notchSideLength, -notchSideLength) + ' rotate(45) ' +
         isRightOfCenter
-          ? translate(TOOLTIP_WIDTH, markerHeight / 2)
-          : translate(0, markerHeight / 2)
+          ? translate(TOOLTIP_WIDTH - 3 * offset, markerHeight / 2) + 'rotate(-45)'
+          : translate(-offset, markerHeight / 2) + 'rotate(-45)'
       )
       .attr('fill', TOOLTIP_BG_COLOUR);
     (valuesAtEachTimestamp.get(timestamp) ?? [])
