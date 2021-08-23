@@ -226,8 +226,9 @@ export default defineComponent({
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const datacubeId = analysisItems.value[0].id;
     const initialViewConfig: ViewState = analysisItems.value[0].viewConfig;
+    const initialDataConfig: DataState = analysisItems.value[0].dataConfig;
 
-    // aply view config for this datacube
+    // apply initial view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
       if (initialViewConfig.temporalResolution !== undefined) {
         selectedTemporalResolution.value = initialViewConfig.temporalResolution as TemporalResolutionOption;
@@ -256,6 +257,15 @@ export default defineComponent({
         selectedAdminLevel.value = initialViewConfig.selectedAdminLevel;
       }
     }
+    // apply initial data config for this datacube
+    const initialSelectedRegionIds: string[] = [];
+    if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
+      if (initialDataConfig.selectedRegionIds !== undefined) {
+        initialDataConfig.selectedRegionIds.forEach(regionId => {
+          initialSelectedRegionIds.push(regionId);
+        });
+      }
+    }
 
     const selectedModelId = ref(datacubeId);
 
@@ -281,7 +291,8 @@ export default defineComponent({
       selectedScenarioIds,
       metadata,
       selectedAdminLevel,
-      breakdownOption
+      breakdownOption,
+      initialSelectedRegionIds
     );
 
     const timeInterval = 10000;
@@ -338,20 +349,6 @@ export default defineComponent({
       } else {
         isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
-    });
-
-    watchEffect(() => {
-      const dataState: DataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value,
-        datacubeTitles: [{
-          datacubeName: metadata.value?.name ?? '',
-          datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
-        }],
-        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
-      };
-      store.dispatch('insightPanel/setDataState', dataState);
     });
 
     const clearRouteParam = () => {
@@ -446,7 +443,29 @@ export default defineComponent({
         selectedAdminLevel: selectedAdminLevel.value
       };
       store.dispatch('insightPanel/setViewState', viewState);
+
+      //
+      // data state
+      //
+      if (currentAnalysisItem.dataConfig === undefined) {
+        currentAnalysisItem.dataConfig = {} as ViewState;
+      }
+      const dataState: DataState = {
+        selectedModelId: selectedModelId.value,
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value,
+        datacubeTitles: [{
+          datacubeName: metadata.value?.name ?? '',
+          datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
+        }],
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
+        selectedRegionIds: selectedRegionIds.value
+      };
+      store.dispatch('insightPanel/setDataState', dataState);
+
+      // FIXME: state is now stored in two places: dataAnalysis and insightPanel
       currentAnalysisItem.viewConfig = viewState;
+      currentAnalysisItem.dataConfig = dataState;
       store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
     });
 
