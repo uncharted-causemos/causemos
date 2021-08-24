@@ -448,7 +448,7 @@ export default defineComponent({
       // data state
       //
       if (currentAnalysisItem.dataConfig === undefined) {
-        currentAnalysisItem.dataConfig = {} as ViewState;
+        currentAnalysisItem.dataConfig = {} as DataState;
       }
       const dataState: DataState = {
         selectedModelId: selectedModelId.value,
