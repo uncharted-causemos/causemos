@@ -217,7 +217,6 @@ export default {
       this.setLayout(Object.assign({}, this.layout, { layoutOption: alg }));
     },
     setLayoutDirection(e) {
-      // this.$emit('setLayoutOption', { direction: e.target.value });
       this.setLayout(Object.assign({}, this.layout, { direction: e.target.value }));
     },
     setEdgeOpacity(e) {
@@ -251,10 +250,6 @@ export default {
 <style lang="scss">
   #graph-action-bar {
     display: flex;
-    label {
-      margin-left: 5px;
-      margin-right: 5px;
-    }
     .graph-setting-border-right {
       border-right: 1px solid #ccc;
     }
@@ -271,9 +266,6 @@ export default {
       &.disabled {
         pointer-events: none;
         color: #888;
-      }
-      input[type=number] {
-        width: 40px;
       }
       .btn-primary {
         display: inline-block;
