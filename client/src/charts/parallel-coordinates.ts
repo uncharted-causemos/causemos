@@ -104,7 +104,7 @@ let pcTypes: {[key: string]: string} = {};
 const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
-const currentLineSelection: Array<ScenarioData> = [];
+let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
 const isCategoricalAxis = (name: string) => {
@@ -519,7 +519,10 @@ function renderParallelCoordinates(
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
           if (!isCategoricalAxis(b.dimName)) {
-            if (+lineData[b.dimName] < +b.start || +lineData[b.dimName] > +b.end) {
+            // @FIXME: comparing (floating point) numbers, should use a reasonable tolerance
+            //  for now, convert all numbers as 2 fixed floating point and compare
+            const lineDataValue = +(+lineData[b.dimName]).toFixed(2);
+            if (lineDataValue < +b.start || lineDataValue > +b.end) {
               isSelected = false;
             }
           } else {
@@ -601,20 +604,19 @@ function renderParallelCoordinates(
       }
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
-
-      selectLine(selectedLine, event, d, lineStrokeWidthSelected);
-
       const selectedLineData = selectedLine.datum() as ScenarioData;
+
       if (selectedLineData) {
-        currentLineSelection.push(selectedLineData);
+        if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
+          deselectLine(selectedLine, event, lineStrokeWidthNormal);
+          currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
+        } else {
+          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
+          currentLineSelection.push(selectedLineData);
+          updateSelectionTooltips(svgElement, selectedLine);
+        }
       } else {
         currentLineSelection.length = 0;
-      }
-
-      // if we have valid selection (either by direct click on a line or through brushing)
-      //  then update the tooltips
-      if (selectedLineData) {
-        updateSelectionTooltips(svgElement, selectedLine);
       }
 
       // notify external listeners
@@ -964,6 +966,42 @@ function renderParallelCoordinates(
               // re-render all the new scenario lines
               renderNewRunsLines();
             })
+            // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is not active
+            .on('mouseover', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              const scaleX = getXScaleFromMap(dimName);
+
+              const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), hoverValue);
+              const xLoc = segmentData.x + ((max - min) / 2);
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Specify where to put label of text
+              gElement.append('text')
+                .attr('x', xLoc + markerTooltipOffsetX)
+                .attr('y', segmentsY + markerTooltipOffsetY)
+                .attr('id', 'h' + '-' + hoverId) // Create an id for text so we can select it later for removing on mouseout
+                .style('fill', 'black')
+                .style('font-size', axisLabelFontSize)
+                .text(function() {
+                  return hoverValue; // Value of the text
+                });
+            })
+            .on('mouseout', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Select text by id and then remove
+              gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
+            })
           ;
         }
       });
@@ -1055,6 +1093,42 @@ function renderParallelCoordinates(
 
               // notify external listeners
               onLinesSelection(selectedLines);
+            })
+            // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is active
+            .on('mouseover', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              const scaleX = getXScaleFromMap(dimName);
+
+              const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), hoverValue);
+              const xLoc = segmentData.x + ((max - min) / 2);
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Specify where to put label of text
+              gElement.append('text')
+                .attr('x', xLoc + markerTooltipOffsetX)
+                .attr('y', segmentsY + markerTooltipOffsetY)
+                .attr('id', 'h' + '-' + hoverId) // Create an id for text so we can select it later for removing on mouseout
+                .style('fill', 'black')
+                .style('font-size', axisLabelFontSize)
+                .text(function() {
+                  return hoverValue; // Value of the text
+                });
+            })
+            .on('mouseout', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Select text by id and then remove
+              gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
             })
           ;
         }
@@ -1246,6 +1320,7 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
       text.raise();
     });
 
+  // freeform custom input support
   axesLabels
     .on('click', function(event: PointerEvent) {
       if (options.newRunsMode) {
@@ -1476,6 +1551,26 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
     // Use D3 to select the line, change color and size
     selectedLine
       .classed('selected', true)
+      .transition().duration(highlightDuration)
+      .style('stroke', colorFunc)
+      .style('opacity', lineOpacityVisible)
+      .attr('stroke-width', lineWidth);
+
+    // since a line is just select, prevent other higher up elements (e.g. svg) from cancelling this selection
+    if (event) {
+      event.stopPropagation();
+    }
+  }
+}
+
+// function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
+function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, lineWidth: number) {
+  const selectedLineData = selectedLine.datum();
+
+  if (selectedLineData) {
+    // Use D3 to select the line, change color and size
+    selectedLine
+      .classed('selected', false)
       .transition().duration(highlightDuration)
       .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible)

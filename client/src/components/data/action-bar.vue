@@ -155,7 +155,7 @@ export default {
         });
         // Back to DataStart page
         this.$router.push({
-          name: 'dataStart',
+          name: 'overview',
           params: {
             project: this.project,
             projectType: ProjectType.Analysis

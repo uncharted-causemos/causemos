@@ -5,16 +5,17 @@
     @click="toggleExpanded"
   >
     <i
-      v-if="itemData.isSelectedAggregationLevel"
+      v-if="checkboxType !== null && itemData.isSelectedAggregationLevel"
       class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
       :class="{
-        'fa-circle': isRadioButtonModeActive && itemData.isChecked,
-        'fa-circle-o': isRadioButtonModeActive && !itemData.isChecked,
-        'fa-check-square-o': !isRadioButtonModeActive && itemData.isChecked,
-        'fa-square-o': !isRadioButtonModeActive && !itemData.isChecked
+        'fa-circle': checkboxType === 'radio' && itemData.isChecked,
+        'fa-circle-o': checkboxType === 'radio' && !itemData.isChecked,
+        'fa-check-square-o': checkboxType === 'checkbox' && itemData.isChecked,
+        'fa-square-o': checkboxType === 'checkbox' && !itemData.isChecked
       }"
       @click.stop="toggleChecked"
     />
+    <!-- TODO: checkboxType === null -->
     <div v-for="i in itemData.indentationCount" :key="i" class="indentation" />
     <i
       v-if="itemData.showExpandToggle"
@@ -35,7 +36,7 @@
         {{ itemData.name }}
       </span>
       <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
-        {{ precisionFormatter(itemData.bars[0].value) ?? 'missing' }}
+        {{ valueFormatter(itemData.bars[0].value) }}
       </span>
       <div
         v-if="itemData.isSelectedAggregationLevel"
@@ -74,7 +75,7 @@
           }"
           :style="{ color: bar.color }"
         >
-          {{ precisionFormatter(bar.value) ?? 'missing' }}
+          {{ valueFormatter(bar.value) }}
         </span>
       </div>
     </div>
@@ -82,7 +83,7 @@
 </template>
 
 <script lang="ts">
-import precisionFormatter from '@/formatters/precision-formatter';
+import * as d3 from 'd3';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType } from '@vue/runtime-core';
 
@@ -124,9 +125,9 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
     },
-    isRadioButtonModeActive: {
-      type: Boolean,
-      default: false
+    checkboxType: {
+      type: String as PropType<'checkbox' | 'radio' | null>,
+      default: null
     }
   },
   computed: {
@@ -159,7 +160,9 @@ export default defineComponent({
     }
   },
   methods: {
-    precisionFormatter,
+    valueFormatter(value: number | null): string {
+      return value !== null ? d3.format(',.2r')(value) : 'missing';
+    },
     toggleExpanded() {
       this.$emit('toggle-expanded');
     },
@@ -238,7 +241,7 @@ export default defineComponent({
 }
 
 span.faded {
-  opacity: 50%;
+  opacity: .5;
 }
 
 .histogram-bar {
@@ -250,7 +253,7 @@ span.faded {
   background: #8767c8;
 
   &.faded {
-    opacity: 25%;
+    opacity: .25;
   }
 }
 

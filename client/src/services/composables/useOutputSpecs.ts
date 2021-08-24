@@ -3,7 +3,7 @@ import { computed } from '@vue/runtime-core';
 import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { useStore } from 'vuex';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 export default function useOutputSpecs(
   selectedModelId: Ref<string>,
@@ -13,8 +13,7 @@ export default function useOutputSpecs(
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+  const { activeFeature } = useActiveDatacubeFeature(metadata);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
     const modelMetadata = metadata.value;
     if (
@@ -24,21 +23,12 @@ export default function useOutputSpecs(
       return [];
     }
 
-    let activeFeature = '';
-    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
-    if (currentOutputEntry !== undefined) {
-      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
-      activeFeature = outputs[currentOutputEntry].name;
-    } else {
-      activeFeature = modelMetadata.default_feature ?? '';
-    }
-
     const activeModelId = modelMetadata.data_id ?? '';
     return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
       id: timeseriesId,
       modelId: activeModelId,
       runId: scenarioId,
-      outputVariable: activeFeature,
+      outputVariable: activeFeature.value,
       timestamp,
       temporalResolution: selectedTemporalResolution.value,
       temporalAggregation: selectedTemporalAggregation.value,

@@ -1,6 +1,6 @@
 <template>
   <div class="datacube-card-container">
-    <div class="insight-capture capture-box">
+    <div class="capture-box">
       <header>
         <slot name="datacube-model-header" />
         <slot name="datacube-model-header-collapse" />
@@ -155,6 +155,7 @@
               :timeseries-data="timeseriesData"
               :selected-timestamp="selectedTimestamp"
               :breakdown-option="breakdownOption"
+              :unit="mainModelOutput?.unit"
               @select-timestamp="emitTimestampSelection"
             />
             <p
@@ -256,7 +257,6 @@ export default defineComponent({
     'on-map-load',
     'set-selected-scenario-ids',
     'select-timestamp',
-    'set-drilldown-data',
     'check-model-metadata-validity',
     'refetch-data',
     'new-runs-mode',
@@ -363,7 +363,6 @@ export default defineComponent({
     const {
       dimensions,
       ordinalDimensionNames,
-      drilldownDimensions,
       runParameterValues
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
@@ -431,7 +430,6 @@ export default defineComponent({
       emitTimestampSelection,
       dimensions,
       ordinalDimensionNames,
-      drilldownDimensions,
       runParameterValues,
       mainModelOutput,
       isModelMetadata,
@@ -468,8 +466,13 @@ export default defineComponent({
   },
   methods: {
     clickData() {
-      const newIds = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready).map(run => run.id).slice(0, 1);
-      this.$emit('set-selected-scenario-ids', newIds);
+      // FIXME: This code to select a model run when switching to the data tab
+      //  should be in a watcher on the parent component to be more robust,
+      //  rather than in this button's click handler.
+      if (this.isModelMetadata && this.selectedScenarioIds.length === 0) {
+        const newIds = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready).map(run => run.id).slice(0, 1);
+        this.$emit('set-selected-scenario-ids', newIds);
+      }
       this.$emit('update-desc-view', false);
     },
     onMapLoad() {
@@ -521,8 +524,6 @@ export default defineComponent({
         // console.log('user selected: ' + e.scenarios.length);
         this.$emit('set-selected-scenario-ids', selectedScenarios.map(s => s.run_id));
       }
-      // we should emit to update the drilldown data everytime scenario selection changes
-      this.$emit('set-drilldown-data', { drilldownDimensions: this.drilldownDimensions });
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
       this.potentialScenarioCount = e.scenarios.length;

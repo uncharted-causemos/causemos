@@ -5,14 +5,18 @@
       <div class="nodes-container">
         <div class="drivers">
           <h5>Top Drivers</h5>
-          <neighbor-node
-            v-for="driver in drivers"
-            :key="driver.edge.id"
-            :node="driver.node"
-            :edge="driver.edge"
-            :is-driver="true"
-            class="neighbor-node"
-          />
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="driver in drivers"
+              :key="driver.edge.id"
+              :node="driver.node"
+              :edge="driver.edge"
+              :is-driver="true"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+              class="neighbor-node"
+            />
+          </template>
         </div>
         <div class="selected-node-column">
           <div class="scenario-selector-row">
@@ -67,6 +71,7 @@
               :min-value="indicatorMin"
               :max-value="indicatorMax"
               :constraints="constraints"
+              :viewing-extent="viewingExtent"
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
@@ -163,14 +168,18 @@
         </div>
         <div class="impacts">
           <h5>Top Impacts</h5>
-          <neighbor-node
-            v-for="impact in impacts"
-            :key="impact.edge.id"
-            :node="impact.node"
-            :edge="impact.edge"
-            :is-driver="false"
-            class="neighbor-node"
-          />
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="impact in impacts"
+              :key="impact.edge.id"
+              :node="impact.node"
+              :edge="impact.edge"
+              :is-driver="false"
+              class="neighbor-node"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+            />
+          </template>
         </div>
       </div>
     </main>
@@ -188,12 +197,14 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
+import { useStore } from 'vuex';
+
+import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
-import { useStore } from 'vuex';
-import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import modelService from '@/services/model-service';
 import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
@@ -205,7 +216,6 @@ import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import _ from 'lodash';
 import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
@@ -283,7 +293,7 @@ export default defineComponent({
     const nodeConceptName = computed(() => selectedNode.value?.label);
 
     const scenarioData = computed(() => {
-      if (modelSummary.value === null || modelComponents.value === null) {
+      if (modelSummary.value === null || modelComponents.value === null || scenarios.value.length === 0) {
         return null;
       }
       return modelService.buildNodeChartData(
@@ -323,6 +333,7 @@ export default defineComponent({
       };
     });
 
+    // FIXME
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
     watch([selectedNodeScenarioData], () => {
       if (_.isEmpty(historicalTimeseries.value)) {
@@ -473,6 +484,14 @@ export default defineComponent({
       });
       try {
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+
+        // FIXME: manually set historical for now because bad watcher
+        historicalTimeseries.value = [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2017, 1) },
+          { value: 0.5, timestamp: Date.UTC(2017, 2) }
+        ];
+
         refreshModelData();
       } catch {
         console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
@@ -592,6 +611,28 @@ export default defineComponent({
       currentCAG
     );
 
+    // Find out the default viewing window
+    const viewingExtent = computed<number[] | null>(() => {
+      const parameter = modelSummary.value?.parameter;
+      if (!parameter) {
+        return null;
+      } else {
+        const projections = selectedNodeScenarioData.value?.projections || [];
+        let max = Number.NEGATIVE_INFINITY;
+        for (let i = 0; i < projections.length; i++) {
+          for (let j = 0; j < projections[i].values.length; j++) {
+            if (max < projections[i].values[j].timestamp) {
+              max = projections[i].values[j].timestamp;
+            }
+          }
+        }
+        return [
+          Math.min(parameter.indicator_time_series_range.start, parameter.projection_start),
+          Math.max(parameter.indicator_time_series_range.end, max)
+        ];
+      }
+    });
+
     return {
       nodeConceptName,
       drilldownPanelTabs,
@@ -625,8 +666,10 @@ export default defineComponent({
       project,
       currentCAG,
       clearParameterization,
+      viewingExtent,
       hasConstraints,
-      clearConstraints
+      clearConstraints,
+      scenarioData
     };
   },
   methods: {
