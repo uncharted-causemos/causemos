@@ -44,7 +44,7 @@ const applyBreakdown = (
       }));
       return {
         name: year,
-        id: year, // FIXME: this should be timeseriesData[0].id and the rest of the code should be updated for that
+        id: year,
         color: colorFromIndex(index),
         points: mappedToBreakdownDomain
       };
@@ -307,28 +307,22 @@ export default function useTimeseriesData(
 
   // Whenever the selected runs change, reset "relative to" state
   //  and selected breakdown option
-  watch(
-    () => [modelRunIds.value, timeseriesData.value],
-    () => {
-      if (modelRunIds.value && modelRunIds.value.length === 0) {
-        relativeTo.value = null;
-      }
-
-      if (timeseriesData.value && modelRunIds.value) {
-        // check that both corresponds to each other
-        const timeseriesIDs = timeseriesData.value.map(t => t.id);
-        if (_.isEqual(timeseriesIDs, modelRunIds.value)) {
-          if (timeseriesData.value.findIndex(t => t.id === relativeTo.value) < 0) {
-            relativeTo.value = null;
-          }
-          // breakdownOption.value = null;
-        }
-      }
-    },
-    {
-      immediate: true
+  watchEffect(() => {
+    // Don't reset relativeTo until data has loaded, in case relativeTo is
+    //  loaded from an insight and will be valid once timeseriesData has been
+    //  populated.
+    const dataHasLoaded =
+      rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
+    // If no timeseries has an ID of `relativeTo`, then `relativeTo` cannot
+    //   be used to select a valid baseline and shouldbe reset to `null`.
+    const doesRelativeToExistInData = timeseriesData.value.some(
+      ({ id }) => id === relativeTo.value
+    );
+    const shouldResetRelativeTo = dataHasLoaded && !doesRelativeToExistInData;
+    if (shouldResetRelativeTo) {
+      relativeTo.value = null;
     }
-  );
+  });
 
   return {
     timeseriesData,
