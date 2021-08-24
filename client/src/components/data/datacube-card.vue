@@ -92,15 +92,12 @@
                       @click="$emit('update-desc-view', false)">
                 Data
               </button>
-              <button
-                v-if="dataPaths.length > 0"
-                class="btn btn-default"
-                :class="{'btn-primary':isDescriptionView}"
-                @click="showDatasets = true"
-              >
-                Show Datasets
-              </button>
             </div>
+            <small-text-button
+              v-if="dataPaths.length > 0"
+              :label="'Download Raw Data'"
+              @click="showDatasets = true"
+            />
             <div
               v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
               class="relative-box"
@@ -155,7 +152,7 @@
             </template>
             <template #body>
               <div v-for="dataPath in dataPaths" :key="dataPath">
-                <a :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
+                <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
                 <br/>
                 <br/>
               </div>
@@ -282,6 +279,7 @@ import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestampMillis } from '@/utils/date-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -371,7 +369,8 @@ export default defineComponent({
     DropdownControl,
     ModalNewScenarioRuns,
     ModalCheckRunsExecutionStatus,
-    Modal
+    Modal,
+    SmallTextButton
   },
   setup(props, { emit }) {
     const store = useStore();
@@ -558,6 +557,10 @@ export default defineComponent({
 @import '~styles/variables';
 
 $fullscreenTransition: all 0.5s ease-in-out;
+
+.dataset-link {
+  text-decoration: underline;
+}
 
 .datacube-card-container {
   background-color: $background-light-1;
