@@ -437,7 +437,8 @@ export default defineComponent({
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        const values = isStatefulDataNode(node)
+        const values = isStatefulDataNode(node) &&
+        (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || selectedBreakdownOption.value !== SpatialAggregationLevel.Region)
           ? node.bars.map(bar => bar.value)
           : [];
         return _.min(values) ?? 0;
