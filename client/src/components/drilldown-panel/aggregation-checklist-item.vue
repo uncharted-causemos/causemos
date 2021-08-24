@@ -41,6 +41,7 @@
         </span>
       </div>
       <aggregation-checklist-histogram
+        v-if="histogramVisible"
         :barColor="itemData.bars[0].color"
         :barValue="itemData.bars[0].value"
         :isChecked="itemData.isChecked"
@@ -65,6 +66,7 @@
       >
         <div class="histogram-bar-wrapper">
           <aggregation-checklist-histogram
+            v-if="histogramVisible"
             :barColor="bar.color"
             :barValue="bar.value"
             :isChecked="itemData.isChecked"
@@ -126,6 +128,10 @@ export default defineComponent({
         indentationCount: 0,
         hiddenAncestorNames: []
       })
+    },
+    histogramVisible: {
+      type: Boolean,
+      default: true
     },
     maxVisibleBarValue: {
       type: Number,

@@ -23,6 +23,7 @@
       :ordered-aggregation-level-keys="ADMIN_LEVEL_KEYS"
       :raw-data="regionalData"
       :units="unit"
+      :selected-breakdown-option="selectedBreakdownOption"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
       :checkbox-type="
@@ -61,6 +62,7 @@
       :aggregation-level-title="qualifierVariable.name"
       :ordered-aggregation-level-keys="[qualifierVariable.name]"
       :raw-data="qualifierVariable.data"
+      :selected-breakdown-option="selectedBreakdownOption"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :units="unit"
       :checkbox-type="
@@ -101,6 +103,7 @@
       :ordered-aggregation-level-keys="['Year']"
       :raw-data="temporalBreakdownData"
       :units="unit"
+      :selected-breakdown-option="selectedBreakdownOption"
       :selected-timeseries-points="selectedTimeseriesPoints"
     >
       <template #aggregation-description>

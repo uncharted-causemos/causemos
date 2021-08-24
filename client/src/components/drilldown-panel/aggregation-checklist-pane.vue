@@ -55,6 +55,7 @@
       <aggregation-checklist-item
         v-for="(row, rowIndex) of visibleRows"
         :key="rowIndex"
+        :histogram-visible="selectedBreakdownOption !== SpatialAggregationLevel.Region || row.isChecked"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
         :min-visible-bar-value="minVisibleBarValue"
@@ -85,6 +86,7 @@ import {
   computed
 } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { SpatialAggregationLevel } from '@/types/Enums';
 
 const SORT_OPTIONS = {
   Name: { label: 'Name', value: 'name' },
@@ -297,6 +299,14 @@ export default defineComponent({
       type: String,
       default: null
     },
+    selectedBreakdownOption: {
+      type: String,
+      required: true
+    },
+    selectedRegionIds: {
+      type: Object as PropType<string[] | null>,
+      default: null
+    },
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
@@ -316,6 +326,7 @@ export default defineComponent({
       rawData,
       aggregationLevel,
       orderedAggregationLevelKeys,
+      selectedBreakdownOption,
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
@@ -404,7 +415,8 @@ export default defineComponent({
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        const values = isStatefulDataNode(node)
+        const values = isStatefulDataNode(node) &&
+          (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || selectedBreakdownOption.value !== SpatialAggregationLevel.Region)
           ? node.bars.map(bar => bar.value)
           : [];
         return _.max(values) ?? 0;
@@ -476,6 +488,7 @@ export default defineComponent({
     });
 
     const toggleChecked = (path: string[]) => {
+      console.log(path);
       const aggregationLevel =
         orderedAggregationLevelKeys.value[path.length - 1];
       const itemId = path.join(REGION_ID_DELIMETER);
@@ -506,6 +519,7 @@ export default defineComponent({
       isAllSelected,
       toggleChecked,
       setAllChecked,
+      SpatialAggregationLevel,
       SORT_OPTIONS,
       sortValue
     };
