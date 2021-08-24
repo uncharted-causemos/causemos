@@ -55,7 +55,7 @@
                     >{{output.display_name !== '' ? output.display_name : output.name}}</option>
                   </select>
                   <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-                  <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
+                  <span class="datacube-name">{{metadata.name}}</span>
                 </h5>
                 <disclaimer
                   v-if="scenarioCount > 0"
@@ -691,6 +691,11 @@ export default defineComponent({
   flex: 1;
   margin: 10px;
   margin-top: 0;
+}
+
+.datacube-name {
+  @include header-secondary;
+  margin-left: 10px;
 }
 
 .search-button {
