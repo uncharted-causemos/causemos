@@ -155,6 +155,7 @@
               :timeseries-data="timeseriesData"
               :selected-timestamp="selectedTimestamp"
               :breakdown-option="breakdownOption"
+              :unit="mainModelOutput?.unit"
               @select-timestamp="emitTimestampSelection"
             />
             <p

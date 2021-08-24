@@ -1,7 +1,24 @@
 <template>
   <div class="timeseries-chart-container">
-    <svg ref="lineChart" />
-    <resize-observer @notify="resize" />
+    <div class="chart">
+      <svg ref="lineChart" />
+      <resize-observer @notify="resize" />
+    </div>
+    <div class="selected-data">
+      <span class="unit">{{ unit }}</span>
+      <div class="selected-data-rows">
+        <div
+          v-for="timeseries in dataAtSelectedTimestamp"
+          :key="timeseries.id"
+          class="selected-data-row"
+          :style="{ color: timeseries.color }"
+        >
+          <strong>{{ timeseries.name }}</strong>
+          <span>{{ valueFormatter(timeseries.value) }}</span>
+        </div>
+      </div>
+      <span class="timestamp">{{ timestampFormatter(selectedTimestamp) }} </span>
+    </div>
   </div>
 </template>
 
@@ -10,7 +27,19 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import renderTimeseries from '@/charts/timeseries-renderer';
 import { Timeseries } from '@/types/Timeseries';
-import { defineComponent, PropType, onMounted, ref, watch, toRefs } from 'vue';
+import {
+  defineComponent,
+  PropType,
+  onMounted,
+  ref,
+  watch,
+  toRefs,
+  computed
+} from 'vue';
+import dateFormatter from '@/formatters/date-formatter';
+import { chartValueFormatter } from '@/utils/string-util';
+import { getTimestampMillis } from '@/utils/date-util';
+import { TemporalAggregationLevel } from '@/types/Enums';
 
 const RESIZE_DELAY = 15;
 
@@ -27,18 +56,26 @@ export default defineComponent({
       default: 0
     },
     selectedTimestampRange: {
-      type: Object as PropType<{start: number; end: number} | null>,
+      type: Object as PropType<{ start: number; end: number } | null>,
       default: null
     },
     breakdownOption: {
       type: String as PropType<string | null>,
       default: null
+    },
+    unit: {
+      type: String,
+      default: ''
     }
   },
   setup(props, { emit }) {
-    const { timeseriesData, breakdownOption, selectedTimestamp, selectedTimestampRange } = toRefs(
-      props
-    );
+    const {
+      timeseriesData,
+      breakdownOption,
+      selectedTimestamp,
+      selectedTimestampRange,
+      unit
+    } = toRefs(props);
     const lineChart = ref<HTMLElement | null>(null);
     function selectTimestamp(newValue: number) {
       emit('select-timestamp', newValue);
@@ -46,6 +83,14 @@ export default defineComponent({
     let updateTimestampElements:
       | ((timestamp: number | null) => void)
       | undefined;
+    const timestampFormatter = (timestamp: number) => {
+      if (breakdownOption.value === TemporalAggregationLevel.Year) {
+        const month = timestamp;
+        // We're only displaying the month, so the year doesn't matter
+        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
+      }
+      return dateFormatter(timestamp, 'MMMM YYYY');
+    };
     const resize = _.debounce(function({ width, height }) {
       if (lineChart.value === null || timeseriesData.value.length === 0) return;
       const svg = d3.select<HTMLElement, null>(lineChart.value);
@@ -62,7 +107,9 @@ export default defineComponent({
         selectedTimestamp.value,
         selectTimestamp,
         breakdownOption.value,
-        selectedTimestampRange.value
+        selectedTimestampRange.value,
+        unit.value,
+        timestampFormatter
       );
     }, RESIZE_DELAY);
     watch(
@@ -74,7 +121,11 @@ export default defineComponent({
       }
     );
     watch(
-      () => [timeseriesData.value, breakdownOption.value, selectedTimestampRange.value],
+      () => [
+        timeseriesData.value,
+        breakdownOption.value,
+        selectedTimestampRange.value
+      ],
       () => {
         // Underlying data has changed, so rerender chart
         const parentElement = lineChart.value?.parentElement;
@@ -85,6 +136,27 @@ export default defineComponent({
         });
       }
     );
+    const valueFormatter = computed(() => {
+      const allPoints = timeseriesData.value.map(timeSeries => timeSeries.points).flat();
+      const yExtent = d3.extent(allPoints.map(point => point.value));
+      if (yExtent[0] === undefined) { return chartValueFormatter(); }
+      return chartValueFormatter(...yExtent);
+    });
+    const dataAtSelectedTimestamp = computed(() => {
+      return timeseriesData.value
+        .map(({ id, name, color, points }) => ({
+          id,
+          name,
+          color,
+          value: points.find(
+            point => point.timestamp === selectedTimestamp.value
+          )?.value
+        }))
+        .filter(({ value }) => value !== undefined)
+        .sort(({ value: a }, { value: b }) => {
+          return (b as number) - (a as number);
+        });
+    });
     onMounted(() => {
       const parentElement = lineChart.value?.parentElement;
       if (parentElement === null || parentElement === undefined) return;
@@ -93,16 +165,57 @@ export default defineComponent({
         height: parentElement.clientHeight
       });
     });
-    return { resize, lineChart };
+    return {
+      resize,
+      lineChart,
+      dataAtSelectedTimestamp,
+      timestampFormatter,
+      valueFormatter
+    };
   }
 });
 </script>
 
 <style lang="scss" scoped>
+@import '@/styles/variables';
+
 .timeseries-chart-container {
-  position: relative;
   width: 100%;
   height: 140px;
+  display: flex;
+}
+
+.chart {
+  flex: 1;
+  min-width: 0;
+  position: relative;
+}
+
+.selected-data {
+  width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+}
+
+.selected-data-rows {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  align-self: stretch;
+}
+
+.selected-data-row {
+  display: flex;
+  justify-content: space-between;
+}
+
+.unit {
+  color: $text-color-medium;
+}
+
+.timestamp {
+  color: $selected-dark
 }
 
 ::v-deep(.xAxis .domain) {
