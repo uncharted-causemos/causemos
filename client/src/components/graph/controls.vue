@@ -28,6 +28,11 @@
           {{ item.name }}
         </option>
       </select>
+      <button class="btn btn-sm btn-primary"
+        @click="setFit">
+        <i class="fa fa-fw fa-arrows"/>
+        Fit
+      </button>
     </div>
     <div class="graph-setting graph-setting-border-right">
       <toggle-button
@@ -166,6 +171,9 @@ export default {
       default: true
     }
   },
+  emits: [
+    'fit', 'setNodeDepth', 'addToSearch', 'removeFromSearch'
+  ],
   data: () => ({
     hops: 1,
     nodeButtonTitles: {
@@ -198,6 +206,9 @@ export default {
     ...mapActions({
       setLayout: 'query/setLayout'
     }),
+    setFit() {
+      this.$emit('fit');
+    },
     expandAll: function() {
       this.$emit('expandAll');
     },
@@ -262,7 +273,7 @@ export default {
         color: #888;
       }
       input[type=number] {
-        width: 50px;
+        width: 40px;
       }
       .btn-primary {
         display: inline-block;
@@ -281,10 +292,6 @@ export default {
       .slider span {
         padding: 5px;
       }
-    }
-
-    .find-path-button > *, .layouts > * {
-      margin: 0px 3px;
     }
   }
 
