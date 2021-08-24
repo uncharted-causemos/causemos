@@ -68,8 +68,8 @@ const selectionTooltipNormalYOffset = 30;
 const tooltipTextFontSize = '14px';
 
 // baseline defaults
-const baselineMarkerSize = 5;
-const baselineMarkerFill = 'brown';
+const baselineMarkerSize = 3;
+const baselineMarkerFill = 'black';
 const baselineMarkerStroke = 'white';
 
 // markers tooltip within new-runs mode
