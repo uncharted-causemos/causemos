@@ -62,8 +62,8 @@ const enlargeAxesScaleToFitData = false;
 
 // tooltips
 const tooltipRectPadding = 4;
-const lineHoverTooltipTextBackgroundColor = 'green';
-const lineSelectionTooltipTextBackgroundColor = 'yellow';
+const lineHoverTooltipTextBackgroundColor = 'black';
+const lineSelectionTooltipTextBackgroundColor = 'white';
 const selectionTooltipNormalYOffset = 30;
 const tooltipTextFontSize = '14px';
 
@@ -80,12 +80,11 @@ const markerTooltipOffsetY = -20;
 const axisLabelOffsetX = 0;
 const axisLabelOffsetY = -15;
 const axisLabelFontSize = '12px';
-const axisLabelFontWeight = 'bold';
 const axisLabelTextAnchor = 'start';
-const axisInputLabelFillColor = 'black';
-const axisOutputLabelFillColor = 'green';
+const axisLabelFillColor = 'black';
 const axisTickLabelFontSize = '12';
 const axisTickLabelOffset = 0; // FIXME: this should be dynamic based on the word size; ignore for now
+const axisOutputLabelFontSize = '10px';
 
 // brushing
 const brushHeight = 8;
@@ -1270,17 +1269,19 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
     .style('text-anchor', axisLabelTextAnchor)
     .attr('x', axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
-    .text(function(d) {
-      if (d.display_name !== undefined) {
-        return d.display_name;
-      }
-      return d.name;
-    })
-    .style('fill', function(d) {
-      return isOutputDimension(dimensions, d.name) ? axisOutputLabelFillColor : axisInputLabelFillColor;
-    })
-    .style('font-size', axisLabelFontSize)
-    .style('font-weight', axisLabelFontWeight);
+    .text(d => (d.display_name ?? d.name))
+    .style('fill', axisLabelFillColor)
+    .style('font-size', axisLabelFontSize);
+
+  renderedAxes
+    .filter(d => isOutputDimension(dimensions, d.name))
+    .append('text')
+    .style('text-anchor', axisLabelTextAnchor)
+    .attr('x', axisLabelOffsetX)
+    .attr('y', axisLabelOffsetY * 2)
+    .text('OUTPUT')
+    .style('fill', axisLabelFillColor)
+    .style('font-size', axisOutputLabelFontSize);
 
   // add descriptive title (i.e., embedded tooltip) for each axis name
   // first start with dimension names as the desc, then update in a later step
