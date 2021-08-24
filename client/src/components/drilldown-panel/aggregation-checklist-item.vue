@@ -239,7 +239,7 @@ export default defineComponent({
 }
 
 span.faded {
-  opacity: 50%;
+  opacity: .5;
 }
 
 .histogram-bar {
@@ -251,7 +251,7 @@ span.faded {
   background: #8767c8;
 
   &.faded {
-    opacity: 25%;
+    opacity: .25;
   }
 }
 
