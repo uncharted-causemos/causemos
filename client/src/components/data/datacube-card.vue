@@ -151,19 +151,17 @@
           </header>
           <modal v-if="showDatasets">
             <template #header>
-              <h4 class="header"> Datasets </h4>
+              <h4 class="header"> Parquet files used to populate this datacube </h4>
             </template>
             <template #body>
+              <div v-for="dataPath in dataPaths" :key="dataPath">
+                <a :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
+                <br/>
+                <br/>
+              </div>
               <p>
-                This modal contains links to the parquet files that are used to generate the data on this webpage.
-                <a href="https://github.com/uncharted-causemos/parquet-to-csv">https://github.com/uncharted-causemos/parquet-to-csv</a>
-                contains code used to process the parquet files.
+                <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
               </p>
-              <ul>
-                <div v-for="dataPath in dataPaths" :key="dataPath">
-                  <li><a :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a></li>
-                </div>
-              </ul>
             </template>
             <template #footer>
               <div
@@ -590,10 +588,6 @@ header {
     margin: 0;
     font-weight: normal;
   }
-}
-
-.header {
-  text-align: center;
 }
 
 .scenario-header {
