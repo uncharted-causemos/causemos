@@ -202,7 +202,7 @@ function renderParallelCoordinates(
   //
   // baseline defaults
   //
-  renderBaselineMarkers(!!options.showBaselineDefaults);
+  renderBaselineMarkers();
 
   //
   // axis labels
@@ -1161,36 +1161,32 @@ function colorFunc(this: SVGPathElement) {
   }
 }
 
-function renderBaselineMarkers(showBaselineDefaults: boolean) {
+function renderBaselineMarkers() {
   if (!renderedAxes) {
     console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
     return;
   }
-
   renderedAxes.selectAll('circle').remove();
-
-  if (showBaselineDefaults) {
-    renderedAxes
-      .filter(function(d) { return (d as ModelParameter).default !== undefined; })
-      .append('circle')
-      .style('stroke', baselineMarkerStroke)
-      .style('fill', baselineMarkerFill)
-      .attr('pointer-events', 'none')
-      .attr('r', baselineMarkerSize)
-      .attr('cx', function(d) {
-        const axisDefault = (d as ModelParameter).default;
-        const dimName = d.name;
-        const scaleX = getXScaleFromMap(dimName);
-        let xPos: number = scaleX(axisDefault as any) as number;
-        if (isCategoricalAxis(dimName)) {
-          const axisDefaultStr = axisDefault.toString();
-          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
-          xPos = min + (max - min) / 2;
-        }
-        return xPos;
-      })
-      .attr('cy', 0);
-  }
+  renderedAxes
+    .filter(function(d) { return (d as ModelParameter).default !== undefined; })
+    .append('circle')
+    .style('stroke', baselineMarkerStroke)
+    .style('fill', baselineMarkerFill)
+    .attr('pointer-events', 'none')
+    .attr('r', baselineMarkerSize)
+    .attr('cx', function(d) {
+      const axisDefault = (d as ModelParameter).default;
+      const dimName = d.name;
+      const scaleX = getXScaleFromMap(dimName);
+      let xPos: number = scaleX(axisDefault as any) as number;
+      if (isCategoricalAxis(dimName)) {
+        const axisDefaultStr = axisDefault.toString();
+        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
+        xPos = min + (max - min) / 2;
+      }
+      return xPos;
+    })
+    .attr('cy', 0);
 }
 
 function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionInfo>) {
@@ -1886,6 +1882,5 @@ const getXScaleFromMap = (dimName: string) => {
 };
 
 export {
-  renderParallelCoordinates,
-  renderBaselineMarkers
+  renderParallelCoordinates
 };

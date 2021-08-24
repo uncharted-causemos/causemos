@@ -19,7 +19,7 @@
 <script lang="ts">
 import * as d3 from 'd3';
 import _ from 'lodash';
-import { renderParallelCoordinates, renderBaselineMarkers } from '@/charts/parallel-coordinates';
+import { renderParallelCoordinates } from '@/charts/parallel-coordinates';
 import { defineComponent, PropType } from 'vue';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo } from '@/types/Datacube';
@@ -46,10 +46,6 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: undefined
     },
-    showBaselineDefaults: {
-      type: Boolean,
-      default: false
-    },
     newRunsMode: {
       type: Boolean,
       default: false
@@ -68,10 +64,6 @@ export default defineComponent({
     },
     selectedDimensions(): void {
       this.render(undefined);
-    },
-    showBaselineDefaults(): void {
-      // do not re-render everything, just update markers visibility
-      renderBaselineMarkers(this.showBaselineDefaults);
     },
     newRunsMode(): void {
       this.render(undefined);
@@ -115,7 +107,6 @@ export default defineComponent({
       const options: ParallelCoordinatesOptions = {
         width,
         height,
-        showBaselineDefaults: this.showBaselineDefaults,
         initialDataSelection: this.initialDataSelection,
         newRunsMode: this.newRunsMode
       };

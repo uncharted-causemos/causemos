@@ -20,15 +20,6 @@
         <div v-if="isModelMetadata" class="scenario-selector">
           <div>
             <div class="checkbox">
-              <label @click="toggleBaselineDefaultsVisibility()">
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
-                />
-                Default Values
-              </label>
-            </div>
-            <div class="checkbox">
               <label @click="toggleNewRunsMode()">
                 <i
                   class="fa fa-lg fa-fw"
@@ -44,7 +35,6 @@
             :selected-dimensions="dimensions"
             :ordinal-dimensions="ordinalDimensionNames"
             :initial-data-selection="isDescriptionView ? [] : selectedScenarioIds"
-            :show-baseline-defaults="showBaselineDefaults"
             :new-runs-mode="showNewRunsMode"
             @select-scenario="updateScenarioSelection"
             @generated-scenarios="updateGeneratedScenarios"
@@ -472,7 +462,6 @@ export default defineComponent({
     };
   },
   data: () => ({
-    showBaselineDefaults: true,
     showDatasets: false,
     showNewRunsMode: false,
     potentialScenarioCount: 0,
@@ -527,19 +516,11 @@ export default defineComponent({
     onSyncMapBounds(mapBounds: Array<Array<number>>) {
       this.mapBounds = mapBounds;
     },
-    toggleBaselineDefaultsVisibility() {
-      this.showBaselineDefaults = !this.showBaselineDefaults;
-    },
     toggleNewRunsMode() {
-      // reset visibility of baselinedefault when toggling the new-runs-mode
-      this.showBaselineDefaults = false;
-
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
 
       if (this.showNewRunsMode) {
-        // always force baselinedefault to be visible when the new-runs-mode is active
-        this.showBaselineDefaults = true;
         // clear any selected scenario and show the model desc page
         this.updateScenarioSelection({ scenarios: [] });
       }
