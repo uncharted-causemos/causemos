@@ -488,7 +488,6 @@ export default defineComponent({
     });
 
     const toggleChecked = (path: string[]) => {
-      console.log(path);
       const aggregationLevel =
         orderedAggregationLevelKeys.value[path.length - 1];
       const itemId = path.join(REGION_ID_DELIMETER);
