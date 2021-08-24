@@ -23,7 +23,7 @@
       />
     </div>
     <div class="sort-selection">
-      <label>Sort By:</label>
+      <span>Sort by</span>
       <radio-button-group
         :selected-button-value="sortValue"
         :buttons="Object.values(SORT_OPTIONS)"
@@ -547,8 +547,13 @@ h5 {
 
 .sort-selection {
   width: fit-content;
+  display: flex;
+  align-items: center;
   margin-top: 10px;
   margin-bottom: 10px;
+  span {
+    padding-right: 20px;
+  }
 }
 
 .aggregation-level-range {
