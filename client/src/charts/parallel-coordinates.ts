@@ -519,7 +519,10 @@ function renderParallelCoordinates(
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
           if (!isCategoricalAxis(b.dimName)) {
-            if (+lineData[b.dimName] < +b.start || +lineData[b.dimName] > +b.end) {
+            // @FIXME: comparing (floating point) numbers, should use a reasonable tolerance
+            //  for now, convert all numbers as 2 fixed floating point and compare
+            const lineDataValue = +(+lineData[b.dimName]).toFixed(2);
+            if (lineDataValue < +b.start || lineDataValue > +b.end) {
               isSelected = false;
             }
           } else {
