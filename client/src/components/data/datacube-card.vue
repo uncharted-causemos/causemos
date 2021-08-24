@@ -18,17 +18,6 @@
       <div class="flex-row">
         <!-- if has multiple scenarios -->
         <div v-if="isModelMetadata" class="scenario-selector">
-          <div>
-            <div class="checkbox">
-              <label @click="toggleNewRunsMode()">
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-toggle-on': showNewRunsMode, 'fa-toggle-off': !showNewRunsMode }"
-                />
-                New Runs Mode
-              </label>
-            </div>
-          </div>
           <parallel-coordinates-chart
             class="pc-chart"
             :dimensions-data="runParameterValues"
@@ -39,29 +28,31 @@
             @select-scenario="updateScenarioSelection"
             @generated-scenarios="updateGeneratedScenarios"
           />
-          <div v-if="showNewRunsMode">
-            <disclaimer
-              :message="
-                potentialScenarioCount +
-                  ' scenario(s) can be generated'
-              "
-            />
-            <button
-              class="search-button btn btn-primary btn-call-for-action"
-              :class="{ 'disabled': potentialScenarioCount === 0}"
-              @click="requestNewModelRuns()"
-            >
-              Review
-            </button>
-          </div>
-          <div v-else>
-            <button
-              class="search-button btn btn-primary btn-call-for-action"
-              @click="showModelExecutionStatus()"
-            >
-              Check execution status
-            </button>
-          </div>
+          <button
+            class="btn toggle-new-runs-button"
+            :class="{
+              'btn-primary btn-call-for-action': !showNewRunsMode,
+              'btn-default': showNewRunsMode
+            }"
+            @click="toggleNewRunsMode()"
+          >
+            {{ showNewRunsMode ? 'Cancel' : 'Request new runs' }}
+          </button>
+          <button
+            v-if="showNewRunsMode"
+            class="btn btn-primary btn-call-for-action"
+            :class="{ 'disabled': potentialScenarioCount === 0}"
+            @click="requestNewModelRuns()"
+          >
+            Review {{ potentialScenarioCount }} new scenario{{ potentialScenarioCount !== 1 ? 's' : '' }}
+          </button>
+          <button
+            v-else
+            class="btn btn-default"
+            @click="showModelExecutionStatus()"
+          >
+            Check execution status
+          </button>
         </div>
         <div class="column">
           <div class="button-row">
@@ -248,7 +239,6 @@ import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect } 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
@@ -352,7 +342,6 @@ export default defineComponent({
   components: {
     timeseriesChart,
     DatacubeScenarioHeader,
-    Disclaimer,
     ParallelCoordinatesChart,
     DataAnalysisMap,
     DropdownControl,
@@ -624,6 +613,10 @@ header {
   min-height: 0;
 }
 
+.toggle-new-runs-button {
+  margin-bottom: 5px;
+}
+
 .relative-box {
   position: relative;
 }
@@ -632,16 +625,6 @@ header {
   position: absolute;
   top: 100%;
   right: 0;
-}
-
-.checkbox {
-  user-select: none; /* Standard syntax */
-  display: inline-block;
-  label {
-    font-weight: normal;
-    cursor: pointer;
-    margin: 0;
-  }
 }
 
 .timeseries-chart {
