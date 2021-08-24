@@ -71,14 +71,13 @@ export default defineComponent({
     const historicalTimeseriesBeforeStart = computed(() => {
       let projectionStartTimestamp = 0;
       if (projections.value.length > 0) {
-        // Get the first timestamp from one of the projections.
-        //  Prefer to check the selectedScenario since it's less likely to be
-        //  stale, and fallback to the first scenario if, for some reason, the
-        //  selectedScenario can't be found.
-        const selectedScenario =
-          projections.value.find(
-            ({ scenarioId }) => scenarioId === selectedScenarioId.value
-          ) ?? projections.value[0];
+        // Get the first timestamp from the first projection.
+        // FIXME: can we make this selection a little smarter to use the
+        //  selected scenario, or at least a non-empty, non-stale scenario?
+        // CAUTION: when placing a new clamp, the new draft scenario has
+        //  no projection points but is selected. When trying to make this
+        //  logic smarter, watch for that case.
+        const selectedScenario = projections.value[0];
         if (selectedScenario.values.length === 0) {
           console.error(
             `When deriving the projection start timestamp, scenario with ID ${selectedScenario.scenarioId} had no points.`
