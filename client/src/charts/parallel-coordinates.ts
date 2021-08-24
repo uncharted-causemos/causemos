@@ -963,6 +963,42 @@ function renderParallelCoordinates(
               // re-render all the new scenario lines
               renderNewRunsLines();
             })
+            // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is not active
+            .on('mouseover', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              const scaleX = getXScaleFromMap(dimName);
+
+              const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), hoverValue);
+              const xLoc = segmentData.x + ((max - min) / 2);
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Specify where to put label of text
+              gElement.append('text')
+                .attr('x', xLoc + markerTooltipOffsetX)
+                .attr('y', segmentsY + markerTooltipOffsetY)
+                .attr('id', 'h' + '-' + hoverId) // Create an id for text so we can select it later for removing on mouseout
+                .style('fill', 'black')
+                .style('font-size', axisLabelFontSize)
+                .text(function() {
+                  return hoverValue; // Value of the text
+                });
+            })
+            .on('mouseout', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Select text by id and then remove
+              gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
+            })
           ;
         }
       });
@@ -1054,6 +1090,42 @@ function renderParallelCoordinates(
 
               // notify external listeners
               onLinesSelection(selectedLines);
+            })
+            // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is active
+            .on('mouseover', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              const scaleX = getXScaleFromMap(dimName);
+
+              const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), hoverValue);
+              const xLoc = segmentData.x + ((max - min) / 2);
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Specify where to put label of text
+              gElement.append('text')
+                .attr('x', xLoc + markerTooltipOffsetX)
+                .attr('y', segmentsY + markerTooltipOffsetY)
+                .attr('id', 'h' + '-' + hoverId) // Create an id for text so we can select it later for removing on mouseout
+                .style('fill', 'black')
+                .style('font-size', axisLabelFontSize)
+                .text(function() {
+                  return hoverValue; // Value of the text
+                });
+            })
+            .on('mouseout', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Select text by id and then remove
+              gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
             })
           ;
         }
@@ -1245,6 +1317,7 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
       text.raise();
     });
 
+  // freeform custom input support
   axesLabels
     .on('click', function(event: PointerEvent) {
       if (options.newRunsMode) {
