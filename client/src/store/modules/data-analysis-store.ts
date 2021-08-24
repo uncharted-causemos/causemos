@@ -55,9 +55,6 @@ const actions: ActionTree<AnalysisState, any> = {
     const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
     commit('setAnalysisItems', items);
   },
-  updateViewConfig({ commit }, analysisItem: AnalysisItem) {
-    commit('setViewConfig', analysisItem);
-  },
   setTimeSelectionSyncing({ commit }, newValue: boolean) {
     commit('setTimeSelectionSyncing', newValue);
   }
@@ -74,19 +71,6 @@ const mutations: MutationTree<AnalysisState> = {
   },
   setAnalysisItemsPreview(state, items = []) {
     state.analysisItems = items;
-  },
-  setViewConfig(state, analysisItem: AnalysisItem) {
-    const datacubeId = analysisItem.datacubeId;
-    const viewConfig = analysisItem.viewConfig;
-
-    // note that by updating the datacubeAnalysisItem we have implicitly updated the state
-    const updatedAnalysisItems = _.cloneDeep(state.analysisItems);
-    const datacubeAnalysisItem = updatedAnalysisItems.find(ai => ai.datacubeId === datacubeId);
-    if (datacubeAnalysisItem !== undefined) {
-      datacubeAnalysisItem.viewConfig = viewConfig;
-    }
-    state.analysisItems = updatedAnalysisItems;
-    saveState(state);
   },
   setTimeSelectionSyncing(state, newValue: boolean) {
     state.timeSelectionSyncing = newValue;

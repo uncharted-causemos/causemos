@@ -23,42 +23,12 @@ export const UNKNOWN_POLARITY_BULK_MESSAGE = {
 };
 
 export const EXPORT_MESSAGES = {
-  NOT_SAVED_MODELS: 'There are not saved models',
   COMMENT_NOT_SAVED: 'Comment could not be saved'
-};
-
-export const NEW_EVIDENCE = {
-  SUCCESSFUL_SUBMISSION: 'Text sent successfully to Eidos for parsing. Will let you know when the new statement(s) are available',
-  ERRONEOUS_SUBMISSION: 'Could not send text to Eidos. Try again later',
-  EMPTY_SUBMISSION: 'There is no evidence submitted. Try again',
-  ERRONEOUS_RESPONSE: 'Could not create new statement(s) due to error. Try again',
-  SUCCESSFUL_MERGE: 'Statements successfully added to the knowledge base',
-  ERRONEOUS_MERGE: 'Merge was unsuccessful. Try again'
 };
 
 export const CURATIONS = {
   SUCCESSFUL_CURATION: 'Positive feedback sent to INDRA',
   ERRONEOUS_CURATION: 'Curation was unsuccessful. Try again'
-};
-
-export const UPDATE_BELIEF_SCORE = {
-  SUCCESSFUL_SUBMISSION: 'Belief scores successfully updated',
-  ERRONEOUS_SUBMISSION: 'There was an error in updating belief scores. Try again later'
-};
-
-export const ONTOLOGY_AUGMENTATION = {
-  SUCCESSFUL_ADDITION: 'New concept succesfully added',
-  ERRONEOUS_ADDITION: 'There was an error in adding a new concept.'
-};
-
-export const UPDATE_GROUNDINGS = {
-  SUCCESSFUL_SUBMISSION: 'Successful submission. New concepts will be ready in a few minutes',
-  ERRONEOUS_SUBMISSION: 'There was an error in updating concepts. Try again later'
-};
-
-export const MODEL_CREATION = {
-  REMOVE_UNKNOWN_POLARITIES: 'There are statements with unknown polarities',
-  REMOVE_SAME_OPPOSITE_POLARITIES: 'There are statements with both same and opposite polarities'
 };
 
 export const DATE_SELECTION = {
@@ -123,13 +93,8 @@ export default {
   CORRECTIONS,
   UNKNOWN_POLARITY_BULK_MESSAGE,
   EXPORT_MESSAGES,
-  NEW_EVIDENCE,
   CURATIONS,
-  UPDATE_BELIEF_SCORE,
-  ONTOLOGY_AUGMENTATION,
-  UPDATE_GROUNDINGS,
   SERVICE_NOT_AVAILABLE,
-  MODEL_CREATION,
   DATE_SELECTION,
   EMPTY_INPUT_PARAMS,
   INSIGHTS,

@@ -51,7 +51,7 @@ export default defineComponent({
     }
   },
   computed: {
-    totalBarLength() {
+    totalBarLength(): number {
       return this.maxVisibleBarValue - this.minVisibleBarValue;
     }
   },

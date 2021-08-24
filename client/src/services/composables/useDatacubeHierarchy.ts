@@ -32,7 +32,8 @@ export default function useDatacubeHierarchy(
   selectedScenarioIds: Ref<string[]>,
   metadata: Ref<Model | Indicator | null>,
   selectedAdminLevel: Ref<number>,
-  breakdownOption: Ref<string | null>
+  breakdownOption: Ref<string | null>,
+  initialSelectedRegionIds?: string[]
 ) {
   /**
    * Contains the lists of regions at each admin level across all timestamps
@@ -98,7 +99,18 @@ export default function useDatacubeHierarchy(
   );
   watch([datacubeHierarchy], () => {
     // Reset the selected region list when the list of all regions changes
-    selectedRegionIdsAtAllLevels.value = _.clone(EMPTY_ADMIN_REGION_SETS);
+
+    const emptyRegionSets = _.clone(EMPTY_ADMIN_REGION_SETS) as any;
+
+    if (initialSelectedRegionIds !== undefined && initialSelectedRegionIds.length > 0) {
+      const adminLevel: string = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
+
+      initialSelectedRegionIds.forEach(regionId => {
+        emptyRegionSets[adminLevel].add(regionId);
+      });
+    }
+
+    selectedRegionIdsAtAllLevels.value = emptyRegionSets;
   });
   watchEffect(() => {
     // If multiselection is no longer allowed, truncate the list of selected

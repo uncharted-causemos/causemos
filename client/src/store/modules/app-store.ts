@@ -77,6 +77,9 @@ const actions: ActionTree<AppState, any> = {
   setConceptDefinitions: ({ commit }, examples) => {
     commit('setConceptDefinitions', examples);
   },
+  updateOntologyCache: ({ commit }, v) => {
+    commit('updateOntologyCache', v);
+  },
   setDatacubeCurrentOutputsMap: ({ commit }, value) => {
     commit('setDatacubeCurrentOutputsMap', value);
   }
@@ -105,6 +108,10 @@ const mutations: MutationTree<AppState> = {
   },
   setConceptDefinitions(state, definitions) {
     state.conceptDefinitions = definitions;
+  },
+  updateOntologyCache(state, v) {
+    state.ontologyConcepts.push(v);
+    state.ontologySet.add(v);
   },
   setDatacubeCurrentOutputsMap(state, value) {
     state.datacubeCurrentOutputsMap = value;

@@ -54,6 +54,7 @@
           @check-model-metadata-validity="checkModelMetadataValidity"
           @update-desc-view="updateDescView"
           @set-relative-to="setRelativeTo"
+          @new-runs-mode="newRunsMode=!newRunsMode"
         >
           <template v-slot:datacube-model-header>
             <datacube-model-header
@@ -239,6 +240,18 @@ export default defineComponent({
     );
 
     const modelRunsFetchedAt = ref(0);
+    const newRunsMode = ref(false);
+
+    const timeInterval = 10000;
+
+    function fetchData() {
+      if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
+        modelRunsFetchedAt.value = Date.now();
+      }
+    }
+
+    // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
+    const timerHandler = setInterval(fetchData, timeInterval);
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
     // so no external status need to be tracked
@@ -458,7 +471,9 @@ export default defineComponent({
       selectedRegionIds,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      timerHandler,
+      newRunsMode
     };
   },
   watch: {
@@ -496,6 +511,9 @@ export default defineComponent({
       immediate: true
     }
   },
+  unmounted(): void {
+    clearInterval(this.timerHandler);
+  },
   async mounted() {
     // ensure the insight explorer panel is closed in case the user has
     //  previously opened it and clicked the browser back button
@@ -503,57 +521,55 @@ export default defineComponent({
 
     let foundPublishedInsights = false;
 
-    if (this.countInsights > 0) {
-      // we have some insights, some/all of which relates to the current model instance
+    // we have some insights, some/all of which relates to the current model instance
 
-      // first, fetch public insights to load the publication status, as needed
-      const publicInsights = await this.getPublicInsights();
-      if (publicInsights.length > 0) {
-        // we have at least one public insight, which we should use to fetch view configurations
-        const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
-        const viewConfig = defaultInsight.view_state;
-        if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
-          (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
+    // first, fetch public insights to load the publication status, as needed
+    const publicInsights = await this.getPublicInsights();
+    if (publicInsights.length > 0) {
+      // we have at least one public insight, which we should use to fetch view configurations
+      const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
+      const viewConfig = defaultInsight.view_state;
+      if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
+        (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
-          if (viewConfig.temporalAggregation) {
-            this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
-          }
-          if (viewConfig.temporalResolution) {
-            this.setSelectedTemporalResolution(viewConfig.temporalResolution);
-          }
-          if (viewConfig.spatialAggregation) {
-            this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
-          }
-          if (viewConfig.selectedAdminLevel !== undefined) {
-            this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
-          }
-          if (viewConfig.selectedMapBaseLayer) {
-            this.setBaseLayer(viewConfig.selectedMapBaseLayer);
-          }
-          if (viewConfig.selectedMapDataLayer) {
-            this.setDataLayer(viewConfig.selectedMapDataLayer);
-          }
-          if (viewConfig.selectedOutputIndex) {
-            const modelId = this.metadata?.id as string;
-            const defaultFeature = {
-              [modelId]: viewConfig.selectedOutputIndex
-            };
-            this.setDatacubeCurrentOutputsMap(defaultFeature);
-          }
-          if (viewConfig.breakdownOption !== undefined) {
-            this.setBreakdownOption(viewConfig.breakdownOption);
-          }
-
-          // @TODO:
-          //  need to support applying an insight by both domain modeler as well as analyst
-
-          // ensure that all publication steps are marked as complete
-          this.publishingSteps.forEach(step => {
-            step.completed = true;
-          });
-
-          foundPublishedInsights = true;
+        if (viewConfig.temporalAggregation) {
+          this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
         }
+        if (viewConfig.temporalResolution) {
+          this.setSelectedTemporalResolution(viewConfig.temporalResolution);
+        }
+        if (viewConfig.spatialAggregation) {
+          this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
+        }
+        if (viewConfig.selectedAdminLevel !== undefined) {
+          this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
+        }
+        if (viewConfig.selectedMapBaseLayer) {
+          this.setBaseLayer(viewConfig.selectedMapBaseLayer);
+        }
+        if (viewConfig.selectedMapDataLayer) {
+          this.setDataLayer(viewConfig.selectedMapDataLayer);
+        }
+        if (viewConfig.selectedOutputIndex) {
+          const modelId = this.metadata?.id as string;
+          const defaultFeature = {
+            [modelId]: viewConfig.selectedOutputIndex
+          };
+          this.setDatacubeCurrentOutputsMap(defaultFeature);
+        }
+        if (viewConfig.breakdownOption !== undefined) {
+          this.setBreakdownOption(viewConfig.breakdownOption);
+        }
+
+        // @TODO:
+        //  need to support applying an insight by both domain modeler as well as analyst
+
+        // ensure that all publication steps are marked as complete
+        this.publishingSteps.forEach(step => {
+          step.completed = true;
+        });
+
+        foundPublishedInsights = true;
       }
     }
 

@@ -37,7 +37,7 @@
           {{ itemData.name }}
         </span>
         <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
-          {{ precisionFormatter(itemData.bars[0].value) ?? 'missing' }}
+          {{ valueFormatter(itemData.bars[0].value) }}
         </span>
       </div>
       <aggregation-checklist-histogram
@@ -81,7 +81,7 @@
           }"
           :style="{ color: bar.color }"
         >
-          {{ precisionFormatter(bar.value) ?? 'missing' }}
+          {{ valueFormatter(bar.value) }}
         </span>
       </div>
     </div>
@@ -89,7 +89,7 @@
 </template>
 
 <script lang="ts">
-import precisionFormatter from '@/formatters/precision-formatter';
+import * as d3 from 'd3';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType } from '@vue/runtime-core';
 import AggregationChecklistHistogram from '@/components/drilldown-panel/aggregation-checklist-histogram.vue';
@@ -174,7 +174,9 @@ export default defineComponent({
     }
   },
   methods: {
-    precisionFormatter,
+    valueFormatter(value: number | null): string {
+      return value !== null ? d3.format(',.2r')(value) : 'missing';
+    },
     toggleExpanded() {
       this.$emit('toggle-expanded');
     },
