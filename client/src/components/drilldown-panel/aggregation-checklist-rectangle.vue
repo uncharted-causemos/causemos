@@ -19,7 +19,6 @@ export default {
   height: 8px;
   top: -2px;
   position: relative;
-  opacity: 100%;
   & .rect {
     fill: #000000;
     opacity: 100%;
