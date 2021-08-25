@@ -139,7 +139,7 @@
             </template>
           </modal>
           <div class="column">
-            <div style="display: flex; flex-direction: row;">
+            <div class="dropdown-row">
               <slot
                 name="temporal-aggregation-config"
                 v-if="!isDescriptionView && timeseriesData.length > 0"
@@ -169,7 +169,7 @@
             </p>
             <div
               v-if="!isDescriptionView && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
-              style="display: flex; flex-direction: row;"
+              class="dropdown-row"
             >
               <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
             </div>
@@ -672,6 +672,11 @@ $marginSize: 5px;
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-top: 5px;
+}
+
+.dropdown-row {
+  display: flex;
   margin-top: 5px;
 }
 

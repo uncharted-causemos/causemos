@@ -92,13 +92,14 @@
 
           <template #spatial-aggregation-config>
             <dropdown-button
-              class="spatial-aggregation"
+              class="dropdown-config"
               :inner-button-label="'Spatial Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedSpatialAggregation"
               @item-selected="setSpatialAggregationSelection"
             />
             <map-dropdown
+              class="dropdown-config"
               :selectedBaseLayer="selectedBaseLayer"
               :selectedDataLayer="selectedDataLayer"
               @set-base-layer="setBaseLayer"
@@ -703,7 +704,8 @@ export default defineComponent({
   margin: 0;
 }
 
-.spatial-aggregation {
-  margin: 5px 0;
+.dropdown-config:not(:first-child) {
+  margin-left: 5px;
 }
+
 </style>
