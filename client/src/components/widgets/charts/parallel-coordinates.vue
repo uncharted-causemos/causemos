@@ -1,7 +1,7 @@
 <template>
   <div class="parallel-coordinates-container">
     <span class="scenario-count">
-      {{scenarioCount}} scenario{{scenarioCount != 1 ? 's' : ''}}.
+      {{scenarioCount}} model run{{scenarioCount != 1 ? 's' : ''}}.
     </span>
     <div class="chart-wrapper">
       <svg
