@@ -76,7 +76,7 @@
               v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
               class="relative-box"
             >
-              Relative to:
+              Relative to
               <button
                 class="btn btn-default"
                 @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"

@@ -663,7 +663,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-experiment-container {
-  height: $content-full-height;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -680,7 +680,7 @@ export default defineComponent({
   min-width: 0;
   flex: 1;
   margin: 10px;
-  margin-top: 0;
+  margin-left: 0;
 }
 
 .datacube-name {
