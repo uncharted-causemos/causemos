@@ -8,4 +8,9 @@ module.exports = require('yargs')
     describe: 'Size of the LRU cache',
     default: 5000
   })
+  .options('morgan-format', {
+    describe: 'Predefined morgan middleware format - this is an opt-in argument',
+    choices: ['common', 'dev', 'combined', 'short', 'short'],
+    default: undefined
+  })
   .argv;
