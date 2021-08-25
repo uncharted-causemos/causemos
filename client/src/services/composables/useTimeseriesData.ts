@@ -248,15 +248,18 @@ export default function useTimeseriesData(
       const modelRunId = modelRunIds.value[index];
       reduced.forEach(({ year, value }) => {
         const entryForThisYear = result.find(entry => entry.id === year);
+        const timeseriesId = breakdownOption.value === TemporalAggregationLevel.Year
+          ? year
+          : modelRunId;
         if (entryForThisYear === undefined) {
           // Add an entry for this year
           result.push({
             id: year,
-            values: { [modelRunId]: value }
+            values: { [timeseriesId]: value }
           });
         } else {
           // Add a value to this year's entry
-          entryForThisYear.values[modelRunId] = value;
+          entryForThisYear.values[timeseriesId] = value;
         }
       });
     });
