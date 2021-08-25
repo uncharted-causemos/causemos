@@ -181,13 +181,17 @@ export default defineComponent({
       }
 
       ::v-deep(.axis .pc-brush .selection) {
-        fill-opacity: .3;
-        fill:darkred;
+        fill-opacity: .5;
+        fill: $selected;
+        stroke: none;
         shape-rendering: crispEdges;
       }
 
       ::v-deep(.axis .pc-brush .handle) {
-        stroke: black;
+        fill: #f8f8f8;
+        stroke: #888;
+        rx: 4;
+        ry: 4;
       }
 
       ::v-deep(.axis text) {
