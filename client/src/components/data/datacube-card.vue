@@ -113,17 +113,12 @@
             </div>
           </div>
           <slot name="datacube-description" v-if="isDescriptionView" />
-          <header v-if="isExpanded && !isDescriptionView">
-            <datacube-scenario-header
-              v-if="mainModelOutput && isModelMetadata"
-              class="scenario-header"
-              :outputVariable="mainModelOutput.display_name"
-              :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
-              :metadata="metadata"
-              :selected-scenario-ids="selectedScenarioIds"
-              :color-from-index="colorFromIndex"
-            />
-          </header>
+          <datacube-scenario-header
+            v-if="isExpanded && !isDescriptionView && mainModelOutput && isModelMetadata"
+            :metadata="metadata"
+            :selected-scenario-ids="selectedScenarioIds"
+            :color-from-index="colorFromIndex"
+          />
           <modal v-if="showDatasets">
             <template #header>
               <h4 class="header"> Parquet files used to populate this datacube </h4>
@@ -588,10 +583,6 @@ header {
     margin: 0;
     font-weight: normal;
   }
-}
-
-.scenario-header {
-  flex: 1;
 }
 
 .column {
