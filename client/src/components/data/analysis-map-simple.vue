@@ -273,7 +273,7 @@ export default {
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = [];
           for (const v of data) {
-            values.push(...Object.values(v.values));
+            values.push(...Object.values(_.omit(v.values, 'unselected region')));
           }
           if (values.length) {
             stats[key] = { min: Math.min(...values), max: Math.max(...values) };
