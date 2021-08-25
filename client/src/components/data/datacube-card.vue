@@ -56,21 +56,17 @@
         </div>
         <div class="column">
           <div class="button-row">
-            <!-- TODO: extract button-group to its own component -->
-            <div class="button-group">
-              <button class="btn btn-default"
-                      :class="{'btn-primary':isDescriptionView}"
-                      @click="$emit('update-desc-view', true)">
-                Descriptions
-              </button>
-              <!-- make 'Data' tab disabled when no scenario selection -->
-              <button class="btn btn-default"
-                      :class="{'btn-primary':!isDescriptionView}"
-                      :disabled="!validModelRunsAvailable"
-                      @click="clickData">
-                Data
-              </button>
-            </div>
+            <radio-button-group
+              :selected-button-value="isDescriptionView"
+              :buttons="[
+                { label: 'Descriptions', value: true},
+                { label: 'Data', value: false},
+              ]"
+              @button-clicked="(value) => value
+                ? $emit('update-desc-view', true)
+                : clickData()
+              "
+            />
             <small-text-button
               v-if="dataPaths.length > 0"
               :label="'Download Raw Data'"
@@ -255,6 +251,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { getTimestampMillis } from '@/utils/date-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
+import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -343,7 +340,8 @@ export default defineComponent({
     ModalNewScenarioRuns,
     ModalCheckRunsExecutionStatus,
     Modal,
-    SmallTextButton
+    SmallTextButton,
+    RadioButtonGroup
   },
   setup(props, { emit }) {
     const store = useStore();
@@ -673,6 +671,8 @@ $marginSize: 5px;
 .button-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
 }
 
 .data-analysis-card-container {
