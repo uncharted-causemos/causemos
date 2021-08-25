@@ -43,7 +43,7 @@
             :dimensions-data="runParameterValues"
             :selected-dimensions="dimensions"
             :ordinal-dimensions="ordinalDimensionNames"
-            :initial-data-selection="isDescriptionView ? [] : selectedScenarioIds"
+            :initial-data-selection="selectedScenarioIds"
             :show-baseline-defaults="showBaselineDefaults"
             :new-runs-mode="showNewRunsMode"
             @select-scenario="updateScenarioSelection"
