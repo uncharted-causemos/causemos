@@ -232,6 +232,7 @@
                   :region-data="regionalData"
                   :grid-layer-stats="gridLayerStats"
                   :selected-base-layer="selectedBaseLayer"
+                  :unit="unit"
                   @sync-bounds="onSyncMapBounds"
                   @on-map-load="onMapLoad"
                   @slide-handle-change="updateMapFilters"
@@ -357,6 +358,10 @@ export default defineComponent({
     selectedDataLayer: {
       type: String,
       required: true
+    },
+    unit: {
+      type: String as PropType<string>,
+      default: null
     }
   },
   components: {

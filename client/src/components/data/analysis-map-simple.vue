@@ -199,6 +199,10 @@ export default {
     selectedBaseLayer: {
       type: String,
       required: true
+    },
+    unit: {
+      type: String,
+      default: null
     }
   },
   data: () => ({
@@ -561,7 +565,7 @@ export default {
 
       const value = prop[this.valueProp];
       const format = v => chartValueFormatter(this.extent.min, this.extent.max)(v);
-      const rows = [format(value)];
+      const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
         const diff = prop[this.valueProp] - prop[this.baselineSpec.id];
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);

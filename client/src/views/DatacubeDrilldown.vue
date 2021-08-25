@@ -33,6 +33,7 @@
           :selected-timeseries-points="selectedTimeseriesPoints"
           :selectedBaseLayer="selectedBaseLayer"
           :selectedDataLayer="selectedDataLayer"
+          :unit="unit"
           @set-selected-scenario-ids="setSelectedScenarioIds"
           @select-timestamp="setSelectedTimestamp"
           @set-relative-to="setRelativeTo"
