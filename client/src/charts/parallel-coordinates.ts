@@ -61,7 +61,8 @@ const lineColorsUnknown = '#000000ff';
 const enlargeAxesScaleToFitData = false;
 
 // tooltips
-const tooltipRectPadding = 4;
+const tooltipRectPaddingY = 4;
+const tooltipRectPaddingX = 6;
 const lineHoverTooltipTextBackgroundColor = 'black';
 const lineSelectionTooltipTextBackgroundColor = 'white';
 const selectionTooltipNormalYOffset = 30;
@@ -1388,8 +1389,6 @@ function renderHoverTooltips() {
     .attr('class', 'pc-hover-tooltip-text-bkgnd-rect')
     .attr('id', function(d) { return d.name; }) // name of the dimension
     .style('fill', lineHoverTooltipTextBackgroundColor)
-    .attr('rx', 8)
-    .attr('ry', 8)
     .attr('x', 0)
     .attr('y', 0)
     .attr('width', 10)
@@ -1417,8 +1416,6 @@ function renderSelectionTooltips() {
     .attr('class', 'pc-selection-tooltip-text-bkgnd-rect')
     .attr('id', function(d) { return d.name; }) // name of the dimension
     .style('fill', lineSelectionTooltipTextBackgroundColor)
-    .attr('rx', 8)
-    .attr('ry', 8)
     .attr('x', 0)
     .attr('y', 0)
     .attr('width', 10)
@@ -1525,18 +1522,18 @@ function updateSelectionToolTipsRect(svgElement: D3Selection) {
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
       // if xPos + text-rect-width is beyond the svg width, then adjust
-      let xPos = textBBox.x - tooltipRectPadding;
-      const width = textBBox.width + tooltipRectPadding * 2;
+      let xPos = textBBox.x - tooltipRectPaddingX;
+      const width = textBBox.width + tooltipRectPaddingX * 2;
       const offset = (xPos + width) - axisRange[1];
       if (offset > 0) {
         xPos -= offset;
-        text.attr('x', xPos + tooltipRectPadding);
+        text.attr('x', xPos + tooltipRectPaddingX);
       }
       rect
         .attr('x', xPos)
-        .attr('y', textBBox.y - tooltipRectPadding)
+        .attr('y', textBBox.y - tooltipRectPaddingY)
         .attr('width', width)
-        .attr('height', textBBox.height + tooltipRectPadding * 2);
+        .attr('height', textBBox.height + tooltipRectPaddingY * 2);
       text.raise();
     });
 }
@@ -1655,18 +1652,18 @@ const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
       // if xPos + text-rect-width is beyond the svg width, then adjust
-      let xPos = textBBox.x - tooltipRectPadding;
-      const width = textBBox.width + tooltipRectPadding * 2;
+      let xPos = textBBox.x - tooltipRectPaddingX;
+      const width = textBBox.width + tooltipRectPaddingX * 2;
       const offset = (xPos + width) - axisRange[1];
       if (offset > 0) {
         xPos -= offset;
-        text.attr('x', xPos + tooltipRectPadding);
+        text.attr('x', xPos + tooltipRectPaddingX);
       }
       rect
         .attr('x', xPos)
-        .attr('y', textBBox.y - tooltipRectPadding)
+        .attr('y', textBBox.y - tooltipRectPaddingY)
         .attr('width', width)
-        .attr('height', textBBox.height + tooltipRectPadding * 2);
+        .attr('height', textBBox.height + tooltipRectPaddingY * 2);
       text.raise();
     });
 };
