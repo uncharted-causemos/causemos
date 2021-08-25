@@ -1163,7 +1163,7 @@ function colorFunc(this: SVGPathElement) {
 
 function renderBaselineMarkers() {
   if (!renderedAxes) {
-    console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
+    console.warn('Cannot render baseline markers before rendering the actual parallel coordinates!');
     return;
   }
   renderedAxes.selectAll('circle').remove();
