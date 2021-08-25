@@ -93,7 +93,7 @@
       </template>
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
-      v-if="isTemporalBreakdownDataValid && selectedBreakdownOption === null"
+      v-if="isTemporalBreakdownDataValid"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
       :aggregation-level="0"
@@ -102,6 +102,13 @@
       :raw-data="temporalBreakdownData"
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
+      :checkbox-type="
+        selectedBreakdownOption === TemporalAggregationLevel.Year
+          ? 'checkbox'
+          : 'radio'
+      "
+      :selected-item-ids="Array.from(selectedYears)"
+      @toggle-is-item-selected="toggleIsYearSelected"
     >
       <template #aggregation-description>
         <p class="aggregation-description">
@@ -181,6 +188,10 @@ export default defineComponent({
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
+    selectedYears: {
+      type: Object as PropType<Set<string>>,
+      default: () => new Set()
+    },
     selectedBreakdownOption: {
       type: String as PropType<string | null>,
       default: null
@@ -194,6 +205,7 @@ export default defineComponent({
     'set-selected-admin-level',
     'toggle-is-region-selected',
     'toggle-is-qualifier-selected',
+    'toggle-is-year-selected',
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
@@ -216,6 +228,10 @@ export default defineComponent({
       qualifierValue: string
     ) => {
       emit('toggle-is-qualifier-selected', qualifierValue);
+    };
+
+    const toggleIsYearSelected = (title: string, year: string) => {
+      emit('toggle-is-year-selected', year);
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
@@ -281,6 +297,7 @@ export default defineComponent({
       setSelectedAdminLevel,
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
+      toggleIsYearSelected,
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
@@ -289,7 +306,8 @@ export default defineComponent({
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
       AggregationOption,
-      SpatialAggregationLevel
+      SpatialAggregationLevel,
+      TemporalAggregationLevel
     };
   }
 });

@@ -13,13 +13,14 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import _ from 'lodash';
-import { computed, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, Ref, ref, shallowRef, watch, watchEffect } from 'vue';
 import { getQualifierTimeseries } from '../new-datacube-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
-  breakdownOption: string | null
+  breakdownOption: string | null,
+  selectedYears: Set<string>
 ): Timeseries[] => {
   if (
     breakdownOption !== TemporalAggregationLevel.Year ||
@@ -32,7 +33,7 @@ const applyBreakdown = (
     getYearFromTimestamp(point.timestamp)
   );
   return Object.keys(brokenDownByYear)
-    .slice(-5) // FIXME: remove -5 slice, replace it with aggregation pane checkbox state
+    .filter((year) => selectedYears.has(year))
     .map((year, index) => {
       const points = brokenDownByYear[year];
       // Depending on the selected breakdown option, timestamp values may need to be mapped
@@ -271,6 +272,57 @@ export default function useTimeseriesData(
     };
   });
 
+
+  const selectedYears = shallowRef(new Set<string>());
+  watchEffect(() => {
+    // Don't reset selected year list until data has loaded, in case it gets
+    //  loaded from an insight and will be valid once timeseriesData has been
+    //  populated.
+    const dataHasLoaded =
+      rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
+    if (!dataHasLoaded || breakdownOption.value !== TemporalAggregationLevel.Year) {
+      return;
+    }
+    // If no timeseries has an ID of `year`, then remove it from the list of
+    //  selected years
+    const doesYearExistInData = (year: string) => timeseriesData.value.some(
+      ({ id }) => id === year
+    );
+    const filteredSelectedYears = new Set<string>();
+    Array.from(selectedYears.value.values())
+      .filter(doesYearExistInData)
+      .forEach(year => {
+        filteredSelectedYears.add(year);
+      });
+    selectedYears.value = filteredSelectedYears;
+  });
+  const isMultiSelectionAllowed = computed(
+    () => breakdownOption.value === TemporalAggregationLevel.Year
+  );
+  const toggleIsYearSelected = (year: string) => {
+    const isYearSelected = selectedYears.value.has(
+      year
+    );
+    const updatedList = _.clone(selectedYears.value);
+
+
+    if (isYearSelected) {
+      // If year is currently selected, remove it from the list of
+      //  selected years.
+      updatedList.delete(year);
+    } else if (isMultiSelectionAllowed.value) {
+      // Else if multiple years can be selected add it to the list of selected years.
+      updatedList.add(year);
+    } else {
+      // Otherwise, replace the list of selected years with this year.
+      updatedList.clear();
+      updatedList.add(year);
+    }
+
+    // Assign new object to selectedYears.value to trigger reactivity updates.
+    selectedYears.value = updatedList;
+  };
+
   const processedTimeseriesData = computed(() => {
     if (rawTimeseriesData.value.length === 0) {
       return {
@@ -280,7 +332,8 @@ export default function useTimeseriesData(
     }
     const afterApplyingBreakdown = applyBreakdown(
       rawTimeseriesData.value,
-      breakdownOption.value
+      breakdownOption.value,
+      selectedYears.value
     );
     return applyRelativeTo(afterApplyingBreakdown, relativeTo.value);
   });
@@ -329,6 +382,8 @@ export default function useTimeseriesData(
     ),
     relativeTo,
     setRelativeTo,
-    temporalBreakdownData
+    temporalBreakdownData,
+    selectedYears,
+    toggleIsYearSelected
   };
 }
