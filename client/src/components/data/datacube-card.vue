@@ -56,22 +56,24 @@
         </div>
         <div class="column">
           <div class="button-row">
-            <radio-button-group
-              :selected-button-value="isDescriptionView"
-              :buttons="[
-                { label: 'Descriptions', value: true},
-                { label: 'Data', value: false},
-              ]"
-              @button-clicked="(value) => value
-                ? $emit('update-desc-view', true)
-                : clickData()
-              "
-            />
-            <small-text-button
-              v-if="dataPaths.length > 0"
-              :label="'Download Raw Data'"
-              @click="showDatasets = true"
-            />
+            <div class="button-row-group">
+              <radio-button-group
+                :selected-button-value="isDescriptionView"
+                :buttons="[
+                  { label: 'Descriptions', value: true},
+                  { label: 'Data', value: false},
+                ]"
+                @button-clicked="(value) => value
+                  ? $emit('update-desc-view', true)
+                  : clickData()
+                "
+              />
+              <small-text-button
+                v-if="dataPaths.length > 0"
+                :label="'Download raw data'"
+                @click="showDatasets = true"
+              />
+            </div>
             <div
               v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
               class="relative-box"
@@ -673,6 +675,15 @@ $marginSize: 5px;
   justify-content: space-between;
   align-items: center;
   margin-top: 5px;
+}
+
+.button-row-group {
+  display: flex;
+  align-items: center;
+
+  & > *:not(:first-child) {
+    margin-left: 10px;
+  }
 }
 
 .dropdown-row {
