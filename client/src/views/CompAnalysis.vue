@@ -3,8 +3,8 @@
     <action-bar />
     <main>
     <analytical-questions-and-insights-panel />
-    <div class="flex-row insight-capture">
-      <div class="column" v-if="analysisItems.length">
+    <div class="flex-row">
+      <div class="column insight-capture" v-if="analysisItems.length">
         <datacube-comparative-card
           v-for="item in analysisItems"
           :key="item.id"
@@ -286,12 +286,12 @@ main {
 
 .column {
   overflow-y: auto;
+  background-color: rgb(242, 242, 242);
 
   .datacube-comparative-card {
-    border-style: solid;
-    border-color: transparent;
-    border-width: thin;
+    border: 2px outset #ddd;
     margin: 1rem;
+    padding: 0 1rem 1rem 0;
     &:hover {
       border-color: blue;
     }

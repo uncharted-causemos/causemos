@@ -49,7 +49,6 @@ export default function useRegionalData(
   outputSpecs: Ref<OutputSpecWithId[]>,
   breakdownOption: Ref<string | null>,
   datacubeHierarchy: Ref<DatacubeGeography | null>
-
 ) {
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);

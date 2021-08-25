@@ -1,6 +1,6 @@
 <template>
   <div class="datacube-card-container">
-    <div class="insight-capture capture-box">
+    <div class="capture-box">
       <header>
         <slot name="datacube-model-header" />
         <slot name="datacube-model-header-collapse" />
@@ -90,6 +90,11 @@
                 Data
               </button>
             </div>
+            <small-text-button
+              v-if="dataPaths.length > 0"
+              :label="'Download Raw Data'"
+              @click="showDatasets = true"
+            />
             <div
               v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
               class="relative-box"
@@ -138,6 +143,29 @@
               :color-from-index="colorFromIndex"
             />
           </header>
+          <modal v-if="showDatasets">
+            <template #header>
+              <h4 class="header"> Parquet files used to populate this datacube </h4>
+            </template>
+            <template #body>
+              <div v-for="dataPath in dataPaths" :key="dataPath">
+                <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
+                <br/>
+                <br/>
+              </div>
+              <p>
+                <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
+              </p>
+            </template>
+            <template #footer>
+              <div
+                class="btn btn-primary btn-call-for-action"
+                @click="showDatasets = false"
+              >
+                Close
+              </div>
+            </template>
+          </modal>
           <div class="column">
             <div style="display: flex; flex-direction: row;">
               <slot
@@ -155,6 +183,7 @@
               :timeseries-data="timeseriesData"
               :selected-timestamp="selectedTimestamp"
               :breakdown-option="breakdownOption"
+              :unit="mainModelOutput?.unit"
               @select-timestamp="emitTimestampSelection"
             />
             <p
@@ -238,6 +267,7 @@ import useParallelCoordinatesData from '@/services/composables/useParallelCoordi
 import { getOutputStats } from '@/services/runoutput-service';
 import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
+import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
@@ -249,6 +279,7 @@ import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 import dateFormatter from '@/formatters/date-formatter';
 import { getTimestampMillis } from '@/utils/date-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -256,7 +287,6 @@ export default defineComponent({
     'on-map-load',
     'set-selected-scenario-ids',
     'select-timestamp',
-    'set-drilldown-data',
     'check-model-metadata-validity',
     'refetch-data',
     'new-runs-mode',
@@ -337,7 +367,9 @@ export default defineComponent({
     DataAnalysisMap,
     DropdownControl,
     ModalNewScenarioRuns,
-    ModalCheckRunsExecutionStatus
+    ModalCheckRunsExecutionStatus,
+    Modal,
+    SmallTextButton
   },
   setup(props, { emit }) {
     const store = useStore();
@@ -363,7 +395,6 @@ export default defineComponent({
     const {
       dimensions,
       ordinalDimensionNames,
-      drilldownDimensions,
       runParameterValues
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
@@ -431,7 +462,6 @@ export default defineComponent({
       emitTimestampSelection,
       dimensions,
       ordinalDimensionNames,
-      drilldownDimensions,
       runParameterValues,
       mainModelOutput,
       isModelMetadata,
@@ -443,6 +473,7 @@ export default defineComponent({
   },
   data: () => ({
     showBaselineDefaults: true,
+    showDatasets: false,
     showNewRunsMode: false,
     potentialScenarioCount: 0,
     isRelativeDropdownOpen: false,
@@ -462,14 +493,32 @@ export default defineComponent({
     disableConcurrentTileRequestsCaching();
   },
   computed: {
+    dataPaths(): string[] {
+      if (!_.isNull(this.metadata)) {
+        const isAModel: boolean = isModel(this.metadata);
+        return _.compact(isAModel
+          ? this.allModelRunData
+            .filter(modelRun => this.selectedScenarioIds.indexOf(modelRun.id) >= 0)
+            .flatMap(modelRun => _.head(modelRun.data_paths))
+          : isIndicator(this.metadata) ? this.metadata.data_paths : []
+        );
+      } else {
+        return [];
+      }
+    },
     mapSelectedLayer(): number {
       return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
     clickData() {
-      const newIds = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready).map(run => run.id).slice(0, 1);
-      this.$emit('set-selected-scenario-ids', newIds);
+      // FIXME: This code to select a model run when switching to the data tab
+      //  should be in a watcher on the parent component to be more robust,
+      //  rather than in this button's click handler.
+      if (this.isModelMetadata && this.selectedScenarioIds.length === 0) {
+        const newIds = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready).map(run => run.id).slice(0, 1);
+        this.$emit('set-selected-scenario-ids', newIds);
+      }
       this.$emit('update-desc-view', false);
     },
     onMapLoad() {
@@ -521,8 +570,6 @@ export default defineComponent({
         // console.log('user selected: ' + e.scenarios.length);
         this.$emit('set-selected-scenario-ids', selectedScenarios.map(s => s.run_id));
       }
-      // we should emit to update the drilldown data everytime scenario selection changes
-      this.$emit('set-drilldown-data', { drilldownDimensions: this.drilldownDimensions });
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
       this.potentialScenarioCount = e.scenarios.length;
@@ -533,9 +580,14 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
+
 @import '~styles/variables';
 
 $fullscreenTransition: all 0.5s ease-in-out;
+
+.dataset-link {
+  text-decoration: underline;
+}
 
 .datacube-card-container {
   background-color: $background-light-1;

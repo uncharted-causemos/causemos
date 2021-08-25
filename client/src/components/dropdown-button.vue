@@ -11,7 +11,11 @@
       </span>
       <i class="fa fa-fw fa-angle-down" />
     </button>
-    <dropdown-control v-if="isDropdownOpen" class="dropdown-control">
+    <dropdown-control
+      v-if="isDropdownOpen"
+      class="dropdown-control"
+      :class="{ 'left-aligned': isDropdownLeftAligned }"
+    >
       <template #content>
         <div
           v-for="item in dropdownItems"
@@ -54,6 +58,10 @@ export default defineComponent({
     innerButtonLabel: {
       type: String as PropType<string | null>,
       default: null
+    },
+    isDropdownLeftAligned: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['item-selected'],
@@ -104,6 +112,11 @@ export default defineComponent({
   top: 90%; // Overlap the button slightly
   max-height: 400px;
   overflow-y: auto;
+
+  &.left-aligned {
+    left: 0;
+    right: auto;
+  }
 }
 .dropdown-option {
   white-space: nowrap;

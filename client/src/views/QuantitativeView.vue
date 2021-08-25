@@ -179,7 +179,12 @@ export default {
     },
     async refreshModelAndScenarios() {
       this.refreshModel();
-      this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      if (this.draftScenario) {
+        this.scenarios = [this.draftScenario, ...scenarios];
+      } else {
+        this.scenarios = scenarios;
+      }
     },
     async refresh() {
       // Basic model data

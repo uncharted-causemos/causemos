@@ -127,6 +127,15 @@ const createAssemblyRequest = async (projectId: string, payload: ReaderOutputRec
   return result.data;
 };
 
+const addNewConceptToOntology = async(projectId: string, label: string, examples: string[], definition: string) => {
+  const result = await API.post(`projects/${projectId}/ontology-concept`, {
+    label,
+    examples,
+    definition
+  });
+  return result.data;
+};
+
 export default {
   getKBs,
   getProjects,
@@ -144,6 +153,8 @@ export default {
   getProjectEdges,
   getProjectStatementIdsByEdges,
   getProjectLocationsPromise,
+
+  addNewConceptToOntology,
 
   createAssemblyRequest,
 

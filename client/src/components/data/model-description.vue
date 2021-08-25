@@ -31,12 +31,14 @@
               v-model="param.display_name"
               type="text"
               class="model-attribute-text"
+              placeholder="display name"
               :class="{ 'attribute-invalid': !isValid(param.display_name) }"
             >
             <input
               v-model="param.unit"
               type="text"
               class="model-attribute-text"
+              placeholder="unit"
               :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
@@ -106,12 +108,14 @@
               v-model="param.display_name"
               type="text"
               class="model-attribute-text"
+              placeholder="display name"
               :class="{ 'attribute-invalid': !isValid(param.display_name) }"
             >
             <input
               v-model="param.unit"
               type="text"
               class="model-attribute-text"
+              placeholder="unit"
               :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
@@ -157,12 +161,14 @@
               v-model="qualifier.display_name"
               type="text"
               class="model-attribute-text"
+              placeholder="display name"
               :class="{ 'attribute-invalid': !isValid(qualifier.display_name) }"
             >
             <input
               v-model="qualifier.unit"
               type="text"
               class="model-attribute-text"
+              placeholder="unit"
               :class="{ 'attribute-invalid': !isValid(qualifier.unit) }"
             >
             <div>Related Features</div>
