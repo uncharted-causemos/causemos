@@ -22,6 +22,14 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <div class="sort-selection">
+      <span>Sort by</span>
+      <radio-button-group
+        :selected-button-value="sortValue"
+        :buttons="Object.values(SORT_OPTIONS)"
+        @button-clicked="clickRadioButton"
+      />
+    </div>
     <div class="flex-row">
       <div
         v-if="checkboxType === 'radio'"
@@ -64,6 +72,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
+import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BreakdownData } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
@@ -75,6 +84,11 @@ import {
   computed
 } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+
+const SORT_OPTIONS = {
+  Name: { label: 'Name', value: 'name' },
+  Value: { label: 'Value', value: 'value' }
+};
 
 interface StatefulDataNode {
   name: string;
@@ -204,10 +218,55 @@ const checklistRowDataFromNode = (
   };
 };
 
+const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string) => {
+  // Sort top level children (i.e. countries) without values to the bottom
+  //  of the list, since if they had descendants with values, they would
+  //  have values themselves, aggregated up from their descendants
+  const hasOneOrMoreValues = (node: StatefulDataNode) => {
+    return node.bars.length > 0;
+  };
+  if (sortValue === SORT_OPTIONS.Value.value) {
+    newStatefulData.children.sort((nodeA, nodeB) => {
+      const nodeAFirstValue = nodeA.bars.map(bar => bar.value)[0];
+      const nodeBFirstValue = nodeB.bars.map(bar => bar.value)[0];
+      const nodeAValue = _.isNull(nodeAFirstValue) || _.isUndefined(nodeAFirstValue) ? null : nodeAFirstValue;
+      const nodeBValue = _.isNull(nodeBFirstValue) || _.isUndefined(nodeBFirstValue) ? null : nodeBFirstValue;
+      if (_.isNull(nodeAValue) && !_.isNull(nodeBValue)) {
+        // A should be sorted after B
+        return 1;
+      } else if (_.isNull(nodeBValue)) {
+        // B should be sorted after A
+        return -1;
+      }
+      // Sort based on value
+      return nodeAValue! <= nodeBValue! ? 1 : -1;
+    });
+  } else {
+    newStatefulData.children.sort((nodeA, nodeB) => {
+      if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
+        // A should be sorted after B
+        return 1;
+      } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
+        // B should be sorted after A
+        return -1;
+      }
+      // Don't change their order
+      return 0;
+    });
+  }
+  newStatefulData.children.forEach(node => {
+    if (_.has(node, 'children')) {
+      sortHierarchy(node, sortValue);
+    }
+  });
+  return newStatefulData;
+};
+
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
-    AggregationChecklistItem
+    AggregationChecklistItem,
+    RadioButtonGroup
   },
   props: {
     aggregationLevelCount: {
@@ -259,12 +318,13 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
+    const sortValue = ref<string>(SORT_OPTIONS.Name.value);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
       //  out of it, augmented with a boolean 'expanded' property to keep
       //  track of the state of the component.
-      const newStatefulData = { children: [] as StatefulDataNode[] };
+      const newStatefulData: RootStatefulDataNode = { children: [] as StatefulDataNode[] };
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
         if (rawData.value === null) return;
         // Get the list of values at this aggregation level for each selected
@@ -312,23 +372,7 @@ export default defineComponent({
           });
         });
       });
-      // Sort top level children (i.e. countries) without values to the bottom
-      //  of the list, since if they had descendants with values, they would
-      //  have values themselves, aggregated up from their descendants
-      const hasOneOrMoreValues = (node: StatefulDataNode) => {
-        return node.bars.length > 0;
-      };
-      newStatefulData.children.sort((nodeA, nodeB) => {
-        if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
-          // A should be sorted after B
-          return 1;
-        } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
-          // B should be sorted after A
-          return -1;
-        }
-        // Don't change their order
-        return 0;
-      });
+      sortHierarchy(newStatefulData, sortValue.value);
       statefulData.value = newStatefulData;
     });
 
@@ -427,10 +471,15 @@ export default defineComponent({
       visibleRows,
       isAllSelected,
       toggleChecked,
-      setAllChecked
+      setAllChecked,
+      SORT_OPTIONS,
+      sortValue
     };
   },
   methods: {
+    clickRadioButton(value: string) {
+      this.sortValue = value;
+    },
     onRangeValueChanged(event: any) {
       this.changeAggregationLevel(event.target.valueAsNumber);
     },
@@ -484,6 +533,17 @@ h5 {
   margin-bottom: 5px;
 }
 
+.sort-selection {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  span {
+    padding-right: 20px;
+  }
+}
+
 .aggregation-level-range {
   margin-top: 10px;
 
@@ -528,6 +588,7 @@ h5 {
 .units {
   color: $text-color-medium;
   font-weight: bold;
+  cursor: pointer;
 }
 
 .flex-row {

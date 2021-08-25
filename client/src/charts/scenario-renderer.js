@@ -70,8 +70,6 @@ function render(chart, data, runOptions) {
   }
 
   yExtent = [data.min, data.max];
-  // FIXME: this is clearly not going to work for Delphi
-  // yExtent = modelService.expandExtentForDyseProjections(yExtent, DEFAULT_NUM_LEVELS);
 
   const formatter = chartValueFormatter(...yExtent);
   const xscale = d3.scaleLinear().domain(xExtent).range([0, width]);

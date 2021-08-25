@@ -72,6 +72,7 @@ export interface DataState {
   selectedModelId?: string;
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
+  selectedRegionIds?: string[];
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];
