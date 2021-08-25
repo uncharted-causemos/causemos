@@ -1,7 +1,9 @@
 import * as d3 from 'd3';
+import moment from 'moment';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
+
 
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
@@ -73,17 +75,20 @@ export function renderAxes(
 ) {
   const firstTimestamp = xScale.domain()[0];
   const lastTimestamp = xScale.domain()[1];
-  const firstYear = parseInt(timestampFormatter(firstTimestamp));
-  const lastYear = parseInt(timestampFormatter(lastTimestamp));
+
+  const firstYear = moment(firstTimestamp).year();
+  const lastYear = moment(lastTimestamp).year();
   const yearsElapsed = lastYear - firstYear;
 
-  console.log(yearsElapsed);
+  // create array of years from firstYear to lastYear
+  // epoch seconds for jan first of each year
+  const years = Array.from({ length: yearsElapsed }, (v, k) => moment([k + 1 + firstYear]).valueOf());
 
   const xAxis = d3
     .axisBottom(xScale)
     .tickSize(xAxisTickSizePx)
     .tickFormat(timestampFormatter)
-    .ticks(yearsElapsed);
+    .tickValues(years);
   const yAxis = d3
     .axisLeft(yScale)
     .tickSize(width - yAxisWidth - paddingRight)
