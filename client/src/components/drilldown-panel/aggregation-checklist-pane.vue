@@ -588,7 +588,6 @@ h5 {
 .units {
   color: $text-color-medium;
   font-weight: bold;
-  cursor: pointer;
 }
 
 .flex-row {

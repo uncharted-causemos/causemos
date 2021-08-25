@@ -78,13 +78,14 @@
 
         <template #spatial-aggregation-config>
           <dropdown-button
-            class="spatial-aggregation"
+            class="dropdown-config"
             :inner-button-label="'Spatial Aggregation'"
             :items="['mean', 'sum']"
             :selected-item="selectedSpatialAggregation"
             @item-selected="item => selectedSpatialAggregation = item"
           />
           <map-dropdown
+            class="dropdown-config"
             :selectedBaseLayer="selectedBaseLayer"
             :selectedDataLayer="selectedDataLayer"
             @set-base-layer="setBaseLayer"
@@ -582,7 +583,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-experiment-container {
-  height: $content-full-height;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -602,7 +603,6 @@ main {
   min-width: 0;
   flex: 1;
   margin: 10px;
-  margin-top: 0;
 }
 
 .search-button {
@@ -620,7 +620,7 @@ main {
   min-height: 70px;
 }
 
-.spatial-aggregation {
-  margin: 5px 0;
+.dropdown-config:not(:first-child) {
+  margin-left: 5px;
 }
 </style>

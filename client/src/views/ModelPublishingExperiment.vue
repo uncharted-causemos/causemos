@@ -98,6 +98,7 @@
               @item-selected="handleSpatialAggregationSelection"
             />
             <map-dropdown
+              class="dropdown-config"
               :selectedBaseLayer="selectedBaseLayer"
               :selectedDataLayer="selectedDataLayer"
               @set-base-layer="setBaseLayer"
@@ -806,10 +807,8 @@ export default defineComponent({
   overflow: hidden;
 }
 
-.dropdown-config {
-  margin-bottom: 5px;
-  margin-top: 5px;
-  margin-right: 5px;
+.dropdown-config:not(:first-child) {
+  margin-left: 5px;
 }
 
 ::v-deep(.attribute-invalid button) {
@@ -825,8 +824,7 @@ export default defineComponent({
 .datacube-expanded {
   min-width: 0;
   flex: 1;
-  margin: 10px;
-  margin-top: 0;
+  margin: 0 10px 10px 0;
 }
 
 .search-button {

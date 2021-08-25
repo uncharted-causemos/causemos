@@ -1,21 +1,18 @@
 <template>
   <div class="run-header">
-    <h6>{{ outputVariable }} ({{ outputVariableUnits }})</h6>
-    <div>
-      <span
-        v-for="parameter in inputParameters"
-        :key="parameter.name"
-        class="scenario-input"
-      >
-        <label>{{ parameter.name }}</label>
-        <span v-for="(value, index) of parameter.values" :key="index">
-          {{ index > 0 ? ', ' : '' }}
-          <span :style="{ color: colorFromIndex(index) }">
-            {{ value }}
-          </span>
+    <span
+      v-for="parameter in inputParameters"
+      :key="parameter.name"
+      class="scenario-input"
+    >
+      <label>{{ parameter.name }}</label>
+      <span v-for="(value, index) of parameter.values" :key="index">
+        {{ index > 0 ? ', ' : '' }}
+        <span :style="{ color: colorFromIndex(index) }">
+          {{ value }}
         </span>
       </span>
-    </div>
+    </span>
   </div>
 </template>
 
@@ -37,14 +34,6 @@ type ScenarioDescription = ModelRunParameter[];
 export default defineComponent({
   name: 'DatacubeScenarioHeader',
   props: {
-    outputVariable: {
-      type: String,
-      required: true
-    },
-    outputVariableUnits: {
-      type: String,
-      required: true
-    },
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       required: true
@@ -109,7 +98,9 @@ export default defineComponent({
 @import '~styles/variables';
 
 .run-header {
-  min-height: 70px;
+  height: 54px;
+  margin-top: 10px;
+  overflow-y: auto;
 }
 
 h6 {
