@@ -1,18 +1,21 @@
 <template>
-  <div
-    ref="pcChart"
-    class="parallel-coordinates-container">
-    <svg
-      ref="pcsvg"
-      :class="{'faded': dimensionsData === null}"
-    />
-    <resize-observer @notify="resize" />
-    <span
-      v-if="dimensionsData === null"
-      class="loading-message"
-    >
-      <i class="fa fa-spin fa-spinner" /> Loading ...
+  <div class="parallel-coordinates-container">
+    <span class="scenario-count">
+      {{scenarioCount}} scenario{{scenarioCount != 1 ? 's' : ''}}.
     </span>
+    <div class="chart-wrapper">
+      <svg
+        ref="pcsvg"
+        :class="{'faded': dimensionsData === null}"
+      />
+      <resize-observer @notify="resize" />
+      <span
+        v-if="dimensionsData === null"
+        class="loading-message"
+      >
+        <i class="fa fa-spin fa-spinner" /> Loading ...
+      </span>
+    </div>
   </div>
 </template>
 
@@ -20,7 +23,7 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
 import { renderParallelCoordinates } from '@/charts/parallel-coordinates';
-import { defineComponent, PropType } from 'vue';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo } from '@/types/Datacube';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
@@ -55,6 +58,12 @@ export default defineComponent({
     'select-scenario',
     'generated-scenarios'
   ],
+  setup(props) {
+    const { dimensionsData } = toRefs(props);
+    return {
+      scenarioCount: computed(() => dimensionsData.value.length)
+    };
+  },
   data: () => ({
     lastSelectedLines: [] as Array<string>
   }),
@@ -162,7 +171,18 @@ export default defineComponent({
   @import "~styles/variables";
 
   .parallel-coordinates-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scenario-count {
+    color: $label-color;
+  }
+
+  .chart-wrapper {
     position: relative;
+    flex: 1;
+    min-height: 0;
 
     svg {
       transition: opacity 0.3s ease-out;

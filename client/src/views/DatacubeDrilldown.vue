@@ -41,31 +41,23 @@
           @update-desc-view="updateDescView"
         >
           <template #datacube-model-header>
-            <div class="datacube-header" v-if="metadata && mainModelOutput">
-              <div v-if="isExpanded">
-                <h5>
-                  <select name="outputs" id="outputs"
-                    v-if="outputs.length > 1"
-                    @change="onOutputSelectionChange($event)"
-                  >
-                    <option
-                      v-for="(output, indx) in outputs"
-                      :key="output.name"
-                      :selected="indx === currentOutputIndex"
-                    >{{output.display_name !== '' ? output.display_name : output.name}}</option>
-                  </select>
-                  <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-                  <span class="datacube-name">{{metadata.name}}</span>
-                </h5>
-                <disclaimer
-                  v-if="scenarioCount > 0"
-                  :message="
-                    scenarioCount +
-                      ' scenarios. Click a vertical line to select or deselect it.'
-                  "
-                />
-              </div>
-            </div>
+            <h5
+              v-if="metadata && mainModelOutput && isExpanded"
+              class="datacube-header"
+            >
+              <select name="outputs" id="outputs"
+                v-if="outputs.length > 1"
+                @change="onOutputSelectionChange($event)"
+              >
+                <option
+                  v-for="(output, indx) in outputs"
+                  :key="output.name"
+                  :selected="indx === currentOutputIndex"
+                >{{output.display_name !== '' ? output.display_name : output.name}}</option>
+              </select>
+              <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
+              <span class="datacube-name">{{metadata.name}}</span>
+            </h5>
           </template>
 
           <template #datacube-model-header-collapse>
@@ -159,7 +151,6 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { DatacubeFeature } from '@/types/Datacube';
-import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
@@ -198,7 +189,6 @@ export default defineComponent({
     DatacubeCard,
     DrilldownPanel,
     BreakdownPane,
-    Disclaimer,
     DatacubeDescription,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
@@ -710,7 +700,7 @@ export default defineComponent({
 
 .datacube-header {
   flex: 1;
-  min-height: 70px;
+  margin: 0;
 }
 
 .spatial-aggregation {
