@@ -164,11 +164,19 @@
             <p
               v-if="
                 !isDescriptionView &&
-                breakdownOption === SpatialAggregationLevel.Region &&
+                breakdownOption !== null &&
                 timeseriesData.length === 0
               "
             >
-              Please select one or more regions, or choose 'Split by none'.
+              Please select one or more
+              {{
+                breakdownOption === SpatialAggregationLevel.Region
+                  ? 'regions'
+                  : breakdownOption === TemporalAggregationLevel.Year
+                  ? 'years'
+                  : 'qualifier values'
+              }}
+              , or choose 'Split by none'.
             </p>
             <div
               v-if="!isDescriptionView && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
@@ -447,6 +455,7 @@ export default defineComponent({
       emitRelativeToSelection,
       timestampFormatter,
       SpatialAggregationLevel,
+      TemporalAggregationLevel,
       validModelRunsAvailable
     };
   },
