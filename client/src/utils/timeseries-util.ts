@@ -83,14 +83,20 @@ export function renderAxes(
   const majorIncrecmentsElapsed = lastYear.get(xAxisMajorTickIncrement) - firstYear.get(xAxisMajorTickIncrement);
   const minTickSpacing = 10;
 
+  const major = moment.duration(1, xAxisMajorTickIncrement).as('ms');
+  const minor = moment.duration(1, xAxisMinorTickIncrement).as('ms');
+  const minorInMajor = Math.trunc(major / minor);
+
+  console.log(minorInMajor);
+
   let tickIncrements = [];
 
-  if (majorIncrecmentsElapsed * 12 > width / minTickSpacing || !useMinorTicks) {
+  if (majorIncrecmentsElapsed * minorInMajor > width / minTickSpacing || !useMinorTicks) {
     // create array of years from firstYear to lastYear
     // epoch seconds for jan first of each year
     tickIncrements = Array.from({ length: majorIncrecmentsElapsed }, (v, k) => moment([k + 1 + firstYear.year()]).valueOf());
   } else {
-    for (let i = 0; i < majorIncrecmentsElapsed * 12; i++) {
+    for (let i = 0; i < majorIncrecmentsElapsed * minorInMajor; i++) {
       const tempMoment = moment(firstYear.add(1, xAxisMinorTickIncrement));
       const temp2Moment = moment([tempMoment.year(), tempMoment.month(), 1]);
       tickIncrements.push(temp2Moment.valueOf());
