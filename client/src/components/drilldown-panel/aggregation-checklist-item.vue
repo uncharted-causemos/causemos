@@ -40,7 +40,7 @@
           {{ valueFormatter(itemData.bars[0].value) }}
         </span>
       </div>
-      <aggregation-checklist-histogram
+      <aggregation-checklist-bar
         :barColor="itemData.bars[0].color"
         :barValue="itemData.bars[0].value"
         :isChecked="itemData.isChecked"
@@ -64,7 +64,7 @@
         class="value-on-same-line"
       >
         <div class="histogram-bar-wrapper">
-          <aggregation-checklist-histogram
+          <aggregation-checklist-bar
             :barColor="bar.color"
             :barValue="bar.value"
             :isChecked="itemData.isChecked"
@@ -92,7 +92,7 @@
 import * as d3 from 'd3';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType } from '@vue/runtime-core';
-import AggregationChecklistHistogram from '@/components/drilldown-panel/aggregation-checklist-histogram.vue';
+import AggregationChecklistBar from '@/components/drilldown-panel/aggregation-checklist-bar.vue';
 
 interface AggregationChecklistItemPropType {
   name: string;
@@ -111,7 +111,7 @@ export default defineComponent({
   name: 'AggregationChecklistItem',
   emits: ['toggle-expanded', 'toggle-checked'],
   components: {
-    AggregationChecklistHistogram
+    AggregationChecklistBar
   },
   props: {
     itemData: {

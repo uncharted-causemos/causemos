@@ -1,5 +1,5 @@
 <template>
-  <div class="aggregation-checklist-histogram" :style="histogramMarginStyle(barValue)">
+  <div class="aggregation-checklist-bar" :style="histogramMarginStyle(barValue)">
     <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue >= 0"/>
     <div
       v-if="isSelectedAggregationLevel"
@@ -16,7 +16,7 @@ import { defineComponent } from '@vue/runtime-core';
 import AggregationChecklistRectangle from '@/components/drilldown-panel/aggregation-checklist-rectangle.vue';
 
 export default defineComponent({
-  name: 'aggregation-checklist-histogram',
+  name: 'aggregation-checklist-bar',
   components: {
     AggregationChecklistRectangle
   },
@@ -75,7 +75,7 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-.aggregation-checklist-histogram {
+.aggregation-checklist-bar {
   width: 100%;
   display: flex;
   flex-direction: row;
