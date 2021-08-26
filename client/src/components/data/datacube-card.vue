@@ -23,7 +23,7 @@
             :dimensions-data="runParameterValues"
             :selected-dimensions="dimensions"
             :ordinal-dimensions="ordinalDimensionNames"
-            :initial-data-selection="isDescriptionView ? [] : selectedScenarioIds"
+            :initial-data-selection="selectedScenarioIds"
             :new-runs-mode="showNewRunsMode"
             @select-scenario="updateScenarioSelection"
             @generated-scenarios="updateGeneratedScenarios"
@@ -207,6 +207,7 @@
                   :region-data="regionalData"
                   :grid-layer-stats="gridLayerStats"
                   :selected-base-layer="selectedBaseLayer"
+                  :unit="unit"
                   @sync-bounds="onSyncMapBounds"
                   @on-map-load="onMapLoad"
                   @slide-handle-change="updateMapFilters"
@@ -336,6 +337,10 @@ export default defineComponent({
     selectedDataLayer: {
       type: String,
       required: true
+    },
+    unit: {
+      type: String as PropType<string>,
+      default: null
     }
   },
   components: {

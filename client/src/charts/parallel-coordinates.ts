@@ -460,7 +460,7 @@ function renderParallelCoordinates(
     event.sourceEvent.stopPropagation();
   }
 
-  function onDataBrush(this: any) {
+  function onDataBrush() {
     // now filter all lines and exclude those the fall outside the range (start, end)
     cancelPrevLineSelection(svgElement);
 
@@ -1096,13 +1096,14 @@ function renderParallelCoordinates(
             })
             // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is active
             .on('mouseover', function() {
-              const segmentData: any = d3.select(this).datum();
-              const hoverValue: string = segmentData.start.toString();
+              const rectElement = d3.select(this);
+              const hoverValue: string = rectElement.attr('start').toString();
+              const x = +rectElement.attr('x');
 
               const scaleX = getXScaleFromMap(dimName);
 
-              const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), hoverValue);
-              const xLoc = segmentData.x + ((max - min) / 2);
+              const { min, max } = getPositionRangeOnOrdinalAxis(x, axisRange, scaleX.domain(), hoverValue);
+              const xLoc = x + ((max - min) / 2);
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
               const hoverValueNoDots = hoverValue.split('.').join('');
@@ -1120,8 +1121,10 @@ function renderParallelCoordinates(
                 });
             })
             .on('mouseout', function() {
-              const segmentData: any = d3.select(this).datum();
-              const hoverValue: string = segmentData.start.toString();
+              // const segmentData: any = d3.select(this).datum(); // segmentData.start
+              // unfortunately, the click event if executed before this event would cause bound data to be lost
+              //  so fetch the data differently
+              const hoverValue: string = d3.select(this).attr('start').toString();
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
               const hoverValueNoDots = hoverValue.split('.').join('');
