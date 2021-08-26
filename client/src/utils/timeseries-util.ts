@@ -69,28 +69,29 @@ export function renderAxes(
   yAxisWidth: number,
   paddingRight: number,
   xAxisHeight: number,
-  // xAxisTickCount = 4,
   yAxisTickCount = 2,
-  xAxisTickSizePx = 2
+  xAxisTickSizePx = 2,
+  xAxisMajorTickIncrement: moment.unitOfTime.DurationConstructor = 'year',
+  xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
+  useMinorTicks = true
 ) {
   const firstTimestamp = xScale.domain()[0];
   const lastTimestamp = xScale.domain()[1];
 
   const firstYear = moment(firstTimestamp);
   const lastYear = moment(lastTimestamp);
-  const yearsElapsed = lastYear.year() - firstYear.year();
+  const majorIncrecmentsElapsed = lastYear.get(xAxisMajorTickIncrement) - firstYear.get(xAxisMajorTickIncrement);
   const minTickSpacing = 10;
 
-  // create array of years from firstYear to lastYear
-  // epoch seconds for jan first of each year
   let tickIncrements = [];
 
-  if (yearsElapsed * 12 > width / minTickSpacing) {
-    tickIncrements = Array.from({ length: yearsElapsed }, (v, k) => moment([k + 1 + firstYear.year()]).valueOf());
+  if (majorIncrecmentsElapsed * 12 > width / minTickSpacing || !useMinorTicks) {
+    // create array of years from firstYear to lastYear
+    // epoch seconds for jan first of each year
+    tickIncrements = Array.from({ length: majorIncrecmentsElapsed }, (v, k) => moment([k + 1 + firstYear.year()]).valueOf());
   } else {
-    console.log('THERE IS ROOM');
-    for (let i = 0; i < yearsElapsed * 12; i++) {
-      const tempMoment = moment(firstYear.add(1, 'months'));
+    for (let i = 0; i < majorIncrecmentsElapsed * 12; i++) {
+      const tempMoment = moment(firstYear.add(1, xAxisMinorTickIncrement));
       const temp2Moment = moment([tempMoment.year(), tempMoment.month(), 1]);
       tickIncrements.push(temp2Moment.valueOf());
     }
@@ -106,8 +107,6 @@ export function renderAxes(
     }
     return '';
   };
-
-  console.log(tickIncrements);
 
   const xAxis = d3
     .axisBottom(xScale)
