@@ -332,7 +332,9 @@ export default {
 
       // FIXME: this will fetch insights for all datacubes and CAGs in all project analyses
       // however, the breakdown of such info is missing, and thus we cannot easily update the number of insights in each analysis
-      this.setContextId(contextIDs);
+      //
+      // @UPDATE: not needed currently in this context since we do not display the insight count and the insight panel is not shown
+      // this.setContextId(contextIDs);
 
       // Sort by modified_at date with latest on top
       this.sortAnalysesByMostRecentDate();
