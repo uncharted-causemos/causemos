@@ -345,7 +345,8 @@ export default defineComponent({
           datacubeName: metadata.value?.name ?? '',
           datacubeOutputName: mainModelOutput.value?.display_name ?? ''
         }],
-        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
+        relativeTo: relativeTo.value
       };
       const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
@@ -430,6 +431,7 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy
     );
+
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -636,6 +638,9 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          this.setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
