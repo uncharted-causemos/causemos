@@ -187,7 +187,8 @@ const toQuantitative = analysis => ({
   title: analysis.title,
   subtitle: dateFormatter(analysis.modified_at, 'MMM DD, YYYY'),
   description: analysis.description || '',
-  type: 'quantitative'
+  type: 'quantitative',
+  modified_at: analysis.modified_at
 });
 
 const toQualitative = cag => ({
@@ -196,7 +197,8 @@ const toQualitative = cag => ({
   title: cag.name,
   subtitle: dateFormatter(cag.modified_at, 'MMM DD, YYYY'),
   description: cag.description || '',
-  type: 'qualitative'
+  type: 'qualitative',
+  modified_at: cag.modified_at
 });
 
 export default {
@@ -284,8 +286,7 @@ export default {
       const contextIDs = [];
 
       // fetch data space analyses
-      const result1 = await getAnalysesByProjectId(this.project);
-      this.quantitativeAnalyses = result1.map(toQuantitative);
+      this.quantitativeAnalyses = (await getAnalysesByProjectId(this.project)).map(toQuantitative);
 
       if (this.quantitativeAnalyses.length) {
         // save context-id(s) for all data-analyses
@@ -310,8 +311,7 @@ export default {
       }
 
       // knowledge and model space analyses
-      const result2 = await modelService.getProjectModels(this.project);
-      this.qualitativeAnalyses = result2.models.map(toQualitative);
+      this.qualitativeAnalyses = (await modelService.getProjectModels(this.project)).models.map(toQualitative);
 
       if (this.qualitativeAnalyses.length) {
         const modelIDs = this.qualitativeAnalyses.map(model => model.id);
