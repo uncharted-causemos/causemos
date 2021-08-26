@@ -10,7 +10,7 @@ module.exports = require('yargs')
   })
   .options('morgan-format', {
     describe: 'Predefined morgan middleware format - this is an opt-in argument',
-    choices: ['common', 'dev', 'combined', 'short', 'short'],
+    choices: ['common', 'dev', 'combined', 'short', 'tiny'],
     default: undefined
   })
   .argv;
