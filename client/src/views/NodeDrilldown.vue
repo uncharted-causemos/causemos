@@ -79,6 +79,7 @@
               v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
               class="scenario-chart"
               :timeseriesData="comparisonTimeseries.timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
             />
           </div>
           <p>

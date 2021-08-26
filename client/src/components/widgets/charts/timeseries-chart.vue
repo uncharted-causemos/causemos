@@ -39,7 +39,7 @@ import {
 import dateFormatter from '@/formatters/date-formatter';
 import { chartValueFormatter } from '@/utils/string-util';
 import { getTimestampMillis } from '@/utils/date-util';
-import { TemporalAggregationLevel } from '@/types/Enums';
+import { TemporalAggregationLevel, TemporalResolutionOption } from '@/types/Enums';
 
 const RESIZE_DELAY = 15;
 
@@ -50,6 +50,10 @@ export default defineComponent({
     timeseriesData: {
       type: Array as PropType<Timeseries[]>,
       required: true
+    },
+    selectedTemporalResolution: {
+      type: String,
+      default: ''
     },
     selectedTimestamp: {
       type: Number,
@@ -72,6 +76,7 @@ export default defineComponent({
     const {
       timeseriesData,
       breakdownOption,
+      selectedTemporalResolution,
       selectedTimestamp,
       selectedTimestampRange,
       unit
@@ -89,7 +94,8 @@ export default defineComponent({
         // We're only displaying the month, so the year doesn't matter
         return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
       }
-      return dateFormatter(timestamp, 'MMMM YYYY');
+      return dateFormatter(timestamp,
+        selectedTemporalResolution.value === TemporalResolutionOption.Year ? 'YYYY' : 'MMMM YYYY');
     };
     const resize = _.debounce(function({ width, height }) {
       if (lineChart.value === null || timeseriesData.value.length === 0) return;

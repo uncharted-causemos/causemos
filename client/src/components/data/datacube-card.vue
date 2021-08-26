@@ -155,6 +155,7 @@
               v-if="!isDescriptionView && timeseriesData.length > 0"
               class="timeseries-chart"
               :timeseries-data="timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
               :selected-timestamp="selectedTimestamp"
               :breakdown-option="breakdownOption"
               :unit="mainModelOutput?.unit"
@@ -287,6 +288,10 @@ export default defineComponent({
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    selectedTemporalResolution: {
+      type: String,
+      default: ''
     },
     selectedTimestamp: {
       type: Number,
