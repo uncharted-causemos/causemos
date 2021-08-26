@@ -454,7 +454,8 @@ export default defineComponent({
           datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
         }],
         datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
-        selectedRegionIds: selectedRegionIds.value
+        selectedRegionIds: selectedRegionIds.value,
+        relativeTo: relativeTo.value
       };
       store.dispatch('insightPanel/setDataState', dataState);
 
@@ -614,6 +615,9 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.selectedTimestamp) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          this.setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
