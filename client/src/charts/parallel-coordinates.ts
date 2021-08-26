@@ -1089,9 +1089,7 @@ function renderParallelCoordinates(
               rect.classed('selection', selected);
 
               selectedLines.length = 0; // reset before identifying selected lines
-              // const rectData = rect.datum();
               onDataBrush();
-              // rect.data(rectData as any);
 
               // notify external listeners
               onLinesSelection(selectedLines);
@@ -1124,6 +1122,8 @@ function renderParallelCoordinates(
             })
             .on('mouseout', function() {
               // const segmentData: any = d3.select(this).datum(); // segmentData.start
+              // unfortunately, the click event if executed before this event would cause bound data to be lost
+              //  so fetch the data differently
               const hoverValue: string = d3.select(this).attr('start').toString();
 
               // remove dots/spaces from the string since it will conflict with the d3 selected later on
