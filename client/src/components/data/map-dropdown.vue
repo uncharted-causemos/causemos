@@ -2,10 +2,10 @@
   <div class="map-dropdown">
     <button
       type="button"
-      class="btn btn-new-cag"
+      class="btn map-dropdown-button"
       @click="onShowDropdownOptions"
     >
-      <div class="btn-new-cag-controls">
+      <div class="map-dropdown-button-controls">
         <img
           class="logo"
           src="../../assets/layers_icon.svg"
@@ -99,19 +99,14 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-$width-name: 160px;
+$dropdown-width: 160px;
 
 .map-dropdown {
-  padding: 0px 10px;
-  margin: 5px 0;
-  width: $width-name;
-  .btn-new-cag {
-    text-align: left;
+  .map-dropdown-button {
     padding: 5px;
     background-color: #f2f2f2;
     border: 1px solid gray;
-    width: 100%;
-    .btn-new-cag-controls {
+    .map-dropdown-button-controls {
       margin: auto;
       width: fit-content;
       .logo {
@@ -122,7 +117,7 @@ $width-name: 160px;
   }
   .CAG-operations-dropdown {
     position: absolute;
-    width: $width-name - 20px;
+    width: $dropdown-width - 20px;
     .dropdown-option {
       border-bottom: 1px solid lightgray;
       border-top: 1px solid lightgray;

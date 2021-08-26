@@ -31,7 +31,7 @@ export default defineComponent({
   emits: ['button-clicked'],
   props: {
     selectedButtonValue: {
-      type: [String, Number] as PropType<any>,
+      type: [String, Number, Boolean] as PropType<any>,
       default: null
     },
     buttons: {
