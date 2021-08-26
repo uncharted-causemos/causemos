@@ -148,7 +148,7 @@ export default defineComponent({
         //
         // ensure that any choice label is mapped back to its underlying value
         this.selectedDimensions.forEach(d => {
-          if (d.choices_labels && d.choices !== undefined) {
+          if (d.choices_labels && d.choices !== undefined && d.is_visible) {
             // update all generatedLines accordingly
             generatedLines.forEach(gl => {
               const currLabelValue = (gl[d.name]).toString();
