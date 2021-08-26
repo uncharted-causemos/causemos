@@ -1,5 +1,5 @@
 <template>
-  <div class="aggregation-checklist-bar" :style="histogramMarginStyle(barValue)">
+  <div class="aggregation-checklist-bar" :class="{'wrapped': wrapped}" :style="histogramMarginStyle(barValue)">
     <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue >= 0"/>
     <div
       v-if="isSelectedAggregationLevel"
@@ -44,6 +44,10 @@ export default defineComponent({
     minVisibleBarValue: {
       type: Number,
       default: 0
+    },
+    wrapped: {
+      type: Boolean,
+      default: false
     }
   },
   computed: {
@@ -80,6 +84,11 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
+.wrapped .histogram-bar {
+  top: 50%;
+  transform: translateY(-50%);
+}
+
 .aggregation-checklist-bar {
   width: 100%;
   display: flex;
@@ -93,10 +102,9 @@ export default defineComponent({
     width: 100%;
     height: 4px;
     background: #8767c8;
-
-    &.faded {
-      opacity: 25%;
-    }
+  }
+  &.faded {
+    opacity: 25%;
   }
 }
 
