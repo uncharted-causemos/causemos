@@ -61,15 +61,16 @@ const lineColorsUnknown = '#000000ff';
 const enlargeAxesScaleToFitData = false;
 
 // tooltips
-const tooltipRectPadding = 4;
-const lineHoverTooltipTextBackgroundColor = 'green';
-const lineSelectionTooltipTextBackgroundColor = 'yellow';
+const tooltipRectPaddingY = 4;
+const tooltipRectPaddingX = 6;
+const lineHoverTooltipTextBackgroundColor = 'black';
+const lineSelectionTooltipTextBackgroundColor = 'white';
 const selectionTooltipNormalYOffset = 30;
 const tooltipTextFontSize = '14px';
 
 // baseline defaults
-const baselineMarkerSize = 5;
-const baselineMarkerFill = 'brown';
+const baselineMarkerSize = 3;
+const baselineMarkerFill = 'black';
 const baselineMarkerStroke = 'white';
 
 // markers tooltip within new-runs mode
@@ -80,12 +81,11 @@ const markerTooltipOffsetY = -20;
 const axisLabelOffsetX = 0;
 const axisLabelOffsetY = -15;
 const axisLabelFontSize = '12px';
-const axisLabelFontWeight = 'bold';
 const axisLabelTextAnchor = 'start';
-const axisInputLabelFillColor = 'black';
-const axisOutputLabelFillColor = 'green';
+const axisLabelFillColor = 'black';
 const axisTickLabelFontSize = '12';
 const axisTickLabelOffset = 0; // FIXME: this should be dynamic based on the word size; ignore for now
+const axisOutputLabelFontSize = '10px';
 
 // brushing
 const brushHeight = 8;
@@ -202,7 +202,7 @@ function renderParallelCoordinates(
   //
   // baseline defaults
   //
-  renderBaselineMarkers(!!options.showBaselineDefaults);
+  renderBaselineMarkers();
 
   //
   // axis labels
@@ -1161,36 +1161,32 @@ function colorFunc(this: SVGPathElement) {
   }
 }
 
-function renderBaselineMarkers(showBaselineDefaults: boolean) {
+function renderBaselineMarkers() {
   if (!renderedAxes) {
-    console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
+    console.warn('Cannot render baseline markers before rendering the actual parallel coordinates!');
     return;
   }
-
   renderedAxes.selectAll('circle').remove();
-
-  if (showBaselineDefaults) {
-    renderedAxes
-      .filter(function(d) { return (d as ModelParameter).default !== undefined; })
-      .append('circle')
-      .style('stroke', baselineMarkerStroke)
-      .style('fill', baselineMarkerFill)
-      .attr('pointer-events', 'none')
-      .attr('r', baselineMarkerSize)
-      .attr('cx', function(d) {
-        const axisDefault = (d as ModelParameter).default;
-        const dimName = d.name;
-        const scaleX = getXScaleFromMap(dimName);
-        let xPos: number = scaleX(axisDefault as any) as number;
-        if (isCategoricalAxis(dimName)) {
-          const axisDefaultStr = axisDefault.toString();
-          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
-          xPos = min + (max - min) / 2;
-        }
-        return xPos;
-      })
-      .attr('cy', 0);
-  }
+  renderedAxes
+    .filter(function(d) { return (d as ModelParameter).default !== undefined; })
+    .append('circle')
+    .style('stroke', baselineMarkerStroke)
+    .style('fill', baselineMarkerFill)
+    .attr('pointer-events', 'none')
+    .attr('r', baselineMarkerSize)
+    .attr('cx', function(d) {
+      const axisDefault = (d as ModelParameter).default;
+      const dimName = d.name;
+      const scaleX = getXScaleFromMap(dimName);
+      let xPos: number = scaleX(axisDefault as any) as number;
+      if (isCategoricalAxis(dimName)) {
+        const axisDefaultStr = axisDefault.toString();
+        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
+        xPos = min + (max - min) / 2;
+      }
+      return xPos;
+    })
+    .attr('cy', 0);
 }
 
 function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionInfo>) {
@@ -1274,17 +1270,19 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
     .style('text-anchor', axisLabelTextAnchor)
     .attr('x', axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
-    .text(function(d) {
-      if (d.display_name !== undefined) {
-        return d.display_name;
-      }
-      return d.name;
-    })
-    .style('fill', function(d) {
-      return isOutputDimension(dimensions, d.name) ? axisOutputLabelFillColor : axisInputLabelFillColor;
-    })
-    .style('font-size', axisLabelFontSize)
-    .style('font-weight', axisLabelFontWeight);
+    .text(d => (d.display_name ?? d.name))
+    .style('fill', axisLabelFillColor)
+    .style('font-size', axisLabelFontSize);
+
+  renderedAxes
+    .filter(d => isOutputDimension(dimensions, d.name))
+    .append('text')
+    .style('text-anchor', axisLabelTextAnchor)
+    .attr('x', axisLabelOffsetX)
+    .attr('y', axisLabelOffsetY * 2)
+    .text('OUTPUT')
+    .style('fill', axisLabelFillColor)
+    .style('font-size', axisOutputLabelFontSize);
 
   // add descriptive title (i.e., embedded tooltip) for each axis name
   // first start with dimension names as the desc, then update in a later step
@@ -1391,8 +1389,6 @@ function renderHoverTooltips() {
     .attr('class', 'pc-hover-tooltip-text-bkgnd-rect')
     .attr('id', function(d) { return d.name; }) // name of the dimension
     .style('fill', lineHoverTooltipTextBackgroundColor)
-    .attr('rx', 8)
-    .attr('ry', 8)
     .attr('x', 0)
     .attr('y', 0)
     .attr('width', 10)
@@ -1420,8 +1416,6 @@ function renderSelectionTooltips() {
     .attr('class', 'pc-selection-tooltip-text-bkgnd-rect')
     .attr('id', function(d) { return d.name; }) // name of the dimension
     .style('fill', lineSelectionTooltipTextBackgroundColor)
-    .attr('rx', 8)
-    .attr('ry', 8)
     .attr('x', 0)
     .attr('y', 0)
     .attr('width', 10)
@@ -1528,18 +1522,18 @@ function updateSelectionToolTipsRect(svgElement: D3Selection) {
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
       // if xPos + text-rect-width is beyond the svg width, then adjust
-      let xPos = textBBox.x - tooltipRectPadding;
-      const width = textBBox.width + tooltipRectPadding * 2;
+      let xPos = textBBox.x - tooltipRectPaddingX;
+      const width = textBBox.width + tooltipRectPaddingX * 2;
       const offset = (xPos + width) - axisRange[1];
       if (offset > 0) {
         xPos -= offset;
-        text.attr('x', xPos + tooltipRectPadding);
+        text.attr('x', xPos + tooltipRectPaddingX);
       }
       rect
         .attr('x', xPos)
-        .attr('y', textBBox.y - tooltipRectPadding)
+        .attr('y', textBBox.y - tooltipRectPaddingY)
         .attr('width', width)
-        .attr('height', textBBox.height + tooltipRectPadding * 2);
+        .attr('height', textBBox.height + tooltipRectPaddingY * 2);
       text.raise();
     });
 }
@@ -1658,18 +1652,18 @@ const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
       // if xPos + text-rect-width is beyond the svg width, then adjust
-      let xPos = textBBox.x - tooltipRectPadding;
-      const width = textBBox.width + tooltipRectPadding * 2;
+      let xPos = textBBox.x - tooltipRectPaddingX;
+      const width = textBBox.width + tooltipRectPaddingX * 2;
       const offset = (xPos + width) - axisRange[1];
       if (offset > 0) {
         xPos -= offset;
-        text.attr('x', xPos + tooltipRectPadding);
+        text.attr('x', xPos + tooltipRectPaddingX);
       }
       rect
         .attr('x', xPos)
-        .attr('y', textBBox.y - tooltipRectPadding)
+        .attr('y', textBBox.y - tooltipRectPaddingY)
         .attr('width', width)
-        .attr('height', textBBox.height + tooltipRectPadding * 2);
+        .attr('height', textBBox.height + tooltipRectPaddingY * 2);
       text.raise();
     });
 };
@@ -1886,6 +1880,5 @@ const getXScaleFromMap = (dimName: string) => {
 };
 
 export {
-  renderParallelCoordinates,
-  renderBaselineMarkers
+  renderParallelCoordinates
 };

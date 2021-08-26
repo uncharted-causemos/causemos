@@ -161,7 +161,7 @@ export default defineComponent({
   },
   methods: {
     valueFormatter(value: number | null): string {
-      return value !== null ? d3.format(',.2r')(value) : 'missing';
+      return value !== null ? d3.format(',.2~f')(value) : 'missing';
     },
     toggleExpanded() {
       this.$emit('toggle-expanded');

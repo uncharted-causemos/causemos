@@ -207,18 +207,6 @@ export default function useTimeseriesData(
   });
 
   const relativeTo = ref<string | null>(null);
-  // Whenever the selected runs change, reset "relative to" state
-  //  and selected breakdown option
-  watch(
-    () => [modelRunIds.value],
-    () => {
-      relativeTo.value = null;
-      // breakdownOption.value = null;
-    },
-    {
-      immediate: true
-    }
-  );
 
   const temporalBreakdownData = computed<BreakdownData | null>(() => {
     if (rawTimeseriesData.value.length === 0) return null;
@@ -316,6 +304,25 @@ export default function useTimeseriesData(
   const timeseriesData = computed(
     () => processedTimeseriesData.value.timeseriesData
   );
+
+  // Whenever the selected runs change, reset "relative to" state
+  //  and selected breakdown option
+  watchEffect(() => {
+    // Don't reset relativeTo until data has loaded, in case relativeTo is
+    //  loaded from an insight and will be valid once timeseriesData has been
+    //  populated.
+    const dataHasLoaded =
+      rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
+    // If no timeseries has an ID of `relativeTo`, then `relativeTo` cannot
+    //   be used to select a valid baseline and shouldbe reset to `null`.
+    const doesRelativeToExistInData = timeseriesData.value.some(
+      ({ id }) => id === relativeTo.value
+    );
+    const shouldResetRelativeTo = dataHasLoaded && !doesRelativeToExistInData;
+    if (shouldResetRelativeTo) {
+      relativeTo.value = null;
+    }
+  });
 
   return {
     timeseriesData,

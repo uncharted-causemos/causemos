@@ -41,31 +41,23 @@
           @update-desc-view="updateDescView"
         >
           <template #datacube-model-header>
-            <div class="datacube-header" v-if="metadata && mainModelOutput">
-              <div v-if="isExpanded">
-                <h5>
-                  <select name="outputs" id="outputs"
-                    v-if="outputs.length > 1"
-                    @change="onOutputSelectionChange($event)"
-                  >
-                    <option
-                      v-for="(output, indx) in outputs"
-                      :key="output.name"
-                      :selected="indx === currentOutputIndex"
-                    >{{output.display_name !== '' ? output.display_name : output.name}}</option>
-                  </select>
-                  <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-                  <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
-                </h5>
-                <disclaimer
-                  v-if="scenarioCount > 0"
-                  :message="
-                    scenarioCount +
-                      ' scenarios. Click a vertical line to select or deselect it.'
-                  "
-                />
-              </div>
-            </div>
+            <h5
+              v-if="metadata && mainModelOutput && isExpanded"
+              class="datacube-header"
+            >
+              <select name="outputs" id="outputs"
+                v-if="outputs.length > 1"
+                @change="onOutputSelectionChange($event)"
+              >
+                <option
+                  v-for="(output, indx) in outputs"
+                  :key="output.name"
+                  :selected="indx === currentOutputIndex"
+                >{{output.display_name !== '' ? output.display_name : output.name}}</option>
+              </select>
+              <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
+              <span class="datacube-name">{{metadata.name}}</span>
+            </h5>
           </template>
 
           <template #datacube-model-header-collapse>
@@ -100,13 +92,14 @@
 
           <template #spatial-aggregation-config>
             <dropdown-button
-              class="spatial-aggregation"
+              class="dropdown-config"
               :inner-button-label="'Spatial Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedSpatialAggregation"
               @item-selected="setSpatialAggregationSelection"
             />
             <map-dropdown
+              class="dropdown-config"
               :selectedBaseLayer="selectedBaseLayer"
               :selectedDataLayer="selectedDataLayer"
               @set-base-layer="setBaseLayer"
@@ -159,7 +152,6 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import { DatacubeFeature } from '@/types/Datacube';
-import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
@@ -198,7 +190,6 @@ export default defineComponent({
     DatacubeCard,
     DrilldownPanel,
     BreakdownPane,
-    Disclaimer,
     DatacubeDescription,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
@@ -459,7 +450,8 @@ export default defineComponent({
           datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
         }],
         datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
-        selectedRegionIds: selectedRegionIds.value
+        selectedRegionIds: selectedRegionIds.value,
+        relativeTo: relativeTo.value
       };
       store.dispatch('insightPanel/setDataState', dataState);
 
@@ -618,6 +610,9 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedTimestamp) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
         }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          this.setRelativeTo(loadedInsight.data_state?.relativeTo);
+        }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
           this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation as AggregationOption;
@@ -673,7 +668,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-experiment-container {
-  height: $content-full-height;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -690,7 +685,12 @@ export default defineComponent({
   min-width: 0;
   flex: 1;
   margin: 10px;
-  margin-top: 0;
+  margin-left: 0;
+}
+
+.datacube-name {
+  @include header-secondary;
+  margin-left: 10px;
 }
 
 .search-button {
@@ -705,10 +705,11 @@ export default defineComponent({
 
 .datacube-header {
   flex: 1;
-  min-height: 70px;
+  margin: 0;
 }
 
-.spatial-aggregation {
-  margin: 5px 0;
+.dropdown-config:not(:first-child) {
+  margin-left: 5px;
 }
+
 </style>

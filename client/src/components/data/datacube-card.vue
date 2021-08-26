@@ -18,88 +18,67 @@
       <div class="flex-row">
         <!-- if has multiple scenarios -->
         <div v-if="isModelMetadata" class="scenario-selector">
-          <div>
-            <div class="checkbox">
-              <label @click="toggleBaselineDefaultsVisibility()">
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-check-square-o': showBaselineDefaults, 'fa-square-o': !showBaselineDefaults }"
-                />
-                Default Values
-              </label>
-            </div>
-            <div class="checkbox">
-              <label @click="toggleNewRunsMode()">
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-toggle-on': showNewRunsMode, 'fa-toggle-off': !showNewRunsMode }"
-                />
-                New Runs Mode
-              </label>
-            </div>
-          </div>
           <parallel-coordinates-chart
             class="pc-chart"
             :dimensions-data="runParameterValues"
             :selected-dimensions="dimensions"
             :ordinal-dimensions="ordinalDimensionNames"
             :initial-data-selection="selectedScenarioIds"
-            :show-baseline-defaults="showBaselineDefaults"
             :new-runs-mode="showNewRunsMode"
             @select-scenario="updateScenarioSelection"
             @generated-scenarios="updateGeneratedScenarios"
           />
-          <div v-if="showNewRunsMode">
-            <disclaimer
-              :message="
-                potentialScenarioCount +
-                  ' scenario(s) can be generated'
-              "
-            />
-            <button
-              class="search-button btn btn-primary btn-call-for-action"
-              :class="{ 'disabled': potentialScenarioCount === 0}"
-              @click="requestNewModelRuns()"
-            >
-              Review
-            </button>
-          </div>
-          <div v-else>
-            <button
-              class="search-button btn btn-primary btn-call-for-action"
-              @click="showModelExecutionStatus()"
-            >
-              Check execution status
-            </button>
-          </div>
+          <button
+            class="btn toggle-new-runs-button"
+            :class="{
+              'btn-primary btn-call-for-action': !showNewRunsMode,
+              'btn-default': showNewRunsMode
+            }"
+            @click="toggleNewRunsMode()"
+          >
+            {{ showNewRunsMode ? 'Cancel' : 'Request new runs' }}
+          </button>
+          <button
+            v-if="showNewRunsMode"
+            class="btn btn-primary btn-call-for-action"
+            :class="{ 'disabled': potentialScenarioCount === 0}"
+            @click="requestNewModelRuns()"
+          >
+            Review {{ potentialScenarioCount }} new scenario{{ potentialScenarioCount !== 1 ? 's' : '' }}
+          </button>
+          <button
+            v-else
+            class="btn btn-default"
+            @click="showModelExecutionStatus()"
+          >
+            Check execution status
+          </button>
         </div>
         <div class="column">
           <div class="button-row">
-            <!-- TODO: extract button-group to its own component -->
-            <div class="button-group">
-              <button class="btn btn-default"
-                      :class="{'btn-primary':isDescriptionView}"
-                      @click="$emit('update-desc-view', true)">
-                Descriptions
-              </button>
-              <!-- make 'Data' tab disabled when no scenario selection -->
-              <button class="btn btn-default"
-                      :class="{'btn-primary':!isDescriptionView}"
-                      :disabled="!validModelRunsAvailable"
-                      @click="clickData">
-                Data
-              </button>
+            <div class="button-row-group">
+              <radio-button-group
+                :selected-button-value="isDescriptionView"
+                :buttons="[
+                  { label: 'Descriptions', value: true},
+                  { label: 'Data', value: false},
+                ]"
+                @button-clicked="(value) => value
+                  ? $emit('update-desc-view', true)
+                  : clickData()
+                "
+              />
+              <small-text-button
+                v-if="dataPaths.length > 0"
+                :label="'Download raw data'"
+                @click="showDatasets = true"
+              />
             </div>
-            <small-text-button
-              v-if="dataPaths.length > 0"
-              :label="'Download Raw Data'"
-              @click="showDatasets = true"
-            />
             <div
               v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
               class="relative-box"
             >
-              Relative to:
+              Relative to
               <button
                 class="btn btn-default"
                 @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
@@ -132,17 +111,12 @@
             </div>
           </div>
           <slot name="datacube-description" v-if="isDescriptionView" />
-          <header v-if="isExpanded && !isDescriptionView">
-            <datacube-scenario-header
-              v-if="mainModelOutput && isModelMetadata"
-              class="scenario-header"
-              :outputVariable="mainModelOutput.display_name"
-              :outputVariableUnits="mainModelOutput.unit && mainModelOutput.unit !== '' ? mainModelOutput.unit : mainModelOutput.units"
-              :metadata="metadata"
-              :selected-scenario-ids="selectedScenarioIds"
-              :color-from-index="colorFromIndex"
-            />
-          </header>
+          <datacube-scenario-header
+            v-if="isExpanded && !isDescriptionView && mainModelOutput && isModelMetadata"
+            :metadata="metadata"
+            :selected-scenario-ids="selectedScenarioIds"
+            :color-from-index="colorFromIndex"
+          />
           <modal v-if="showDatasets">
             <template #header>
               <h4 class="header"> Parquet files used to populate this datacube </h4>
@@ -167,7 +141,7 @@
             </template>
           </modal>
           <div class="column">
-            <div style="display: flex; flex-direction: row;">
+            <div class="dropdown-row">
               <slot
                 name="temporal-aggregation-config"
                 v-if="!isDescriptionView && timeseriesData.length > 0"
@@ -181,6 +155,7 @@
               v-if="!isDescriptionView && timeseriesData.length > 0"
               class="timeseries-chart"
               :timeseries-data="timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
               :selected-timestamp="selectedTimestamp"
               :breakdown-option="breakdownOption"
               :unit="mainModelOutput?.unit"
@@ -197,7 +172,7 @@
             </p>
             <div
               v-if="!isDescriptionView && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
-              style="display: flex; flex-direction: row;"
+              class="dropdown-row"
             >
               <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
             </div>
@@ -258,7 +233,6 @@ import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect } 
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import Disclaimer from '@/components/widgets/disclaimer.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
@@ -280,6 +254,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { getTimestampMillis } from '@/utils/date-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
+import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -313,6 +288,10 @@ export default defineComponent({
     selectedScenarioIds: {
       type: Array as PropType<string[]>,
       default: []
+    },
+    selectedTemporalResolution: {
+      type: String,
+      default: ''
     },
     selectedTimestamp: {
       type: Number,
@@ -362,14 +341,14 @@ export default defineComponent({
   components: {
     timeseriesChart,
     DatacubeScenarioHeader,
-    Disclaimer,
     ParallelCoordinatesChart,
     DataAnalysisMap,
     DropdownControl,
     ModalNewScenarioRuns,
     ModalCheckRunsExecutionStatus,
     Modal,
-    SmallTextButton
+    SmallTextButton,
+    RadioButtonGroup
   },
   setup(props, { emit }) {
     const store = useStore();
@@ -472,7 +451,6 @@ export default defineComponent({
     };
   },
   data: () => ({
-    showBaselineDefaults: true,
     showDatasets: false,
     showNewRunsMode: false,
     potentialScenarioCount: 0,
@@ -527,19 +505,11 @@ export default defineComponent({
     onSyncMapBounds(mapBounds: Array<Array<number>>) {
       this.mapBounds = mapBounds;
     },
-    toggleBaselineDefaultsVisibility() {
-      this.showBaselineDefaults = !this.showBaselineDefaults;
-    },
     toggleNewRunsMode() {
-      // reset visibility of baselinedefault when toggling the new-runs-mode
-      this.showBaselineDefaults = false;
-
       this.showNewRunsMode = !this.showNewRunsMode;
       this.potentialScenarioCount = 0;
 
       if (this.showNewRunsMode) {
-        // always force baselinedefault to be visible when the new-runs-mode is active
-        this.showBaselineDefaults = true;
         // clear any selected scenario and show the model desc page
         this.updateScenarioSelection({ scenarios: [] });
       }
@@ -620,10 +590,6 @@ header {
   }
 }
 
-.scenario-header {
-  flex: 1;
-}
-
 .column {
   flex: 1;
   min-width: 0;
@@ -643,6 +609,10 @@ header {
   min-height: 0;
 }
 
+.toggle-new-runs-button {
+  margin-bottom: 5px;
+}
+
 .relative-box {
   position: relative;
 }
@@ -651,16 +621,6 @@ header {
   position: absolute;
   top: 100%;
   right: 0;
-}
-
-.checkbox {
-  user-select: none; /* Standard syntax */
-  display: inline-block;
-  label {
-    font-weight: normal;
-    cursor: pointer;
-    margin: 0;
-  }
 }
 
 .timeseries-chart {
@@ -718,6 +678,22 @@ $marginSize: 5px;
 .button-row {
   display: flex;
   justify-content: space-between;
+  align-items: center;
+  margin-top: 5px;
+}
+
+.button-row-group {
+  display: flex;
+  align-items: center;
+
+  & > *:not(:first-child) {
+    margin-left: 10px;
+  }
+}
+
+.dropdown-row {
+  display: flex;
+  margin-top: 5px;
 }
 
 .data-analysis-card-container {
