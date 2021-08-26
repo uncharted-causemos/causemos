@@ -108,7 +108,7 @@ export function renderAxes(
       return '';
     }
     const input = moment.utc(v);
-    if (input.month() === 0) {
+    if (input.get(xAxisMinorTickIncrement) === 0) {
       return timestampFormatter(v);
     }
     return '';
