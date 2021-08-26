@@ -129,6 +129,7 @@
                 :unit="unit"
                 :selected-spatial-aggregation="selectedSpatialAggregation"
                 :selected-temporal-aggregation="selectedTemporalAggregation"
+                :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :selected-scenario-ids="selectedScenarioIds"
                 :selected-region-ids="selectedRegionIds"

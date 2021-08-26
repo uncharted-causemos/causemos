@@ -117,7 +117,7 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
-import dateFormatter from '@/formatters/date-formatter';
+import formatTimestamp from '@/formatters/timestamp-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
@@ -128,7 +128,6 @@ import {
   AdminLevel
 } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { getTimestampMillis } from '@/utils/date-util';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
@@ -156,6 +155,10 @@ export default defineComponent({
     selectedTemporalAggregation: {
       type: String as PropType<string | null>,
       default: AggregationOption.Mean
+    },
+    selectedTemporalResolution: {
+      type: String as PropType<string | null>,
+      default: null
     },
     unit: {
       type: String as PropType<string>,
@@ -201,6 +204,7 @@ export default defineComponent({
       regionalData,
       temporalBreakdownData,
       selectedBreakdownOption,
+      selectedTemporalResolution,
       qualifierBreakdownData
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
@@ -269,12 +273,11 @@ export default defineComponent({
     });
 
     const timestampFormatter = (timestamp: number) => {
-      if (selectedBreakdownOption.value === TemporalAggregationLevel.Year) {
-        const month = timestamp;
-        // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
-      }
-      return dateFormatter(timestamp, 'MMMM YYYY');
+      return formatTimestamp(
+        timestamp,
+        selectedBreakdownOption.value,
+        selectedTemporalResolution.value
+      );
     };
 
     return {
