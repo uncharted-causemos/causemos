@@ -33,7 +33,7 @@ const applyBreakdown = (
     getYearFromTimestamp(point.timestamp)
   );
   return Object.keys(brokenDownByYear)
-    .filter((year) => selectedYears.has(year))
+    .filter(year => selectedYears.has(year))
     .map((year, index) => {
       const points = brokenDownByYear[year];
       // Depending on the selected breakdown option, timestamp values may need to be mapped
@@ -213,9 +213,16 @@ export default function useTimeseriesData(
     if (rawTimeseriesData.value.length === 0) return null;
     const result: {
       id: string;
-      values: { [modelRunId: string]: number };
+      values: { [timeseriesId: string]: number };
     }[] = [];
-    rawTimeseriesData.value.map(({ points }, index) => {
+    // When "split by year" is active, we have to use the timeseries data for
+    //  the entire selected run, otherwise we'll only have breakdown data
+    //  entries for the selected years and won't be able to select any others
+    const timeseriesListToUse =
+      breakdownOption.value === TemporalAggregationLevel.Year
+        ? rawTimeseriesData.value
+        : timeseriesData.value;
+    timeseriesListToUse.map(({ id: timeseriesId, points }) => {
       // Group points by year
       const brokenDownByYear = _.groupBy(points, point =>
         getYearFromTimestamp(point.timestamp)
@@ -233,21 +240,25 @@ export default function useTimeseriesData(
         };
       });
       // Restructure into the BreakdownData format
-      const modelRunId = modelRunIds.value[index];
       reduced.forEach(({ year, value }) => {
+        // If "split by year" is active we want to use each entry's year as its
+        //  ID so that it's coloured correctly in the breakdown pane. Also,
+        //  they all come from the same timeseries and would otherwise have non
+        //  unique IDs.
+        const idToUse =
+          breakdownOption.value === TemporalAggregationLevel.Year
+            ? year
+            : timeseriesId;
         const entryForThisYear = result.find(entry => entry.id === year);
-        const timeseriesId = breakdownOption.value === TemporalAggregationLevel.Year
-          ? year
-          : modelRunId;
         if (entryForThisYear === undefined) {
           // Add an entry for this year
           result.push({
             id: year,
-            values: { [timeseriesId]: value }
+            values: { [idToUse]: value }
           });
         } else {
           // Add a value to this year's entry
-          entryForThisYear.values[timeseriesId] = value;
+          entryForThisYear.values[idToUse] = value;
         }
       });
     });
@@ -263,7 +274,6 @@ export default function useTimeseriesData(
     };
   });
 
-
   const selectedYears = shallowRef(new Set<string>());
   watchEffect(() => {
     // Don't reset selected year list until data has loaded, in case it gets
@@ -271,14 +281,16 @@ export default function useTimeseriesData(
     //  populated.
     const dataHasLoaded =
       rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
-    if (!dataHasLoaded || breakdownOption.value !== TemporalAggregationLevel.Year) {
+    if (
+      !dataHasLoaded ||
+      breakdownOption.value !== TemporalAggregationLevel.Year
+    ) {
       return;
     }
     // If no timeseries has an ID of `year`, then remove it from the list of
     //  selected years
-    const doesYearExistInData = (year: string) => timeseriesData.value.some(
-      ({ id }) => id === year
-    );
+    const doesYearExistInData = (year: string) =>
+      timeseriesData.value.some(({ id }) => id === year);
     const filteredSelectedYears = new Set<string>();
     Array.from(selectedYears.value.values())
       .filter(doesYearExistInData)
@@ -291,11 +303,8 @@ export default function useTimeseriesData(
     () => breakdownOption.value === TemporalAggregationLevel.Year
   );
   const toggleIsYearSelected = (year: string) => {
-    const isYearSelected = selectedYears.value.has(
-      year
-    );
+    const isYearSelected = selectedYears.value.has(year);
     const updatedList = _.clone(selectedYears.value);
-
 
     if (isYearSelected) {
       // If year is currently selected, remove it from the list of
