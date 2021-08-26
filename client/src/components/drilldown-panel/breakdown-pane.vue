@@ -105,7 +105,7 @@
       :checkbox-type="
         selectedBreakdownOption === TemporalAggregationLevel.Year
           ? 'checkbox'
-          : 'radio'
+          : null
       "
       :selected-item-ids="Array.from(selectedYears)"
       @toggle-is-item-selected="toggleIsYearSelected"

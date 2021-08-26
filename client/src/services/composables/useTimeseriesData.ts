@@ -281,14 +281,12 @@ export default function useTimeseriesData(
     //  populated.
     const dataHasLoaded =
       rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
-    if (
-      !dataHasLoaded ||
-      breakdownOption.value !== TemporalAggregationLevel.Year
-    ) {
-      return;
-    }
+    if (!dataHasLoaded) return;
     // If no timeseries has an ID of `year`, then remove it from the list of
-    //  selected years
+    //  selected years.
+    // This also means that all years will be deselected when the breakdown
+    //  option changes (except in the extreme edge case where a region/model
+    //  run/qualifier has a year as its ID).
     const doesYearExistInData = (year: string) =>
       timeseriesData.value.some(({ id }) => id === year);
     const filteredSelectedYears = new Set<string>();
@@ -299,9 +297,6 @@ export default function useTimeseriesData(
       });
     selectedYears.value = filteredSelectedYears;
   });
-  const isMultiSelectionAllowed = computed(
-    () => breakdownOption.value === TemporalAggregationLevel.Year
-  );
   const toggleIsYearSelected = (year: string) => {
     const isYearSelected = selectedYears.value.has(year);
     const updatedList = _.clone(selectedYears.value);
@@ -310,12 +305,8 @@ export default function useTimeseriesData(
       // If year is currently selected, remove it from the list of
       //  selected years.
       updatedList.delete(year);
-    } else if (isMultiSelectionAllowed.value) {
-      // Else if multiple years can be selected add it to the list of selected years.
-      updatedList.add(year);
     } else {
-      // Otherwise, replace the list of selected years with this year.
-      updatedList.clear();
+      // Else add it to the list of selected years.
       updatedList.add(year);
     }
 
