@@ -1,5 +1,5 @@
 <template>
-  <div :style="histogramMarginStyle(barValue)">
+  <div class="aggregation-checklist-histogram" :style="histogramMarginStyle(barValue)">
     <aggregation-checklist-rectangle v-if="isSelectedAggregationLevel && minVisibleBarValue < 0 && barValue >= 0"/>
     <div
       v-if="isSelectedAggregationLevel"
@@ -56,15 +56,12 @@ export default defineComponent({
       return (value / this.totalBarLength) * 100;
     },
     histogramMarginStyle(value: number) {
-      const DEFAULT_WIDTH = '100%';
-      const DEFAULT_DISPLAY = 'flex';
-      const DEFAULT_DIRECTION = 'row';
       if (value < 0) {
         const marginLeft = `${this.calculateWidth(value - this.minVisibleBarValue)}%`;
-        return { 'margin-left': marginLeft, 'width': DEFAULT_WIDTH, 'display': DEFAULT_DISPLAY, 'flex-direction': DEFAULT_DIRECTION };
+        return { 'margin-left': marginLeft };
       } else {
         const marginLeft = `${this.calculateWidth(-this.minVisibleBarValue)}%`;
-        return { 'margin-left': marginLeft, 'width': DEFAULT_WIDTH, 'display': DEFAULT_DISPLAY, 'flex-direction': DEFAULT_DIRECTION };
+        return { 'margin-left': marginLeft };
       }
     },
     histogramBarStyle(value: number, color: string) {
@@ -78,19 +75,23 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 
-span.faded {
-  opacity: 50%;
-}
-
-.histogram-bar {
-  position: relative;
-  left: 0;
+.aggregation-checklist-histogram {
   width: 100%;
-  height: 4px;
-  background: #8767c8;
+  display: flex;
+  flex-direction: row;
+  span.faded {
+    opacity: 50%;
+  }
+  .histogram-bar {
+    position: relative;
+    left: 0;
+    width: 100%;
+    height: 4px;
+    background: #8767c8;
 
-  &.faded {
-    opacity: 25%;
+    &.faded {
+      opacity: 25%;
+    }
   }
 }
 
