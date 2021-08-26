@@ -49,18 +49,23 @@ export default defineComponent({
   computed: {
     totalBarLength(): number {
       return this.maxVisibleBarValue - this.minVisibleBarValue;
+    },
+    maxBarLength(): number {
+      return Math.max(this.maxVisibleBarValue, -this.minVisibleBarValue);
     }
   },
   methods: {
     calculateWidth(value: number) {
-      return (value / this.totalBarLength) * 100;
+      return this.minVisibleBarValue < 0
+        ? (value / this.maxBarLength) * 100 / 2
+        : (value / this.totalBarLength) * 100;
     },
     histogramMarginStyle(value: number) {
       if (value < 0) {
-        const marginLeft = `${this.calculateWidth(value - this.minVisibleBarValue)}%`;
+        const marginLeft = `${this.calculateWidth(value + this.maxBarLength)}%`;
         return { 'margin-left': marginLeft };
       } else {
-        const marginLeft = `${this.calculateWidth(-this.minVisibleBarValue)}%`;
+        const marginLeft = `${this.minVisibleBarValue < 0 ? 50 : 0}%`;
         return { 'margin-left': marginLeft };
       }
     },
