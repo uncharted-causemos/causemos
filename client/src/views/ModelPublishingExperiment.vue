@@ -122,6 +122,7 @@
                 :selected-timestamp="selectedTimestamp"
                 :selected-spatial-aggregation="selectedSpatialAggregation"
                 :selected-temporal-aggregation="selectedTemporalAggregation"
+                :selected-temporal-resolution="selectedTemporalResolution"
                 :regional-data="regionalData"
                 :output-source-specs="outputSpecs"
                 :selected-breakdown-option="breakdownOption"
