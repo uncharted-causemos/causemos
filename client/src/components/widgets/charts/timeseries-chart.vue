@@ -36,6 +36,7 @@ import {
   toRefs,
   computed
 } from 'vue';
+import { TemporalResolutionOption } from '@/types/Enums';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { chartValueFormatter } from '@/utils/string-util';
 
@@ -50,7 +51,7 @@ export default defineComponent({
       required: true
     },
     selectedTemporalResolution: {
-      type: String,
+      type: String as PropType<TemporalResolutionOption | null>,
       default: ''
     },
     selectedTimestamp: {

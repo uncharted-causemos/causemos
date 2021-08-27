@@ -125,6 +125,7 @@ import {
   AggregationOption,
   TemporalAggregationLevel,
   SpatialAggregationLevel,
+  TemporalResolutionOption,
   AdminLevel
 } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
@@ -149,15 +150,15 @@ export default defineComponent({
       default: null
     },
     selectedSpatialAggregation: {
-      type: String as PropType<string | null>,
+      type: String as PropType<AggregationOption | null>,
       default: AggregationOption.Mean
     },
     selectedTemporalAggregation: {
-      type: String as PropType<string | null>,
+      type: String as PropType<AggregationOption | null>,
       default: AggregationOption.Mean
     },
     selectedTemporalResolution: {
-      type: String as PropType<string | null>,
+      type: String as PropType<TemporalResolutionOption | null>,
       default: null
     },
     unit: {
