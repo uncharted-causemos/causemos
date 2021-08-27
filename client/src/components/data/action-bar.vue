@@ -53,27 +53,6 @@
           Sync time selection
         </label>
       </div>
-      <div class="comment-btn">
-        <button
-          v-tooltip.top-center="'Comments'"
-          type="button"
-          class="btn btn-primary"
-          @click="toggleComments"
-        >
-          <i
-            class="fa fa-fw"
-            :class="{'fa-commenting': description !== '', 'fa-commenting-o': description === ''}"
-          />
-        </button>
-        <text-area-card
-          v-if="isCommentOpen"
-          class="comment-box"
-          :title="'Comments'"
-          :initial-text="description"
-          @close="isCommentOpen = false"
-          @saveText="updateComments"
-        />
-      </div>
       <rename-modal
         v-if="showRenameModal"
         :modal-title="'Rename Analysis'"
@@ -91,26 +70,22 @@
 import { mapActions, mapGetters } from 'vuex';
 
 import { getAnalysis, updateAnalysis, deleteAnalysis } from '@/services/analysis-service';
-import { ANALYSIS, EXPORT_MESSAGES } from '@/utils/messages-util';
+import { ANALYSIS } from '@/utils/messages-util';
 
 import RenameModal from '@/components/action-bar/rename-modal';
 import DropdownControl from '@/components/dropdown-control';
-import TextAreaCard from '@/components/cards/text-area-card';
 import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'ActionBar',
   components: {
     RenameModal,
-    DropdownControl,
-    TextAreaCard
+    DropdownControl
   },
   data: () => ({
     showDropdown: false,
     showRenameModal: false,
-    analysisName: '',
-    description: '',
-    isCommentOpen: false
+    analysisName: ''
   }),
   computed: {
     ...mapGetters({
@@ -126,7 +101,6 @@ export default {
   async mounted() {
     const result = await getAnalysis(this.analysisId);
     this.analysisName = result.title;
-    this.description = result.description;
     // if no data cube unset time syncing
     if (this.emptyDataAnalysis) {
       this.setTimeSelectionSyncing(false);
@@ -184,17 +158,6 @@ export default {
     },
     onRenameModalClose() {
       this.showRenameModal = false;
-    },
-    toggleComments() {
-      this.isCommentOpen = !this.isCommentOpen;
-    },
-    async updateComments(commentsText) {
-      this.description = commentsText;
-      try {
-        await updateAnalysis(this.analysisId, { description: commentsText });
-      } catch (e) {
-        this.toaster(EXPORT_MESSAGES.COMMENT_NOT_SAVED, 'error', true);
-      }
     }
   }
 };
@@ -218,21 +181,6 @@ $width-name: 10vw;
   button {
     i {
       margin-right: 5px;
-    }
-  }
-  .comment-btn {
-    position: absolute;
-    right: 5px;
-
-    i {
-      margin-right: 0;
-    }
-
-    .comment-box {
-      position: absolute;
-      right: 0;
-      top: calc(100% + 3px);
-      width: 25vw;
     }
   }
   .btn-new-analysis {
