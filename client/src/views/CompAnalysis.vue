@@ -1,31 +1,31 @@
 <template>
   <div class="comp-analysis-container">
     <action-bar />
-    <main>
-    <analytical-questions-and-insights-panel />
     <div class="flex-row">
-      <div class="column insight-capture" v-if="analysisItems.length">
-        <datacube-comparative-card
-          v-for="item in analysisItems"
-          :key="item.id"
-          class="datacube-comparative-card"
-          :id="item.id"
+      <analytical-questions-and-insights-panel />
+      <main>
+        <div class="column insight-capture" v-if="analysisItems.length">
+          <datacube-comparative-card
+            v-for="item in analysisItems"
+            :key="item.id"
+            class="datacube-comparative-card"
+            :id="item.id"
+            :selected-timestamp="selectedTimestamp"
+            :selected-timestamp-range="selectedTimestampRange"
+            @loaded-timeseries="onLoadedTimeseries"
+          />
+        </div>
+        <empty-state-instructions v-else />
+        <datacube-comparative-timeline-sync
+          v-if="globalTimeseries.length > 0 && timeSelectionSyncing"
+          class="datacube-comparative-timeline-sync"
+          :timeseriesData="globalTimeseries"
           :selected-timestamp="selectedTimestamp"
-          :selected-timestamp-range="selectedTimestampRange"
-          @loaded-timeseries="onLoadedTimeseries"
+          @select-timestamp="setSelectedTimestamp"
+          @select-timestamp-range="handleTimestampRangeSelection"
         />
-      </div>
-      <empty-state-instructions v-else />
-      <datacube-comparative-timeline-sync
-        v-if="globalTimeseries.length > 0 && timeSelectionSyncing"
-        class="datacube-comparative-timeline-sync"
-        :timeseriesData="globalTimeseries"
-        :selected-timestamp="selectedTimestamp"
-        @select-timestamp="setSelectedTimestamp"
-        @select-timestamp-range="handleTimestampRangeSelection"
-      />
+      </main>
     </div>
-    </main>
   </div>
 </template>
 
@@ -256,27 +256,30 @@ export default defineComponent({
 }
 
 .flex-row {
-  display: flex;
   flex: 1;
+  display: flex;
   min-height: 0;
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
 }
 
 main {
-  flex: 1;
   display: flex;
-  min-height: 0;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
 }
 
 .datacube-comparative-timeline-sync {
   background-color: rgb(235, 235, 235);
 }
 
+.datacube-comparative-card:not(:first-child) {
+  margin-top: 10px;
+}
+
 .column {
+  margin-top: 10px;
   overflow-y: auto;
+  padding-bottom: 80px;
 }
 
 </style>
