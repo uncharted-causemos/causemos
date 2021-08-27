@@ -7,7 +7,7 @@
         @click="openDrilldown"
       >
         <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-        <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
+        <span class="datacube-name">{{metadata.name}}</span>
       </h5>
       <button
         v-tooltip="'Drilldown'"
@@ -70,15 +70,6 @@ import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
 import { DataState, ViewState } from '@/types/Insight';
-
-const DRILLDOWN_TABS = [
-  {
-    name: 'Breakdown',
-    id: 'breakdown',
-    // TODO: our version of FA doesn't include fa-chart
-    icon: 'fa-question'
-  }
-];
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
@@ -255,7 +246,6 @@ export default defineComponent({
     });
 
     return {
-      drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -340,11 +330,22 @@ export default defineComponent({
   .datacube-title-area {
     display: inline-block;
     cursor: pointer;
+    flex: 1;
+    min-width: 0;
+    &:hover {
+      color: $selected-dark;
+    }
   }
   .drilldown-btn {
     padding: 5px;
     margin-left:auto;
   }
+}
+
+.datacube-name {
+  font-weight: normal;
+  color: $label-color;
+  margin-left: 10px;
 }
 
 .timeseries-chart {

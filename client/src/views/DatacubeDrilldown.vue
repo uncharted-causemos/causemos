@@ -690,7 +690,8 @@ export default defineComponent({
 }
 
 .datacube-name {
-  @include header-secondary;
+  font-weight: normal;
+  color: $label-color;
   margin-left: 10px;
 }
 
