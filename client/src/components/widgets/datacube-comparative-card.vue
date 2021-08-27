@@ -82,10 +82,6 @@ export default defineComponent({
       type: String,
       required: true
     },
-    isSelected: {
-      type: Boolean,
-      default: false
-    },
     selectedTimestamp: {
       type: Number,
       default: 0

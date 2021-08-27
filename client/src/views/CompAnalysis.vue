@@ -9,12 +9,9 @@
           v-for="item in analysisItems"
           :key="item.id"
           class="datacube-comparative-card"
-          :class="{ 'selected': selectedDatacubeId === item.id }"
           :id="item.id"
-          :isSelected="selectedDatacubeId === item.id"
           :selected-timestamp="selectedTimestamp"
           :selected-timestamp-range="selectedTimestampRange"
-          @click="selectedDatacubeId = item.id"
           @loaded-timeseries="onLoadedTimeseries"
         />
       </div>
@@ -58,13 +55,8 @@ export default defineComponent({
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const timeSelectionSyncing = computed(() => store.getters['dataAnalysis/timeSelectionSyncing']);
 
-    const selectedDatacubeId = ref('');
-
     watchEffect(() => {
       if (analysisItems.value && analysisItems.value.length > 0) {
-        // @FIXME: select first one by default
-        selectedDatacubeId.value = analysisItems.value[0].id;
-
         // set context-ids to fetch insights correctly for all datacubes in this analysis
         const contextIDs = analysisItems.value.map((dc: any) => dc.id);
         store.dispatch('insightPanel/setContextId', contextIDs);
@@ -115,7 +107,6 @@ export default defineComponent({
     );
 
     return {
-      selectedDatacubeId,
       analysisItems,
       allTimeseriesMap,
       allDatacubesMetadataMap,
@@ -292,9 +283,6 @@ main {
     border: 2px outset #ddd;
     margin: 1rem;
     padding: 0 1rem 1rem 0;
-  }
-  .selected {
-    border-color: black;
   }
 }
 
