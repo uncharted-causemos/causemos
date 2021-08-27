@@ -268,10 +268,6 @@ main {
   min-width: 0;
 }
 
-.datacube-comparative-timeline-sync {
-  background-color: rgb(235, 235, 235);
-}
-
 .datacube-comparative-card:not(:first-child) {
   margin-top: 10px;
 }
