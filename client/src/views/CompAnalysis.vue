@@ -273,7 +273,7 @@ main {
 }
 
 .column {
-  margin-top: 10px;
+  margin: 10px 0;
   overflow-y: auto;
   padding-bottom: 80px;
 }
