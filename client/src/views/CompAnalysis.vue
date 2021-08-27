@@ -292,9 +292,6 @@ main {
     border: 2px outset #ddd;
     margin: 1rem;
     padding: 0 1rem 1rem 0;
-    &:hover {
-      border-color: blue;
-    }
   }
   .selected {
     border-color: black;
