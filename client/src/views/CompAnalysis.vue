@@ -2,7 +2,7 @@
   <div class="comp-analysis-container">
     <action-bar />
     <div class="flex-row">
-      <analytical-questions-and-insights-panel />
+      <analytical-questions-and-insights-panel class="side-panel" />
       <main>
         <div class="column insight-capture" v-if="analysisItems.length">
           <datacube-comparative-card
@@ -259,6 +259,11 @@ export default defineComponent({
   flex: 1;
   display: flex;
   min-height: 0;
+}
+
+.side-panel {
+  isolation: isolate;
+  z-index: 1;
 }
 
 main {
