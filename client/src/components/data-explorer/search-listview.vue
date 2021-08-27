@@ -54,7 +54,7 @@
                       >
                         Processing
                       </button>
-                      <div class="text-bold">{{ d.outputs[0].display_name }}</div>
+                      <div class="text-bold">{{ d.default_feature }}</div>
                       <div>{{ d.name }}</div>
                       <div>{{ d.source }}</div>
                       <div v-if="isExpanded(d) && d.parameters?.length > 0" class="knobs">
@@ -155,7 +155,7 @@ export default {
             const newSelectedDatacubes = this.selectedDatacubes.filter(sd => sd.id !== item.id);
             this.setSelectedDatacubes(newSelectedDatacubes);
           } else {
-            this.setSelectedDatacubes([...this.selectedDatacubes, item]);
+            this.setSelectedDatacubes([item, ...this.selectedDatacubes]);
           }
         } else {
           // only one selection is allowed, so replace the selected datacubes array

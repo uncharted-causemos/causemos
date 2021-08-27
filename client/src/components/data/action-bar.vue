@@ -41,7 +41,6 @@
           @click="openDataExplorer"
         > <i class="fa fa-fw fa-search" />Search Data Cubes</button>
       </div>
-      <!--
       <div
         class="nav-item time-sync"
         :class="{ 'disabled': emptyDataAnalysis }"
@@ -54,7 +53,6 @@
           Sync time selection
         </label>
       </div>
-      -->
       <div class="comment-btn">
         <button
           v-tooltip.top-center="'Comments'"
@@ -116,7 +114,7 @@ export default {
   }),
   computed: {
     ...mapGetters({
-      // timeSelectionSyncing: 'dataAnalysis/timeSelectionSyncing',
+      timeSelectionSyncing: 'dataAnalysis/timeSelectionSyncing',
       analysisId: 'dataAnalysis/analysisId',
       analysisItems: 'dataAnalysis/analysisItems',
       project: 'app/project'
@@ -131,12 +129,12 @@ export default {
     this.description = result.description;
     // if no data cube unset time syncing
     if (this.emptyDataAnalysis) {
-      // this.setTimeSelectionSyncing(false);
+      this.setTimeSelectionSyncing(false);
     }
   },
   methods: {
     ...mapActions({
-      // setTimeSelectionSyncing: 'dataAnalysis/setTimeSelectionSyncing'
+      setTimeSelectionSyncing: 'dataAnalysis/setTimeSelectionSyncing'
     }),
     openDataExplorer() {
       this.$router.push({ name: 'dataExplorer', query: { analysisName: this.analysisName } });
@@ -157,7 +155,7 @@ export default {
         });
         // Back to DataStart page
         this.$router.push({
-          name: 'dataStart',
+          name: 'overview',
           params: {
             project: this.project,
             projectType: ProjectType.Analysis

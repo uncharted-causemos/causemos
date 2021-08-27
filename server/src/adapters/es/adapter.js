@@ -38,6 +38,7 @@ const RESOURCE = Object.freeze({
   ONTOLOGY: 'ontology',
   SESSION_LOG: 'session-log',
   INDICATOR_METADATA: 'indicator-metadata',
+  INDICATOR_MATCH_HISTORY: 'indicator-match-history',
 
 
   // Tracking

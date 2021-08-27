@@ -18,10 +18,6 @@ import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
 export default {
   name: 'ModelGraph',
   props: {
-    currentEngine: {
-      type: String,
-      default: null
-    },
     data: {
       type: Object,
       default: () => ({})
@@ -64,6 +60,8 @@ export default {
       adapter: new Adapter({ nodeWidth: 120, nodeHeight: 60, layout: layered }),
       renderMode: 'delta',
       useEdgeControl: true,
+      useStableZoomPan: true,
+      useStableLayout: true,
       addons: [highlight, nodeDrag, panZoom]
     });
 
@@ -119,7 +117,7 @@ export default {
       this.renderer.hideNeighbourhood();
       this.renderer.enableDrag(true);
       this.renderer.enableSubInteractions();
-      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId, this.currentEngine);
+      this.renderer.renderHistoricalAndProjections(this.selectedScenarioId);
     }
   }
 };
@@ -133,5 +131,6 @@ export default {
   width: 100%;
   height: 100%;
   overflow: hidden;
+  background-color: rgb(242, 242, 242);
 }
 </style>

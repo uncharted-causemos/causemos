@@ -56,7 +56,12 @@ const insertDatacube = async(metadata) => {
   metadata.type = metadata.type || 'model'; // Assume these ar all models for now
   metadata.status = 'REGISTERED';
   metadata.family_name = metadata.family_name || metadata.name;
-  metadata.default_feature = metadata.outputs[0].name;
+
+  // Take the first numeric output, others are not currently supported
+  const validOutput = metadata.outputs.filter(o =>
+    o.type === 'int' || o.type === 'float' || o.type === 'boolean'
+  )[0] || metadata.outputs[0];
+  metadata.default_feature = validOutput.name;
   metadata.outputs.forEach(output => { output.id = undefined; });
   metadata.parameters.forEach(param => { param.id = undefined; });
 

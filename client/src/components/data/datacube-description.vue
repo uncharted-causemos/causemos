@@ -32,7 +32,7 @@
         v-if="metadata.geography.country"
         class="metadata-row"
       >
-        <b>Country: </b> {{ metadata.geography.country[0] }}
+        <b>Country: </b> {{ metadata.geography.country.join(", ") }}
       </div>
       <div class="metadata-row">
         <b>Dataset/Model: </b> {{ metadata.name }}
@@ -104,8 +104,11 @@ export default defineComponent({
   flex-basis: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0 10px;
   overflow-y: auto;
+
+  &:not(:first-child) {
+    margin-left: 5px;
+  }
 
   h5 {
     @include header-secondary;

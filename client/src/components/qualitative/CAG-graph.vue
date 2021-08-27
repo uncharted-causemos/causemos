@@ -733,6 +733,34 @@ class CAGRenderer extends SVGRenderer {
       highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
     }
   }
+
+  /**
+   * Used for creating new CAG node and retain existing xy-position.
+   * We are building a blueprint, so the next iteration, when we have actual
+   * data we can bind to it without losing prior position placements
+   */
+  createNewNode(x, y, { concept, label }) {
+    const chart = this.chart;
+    const node = chart.append('g').classed('node', true).attr('transform', svgUtil.translate(x, y));
+
+    node.datum({
+      id: concept,
+      concept: concept,
+      label: label,
+      x: x,
+      y: y,
+      height: 30,
+      width: 130,
+      type: 'normal',
+      data: {},
+      nodes: []
+    });
+
+    const nodeUI = node.append('g').classed('node-ui', true);
+
+    this.renderNodeAdded(nodeUI);
+    nodeUI.call(this.enableNodeInteraction, this);
+  }
 }
 
 
@@ -761,6 +789,8 @@ export default {
     selectedNode: '',
     newNodeX: 0,
     newNodeY: 0,
+    svgX: 0,
+    svgY: 0,
     showCustomConcept: false
   }),
   computed: {
@@ -801,6 +831,7 @@ export default {
       addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
       useStableLayout: true,
+      useStableZoomPan: true,
       newEdgeFn: (source, target) => {
         this.$emit('new-edge', { source, target });
       },
@@ -817,13 +848,15 @@ export default {
       this.deselectNodeAndEdge();
     });
 
-    this.renderer.setCallback('backgroundDblClick', (evt) => {
+    this.renderer.setCallback('backgroundDblClick', (evt, _target, _renderer, coord) => {
       this.newNodeX = evt.offsetX;
       this.newNodeY = evt.offsetY;
+      this.svgX = coord.x;
+      this.svgY = coord.y;
       this.$emit('background-dbl-click');
     });
 
-    this.renderer.setCallback('nodeClick', (evt, node) => {
+    this.renderer.setCallback('nodeClick', (_evt, node) => {
       const concept = node.datum().concept;
       const neighborhood = calculateNeighborhood(this.data, concept);
 
@@ -848,7 +881,7 @@ export default {
       this.renderer.selectEdge(evt, edge);
     });
 
-    this.renderer.setCallback('nodeMouseEnter', (evt, node, renderer) => {
+    this.renderer.setCallback('nodeMouseEnter', (_evt, node, renderer) => {
       if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.enableNodeHandles(node);
       const data = node.datum();
@@ -857,7 +890,7 @@ export default {
       }
     });
 
-    this.renderer.setCallback('nodeMouseLeave', (evt, node, renderer) => {
+    this.renderer.setCallback('nodeMouseLeave', (_evt, node, renderer) => {
       if (node.datum().nodes) return;
       if (_.isNil(renderer.newEdgeSource)) renderer.disableNodeHandles();
 
@@ -890,7 +923,7 @@ export default {
       }
     });
 
-    this.renderer.setCallback('edgeMouseLeave', (evt, edge) => {
+    this.renderer.setCallback('edgeMouseLeave', (_evt, edge) => {
       edge.selectAll('.edge-mouseover-handle').remove();
     });
 
@@ -901,7 +934,12 @@ export default {
   },
   methods: {
     saveCustomConcept(value) {
-      console.log(`Emitted custom grounding: ${JSON.stringify(value)}`);
+      this.$emit('suggestion-selected', {
+        concept: value.theme,
+        shortName: value.theme,
+        label: value.theme,
+        hasEvidence: false
+      });
     },
     async refresh() {
       if (_.isEmpty(this.data)) return;
@@ -931,6 +969,16 @@ export default {
       this.renderer.highlight({ nodes, edges }, options);
     },
     onSuggestionSelected(suggestion) {
+      // HACK This is leveraing the svg-flowgraph internals.
+      //
+      // We inject the node-blueprint into the DOM with createNewNode, then when the
+      // graph itself re-renders it will detect the node-blueprint, rebinds the data and
+      // thus retaining the original layout.
+      this.renderer.createNewNode(this.svgX, this.svgY, {
+        concept: suggestion.concept,
+        label: suggestion.label
+      });
+
       this.$emit('suggestion-selected', suggestion);
     },
     focusNewNodeInput() {

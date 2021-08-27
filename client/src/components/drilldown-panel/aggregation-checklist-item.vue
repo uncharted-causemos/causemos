@@ -5,14 +5,17 @@
     @click="toggleExpanded"
   >
     <i
-      v-if="itemData.isSelectedAggregationLevel"
+      v-if="checkboxType !== null && itemData.isSelectedAggregationLevel"
       class="fa fa-lg fa-fw unit-width agg-item-checkbox icon-centered"
       :class="{
-        'fa-check-square-o': itemData.isChecked,
-        'fa-square-o': !itemData.isChecked
+        'fa-circle': checkboxType === 'radio' && itemData.isChecked,
+        'fa-circle-o': checkboxType === 'radio' && !itemData.isChecked,
+        'fa-check-square-o': checkboxType === 'checkbox' && itemData.isChecked,
+        'fa-square-o': checkboxType === 'checkbox' && !itemData.isChecked
       }"
       @click.stop="toggleChecked"
     />
+    <!-- TODO: checkboxType === null -->
     <div v-for="i in itemData.indentationCount" :key="i" class="indentation" />
     <i
       v-if="itemData.showExpandToggle"
@@ -24,7 +27,7 @@
     />
     <div v-else class="unit-width" />
     <div
-      v-if="itemData.values.length === 1"
+      v-if="itemData.bars.length === 1"
       v-tooltip.top-start="ancestorTooltip"
       class="content--single-row"
     >
@@ -33,13 +36,13 @@
         {{ itemData.name }}
       </span>
       <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
-        {{ precisionFormatter(itemData.values[0]) ?? 'missing' }}
+        {{ valueFormatter(itemData.bars[0].value) }}
       </span>
       <div
         v-if="itemData.isSelectedAggregationLevel"
         class="histogram-bar"
         :class="{ faded: !itemData.isChecked }"
-        :style="histogramBarStyle(itemData.values[0], 0)"
+        :style="histogramBarStyle(itemData.bars[0].value, itemData.bars[0].color)"
       />
     </div>
     <div
@@ -52,7 +55,7 @@
         {{ itemData.name }}
       </span>
       <div
-        v-for="(value, index) in itemData.values"
+        v-for="(bar, index) in itemData.bars"
         :key="index"
         class="value-on-same-line"
       >
@@ -61,7 +64,7 @@
             v-if="itemData.isSelectedAggregationLevel"
             class="histogram-bar"
             :class="{ faded: !itemData.isChecked }"
-            :style="histogramBarStyle(value, index)"
+            :style="histogramBarStyle(bar.value, bar.color)"
           />
         </div>
         <span
@@ -70,9 +73,9 @@
               !itemData.isSelectedAggregationLevel || !itemData.isChecked,
             'multiple-row-label': true
           }"
-          :style="textColorStyle(index)"
+          :style="{ color: bar.color }"
         >
-          {{ precisionFormatter(value) ?? 'missing' }}
+          {{ valueFormatter(bar.value) }}
         </span>
       </div>
     </div>
@@ -80,16 +83,15 @@
 </template>
 
 <script lang="ts">
-import precisionFormatter from '@/formatters/precision-formatter';
+import * as d3 from 'd3';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { colorFromIndex } from '@/utils/colors-util';
 import { defineComponent, PropType } from '@vue/runtime-core';
 
 const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
 
 interface AggregationChecklistItemPropType {
   name: string;
-  values: (number | null)[];
+  bars: { color: string; value: number }[];
   isSelectedAggregationLevel: boolean;
   showExpandToggle: boolean;
   isExpanded: boolean;
@@ -106,7 +108,7 @@ export default defineComponent({
       type: Object as PropType<AggregationChecklistItemPropType>,
       default: () => ({
         name: '[Aggregation Checklist Item]',
-        values: [0],
+        bars: [],
         isSelectedAggregationLevel: false,
         showExpandToggle: false,
         isExpanded: false,
@@ -122,6 +124,10 @@ export default defineComponent({
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
+    },
+    checkboxType: {
+      type: String as PropType<'checkbox' | 'radio' | null>,
+      default: null
     }
   },
   computed: {
@@ -154,22 +160,18 @@ export default defineComponent({
     }
   },
   methods: {
-    precisionFormatter,
+    valueFormatter(value: number | null): string {
+      return value !== null ? d3.format(',.2~f')(value) : 'missing';
+    },
     toggleExpanded() {
       this.$emit('toggle-expanded');
     },
     toggleChecked() {
       this.$emit('toggle-checked');
     },
-    histogramBarStyle(value: number | null, index: number) {
-      const percentage =
-        value !== null ? (value / this.maxVisibleBarValue) * 100 : 0;
-      return { width: `${percentage}%`, background: colorFromIndex(index) };
-    },
-    textColorStyle(index: number) {
-      return {
-        color: colorFromIndex(index)
-      };
+    histogramBarStyle(value: number, color: string) {
+      const percentage = (value / this.maxVisibleBarValue) * 100;
+      return { width: `${percentage}%`, background: color };
     },
     colorFromIndex(index: number) {
       return this.selectedTimeseriesPoints[index].color;
@@ -239,7 +241,7 @@ export default defineComponent({
 }
 
 span.faded {
-  opacity: 50%;
+  opacity: .5;
 }
 
 .histogram-bar {
@@ -251,7 +253,7 @@ span.faded {
   background: #8767c8;
 
   &.faded {
-    opacity: 25%;
+    opacity: .25;
   }
 }
 

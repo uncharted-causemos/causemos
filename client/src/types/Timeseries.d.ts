@@ -22,3 +22,7 @@ export interface TimeseriesPointSelection {
   timeseriesName: string;
   color: string;
 }
+
+export interface QualifierTimeseriesResponse {
+  name: string; timeseries: TimeseriesPoint[];
+}

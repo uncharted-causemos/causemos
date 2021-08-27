@@ -8,7 +8,7 @@ export interface Snapshot {
   project_id?: string;
 
   // e.g., datacube-id, CAG-id, etc.
-  context_id?: string;
+  context_id?: string[];
 
   url: string;
 
@@ -68,21 +68,23 @@ export interface ViewState {
 // data-specific context values
 // data context/selection (metadata, CAG node, one or more model runs, etc.)
 export interface DataState {
-  // generic metadata (provenance, etc.)
-  metadata?: any;
-
-  filters?: any; // any filter options applied
-  breakdownOptions?: any; // any grouping options applied
-
   // data space specific
   selectedModelId?: string;
   selectedScenarioIds?: string[];
-  selectedTimestamp?: number;
-  transform?: number; // i.e., relative to a specific run index
+  selectedTimestamp?: number | null;
+  selectedRegionIds?: string[];
+  //
+  datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
+  datacubeRegions?: string[];
+  relativeTo?: string | null;
 
   // knowledge/model space specific
-  cagNode?: any;
-  cagID?: any;
+  selectedScenarioId?: string;
+  selectedNode?: string;
+  selectedEdge?: string; // src + des node names
+  currentEngine?: string;
+  modelName?: string;
+  nodesCount?: number;
 
   // others
   // ...

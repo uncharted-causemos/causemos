@@ -1,24 +1,32 @@
 import API from '@/api/api';
 import { Datacube } from '@/types/Datacube';
 import { BreakdownData } from '@/types/Datacubes';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { Timeseries } from '@/types/Timeseries';
+import {
+  AggregationOption,
+  TemporalResolutionOption,
+  SpatialAggregationLevel,
+  TemporalAggregationLevel
+} from '@/types/Enums';
+import { QualifierTimeseriesResponse, Timeseries } from '@/types/Timeseries';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
 import { getMonthFromTimestamp, getYearFromTimestamp } from '@/utils/date-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
-import { useStore } from 'vuex';
+import { getQualifierTimeseries } from '../new-datacube-service';
+import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const applyBreakdown = (
   timeseriesData: Timeseries[],
   breakdownOption: string | null
 ): Timeseries[] => {
-  if (breakdownOption === null || timeseriesData.length !== 1) {
+  if (
+    breakdownOption !== TemporalAggregationLevel.Year ||
+    timeseriesData.length !== 1
+  ) {
     return timeseriesData;
   }
-  // FIXME: Still need to add logic for breaking down timeseries by other
-  //  temporal aggregation levels and by other facets of the data
   const onlyTimeseries = timeseriesData[0].points;
   const brokenDownByYear = _.groupBy(onlyTimeseries, point =>
     getYearFromTimestamp(point.timestamp)
@@ -43,7 +51,6 @@ const applyBreakdown = (
     });
 };
 
-
 /**
  * Takes a data ID, a list of model run IDs, and a colouring function,
  * fetches the timeseries data for each run, then assigns a colour to
@@ -52,38 +59,26 @@ const applyBreakdown = (
  */
 export default function useTimeseriesData(
   metadata: Ref<Datacube | null>,
-  dataId: Ref<string>,
   modelRunIds: Ref<string[]>,
   selectedTemporalResolution: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
   selectedSpatialAggregation: Ref<string>,
   breakdownOption: Ref<string | null>,
   selectedTimestamp: Ref<number | null>,
-  onNewLastTimestamp: (lastTimestamp: number) => void
+  onNewLastTimestamp: (lastTimestamp: number) => void,
+  regionIds: Ref<string[]>,
+  selectedQualifierValues: Ref<Set<string>>
 ) {
-  const store = useStore();
-  const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-
   const rawTimeseriesData = ref<Timeseries[]>([]);
+  const { activeFeature } = useActiveDatacubeFeature(metadata);
 
   watchEffect(onInvalidate => {
-    const modelMetadata = metadata.value;
-    if (
-      modelRunIds.value.length === 0 ||
-      modelMetadata === null
-    ) {
+    const datacubeMetadata = metadata.value;
+    if (modelRunIds.value.length === 0 || datacubeMetadata === null) {
       // Don't have the information needed to fetch the data
       return;
     }
-    let activeFeature = '';
-    const currentOutputEntry = datacubeCurrentOutputsMap.value[modelMetadata.id];
-    if (currentOutputEntry !== undefined) {
-      const outputs = modelMetadata.validatedOutputs ? modelMetadata.validatedOutputs : modelMetadata.outputs;
-      activeFeature = outputs[currentOutputEntry].name;
-    } else {
-      activeFeature = modelMetadata.default_feature ?? '';
-    }
-    const activeDataId = modelMetadata.data_id;
+    const dataId = datacubeMetadata.data_id;
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
@@ -100,21 +95,70 @@ export default function useTimeseriesData(
           ? selectedSpatialAggregation.value
           : AggregationOption.Mean;
 
-      const promises = modelRunIds.value.map(runId =>
-        API.get('maas/output/timeseries', {
-          params: {
-            data_id: activeDataId,
-            run_id: runId,
-            feature: activeFeature,
-            resolution: temporalRes,
-            temporal_agg: temporalAgg,
-            spatial_agg: spatialAgg
-          }
-        })
-      );
-      const fetchResults = (await Promise.all(promises)).map(response =>
-        Array.isArray(response.data) ? response.data : JSON.parse(response.data)
-      );
+      let promises: Promise<{ data: any } | null>[] = [];
+      if (breakdownOption.value === SpatialAggregationLevel.Region) {
+        promises = regionIds.value.map(regionId => {
+          return API.get('maas/output/timeseries', {
+            params: {
+              data_id: dataId,
+              run_id: modelRunIds.value[0],
+              feature: activeFeature.value,
+              resolution: temporalRes,
+              temporal_agg: temporalAgg,
+              spatial_agg: spatialAgg,
+              region_id: regionId
+            }
+          }).catch(() => {
+            // FIXME: we're getting way more regions back from the hierarchy endpoint
+            //  than we seemingly have data for
+            console.error(`Failed to fetch timeseries for ${regionId}`);
+            return null;
+          });
+        });
+      } else if (
+        breakdownOption.value === null ||
+        breakdownOption.value === TemporalAggregationLevel.Year
+      ) {
+        // If no regions are selected, pass "undefined" as the region_id
+        //  to get the aggregated timeseries for all regions. Otherwise,
+        //  fetch the timeseries for the selected region
+        // ASSUMPTION: when split by region is not active, only one
+        //  region is selected at a time
+        const regionId =
+          regionIds.value.length > 0 ? regionIds.value[0] : undefined;
+        promises = modelRunIds.value.map(runId => {
+          return API.get('maas/output/timeseries', {
+            params: {
+              data_id: dataId,
+              run_id: runId,
+              feature: activeFeature.value,
+              resolution: temporalRes,
+              temporal_agg: temporalAgg,
+              spatial_agg: spatialAgg,
+              region_id: regionId
+            }
+          });
+        });
+      } else {
+        // Breakdown by qualifier
+        // ASSUMPTION: we'll only need to fetch the qualifier timeseries when
+        //  exactly one model run is selected
+        promises = [
+          getQualifierTimeseries(
+            dataId,
+            modelRunIds.value[0],
+            activeFeature.value,
+            temporalRes,
+            temporalAgg,
+            spatialAgg,
+            breakdownOption.value,
+            Array.from(selectedQualifierValues.value)
+          )
+        ];
+      }
+      const fetchResults = (await Promise.all(promises))
+        .filter(response => response !== null)
+        .map((response: any) => response.data);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
@@ -122,32 +166,47 @@ export default function useTimeseriesData(
       }
       // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
-      rawTimeseriesData.value = fetchResults.map((points, index) => {
-        const name = `Run ${index}`;
-        const id = modelRunIds.value[index];
-        const color = colorFromIndex(index);
-        return { name, id, color, points };
-      });
+      if (breakdownOption.value === SpatialAggregationLevel.Region) {
+        rawTimeseriesData.value = fetchResults.map((points, index) => {
+          // Take the last segment of the region ID to get its display name
+          const name =
+            regionIds.value[index].split(REGION_ID_DELIMETER).pop() ??
+            regionIds.value[index];
+          const id = regionIds.value[index];
+          const color = colorFromIndex(index);
+          return { name, id, color, points };
+        });
+      } else if (
+        breakdownOption.value === TemporalAggregationLevel.Year ||
+        breakdownOption.value === null
+      ) {
+        rawTimeseriesData.value = fetchResults.map((points, index) => {
+          const name = `Run ${index}`;
+          const id = modelRunIds.value[index];
+          const color = colorFromIndex(index);
+          return { name, id, color, points };
+        });
+      } else {
+        // Breakdown by qualifier
+        const options: QualifierTimeseriesResponse[] = fetchResults[0];
+        rawTimeseriesData.value = options.map(({ name, timeseries }, index) => {
+          return {
+            name, // TODO: look up display name
+            id: name,
+            color: colorFromIndex(index),
+            points: timeseries
+          };
+        });
+      }
     }
     onInvalidate(() => {
       isCancelled = true;
     });
+
     fetchTimeseries();
   });
 
   const relativeTo = ref<string | null>(null);
-  // Whenever the selected runs change, reset "relative to" state
-  //  and selected breakdown option
-  watch(
-    () => [modelRunIds.value],
-    () => {
-      relativeTo.value = null;
-      // breakdownOption.value = null;
-    },
-    {
-      immediate: true
-    }
-  );
 
   const temporalBreakdownData = computed<BreakdownData | null>(() => {
     if (rawTimeseriesData.value.length === 0) return null;
@@ -245,6 +304,25 @@ export default function useTimeseriesData(
   const timeseriesData = computed(
     () => processedTimeseriesData.value.timeseriesData
   );
+
+  // Whenever the selected runs change, reset "relative to" state
+  //  and selected breakdown option
+  watchEffect(() => {
+    // Don't reset relativeTo until data has loaded, in case relativeTo is
+    //  loaded from an insight and will be valid once timeseriesData has been
+    //  populated.
+    const dataHasLoaded =
+      rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
+    // If no timeseries has an ID of `relativeTo`, then `relativeTo` cannot
+    //   be used to select a valid baseline and shouldbe reset to `null`.
+    const doesRelativeToExistInData = timeseriesData.value.some(
+      ({ id }) => id === relativeTo.value
+    );
+    const shouldResetRelativeTo = dataHasLoaded && !doesRelativeToExistInData;
+    if (shouldResetRelativeTo) {
+      relativeTo.value = null;
+    }
+  });
 
   return {
     timeseriesData,

@@ -10,7 +10,7 @@
           <td
             v-for="(dim, idx) in inputParameters"
             :key="idx">
-            <span style="font-weight: bold;">{{ dim.name }}</span>
+            <div class="params-header">{{ dim.name }}</div>
           </td>
           <td>&nbsp;</td>
         </tr>
@@ -18,9 +18,10 @@
           v-for="(run, sidx) in potentialRuns"
           :key="sidx">
           <td>{{ sidx }}</td>
-          <td v-for="(dimName, idx) in Object.keys(run)"
-            :key="idx">
-            <label>{{ run[dimName] }}</label>
+          <td v-for="(dim, idx) in inputParameters"
+            :key="idx"
+            class="params-value">
+            <label>{{ run[dim.name] }}</label>
           </td>
           <td>
             <div
@@ -36,6 +37,9 @@
       </table>
     </template>
     <template #footer>
+      <div class="row estimated-runtime">
+        Estimated execution time: {{ potentialScenarios.length * 2 }} {{ metadata.name.toLowerCase().includes('wash') ? 'hours' : 'minutes' }}
+      </div>
       <ul class="unstyled-list">
         <button
           type="button"
@@ -59,11 +63,10 @@
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
-import { Model } from '@/types/Datacube';
+import { Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
 import { mapGetters } from 'vuex';
-import { ModelParameterDataType } from '@/types/Enums';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -85,7 +88,7 @@ export default defineComponent({
     }
   },
   computed: {
-    inputParameters(): Array<any> {
+    inputParameters(): Array<ModelParameter> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
     },
     ...mapGetters({
@@ -99,7 +102,18 @@ export default defineComponent({
     potentialRuns: [] as Array<ScenarioData>
   }),
   mounted() {
-    this.potentialRuns = _.cloneDeep(this.potentialScenarios);
+    // potentialScenarios won't have values for the invisible input knobs
+    //  so we need to add them to explicitly highlight ALL potential run values
+    const potentialRuns = _.cloneDeep(this.potentialScenarios);
+    // for each requested new run, review if there were any invisible input knobs
+    potentialRuns.forEach(potentialRun => {
+      this.inputParameters.forEach(input => {
+        if (input.is_visible === false) {
+          potentialRun[input.name] = input.default;
+        }
+      });
+    });
+    this.potentialRuns = potentialRuns;
   },
   methods: {
     async startExecution() {
@@ -108,7 +122,6 @@ export default defineComponent({
 
       const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
-      const freeformParams = this.metadata.parameters.filter(d => d.data_type === ModelParameterDataType.Freeform);
 
       const promises = this.potentialRuns.map(async (modelRun) => {
         const paramArray: any[] = [];
@@ -124,12 +137,6 @@ export default defineComponent({
         // add drilldown/freeform params since they are still inputs
         //  although hidden in the parallel coordinates
         drilldownParams.forEach(p => {
-          paramArray.push({
-            name: p.name,
-            value: p.default
-          });
-        });
-        freeformParams.forEach(p => {
           paramArray.push({
             name: p.name,
             value: p.default
@@ -162,10 +169,29 @@ export default defineComponent({
 @import "~styles/variables";
 
 ::v-deep(.modal-container) {
+  width: max-content;
+  max-width: 80vw;
   .modal-body {
     height: 300px;
     overflow-y: scroll;
   }
+}
+
+.params-header {
+  font-weight: bold;
+  padding-left: 1rem;
+  padding-right: 1rem;
+}
+
+.params-value {
+  padding-left: 1rem;
+  padding-right: 1rem;
+  align-content: center;
+}
+
+.estimated-runtime {
+  display: flex;
+  padding: 1rem;
 }
 
 .title {

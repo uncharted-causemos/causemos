@@ -49,6 +49,10 @@ export default defineComponent({
       type: Number,
       required: true
     },
+    viewingExtent: {
+      type: Array as PropType<number[]>,
+      default: null
+    },
     constraints: {
       type: Array as PropType<ProjectionConstraint[]>,
       required: true
@@ -61,13 +65,27 @@ export default defineComponent({
       selectedScenarioId,
       minValue,
       maxValue,
+      viewingExtent,
       constraints
     } = toRefs(props);
     const historicalTimeseriesBeforeStart = computed(() => {
-      const projectionStartTimestamp =
-        projections.value.length === 0
-          ? 0
-          : projections.value[0].values[0].timestamp;
+      let projectionStartTimestamp = 0;
+      if (projections.value.length > 0) {
+        // Get the first timestamp from the first projection.
+        // FIXME: can we make this selection a little smarter to use the
+        //  selected scenario, or at least a non-empty, non-stale scenario?
+        // CAUTION: when placing a new clamp, the new draft scenario has
+        //  no projection points but is selected. When trying to make this
+        //  logic smarter, watch for that case.
+        const selectedScenario = projections.value[0];
+        if (selectedScenario.values.length === 0) {
+          console.error(
+            `When deriving the projection start timestamp, scenario with ID ${selectedScenario.scenarioId} had no points.`
+          );
+        } else {
+          projectionStartTimestamp = selectedScenario.values[0].timestamp;
+        }
+      }
       return historicalTimeseries.value.filter(
         point => point.timestamp < projectionStartTimestamp
       );
@@ -147,7 +165,8 @@ export default defineComponent({
       // Set new size
       svg.attr('width', width).attr('height', height);
       // (Re-)render
-      svg.selectAll('*').remove();
+      // svg.selectAll('*').remove();
+
       renderChart(
         svg,
         width,
@@ -158,6 +177,7 @@ export default defineComponent({
         constraints,
         min,
         max,
+        viewingExtent.value,
         setConstraints,
         setHistoricalTimeseries
       );

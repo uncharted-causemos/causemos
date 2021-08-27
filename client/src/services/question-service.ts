@@ -124,7 +124,7 @@ const fetchQuestions = async (fetchParamsArray: any[]) => {
 
   // but we may also run the loop in parallel; map the array to promises
   const promises = fetchParamsArray.map((fetchParams) => {
-    return API.get('questions', { params: fetchParams });
+    return API.post('questions/search', fetchParams);
   });
   // wait until all promises are resolved
   const allRawResponses = await Promise.all(promises);

@@ -1,4 +1,8 @@
 <template>
+  <modal-edit-param-choices
+    v-if="showEditParamChoicesModal === true"
+    :selected-parameter="selectedParameter"
+    @close="onEditParamChoicesModalClose" />
   <div class="desc-header">
     <a @click="scrollToSection('inputknobs')">
       Input Knobs
@@ -27,12 +31,14 @@
               v-model="param.display_name"
               type="text"
               class="model-attribute-text"
+              placeholder="display name"
               :class="{ 'attribute-invalid': !isValid(param.display_name) }"
             >
             <input
               v-model="param.unit"
               type="text"
               class="model-attribute-text"
+              placeholder="unit"
               :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
@@ -65,6 +71,13 @@
                 Freeform
               </label>
             </div>
+            <button
+              v-if="param.choices_labels"
+              type="button"
+              class="btn btn-link edit-choices"
+              @click="editParamChoices(param)">
+              Rename Choices
+            </button>
           </td>
         </tr>
       </tbody>
@@ -95,12 +108,14 @@
               v-model="param.display_name"
               type="text"
               class="model-attribute-text"
+              placeholder="display name"
               :class="{ 'attribute-invalid': !isValid(param.display_name) }"
             >
             <input
               v-model="param.unit"
               type="text"
               class="model-attribute-text"
+              placeholder="unit"
               :class="{ 'attribute-invalid': !isValid(param.unit) }"
             >
           </td>
@@ -146,12 +161,14 @@
               v-model="qualifier.display_name"
               type="text"
               class="model-attribute-text"
+              placeholder="display name"
               :class="{ 'attribute-invalid': !isValid(qualifier.display_name) }"
             >
             <input
               v-model="qualifier.unit"
               type="text"
               class="model-attribute-text"
+              placeholder="unit"
               :class="{ 'attribute-invalid': !isValid(qualifier.unit) }"
             >
             <div>Related Features</div>
@@ -211,15 +228,17 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ComputedRef, toRefs } from 'vue';
+import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref } from 'vue';
 import _ from 'lodash';
 import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
 import { FeatureQualifierRoles, ModelParameterDataType } from '@/types/Enums';
+import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.vue';
 
 export default defineComponent({
   name: 'ModelDescription',
   components: {
+    ModalEditParamChoices
   },
   props: {
     metadata: {
@@ -229,7 +248,7 @@ export default defineComponent({
   },
   emits: [
     'check-model-metadata-validity',
-    'update-attribute-visibility'
+    'refresh-metadata'
   ],
   setup(props) {
     const { metadata } = toRefs(props);
@@ -255,6 +274,9 @@ export default defineComponent({
       return validatedOutputVariables.value[currentOutputIndex.value];
     });
 
+    const selectedParameter = ref(null) as Ref<ModelParameter | null>;
+    const showEditParamChoicesModal = ref(false);
+
     return {
       datacubeCurrentOutputsMap,
       currentOutputIndex,
@@ -262,7 +284,9 @@ export default defineComponent({
       currentOutputFeature,
       outputVariables,
       FeatureQualifierRoles,
-      ModelParameterDataType
+      ModelParameterDataType,
+      showEditParamChoicesModal,
+      selectedParameter
     };
   },
   computed: {
@@ -315,6 +339,23 @@ export default defineComponent({
       };
       elm.scrollIntoView(scrollViewOptions);
     },
+    editParamChoices(param: ModelParameter) {
+      // show a modal to edit param choices
+      this.selectedParameter = param;
+      this.showEditParamChoicesModal = true;
+    },
+    onEditParamChoicesModalClose(status: any) {
+      this.showEditParamChoicesModal = false;
+      if (status.cancel === false) {
+        const updatedParam = status.updatedParameter;
+        if (this.selectedParameter !== null) {
+          this.selectedParameter.choices_labels = updatedParam.choices_labels;
+
+          // need to emit an event for the metadata to refresh the sync with all components
+          this.$emit('refresh-metadata');
+        }
+      }
+    },
     visibleOutputsCount() {
       return this.validatedOutputVariables.filter(o => o.is_visible).length;
     },
@@ -356,7 +397,7 @@ export default defineComponent({
       // need to emit an event for the metadata to refresh the sync with all components
       //  for example to allow the PC to show/hide
       //   the relevant dimension based on the updated visibility
-      this.$emit('update-attribute-visibility');
+      this.$emit('refresh-metadata');
     },
     updateOutputVisibility(output: DatacubeFeature) {
       // at least one validated output must be visible
@@ -379,14 +420,14 @@ export default defineComponent({
         this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
       }
 
-      this.$emit('update-attribute-visibility');
+      this.$emit('refresh-metadata');
     },
     updateDrilldownVisibility(param: ModelParameter) {
       param.is_visible = !param.is_visible;
       // need to emit an event for the metadata to refresh the sync with all components
       //  for example to allow the Breakdown panel to show/hide
       //  the relevant drilldown-dimension based on the updated visibility
-      this.$emit('update-attribute-visibility');
+      this.$emit('refresh-metadata');
     }
   }
 });
@@ -496,6 +537,14 @@ table.model-table thead tr th {
     cursor: auto;
     color: gray;
   }
+}
+
+.edit-choices {
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-bottom: 0;
+  margin-top: 0;
+  color: black;
 }
 
 </style>

@@ -1,9 +1,7 @@
 import * as d3 from 'd3';
-import _ from 'lodash';
 import { translate } from '@/utils/svg-util';
 import { SELECTED_COLOR, SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
-import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
@@ -12,39 +10,24 @@ import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
 const PADDING_TOP = 10;
-const PADDING_RIGHT = 40;
+const PADDING_RIGHT = 5;
 
-// The type of value can't be more specific than `any`
-//  because under the hood d3.tickFormat requires d3.NumberType.
-// It correctly converts, but its TypeScript definitions don't
-//  seem to reflect that.
+const TOOLTIP_BG_COLOUR = 'white';
+const TOOLTIP_BORDER_COLOUR = 'grey';
+const TOOLTIP_WIDTH = 150;
+const TOOLTIP_BORDER_WIDTH = 1.5;
+const TOOLTIP_FONT_SIZE = 10;
+const TOOLTIP_PADDING = TOOLTIP_FONT_SIZE / 2;
+const TOOLTIP_LINE_HEIGHT = TOOLTIP_FONT_SIZE + TOOLTIP_PADDING;
 
-const DATE_FORMATTER = (value: any) =>
-  dateFormatter(value, 'MMM DD, YYYY');
-const BY_YEAR_DATE_FORMATTER = (value: any) =>
-  dateFormatter(new Date(0, value), 'MMM');
-
-const DEFAULT_LINE_COLOR = '#000';
-const LABEL_BACKGROUND_COLOR = 'white';
-const LABEL_FONT_SIZE = '12px';
 const DASHED_LINE = {
   length: 4,
   gap: 2,
   opacity: 0.5
 };
 
-const SELECTED_TIMESTAMP_WIDTH = 2;
+const SELECTED_TIMESTAMP_WIDTH = 1;
 const SELECTABLE_TIMESTAMP_OPACITY = 0.5;
-
-// A collection of elements that are used to dynamically show details about the selected
-//  timestamp
-// - selectedTimestampGroup: the vertical line and label to show the timestamp itself
-// - valueGroups: an array of horizontal dashed lines and labels to show the value of
-//    each timeseries at the selected timestamp. One group of elements for each timeseries.
-interface TimestampElements {
-  selectedTimestampGroup: D3GElementSelection;
-  valueGroups: D3GElementSelection[];
-}
 
 export default function(
   selection: D3Selection,
@@ -53,10 +36,13 @@ export default function(
   height: number,
   selectedTimestamp: number,
   onTimestampSelected: (timestamp: number) => void,
-  breakdownOption: string | null
+  breakdownOption: string | null,
+  selectedTimestampRange: {start: number; end: number} | null,
+  unit: string,
+  timestampFormatter: (timestamp: number) => string
 ) {
   const groupElement = selection.append('g');
-  const [xExtent, yExtent] = calculateExtents(timeseriesList);
+  const [xExtent, yExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
   if (xExtent[0] === undefined || yExtent[0] === undefined) {
     console.error('Unable to derive extent from data', timeseriesList);
     // This function must always return a function to call when
@@ -73,10 +59,6 @@ export default function(
     yExtent,
     breakdownOption
   );
-  const timestampFormatter =
-    breakdownOption === TemporalAggregationLevel.Year
-      ? BY_YEAR_DATE_FORMATTER
-      : DATE_FORMATTER;
   renderAxes(
     groupElement,
     xScale,
@@ -92,55 +74,64 @@ export default function(
   timeseriesList.forEach(timeseries => {
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1
       renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
+      // also, draw dots for all the timeseries points
+      renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
     } else { // draw a spot for timeseries that are only 1 long
       renderPoint(groupElement, timeseries.points, xScale, yScale, timeseries.color);
     }
   });
+
+  const timestampLineElement = generateSelectedTimestampLine(
+    groupElement,
+    height
+  );
 
   generateSelectableTimestamps(
     groupElement,
     timeseriesList,
     xScale,
     height,
-    onTimestampSelected
-  );
-
-  const timestampElements = generateSelectedTimestampElements(
-    groupElement,
-    height,
-    width,
-    timeseriesList
+    unit,
+    onTimestampSelected,
+    valueFormatter,
+    timestampFormatter
   );
 
   // Set timestamp elements to reflect the initially selected
   //  timestamp
   updateTimestampElements(
     selectedTimestamp,
-    timestampElements,
+    timestampLineElement,
     timeseriesList,
     xScale,
-    yScale,
-    valueFormatter,
-    timestampFormatter
+    selectedTimestampRange
   );
   // Return function to update the timestamp elements when
   //  a parent component selects a different timestamp
   return (timestamp: number | null) => {
     updateTimestampElements(
       timestamp,
-      timestampElements,
+      timestampLineElement,
       timeseriesList,
       xScale,
-      yScale,
-      valueFormatter,
-      timestampFormatter
+      selectedTimestampRange
     );
   };
 }
 
-function calculateExtents(timeseriesList: Timeseries[]) {
+function calculateExtents(timeseriesList: Timeseries[], selectedTimestampRange: {start: number; end: number} | null) {
   const allPoints = timeseriesList.map(timeSeries => timeSeries.points).flat();
-  const xExtent = d3.extent(allPoints.map(point => point.timestamp));
+  const allTimestampDataPoints = allPoints.map(point => point.timestamp);
+  let xExtent: [number, number] | [undefined, undefined] = [undefined, undefined];
+  if (selectedTimestampRange !== null) {
+    // the user requested to render the timeseries chart within a specific range
+    // so we should respect that and enlarge the extent to include the selectedTimestampRange, as needed
+    //  this would enable the zooming effect
+    xExtent = [selectedTimestampRange.start, selectedTimestampRange.end];
+  } else {
+    xExtent = d3.extent(allTimestampDataPoints);
+  }
+
   const yExtent = d3.extent(allPoints.map(point => point.value));
   return [xExtent, yExtent];
 }
@@ -172,14 +163,27 @@ function generateSelectableTimestamps(
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
   height: number,
-  onTimestampSelected: (timestamp: number) => void
+  unit: string,
+  onTimestampSelected: (timestamp: number) => void,
+  valueFormatter: (value: number) => string,
+  timestampFormatter: (value: number) => string
 ) {
   const timestampGroup = selection.append('g');
-  const allTimestamps = timeseriesList
-    .map(timeSeries => timeSeries.points)
-    .flat()
-    .map(point => point.timestamp);
-  const uniqueTimestamps = _.uniq(allTimestamps);
+  const valuesAtEachTimestamp = new Map<number, { color: string; name: string; value: number}[]>();
+  timeseriesList.forEach(timeseries => {
+    const { color, name, points } = timeseries;
+    points.forEach(({ value, timestamp }) => {
+      if (!valuesAtEachTimestamp.has(timestamp)) {
+        valuesAtEachTimestamp.set(timestamp, []);
+      }
+      const valuesAtThisTimestamp = valuesAtEachTimestamp.get(timestamp);
+      if (valuesAtThisTimestamp === undefined) {
+        return;
+      }
+      valuesAtThisTimestamp.push({ color, name, value });
+    });
+  });
+  const uniqueTimestamps = Array.from(valuesAtEachTimestamp.keys());
   // FIXME: We assume that all timestamps are evenly spaced when determining
   //  how wide the hover/click hitbox should be. This may not always be the case.
 
@@ -189,187 +193,172 @@ function generateSelectableTimestamps(
     uniqueTimestamps.length > 1
       ? xScale(uniqueTimestamps[1]) - xScale(uniqueTimestamps[0])
       : SELECTED_TIMESTAMP_WIDTH * 5;
+  const markerHeight = height - PADDING_TOP - X_AXIS_HEIGHT;
+  const [minTimestamp, maxTimestamp] = xScale.domain();
+  const centerTimestamp = minTimestamp + (maxTimestamp - minTimestamp) / 2;
   uniqueTimestamps.forEach(timestamp => {
-    const timestampMarker = timestampGroup
-      .append('rect')
-      .attr('width', SELECTED_TIMESTAMP_WIDTH)
-      .attr('height', height - PADDING_TOP - X_AXIS_HEIGHT)
+    // Display tooltip on the left of the hovered timestamp if that timestamp
+    //  is on the right side of the chart to avoid the tooltip overflowing
+    //  or being clipped.
+    const isRightOfCenter = timestamp > centerTimestamp;
+    const markerAndTooltip = timestampGroup
+      .append('g')
       .attr(
         'transform',
         translate(xScale(timestamp) - SELECTED_TIMESTAMP_WIDTH / 2, PADDING_TOP)
       )
-      .attr('fill', SELECTED_COLOR)
-      .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY)
       .attr('visibility', 'hidden');
+    markerAndTooltip
+      .append('rect')
+      .attr('width', SELECTED_TIMESTAMP_WIDTH)
+      .attr('height', markerHeight)
+      .attr('fill', SELECTED_COLOR)
+      .attr('fill-opacity', SELECTABLE_TIMESTAMP_OPACITY);
+    // How far the tooltip is shifted horizontally from the hovered timestamp
+    //  also the "radius" of the notch diamond
+    const offset = 10;
+    const notchSideLength = Math.sqrt(offset * offset + offset * offset);
+    const tooltip = markerAndTooltip.append('g')
+      .attr('transform', translate(
+        isRightOfCenter
+          ? -offset - TOOLTIP_WIDTH
+          : offset
+        , 0)
+      );
+    tooltip
+      .append('rect')
+      .attr('width', TOOLTIP_WIDTH)
+      .attr('height', markerHeight)
+      .attr('fill', TOOLTIP_BG_COLOUR)
+      .attr('stroke', TOOLTIP_BORDER_COLOUR);
+    // Notch border
+    tooltip
+      .append('rect')
+      .attr('width', notchSideLength + TOOLTIP_BORDER_WIDTH)
+      .attr('height', notchSideLength + TOOLTIP_BORDER_WIDTH)
+      .attr(
+        'transform',
+        isRightOfCenter
+          ? translate(TOOLTIP_WIDTH - offset - TOOLTIP_BORDER_WIDTH, markerHeight / 2) + 'rotate(-45)'
+          : translate(-TOOLTIP_BORDER_WIDTH - offset, markerHeight / 2) + 'rotate(-45)'
+      )
+      .attr('fill', TOOLTIP_BORDER_COLOUR);
+    // Notch background
+    // Extend side length of notch backgroundto make sure it covers the right
+    //  half of the border rect
+    tooltip
+      .append('rect')
+      .attr('width', notchSideLength * 2)
+      .attr('height', notchSideLength * 2)
+      .attr(
+        'transform',
+        isRightOfCenter
+          ? translate(TOOLTIP_WIDTH - 3 * offset, markerHeight / 2) + 'rotate(-45)'
+          : translate(-offset, markerHeight / 2) + 'rotate(-45)'
+      )
+      .attr('fill', TOOLTIP_BG_COLOUR);
+    // Display units
+    tooltip
+      .append('text')
+      .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, TOOLTIP_LINE_HEIGHT))
+      .style('text-anchor', 'end')
+      .style('fill', '#9C9D9E') // text-color-medium
+      .text(unit);
+    // Display a line for each value at this timestamp
+    (valuesAtEachTimestamp.get(timestamp) ?? [])
+      .sort(({ value: valueA }, { value: valueB }) => valueB - valueA)
+      .forEach(({ color, name, value }, index) => {
+        // +1 line because the origin point for text elements is the bottom left corner
+        // +1 line because the units are displayed above
+        const yPosition = TOOLTIP_LINE_HEIGHT * (index + 2);
+        tooltip
+          .append('text')
+          .attr('transform', translate(TOOLTIP_PADDING, yPosition))
+          .style('fill', color)
+          .style('font-weight', 'bold')
+          .text(name);
+        tooltip
+          .append('text')
+          .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition))
+          .style('text-anchor', 'end')
+          .style('fill', color)
+          .text(valueFormatter(value));
+      });
+    // Display hovered timestamp
+    tooltip
+      .append('text')
+      .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, markerHeight - TOOLTIP_PADDING))
+      .style('text-anchor', 'end')
+      .style('fill', SELECTED_COLOR_DARK)
+      .text(timestampFormatter(timestamp));
     // Hover hitbox
     timestampGroup
       .append('rect')
       .attr('width', hitboxWidth)
-      .attr('height', height - PADDING_TOP - X_AXIS_HEIGHT)
+      .attr('height', markerHeight)
       .attr(
         'transform',
         translate(xScale(timestamp) - hitboxWidth / 2, PADDING_TOP)
       )
       .attr('fill-opacity', 0)
       .style('cursor', 'pointer')
-      .on('mouseenter', () => timestampMarker.attr('visibility', 'visible'))
-      .on('mouseleave', () => timestampMarker.attr('visibility', 'hidden'))
-      .on('mousedown', () => onTimestampSelected(timestamp));
+      .on('mouseenter', () => markerAndTooltip.attr('visibility', 'visible'))
+      .on('mouseleave', () => markerAndTooltip.attr('visibility', 'hidden'))
+      .on('mousedown', () => onTimestampSelected(timestamp))
+    ;
   });
 }
 
-function calculateLabelDimensions(
-  labelText: d3.Selection<SVGTextElement, any, null, any>
-) {
-  const textBBox = labelText.node()?.getBBox() ?? { width: 0, height: 0 };
-  return {
-    labelWidth: textBBox.width,
-    labelHeight: textBBox.height
-  };
-}
-
-function generateLabel(
-  parentElement: D3GElementSelection,
-  color: string,
-  text: string
-) {
-  const labelGroup = parentElement.append('g');
-  // Label to display the timestamp
-  const labelText = labelGroup
-    .append('text')
-    .style('fill', color)
-    .style('text-anchor', 'middle')
-    .style('font-size', LABEL_FONT_SIZE)
-    .text(text);
-  const { labelWidth, labelHeight } = calculateLabelDimensions(labelText);
-  labelText.attr(
-    'transform',
-    // Nudge upwards to accomodate for the weird text bounding box sizing
-    translate(0, labelHeight - 3)
-  );
-  // Background for the label
-  labelGroup
-    .append('rect')
-    .classed('label-background', true)
-    .attr('width', labelWidth)
-    .attr('height', labelHeight)
-    .attr('transform', translate(-labelWidth / 2, 0))
-    .style('fill', LABEL_BACKGROUND_COLOR);
-  // Move text on top of background
-  labelText.raise();
-  return labelGroup;
-}
-
-function generateSelectedTimestampElements(
+function generateSelectedTimestampLine(
   selection: D3GElementSelection,
-  height: number,
-  width: number,
-  timeseriesList: Timeseries[]
+  height: number
 ) {
   const selectedTimestampGroup = selection
     .append('g')
     .attr('visibility', 'hidden');
   const selectedTimestampHeight = height - X_AXIS_HEIGHT - PADDING_TOP;
 
-  // Vertical line
   selectedTimestampGroup
-    .append('rect')
-    .attr('width', SELECTED_TIMESTAMP_WIDTH)
-    .attr('height', selectedTimestampHeight)
-    .attr('transform', translate(-(SELECTED_TIMESTAMP_WIDTH / 2), 0))
-    .style('fill', SELECTED_COLOR_DARK);
+    .append('line')
+    .attr('stroke', SELECTED_COLOR_DARK)
+    .attr('stroke-width', SELECTED_TIMESTAMP_WIDTH)
+    .attr('stroke-dasharray', `${DASHED_LINE.length},${DASHED_LINE.gap}`)
+    .attr('stroke-opacity', DASHED_LINE.opacity)
+    .attr('x1', 0)
+    .attr('x2', 0)
+    .attr('y1', 0)
+    .attr('y2', selectedTimestampHeight);
 
-  generateLabel(
-    selectedTimestampGroup,
-    SELECTED_COLOR_DARK,
-    '[selected timestamp]'
-  ).attr('transform', translate(0, selectedTimestampHeight));
-
-  // For each timeseries, add a dotted line and label
-  const valueGroups = timeseriesList.map(timeseries => {
-    const gElement = selection
-      .append('g')
-      .attr('visibility', 'hidden')
-      .attr('transform', translate(width - PADDING_RIGHT, PADDING_TOP));
-    const color = timeseries.color ?? DEFAULT_LINE_COLOR;
-    gElement
-      .append('line')
-      .attr('stroke', color)
-      .attr('stroke-dasharray', `${DASHED_LINE.length},${DASHED_LINE.gap}`)
-      .attr('stroke-opacity', DASHED_LINE.opacity)
-      .attr('x1', 0)
-      .attr('x2', 0)
-      .attr('y1', 0)
-      .attr('y2', 0);
-    const label = generateLabel(gElement, color, '[value]');
-    const height = label.node()?.getBBox().height ?? 0;
-    label.attr(
-      'transform',
-      translate(SELECTED_TIMESTAMP_WIDTH / 2, -height / 2)
-    );
-    label.select('text').style('text-anchor', 'start');
-    label.select('rect').attr('transform', translate(0, 0));
-    return gElement;
-  });
-  return { selectedTimestampGroup, valueGroups };
+  return selectedTimestampGroup;
 }
 
 function updateTimestampElements(
   timestamp: number | null,
-  { selectedTimestampGroup, valueGroups }: TimestampElements,
+  selectedTimestampGroup: D3GElementSelection,
   timeseriesList: Timeseries[],
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  valueFormatter: (value: any) => string,
-  timestampFormatter: (timestamp: number) => string
+  selectedTimestampRange: {start: number; end: number} | null
 ) {
   if (timestamp === null) {
     // Hide everything
     selectedTimestampGroup.attr('visibility', 'hidden');
-    valueGroups.forEach(valueGroup => valueGroup.attr('visibility', 'hidden'));
     return;
   }
+  // check if the selectedTimestamp is out of the timeseries range
+  const [xExtent] = calculateExtents(timeseriesList, selectedTimestampRange);
+  if (xExtent[0] === undefined || xExtent[1] === undefined) {
+    console.error('Unable to derive extent from data', timeseriesList);
+  } else {
+    if (timestamp < xExtent[0] || timestamp > xExtent[1]) {
+      // Hide everything
+      selectedTimestampGroup.attr('visibility', 'hidden');
+      return;
+    }
+  }
+
   // Move selectedTimestamp elements horizontally to the right position
   const selectedXPosition = xScale(timestamp);
   selectedTimestampGroup
     .attr('visibility', 'visible')
     .attr('transform', translate(selectedXPosition, PADDING_TOP));
-  // Display the newly selected timestamp
-  const labelText = selectedTimestampGroup
-    .select<SVGTextElement>('text')
-    .text(timestampFormatter(timestamp));
-  // Resize background to match
-  const { labelWidth } = calculateLabelDimensions(labelText);
-  selectedTimestampGroup
-    .select('.label-background')
-    .attr('width', labelWidth)
-    .attr('transform', translate(-labelWidth / 2, 0));
-
-  valueGroups.forEach((valueGroup, index) => {
-    valueGroup.attr('visibility', 'visible');
-    // Adjust the length and vertical position of each dashed line
-    const timeseries = timeseriesList[index];
-    const point = timeseries.points.find(
-      point => point.timestamp === timestamp
-    );
-    if (point === undefined) {
-      // This line doesn't have a value at the selected timestamp,
-      // so hide it and move on
-      valueGroup.attr('visibility', 'hidden');
-      return;
-    }
-    const yPosition = yScale(point.value);
-    const rightEdge = xScale.range()[1];
-    valueGroup
-      .attr('transform', translate(rightEdge, yPosition))
-      .select<SVGLineElement>('line')
-      .attr('x2', -(rightEdge - selectedXPosition));
-    // Display the run's value at this timestamp
-    const labelText = valueGroup
-      .select<SVGTextElement>('text')
-      .text(valueFormatter(point.value));
-    // Resize background to match
-    const { labelWidth } = calculateLabelDimensions(labelText);
-    valueGroup.select('.label-background').attr('width', labelWidth);
-  });
 }

@@ -4,15 +4,19 @@
     <main>
       <div class="nodes-container">
         <div class="drivers">
-          <h5>Top Drivers</h5>
-          <neighbor-node
-            v-for="driver in drivers"
-            :key="driver.edge.id"
-            :node="driver.node"
-            :edge="driver.edge"
-            :is-driver="true"
-            class="neighbor-node"
-          />
+          <h5 v-if="drivers.length > 0">Top Drivers</h5>
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="driver in drivers"
+              :key="driver.edge.id"
+              :node="driver.node"
+              :edge="driver.edge"
+              :is-driver="true"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+              class="neighbor-node"
+            />
+          </template>
         </div>
         <div class="selected-node-column">
           <div class="scenario-selector-row">
@@ -67,6 +71,7 @@
               :min-value="indicatorMin"
               :max-value="indicatorMax"
               :constraints="constraints"
+              :viewing-extent="viewingExtent"
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
@@ -74,6 +79,7 @@
               v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
               class="scenario-chart"
               :timeseriesData="comparisonTimeseries.timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
             />
           </div>
           <p>
@@ -88,6 +94,7 @@
             <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
             <div class="indicator-buttons">
               <button
+                v-if="indicatorId !== null"
                 v-tooltip.top-center="'Edit datacube'"
                 type="button"
                 class="btn btn-primary btn-sm"
@@ -95,11 +102,35 @@
                 Edit datacube
               </button>
               <button
+                v-if="indicatorId !== null"
                 v-tooltip.top-center="'Change datacube'"
                 type="button"
                 class="btn btn-primary btn-sm"
                 @click="openDataExplorer">
-                Change datacube
+                <i class="fa fa-fw fa-search" /> Change datacube
+              </button>
+              <button
+                v-else
+                v-tooltip.top-center="'Find datacube'"
+                type="button"
+                class="btn btn-primary btn-call-for-action btn-sm"
+                @click="openDataExplorer">
+                <i class="fa fa-fw fa-search" /> Find datacube
+              </button>
+              <button
+                v-tooltip.top-center="'Clear parameterization'"
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="clearParameterization">
+                Clear parameterization
+              </button>
+              <button
+                v-if="hasConstraints"
+                v-tooltip.top-center="'Clear constraints'"
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="clearConstraints">
+                Clear constraints
               </button>
             </div>
           </div>
@@ -137,15 +168,19 @@
           </div>
         </div>
         <div class="impacts">
-          <h5>Top Impacts</h5>
-          <neighbor-node
-            v-for="impact in impacts"
-            :key="impact.edge.id"
-            :node="impact.node"
-            :edge="impact.edge"
-            :is-driver="false"
-            class="neighbor-node"
-          />
+          <h5 v-if="impacts.length > 0">Top Impacts</h5>
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="impact in impacts"
+              :key="impact.edge.id"
+              :node="impact.node"
+              :edge="impact.edge"
+              :is-driver="false"
+              class="neighbor-node"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+            />
+          </template>
         </div>
       </div>
     </main>
@@ -163,12 +198,14 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref, watchEffect } from 'vue';
+import _ from 'lodash';
+import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
+import { useStore } from 'vuex';
+
+import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
-import { useStore } from 'vuex';
-import { ProjectType } from '@/types/Enums';
 import modelService from '@/services/model-service';
 import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
@@ -180,8 +217,9 @@ import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import _ from 'lodash';
 import useToaster from '@/services/composables/useToaster';
+import { ViewState } from '@/types/Insight';
+import { QUANTIFICATION } from '@/utils/messages-util';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -256,7 +294,7 @@ export default defineComponent({
     const nodeConceptName = computed(() => selectedNode.value?.label);
 
     const scenarioData = computed(() => {
-      if (modelSummary.value === null || modelComponents.value === null) {
+      if (modelSummary.value === null || modelComponents.value === null || scenarios.value.length === 0) {
         return null;
       }
       return modelService.buildNodeChartData(
@@ -296,11 +334,14 @@ export default defineComponent({
       };
     });
 
+    // FIXME
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
-    watchEffect(() => {
-      historicalTimeseries.value =
-        selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+    watch([selectedNodeScenarioData], () => {
+      if (_.isEmpty(historicalTimeseries.value)) {
+        historicalTimeseries.value = selectedNodeScenarioData.value?.historicalTimeseries ?? [];
+      }
     });
+
     const setHistoricalTimeseries = (newPoints: TimeseriesPoint[]) => {
       historicalTimeseries.value = newPoints;
     };
@@ -322,6 +363,10 @@ export default defineComponent({
         return { displayName: scenario.name, value: scenario.id };
       })
     );
+
+    const hasConstraints = computed(() => {
+      return constraints.value.length > 0;
+    });
 
     // TODO: Filter top drivers and top impacts
     //  CLARIFICATION REQUIRED:
@@ -401,6 +446,59 @@ export default defineComponent({
         isSeasonalityActive.value = period > 1;
       }
     });
+    const clearParameterization = async () => {
+      if (selectedNode.value === null) return;
+      const { id, concept, label, model_id } = selectedNode.value;
+      const nodeParameters = {
+        id,
+        concept,
+        label,
+        model_id,
+        parameter: {
+          id: null,
+          name: 'Abstract',
+          unit: '',
+          country: '',
+          admin1: '',
+          admin2: '',
+          admin3: '',
+          period: 12,
+          timeseries: [
+            { value: 0.5, timestamp: Date.UTC(2017, 0) },
+            { value: 0.5, timestamp: Date.UTC(2017, 1) },
+            { value: 0.5, timestamp: Date.UTC(2017, 2) }
+          ],
+          max: null, // filled in by server
+          min: null // filled in by server
+        }
+      };
+
+      // save view config options when quantifying the node along with the node parameters
+      const viewConfig: ViewState = {
+        spatialAggregation: AggregationOption.Mean,
+        temporalAggregation: AggregationOption.Mean,
+        temporalResolution: TemporalResolutionOption.Month,
+        breakdownOption: null
+      };
+      Object.keys(viewConfig).forEach(key => {
+        (nodeParameters.parameter as any)[key] = viewConfig[key];
+      });
+      try {
+        await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+
+        // FIXME: manually set historical for now because bad watcher
+        historicalTimeseries.value = [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2017, 1) },
+          { value: 0.5, timestamp: Date.UTC(2017, 2) }
+        ];
+
+        refreshModelData();
+      } catch {
+        console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
+        toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, 'error', true);
+      }
+    };
     const areParameterValuesChanged = computed(() => {
       const indicator = selectedNode.value?.parameter;
       if (indicator === null || indicator === undefined) return false;
@@ -432,8 +530,8 @@ export default defineComponent({
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
         refreshModelData();
       } catch {
-        console.error('Failed to update node parameter', nodeParameters);
-        toaster('Unable to save node parameter changes.', 'error', true);
+        console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
+        toaster(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, 'error', true);
       }
     };
 
@@ -486,6 +584,11 @@ export default defineComponent({
       saveDraft();
     };
 
+    const clearConstraints = () => {
+      constraints.value = [];
+      saveDraft();
+    };
+
     watchEffect(() => {
       // When the selectedScenario changes, grab the constraints from that scenario
       //  and store them in the `constraints` ref to be displayed
@@ -508,6 +611,28 @@ export default defineComponent({
       modelSummary,
       currentCAG
     );
+
+    // Find out the default viewing window
+    const viewingExtent = computed<number[] | null>(() => {
+      const parameter = modelSummary.value?.parameter;
+      if (!parameter) {
+        return null;
+      } else {
+        const projections = selectedNodeScenarioData.value?.projections || [];
+        let max = Number.NEGATIVE_INFINITY;
+        for (let i = 0; i < projections.length; i++) {
+          for (let j = 0; j < projections[i].values.length; j++) {
+            if (max < projections[i].values[j].timestamp) {
+              max = projections[i].values[j].timestamp;
+            }
+          }
+        }
+        return [
+          Math.min(parameter.indicator_time_series_range.start, parameter.projection_start),
+          Math.max(parameter.indicator_time_series_range.end, max)
+        ];
+      }
+    });
 
     return {
       nodeConceptName,
@@ -540,7 +665,12 @@ export default defineComponent({
       modifyConstraints,
       nodeId,
       project,
-      currentCAG
+      currentCAG,
+      clearParameterization,
+      viewingExtent,
+      hasConstraints,
+      clearConstraints,
+      scenarioData
     };
   },
   methods: {
@@ -744,7 +874,7 @@ h5 {
 }
 
 .restrict-max-width {
-  max-width: 90ch;
+  max-width: 110ch;
 }
 
 .save-parameter-button {

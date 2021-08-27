@@ -66,6 +66,12 @@ export default defineComponent({
       // TODO: how spacing and label names are used
       attributes.push({
         name: 'Model family',
+        value: metadata.value.family_name,
+        tweakable: false,
+        type: 'text'
+      });
+      attributes.push({
+        name: 'Model',
         value: metadata.value.name,
         tweakable: false,
         type: 'text'

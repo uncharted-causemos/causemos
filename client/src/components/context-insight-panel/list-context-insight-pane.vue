@@ -50,7 +50,7 @@
               class="context-insight-title"
               :class="{ 'private-insight-title': contextInsight.visibility === 'private' }">
               <i class="fa fa-star"></i>
-              {{ stringFormatter(contextInsight.name, 25) }}
+              {{ contextInsight.name }}
             </div>
             <div class="context-insight-action" @click.stop="openEditor(contextInsight.id)">
               <i class="fa fa-ellipsis-h context-insight-header-btn" />
@@ -69,7 +69,8 @@
             </div>
             <div
               v-if="contextInsight.description.length > 0"
-              class="context-insight-description">
+              class="context-insight-description"
+              :class="{ 'private-insight-description': contextInsight.visibility === 'private' }">
               {{ contextInsight.description }}
             </div>
             <div
@@ -483,9 +484,7 @@ export default {
 
 <style lang="scss">
 @import "~styles/variables";
-.private-insight-title {
-  color: black;
-}
+
 .list-context-insights-pane-container {
   color: #707070;
   overflow-y: hidden;
@@ -535,15 +534,31 @@ export default {
       .context-insight-title {
         flex: 1 1 auto;
         font-weight: bold;
+        color: gray;
+        font-style: italic;
+      }
+      .private-insight-title {
+        color: black;
+        font-style: normal;
       }
     }
-    .context-insight-empty-description {
-      color: #D6DBDF;
-    }
-    .context-insight-thumbnail {
-      .thumbnail {
-        width:  100%;
-        min-height: 100px;
+    .context-insight-content {
+      .context-insight-thumbnail {
+        .thumbnail {
+          width:  100%;
+          min-height: 100px;
+        }
+      }
+      .context-insight-description {
+        color: gray;
+        font-style: italic;
+      }
+      .private-insight-description {
+        color: black;
+        font-style: normal;
+      }
+      .context-insight-empty-description {
+        color: #D6DBDF;
       }
     }
   }

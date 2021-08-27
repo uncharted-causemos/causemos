@@ -360,7 +360,7 @@ export default {
                   alignment: AlignmentType.CENTER,
                   children: [
                     new TextRun({
-                      size: 16,
+                      size: 14,
                       text: this.metadataSummary
                     })
                   ]

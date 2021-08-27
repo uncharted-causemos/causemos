@@ -1,5 +1,5 @@
 import API from '@/api/api';
-import { Model } from '@/types/Datacube';
+import { Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { Filters } from '@/types/Filters';
 import { ModelRun } from '@/types/ModelRun';
 import fu from '@/utils/filters-util';
@@ -25,7 +25,11 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
  * @param {Filters} filters
  */
 export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
-  const { data } = await API.get(`maas/new-datacubes/facets?facets=${JSON.stringify(facets)}&filters=${JSON.stringify(filters)}`);
+  const { data } = await API.get(
+    `maas/new-datacubes/facets?facets=${JSON.stringify(
+      facets
+    )}&filters=${JSON.stringify(filters)}`
+  );
   return data;
 };
 
@@ -46,7 +50,9 @@ export const getDatacubeById = async (datacubeId: string) => {
  * @returns {Promise<number>}
  */
 export const getDatacubesCount = async (filters: Filters) => {
-  const { data } = await API.get('maas/new-datacubes/count', { params: { filters: filters } });
+  const { data } = await API.get('maas/new-datacubes/count', {
+    params: { filters: filters }
+  });
   return data || 0;
 };
 
@@ -107,6 +113,76 @@ export const getSuggestions = async (field: string, queryString: string) => {
     }
   });
   return data;
+};
+
+/**
+ * Fetches the hierarchy for a given model or indicator
+ * @param dataId indicator or model ID
+ * @param runId the ID of the model run. If this is an indicator, should be 'indicator'
+ * @param feature the output feature
+ */
+export const getHierarchy = async (
+  dataId: string,
+  runId: string,
+  feature: string
+) => {
+  const { data } = await API.get('maas/output/hierarchy', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature
+    }
+  });
+  return data;
+};
+
+export const getQualifierTimeseries = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  qualifierVariableId: string,
+  qualifierOptions: string[]
+) => {
+  return await API.get('maas/output/qualifier-timeseries', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature: feature,
+      resolution: temporalResolution,
+      temporal_agg: temporalAggregation,
+      spatial_agg: spatialAggregation,
+      qualifier: qualifierVariableId,
+      q_opt: qualifierOptions
+    }
+  });
+};
+
+export const getQualifierBreakdown = async (
+  dataId: string,
+  runId: string,
+  feature: string,
+  qualifierVariableIds: string[],
+  temporalResolution: string,
+  temporalAggregation: string,
+  spatialAggregation: string,
+  timestamp: number
+) => {
+  const { data } = await API.get('maas/output/qualifier-data', {
+    params: {
+      data_id: dataId,
+      run_id: runId,
+      feature: feature,
+      resolution: temporalResolution,
+      temporal_agg: temporalAggregation,
+      spatial_agg: spatialAggregation,
+      timestamp,
+      qlf: qualifierVariableIds
+    }
+  });
+  return data as QualifierBreakdownResponse[];
 };
 
 // DEPRECATED - NO LONGER WORK

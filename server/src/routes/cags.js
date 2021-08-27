@@ -35,6 +35,8 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
   const modelId = req.params.mid;
   const CAG = await cagService.getComponents(modelId);
 
+  const { name } = req.body;
+
   // Get all the relevant model data to populate the metadata. We wish
   // to ignore the edges, nodes, and id.
   const modelData = {};
@@ -77,12 +79,13 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
   // Need to re-apply status code because create defaults to false
   await cagService.updateCAGMetadata(newId, {
     id: newId,
+    name: name,
     status: MODEL_STATUS.UNSYNCED,
     is_stale: CAG.is_stale,
     is_quantified: CAG.is_quantified
   });
 
-  res.status(200).send({ updateToken: editTime });
+  res.status(200).send({ updateToken: editTime, id: newId });
 }));
 
 /**

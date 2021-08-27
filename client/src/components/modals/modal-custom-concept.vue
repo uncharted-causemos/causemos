@@ -52,7 +52,9 @@
 </template>
 
 <script>
+import { mapGetters, mapActions } from 'vuex';
 import Modal from '@/components/modals/modal';
+import projectService from '@/services/project-service';
 
 export default {
   name: 'modal-custom-concept',
@@ -60,7 +62,19 @@ export default {
     Modal
   },
   methods: {
+    ...mapActions({
+      updateOntologyCache: 'app/updateOntologyCache'
+    }),
     saveCustomConcept() {
+      const concept = this.customGrounding.theme;
+      // Update ontology
+      if (this.ontologySet.has(concept) === false) {
+        projectService.addNewConceptToOntology(this.project, concept, [], '');
+        this.updateOntologyCache(concept);
+      } else {
+        console.error(`Trying to add existing concept ${concept}, ignoring...`);
+      }
+
       this.$emit('saveCustomConcept', this.customGrounding);
       this.$emit('close');
     },
@@ -82,7 +96,12 @@ export default {
     process: '',
     process_property: ''
   }),
+
   computed: {
+    ...mapGetters({
+      project: 'app/project',
+      ontologySet: 'app/ontologySet'
+    }),
     haveData() {
       if (this.theme.length > 0) {
         return true;

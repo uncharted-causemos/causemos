@@ -4,7 +4,7 @@ import moment from 'moment';
 
 import initialize from '@/charts/initialize';
 import { timeseriesLine, confidenceArea, translate } from '@/utils/svg-util';
-import { DEFAULT_COLOR, SELECTED_COLOR, MARKER_COLOR } from '@/utils/colors-util';
+import { DEFAULT_COLOR, SELECTED_COLOR } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
 
 const CONFIDENCE_BAND_OPACITY = 0.2;
@@ -70,8 +70,6 @@ function render(chart, data, runOptions) {
   }
 
   yExtent = [data.min, data.max];
-  // FIXME: this is clearly not going to work for Delphi
-  // yExtent = modelService.expandExtentForDyseProjections(yExtent, DEFAULT_NUM_LEVELS);
 
   const formatter = chartValueFormatter(...yExtent);
   const xscale = d3.scaleLinear().domain(xExtent).range([0, width]);
@@ -119,32 +117,6 @@ function render(chart, data, runOptions) {
       .style('stroke', HISTORY_BACKGROUND_COLOR)
       .style('stroke-width', 1.5)
       .style('fill', DEFAULT_COLOR);
-  }
-
-  // Above 0
-  // historicG.append('path')
-  //   .attr('class', 'historical')
-  //   .attr('d', timeseriesArea(xscale, yscale, true)(filteredTimeSeries))
-  //   .style('stroke', 'none')
-  //   .style('fill', '#CCC');
-
-  // Below 0
-  // historicG.append('path')
-  //   .attr('class', 'historical')
-  //   .attr('d', timeseriesArea(xscale, yscale, false)(filteredTimeSeries))
-  //   .style('stroke', 'none')
-  //   .style('fill', '#CCC');
-
-  if (runOptions.shouldDrawInitialValue) {
-    // Initial value line
-    historicG.append('line')
-      .attr('x1', xscale(historyRange.start))
-      .attr('y1', yscale(data.initial_value))
-      .attr('x2', xscale(historyRange.end))
-      .attr('y2', yscale(data.initial_value))
-      .style('stroke-width', 1.0)
-      .style('stroke', MARKER_COLOR)
-      .style('opacity', 0.5);
   }
 
   // Render scenario projections - stale scenarios may appear weird due to different time ranges

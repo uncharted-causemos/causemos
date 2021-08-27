@@ -49,7 +49,8 @@ export default defineComponent({
       return this.pageSize > this.currentPageLength;
     },
     currentStart(): string {
-      return (this.pageCount * this.pageSize).toLocaleString();
+      const offset = this.currentPageLength > 0 ? 1 : 0;
+      return ((this.pageCount * this.pageSize) + offset).toLocaleString();
     },
     currentFinish(): string {
       return (this.pageCount * this.pageSize + this.currentPageLength).toLocaleString();
