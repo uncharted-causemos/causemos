@@ -1,5 +1,5 @@
 <template>
-  <div class="row datacube-card-container">
+  <div class="datacube-card-container">
     <header class="datacube-header" >
       <h5
         v-if="metadata && mainModelOutput"
@@ -30,8 +30,8 @@
         </template>
       </datacard-options-button>
     </header>
-    <div>
-      <div class="col-md-9 timeseries-chart">
+    <main>
+      <div class="timeseries-chart">
         <timeseries-chart
           v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
           :timeseries-data="visibleTimeseriesData"
@@ -41,10 +41,10 @@
           :breakdown-option="breakdownOption"
         />
       </div>
-      <div class="datacube-map-placeholder col-md-3">
+      <div class="datacube-map-placeholder">
         <!-- placeholder for mini map -->
-        <b>Country:</b>
-        <div v-if="metadata" class="fixed-height-column">
+        <strong>Country</strong>
+        <div v-if="metadata" class="country-list">
           <div
             v-for="country in metadata.geography.country"
             :key="country">
@@ -52,7 +52,7 @@
           </div>
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -312,17 +312,12 @@ export default defineComponent({
   background: $background-light-1;
   margin: 10px;
   border-radius: 3px;
-}
-
-.datacube-expanded {
-  min-width: 0;
-  flex: 1;
-  margin: 10px;
-  margin-top: 0;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
 }
 
 .datacube-header {
-  flex: 1;
   margin-left: 20px;
   display: flex;
   align-items: center;
@@ -348,25 +343,34 @@ export default defineComponent({
   margin-left: 10px;
 }
 
+main {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+}
+
 .timeseries-chart {
   display: flex;
   flex-direction: column;
   padding-left: 5px;
   padding-right: 5px;
+  flex: 1;
+  min-width: 0;
 }
 
 .datacube-map-placeholder {
-  background-color: aliceblue;
+  background-color: #fafafa;
   height: 100%;
-  border-color: darkgray;
-  border-style: solid;
-  border-width: thin;
-  margin-bottom: 5px;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
 }
 
-.fixed-height-column {
-  height: 12vh;
-  overflow-y: scroll;
+.country-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 </style>
