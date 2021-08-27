@@ -8,18 +8,10 @@
       >
         <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
         <span class="datacube-name">{{metadata.name}}</span>
+        <i class="fa fa-fw fa-expand drilldown-btn" />
       </h5>
-      <button
-        v-tooltip="'Drilldown'"
-        class="btn btn-default drilldown-btn"
-        @click="openDrilldown">
-        <i class="fa fa-fw fa-expand" />
-      </button>
-      <datacard-options-button
-        class="menu"
-        :dropdown-below="true"
-        :wider-dropdown-options="true"
-      >
+
+      <options-button :dropdown-below="true">
         <template #content>
           <div
             class="dropdown-option"
@@ -28,7 +20,7 @@
             Remove
           </div>
         </template>
-      </datacard-options-button>
+      </options-button>
     </header>
     <main>
       <timeseries-chart
@@ -62,7 +54,7 @@ import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
-import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
+import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
@@ -73,7 +65,7 @@ import { DataState, ViewState } from '@/types/Insight';
 export default defineComponent({
   name: 'DatacubeComparativeCard',
   components: {
-    DatacardOptionsButton,
+    OptionsButton,
     TimeseriesChart
   },
   props: {
@@ -325,17 +317,27 @@ export default defineComponent({
     margin: 0;
     &:hover {
       color: $selected-dark;
+
+      .datacube-name {
+        color: $selected-dark;
+      }
+
+      .drilldown-btn {
+        color: $selected-dark;
+      }
     }
-  }
-  .drilldown-btn {
-    padding: 5px;
-    margin-left:auto;
   }
 }
 
 .datacube-name {
   font-weight: normal;
   color: $label-color;
+  margin-left: 10px;
+}
+
+.drilldown-btn {
+  padding: 5px;
+  color: $text-color-light;
   margin-left: 10px;
 }
 
