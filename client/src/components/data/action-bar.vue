@@ -206,11 +206,10 @@ export default {
 $width-name: 10vw;
 
 .action-bar-container {
-  height: $navbar-outer-height;
   display: flex;
   align-items: center;
-  background-color: $background-light-3;
   padding: 0 10px;
+  margin-top: 10px;
   position: relative;
 
   .nav-item:not(:first-child) {
