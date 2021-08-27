@@ -277,13 +277,6 @@ main {
 
 .column {
   overflow-y: auto;
-  background-color: rgb(242, 242, 242);
-
-  .datacube-comparative-card {
-    border: 2px outset #ddd;
-    margin: 1rem;
-    padding: 0 1rem 1rem 0;
-  }
 }
 
 </style>

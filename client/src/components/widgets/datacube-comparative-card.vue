@@ -31,16 +31,15 @@
       </datacard-options-button>
     </header>
     <main>
-      <div class="timeseries-chart">
-        <timeseries-chart
-          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
-          :timeseries-data="visibleTimeseriesData"
-          :selected-temporal-resolution="selectedTemporalResolution"
-          :selected-timestamp="selectedTimestamp"
-          :selected-timestamp-range="selectedTimestampRange"
-          :breakdown-option="breakdownOption"
-        />
-      </div>
+      <timeseries-chart
+        v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
+        class="timeseries-chart"
+        :timeseries-data="visibleTimeseriesData"
+        :selected-temporal-resolution="selectedTemporalResolution"
+        :selected-timestamp="selectedTimestamp"
+        :selected-timestamp-range="selectedTimestampRange"
+        :breakdown-option="breakdownOption"
+      />
       <div class="datacube-map-placeholder">
         <!-- placeholder for mini map -->
         <strong>Country</strong>
@@ -311,10 +310,11 @@ export default defineComponent({
   height: 200px;
   display: flex;
   flex-direction: column;
+  border: 1px solid $background-light-3;
+  padding: 1rem;
 }
 
 .datacube-header {
-  margin-left: 20px;
   display: flex;
   align-items: center;
 
@@ -323,6 +323,7 @@ export default defineComponent({
     cursor: pointer;
     flex: 1;
     min-width: 0;
+    margin: 0;
     &:hover {
       color: $selected-dark;
     }
@@ -346,10 +347,6 @@ main {
 }
 
 .timeseries-chart {
-  display: flex;
-  flex-direction: column;
-  padding-left: 5px;
-  padding-right: 5px;
   flex: 1;
   min-width: 0;
 }
