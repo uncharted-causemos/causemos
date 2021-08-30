@@ -47,7 +47,7 @@ export default defineComponent({
     },
     isWrapped: {
       type: Boolean,
-      default: false
+      required: true
     }
   },
   computed: {

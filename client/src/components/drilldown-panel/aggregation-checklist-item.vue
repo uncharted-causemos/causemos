@@ -47,6 +47,7 @@
         :maxVisibleBarValue="maxVisibleBarValue"
         :minVisibleBarValue="minVisibleBarValue"
         :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
+        :isWrapped="false"
       />
     </div>
     <div
@@ -71,7 +72,7 @@
             :maxVisibleBarValue="maxVisibleBarValue"
             :minVisibleBarValue="minVisibleBarValue"
             :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
-            :is-wrapped="true"
+            :isWrapped="true"
           />
         </div>
         <span
