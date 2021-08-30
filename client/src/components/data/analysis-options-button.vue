@@ -1,6 +1,7 @@
 <template>
   <div class="analysis-options-button-container">
     <button type="button" @click="isDropdownOpen = !isDropdownOpen">
+      <i class="fa fa-fw fa-line-chart analysis-type-icon" />
       <span>{{ analysisName }}</span>
       <i
         class="fa fa-fw"
@@ -138,6 +139,10 @@ button {
   &:hover {
     background: rgba(255, 255, 255, .2);
   }
+}
+
+.analysis-type-icon {
+  margin-right: 5px;
 }
 
 .analysis-options-dropdown {
