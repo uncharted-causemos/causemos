@@ -79,19 +79,7 @@ export default function(
     Y_AXIS_WIDTH,
     PADDING_RIGHT
   );
-  // renderAxes(
-  //   groupElement,
-  //   xScale,
-  //   yScale,
-  //   xAxisTicks,
-  //   valueFormatter,
-  //   width,
-  //   height,
-  //   timestampFormatter,
-  //   Y_AXIS_WIDTH,
-  //   PADDING_RIGHT,
-  //   X_AXIS_HEIGHT
-  // );
+
   timeseriesList.forEach(timeseries => {
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1
       renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);

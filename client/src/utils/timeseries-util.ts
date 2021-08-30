@@ -57,33 +57,33 @@ export function applyRelativeTo(
 export function calculateXTicks (
   xScale: d3.ScaleLinear<number, number>,
   width: number,
-  xAxisMajorTickIncrement: moment.unitOfTime.DurationConstructor = 'year',
-  xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
+  majorTickDuration: moment.unitOfTime.DurationConstructor = 'year',
+  minorTickDuration: moment.unitOfTime.DurationConstructor = 'month',
+  minTickSpacing = 10,
   useMinorTicks = true
 ) {
   const firstTimestamp = xScale.domain()[0];
   const lastTimestamp = xScale.domain()[1];
-
   const firstYear = moment(firstTimestamp);
   const lastYear = moment(lastTimestamp);
-  const majorIncrecmentsElapsed = lastYear.get(xAxisMajorTickIncrement) - firstYear.get(xAxisMajorTickIncrement);
-  const minTickSpacing = 10;
 
-  const major = moment.duration(1, xAxisMajorTickIncrement).as('ms');
-  const minor = moment.duration(1, xAxisMinorTickIncrement).as('ms');
-  const minorInMajor = Math.trunc(major / minor);
+  const majorIncrecmentsElapsed = lastYear.get(majorTickDuration) - firstYear.get(majorTickDuration);
+
+  const major = moment.duration(1, majorTickDuration).as('ms'); // convert to moment duration object
+  const minor = moment.duration(1, minorTickDuration).as('ms');
+  const minorInMajor = Math.trunc(major / minor); // number of minor ticks in between each major tick
 
   let tickIncrements = [];
 
-  if (majorIncrecmentsElapsed * minorInMajor > width / minTickSpacing || !useMinorTicks) {
-    // create array of years from firstYear to lastYear
-    // epoch seconds for jan first of each year
+  // create array of years from firstYear to lastYear
+  // epoch seconds for jan first of each year
+  if (majorIncrecmentsElapsed * minorInMajor > width / minTickSpacing || !useMinorTicks) { // not enough space for minor ticks
     tickIncrements = Array.from({ length: majorIncrecmentsElapsed }, (v, k) => moment([k + 1 + firstYear.year()]).valueOf());
-  } else {
+  } else { // enough space for minor ticks
     for (let i = 0; i < majorIncrecmentsElapsed * minorInMajor; i++) {
-      const tempMoment = moment(firstYear.add(1, xAxisMinorTickIncrement));
-      const temp2Moment = moment([tempMoment.year(), tempMoment.month(), 1]);
-      tickIncrements.push(temp2Moment.valueOf());
+      const momentPlusDuration = moment(firstYear.add(1, minorTickDuration)); // add increment of minor duration to next tick
+      const momentNormalized = moment([momentPlusDuration.year(), momentPlusDuration.month(), 1]); // force tick to first of month, FIXME - this is still hardcoded to only work with years and months, not quite sure how to fix
+      tickIncrements.push(momentNormalized.valueOf());
     }
   }
 
@@ -99,6 +99,7 @@ export function renderXaxis(
   xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
   xAxisTickSizePx = 2
 ) {
+  // only calls formatter in january, otherwise returns empty string for now label
   const customTimestampFormatter = function (v: any) {
     if (v === undefined || v === null) {
       return '';
@@ -152,29 +153,6 @@ export function renderYaxis(
     .style('font-size', '10px')
     .attr('transform', translate(width - paddingRight, 0));
 }
-
-// export function renderAxes(
-//   selection: D3GElementSelection,
-//   xScale: d3.ScaleLinear<number, number>,
-//   yScale: d3.ScaleLinear<number, number>,
-//   // The type of value can't be more specific than `any`
-//   //  because under the hood d3.tickFormat requires d3.NumberType.
-//   // It correctly converts, but its TypeScript definitions don't
-//   //  seem to reflect that.
-//   tickIncrements: Array<number>,
-//   valueFormatter: (value: any) => string,
-//   width: number,
-//   height: number,
-//   timestampFormatter: (timestamp: any) => string,
-//   yAxisWidth: number,
-//   paddingRight: number,
-//   xAxisHeight: number,
-//   xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
-//   yAxisTickCount = 2,
-//   xAxisTickSizePx = 2
-// ) {
-
-// }
 
 export function renderLine(
   parentGroupElement: D3GElementSelection,

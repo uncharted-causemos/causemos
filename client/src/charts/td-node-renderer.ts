@@ -128,19 +128,7 @@ export default function(
     Y_AXIS_WIDTH,
     PADDING_RIGHT
   );
-  // renderAxes(
-  //   contextGroupElement,
-  //   xScaleContext,
-  //   yScaleContext,
-  //   xAxisTicks,
-  //   valueFormatter,
-  //   totalWidth,
-  //   contextHeight,
-  //   DATE_FORMATTER,
-  //   Y_AXIS_WIDTH,
-  //   PADDING_RIGHT,
-  //   X_AXIS_HEIGHT
-  // );
+
   contextGroupElement.selectAll('.yAxis').remove();
   contextGroupElement.attr('transform', translate(0, focusHeight)); // move context to bottom
   renderStaticElements(
@@ -284,19 +272,7 @@ export default function(
       Y_AXIS_WIDTH,
       PADDING_RIGHT
     );
-    // renderAxes(
-    //   focusGroupElement,
-    //   xScaleFocus,
-    //   yScaleFocus,
-    //   xAxisTicks,
-    //   valueFormatter,
-    //   totalWidth,
-    //   focusHeight,
-    //   DATE_FORMATTER,
-    //   Y_AXIS_WIDTH,
-    //   PADDING_RIGHT,
-    //   X_AXIS_HEIGHT
-    // );
+
     focusGroupElement.selectAll('.yAxis .domain').remove();
     focusGroupElement.selectAll('.yAxis .tick line').remove();
     renderHistoricalTimeseries(
