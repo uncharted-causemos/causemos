@@ -885,4 +885,8 @@ h5 {
   color: white;
 }
 
+.btn-danger:hover {
+  color: white;
+}
+
 </style>
