@@ -12,10 +12,12 @@ import Vue3Resize from 'vue3-resize';
 import 'vue-toastification/dist/index.css';
 import 'v-tooltip/dist/v-tooltip.css';
 
+// import Shepherd from 'shepherd.js';
+// import VueShepherd from 'vue-shepherd';
 
 sync(store, router);
 
-const app = createApp(App).use(store).use(router).use(VTooltip).use(Vue3Resize);
+const app = createApp(App).use(store).use(router).use(VTooltip).use(Vue3Resize); // .use(VueShepherd)
 app.use(Toast);
 
 app.mixin({

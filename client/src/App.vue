@@ -127,6 +127,9 @@ export default {
 
 <style lang="scss">
 
+/* Shepherd site tour (i.e., onboarding) */
+@import '~shepherd.js/dist/css/shepherd.css';
+
 /* Font awesome */
 $fa-font-path: '~font-awesome/fonts';
 @import '~font-awesome/scss/font-awesome';

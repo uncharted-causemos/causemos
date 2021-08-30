@@ -118,6 +118,10 @@
                 :class="{ 'private-question-title': questionItem.visibility === 'private' }">
                   {{ questionItem.question }}
               </span>
+              <i
+                class="fa fa-lg fa-info"
+                @click="startQuestionTour"
+              />
             </div>
             <!-- second row display a list of linked insights -->
             <div class="checklist-item-insights">
@@ -449,6 +453,9 @@ export default defineComponent({
         );
         updateInsight(insight?.id as string, insight);
       }
+    },
+    startQuestionTour() {
+
     }
   }
 });
