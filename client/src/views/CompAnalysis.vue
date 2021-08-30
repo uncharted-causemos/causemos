@@ -3,10 +3,10 @@
     <navbar-new :show-help-button="true">
       <analysis-options-button />
     </navbar-new>
-    <action-bar />
     <div class="flex-row">
       <analytical-questions-and-insights-panel class="side-panel" />
       <main>
+        <action-bar />
         <div class="column insight-capture" v-if="analysisItems.length">
           <datacube-comparative-card
             v-for="item in analysisItems"
