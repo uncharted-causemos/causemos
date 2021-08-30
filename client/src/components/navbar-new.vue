@@ -3,7 +3,7 @@
     <div class="navbar-left-group">
       <a
         href="#/"
-        class="nav-item nav-item--logo"
+        class="nav-item nav-item--logo clickable"
       >
         <img
           class="logo"
@@ -17,7 +17,7 @@
       >
         <router-link
           v-if="navItem.route !== undefined"
-          class="nav-item"
+          class="nav-item clickable"
           :to="navItem.route"
         >
           <i class="fa fa-fw" :class="[navItem.icon]" />
@@ -45,6 +45,7 @@
       v-if="showHelpButton"
       href="https://docs.google.com/presentation/d/1WnIXxAd639IFMOKEAu3E3C1SUgfzsCO6oLLbKOvAZkI/edit#slide=id.g8c51928f8f_0_200"
       target="_blank"
+      class="nav-item clickable"
     >
       <i class="fa fa-question" />
     </a>
@@ -95,6 +96,10 @@ export default defineComponent({
       const icon = projectType.value === ProjectType.Analysis
         ? 'fa-clone'
         : 'fa-connectdevelop';
+      // TODO: route should be `null` if
+      //  - itemsAfterProject.length === 0
+      //  AND
+      //  - nothing is passed into the slot
       const routeName = projectType.value === ProjectType.Analysis
         ? 'overview'
         : 'domainDatacubeOverview';
@@ -154,7 +159,7 @@ export default defineComponent({
   display: flex;
   justify-content: space-between;
   background: #363434;
-  padding-left: 15px;
+  padding: 0 15px;
 }
 
 .navbar-left-group {
@@ -172,10 +177,21 @@ export default defineComponent({
   }
 }
 
+.clickable:hover {
+  background: rgba(255, 255, 255, 0.2);
+
+  .nav-item-label, i {
+    color: white;
+  }
+}
+
 .nav-item-label, i {
-  color: white;
-  font-weight: 600;
+  color: rgba(255, 255, 255, 0.71);
   font-size: $font-size-large;
+}
+
+.nav-item-label {
+  font-weight: 600;
 }
 
 $logo-size: 28px;
