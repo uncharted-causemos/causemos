@@ -108,31 +108,6 @@ export default defineComponent({
         route: { name: routeName, params: { project: project.value } },
         text: projectMetadata.value.name
       };
-      //   <li
-      //     v-if="projectType === ProjectType.Analysis && currentView !== 'overview'"
-      //     class="nav-item"
-      //     :class="{'nav-item--label': currentView !== 'nodeDrilldown', underlined: currentView === 'dataComparative' || currentView === 'qualitative' || currentView === 'quantitative'}">
-      //     <router-link
-      //       v-if="currentView === 'nodeDrilldown'"
-      //       class="nav-link"
-      //       :to="{name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}"
-      //     >
-      //       {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
-      //     </router-link>
-      //     <template v-else>
-      //       <i v-if="currentView === 'quantitative'" class="fa fa-fw fa-connectdevelop" />
-      //       <i v-if="currentView === 'qualitative'" class="fa fa-fw fa-book" />
-      //       <i v-if="currentView === 'dataComparative'" class="fa fa-fw fa-line-chart" />
-      //       {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
-      //     </template>
-      //   </li>
-      //   <li
-      //     v-if="projectType === ProjectType.Analysis && currentView === 'nodeDrilldown'"
-      //     class="nav-item nav-item--label"
-      //     :class="{underlined: currentView === 'nodeDrilldown'}">
-      //     Node Drilldown
-      //   </li>
-      // </template>
     });
 
     const navItems = computed(() => {
