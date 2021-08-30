@@ -226,7 +226,7 @@ const ABSTRACT_INDICATOR = {
   spatialAggregation: 'mean',
   temporalAggregation: 'mean',
   temporalResolution: 'month',
-  period: 12,
+  period: 1,
   timeseries: [
     { value: 0.5, timestamp: Date.UTC(2017, 0) },
     { value: 0.5, timestamp: Date.UTC(2017, 1) },

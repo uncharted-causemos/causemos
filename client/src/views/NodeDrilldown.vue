@@ -462,7 +462,7 @@ export default defineComponent({
           admin1: '',
           admin2: '',
           admin3: '',
-          period: 12,
+          period: 1,
           timeseries: [
             { value: 0.5, timestamp: Date.UTC(2017, 0) },
             { value: 0.5, timestamp: Date.UTC(2017, 1) },
@@ -879,6 +879,14 @@ h5 {
 
 .save-parameter-button {
   align-self: flex-start;
+}
+
+.btn-danger {
+  color: white;
+}
+
+.btn-danger:hover {
+  color: white;
 }
 
 </style>
