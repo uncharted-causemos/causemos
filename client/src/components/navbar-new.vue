@@ -21,14 +21,14 @@
           :to="navItem.route"
         >
           <i class="fa fa-fw" :class="[navItem.icon]" />
-          {{ navItem.text }}
+          <span class="nav-item-label">{{ navItem.text }}</span>
         </router-link>
         <div
           v-else
           class="nav-item"
         >
           <i class="fa fa-fw" :class="[navItem.icon]" />
-          {{ navItem.text }}
+          <span class="nav-item-label">{{ navItem.text }}</span>
         </div>
       </template>
       <!-- TODO: on home page, pass
@@ -162,17 +162,20 @@ export default defineComponent({
 }
 
 .nav-item {
-  color: white;
   display: flex;
   align-items: center;
   text-decoration: none;
   padding: 0 10px;
-  font-size: $font-size-large;
-  font-weight: 600;
 
   i {
     margin-right: 5px;
   }
+}
+
+.nav-item-label, i {
+  color: white;
+  font-weight: 600;
+  font-size: $font-size-large;
 }
 
 $logo-size: 28px;
