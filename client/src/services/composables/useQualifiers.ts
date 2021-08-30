@@ -72,7 +72,8 @@ export default function useQualifiers(
   temporalResolution: Ref<TemporalResolutionOption>,
   temporalAggregation: Ref<AggregationOption>,
   spatialAggregation: Ref<AggregationOption>,
-  selectedTimestamp: Ref<number | null>
+  selectedTimestamp: Ref<number | null>,
+  initialSelectedQualifierValues?: string[]
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
@@ -88,7 +89,15 @@ export default function useQualifiers(
   const selectedQualifierValues = ref<Set<string>>(new Set());
   watch([metadata, breakdownOption], () => {
     // Reset the selected qualifier value list when the selected qualifier changes
-    selectedQualifierValues.value = new Set();
+    const initialQualifierList = new Set<string>();
+
+    if (initialSelectedQualifierValues !== undefined && initialSelectedQualifierValues.length > 0) {
+      initialSelectedQualifierValues.forEach(qualifierValue => {
+        initialQualifierList.add(qualifierValue);
+      });
+    }
+
+    selectedQualifierValues.value = initialQualifierList;
   });
   const toggleIsQualifierSelected = (qualifierValue: string) => {
     const isQualifierValueSelected = selectedQualifierValues.value.has(

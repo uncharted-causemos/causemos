@@ -251,10 +251,16 @@ export default defineComponent({
     }
     // apply initial data config for this datacube
     const initialSelectedRegionIds: string[] = [];
+    const initialSelectedQualifierValues: string[] = [];
     if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
       if (initialDataConfig.selectedRegionIds !== undefined) {
         initialDataConfig.selectedRegionIds.forEach(regionId => {
           initialSelectedRegionIds.push(regionId);
+        });
+      }
+      if (initialDataConfig.selectedQualifierValues !== undefined) {
+        initialDataConfig.selectedQualifierValues.forEach((qualifierValue: string) => {
+          initialSelectedQualifierValues.push(qualifierValue);
         });
       }
     }
@@ -368,7 +374,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      selectedTimestamp
+      selectedTimestamp,
+      initialSelectedQualifierValues
     );
 
     const {
@@ -452,7 +459,8 @@ export default defineComponent({
         }],
         datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
         selectedRegionIds: selectedRegionIds.value,
-        relativeTo: relativeTo.value
+        relativeTo: relativeTo.value,
+        selectedQualifierValues: [...selectedQualifierValues.value]
       };
       store.dispatch('insightPanel/setDataState', dataState);
 
