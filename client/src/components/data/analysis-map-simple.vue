@@ -199,6 +199,10 @@ export default {
     selectedBaseLayer: {
       type: String,
       required: true
+    },
+    unit: {
+      type: String,
+      default: null
     }
   },
   data: () => ({
@@ -273,7 +277,7 @@ export default {
         for (const [key, data] of Object.entries(this.regionData)) {
           const values = [];
           for (const v of data) {
-            values.push(...Object.values(v.values));
+            values.push(...Object.values(_.omit(v.values, 'unselected region')));
           }
           if (values.length) {
             stats[key] = { min: Math.min(...values), max: Math.max(...values) };
@@ -318,7 +322,7 @@ export default {
       return this.gridStats[zoom];
     },
     extent() {
-      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom || this.computeGridRelativeStats();
+      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom;
       if (!extent) return { min: 0, max: 1 };
       if (extent.min === extent.max) {
         extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
@@ -409,14 +413,22 @@ export default {
       this.refreshLayers();
       this.updateLayerFilter();
     },
+    getExtent() {
+      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom || this.computeGridRelativeStats();
+      if (!extent) return { min: 0, max: 1 };
+      if (extent.min === extent.max) {
+        extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
+      }
+      return extent;
+    },
     refreshLayers() {
-      if (this.extent === undefined || this.colorOption === undefined) return;
+      if (this.colorOption === undefined) return;
       const useFeatureState = !this.isGridMap;
       this.baseLayer = baseLayer(this.valueProp, useFeatureState, this.baselineSpec?.id);
       this.refreshColorLayer(useFeatureState);
     },
     refreshColorLayer(useFeatureState = false) {
-      const { min, max } = this.extent;
+      const { min, max } = this.getExtent();
       const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec?.id;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
@@ -457,7 +469,7 @@ export default {
       setTimeout(() => {
         // Hack: give enough time to map to render features from updated source
         this.refreshGridMap();
-      }, 1000);
+      }, 500);
     },
     updateCurrentZoomLevel() {
       if (!this.map) return;
@@ -561,7 +573,7 @@ export default {
 
       const value = prop[this.valueProp];
       const format = v => chartValueFormatter(this.extent.min, this.extent.max)(v);
-      const rows = [format(value)];
+      const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
         const diff = prop[this.valueProp] - prop[this.baselineSpec.id];
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
@@ -579,8 +591,11 @@ export default {
       this.refreshColorLayer();
       this.updateLayerFilter();
     },
+    isSourceLayerLoaded(sourceLayer) {
+      return Boolean(this.map?.getLayer(this.colorLayerId)?.sourceLayer === sourceLayer);
+    },
     computeGridRelativeStats() {
-      if (!this.map || !this.baselineSpec) return;
+      if (!this.isSourceLayerLoaded(this.vectorSourceLayer) || !this.baselineSpec) return;
       // Stats relative to the baseline. (min/max of the difference relative to the baseline)
       const baselineProp = this.baselineSpec.id;
       const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });

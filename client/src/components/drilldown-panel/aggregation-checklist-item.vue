@@ -40,7 +40,7 @@
           {{ valueFormatter(itemData.bars[0].value) }}
         </span>
       </div>
-      <aggregation-checklist-histogram
+      <aggregation-checklist-bar
         v-if="histogramVisible"
         :barColor="itemData.bars[0].color"
         :barValue="itemData.bars[0].value"
@@ -48,6 +48,7 @@
         :maxVisibleBarValue="maxVisibleBarValue"
         :minVisibleBarValue="minVisibleBarValue"
         :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
+        :isWrapped="false"
       />
     </div>
     <div
@@ -65,7 +66,7 @@
         class="value-on-same-line"
       >
         <div class="histogram-bar-wrapper">
-          <aggregation-checklist-histogram
+          <aggregation-checklist-bar
             v-if="histogramVisible"
             :barColor="bar.color"
             :barValue="bar.value"
@@ -73,6 +74,7 @@
             :maxVisibleBarValue="maxVisibleBarValue"
             :minVisibleBarValue="minVisibleBarValue"
             :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
+            :isWrapped="true"
           />
         </div>
         <span
@@ -94,7 +96,7 @@
 import * as d3 from 'd3';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType } from '@vue/runtime-core';
-import AggregationChecklistHistogram from '@/components/drilldown-panel/aggregation-checklist-histogram.vue';
+import AggregationChecklistBar from '@/components/drilldown-panel/aggregation-checklist-bar.vue';
 
 interface AggregationChecklistItemPropType {
   name: string;
@@ -113,7 +115,7 @@ export default defineComponent({
   name: 'AggregationChecklistItem',
   emits: ['toggle-expanded', 'toggle-checked'],
   components: {
-    AggregationChecklistHistogram
+    AggregationChecklistBar
   },
   props: {
     itemData: {
@@ -181,7 +183,7 @@ export default defineComponent({
   },
   methods: {
     valueFormatter(value: number | null): string {
-      return value !== null ? d3.format(',.2r')(value) : 'missing';
+      return value !== null ? d3.format(',.2~f')(value) : 'missing';
     },
     toggleExpanded() {
       this.$emit('toggle-expanded');

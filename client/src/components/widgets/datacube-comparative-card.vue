@@ -35,6 +35,7 @@
         <timeseries-chart
           v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
           :timeseries-data="visibleTimeseriesData"
+          :selected-temporal-resolution="selectedTemporalResolution"
           :selected-timestamp="selectedTimestamp"
           :selected-timestamp-range="selectedTimestampRange"
           :breakdown-option="breakdownOption"

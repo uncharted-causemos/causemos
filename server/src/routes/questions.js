@@ -52,10 +52,10 @@ router.put('/:id', asyncHandler(async (req, res) => {
 }));
 
 /**
- * GET a list of questions
+ * POST search for a list of questions
  */
-router.get('/', asyncHandler(async (req, res) => {
-  const { project_id, context_id, target_view, visibility } = req.query;
+router.post('/search', asyncHandler(async (req, res) => {
+  const { project_id, context_id, target_view, visibility } = req.body;
   const result = await questionService.getAllQuestions(project_id, context_id, target_view, visibility);
   res.json(result);
 }));

@@ -242,7 +242,7 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
         return -1;
       }
       // Sort based on value
-      return nodeAValue! <= nodeBValue! ? 1 : -1;
+      return (nodeAValue as number) <= (nodeBValue as number) ? 1 : -1;
     });
   } else {
     newStatefulData.children.sort((nodeA, nodeB) => {
@@ -636,7 +636,6 @@ h5 {
 .units {
   color: $text-color-medium;
   font-weight: bold;
-  cursor: pointer;
 }
 
 .flex-row {

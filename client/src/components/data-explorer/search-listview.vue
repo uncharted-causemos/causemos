@@ -54,7 +54,7 @@
                       >
                         Processing
                       </button>
-                      <div class="text-bold">{{ d.outputs[0].display_name }}</div>
+                      <div class="text-bold">{{ d.default_feature }}</div>
                       <div>{{ d.name }}</div>
                       <div>{{ d.source }}</div>
                       <div v-if="isExpanded(d) && d.parameters?.length > 0" class="knobs">
