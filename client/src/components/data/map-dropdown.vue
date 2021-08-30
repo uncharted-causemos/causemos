@@ -70,10 +70,6 @@ export default defineComponent({
     selectedDataLayer: {
       type: String,
       required: true
-    },
-    viewAfterDeletion: {
-      type: String,
-      default: 'qualitativeView'
     }
   },
   emits: ['rename', 'set-base-layer', 'set-data-layer'],

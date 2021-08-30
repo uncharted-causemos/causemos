@@ -120,6 +120,7 @@
               :selected-region-ids="selectedRegionIds"
               :selected-qualifier-values="selectedQualifierValues"
               :selected-breakdown-option="breakdownOption"
+              :selected-temporal-resolution="selectedTemporalResolution"
               :selected-timeseries-points="selectedTimeseriesPoints"
               :selected-years="selectedYears"
               @toggle-is-region-selected="toggleIsRegionSelected"
