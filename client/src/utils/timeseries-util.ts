@@ -89,25 +89,14 @@ export function calculateXTicks (
 
   return tickIncrements;
 }
-
-export function renderAxes(
+export function renderXaxis(
   selection: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  // The type of value can't be more specific than `any`
-  //  because under the hood d3.tickFormat requires d3.NumberType.
-  // It correctly converts, but its TypeScript definitions don't
-  //  seem to reflect that.
   tickIncrements: Array<number>,
-  valueFormatter: (value: any) => string,
-  width: number,
   height: number,
   timestampFormatter: (timestamp: any) => string,
-  yAxisWidth: number,
-  paddingRight: number,
   xAxisHeight: number,
   xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
-  yAxisTickCount = 2,
   xAxisTickSizePx = 2
 ) {
   const customTimestampFormatter = function (v: any) {
@@ -126,11 +115,7 @@ export function renderAxes(
     .tickSize(xAxisTickSizePx)
     .tickFormat(customTimestampFormatter)
     .tickValues(tickIncrements);
-  const yAxis = d3
-    .axisLeft(yScale)
-    .tickSize(width - yAxisWidth - paddingRight)
-    .tickFormat(valueFormatter)
-    .ticks(yAxisTickCount);
+
   selection
     .append('g')
     .classed('xAxis', true)
@@ -138,6 +123,26 @@ export function renderAxes(
     .call(xAxis)
     .style('font-size', '10px')
     .attr('transform', translate(0, height - xAxisHeight));
+}
+
+export function renderYaxis(
+  selection: D3GElementSelection,
+  yScale: d3.ScaleLinear<number, number>,
+  // The type of value can't be more specific than `any`
+  //  because under the hood d3.tickFormat requires d3.NumberType.
+  // It correctly converts, but its TypeScript definitions don't
+  //  seem to reflect that.
+  valueFormatter: (value: any) => string,
+  width: number,
+  yAxisWidth: number,
+  paddingRight: number,
+  yAxisTickCount = 2
+) {
+  const yAxis = d3
+    .axisLeft(yScale)
+    .tickSize(width - yAxisWidth - paddingRight)
+    .tickFormat(valueFormatter)
+    .ticks(yAxisTickCount);
 
   selection
     .append('g')
@@ -147,6 +152,29 @@ export function renderAxes(
     .style('font-size', '10px')
     .attr('transform', translate(width - paddingRight, 0));
 }
+
+// export function renderAxes(
+//   selection: D3GElementSelection,
+//   xScale: d3.ScaleLinear<number, number>,
+//   yScale: d3.ScaleLinear<number, number>,
+//   // The type of value can't be more specific than `any`
+//   //  because under the hood d3.tickFormat requires d3.NumberType.
+//   // It correctly converts, but its TypeScript definitions don't
+//   //  seem to reflect that.
+//   tickIncrements: Array<number>,
+//   valueFormatter: (value: any) => string,
+//   width: number,
+//   height: number,
+//   timestampFormatter: (timestamp: any) => string,
+//   yAxisWidth: number,
+//   paddingRight: number,
+//   xAxisHeight: number,
+//   xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
+//   yAxisTickCount = 2,
+//   xAxisTickSizePx = 2
+// ) {
+
+// }
 
 export function renderLine(
   parentGroupElement: D3GElementSelection,

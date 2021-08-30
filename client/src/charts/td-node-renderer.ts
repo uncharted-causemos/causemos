@@ -4,7 +4,7 @@ import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
-import { calculateXTicks, renderAxes, renderLine } from '@/utils/timeseries-util';
+import { calculateXTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import {
   confidenceArea,
@@ -112,19 +112,35 @@ export default function(
     xScaleFocus,
     totalWidth
   );
-  renderAxes(
+  renderXaxis(
     contextGroupElement,
     xScaleContext,
-    yScaleContext,
     xAxisTicks,
-    valueFormatter,
-    totalWidth,
     contextHeight,
     DATE_FORMATTER,
-    Y_AXIS_WIDTH,
-    PADDING_RIGHT,
     X_AXIS_HEIGHT
   );
+  renderYaxis(
+    contextGroupElement,
+    yScaleContext,
+    valueFormatter,
+    totalWidth,
+    Y_AXIS_WIDTH,
+    PADDING_RIGHT
+  );
+  // renderAxes(
+  //   contextGroupElement,
+  //   xScaleContext,
+  //   yScaleContext,
+  //   xAxisTicks,
+  //   valueFormatter,
+  //   totalWidth,
+  //   contextHeight,
+  //   DATE_FORMATTER,
+  //   Y_AXIS_WIDTH,
+  //   PADDING_RIGHT,
+  //   X_AXIS_HEIGHT
+  // );
   contextGroupElement.selectAll('.yAxis').remove();
   contextGroupElement.attr('transform', translate(0, focusHeight)); // move context to bottom
   renderStaticElements(
@@ -252,19 +268,35 @@ export default function(
       xScaleFocus,
       totalWidth
     );
-    renderAxes(
+    renderXaxis(
       focusGroupElement,
       xScaleFocus,
-      yScaleFocus,
       xAxisTicks,
-      valueFormatter,
-      totalWidth,
       focusHeight,
       DATE_FORMATTER,
-      Y_AXIS_WIDTH,
-      PADDING_RIGHT,
       X_AXIS_HEIGHT
     );
+    renderYaxis(
+      focusGroupElement,
+      yScaleFocus,
+      valueFormatter,
+      totalWidth,
+      Y_AXIS_WIDTH,
+      PADDING_RIGHT
+    );
+    // renderAxes(
+    //   focusGroupElement,
+    //   xScaleFocus,
+    //   yScaleFocus,
+    //   xAxisTicks,
+    //   valueFormatter,
+    //   totalWidth,
+    //   focusHeight,
+    //   DATE_FORMATTER,
+    //   Y_AXIS_WIDTH,
+    //   PADDING_RIGHT,
+    //   X_AXIS_HEIGHT
+    // );
     focusGroupElement.selectAll('.yAxis .domain').remove();
     focusGroupElement.selectAll('.yAxis .tick line').remove();
     renderHistoricalTimeseries(
