@@ -254,7 +254,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-container {
-  height: $content-full-height;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -276,6 +276,7 @@ main {
   flex-direction: column;
   flex: 1;
   min-width: 0;
+  margin-right: 10px;
 }
 
 .datacube-comparative-card:not(:first-child) {
