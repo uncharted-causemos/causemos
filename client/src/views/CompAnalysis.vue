@@ -1,7 +1,7 @@
 <template>
   <div class="comp-analysis-container">
     <navbar-new :show-help-button="true">
-      <div>Test</div>
+      <analysis-options-button />
     </navbar-new>
     <action-bar />
     <div class="flex-row">
@@ -44,6 +44,7 @@ import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-compa
 import _ from 'lodash';
 import { DataState } from '@/types/Insight';
 import NavbarNew from '@/components/navbar-new.vue';
+import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
 
 export default defineComponent({
   name: 'CompAnalysis',
@@ -53,7 +54,8 @@ export default defineComponent({
     EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,
     DatacubeComparativeTimelineSync,
-    NavbarNew
+    NavbarNew,
+    AnalysisOptionsButton
   },
   setup() {
     const store = useStore();
