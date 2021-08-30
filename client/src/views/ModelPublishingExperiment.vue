@@ -98,6 +98,7 @@
               @item-selected="handleSpatialAggregationSelection"
             />
             <map-dropdown
+              class="dropdown-config"
               :selectedBaseLayer="selectedBaseLayer"
               :selectedDataLayer="selectedDataLayer"
               @set-base-layer="setBaseLayer"
@@ -121,6 +122,7 @@
                 :selected-timestamp="selectedTimestamp"
                 :selected-spatial-aggregation="selectedSpatialAggregation"
                 :selected-temporal-aggregation="selectedTemporalAggregation"
+                :selected-temporal-resolution="selectedTemporalResolution"
                 :regional-data="regionalData"
                 :output-source-specs="outputSpecs"
                 :selected-breakdown-option="breakdownOption"
@@ -128,8 +130,10 @@
                 :selected-timeseries-points="selectedTimeseriesPoints"
                 :selected-region-ids="selectedRegionIds"
                 :selected-qualifier-values="selectedQualifierValues"
+                :selected-years="selectedYears"
                 @toggle-is-region-selected="toggleIsRegionSelected"
                 @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+                @toggle-is-year-selected="toggleIsYearSelected"
                 @set-selected-admin-level="setSelectedAdminLevel"
                 @set-breakdown-option="setBreakdownOption"
               />
@@ -335,33 +339,6 @@ export default defineComponent({
       }
     });
 
-    watchEffect(() => {
-      const dataState: DataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value,
-        datacubeTitles: [{
-          datacubeName: metadata.value?.name ?? '',
-          datacubeOutputName: mainModelOutput.value?.display_name ?? ''
-        }],
-        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
-      };
-      const viewState: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value
-      };
-
-      store.dispatch('insightPanel/setViewState', viewState);
-      store.dispatch('insightPanel/setDataState', dataState);
-    });
-
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
@@ -390,7 +367,9 @@ export default defineComponent({
       relativeTo,
       baselineMetadata,
       setRelativeTo,
-      temporalBreakdownData
+      temporalBreakdownData,
+      selectedYears,
+      toggleIsYearSelected
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -429,6 +408,35 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy
     );
+
+    watchEffect(() => {
+      const dataState: DataState = {
+        selectedModelId: selectedModelId.value,
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value,
+        datacubeTitles: [{
+          datacubeName: metadata.value?.name ?? '',
+          datacubeOutputName: mainModelOutput.value?.display_name ?? ''
+        }],
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
+        relativeTo: relativeTo.value
+      };
+      const viewState: ViewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
+      };
+
+      store.dispatch('insightPanel/setViewState', viewState);
+      store.dispatch('insightPanel/setDataState', dataState);
+    });
+
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -473,7 +481,9 @@ export default defineComponent({
       toggleIsQualifierSelected,
       selectedQualifierValues,
       timerHandler,
-      newRunsMode
+      newRunsMode,
+      selectedYears,
+      toggleIsYearSelected
     };
   },
   watch: {
@@ -635,6 +645,9 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          this.setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
@@ -806,10 +819,8 @@ export default defineComponent({
   overflow: hidden;
 }
 
-.dropdown-config {
-  margin-bottom: 5px;
-  margin-top: 5px;
-  margin-right: 5px;
+.dropdown-config:not(:first-child) {
+  margin-left: 5px;
 }
 
 ::v-deep(.attribute-invalid button) {
@@ -825,8 +836,7 @@ export default defineComponent({
 .datacube-expanded {
   min-width: 0;
   flex: 1;
-  margin: 10px;
-  margin-top: 0;
+  margin: 0 10px 10px 0;
 }
 
 .search-button {

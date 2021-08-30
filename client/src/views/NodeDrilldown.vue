@@ -4,7 +4,7 @@
     <main>
       <div class="nodes-container">
         <div class="drivers">
-          <h5>Top Drivers</h5>
+          <h5 v-if="drivers.length > 0">Top Drivers</h5>
           <template v-if="scenarioData">
             <neighbor-node
               v-for="driver in drivers"
@@ -79,6 +79,7 @@
               v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
               class="scenario-chart"
               :timeseriesData="comparisonTimeseries.timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
             />
           </div>
           <p>
@@ -167,7 +168,7 @@
           </div>
         </div>
         <div class="impacts">
-          <h5>Top Impacts</h5>
+          <h5 v-if="impacts.length > 0">Top Impacts</h5>
           <template v-if="scenarioData">
             <neighbor-node
               v-for="impact in impacts"

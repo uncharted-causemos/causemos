@@ -78,13 +78,14 @@
 
         <template #spatial-aggregation-config>
           <dropdown-button
-            class="spatial-aggregation"
+            class="dropdown-config"
             :inner-button-label="'Spatial Aggregation'"
             :items="['mean', 'sum']"
             :selected-item="selectedSpatialAggregation"
             @item-selected="item => selectedSpatialAggregation = item"
           />
           <map-dropdown
+            class="dropdown-config"
             :selectedBaseLayer="selectedBaseLayer"
             :selectedDataLayer="selectedDataLayer"
             @set-base-layer="setBaseLayer"
@@ -111,6 +112,7 @@
               :selected-admin-level="selectedAdminLevel"
               :qualifier-breakdown-data="qualifierBreakdownData"
               :regional-data="regionalData"
+              :temporal-breakdown-data="temporalBreakdownData"
               :unit="unit"
               :selected-spatial-aggregation="selectedSpatialAggregation"
               :selected-timestamp="selectedTimestamp"
@@ -118,9 +120,12 @@
               :selected-region-ids="selectedRegionIds"
               :selected-qualifier-values="selectedQualifierValues"
               :selected-breakdown-option="breakdownOption"
+              :selected-temporal-resolution="selectedTemporalResolution"
               :selected-timeseries-points="selectedTimeseriesPoints"
+              :selected-years="selectedYears"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+              @toggle-is-year-selected="toggleIsYearSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
               @set-breakdown-option="setBreakdownOption"
             />
@@ -317,7 +322,10 @@ export default defineComponent({
       visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      temporalBreakdownData,
+      setRelativeTo,
+      selectedYears,
+      toggleIsYearSelected
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -427,7 +435,10 @@ export default defineComponent({
       selectedRegionIds,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      temporalBreakdownData,
+      selectedYears,
+      toggleIsYearSelected
     };
   },
   unmounted(): void {
@@ -582,7 +593,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-experiment-container {
-  height: $content-full-height;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -602,7 +613,6 @@ main {
   min-width: 0;
   flex: 1;
   margin: 10px;
-  margin-top: 0;
 }
 
 .search-button {
@@ -620,7 +630,7 @@ main {
   min-height: 70px;
 }
 
-.spatial-aggregation {
-  margin: 5px 0;
+.dropdown-config:not(:first-child) {
+  margin-left: 5px;
 }
 </style>

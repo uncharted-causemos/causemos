@@ -76,6 +76,7 @@ export interface DataState {
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];
+  relativeTo?: string | null;
 
   // knowledge/model space specific
   selectedScenarioId?: string;
