@@ -129,8 +129,10 @@
                 :selected-timeseries-points="selectedTimeseriesPoints"
                 :selected-region-ids="selectedRegionIds"
                 :selected-qualifier-values="selectedQualifierValues"
+                :selected-years="selectedYears"
                 @toggle-is-region-selected="toggleIsRegionSelected"
                 @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+                @toggle-is-year-selected="toggleIsYearSelected"
                 @set-selected-admin-level="setSelectedAdminLevel"
                 @set-breakdown-option="setBreakdownOption"
               />
@@ -364,7 +366,9 @@ export default defineComponent({
       relativeTo,
       baselineMetadata,
       setRelativeTo,
-      temporalBreakdownData
+      temporalBreakdownData,
+      selectedYears,
+      toggleIsYearSelected
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -476,7 +480,9 @@ export default defineComponent({
       toggleIsQualifierSelected,
       selectedQualifierValues,
       timerHandler,
-      newRunsMode
+      newRunsMode,
+      selectedYears,
+      toggleIsYearSelected
     };
   },
   watch: {

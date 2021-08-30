@@ -33,8 +33,13 @@ export default function useParallelCoordinatesData(
         status: runStatus ?? ModelRunStatus.Ready
       };
       if (run.status === ModelRunStatus.Ready) {
-        const output_agg_values = allModelRunData.value[runIndex].output_agg_values[currentOutputIndex.value].value;
-        run[outputParameterName] = output_agg_values;
+        const currRunData = allModelRunData.value[runIndex];
+        if (currRunData.output_agg_values[currentOutputIndex.value]) {
+          const output_agg_values = currRunData.output_agg_values[currentOutputIndex.value].value;
+          run[outputParameterName] = output_agg_values;
+        } else {
+          console.warn('Missing output value for run: ' + run_id);
+        }
       }
       modelRun.parameters.forEach(({ name, value }) => {
         run[name ?? 'undefined'] = value;
