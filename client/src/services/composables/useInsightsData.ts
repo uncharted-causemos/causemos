@@ -25,6 +25,12 @@ export default function useInsightsData() {
     console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function getInsights() {
+      // do not fetch if the panel is not open
+      console.log(isPanelOpen.value);
+      if (isPanelOpen.value === false) {
+        return;
+      }
+
       // @HACK: ignore context-id(s) when the insight explorer is open
       //  (i.e., when clicking 'Review All Insights')
       // NOTE: this only makes sense for analysis projects
@@ -56,6 +62,7 @@ export default function useInsightsData() {
       }
       // Note that when 'ignoreContextId' is true, this means we are fetching insights for the insight explorer within an analysis project
       // For this case, public insights should not be listed
+      console.log(publicFilterArray.length);
       const publicInsights = ignoreContextId ? [] : await fetchInsights(publicFilterArray);
 
       //
@@ -77,6 +84,7 @@ export default function useInsightsData() {
       } else {
         contextFilterArray.push(contextInsightsSearchFields);
       }
+      console.log(contextFilterArray.length);
       const contextInsights = await fetchInsights(contextFilterArray);
 
       if (isCancelled) {

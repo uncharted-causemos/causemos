@@ -16,7 +16,7 @@ export interface Snapshot {
 
   // target-view can be used to control visibility (e.g., a saved insight that targets data space won't be visible in the model space)
   // target-view can also force re-direct the final url for restoring state, e.g., a saved insight during model publish page would redirects to comparative analysis page
-  target_view: string; // main tab when the snapshot was saved, e.g., data, qualitative, quantitative.
+  target_view: string[]; // main tab when the snapshot was saved, e.g., data, qualitative, quantitative.
 
   // actions to be applied before/after applying this snapshot
   //  these could for example be items that follow the Command design pattern to update state

@@ -154,6 +154,7 @@ import { QUESTIONS } from '@/utils/messages-util';
 import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion, getContextSpecificQuestions } from '@/services/question-service';
 import DropdownControl from '@/components/dropdown-control.vue';
 import useInsightsData from '@/services/composables/useInsightsData';
+import { ProjectType } from '@/types/Enums';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -240,8 +241,18 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       viewState: 'insightPanel/viewState',
-      currentView: 'app/currentView'
-    })
+      currentView: 'app/currentView',
+      projectType: 'app/projectType'
+    }),
+    // @REVIEW: this is similar to insightTargetView
+    questionTargetView(): string[] {
+      // an insight created during model publication should be listed either
+      //  in the full list of insights,
+      //  or as a context specific insight when opening the page of the corresponding model family instance
+      //  (the latter is currently supported via a special route named dataPreview)
+      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+    }
   },
   methods: {
     ...mapActions({
@@ -280,7 +291,7 @@ export default defineComponent({
         project_id: this.project,
         context_id: this.contextId,
         url,
-        target_view: this.currentView,
+        target_view: this.questionTargetView,
         pre_actions: null,
         post_actions: null,
         linked_insights: [],
