@@ -4,7 +4,7 @@ import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
-import { renderAxes, renderLine } from '@/utils/timeseries-util';
+import { calculateXTicks, renderAxes, renderLine } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import {
   confidenceArea,
@@ -107,10 +107,16 @@ export default function(
   const contextGroupElement = selection
     .append('g')
     .classed('contextGroupElement', true);
+
+  const xAxisTicks = calculateXTicks(
+    xScaleFocus,
+    totalWidth
+  );
   renderAxes(
     contextGroupElement,
     xScaleContext,
     yScaleContext,
+    xAxisTicks,
     valueFormatter,
     totalWidth,
     contextHeight,
@@ -242,10 +248,15 @@ export default function(
       projections,
       historicalTimeseries
     );
+    const xAxisTicks = calculateXTicks(
+      xScaleFocus,
+      totalWidth
+    );
     renderAxes(
       focusGroupElement,
       xScaleFocus,
       yScaleFocus,
+      xAxisTicks,
       valueFormatter,
       totalWidth,
       focusHeight,

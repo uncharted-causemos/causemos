@@ -54,23 +54,9 @@ export function applyRelativeTo(
   return { baselineMetadata, timeseriesData: returnValue };
 }
 
-export function renderAxes(
-  selection: D3GElementSelection,
+export function calculateXTicks (
   xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  // The type of value can't be more specific than `any`
-  //  because under the hood d3.tickFormat requires d3.NumberType.
-  // It correctly converts, but its TypeScript definitions don't
-  //  seem to reflect that.
-  valueFormatter: (value: any) => string,
   width: number,
-  height: number,
-  timestampFormatter: (timestamp: any) => string,
-  yAxisWidth: number,
-  paddingRight: number,
-  xAxisHeight: number,
-  yAxisTickCount = 2,
-  xAxisTickSizePx = 2,
   xAxisMajorTickIncrement: moment.unitOfTime.DurationConstructor = 'year',
   xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
   useMinorTicks = true
@@ -87,8 +73,6 @@ export function renderAxes(
   const minor = moment.duration(1, xAxisMinorTickIncrement).as('ms');
   const minorInMajor = Math.trunc(major / minor);
 
-  console.log(minorInMajor);
-
   let tickIncrements = [];
 
   if (majorIncrecmentsElapsed * minorInMajor > width / minTickSpacing || !useMinorTicks) {
@@ -103,6 +87,29 @@ export function renderAxes(
     }
   }
 
+  return tickIncrements;
+}
+
+export function renderAxes(
+  selection: D3GElementSelection,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  // The type of value can't be more specific than `any`
+  //  because under the hood d3.tickFormat requires d3.NumberType.
+  // It correctly converts, but its TypeScript definitions don't
+  //  seem to reflect that.
+  tickIncrements: Array<number>,
+  valueFormatter: (value: any) => string,
+  width: number,
+  height: number,
+  timestampFormatter: (timestamp: any) => string,
+  yAxisWidth: number,
+  paddingRight: number,
+  xAxisHeight: number,
+  xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
+  yAxisTickCount = 2,
+  xAxisTickSizePx = 2
+) {
   const customTimestampFormatter = function (v: any) {
     if (v === undefined || v === null) {
       return '';

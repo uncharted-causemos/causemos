@@ -5,7 +5,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
-import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
+import { calculateXTicks, renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -59,10 +59,15 @@ export default function(
     yExtent,
     breakdownOption
   );
+  const xAxisTicks = calculateXTicks(
+    xScale,
+    width
+  );
   renderAxes(
     groupElement,
     xScale,
     yScale,
+    xAxisTicks,
     valueFormatter,
     width,
     height,
