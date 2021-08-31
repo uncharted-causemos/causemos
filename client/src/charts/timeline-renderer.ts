@@ -95,7 +95,7 @@ export default function(
     groupElement,
     xScale,
     xAxisTicks,
-    width,
+    height,
     timestampFormatter,
     X_AXIS_HEIGHT
   );
@@ -103,7 +103,7 @@ export default function(
     groupElement,
     yScale,
     valueFormatter,
-    height,
+    width,
     Y_AXIS_WIDTH,
     PADDING_RIGHT
   );
