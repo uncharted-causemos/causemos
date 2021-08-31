@@ -1,6 +1,5 @@
 const _ = require('lodash');
 const moment = require('moment');
-const delphiUtil = require('../util/delphi-util');
 const Logger = rootRequire('/config/logger');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
@@ -365,36 +364,6 @@ const buildGoalOptimizationPayload = async (modelId, engine, goals) => {
   return payload;
 };
 
-/**
- * Current Post processing steps for experiment result from delphi - Jul 30
- *  * Convert year/month in result to timestamp
- *
- * @param {object}  experiment
- *
- */
-const postProcessDelphiExperiment = (experiment) => {
-  const experimentResults = experiment.results;
-  const concepts = Object.keys(experimentResults);
-  const processedResults = {};
-  concepts.forEach(concept => {
-    const confidenceInterval = experimentResults[concept].confidenceInterval;
-    // convert upper
-    const transformedUpper = delphiUtil.convertToTimestamp(confidenceInterval.upper);
-    // convert lower
-    const transformedLower = delphiUtil.convertToTimestamp(confidenceInterval.lower);
-    // convert value
-    const transformedValues = delphiUtil.convertToTimestamp(experimentResults[concept].values);
-    processedResults[concept] = {
-      confidenceInterval: {
-        upper: transformedUpper,
-        lower: transformedLower
-      },
-      values: transformedValues
-    };
-  });
-  experiment.results = processedResults;
-};
-
 /* PUT clear node/edge parameter by ID */
 const clearNodeParameter = async (modelId, nodeId) => {
   Logger.info(`Resetting node's parameter with id ${nodeId} in model ${modelId}`);
@@ -503,6 +472,5 @@ module.exports = {
   buildGoalOptimizationPayload,
   buildNodeParametersPayload,
   buildEdgeParametersPayload,
-  postProcessDelphiExperiment,
   clearNodeParameter
 };

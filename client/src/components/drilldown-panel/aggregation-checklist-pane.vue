@@ -22,9 +22,17 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <div class="sort-selection">
+      <span>Sort by</span>
+      <radio-button-group
+        :selected-button-value="sortValue"
+        :buttons="Object.values(SORT_OPTIONS)"
+        @button-clicked="clickRadioButton"
+      />
+    </div>
     <div class="flex-row">
       <div
-        v-if="isRadioButtonModeActive"
+        v-if="checkboxType === 'radio'"
         class="all-radio-button"
         @click="setAllChecked"
       >
@@ -49,8 +57,9 @@
         :key="rowIndex"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
+        :min-visible-bar-value="minVisibleBarValue"
         :selected-timeseries-points="selectedTimeseriesPoints"
-        :is-radio-button-mode-active="isRadioButtonModeActive"
+        :checkbox-type="checkboxType"
         @toggle-expanded="toggleExpanded(row.path)"
         @toggle-checked="toggleChecked(row.path)"
       />
@@ -64,6 +73,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
+import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BreakdownData } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import {
@@ -75,6 +85,11 @@ import {
   computed
 } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+
+const SORT_OPTIONS = {
+  Name: { label: 'Name', value: 'name' },
+  Value: { label: 'Value', value: 'value' }
+};
 
 interface StatefulDataNode {
   name: string;
@@ -126,7 +141,7 @@ const extractVisibleRows = (
   metadataNode: RootStatefulDataNode | StatefulDataNode,
   hiddenAncestorNames: string[],
   selectedLevel: number,
-  selectedItemIds: string[] | null,
+  selectedItemIds: string[],
   orderedAggregationLevelKeys: string[]
 ): ChecklistRowData[] => {
   // The root node is at depth level "-1" since it isn't selectable
@@ -165,8 +180,7 @@ const extractVisibleRows = (
     return visibleChildren;
   }
   const itemId = metadataNode.path.join(REGION_ID_DELIMETER);
-  const isChecked =
-    selectedItemIds === null || selectedItemIds.includes(itemId);
+  const isChecked = selectedItemIds.includes(itemId);
   // Add the metadata that's required to display the entry as a row in the checklist
   return [
     checklistRowDataFromNode(
@@ -205,10 +219,55 @@ const checklistRowDataFromNode = (
   };
 };
 
+const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string) => {
+  // Sort top level children (i.e. countries) without values to the bottom
+  //  of the list, since if they had descendants with values, they would
+  //  have values themselves, aggregated up from their descendants
+  const hasOneOrMoreValues = (node: StatefulDataNode) => {
+    return node.bars.length > 0;
+  };
+  if (sortValue === SORT_OPTIONS.Value.value) {
+    newStatefulData.children.sort((nodeA, nodeB) => {
+      const nodeAFirstValue = nodeA.bars.map(bar => bar.value)[0];
+      const nodeBFirstValue = nodeB.bars.map(bar => bar.value)[0];
+      const nodeAValue = _.isNull(nodeAFirstValue) || _.isUndefined(nodeAFirstValue) ? null : nodeAFirstValue;
+      const nodeBValue = _.isNull(nodeBFirstValue) || _.isUndefined(nodeBFirstValue) ? null : nodeBFirstValue;
+      if (_.isNull(nodeAValue) && !_.isNull(nodeBValue)) {
+        // A should be sorted after B
+        return 1;
+      } else if (_.isNull(nodeBValue)) {
+        // B should be sorted after A
+        return -1;
+      }
+      // Sort based on value
+      return (nodeAValue as number) <= (nodeBValue as number) ? 1 : -1;
+    });
+  } else {
+    newStatefulData.children.sort((nodeA, nodeB) => {
+      if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
+        // A should be sorted after B
+        return 1;
+      } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
+        // B should be sorted after A
+        return -1;
+      }
+      // Don't change their order
+      return 0;
+    });
+  }
+  newStatefulData.children.forEach(node => {
+    if (_.has(node, 'children')) {
+      sortHierarchy(node, sortValue);
+    }
+  });
+  return newStatefulData;
+};
+
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
-    AggregationChecklistItem
+    AggregationChecklistItem,
+    RadioButtonGroup
   },
   props: {
     aggregationLevelCount: {
@@ -242,19 +301,13 @@ export default defineComponent({
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
     },
-    /**
-     * An optional parameter for the components that don't have a "selected" state.
-     * TODO: use it to hide the checkboxes for those components, so:
-     * - null means "no item will ever be selected", and
-     * - [] means "no item is currently selected".
-     */
     selectedItemIds: {
-      type: Object as PropType<string[] | null>,
-      default: null
+      type: Object as PropType<string[]>,
+      default: []
     },
-    isRadioButtonModeActive: {
-      type: Boolean,
-      default: false
+    checkboxType: {
+      type: String as PropType<'checkbox' | 'radio' | null>,
+      default: null
     }
   },
   emits: ['aggregation-level-change', 'toggle-is-item-selected'],
@@ -266,12 +319,13 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
+    const sortValue = ref<string>(SORT_OPTIONS.Name.value);
     const statefulData = ref<RootStatefulDataNode | null>(null);
     watchEffect(() => {
       // Whenever the raw data changes, construct a hierarchical data structure
       //  out of it, augmented with a boolean 'expanded' property to keep
       //  track of the state of the component.
-      const newStatefulData = { children: [] as StatefulDataNode[] };
+      const newStatefulData: RootStatefulDataNode = { children: [] as StatefulDataNode[] };
       orderedAggregationLevelKeys.value.forEach(aggregationLevelKey => {
         if (rawData.value === null) return;
         // Get the list of values at this aggregation level for each selected
@@ -319,23 +373,7 @@ export default defineComponent({
           });
         });
       });
-      // Sort top level children (i.e. countries) without values to the bottom
-      //  of the list, since if they had descendants with values, they would
-      //  have values themselves, aggregated up from their descendants
-      const hasOneOrMoreValues = (node: StatefulDataNode) => {
-        return node.bars.length > 0;
-      };
-      newStatefulData.children.sort((nodeA, nodeB) => {
-        if (!hasOneOrMoreValues(nodeA) && hasOneOrMoreValues(nodeB)) {
-          // A should be sorted after B
-          return 1;
-        } else if (hasOneOrMoreValues(nodeA) && !hasOneOrMoreValues(nodeB)) {
-          // B should be sorted after A
-          return -1;
-        }
-        // Don't change their order
-        return 0;
-      });
+      sortHierarchy(newStatefulData, sortValue.value);
       statefulData.value = newStatefulData;
     });
 
@@ -360,6 +398,7 @@ export default defineComponent({
       computeExpanded(statefulData.value, -1);
     });
 
+    // Returns the maximum among bar values or zero, whichever is greater
     const findMaxVisibleBarValue = (
       node: RootStatefulDataNode | StatefulDataNode,
       levelsUntilSelectedDepth: number
@@ -368,9 +407,9 @@ export default defineComponent({
         const values = isStatefulDataNode(node)
           ? node.bars.map(bar => bar.value)
           : [];
-        return _.max(values) ?? Number.MIN_VALUE;
+        return _.max(values) ?? 0;
       }
-      let maxValue = Number.MIN_VALUE;
+      let maxValue = 0;
       node.children.forEach(child => {
         maxValue = Math.max(
           maxValue,
@@ -380,11 +419,42 @@ export default defineComponent({
       return maxValue;
     };
 
+    // Returns the minimum among bar values or zero, whichever is less
+    const findMinVisibleBarValue = (
+      node: RootStatefulDataNode | StatefulDataNode,
+      levelsUntilSelectedDepth: number
+    ) => {
+      if (levelsUntilSelectedDepth === 0) {
+        const values = isStatefulDataNode(node)
+          ? node.bars.map(bar => bar.value)
+          : [];
+        return _.min(values) ?? 0;
+      }
+      let minValue = 0;
+      node.children.forEach(child => {
+        minValue = Math.min(
+          minValue,
+          findMinVisibleBarValue(child, levelsUntilSelectedDepth - 1)
+        );
+      });
+      return minValue;
+    };
+
     const maxVisibleBarValue = computed(() => {
       if (_.isNil(statefulData.value)) return 0;
       // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
       //  the root level.
       return findMaxVisibleBarValue(
+        statefulData.value,
+        aggregationLevel.value + 1
+      );
+    });
+
+    const minVisibleBarValue = computed(() => {
+      if (_.isNil(statefulData.value)) return 0;
+      // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
+      //  the root level.
+      return findMinVisibleBarValue(
         statefulData.value,
         aggregationLevel.value + 1
       );
@@ -402,9 +472,7 @@ export default defineComponent({
     });
 
     const isAllSelected = computed(() => {
-      return (
-        selectedItemIds.value === null || selectedItemIds.value.length === 0
-      );
+      return selectedItemIds.value.length === 0;
     });
 
     const toggleChecked = (path: string[]) => {
@@ -417,10 +485,7 @@ export default defineComponent({
     const setAllChecked = () => {
       // ASSUMPTION: the "All" option is only showed when "radio button" mode
       //  is active, meaning there is no more than one item
-      if (
-        selectedItemIds.value === null ||
-        selectedItemIds.value.length === 0
-      ) {
+      if (selectedItemIds.value.length === 0) {
         return;
       }
       if (selectedItemIds.value.length > 1) {
@@ -436,13 +501,19 @@ export default defineComponent({
     return {
       statefulData,
       maxVisibleBarValue,
+      minVisibleBarValue,
       visibleRows,
       isAllSelected,
       toggleChecked,
-      setAllChecked
+      setAllChecked,
+      SORT_OPTIONS,
+      sortValue
     };
   },
   methods: {
+    clickRadioButton(value: string) {
+      this.sortValue = value;
+    },
     onRangeValueChanged(event: any) {
       this.changeAggregationLevel(event.target.valueAsNumber);
     },
@@ -494,6 +565,17 @@ $tick-size: 8px;
 h5 {
   margin: 0;
   margin-bottom: 5px;
+}
+
+.sort-selection {
+  width: fit-content;
+  display: flex;
+  align-items: center;
+  margin-top: 10px;
+  margin-bottom: 10px;
+  span {
+    padding-right: 20px;
+  }
 }
 
 .aggregation-level-range {

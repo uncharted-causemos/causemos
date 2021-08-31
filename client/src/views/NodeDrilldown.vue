@@ -4,15 +4,19 @@
     <main>
       <div class="nodes-container">
         <div class="drivers">
-          <h5>Top Drivers</h5>
-          <neighbor-node
-            v-for="driver in drivers"
-            :key="driver.edge.id"
-            :node="driver.node"
-            :edge="driver.edge"
-            :is-driver="true"
-            class="neighbor-node"
-          />
+          <h5 v-if="drivers.length > 0">Top Drivers</h5>
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="driver in drivers"
+              :key="driver.edge.id"
+              :node="driver.node"
+              :edge="driver.edge"
+              :is-driver="true"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+              class="neighbor-node"
+            />
+          </template>
         </div>
         <div class="selected-node-column">
           <div class="scenario-selector-row">
@@ -67,6 +71,7 @@
               :min-value="indicatorMin"
               :max-value="indicatorMax"
               :constraints="constraints"
+              :viewing-extent="viewingExtent"
               @set-constraints="modifyConstraints"
               @set-historical-timeseries="setHistoricalTimeseries"
             />
@@ -74,6 +79,7 @@
               v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
               class="scenario-chart"
               :timeseriesData="comparisonTimeseries.timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
             />
           </div>
           <p>
@@ -118,6 +124,14 @@
                 @click="clearParameterization">
                 Clear parameterization
               </button>
+              <button
+                v-if="hasConstraints"
+                v-tooltip.top-center="'Clear constraints'"
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="clearConstraints">
+                Clear constraints
+              </button>
             </div>
           </div>
           <p class="restrict-max-width">
@@ -154,15 +168,19 @@
           </div>
         </div>
         <div class="impacts">
-          <h5>Top Impacts</h5>
-          <neighbor-node
-            v-for="impact in impacts"
-            :key="impact.edge.id"
-            :node="impact.node"
-            :edge="impact.edge"
-            :is-driver="false"
-            class="neighbor-node"
-          />
+          <h5 v-if="impacts.length > 0">Top Impacts</h5>
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="impact in impacts"
+              :key="impact.edge.id"
+              :node="impact.node"
+              :edge="impact.edge"
+              :is-driver="false"
+              class="neighbor-node"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+            />
+          </template>
         </div>
       </div>
     </main>
@@ -180,12 +198,14 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
+import { useStore } from 'vuex';
+
+import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
-import { useStore } from 'vuex';
-import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import modelService from '@/services/model-service';
 import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
@@ -197,7 +217,6 @@ import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import _ from 'lodash';
 import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
@@ -275,7 +294,7 @@ export default defineComponent({
     const nodeConceptName = computed(() => selectedNode.value?.label);
 
     const scenarioData = computed(() => {
-      if (modelSummary.value === null || modelComponents.value === null) {
+      if (modelSummary.value === null || modelComponents.value === null || scenarios.value.length === 0) {
         return null;
       }
       return modelService.buildNodeChartData(
@@ -315,6 +334,7 @@ export default defineComponent({
       };
     });
 
+    // FIXME
     const historicalTimeseries = ref<TimeseriesPoint[]>([]);
     watch([selectedNodeScenarioData], () => {
       if (_.isEmpty(historicalTimeseries.value)) {
@@ -343,6 +363,10 @@ export default defineComponent({
         return { displayName: scenario.name, value: scenario.id };
       })
     );
+
+    const hasConstraints = computed(() => {
+      return constraints.value.length > 0;
+    });
 
     // TODO: Filter top drivers and top impacts
     //  CLARIFICATION REQUIRED:
@@ -438,7 +462,7 @@ export default defineComponent({
           admin1: '',
           admin2: '',
           admin3: '',
-          period: 12,
+          period: 1,
           timeseries: [
             { value: 0.5, timestamp: Date.UTC(2017, 0) },
             { value: 0.5, timestamp: Date.UTC(2017, 1) },
@@ -461,6 +485,14 @@ export default defineComponent({
       });
       try {
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
+
+        // FIXME: manually set historical for now because bad watcher
+        historicalTimeseries.value = [
+          { value: 0.5, timestamp: Date.UTC(2017, 0) },
+          { value: 0.5, timestamp: Date.UTC(2017, 1) },
+          { value: 0.5, timestamp: Date.UTC(2017, 2) }
+        ];
+
         refreshModelData();
       } catch {
         console.error(QUANTIFICATION.ERRONEOUS_PARAMETER_CHANGE, nodeParameters);
@@ -552,6 +584,11 @@ export default defineComponent({
       saveDraft();
     };
 
+    const clearConstraints = () => {
+      constraints.value = [];
+      saveDraft();
+    };
+
     watchEffect(() => {
       // When the selectedScenario changes, grab the constraints from that scenario
       //  and store them in the `constraints` ref to be displayed
@@ -574,6 +611,28 @@ export default defineComponent({
       modelSummary,
       currentCAG
     );
+
+    // Find out the default viewing window
+    const viewingExtent = computed<number[] | null>(() => {
+      const parameter = modelSummary.value?.parameter;
+      if (!parameter) {
+        return null;
+      } else {
+        const projections = selectedNodeScenarioData.value?.projections || [];
+        let max = Number.NEGATIVE_INFINITY;
+        for (let i = 0; i < projections.length; i++) {
+          for (let j = 0; j < projections[i].values.length; j++) {
+            if (max < projections[i].values[j].timestamp) {
+              max = projections[i].values[j].timestamp;
+            }
+          }
+        }
+        return [
+          Math.min(parameter.indicator_time_series_range.start, parameter.projection_start),
+          Math.max(parameter.indicator_time_series_range.end, max)
+        ];
+      }
+    });
 
     return {
       nodeConceptName,
@@ -607,7 +666,11 @@ export default defineComponent({
       nodeId,
       project,
       currentCAG,
-      clearParameterization
+      clearParameterization,
+      viewingExtent,
+      hasConstraints,
+      clearConstraints,
+      scenarioData
     };
   },
   methods: {
@@ -811,11 +874,19 @@ h5 {
 }
 
 .restrict-max-width {
-  max-width: 90ch;
+  max-width: 110ch;
 }
 
 .save-parameter-button {
   align-self: flex-start;
+}
+
+.btn-danger {
+  color: white;
+}
+
+.btn-danger:hover {
+  color: white;
 }
 
 </style>

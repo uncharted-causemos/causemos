@@ -587,15 +587,8 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
             include: {
               partition: partition,
               num_partitions: totalPartitions
-            }
-          },
-          aggs: {
-            edges: {
-              terms: {
-                field: 'wm.edge',
-                size: MAX_ES_BUCKET_SIZE
-              }
-            }
+            },
+            size: MAX_ES_BUCKET_SIZE
           }
         }
       }

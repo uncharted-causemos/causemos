@@ -1,8 +1,10 @@
 const express = require('express');
 const moment = require('moment');
 const _ = require('lodash');
+const uuid = require('uuid');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
+const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 // const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const { get } = rootRequire('/cache/node-lru-cache');
@@ -328,6 +330,40 @@ router.post('/:projectId/assembly', asyncHandler(async (req, res) => {
   // Send signal to kick start incremental knowledge ingestion process
   const result = await projectService.requestAssembly(projectionId);
   res.json(result);
+}));
+
+
+/**
+ * POST a new concept into project specific ontology
+ */
+router.post('/:projectId/ontology-concept', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const { definition, examples, label } = req.body;
+
+  Logger.info(`Adding concept ${label} to ontology for project ${projectId}`);
+
+  const ontology = Adapter.get(RESOURCE.ONTOLOGY);
+  const doc = await ontology.findOne([
+    { field: 'label', value: label },
+    { field: 'project_id', value: projectId }
+  ], {});
+
+  const payload = {
+    label,
+    project_id: projectId,
+    examples: examples || [],
+    definition: definition || ''
+  };
+
+  if (doc) {
+    payload.id = doc.id;
+    await ontology.update([payload], d => d.id);
+  } else {
+    payload.id = uuid();
+    await ontology.insert([payload], d => d.id);
+  }
+
+  res.json({});
 }));
 
 module.exports = router;

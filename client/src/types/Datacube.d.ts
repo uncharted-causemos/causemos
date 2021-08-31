@@ -82,7 +82,10 @@ export interface Datacube {
   default_feature: string; // name of the primary output feature
   status: DatacubeStatus;
   _search: string;
-  qualifier_outputs?: FeatureQualifier[];
+  // FIXME: current metadata results have `null` qualifier_outputs
+  //  we should either use undefined and keep qualifier_outputs optional,
+  //  or use null and make the field required
+  qualifier_outputs?: FeatureQualifier[] | null;
   default_view: any; // object that will contain various default view configurations such as default aggregations
 }
 
@@ -100,4 +103,9 @@ export interface ModelPublishingStep {
   id: ModelPublishingStepID;
   completed: boolean;
   text: string;
+}
+
+export interface QualifierBreakdownResponse {
+  name: string;
+  options: { name: string; value: number? }[];
 }

@@ -1,8 +1,12 @@
 <template>
   <div class="row datacube-card-container">
     <header class="datacube-header" >
-      <h5 v-if="metadata && mainModelOutput" style="display: inline-block">
-        <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
+      <h5
+        v-if="metadata && mainModelOutput"
+        class="datacube-title-area"
+        @click="openDrilldown"
+      >
+        <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}} - {{ selectedRegionIdsDisplay }}</span>
         <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
       </h5>
       <button
@@ -31,6 +35,7 @@
         <timeseries-chart
           v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
           :timeseries-data="visibleTimeseriesData"
+          :selected-temporal-resolution="selectedTemporalResolution"
           :selected-timestamp="selectedTimestamp"
           :selected-timestamp-range="selectedTimestampRange"
           :breakdown-option="breakdownOption"
@@ -48,6 +53,10 @@
         </div>
       </div>
     </div>
+    <div>
+      <div class="col-md-9">Temporal Aggregation: {{ selectedTemporalAggregation }} </div>
+      <div class="col-md-3">Spatial Aggregation: {{ selectedSpatialAggregation }} </div>
+    </div>
   </div>
 </template>
 
@@ -56,7 +65,6 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
 import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
@@ -65,6 +73,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
+import { DataState, ViewState } from '@/types/Insight';
 
 const DRILLDOWN_TABS = [
   {
@@ -106,8 +115,6 @@ export default defineComponent({
       selectedTimestamp
     } = toRefs(props);
 
-    const typeBreakdownData = ref([] as NamedBreakdownData[]);
-
     const metadata = useModelMetadata(id);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
@@ -147,10 +154,14 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
     const allModelRunData = useScenarioData(id, modelRunsFetchedAt);
 
+    const selectedRegionIds: string[] = [];
+    let initialSelectedScenarioIds: string[] = [];
+
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const allScenarioIds = allModelRunData.value.map(run => run.id);
-        selectedScenarioIds.value = [allScenarioIds[0]];
+        // do not pick the first run by default in case a run was previously selected
+        selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
       }
     });
 
@@ -167,7 +178,8 @@ export default defineComponent({
     // apply the view-config for this datacube
     const indx = analysisItems.value.findIndex((ai: any) => ai.id === props.id);
     if (indx >= 0) {
-      const initialViewConfig = analysisItems.value[indx].viewConfig;
+      const initialViewConfig: ViewState = analysisItems.value[indx].viewConfig;
+      const initialDataConfig: DataState = analysisItems.value[indx].dataConfig;
 
       if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
         if (initialViewConfig.temporalResolution !== undefined) {
@@ -183,6 +195,18 @@ export default defineComponent({
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
           defaultOutputMap[props.id] = initialViewConfig.selectedOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+      }
+
+      // apply initial data config for this datacube
+      if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
+        if (initialDataConfig.selectedRegionIds !== undefined) {
+          initialDataConfig.selectedRegionIds.forEach(regionId => {
+            selectedRegionIds.push(regionId);
+          });
+        }
+        if (initialDataConfig.selectedScenarioIds !== undefined) {
+          initialSelectedScenarioIds = initialDataConfig.selectedScenarioIds;
         }
       }
     }
@@ -209,7 +233,6 @@ export default defineComponent({
       temporalBreakdownData
     } = useTimeseriesData(
       metadata,
-      id,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -217,13 +240,27 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      ref([]) // region breakdown
+      ref(selectedRegionIds),
+      ref(new Set())
     );
 
     watchEffect(() => {
-      if (visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
-        emit('loaded-timeseries', { id: id.value, timeseriesList: visibleTimeseriesData.value });
+      if (metadata.value && visibleTimeseriesData.value && visibleTimeseriesData.value.length > 0) {
+        emit('loaded-timeseries', {
+          id: id.value,
+          timeseriesList: visibleTimeseriesData.value,
+          //
+          datacubeName: metadata.value.name,
+          datacubeOutputName: mainModelOutput.value?.display_name,
+          //
+          region: metadata.value.geography.country // FIXME: later this could be the selected region for each datacube
+        });
       }
+    });
+
+    const selectedRegionIdsDisplay = computed(() => {
+      if (_.isEmpty(selectedRegionIds)) return 'All';
+      return selectedRegionIds.join('/');
     });
 
     return {
@@ -233,7 +270,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
-      typeBreakdownData,
+      selectedRegionIdsDisplay,
       metadata,
       mainModelOutput,
       outputs,
@@ -293,17 +330,8 @@ export default defineComponent({
 
 .datacube-card-container {
   background: $background-light-1;
-  box-shadow: $shadow-level-1;
-  // padding: 10px;
   margin: 10px;
   border-radius: 3px;
-}
-
-.datacube-expanded {
-  min-width: 0;
-  flex: 1;
-  margin: 10px;
-  margin-top: 0;
 }
 
 .datacube-header {
@@ -312,6 +340,10 @@ export default defineComponent({
   display: flex;
   align-items: center;
 
+  .datacube-title-area {
+    display: inline-block;
+    cursor: pointer;
+  }
   .drilldown-btn {
     padding: 5px;
     margin-left:auto;

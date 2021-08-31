@@ -831,6 +831,7 @@ export default {
       addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
       useStableLayout: true,
+      useStableZoomPan: true,
       newEdgeFn: (source, target) => {
         this.$emit('new-edge', { source, target });
       },
