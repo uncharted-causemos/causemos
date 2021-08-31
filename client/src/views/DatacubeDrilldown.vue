@@ -522,7 +522,7 @@ export default defineComponent({
       toggleIsQualifierSelected,
       selectedQualifierValues,
       selectedYears,
-      toggleIsYearSelected
+      toggleIsYearSelected,
       initialSelectedQualifierValues,
       initialSelectedRegionIds
     };
