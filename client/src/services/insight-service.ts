@@ -2,6 +2,7 @@ import API from '@/api/api';
 import { Insight } from '@/types/Insight';
 import _ from 'lodash';
 
+// FIXME: the following filter fields are also used when fetching questions, rename accordingly
 export interface InsightFilterFields {
   project_id?: string;
   context_id?: string;
