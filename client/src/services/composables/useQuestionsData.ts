@@ -21,9 +21,6 @@ export default function useQuestionsData() {
   const project = computed(() => store.getters['app/project']);
   const projectType = computed(() => store.getters['app/projectType']);
 
-  // FIXME: using the isPanelOpen from the insights stores also to track of the question pane is open
-  //  a more proper fix would be to move such state higher up (to a common store)
-  //  NOTE: this also applied to contextId
   const isPanelOpen = computed(() => store.getters['panel/isPanelOpen']);
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
 
