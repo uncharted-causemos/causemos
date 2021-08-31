@@ -194,7 +194,6 @@ export default defineComponent({
       let isCancelled = false;
       async function fetchQuestions() {
         let allQuestions;
-        // allQuestions = await getAllQuestions(project.value);
 
         if (contextId.value === '') {
           allQuestions = await getAllQuestions(project.value);

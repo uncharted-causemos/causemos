@@ -19,18 +19,17 @@ export default function useInsightsData() {
   const project = computed(() => store.getters['app/project']);
   const projectType = computed(() => store.getters['app/projectType']);
 
-  const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
+  const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
+  const isContextInsightPanelOpen = computed(() => store.getters['contextInsightPanel/isPanelOpen']);
 
   watchEffect(onInvalidate => {
     console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function getInsights() {
       // do not fetch if the panel is not open
-      console.log(isPanelOpen.value);
-      if (isPanelOpen.value === false) {
+      if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true)) {
         return;
       }
-
       // @HACK: ignore context-id(s) when the insight explorer is open
       //  (i.e., when clicking 'Review All Insights')
       // NOTE: this only makes sense for analysis projects
@@ -38,7 +37,7 @@ export default function useInsightsData() {
       // a more proper solution would be to store all context-id(s) for an analysis project,
       // and set those everytime prior to opening the insight explorer,
       // and finally restore that specific context-id once the insight explorer is closed!
-      const ignoreContextId = isPanelOpen.value && projectType.value === ProjectType.Analysis;
+      const ignoreContextId = isInsightExplorerOpen.value === true && projectType.value === ProjectType.Analysis;
 
       //
       // fetch public insights
@@ -62,7 +61,6 @@ export default function useInsightsData() {
       }
       // Note that when 'ignoreContextId' is true, this means we are fetching insights for the insight explorer within an analysis project
       // For this case, public insights should not be listed
-      console.log(publicFilterArray.length);
       const publicInsights = ignoreContextId ? [] : await fetchInsights(publicFilterArray);
 
       //
@@ -84,7 +82,6 @@ export default function useInsightsData() {
       } else {
         contextFilterArray.push(contextInsightsSearchFields);
       }
-      console.log(contextFilterArray.length);
       const contextInsights = await fetchInsights(contextFilterArray);
 
       if (isCancelled) {
