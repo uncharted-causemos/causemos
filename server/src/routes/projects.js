@@ -266,7 +266,13 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
   const field = req.query.field;
   const queryString = req.query.q;
-  let results = await projectService.searchFields(projectId, field, queryString);
+  let results = null;
+  if (field === 'subjConcept' || field == 'objConcept') {
+    const q = await projectService.searchOntologyExamples(projectId, queryString);
+    results = await projectService.searchFields(projectId, field, q, 'OR');
+  } else {
+    results = await projectService.searchFields(projectId, field, queryString);
+  }
 
   // FIXME: These fields are array fields and do not
   // aggregate. We need to use nested or use es-native suggestion api.

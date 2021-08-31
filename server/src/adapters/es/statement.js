@@ -73,12 +73,12 @@ const _keyFn = (doc) => {
 };
 
 class Statement {
-  constructor (index) {
+  constructor(index) {
     this.index = index;
     this.client = ES.client;
   }
 
-  async findOne (statementFilters, options) {
+  async findOne(statementFilters, options) {
     options.size = 1; // return only one
 
     const result = await this._search(statementFilters, options);
@@ -86,7 +86,7 @@ class Statement {
     return result.hits.hits[0]._source;
   }
 
-  async find (statementFilters, options) {
+  async find(statementFilters, options) {
     const result = await this._search(statementFilters, options);
     if (_.isEmpty(result.hits.hits)) return [];
     return result.hits.hits.map(d => d._source);
@@ -100,7 +100,7 @@ class Statement {
    *
    * @param {object} statementFilters
    */
-  async stats (statementFilters) {
+  async stats(statementFilters) {
     const filterQuery = queryUtil.buildQuery(statementFilters);
     const clauses = statementFilters.clauses || [];
     const nestedFilters = queryUtil.buildFilters(queryUtil.levelFilter(clauses, FIELD_LEVELS.EVIDENCE));
@@ -157,7 +157,7 @@ class Statement {
    * Note: by default staged, deleted, self-looped statements are filtered
    * @param {object} statementFilters - statement related filters
    */
-  async count (statementFilters) {
+  async count(statementFilters) {
     const filterQuery = queryUtil.buildQuery(statementFilters);
     const countQuery = {
       index: this.index,
@@ -172,7 +172,7 @@ class Statement {
    * Note: by default staged, deleted, self-looped statements are filtered
    * @param {object} statementFilters - statement related filters
    */
-  async evidenceCount (statementFilters) {
+  async evidenceCount(statementFilters) {
     const filterQuery = queryUtil.buildQuery(statementFilters);
     const readerFilter = findFilter(statementFilters, 'reader');
     const ALL_READERS = ['hume', 'eidos', 'sofia'];
@@ -246,7 +246,7 @@ class Statement {
    * @param {string} searchField - config fields
    * @param {string} queryString - search query
    */
-  async searchFields(projectId, searchField, queryString) {
+  async searchFields(projectId, searchField, queryString, defaultOperator = 'AND') {
     const fieldNames = FIELDS[searchField].fields;
     const aggFieldNames = FIELDS[searchField].aggFields || fieldNames;
 
@@ -269,7 +269,7 @@ class Statement {
               query_string: {
                 fields: [field],
                 query: processedQuery,
-                default_operator: 'AND'
+                default_operator: defaultOperator
               }
             },
             aggs: {

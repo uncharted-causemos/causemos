@@ -120,7 +120,7 @@ const createProject = async (kbId, name, description) => {
  * @param {string} projectId - project id
  * @param {object} projectFields - project fields
  */
-const updateProject = async(projectId, projectFields) => {
+const updateProject = async (projectId, projectFields) => {
   const project = Adapter.get(RESOURCE.PROJECT);
 
   const keyFn = (doc) => {
@@ -525,7 +525,7 @@ const facets = async (projectId, filters, fields) => {
  * Retrieves a map of concept => definitions for a given project
  * @param {string} projectId - project identifier
  */
-const getOntologyDefinitions = async(projectId) => {
+const getOntologyDefinitions = async (projectId) => {
   const MAX_SIZE = 5000;
   const ontology = Adapter.get(RESOURCE.ONTOLOGY);
 
@@ -547,7 +547,7 @@ const getOntologyDefinitions = async(projectId) => {
  * @param {string} projectId - project identifier
  * @param {array} ids - list of statement identifiers
  */
-const getProjectStatementsScores = async(projectId, ids) => {
+const getProjectStatementsScores = async (projectId, ids) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
 
   if (ids.length > SEARCH_LIMIT) {
@@ -621,7 +621,7 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
  * @param {string} projectId  - project identifier
  * @param {object} filters    - statement filters
  */
-const getProjectEdges = async(projectId, filters) => {
+const getProjectEdges = async (projectId, filters) => {
   const totalPartitions = 50;
   const partitionsOfEdges = (await Promise.all([...Array(totalPartitions).keys()].map(partition =>
     getProjectEdgesByPartition(projectId, filters, totalPartitions, partition)
@@ -629,13 +629,98 @@ const getProjectEdges = async(projectId, filters) => {
   return partitionsOfEdges.flat();
 };
 
+const searchOntologyExamples = async (projectId, queryString) => {
+  const ontology = Adapter.get(RESOURCE.ONTOLOGY);
+  const prefixes = queryString.split(" ").map(query => {
+    return {
+      prefix: {
+        examples: query
+      }
+    };
+  });
+  const body = {
+    query: {
+      bool: {
+        must: [
+          {
+            term: {
+              project_id: projectId
+            },
+          },
+          {
+            bool: {
+              should: prefixes
+            }
+          }
+        ]
+      }
+    }
+  };
+  const ontologyMatches = await ontology.client.search({
+    index: RESOURCE.ONTOLOGY,
+    body
+  });
+  // create one big string
+  const q = queryString + " " + [...new Set(_.flatten(ontologyMatches.body.hits.hits.map(match => {
+    // reformatting to deal with the concept path
+    let label = match._source.label.split("/").splice(-1)[0];
+    return label.split("_");
+  })))].join(" ");
+  return q;
+};
+
 /**
  * Search various fields in ES for terms starting with the queryString
  *
  */
-const searchFields = async (projectId, searchField, queryString) => {
+const searchFields = async (projectId, searchField, queryString, defaultOperator = 'AND') => {
+  // const ontology = Adapter.get(RESOURCE.ONTOLOGY);
+  // let q = null;
+  // try {
+  //   // split up query if there are multiple words, add prefix for them all
+  //   const prefixes = queryString.split(" ").map(query => {
+  //     return {
+  //       prefix: {
+  //         examples: query
+  //       }
+  //     };
+  //   });
+  //   const body = {
+  //     query: {
+  //       bool: {
+  //         must: [
+  //           {
+  //             term: {
+  //               project_id: projectId
+  //             },
+  //           },
+  //           {
+  //             bool: {
+  //               should: prefixes
+  //             }
+  //           }
+  //         ]
+  //       }
+  //     }
+  //   };
+  //   const ontologyMatches = await ontology.client.search({
+  //     index: RESOURCE.ONTOLOGY,
+  //     body
+  //   });
+  //   // create one big string
+  //   q = queryString + " " + [...new Set(_.flatten(ontologyMatches.body.hits.hits.map(match => {
+  //     // reformatting to deal with the concept path
+  //     let label = match._source.label.split("/").splice(-1)[0];
+  //     return label.split("_");
+  //   })))].join(" ");
+  //   console.log('wat');
+  // } catch (e) {
+  //   q = queryString;
+  //   console.log(e);
+  // }
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
-  const matchedTerms = await statement.searchFields(projectId, searchField, queryString);
+  // const matchedTerms = await statement.searchFields(projectId, searchField, q, defaultOperator = 'OR');
+  const matchedTerms = await statement.searchFields(projectId, searchField, queryString, defaultOperator);
   return matchedTerms;
 };
 
@@ -837,6 +922,7 @@ module.exports = {
   countStats,
   facets,
   getOntologyDefinitions,
+  searchOntologyExamples,
 
   getProjectStatementsScores,
   getProjectEdges,
