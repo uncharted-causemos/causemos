@@ -92,7 +92,7 @@ import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
 import { DatacubeStatus } from '@/types/Enums';
-import {isIndicator, isModel} from '../../utils/datacube-util';
+import { isIndicator, isModel } from '../../utils/datacube-util';
 
 export default {
   name: 'SearchListview',
