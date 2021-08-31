@@ -6,7 +6,7 @@
         class="datacube-title-area"
         @click="openDrilldown"
       >
-        <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
+        <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}} - {{ selectedRegionIdsDisplay }}</span>
         <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
       </h5>
       <button
@@ -52,6 +52,10 @@
           </div>
         </div>
       </div>
+    </div>
+    <div>
+      <div class="col-md-9">Temporal Aggreagation: {{ selectedTemporalAggregation }} </div>
+      <div class="col-md-3">Spatial Aggregation: {{ selectedSpatialAggregation }} </div>
     </div>
   </div>
 </template>
@@ -254,6 +258,11 @@ export default defineComponent({
       }
     });
 
+    const selectedRegionIdsDisplay = computed(() => {
+      if (_.isEmpty(selectedRegionIds)) return 'All';
+      return selectedRegionIds.join('/');
+    });
+
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
@@ -261,6 +270,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
+      selectedRegionIdsDisplay,
       metadata,
       mainModelOutput,
       outputs,
@@ -322,13 +332,6 @@ export default defineComponent({
   background: $background-light-1;
   margin: 10px;
   border-radius: 3px;
-}
-
-.datacube-expanded {
-  min-width: 0;
-  flex: 1;
-  margin: 10px;
-  margin-top: 0;
 }
 
 .datacube-header {
