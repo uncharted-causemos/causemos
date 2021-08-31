@@ -1,0 +1,588 @@
+{
+  "$id": "https://github.com/uncharted-causemos/docs/blob/model-schemas/datacubes/indicator.schema.json",
+  "$schema": "http://json-schema.org/draft-07/schema",
+  "description": "World Modelers Indicator Metadata Schema",
+  "required": [
+    "id",
+    "name",
+    "description",
+    "category",
+    "maintainer",
+    "data_paths",
+    "outputs"
+  ],
+  "title": "Indicator Metadata Schema",
+  "type": "object",
+  "properties": {
+    "id": {
+      "$id": "#/properties/id",
+      "title": "Dataset ID",
+      "description": "A unique dataset id",
+      "type": "string",
+      "examples": [
+        "123e4567-e89b-12d3-a456-426614174000"
+      ]
+    },
+    "name": {
+      "$id": "#/properties/name",
+      "title": "Dataset Name",
+      "description": "The dataset name",
+      "type": "string",
+      "examples": [
+        "WDI"
+      ]
+    },
+    "family_name": {
+      "$id": "#/properties/name",
+      "title": "Dataset Family Name",
+      "description": "The dataset family name",
+      "type": "string",
+      "examples": [
+        "WDI"
+      ]
+    },
+    "description": {
+      "$id": "#/properties/description",
+      "title": "Dataset Description",
+      "description": "The description of the dataset.",
+      "type": "string",
+      "examples": [
+        "World Development Indicators are the World Bank's compilation of relevant, high-quality, and internationally comparable statistics about global development. The global database contains 1,600 time series indicators for 217 economies and more than 40 country groups, with data for many indicators going back more than 50 years.  There are ~1400 indicators for Ethiopia at the National level.  This data was pulled by the World Modelers program in September 2020."
+      ]
+    },
+    "created_at": {
+      "$id": "#/properties/created_at",
+      "title": "Dataset Registration Time",
+      "description": "When the dataset was registered",
+      "type": "integer",
+      "examples": [
+        1234567890000
+      ]
+    },
+    "category": {
+      "$id": "#/properties/category",
+      "title": "Categories",
+      "description": "List of categories",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        [
+          "Economic",
+          "Agricultural"
+        ]
+      ]
+    },
+    "maintainer": {
+      "$id": "#/properties/maintainer",
+      "title": "Dataset Maintainer",
+      "description": "Information about the dataset maintainer.",
+      "$ref": "#/definitions/maintainer",
+      "additionalProperties": false
+    },
+    "data_paths": {
+      "$id": "#/properties/data_paths",
+      "title": "Data Path URLs",
+      "description": "URL paths to data",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        [
+          "https://jataware-world-modelers.s3.amazonaws.com/WDI/data.csv"
+        ]
+      ]
+    },
+    "outputs": {
+      "$id": "#/properties/outputs",
+      "title": "Dataset Outputs",
+      "description": "An array of dataset variables",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/output"
+      }
+    },
+    "qualifier_outputs": {
+      "$id": "#/properties/qualifier_outputs",
+      "title": "Dataset Qualifier Outputs",
+      "description": "An array describing the additional qualifier columns in the output data files",
+      "type": "array",
+      "items": {
+        "$ref": "#/definitions/qualifier_output"
+      }
+    },
+    "tags": {
+      "$id": "#/properties/tags",
+      "title": "Search Tags",
+      "description": "The tags associated with the dataset.",
+      "type": "array",
+      "items": {
+        "type": "string"
+      },
+      "examples": [
+        [
+          "Agriculture"
+        ]
+      ]
+    },
+    "geography": {
+      "$id": "#/properties/geography",
+      "title": "Geography",
+      "description": "Information about the geography covered by the dataset",
+      "$ref": "#/definitions/geography"
+    },
+    "period": {
+      "$id": "#/properties/period",
+      "title": "Run time period",
+      "description": "Data ranges covered by the dataset",
+      "$ref": "#/definitions/period"
+    }
+  },
+  "additionalProperties": false,
+  "definitions": {
+    "output": {
+      "$id": "#/definitions/output",
+      "type": "object",
+      "required": [
+        "name",
+        "display_name",
+        "description",
+        "type",
+        "unit",
+        "ontologies",
+        "is_primary"
+      ],
+      "properties": {
+        "name": {
+          "$id": "#/definitions/output/name",
+          "title": "Output Variable Name",
+          "description": "The name of the output variable",
+          "type": "string",
+          "examples": [
+            "account_ownership_at_a_financial_institution_or_with_a_mobile_money_service_provider_older_adults_of_population_ages_25"
+          ]
+        },
+        "display_name": {
+          "$id": "#/definitions/output/display_name",
+          "title": "Output Variable Display Name",
+          "description": "The user visible name of the output variable",
+          "type": "string",
+          "examples": [
+            "Account ownership at a financial institution or with a mobile-money-service provider, older adults (% of population ages 25+)"
+          ]
+        },
+        "description": {
+          "$id": "#/definitions/output/description",
+          "title": "Output variable Description",
+          "description": "The description of the output variable",
+          "type": "string",
+          "examples": [
+            "SOURCE NOTE: Account denotes the percentage of respondents who report having an account (by themselves or together with someone else) at a bank or another type of financial institution or report personally using a mobile money service in the past 12 months (older adults, % of population ages 25+).\\nSOURCE ORGANIZATION: Demirguc-Kunt et al., 2018, Global Financial Inclusion Database, World Bank."
+          ]
+        },
+        "type": {
+          "$id": "#/definitions/output/type",
+          "title": "Output variable Type",
+          "description": "The type of output variable",
+          "enum": [
+            "int",
+            "float",
+            "str",
+            "boolean",
+            "datetime",
+            "lat",
+            "lng",
+            "country",
+            "admin1",
+            "admin2",
+            "admin3"
+          ]
+        },
+        "unit": {
+          "$id": "#/definitions/output/unit",
+          "title": "Unit",
+          "description": "The unit of the output variable",
+          "type": "string",
+          "examples": [
+            "unitless"
+          ]
+        },
+        "unit_description": {
+          "$id": "#/definitions/output/unit_description",
+          "title": "Unit Description",
+          "description": "A short description of the unit",
+          "type": "string",
+          "examples": [
+            ""
+          ]
+        },
+        "ontologies": {
+          "$id": "#/definitions/output/ontologies",
+          "title": "Ontology Components",
+          "description": "The three ontological parts representing the concepts matched to this varible",
+          "$ref": "#/definitions/ontology_components"
+        },
+        "is_primary": {
+          "$id": "#/definitions/output/is_primary",
+          "title": "Is Primary?",
+          "description": "Does this variable represent data based on the primary time and location columns",
+          "type": "boolean",
+          "examples": [
+            true
+          ]
+        },
+        "data_resolution": {
+          "$id": "#/definitions/output/data_resolution",
+          "title": "Data Resolution",
+          "description": "Spatial and temporal resolution of the data",
+          "$ref": "#/definitions/output/definitions/resolution"
+        }
+      },
+      "additionalProperties": false,
+      "definitions": {
+        "resolution": {
+          "$id": "#/definitions/output/definitions/resolution",
+          "type": "object",
+          "properties": {
+            "temporal_resolution": {
+              "$id": "#/definitions/output/definitions/resolution/temporal_resolution",
+              "title": "Temporal Resolution",
+              "description": "Temporal resolution of the output",
+              "enum": [
+                "annual",
+                "monthly",
+                "dekad",
+                "weekly",
+                "daily",
+                "other"
+              ]
+            },
+            "spatial_resolution": {
+              "$id": "#/definitions/output/definitions/resolution/spatial_resolution",
+              "title": "Spatial Resolution",
+              "description": "Spatial resolution of the output (in meters)",
+              "type": "array",
+              "items": {
+                "type": "number"
+              },
+              "minItems": 2,
+              "maxItems": 2,
+              "examples": [
+                [
+                  20,
+                  20
+                ]
+              ]
+            }
+          }
+        }
+      }
+    },
+    "qualifier_output": {
+      "$id": "#/definitions/qualifier_output",
+      "type": "object",
+      "required": [
+        "name",
+        "display_name",
+        "description",
+        "type",
+        "ontologies",
+        "related_features"
+      ],
+      "properties": {
+        "name": {
+          "$id": "#/definitions/qualifier_output/name",
+          "title": "Output Qualifier Column Name",
+          "description": "The name of the output qualifier column in data file",
+          "type": "string",
+          "examples": [
+            "service_type"
+          ]
+        },
+        "display_name": {
+          "$id": "#/definitions/qualifier_output/display_name",
+          "title": "Output Qualifier Display Name",
+          "description": "The user visible name of the output qualifier",
+          "type": "string",
+          "examples": [
+            "Type of money service"
+          ]
+        },
+        "description": {
+          "$id": "#/definitions/qualifier_output/description",
+          "title": "Output Qualifier Description",
+          "description": "The description of the output qualifier",
+          "type": "string",
+          "examples": [
+            "Type of money service used"
+          ]
+        },
+        "type": {
+          "$id": "#/definitions/qualifier_output/type",
+          "title": "Output Qualifier Type",
+          "description": "The type of the output qualifier",
+          "enum": [
+            "int",
+            "float",
+            "str",
+            "boolean",
+            "datetime",
+            "lat",
+            "lng",
+            "country",
+            "admin1",
+            "admin2",
+            "admin3"
+          ]
+        },
+        "unit": {
+          "$id": "#/definitions/qualifier_output/unit",
+          "title": "Unit",
+          "description": "The unit of the output qualifier",
+          "type": "string",
+          "examples": [
+            "unitless"
+          ]
+        },
+        "unit_description": {
+          "$id": "#/definitions/qualifier_output/unit_description",
+          "title": "Unit Description",
+          "description": "A short description of the unit",
+          "type": "string",
+          "examples": [
+            ""
+          ]
+        },
+        "ontologies": {
+          "$id": "#/definitions/qualifier_output/ontologies",
+          "title": "Ontology Components",
+          "description": "The three ontological parts representing the concepts matched to this output",
+          "$ref": "#/definitions/ontology_components"
+        },
+        "related_features": {
+          "$id": "#/definitions/qualifier_output/related_features",
+          "title": "Related Features",
+          "description": "The feature names that this data should be used as a qualifier for",
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
+    },
+    "maintainer": {
+      "$id": "#/definitions/maintainer",
+      "type": "object",
+      "required": [
+        "name",
+        "email"
+      ],
+      "properties": {
+        "name": {
+          "$id": "#/definitions/maintainer/properties/name",
+          "title": "Creator Name",
+          "description": "The full name of the dataset creator",
+          "type": "string",
+          "examples": [
+            "Bob Fakename"
+          ]
+        },
+        "email": {
+          "$id": "#/definitions/maintainer/properties/email",
+          "title": "Creator Email Address",
+          "description": "Email address of the dataset creator",
+          "type": "string",
+          "examples": [
+            "bob@fake.org"
+          ]
+        },
+        "organization": {
+          "$id": "#/definitions/maintainer/properties/organization",
+          "title": "Creator Organization",
+          "description": "Dataset Creator's Organization",
+          "type": "string",
+          "examples": [
+            "World Bank"
+          ]
+        },
+        "website": {
+          "$id": "#/definitions/maintainer/properties/website",
+          "title": "Dataset Website",
+          "description": "Dataset source website",
+          "type": "string",
+          "examples": [
+            "https://databank.worldbank.org/source/world-development-indicators"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "geography": {
+      "$id": "#/definitions/geography",
+      "type": "object",
+      "properties": {
+        "country": {
+          "$id": "#/definitions/geography/properties/country",
+          "title": "Countries",
+          "description": "List of countries covered by the dataset",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            [
+              "Ethiopia",
+              "South Sudan"
+            ]
+          ]
+        },
+        "admin1": {
+          "$id": "#/definitions/geography/properties/admin1",
+          "title": "Admin Level 1",
+          "description": "List of admin level 1 regions covered by the dataset",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            [
+              "Oromia",
+              "Sidama",
+              "Amhara"
+            ]
+          ]
+        },
+        "admin2": {
+          "$id": "#/definitions/geography/properties/admin2",
+          "title": "Admin Level 2",
+          "description": "List of admin level 2 regions covered by the dataset",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            [
+              "West Gojjam",
+              "East Gojjam",
+              "Agew Awi",
+              "Arsi",
+              "Bale",
+              "Borana"
+            ]
+          ]
+        },
+        "admin3": {
+          "$id": "#/definitions/geography/properties/admin3",
+          "title": "Admin Level 3",
+          "description": "List of admin level 3 regions covered by the dataset",
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "examples": [
+            [
+              "Aminyaa",
+              "Askoo",
+              "Coole",
+              "Galaanaa",
+              "Qarsaa",
+              "Qarcaa"
+            ]
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "period": {
+      "$id": "#/definitions/period",
+      "title": "Date Range",
+      "description": "Date range and resolution",
+      "type": "object",
+      "required": [
+        "gte",
+        "lte"
+      ],
+      "properties": {
+        "gte": {
+          "$id": "#/definition/output/gte",
+          "title": "Start Time",
+          "description": "Start Time (inclusive)",
+          "type": "integer",
+          "examples": [
+            1234567890000
+          ]
+        },
+        "lte": {
+          "$id": "#/definition/output/lte",
+          "title": "End Time",
+          "description": "End Time (inclusive)",
+          "type": "integer",
+          "examples": [
+            1234567890000
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "ontology_components": {
+      "$id": "#/definitions/ontology_components",
+      "type": "object",
+      "properties": {
+        "concepts": {
+          "$id": "#/definitions/ontology_components/concepts",
+          "title": "Matched concepts",
+          "description": "A list of concepts matched for this variable",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/concept_match"
+          }
+        },
+        "processes": {
+          "$id": "#/definitions/ontology_components/processes",
+          "title": "Matched Processes",
+          "description": "A list of processes matched for this variable",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/concept_match"
+          }
+        },
+        "properties": {
+          "$id": "#/definitions/ontology_components/properties",
+          "title": "Matched Properties",
+          "description": "A list of properties matched for this variable",
+          "type": "array",
+          "items": {
+            "$ref": "#/definitions/concept_match"
+          }
+        }
+      }
+    },
+    "concept_match": {
+      "$id": "#/definitions/concept_match",
+      "type": "object",
+      "properties": {
+        "name": {
+          "$id": "#/definitions/concept_match/name",
+          "title": "Concept Component Name",
+          "description": "The name of the concept component in the ontology",
+          "type": "string",
+          "examples": [
+            "wm/concept/humanitarian_assistance/food_aid"
+          ]
+        },
+        "score": {
+          "$id": "#/definitions/concept_match/score",
+          "title": "Match Score",
+          "description": "A score between 0 and 1 representing the strength of the match",
+          "type": "number",
+          "examples": [
+            0.785829484462738
+          ]
+        }
+      }
+    }
+  }
+}
