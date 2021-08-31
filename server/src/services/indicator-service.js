@@ -150,7 +150,7 @@ const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
     compositionalConcepts = [...new Set(compositionalConcepts)];
 
     const compositionalKeywords = [...new Set(compositionalConcepts.map(comp => {
-      const words = comp.split('/').slice(3);
+      const words = comp.split('/').slice(2);
       return words.map(word => word.split('_')).flat(1);
     }).flat(1))];
 
