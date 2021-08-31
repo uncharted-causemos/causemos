@@ -35,6 +35,7 @@
         <timeseries-chart
           v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
           :timeseries-data="visibleTimeseriesData"
+          :selected-temporal-resolution="selectedTemporalResolution"
           :selected-timestamp="selectedTimestamp"
           :selected-timestamp-range="selectedTimestampRange"
           :breakdown-option="breakdownOption"
@@ -68,6 +69,7 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
+import { DataState, ViewState } from '@/types/Insight';
 
 const DRILLDOWN_TABS = [
   {
@@ -148,10 +150,14 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
     const allModelRunData = useScenarioData(id, modelRunsFetchedAt);
 
+    const selectedRegionIds: string[] = [];
+    let initialSelectedScenarioIds: string[] = [];
+
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const allScenarioIds = allModelRunData.value.map(run => run.id);
-        selectedScenarioIds.value = [allScenarioIds[0]];
+        // do not pick the first run by default in case a run was previously selected
+        selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
       }
     });
 
@@ -168,7 +174,8 @@ export default defineComponent({
     // apply the view-config for this datacube
     const indx = analysisItems.value.findIndex((ai: any) => ai.id === props.id);
     if (indx >= 0) {
-      const initialViewConfig = analysisItems.value[indx].viewConfig;
+      const initialViewConfig: ViewState = analysisItems.value[indx].viewConfig;
+      const initialDataConfig: DataState = analysisItems.value[indx].dataConfig;
 
       if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
         if (initialViewConfig.temporalResolution !== undefined) {
@@ -184,6 +191,18 @@ export default defineComponent({
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
           defaultOutputMap[props.id] = initialViewConfig.selectedOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+      }
+
+      // apply initial data config for this datacube
+      if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
+        if (initialDataConfig.selectedRegionIds !== undefined) {
+          initialDataConfig.selectedRegionIds.forEach(regionId => {
+            selectedRegionIds.push(regionId);
+          });
+        }
+        if (initialDataConfig.selectedScenarioIds !== undefined) {
+          initialSelectedScenarioIds = initialDataConfig.selectedScenarioIds;
         }
       }
     }
@@ -217,7 +236,7 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      ref([]), // region breakdown
+      ref(selectedRegionIds),
       ref(new Set())
     );
 
@@ -301,8 +320,6 @@ export default defineComponent({
 
 .datacube-card-container {
   background: $background-light-1;
-  box-shadow: $shadow-level-1;
-  // padding: 10px;
   margin: 10px;
   border-radius: 3px;
 }

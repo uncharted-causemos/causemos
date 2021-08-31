@@ -22,117 +22,124 @@
         />
       </div>
     </div>
-    <main>
+    <main class="main">
       <analytical-questions-and-insights-panel />
-    <!-- TODO: whether a card is actually expanded or not will
-    be dynamic later -->
-    <datacube-card
-      :class="{ 'datacube-expanded': true }"
-      :isExpanded="false"
-      :selected-admin-level="selectedAdminLevel"
-      :selected-model-id="selectedModelId"
-      :all-model-run-data="allModelRunData"
-      :selected-scenario-ids="selectedScenarioIds"
-      :selected-timestamp="selectedTimestamp"
-      :selected-temporal-aggregation="selectedTemporalAggregation"
-      :selected-temporal-resolution="selectedTemporalResolution"
-      :selected-spatial-aggregation="selectedSpatialAggregation"
-      :regional-data="regionalData"
-      :output-source-specs="outputSpecs"
-      :is-description-view="isDescriptionView"
-      :metadata="metadata"
-      :timeseries-data="visibleTimeseriesData"
-      :relative-to="relativeTo"
-      :breakdown-option="breakdownOption"
-      :baseline-metadata="baselineMetadata"
-      :selected-timeseries-points="selectedTimeseriesPoints"
-      :selectedBaseLayer="selectedBaseLayer"
-      :selectedDataLayer="selectedDataLayer"
-      @set-selected-scenario-ids="setSelectedScenarioIds"
-      @select-timestamp="updateSelectedTimestamp"
-      @check-model-metadata-validity="checkModelMetadataValidity"
-      @update-desc-view="updateDescView"
-      @set-relative-to="setRelativeTo"
-    >
-      <template v-slot:datacube-model-header>
-        <datacube-model-header
-          class="scenario-header"
+      <!-- TODO: whether a card is actually expanded or not will
+      be dynamic later -->
+      <div class="main insight-capture">
+        <datacube-card
+          :class="{ 'datacube-expanded': true }"
+          :isExpanded="false"
+          :selected-admin-level="selectedAdminLevel"
+          :selected-model-id="selectedModelId"
+          :all-model-run-data="allModelRunData"
+          :selected-scenario-ids="selectedScenarioIds"
+          :selected-timestamp="selectedTimestamp"
+          :selected-temporal-aggregation="selectedTemporalAggregation"
+          :selected-temporal-resolution="selectedTemporalResolution"
+          :selected-spatial-aggregation="selectedSpatialAggregation"
+          :regional-data="regionalData"
+          :output-source-specs="outputSpecs"
+          :is-description-view="isDescriptionView"
           :metadata="metadata"
-        />
-      </template>
-      <template v-slot:datacube-description>
-        <model-description
-          :metadata="metadata"
-          @refresh-metadata="refreshMetadata"
-        />
-      </template>
-      <template #temporal-aggregation-config>
-        <dropdown-button
-          class="dropdown-config"
-          :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
-          :inner-button-label="'Temporal Aggregation'"
-          :items="Object.values(AggregationOption)"
-          :selected-item="selectedTemporalAggregation"
-          @item-selected="handleTemporalAggregationSelection"
-        />
-      </template>
-      <template #temporal-resolution-config>
-        <dropdown-button
-          class="dropdown-config"
-          :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
-          :inner-button-label="'Temporal Resolution'"
-          :items="Object.values(TemporalResolutionOption)"
-          :selected-item="selectedTemporalResolution"
-          @item-selected="handleTemporalResolutionSelection"
-        />
-      </template>
-      <template #spatial-aggregation-config>
-        <dropdown-button
-          class="dropdown-config"
-          :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
-          :inner-button-label="'Spatial Aggregation'"
-          :items="Object.values(AggregationOption)"
-          :selected-item="selectedSpatialAggregation"
-          @item-selected="handleSpatialAggregationSelection"
-        />
-        <map-dropdown
+          :timeseries-data="visibleTimeseriesData"
+          :relative-to="relativeTo"
+          :breakdown-option="breakdownOption"
+          :baseline-metadata="baselineMetadata"
+          :selected-timeseries-points="selectedTimeseriesPoints"
           :selectedBaseLayer="selectedBaseLayer"
           :selectedDataLayer="selectedDataLayer"
-          @set-base-layer="setBaseLayer"
-          @set-data-layer="setDataLayer"
-        />
-      </template>
-    </datacube-card>
-    <drilldown-panel
-        class="drilldown"
-        :is-open="activeDrilldownTab !== null"
-        :tabs="drilldownTabs"
-        :active-tab-id="activeDrilldownTab"
-      >
-        <template #content>
-          <breakdown-pane
-            v-if="activeDrilldownTab ==='breakdown'"
-            :selected-admin-level="selectedAdminLevel"
-            :qualifier-breakdown-data="qualifierBreakdownData"
-            :selected-model-id="selectedModelId"
-            :selected-scenario-ids="selectedScenarioIds"
-            :selected-timestamp="selectedTimestamp"
-            :selected-spatial-aggregation="selectedSpatialAggregation"
-            :selected-temporal-aggregation="selectedTemporalAggregation"
-            :regional-data="regionalData"
-            :output-source-specs="outputSpecs"
-            :selected-breakdown-option="breakdownOption"
-            :temporal-breakdown-data="temporalBreakdownData"
-            :selected-timeseries-points="selectedTimeseriesPoints"
-            :selected-region-ids="selectedRegionIds"
-            :selected-qualifier-values="selectedQualifierValues"
-            @toggle-is-region-selected="toggleIsRegionSelected"
-            @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-            @set-selected-admin-level="setSelectedAdminLevel"
-            @set-breakdown-option="setBreakdownOption"
-          />
-        </template>
-    </drilldown-panel>
+          @set-selected-scenario-ids="setSelectedScenarioIds"
+          @select-timestamp="updateSelectedTimestamp"
+          @check-model-metadata-validity="checkModelMetadataValidity"
+          @update-desc-view="updateDescView"
+          @set-relative-to="setRelativeTo"
+          @new-runs-mode="newRunsMode=!newRunsMode"
+        >
+          <template v-slot:datacube-model-header>
+            <datacube-model-header
+              class="scenario-header"
+              :metadata="metadata"
+            />
+          </template>
+          <template v-slot:datacube-description>
+            <model-description
+              :metadata="metadata"
+              @refresh-metadata="refreshMetadata"
+            />
+          </template>
+          <template #temporal-aggregation-config>
+            <dropdown-button
+              class="dropdown-config"
+              :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
+              :inner-button-label="'Temporal Aggregation'"
+              :items="Object.values(AggregationOption)"
+              :selected-item="selectedTemporalAggregation"
+              @item-selected="handleTemporalAggregationSelection"
+            />
+          </template>
+          <template #temporal-resolution-config>
+            <dropdown-button
+              class="dropdown-config"
+              :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
+              :inner-button-label="'Temporal Resolution'"
+              :items="Object.values(TemporalResolutionOption)"
+              :selected-item="selectedTemporalResolution"
+              @item-selected="handleTemporalResolutionSelection"
+            />
+          </template>
+          <template #spatial-aggregation-config>
+            <dropdown-button
+              class="dropdown-config"
+              :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
+              :inner-button-label="'Spatial Aggregation'"
+              :items="Object.values(AggregationOption)"
+              :selected-item="selectedSpatialAggregation"
+              @item-selected="handleSpatialAggregationSelection"
+            />
+            <map-dropdown
+              class="dropdown-config"
+              :selectedBaseLayer="selectedBaseLayer"
+              :selectedDataLayer="selectedDataLayer"
+              @set-base-layer="setBaseLayer"
+              @set-data-layer="setDataLayer"
+            />
+          </template>
+        </datacube-card>
+        <drilldown-panel
+            class="drilldown"
+            :is-open="activeDrilldownTab !== null"
+            :tabs="drilldownTabs"
+            :active-tab-id="activeDrilldownTab"
+          >
+            <template #content>
+              <breakdown-pane
+                v-if="activeDrilldownTab ==='breakdown'"
+                :selected-admin-level="selectedAdminLevel"
+                :qualifier-breakdown-data="qualifierBreakdownData"
+                :selected-model-id="selectedModelId"
+                :selected-scenario-ids="selectedScenarioIds"
+                :selected-timestamp="selectedTimestamp"
+                :selected-spatial-aggregation="selectedSpatialAggregation"
+                :selected-temporal-aggregation="selectedTemporalAggregation"
+                :selected-temporal-resolution="selectedTemporalResolution"
+                :regional-data="regionalData"
+                :output-source-specs="outputSpecs"
+                :selected-breakdown-option="breakdownOption"
+                :temporal-breakdown-data="temporalBreakdownData"
+                :selected-timeseries-points="selectedTimeseriesPoints"
+                :selected-region-ids="selectedRegionIds"
+                :selected-qualifier-values="selectedQualifierValues"
+                :selected-years="selectedYears"
+                @toggle-is-region-selected="toggleIsRegionSelected"
+                @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+                @toggle-is-year-selected="toggleIsYearSelected"
+                @set-selected-admin-level="setSelectedAdminLevel"
+                @set-breakdown-option="setBreakdownOption"
+              />
+            </template>
+        </drilldown-panel>
+      </div>
     </main>
   </div>
 </template>
@@ -237,6 +244,18 @@ export default defineComponent({
     );
 
     const modelRunsFetchedAt = ref(0);
+    const newRunsMode = ref(false);
+
+    const timeInterval = 10000;
+
+    function fetchData() {
+      if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
+        modelRunsFetchedAt.value = Date.now();
+      }
+    }
+
+    // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
+    const timerHandler = setInterval(fetchData, timeInterval);
 
     // NOTE: data is only fetched one time for DSSAT since it is not executable
     // so no external status need to be tracked
@@ -320,33 +339,6 @@ export default defineComponent({
       }
     });
 
-    watchEffect(() => {
-      const dataState: DataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value,
-        datacubeTitles: [{
-          datacubeName: metadata.value?.name ?? '',
-          datacubeOutputName: mainModelOutput.value?.display_name ?? ''
-        }],
-        datacubeRegions: metadata.value?.geography.country // FIXME: later this could be the selected region for each datacube
-      };
-      const viewState: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value
-      };
-
-      store.dispatch('insightPanel/setViewState', viewState);
-      store.dispatch('insightPanel/setDataState', dataState);
-    });
-
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
@@ -375,7 +367,9 @@ export default defineComponent({
       relativeTo,
       baselineMetadata,
       setRelativeTo,
-      temporalBreakdownData
+      temporalBreakdownData,
+      selectedYears,
+      toggleIsYearSelected
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -414,6 +408,35 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy
     );
+
+    watchEffect(() => {
+      const dataState: DataState = {
+        selectedModelId: selectedModelId.value,
+        selectedScenarioIds: selectedScenarioIds.value,
+        selectedTimestamp: selectedTimestamp.value,
+        datacubeTitles: [{
+          datacubeName: metadata.value?.name ?? '',
+          datacubeOutputName: mainModelOutput.value?.display_name ?? ''
+        }],
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
+        relativeTo: relativeTo.value
+      };
+      const viewState: ViewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: isDescriptionView.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
+      };
+
+      store.dispatch('insightPanel/setViewState', viewState);
+      store.dispatch('insightPanel/setDataState', dataState);
+    });
+
 
     return {
       drilldownTabs: DRILLDOWN_TABS,
@@ -456,7 +479,11 @@ export default defineComponent({
       selectedRegionIds,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      timerHandler,
+      newRunsMode,
+      selectedYears,
+      toggleIsYearSelected
     };
   },
   watch: {
@@ -494,6 +521,9 @@ export default defineComponent({
       immediate: true
     }
   },
+  unmounted(): void {
+    clearInterval(this.timerHandler);
+  },
   async mounted() {
     // ensure the insight explorer panel is closed in case the user has
     //  previously opened it and clicked the browser back button
@@ -501,57 +531,55 @@ export default defineComponent({
 
     let foundPublishedInsights = false;
 
-    if (this.countInsights > 0) {
-      // we have some insights, some/all of which relates to the current model instance
+    // we have some insights, some/all of which relates to the current model instance
 
-      // first, fetch public insights to load the publication status, as needed
-      const publicInsights = await this.getPublicInsights();
-      if (publicInsights.length > 0) {
-        // we have at least one public insight, which we should use to fetch view configurations
-        const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
-        const viewConfig = defaultInsight.view_state;
-        if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
-          (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
+    // first, fetch public insights to load the publication status, as needed
+    const publicInsights = await this.getPublicInsights();
+    if (publicInsights.length > 0) {
+      // we have at least one public insight, which we should use to fetch view configurations
+      const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
+      const viewConfig = defaultInsight.view_state;
+      if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
+        (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
-          if (viewConfig.temporalAggregation) {
-            this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
-          }
-          if (viewConfig.temporalResolution) {
-            this.setSelectedTemporalResolution(viewConfig.temporalResolution);
-          }
-          if (viewConfig.spatialAggregation) {
-            this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
-          }
-          if (viewConfig.selectedAdminLevel !== undefined) {
-            this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
-          }
-          if (viewConfig.selectedMapBaseLayer) {
-            this.setBaseLayer(viewConfig.selectedMapBaseLayer);
-          }
-          if (viewConfig.selectedMapDataLayer) {
-            this.setDataLayer(viewConfig.selectedMapDataLayer);
-          }
-          if (viewConfig.selectedOutputIndex) {
-            const modelId = this.metadata?.id as string;
-            const defaultFeature = {
-              [modelId]: viewConfig.selectedOutputIndex
-            };
-            this.setDatacubeCurrentOutputsMap(defaultFeature);
-          }
-          if (viewConfig.breakdownOption !== undefined) {
-            this.setBreakdownOption(viewConfig.breakdownOption);
-          }
-
-          // @TODO:
-          //  need to support applying an insight by both domain modeler as well as analyst
-
-          // ensure that all publication steps are marked as complete
-          this.publishingSteps.forEach(step => {
-            step.completed = true;
-          });
-
-          foundPublishedInsights = true;
+        if (viewConfig.temporalAggregation) {
+          this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
         }
+        if (viewConfig.temporalResolution) {
+          this.setSelectedTemporalResolution(viewConfig.temporalResolution);
+        }
+        if (viewConfig.spatialAggregation) {
+          this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
+        }
+        if (viewConfig.selectedAdminLevel !== undefined) {
+          this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
+        }
+        if (viewConfig.selectedMapBaseLayer) {
+          this.setBaseLayer(viewConfig.selectedMapBaseLayer);
+        }
+        if (viewConfig.selectedMapDataLayer) {
+          this.setDataLayer(viewConfig.selectedMapDataLayer);
+        }
+        if (viewConfig.selectedOutputIndex) {
+          const modelId = this.metadata?.id as string;
+          const defaultFeature = {
+            [modelId]: viewConfig.selectedOutputIndex
+          };
+          this.setDatacubeCurrentOutputsMap(defaultFeature);
+        }
+        if (viewConfig.breakdownOption !== undefined) {
+          this.setBreakdownOption(viewConfig.breakdownOption);
+        }
+
+        // @TODO:
+        //  need to support applying an insight by both domain modeler as well as analyst
+
+        // ensure that all publication steps are marked as complete
+        this.publishingSteps.forEach(step => {
+          step.completed = true;
+        });
+
+        foundPublishedInsights = true;
       }
     }
 
@@ -617,6 +645,9 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          this.setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
@@ -788,17 +819,15 @@ export default defineComponent({
   overflow: hidden;
 }
 
-.dropdown-config {
-  margin-bottom: 5px;
-  margin-top: 5px;
-  margin-right: 5px;
+.dropdown-config:not(:first-child) {
+  margin-left: 5px;
 }
 
 ::v-deep(.attribute-invalid button) {
   border:1px solid red !important;
 }
 
-main {
+.main {
   flex: 1;
   display: flex;
   min-height: 0;
@@ -807,8 +836,7 @@ main {
 .datacube-expanded {
   min-width: 0;
   flex: 1;
-  margin: 10px;
-  margin-top: 0;
+  margin: 0 10px 10px 0;
 }
 
 .search-button {

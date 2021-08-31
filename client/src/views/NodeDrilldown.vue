@@ -4,15 +4,19 @@
     <main>
       <div class="nodes-container">
         <div class="drivers">
-          <h5>Top Drivers</h5>
-          <neighbor-node
-            v-for="driver in drivers"
-            :key="driver.edge.id"
-            :node="driver.node"
-            :edge="driver.edge"
-            :is-driver="true"
-            class="neighbor-node"
-          />
+          <h5 v-if="drivers.length > 0">Top Drivers</h5>
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="driver in drivers"
+              :key="driver.edge.id"
+              :node="driver.node"
+              :edge="driver.edge"
+              :is-driver="true"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+              class="neighbor-node"
+            />
+          </template>
         </div>
         <div class="selected-node-column">
           <div class="scenario-selector-row">
@@ -75,6 +79,7 @@
               v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
               class="scenario-chart"
               :timeseriesData="comparisonTimeseries.timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
             />
           </div>
           <p>
@@ -163,15 +168,19 @@
           </div>
         </div>
         <div class="impacts">
-          <h5>Top Impacts</h5>
-          <neighbor-node
-            v-for="impact in impacts"
-            :key="impact.edge.id"
-            :node="impact.node"
-            :edge="impact.edge"
-            :is-driver="false"
-            class="neighbor-node"
-          />
+          <h5 v-if="impacts.length > 0">Top Impacts</h5>
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="impact in impacts"
+              :key="impact.edge.id"
+              :node="impact.node"
+              :edge="impact.edge"
+              :is-driver="false"
+              class="neighbor-node"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+            />
+          </template>
         </div>
       </div>
     </main>
@@ -189,12 +198,14 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
 import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
+import { useStore } from 'vuex';
+
+import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
-import { useStore } from 'vuex';
-import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import modelService from '@/services/model-service';
 import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
@@ -206,7 +217,6 @@ import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
 import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import _ from 'lodash';
 import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
@@ -284,7 +294,7 @@ export default defineComponent({
     const nodeConceptName = computed(() => selectedNode.value?.label);
 
     const scenarioData = computed(() => {
-      if (modelSummary.value === null || modelComponents.value === null) {
+      if (modelSummary.value === null || modelComponents.value === null || scenarios.value.length === 0) {
         return null;
       }
       return modelService.buildNodeChartData(
@@ -452,7 +462,7 @@ export default defineComponent({
           admin1: '',
           admin2: '',
           admin3: '',
-          period: 12,
+          period: 1,
           timeseries: [
             { value: 0.5, timestamp: Date.UTC(2017, 0) },
             { value: 0.5, timestamp: Date.UTC(2017, 1) },
@@ -659,7 +669,8 @@ export default defineComponent({
       clearParameterization,
       viewingExtent,
       hasConstraints,
-      clearConstraints
+      clearConstraints,
+      scenarioData
     };
   },
   methods: {
@@ -868,6 +879,14 @@ h5 {
 
 .save-parameter-button {
   align-self: flex-start;
+}
+
+.btn-danger {
+  color: white;
+}
+
+.btn-danger:hover {
+  color: white;
 }
 
 </style>

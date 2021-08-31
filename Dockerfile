@@ -29,4 +29,5 @@ WORKDIR /server
 
 WORKDIR /
 RUN yarn install
-CMD yarn start-server -- --log-level info
+CMD yarn workspace server run start --log-level info
+

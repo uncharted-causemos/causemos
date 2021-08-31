@@ -8,6 +8,7 @@
     <template #body>
       <table class="table">
         <tr>
+          <td>ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
           <td
             v-for="(dim, idx) in potentialRunsParameters"
             :key="idx">
@@ -18,6 +19,7 @@
         <tr
           v-for="(run, sidx) in potentialRuns"
           :key="sidx">
+          <td>{{ sidx }}</td>
           <td v-for="(dimName, idx) in Object.keys(run)"
             :key="idx"
             class="params-value">
@@ -90,7 +92,8 @@ export default defineComponent({
     potentialRuns(): Array<any> {
       const runs = this.potentialScenarios.filter(r => r.status !== ModelRunStatus.Ready);
       const drilldownParamNames = this.metadata.parameters.filter((p: any) => p.is_drilldown).map(p => p.name);
-      const newArray = _.map(runs, function (row) {
+      const sortedRuns = _.sortBy(runs, r => r.status);
+      const newArray = _.map(sortedRuns, function (row) {
         return _.omit(row, ['run_id', ...drilldownParamNames]);
       });
       return newArray;

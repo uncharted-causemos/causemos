@@ -72,9 +72,11 @@ export interface DataState {
   selectedModelId?: string;
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
+  selectedRegionIds?: string[];
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];
+  relativeTo?: string | null;
 
   // knowledge/model space specific
   selectedScenarioId?: string;

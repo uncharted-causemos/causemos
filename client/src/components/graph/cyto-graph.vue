@@ -11,6 +11,7 @@
       @setNodeDepth="onNodeDepth"
       @addToSearch="onAddToSearch"
       @removeFromSearch="onRemoveFromSearch"
+      @fit="onFit"
 
     />
     <div class="layout-message">{{ layoutMessage }}</div>
@@ -402,6 +403,10 @@ export default {
       ids.forEach(id => {
         this.removeSearchTerm({ field: 'topic', operand: 'or', isNot: false, term: id });
       });
+    },
+    onFit() {
+      const cy = this.graphRenderer.cy;
+      cy.fit();
     },
     clearSelections() {
       this.$emit('clear-selection');

@@ -104,8 +104,11 @@ export default defineComponent({
   flex-basis: 100%;
   display: flex;
   flex-direction: column;
-  padding: 0 10px;
   overflow-y: auto;
+
+  &:not(:first-child) {
+    margin-left: 5px;
+  }
 
   h5 {
     @include header-secondary;

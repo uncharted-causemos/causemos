@@ -76,13 +76,16 @@
     <div class="row">
       <div class="col-sm-7"></div>
       <div class="col-sm-3">
+        <!--
         <button
           v-tooltip.top-center="'Open datacube instance for review'"
           type="button"
           class="btn btn-primary button-spacing btn-call-for-action"
           @click="open(datacube.data_id)"
         ><i class="fa fa-folder-open-o" />
-          Open</button>
+          Open
+        </button>
+        -->
           <button
           v-tooltip.top-center="'Edit datacube instance publication'"
           type="button"
