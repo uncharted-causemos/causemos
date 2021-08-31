@@ -215,6 +215,10 @@ export default defineComponent({
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
+    // apply initial data config for this datacube
+    const initialSelectedRegionIds: string[] = [];
+    const initialSelectedQualifierValues = ref<string[]>([]);
+
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const datacubeId = analysisItems.value[0].id;
     const initialViewConfig: ViewState = analysisItems.value[0].viewConfig;
@@ -249,9 +253,7 @@ export default defineComponent({
         selectedAdminLevel.value = initialViewConfig.selectedAdminLevel;
       }
     }
-    // apply initial data config for this datacube
-    const initialSelectedRegionIds: string[] = [];
-    const initialSelectedQualifierValues: string[] = [];
+
     if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
       if (initialDataConfig.selectedRegionIds !== undefined) {
         initialDataConfig.selectedRegionIds.forEach(regionId => {
@@ -259,9 +261,7 @@ export default defineComponent({
         });
       }
       if (initialDataConfig.selectedQualifierValues !== undefined) {
-        initialDataConfig.selectedQualifierValues.forEach((qualifierValue: string) => {
-          initialSelectedQualifierValues.push(qualifierValue);
-        });
+        initialSelectedQualifierValues.value = _.clone(initialDataConfig.selectedQualifierValues);
       }
     }
 
@@ -515,7 +515,9 @@ export default defineComponent({
       analysisId,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      initialSelectedQualifierValues,
+      initialSelectedRegionIds
     };
   },
   data: () => ({
@@ -621,6 +623,12 @@ export default defineComponent({
         }
         if (loadedInsight.data_state?.relativeTo !== undefined) {
           this.setRelativeTo(loadedInsight.data_state?.relativeTo);
+        }
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
         }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {

@@ -1,6 +1,6 @@
 import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
-import { AggregationOption, SpatialAggregationLevel, TemporalAggregationLevel, TemporalResolutionOption } from '@/types/Enums';
+import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
@@ -73,7 +73,7 @@ export default function useQualifiers(
   temporalAggregation: Ref<AggregationOption>,
   spatialAggregation: Ref<AggregationOption>,
   selectedTimestamp: Ref<number | null>,
-  initialSelectedQualifierValues?: string[]
+  initialSelectedQualifierValues: Ref<string[]>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
@@ -89,24 +89,22 @@ export default function useQualifiers(
   const selectedQualifierValues = ref<Set<string>>(new Set());
   watch([metadata, breakdownOption], () => {
     // Reset the selected qualifier value list when the selected qualifier changes
-    selectedQualifierValues.value = new Set();
-  });
-  watch([initialSelectedQualifierValues, metadata, breakdownOption], () => {
-    if (breakdownOption.value !== null &&
-        breakdownOption.value !== TemporalAggregationLevel.Year &&
-        breakdownOption.value !== SpatialAggregationLevel.Region) {
-      // Reset the selected qualifier value list when there is an initial list of selected qualifier values
-      const initialQualifierList = new Set<string>();
-
-      if (initialSelectedQualifierValues !== undefined && initialSelectedQualifierValues.length > 0) {
-        initialSelectedQualifierValues.forEach(qualifierValue => {
-          initialQualifierList.add(qualifierValue);
-        });
-      }
-
-      selectedQualifierValues.value = initialQualifierList;
+    if (selectedQualifierValues.value.keys.length !== 0) {
+      selectedQualifierValues.value = new Set();
     }
   });
+  watchEffect(() => {
+    if (initialSelectedQualifierValues.value.length === 0) {
+      return;
+    }
+    // Reset the selected qualifier value list when there is an initial list of selected qualifier values
+    const initialQualifierList = new Set<string>();
+    initialSelectedQualifierValues.value.forEach(qualifierValue => {
+      initialQualifierList.add(qualifierValue);
+    });
+    selectedQualifierValues.value = initialQualifierList;
+  });
+
   const toggleIsQualifierSelected = (qualifierValue: string) => {
     const isQualifierValueSelected = selectedQualifierValues.value.has(
       qualifierValue
