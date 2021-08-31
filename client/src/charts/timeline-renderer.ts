@@ -25,7 +25,7 @@ const CONTEXT_TIMESERIES_OPACITY = 0.2;
 //  seem to reflect that.
 
 const DATE_FORMATTER = (value: any) =>
-  dateFormatter(value, 'MMM DD, YYYY');
+  dateFormatter(value, 'MMM DD, YYYY'); // FIXME right now there is lots of text overlap when using this formatter but I am not sure what to use as this is as genericly always year by year
 const BY_YEAR_DATE_FORMATTER = (value: any) =>
   dateFormatter(new Date(0, value), 'MMM');
 
