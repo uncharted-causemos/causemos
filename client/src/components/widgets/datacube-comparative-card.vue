@@ -54,7 +54,7 @@
       </div>
     </div>
     <div>
-      <div class="col-md-9">Temporal Aggreagation: {{ selectedTemporalAggregation }} </div>
+      <div class="col-md-9">Temporal Aggregation: {{ selectedTemporalAggregation }} </div>
       <div class="col-md-3">Spatial Aggregation: {{ selectedSpatialAggregation }} </div>
     </div>
   </div>
