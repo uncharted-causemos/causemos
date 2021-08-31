@@ -2,6 +2,7 @@ const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const domainProjectService = rootRequire('/services/domain-project-service');
 const { filterWithSchema } = rootRequire('util/joi-util.ts');
+const { processFilteredData } = rootRequire('util/post-processing');
 
 /**
  * Return all datacubes
@@ -39,18 +40,10 @@ const insertDatacube = async(metadata) => {
   metadata.type = metadata.type || 'model'; // Assume these ar all models for now
   metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
   const filteredMetadata = filterWithSchema('./src/schemas/model.schema.json', metadata);
-
-  // Apparently ES can't support negative timestamps
-  if (filteredMetadata.period && filteredMetadata.period.gte < 0) {
-    filteredMetadata.period.gte = 0;
-  }
-  if (filteredMetadata.period && filteredMetadata.period.lte < 0) {
-    filteredMetadata.period.lte = 0;
-  }
+  processFilteredData(filteredMetadata);
 
   filteredMetadata.data_id = filteredMetadata.id;
   filteredMetadata.status = 'REGISTERED';
-  filteredMetadata.family_name = filteredMetadata.family_name || filteredMetadata.name;
 
   // Take the first numeric output, others are not currently supported
   const validOutput = filteredMetadata.outputs.filter(o =>

@@ -2,6 +2,7 @@ const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { filterWithSchema } = rootRequire('util/joi-util.ts');
+const { processFilteredData } = rootRequire('util/post-processing');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
@@ -188,17 +189,8 @@ const startIndicatorPostProcessing = async (metadata) => {
     return;
   }
 
-  // Apparently ES can't support negative timestamps
-  if (filteredMetadata.period && filteredMetadata.period.gte < 0) {
-    filteredMetadata.period.gte = 0;
-  }
-  if (filteredMetadata.period && filteredMetadata.period.lte < 0) {
-    filteredMetadata.period.lte = 0;
-  }
-
+  processFilteredData(filteredMetadata);
   filteredMetadata.type = 'indicator';
-  filteredMetadata.family_name = filteredMetadata.family_name || filteredMetadata.name;
-
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
   //        the following function would be called at:
