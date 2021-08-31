@@ -119,7 +119,7 @@ export default function useQualifiers(
       updatedList.add(qualifierValue);
     }
 
-    // Assign new object to selectedRegionIdsAtAllLevels.value to trigger reactivity updates.
+    // Assign new object to selectedQualifierValues.value to trigger reactivity updates.
     selectedQualifierValues.value = updatedList;
   };
 
