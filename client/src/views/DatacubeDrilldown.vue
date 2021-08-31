@@ -129,14 +129,17 @@
                 :unit="unit"
                 :selected-spatial-aggregation="selectedSpatialAggregation"
                 :selected-temporal-aggregation="selectedTemporalAggregation"
+                :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :selected-scenario-ids="selectedScenarioIds"
                 :selected-region-ids="selectedRegionIds"
                 :selected-qualifier-values="selectedQualifierValues"
                 :selected-breakdown-option="breakdownOption"
                 :selected-timeseries-points="selectedTimeseriesPoints"
+                :selected-years="selectedYears"
                 @toggle-is-region-selected="toggleIsRegionSelected"
                 @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+                @toggle-is-year-selected="toggleIsYearSelected"
                 @set-selected-admin-level="setSelectedAdminLevel"
                 @set-breakdown-option="setBreakdownOption"
               />
@@ -377,7 +380,9 @@ export default defineComponent({
       relativeTo,
       baselineMetadata,
       setRelativeTo,
-      temporalBreakdownData
+      temporalBreakdownData,
+      selectedYears,
+      toggleIsYearSelected
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -507,7 +512,9 @@ export default defineComponent({
       analysisId,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      selectedYears,
+      toggleIsYearSelected
     };
   },
   data: () => ({
