@@ -537,8 +537,6 @@ export default defineComponent({
   },
   unmounted(): void {
     clearInterval(this.timerHandler);
-    // clear the context so that other pages won't incorrectly fetch insights/questions
-    this.setContextId([]);
   },
   async mounted() {
     // ensure the insight explorer panel is closed in case the user has
@@ -564,8 +562,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setContextId: 'insightPanel/setContextId'
+      hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
     setSelectedAdminLevel(newValue: number) {
       this.selectedAdminLevel = newValue;

@@ -130,10 +130,6 @@ export default defineComponent({
       timeSelectionSyncing
     };
   },
-  unmounted() {
-    //  clear the context so that other pages won't incorrectly fetch insights/questions
-    this.setContextId([]);
-  },
   mounted() {
     // ensure the insight explorer panel is closed in case the user has
     //  previously opened it and clicked the browser back button
@@ -147,8 +143,7 @@ export default defineComponent({
   methods: {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setDataState: 'insightPanel/setDataState',
-      setContextId: 'insightPanel/setContextId'
+      setDataState: 'insightPanel/setDataState'
     }),
     onLoadedTimeseries(timeseriesInfo: {id: string; timeseriesList: Timeseries[]; datacubeName: string; datacubeOutputName: string; region: string[]}) {
       // we should only set the global timeseries one time

@@ -387,10 +387,6 @@ export default defineComponent({
   beforeUnmount() {
     this.clearThumbnailTimer();
   },
-  unmounted() {
-    // clear the context so that other pages won't incorrectly fetch insights/questions
-    this.setContextId([]);
-  },
   methods: {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken',

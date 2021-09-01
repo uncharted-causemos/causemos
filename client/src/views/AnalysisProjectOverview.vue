@@ -335,6 +335,9 @@ export default {
       // @UPDATE: not needed currently in this context since we do not display the insight count and the insight panel is not shown
       //  with regards to questions, also, there is no need to fetch for all contexts as it is enough to fetch public and project-level questions
       // this.setContextId(contextIDs);
+      //
+      // clear the context to fetch all questions, and insights if applicable
+      this.setContextId([]);
 
       // Sort by modified_at date with latest on top
       this.sortAnalysesByMostRecentDate();

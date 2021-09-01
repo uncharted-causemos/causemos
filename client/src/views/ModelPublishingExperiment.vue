@@ -523,8 +523,6 @@ export default defineComponent({
   },
   unmounted() {
     clearInterval(this.timerHandler);
-    // clear the context so that other pages won't incorrectly fetch insights/questions
-    this.setContextId([]);
   },
   async mounted() {
     // ensure the insight explorer panel is closed in case the user has
@@ -600,8 +598,7 @@ export default defineComponent({
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
       setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution',
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
-      setContextId: 'insightPanel/setContextId'
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
     }),
     async getPublicInsights() {
       const publicInsightsSearchFields: InsightFilterFields = {};

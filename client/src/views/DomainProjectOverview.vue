@@ -170,10 +170,6 @@ export default {
     //  previously opened it and clicked the browser back button
     this.hideInsightPanel();
   },
-  unmounted() {
-    // clear the context so that other pages won't incorrectly fetch insights/questions
-    this.setContextId([]);
-  },
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
