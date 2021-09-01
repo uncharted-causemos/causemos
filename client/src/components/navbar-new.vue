@@ -22,9 +22,7 @@
           <span class="nav-item-label">{{ navItem.text }}</span>
         </div>
       </template>
-      <div class="nav-item">
-        <slot />
-      </div>
+      <slot />
     </div>
 
     <!-- Help button -->
@@ -42,7 +40,7 @@
 <script lang="ts">
 import { getAnalysis } from '@/services/analysis-service';
 import { ProjectType } from '@/types/Enums';
-import { computed, defineComponent, onMounted, ref } from 'vue';
+import { computed, defineComponent, onMounted, PropType, ref, toRefs } from 'vue';
 import { useStore } from 'vuex';
 
 interface NavbarItem {
@@ -70,15 +68,17 @@ export default defineComponent({
     showHelpButton: {
       type: Boolean,
       default: true
+    },
+    // The page that contains this navbar will know when a user renames an
+    //  analysis. This prop is a way to let the navbar know about the new name
+    //  to avoid needing to re-fetch it.
+    changedAnalysisName: {
+      type: String as PropType<string | null>,
+      default: null
     }
-    // TODO: implement
-    // TODO: comment
-    // changedAnalysisName: {
-    //   type: String as PropType<string | null>,
-    //   default: null
-    // }
   },
-  setup() {
+  setup(props) {
+    const { changedAnalysisName } = toRefs(props);
     const store = useStore();
 
     const project = computed(() => store.getters['app/project']);
@@ -91,13 +91,13 @@ export default defineComponent({
       () => store.getters['dataAnalysis/analysisId']
     );
 
-    const analysisName = ref('');
+    const analysisNameOnMounted = ref('');
     onMounted(async () => {
       // TODO: fetch the right analysis name depending on whether this
       //  is a quantitative or qualitiative analysis
       // TODO: handle case where no analysis is open
       const result = await getAnalysis(quantitativeAnalysisId.value);
-      analysisName.value = result.title;
+      analysisNameOnMounted.value = result.title;
     });
 
     const isCurrentAnalysisInDataSpace = computed(() => {
@@ -136,7 +136,6 @@ export default defineComponent({
         currentView.value !== 'overview'
       ) {
         // Add an item for the current analysis
-        // TODO: take changed name into account
         // TODO: this nav item will require a route in qualitative analyses
         // {name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}
         const analysisNavItem = {
@@ -144,7 +143,7 @@ export default defineComponent({
             ? QUANTITATIVE_ANALYSIS_ICON
             : QUALITATIVE_ANALYSIS_ICON,
           route: null,
-          text: analysisName.value,
+          text: changedAnalysisName.value ?? analysisNameOnMounted.value,
           isActive: false
         };
         result.push(analysisNavItem);
@@ -187,6 +186,7 @@ export default defineComponent({
 
 .navbar-left-group {
   display: flex;
+  align-items: center
 }
 
 .nav-item {

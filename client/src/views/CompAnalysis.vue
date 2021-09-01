@@ -1,7 +1,10 @@
 <template>
   <div class="comp-analysis-container">
-    <navbar-new :show-help-button="true">
-      <analysis-options-button />
+    <navbar-new
+      :show-help-button="true"
+      :changed-analysis-name="changedAnalysisName"
+    >
+      <analysis-options-button @on-analysis-renamed="onAnalysisRenamed" />
     </navbar-new>
     <div class="flex-row">
       <analytical-questions-and-insights-panel class="side-panel" />
@@ -113,6 +116,11 @@ export default defineComponent({
       }
     );
 
+    const changedAnalysisName = ref<string | null>(null);
+    const onAnalysisRenamed = (newName: string) => {
+      changedAnalysisName.value = newName;
+    };
+
     return {
       analysisItems,
       allTimeseriesMap,
@@ -125,7 +133,9 @@ export default defineComponent({
       reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
       initialSelectedTimestampRange,
-      timeSelectionSyncing
+      timeSelectionSyncing,
+      changedAnalysisName,
+      onAnalysisRenamed
     };
   },
   unmounted(): void {
