@@ -1,40 +1,27 @@
 <template>
   <nav class="navbar-container">
     <div class="navbar-left-group">
-      <a
-        href="#/"
-        class="nav-item nav-item--logo clickable"
-      >
+      <a href="#/" class="nav-item nav-item--logo clickable">
         <img
           class="logo"
           src="../assets/causemos-icon-white.svg"
           alt="CauseMos logo"
         />
       </a>
-      <template
-        v-for="(navItem, index) of navItems"
-        :key="index"
-      >
+      <template v-for="(navItem, index) of navItems" :key="index">
         <router-link
-          v-if="navItem.route !== undefined"
+          v-if="isActive === false"
           class="nav-item clickable"
           :to="navItem.route"
         >
           <i class="fa fa-fw" :class="[navItem.icon]" />
           <span class="nav-item-label">{{ navItem.text }}</span>
         </router-link>
-        <div
-          v-else
-          class="nav-item"
-        >
+        <div v-else class="nav-item">
           <i class="fa fa-fw" :class="[navItem.icon]" />
           <span class="nav-item-label">{{ navItem.text }}</span>
         </div>
       </template>
-      <!-- TODO: on home page, pass
-        [{ text: 'All Projects' }]
-        into itemsAfterProject.
-      -->
       <div class="nav-item">
         <slot />
       </div>
@@ -53,15 +40,29 @@
 </template>
 
 <script lang="ts">
+import { getAnalysis } from '@/services/analysis-service';
 import { ProjectType } from '@/types/Enums';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { computed, defineComponent, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
 
 interface NavbarItem {
-  route?: { name: string; params: any };
+  route: { name: string; params: any } | null;
   icon?: string;
   text: string;
+  isActive: boolean;
 }
+
+const ANALYSIS_PROJECT_ICON = 'fa-clone';
+const DATACUBE_PROJECT_ICON = 'fa-connectdevelop';
+const QUANTITATIVE_ANALYSIS_ICON = 'fa-line-chart';
+const QUALITATIVE_ANALYSIS_ICON = 'fa-book';
+const NODE_DRILLDOWN_ICON = 'fa-circle';
+
+// TODO: Is there a cleaner way to determine whether the current view is part
+//  of a quantitative or quantitative analysis?
+//  If so, do that.
+//  If not, flesh out this list.
+const DATA_ANALYSIS_VIEWS = ['dataComparative'];
 
 export default defineComponent({
   name: 'NavbarNew',
@@ -69,14 +70,15 @@ export default defineComponent({
     showHelpButton: {
       type: Boolean,
       default: true
-    },
-    itemsAfterProject: {
-      type: Array as PropType<NavbarItem[]>,
-      default: []
     }
+    // TODO: implement
+    // TODO: comment
+    // changedAnalysisName: {
+    //   type: String as PropType<string | null>,
+    //   default: null
+    // }
   },
-  setup(props) {
-    const { itemsAfterProject } = toRefs(props);
+  setup() {
     const store = useStore();
 
     const project = computed(() => store.getters['app/project']);
@@ -84,38 +86,84 @@ export default defineComponent({
       () => store.getters['app/projectMetadata']
     );
     const projectType = computed(() => store.getters['app/projectType']);
+    const currentView = computed(() => store.getters['app/currentView']);
+    const quantitativeAnalysisId = computed(
+      () => store.getters['dataAnalysis/analysisId']
+    );
 
-    const projectNavItem = computed<NavbarItem | null>(() => {
+    const analysisName = ref('');
+    onMounted(async () => {
+      // TODO: fetch the right analysis name depending on whether this
+      //  is a quantitative or qualitiative analysis
+      // TODO: handle case where no analysis is open
+      const result = await getAnalysis(quantitativeAnalysisId.value);
+      analysisName.value = result.title;
+    });
+
+    const isCurrentAnalysisInDataSpace = computed(() => {
+      return DATA_ANALYSIS_VIEWS.includes(currentView.value);
+    });
+
+    const navItems = computed(() => {
+      const result: NavbarItem[] = [];
       if (
         project.value === null ||
         projectMetadata.value === null ||
         projectMetadata.value.name === ''
       ) {
-        return null;
+        return result;
       }
-      const icon = projectType.value === ProjectType.Analysis
-        ? 'fa-clone'
-        : 'fa-connectdevelop';
-      // TODO: route should be `null` if
-      //  - itemsAfterProject.length === 0
-      //  AND
-      //  - nothing is passed into the slot
-      const routeName = projectType.value === ProjectType.Analysis
-        ? 'overview'
-        : 'domainDatacubeOverview';
-      return {
-        icon,
-        route: { name: routeName, params: { project: project.value } },
-        text: projectMetadata.value.name
-      };
-    });
 
-    const navItems = computed(() => {
-      const result = [];
-      if (projectNavItem.value !== null) {
-        result.push(projectNavItem.value);
+      // Add an item for the current project
+      const projectTypeIcon =
+        projectType.value === ProjectType.Analysis
+          ? ANALYSIS_PROJECT_ICON
+          : DATACUBE_PROJECT_ICON;
+      const projectRouteName =
+        projectType.value === ProjectType.Analysis
+          ? 'overview'
+          : 'domainDatacubeOverview';
+      const projectNavItem = {
+        icon: projectTypeIcon,
+        route: { name: projectRouteName, params: { project: project.value } },
+        text: projectMetadata.value.name,
+        isActive: false
+      };
+      result.push(projectNavItem);
+
+      if (
+        projectType.value === ProjectType.Analysis &&
+        currentView.value !== 'overview'
+      ) {
+        // Add an item for the current analysis
+        // TODO: take changed name into account
+        // TODO: this nav item will require a route in qualitative analyses
+        // {name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}
+        const analysisNavItem = {
+          icon: isCurrentAnalysisInDataSpace.value
+            ? QUANTITATIVE_ANALYSIS_ICON
+            : QUALITATIVE_ANALYSIS_ICON,
+          route: null,
+          text: analysisName.value,
+          isActive: false
+        };
+        result.push(analysisNavItem);
+
+        if (currentView.value === 'nodeDrilldown') {
+          // Add an item for the current node
+          const nodeDrilldownNavItem = {
+            icon: NODE_DRILLDOWN_ICON,
+            route: null,
+            text: 'Node drilldown',
+            isActive: false
+          };
+          result.push(nodeDrilldownNavItem);
+        }
       }
-      result.push(...itemsAfterProject.value);
+
+      // The last entry in the current navigation path is always the one that's
+      //  active
+      result[result.length - 1].isActive = true;
       return result;
     });
 
@@ -155,12 +203,14 @@ export default defineComponent({
 .clickable:hover {
   background: rgba(255, 255, 255, 0.2);
 
-  .nav-item-label, i {
+  .nav-item-label,
+  i {
     color: white;
   }
 }
 
-.nav-item-label, i {
+.nav-item-label,
+i {
   color: rgba(255, 255, 255, 0.71);
   font-size: $font-size-large;
 }
