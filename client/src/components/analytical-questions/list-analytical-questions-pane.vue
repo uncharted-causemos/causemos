@@ -462,14 +462,20 @@ export default defineComponent({
       // FIXME: do not create a tour that already exist
       //        and if there is another tour, close that existing one first
       const tour = new Shepherd.Tour({
-        useModalOverlay: true
+        useModalOverlay: true,
+        // enable X button to cancel from any step
+        defaultStepOptions: {
+          cancelIcon: {
+            enabled: true
+          }
+        }
       });
 
       const stepOne = {
         id: 'step-1-matrix-tab-click',
         text: 'Click the Matrix tab.',
         attachTo: {
-          element: '.matrix-tab', // this.$refs.newrunsbuttonref
+          element: '.matrix-tab', // this.$refs.newrunsbuttonref // also element can be referenced with id, e.g. #some-id
           on: 'bottom'
         },
         buttons: [
@@ -480,6 +486,8 @@ export default defineComponent({
             }
           }
         ]
+        // highlightClass: 'highlight-matrix-tab',
+        // class: 'highlight-matrix-tab'
       };
 
       const stepTwo = {
@@ -556,6 +564,12 @@ export default defineComponent({
 
 <style lang="scss" scoped>
   @import "~styles/variables";
+
+  .highlight-matrix-tab {
+    border-width: 1px;
+    border-style: solid;
+    border-color: red;
+  }
 
   .question-text {
     margin: 1rem;
