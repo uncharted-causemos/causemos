@@ -14,6 +14,17 @@ export default function useInsightsData() {
     insightsFetchedAt.value = Date.now();
   };
 
+  const getInsightsByIDs = (insightIDs: string[]) => {
+    const result: Insight[] = [];
+    insightIDs.forEach(insightId => {
+      const ins = insights.value.find(i => i.id === insightId);
+      if (ins) {
+        result.push(ins);
+      }
+    });
+    return result;
+  };
+
   const store = useStore();
   const contextIds = computed(() => store.getters['insightPanel/contextId']);
   const project = computed(() => store.getters['app/project']);
@@ -101,6 +112,7 @@ export default function useInsightsData() {
 
   return {
     insights,
+    getInsightsByIDs,
     reFetchInsights
   };
 }

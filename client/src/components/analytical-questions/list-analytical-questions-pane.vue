@@ -107,8 +107,8 @@
               <i
                 class="step-icon-common fa fa-lg fa-border"
                 :class="{
-                  'fa-check-circle step-complete': fullLinkedInsights(questionItem.linked_insights).length > 0,
-                  'fa-circle step-not-complete': fullLinkedInsights(questionItem.linked_insights).length === 0,
+                  'fa-check-circle step-complete': getInsightsByIDs(questionItem.linked_insights).length > 0,
+                  'fa-circle step-not-complete': getInsightsByIDs(questionItem.linked_insights).length === 0,
                 }"
                 @mousedown.stop.prevent
               />
@@ -122,7 +122,7 @@
             <!-- second row display a list of linked insights -->
             <div class="checklist-item-insights">
               <div
-                v-for="insight in fullLinkedInsights(questionItem.linked_insights)"
+                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
                 :key="insight.id"
                 class="checklist-item-insight">
                   <i @mousedown.stop.prevent class="fa fa-star" style="color: orange" />
@@ -162,12 +162,11 @@ export default defineComponent({
     DropdownControl
   },
   setup() {
-    const { questionsList, reFetchQuestions, insightsById, fullLinkedInsights } = useQuestionsData();
+    const { questionsList, reFetchQuestions, getInsightsByIDs } = useQuestionsData();
     return {
       questionsList,
       reFetchQuestions,
-      insightsById,
-      fullLinkedInsights
+      getInsightsByIDs
     };
   },
   data: () => ({
@@ -402,7 +401,7 @@ export default defineComponent({
       this.removeQuestionFromInsight(questionItem, insightId);
     },
     removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insight: any = this.insightsById(insightId);
+      const insight: any = this.getInsightsByIDs([insightId]);
       if (insight) {
         insight.analytical_question = insight?.analytical_question.filter(
           (qid: string) => qid !== questionItem.id

@@ -1,5 +1,5 @@
 import { ProjectType } from '@/types/Enums';
-import { AnalyticalQuestion, Insight } from '@/types/Insight';
+import { AnalyticalQuestion } from '@/types/Insight';
 import { computed, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import { InsightFilterFields } from '@/services/insight-service';
@@ -24,21 +24,8 @@ export default function useQuestionsData() {
   const isPanelOpen = computed(() => store.getters['panel/isPanelOpen']);
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
 
-  // save a local copy of all insights for quick reference whenever needed
-  // FIXME: ideally this should be from a store so that changes to the insight list externally are captured
-  const { insights: allInsights } = useInsightsData();
-  const insightsById = (id: string) => allInsights.value.find(i => i.id === id);
-
-  const fullLinkedInsights = (linked_insights: string[]) => {
-    const result: Insight[] = [];
-    linked_insights.forEach(insightId => {
-      const ins = insightsById(insightId);
-      if (ins) {
-        result.push(ins);
-      }
-    });
-    return result;
-  };
+  // reference the utility function (or the computed property) of all insights to quickly find linked insights
+  const { getInsightsByIDs } = useInsightsData();
 
   watchEffect(onInvalidate => {
     console.log('refetching questions at: ' + new Date(questionsFetchedAt.value).toTimeString());
@@ -122,7 +109,6 @@ export default function useQuestionsData() {
   return {
     questionsList,
     reFetchQuestions,
-    insightsById,
-    fullLinkedInsights
+    getInsightsByIDs
   };
 }
