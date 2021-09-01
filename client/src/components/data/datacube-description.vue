@@ -37,7 +37,8 @@
       <div class="metadata-row">
         <b>Dataset/Model: </b> {{ metadata.name }}
         <div v-if="metadata.description !== null">
-        {{ metadata.description }}</div>
+          <multiline-description :text="metadata.description" />
+        </div>
       </div>
       <div
         v-if="metadata.maintainer"
@@ -63,10 +64,12 @@ import { defineComponent, PropType } from 'vue';
 import stringUtil from '@/utils/string-util';
 import { Indicator, Model } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
+import MultilineDescription from '@/components/widgets/multiline-description.vue';
 
 export default defineComponent({
   name: 'DatacubeDescription',
   components: {
+    MultilineDescription
   },
   props: {
     metadata: {
