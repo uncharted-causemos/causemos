@@ -46,12 +46,6 @@
               Cancel
             </button>
             <button
-              class="btn btn-primary"
-              @click="autofillInsight"
-            >
-              Autofill
-            </button>
-            <button
               type="button"
               class="btn btn-primary"
               :class="{ 'disabled': name.length === 0}"
@@ -100,12 +94,11 @@ import DrilldownPanel from '@/components/drilldown-panel';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
-import modelService from '@/services/model-service';
 import { VIEWS_LIST } from '@/utils/views-util';
 import { INSIGHTS } from '@/utils/messages-util';
-import { ProjectType } from '@/types/Enums';
 import Disclaimer from '@/components/widgets/disclaimer';
 import { updateInsight } from '@/services/insight-service';
+import projectService from '@/services/project-service';
 import useInsightsData from '@/services/composables/useInsightsData';
 
 
@@ -134,7 +127,7 @@ export default {
     imagePreview: null,
     metadata: '',
     name: '',
-    currentDatacubes: []
+    projectMetadata: null
   }),
   setup() {
     const { insights: listContextInsights, reFetchInsights } = useInsightsData();
@@ -148,17 +141,14 @@ export default {
       currentView: 'app/currentView',
       projectType: 'app/projectType',
       currentCAG: 'app/currentCAG',
-      projectMetadata: 'app/projectMetadata',
 
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
       countInsights: 'insightPanel/countInsights',
       updatedInsightId: 'insightPanel/updatedInsightId',
 
-      dataState: 'insightPanel/dataState',
       viewState: 'insightPanel/viewState',
       contextId: 'insightPanel/contextId',
-      project: 'app/project',
 
       filters: 'dataSearch/filters',
       ontologyConcepts: 'dataSearch/ontologyConcepts',
@@ -185,23 +175,14 @@ export default {
       }, '');
       return `${filterString.length > 0 ? filterString : ''}`;
     },
-    insightVisibility() {
-      return this.projectType === ProjectType.Analysis ? 'private' : 'public';
-      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
-    },
-    insightTargetView() {
-      // an insight created during model publication should be listed either
-      //  in the full list of insights,
-      //  or as a context specific insight when opening the page of the corresponding model family instance
-      //  (the latter is currently supported via a special route named dataPreview)
-      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
-      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
-    },
     isQuantitativeView() {
       return this.currentView === 'modelPublishingExperiment' ||
       this.currentView === 'data' ||
       this.currentView === 'dataPreview' ||
       this.currentView === 'dataComparative';
+    },
+    dataState() {
+      return this.currentInsight ? this.currentInsight.data_state : null;
     },
     metadataDetails() {
       //
@@ -230,10 +211,12 @@ export default {
 
       const arr = [];
       // @Review: The content of this function needs to be revised and cleaned
-      arr.push({
-        key: 'Project Name:',
-        value: this.projectMetadata.name
-      });
+      if (this.projectMetadata) {
+        arr.push({
+          key: 'Project Name:',
+          value: this.projectMetadata.name
+        });
+      }
       if (this.dataState) {
         if (this.dataState.datacubeTitles) {
           this.dataState.datacubeTitles.forEach((title, indx) => {
@@ -293,7 +276,7 @@ export default {
         }
       }
 
-      if (!this.isQuantitativeView) {
+      if (!this.isQuantitativeView && this.projectMetadata) {
         arr.push({
           key: 'Ontology:',
           value: this.projectMetadata.ontology
@@ -326,9 +309,6 @@ export default {
     }
   },
   watch: {
-    updatedInsightId() {
-      console.log(this.updatedInsightId);
-    },
     name(n) {
       if (_.isEmpty(n) && this.isPanelOpen) {
         this.hasError = true;
@@ -342,8 +322,16 @@ export default {
       this.imagePreview = await this.loadSnapshot();
     },
     currentPane() {
-      if (this.currentPane !== 'new-insight') {
+      if (this.currentPane !== 'edit-insight') {
         this.initInsight();
+      }
+    },
+    async currentInsight() {
+      if (this.currentInsight) {
+        console.log(this.currentInsight);
+        this.name = this.currentInsight.name;
+        this.description = this.currentInsight.description;
+        this.projectMetadata = await projectService.getProject(this.currentInsight.project_id);
       }
     }
   },
@@ -359,50 +347,24 @@ export default {
     closeInsightPanel() {
       this.hideInsightPanel();
       this.setCurrentPane('');
-      this.setupdatedInsightId('');
+      this.setUpdatedInsightId('');
     },
     initInsight() {
       this.name = '';
       this.description = '';
       this.hasError = false;
     },
-    async autofillInsight() {
-      this.modelSummary = this.currentCAG ? await modelService.getSummary(this.currentCAG) : null;
-
-      this.name = (this.projectMetadata ? this.projectMetadata.name : '') +
-        (this.modelSummary ? (' - ' + this.modelSummary.name) : '') +
-        (this.currentView ? (' - ' + this.currentView) : '');
-
-      this.description = this.formattedFilterString.length > 0 ? `Filters: ${this.formattedFilterString} ` : '';
-    },
     async saveInsight() {
       if (this.hasError || _.isEmpty(this.name) || this.updatedInsightId === '') return;
-      const url = this.$route.fullPath;
-      const updatedInsight = {
-        name: this.name,
-        description: this.description,
-        visibility: this.insightVisibility,
-        project_id: this.project,
-        context_id: this.contextId,
-        url,
-        target_view: this.insightTargetView,
-        pre_actions: null,
-        post_actions: null,
-        is_default: true,
-        analytical_question: [],
-        thumbnail: this.imagePreview,
-        view_state: this.viewState,
-        data_state: this.dataState
-      };
+      const updatedInsight = this.currentInsight;
+      updatedInsight.name = this.name;
+      updatedInsight.description = this.description;
       updateInsight(this.updatedInsightId, updatedInsight)
         .then((result) => {
-          const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
-          if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
-            this.toaster(message, 'success', false);
-            const count = this.countInsights + 1;
-            this.setCountInsights(count);
+          if (result.updated === 'success') {
+            this.toaster(INSIGHTS.SUCCESFUL_UPDATE, 'success', false);
           } else {
-            this.toaster(message, 'error', true);
+            this.toaster(INSIGHTS.ERRONEOUS_UPDATE, 'error', true);
           }
           this.closeInsightPanel();
           this.initInsight();
