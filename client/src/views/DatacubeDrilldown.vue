@@ -634,9 +634,6 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
-        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
-          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
-        }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
           this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation as AggregationOption;
@@ -666,6 +663,10 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
         }
       }
     },
