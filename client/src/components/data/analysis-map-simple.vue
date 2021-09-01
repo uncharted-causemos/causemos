@@ -192,6 +192,10 @@ export default {
       type: Object,
       default: () => undefined
     },
+    adminLayerStats: {
+      type: Object,
+      default: () => undefined
+    },
     gridLayerStats: {
       type: Array,
       default: () => []

@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import mapboxgl from 'mapbox-gl';
 import { BASE_LAYER } from '@/utils/map-util-new';
+import { chartValueFormatter } from '@/utils/string-util';
 
 export const ETHIOPIA_BOUNDING_BOX = {
   TOP: 18,
@@ -254,3 +255,28 @@ export function transformMapData(mapData = {}, options = {}) {
   return result;
 }
 
+
+export const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
+  const stops = !_.isNil(relativeTo)
+    ? createDivergingColorStops(domain, colors, scaleFn)
+    : createColorStops(domain, colors, scaleFn);
+  const labels = [];
+  // process with color stops (e.g [c1, v1, c2, v2, c3]) where cn is color and vn is value.
+  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 2])(v);
+  stops.forEach((item, index) => {
+    if (index === 1) {
+      labels.push(`< ${format(item)}`);
+    } else if (index % 2 !== 0) {
+      labels.push(`${format(stops[index - 2])} - ${format(item)}`);
+    }
+    // if last stop value
+    if (index === stops.length - 2) {
+      labels.push(`> ${format(item)}`);
+    }
+  });
+  const data = [];
+  colors.forEach((item, index) => {
+    data.push({ color: item, label: labels[index] });
+  });
+  return data.reverse();
+};

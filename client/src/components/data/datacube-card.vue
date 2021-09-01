@@ -184,50 +184,58 @@
             >
               <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
             </div>
-            <div
-              v-if="mapReady && !isDescriptionView && regionalData !== null"
-              class="card-maps-container">
+            <div class="card-maps-box">
               <div
-                v-for="(spec, indx) in outputSourceSpecs"
-                :key="spec.id"
-                class="card-map-container"
-                :class="[
-                  `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
-                ]"
-              >
-                <span
-                  v-if="outputSourceSpecs.length > 1"
-                  :style="{ color: colorFromIndex(indx)}"
+                v-if="mapReady && !isDescriptionView && regionalData !== null"
+                class="card-maps-container">
+                <div
+                  v-for="(spec, indx) in outputSourceSpecs"
+                  :key="spec.id"
+                  class="card-map-container"
+                  :class="[
+                    `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                  ]"
                 >
-                  {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
-                </span>
+                  <span
+                    v-if="outputSourceSpecs.length > 1"
+                    :style="{ color: colorFromIndex(indx)}"
+                  >
+                    {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
+                  </span>
 
-                <data-analysis-map
-                  class="card-map"
-                  :style="{ borderColor: colorFromIndex(indx) }"
-                  :output-source-specs="outputSourceSpecs"
-                  :output-selection=spec.id
-                  :relative-to="relativeTo"
-                  :show-tooltip="true"
-                  :selected-layer-id="mapSelectedLayer"
-                  :filters="mapFilters"
-                  :map-bounds="mapBounds"
-                  :region-data="regionalData"
-                  :grid-layer-stats="gridLayerStats"
-                  :selected-base-layer="selectedBaseLayer"
-                  :unit="unit"
-                  @sync-bounds="onSyncMapBounds"
-                  @on-map-load="onMapLoad"
-                  @slide-handle-change="updateMapFilters"
-                />
+                  <data-analysis-map
+                    class="card-map"
+                    :style="{ borderColor: colorFromIndex(indx) }"
+                    :output-source-specs="outputSourceSpecs"
+                    :output-selection=spec.id
+                    :relative-to="relativeTo"
+                    :show-tooltip="true"
+                    :selected-layer-id="mapSelectedLayer"
+                    :filters="mapFilters"
+                    :map-bounds="mapBounds"
+                    :region-data="regionalData"
+                    :admin-layer-stats="adminLayerStats"
+                    :grid-layer-stats="gridLayerStats"
+                    :selected-base-layer="selectedBaseLayer"
+                    :unit="unit"
+                    @sync-bounds="onSyncMapBounds"
+                    @on-map-load="onMapLoad"
+                    @slide-handle-change="updateMapFilters"
+                  />
+                </div>
               </div>
-            </div>
-            <div
-              v-else-if="!isDescriptionView"
-              class="card-maps-container"
-            >
-              <!-- Empty div to reduce jumpiness when the maps are loading -->
-              <div class="card-map" />
+              <div
+                v-else-if="!isDescriptionView"
+                class="card-maps-container"
+              >
+                <!-- Empty div to reduce jumpiness when the maps are loading -->
+                <div class="card-map" />
+              </div>
+              <div class="card-maps-legend-container">
+                <div v-for="(data, index) in mapLegendData" :key="index">
+                  <map-legend :ramp="data" />
+                </div>
+              </div>
             </div>
           </div>
         </div>
@@ -248,20 +256,23 @@ import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { getOutputStats } from '@/services/runoutput-service';
-import { colorFromIndex } from '@/utils/colors-util';
+import { colorFromIndex, COLOR_SCHEME } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { ModelRunStatus, SpatialAggregationLevel } from '@/types/Enums';
-import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
+import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX, createMapLegendData } from '@/utils/map-util';
 import { OutputSpecWithId, RegionalAggregations, OutputStatsResult } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
-import { DATA_LAYER } from '@/utils/map-util-new';
+import { DATA_LAYER, computeRegionalStats, adminLevelToString } from '@/utils/map-util-new';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import MapLegend, { MapLegendColor } from '@/components/widgets/map-legend.vue';
+import * as d3 from 'd3';
+
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -359,7 +370,8 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus,
     Modal,
     SmallTextButton,
-    RadioButtonGroup
+    RadioButtonGroup,
+    MapLegend
   },
   setup(props, { emit }) {
     const store = useStore();
@@ -370,7 +382,10 @@ export default defineComponent({
       selectedScenarioIds,
       allModelRunData,
       metadata,
-      outputSourceSpecs
+      outputSourceSpecs,
+      regionalData,
+      relativeTo,
+      selectedAdminLevel
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -406,6 +421,24 @@ export default defineComponent({
         _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
     });
 
+    const mapLegendData = ref<MapLegendColor[][]>([]);
+    const adminLayerStats = ref<any>({});
+    watchEffect(() => {
+      if (!regionalData.value) return;
+      adminLayerStats.value = computeRegionalStats(regionalData.value, (relativeTo.value || undefined));
+      if (relativeTo.value) {
+        const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
+        const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
+        mapLegendData.value = [
+          createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear, relativeTo.value),
+          createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, relativeTo.value)
+        ];
+      } else {
+        const { min, max } = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
+        mapLegendData.value = [createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)];
+      }
+    });
+
     const gridLayerStats = ref<OutputStatsResult[]>([]);
 
     watchEffect(async onInvalidate => {
@@ -435,7 +468,9 @@ export default defineComponent({
     );
 
     return {
+      adminLayerStats,
       gridLayerStats,
+      mapLegendData,
       updateMapFilters,
       mapFilters,
       colorFromIndex,
@@ -643,9 +678,19 @@ header {
 
 $marginSize: 5px;
 
-.card-map-container {
-  flex: 1;
+.card-maps-box {
+  flex: 3;
   min-width: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.card-maps-legend-container {
+  width: 100px;
+}
+
+.card-map-container {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
 
