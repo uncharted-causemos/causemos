@@ -467,13 +467,15 @@ export default defineComponent({
         defaultStepOptions: {
           cancelIcon: {
             enabled: true
-          }
+          },
+          classes: 'my-container my-title my-text' // default CSS classes for all steps
         }
       });
 
       const stepOne = {
         id: 'step-1-matrix-tab-click',
-        text: 'Click the Matrix tab.',
+        text: 'Clicking the Matrix tab will show the sensitivity matrix.',
+        title: 'Click the Matrix tab',
         attachTo: {
           element: '.matrix-tab', // this.$refs.newrunsbuttonref // also element can be referenced with id, e.g. #some-id
           on: 'bottom'
@@ -485,9 +487,10 @@ export default defineComponent({
               return tour.cancel();
             }
           }
-        ]
-        // highlightClass: 'highlight-matrix-tab',
-        // class: 'highlight-matrix-tab'
+        ],
+        modalOverlayOpeningPadding: 0, // padding applied to the highlight on the target element
+        highlightClass: 'my-highlight'
+        // classes: 'my-title my-text' // CSS classes for this step
       };
 
       const stepTwo = {
@@ -537,7 +540,7 @@ export default defineComponent({
 
       const stepThree = {
         id: 'step-3-sensitivity-matrix-click',
-        text: '<b>Key influences</b> causing change in malnutrition are the darker cells ones.<br> Influence score is based on structure of graph and weight of relationships',
+        text: '<b>Key influences</b> causing change in malnutrition are the darker cells ones.<br> <b>Influence score</b> is based on structure of graph and weight of relationships',
         attachTo: {
           element: '.grid-lines', // FIXME: add a unique tour css
           on: 'right'
@@ -564,12 +567,6 @@ export default defineComponent({
 
 <style lang="scss" scoped>
   @import "~styles/variables";
-
-  .highlight-matrix-tab {
-    border-width: 1px;
-    border-style: solid;
-    border-color: red;
-  }
 
   .question-text {
     margin: 1rem;
