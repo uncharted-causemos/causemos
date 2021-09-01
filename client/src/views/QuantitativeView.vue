@@ -469,7 +469,7 @@ export default {
       // If another sensitivity analysis started running before this one returns an ID,
       //  then don't bother fetching/processing the results to avoid a race condition
       if (this.sensitivityDataTimestamp !== now) return;
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId);
+      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50);
 
       if (this.sensitivityDataTimestamp !== now) return;
       const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
