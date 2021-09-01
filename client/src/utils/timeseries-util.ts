@@ -54,6 +54,51 @@ export function applyRelativeTo(
   return { baselineMetadata, timeseriesData: returnValue };
 }
 
+export function renderAxes(
+  selection: D3GElementSelection,
+  xScale: d3.ScaleLinear<number, number>,
+  yScale: d3.ScaleLinear<number, number>,
+  // The type of value can't be more specific than `any`
+  //  because under the hood d3.tickFormat requires d3.NumberType.
+  // It correctly converts, but its TypeScript definitions don't
+  //  seem to reflect that.
+  valueFormatter: (value: any) => string,
+  width: number,
+  height: number,
+  timestampFormatter: (timestamp: any) => string,
+  yAxisWidth: number,
+  paddingRight: number,
+  xAxisHeight: number,
+  xAxisTickCount = 4,
+  yAxisTickCount = 2,
+  xAxisTickSizePx = 2
+) {
+  const xAxis = d3
+    .axisBottom(xScale)
+    .tickSize(xAxisTickSizePx)
+    .tickFormat(timestampFormatter)
+    .ticks(xAxisTickCount);
+  const yAxis = d3
+    .axisLeft(yScale)
+    .tickSize(width - yAxisWidth - paddingRight)
+    .tickFormat(valueFormatter)
+    .ticks(yAxisTickCount);
+  selection
+    .append('g')
+    .classed('xAxis', true)
+    .style('pointer-events', 'none')
+    .call(xAxis)
+    .style('font-size', '10px')
+    .attr('transform', translate(0, height - xAxisHeight));
+  selection
+    .append('g')
+    .classed('yAxis', true)
+    .style('pointer-events', 'none')
+    .call(yAxis)
+    .style('font-size', '10px')
+    .attr('transform', translate(width - paddingRight, 0));
+}
+
 export function calculateXTicks (
   xScale: d3.ScaleLinear<number, number>,
   width: number,

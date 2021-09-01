@@ -7,7 +7,7 @@ import dateFormatter from '@/formatters/date-formatter';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
-import { calculateXTicks, renderXaxis, renderYaxis, renderLine, renderPoint } from '@/utils/timeseries-util';
+import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -25,7 +25,7 @@ const CONTEXT_TIMESERIES_OPACITY = 0.2;
 //  seem to reflect that.
 
 const DATE_FORMATTER = (value: any) =>
-  dateFormatter(value, 'MMM DD, YYYY'); // FIXME right now there is lots of text overlap when using this formatter but I am not sure what to use as this is as genericly always year by year
+  dateFormatter(value, 'MMM DD, YYYY');
 const BY_YEAR_DATE_FORMATTER = (value: any) =>
   dateFormatter(new Date(0, value), 'MMM');
 
@@ -87,27 +87,18 @@ export default function(
     breakdownOption === TemporalAggregationLevel.Year
       ? BY_YEAR_DATE_FORMATTER
       : DATE_FORMATTER;
-  const xAxisTicks = calculateXTicks(
-    xScale,
-    width
-  );
-  renderXaxis(
+  renderAxes(
     groupElement,
     xScale,
-    xAxisTicks,
-    height,
-    timestampFormatter,
-    X_AXIS_HEIGHT
-  );
-  renderYaxis(
-    groupElement,
     yScale,
     valueFormatter,
     width,
+    height,
+    timestampFormatter,
     Y_AXIS_WIDTH,
-    PADDING_RIGHT
+    PADDING_RIGHT,
+    X_AXIS_HEIGHT
   );
-
   timeseriesList.forEach(timeseries => {
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1
       renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color, 1);

@@ -5,7 +5,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import { Timeseries } from '@/types/Timeseries';
 import { D3Selection, D3GElementSelection } from '@/types/D3';
 import { TemporalAggregationLevel } from '@/types/Enums';
-import { calculateXTicks, renderXaxis, renderYaxis, renderLine, renderPoint } from '@/utils/timeseries-util';
+import { renderAxes, renderLine, renderPoint } from '@/utils/timeseries-util';
 
 const X_AXIS_HEIGHT = 20;
 const Y_AXIS_WIDTH = 40;
@@ -59,27 +59,18 @@ export default function(
     yExtent,
     breakdownOption
   );
-  const xAxisTicks = calculateXTicks(
-    xScale,
-    width
-  );
-  renderXaxis(
+  renderAxes(
     groupElement,
     xScale,
-    xAxisTicks,
-    height,
-    timestampFormatter,
-    X_AXIS_HEIGHT
-  );
-  renderYaxis(
-    groupElement,
     yScale,
     valueFormatter,
     width,
+    height,
+    timestampFormatter,
     Y_AXIS_WIDTH,
-    PADDING_RIGHT
+    PADDING_RIGHT,
+    X_AXIS_HEIGHT
   );
-
   timeseriesList.forEach(timeseries => {
     if (timeseries.points.length > 1) { // draw a line for time series longer than 1
       renderLine(groupElement, timeseries.points, xScale, yScale, timeseries.color);
