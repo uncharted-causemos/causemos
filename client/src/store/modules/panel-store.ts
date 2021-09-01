@@ -2,6 +2,9 @@ import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 /* Used for drilldown-related states */
 interface PanelState {
+  // @REVIEW
+  // @FIXME: isPanelOpen is repeated in multiple stores for different reasons,
+  //  so the logic should be reviewed in case it could be merged, and also regarding renaming it
   isPanelOpen: boolean;
   currentTab: string;
 }

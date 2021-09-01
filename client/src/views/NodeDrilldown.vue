@@ -200,7 +200,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 
 import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
@@ -673,7 +673,14 @@ export default defineComponent({
       scenarioData
     };
   },
+  unmounted() {
+    // clear the context so that other pages won't incorrectly fetch insights/questions
+    this.setContextId([]);
+  },
   methods: {
+    ...mapActions({
+      setContextId: 'insightPanel/setContextId'
+    }),
     openDataExplorer() {
       this.$router.push({
         name: 'nodeDataExplorer',

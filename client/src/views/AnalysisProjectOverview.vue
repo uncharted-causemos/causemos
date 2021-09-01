@@ -330,13 +330,11 @@ export default {
 
       this.analyses = [...this.quantitativeAnalyses, ...this.qualitativeAnalyses];
 
-      // FIXME: this will fetch insights/questions for all datacubes and CAGs in all project analyses
+      // FIXME: setContextId would fetch insights/questions for all datacubes and CAGs in all analyses
       //
       // @UPDATE: not needed currently in this context since we do not display the insight count and the insight panel is not shown
       //  with regards to questions, also, there is no need to fetch for all contexts as it is enough to fetch public and project-level questions
       // this.setContextId(contextIDs);
-      //  clear the context which may have been set by opening one of the existing analyses
-      this.setContextId([]);
 
       // Sort by modified_at date with latest on top
       this.sortAnalysesByMostRecentDate();
