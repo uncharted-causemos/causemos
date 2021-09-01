@@ -41,6 +41,11 @@ export default function useInsightsData() {
       if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true)) {
         return;
       }
+      // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
+      if (contextIds.value === undefined) {
+        return;
+      }
+
       // @HACK: ignore context-id(s) when the insight explorer is open
       //  (i.e., when clicking 'Review All Insights')
       // NOTE: this only makes sense for analysis projects
