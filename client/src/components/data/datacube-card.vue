@@ -1,12 +1,5 @@
 <template>
   <div class="datacube-card-container">
-    <button
-      ref="newrunsbuttonref"
-      class="btn toggle-new-runs-button btn-primary btn-call-for-action"
-      style="height: fit-content"
-    >
-      Test Onboarding
-    </button>
     <div class="capture-box">
       <header>
         <slot name="datacube-model-header" />
@@ -263,7 +256,6 @@ import { getTimestampMillis } from '@/utils/date-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-import Shepherd from 'shepherd.js';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -484,39 +476,6 @@ export default defineComponent({
     disableConcurrentTileRequestsCaching();
   },
   mounted() {
-    const tour = new Shepherd.Tour({
-      useModalOverlay: true
-    });
-
-    const stepOne = {
-      id: 'example-step-1',
-      text: 'This step is attached to the bottom of the <code>.step-one</code> element.',
-      attachTo: {
-        element: this.$refs.newrunsbuttonref,
-        on: 'bottom'
-      },
-      buttons: [
-        {
-          text: 'Next',
-          action: function() {
-            return tour.next();
-          }
-        }
-      ]
-    };
-
-    const stepTwo = {
-      id: 'example-step-2',
-      text: 'This step is attached to the bottom of the <code>.step-two</code> element.',
-      attachTo: {
-        element: this.$refs.newrunsbuttonref,
-        on: 'bottom'
-      }// ,
-      // advanceOn: { selector: this.$refs.newrunsbuttonref, event: 'click' }
-    };
-
-    tour.addSteps([stepOne, stepTwo]);
-    tour.start();
   },
   computed: {
     dataPaths(): string[] {

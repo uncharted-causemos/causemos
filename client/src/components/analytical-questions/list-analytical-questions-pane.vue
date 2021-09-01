@@ -119,8 +119,9 @@
                   {{ questionItem.question }}
               </span>
               <i
-                class="fa fa-lg fa-info"
-                @click="startQuestionTour"
+                class="fa fa-lg fa-info-circle"
+                @click.stop.prevent="startQuestionTour"
+                @mousedown.stop.prevent
               />
             </div>
             <!-- second row display a list of linked insights -->
@@ -158,6 +159,7 @@ import { QUESTIONS } from '@/utils/messages-util';
 import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion, getContextSpecificQuestions } from '@/services/question-service';
 import DropdownControl from '@/components/dropdown-control.vue';
 import useInsightsData from '@/services/composables/useInsightsData';
+import Shepherd from 'shepherd.js';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -244,12 +246,14 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       viewState: 'insightPanel/viewState',
-      currentView: 'app/currentView'
+      currentView: 'app/currentView',
+      isReadyForNextStep: 'tour/isReadyForNextStep'
     })
   },
   methods: {
     ...mapActions({
-      setQuestions: 'analysisChecklist/setQuestions'
+      setQuestions: 'analysisChecklist/setQuestions',
+      setTour: 'tour/setTour'
     }),
     promote() {
       // update selectedQuestion to be public, i.e., visible in all projects
@@ -455,7 +459,96 @@ export default defineComponent({
       }
     },
     startQuestionTour() {
+      // FIXME: do not create a tour that already exist
+      //        and if there is another tour, close that existing one first
+      const tour = new Shepherd.Tour({
+        useModalOverlay: true
+      });
 
+      const stepOne = {
+        id: 'step-1-matrix-tab-click',
+        text: 'Click the Matrix tab.',
+        attachTo: {
+          element: '.matrix-tab', // this.$refs.newrunsbuttonref
+          on: 'bottom'
+        },
+        buttons: [
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          }
+        ]
+      };
+
+      const stepTwo = {
+        id: 'step-2-sensitivity-matrix',
+        text: 'This is the sensitivity analysis matrix. <br>To see the top influencers for a node, click on its column header.',
+        attachTo: {
+          element: '.x-axis-sensitivity-matrix', // this DOM element is dynamic and will only be available once the sensitivity-analysis-matrix is rendered
+          on: 'bottom'
+        },
+        buttons: [
+          {
+            text: 'Next',
+            action: function() {
+              return tour.next();
+            }
+          },
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          }
+        ],
+        beforeShowPromise: () => {
+          return new Promise<void>(resolve => {
+            // check every 1 second for the next step to be flagged as ready
+            //  i.e., until the sensitivity matrix is visible
+            //  kill the timer if the operation is taking too long!
+            let elapsedTime = 0;
+            const wait = () => {
+              if (this.isReadyForNextStep) {
+                resolve();
+              } else {
+                elapsedTime += 1000;
+                if (elapsedTime > 10000) {
+                  console.warn('operation took too long... killing the tour timer!');
+                  resolve();
+                }
+                _.debounce(wait, 1000)();
+              }
+            };
+            wait();
+          });
+        }
+        // advanceOn: { selector: '', event: 'click' }
+      };
+
+      const stepThree = {
+        id: 'step-3-sensitivity-matrix-click',
+        text: '<b>Key influences</b> causing change in malnutrition are the darker cells ones.<br> Influence score is based on structure of graph and weight of relationships',
+        attachTo: {
+          element: '.grid-lines', // FIXME: add a unique tour css
+          on: 'right'
+        },
+        buttons: [
+          {
+            text: 'Got it',
+            action: function() {
+              return tour.complete();
+            }
+          }
+        ]
+      };
+
+      tour.addSteps([stepOne, stepTwo, stepThree]);
+      tour.start();
+
+      // save this newly created tour in the store
+      this.setTour(tour);
     }
   }
 });

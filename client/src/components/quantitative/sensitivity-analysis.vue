@@ -57,6 +57,7 @@ import csrUtil from '@/utils/csr-util';
 import { showSvgTooltip, hideSvgTooltip } from '@/utils/svg-util';
 import ordinalNumberFormatter from '@/formatters/ordinal-number-formatter';
 import SensitivityAnalysisLegend from './sensitivity-analysis-legend.vue';
+import { mapActions } from 'vuex';
 
 const RESIZE_DELAY = 50;
 
@@ -127,6 +128,7 @@ export default {
   watch: {
     matrixData() {
       this.render();
+      this.enableNextStep();
     },
     rowOrder() {
       this.render();
@@ -139,6 +141,9 @@ export default {
     this.render();
   },
   methods: {
+    ...mapActions({
+      enableNextStep: 'tour/enableNextStep'
+    }),
     setAnalysisType(e) {
       this.$emit('set-analysis-type', e.target.value);
     },

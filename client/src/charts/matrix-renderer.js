@@ -65,6 +65,7 @@ export default function(
 
   const xAxis = svgElement
     .append('g')
+    .attr('class', 'x-axis-sensitivity-matrix')
     .attr('transform', svgUtil.translate(0, margin.top))
     .call(d3.axisTop(xScale));
 
