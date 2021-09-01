@@ -462,6 +462,7 @@ export default defineComponent({
       // FIXME: do not create a tour that already exist
       //        and if there is another tour, close that existing one first
       const tour = new Shepherd.Tour({
+        tourName: 'sensitivity-matrix-tour',
         useModalOverlay: true,
         // enable X button to cancel from any step
         defaultStepOptions: {
@@ -525,11 +526,14 @@ export default defineComponent({
                 resolve();
               } else {
                 elapsedTime += 1000;
-                if (elapsedTime > 10000) {
+                if (elapsedTime > 30000) { // wait 30 seconds
                   console.warn('operation took too long... killing the tour timer!');
                   resolve();
                 }
-                _.debounce(wait, 1000)();
+                // we should only continue waiting/checking for the ready-signal unless requested-to-cancel is issued
+                if (tour.isActive()) {
+                  _.debounce(wait, 1000)();
+                }
               }
             };
             wait();
