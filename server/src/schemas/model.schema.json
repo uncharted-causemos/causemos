@@ -9,7 +9,6 @@
     "description",
     "maintainer",
     "category",
-    "image",
     "parameters",
     "outputs"
   ],
@@ -82,15 +81,6 @@
       "description": "Information about the model maintainer.",
       "$ref": "#/definitions/maintainer",
       "additionalProperties": false
-    },
-    "image": {
-      "$id": "#/properties/image",
-      "title": "Container Image",
-      "description": "The name and tag of the model container image (on Dockerhub, etc.)",
-      "type": "string",
-      "examples": [
-        "DSSAT:latest"
-      ]
     },
     "observed_data": {
       "$id": "#/properties/observed_data",

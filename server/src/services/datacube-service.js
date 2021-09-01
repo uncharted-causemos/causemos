@@ -1,8 +1,9 @@
 const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const domainProjectService = rootRequire('/services/domain-project-service');
-const { filterWithSchema } = rootRequire('util/joi-util.ts');
-const { processFilteredData } = rootRequire('util/post-processing');
+const { filterAndLog } = rootRequire('util/joi-util.ts');
+const { processFilteredData } = rootRequire('util/post-processing-util.ts');
+const Logger = rootRequire('/config/logger');
 
 /**
  * Return all datacubes
@@ -39,7 +40,7 @@ const insertDatacube = async(metadata) => {
 
   metadata.type = metadata.type || 'model'; // Assume these ar all models for now
   metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
-  const filteredMetadata = filterWithSchema('./src/schemas/model.schema.json', metadata);
+  const filteredMetadata = filterAndLog(Logger, './src/schemas/model.schema.json', metadata);
   processFilteredData(filteredMetadata);
 
   filteredMetadata.data_id = filteredMetadata.id;

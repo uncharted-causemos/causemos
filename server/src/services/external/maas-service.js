@@ -1,8 +1,8 @@
 const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const { filterWithSchema } = rootRequire('util/joi-util.ts');
-const { processFilteredData } = rootRequire('util/post-processing');
+const { filterAndLog } = rootRequire('util/joi-util.ts');
+const { processFilteredData } = rootRequire('util/post-processing-util.ts');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
@@ -52,13 +52,7 @@ const submitModelRun = async(metadata) => {
  * @param {ModelRun} metadata - model run metadata
  */
 const startModelOutputPostProcessing = async (metadata) => {
-  const filteredMetadata = filterWithSchema('./src/schemas/model-run.schema.json', metadata);
-  Logger.info(`Start model output processing ${filteredMetadata.model_name} ${filteredMetadata.id} `);
-  if (!filteredMetadata.model_id || !filteredMetadata.id) {
-    Logger.error('Required ids for model output post processing were not provided');
-    return;
-  }
-
+  const filteredMetadata = filterAndLog(Logger, './src/schemas/model-run.schema.json', metadata);
   const filters = {
     clauses: [
       { field: 'id', operand: 'or', isNot: false, values: [filteredMetadata.model_id] }
@@ -182,12 +176,7 @@ const getJobStatus = async (runId) => {
  * @param {Indicator} metadata -indicator metadata
  */
 const startIndicatorPostProcessing = async (metadata) => {
-  const filteredMetadata = filterWithSchema('./src/schemas/indicator.schema.json', metadata);
-  Logger.info(`Start indicator processing ${filteredMetadata.name} ${filteredMetadata.id} `);
-  if (!filteredMetadata.id) {
-    Logger.error('Required ids for indicator post processing were not provided');
-    return;
-  }
+  const filteredMetadata = filterAndLog(Logger, './src/schemas/indicator.schema.json', metadata);
 
   processFilteredData(filteredMetadata);
   filteredMetadata.type = 'indicator';

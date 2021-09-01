@@ -37,8 +37,15 @@ describe('joi-util', function () {
         a: 'test-val-a',
         b: 'test-val-b'
       };
-      const result = filterWithSchema('./test/unit/util/filter-schema.json', json);
-      expect(result).to.eql({ a: 'test-val-a' });
+      const { filteredJson } = filterWithSchema('./test/unit/util/filter-schema.json', json);
+      expect(filteredJson).to.eql({ a: 'test-val-a' });
+    });
+    it('Test incomplete json with a schema from a file.', function() {
+      const json = {};
+      const jsonSchema = JSON.parse(fs.readFileSync('./test/unit/util/filter-schema.json'));
+      const schema = Enjoi.schema(jsonSchema);
+      const result = schema.validate(json, { stripUnknown: true });
+      should.exist(result.error);
     });
   });
   describe('Validation examples', function () {
