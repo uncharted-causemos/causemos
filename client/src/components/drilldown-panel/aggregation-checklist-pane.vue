@@ -55,7 +55,7 @@
       <aggregation-checklist-item
         v-for="(row, rowIndex) of visibleRows"
         :key="rowIndex"
-        :histogram-visible="selectedBreakdownOption !== SpatialAggregationLevel.Region || row.isChecked"
+        :histogram-visible="shouldShowDeselectedBars || row.isChecked"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
         :min-visible-bar-value="minVisibleBarValue"
@@ -299,14 +299,6 @@ export default defineComponent({
       type: String,
       default: null
     },
-    selectedBreakdownOption: {
-      type: String,
-      required: true
-    },
-    selectedRegionIds: {
-      type: Object as PropType<string[] | null>,
-      default: null
-    },
     selectedTimeseriesPoints: {
       type: Array as PropType<TimeseriesPointSelection[]>,
       required: true
@@ -314,6 +306,10 @@ export default defineComponent({
     selectedItemIds: {
       type: Object as PropType<string[]>,
       default: []
+    },
+    shouldShowDeselectedBars: {
+      type: Boolean,
+      required: true
     },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
@@ -326,7 +322,7 @@ export default defineComponent({
       rawData,
       aggregationLevel,
       orderedAggregationLevelKeys,
-      selectedBreakdownOption,
+      shouldShowDeselectedBars,
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
@@ -416,7 +412,7 @@ export default defineComponent({
     ) => {
       if (levelsUntilSelectedDepth === 0) {
         const values = isStatefulDataNode(node) &&
-          (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || selectedBreakdownOption.value !== SpatialAggregationLevel.Region)
+          (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars.value)
           ? node.bars.map(bar => bar.value)
           : [];
         return _.max(values) ?? 0;
@@ -438,7 +434,7 @@ export default defineComponent({
     ) => {
       if (levelsUntilSelectedDepth === 0) {
         const values = isStatefulDataNode(node) &&
-        (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || selectedBreakdownOption.value !== SpatialAggregationLevel.Region)
+        (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars.value)
           ? node.bars.map(bar => bar.value)
           : [];
         return _.min(values) ?? 0;
