@@ -10,19 +10,21 @@
       </a>
       <template v-for="(navItem, index) of navItems" :key="index">
         <router-link
-          v-if="isActive === false"
+          v-if="navItem.isActive === false"
           class="nav-item clickable"
           :to="navItem.route"
         >
           <i class="fa fa-fw" :class="[navItem.icon]" />
           <span class="nav-item-label">{{ navItem.text }}</span>
         </router-link>
-        <div v-else class="nav-item">
+        <div v-else class="nav-item active">
           <i class="fa fa-fw" :class="[navItem.icon]" />
           <span class="nav-item-label">{{ navItem.text }}</span>
         </div>
       </template>
-      <slot />
+      <div class="trailing">
+        <slot />
+      </div>
     </div>
 
     <!-- Help button -->
@@ -186,7 +188,14 @@ export default defineComponent({
 
 .navbar-left-group {
   display: flex;
-  align-items: center
+
+  & > .nav-item:not(:first-child) {
+    margin-left: 10px;
+  }
+}
+
+.trailing {
+  align-self: center;
 }
 
 .nav-item {
@@ -198,9 +207,15 @@ export default defineComponent({
   i {
     margin-right: 5px;
   }
+
+  .nav-item-label,
+  i {
+    color: rgba(255, 255, 255, 0.71);
+    font-size: $font-size-large;
+  }
 }
 
-.clickable:hover {
+.nav-item.clickable:hover {
   background: rgba(255, 255, 255, 0.2);
 
   .nav-item-label,
@@ -209,14 +224,14 @@ export default defineComponent({
   }
 }
 
-.nav-item-label,
-i {
-  color: rgba(255, 255, 255, 0.71);
-  font-size: $font-size-large;
-}
-
-.nav-item-label {
-  font-weight: 600;
+.nav-item.active {
+  .nav-item-label,
+  i {
+    color: white;
+  }
+  .nav-item-label {
+    font-weight: 600;
+  }
 }
 
 $logo-size: 28px;
