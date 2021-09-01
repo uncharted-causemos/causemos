@@ -4,6 +4,7 @@
     :class="{'panel-hidden': !isOpen}"
   >
     <new-insight-modal v-if="currentPane === 'new-insight'" />
+    <edit-insight-modal v-if="currentPane === 'edit-insight'" />
     <list-insights-modal v-if="currentPane === 'list-insights'" />
   </div>
 </template>
@@ -12,13 +13,15 @@
 import { mapGetters } from 'vuex';
 import NewInsightModal from '@/components/insight-manager/new-insight-modal';
 import ListInsightsModal from '@/components/insight-manager/list-insights-modal';
+import EditInsightModal from '@/components/insight-manager/edit-insight-modal';
 
 
 export default {
   name: 'InsightManager',
   components: {
     NewInsightModal,
-    ListInsightsModal
+    ListInsightsModal,
+    EditInsightModal
   },
   computed: {
     ...mapGetters({
