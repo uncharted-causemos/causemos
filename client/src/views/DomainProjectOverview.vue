@@ -203,6 +203,9 @@ export default {
         // context-id should be an array to fetch insights for each and every model instance
         const contextIDs = this.datacubeInstances.map(dc => dc.id);
         this.setContextId(contextIDs);
+      } else {
+        // no datacubes were found, do not fetch any insights/questions
+        this.setContextId(undefined);
       }
 
       // reset to avoid invalid data fetch when a given instance it loaded

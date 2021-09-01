@@ -218,6 +218,10 @@ export default defineComponent({
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
+    // apply initial data config for this datacube
+    const initialSelectedRegionIds: string[] = [];
+    const initialSelectedQualifierValues = ref<string[]>([]);
+
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const datacubeId = analysisItems.value[0].id;
     const initialViewConfig: ViewState = analysisItems.value[0].viewConfig;
@@ -252,13 +256,15 @@ export default defineComponent({
         selectedAdminLevel.value = initialViewConfig.selectedAdminLevel;
       }
     }
-    // apply initial data config for this datacube
-    const initialSelectedRegionIds: string[] = [];
+
     if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
       if (initialDataConfig.selectedRegionIds !== undefined) {
         initialDataConfig.selectedRegionIds.forEach(regionId => {
           initialSelectedRegionIds.push(regionId);
         });
+      }
+      if (initialDataConfig.selectedQualifierValues !== undefined) {
+        initialSelectedQualifierValues.value = _.clone(initialDataConfig.selectedQualifierValues);
       }
     }
 
@@ -371,7 +377,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      selectedTimestamp
+      selectedTimestamp,
+      initialSelectedQualifierValues
     );
 
     const {
@@ -457,7 +464,8 @@ export default defineComponent({
         }],
         datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
         selectedRegionIds: selectedRegionIds.value,
-        relativeTo: relativeTo.value
+        relativeTo: relativeTo.value,
+        selectedQualifierValues: [...selectedQualifierValues.value]
       };
       store.dispatch('insightPanel/setDataState', dataState);
 
@@ -514,7 +522,9 @@ export default defineComponent({
       toggleIsQualifierSelected,
       selectedQualifierValues,
       selectedYears,
-      toggleIsYearSelected
+      toggleIsYearSelected,
+      initialSelectedQualifierValues,
+      initialSelectedRegionIds
     };
   },
   data: () => ({
@@ -621,6 +631,9 @@ export default defineComponent({
         if (loadedInsight.data_state?.relativeTo !== undefined) {
           this.setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
           this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation as AggregationOption;
@@ -650,6 +663,10 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
         }
       }
     },

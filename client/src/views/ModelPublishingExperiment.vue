@@ -358,7 +358,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      selectedTimestamp
+      selectedTimestamp,
+      ref([])
     );
 
     const {
@@ -521,7 +522,7 @@ export default defineComponent({
       immediate: true
     }
   },
-  unmounted(): void {
+  unmounted() {
     clearInterval(this.timerHandler);
   },
   async mounted() {

@@ -6,7 +6,7 @@ interface InsightState {
   countInsights: number;
   viewState: any;
   dataState: any;
-  contextId: string[];
+  contextId: string[] | undefined;
   analysisId: string;
   updatedInsightId: string;
 }
@@ -20,7 +20,7 @@ const state: InsightState = {
   countInsights: 0,
   viewState: {},
   dataState: {},
-  contextId: [],
+  contextId: undefined,
   analysisId: '',
   updatedInsightId: ''
 };

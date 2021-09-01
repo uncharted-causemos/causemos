@@ -163,8 +163,12 @@ export default {
         `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
     }
   },
+  mounted() {
+    this.showContextInsightPanel();
+  },
   methods: {
     ...mapActions({
+      showContextInsightPanel: 'contextInsightPanel/showContextInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsightId: 'insightPanel/setUpdatedInsightId'

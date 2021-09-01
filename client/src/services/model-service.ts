@@ -655,6 +655,7 @@ export const calculateScenarioPercentageChange = (experiment: ScenarioResult, in
 // engine should handle this quirky case. Sep 2020
 const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptProjectionConstraints[]) => {
   const result = _.cloneDeep(constraints);
+  /*
   nodeParameters.forEach(n => {
     const concept = n.concept;
     // const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
@@ -676,6 +677,7 @@ const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptPro
       });
     }
   });
+  */
 
   result.forEach(r => {
     r.values = _.orderBy(r.values, v => v.step);

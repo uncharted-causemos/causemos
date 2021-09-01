@@ -107,8 +107,8 @@
               <i
                 class="step-icon-common fa fa-lg fa-border"
                 :class="{
-                  'fa-check-circle step-complete': fullLinkedInsights(questionItem.linked_insights).length > 0,
-                  'fa-circle step-not-complete': fullLinkedInsights(questionItem.linked_insights).length === 0,
+                  'fa-check-circle step-complete': getInsightsByIDs(questionItem.linked_insights).length > 0,
+                  'fa-circle step-not-complete': getInsightsByIDs(questionItem.linked_insights).length === 0,
                 }"
                 @mousedown.stop.prevent
               />
@@ -122,7 +122,7 @@
             <!-- second row display a list of linked insights -->
             <div class="checklist-item-insights">
               <div
-                v-for="insight in fullLinkedInsights(questionItem.linked_insights)"
+                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
                 :key="insight.id"
                 class="checklist-item-insight">
                   <i @mousedown.stop.prevent class="fa fa-star" style="color: orange" />
@@ -144,16 +144,17 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters, useStore } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 
 import { getInsightById, updateInsight } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight } from '@/types/Insight';
-import { computed, defineComponent, ref, watchEffect } from 'vue';
+import { defineComponent } from 'vue';
 import _ from 'lodash';
 import { QUESTIONS } from '@/utils/messages-util';
-import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion, getContextSpecificQuestions } from '@/services/question-service';
+import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import DropdownControl from '@/components/dropdown-control.vue';
-import useInsightsData from '@/services/composables/useInsightsData';
+import { ProjectType } from '@/types/Enums';
+import useQuestionsData from '@/services/composables/useQuestionsData';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -161,69 +162,11 @@ export default defineComponent({
     DropdownControl
   },
   setup() {
-    const questionsList = ref<AnalyticalQuestion[]>([]);
-
-    const store = useStore();
-    const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['app/project']);
-    const currentView = computed(() => store.getters['app/currentView']);
-
-    const questionsFetchedAt = ref(0);
-
-    // save a local copy of all insights for quick reference whenever needed
-    // FIXME: ideally this should be from a store so that changes to the insight list externally are captured
-    const { insights: allInsights } = useInsightsData();
-
-    const insightsById = (id: string) => allInsights.value.find(i => i.id === id);
-
-    const fullLinkedInsights = (linked_insights: string[]) => {
-      const result: Insight[] = [];
-      linked_insights.forEach(insightId => {
-        const ins = insightsById(insightId);
-        if (ins) {
-          result.push(ins);
-        }
-      });
-      return result;
-    };
-
-    // FIXME: refactor into a composable
-    watchEffect(onInvalidate => {
-      console.log('refetching questions at: ' + new Date(questionsFetchedAt.value).toTimeString());
-      let isCancelled = false;
-      async function fetchQuestions() {
-        let allQuestions;
-        // allQuestions = await getAllQuestions(project.value);
-
-        if (contextId.value === '') {
-          allQuestions = await getAllQuestions(project.value);
-        } else {
-          allQuestions = await getContextSpecificQuestions(project.value, contextId.value, currentView.value);
-        }
-
-        if (isCancelled) {
-          // Dependencies have changed since the fetch started, so ignore the
-          //  fetch results to avoid a race condition.
-          return;
-        }
-
-        // update the store to facilitate questions consumption in other UI places
-        store.dispatch('analysisChecklist/setQuestions', allQuestions);
-
-        questionsList.value = allQuestions;
-      }
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      fetchQuestions();
-    });
+    const { questionsList, reFetchQuestions, getInsightsByIDs } = useQuestionsData();
     return {
       questionsList,
-      contextId,
-      project,
-      questionsFetchedAt,
-      insightsById,
-      fullLinkedInsights
+      reFetchQuestions,
+      getInsightsByIDs
     };
   },
   data: () => ({
@@ -240,12 +183,28 @@ export default defineComponent({
   computed: {
     ...mapGetters({
       viewState: 'insightPanel/viewState',
-      currentView: 'app/currentView'
-    })
+      currentView: 'app/currentView',
+      projectType: 'app/projectType',
+      project: 'app/project',
+      contextId: 'insightPanel/contextId'
+    }),
+    // @REVIEW: this is similar to insightTargetView
+    questionTargetView(): string[] {
+      // an insight created during model publication should be listed either
+      //  in the full list of insights,
+      //  or as a context specific insight when opening the page of the corresponding model family instance
+      //  (the latter is currently supported via a special route named dataPreview)
+      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+    }
+  },
+  mounted() {
+    this.showSidePanel();
   },
   methods: {
     ...mapActions({
-      setQuestions: 'analysisChecklist/setQuestions'
+      setQuestions: 'analysisChecklist/setQuestions',
+      showSidePanel: 'panel/showSidePanel'
     }),
     promote() {
       // update selectedQuestion to be public, i.e., visible in all projects
@@ -280,7 +239,7 @@ export default defineComponent({
         project_id: this.project,
         context_id: this.contextId,
         url,
-        target_view: this.currentView,
+        target_view: this.questionTargetView,
         pre_actions: null,
         post_actions: null,
         linked_insights: [],
@@ -292,7 +251,7 @@ export default defineComponent({
         if (message === QUESTIONS.SUCCESSFUL_ADDITION) {
           (this as any).toaster(message, 'success', false);
           // refresh the latest list from the server
-          this.questionsFetchedAt = Date.now();
+          this.reFetchQuestions();
         } else {
           (this as any).toaster(message, 'error', true);
         }
@@ -442,7 +401,7 @@ export default defineComponent({
       this.removeQuestionFromInsight(questionItem, insightId);
     },
     removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insight: any = this.insightsById(insightId);
+      const insight: any = this.getInsightsByIDs([insightId]);
       if (insight) {
         insight.analytical_question = insight?.analytical_question.filter(
           (qid: string) => qid !== questionItem.id
