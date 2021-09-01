@@ -35,9 +35,10 @@ export default defineComponent({
   display: flex;
   flex-direction: row;
   justify-content: flex-end;
+  flex-grow: 1;
 }
 .color {
-  height: 17px;
+  min-height: 17px;
   width: 17px;
 }
 .color-label {

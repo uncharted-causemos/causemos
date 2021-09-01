@@ -686,7 +686,16 @@ $marginSize: 5px;
 }
 
 .card-maps-legend-container {
-  width: 100px;
+    display: flex;
+    flex-direction: column;
+    div {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+    div:nth-child(2) {
+      margin-top: 30px;
+    }
 }
 
 .card-map-container {
