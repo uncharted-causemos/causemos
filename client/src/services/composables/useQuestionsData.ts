@@ -1,28 +1,19 @@
 import { ProjectType } from '@/types/Enums';
-import { Insight } from '@/types/Insight';
-import { computed, ref, Ref, watchEffect } from 'vue';
+import { AnalyticalQuestion } from '@/types/Insight';
+import { computed, ref, watchEffect } from 'vue';
 import { useStore } from 'vuex';
-import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
+import { InsightFilterFields } from '@/services/insight-service';
 import _ from 'lodash';
+import useInsightsData from './useInsightsData';
+import { fetchQuestions } from '../question-service';
 
-export default function useInsightsData() {
-  const insights = ref([]) as Ref<Insight[]>;
+export default function useQuestionsData() {
+  const questionsList = ref<AnalyticalQuestion[]>([]);
 
-  const insightsFetchedAt = ref(0);
+  const questionsFetchedAt = ref(0);
 
-  const reFetchInsights = () => {
-    insightsFetchedAt.value = Date.now();
-  };
-
-  const getInsightsByIDs = (insightIDs: string[]) => {
-    const result: Insight[] = [];
-    insightIDs.forEach(insightId => {
-      const ins = insights.value.find(i => i.id === insightId);
-      if (ins) {
-        result.push(ins);
-      }
-    });
-    return result;
+  const reFetchQuestions = () => {
+    questionsFetchedAt.value = Date.now();
   };
 
   const store = useStore();
@@ -30,15 +21,18 @@ export default function useInsightsData() {
   const project = computed(() => store.getters['app/project']);
   const projectType = computed(() => store.getters['app/projectType']);
 
+  const isPanelOpen = computed(() => store.getters['panel/isPanelOpen']);
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
-  const isContextInsightPanelOpen = computed(() => store.getters['contextInsightPanel/isPanelOpen']);
+
+  // reference the utility function (or the computed property) of all insights to quickly find linked insights
+  const { getInsightsByIDs } = useInsightsData();
 
   watchEffect(onInvalidate => {
-    console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
+    console.log('refetching questions at: ' + new Date(questionsFetchedAt.value).toTimeString());
     let isCancelled = false;
-    async function getInsights() {
+    async function getQuestions() {
       // do not fetch if the panel is not open
-      if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true)) {
+      if (!(isPanelOpen.value === true || isInsightExplorerOpen.value === true)) {
         return;
       }
       // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
@@ -58,66 +52,68 @@ export default function useInsightsData() {
       //
       // fetch public insights
       //
-      const publicInsightsSearchFields: InsightFilterFields = {};
-      publicInsightsSearchFields.visibility = 'public';
+      const publicQuestionsSearchFields: InsightFilterFields = {};
+      publicQuestionsSearchFields.visibility = 'public';
       if (projectType.value !== ProjectType.Analysis) {
         // when fetching public insights, then project-id is only relevant in domain projects
-        publicInsightsSearchFields.project_id = project.value;
+        publicQuestionsSearchFields.project_id = project.value;
       }
       const publicFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
         contextIds.value.forEach((contextId: string) => {
-          // context-id must be ignored when fetching insights at the project landing page
-          const searchFilter = _.clone(publicInsightsSearchFields);
+          // context-id must be ignored when fetching questions at the project landing page
+          const searchFilter = _.clone(publicQuestionsSearchFields);
           searchFilter.context_id = contextId;
           publicFilterArray.push(searchFilter);
         });
       } else {
-        publicFilterArray.push(publicInsightsSearchFields);
+        publicFilterArray.push(publicQuestionsSearchFields);
       }
-      // Note that when 'ignoreContextId' is true, this means we are fetching insights for the insight explorer within an analysis project
-      // For this case, public insights should not be listed
-      const publicInsights = ignoreContextId ? [] : await fetchInsights(publicFilterArray);
+      // Note that when 'ignoreContextId' is true, this means we are fetching questions for the insight explorer within an analysis project
+      // For this case, public questions should not be listed
+      const publicQuestions = ignoreContextId ? [] : await fetchQuestions(publicFilterArray);
 
       //
-      // fetch project-specific insights
+      // fetch context-specific questions
       //
-      const contextInsightsSearchFields: InsightFilterFields = {};
+      const contextQuestionsSearchFields: InsightFilterFields = {};
       if (projectType.value === ProjectType.Analysis) {
         // when fetching project-specific insights, then project-id is relevant
-        contextInsightsSearchFields.project_id = project.value;
+        contextQuestionsSearchFields.project_id = project.value;
       }
-      contextInsightsSearchFields.visibility = 'private';
+      contextQuestionsSearchFields.visibility = 'private';
       const contextFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
         contextIds.value.forEach((contextId: string) => {
-          const searchFilter = _.clone(contextInsightsSearchFields);
+          const searchFilter = _.clone(contextQuestionsSearchFields);
           searchFilter.context_id = contextId;
           contextFilterArray.push(searchFilter);
         });
       } else {
-        contextFilterArray.push(contextInsightsSearchFields);
+        contextFilterArray.push(contextQuestionsSearchFields);
       }
-      const contextInsights = await fetchInsights(contextFilterArray);
+      const contextQuestions = await fetchQuestions(contextFilterArray);
 
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
         //  fetch results to avoid a race condition.
         return;
       }
-      insights.value = _.uniqBy([...publicInsights, ...contextInsights], 'id');
-      store.dispatch('contextInsightPanel/setCountContextInsights', insights.value.length);
-      store.dispatch('insightPanel/setCountInsights', insights.value.length);
+      const allQuestions = _.uniqBy([...publicQuestions, ...contextQuestions], 'id');
+      // update the store to facilitate questions consumption in other UI places
+      store.dispatch('analysisChecklist/setQuestions', allQuestions);
+
+      questionsList.value = allQuestions;
     }
     onInvalidate(() => {
       isCancelled = true;
     });
-    getInsights();
+    getQuestions();
   });
 
   return {
-    insights,
-    getInsightsByIDs,
-    reFetchInsights
+    questionsList,
+    reFetchQuestions,
+    getInsightsByIDs
   };
 }
