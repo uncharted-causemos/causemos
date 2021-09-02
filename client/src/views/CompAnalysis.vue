@@ -1,37 +1,32 @@
 <template>
   <div class="comp-analysis-container">
-    <navbar-new
-      :show-help-button="true"
-    />
     <teleport to="#navbar-trailing-teleport-destination">
       <analysis-options-button />
     </teleport>
-    <div class="flex-row">
-      <analytical-questions-and-insights-panel class="side-panel" />
-      <main>
-        <action-bar />
-        <div class="column insight-capture" v-if="analysisItems.length">
-          <datacube-comparative-card
-            v-for="item in analysisItems"
-            :key="item.id"
-            class="datacube-comparative-card"
-            :id="item.id"
-            :selected-timestamp="selectedTimestamp"
-            :selected-timestamp-range="selectedTimestampRange"
-            @loaded-timeseries="onLoadedTimeseries"
-          />
-        </div>
-        <empty-state-instructions v-else />
-        <datacube-comparative-timeline-sync
-          v-if="globalTimeseries.length > 0 && timeSelectionSyncing"
-          class="datacube-comparative-timeline-sync"
-          :timeseriesData="globalTimeseries"
+    <analytical-questions-and-insights-panel class="side-panel" />
+    <main>
+      <action-bar />
+      <div class="column insight-capture" v-if="analysisItems.length">
+        <datacube-comparative-card
+          v-for="item in analysisItems"
+          :key="item.id"
+          class="datacube-comparative-card"
+          :id="item.id"
           :selected-timestamp="selectedTimestamp"
-          @select-timestamp="setSelectedTimestamp"
-          @select-timestamp-range="handleTimestampRangeSelection"
+          :selected-timestamp-range="selectedTimestampRange"
+          @loaded-timeseries="onLoadedTimeseries"
         />
-      </main>
-    </div>
+      </div>
+      <empty-state-instructions v-else />
+      <datacube-comparative-timeline-sync
+        v-if="globalTimeseries.length > 0 && timeSelectionSyncing"
+        class="datacube-comparative-timeline-sync"
+        :timeseriesData="globalTimeseries"
+        :selected-timestamp="selectedTimestamp"
+        @select-timestamp="setSelectedTimestamp"
+        @select-timestamp-range="handleTimestampRangeSelection"
+      />
+    </main>
   </div>
 </template>
 
@@ -46,7 +41,6 @@ import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import _ from 'lodash';
 import { DataState } from '@/types/Insight';
-import NavbarNew from '@/components/navbar-new.vue';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
 
@@ -58,7 +52,6 @@ export default defineComponent({
     EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,
     DatacubeComparativeTimelineSync,
-    NavbarNew,
     AnalysisOptionsButton
   },
   setup() {
@@ -270,16 +263,9 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-container {
-  height: 100vh;
+  height: $content-full-height;
   display: flex;
-  flex-direction: column;
   overflow: hidden;
-}
-
-.flex-row {
-  flex: 1;
-  display: flex;
-  min-height: 0;
 }
 
 .side-panel {
