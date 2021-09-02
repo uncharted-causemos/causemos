@@ -118,6 +118,10 @@ export default {
       type: String,
       default: ''
     },
+    hasError: {
+      type: Boolean,
+      default: false
+    },
     isNewInsight: {
       type: Boolean,
       default: true
@@ -143,7 +147,6 @@ export default {
   data: () => ({
     drilldownTabs: METDATA_DRILLDOWN_TABS,
     errorMsg: MSG_EMPTY_INSIGHT_NAME,
-    hasError: false,
     insightMetadata: ''
   }),
   methods: {
