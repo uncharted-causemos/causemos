@@ -92,7 +92,7 @@ import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
 import { DatacubeStatus } from '@/types/Enums';
-import { isModel } from '../../utils/datacube-util';
+import { isIndicator, isModel } from '../../utils/datacube-util';
 
 export default {
   name: 'SearchListview',
@@ -128,7 +128,7 @@ export default {
       return datacube.status !== DatacubeStatus.Ready && isModel(datacube);
     },
     isProcessing(datacube) {
-      return datacube.status === DatacubeStatus.Processing && isModel(datacube);
+      return datacube.status === DatacubeStatus.Processing && isIndicator(datacube);
     },
     isNotPublished(datacube) {
       return datacube.status === DatacubeStatus.Registered && isModel(datacube);

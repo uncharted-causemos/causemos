@@ -1,7 +1,9 @@
 import * as d3 from 'd3';
+import moment from 'moment';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
+
 
 const DEFAULT_LINE_COLOR = '#000';
 const DEFAULT_LINE_WIDTH = 2;
@@ -95,6 +97,96 @@ export function renderAxes(
     .call(yAxis)
     .style('font-size', '10px')
     .attr('transform', translate(width - paddingRight, 0));
+}
+
+export function calculateYearlyTicks (
+  firstTimestamp: number,
+  lastTimestamp: number,
+  width: number,
+  minTickSpacing = 10,
+  useMonthTicks = true
+) {
+  const firstYear = moment(firstTimestamp);
+  const lastYear = moment(lastTimestamp);
+
+  const majorIncrecmentsElapsed = lastYear.year() - firstYear.year();
+
+  let tickIncrements = [];
+
+  // create array of years from firstYear to lastYear
+  // epoch seconds for jan first of each year
+  if (majorIncrecmentsElapsed * 12 > width / minTickSpacing || !useMonthTicks) { // not enough space for minor ticks
+    tickIncrements = Array.from({ length: majorIncrecmentsElapsed }, (v, k) => moment([k + 1 + firstYear.year()]).valueOf());
+  } else { // enough space for minor ticks
+    for (let i = 0; i < majorIncrecmentsElapsed * 12; i++) {
+      const momentPlusDuration = moment(firstYear.add(1, 'month')); // add increment of minor duration to next tick
+      const momentNormalized = moment([momentPlusDuration.year(), momentPlusDuration.month(), 1]); // force tick to first of month, FIXME - this is still hardcoded to only work with years and months, not quite sure how to fix
+      tickIncrements.push(momentNormalized.valueOf());
+    }
+  }
+
+  return tickIncrements;
+}
+export function renderXaxis(
+  selection: D3GElementSelection,
+  xScale: d3.ScaleLinear<number, number>,
+  tickIncrements: Array<number>,
+  yOffset: number,
+  timestampFormatter: (timestamp: any) => string,
+  xAxisTickSizePx = 2
+) {
+  // only calls formatter in january, otherwise returns empty string for now label
+  const customTimestampFormatter = function (v: any) {
+    if (v === undefined || v === null) {
+      return '';
+    }
+    const input = moment.utc(v);
+    if (input.month() === 0) {
+      return timestampFormatter(v);
+    }
+    return '';
+  };
+
+  const xAxis = d3
+    .axisBottom(xScale)
+    .tickSize(xAxisTickSizePx)
+    .tickFormat(customTimestampFormatter)
+    .tickValues(tickIncrements);
+
+  selection
+    .append('g')
+    .classed('xAxis', true)
+    .style('pointer-events', 'none')
+    .call(xAxis)
+    .style('font-size', '10px')
+    .attr('transform', translate(0, yOffset));
+}
+
+export function renderYaxis(
+  selection: D3GElementSelection,
+  yScale: d3.ScaleLinear<number, number>,
+  // The type of value can't be more specific than `any`
+  //  because under the hood d3.tickFormat requires d3.NumberType.
+  // It correctly converts, but its TypeScript definitions don't
+  //  seem to reflect that.
+  valueFormatter: (value: any) => string,
+  xOffset: number,
+  yAxisWidth: number,
+  yAxisTickCount = 2
+) {
+  const yAxis = d3
+    .axisLeft(yScale)
+    .tickSize(xOffset - yAxisWidth)
+    .tickFormat(valueFormatter)
+    .ticks(yAxisTickCount);
+
+  selection
+    .append('g')
+    .classed('yAxis', true)
+    .style('pointer-events', 'none')
+    .call(yAxis)
+    .style('font-size', '10px')
+    .attr('transform', translate(xOffset, 0));
 }
 
 export function renderLine(

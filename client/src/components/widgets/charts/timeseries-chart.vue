@@ -36,10 +36,9 @@ import {
   toRefs,
   computed
 } from 'vue';
-import dateFormatter from '@/formatters/date-formatter';
+import { TemporalResolutionOption } from '@/types/Enums';
+import formatTimestamp from '@/formatters/timestamp-formatter';
 import { chartValueFormatter } from '@/utils/string-util';
-import { getTimestampMillis } from '@/utils/date-util';
-import { TemporalAggregationLevel, TemporalResolutionOption } from '@/types/Enums';
 
 const RESIZE_DELAY = 15;
 
@@ -52,7 +51,7 @@ export default defineComponent({
       required: true
     },
     selectedTemporalResolution: {
-      type: String,
+      type: String as PropType<TemporalResolutionOption | null>,
       default: ''
     },
     selectedTimestamp: {
@@ -89,13 +88,11 @@ export default defineComponent({
       | ((timestamp: number | null) => void)
       | undefined;
     const timestampFormatter = (timestamp: number) => {
-      if (breakdownOption.value === TemporalAggregationLevel.Year) {
-        const month = timestamp;
-        // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
-      }
-      return dateFormatter(timestamp,
-        selectedTemporalResolution.value === TemporalResolutionOption.Year ? 'YYYY' : 'MMMM YYYY');
+      return formatTimestamp(
+        timestamp,
+        breakdownOption.value,
+        selectedTemporalResolution.value
+      );
     };
     const resize = _.debounce(function({ width, height }) {
       if (lineChart.value === null || timeseriesData.value.length === 0) return;
