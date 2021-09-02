@@ -9,7 +9,7 @@
         >
           <b>{{param.display_name}} </b>
           <span v-if="param.unit" v-tooltip="param.unit_description"> ({{param.unit}})</span>
-          <span v-if="param.description">: {{ param.description }}</span>
+          <span v-if="param.description">: <multiline-description :text="param.description" /></span>
           <p />
         </div>
       </template>
@@ -21,7 +21,7 @@
         >
           <b>{{output.display_name}} </b>
           <span v-if="output.unit" v-tooltip="output.unit_description"> ({{output.unit}})</span>
-          <span v-if="output.description">: {{ output.description }}</span>
+          <span v-if="output.description">: <multiline-description :text="output.description" /> </span>
         </div>
       </template>
     </div>
