@@ -1,5 +1,5 @@
 <template>
-  <nav class="navbar-container">
+  <nav class="navbar-container" v-if="isNavbarVisible">
     <div class="navbar-left-group">
       <a href="#/" class="nav-item nav-item--logo clickable">
         <img
@@ -56,7 +56,9 @@ export default defineComponent({
     const projectMetadata = computed(
       () => store.getters['app/projectMetadata']
     );
-    const quantitativeAnalysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+    const quantitativeAnalysisId = computed(
+      () => store.getters['dataAnalysis/analysisId']
+    );
     const analysisName = computed(() => store.getters['app/analysisName']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
 
@@ -98,22 +100,15 @@ export default defineComponent({
         }
       }
     }));
-    const modelPublishingItem = {
-      icon: 'fa-cube',
-      route: null,
-      text: 'Instance'
-    };
-
-    const nodeDrilldownItem = {
-      icon: 'fa-circle',
-      route: null,
-      text: 'Node drilldown'
-    };
 
     const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
       home: [],
-      overview: [analysisProjectItem.value],
       domainDatacubeOverview: [datacubeProjectItem.value],
+      modelPublishingExperiment: [
+        datacubeProjectItem.value,
+        { icon: 'fa-cube', route: null, text: 'Instance' }
+      ],
+      overview: [analysisProjectItem.value],
       dataComparative: [
         analysisProjectItem.value,
         quantitativeAnalysisItem.value
@@ -128,24 +123,22 @@ export default defineComponent({
       nodeDrilldown: [
         analysisProjectItem.value,
         qualitativeAnalysisItem.value,
-        nodeDrilldownItem
-      ],
-      modelPublishingExperiment: [
-        datacubeProjectItem.value,
-        modelPublishingItem
+        { icon: 'fa-circle', route: null, text: 'Node drilldown' }
       ]
-      // data? // CURRENTLY A "full screen modal" BUT SHOULD PROBABLY JUST BE IN THE REGULAR FLOW
-      // kb-explorer?
-      // dataExplorer?
-      // insight pages??
-      // ...?
+      // 'nodeCompExperiment',
+      // 'nodeDataExplorer',
+      // 'kbExplorer',
+      // 'dataExplorer',
+      // 'createDataCube'
     }));
 
     const currentView = computed(() => store.getters['app/currentView']);
     const navItems = computed(() => siteMap.value[currentView.value] ?? null);
+    const isNavbarVisible = computed(() => navItems.value !== null);
 
     return {
-      navItems
+      navItems,
+      isNavbarVisible
     };
   }
 });
