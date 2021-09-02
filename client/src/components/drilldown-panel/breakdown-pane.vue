@@ -103,7 +103,7 @@
       :ordered-aggregation-level-keys="['Year']"
       :raw-data="temporalBreakdownData"
       :units="unit"
-      :should-show-deselected-bars="true"
+      :should-show-deselected-bars="selectedBreakdownOption !== TemporalAggregationLevel.Year"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :checkbox-type="
         selectedBreakdownOption === TemporalAggregationLevel.Year
