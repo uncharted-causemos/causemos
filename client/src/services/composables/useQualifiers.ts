@@ -87,7 +87,7 @@ export default function useQualifiers(
   });
 
   const selectedQualifierValues = ref<Set<string>>(new Set());
-  watch([metadata, breakdownOption], () => {
+  watch([breakdownOption], () => {
     // Reset the selected qualifier value list when the selected qualifier changes
     if (selectedQualifierValues.value.size !== 0) {
       selectedQualifierValues.value = new Set();
