@@ -2,9 +2,10 @@
   <div class="comp-analysis-container">
     <navbar-new
       :show-help-button="true"
-    >
+    />
+    <teleport to="#navbar-trailing-teleport-destination">
       <analysis-options-button />
-    </navbar-new>
+    </teleport>
     <div class="flex-row">
       <analytical-questions-and-insights-panel class="side-panel" />
       <main>

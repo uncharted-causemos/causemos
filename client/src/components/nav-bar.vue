@@ -23,10 +23,7 @@
           <span class="nav-item-label">{{ navItem.text }}</span>
         </div>
       </template>
-      <!-- TODO: teleport destination goes here -->
-      <!-- <div class="trailing">
-        <slot />
-      </div> -->
+      <div id="navbar-trailing-teleport-destination" class="trailing"></div>
     </div>
 
     <!-- Help button -->
