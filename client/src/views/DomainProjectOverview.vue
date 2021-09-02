@@ -345,6 +345,8 @@ main {
 
 .insights {
   flex: 1;
+  background: white;
+  padding: 10px;
 }
 
 .instance-list-column {
