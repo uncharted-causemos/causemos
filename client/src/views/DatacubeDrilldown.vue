@@ -1,12 +1,5 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <full-screen-modal-header
-      v-if="projectType === ProjectType.Analysis"
-      icon="angle-left"
-      :nav-back-label="navBackLabel"
-      @close="onClose"
-    >
-    </full-screen-modal-header>
     <main class="main">
       <analytical-questions-and-insights-panel />
       <div class="main insight-capture">
@@ -172,7 +165,6 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { getAnalysis } from '@/services/analysis-service';
-import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState, DataState } from '@/types/Insight';
@@ -197,7 +189,6 @@ export default defineComponent({
     DatacubeDescription,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
-    FullScreenModalHeader,
     MapDropdown
   },
   setup() {
@@ -561,13 +552,7 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       projectType: 'app/projectType'
-    }),
-    navBackLabel(): string {
-      if (this.analysis) {
-        return 'Back to ' + (this.analysis as any).title;
-      }
-      return 'Back to analysis';
-    }
+    })
   },
   methods: {
     ...mapActions({
@@ -693,7 +678,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-experiment-container {
-  height: 100vh;
+  height: $content-full-height;
   display: flex;
   flex-direction: column;
   overflow: hidden;

@@ -56,6 +56,7 @@ export default defineComponent({
     const projectMetadata = computed(
       () => store.getters['app/projectMetadata']
     );
+    const quantitativeAnalysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisName = computed(() => store.getters['app/analysisName']);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
 
@@ -76,7 +77,14 @@ export default defineComponent({
     const quantitativeAnalysisItem = computed(() => ({
       text: analysisName.value,
       icon: 'fa-line-chart',
-      route: null
+      route: {
+        name: 'dataComparative',
+        params: {
+          project: project.value,
+          currentCAG: quantitativeAnalysisId.value,
+          projectType: ProjectType.Analysis
+        }
+      }
     }));
     const qualitativeAnalysisItem = computed(() => ({
       text: analysisName.value,
@@ -109,6 +117,11 @@ export default defineComponent({
       dataComparative: [
         analysisProjectItem.value,
         quantitativeAnalysisItem.value
+      ],
+      data: [
+        analysisProjectItem.value,
+        quantitativeAnalysisItem.value,
+        { icon: 'fa-cube', route: null, text: 'Datacube drilldown' }
       ],
       qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
       quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
