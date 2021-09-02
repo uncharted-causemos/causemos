@@ -58,6 +58,9 @@ import {
   createColorStops,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
+import {
+  adminLevelToString
+} from '@/utils/map-util-new';
 import { chartValueFormatter } from '@/utils/string-util';
 import MapLegend from '@/components/widgets/map-legend';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
@@ -249,7 +252,7 @@ export default {
     },
     adminLevel() {
       if (this.selectedLayerId > 3) return undefined;
-      return this.selectedLayerId === 0 ? 'country' : 'admin' + this.selectedLayerId;
+      return adminLevelToString(this.selectedLayerId);
     },
     gridStats() {
       const result = {};
@@ -371,7 +374,7 @@ export default {
     getExtent() {
       if (this.baselineSpec) {
         return this.adminLayerStats?.difference[this.adminLevel];
-      } else if (this.valueProp === this.relativeTo) {
+      } else if (this.outputSelection === this.relativeTo) {
         return this.adminLayerStats?.baseline[this.adminLevel];
       } else {
         return this.adminLayerStats?.global[this.adminLevel];
