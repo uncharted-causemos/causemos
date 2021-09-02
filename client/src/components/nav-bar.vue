@@ -58,6 +58,7 @@ export default defineComponent({
     const projectMetadata = computed(
       () => store.getters['app/projectMetadata']
     );
+    const analysisName = computed(() => store.getters['app/analysisName']);
 
     const analysisProjectItem = computed<NavBarItem>(() => ({
       text: projectMetadata.value.name,
@@ -74,12 +75,12 @@ export default defineComponent({
     }));
 
     const quantitativeAnalysisItem = computed(() => ({
-      text: '', // app/analysisName
+      text: analysisName.value,
       icon: 'fa-line-chart',
       route: null
     }));
     const qualitativeAnalysisItem = computed(() => ({
-      text: '', // app/analysisName
+      text: analysisName.value,
       icon: 'fa-book',
       route: null
       // TODO: this nav item will require a route in qualitative analyses

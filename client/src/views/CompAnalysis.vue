@@ -2,9 +2,8 @@
   <div class="comp-analysis-container">
     <navbar-new
       :show-help-button="true"
-      :changed-analysis-name="changedAnalysisName"
     >
-      <analysis-options-button @on-analysis-renamed="onAnalysisRenamed" />
+      <analysis-options-button />
     </navbar-new>
     <div class="flex-row">
       <analytical-questions-and-insights-panel class="side-panel" />
@@ -36,7 +35,7 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
@@ -48,6 +47,7 @@ import _ from 'lodash';
 import { DataState } from '@/types/Insight';
 import NavbarNew from '@/components/navbar-new.vue';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
+import { getAnalysis } from '@/services/analysis-service';
 
 export default defineComponent({
   name: 'CompAnalysis',
@@ -64,6 +64,15 @@ export default defineComponent({
     const store = useStore();
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const timeSelectionSyncing = computed(() => store.getters['dataAnalysis/timeSelectionSyncing']);
+    const quantitativeAnalysisId = computed(
+      () => store.getters['dataAnalysis/analysisId']
+    );
+
+    onMounted(async () => {
+      store.dispatch('app/setAnalysisName', '');
+      const result = await getAnalysis(quantitativeAnalysisId.value);
+      store.dispatch('app/setAnalysisName', result.title);
+    });
 
     watchEffect(() => {
       if (analysisItems.value && analysisItems.value.length > 0) {
@@ -119,11 +128,6 @@ export default defineComponent({
       }
     );
 
-    const changedAnalysisName = ref<string | null>(null);
-    const onAnalysisRenamed = (newName: string) => {
-      changedAnalysisName.value = newName;
-    };
-
     return {
       analysisItems,
       allTimeseriesMap,
@@ -136,9 +140,7 @@ export default defineComponent({
       reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
       initialSelectedTimestampRange,
-      timeSelectionSyncing,
-      changedAnalysisName,
-      onAnalysisRenamed
+      timeSelectionSyncing
     };
   },
   mounted() {

@@ -43,11 +43,11 @@ import { ProjectType } from '@/types/Enums';
 export default defineComponent({
   components: { RenameModal, DropdownControl },
   name: 'AnalysisOptionsButton',
-  emits: ['on-analysis-renamed'],
-  setup(props, { emit }) {
+  setup() {
     const toast = useToaster();
     const store = useStore();
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+    const analysisName = computed(() => store.getters['app/analysisName']);
     const project = computed(() => store.getters['app/project']);
 
     const isDropdownOpen = ref(false);
@@ -58,11 +58,14 @@ export default defineComponent({
       isDropdownOpen.value = false;
     };
     const onRenameModalConfirm = async (newName: string) => {
+      const previousName = analysisName.value;
       try {
+        // Optimistically set the new name
+        store.dispatch('app/setAnalysisName', newName);
         await updateAnalysis(analysisId.value, { title: newName });
-        emit('on-analysis-renamed', newName);
-        toast(ANALYSIS.SUCCESSFUL_RENAME, 'success', false);
       } catch (e) {
+        // Update failed, so undo name change
+        store.dispatch('app/setAnalysisName', previousName);
         toast(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
       }
       isRenameModalOpen.value = false;
@@ -95,6 +98,7 @@ export default defineComponent({
     return {
       isDropdownOpen,
       isRenameModalOpen,
+      analysisName,
       onRename,
       onRenameModalConfirm,
       onDelete
