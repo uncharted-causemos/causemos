@@ -88,7 +88,6 @@ export default {
     },
     async currentInsight() {
       if (this.currentInsight) {
-        console.log(this.currentInsight);
         this.name = this.currentInsight.name;
         this.description = this.currentInsight.description;
         this.projectMetadata = await projectService.getProject(this.currentInsight.project_id);
