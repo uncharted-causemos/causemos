@@ -99,34 +99,27 @@ export function renderAxes(
     .attr('transform', translate(width - paddingRight, 0));
 }
 
-export function calculateXTicks (
-  xScale: d3.ScaleLinear<number, number>,
+export function calculateYearlyTicks (
+  firstTimestamp: number,
+  lastTimestamp: number,
   width: number,
-  majorTickDuration: moment.unitOfTime.DurationConstructor = 'year',
-  minorTickDuration: moment.unitOfTime.DurationConstructor = 'month',
   minTickSpacing = 10,
-  useMinorTicks = true
+  useMonthTicks = true
 ) {
-  const firstTimestamp = xScale.domain()[0];
-  const lastTimestamp = xScale.domain()[1];
   const firstYear = moment(firstTimestamp);
   const lastYear = moment(lastTimestamp);
 
-  const majorIncrecmentsElapsed = lastYear.get(majorTickDuration) - firstYear.get(majorTickDuration);
-
-  const major = moment.duration(1, majorTickDuration).as('ms'); // convert to moment duration object
-  const minor = moment.duration(1, minorTickDuration).as('ms');
-  const minorInMajor = Math.trunc(major / minor); // number of minor ticks in between each major tick
+  const majorIncrecmentsElapsed = lastYear.year() - firstYear.year();
 
   let tickIncrements = [];
 
   // create array of years from firstYear to lastYear
   // epoch seconds for jan first of each year
-  if (majorIncrecmentsElapsed * minorInMajor > width / minTickSpacing || !useMinorTicks) { // not enough space for minor ticks
+  if (majorIncrecmentsElapsed * 12 > width / minTickSpacing || !useMonthTicks) { // not enough space for minor ticks
     tickIncrements = Array.from({ length: majorIncrecmentsElapsed }, (v, k) => moment([k + 1 + firstYear.year()]).valueOf());
   } else { // enough space for minor ticks
-    for (let i = 0; i < majorIncrecmentsElapsed * minorInMajor; i++) {
-      const momentPlusDuration = moment(firstYear.add(1, minorTickDuration)); // add increment of minor duration to next tick
+    for (let i = 0; i < majorIncrecmentsElapsed * 12; i++) {
+      const momentPlusDuration = moment(firstYear.add(1, 'month')); // add increment of minor duration to next tick
       const momentNormalized = moment([momentPlusDuration.year(), momentPlusDuration.month(), 1]); // force tick to first of month, FIXME - this is still hardcoded to only work with years and months, not quite sure how to fix
       tickIncrements.push(momentNormalized.valueOf());
     }
@@ -138,10 +131,8 @@ export function renderXaxis(
   selection: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
   tickIncrements: Array<number>,
-  height: number,
+  yOffset: number,
   timestampFormatter: (timestamp: any) => string,
-  xAxisHeight: number,
-  xAxisMinorTickIncrement: moment.unitOfTime.DurationConstructor = 'month',
   xAxisTickSizePx = 2
 ) {
   // only calls formatter in january, otherwise returns empty string for now label
@@ -150,7 +141,7 @@ export function renderXaxis(
       return '';
     }
     const input = moment.utc(v);
-    if (input.get(xAxisMinorTickIncrement) === 0) {
+    if (input.month() === 0) {
       return timestampFormatter(v);
     }
     return '';
@@ -168,7 +159,7 @@ export function renderXaxis(
     .style('pointer-events', 'none')
     .call(xAxis)
     .style('font-size', '10px')
-    .attr('transform', translate(0, height - xAxisHeight));
+    .attr('transform', translate(0, yOffset));
 }
 
 export function renderYaxis(
@@ -179,14 +170,13 @@ export function renderYaxis(
   // It correctly converts, but its TypeScript definitions don't
   //  seem to reflect that.
   valueFormatter: (value: any) => string,
-  width: number,
+  xOffset: number,
   yAxisWidth: number,
-  paddingRight: number,
   yAxisTickCount = 2
 ) {
   const yAxis = d3
     .axisLeft(yScale)
-    .tickSize(width - yAxisWidth - paddingRight)
+    .tickSize(xOffset - yAxisWidth)
     .tickFormat(valueFormatter)
     .ticks(yAxisTickCount);
 
@@ -196,7 +186,7 @@ export function renderYaxis(
     .style('pointer-events', 'none')
     .call(yAxis)
     .style('font-size', '10px')
-    .attr('transform', translate(width - paddingRight, 0));
+    .attr('transform', translate(xOffset, 0));
 }
 
 export function renderLine(
