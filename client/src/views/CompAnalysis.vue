@@ -68,6 +68,9 @@ export default defineComponent({
         // set context-ids to fetch insights correctly for all datacubes in this analysis
         const contextIDs = analysisItems.value.map((dc: any) => dc.id);
         store.dispatch('insightPanel/setContextId', contextIDs);
+      } else {
+        // no datacubes in this analysis, so do not fetch any insights/questions
+        store.dispatch('insightPanel/setContextId', undefined);
       }
     });
 
@@ -129,8 +132,6 @@ export default defineComponent({
       initialSelectedTimestampRange,
       timeSelectionSyncing
     };
-  },
-  unmounted(): void {
   },
   mounted() {
     // ensure the insight explorer panel is closed in case the user has

@@ -522,7 +522,7 @@ export default defineComponent({
       immediate: true
     }
   },
-  unmounted(): void {
+  unmounted() {
     clearInterval(this.timerHandler);
   },
   async mounted() {
