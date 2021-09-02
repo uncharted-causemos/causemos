@@ -1,10 +1,11 @@
 import _ from 'lodash';
+import moment from 'moment';
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
-import { renderAxes, renderLine } from '@/utils/timeseries-util';
+import { calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import {
   confidenceArea,
@@ -36,7 +37,7 @@ const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
   be snapped to. */
 const DISCRETE_Y_POSITION_COUNT = 31;
 
-const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
+const DATE_FORMATTER = (value: any) => dateFormatter(value, 'YYYY');
 
 export default function(
   selection: D3Selection,
@@ -107,18 +108,28 @@ export default function(
   const contextGroupElement = selection
     .append('g')
     .classed('contextGroupElement', true);
-  renderAxes(
+
+  const firstTimestamp = xScaleContext.domain()[0]; // potentially misleading as this isnt always the first day of the year
+  const lastTimestamp = moment([moment(xScaleContext.domain()[1]).year()]).valueOf();
+  const xAxisTicks = [firstTimestamp, lastTimestamp];
+  const yOffset = contextHeight - X_AXIS_HEIGHT;
+  const xOffset = totalWidth - PADDING_RIGHT;
+
+  renderXaxis(
     contextGroupElement,
     xScaleContext,
+    xAxisTicks,
+    yOffset,
+    DATE_FORMATTER
+  );
+  renderYaxis(
+    contextGroupElement,
     yScaleContext,
     valueFormatter,
-    totalWidth,
-    contextHeight,
-    DATE_FORMATTER,
-    Y_AXIS_WIDTH,
-    PADDING_RIGHT,
-    X_AXIS_HEIGHT
+    xOffset,
+    Y_AXIS_WIDTH
   );
+
   contextGroupElement.selectAll('.yAxis').remove();
   contextGroupElement.attr('transform', translate(0, focusHeight)); // move context to bottom
   renderStaticElements(
@@ -242,18 +253,29 @@ export default function(
       projections,
       historicalTimeseries
     );
-    renderAxes(
+    const xAxisTicks = calculateYearlyTicks(
+      xScaleFocus.domain()[0],
+      xScaleFocus.domain()[1],
+      totalWidth
+    );
+    const yOffset = focusHeight - X_AXIS_HEIGHT;
+    const xOffset = totalWidth - PADDING_RIGHT;
+
+    renderXaxis(
       focusGroupElement,
       xScaleFocus,
+      xAxisTicks,
+      yOffset,
+      DATE_FORMATTER
+    );
+    renderYaxis(
+      focusGroupElement,
       yScaleFocus,
       valueFormatter,
-      totalWidth,
-      focusHeight,
-      DATE_FORMATTER,
-      Y_AXIS_WIDTH,
-      PADDING_RIGHT,
-      X_AXIS_HEIGHT
+      xOffset,
+      Y_AXIS_WIDTH
     );
+
     focusGroupElement.selectAll('.yAxis .domain').remove();
     focusGroupElement.selectAll('.yAxis .tick line').remove();
     renderHistoricalTimeseries(
