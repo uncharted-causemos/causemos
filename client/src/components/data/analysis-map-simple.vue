@@ -47,7 +47,6 @@
 <script>
 
 import _ from 'lodash';
-// import { getOutputStats } from '@/services/runoutput-service';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
@@ -55,7 +54,6 @@ import {
   BASE_MAP_OPTIONS,
   createHeatmapLayerStyle,
   ETHIOPIA_BOUNDING_BOX,
-  isLayerLoaded,
   createDivergingColorStops,
   createColorStops,
   STYLE_URL_PREFIX
@@ -216,7 +214,8 @@ export default {
     hoverId: undefined,
     map: undefined,
     legendData: [],
-    curZoom: 0
+    curZoom: 0,
+    extent: undefined
   }),
   computed: {
     mapFixedOptions() {
@@ -252,44 +251,6 @@ export default {
       if (this.selectedLayerId > 3) return undefined;
       return this.selectedLayerId === 0 ? 'country' : 'admin' + this.selectedLayerId;
     },
-    stats() {
-      const stats = {};
-      if (!this.regionData) return stats;
-      if (this.baselineSpec) {
-        // Stats relative to the baseline. (min/max of the difference relative to the baseline)
-        const baselineProp = this.baselineSpec.id;
-        for (const [key, data] of Object.entries(this.regionData)) {
-          const values = [];
-          data.filter(v => v.values[baselineProp] !== undefined).forEach(v => {
-            const diffs = Object.values(v.values).map(value => value - v.values[baselineProp]);
-            values.push(...diffs);
-          });
-          if (values.length) {
-            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
-          }
-        }
-      } else if (this.relativeTo === this.outputSelection) {
-        // Stats for the baseline map
-        for (const [key, data] of Object.entries(this.regionData)) {
-          const values = data.filter(v => v.values[this.valueProp] !== undefined).map(v => v.values[this.valueProp]);
-          if (values.length) {
-            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
-          }
-        }
-      } else {
-        // Stats globally across all maps
-        for (const [key, data] of Object.entries(this.regionData)) {
-          const values = [];
-          for (const v of data) {
-            values.push(...Object.values(_.omit(v.values, 'unselected region')));
-          }
-          if (values.length) {
-            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
-          }
-        }
-      }
-      return stats;
-    },
     gridStats() {
       const result = {};
       // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
@@ -324,14 +285,6 @@ export default {
       const maxZoom = Math.max(...zoomLevels);
       const zoom = Math.min(maxZoom, this.curZoom);
       return this.gridStats[zoom];
-    },
-    extent() {
-      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom;
-      if (!extent) return { min: 0, max: 1 };
-      if (extent.min === extent.max) {
-        extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
-      }
-      return extent;
     },
     selectedBaseLayerEndpoint() {
       return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
@@ -380,17 +333,21 @@ export default {
     filters() {
       this.updateLayerFilter();
     },
-    selection() {
-      this.refresh();
-    },
     relativeTo() {
-      this.refresh();
+      console.log('relativeTo changed');
+      this.debouncedRefresh();
     },
     regionData() {
-      this.refresh();
+      console.log('regiondata changed');
+      this.debouncedRefresh();
     },
     selectedLayer() {
-      this.refreshLayers();
+      console.log('selectedLayer changed');
+      this.debouncedRefresh();
+    },
+    adminLayerStats() {
+      console.log('adminlayerstats changed');
+      this.debouncedRefresh();
     }
   },
   created() {
@@ -399,31 +356,26 @@ export default {
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
 
-    this.debouncedRefreshGridMap = _.debounce(function() {
-      this.refreshGridMap();
+    this.debouncedRefresh = _.debounce(function() {
+      console.log('debounced refresh');
+      this.refresh();
     }, 50);
-
-    // Init layer objects
-    this.refreshLayers();
-  },
-  mounted() {
-    this.refresh();
   },
   methods: {
     refresh() {
       if (!this.map || !this.selection) return;
-
       this.setFeatureStates();
       this.refreshLayers();
       this.updateLayerFilter();
     },
     getExtent() {
-      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom || this.computeGridRelativeStats();
-      if (!extent) return { min: 0, max: 1 };
-      if (extent.min === extent.max) {
-        extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
+      if (this.baselineSpec) {
+        return this.adminLayerStats?.difference[this.adminLevel];
+      } else if (this.valueProp === this.relativeTo) {
+        return this.adminLayerStats?.baseline[this.adminLevel];
+      } else {
+        return this.adminLayerStats?.global[this.adminLevel];
       }
-      return extent;
     },
     refreshLayers() {
       if (this.colorOption === undefined) return;
@@ -432,14 +384,17 @@ export default {
       this.refreshColorLayer(useFeatureState);
     },
     refreshColorLayer(useFeatureState = false) {
-      const { min, max } = this.getExtent();
+      this.extent = this.getExtent();
+      if (!this.extent) return;
+      const { min, max } = this.extent;
+      console.log('from refresh:', this.extent);
       const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec?.id;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
       this.legendData = createMapLegendData([min, max], this.colorScheme, scaleFn, relativeToProp);
     },
     setFeatureStates() {
-      if (!this.adminLevel) return;
+      if (!this.map || !this.adminLevel || this.isGridMap) return;
 
       // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
@@ -472,7 +427,7 @@ export default {
     onUpdateSource() {
       setTimeout(() => {
         // Hack: give enough time to map to render features from updated source
-        this.refreshGridMap();
+        this.isGridMap && this.refresh();
       }, 500);
     },
     updateCurrentZoomLevel() {
@@ -491,11 +446,15 @@ export default {
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
       this.updateCurrentZoomLevel();
+
+      // Init layers
+      this.refreshLayers();
+
       this.$emit('on-map-load');
     },
     onMapMove(event) {
       this.updateCurrentZoomLevel();
-      this.debouncedRefreshGridMap();
+      this.isGridMap && this.debouncedRefresh();
       this.syncBounds(event);
     },
     syncBounds(event) {
@@ -576,7 +535,9 @@ export default {
       if (_.isNil(prop && prop[this.valueProp])) return null;
 
       const value = prop[this.valueProp];
-      const format = v => chartValueFormatter(this.extent.min, this.extent.max)(v);
+      const format = v => this.extnet
+        ? chartValueFormatter(this.extent.min, this.extent.max)(v)
+        : chartValueFormatter()(v);
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
         const diff = prop[this.valueProp] - prop[this.baselineSpec.id];
@@ -585,15 +546,6 @@ export default {
       }
       if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
-    },
-    refreshGridMap() {
-      if (!this.map) return;
-      // Exit early if the layer hasn't finished loading
-      if (!isLayerLoaded(this.map, this.baseLayerId)) return;
-      // This only applies to grid map
-      if (!this.isGridMap) return;
-      this.refreshColorLayer();
-      this.updateLayerFilter();
     },
     isSourceLayerLoaded(sourceLayer) {
       return Boolean(this.map?.getLayer(this.colorLayerId)?.sourceLayer === sourceLayer);

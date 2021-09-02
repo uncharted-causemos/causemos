@@ -436,7 +436,9 @@ export default defineComponent({
       } else {
         const { min, max } = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
         mapLegendData.value = [createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)];
+        console.log(min, max);
       }
+      console.log('From regionDataChange: ', adminLayerStats.value);
     });
 
     const gridLayerStats = ref<OutputStatsResult[]>([]);

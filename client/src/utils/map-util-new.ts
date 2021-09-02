@@ -21,6 +21,20 @@ export function adminLevelToString(level: number) {
   return adminLevel;
 }
 
+// Resolve edge case where min and max are equal. Often happens when there's single data point when calculating min/max
+// Eg. Region data only has Ethiopia at country level.
+function resolveSameMinMaxValue(minMax: { min: number; max: number}) {
+  const { min, max } = minMax;
+  if (min === 0 && max === 0) {
+    return { min: -1, max: 1 };
+  }
+  const result = { ...minMax };
+  if (min === max) {
+    result[Math.sign(result.min) === -1 ? 'max' : 'min'] = 0;
+  }
+  return result;
+}
+
 // Compute min/max stats for regional data
 export function computeRegionalStats(regionData: RegionalAggregations, baselineProp?: string) {
   const global: RegionalStats = {};
@@ -31,7 +45,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
       values.push(...Object.values(_.omit(v.values, 'unselected region')));
     }
     if (values.length) {
-      global[key] = { min: Math.min(...values), max: Math.max(...values) };
+      global[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
     }
   }
   const baseline: RegionalStats = {};
@@ -41,7 +55,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
     for (const [key, data] of Object.entries(regionData)) {
       const values = (data || []).filter(v => v.values[baselineProp] !== undefined).map(v => v.values[baselineProp]);
       if (values.length) {
-        baseline[key] = { min: Math.min(...values), max: Math.max(...values) };
+        baseline[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
       }
     }
 
@@ -53,7 +67,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
         values.push(...diffs);
       });
       if (values.length) {
-        difference[key] = { min: Math.min(...values), max: Math.max(...values) };
+        difference[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
       }
     }
   }
