@@ -14,7 +14,7 @@
       :is-dropdown-left-aligned="true"
       @item-selected="emitBreakdownOptionSelection"
     />
-    <aggregation-checklist-pane-wrapper
+    <aggregation-checklist-pane
       v-if="isRegionalDataValid"
       class="checklist-section"
       :aggregation-level-count="availableAdminLevelTitles.length"
@@ -52,8 +52,8 @@
           >.
         </p>
       </template>
-    </aggregation-checklist-pane-wrapper>
-    <aggregation-checklist-pane-wrapper
+    </aggregation-checklist-pane>
+    <aggregation-checklist-pane
       class="checklist-section"
       v-for="qualifierVariable in qualifierBreakdownData"
       :key="qualifierVariable.name"
@@ -93,8 +93,8 @@
           >.
         </p>
       </template>
-    </aggregation-checklist-pane-wrapper>
-    <aggregation-checklist-pane-wrapper
+    </aggregation-checklist-pane>
+    <aggregation-checklist-pane
       v-if="isTemporalBreakdownDataValid"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
@@ -120,13 +120,13 @@
           >.
         </p>
       </template>
-    </aggregation-checklist-pane-wrapper>
+    </aggregation-checklist-pane>
   </div>
 </template>
 
 <script lang="ts">
 import { computed, defineComponent, PropType, toRefs } from 'vue';
-import aggregationChecklistPaneWrapper from '@/components/drilldown-panel/aggregation-checklist-pane-wrapper.vue';
+import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
 import formatTimestamp from '@/formatters/timestamp-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
@@ -144,7 +144,7 @@ import { TimeseriesPointSelection } from '@/types/Timeseries';
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
 
 export default defineComponent({
-  components: { aggregationChecklistPaneWrapper, DropdownButton },
+  components: { aggregationChecklistPane, DropdownButton },
   name: 'BreakdownPane',
   props: {
     selectedAdminLevel: {
