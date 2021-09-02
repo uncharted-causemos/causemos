@@ -1,163 +1,192 @@
 <template>
-  <nav class="navbar navbar-default">
-    <div class="container-fluid">
-      <div class="navbar-header">
-        <ul class="nav navbar-nav">
-          <li
-            class="nav-item--logo"
-            :class="{active: currentView === 'home'}">
-            <a href="#/">
-              <img
-                class="logo"
-                src="../assets/causemos-icon-white.svg"
-                alt="CauseMos logo"
-              >
-            </a>
-          </li>
-          <li v-if="currentView === 'home'" class="nav-item nav-item--label">
-            All Projects
-          </li>
-          <template v-if="project !== null && projectMetadata !== null && projectMetadata.name !== ''">
-            <li
-              v-if="projectType !== ProjectType.Analysis"
-              class="nav-item"
-              :class="{underlined: currentView === 'domainDatacubeOverview'}">
-              <router-link
-                class="nav-link"
-                :to="{name:'domainDatacubeOverview', params:{project: project}}"
-              >
-                <i class="fa fa-fw fa-connectdevelop" />
-                {{ projectMetadata.name }}
-              </router-link>
-            </li>
-            <li
-              v-if="projectType === ProjectType.Analysis"
-              class="nav-item"
-              :class="{underlined: currentView === 'overview'}">
-              <router-link
-                class="nav-link"
-                :to="{name:'overview', params:{project: project}}"
-              >
-                <i class="fa fa-fw fa-clone" />
-                {{ projectMetadata.name }}
-              </router-link>
-            </li>
-            <li
-              v-if="projectType === ProjectType.Analysis && currentView !== 'overview'"
-              class="nav-item"
-              :class="{'nav-item--label': currentView !== 'nodeDrilldown', underlined: currentView === 'dataComparative' || currentView === 'qualitative' || currentView === 'quantitative'}">
-              <router-link
-                v-if="currentView === 'nodeDrilldown'"
-                class="nav-link"
-                :to="{name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}"
-              >
-                {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
-              </router-link>
-              <template v-else>
-                <i v-if="currentView === 'quantitative'" class="fa fa-fw fa-connectdevelop" />
-                <i v-if="currentView === 'qualitative'" class="fa fa-fw fa-book" />
-                <i v-if="currentView === 'dataComparative'" class="fa fa-fw fa-line-chart" />
-                {{ currentView === 'dataComparative' ? 'Quantitative' : 'Qualitative' }}
-              </template>
-            </li>
-            <li
-              v-if="projectType === ProjectType.Analysis && currentView === 'nodeDrilldown'"
-              class="nav-item nav-item--label"
-              :class="{underlined: currentView === 'nodeDrilldown'}">
-              Node Drilldown
-            </li>
-          </template>
-        </ul>
-      </div>
-
-      <!-- Help button -->
-      <ul
-        class="nav navbar-nav navbar-right help-holder">
-        <li class="nav-item nav-item--help">
-          <a
-            href="https://docs.google.com/presentation/d/1WnIXxAd639IFMOKEAu3E3C1SUgfzsCO6oLLbKOvAZkI/edit#slide=id.g8c51928f8f_0_200"
-            target="_blank"
-          > <i class="fa fa-question" />
-          </a>
-        </li>
-      </ul>
+  <nav class="navbar-container">
+    <div class="navbar-left-group">
+      <a href="#/" class="nav-item nav-item--logo clickable">
+        <img
+          class="logo"
+          src="../assets/causemos-icon-white.svg"
+          alt="CauseMos logo"
+        />
+      </a>
+      <template v-for="(navItem, index) of navItems" :key="index">
+        <router-link
+          v-if="index !== navItems.length - 1"
+          class="nav-item clickable"
+          :to="navItem.route"
+        >
+          <i class="fa fa-fw" :class="[navItem.icon]" />
+          <span class="nav-item-label">{{ navItem.text }}</span>
+        </router-link>
+        <!-- The last navItem is considered "active" and not clickable -->
+        <div v-else class="nav-item active">
+          <i class="fa fa-fw" :class="[navItem.icon]" />
+          <span class="nav-item-label">{{ navItem.text }}</span>
+        </div>
+      </template>
+      <!-- TODO: teleport destination goes here -->
+      <!-- <div class="trailing">
+        <slot />
+      </div> -->
     </div>
+
+    <!-- Help button -->
+    <a
+      href="https://docs.google.com/presentation/d/1WnIXxAd639IFMOKEAu3E3C1SUgfzsCO6oLLbKOvAZkI/edit#slide=id.g8c51928f8f_0_200"
+      target="_blank"
+      class="nav-item clickable"
+    >
+      <i class="fa fa-question" />
+    </a>
   </nav>
 </template>
 
 <script lang="ts">
-import { mapGetters } from 'vuex';
-import { defineComponent } from 'vue';
+import { computed, defineComponent } from 'vue';
+import { useStore } from 'vuex';
 
-import { ProjectType } from '@/types/Enums';
+interface NavBarItem {
+  route: { name: string; params: any } | null;
+  icon?: string;
+  text: string;
+}
 
 export default defineComponent({
   name: 'NavBar',
-  components: {
-  },
-  data: () => ({
-    ProjectType
-  }),
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-      currentView: 'app/currentView',
-      currentCAG: 'app/currentCAG',
-      projectMetadata: 'app/projectMetadata',
-      selectedModel: 'model/selectedModel',
-      lastQuery: 'query/lastQuery',
-      projectType: 'app/projectType'
-    })
+  setup() {
+    const store = useStore();
+    const project = computed(() => store.getters['app/project']);
+    const projectMetadata = computed(
+      () => store.getters['app/projectMetadata']
+    );
+
+    const analysisProjectItem = computed<NavBarItem>(() => ({
+      text: projectMetadata.value.name,
+      icon: 'fa-clone',
+      route: { name: 'overview', params: { project: project.value } }
+    }));
+    const datacubeProjectItem = computed<NavBarItem>(() => ({
+      text: projectMetadata.value.name,
+      icon: 'fa-connectdevelop',
+      route: {
+        name: 'domainDatacubeOverview',
+        params: { project: project.value }
+      }
+    }));
+
+    const quantitativeAnalysisItem = computed(() => ({
+      text: '', // app/analysisName
+      icon: 'fa-line-chart',
+      route: null
+    }));
+    const qualitativeAnalysisItem = computed(() => ({
+      text: '', // app/analysisName
+      icon: 'fa-book',
+      route: null
+      // TODO: this nav item will require a route in qualitative analyses
+      // {name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}
+    }));
+
+    const nodeDrilldownItem = {
+      icon: 'fa-circle',
+      route: null,
+      text: 'Node drilldown'
+    };
+
+    const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
+      home: [],
+      overview: [analysisProjectItem.value],
+      domainDatacubeOverview: [datacubeProjectItem.value],
+      dataComparative: [
+        analysisProjectItem.value,
+        quantitativeAnalysisItem.value
+      ],
+      qualitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
+      quantitative: [analysisProjectItem.value, qualitativeAnalysisItem.value],
+      nodeDrilldown: [
+        analysisProjectItem.value,
+        qualitativeAnalysisItem.value,
+        nodeDrilldownItem
+      ]
+      // data? // CURRENTLY A "full screen modal" BUT SHOULD PROBABLY JUST BE IN THE REGULAR FLOW
+      // kb-explorer?
+      // dataExplorer?
+      // insight pages??
+      // ...?
+    }));
+
+    const currentView = computed(() => store.getters['app/currentView']);
+    const navItems = computed(() => siteMap.value[currentView.value] ?? null);
+
+    return {
+      navItems
+    };
   }
 });
 </script>
 
-
 <style scoped lang="scss">
-@import '~styles/variables';
+@import '@/styles/variables';
 
-.nav {
-  min-height: $navbar-outer-height;
+.navbar-container {
+  height: $navbar-outer-height;
+  display: flex;
+  justify-content: space-between;
+  background: #363434;
+  padding: 0 15px;
 }
 
-.navbar {
-  border: none;
-  margin-bottom: 0px;
-}
+.navbar-left-group {
+  display: flex;
 
-a {
-  font-weight: 600;
-}
-
-.nav-item.underlined {
-  border-bottom: 3px solid $selected;
-  color: #ffffff;
-  .nav-link {
-    color: #ffffff;
+  & > .nav-item:not(:first-child) {
+    margin-left: 10px;
   }
 }
 
-button {
-  height: $navbar-outer-height;
-  background-color: transparent;
-  border: none;
+.trailing {
+  align-self: center;
 }
 
-.container-fluid {
-  padding-right: 0;
+.nav-item {
+  display: flex;
+  align-items: center;
+  text-decoration: none;
+  padding: 0 10px;
+
+  i {
+    margin-right: 5px;
+  }
+
+  .nav-item-label,
+  i {
+    color: rgba(255, 255, 255, 0.71);
+    font-size: $font-size-large;
+  }
+}
+
+.nav-item.clickable:hover {
+  background: rgba(255, 255, 255, 0.2);
+
+  .nav-item-label,
+  i {
+    color: white;
+  }
+}
+
+.nav-item.active {
+  .nav-item-label,
+  i {
+    color: white;
+  }
+  .nav-item-label {
+    font-weight: 600;
+  }
 }
 
 $logo-size: 28px;
 
 .nav-item--logo {
-  height: $navbar-outer-height;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-
-  a {
-    padding: ($navbar-outer-height - $logo-size) / 2;
-  }
+  padding: ($navbar-outer-height - $logo-size) / 2;
 }
 
 .logo {
@@ -166,20 +195,4 @@ $logo-size: 28px;
   // Nudge the logo up a little bit so it's more visually centered
   bottom: $logo-size / 10;
 }
-
-.nav-item--label {
-  color: white;
-  padding: 14.5px;
-  line-height: 19px;
-  font-weight: 600;
-}
-
-.help-holder {
-  margin: 0;
-}
-
-.nav-item--help {
-  right: 10px;
-}
-
 </style>
