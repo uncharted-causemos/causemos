@@ -38,6 +38,7 @@
 </template>
 
 <script lang="ts">
+import { ProjectType } from '@/types/Enums';
 import { computed, defineComponent } from 'vue';
 import { useStore } from 'vuex';
 
@@ -56,6 +57,7 @@ export default defineComponent({
       () => store.getters['app/projectMetadata']
     );
     const analysisName = computed(() => store.getters['app/analysisName']);
+    const currentCAG = computed(() => store.getters['app/currentCAG']);
 
     const analysisProjectItem = computed<NavBarItem>(() => ({
       text: projectMetadata.value.name,
@@ -79,9 +81,14 @@ export default defineComponent({
     const qualitativeAnalysisItem = computed(() => ({
       text: analysisName.value,
       icon: 'fa-book',
-      route: null
-      // TODO: this nav item will require a route in qualitative analyses
-      // {name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}
+      route: {
+        name: 'quantitative',
+        params: {
+          project: project.value,
+          currentCAG: currentCAG.value,
+          projectType: ProjectType.Analysis
+        }
+      }
     }));
     const modelPublishingItem = {
       icon: 'fa-cube',
