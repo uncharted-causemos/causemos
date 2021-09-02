@@ -83,6 +83,11 @@ export default defineComponent({
       // TODO: this nav item will require a route in qualitative analyses
       // {name:'quantitative', params:{project: project, currentCAG: currentCAG, projectType: ProjectType.Analysis}}
     }));
+    const modelPublishingItem = {
+      icon: 'fa-cube',
+      route: null,
+      text: 'Instance'
+    };
 
     const nodeDrilldownItem = {
       icon: 'fa-circle',
@@ -104,6 +109,10 @@ export default defineComponent({
         analysisProjectItem.value,
         qualitativeAnalysisItem.value,
         nodeDrilldownItem
+      ],
+      modelPublishingExperiment: [
+        datacubeProjectItem.value,
+        modelPublishingItem
       ]
       // data? // CURRENTLY A "full screen modal" BUT SHOULD PROBABLY JUST BE IN THE REGULAR FLOW
       // kb-explorer?
