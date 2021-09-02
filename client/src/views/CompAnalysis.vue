@@ -3,7 +3,11 @@
     <teleport to="#navbar-trailing-teleport-destination">
       <analysis-options-button />
     </teleport>
-    <analytical-questions-and-insights-panel class="side-panel" />
+    <analytical-questions-and-insights-panel class="side-panel">
+      <template #below-tabs>
+        <comments-button />
+      </template>
+    </analytical-questions-and-insights-panel>
     <main>
       <action-bar />
       <div class="column insight-capture" v-if="analysisItems.length">
@@ -43,11 +47,13 @@ import _ from 'lodash';
 import { DataState } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
+import CommentsButton from '@/components/widgets/comments-button.vue';
 
 export default defineComponent({
   name: 'CompAnalysis',
   components: {
     DatacubeComparativeCard,
+    CommentsButton,
     ActionBar,
     EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,

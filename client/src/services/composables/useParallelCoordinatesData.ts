@@ -34,9 +34,9 @@ export default function useParallelCoordinatesData(
       };
       if (run.status === ModelRunStatus.Ready) {
         const currRunData = allModelRunData.value[runIndex];
-        if (currRunData.output_agg_values[currentOutputIndex.value]) {
-          const output_agg_values = currRunData.output_agg_values[currentOutputIndex.value].value;
-          run[outputParameterName] = output_agg_values;
+        const outputValue = currRunData.output_agg_values.find(val => val.name === outputParameterName);
+        if (outputValue) {
+          run[outputParameterName] = outputValue.value;
         } else {
           console.warn('Missing output value for run: ' + run_id);
         }

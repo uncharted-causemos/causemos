@@ -14,14 +14,13 @@
         v-if="currentTab === 'Context Insights'" />
 
       <template #below-tabs>
-        <comments-button />
+        <slot name="below-tabs" />
       </template>
   </side-panel>
 </template>
 
 <script lang="ts">
 import SidePanel from '@/components/side-panel/side-panel.vue';
-import CommentsButton from '@/components/widgets/comments-button.vue';
 import { defineComponent } from 'vue';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
@@ -31,8 +30,7 @@ export default defineComponent({
   components: {
     SidePanel,
     ListContextInsightPane,
-    ListAnalyticalQuestionsPane,
-    CommentsButton
+    ListAnalyticalQuestionsPane
   },
   data: () => ({
     tabs: [
