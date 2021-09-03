@@ -98,7 +98,7 @@ const startModelOutputPostProcessing = async (metadata) => {
     ...filteredMetadata,
     status: 'PROCESSING'
   }, d => d.id);
-  return result;
+  return { result: result, code: 200 };
 };
 
 /**
@@ -177,6 +177,7 @@ const getJobStatus = async (runId) => {
  * @param {Indicator} metadata -indicator metadata
  */
 const startIndicatorPostProcessing = async (metadata) => {
+  // TODO: Write a try/catch block here and fill in the rest of the gaps
   const filteredMetadata = filterAndLog(Logger, './src/schemas/indicator.schema.json', metadata);
 
   processFilteredData(filteredMetadata);
@@ -287,9 +288,9 @@ const startIndicatorPostProcessing = async (metadata) => {
   if (newIndicatorMetadata.length > 0) {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
     const result = await connection.insert(newIndicatorMetadata, d => d.id);
-    return result;
+    return { result, code: 200 };
   }
-  return 'No documents added';
+  return { result: 'No documents added', code: 202 };
 };
 
 module.exports = {
