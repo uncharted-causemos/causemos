@@ -17,11 +17,22 @@
         <h5>Output Descriptions</h5>
         <div
           v-for="output in metadata.outputs"
-          :key="output.id"
+          :key="output.name"
         >
           <b>{{output.display_name}} </b>
           <span v-if="output.unit" v-tooltip="output.unit_description"> ({{output.unit}})</span>
           <span v-if="output.description">: <multiline-description :text="output.description" /> </span>
+        </div>
+      </template>
+      <template v-if="metadata && displayedQualifiers.length > 0">
+        <h5>Qualifier Descriptions</h5>
+        <div
+          v-for="qualifier in displayedQualifiers"
+          :key="qualifier.name"
+        >
+          <b>{{qualifier.display_name}} </b>
+          <span v-if="qualifier.unit" v-tooltip="qualifier.unit_description"> ({{qualifier.unit}})</span>
+          <span v-if="qualifier.description">: <multiline-description :text="qualifier.description" /> </span>
         </div>
       </template>
     </div>
@@ -62,9 +73,10 @@
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
 import stringUtil from '@/utils/string-util';
-import { Indicator, Model } from '@/types/Datacube';
+import { FeatureQualifier, Indicator, Model } from '@/types/Datacube';
 import { isModel } from '@/utils/datacube-util';
 import MultilineDescription from '@/components/widgets/multiline-description.vue';
+import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 
 export default defineComponent({
   name: 'DatacubeDescription',
@@ -85,6 +97,10 @@ export default defineComponent({
       return (this.metadata && isModel(this.metadata))
         ? this.metadata.parameters.filter((p: any) => !p.is_drilldown)
         : [];
+    },
+    displayedQualifiers(): Array<any> {
+      return this.metadata?.qualifier_outputs?.filter(
+        (q: FeatureQualifier) => !QUALIFIERS_TO_EXCLUDE.includes(q.name)) ?? [];
     }
   }
 });
