@@ -1,4 +1,4 @@
-const respondUsingCode = async (req: { body: any; }, res: { status: (arg0: number) => { (): any; new(): any; json: { (arg0: {}): void; new(): any; }; send: { (arg0: string): void; new(): any; }; }; }, serviceFcn: any) => {
+const respondUsingCode = async (req, res, serviceFcn) => {
   const metadata = req.body;
   try {
     await serviceFcn(metadata);
@@ -9,6 +9,6 @@ const respondUsingCode = async (req: { body: any; }, res: { status: (arg0: numbe
   }
 };
 
-export default {
+module.exports = {
   respondUsingCode
 };
