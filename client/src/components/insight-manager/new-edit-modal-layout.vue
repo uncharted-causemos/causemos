@@ -90,11 +90,13 @@
   </div>
 </template>
 
-<script>
-
-import Disclaimer from '@/components/widgets/disclaimer';
-import DrilldownPanel from '@/components/drilldown-panel';
-import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
+<script lang="ts">
+import {
+  defineComponent
+} from 'vue';
+import Disclaimer from '@/components/widgets/disclaimer.vue';
+import DrilldownPanel from '@/components/drilldown-panel.vue';
+import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 
 const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 
@@ -106,7 +108,7 @@ const METDATA_DRILLDOWN_TABS = [
   }
 ];
 
-export default {
+export default defineComponent({
   name: 'NewEditModalLayout',
   components: {
     DrilldownPanel,
@@ -159,14 +161,14 @@ export default {
     save() {
       this.$emit('save');
     },
-    updateName(event) {
+    updateName(event: any) {
       this.$emit('update:name', event.target.value);
     },
-    updateDescription(event) {
+    updateDescription(event: any) {
       this.$emit('update:description', event.target.value);
     }
   }
-};
+});
 </script>
 
 <style lang="scss" scoped>
