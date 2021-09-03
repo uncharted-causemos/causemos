@@ -63,7 +63,7 @@
       :ordered-aggregation-level-keys="[qualifierVariable.name]"
       :raw-data="qualifierVariable.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
-      :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
+      :should-show-deselected-bars="selectedBreakdownOption === SpatialAggregationLevel.Region || selectedBreakdownOption === TemporalAggregationLevel.Year || selectedBreakdownOption === null"
       :units="unit"
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.name ? 'checkbox' : null
