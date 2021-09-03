@@ -1,6 +1,9 @@
 const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const domainProjectService = rootRequire('/services/domain-project-service');
+const { filterAndLog } = rootRequire('util/joi-util.ts');
+const { processFilteredData } = rootRequire('util/post-processing-util.ts');
+const Logger = rootRequire('/config/logger');
 
 /**
  * Return all datacubes
@@ -35,40 +38,24 @@ const countDatacubes = async (filter) => {
 const insertDatacube = async(metadata) => {
   // TODO: Fix all this copypasta from maas-service startIndicatorPostProcessing
 
-  // Remove some unused Jataware fields
-  metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
-  metadata.stochastic = undefined;
-  metadata.attributes = undefined;
-  metadata.image = undefined;
-  if (metadata.geography) {
-    metadata.geography.coordinates = undefined;
-  }
-
-  // Apparently ES can't support negative timestamps
-  if (metadata.period && metadata.period.gte < 0) {
-    metadata.period.gte = 0;
-  }
-  if (metadata.period && metadata.period.lte < 0) {
-    metadata.period.lte = 0;
-  }
-
-  metadata.data_id = metadata.id;
   metadata.type = metadata.type || 'model'; // Assume these ar all models for now
-  metadata.status = 'REGISTERED';
-  metadata.family_name = metadata.family_name || metadata.name;
+  metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
+  const filteredMetadata = filterAndLog(Logger, './src/schemas/model.schema.json', metadata);
+  processFilteredData(filteredMetadata);
+
+  filteredMetadata.data_id = filteredMetadata.id;
+  filteredMetadata.status = 'REGISTERED';
 
   // Take the first numeric output, others are not currently supported
-  const validOutput = metadata.outputs.filter(o =>
+  const validOutput = filteredMetadata.outputs.filter(o =>
     o.type === 'int' || o.type === 'float' || o.type === 'boolean'
-  )[0] || metadata.outputs[0];
-  metadata.default_feature = validOutput.name;
-  metadata.outputs.forEach(output => { output.id = undefined; });
-  metadata.parameters.forEach(param => { param.id = undefined; });
+  )[0] || filteredMetadata.outputs[0];
+  filteredMetadata.default_feature = validOutput.name;
 
   // Combine all concept matches into one list at the root
-  const fields = [metadata.outputs, metadata.parameters];
-  if (metadata.qualifier_outputs) {
-    fields.push(metadata.qualifier_outputs);
+  const fields = [filteredMetadata.outputs, filteredMetadata.parameters];
+  if (filteredMetadata.qualifier_outputs) {
+    fields.push(filteredMetadata.qualifier_outputs);
   }
 
   const ontologyMatches = fields.map(field => {
@@ -80,14 +67,14 @@ const insertDatacube = async(metadata) => {
       ]);
   }).flat(2);
 
-  metadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+  filteredMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
 
   // a new datacube (model or indicator) is being added
   // ensure for each newly registered datacube a corresponding domain project
-  await domainProjectService.updateDomainProjects(metadata);
+  await domainProjectService.updateDomainProjects(filteredMetadata);
 
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.insert([metadata]);
+  return await connection.insert([filteredMetadata]);
 };
 
 /**
