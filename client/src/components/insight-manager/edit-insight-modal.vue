@@ -104,6 +104,7 @@ export default {
       setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane'
     }),
     closeInsight() {
+      this.reFetchInsights();
       this.hideInsightPanel();
       this.setCurrentPane('');
       this.setUpdatedInsightId('');

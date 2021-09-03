@@ -141,7 +141,7 @@ export default {
           } else {
             this.toaster(message, 'error', true);
           }
-          this.closeInsightPanel();
+          this.closeInsight();
           this.initInsight();
           // also hide the context insight panel if opened, to force refresh upon re-open
           this.closeContextInsightPanel();
