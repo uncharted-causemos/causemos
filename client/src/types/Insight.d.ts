@@ -74,6 +74,7 @@ export interface DataState {
   selectedTimestamp?: number | null;
   selectedRegionIds?: string[];
   selectedQualifierValues?: string[];
+  selectedYears?: string[];
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];

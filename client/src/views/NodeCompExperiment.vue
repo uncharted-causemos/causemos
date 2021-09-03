@@ -338,7 +338,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      selectedQualifierValues
+      selectedQualifierValues,
+      ref([])
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(

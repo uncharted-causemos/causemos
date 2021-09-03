@@ -235,6 +235,7 @@ export default defineComponent({
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
+    const initialSelectedYears = ref<string[]>([]);
 
     const {
       datacubeHierarchy,
@@ -386,7 +387,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      selectedQualifierValues
+      selectedQualifierValues,
+      initialSelectedYears
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -427,7 +429,8 @@ export default defineComponent({
         datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube,
         selectedRegionIds: selectedRegionIds.value,
         relativeTo: relativeTo.value,
-        selectedQualifierValues: [...selectedQualifierValues.value]
+        selectedQualifierValues: [...selectedQualifierValues.value],
+        selectedYears: [...selectedYears.value]
       };
       const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
@@ -493,7 +496,8 @@ export default defineComponent({
       selectedYears,
       toggleIsYearSelected,
       initialSelectedRegionIds,
-      initialSelectedQualifierValues
+      initialSelectedQualifierValues,
+      initialSelectedYears
     };
   },
   watch: {
@@ -708,6 +712,10 @@ export default defineComponent({
         // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedYears !== undefined) {
+          this.initialSelectedYears = _.clone(loadedInsight.data_state?.selectedYears);
         }
       }
     },
