@@ -219,7 +219,7 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
     // apply initial data config for this datacube
-    const initialSelectedRegionIds: string[] = [];
+    const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
 
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
@@ -259,9 +259,7 @@ export default defineComponent({
 
     if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
       if (initialDataConfig.selectedRegionIds !== undefined) {
-        initialDataConfig.selectedRegionIds.forEach(regionId => {
-          initialSelectedRegionIds.push(regionId);
-        });
+        initialSelectedRegionIds.value = _.clone(initialDataConfig.selectedRegionIds);
       }
       if (initialDataConfig.selectedQualifierValues !== undefined) {
         initialSelectedQualifierValues.value = _.clone(initialDataConfig.selectedQualifierValues);

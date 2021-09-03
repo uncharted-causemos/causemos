@@ -232,6 +232,10 @@ export default defineComponent({
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
+    // apply initial data config for this datacube
+    const initialSelectedRegionIds = ref<string[]>([]);
+    const initialSelectedQualifierValues = ref<string[]>([]);
+
     const {
       datacubeHierarchy,
       selectedRegionIds,
@@ -240,7 +244,8 @@ export default defineComponent({
       selectedScenarioIds,
       metadata,
       selectedAdminLevel,
-      breakdownOption
+      breakdownOption,
+      initialSelectedRegionIds
     );
 
     const modelRunsFetchedAt = ref(0);
@@ -359,7 +364,7 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedTimestamp,
-      ref([])
+      initialSelectedQualifierValues
     );
 
     const {
@@ -419,8 +424,10 @@ export default defineComponent({
           datacubeName: metadata.value?.name ?? '',
           datacubeOutputName: mainModelOutput.value?.display_name ?? ''
         }],
-        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
-        relativeTo: relativeTo.value
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube,
+        selectedRegionIds: selectedRegionIds.value,
+        relativeTo: relativeTo.value,
+        selectedQualifierValues: [...selectedQualifierValues.value]
       };
       const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
@@ -484,7 +491,9 @@ export default defineComponent({
       timerHandler,
       newRunsMode,
       selectedYears,
-      toggleIsYearSelected
+      toggleIsYearSelected,
+      initialSelectedRegionIds,
+      initialSelectedQualifierValues
     };
   },
   watch: {
@@ -534,62 +543,74 @@ export default defineComponent({
 
     // we have some insights, some/all of which relates to the current model instance
 
-    // first, fetch public insights to load the publication status, as needed
-    const publicInsights = await this.getPublicInsights();
-    if (publicInsights.length > 0) {
-      // we have at least one public insight, which we should use to fetch view configurations
-      const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
-      const viewConfig = defaultInsight.view_state;
-      if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
-        (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
+    const insight_id = this.$route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      // just mark all steps as completed
+      this.publishingSteps.forEach(step => {
+        step.completed = true;
+      });
+    } else {
+      // check if a public insight exist for this model instance
+      // first, fetch public insights to load the publication status, as needed
+      const publicInsights = await this.getPublicInsights();
+      if (publicInsights.length > 0) {
+        //
+        // FIXME: only apply public insight if no, other, insight is being applied
+        //
+        // we have at least one public insight, which we should use to fetch view configurations
+        const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
+        const viewConfig = defaultInsight.view_state;
+        if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
+          (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
-        if (viewConfig.temporalAggregation) {
-          this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
-        }
-        if (viewConfig.temporalResolution) {
-          this.setSelectedTemporalResolution(viewConfig.temporalResolution);
-        }
-        if (viewConfig.spatialAggregation) {
-          this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
-        }
-        if (viewConfig.selectedAdminLevel !== undefined) {
-          this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
-        }
-        if (viewConfig.selectedMapBaseLayer) {
-          this.setBaseLayer(viewConfig.selectedMapBaseLayer);
-        }
-        if (viewConfig.selectedMapDataLayer) {
-          this.setDataLayer(viewConfig.selectedMapDataLayer);
-        }
-        if (viewConfig.selectedOutputIndex) {
-          const modelId = this.metadata?.id as string;
-          const defaultFeature = {
-            [modelId]: viewConfig.selectedOutputIndex
-          };
-          this.setDatacubeCurrentOutputsMap(defaultFeature);
-        }
-        if (viewConfig.breakdownOption !== undefined) {
-          this.setBreakdownOption(viewConfig.breakdownOption);
-        }
+          if (viewConfig.temporalAggregation) {
+            this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
+          }
+          if (viewConfig.temporalResolution) {
+            this.setSelectedTemporalResolution(viewConfig.temporalResolution);
+          }
+          if (viewConfig.spatialAggregation) {
+            this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
+          }
+          if (viewConfig.selectedAdminLevel !== undefined) {
+            this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
+          }
+          if (viewConfig.selectedMapBaseLayer) {
+            this.setBaseLayer(viewConfig.selectedMapBaseLayer);
+          }
+          if (viewConfig.selectedMapDataLayer) {
+            this.setDataLayer(viewConfig.selectedMapDataLayer);
+          }
+          if (viewConfig.selectedOutputIndex) {
+            const modelId = this.metadata?.id as string;
+            const defaultFeature = {
+              [modelId]: viewConfig.selectedOutputIndex
+            };
+            this.setDatacubeCurrentOutputsMap(defaultFeature);
+          }
+          if (viewConfig.breakdownOption !== undefined) {
+            this.setBreakdownOption(viewConfig.breakdownOption);
+          }
 
-        // @TODO:
-        //  need to support applying an insight by both domain modeler as well as analyst
+          // @TODO:
+          //  need to support applying an insight by both domain modeler as well as analyst
 
-        // ensure that all publication steps are marked as complete
-        this.publishingSteps.forEach(step => {
-          step.completed = true;
-        });
+          // ensure that all publication steps are marked as complete
+          this.publishingSteps.forEach(step => {
+            step.completed = true;
+          });
 
-        foundPublishedInsights = true;
+          foundPublishedInsights = true;
+        }
       }
-    }
 
-    if (!foundPublishedInsights) {
-      // reset store and ensure values are default view configurations
-      //  (in case opening another published model instance has updated them)
-      this.setSelectedTemporalAggregation(AggregationOption.None);
-      this.setSelectedTemporalResolution(TemporalResolutionOption.None);
-      this.setSelectedSpatialAggregation(AggregationOption.None);
+      if (!foundPublishedInsights) {
+        // reset store and ensure values are default view configurations
+        //  (in case opening another published model instance has updated them)
+        this.setSelectedTemporalAggregation(AggregationOption.None);
+        this.setSelectedTemporalResolution(TemporalResolutionOption.None);
+        this.setSelectedSpatialAggregation(AggregationOption.None);
+      }
     }
   },
   methods: {
@@ -679,6 +700,14 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
+        }
+        // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
       }
     },
