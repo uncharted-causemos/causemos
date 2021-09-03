@@ -36,10 +36,9 @@ export default {
     projectMetadata: null
   }),
   setup() {
-    const { insights: listContextInsights, reFetchInsights } = useInsightsData();
+    const { insights: listContextInsights } = useInsightsData();
     return {
-      listContextInsights,
-      reFetchInsights
+      listContextInsights
     };
   },
   computed: {
@@ -97,14 +96,12 @@ export default {
   methods: {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCountInsights: 'insightPanel/setCountInsights',
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsightId: 'insightPanel/setUpdatedInsightId',
       hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
       setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane'
     }),
     closeInsight() {
-      this.reFetchInsights();
       this.hideInsightPanel();
       this.setCurrentPane('');
       this.setUpdatedInsightId('');
