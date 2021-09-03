@@ -73,7 +73,7 @@
 
           <template #temporal-aggregation-config>
             <dropdown-button
-              class="dropdown-config"
+              class="dropdown-config tour-temporal-agg-dropdown-config"
               :inner-button-label="'Temporal Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedTemporalAggregation"
@@ -93,7 +93,7 @@
 
           <template #spatial-aggregation-config>
             <dropdown-button
-              class="dropdown-config"
+              class="dropdown-config tour-spatial-agg-dropdown-config"
               :inner-button-label="'Spatial Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedSpatialAggregation"

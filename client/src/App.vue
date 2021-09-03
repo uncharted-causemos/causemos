@@ -162,7 +162,7 @@ export default {
 }
 .shepherd-element.my-text .shepherd-text {
   color: rgb(37, 36, 36);
-  font-size: large;
+  font-size: medium;
 }
 
 /* Font awesome */

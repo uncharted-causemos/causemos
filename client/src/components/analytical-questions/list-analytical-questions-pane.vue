@@ -120,7 +120,7 @@
               </span>
               <i
                 class="fa fa-lg fa-info-circle"
-                @click.stop.prevent="startQuestionTour"
+                @click.stop.prevent="startTour(questionItem)"
                 @mousedown.stop.prevent
               />
             </div>
@@ -458,14 +458,33 @@ export default defineComponent({
         updateInsight(insight?.id as string, insight);
       }
     },
-    startQuestionTour() {
+    startTour(question: AnalyticalQuestion) {
+      // @TEMP
+      question.tour_name = 'aggregations-tour';
+
+      // we assume that some questions will save with them the tour name/id that may be used to initiate pre-defined tours
+      if (question.tour_name === undefined) {
+        // do nothing
+        return;
+      }
+
+      switch (question.tour_name) {
+        case 'sensitivity-matrix-tour':
+          this.startMatrixTour();
+          break;
+        case 'aggregations-tour':
+          this.startAggregationsTour();
+          break;
+      }
+    },
+    startMatrixTour() {
       // FIXME: do not create a tour that already exist
       //        and if there is another tour, close that existing one first
       const tour = new Shepherd.Tour({
         tourName: 'sensitivity-matrix-tour',
         useModalOverlay: true,
-        // enable X button to cancel from any step
         defaultStepOptions: {
+          // enable X button to cancel from any step
           cancelIcon: {
             enabled: true
           },
@@ -473,12 +492,14 @@ export default defineComponent({
         }
       });
 
+      // NOTE
+      // step one assumes the context of a CAG in the qualitative view with the flow-tab
       const stepOne = {
         id: 'step-1-matrix-tab-click',
         text: 'Clicking the Matrix tab will show the sensitivity matrix.',
         title: 'Click the Matrix tab',
         attachTo: {
-          element: '.matrix-tab', // this.$refs.newrunsbuttonref // also element can be referenced with id, e.g. #some-id
+          element: '.tour-matrix-tab', // this.$refs.newrunsbuttonref // also element can be referenced with id, e.g. #some-id
           on: 'bottom'
         },
         buttons: [
@@ -530,7 +551,7 @@ export default defineComponent({
                   console.warn('operation took too long... killing the tour timer!');
                   resolve();
                 }
-                // we should only continue waiting/checking for the ready-signal unless requested-to-cancel is issued
+                // we should only continue waiting/checking for the ready-signal unless as long as the tour is active
                 if (tour.isActive()) {
                   _.debounce(wait, 1000)();
                 }
@@ -560,6 +581,167 @@ export default defineComponent({
       };
 
       tour.addSteps([stepOne, stepTwo, stepThree]);
+      tour.start();
+
+      // save this newly created tour in the store
+      this.setTour(tour);
+    },
+    startAggregationsTour() {
+      // FIXME: do not create a tour that already exist
+      //        and if there is another tour, close that existing one first
+      //
+      // FIXME: starting a tour may switch the user context to the approperiate context where the tour is applicable
+      //        ideally, a warning is needed and ideally saving the tour details (e.g., steps) in ES and having a more flexible way to create them
+      const tour = new Shepherd.Tour({
+        tourName: 'aggregations-tour',
+        useModalOverlay: true,
+        defaultStepOptions: {
+          classes: 'my-container my-title my-text' // default CSS classes for all steps
+        }
+      });
+
+      const stepOne = {
+        id: 'step-1-overview',
+        text: `On the <b>Descriptions</b> tab, review the <b>units</b> and identify if it is:
+          <br>
+          <ul>
+            <li>a count (e.g. number of people)</li>
+            <li>a percentage, rate or probability (e.g. % of population)</li>
+            <li>an index (e.g. rank)</li>
+          </ul>
+          <br>
+          Then click on the <b>Data</b> tab.
+        `,
+        title: 'Review Description and Click Data tab',
+        attachTo: {
+          element: '.tour-datacube-desc',
+          on: 'right'
+        },
+        buttons: [
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          }
+        ],
+        highlightClass: 'my-highlight',
+        // @FIXME: temp solution to expand the highlighted-target area to include
+        //  the Data/Desc buttons since they live in different components in the DOM hierarchy
+        //  and won't be clickable if not within the highlighted area
+        modalOverlayOpeningPadding: 50
+      };
+
+      const stepTwo = {
+        id: 'step-2-select-spatial-aggregation',
+        text: `Select the appropriate <b>Spatial Aggregation</b>:
+               e.g. if there are values at regional level, how should they be aggregated at the country level?
+          <br>
+          <ul>
+            <li>a count: <b>sum</b></li>
+            <li>a percentage, rate or probability: <b>mean</b></li>
+            <li>an index: <b>mean</b></li>
+          </ul>
+        `,
+        title: 'Select Spatial Aggregation',
+        attachTo: {
+          element: '.tour-spatial-agg-dropdown-config',
+          on: 'right'
+        },
+        buttons: [
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          },
+          {
+            text: 'Next',
+            action: function() {
+              return tour.next();
+            }
+          }
+        ],
+        beforeShowPromise: () => {
+          return new Promise<void>(resolve => {
+            // check every 1 second for the next step to be flagged as ready
+            //  i.e., until the map and the spatial-aggregation config are visible
+            //  kill the timer if the operation is taking too long!
+            let elapsedTime = 0;
+            const wait = () => {
+              if (this.isReadyForNextStep) {
+                resolve();
+              } else {
+                elapsedTime += 1000;
+                if (elapsedTime > 30000) { // wait 30 seconds
+                  console.warn('operation took too long... killing the tour timer!');
+                  resolve();
+                }
+                // we should only continue waiting/checking for the ready-signal unless as long as the tour is active
+                if (tour.isActive()) {
+                  _.debounce(wait, 1000)();
+                }
+              }
+            };
+            wait();
+          });
+        },
+        highlightClass: 'my-highlight',
+        // @FIXME: temp solution to expand the highlighted-target area to include
+        //  the dropdown config options to allow the user to select one of them before advancing the tour
+        modalOverlayOpeningPadding: 100
+      };
+
+      const stepThree = {
+        id: 'step-3-select-temporal-aggregation',
+        text: `Select the appropriate <b>Temporal Aggregation</b>:
+               e.g. if there are values for multiple days in a month, how should they be aggregated as one value for that month?
+          <br>
+          <ul>
+            <li>a count: <b>sum</b></li>
+            <li>a percentage, rate or probability: <b>mean</b></li>
+            <li>an index: <b>mean</b></li>
+          </ul>
+        `,
+        title: 'Select Temporal Aggregation',
+        attachTo: {
+          element: '.tour-temporal-agg-dropdown-config',
+          on: 'right'
+        },
+        buttons: [
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          },
+          {
+            text: 'Next',
+            action: function() {
+              return tour.next();
+            }
+          }
+        ],
+        highlightClass: 'my-highlight',
+        // @FIXME: temp solution to expand the highlighted-target area to include
+        //  the dropdown config options to allow the user to select one of them before advancing the tour
+        modalOverlayOpeningPadding: 100
+      };
+
+      const stepFour = {
+        id: 'step-4-aggregation-summary',
+        text: 'These configuration options will be remembered in this quantitative analysis.',
+        buttons: [
+          {
+            text: 'Got it',
+            action: function() {
+              return tour.complete();
+            }
+          }
+        ]
+      };
+
+      tour.addSteps([stepOne, stepTwo, stepThree, stepFour]);
       tour.start();
 
       // save this newly created tour in the store

@@ -485,7 +485,7 @@ export default {
       if (tab === 'matrix') {
         this.fetchSensitivityAnalysisResults();
         // advance the tour if it is active
-        if (this.tour !== null) {
+        if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
           this.tour.next();
         }
       }

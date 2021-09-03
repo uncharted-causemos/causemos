@@ -359,6 +359,7 @@ export default defineComponent({
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const tour = computed(() => store.getters['tour/tour']);
 
     const {
       selectedScenarioIds,
@@ -452,7 +453,8 @@ export default defineComponent({
       emitRelativeToSelection,
       timestampFormatter,
       SpatialAggregationLevel,
-      validModelRunsAvailable
+      validModelRunsAvailable,
+      tour
     };
   },
   data: () => ({
@@ -505,6 +507,10 @@ export default defineComponent({
         this.$emit('set-selected-scenario-ids', newIds);
       }
       this.$emit('update-desc-view', false);
+      // advance the tour if it is active
+      if (this.tour && this.tour.id.startsWith('aggregations-tour')) {
+        this.tour.next();
+      }
     },
     onMapLoad() {
       this.$emit('on-map-load');
