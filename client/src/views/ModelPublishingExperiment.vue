@@ -321,18 +321,19 @@ export default defineComponent({
 
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
-        // set initial output variable index
-        let initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
-        if (initialOutputIndex < 0) {
-          // this would be the case when the use toggles the visibility of the default feature
-          initialOutputIndex = 0;
+        let initialOutputIndex = 0;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        if (currentOutputEntry !== undefined) {
+          // we have a store entry for the selected output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+
+          // update the store
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
-        // create a default feature object as a map entry that saves the initial output index for the current model instance
-        //  and note we overwrite the store content since we can only have one model being published by a given user at a time
-        const defaultFeature = {
-          [metadata.value.id]: initialOutputIndex
-        };
-        store.dispatch('app/setDatacubeCurrentOutputsMap', defaultFeature);
         mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
@@ -567,6 +568,7 @@ export default defineComponent({
         if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
           (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
+          // FIXME: do we need to apply any data state here!?
           if (viewConfig.temporalAggregation) {
             this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
           }
@@ -665,6 +667,16 @@ export default defineComponent({
           // this will reload datacube metadata as well as scenario runs
           this.selectedModelId = loadedInsight.data_state?.selectedModelId;
         }
+        if (loadedInsight.data_state?.datacubeTitles !== undefined && loadedInsight.data_state?.datacubeTitles.length > 0) {
+          // this will reload datacube metadata as well as scenario runs
+          const selectedOutput = loadedInsight.data_state?.datacubeTitles[0].datacubeOutputName;
+          const outputIndex = this.metadata?.validatedOutputs?.findIndex(o => o.name === selectedOutput) ?? 0;
+          // update the store
+          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap[datacubeId ?? ''] = outputIndex;
+          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
         if (loadedInsight.data_state?.selectedScenarioIds) {
           // this would only be valid and effective if/after datacube runs are reloaded
           this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
@@ -688,9 +700,10 @@ export default defineComponent({
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
           this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
         }
-        if (loadedInsight.view_state?.selectedOutputIndex) {
+        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
           const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
           this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
