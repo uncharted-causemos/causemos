@@ -8,7 +8,7 @@ interface InsightState {
   dataState: any;
   contextId: string[] | undefined;
   analysisId: string;
-  updatedInsight: any;
+  updatedInsight: any | null;
 }
 
 /**
