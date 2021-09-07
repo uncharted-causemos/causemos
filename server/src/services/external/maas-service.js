@@ -1,4 +1,4 @@
-import {ModelRunStatus} from "client/src/types/Enums";
+import { ModelRunStatus } from "client/src/types/Enums";
 
 const _ = require('lodash');
 const uuid = require('uuid');
