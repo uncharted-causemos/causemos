@@ -251,7 +251,8 @@ export default defineComponent({
       selectedScenarioIds,
       metadata,
       selectedAdminLevel,
-      breakdownOption
+      breakdownOption,
+      ref([])
     );
 
     const timeInterval = 10000;
@@ -337,7 +338,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      selectedQualifierValues
+      selectedQualifierValues,
+      ref([])
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(

@@ -1,20 +1,11 @@
 import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { getQualifierBreakdown } from '../new-datacube-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
-
-const QUALIFIERS_TO_EXCLUDE = [
-  ...ADMIN_LEVEL_KEYS,
-  'timestamp',
-  'lat',
-  'lng',
-  'feature',
-  'value'
-];
 
 const convertResponsesToBreakdownData = (
   responses: QualifierBreakdownResponse[][],

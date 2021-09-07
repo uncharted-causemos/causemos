@@ -219,7 +219,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       ref(selectedRegionIds),
-      ref(new Set())
+      ref(new Set()),
+      ref([])
     );
 
     watchEffect(() => {

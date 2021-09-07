@@ -65,6 +65,7 @@ export default function(
 
   const xAxis = svgElement
     .append('g')
+    .attr('class', 'tour-x-axis-sensitivity-matrix')
     .attr('transform', svgUtil.translate(0, margin.top))
     .call(d3.axisTop(xScale));
 
@@ -151,7 +152,7 @@ export default function(
   // height of the grid
   svgElement
     .append('g')
-    .attr('class', 'grid-lines')
+    .attr('class', 'grid-lines tour-grid-lines')
     .attr('transform', svgUtil.translate(xScale.bandwidth() / 2, height - margin.bottom))
     .call(d3.axisTop(xScale)
       .tickSize(height - margin.top - margin.bottom)
@@ -163,7 +164,7 @@ export default function(
   // y grid lines
   svgElement
     .append('g')
-    .attr('class', 'grid-lines')
+    .attr('class', 'grid-lines tour-grid-lines')
     .attr('transform', svgUtil.translate(width - margin.right, yScale.bandwidth() / 2))
     .call(d3.axisLeft(yScale)
       .tickSize(width - margin.right - margin.left)

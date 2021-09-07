@@ -237,6 +237,12 @@ export default {
           savedURL = '/analysis/' + this.project + '/data/' + this.analysisId;
         }
 
+        if (this.projectType === ProjectType.Model) {
+          // this is an insight created by the domain modeler during model publication:
+          //  needed since an existing url may have insight_id with old/invalid value
+          savedURL = '/model/' + this.project + '/model-publishing-experiment';
+        }
+
         // add 'insight_id' as a URL param so that the target page can apply it
         const finalURL = this.getSourceUrlForExport(savedURL, this.selectedContextInsight.id);
 

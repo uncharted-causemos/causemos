@@ -89,7 +89,8 @@ export default {
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId',
       draftScenario: 'model/draftScenario',
-      draftScenarioDirty: 'model/draftScenarioDirty'
+      draftScenarioDirty: 'model/draftScenarioDirty',
+      tour: 'tour/tour'
     }),
     ready() {
       return this.modelSummary && this.modelComponents && this.scenarios;
@@ -229,7 +230,7 @@ export default {
         // Now we are up to date, create base scenario
         this.enableOverlay('Creating baseline scenario');
         try {
-          await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+          await modelService.createBaselineScenario(this.modelSummary);
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
@@ -411,8 +412,9 @@ export default {
       this.enableOverlay(`Running experiment on ${this.currentEngine}`);
       let experimentId = 0;
       let result = null;
+
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.cleanConstraints(selectedScenario.parameter.constraints));
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         console.error(error);
@@ -465,7 +467,7 @@ export default {
       this.sensitivityMatrixData = null;
       const now = Date.now();
       this.sensitivityDataTimestamp = now;
-      const constraints = modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints);
+      const constraints = modelService.cleanConstraints(selectedScenario.parameter.constraints);
 
       const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
 
@@ -486,6 +488,10 @@ export default {
     tabClick(tab) {
       if (tab === 'matrix') {
         this.fetchSensitivityAnalysisResults();
+        // advance the tour if it is active
+        if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
+          this.tour.next();
+        }
       }
     },
     resetCAGLayout() {

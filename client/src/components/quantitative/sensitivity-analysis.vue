@@ -57,6 +57,7 @@ import csrUtil from '@/utils/csr-util';
 import { showSvgTooltip, hideSvgTooltip } from '@/utils/svg-util';
 import ordinalNumberFormatter from '@/formatters/ordinal-number-formatter';
 import SensitivityAnalysisLegend from './sensitivity-analysis-legend.vue';
+import { mapActions, mapGetters } from 'vuex';
 
 const RESIZE_DELAY = 50;
 
@@ -90,6 +91,9 @@ export default {
     selectedRowOrColumn: { isRow: false, concept: null }
   }),
   computed: {
+    ...mapGetters({
+      tour: 'tour/tour'
+    }),
     rowOrder() {
       if (this.matrixData === null) return [];
       if (this.selectedRowOrColumn.concept === null || this.selectedRowOrColumn.isRow === true) {
@@ -127,6 +131,10 @@ export default {
   watch: {
     matrixData() {
       this.render();
+      // allow the relevant tour to advance to the next step
+      if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
+        this.enableNextStep();
+      }
     },
     rowOrder() {
       this.render();
@@ -138,7 +146,17 @@ export default {
   mounted() {
     this.render();
   },
+  beforeUnmount() {
+    // a tour may be active while we are in this view,
+    //  if so and the user interaction is no longer within this view then cancel the tour
+    if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
+      this.tour.cancel();
+    }
+  },
   methods: {
+    ...mapActions({
+      enableNextStep: 'tour/enableNextStep'
+    }),
     setAnalysisType(e) {
       this.$emit('set-analysis-type', e.target.value);
     },
