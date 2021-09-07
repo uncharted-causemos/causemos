@@ -87,7 +87,7 @@ const startModelOutputPostProcessing = async (metadata) => {
     ...metadata,
     status: 'PROCESSING'
   }, d => d.id).then(result => {
-    if (_.first(result.items).update.status === 200) {
+    if (!result.errors) {
       docIds = [metadata.id];
     } else {
       return connection.insert({
