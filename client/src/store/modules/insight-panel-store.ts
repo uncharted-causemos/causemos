@@ -1,3 +1,4 @@
+import { Insight } from '@/types/Insight';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface InsightState {
@@ -8,7 +9,7 @@ interface InsightState {
   dataState: any;
   contextId: string[] | undefined;
   analysisId: string;
-  updatedInsight: any | null;
+  updatedInsight: Insight | null;
 }
 
 /**
