@@ -1,3 +1,5 @@
+import {ModelRunStatus} from "client/src/types/Enums";
+
 const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
@@ -84,14 +86,14 @@ const startModelOutputPostProcessing = async (metadata) => {
   let docIds = [];
   const result = await connection.update({
     ...metadata,
-    status: 'PROCESSING'
+    status: ModelRunStatus.Processing
   }, d => d.id).then(result => {
-    if (_.first(result.items).status === 200) {
+    if (_.first(result.items).update.status === 200) {
       docIds = [metadata.id];
     } else {
       return connection.insert({
         ...metadata,
-        status: 'TEST'
+        status: ModelRunStatus.Test
       }, d => d.id);
     }
   });
