@@ -677,15 +677,7 @@ function renderParallelCoordinates(
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
         } else {
-          if ((d as ModelParameter) !== undefined && (d as ModelParameter).data_type !== ModelParameterDataType.Freeform) {
-            // check if we have label choices array
-            if (d.choices_labels !== undefined && d.choices_labels.length > 0) {
-              const choiceIndex = d.choices?.findIndex(c => c === formattedValue) ?? 0;
-              if (choiceIndex >= 0 && choiceIndex < d.choices_labels.length) {
-                formattedValue = d.choices_labels[choiceIndex];
-              }
-            }
-          }
+          formattedValue = findLabelForValue(d, formattedValue);
         }
         // ignore tooltip for non-existing values (e.g., output value for active model runs that are not completed yet)
         if (formattedValue === 'NaN') {
