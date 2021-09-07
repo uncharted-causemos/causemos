@@ -232,7 +232,7 @@
                 <div class="card-map" />
               </div>
               <div class="card-maps-legend-container">
-                <div v-for="(data, index) in mapLegendData" :key="index">
+                <div v-for="(data, index) in mapLegendData[isGridLayer ? 'grid' : 'admin']" :key="index">
                   <map-legend :ramp="data" />
                 </div>
               </div>
@@ -263,11 +263,11 @@ import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vu
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX, createMapLegendData } from '@/utils/map-util';
-import { OutputSpecWithId, RegionalAggregations, OutputStatsResult } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
-import { DATA_LAYER, computeRegionalStats, adminLevelToString } from '@/utils/map-util-new';
+import { DATA_LAYER, computeRegionalStats, adminLevelToString, computeGridLayerStats } from '@/utils/map-util-new';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
 import MapLegend, { MapLegendColor } from '@/components/widgets/map-legend.vue';
@@ -421,7 +421,10 @@ export default defineComponent({
         _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
     });
 
-    const mapLegendData = ref<MapLegendColor[][]>([]);
+    const mapLegendData = ref<{
+      admin: MapLegendColor[][];
+      grid: MapLegendColor[][];
+    }>({ admin: [], grid: [] });
     const adminLayerStats = ref<any>({});
     watchEffect(() => {
       if (!regionalData.value) return;
@@ -429,19 +432,26 @@ export default defineComponent({
       if (relativeTo.value) {
         const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
         const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
-        mapLegendData.value = [
-          createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear, relativeTo.value),
-          createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, relativeTo.value)
-        ];
+        mapLegendData.value = {
+          ...mapLegendData.value,
+          admin: [
+            createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
+            createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
+          ]
+        };
       } else {
         const { min, max } = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
-        mapLegendData.value = [createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)];
-        console.log(min, max);
+        mapLegendData.value = {
+          ...mapLegendData.value,
+          admin: [
+            createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+          ]
+        };
       }
       console.log('From regionDataChange: ', adminLayerStats.value);
     });
 
-    const gridLayerStats = ref<OutputStatsResult[]>([]);
+    const gridLayerStats = ref<any>({});
 
     watchEffect(async onInvalidate => {
       if (outputSourceSpecs.value.length === 0) return;
@@ -451,8 +461,32 @@ export default defineComponent({
       });
       const result = await getOutputStats(outputSourceSpecs.value);
       if (isCancelled) return;
-      gridLayerStats.value = result;
+      gridLayerStats.value = computeGridLayerStats(result, (relativeTo.value || undefined));
     });
+
+    // watchEffect(() => {
+    //   // Update map legend data for grid map
+    //   if (_.isEmpty(gridLayerStats.value)) return;
+    //   if (relativeTo.value) {
+    //     const baseline = gridLayerStats.value.baseline[0];
+    //     const difference = gridLayerStats.value.difference[0];
+    //     mapLegendData.value = {
+    //       ...mapLegendData.value,
+    //       admin: [
+    //         createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
+    //         createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
+    //       ]
+    //     };
+    //   } else {
+    //     const { min, max } = gridLayerStats.value.global[0];
+    //     mapLegendData.value = {
+    //       ...mapLegendData.value,
+    //       admin: [
+    //         createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+    //       ]
+    //     };
+    //   }
+    // });
 
     const mapFilters = ref<AnalysisMapFilter[]>([]);
     const updateMapFilters = (data: AnalysisMapFilter) => {
@@ -522,8 +556,11 @@ export default defineComponent({
         return [];
       }
     },
+    isGridLayer(): boolean {
+      return this.selectedDataLayer === DATA_LAYER.TILES;
+    },
     mapSelectedLayer(): number {
-      return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
+      return this.isGridLayer ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {

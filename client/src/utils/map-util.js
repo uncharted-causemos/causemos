@@ -256,8 +256,8 @@ export function transformMapData(mapData = {}, options = {}) {
 }
 
 
-export const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
-  const stops = !_.isNil(relativeTo)
+export const createMapLegendData = (domain, colors, scaleFn, isDiverging) => {
+  const stops = isDiverging
     ? createDivergingColorStops(domain, colors, scaleFn)
     : createColorStops(domain, colors, scaleFn);
   const labels = [];

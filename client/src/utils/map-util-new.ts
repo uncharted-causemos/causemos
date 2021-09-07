@@ -1,8 +1,8 @@
 import _ from 'lodash';
-import { RegionalAggregations } from '@/types/Runoutput';
+import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 // import { AdminLevel } from '@/types/Enums';
 
-interface RegionalStats {
+interface MapLayerStats {
   [key: string]: { min: number; max: number };
 }
 
@@ -37,7 +37,7 @@ function resolveSameMinMaxValue(minMax: { min: number; max: number}) {
 
 // Compute min/max stats for regional data
 export function computeRegionalStats(regionData: RegionalAggregations, baselineProp?: string) {
-  const global: RegionalStats = {};
+  const global: MapLayerStats = {};
   // Stats globally across all runs
   for (const [key, data] of Object.entries(regionData)) {
     const values = [];
@@ -48,8 +48,8 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
       global[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
     }
   }
-  const baseline: RegionalStats = {};
-  const difference: RegionalStats = {};
+  const baseline: MapLayerStats = {};
+  const difference: MapLayerStats = {};
   if (baselineProp) {
     // Stats for the baseline run
     for (const [key, data] of Object.entries(regionData)) {
@@ -75,5 +75,35 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
     global,
     baseline,
     difference
+  };
+}
+
+export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], baselineProp?: string) {
+  // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
+  // The difference is 6 so we subtract the difference to make the lowest level 0.
+  const Z_DIFF = 6;
+  const global: MapLayerStats = {};
+  const baseline: MapLayerStats = {};
+  // Stats globally across all maps
+  for (const item of gridOutputStats) {
+    for (const stat of item.stats) {
+      const zoom = stat.zoom - Z_DIFF;
+      if (global[zoom]) {
+        global[zoom] = { min: Math.min(global[zoom].min, stat.min), max: Math.max(global[zoom].max, stat.max) };
+      } else {
+        global[zoom] = { min: stat.min, max: stat.max };
+      }
+    }
+  }
+  if (baselineProp) {
+    // Stats for the baseline map
+    const stats = gridOutputStats.find(item => item.outputSpecId === baselineProp)?.stats;
+    (stats || []).forEach(stat => {
+      baseline[stat.zoom - Z_DIFF] = { min: stat.min, max: stat.max };
+    });
+  }
+  return {
+    global,
+    baseline
   };
 }
