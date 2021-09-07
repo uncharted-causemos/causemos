@@ -89,7 +89,8 @@ export default {
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId',
       draftScenario: 'model/draftScenario',
-      draftScenarioDirty: 'model/draftScenarioDirty'
+      draftScenarioDirty: 'model/draftScenarioDirty',
+      tour: 'tour/tour'
     }),
     ready() {
       return this.modelSummary && this.modelComponents && this.scenarios;
@@ -484,6 +485,10 @@ export default {
     tabClick(tab) {
       if (tab === 'matrix') {
         this.fetchSensitivityAnalysisResults();
+        // advance the tour if it is active
+        if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
+          this.tour.next();
+        }
       }
     },
     resetCAGLayout() {

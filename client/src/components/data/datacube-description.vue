@@ -1,6 +1,6 @@
 <template>
   <div class="datacube-description-container">
-    <div class="datacube-description-column">
+    <div class="datacube-description-column tour-datacube-desc">
       <template v-if="metadata && metadata.parameters">
         <h5>Input Descriptions</h5>
         <div

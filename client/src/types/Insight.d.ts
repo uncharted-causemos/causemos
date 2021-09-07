@@ -39,6 +39,7 @@ export interface Insight extends Snapshot {
 export interface AnalyticalQuestion extends Snapshot {
   question: string;
   linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
+  tour_name?: string;
 }
 
 // view-specific values (no data dependency)

@@ -5,7 +5,7 @@
       <div class="tab-nav-bar">
         <quantitative-model-options />
         <tab-bar
-          class="tab-bar"
+          class="tab-bar tour-matrix-tab"
           :tabs="validTabs"
           :active-tab-id="activeTab"
           @tab-click="setActive"
