@@ -1,20 +1,11 @@
 import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { ADMIN_LEVEL_KEYS } from '@/utils/admin-level-util';
+import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
 import { getQualifierBreakdown } from '../new-datacube-service';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
-
-const QUALIFIERS_TO_EXCLUDE = [
-  ...ADMIN_LEVEL_KEYS,
-  'timestamp',
-  'lat',
-  'lng',
-  'feature',
-  'value'
-];
 
 const convertResponsesToBreakdownData = (
   responses: QualifierBreakdownResponse[][],
@@ -72,7 +63,8 @@ export default function useQualifiers(
   temporalResolution: Ref<TemporalResolutionOption>,
   temporalAggregation: Ref<AggregationOption>,
   spatialAggregation: Ref<AggregationOption>,
-  selectedTimestamp: Ref<number | null>
+  selectedTimestamp: Ref<number | null>,
+  initialSelectedQualifierValues: Ref<string[]>
 ) {
   const qualifierBreakdownData = ref<NamedBreakdownData[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
@@ -86,10 +78,24 @@ export default function useQualifiers(
   });
 
   const selectedQualifierValues = ref<Set<string>>(new Set());
-  watch([metadata, breakdownOption], () => {
+  watch([breakdownOption], () => {
     // Reset the selected qualifier value list when the selected qualifier changes
-    selectedQualifierValues.value = new Set();
+    if (selectedQualifierValues.value.size !== 0) {
+      selectedQualifierValues.value = new Set();
+    }
   });
+  watchEffect(() => {
+    if (initialSelectedQualifierValues.value.length === 0) {
+      return;
+    }
+    // Reset the selected qualifier value list when there is an initial list of selected qualifier values
+    const initialQualifierList = new Set<string>();
+    initialSelectedQualifierValues.value.forEach(qualifierValue => {
+      initialQualifierList.add(qualifierValue);
+    });
+    selectedQualifierValues.value = initialQualifierList;
+  });
+
   const toggleIsQualifierSelected = (qualifierValue: string) => {
     const isQualifierValueSelected = selectedQualifierValues.value.has(
       qualifierValue
@@ -104,7 +110,7 @@ export default function useQualifiers(
       updatedList.add(qualifierValue);
     }
 
-    // Assign new object to selectedRegionIdsAtAllLevels.value to trigger reactivity updates.
+    // Assign new object to selectedQualifierValues.value to trigger reactivity updates.
     selectedQualifierValues.value = updatedList;
   };
 

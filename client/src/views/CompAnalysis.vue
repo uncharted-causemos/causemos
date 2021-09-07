@@ -1,34 +1,41 @@
 <template>
   <div class="comp-analysis-container">
-    <action-bar />
-    <main>
-    <analytical-questions-and-insights-panel />
+    <navbar-new
+      :show-help-button="true"
+      :changed-analysis-name="changedAnalysisName"
+    >
+      <analysis-options-button @on-analysis-renamed="onAnalysisRenamed" />
+    </navbar-new>
     <div class="flex-row">
-      <div class="column insight-capture" v-if="analysisItems.length">
-        <datacube-comparative-card
-          v-for="item in analysisItems"
-          :key="item.id"
-          class="datacube-comparative-card"
-          :class="{ 'selected': selectedDatacubeId === item.id }"
-          :id="item.id"
-          :isSelected="selectedDatacubeId === item.id"
+      <analytical-questions-and-insights-panel class="side-panel">
+        <template #below-tabs>
+          <comments-button />
+        </template>
+      </analytical-questions-and-insights-panel>
+      <main>
+        <action-bar />
+        <div class="column insight-capture" v-if="analysisItems.length">
+          <datacube-comparative-card
+            v-for="item in analysisItems"
+            :key="item.id"
+            class="datacube-comparative-card"
+            :id="item.id"
+            :selected-timestamp="selectedTimestamp"
+            :selected-timestamp-range="selectedTimestampRange"
+            @loaded-timeseries="onLoadedTimeseries"
+          />
+        </div>
+        <empty-state-instructions v-else />
+        <datacube-comparative-timeline-sync
+          v-if="globalTimeseries.length > 0 && timeSelectionSyncing"
+          class="datacube-comparative-timeline-sync"
+          :timeseriesData="globalTimeseries"
           :selected-timestamp="selectedTimestamp"
-          :selected-timestamp-range="selectedTimestampRange"
-          @click="selectedDatacubeId = item.id"
-          @loaded-timeseries="onLoadedTimeseries"
+          @select-timestamp="setSelectedTimestamp"
+          @select-timestamp-range="handleTimestampRangeSelection"
         />
-      </div>
-      <empty-state-instructions v-else />
-      <datacube-comparative-timeline-sync
-        v-if="globalTimeseries.length > 0 && timeSelectionSyncing"
-        class="datacube-comparative-timeline-sync"
-        :timeseriesData="globalTimeseries"
-        :selected-timestamp="selectedTimestamp"
-        @select-timestamp="setSelectedTimestamp"
-        @select-timestamp-range="handleTimestampRangeSelection"
-      />
+      </main>
     </div>
-    </main>
   </div>
 </template>
 
@@ -43,31 +50,35 @@ import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import _ from 'lodash';
 import { DataState } from '@/types/Insight';
+import NavbarNew from '@/components/navbar-new.vue';
+import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
+import CommentsButton from '@/components/widgets/comments-button.vue';
 
 export default defineComponent({
   name: 'CompAnalysis',
   components: {
     DatacubeComparativeCard,
+    CommentsButton,
     ActionBar,
     EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,
-    DatacubeComparativeTimelineSync
+    DatacubeComparativeTimelineSync,
+    NavbarNew,
+    AnalysisOptionsButton
   },
   setup() {
     const store = useStore();
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const timeSelectionSyncing = computed(() => store.getters['dataAnalysis/timeSelectionSyncing']);
 
-    const selectedDatacubeId = ref('');
-
     watchEffect(() => {
       if (analysisItems.value && analysisItems.value.length > 0) {
-        // @FIXME: select first one by default
-        selectedDatacubeId.value = analysisItems.value[0].id;
-
         // set context-ids to fetch insights correctly for all datacubes in this analysis
         const contextIDs = analysisItems.value.map((dc: any) => dc.id);
         store.dispatch('insightPanel/setContextId', contextIDs);
+      } else {
+        // no datacubes in this analysis, so do not fetch any insights/questions
+        store.dispatch('insightPanel/setContextId', undefined);
       }
     });
 
@@ -114,8 +125,12 @@ export default defineComponent({
       }
     );
 
+    const changedAnalysisName = ref<string | null>(null);
+    const onAnalysisRenamed = (newName: string) => {
+      changedAnalysisName.value = newName;
+    };
+
     return {
-      selectedDatacubeId,
       analysisItems,
       allTimeseriesMap,
       allDatacubesMetadataMap,
@@ -127,10 +142,10 @@ export default defineComponent({
       reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
       initialSelectedTimestampRange,
-      timeSelectionSyncing
+      timeSelectionSyncing,
+      changedAnalysisName,
+      onAnalysisRenamed
     };
-  },
-  unmounted(): void {
   },
   mounted() {
     // ensure the insight explorer panel is closed in case the user has
@@ -258,47 +273,39 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-container {
-  height: $content-full-height;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
 }
 
 .flex-row {
-  display: flex;
   flex: 1;
+  display: flex;
   min-height: 0;
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+}
+
+.side-panel {
+  isolation: isolate;
+  z-index: 1;
 }
 
 main {
-  flex: 1;
   display: flex;
-  min-height: 0;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  margin-right: 10px;
 }
 
-.datacube-comparative-timeline-sync {
-  background-color: rgb(235, 235, 235);
+.datacube-comparative-card:not(:first-child) {
+  margin-top: 10px;
 }
 
 .column {
+  margin: 10px 0;
   overflow-y: auto;
-  background-color: rgb(242, 242, 242);
-
-  .datacube-comparative-card {
-    border: 2px outset #ddd;
-    margin: 1rem;
-    padding: 0 1rem 1rem 0;
-    &:hover {
-      border-color: blue;
-    }
-  }
-  .selected {
-    border-color: black;
-  }
+  padding-bottom: 80px;
 }
 
 </style>

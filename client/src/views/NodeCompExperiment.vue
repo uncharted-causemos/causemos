@@ -112,6 +112,7 @@
               :selected-admin-level="selectedAdminLevel"
               :qualifier-breakdown-data="qualifierBreakdownData"
               :regional-data="regionalData"
+              :temporal-breakdown-data="temporalBreakdownData"
               :unit="unit"
               :selected-spatial-aggregation="selectedSpatialAggregation"
               :selected-timestamp="selectedTimestamp"
@@ -119,9 +120,12 @@
               :selected-region-ids="selectedRegionIds"
               :selected-qualifier-values="selectedQualifierValues"
               :selected-breakdown-option="breakdownOption"
+              :selected-temporal-resolution="selectedTemporalResolution"
               :selected-timeseries-points="selectedTimeseriesPoints"
+              :selected-years="selectedYears"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+              @toggle-is-year-selected="toggleIsYearSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
               @set-breakdown-option="setBreakdownOption"
             />
@@ -247,7 +251,8 @@ export default defineComponent({
       selectedScenarioIds,
       metadata,
       selectedAdminLevel,
-      breakdownOption
+      breakdownOption,
+      ref([])
     );
 
     const timeInterval = 10000;
@@ -309,7 +314,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      selectedTimestamp
+      selectedTimestamp,
+      ref([])
     );
 
 
@@ -318,7 +324,10 @@ export default defineComponent({
       visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      temporalBreakdownData,
+      setRelativeTo,
+      selectedYears,
+      toggleIsYearSelected
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -329,7 +338,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      selectedQualifierValues
+      selectedQualifierValues,
+      ref([])
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -428,7 +438,10 @@ export default defineComponent({
       selectedRegionIds,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
-      selectedQualifierValues
+      selectedQualifierValues,
+      temporalBreakdownData,
+      selectedYears,
+      toggleIsYearSelected
     };
   },
   unmounted(): void {

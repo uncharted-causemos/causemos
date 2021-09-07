@@ -31,18 +31,24 @@
       v-tooltip.top-start="ancestorTooltip"
       class="content--single-row"
     >
-      <span class="title">
-        <span class="faded">{{ ancestorPrefix }}</span>
-        {{ itemData.name }}
-      </span>
-      <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
-        {{ valueFormatter(itemData.bars[0].value) }}
-      </span>
-      <div
-        v-if="itemData.isSelectedAggregationLevel"
-        class="histogram-bar"
-        :class="{ faded: !itemData.isChecked }"
-        :style="histogramBarStyle(itemData.bars[0].value, itemData.bars[0].color)"
+      <div class="single-row-headings">
+        <span class="title">
+          <span class="faded">{{ ancestorPrefix }}</span>
+          {{ itemData.name }}
+        </span>
+        <span :class="{ faded: !itemData.isSelectedAggregationLevel }">
+          {{ valueFormatter(itemData.bars[0].value) }}
+        </span>
+      </div>
+      <aggregation-checklist-bar
+        v-if="histogramVisible"
+        :barColor="itemData.bars[0].color"
+        :barValue="itemData.bars[0].value"
+        :isChecked="itemData.isChecked"
+        :maxVisibleBarValue="maxVisibleBarValue"
+        :minVisibleBarValue="minVisibleBarValue"
+        :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
+        :isWrapped="false"
       />
     </div>
     <div
@@ -60,11 +66,15 @@
         class="value-on-same-line"
       >
         <div class="histogram-bar-wrapper">
-          <div
-            v-if="itemData.isSelectedAggregationLevel"
-            class="histogram-bar"
-            :class="{ faded: !itemData.isChecked }"
-            :style="histogramBarStyle(bar.value, bar.color)"
+          <aggregation-checklist-bar
+            v-if="histogramVisible"
+            :barColor="bar.color"
+            :barValue="bar.value"
+            :isChecked="itemData.isChecked"
+            :maxVisibleBarValue="maxVisibleBarValue"
+            :minVisibleBarValue="minVisibleBarValue"
+            :isSelectedAggregationLevel="itemData.isSelectedAggregationLevel"
+            :isWrapped="true"
           />
         </div>
         <span
@@ -86,8 +96,7 @@
 import * as d3 from 'd3';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import { defineComponent, PropType } from '@vue/runtime-core';
-
-const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
+import AggregationChecklistBar from '@/components/drilldown-panel/aggregation-checklist-bar.vue';
 
 interface AggregationChecklistItemPropType {
   name: string;
@@ -100,9 +109,14 @@ interface AggregationChecklistItemPropType {
   hiddenAncestorNames: string[];
 }
 
+const ANCESTOR_VISIBLE_CHAR_COUNT = 8;
+
 export default defineComponent({
   name: 'AggregationChecklistItem',
   emits: ['toggle-expanded', 'toggle-checked'],
+  components: {
+    AggregationChecklistBar
+  },
   props: {
     itemData: {
       type: Object as PropType<AggregationChecklistItemPropType>,
@@ -117,7 +131,15 @@ export default defineComponent({
         hiddenAncestorNames: []
       })
     },
+    histogramVisible: {
+      type: Boolean,
+      default: true
+    },
     maxVisibleBarValue: {
+      type: Number,
+      default: 0
+    },
+    minVisibleBarValue: {
       type: Number,
       default: 0
     },
@@ -169,10 +191,6 @@ export default defineComponent({
     toggleChecked() {
       this.$emit('toggle-checked');
     },
-    histogramBarStyle(value: number, color: string) {
-      const percentage = (value / this.maxVisibleBarValue) * 100;
-      return { width: `${percentage}%`, background: color };
-    },
     colorFromIndex(index: number) {
       return this.selectedTimeseriesPoints[index].color;
     }
@@ -216,7 +234,11 @@ export default defineComponent({
   flex: 1;
   display: flex;
   position: relative;
-
+  flex-direction: column;
+  .single-row-headings {
+    display: flex;
+    flex-direction: row;
+  }
   .title {
     flex: 1;
   }
@@ -240,29 +262,9 @@ export default defineComponent({
   display: flex;
 }
 
-span.faded {
-  opacity: .5;
-}
-
-.histogram-bar {
-  position: absolute;
-  top: 100%;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: #8767c8;
-
-  &.faded {
-    opacity: .25;
-  }
-}
-
 .histogram-bar-wrapper {
   flex: 1;
   position: relative;
-  .histogram-bar {
-    top: 50%;
-    transform: translateY(-50%);
-  }
 }
+
 </style>

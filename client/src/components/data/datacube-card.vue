@@ -164,11 +164,19 @@
             <p
               v-if="
                 !isDescriptionView &&
-                breakdownOption === SpatialAggregationLevel.Region &&
+                breakdownOption !== null &&
                 timeseriesData.length === 0
               "
             >
-              Please select one or more regions, or choose 'Split by none'.
+              Please select one or more
+              {{
+                breakdownOption === SpatialAggregationLevel.Region
+                  ? 'regions'
+                  : breakdownOption === TemporalAggregationLevel.Year
+                  ? 'years'
+                  : 'qualifier values'
+              }}
+              , or choose 'Split by none'.
             </p>
             <div
               v-if="!isDescriptionView && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
@@ -251,8 +259,6 @@ import { OutputSpecWithId, RegionalAggregations, OutputStatsResult } from '@/typ
 import { useStore } from 'vuex';
 import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
-import dateFormatter from '@/formatters/date-formatter';
-import { getTimestampMillis } from '@/utils/date-util';
 import { DATA_LAYER } from '@/utils/map-util-new';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
@@ -365,7 +371,6 @@ export default defineComponent({
       selectedScenarioIds,
       allModelRunData,
       metadata,
-      breakdownOption,
       outputSourceSpecs
     } = toRefs(props);
 
@@ -430,15 +435,6 @@ export default defineComponent({
       }
     );
 
-    const timestampFormatter = (timestamp: number) => {
-      if (breakdownOption.value === TemporalAggregationLevel.Year) {
-        const month = timestamp;
-        // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
-      }
-      return dateFormatter(timestamp, 'MMMM YYYY');
-    };
-
     return {
       gridLayerStats,
       updateMapFilters,
@@ -451,9 +447,9 @@ export default defineComponent({
       mainModelOutput,
       isModelMetadata,
       emitRelativeToSelection,
-      timestampFormatter,
       SpatialAggregationLevel,
-      validModelRunsAvailable,
+      TemporalAggregationLevel,
+      validModelRunsAvailable
       tour
     };
   },

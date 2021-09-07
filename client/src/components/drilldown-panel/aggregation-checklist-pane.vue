@@ -55,8 +55,10 @@
       <aggregation-checklist-item
         v-for="(row, rowIndex) of visibleRows"
         :key="rowIndex"
+        :histogram-visible="shouldShowDeselectedBars || row.isChecked"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
+        :min-visible-bar-value="minVisibleBarValue"
         :selected-timeseries-points="selectedTimeseriesPoints"
         :checkbox-type="checkboxType"
         @toggle-expanded="toggleExpanded(row.path)"
@@ -84,6 +86,7 @@ import {
   computed
 } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { SpatialAggregationLevel } from '@/types/Enums';
 
 const SORT_OPTIONS = {
   Name: { label: 'Name', value: 'name' },
@@ -304,6 +307,10 @@ export default defineComponent({
       type: Object as PropType<string[]>,
       default: []
     },
+    shouldShowDeselectedBars: {
+      type: Boolean,
+      required: true
+    },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
       default: null
@@ -315,6 +322,7 @@ export default defineComponent({
       rawData,
       aggregationLevel,
       orderedAggregationLevelKeys,
+      shouldShowDeselectedBars,
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
@@ -397,17 +405,19 @@ export default defineComponent({
       computeExpanded(statefulData.value, -1);
     });
 
+    // Returns the maximum among bar values or zero, whichever is greater
     const findMaxVisibleBarValue = (
       node: RootStatefulDataNode | StatefulDataNode,
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        const values = isStatefulDataNode(node)
+        const values = isStatefulDataNode(node) &&
+          (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars.value)
           ? node.bars.map(bar => bar.value)
           : [];
-        return _.max(values) ?? Number.MIN_VALUE;
+        return _.max(values) ?? 0;
       }
-      let maxValue = Number.MIN_VALUE;
+      let maxValue = 0;
       node.children.forEach(child => {
         maxValue = Math.max(
           maxValue,
@@ -417,11 +427,43 @@ export default defineComponent({
       return maxValue;
     };
 
+    // Returns the minimum among bar values or zero, whichever is less
+    const findMinVisibleBarValue = (
+      node: RootStatefulDataNode | StatefulDataNode,
+      levelsUntilSelectedDepth: number
+    ) => {
+      if (levelsUntilSelectedDepth === 0) {
+        const values = isStatefulDataNode(node) &&
+        (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars.value)
+          ? node.bars.map(bar => bar.value)
+          : [];
+        return _.min(values) ?? 0;
+      }
+      let minValue = 0;
+      node.children.forEach(child => {
+        minValue = Math.min(
+          minValue,
+          findMinVisibleBarValue(child, levelsUntilSelectedDepth - 1)
+        );
+      });
+      return minValue;
+    };
+
     const maxVisibleBarValue = computed(() => {
       if (_.isNil(statefulData.value)) return 0;
       // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
       //  the root level.
       return findMaxVisibleBarValue(
+        statefulData.value,
+        aggregationLevel.value + 1
+      );
+    });
+
+    const minVisibleBarValue = computed(() => {
+      if (_.isNil(statefulData.value)) return 0;
+      // + 1 because if aggregationLevel === 0, we need to go 1 level deeper than
+      //  the root level.
+      return findMinVisibleBarValue(
         statefulData.value,
         aggregationLevel.value + 1
       );
@@ -468,10 +510,12 @@ export default defineComponent({
     return {
       statefulData,
       maxVisibleBarValue,
+      minVisibleBarValue,
       visibleRows,
       isAllSelected,
       toggleChecked,
       setAllChecked,
+      SpatialAggregationLevel,
       SORT_OPTIONS,
       sortValue
     };

@@ -162,8 +162,12 @@ export default {
         `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
     }
   },
+  mounted() {
+    this.showContextInsightPanel();
+  },
   methods: {
     ...mapActions({
+      showContextInsightPanel: 'contextInsightPanel/showContextInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane'
     }),
@@ -231,6 +235,12 @@ export default {
           // for applying this insight, do not redirect to the domain project page,
           // instead use the current context and rehydrate the view
           savedURL = '/analysis/' + this.project + '/data/' + this.analysisId;
+        }
+
+        if (this.projectType === ProjectType.Model) {
+          // this is an insight created by the domain modeler during model publication:
+          //  needed since an existing url may have insight_id with old/invalid value
+          savedURL = '/model/' + this.project + '/model-publishing-experiment';
         }
 
         // add 'insight_id' as a URL param so that the target page can apply it

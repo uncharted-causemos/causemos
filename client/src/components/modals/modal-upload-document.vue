@@ -141,6 +141,7 @@ export default defineComponent({
   }
   .modal-body {
     flex-grow: 1;
+    max-height: 70vh;
     overflow-y: auto;
     .upload-file-label {
       padding-bottom: 10px;

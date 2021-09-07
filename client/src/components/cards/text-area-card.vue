@@ -85,32 +85,37 @@ export default defineComponent({
 .text-area-card-container {
   width: 25%;
   z-index: 9998;
+  background: white;
+  padding: 10px;
 }
 
 .close-button {
+  position: relative;
+  top: auto;
+  right: auto;
 
   &:hover {
     color: #E0E0E0;
   }
-
-  top: 8px;
-  right: 8px;
 }
 
 h4 {
-  background: #15223D;
-  color: #FFF;
-  padding: 10px 14px;
+  @include header-secondary;
   margin: 0;
+  margin-bottom: 10px;
   border-top-left-radius: inherit;
   border-top-right-radius: inherit;
   transition: background 0.15s;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
 }
 
 .form-control {
-  background: #ffffff;
   resize: none;
   font-size: medium;
+  border: 1px solid $background-light-3;
+  background: $background-light-1;
   border-radius: 0;
   border-bottom-left-radius: inherit;
   border-bottom-right-radius: inherit;

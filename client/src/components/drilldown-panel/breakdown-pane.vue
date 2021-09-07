@@ -25,6 +25,7 @@
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
+      :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
       :checkbox-type="
         selectedBreakdownOption === SpatialAggregationLevel.Region
           ? 'checkbox'
@@ -62,6 +63,7 @@
       :ordered-aggregation-level-keys="[qualifierVariable.name]"
       :raw-data="qualifierVariable.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
+      :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
       :units="unit"
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.name ? 'checkbox' : null
@@ -93,7 +95,7 @@
       </template>
     </aggregation-checklist-pane>
     <aggregation-checklist-pane
-      v-if="isTemporalBreakdownDataValid && selectedBreakdownOption === null"
+      v-if="isTemporalBreakdownDataValid"
       class="checklist-section"
       :aggregation-level-count="Object.keys(temporalBreakdownData).length"
       :aggregation-level="0"
@@ -101,7 +103,15 @@
       :ordered-aggregation-level-keys="['Year']"
       :raw-data="temporalBreakdownData"
       :units="unit"
+      :should-show-deselected-bars="true"
       :selected-timeseries-points="selectedTimeseriesPoints"
+      :checkbox-type="
+        selectedBreakdownOption === TemporalAggregationLevel.Year
+          ? 'checkbox'
+          : null
+      "
+      :selected-item-ids="Array.from(selectedYears)"
+      @toggle-is-item-selected="toggleIsYearSelected"
     >
       <template #aggregation-description>
         <p class="aggregation-description">
@@ -117,7 +127,7 @@
 <script lang="ts">
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import aggregationChecklistPane from '@/components/drilldown-panel/aggregation-checklist-pane.vue';
-import dateFormatter from '@/formatters/date-formatter';
+import formatTimestamp from '@/formatters/timestamp-formatter';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
 import { ADMIN_LEVEL_KEYS, ADMIN_LEVEL_TITLES } from '@/utils/admin-level-util';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
@@ -125,10 +135,10 @@ import {
   AggregationOption,
   TemporalAggregationLevel,
   SpatialAggregationLevel,
+  TemporalResolutionOption,
   AdminLevel
 } from '@/types/Enums';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
-import { getTimestampMillis } from '@/utils/date-util';
 
 // FIXME: This should dynamically change to whichever temporal aggregation level is selected
 const selectedTemporalAggregationLevel = TemporalAggregationLevel.Year;
@@ -150,12 +160,16 @@ export default defineComponent({
       default: null
     },
     selectedSpatialAggregation: {
-      type: String as PropType<string | null>,
+      type: String as PropType<AggregationOption | null>,
       default: AggregationOption.Mean
     },
     selectedTemporalAggregation: {
-      type: String as PropType<string | null>,
+      type: String as PropType<AggregationOption | null>,
       default: AggregationOption.Mean
+    },
+    selectedTemporalResolution: {
+      type: String as PropType<TemporalResolutionOption | null>,
+      default: null
     },
     unit: {
       type: String as PropType<string>,
@@ -181,6 +195,10 @@ export default defineComponent({
       type: Object as PropType<Set<string>>,
       default: () => new Set()
     },
+    selectedYears: {
+      type: Object as PropType<Set<string>>,
+      default: () => new Set()
+    },
     selectedBreakdownOption: {
       type: String as PropType<string | null>,
       default: null
@@ -194,6 +212,7 @@ export default defineComponent({
     'set-selected-admin-level',
     'toggle-is-region-selected',
     'toggle-is-qualifier-selected',
+    'toggle-is-year-selected',
     'set-breakdown-option'
   ],
   setup(props, { emit }) {
@@ -201,6 +220,7 @@ export default defineComponent({
       regionalData,
       temporalBreakdownData,
       selectedBreakdownOption,
+      selectedTemporalResolution,
       qualifierBreakdownData
     } = toRefs(props);
     const setSelectedAdminLevel = (level: number) => {
@@ -216,6 +236,10 @@ export default defineComponent({
       qualifierValue: string
     ) => {
       emit('toggle-is-qualifier-selected', qualifierValue);
+    };
+
+    const toggleIsYearSelected = (title: string, year: string) => {
+      emit('toggle-is-year-selected', year);
     };
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
@@ -269,18 +293,18 @@ export default defineComponent({
     });
 
     const timestampFormatter = (timestamp: number) => {
-      if (selectedBreakdownOption.value === TemporalAggregationLevel.Year) {
-        const month = timestamp;
-        // We're only displaying the month, so the year doesn't matter
-        return dateFormatter(getTimestampMillis(1970, month), 'MMMM');
-      }
-      return dateFormatter(timestamp, 'MMMM YYYY');
+      return formatTimestamp(
+        timestamp,
+        selectedBreakdownOption.value,
+        selectedTemporalResolution.value
+      );
     };
 
     return {
       setSelectedAdminLevel,
       toggleIsRegionSelected,
       toggleIsQualifierSelected,
+      toggleIsYearSelected,
       availableAdminLevelTitles,
       timestampFormatter,
       ADMIN_LEVEL_KEYS,
@@ -289,7 +313,8 @@ export default defineComponent({
       isRegionalDataValid,
       isTemporalBreakdownDataValid,
       AggregationOption,
-      SpatialAggregationLevel
+      SpatialAggregationLevel,
+      TemporalAggregationLevel
     };
   }
 });
