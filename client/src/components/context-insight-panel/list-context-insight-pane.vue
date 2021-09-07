@@ -57,6 +57,7 @@
               <context-insight-editor
                 v-if="activeContextInsight === contextInsight.id"
                 @delete="deleteContextInsight(contextInsight.id)"
+                @edit="editContextInsight(contextInsight)"
               />
             </div>
           </div>
@@ -169,7 +170,8 @@ export default {
     ...mapActions({
       showContextInsightPanel: 'contextInsightPanel/showContextInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane'
+      setCurrentPane: 'insightPanel/setCurrentPane',
+      setUpdatedInsight: 'insightPanel/setUpdatedInsight'
     }),
     stringFormatter,
     redirectToAnalysisInsight() {
@@ -279,6 +281,11 @@ export default {
           this.toaster(message, 'error', true);
         }
       });
+    },
+    editContextInsight(insight) {
+      this.showInsightPanel();
+      this.setUpdatedInsight(insight);
+      this.setCurrentPane('edit-insight');
     },
     openExport() {
       this.exportActive = true;
