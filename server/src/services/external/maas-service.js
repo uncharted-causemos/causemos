@@ -21,6 +21,22 @@ const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3
  * @param {ModelRun} metadata - model run metadata
  */
 const submitModelRun = async(metadata) => {
+  const {
+    model_id,
+    model_name,
+    parameters,
+    is_default_run = false
+  } = metadata;
+  const filteredMetadata = {
+    id: uuid(),
+    model_id,
+    model_name,
+    parameters,
+    data_paths: [],
+    is_default_run,
+    created_at: Date.now(),
+    tags: []
+  };
   Logger.info('Submitting model run for execution');
 
   const pipelinePayload = {
@@ -32,19 +48,29 @@ const submitModelRun = async(metadata) => {
       'Content-type': 'application/json',
       'Accept': 'application/json'
     },
-    json: metadata
+    json: filteredMetadata
   };
 
-  Logger.info(`Submitting execution request for id: ${metadata.id}`);
-  const result = await requestAsPromise(pipelinePayload);
+  Logger.info(`Submitting execution request for id: ${filteredMetadata.id}`);
+  let result;
+  try {
+    result = await requestAsPromise(pipelinePayload);
+  } catch (err) {
+    return { result: err, code: 500 };
+  }
   Logger.info(`Model execution response ${result}`);
 
-  // If API call succeeded, insert metadata into ES
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return await connection.insert({
-    ...metadata,
-    status: 'SUBMITTED'
-  }, d => d.id);
+  try {
+    // If API call succeeded, insert metadata into ES
+    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+    const result = await connection.insert({
+      ...filteredMetadata,
+      status: 'SUBMITTED'
+    }, d => d.id);
+    return { result, code: 200 };
+  } catch (err) {
+    return { result: err, code: 500 };
+  }
 };
 
 /**
@@ -53,7 +79,12 @@ const submitModelRun = async(metadata) => {
  * @param {ModelRun} metadata - model run metadata
  */
 const startModelOutputPostProcessing = async (metadata) => {
-  const filteredMetadata = filterAndLog(Logger, './src/schemas/model-run.schema.json', metadata);
+  let filteredMetadata;
+  try {
+    filteredMetadata = filterAndLog(Logger, './src/schemas/model-run.schema.json', metadata);
+  } catch (err) {
+    return { result: err, code: 400 };
+  }
   const filters = {
     clauses: [
       { field: 'id', operand: 'or', isNot: false, values: [filteredMetadata.model_id] }
@@ -63,6 +94,9 @@ const startModelOutputPostProcessing = async (metadata) => {
     includes: ['outputs', 'qualifier_outputs'],
     size: 1
   }))[0];
+  if (_.isUndefined(modelMetadata)) {
+    return { result: '', code: 409 };
+  }
 
   const qualifierMap = {};
   if (modelMetadata.qualifier_outputs) {
@@ -92,13 +126,22 @@ const startModelOutputPostProcessing = async (metadata) => {
     json: flowParameters
   };
 
-  await requestAsPromise(pipelinePayload);
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const result = await connection.update({
-    ...filteredMetadata,
-    status: 'PROCESSING'
-  }, d => d.id);
-  return { result: result, code: 200 };
+  try {
+    await requestAsPromise(pipelinePayload);
+  } catch (err) {
+    return { result: err, code: 500 };
+  }
+  try {
+    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+    // TODO: Handle insert here with 201 code when data gets inserted.
+    const result = await connection.update({
+      ...filteredMetadata,
+      status: 'PROCESSING'
+    }, d => d.id);
+    return { result, code: 200 };
+  } catch (err) {
+    return { result: err, code: 500 };
+  }
 };
 
 /**
@@ -109,14 +152,19 @@ const startModelOutputPostProcessing = async (metadata) => {
 const markModelRunFailed = async (metadata) => {
   Logger.info(`Marking model run as failed ${metadata.model_name} ${metadata.id} `);
   if (!metadata.id) {
-    throw new Error('Model run id missing');
+    return { result: 'Model run id missing', code: 500 };
   }
 
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return await connection.update({
-    id: metadata.id,
-    status: 'EXECUTION FAILED'
-  }, d => d.id);
+  try {
+    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+    const result = await connection.update({
+      id: metadata.id,
+      status: 'EXECUTION FAILED'
+    }, d => d.id);
+    return { result, code: 200 };
+  } catch (err) {
+    return { result: err, code: 500 };
+  }
 };
 
 /**
@@ -177,9 +225,12 @@ const getJobStatus = async (runId) => {
  * @param {Indicator} metadata -indicator metadata
  */
 const startIndicatorPostProcessing = async (metadata) => {
-  // TODO: Write a try/catch block here and fill in the rest of the gaps
-  const filteredMetadata = filterAndLog(Logger, './src/schemas/indicator.schema.json', metadata);
-
+  let filteredMetadata;
+  try {
+    filteredMetadata = filterAndLog(Logger, './src/schemas/indicator.schema.json', metadata);
+  } catch (err) {
+    return { result: err, code: 400 };
+  }
   processFilteredData(filteredMetadata);
   filteredMetadata.type = 'indicator';
   // ensure for each newly registered indicator datacube a corresponding domain project
@@ -284,11 +335,19 @@ const startIndicatorPostProcessing = async (metadata) => {
     json: flowParameters
   };
 
-  await requestAsPromise(pipelinePayload);
+  try {
+    await requestAsPromise(pipelinePayload);
+  } catch (err) {
+    return { result: err, code: 500 };
+  }
   if (newIndicatorMetadata.length > 0) {
-    const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    const result = await connection.insert(newIndicatorMetadata, d => d.id);
-    return { result, code: 200 };
+    try {
+      const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+      const result = await connection.insert(newIndicatorMetadata, d => d.id);
+      return { result, code: 200 };
+    } catch (err) {
+      return { result: err, code: 500 };
+    }
   }
   return { result: 'No documents added', code: 202 };
 };
