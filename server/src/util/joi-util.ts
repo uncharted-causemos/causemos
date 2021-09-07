@@ -15,8 +15,8 @@ const filterWithSchema = (schemaFilename, json) => {
 }
 
 const filterAndLog = (Logger, schemaFilename, metadata) => {
+  Logger.info(`Start filtering and validation.`);
   const { filteredJson: filteredMetadata, error } = filterWithSchema(schemaFilename, metadata);
-  Logger.info(`Start model output processing ${filteredMetadata.model_name} ${filteredMetadata.id} `);
   if (error) {
     Logger.error('One of the required metadata fields was not provided.');
     throw new JsonValidationException(error);
