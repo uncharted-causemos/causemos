@@ -1,4 +1,3 @@
-import { ModelRunStatus } from "client/src/types/Enums";
 
 const _ = require('lodash');
 const uuid = require('uuid');
@@ -86,14 +85,14 @@ const startModelOutputPostProcessing = async (metadata) => {
   let docIds = [];
   const result = await connection.update({
     ...metadata,
-    status: ModelRunStatus.Processing
+    status: 'PROCESSING'
   }, d => d.id).then(result => {
     if (_.first(result.items).update.status === 200) {
       docIds = [metadata.id];
     } else {
       return connection.insert({
         ...metadata,
-        status: ModelRunStatus.Test
+        status: 'TEST'
       }, d => d.id);
     }
   });
