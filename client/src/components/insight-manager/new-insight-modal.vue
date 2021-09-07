@@ -49,8 +49,7 @@ export default {
       viewState: 'insightPanel/viewState',
       contextId: 'insightPanel/contextId',
       project: 'app/project',
-      filters: 'dataSearch/filters',
-      ontologyConcepts: 'dataSearch/ontologyConcepts'
+      filters: 'dataSearch/filters'
     }),
     formattedFilterString() {
       return insightUtil.getFormattedFilterString(this.filters);

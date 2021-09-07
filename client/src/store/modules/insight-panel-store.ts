@@ -8,7 +8,7 @@ interface InsightState {
   dataState: any;
   contextId: string[] | undefined;
   analysisId: string;
-  updatedInsightId: string;
+  updatedInsight: any;
 }
 
 /**
@@ -22,7 +22,7 @@ const state: InsightState = {
   dataState: {},
   contextId: undefined,
   analysisId: '',
-  updatedInsightId: ''
+  updatedInsight: null
 };
 
 
@@ -34,7 +34,7 @@ const getters: GetterTree<InsightState, any> = {
   dataState: state => state.dataState,
   contextId: state => state.contextId,
   analysisId: state => state.analysisId,
-  updatedInsightId: state => state.updatedInsightId
+  updatedInsight: state => state.updatedInsight
 };
 
 
@@ -63,8 +63,8 @@ const actions: ActionTree<InsightState, any> = {
   setAnalysisId: ({ commit }, newValue) => {
     commit('setAnalysisId', newValue);
   },
-  setUpdatedInsightId: ({ commit }, newValue) => {
-    commit('setUpdatedInsightId', newValue);
+  setUpdatedInsight: ({ commit }, newValue) => {
+    commit('setUpdatedInsight', newValue);
   }
 };
 
@@ -94,8 +94,8 @@ const mutations: MutationTree<InsightState> = {
   setAnalysisId(state, value) {
     state.analysisId = value;
   },
-  setUpdatedInsightId(state, value) {
-    state.updatedInsightId = value;
+  setUpdatedInsight(state, value) {
+    state.updatedInsight = value;
   }
 };
 

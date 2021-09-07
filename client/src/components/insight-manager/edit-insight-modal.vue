@@ -17,8 +17,6 @@ import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 import NewEditModalLayout from '@/components/insight-manager/new-edit-modal-layout';
 import { updateInsight } from '@/services/insight-service';
-import projectService from '@/services/project-service';
-import useInsightsData from '@/services/composables/useInsightsData';
 import insightUtil from '@/utils/insight-util';
 import { INSIGHTS } from '@/utils/messages-util';
 
@@ -32,41 +30,22 @@ export default {
     hasError: false,
     imagePreview: null,
     metadata: '',
-    name: '',
-    projectMetadata: null
+    name: ''
   }),
-  setup() {
-    const { insights: listContextInsights } = useInsightsData();
-    return {
-      listContextInsights
-    };
-  },
   computed: {
     ...mapGetters({
       currentView: 'app/currentView',
-      projectType: 'app/projectType',
-      currentCAG: 'app/currentCAG',
+      projectMetadata: 'app/projectMetadata',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
-      countInsights: 'insightPanel/countInsights',
-      updatedInsightId: 'insightPanel/updatedInsightId',
-      viewState: 'insightPanel/viewState',
-      contextId: 'insightPanel/contextId',
-      filters: 'dataSearch/filters',
-      ontologyConcepts: 'dataSearch/ontologyConcepts'
+      updatedInsight: 'insightPanel/updatedInsight',
+      filters: 'dataSearch/filters'
     }),
     formattedFilterString() {
       return insightUtil.getFormattedFilterString(this.filters);
     },
-    dataState() {
-      return this.currentInsight ? this.currentInsight.data_state : null;
-    },
-    currentInsight () {
-      const current = this.listContextInsights.filter(i => i.id === this.updatedInsightId);
-      return current.length > 0 ? current[0] : null;
-    },
     metadataDetails() {
-      return insightUtil.parseMetadataDetails(this.dataState, this.projectMetadata, this.formattedFilterString, this.currentView);
+      return insightUtil.parseMetadataDetails(this.updatedInsight.data_state, this.projectMetadata, this.formattedFilterString, this.currentView);
     }
   },
   watch: {
@@ -77,19 +56,9 @@ export default {
         this.hasError = false;
       }
     },
-    async listContextInsights() {
-      this.imagePreview = await this.loadSnapshot();
-    },
     currentPane() {
       if (this.currentPane !== 'edit-insight') {
         this.initInsight();
-      }
-    },
-    async currentInsight() {
-      if (this.currentInsight) {
-        this.name = this.currentInsight.name;
-        this.description = this.currentInsight.description;
-        this.projectMetadata = await projectService.getProject(this.currentInsight.project_id);
       }
     }
   },
@@ -97,14 +66,14 @@ export default {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
-      setUpdatedInsightId: 'insightPanel/setUpdatedInsightId',
+      setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
       setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane'
     }),
     closeInsight() {
       this.hideInsightPanel();
       this.setCurrentPane('');
-      this.setUpdatedInsightId('');
+      this.setUpdatedInsight(null);
     },
     initInsight() {
       this.name = '';
@@ -112,11 +81,11 @@ export default {
       this.hasError = false;
     },
     async saveInsight() {
-      if (this.hasError || _.isEmpty(this.name) || this.updatedInsightId === '') return;
-      const updatedInsight = this.currentInsight;
+      if (this.hasError || _.isEmpty(this.name) || this.updatedInsight === '') return;
+      const updatedInsight = this.updatedInsight;
       updatedInsight.name = this.name;
       updatedInsight.description = this.description;
-      updateInsight(this.updatedInsightId, updatedInsight)
+      updateInsight(this.updatedInsight.id, updatedInsight)
         .then((result) => {
           if (result.updated === 'success') {
             this.toaster(INSIGHTS.SUCCESFUL_UPDATE, 'success', false);
@@ -132,11 +101,12 @@ export default {
     closeContextInsightPanel() {
       this.hideContextInsightPanel();
       this.setCurrentContextInsightPane('');
-    },
-    async loadSnapshot() {
-      const image = this.currentInsight ? this.currentInsight.thumbnail : null;
-      return image;
     }
+  },
+  mounted() {
+    this.name = this.updatedInsight.name;
+    this.description = this.updatedInsight.description;
+    this.imagePreview = this.updatedInsight.thumbnail;
   }
 };
 </script>
