@@ -5,9 +5,15 @@ function JsonValidationException(message) {
   this.message = message;
   this.name = 'JsonValidationException';
 }
+
+const readySchemas = {};
 const filterWithSchema = (schemaFilename, json) => {
-  const jsonSchema = JSON.parse(fs.readFileSync(schemaFilename));
-  const schema = Enjoi.schema(jsonSchema);
+  if (!readySchemas[schemaFilename]) {
+    const jsonSchema = JSON.parse(fs.readFileSync(schemaFilename));
+    const schema = Enjoi.schema(jsonSchema);
+    readySchemas[schemaFilename] = schema;
+  }
+  const schema = readySchemas[schemaFilename];
   const validationResult = schema.validate(json, {
     stripUnknown: true
   });
