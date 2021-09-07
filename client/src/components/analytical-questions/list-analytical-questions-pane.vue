@@ -492,7 +492,7 @@ export default defineComponent({
         id: 'step-2-sensitivity-matrix',
         text: 'This is the sensitivity analysis matrix. <br>To see the top influencers for a node, click on its column header.',
         attachTo: {
-          element: '.x-axis-sensitivity-matrix', // this DOM element is dynamic and will only be available once the sensitivity-analysis-matrix is rendered
+          element: '.tour-x-axis-sensitivity-matrix', // this DOM element is dynamic and will only be available once the sensitivity-analysis-matrix is rendered
           on: 'bottom'
         },
         buttons: [
@@ -540,7 +540,7 @@ export default defineComponent({
         id: 'step-3-sensitivity-matrix-click',
         text: '<b>Key influences</b> causing change in malnutrition are the darker cells ones.<br> <b>Influence score</b> is based on structure of graph and weight of relationships',
         attachTo: {
-          element: '.grid-lines', // FIXME: add a unique tour css
+          element: '.tour-grid-lines',
           on: 'right'
         },
         buttons: [
