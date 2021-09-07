@@ -119,7 +119,9 @@
                   {{ questionItem.question }}
               </span>
               <i
+                v-if="hasTour(questionItem)"
                 class="fa fa-lg fa-info-circle"
+                :disabled="canStartTour()"
                 @click.stop.prevent="startTour(questionItem)"
                 @mousedown.stop.prevent
               />
@@ -241,13 +243,24 @@ export default defineComponent({
     showNewAnalyticalQuestion: false,
     newQuestionText: '',
     showDeleteModal: false,
-    isOpenEditor: false
+    isOpenEditor: false,
+    toursMetadata: [
+      {
+        baseQuestion: 'What are the appropriate aggregation functions?',
+        targetView: 'data'
+      },
+      {
+        baseQuestion: 'What are the key influences causing change in a node?',
+        targetView: 'quantitative'
+      }
+    ]
   }),
   computed: {
     ...mapGetters({
       viewState: 'insightPanel/viewState',
       currentView: 'app/currentView',
-      isReadyForNextStep: 'tour/isReadyForNextStep'
+      isReadyForNextStep: 'tour/isReadyForNextStep',
+      isPanelOpen: 'insightPanel/isPanelOpen'
     })
   },
   methods: {
@@ -255,6 +268,14 @@ export default defineComponent({
       setQuestions: 'analysisChecklist/setQuestions',
       setTour: 'tour/setTour'
     }),
+    hasTour(questionItem: AnalyticalQuestion): boolean {
+      return this.toursMetadata.findIndex(t => t.baseQuestion === questionItem.question) >= 0;
+    },
+    canStartTour() {
+      // if the tour's target-view is compatible with currentView and no modal is shown
+      return !this.isPanelOpen &&
+             this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
+    },
     promote() {
       // update selectedQuestion to be public, i.e., visible in all projects
       if (this.selectedQuestion) {
@@ -459,27 +480,19 @@ export default defineComponent({
       }
     },
     startTour(question: AnalyticalQuestion) {
-      // @TEMP
-      question.tour_name = 'aggregations-tour';
-
-      // we assume that some questions will save with them the tour name/id that may be used to initiate pre-defined tours
-      if (question.tour_name === undefined) {
-        // do nothing
-        return;
-      }
-
-      switch (question.tour_name) {
-        case 'sensitivity-matrix-tour':
-          this.startMatrixTour();
-          break;
-        case 'aggregations-tour':
-          this.startAggregationsTour();
-          break;
+      if (this.canStartTour()) {
+        // @NOTE: tours are linked with questions via question's text
+        switch (question.question) {
+          case 'What are the key influences causing change in a node?':
+            this.startMatrixTour();
+            break;
+          case 'What are the appropriate aggregation functions?':
+            this.startAggregationsTour();
+            break;
+        }
       }
     },
     startMatrixTour() {
-      // FIXME: do not create a tour that already exist
-      //        and if there is another tour, close that existing one first
       const tour = new Shepherd.Tour({
         tourName: 'sensitivity-matrix-tour',
         useModalOverlay: true,
@@ -587,9 +600,6 @@ export default defineComponent({
       this.setTour(tour);
     },
     startAggregationsTour() {
-      // FIXME: do not create a tour that already exist
-      //        and if there is another tour, close that existing one first
-      //
       // FIXME: starting a tour may switch the user context to the approperiate context where the tour is applicable
       //        ideally, a warning is needed and ideally saving the tour details (e.g., steps) in ES and having a more flexible way to create them
       const tour = new Shepherd.Tour({
