@@ -36,6 +36,7 @@ const countDatacubes = async (filter) => {
  * Insert a new datacube
  */
 const insertDatacube = async(metadata) => {
+  Logger.info(`Start insert datacube ${metadata.name} ${metadata.id}`);
   // TODO: Fix all this copypasta from maas-service startIndicatorPostProcessing
 
   metadata.type = metadata.type || 'model'; // Assume these ar all models for now

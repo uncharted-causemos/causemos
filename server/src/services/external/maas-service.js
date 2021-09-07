@@ -52,6 +52,7 @@ const submitModelRun = async(metadata) => {
  * @param {ModelRun} metadata - model run metadata
  */
 const startModelOutputPostProcessing = async (metadata) => {
+  Logger.info(`Start model output processing ${metadata.model_name} ${metadata.id} `);
   const filteredMetadata = filterAndLog(Logger, './src/schemas/model-run.schema.json', metadata);
   const filters = {
     clauses: [
@@ -176,6 +177,7 @@ const getJobStatus = async (runId) => {
  * @param {Indicator} metadata -indicator metadata
  */
 const startIndicatorPostProcessing = async (metadata) => {
+  Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
   const filteredMetadata = filterAndLog(Logger, './src/schemas/indicator.schema.json', metadata);
 
   processFilteredData(filteredMetadata);
