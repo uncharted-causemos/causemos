@@ -449,7 +449,7 @@ export default defineComponent({
       emitRelativeToSelection,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
-      validModelRunsAvailable
+      validModelRunsAvailable,
       tour
     };
   },

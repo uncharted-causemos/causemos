@@ -121,7 +121,8 @@
               <i
                 v-if="hasTour(questionItem)"
                 class="fa fa-lg fa-info-circle"
-                :disabled="canStartTour()"
+                :style="{ color: canStartTour ? '#000000' : '#707070' }"
+                :disabled="!canStartTour"
                 @click.stop.prevent="startTour(questionItem)"
                 @mousedown.stop.prevent
               />
@@ -216,6 +217,11 @@ export default defineComponent({
       //  (the latter is currently supported via a special route named dataPreview)
       // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
       return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+    },
+    canStartTour(): boolean {
+      // if the tour's target-view is compatible with currentView and no modal is shown
+      return !this.isPanelOpen &&
+             this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
     }
   },
   mounted() {
@@ -229,11 +235,6 @@ export default defineComponent({
     }),
     hasTour(questionItem: AnalyticalQuestion): boolean {
       return this.toursMetadata.findIndex(t => t.baseQuestion === questionItem.question) >= 0;
-    },
-    canStartTour() {
-      // if the tour's target-view is compatible with currentView and no modal is shown
-      return !this.isPanelOpen &&
-             this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
     },
     promote() {
       // update selectedQuestion to be public, i.e., visible in all projects
@@ -439,7 +440,7 @@ export default defineComponent({
       }
     },
     startTour(question: AnalyticalQuestion) {
-      if (this.canStartTour()) {
+      if (this.canStartTour) {
         // @NOTE: tours are linked with questions via question's text
         switch (question.question) {
           case 'What are the key influences causing change in a node?':
