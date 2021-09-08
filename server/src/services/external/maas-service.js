@@ -83,19 +83,19 @@ const startModelOutputPostProcessing = async (metadata) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
 
   let docIds = [];
-  const result = await connection.update({
-    ...metadata,
-    status: 'PROCESSING'
-  }, d => d.id).then(result => {
-    if (!result.errors) {
-      docIds = [metadata.id];
-    } else {
-      return connection.insert({
-        ...metadata,
-        status: 'TEST'
-      }, d => d.id);
-    }
-  });
+  let result;
+  if (await connection.exists([{ field: 'id', value: metadata.id }])) {
+    result = await connection.update({
+      ...metadata,
+      status: 'PROCESSING'
+    }, d => d.id);
+    docIds = [metadata.id];
+  } else {
+    result = await connection.insert({
+      ...metadata,
+      status: 'TEST'
+    }, d => d.id);
+  }
 
   const flowParameters = {
     model_id: metadata.model_id,
