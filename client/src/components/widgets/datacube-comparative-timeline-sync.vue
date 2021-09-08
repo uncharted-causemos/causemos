@@ -16,7 +16,7 @@
 <script lang="ts">
 import { AggregationOption } from '@/types/Enums';
 import { defineComponent, PropType, ref } from 'vue';
-import TimelineChart from '@/components/widgets/charts/timeline-chart.vue';
+import TimelineChart from '@/components/widgets/charts/context-timeseries-chart.vue';
 import { Timeseries } from '@/types/Timeseries';
 
 export default defineComponent({
