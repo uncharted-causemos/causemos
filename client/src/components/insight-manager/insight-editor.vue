@@ -4,7 +4,7 @@
   >
     <template #content>
       <div
-        class="dropdown-option disabled"
+        class="dropdown-option"
         @click="editInsight"
       >
         <i class="fa fa-edit" />

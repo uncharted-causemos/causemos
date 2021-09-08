@@ -21,6 +21,7 @@ interface BrushType {
   dimName: string;
   start: string | number;
   end: string | number;
+  brushLabel?: string | number;
 }
 
 type D3ScaleFunc = (name: string) => D3Scale;
@@ -61,15 +62,16 @@ const lineColorsUnknown = '#000000ff';
 const enlargeAxesScaleToFitData = false;
 
 // tooltips
-const tooltipRectPadding = 4;
-const lineHoverTooltipTextBackgroundColor = 'green';
-const lineSelectionTooltipTextBackgroundColor = 'yellow';
+const tooltipRectPaddingY = 4;
+const tooltipRectPaddingX = 6;
+const lineHoverTooltipTextBackgroundColor = 'black';
+const lineSelectionTooltipTextBackgroundColor = 'white';
 const selectionTooltipNormalYOffset = 30;
 const tooltipTextFontSize = '14px';
 
 // baseline defaults
-const baselineMarkerSize = 5;
-const baselineMarkerFill = 'brown';
+const baselineMarkerSize = 3;
+const baselineMarkerFill = 'black';
 const baselineMarkerStroke = 'white';
 
 // markers tooltip within new-runs mode
@@ -80,12 +82,11 @@ const markerTooltipOffsetY = -20;
 const axisLabelOffsetX = 0;
 const axisLabelOffsetY = -15;
 const axisLabelFontSize = '12px';
-const axisLabelFontWeight = 'bold';
 const axisLabelTextAnchor = 'start';
-const axisInputLabelFillColor = 'black';
-const axisOutputLabelFillColor = 'green';
+const axisLabelFillColor = 'black';
 const axisTickLabelFontSize = '12';
 const axisTickLabelOffset = 0; // FIXME: this should be dynamic based on the word size; ignore for now
+const axisOutputLabelFontSize = '10px';
 
 // brushing
 const brushHeight = 8;
@@ -104,7 +105,7 @@ let pcTypes: {[key: string]: string} = {};
 const axisMarkersMap: {[key: string]: Array<MarkerInfo>} = {};
 const selectedLines: Array<ScenarioData> = [];
 const brushes: Array<BrushType> = [];
-const currentLineSelection: Array<ScenarioData> = [];
+let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
 const isCategoricalAxis = (name: string) => {
@@ -202,7 +203,7 @@ function renderParallelCoordinates(
   //
   // baseline defaults
   //
-  renderBaselineMarkers(!!options.showBaselineDefaults);
+  renderBaselineMarkers();
 
   //
   // axis labels
@@ -273,12 +274,15 @@ function renderParallelCoordinates(
     const fn = dataDrivenDimensionSet.map(function(p: DimensionInfo) {
       const dimName = p.name;
       const scaleX = getXScaleFromMap(dimName);
-      const val = d[dimName];
+      let val = d[dimName];
       let xPos = scaleX(val as any) as number;
       if (isCategoricalAxis(dimName)) {
         // ordinal axis, so instead of mapping to one position in this segment,
         // lets attempt to distribute the values randomly on the segment
         // with the goal of improving lines visibility and reducing overlap
+        //
+        // get the corresponding label for this value if suitable
+        val = findLabelForValue(p, val);
         const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val.toString());
         if (options.newRunsMode) {
           // special case when rendering potential scenario lines in the new-runs mode
@@ -460,7 +464,7 @@ function renderParallelCoordinates(
     event.sourceEvent.stopPropagation();
   }
 
-  function onDataBrush(this: any) {
+  function onDataBrush() {
     // now filter all lines and exclude those the fall outside the range (start, end)
     cancelPrevLineSelection(svgElement);
 
@@ -483,8 +487,9 @@ function renderParallelCoordinates(
         }
         if (selection) {
           const xScale = getXScaleFromMap(dimName);
-          let start;
+          let start: string | number;
           let end;
+          let brushLabel;
           const skip = false;
           if (!isCategoricalAxis(dimName)) {
             start = (xScale as D3ScaleLinear).invert(selection[0] as number).toFixed(2);
@@ -492,12 +497,28 @@ function renderParallelCoordinates(
           } else {
             start = selection[0];
             end = selection[1];
+
+            // note for categorical axes with choices labels,
+            //  this may refer to a label choice rather than an actual valid value
+            const dim = dimensions.find(d => d.name === dimName);
+            if ((dim as ModelParameter) !== undefined && (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform) {
+              // ensure that any choice label is mapped back to its underlying value
+              if (dim?.choices_labels !== undefined && dim.choices_labels.length > 0) {
+                const choiceIndex = dim.choices_labels?.findIndex(c => c === start) ?? 0;
+                if (dim.choices !== undefined && choiceIndex >= 0 && choiceIndex < dim.choices_labels.length) {
+                  start = dim?.choices[choiceIndex];
+                  end = start;
+                  brushLabel = selection[0];
+                }
+              }
+            }
           }
           if (!skip) {
             brushes.push({
               dimName,
               start,
-              end
+              end,
+              brushLabel
             });
           }
         }
@@ -519,7 +540,10 @@ function renderParallelCoordinates(
         for (const b of brushes) {
           // if line falls outside of this brush, then it is de-selected
           if (!isCategoricalAxis(b.dimName)) {
-            if (+lineData[b.dimName] < +b.start || +lineData[b.dimName] > +b.end) {
+            // @FIXME: comparing (floating point) numbers, should use a reasonable tolerance
+            //  for now, convert all numbers as 2 fixed floating point and compare
+            const lineDataValue = +(+lineData[b.dimName]).toFixed(2);
+            if (lineDataValue < +b.start || lineDataValue > +b.end) {
               isSelected = false;
             }
           } else {
@@ -601,20 +625,19 @@ function renderParallelCoordinates(
       }
 
       const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
-
-      selectLine(selectedLine, event, d, lineStrokeWidthSelected);
-
       const selectedLineData = selectedLine.datum() as ScenarioData;
+
       if (selectedLineData) {
-        currentLineSelection.push(selectedLineData);
+        if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
+          deselectLine(selectedLine, event, lineStrokeWidthNormal);
+          currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
+        } else {
+          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
+          currentLineSelection.push(selectedLineData);
+          updateSelectionTooltips(svgElement, selectedLine);
+        }
       } else {
         currentLineSelection.length = 0;
-      }
-
-      // if we have valid selection (either by direct click on a line or through brushing)
-      //  then update the tooltips
-      if (selectedLineData) {
-        updateSelectionTooltips(svgElement, selectedLine);
       }
 
       // notify external listeners
@@ -653,6 +676,8 @@ function renderParallelCoordinates(
         if (!isCategoricalAxis(dimName)) {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
+        } else {
+          formattedValue = findLabelForValue(d, formattedValue);
         }
         // ignore tooltip for non-existing values (e.g., output value for active model runs that are not completed yet)
         if (formattedValue === 'NaN') {
@@ -664,7 +689,9 @@ function renderParallelCoordinates(
           .attr('visibility', 'visible')
           .attr('x', function() {
             const xScale = getXScaleFromMap(dimName);
-            return xScale(value as any) as number;
+            // get the corresponding label for this value if suitable
+            formattedValue = findLabelForValue(d, formattedValue);
+            return xScale(formattedValue as any) as number;
           });
       });
 
@@ -964,6 +991,42 @@ function renderParallelCoordinates(
               // re-render all the new scenario lines
               renderNewRunsLines();
             })
+            // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is not active
+            .on('mouseover', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              const scaleX = getXScaleFromMap(dimName);
+
+              const { min, max } = getPositionRangeOnOrdinalAxis(segmentData.x, axisRange, scaleX.domain(), hoverValue);
+              const xLoc = segmentData.x + ((max - min) / 2);
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Specify where to put label of text
+              gElement.append('text')
+                .attr('x', xLoc + markerTooltipOffsetX)
+                .attr('y', segmentsY + markerTooltipOffsetY)
+                .attr('id', 'h' + '-' + hoverId) // Create an id for text so we can select it later for removing on mouseout
+                .style('fill', 'black')
+                .style('font-size', axisLabelFontSize)
+                .text(function() {
+                  return hoverValue; // Value of the text
+                });
+            })
+            .on('mouseout', function() {
+              const segmentData: any = d3.select(this).datum();
+              const hoverValue: string = segmentData.start.toString();
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Select text by id and then remove
+              gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
+            })
           ;
         }
       });
@@ -1056,6 +1119,45 @@ function renderParallelCoordinates(
               // notify external listeners
               onLinesSelection(selectedLines);
             })
+            // @REVIEW: code is repeated to support hover over categorical segments when new-runs-mode is active
+            .on('mouseover', function() {
+              const rectElement = d3.select(this);
+              const hoverValue: string = rectElement.attr('start').toString();
+              const x = +rectElement.attr('x');
+
+              const scaleX = getXScaleFromMap(dimName);
+
+              const { min, max } = getPositionRangeOnOrdinalAxis(x, axisRange, scaleX.domain(), hoverValue);
+              const xLoc = x + ((max - min) / 2);
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Specify where to put label of text
+              gElement.append('text')
+                .attr('x', xLoc + markerTooltipOffsetX)
+                .attr('y', segmentsY + markerTooltipOffsetY)
+                .attr('id', 'h' + '-' + hoverId) // Create an id for text so we can select it later for removing on mouseout
+                .style('fill', 'black')
+                .style('font-size', axisLabelFontSize)
+                .text(function() {
+                  return hoverValue; // Value of the text
+                });
+            })
+            .on('mouseout', function() {
+              // const segmentData: any = d3.select(this).datum(); // segmentData.start
+              // unfortunately, the click event if executed before this event would cause bound data to be lost
+              //  so fetch the data differently
+              const hoverValue: string = d3.select(this).attr('start').toString();
+
+              // remove dots/spaces from the string since it will conflict with the d3 selected later on
+              const hoverValueNoDots = hoverValue.split('.').join('');
+              const hoverId = hoverValueNoDots.split(' ').join('');
+
+              // Select text by id and then remove
+              gElement.select('#h' + '-' + hoverId).remove(); // Remove text location
+            })
           ;
         }
       });
@@ -1087,36 +1189,34 @@ function colorFunc(this: SVGPathElement) {
   }
 }
 
-function renderBaselineMarkers(showBaselineDefaults: boolean) {
+function renderBaselineMarkers() {
   if (!renderedAxes) {
-    console.warn('Cannot render baseline markers before rendering the actual parallle coordinates!');
+    console.warn('Cannot render baseline markers before rendering the actual parallel coordinates!');
     return;
   }
-
   renderedAxes.selectAll('circle').remove();
-
-  if (showBaselineDefaults) {
-    renderedAxes
-      .filter(function(d) { return (d as ModelParameter).default !== undefined; })
-      .append('circle')
-      .style('stroke', baselineMarkerStroke)
-      .style('fill', baselineMarkerFill)
-      .attr('pointer-events', 'none')
-      .attr('r', baselineMarkerSize)
-      .attr('cx', function(d) {
-        const axisDefault = (d as ModelParameter).default;
-        const dimName = d.name;
-        const scaleX = getXScaleFromMap(dimName);
-        let xPos: number = scaleX(axisDefault as any) as number;
-        if (isCategoricalAxis(dimName)) {
-          const axisDefaultStr = axisDefault.toString();
-          const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
-          xPos = min + (max - min) / 2;
-        }
-        return xPos;
-      })
-      .attr('cy', 0);
-  }
+  renderedAxes
+    .filter(function(d) { return (d as ModelParameter).default !== undefined; })
+    .append('circle')
+    .style('stroke', baselineMarkerStroke)
+    .style('fill', baselineMarkerFill)
+    .attr('pointer-events', 'none')
+    .attr('r', baselineMarkerSize)
+    .attr('cx', function(d) {
+      const axisDefault = (d as ModelParameter).default;
+      const dimName = d.name;
+      const scaleX = getXScaleFromMap(dimName);
+      let xPos: number = scaleX(axisDefault as any) as number;
+      if (isCategoricalAxis(dimName)) {
+        let axisDefaultStr = axisDefault.toString();
+        // get the corresponding label for this value if suitable
+        axisDefaultStr = findLabelForValue(d, axisDefaultStr) as string;
+        const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
+        xPos = min + (max - min) / 2;
+      }
+      return xPos;
+    })
+    .attr('cy', 0);
 }
 
 function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionInfo>) {
@@ -1200,17 +1300,19 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
     .style('text-anchor', axisLabelTextAnchor)
     .attr('x', axisLabelOffsetX)
     .attr('y', axisLabelOffsetY)
-    .text(function(d) {
-      if (d.display_name !== undefined) {
-        return d.display_name;
-      }
-      return d.name;
-    })
-    .style('fill', function(d) {
-      return isOutputDimension(dimensions, d.name) ? axisOutputLabelFillColor : axisInputLabelFillColor;
-    })
-    .style('font-size', axisLabelFontSize)
-    .style('font-weight', axisLabelFontWeight);
+    .text(d => (d.display_name ?? d.name))
+    .style('fill', axisLabelFillColor)
+    .style('font-size', axisLabelFontSize);
+
+  renderedAxes
+    .filter(d => isOutputDimension(dimensions, d.name))
+    .append('text')
+    .style('text-anchor', axisLabelTextAnchor)
+    .attr('x', axisLabelOffsetX)
+    .attr('y', axisLabelOffsetY * 2)
+    .text('OUTPUT')
+    .style('fill', axisLabelFillColor)
+    .style('font-size', axisOutputLabelFontSize);
 
   // add descriptive title (i.e., embedded tooltip) for each axis name
   // first start with dimension names as the desc, then update in a later step
@@ -1246,6 +1348,7 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
       text.raise();
     });
 
+  // freeform custom input support
   axesLabels
     .on('click', function(event: PointerEvent) {
       if (options.newRunsMode) {
@@ -1316,8 +1419,6 @@ function renderHoverTooltips() {
     .attr('class', 'pc-hover-tooltip-text-bkgnd-rect')
     .attr('id', function(d) { return d.name; }) // name of the dimension
     .style('fill', lineHoverTooltipTextBackgroundColor)
-    .attr('rx', 8)
-    .attr('ry', 8)
     .attr('x', 0)
     .attr('y', 0)
     .attr('width', 10)
@@ -1345,8 +1446,6 @@ function renderSelectionTooltips() {
     .attr('class', 'pc-selection-tooltip-text-bkgnd-rect')
     .attr('id', function(d) { return d.name; }) // name of the dimension
     .style('fill', lineSelectionTooltipTextBackgroundColor)
-    .attr('rx', 8)
-    .attr('ry', 8)
     .attr('x', 0)
     .attr('y', 0)
     .attr('width', 10)
@@ -1373,21 +1472,7 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         isTooltipVisible = 'hidden';
         const brushRange = brushes.find(b => b.dimName === dimName);
         if (brushRange) {
-          /*
-          if (!isCategoricalAxis(dimName)) {
-            // note that since brush is a (moving) range then it will mostly have float range
-            // but we could check the axis domain to figure out a more accurate data type
-            const xScaleDomain = xScale.domain();
-            let d3FormatFunc = numberFloatFormat;
-            if (Number.isInteger(+xScaleDomain[0]) && Number.isInteger(+xScaleDomain[1])) {
-              d3FormatFunc = numberIntegerFormat;
-            }
-            value = d3FormatFunc(brushRange.start as number) + ' : ' + d3FormatFunc(brushRange.end as number);
-          } else {
-            value = brushRange.start + ' : ' + brushRange.end;
-          }
-          */
-          value = brushRange.start + ' : ' + brushRange.end;
+          value = brushRange.brushLabel !== undefined ? brushRange.brushLabel : brushRange.start + ' : ' + brushRange.end;
 
           isTooltipVisible = 'visible';
           formattedValue = value;
@@ -1401,7 +1486,11 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         const brushTooltipRectWidth = 100;
         xPos = centerAxisXPos - brushTooltipRectWidth / 2;
       } else {
+        // showing labels for lines that were selected by direct click
         value = selectedLineData ? selectedLineData[dimName] : 'undefined';
+        // get the corresponding label for this value if suitable
+        value = findLabelForValue(d, value);
+
         formattedValue = value;
         if (!isCategoricalAxis(dimName)) {
           const numValue = +value as number;
@@ -1453,20 +1542,34 @@ function updateSelectionToolTipsRect(svgElement: D3Selection) {
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
       // if xPos + text-rect-width is beyond the svg width, then adjust
-      let xPos = textBBox.x - tooltipRectPadding;
-      const width = textBBox.width + tooltipRectPadding * 2;
+      let xPos = textBBox.x - tooltipRectPaddingX;
+      const width = textBBox.width + tooltipRectPaddingX * 2;
       const offset = (xPos + width) - axisRange[1];
       if (offset > 0) {
         xPos -= offset;
-        text.attr('x', xPos + tooltipRectPadding);
+        text.attr('x', xPos + tooltipRectPaddingX);
       }
       rect
         .attr('x', xPos)
-        .attr('y', textBBox.y - tooltipRectPadding)
+        .attr('y', textBBox.y - tooltipRectPaddingY)
         .attr('width', width)
-        .attr('height', textBBox.height + tooltipRectPadding * 2);
+        .attr('height', textBBox.height + tooltipRectPaddingY * 2);
       text.raise();
     });
+}
+
+function findLabelForValue(dim: DimensionInfo, value: string | number) {
+  let labelValue = value;
+  if ((dim as ModelParameter) !== undefined && (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform) {
+    // check if we have label choices array
+    if (dim.choices_labels !== undefined && dim.choices_labels.length > 0) {
+      const choiceIndex = dim.choices?.findIndex(c => c === value) ?? 0;
+      if (choiceIndex >= 0 && choiceIndex < dim.choices_labels.length) {
+        labelValue = dim.choices_labels[choiceIndex];
+      }
+    }
+  }
+  return labelValue;
 }
 
 function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
@@ -1476,6 +1579,26 @@ function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefin
     // Use D3 to select the line, change color and size
     selectedLine
       .classed('selected', true)
+      .transition().duration(highlightDuration)
+      .style('stroke', colorFunc)
+      .style('opacity', lineOpacityVisible)
+      .attr('stroke-width', lineWidth);
+
+    // since a line is just select, prevent other higher up elements (e.g. svg) from cancelling this selection
+    if (event) {
+      event.stopPropagation();
+    }
+  }
+}
+
+// function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
+function deselectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, lineWidth: number) {
+  const selectedLineData = selectedLine.datum();
+
+  if (selectedLineData) {
+    // Use D3 to select the line, change color and size
+    selectedLine
+      .classed('selected', false)
       .transition().duration(highlightDuration)
       .style('stroke', colorFunc)
       .style('opacity', lineOpacityVisible)
@@ -1563,18 +1686,18 @@ const updateHoverToolTipsRect = (renderedAxes: D3AxisSelection) => {
       const textNode = text.node() as SVGGraphicsElement;
       const textBBox = textNode.getBBox();
       // if xPos + text-rect-width is beyond the svg width, then adjust
-      let xPos = textBBox.x - tooltipRectPadding;
-      const width = textBBox.width + tooltipRectPadding * 2;
+      let xPos = textBBox.x - tooltipRectPaddingX;
+      const width = textBBox.width + tooltipRectPaddingX * 2;
       const offset = (xPos + width) - axisRange[1];
       if (offset > 0) {
         xPos -= offset;
-        text.attr('x', xPos + tooltipRectPadding);
+        text.attr('x', xPos + tooltipRectPaddingX);
       }
       rect
         .attr('x', xPos)
-        .attr('y', textBBox.y - tooltipRectPadding)
+        .attr('y', textBBox.y - tooltipRectPaddingY)
         .attr('width', width)
-        .attr('height', textBBox.height + tooltipRectPadding * 2);
+        .attr('height', textBBox.height + tooltipRectPaddingY * 2);
       text.raise();
     });
 };
@@ -1699,12 +1822,19 @@ const createScales = (
       dataExtent = dataChoices;
     }
 
+    let isFreeformParam = false;
+
     // ensure that dataExtent and dataChoices are merged as one list (including the default value)
     const outputVarName = getOutputDimension(dimensions).name;
     if (outputVarName !== name) {
       dataChoices.push((dim as ModelParameter).default);
+      isFreeformParam = (dim as ModelParameter).data_type === ModelParameterDataType.Freeform;
     }
-    dataExtent = _.uniq(_.union(dataExtent, dataChoices));
+    if (isFreeformParam) {
+      // only freeform params can have combined list of choices.
+      // other ordinal params, however, should have a fixed list of choices
+      dataExtent = _.uniq(_.union(dataExtent, dataChoices));
+    }
 
     if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
       console.warn('Unable to derive extent from data for ' + name + '. A default point scale will be created!', data);
@@ -1791,6 +1921,5 @@ const getXScaleFromMap = (dimName: string) => {
 };
 
 export {
-  renderParallelCoordinates,
-  renderBaselineMarkers
+  renderParallelCoordinates
 };

@@ -1,10 +1,11 @@
 import _ from 'lodash';
+import moment from 'moment';
 import dateFormatter from '@/formatters/date-formatter';
 import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
-import { renderAxes, renderLine } from '@/utils/timeseries-util';
+import { calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import {
   confidenceArea,
@@ -36,7 +37,7 @@ const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
   be snapped to. */
 const DISCRETE_Y_POSITION_COUNT = 31;
 
-const DATE_FORMATTER = (value: any) => dateFormatter(value, 'MMM YYYY');
+const DATE_FORMATTER = (value: any) => dateFormatter(value, 'YYYY');
 
 export default function(
   selection: D3Selection,
@@ -48,6 +49,7 @@ export default function(
   constraints: ProjectionConstraint[],
   minValue: number,
   maxValue: number,
+  viewingExtent: number[] | null,
   setConstraints: (newConstraints: ProjectionConstraint[]) => void,
   setHistoricalTimeseries: (newPoints: TimeseriesPoint[]) => void
 ) {
@@ -70,6 +72,13 @@ export default function(
     console.error('TD Node Renderer: unable to derive extent from data');
     return;
   }
+
+  if (viewingExtent != null) {
+    if (viewingExtent[0] < xExtent[0]) {
+      viewingExtent[0] = xExtent[0];
+    }
+  }
+
   const valueFormatter = chartValueFormatter(...yExtent);
 
   // Build main "focus" chart scales and group element
@@ -99,18 +108,28 @@ export default function(
   const contextGroupElement = selection
     .append('g')
     .classed('contextGroupElement', true);
-  renderAxes(
+
+  const firstTimestamp = xScaleContext.domain()[0]; // potentially misleading as this isnt always the first day of the year
+  const lastTimestamp = moment([moment(xScaleContext.domain()[1]).year()]).valueOf();
+  const xAxisTicks = [firstTimestamp, lastTimestamp];
+  const yOffset = contextHeight - X_AXIS_HEIGHT;
+  const xOffset = totalWidth - PADDING_RIGHT;
+
+  renderXaxis(
     contextGroupElement,
     xScaleContext,
+    xAxisTicks,
+    yOffset,
+    DATE_FORMATTER
+  );
+  renderYaxis(
+    contextGroupElement,
     yScaleContext,
     valueFormatter,
-    totalWidth,
-    contextHeight,
-    DATE_FORMATTER,
-    Y_AXIS_WIDTH,
-    PADDING_RIGHT,
-    X_AXIS_HEIGHT
+    xOffset,
+    Y_AXIS_WIDTH
   );
+
   contextGroupElement.selectAll('.yAxis').remove();
   contextGroupElement.attr('transform', translate(0, focusHeight)); // move context to bottom
   renderStaticElements(
@@ -147,7 +166,14 @@ export default function(
       [xScaleContext.range()[0], yScaleContext.range()[1]],
       [xScaleContext.range()[1], yScaleContext.range()[0]]
     ])
-    .on('brush', brushed);
+    .on('start brush end', brushed);
+
+  // Use viewingExtent to constrain focus if applicable
+  if (oldCoords.length === 0 && viewingExtent !== null) {
+    oldCoords.push(xScaleFocus(viewingExtent[0]));
+    oldCoords.push(xScaleFocus(viewingExtent[1]));
+  }
+
   contextGroupElement
     .append('g') // create brush element and move to default
     .classed('brush', true)
@@ -170,11 +196,51 @@ export default function(
     .attr('height', yScaleFocus.range()[0] - yScaleFocus.range()[1])
     .attr('transform', translate(PADDING_RIGHT, PADDING_TOP));
 
+
+  function brushHandle(g: D3GElementSelection, selection: number[]) {
+    const enterFn = (enter: D3Selection) => {
+      const handleW = 9;
+      const handleWGap = -2;
+      const handleHGap = 4;
+      const handleH = contextHeight - X_AXIS_HEIGHT - 2 * handleHGap;
+
+      const container = enter.append('g')
+        .attr('class', 'custom-handle')
+        .attr('cursor', 'ew-resize');
+
+      container.append('rect')
+        .attr('fill', '#f8f8f8')
+        .attr('stroke', '#888888')
+        .attr('y', handleHGap)
+        .attr('x', (d, i) => i === 0 ? -(handleW + handleWGap) : handleWGap)
+        .attr('rx', 4)
+        .attr('ry', 4)
+        .attr('width', handleW)
+        .attr('height', handleH);
+
+      // Vertical dots
+      [0.3, 0.4, 0.5, 0.6, 0.7].forEach(value => {
+        container.append('circle')
+          .attr('cx', (d, i) => i === 0 ? -(0.5 * handleW + handleWGap) : 0.5 * handleW + handleWGap)
+          .attr('cy', handleHGap + handleH * value)
+          .attr('r', 1.25)
+          .attr('fill', '#888888');
+      });
+    };
+
+    g.selectAll('.custom-handle')
+      .data([{ type: 'w' }, { type: 'e' }])
+      .join(enterFn as any)
+      .attr('transform', (d, i) => translate(selection[i], 0));
+  }
+
+
   // Redraw chart whenever axis is brushed
   //  Also gets called with "initialBrushSelection"
   function brushed({ selection }: { selection: number[] }) {
     // FIXME: Tie data to group element, should make renderer stateful instead of a single function
     contextGroupElement.datum(selection);
+    contextGroupElement.select('.brush').call(brushHandle as any, selection);
 
     const [x0, x1] = selection.map(xScaleContext.invert);
     xScaleFocus.domain([x0, x1]);
@@ -187,18 +253,29 @@ export default function(
       projections,
       historicalTimeseries
     );
-    renderAxes(
+    const xAxisTicks = calculateYearlyTicks(
+      xScaleFocus.domain()[0],
+      xScaleFocus.domain()[1],
+      totalWidth
+    );
+    const yOffset = focusHeight - X_AXIS_HEIGHT;
+    const xOffset = totalWidth - PADDING_RIGHT;
+
+    renderXaxis(
       focusGroupElement,
       xScaleFocus,
+      xAxisTicks,
+      yOffset,
+      DATE_FORMATTER
+    );
+    renderYaxis(
+      focusGroupElement,
       yScaleFocus,
       valueFormatter,
-      totalWidth,
-      focusHeight,
-      DATE_FORMATTER,
-      Y_AXIS_WIDTH,
-      PADDING_RIGHT,
-      X_AXIS_HEIGHT
+      xOffset,
+      Y_AXIS_WIDTH
     );
+
     focusGroupElement.selectAll('.yAxis .domain').remove();
     focusGroupElement.selectAll('.yAxis .tick line').remove();
     renderHistoricalTimeseries(

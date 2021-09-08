@@ -1,26 +1,29 @@
 <template>
-  <div
-    ref="pcChart"
-    class="parallel-coordinates-container">
-    <svg
-      ref="pcsvg"
-      :class="{'faded': dimensionsData === null}"
-    />
-    <resize-observer @notify="resize" />
-    <span
-      v-if="dimensionsData === null"
-      class="loading-message"
-    >
-      <i class="fa fa-spin fa-spinner" /> Loading ...
+  <div class="parallel-coordinates-container">
+    <span class="scenario-count">
+      {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
     </span>
+    <div class="chart-wrapper">
+      <svg
+        ref="pcsvg"
+        :class="{'faded': dimensionsData === null}"
+      />
+      <resize-observer @notify="resize" />
+      <span
+        v-if="dimensionsData === null"
+        class="loading-message"
+      >
+        <i class="fa fa-spin fa-spinner" /> Loading ...
+      </span>
+    </div>
   </div>
 </template>
 
 <script lang="ts">
 import * as d3 from 'd3';
 import _ from 'lodash';
-import { renderParallelCoordinates, renderBaselineMarkers } from '@/charts/parallel-coordinates';
-import { defineComponent, PropType } from 'vue';
+import { renderParallelCoordinates } from '@/charts/parallel-coordinates';
+import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo } from '@/types/Datacube';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
@@ -46,10 +49,6 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: undefined
     },
-    showBaselineDefaults: {
-      type: Boolean,
-      default: false
-    },
     newRunsMode: {
       type: Boolean,
       default: false
@@ -59,6 +58,12 @@ export default defineComponent({
     'select-scenario',
     'generated-scenarios'
   ],
+  setup(props) {
+    const { dimensionsData } = toRefs(props);
+    return {
+      scenarioCount: computed(() => dimensionsData.value.length)
+    };
+  },
   data: () => ({
     lastSelectedLines: [] as Array<string>
   }),
@@ -68,10 +73,6 @@ export default defineComponent({
     },
     selectedDimensions(): void {
       this.render(undefined);
-    },
-    showBaselineDefaults(): void {
-      // do not re-render everything, just update markers visibility
-      renderBaselineMarkers(this.showBaselineDefaults);
     },
     newRunsMode(): void {
       this.render(undefined);
@@ -115,7 +116,6 @@ export default defineComponent({
       const options: ParallelCoordinatesOptions = {
         width,
         height,
-        showBaselineDefaults: this.showBaselineDefaults,
         initialDataSelection: this.initialDataSelection,
         newRunsMode: this.newRunsMode
       };
@@ -145,21 +145,6 @@ export default defineComponent({
     },
     onGeneratedRuns(generatedLines?: Array<ScenarioData> /* array of generated lines on the PCs plot */): void {
       if (generatedLines && Array.isArray(generatedLines)) {
-        //
-        // ensure that any choice label is mapped back to its underlying value
-        this.selectedDimensions.forEach(d => {
-          if (d.choices_labels && d.choices !== undefined) {
-            // update all generatedLines accordingly
-            generatedLines.forEach(gl => {
-              const currLabelValue = (gl[d.name]).toString();
-              const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
-              if (d.choices !== undefined) {
-                gl[d.name] = d.choices[labelIndex];
-              }
-            });
-          }
-        });
-
         this.$emit('generated-scenarios', { scenarios: generatedLines });
       }
     }
@@ -171,7 +156,18 @@ export default defineComponent({
   @import "~styles/variables";
 
   .parallel-coordinates-container {
+    display: flex;
+    flex-direction: column;
+  }
+
+  .scenario-count {
+    color: $label-color;
+  }
+
+  .chart-wrapper {
     position: relative;
+    flex: 1;
+    min-height: 0;
 
     svg {
       transition: opacity 0.3s ease-out;
@@ -190,13 +186,17 @@ export default defineComponent({
       }
 
       ::v-deep(.axis .pc-brush .selection) {
-        fill-opacity: .3;
-        fill:darkred;
+        fill-opacity: .5;
+        fill: $selected;
+        stroke: none;
         shape-rendering: crispEdges;
       }
 
       ::v-deep(.axis .pc-brush .handle) {
-        stroke: black;
+        fill: #f8f8f8;
+        stroke: #888;
+        rx: 4;
+        ry: 4;
       }
 
       ::v-deep(.axis text) {

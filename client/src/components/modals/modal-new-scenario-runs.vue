@@ -18,10 +18,10 @@
           v-for="(run, sidx) in potentialRuns"
           :key="sidx">
           <td>{{ sidx }}</td>
-          <td v-for="(dimName, idx) in Object.keys(run)"
+          <td v-for="(dim, idx) in inputParameters"
             :key="idx"
             class="params-value">
-            <label>{{ run[dimName] }}</label>
+            <label>{{ run[dim.name] }}</label>
           </td>
           <td>
             <div
@@ -63,11 +63,10 @@
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
-import { Model } from '@/types/Datacube';
+import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
 import { mapGetters } from 'vuex';
-import { ModelParameterDataType } from '@/types/Enums';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -86,10 +85,14 @@ export default defineComponent({
     metadata: {
       type: Object as PropType<Model>,
       default: null
+    },
+    selectedDimensions: {
+      type: Array as PropType<DimensionInfo[]>,
+      default: null
     }
   },
   computed: {
-    inputParameters(): Array<any> {
+    inputParameters(): Array<ModelParameter> {
       return this.metadata.parameters.filter((p: any) => !p.is_drilldown);
     },
     ...mapGetters({
@@ -103,7 +106,20 @@ export default defineComponent({
     potentialRuns: [] as Array<ScenarioData>
   }),
   mounted() {
-    this.potentialRuns = _.cloneDeep(this.potentialScenarios);
+    // potentialScenarios won't have values for the invisible input knobs
+    //  so we need to add them to explicitly highlight ALL potential run values
+    const potentialRuns = _.cloneDeep(this.potentialScenarios);
+    // for each requested new run, review if there were any invisible input knobs
+    potentialRuns.forEach(potentialRun => {
+      this.inputParameters.forEach(input => {
+        if (input.is_visible === false) {
+          potentialRun[input.name] = input.default;
+        }
+      });
+    });
+    // FIXME:
+    // also, when rendering potential run(s) values, use label choices if available
+    this.potentialRuns = potentialRuns;
   },
   methods: {
     async startExecution() {
@@ -112,7 +128,22 @@ export default defineComponent({
 
       const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
-      const freeformParams = this.metadata.parameters.filter(d => d.data_type === ModelParameterDataType.Freeform);
+
+      //
+      // ensure that any choice label is mapped back to its underlying value
+      //
+      this.selectedDimensions.forEach(d => {
+        if (d.choices_labels && d.choices !== undefined && d.is_visible) {
+          // update all generatedLines accordingly
+          this.potentialRuns.forEach(gl => {
+            const currLabelValue = (gl[d.name]).toString();
+            const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
+            if (d.choices !== undefined) {
+              gl[d.name] = d.choices[labelIndex];
+            }
+          });
+        }
+      });
 
       const promises = this.potentialRuns.map(async (modelRun) => {
         const paramArray: any[] = [];
@@ -128,12 +159,6 @@ export default defineComponent({
         // add drilldown/freeform params since they are still inputs
         //  although hidden in the parallel coordinates
         drilldownParams.forEach(p => {
-          paramArray.push({
-            name: p.name,
-            value: p.default
-          });
-        });
-        freeformParams.forEach(p => {
           paramArray.push({
             name: p.name,
             value: p.default

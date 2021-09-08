@@ -13,6 +13,7 @@ const session = require('express-session');
 // const cookieParser = require('cookie-parser');
 const morgan = require('morgan');
 const Logger = rootRequire('/config/logger');
+const argv = rootRequire('/config/yargs-wrapper');
 
 
 const nocache = require('nocache');
@@ -55,7 +56,10 @@ if (dotenvConfigResult.error) {
 // TODO: selectively add cache busting header for performance
 app.use(nocache());
 app.use(compression());
-app.use(morgan('dev', {
+
+const prodFormat = ':method :url :status :response-time ms - :res[content-length]';
+const morganFormat = (argv.morganFormat || prodFormat);
+app.use(morgan(morganFormat, {
   stream: { write: message => Logger.info(message.trim()) },
   skip: function(req, res) {
     if (req.path === '/health') return true;

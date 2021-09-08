@@ -1,5 +1,5 @@
 <template>
-  <div class="dropdown-button-container">
+  <div class="dropdown-button-container" ref="containerElement">
     <button
       type="button"
       class="btn dropdown-btn"
@@ -11,7 +11,11 @@
       </span>
       <i class="fa fa-fw fa-angle-down" />
     </button>
-    <dropdown-control v-if="isDropdownOpen" class="dropdown-control">
+    <dropdown-control
+      v-if="isDropdownOpen"
+      class="dropdown-control"
+      :class="{ 'left-aligned': isDropdownLeftAligned }"
+    >
       <template #content>
         <div
           v-for="item in dropdownItems"
@@ -30,7 +34,14 @@
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, PropType, ref, toRefs } from 'vue';
+import {
+  computed,
+  defineComponent,
+  PropType,
+  ref,
+  toRefs,
+  watchEffect
+} from 'vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 
 export interface DropdownItem {
@@ -54,6 +65,10 @@ export default defineComponent({
     innerButtonLabel: {
       type: String as PropType<string | null>,
       default: null
+    },
+    isDropdownLeftAligned: {
+      type: Boolean,
+      default: false
     }
   },
   emits: ['item-selected'],
@@ -61,6 +76,23 @@ export default defineComponent({
     const { items, selectedItem } = toRefs(props);
 
     const isDropdownOpen = ref(false);
+    const containerElement = ref<HTMLElement | null>(null);
+
+    const onClickOutside = (event: MouseEvent) => {
+      if ((event.target instanceof Element) && containerElement.value?.contains(event.target)) {
+        // Click was within this element, so do nothing
+        return;
+      }
+      isDropdownOpen.value = false;
+    };
+
+    watchEffect(() => {
+      if (isDropdownOpen.value) {
+        window.document.addEventListener('click', onClickOutside);
+      } else {
+        window.document.removeEventListener('click', onClickOutside);
+      }
+    });
 
     // This component can accept a list of strings or a list of DropdownItems.
     //  This computed property standardizes by converting strings to DropdownItems.
@@ -86,7 +118,8 @@ export default defineComponent({
       isDropdownOpen,
       emitItemSelection,
       dropdownItems,
-      selectedItemDisplayName
+      selectedItemDisplayName,
+      containerElement
     };
   }
 });
@@ -104,6 +137,11 @@ export default defineComponent({
   top: 90%; // Overlap the button slightly
   max-height: 400px;
   overflow-y: auto;
+
+  &.left-aligned {
+    left: 0;
+    right: auto;
+  }
 }
 .dropdown-option {
   white-space: nowrap;

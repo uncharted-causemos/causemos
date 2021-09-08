@@ -77,12 +77,8 @@ export default defineComponent({
 @import "~styles/variables";
 
 .side-panel-nav-container {
-  width: $navbar-outer-height;
   margin: 0;
   padding: 0;
-  position: absolute;
-  top: 0;
-  right: 0;
 
   // If no tab is open, all tabs should take
   //  the full square width

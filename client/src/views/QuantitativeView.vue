@@ -89,7 +89,8 @@ export default {
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId',
       draftScenario: 'model/draftScenario',
-      draftScenarioDirty: 'model/draftScenarioDirty'
+      draftScenarioDirty: 'model/draftScenarioDirty',
+      tour: 'tour/tour'
     }),
     ready() {
       return this.modelSummary && this.modelComponents && this.scenarios;
@@ -147,6 +148,7 @@ export default {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
+      setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setDraftScenario: 'model/setDraftScenario',
       updateDraftScenarioConstraints: 'model/updateDraftScenarioConstraints',
@@ -173,13 +175,20 @@ export default {
     },
     async refreshModel() {
       this.enableOverlay('Getting model data');
+      this.setAnalysisName('');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
+      this.setAnalysisName(this.modelSummary?.name ?? '');
       this.modelComponents = await modelService.getComponents(this.currentCAG);
       this.disableOverlay();
     },
     async refreshModelAndScenarios() {
       this.refreshModel();
-      this.scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      if (this.draftScenario) {
+        this.scenarios = [this.draftScenario, ...scenarios];
+      } else {
+        this.scenarios = scenarios;
+      }
     },
     async refresh() {
       // Basic model data
@@ -221,7 +230,7 @@ export default {
         // Now we are up to date, create base scenario
         this.enableOverlay('Creating baseline scenario');
         try {
-          await modelService.createBaselineScenario(this.modelSummary, this.modelComponents.nodes);
+          await modelService.createBaselineScenario(this.modelSummary);
           scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
         } catch (error) {
           console.error(error);
@@ -403,8 +412,9 @@ export default {
       this.enableOverlay(`Running experiment on ${this.currentEngine}`);
       let experimentId = 0;
       let result = null;
+
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.cleanConstraints(selectedScenario.parameter.constraints));
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         console.error(error);
@@ -457,14 +467,14 @@ export default {
       this.sensitivityMatrixData = null;
       const now = Date.now();
       this.sensitivityDataTimestamp = now;
-      const constraints = modelService.injectStepZero(this.modelComponents.nodes, selectedScenario.parameter.constraints);
+      const constraints = modelService.cleanConstraints(selectedScenario.parameter.constraints);
 
       const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
 
       // If another sensitivity analysis started running before this one returns an ID,
       //  then don't bother fetching/processing the results to avoid a race condition
       if (this.sensitivityDataTimestamp !== now) return;
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId);
+      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50);
 
       if (this.sensitivityDataTimestamp !== now) return;
       const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
@@ -478,6 +488,10 @@ export default {
     tabClick(tab) {
       if (tab === 'matrix') {
         this.fetchSensitivityAnalysisResults();
+        // advance the tour if it is active
+        if (this.tour && this.tour.id.startsWith('sensitivity-matrix-tour')) {
+          this.tour.next();
+        }
       }
     },
     resetCAGLayout() {

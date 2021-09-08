@@ -3,7 +3,7 @@
     <!-- CAG rename/delete/duplicate dropdown -->
     <model-options
       :cag-name="cagNameToDisplay"
-      :view-after-deletion="'quantitativeStart'"
+      :view-after-deletion="'overview'"
       @rename="openRenameModal"
       @duplicate="openDuplicateModal"
     />
@@ -62,7 +62,7 @@ export default defineComponent({
       currentCAG,
       cagNameToDisplay,
       project,
-
+      setAnalysisName: (newName: string) => store.dispatch('app/setAnalysisName', newName),
       toaster: useToaster()
     };
   },
@@ -80,7 +80,7 @@ export default defineComponent({
     },
     async saveNewCagName() {
       modelService.updateModelMetadata(this.currentCAG, { name: this.newCagName }).then(() => {
-        this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
+        this.setAnalysisName(this.newCagName);
       }).catch(() => {
         this.newCagName = '';
         this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);

@@ -4,7 +4,7 @@
       <!-- CAG rename/delete/duplicate dropdown -->
       <model-options
         :cag-name="cagNameToDisplay"
-        :view-after-deletion="'qualitativeStart'"
+        :view-after-deletion="'overview'"
         @rename="openRenameModal"
         @duplicate="openDuplicateModal"
       />
@@ -156,7 +156,8 @@ export default {
   methods: {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
-      disableOverlay: 'app/disableOverlay'
+      disableOverlay: 'app/disableOverlay',
+      setAnalysisName: 'app/setAnalysisName'
     }),
     openKBExplorer() {
       this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG } });
@@ -179,7 +180,7 @@ export default {
     async saveNewCagName() {
       const targetCagId = this.duplicateCagId ? this.duplicateCagId : this.currentCAG;
       modelService.updateModelMetadata(targetCagId, { name: this.newCagName }).then(() => {
-        this.toaster(CAG.SUCCESSFUL_RENAME, 'success', false);
+        this.setAnalysisName(this.newCagName);
       }).catch(() => {
         this.newCagName = '';
         this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);

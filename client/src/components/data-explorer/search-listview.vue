@@ -54,7 +54,7 @@
                       >
                         Processing
                       </button>
-                      <div class="text-bold">{{ d.outputs[0].display_name }}</div>
+                      <div class="text-bold">{{ d.default_feature }}</div>
                       <div>{{ d.name }}</div>
                       <div>{{ d.source }}</div>
                       <div v-if="isExpanded(d) && d.parameters?.length > 0" class="knobs">
@@ -65,7 +65,7 @@
                 </div>
               </td>
               <td class="desc-col">
-                <div>{{ formatDescription(d) }}</div>
+                <multiline-description :text="formatDescription(d)" />
               </td>
               <td class="period-col">
                 <div class="text-bold">{{ formatPeriod(d) }}</div>
@@ -91,13 +91,15 @@
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
+import MultilineDescription from '@/components/widgets/multiline-description';
 import { DatacubeStatus } from '@/types/Enums';
-import { isModel } from '../../utils/datacube-util';
+import { isIndicator, isModel } from '../../utils/datacube-util';
 
 export default {
   name: 'SearchListview',
   components: {
-    Sparkline
+    Sparkline,
+    MultilineDescription
   },
   props: {
     datacubes: {
@@ -128,7 +130,7 @@ export default {
       return datacube.status !== DatacubeStatus.Ready && isModel(datacube);
     },
     isProcessing(datacube) {
-      return datacube.status === DatacubeStatus.Processing && isModel(datacube);
+      return datacube.status === DatacubeStatus.Processing && isIndicator(datacube);
     },
     isNotPublished(datacube) {
       return datacube.status === DatacubeStatus.Registered && isModel(datacube);

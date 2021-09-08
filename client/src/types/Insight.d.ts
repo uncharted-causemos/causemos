@@ -8,7 +8,7 @@ export interface Snapshot {
   project_id?: string;
 
   // e.g., datacube-id, CAG-id, etc.
-  context_id?: string;
+  context_id?: string[];
 
   url: string;
 
@@ -16,7 +16,7 @@ export interface Snapshot {
 
   // target-view can be used to control visibility (e.g., a saved insight that targets data space won't be visible in the model space)
   // target-view can also force re-direct the final url for restoring state, e.g., a saved insight during model publish page would redirects to comparative analysis page
-  target_view: string; // main tab when the snapshot was saved, e.g., data, qualitative, quantitative.
+  target_view: string[]; // main tab when the snapshot was saved, e.g., data, qualitative, quantitative.
 
   // actions to be applied before/after applying this snapshot
   //  these could for example be items that follow the Command design pattern to update state
@@ -39,6 +39,7 @@ export interface Insight extends Snapshot {
 export interface AnalyticalQuestion extends Snapshot {
   question: string;
   linked_insights: string[]; // has some insight (using their names/IDs) been linked to satisfy/answer this question?
+  tour_name?: string;
 }
 
 // view-specific values (no data dependency)
@@ -72,9 +73,13 @@ export interface DataState {
   selectedModelId?: string;
   selectedScenarioIds?: string[];
   selectedTimestamp?: number | null;
+  selectedRegionIds?: string[];
+  selectedQualifierValues?: string[];
+  selectedYears?: string[];
   //
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];
+  relativeTo?: string | null;
 
   // knowledge/model space specific
   selectedScenarioId?: string;

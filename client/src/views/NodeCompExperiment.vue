@@ -19,7 +19,7 @@
         <span v-if="stepsBeforeCanConfirm.length > 0">{{ stepsBeforeCanConfirm[0] }}</span>
       </div>
     </full-screen-modal-header>
-    <main>
+    <main class="insight-capture">
       <datacube-card
         :class="{ 'datacube-expanded': true }"
         :selected-admin-level="selectedAdminLevel"
@@ -43,7 +43,6 @@
         :selected-data-layer="selectedDataLayer"
         @set-selected-scenario-ids="setSelectedScenarioIds"
         @select-timestamp="setSelectedTimestamp"
-        @set-drilldown-data="setDrilldownData"
         @set-relative-to="setRelativeTo"
         @refetch-data="fetchData"
         @new-runs-mode="newRunsMode=!newRunsMode"
@@ -79,13 +78,14 @@
 
         <template #spatial-aggregation-config>
           <dropdown-button
-            class="spatial-aggregation"
+            class="dropdown-config"
             :inner-button-label="'Spatial Aggregation'"
             :items="['mean', 'sum']"
             :selected-item="selectedSpatialAggregation"
             @item-selected="item => selectedSpatialAggregation = item"
           />
           <map-dropdown
+            class="dropdown-config"
             :selectedBaseLayer="selectedBaseLayer"
             :selectedDataLayer="selectedDataLayer"
             @set-base-layer="setBaseLayer"
@@ -110,16 +110,22 @@
             <breakdown-pane
               v-if="activeDrilldownTab ==='breakdown'"
               :selected-admin-level="selectedAdminLevel"
-              :type-breakdown-data="typeBreakdownData"
+              :qualifier-breakdown-data="qualifierBreakdownData"
               :regional-data="regionalData"
+              :temporal-breakdown-data="temporalBreakdownData"
               :unit="unit"
               :selected-spatial-aggregation="selectedSpatialAggregation"
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
               :selected-region-ids="selectedRegionIds"
+              :selected-qualifier-values="selectedQualifierValues"
               :selected-breakdown-option="breakdownOption"
+              :selected-temporal-resolution="selectedTemporalResolution"
               :selected-timeseries-points="selectedTimeseriesPoints"
+              :selected-years="selectedYears"
               @toggle-is-region-selected="toggleIsRegionSelected"
+              @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+              @toggle-is-year-selected="toggleIsYearSelected"
               @set-selected-admin-level="setSelectedAdminLevel"
               @set-breakdown-option="setBreakdownOption"
             />
@@ -149,16 +155,15 @@ import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
-import { DimensionInfo, DatacubeFeature } from '@/types/Datacube';
-import { NamedBreakdownData } from '@/types/Datacubes';
-import { DatacubeType, ProjectType } from '@/types/Enums';
+import { DatacubeFeature } from '@/types/Datacube';
+import { AggregationOption, DatacubeType, ProjectType, TemporalResolutionOption } from '@/types/Enums';
 
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { getRandomNumber } from '@/utils/random';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import modelService from '@/services/model-service';
 import { ViewState } from '@/types/Insight';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
+import useQualifiers from '@/services/composables/useQualifiers';
 
 const DRILLDOWN_TABS = [
   {
@@ -192,7 +197,6 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     }
 
-    const typeBreakdownData = ref([] as NamedBreakdownData[]);
     const isExpanded = true;
 
     const store = useStore();
@@ -247,7 +251,8 @@ export default defineComponent({
       selectedScenarioIds,
       metadata,
       selectedAdminLevel,
-      breakdownOption
+      breakdownOption,
+      ref([])
     );
 
     const timeInterval = 10000;
@@ -289,9 +294,9 @@ export default defineComponent({
       }
     });
 
-    const selectedTemporalResolution = ref('month');
-    const selectedTemporalAggregation = ref('mean');
-    const selectedSpatialAggregation = ref('mean');
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
 
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
@@ -299,14 +304,32 @@ export default defineComponent({
     };
 
     const {
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues
+    } = useQualifiers(
+      metadata,
+      breakdownOption,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      selectedTimestamp,
+      ref([])
+    );
+
+
+    const {
       timeseriesData,
       visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
-      setRelativeTo
+      temporalBreakdownData,
+      setRelativeTo,
+      selectedYears,
+      toggleIsYearSelected
     } = useTimeseriesData(
       metadata,
-      selectedModelId,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -314,7 +337,9 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      selectedRegionIds
+      selectedRegionIds,
+      selectedQualifierValues,
+      ref([])
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -374,7 +399,6 @@ export default defineComponent({
       setSelectedAdminLevel,
       selectedModelId,
       selectedScenarioIds,
-      typeBreakdownData,
       selectedTimestamp,
       isExpanded,
       metadata,
@@ -411,7 +435,13 @@ export default defineComponent({
       setBaseLayer: (val: BASE_LAYER) => { selectedBaseLayer.value = val; },
       setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; },
       toggleIsRegionSelected,
-      selectedRegionIds
+      selectedRegionIds,
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues,
+      temporalBreakdownData,
+      selectedYears,
+      toggleIsYearSelected
     };
   },
   unmounted(): void {
@@ -558,45 +588,6 @@ export default defineComponent({
         if (_.isEqual(this.selectedScenarioIds, newIds)) return;
       }
       this.selectedScenarioIds = newIds;
-    },
-    setDrilldownData(e: { drilldownDimensions: Array<DimensionInfo> }) {
-      this.typeBreakdownData = [];
-      if (this.selectedScenarioIds.length === 0) return;
-      // typeBreakdownData array contains an entry for each drilldown dimension
-      //  (e.g. 'crop type')
-      this.typeBreakdownData = e.drilldownDimensions.map(dimension => {
-        // Initialize total for each scenarioId to 0
-        const totals = {} as { [scenarioId: string]: number };
-        this.selectedScenarioIds.forEach(scenarioId => {
-          totals[scenarioId] = 0;
-        });
-        // Randomly assign values for each option in the dimension (e.g. 'maize', 'corn)
-        //  to each scenario, and keep track of the sum totals for each scenario
-        const choices = dimension.choices ?? [];
-        const drilldownChildren = choices.map(choice => {
-          const values = {} as { [scenarioId: string]: number };
-          this.selectedScenarioIds.forEach(scenarioId => {
-            // FIXME: use random data for now. Later, pickup the actual breakdown aggregation
-            //  from (selected scenarios) data
-            const randomValue = getRandomNumber(0, 5000);
-            values[scenarioId] = randomValue;
-            totals[scenarioId] += randomValue;
-          });
-          return {
-            // Breakdown data IDs are written as the hierarchical path delimited by '__'
-            id: 'All__' + choice,
-            values
-          };
-        });
-
-        return {
-          name: dimension.name,
-          data: {
-            Total: [{ id: 'All', values: totals }],
-            [dimension.name]: drilldownChildren
-          }
-        };
-      });
     }
   }
 });
@@ -605,7 +596,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-experiment-container {
-  height: $content-full-height;
+  height: 100vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -625,7 +616,6 @@ main {
   min-width: 0;
   flex: 1;
   margin: 10px;
-  margin-top: 0;
 }
 
 .search-button {
@@ -643,7 +633,7 @@ main {
   min-height: 70px;
 }
 
-.spatial-aggregation {
-  margin: 5px 0;
+.dropdown-config:not(:first-child) {
+  margin-left: 5px;
 }
 </style>

@@ -1,21 +1,17 @@
 <template>
-  <div class="row datacube-card-container">
+  <div class="datacube-card-container">
     <header class="datacube-header" >
-      <h5 v-if="metadata && mainModelOutput" style="display: inline-block">
-        <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-        <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
-      </h5>
-      <button
-        v-tooltip="'Drilldown'"
-        class="btn btn-default drilldown-btn"
-        @click="openDrilldown">
-        <i class="fa fa-fw fa-expand" />
-      </button>
-      <datacard-options-button
-        class="menu"
-        :dropdown-below="true"
-        :wider-dropdown-options="true"
+      <h5
+        v-if="metadata && mainModelOutput"
+        class="datacube-title-area"
+        @click="openDrilldown"
       >
+        <span>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}} - {{ selectedRegionIdsDisplay }}</span>
+        <span class="datacube-name">{{metadata.name}}</span>
+        <i class="fa fa-fw fa-expand drilldown-btn" />
+      </h5>
+
+      <options-button :dropdown-below="true">
         <template #content>
           <div
             class="dropdown-option"
@@ -24,22 +20,22 @@
             Remove
           </div>
         </template>
-      </datacard-options-button>
+      </options-button>
     </header>
-    <div>
-      <div class="col-md-9 timeseries-chart">
-        <timeseries-chart
-          v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
-          :timeseries-data="visibleTimeseriesData"
-          :selected-timestamp="selectedTimestamp"
-          :selected-timestamp-range="selectedTimestampRange"
-          :breakdown-option="breakdownOption"
-        />
-      </div>
-      <div class="datacube-map-placeholder col-md-3">
+    <main>
+      <timeseries-chart
+        v-if="timeseriesData.length > 0 && timeseriesData[0].points.length > 0"
+        class="timeseries-chart"
+        :timeseries-data="visibleTimeseriesData"
+        :selected-temporal-resolution="selectedTemporalResolution"
+        :selected-timestamp="selectedTimestamp"
+        :selected-timestamp-range="selectedTimestampRange"
+        :breakdown-option="breakdownOption"
+      />
+      <div class="datacube-map-placeholder">
         <!-- placeholder for mini map -->
-        <b>Country:</b>
-        <div v-if="metadata" class="fixed-height-column">
+        <strong>Country</strong>
+        <div v-if="metadata" class="country-list">
           <div
             v-for="country in metadata.geography.country"
             :key="country">
@@ -47,6 +43,10 @@
           </div>
         </div>
       </div>
+    </main>
+    <div>
+      <div class="col-md-9">Temporal Aggregation: {{ selectedTemporalAggregation }} </div>
+      <div class="col-md-3">Spatial Aggregation: {{ selectedSpatialAggregation }} </div>
     </div>
   </div>
 </template>
@@ -56,39 +56,26 @@ import useModelMetadata from '@/services/composables/useModelMetadata';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { NamedBreakdownData } from '@/types/Datacubes';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import { computed, defineComponent, PropType, Ref, ref, toRefs, watchEffect } from 'vue';
-import DatacardOptionsButton from '@/components/widgets/datacard-options-button.vue';
+import OptionsButton from '@/components/widgets/options-button.vue';
 import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import useScenarioData from '@/services/composables/useScenarioData';
 import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
-
-const DRILLDOWN_TABS = [
-  {
-    name: 'Breakdown',
-    id: 'breakdown',
-    // TODO: our version of FA doesn't include fa-chart
-    icon: 'fa-question'
-  }
-];
+import { DataState, ViewState } from '@/types/Insight';
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
   components: {
-    DatacardOptionsButton,
+    OptionsButton,
     TimeseriesChart
   },
   props: {
     id: {
       type: String,
       required: true
-    },
-    isSelected: {
-      type: Boolean,
-      default: false
     },
     selectedTimestamp: {
       type: Number,
@@ -105,8 +92,6 @@ export default defineComponent({
       id,
       selectedTimestamp
     } = toRefs(props);
-
-    const typeBreakdownData = ref([] as NamedBreakdownData[]);
 
     const metadata = useModelMetadata(id);
 
@@ -147,10 +132,14 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
     const allModelRunData = useScenarioData(id, modelRunsFetchedAt);
 
+    const selectedRegionIds: string[] = [];
+    let initialSelectedScenarioIds: string[] = [];
+
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Model && allModelRunData.value && allModelRunData.value.length > 0) {
         const allScenarioIds = allModelRunData.value.map(run => run.id);
-        selectedScenarioIds.value = [allScenarioIds[0]];
+        // do not pick the first run by default in case a run was previously selected
+        selectedScenarioIds.value = initialSelectedScenarioIds.length > 0 ? initialSelectedScenarioIds : [allScenarioIds[0]];
       }
     });
 
@@ -167,7 +156,8 @@ export default defineComponent({
     // apply the view-config for this datacube
     const indx = analysisItems.value.findIndex((ai: any) => ai.id === props.id);
     if (indx >= 0) {
-      const initialViewConfig = analysisItems.value[indx].viewConfig;
+      const initialViewConfig: ViewState = analysisItems.value[indx].viewConfig;
+      const initialDataConfig: DataState = analysisItems.value[indx].dataConfig;
 
       if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
         if (initialViewConfig.temporalResolution !== undefined) {
@@ -183,6 +173,18 @@ export default defineComponent({
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
           defaultOutputMap[props.id] = initialViewConfig.selectedOutputIndex;
           store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        }
+      }
+
+      // apply initial data config for this datacube
+      if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
+        if (initialDataConfig.selectedRegionIds !== undefined) {
+          initialDataConfig.selectedRegionIds.forEach(regionId => {
+            selectedRegionIds.push(regionId);
+          });
+        }
+        if (initialDataConfig.selectedScenarioIds !== undefined) {
+          initialSelectedScenarioIds = initialDataConfig.selectedScenarioIds;
         }
       }
     }
@@ -209,7 +211,6 @@ export default defineComponent({
       temporalBreakdownData
     } = useTimeseriesData(
       metadata,
-      id,
       selectedScenarioIds,
       selectedTemporalResolution,
       selectedTemporalAggregation,
@@ -217,7 +218,9 @@ export default defineComponent({
       breakdownOption,
       selectedTimestamp,
       setSelectedTimestamp,
-      ref([]) // region breakdown
+      ref(selectedRegionIds),
+      ref(new Set()),
+      ref([])
     );
 
     watchEffect(() => {
@@ -234,14 +237,18 @@ export default defineComponent({
       }
     });
 
+    const selectedRegionIdsDisplay = computed(() => {
+      if (_.isEmpty(selectedRegionIds)) return 'All';
+      return selectedRegionIds.join('/');
+    });
+
     return {
-      drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedScenarioIds,
-      typeBreakdownData,
+      selectedRegionIdsDisplay,
       metadata,
       mainModelOutput,
       outputs,
@@ -301,50 +308,74 @@ export default defineComponent({
 
 .datacube-card-container {
   background: $background-light-1;
-  box-shadow: $shadow-level-1;
-  // padding: 10px;
-  margin: 10px;
   border-radius: 3px;
-}
-
-.datacube-expanded {
-  min-width: 0;
-  flex: 1;
-  margin: 10px;
-  margin-top: 0;
+  height: 200px;
+  display: flex;
+  flex-direction: column;
+  border: 1px solid $background-light-3;
+  padding: 1rem;
 }
 
 .datacube-header {
-  flex: 1;
-  margin-left: 20px;
   display: flex;
   align-items: center;
 
-  .drilldown-btn {
-    padding: 5px;
-    margin-left:auto;
+  .datacube-title-area {
+    display: inline-block;
+    cursor: pointer;
+    flex: 1;
+    min-width: 0;
+    margin: 0;
+    &:hover {
+      color: $selected-dark;
+
+      .datacube-name {
+        color: $selected-dark;
+      }
+
+      .drilldown-btn {
+        color: $selected-dark;
+      }
+    }
   }
 }
 
-.timeseries-chart {
+.datacube-name {
+  font-weight: normal;
+  color: $label-color;
+  margin-left: 10px;
+}
+
+.drilldown-btn {
+  padding: 5px;
+  color: $text-color-light;
+  margin-left: 10px;
+}
+
+main {
   display: flex;
-  flex-direction: column;
-  padding-left: 5px;
-  padding-right: 5px;
+  flex: 1;
+  min-height: 0;
+}
+
+.timeseries-chart {
+  flex: 1;
+  min-width: 0;
 }
 
 .datacube-map-placeholder {
-  background-color: aliceblue;
+  background-color: #fafafa;
   height: 100%;
-  border-color: darkgray;
-  border-style: solid;
-  border-width: thin;
-  margin-bottom: 5px;
+  width: 150px;
+  display: flex;
+  flex-direction: column;
+  padding: 5px;
 }
 
-.fixed-height-column {
-  height: 12vh;
-  overflow-y: scroll;
+.country-list {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
 }
 
 </style>

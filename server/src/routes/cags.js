@@ -82,7 +82,7 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
     name: name,
     status: MODEL_STATUS.UNSYNCED,
     is_stale: CAG.is_stale,
-    is_quantified: CAG.is_quantified
+    is_quantified: false
   });
 
   res.status(200).send({ updateToken: editTime, id: newId });
