@@ -21,22 +21,7 @@ const getDatacubes = async(filter, options) => {
   if (!options.size) {
     options.size = SEARCH_LIMIT;
   }
-  const data = await connection.find(filter, options);
-  data.forEach(datum => {
-    datum.stochastic = 'garbage';
-    datum.attributes = 'garbage';
-    datum.image = 'garbage';
-    if (datum.geography) {
-      datum.geography.coordinates = [0, 0];
-    }
-    datum.outputs.forEach(output => {
-      output.id = 'garbage';
-    });
-    datum.parameters.forEach(param => {
-      param.id = 'garbage';
-    });
-  });
-  return data;
+  return await connection.find(filter, options);
 };
 
 /**

@@ -126,10 +126,7 @@ const markModelRunFailed = async (metadata) => {
  */
 const getAllModelRuns = async(modelId) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const data = await connection.find([{ field: 'model_id', value: modelId }], { size: SEARCH_LIMIT });
-  data.attributes = 'example';
-  data.default_run = 'example';
-  return data;
+  return connection.find([{ field: 'model_id', value: modelId }], { size: SEARCH_LIMIT });
 };
 
 /**
