@@ -236,6 +236,10 @@ export default defineComponent({
     hasTour(questionItem: AnalyticalQuestion): boolean {
       return this.toursMetadata.findIndex(t => t.baseQuestion === questionItem.question) >= 0;
     },
+    questionVisibility() {
+      return this.projectType === ProjectType.Analysis ? 'private' : 'public';
+      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
+    },
     promote() {
       // update selectedQuestion to be public, i.e., visible in all projects
       if (this.selectedQuestion) {
@@ -265,7 +269,7 @@ export default defineComponent({
       const newQuestion: AnalyticalQuestion = {
         question: this.newQuestionText,
         description: '',
-        visibility: 'private', // questions are always added with private visibility but can be promoted to be public
+        visibility: this.questionVisibility(),
         project_id: this.project,
         context_id: this.contextId,
         url,
