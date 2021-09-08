@@ -32,6 +32,9 @@ const getDatacubes = async(filter, options) => {
     datum.outputs.forEach(output => {
       output.id = 'garbage';
     });
+    datum.parameters.forEach(param => {
+      param.id = 'garbage';
+    });
   });
   return data;
 };
