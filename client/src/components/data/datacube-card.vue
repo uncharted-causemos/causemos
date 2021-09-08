@@ -9,6 +9,7 @@
         v-if="isModelMetadata && showNewRunsModal === true"
         :metadata="metadata"
         :potential-scenarios="potentialScenarios"
+        :selected-dimensions="dimensions"
         @close="onNewScenarioRunsModalClose" />
       <modal-check-runs-execution-status
         v-if="isModelMetadata & showModelRunsExecutionStatus === true"
