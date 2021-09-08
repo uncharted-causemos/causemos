@@ -6,14 +6,14 @@ function JsonValidationException(message) {
   this.name = 'JsonValidationException';
 }
 
-const readySchemas = {};
+const readySchemas = new Map();
 const filterWithSchema = (schemaFilename, json) => {
-  if (!readySchemas[schemaFilename]) {
+  if (!readySchemas.has(schemaFilename)) {
     const jsonSchema = JSON.parse(fs.readFileSync(schemaFilename));
     const schema = Enjoi.schema(jsonSchema);
-    readySchemas[schemaFilename] = schema;
+    readySchemas.set(schemaFilename, schema);
   }
-  const schema = readySchemas[schemaFilename];
+  const schema = readySchemas.get(schemaFilename);
   const validationResult = schema.validate(json, {
     stripUnknown: true
   });
