@@ -8,6 +8,7 @@ interface AppState {
   ontologyConcepts: Array<string>;
   ontologySet: Set<string>;
   projectMetadata: any; // FIXME
+  analysisName: string;
   conceptDefinitions: { [key: string]: string };
   datacubeCurrentOutputsMap: {}; // map for datacubes' currently selected features; each key is the datacube-id and the value is the selected output's index
 }
@@ -19,6 +20,7 @@ const state: AppState = {
   ontologyConcepts: [],
   ontologySet: new Set<string>(),
   projectMetadata: {},
+  analysisName: '',
   conceptDefinitions: {},
   datacubeCurrentOutputsMap: {}
 };
@@ -53,6 +55,7 @@ const getters: GetterTree<AppState, any> = {
   ontologyConcepts: state => state.ontologyConcepts,
   ontologySet: state => state.ontologySet,
   projectMetadata: state => state.projectMetadata,
+  analysisName: state => state.analysisName,
   conceptDefinitions: state => state.conceptDefinitions,
   datacubeCurrentOutputsMap: state => state.datacubeCurrentOutputsMap
 };
@@ -73,6 +76,9 @@ const actions: ActionTree<AppState, any> = {
   },
   setProjectMetadata({ commit }, metadata) {
     commit('setProjectMetadata', metadata);
+  },
+  setAnalysisName({ commit }, newName) {
+    commit('setAnalysisName', newName);
   },
   setConceptDefinitions: ({ commit }, examples) => {
     commit('setConceptDefinitions', examples);
@@ -105,6 +111,9 @@ const mutations: MutationTree<AppState> = {
   },
   setProjectMetadata(state, metadata) {
     state.projectMetadata = metadata;
+  },
+  setAnalysisName(state, newName) {
+    state.analysisName = newName;
   },
   setConceptDefinitions(state, definitions) {
     state.conceptDefinitions = definitions;

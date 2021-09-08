@@ -4,7 +4,7 @@
       v-if="overlayActivated"
       :message="overlayMessage"
     />
-    <nav-bar v-if="!isNavBarHidden" />
+    <nav-bar />
     <insight-manager />
     <router-view />
   </div>
@@ -24,16 +24,6 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
 
-const viewsWithNoNavbar = [
-  'dataComparative',
-  'nodeCompExperiment',
-  'nodeDataExplorer',
-  'data',
-  'kbExplorer',
-  'dataExplorer',
-  'createDataCube'
-];
-
 export default {
   name: 'App',
   components: {
@@ -43,15 +33,11 @@ export default {
   },
   computed: {
     ...mapGetters({
-      currentView: 'app/currentView',
       overlayMessage: 'app/overlayMessage',
       overlayActivated: 'app/overlayActivated',
       project: 'app/project',
       projectType: 'app/projectType'
-    }),
-    isNavBarHidden() {
-      return viewsWithNoNavbar.includes(this.currentView);
-    }
+    })
   },
   watch: {
     project: function() {

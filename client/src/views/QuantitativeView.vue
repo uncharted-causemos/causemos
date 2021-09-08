@@ -148,6 +148,7 @@ export default {
     ...mapActions({
       enableOverlay: 'app/enableOverlay',
       disableOverlay: 'app/disableOverlay',
+      setAnalysisName: 'app/setAnalysisName',
       setSelectedScenarioId: 'model/setSelectedScenarioId',
       setDraftScenario: 'model/setDraftScenario',
       updateDraftScenarioConstraints: 'model/updateDraftScenarioConstraints',
@@ -174,7 +175,9 @@ export default {
     },
     async refreshModel() {
       this.enableOverlay('Getting model data');
+      this.setAnalysisName('');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
+      this.setAnalysisName(this.modelSummary?.name ?? '');
       this.modelComponents = await modelService.getComponents(this.currentCAG);
       this.disableOverlay();
     },
