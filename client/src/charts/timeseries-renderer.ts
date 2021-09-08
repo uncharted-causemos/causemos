@@ -169,7 +169,7 @@ function generateSelectableTimestamps(
   timestampFormatter: (value: number) => string
 ) {
   const timestampGroup = selection.append('g');
-  const valuesAtEachTimestamp = new Map<number, { color: string; name: string; value: number}[]>();
+  const valuesAtEachTimestamp = new Map<number, { color: string; name: string; value: number | string}[]>();
   timeseriesList.forEach(timeseries => {
     const { color, name, points } = timeseries;
     points.forEach(({ value, timestamp }) => {
@@ -183,7 +183,28 @@ function generateSelectableTimestamps(
       valuesAtThisTimestamp.push({ color, name, value });
     });
   });
+
   const uniqueTimestamps = Array.from(valuesAtEachTimestamp.keys());
+
+  // note that the timeseries list may have timeseries each of different number of timestamps
+  //  this means that there are missing values at some of the timestamps
+  // so, attempt to fill those as n/a for consistency
+  uniqueTimestamps.forEach(timestamp => {
+    const valuesAtThisTimestamp = valuesAtEachTimestamp.get(timestamp) ?? [];
+    if (valuesAtThisTimestamp.length !== timeseriesList.length) {
+      //
+      // we are missing some values at this timestamp
+      //
+      timeseriesList.forEach(timeseries => {
+        // skip if we do have a value for this timeseries
+        const { color, name } = timeseries;
+        if (valuesAtThisTimestamp.findIndex(e => e.name === name) < 0) {
+          valuesAtThisTimestamp.push({ color, name, value: 'n/a' });
+        }
+      });
+    }
+  });
+
   // FIXME: We assume that all timestamps are evenly spaced when determining
   //  how wide the hover/click hitbox should be. This may not always be the case.
 
@@ -266,23 +287,36 @@ function generateSelectableTimestamps(
       .text(unit);
     // Display a line for each value at this timestamp
     (valuesAtEachTimestamp.get(timestamp) ?? [])
-      .sort(({ value: valueA }, { value: valueB }) => valueB - valueA)
-      .forEach(({ color, name, value }, index) => {
+    // values should be sorted matching the timeseries list
+      /*
+      .sort(({ value: valueA }, { value: valueB }) => {
+        return (typeof valueA === 'number' && typeof valueB === 'number') ? (valueB - valueA) : -1;
+      })
+      */
+      .sort(({ name: nameA }, { name: nameB }) => {
+        const timeseriesAIndx = timeseriesList.findIndex(t => t.name === nameA);
+        const timeseriesBIndx = timeseriesList.findIndex(t => t.name === nameB);
+
+        return timeseriesAIndx - timeseriesBIndx;
+      })
+      .forEach(({ color, /* name, */ value }, index) => {
         // +1 line because the origin point for text elements is the bottom left corner
         // +1 line because the units are displayed above
         const yPosition = TOOLTIP_LINE_HEIGHT * (index + 2);
+        /*
         tooltip
           .append('text')
           .attr('transform', translate(TOOLTIP_PADDING, yPosition))
           .style('fill', color)
           .style('font-weight', 'bold')
           .text(name);
+        */
         tooltip
           .append('text')
           .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition))
           .style('text-anchor', 'end')
           .style('fill', color)
-          .text(valueFormatter(value));
+          .text(typeof value === 'string' ? value : valueFormatter(value));
       });
     // Display hovered timestamp
     tooltip
