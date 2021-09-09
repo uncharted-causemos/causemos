@@ -40,6 +40,7 @@
           <i class="fa fa-ellipsis-h insight-header-btn" />
           <insight-editor
             v-if="activeInsight === insight.id"
+            @edit="editInsight()"
             @delete="deleteInsight()"
           />
         </div>
@@ -84,10 +85,14 @@ export default defineComponent({
       default: false
     }
   },
-  emits: ['delete-insight', 'open-editor', 'select-insight', 'update-curation'],
+  emits: ['delete-insight', 'edit-insight', 'open-editor', 'select-insight', 'update-curation'],
   methods: {
     dateFormatter,
     stringFormatter,
+
+    editInsight() {
+      this.$emit('edit-insight');
+    },
     deleteInsight() {
       this.$emit('delete-insight');
     },

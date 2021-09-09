@@ -145,21 +145,6 @@ export default defineComponent({
     },
     onGeneratedRuns(generatedLines?: Array<ScenarioData> /* array of generated lines on the PCs plot */): void {
       if (generatedLines && Array.isArray(generatedLines)) {
-        //
-        // ensure that any choice label is mapped back to its underlying value
-        this.selectedDimensions.forEach(d => {
-          if (d.choices_labels && d.choices !== undefined && d.is_visible) {
-            // update all generatedLines accordingly
-            generatedLines.forEach(gl => {
-              const currLabelValue = (gl[d.name]).toString();
-              const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
-              if (d.choices !== undefined) {
-                gl[d.name] = d.choices[labelIndex];
-              }
-            });
-          }
-        });
-
         this.$emit('generated-scenarios', { scenarios: generatedLines });
       }
     }

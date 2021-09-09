@@ -2,7 +2,7 @@ const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
-const { sendToPipeline } = rootRequire('services/external/prefect-queue-service.ts');
+const { sendToPipeline } = rootRequire('services/external/prefect-queue-service');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
@@ -70,21 +70,41 @@ const startModelOutputPostProcessing = async (metadata) => {
     });
   }
 
+  // Remove extra fields from Jataware
+  metadata.attributes = undefined;
+  metadata.default_run = undefined;
+
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+
+  let docIds = [];
+  let result;
+  if (await connection.exists([{ field: 'id', value: metadata.id }])) {
+    result = await connection.update({
+      ...metadata,
+      status: 'PROCESSING'
+    }, d => d.id);
+    docIds = [metadata.id];
+  } else {
+    result = await connection.insert({
+      ...metadata,
+      status: 'TEST'
+    }, d => d.id);
+  }
+
   const flowParameters = {
     model_id: metadata.model_id,
     run_id: metadata.id,
-    doc_ids: [metadata.id],
+    doc_ids: docIds,
     data_paths: metadata.data_paths,
     qualifier_map: qualifierMap,
     compute_tiles: true
   };
-  sendToPipeline(flowParameters);
 
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const result = await connection.update({
-    ...metadata,
-    status: 'PROCESSING'
-  }, d => d.id);
+  sendToPipeline(flowParameters);
+  // Remove extra fields from Jataware
+  metadata.attributes = undefined;
+  metadata.default_run = undefined;
+
   return result;
 };
 

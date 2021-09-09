@@ -232,6 +232,11 @@ export default defineComponent({
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
+    // apply initial data config for this datacube
+    const initialSelectedRegionIds = ref<string[]>([]);
+    const initialSelectedQualifierValues = ref<string[]>([]);
+    const initialSelectedYears = ref<string[]>([]);
+
     const {
       datacubeHierarchy,
       selectedRegionIds,
@@ -240,7 +245,8 @@ export default defineComponent({
       selectedScenarioIds,
       metadata,
       selectedAdminLevel,
-      breakdownOption
+      breakdownOption,
+      initialSelectedRegionIds
     );
 
     const modelRunsFetchedAt = ref(0);
@@ -315,18 +321,19 @@ export default defineComponent({
 
         outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
-        // set initial output variable index
-        let initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
-        if (initialOutputIndex < 0) {
-          // this would be the case when the use toggles the visibility of the default feature
-          initialOutputIndex = 0;
+        let initialOutputIndex = 0;
+        const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
+        if (currentOutputEntry !== undefined) {
+          // we have a store entry for the selected output of the current model
+          initialOutputIndex = currentOutputEntry;
+        } else {
+          initialOutputIndex = metadata.value.validatedOutputs?.findIndex(o => o.name === metadata.value?.default_feature) ?? 0;
+
+          // update the store
+          const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+          defaultOutputMap[metadata.value.id] = initialOutputIndex;
+          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
         }
-        // create a default feature object as a map entry that saves the initial output index for the current model instance
-        //  and note we overwrite the store content since we can only have one model being published by a given user at a time
-        const defaultFeature = {
-          [metadata.value.id]: initialOutputIndex
-        };
-        store.dispatch('app/setDatacubeCurrentOutputsMap', defaultFeature);
         mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
@@ -358,7 +365,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      selectedTimestamp
+      selectedTimestamp,
+      initialSelectedQualifierValues
     );
 
     const {
@@ -380,7 +388,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      selectedQualifierValues
+      selectedQualifierValues,
+      initialSelectedYears
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -418,8 +427,11 @@ export default defineComponent({
           datacubeName: metadata.value?.name ?? '',
           datacubeOutputName: mainModelOutput.value?.display_name ?? ''
         }],
-        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
-        relativeTo: relativeTo.value
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube,
+        selectedRegionIds: selectedRegionIds.value,
+        relativeTo: relativeTo.value,
+        selectedQualifierValues: [...selectedQualifierValues.value],
+        selectedYears: [...selectedYears.value]
       };
       const viewState: ViewState = {
         spatialAggregation: selectedSpatialAggregation.value,
@@ -483,7 +495,10 @@ export default defineComponent({
       timerHandler,
       newRunsMode,
       selectedYears,
-      toggleIsYearSelected
+      toggleIsYearSelected,
+      initialSelectedRegionIds,
+      initialSelectedQualifierValues,
+      initialSelectedYears
     };
   },
   watch: {
@@ -521,7 +536,7 @@ export default defineComponent({
       immediate: true
     }
   },
-  unmounted(): void {
+  unmounted() {
     clearInterval(this.timerHandler);
   },
   async mounted() {
@@ -533,62 +548,75 @@ export default defineComponent({
 
     // we have some insights, some/all of which relates to the current model instance
 
-    // first, fetch public insights to load the publication status, as needed
-    const publicInsights = await this.getPublicInsights();
-    if (publicInsights.length > 0) {
-      // we have at least one public insight, which we should use to fetch view configurations
-      const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
-      const viewConfig = defaultInsight.view_state;
-      if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
-        (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
+    const insight_id = this.$route.query.insight_id as any;
+    if (insight_id !== undefined) {
+      // just mark all steps as completed
+      this.publishingSteps.forEach(step => {
+        step.completed = true;
+      });
+    } else {
+      // check if a public insight exist for this model instance
+      // first, fetch public insights to load the publication status, as needed
+      const publicInsights = await this.getPublicInsights();
+      if (publicInsights.length > 0) {
+        //
+        // FIXME: only apply public insight if no, other, insight is being applied
+        //
+        // we have at least one public insight, which we should use to fetch view configurations
+        const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
+        const viewConfig = defaultInsight.view_state;
+        if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
+          (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
 
-        if (viewConfig.temporalAggregation) {
-          this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
-        }
-        if (viewConfig.temporalResolution) {
-          this.setSelectedTemporalResolution(viewConfig.temporalResolution);
-        }
-        if (viewConfig.spatialAggregation) {
-          this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
-        }
-        if (viewConfig.selectedAdminLevel !== undefined) {
-          this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
-        }
-        if (viewConfig.selectedMapBaseLayer) {
-          this.setBaseLayer(viewConfig.selectedMapBaseLayer);
-        }
-        if (viewConfig.selectedMapDataLayer) {
-          this.setDataLayer(viewConfig.selectedMapDataLayer);
-        }
-        if (viewConfig.selectedOutputIndex) {
-          const modelId = this.metadata?.id as string;
-          const defaultFeature = {
-            [modelId]: viewConfig.selectedOutputIndex
-          };
-          this.setDatacubeCurrentOutputsMap(defaultFeature);
-        }
-        if (viewConfig.breakdownOption !== undefined) {
-          this.setBreakdownOption(viewConfig.breakdownOption);
-        }
+          // FIXME: do we need to apply any data state here!?
+          if (viewConfig.temporalAggregation) {
+            this.setSelectedTemporalAggregation(viewConfig.temporalAggregation);
+          }
+          if (viewConfig.temporalResolution) {
+            this.setSelectedTemporalResolution(viewConfig.temporalResolution);
+          }
+          if (viewConfig.spatialAggregation) {
+            this.setSelectedSpatialAggregation(viewConfig.spatialAggregation);
+          }
+          if (viewConfig.selectedAdminLevel !== undefined) {
+            this.setSelectedAdminLevel(viewConfig.selectedAdminLevel);
+          }
+          if (viewConfig.selectedMapBaseLayer) {
+            this.setBaseLayer(viewConfig.selectedMapBaseLayer);
+          }
+          if (viewConfig.selectedMapDataLayer) {
+            this.setDataLayer(viewConfig.selectedMapDataLayer);
+          }
+          if (viewConfig.selectedOutputIndex) {
+            const modelId = this.metadata?.id as string;
+            const defaultFeature = {
+              [modelId]: viewConfig.selectedOutputIndex
+            };
+            this.setDatacubeCurrentOutputsMap(defaultFeature);
+          }
+          if (viewConfig.breakdownOption !== undefined) {
+            this.setBreakdownOption(viewConfig.breakdownOption);
+          }
 
-        // @TODO:
-        //  need to support applying an insight by both domain modeler as well as analyst
+          // @TODO:
+          //  need to support applying an insight by both domain modeler as well as analyst
 
-        // ensure that all publication steps are marked as complete
-        this.publishingSteps.forEach(step => {
-          step.completed = true;
-        });
+          // ensure that all publication steps are marked as complete
+          this.publishingSteps.forEach(step => {
+            step.completed = true;
+          });
 
-        foundPublishedInsights = true;
+          foundPublishedInsights = true;
+        }
       }
-    }
 
-    if (!foundPublishedInsights) {
-      // reset store and ensure values are default view configurations
-      //  (in case opening another published model instance has updated them)
-      this.setSelectedTemporalAggregation(AggregationOption.None);
-      this.setSelectedTemporalResolution(TemporalResolutionOption.None);
-      this.setSelectedSpatialAggregation(AggregationOption.None);
+      if (!foundPublishedInsights) {
+        // reset store and ensure values are default view configurations
+        //  (in case opening another published model instance has updated them)
+        this.setSelectedTemporalAggregation(AggregationOption.None);
+        this.setSelectedTemporalResolution(TemporalResolutionOption.None);
+        this.setSelectedSpatialAggregation(AggregationOption.None);
+      }
     }
   },
   methods: {
@@ -639,6 +667,16 @@ export default defineComponent({
           // this will reload datacube metadata as well as scenario runs
           this.selectedModelId = loadedInsight.data_state?.selectedModelId;
         }
+        if (loadedInsight.data_state?.datacubeTitles !== undefined && loadedInsight.data_state?.datacubeTitles.length > 0) {
+          // this will reload datacube metadata as well as scenario runs
+          const selectedOutput = loadedInsight.data_state?.datacubeTitles[0].datacubeOutputName;
+          const outputIndex = this.metadata?.validatedOutputs?.findIndex(o => o.name === selectedOutput) ?? 0;
+          // update the store
+          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
+          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap[datacubeId ?? ''] = outputIndex;
+          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
         if (loadedInsight.data_state?.selectedScenarioIds) {
           // this would only be valid and effective if/after datacube runs are reloaded
           this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
@@ -662,9 +700,10 @@ export default defineComponent({
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
           this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
         }
-        if (loadedInsight.view_state?.selectedOutputIndex) {
+        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
           const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
           this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
@@ -678,6 +717,18 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
+        }
+        // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedYears !== undefined) {
+          this.initialSelectedYears = _.clone(loadedInsight.data_state?.selectedYears);
         }
       }
     },

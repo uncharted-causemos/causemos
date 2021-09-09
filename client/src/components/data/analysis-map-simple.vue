@@ -63,6 +63,7 @@ import {
 import { chartValueFormatter } from '@/utils/string-util';
 import MapLegend from '@/components/widgets/map-legend';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { mapActions, mapGetters } from 'vuex';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -215,6 +216,9 @@ export default {
     curZoom: 0
   }),
   computed: {
+    ...mapGetters({
+      tour: 'tour/tour'
+    }),
     mapFixedOptions() {
       const options = {
         minZoom: 1,
@@ -404,8 +408,18 @@ export default {
   },
   mounted() {
     this.refresh();
+    //
+    // @REVIEW
+    // the map component is visible as well as the spatial-aggregation dropdown config
+    // allow the relevant tour to advance to the next step
+    if (this.tour && this.tour.id.startsWith('aggregations-tour')) {
+      this.enableNextStep();
+    }
   },
   methods: {
+    ...mapActions({
+      enableNextStep: 'tour/enableNextStep'
+    }),
     refresh() {
       if (!this.map || !this.selection) return;
 

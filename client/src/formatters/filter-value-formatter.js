@@ -20,7 +20,7 @@ const FIELDS_INVERSE = _.invert(CodeUtil.FIELDS);
  * Note this is a higher level formatter that uses other basic formatters.
  *
  * @param {Object|String|Array} value - a filter value representation
- * @param {string} key - a field key
+ * @param {string|null} key - a field key
  *
  */
 export default function (value, key) {

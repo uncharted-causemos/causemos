@@ -1,12 +1,5 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <full-screen-modal-header
-      v-if="projectType === ProjectType.Analysis"
-      icon="angle-left"
-      :nav-back-label="navBackLabel"
-      @close="onClose"
-    >
-    </full-screen-modal-header>
     <main class="main">
       <analytical-questions-and-insights-panel />
       <div class="main insight-capture">
@@ -73,7 +66,7 @@
 
           <template #temporal-aggregation-config>
             <dropdown-button
-              class="dropdown-config"
+              class="dropdown-config tour-temporal-agg-dropdown-config"
               :inner-button-label="'Temporal Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedTemporalAggregation"
@@ -93,7 +86,7 @@
 
           <template #spatial-aggregation-config>
             <dropdown-button
-              class="dropdown-config"
+              class="dropdown-config tour-spatial-agg-dropdown-config"
               :inner-button-label="'Spatial Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedSpatialAggregation"
@@ -172,7 +165,6 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { getAnalysis } from '@/services/analysis-service';
-import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState, DataState } from '@/types/Insight';
@@ -197,7 +189,6 @@ export default defineComponent({
     DatacubeDescription,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
-    FullScreenModalHeader,
     MapDropdown
   },
   setup() {
@@ -217,6 +208,11 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+
+    // apply initial data config for this datacube
+    const initialSelectedRegionIds = ref<string[]>([]);
+    const initialSelectedQualifierValues = ref<string[]>([]);
+    const initialSelectedYears = ref<string[]>([]);
 
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const datacubeId = analysisItems.value[0].id;
@@ -252,13 +248,13 @@ export default defineComponent({
         selectedAdminLevel.value = initialViewConfig.selectedAdminLevel;
       }
     }
-    // apply initial data config for this datacube
-    const initialSelectedRegionIds: string[] = [];
+
     if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
       if (initialDataConfig.selectedRegionIds !== undefined) {
-        initialDataConfig.selectedRegionIds.forEach(regionId => {
-          initialSelectedRegionIds.push(regionId);
-        });
+        initialSelectedRegionIds.value = _.clone(initialDataConfig.selectedRegionIds);
+      }
+      if (initialDataConfig.selectedQualifierValues !== undefined) {
+        initialSelectedQualifierValues.value = _.clone(initialDataConfig.selectedQualifierValues);
       }
     }
 
@@ -371,7 +367,8 @@ export default defineComponent({
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      selectedTimestamp
+      selectedTimestamp,
+      initialSelectedQualifierValues
     );
 
     const {
@@ -393,7 +390,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      selectedQualifierValues
+      selectedQualifierValues,
+      initialSelectedYears
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -457,7 +455,9 @@ export default defineComponent({
         }],
         datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
         selectedRegionIds: selectedRegionIds.value,
-        relativeTo: relativeTo.value
+        relativeTo: relativeTo.value,
+        selectedQualifierValues: [...selectedQualifierValues.value],
+        selectedYears: [...selectedYears.value]
       };
       store.dispatch('insightPanel/setDataState', dataState);
 
@@ -514,7 +514,10 @@ export default defineComponent({
       toggleIsQualifierSelected,
       selectedQualifierValues,
       selectedYears,
-      toggleIsYearSelected
+      toggleIsYearSelected,
+      initialSelectedQualifierValues,
+      initialSelectedRegionIds,
+      initialSelectedYears
     };
   },
   data: () => ({
@@ -551,13 +554,7 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       projectType: 'app/projectType'
-    }),
-    navBackLabel(): string {
-      if (this.analysis) {
-        return 'Back to ' + (this.analysis as any).title;
-      }
-      return 'Back to analysis';
-    }
+    })
   },
   methods: {
     ...mapActions({
@@ -636,7 +633,8 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.selectedOutputIndex) {
           const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
           this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
@@ -650,6 +648,17 @@ export default defineComponent({
         }
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedYears !== undefined) {
+          this.initialSelectedYears = _.clone(loadedInsight.data_state?.selectedYears);
         }
       }
     },
@@ -676,7 +685,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-experiment-container {
-  height: 100vh;
+  height: $content-full-height;
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -697,7 +706,8 @@ export default defineComponent({
 }
 
 .datacube-name {
-  @include header-secondary;
+  font-weight: normal;
+  color: $label-color;
   margin-left: 10px;
 }
 

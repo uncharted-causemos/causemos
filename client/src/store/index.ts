@@ -4,6 +4,7 @@ import QueryStore from './modules/query-store';
 import StatementsStore from './modules/statements-store';
 import AppStore from './modules/app-store';
 import PanelStore from './modules/panel-store';
+import TourStore from './modules/tour-store';
 import KnowledgebaseStore from './modules/knowledgebase-store';
 import GraphStore from './modules/graph-store';
 import ModelStore from './modules/model-store';
@@ -20,6 +21,7 @@ export default new Vuex.Store({
     statements: StatementsStore,
     app: AppStore,
     panel: PanelStore,
+    tour: TourStore,
     kb: KnowledgebaseStore,
     graph: GraphStore,
     model: ModelStore,

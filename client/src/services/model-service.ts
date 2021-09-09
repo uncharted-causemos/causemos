@@ -456,11 +456,11 @@ const runSensitivityAnalysis = async (
 };
 
 
-const createBaselineScenario = async (modelSummary: CAGModelSummary, nodes: NodeParameter[]) => {
+const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const modelId = modelSummary.id;
   const numSteps = modelSummary.parameter.num_steps;
   try {
-    const experimentId = await runProjectionExperiment(modelId, numSteps, injectStepZero(nodes, []));
+    const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
     const result: any = await getExperimentResult(modelId, experimentId);
 
     const scenario: NewScenario = {
@@ -651,37 +651,19 @@ export const calculateScenarioPercentageChange = (experiment: ScenarioResult, in
 };
 
 
-// FIXME: Inject step=0 initial value constraints per node, we shouldn't need to do this,
-// engine should handle this quirky case. Sep 2020
-const injectStepZero = (nodeParameters: NodeParameter[], constraints: ConceptProjectionConstraints[]) => {
+// Cleanse constraint payload
+const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
   const result = _.cloneDeep(constraints);
-  nodeParameters.forEach(n => {
-    const concept = n.concept;
-    // const initialValue = _.isNil(n.parameter) ? 0 : n.parameter.initial_value;
-    const timeseries: any = _.get(n.parameter, 'timeseries', []);
-    let initialValue = 0;
-    if (timeseries.length > 0) {
-      initialValue = timeseries[timeseries.length - 1].value;
-    }
 
-    const current = result.find(c => c.concept === concept);
-    if (!_.isNil(current)) {
-      if (!_.some(current.values, v => v.step === 0)) {
-        current.values.push({ step: 0, value: initialValue });
-      }
-    } else {
-      result.push({
-        concept: concept,
-        values: [{ step: 0, value: initialValue }]
-      });
-    }
-  });
-
+  // Reorder by step ascending order - FIXME: Check with DySE if we still need this - Sep 2021
   result.forEach(r => {
     r.values = _.orderBy(r.values, v => v.step);
   });
 
-  return result;
+  // Remove concepts with empty constraints
+  return result.filter(d => {
+    return !_.isEmpty(d.values);
+  });
 };
 
 
@@ -729,7 +711,7 @@ export default {
   hasMergeConflictEdges,
 
   calculateScenarioPercentageChange,
-  injectStepZero,
+  cleanConstraints,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,
