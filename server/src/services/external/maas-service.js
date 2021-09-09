@@ -1,3 +1,4 @@
+
 const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
@@ -75,10 +76,31 @@ const startModelOutputPostProcessing = async (metadata) => {
     });
   }
 
+  // Remove extra fields from Jataware
+  metadata.attributes = undefined;
+  metadata.default_run = undefined;
+
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+
+  let docIds = [];
+  let result;
+  if (await connection.exists([{ field: 'id', value: metadata.id }])) {
+    result = await connection.update({
+      ...metadata,
+      status: 'PROCESSING'
+    }, d => d.id);
+    docIds = [metadata.id];
+  } else {
+    result = await connection.insert({
+      ...metadata,
+      status: 'TEST'
+    }, d => d.id);
+  }
+
   const flowParameters = {
     model_id: metadata.model_id,
     run_id: metadata.id,
-    doc_ids: [metadata.id],
+    doc_ids: docIds,
     data_paths: metadata.data_paths,
     qualifier_map: qualifierMap,
     compute_tiles: true
@@ -93,18 +115,8 @@ const startModelOutputPostProcessing = async (metadata) => {
     },
     json: flowParameters
   };
-
   await requestAsPromise(pipelinePayload);
 
-  // Remove extra fields from Jataware
-  metadata.attributes = undefined;
-  metadata.default_run = undefined;
-
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  const result = await connection.update({
-    ...metadata,
-    status: 'PROCESSING'
-  }, d => d.id);
   return result;
 };
 
