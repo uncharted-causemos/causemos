@@ -34,6 +34,15 @@
         :layer-id="baseLayerId"
         :layer="baseLayer"
       />
+      <template v-if="showPreRenderedViz">
+        <wm-map-image
+          v-for="pregen in preRenderedData" :key="pregen.file"
+          :source="pregen.file"
+          :source-id="imageSourceId"
+          :layer-id="imageLayerId"
+          :coords="pregen.coords"
+        />
+      </template>
       <wm-map-popup
         v-if="showTooltip"
         :layer-id="baseLayerId"
@@ -49,7 +58,7 @@
 import _ from 'lodash';
 // import { getOutputStats } from '@/services/runoutput-service';
 import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
-import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
+import { WmMap, WmMapVector, WmMapImage, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
@@ -147,6 +156,7 @@ export default {
   components: {
     WmMap,
     WmMapVector,
+    WmMapImage,
     WmMapPopup,
     MapLegend
   },
@@ -173,6 +183,10 @@ export default {
     showTooltip: {
       type: Boolean,
       default: false
+    },
+    showPreRenderedViz: {
+      type: Boolean,
+      default: true
     },
     selectedLayerId: {
       type: Number,
@@ -374,6 +388,10 @@ export default {
     },
     isFilterGlobal() {
       return this.filter && this.filter.global;
+    },
+    preRenderedData() {
+      // map supported overlays (received as pre-generated output) must have valid geo-coords
+      return this.selection.preGeneratedOutput.filter(p => p.coords !== undefined);
     }
   },
   watch: {
@@ -398,6 +416,10 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+
+    // the following are needed to render pre-generated overlay
+    this.imageSourceId = 'maas-image-source';
+    this.imageLayerId = 'image-layer';
 
     this.debouncedRefreshGridMap = _.debounce(function() {
       this.refreshGridMap();

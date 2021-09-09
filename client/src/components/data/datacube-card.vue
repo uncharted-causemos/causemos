@@ -141,7 +141,7 @@
               </div>
             </template>
           </modal>
-          <div class="column">
+          <div class="column" style="overflow: auto">
             <div class="dropdown-row">
               <slot
                 name="temporal-aggregation-config"
@@ -203,24 +203,47 @@
                   {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
                 </span>
 
+                <!--
+                  NOTE: we either show the map (and any pre-rendered map overlays)
+                        or
+                        the (other) pre-generated output
+                -->
                 <data-analysis-map
-                  class="card-map"
-                  :style="{ borderColor: colorFromIndex(indx) }"
-                  :output-source-specs="outputSourceSpecs"
-                  :output-selection=spec.id
-                  :relative-to="relativeTo"
-                  :show-tooltip="true"
-                  :selected-layer-id="mapSelectedLayer"
-                  :filters="mapFilters"
-                  :map-bounds="mapBounds"
-                  :region-data="regionalData"
-                  :grid-layer-stats="gridLayerStats"
-                  :selected-base-layer="selectedBaseLayer"
-                  :unit="unit"
-                  @sync-bounds="onSyncMapBounds"
-                  @on-map-load="onMapLoad"
-                  @slide-handle-change="updateMapFilters"
-                />
+                    v-if="!showPreRenderedViz"
+                    class="card-map"
+                    :style="{ borderColor: colorFromIndex(indx) }"
+                    :output-source-specs="outputSourceSpecs"
+                    :output-selection=spec.id
+                    :relative-to="relativeTo"
+                    :show-tooltip="true"
+                    :selected-layer-id="mapSelectedLayer"
+                    :filters="mapFilters"
+                    :map-bounds="mapBounds"
+                    :region-data="regionalData"
+                    :grid-layer-stats="gridLayerStats"
+                    :selected-base-layer="selectedBaseLayer"
+                    :unit="unit"
+                    @sync-bounds="onSyncMapBounds"
+                    @on-map-load="onMapLoad"
+                    @slide-handle-change="updateMapFilters"
+                  />
+                <div
+                  v-if="showPreRenderedViz && spec.preGeneratedOutput && spec.preGeneratedOutput.filter(p => p.coords === undefined).length > 0"
+                  class="pre-rendered-container" >
+                  <template v-for="pregen in spec.preGeneratedOutput.filter(p => p.coords === undefined)" :key="pregen.file">
+                    <img
+                      v-if="pregen.type === 'image'"
+                      :src="pregen.file"
+                      class="pre-rendered-content"
+                      alt="Pre-rendered Visualization"
+                    >
+                    <video v-if="pregen.type === 'video'" class="pre-rendered-content" controls muted>
+                      <source :src="pregen.file" type="video/mp4">
+                      Your browser does not support the video tag.
+                    </video>
+                  </template>
+
+                </div>
               </div>
             </div>
             <div
@@ -284,6 +307,10 @@ export default defineComponent({
     isDescriptionView: {
       type: Boolean,
       default: true
+    },
+    showPreRenderedViz: {
+      type: Boolean,
+      default: false
     },
     selectedAdminLevel: {
       type: Number,
@@ -547,8 +574,8 @@ export default defineComponent({
         // console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
       } else {
-        // console.log('user selected: ' + e.scenarios.length);
-        this.$emit('set-selected-scenario-ids', selectedScenarios.map(s => s.run_id));
+        const selectedRunIDs = selectedScenarios.map(s => s.run_id);
+        this.$emit('set-selected-scenario-ids', selectedRunIDs);
       }
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
@@ -651,6 +678,18 @@ header {
 }
 
 $marginSize: 5px;
+
+.pre-rendered-container {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+
+  .pre-rendered-content {
+    max-width: 100%;
+    max-height: 100%
+  }
+}
 
 .card-map-container {
   flex: 1;

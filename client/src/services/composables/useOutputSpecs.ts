@@ -4,6 +4,7 @@ import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
+import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 
 export default function useOutputSpecs(
   selectedModelId: Ref<string>,
@@ -11,7 +12,8 @@ export default function useOutputSpecs(
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | Indicator | null>,
-  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>
+  selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
+  allModelRunData?: Ref<ModelRun[]>
 ) {
   const { activeFeature } = useActiveDatacubeFeature(metadata);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
@@ -24,16 +26,30 @@ export default function useOutputSpecs(
     }
 
     const activeModelId = modelMetadata.data_id ?? '';
-    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => ({
-      id: timeseriesId,
-      modelId: activeModelId,
-      runId: scenarioId,
-      outputVariable: activeFeature.value,
-      timestamp,
-      temporalResolution: selectedTemporalResolution.value,
-      temporalAggregation: selectedTemporalAggregation.value,
-      spatialAggregation: selectedSpatialAggregation.value
-    }));
+    return selectedTimeseriesPoints.value.map(({ timeseriesId, scenarioId, timestamp }) => {
+      const outputSpec: OutputSpecWithId = {
+        id: timeseriesId,
+        modelId: activeModelId,
+        runId: scenarioId,
+        outputVariable: activeFeature.value,
+        timestamp,
+        temporalResolution: selectedTemporalResolution.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        spatialAggregation: selectedSpatialAggregation.value,
+        preGeneratedOutput: undefined
+      };
+
+      const pregenDataForRun = allModelRunData?.value.find(run => run.id === scenarioId)?.pre_gen_output_paths;
+      if (pregenDataForRun && pregenDataForRun.length > 0) {
+        // ensure that we have an array of objects each describe the pre-gen output
+        // FIXME: remove this condition once the metadata schema is updated
+        if (typeof pregenDataForRun[0] !== 'string') {
+          outputSpec.preGeneratedOutput = pregenDataForRun as PreGeneratedModelRunData[];
+        }
+      }
+
+      return outputSpec;
+    });
   });
   return { outputSpecs };
 }

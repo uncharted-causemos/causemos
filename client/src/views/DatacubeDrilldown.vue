@@ -18,6 +18,7 @@
           :regional-data="regionalData"
           :output-source-specs="outputSpecs"
           :is-description-view="isDescriptionView"
+          :show-pre-rendered-viz="showPreRenderedViz"
           :metadata="metadata"
           :timeseries-data="visibleTimeseriesData"
           :relative-to="relativeTo"
@@ -99,6 +100,17 @@
               @set-base-layer="setBaseLayer"
               @set-data-layer="setDataLayer"
             />
+            <div class="checkbox">
+              <!-- @click="showPreRenderedViz=!showPreRenderedViz" -->
+              <label
+                :class="{ 'checkbox-enabled': showPreRenderedViz }">
+                <i
+                  class="fa fa-lg fa-fw"
+                  :class="{ 'fa-check-square-o': showPreRenderedViz, 'fa-square-o': !showPreRenderedViz }"
+                />
+                Pre-rendered Viz
+              </label>
+            </div>
           </template>
           <template #datacube-description>
             <datacube-description
@@ -409,7 +421,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      allModelRunData
     );
 
     const {
@@ -419,6 +432,16 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy
     );
+
+    const showPreRenderedViz = ref(false);
+    watchEffect(() => {
+      if (selectedScenarioIds.value.length > 0) {
+        // we have one or more selected model runs
+        // check if any of the selected runs have pre-rendered viz
+        const modelRunsWithPreGenData = allModelRunData.value.filter(r => selectedScenarioIds.value.includes(r.id) && r.pre_gen_output_paths !== null && r.pre_gen_output_paths !== undefined && r.pre_gen_output_paths.length > 0);
+        showPreRenderedViz.value = modelRunsWithPreGenData.length > 0;
+      }
+    });
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
@@ -517,7 +540,8 @@ export default defineComponent({
       toggleIsYearSelected,
       initialSelectedQualifierValues,
       initialSelectedRegionIds,
-      initialSelectedYears
+      initialSelectedYears,
+      showPreRenderedViz
     };
   },
   data: () => ({
@@ -676,6 +700,7 @@ export default defineComponent({
         if (_.isEqual(this.selectedScenarioIds, newIds)) return;
       }
       this.selectedScenarioIds = newIds;
+
       this.clearRouteParam();
     }
   }
@@ -709,6 +734,28 @@ export default defineComponent({
   font-weight: normal;
   color: $label-color;
   margin-left: 10px;
+}
+
+.checkbox {
+  user-select: none; /* Standard syntax */
+  display: inline-block;
+  margin: 0;
+  padding: 0;
+  align-self: center;
+  cursor: not-allowed;
+
+  .checkbox-enabled {
+    cursor: pointer;
+    color: black;
+  }
+
+  label {
+    font-weight: normal;
+    margin: 0;
+    padding: 0;
+    cursor: not-allowed;
+    color: gray;
+  }
 }
 
 .search-button {
