@@ -4,7 +4,7 @@ import { Indicator, Model } from '@/types/Datacube';
 import { OutputSpecWithId } from '@/types/Runoutput';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
 import useActiveDatacubeFeature from './useActiveDatacubeFeature';
-import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
+import { ModelRun } from '@/types/ModelRun';
 
 export default function useOutputSpecs(
   selectedModelId: Ref<string>,
@@ -41,11 +41,7 @@ export default function useOutputSpecs(
 
       const pregenDataForRun = allModelRunData?.value.find(run => run.id === scenarioId)?.pre_gen_output_paths;
       if (pregenDataForRun && pregenDataForRun.length > 0) {
-        // ensure that we have an array of objects each describe the pre-gen output
-        // FIXME: remove this condition once the metadata schema is updated
-        if (typeof pregenDataForRun[0] !== 'string') {
-          outputSpec.preGeneratedOutput = pregenDataForRun as PreGeneratedModelRunData[];
-        }
+        outputSpec.preGeneratedOutput = pregenDataForRun;
       }
 
       return outputSpec;

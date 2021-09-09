@@ -33,7 +33,7 @@ export interface ModelRun {
   flow_id: string;
   use_case_id: string;
   data_paths: string[];
-  pre_gen_output_paths: string[] | PreGeneratedModelRunData[];
+  pre_gen_output_paths: PreGeneratedModelRunData[];
   is_default_run: boolean;
   tags: string[];
   status: ModelRunStatus;

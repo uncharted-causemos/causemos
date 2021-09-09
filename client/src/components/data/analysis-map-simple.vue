@@ -391,7 +391,7 @@ export default {
     },
     preRenderedData() {
       // map supported overlays (received as pre-generated output) must have valid geo-coords
-      return this.selection.preGeneratedOutput.filter(p => p.coords !== undefined);
+      return this.selection.preGeneratedOutput ? this.selection.preGeneratedOutput.filter(p => p.coords !== undefined) : [];
     }
   },
   watch: {
