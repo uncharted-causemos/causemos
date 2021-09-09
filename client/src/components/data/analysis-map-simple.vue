@@ -14,7 +14,7 @@
     >
       <wm-map-vector
         v-if="vectorSource"
-        :key="baseLayerTrigger"
+        :key="layerRerenderTrigger"
         :source-id="vectorSourceId"
         :source="vectorSource"
         :source-layer="vectorSourceLayer"
@@ -27,7 +27,7 @@
       />
       <wm-map-vector
         v-if="vectorSource"
-        :key="baseLayerTrigger"
+        :key="layerRerenderTrigger"
         :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
         :promote-id="idPropName"
@@ -154,7 +154,8 @@ export default {
     'on-map-load',
     'aggregation-level-change',
     'slide-handle-change',
-    'sync-bounds'
+    'sync-bounds',
+    'zoom-change'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -198,8 +199,8 @@ export default {
       default: () => undefined
     },
     gridLayerStats: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => undefined
     },
     selectedBaseLayer: {
       type: String,
@@ -212,7 +213,7 @@ export default {
   },
   data: () => ({
     baseLayer: undefined,
-    baseLayerTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
+    layerRerenderTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
@@ -256,31 +257,31 @@ export default {
     },
     gridStats() {
       const result = {};
-      // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
-      // The difference is 6 so we subtract the difference to make the lowest level 0.
-      const Z_DIFF = 6;
-      if (!this.gridLayerStats.length) return result;
-      if (this.baselineSpec) {
-        // Do nothing. computeGridRelativeStats method capture this case.
-      } else if (this.relativeTo === this.outputSelection) {
-        // Stats for the baseline map
-        const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection)?.stats;
-        (stats || []).forEach(stat => {
-          result[stat.zoom - Z_DIFF] = { min: stat.min, max: stat.max };
-        });
-      } else {
-        // Stats globally across all maps
-        for (const item of this.gridLayerStats) {
-          for (const stat of item.stats) {
-            const zoom = stat.zoom - Z_DIFF;
-            if (result[zoom]) {
-              result[zoom] = { min: Math.min(result[zoom].min, stat.min), max: Math.max(result[zoom].max, stat.max) };
-            } else {
-              result[zoom] = { min: stat.min, max: stat.max };
-            }
-          }
-        }
-      }
+      // // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
+      // // The difference is 6 so we subtract the difference to make the lowest level 0.
+      // const Z_DIFF = 6;
+      // if (!this.gridLayerStats.length) return result;
+      // if (this.baselineSpec) {
+      //   // Do nothing. computeGridRelativeStats method capture this case.
+      // } else if (this.relativeTo === this.outputSelection) {
+      //   // Stats for the baseline map
+      //   const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection)?.stats;
+      //   (stats || []).forEach(stat => {
+      //     result[stat.zoom - Z_DIFF] = { min: stat.min, max: stat.max };
+      //   });
+      // } else {
+      //   // Stats globally across all maps
+      //   for (const item of this.gridLayerStats) {
+      //     for (const stat of item.stats) {
+      //       const zoom = stat.zoom - Z_DIFF;
+      //       if (result[zoom]) {
+      //         result[zoom] = { min: Math.min(result[zoom].min, stat.min), max: Math.max(result[zoom].max, stat.max) };
+      //       } else {
+      //         result[zoom] = { min: stat.min, max: stat.max };
+      //       }
+      //     }
+      //   }
+      // }
       return result;
     },
     gridStatsForCurZoom() {
@@ -351,6 +352,10 @@ export default {
     adminLayerStats() {
       console.log('adminlayerstats changed');
       this.debouncedRefresh();
+    },
+    gridLayerStats() {
+      console.log('gridLayerStats changed');
+      this.debouncedRefresh();
     }
   },
   created() {
@@ -372,6 +377,29 @@ export default {
       this.updateLayerFilter();
     },
     getExtent() {
+      if (this.isGridMap) {
+        return this.getGridMapExtent();
+      }
+      return this.getAdminMapExtent();
+    },
+    getGridMapExtent() {
+      if (!this.gridLayerStats) return;
+      if (this.baselineSpec) {
+        return { min: 0, max: 1 };
+      } else if (this.outputSelection === this.relativeTo) {
+        const zoomLevels = Object.keys(this.gridLayerStats.global).map(Number);
+        const maxZoom = Math.max(...zoomLevels);
+        const zoom = Math.min(maxZoom, this.curZoom);
+        return this.gridLayerStats?.baseline[String(zoom)];
+      } else {
+        const zoomLevels = Object.keys(this.gridLayerStats.global).map(Number);
+        const maxZoom = Math.max(...zoomLevels);
+        const zoom = Math.min(maxZoom, this.curZoom);
+        return this.gridLayerStats?.global[String(zoom)];
+      }
+    },
+    getAdminMapExtent() {
+      if (!this.adminLayerStats) return;
       if (this.baselineSpec) {
         return this.adminLayerStats?.difference[this.adminLevel];
       } else if (this.outputSelection === this.relativeTo) {
@@ -438,6 +466,11 @@ export default {
       const zoom = Math.floor(this.map.getZoom());
       if (this.curZoom !== zoom) {
         this.curZoom = zoom;
+        this.$emit('zoom-change', {
+          outputSpecId: this.outputSelection,
+          map: this.map,
+          zoom: this.curZoom
+        });
       }
     },
     onMapLoad(event) {
@@ -529,9 +562,12 @@ export default {
       this._unsetHover(event.map);
     },
     onStyleChange() {
-      // This line of code must be executed after map style is changed so that the data layer shows up.
+      // HACK: This line of code must be executed after map style is changed so that the data layer shows up.
       // The data layer only shows up if wm-map-vector is re-rendered using :key after the style change.
-      this.baseLayerTrigger = this.selectedBaseLayerEndpoint;
+      // Also force rerender when selected data layer cahnges (grid <-> admin)
+      setTimeout(() => {
+        this.layerRerenderTrigger = this.selectedBaseLayerEndpoint + this.isGridMap;
+      }, 200);
     },
     popupValueFormatter(feature) {
       const prop = this.isGridMap ? feature?.properties : feature?.state;

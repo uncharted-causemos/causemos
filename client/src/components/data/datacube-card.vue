@@ -211,7 +211,6 @@
                     :relative-to="relativeTo"
                     :show-tooltip="true"
                     :selected-layer-id="mapSelectedLayer"
-                    :filters="mapFilters"
                     :map-bounds="mapBounds"
                     :region-data="regionalData"
                     :admin-layer-stats="adminLayerStats"
@@ -220,7 +219,7 @@
                     :unit="unit"
                     @sync-bounds="onSyncMapBounds"
                     @on-map-load="onMapLoad"
-                    @slide-handle-change="updateMapFilters"
+                    @zoom-change="updateMapCurSyncedZoom"
                   />
                 </div>
               </div>
@@ -232,7 +231,7 @@
                 <div class="card-map" />
               </div>
               <div class="card-maps-legend-container">
-                <div v-for="(data, index) in mapLegendData[isGridLayer ? 'grid' : 'admin']" :key="index">
+                <div v-for="(data, index) in (isGridLayer ? gridMapLayerLegendData : adminMapLayerLegendData)" :key="index">
                   <map-legend :ramp="data" />
                 </div>
               </div>
@@ -246,13 +245,13 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect } from 'vue';
+import { defineComponent, ref, PropType, toRefs, computed, watchEffect } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ModelRun } from '@/types/ModelRun';
-import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
+import { ScenarioData } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import { getOutputStats } from '@/services/runoutput-service';
@@ -379,7 +378,6 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const {
-      selectedScenarioIds,
       allModelRunData,
       metadata,
       outputSourceSpecs,
@@ -421,10 +419,8 @@ export default defineComponent({
         _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
     });
 
-    const mapLegendData = ref<{
-      admin: MapLegendColor[][];
-      grid: MapLegendColor[][];
-    }>({ admin: [], grid: [] });
+    const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
+    const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
     const adminLayerStats = ref<any>({});
     watchEffect(() => {
       if (!regionalData.value) return;
@@ -432,26 +428,25 @@ export default defineComponent({
       if (relativeTo.value) {
         const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
         const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
-        mapLegendData.value = {
-          ...mapLegendData.value,
-          admin: [
-            createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
-            createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
-          ]
-        };
+        adminMapLayerLegendData.value = [
+          createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
+          createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
+        ];
       } else {
         const { min, max } = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
-        mapLegendData.value = {
-          ...mapLegendData.value,
-          admin: [
-            createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
-          ]
-        };
+        adminMapLayerLegendData.value = [
+          createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+        ];
       }
       console.log('From regionDataChange: ', adminLayerStats.value);
     });
 
     const gridLayerStats = ref<any>({});
+    const mapCurZoom = ref<number>(0);
+    const updateMapCurSyncedZoom = (data: { zoom: number }) => {
+      if (mapCurZoom.value === data.zoom) return;
+      mapCurZoom.value = data.zoom;
+    };
 
     watchEffect(async onInvalidate => {
       if (outputSourceSpecs.value.length === 0) return;
@@ -464,51 +459,33 @@ export default defineComponent({
       gridLayerStats.value = computeGridLayerStats(result, (relativeTo.value || undefined));
     });
 
-    // watchEffect(() => {
-    //   // Update map legend data for grid map
-    //   if (_.isEmpty(gridLayerStats.value)) return;
-    //   if (relativeTo.value) {
-    //     const baseline = gridLayerStats.value.baseline[0];
-    //     const difference = gridLayerStats.value.difference[0];
-    //     mapLegendData.value = {
-    //       ...mapLegendData.value,
-    //       admin: [
-    //         createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
-    //         createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
-    //       ]
-    //     };
-    //   } else {
-    //     const { min, max } = gridLayerStats.value.global[0];
-    //     mapLegendData.value = {
-    //       ...mapLegendData.value,
-    //       admin: [
-    //         createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
-    //       ]
-    //     };
-    //   }
-    // });
-
-    const mapFilters = ref<AnalysisMapFilter[]>([]);
-    const updateMapFilters = (data: AnalysisMapFilter) => {
-      mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
-    };
-    // When the list of selected scenario IDs changes, remove any map filters
-    //  that no longer apply to any of the selected scenarios
-    watch(
-      () => selectedScenarioIds.value,
-      () => {
-        mapFilters.value = mapFilters.value.filter(filter => {
-          return selectedScenarioIds.value.find(scenarioId => filter.id === scenarioId);
-        });
-      }
-    );
+    watchEffect(() => {
+      // Update map legend data for grid map
+      if (_.isEmpty(gridLayerStats.value)) return;
+      if (relativeTo.value) return;
+      // if (relativeTo.value) {
+      //   const baseline = gridLayerStats.value.baseline[String(mapCurZoom.value)];
+      //   const difference = gridLayerStats.value.difference[String(mapCurZoom.value)];
+      //   if (!baseline || !difference) return;
+      //   gridMapLayerLegendData.value = [
+      //     createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
+      //     createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
+      //   ];
+      // } else {
+      const global = gridLayerStats.value.global[String(mapCurZoom.value)];
+      if (!global) return;
+      gridMapLayerLegendData.value = [
+        createMapLegendData([global.min, global.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+      ];
+      // }
+    });
 
     return {
+      updateMapCurSyncedZoom,
       adminLayerStats,
       gridLayerStats,
-      mapLegendData,
-      updateMapFilters,
-      mapFilters,
+      adminMapLayerLegendData,
+      gridMapLayerLegendData,
       colorFromIndex,
       emitTimestampSelection,
       dimensions,
