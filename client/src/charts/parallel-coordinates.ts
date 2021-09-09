@@ -9,7 +9,7 @@ import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
-import _ from 'lodash';
+import _, { Dictionary } from 'lodash';
 import { ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 
 import { colorFromIndex } from '@/utils/colors-util';
@@ -629,12 +629,28 @@ function renderParallelCoordinates(
 
       if (selectedLineData) {
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
-          deselectLine(selectedLine, event, lineStrokeWidthNormal);
           currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
+          deselectLine(selectedLine, event, lineStrokeWidthNormal);
+          const lineDict = currentLineSelection.reduce((acc: Dictionary<number>, sl, i) => {
+            acc[sl.run_id] = i;
+            return acc;
+          }, {});
+          const lines = d3.select(this.parentElement).selectAll('.line');
+          lines.data(data).each(function(lineData) {
+            const hasIndex = lineDict[lineData.run_id];
+            if (hasIndex !== undefined) {
+              const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+              if (lineData.status === ModelRunStatus.Ready) {
+                // set an incremental index for this line as part of the selected line collection
+                selectedLine.attr('selection-index', hasIndex);
+                selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthSelected);
+              }
+            }
+          });
         } else {
-          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
           currentLineSelection.push(selectedLineData);
           updateSelectionTooltips(svgElement, selectedLine);
+          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
         }
       } else {
         currentLineSelection.length = 0;
@@ -1574,9 +1590,13 @@ function findLabelForValue(dim: DimensionInfo, value: string | number) {
 
 function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
   const selectedLineData = selectedLine.datum();
-
   if (selectedLineData) {
     // Use D3 to select the line, change color and size
+    const selectedLineIndex = currentLineSelection.findIndex((sl) => sl.run_id === selectedLineData.run_id);
+    if (selectedLineIndex > -1) {
+      selectedLine.attr('selection-index', selectedLineIndex);
+    }
+
     selectedLine
       .classed('selected', true)
       .transition().duration(highlightDuration)
