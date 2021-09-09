@@ -9,7 +9,7 @@ import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
-import _, { Dictionary } from 'lodash';
+import _ from 'lodash';
 import { ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 
 import { colorFromIndex } from '@/utils/colors-util';
@@ -631,18 +631,18 @@ function renderParallelCoordinates(
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
           currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
           deselectLine(selectedLine, event, lineStrokeWidthNormal);
-          const lineDict = currentLineSelection.reduce((acc: Dictionary<number>, sl, i) => {
-            acc[sl.run_id] = i;
+          const lineDict = currentLineSelection.reduce((acc: Map<string|number, number>, sl, i) => {
+            acc.set(sl.run_id, i);
             return acc;
-          }, {});
+          }, new Map());
           const lines = d3.select(this.parentElement).selectAll('.line');
           lines.data(data).each(function(lineData) {
-            const hasIndex = lineDict[lineData.run_id];
-            if (hasIndex !== undefined) {
+            const index = lineDict.get(lineData.run_id);
+            if (index !== undefined) {
               const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
               if (lineData.status === ModelRunStatus.Ready) {
                 // set an incremental index for this line as part of the selected line collection
-                selectedLine.attr('selection-index', hasIndex);
+                selectedLine.attr('selection-index', index);
                 selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthSelected);
               }
             }
