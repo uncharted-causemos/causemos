@@ -629,12 +629,28 @@ function renderParallelCoordinates(
 
       if (selectedLineData) {
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
-          deselectLine(selectedLine, event, lineStrokeWidthNormal);
           currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
+          deselectLine(selectedLine, event, lineStrokeWidthNormal);
+          const lineDict = currentLineSelection.reduce((acc: Map<string|number, number>, sl, i) => {
+            acc.set(sl.run_id, i);
+            return acc;
+          }, new Map());
+          const lines = d3.select(this.parentElement).selectAll('.line');
+          lines.data(data).each(function(lineData) {
+            const index = lineDict.get(lineData.run_id);
+            if (index !== undefined) {
+              const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+              if (lineData.status === ModelRunStatus.Ready) {
+                // set an incremental index for this line as part of the selected line collection
+                selectedLine.attr('selection-index', index);
+                selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthSelected);
+              }
+            }
+          });
         } else {
-          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
           currentLineSelection.push(selectedLineData);
           updateSelectionTooltips(svgElement, selectedLine);
+          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
         }
       } else {
         currentLineSelection.length = 0;
@@ -1574,9 +1590,13 @@ function findLabelForValue(dim: DimensionInfo, value: string | number) {
 
 function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
   const selectedLineData = selectedLine.datum();
-
   if (selectedLineData) {
     // Use D3 to select the line, change color and size
+    const selectedLineIndex = currentLineSelection.findIndex((sl) => sl.run_id === selectedLineData.run_id);
+    if (selectedLineIndex > -1) {
+      selectedLine.attr('selection-index', selectedLineIndex);
+    }
+
     selectedLine
       .classed('selected', true)
       .transition().duration(highlightDuration)
