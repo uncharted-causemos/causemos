@@ -2,12 +2,12 @@ const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
+const requestAsPromise = rootRequire('/util/request-as-promise');
 const { sendToPipeline } = rootRequire('services/external/prefect-queue-service');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
 const datacubeService = rootRequire('/services/datacube-service');
-const requestAsPromise = rootRequire('/util/request-as-promise');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
