@@ -51,6 +51,10 @@ const submitModelRun = async(metadata) => {
  */
 const startModelOutputPostProcessing = async (metadata) => {
   Logger.info(`Start model output processing ${metadata.model_name} ${metadata.id} `);
+  if (!metadata.model_id || !metadata.id) {
+    Logger.error('Required ids for model output post processing were not provided');
+    return {};
+  }
   const filters = {
     clauses: [
       { field: 'id', operand: 'or', isNot: false, values: [metadata.model_id] }
