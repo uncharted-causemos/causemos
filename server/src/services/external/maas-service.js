@@ -1,14 +1,13 @@
 const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const { processFilteredData } = rootRequire('util/post-processing-util.ts');
-const requestAsPromise = rootRequire('/util/request-as-promise');
+const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
+const { sendToPipeline } = rootRequire('services/external/prefect-queue-service.ts');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
 const datacubeService = rootRequire('/services/datacube-service');
-
-const QUEUE_SERVICE_URL = 'http://10.65.18.52:4040/data-pipeline/enqueue';
+const requestAsPromise = rootRequire('/util/request-as-promise');
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
@@ -79,18 +78,8 @@ const startModelOutputPostProcessing = async (metadata) => {
     qualifier_map: qualifierMap,
     compute_tiles: true
   };
+  sendToPipeline(flowParameters);
 
-  const pipelinePayload = {
-    method: 'PUT',
-    url: QUEUE_SERVICE_URL,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: flowParameters
-  };
-
-  await requestAsPromise(pipelinePayload);
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
   const result = await connection.update({
     ...metadata,
@@ -178,6 +167,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
 
   processFilteredData(metadata);
+  removeUnwantedData(metadata);
   metadata.type = 'indicator';
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
@@ -270,18 +260,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     qualifier_map: qualifierMap,
     is_indicator: true
   };
-
-  const pipelinePayload = {
-    method: 'PUT',
-    url: QUEUE_SERVICE_URL,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: flowParameters
-  };
-
-  await requestAsPromise(pipelinePayload);
+  sendToPipeline(flowParameters);
   if (newIndicatorMetadata.length > 0) {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
     const result = await connection.insert(newIndicatorMetadata, d => d.id);

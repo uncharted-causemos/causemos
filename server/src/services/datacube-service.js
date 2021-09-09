@@ -1,7 +1,7 @@
 const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const domainProjectService = rootRequire('/services/domain-project-service');
-const { processFilteredData } = rootRequire('util/post-processing-util.ts');
+const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const Logger = rootRequire('/config/logger');
 
 /**
@@ -41,6 +41,7 @@ const insertDatacube = async(metadata) => {
   metadata.type = metadata.type || 'model'; // Assume these ar all models for now
   metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
   processFilteredData(metadata);
+  removeUnwantedData(metadata);
 
   metadata.data_id = metadata.id;
   metadata.status = 'REGISTERED';
