@@ -276,16 +276,10 @@ export default defineComponent({
     async openDrilldown() {
       // NOTE: instead of replacing the datacubeIDs array,
       // ensure that the current datacubeId is at 0 index
-      let workingAnalysisItems = this.analysisItems.map((item: AnalysisItem): AnalysisItem => item);
-      const indx = workingAnalysisItems.findIndex((ai: any) => ai.id === this.props.id);
-      if (indx > 0) {
-        // move to 0-index
-        const targetItem = workingAnalysisItems[indx];
-        workingAnalysisItems = workingAnalysisItems.filter((ai: any) => ai.id !== this.props.id);
-        workingAnalysisItems.unshift(targetItem);
-      }
+      const workingAnalysisItems = this.analysisItems.map((item: AnalysisItem): AnalysisItem => item);
       const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
       await this.store.dispatch('dataAnalysis/updateAnalysisItems', updatedAnalysisInfo);
+      await this.store.dispatch('dataAnalysis/setSelectedItemId', this.props.id);
 
       router.push({
         name: 'data',

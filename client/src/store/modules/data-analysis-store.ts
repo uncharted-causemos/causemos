@@ -26,7 +26,10 @@ const state = { ...DEFAULT_STATE };
 const getters: GetterTree<AnalysisState, any> = {
   analysisItems: state => state.analysisItems,
   analysisId: state => state.currentAnalysisId,
-  selectedItem: state => state.analysisItems.find(item => item.id === state.selectedAnalysisId),
+  selectedItem: state => {
+    const itemForId = state.analysisItems.find(item => item.id === state.selectedAnalysisId);
+    return _.isUndefined(itemForId) ? state.analysisItems[0] : itemForId;
+  },
   timeSelectionSyncing: state => state.timeSelectionSyncing
 };
 
@@ -57,7 +60,7 @@ const actions: ActionTree<AnalysisState, any> = {
     const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
     commit('setAnalysisItems', items);
   },
-  setSelectedAnalysisId({ state, commit }, newId: string) {
+  setSelectedAnalysisId({ commit }, newId: string) {
     commit('setSelectedItemId', newId);
   },
   setTimeSelectionSyncing({ commit }, newValue: boolean) {
