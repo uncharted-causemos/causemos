@@ -30,6 +30,7 @@ export default function(
     columnOrder,
     showRankLabels = false
   } = options;
+
   const margin = {
     top: axisLabelMargin,
     bottom: 0,
@@ -46,6 +47,9 @@ export default function(
     });
   });
 
+  console.log(cleanData);
+  // other option: add viewbox to svg
+  // just make grid static size
   const xScale = d3
     .scaleBand()
     .domain(columnOrder || data.columns)
@@ -56,12 +60,21 @@ export default function(
     .domain(rowOrder || data.rows)
     .range([margin.top, height - margin.bottom]);
 
+  let rowHeight = yScale.bandwidth();
+  console.log('before: ', rowHeight);
+  if (rowHeight < 10) {
+    rowHeight = 10;
+  }
+  console.log('after: ', rowHeight);
+
 
   const valueDomain = [d3.min(data.value), (clampColourRange ? d3.max(data.value) : 1)];
   let valueScale = log ? d3.scaleSequentialLog() : d3.scaleSequential();
   valueScale = valueScale
     .domain(valueDomain)
     .interpolator(d3.interpolateGreys);
+
+  // svgElement.attr('overflow', 'scroll').attr('viewBox', '0,0,150,420');
 
   const xAxis = svgElement
     .append('g')

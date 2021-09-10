@@ -148,8 +148,8 @@ export default {
       const svgHeight = height || this.$refs['matrix-container'].clientHeight;
       const options = {
         axisLabelMargin: AXIS_LABEL_MARGIN_PX,
-        width: svgWidth,
-        height: svgHeight,
+        width: 4 * svgWidth,
+        height: 4 * svgHeight,
         rowOrder: this.rowOrder,
         columnOrder: this.columnOrder,
         showRankLabels: true
@@ -276,10 +276,11 @@ export default {
   .matrix-container {
     grid-area: matrix;
     position: relative;
+    overflow: scroll;
 
     svg {
-      width: 100%;
-      height: 100%;
+      // width: 100%; // could make svg as big as needed, then scroll svg in container
+      // height: 100%;
       transition: opacity 0.3s ease-out;
 
       &.faded {
