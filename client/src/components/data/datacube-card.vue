@@ -477,20 +477,27 @@ export default defineComponent({
       return metadata.value !== null && isModel(metadata.value);
     });
 
-    // only show the 'Other Viz' tab for models
-    const headerGroupButtons = ref([]) as Ref<{label: string; value: string}[]>;
+    const headerGroupButtons = ref([
+      { label: 'Descriptions', value: 'description' },
+      { label: 'Data', value: 'data' },
+      { label: 'Other Viz', value: 'pre-rendered-viz' }
+    ]) as Ref<{label: string; value: string}[]>;
     watchEffect(() => {
-      if (metadata.value && isModelMetadata.value) {
-        headerGroupButtons.value = [
-          { label: 'Descriptions', value: 'description' },
-          { label: 'Data', value: 'data' },
-          { label: 'Other Viz', value: 'pre-rendered-viz' }
-        ];
-      } else {
-        headerGroupButtons.value = [
-          { label: 'Descriptions', value: 'description' },
-          { label: 'Data', value: 'data' }
-        ];
+      const headerGroupButtonsSimple = [
+        { label: 'Descriptions', value: 'description' },
+        { label: 'Data', value: 'data' }
+      ];
+      // indicators should not have the 'Other Viz' tab
+      const isIndicatorDatacube = metadata.value !== null && isIndicator(metadata.value);
+      if (isIndicatorDatacube) {
+        headerGroupButtons.value = headerGroupButtonsSimple;
+      }
+      // models with no pre-generated data should not have the 'Other Viz' tab
+      if (allModelRunData.value !== null && allModelRunData.value.length > 0) {
+        const runsWithPreGenDataAvailable = _.some(allModelRunData.value, r => r.pre_gen_output_paths && _.some(r.pre_gen_output_paths, p => p.coords === undefined));
+        if (!runsWithPreGenDataAvailable) {
+          headerGroupButtons.value = headerGroupButtonsSimple;
+        }
       }
     });
 
