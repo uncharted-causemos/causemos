@@ -104,7 +104,7 @@ const startModelOutputPostProcessing = async (metadata) => {
     compute_tiles: true
   };
 
-  sendToPipeline(flowParameters);
+  await sendToPipeline(flowParameters);
   // Remove extra fields from Jataware
   metadata.attributes = undefined;
   metadata.default_run = undefined;
@@ -189,7 +189,10 @@ const getJobStatus = async (runId) => {
  */
 const startIndicatorPostProcessing = async (metadata) => {
   Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
-
+  if (!metadata.id) {
+    Logger.error('Required ids for indicator post processing were not provided');
+    return;
+  }
   processFilteredData(metadata);
   removeUnwantedData(metadata);
   metadata.type = 'indicator';
@@ -284,7 +287,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     qualifier_map: qualifierMap,
     is_indicator: true
   };
-  sendToPipeline(flowParameters);
+  await sendToPipeline(flowParameters);
   if (newIndicatorMetadata.length > 0) {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
     const result = await connection.insert(newIndicatorMetadata, d => d.id);
