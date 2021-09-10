@@ -14,6 +14,7 @@
               :is-driver="true"
               :neighborhood-chart-data="scenarioData"
               :selected-scenario-id="selectedScenarioId"
+              @click="openNeighborDrilldown(driver.node)"
               class="neighbor-node"
             />
           </template>
@@ -179,6 +180,7 @@
               class="neighbor-node"
               :neighborhood-chart-data="scenarioData"
               :selected-scenario-id="selectedScenarioId"
+              @click="openNeighborDrilldown(impact.node)"
             />
           </template>
         </div>
@@ -415,6 +417,18 @@ export default defineComponent({
       });
     };
 
+    const openNeighborDrilldown = (node: any) => {
+      router.push({
+        name: 'nodeDrilldown',
+        params: {
+          project: project.value,
+          currentCAG: currentCAG.value,
+          projectType: ProjectType.Analysis,
+          nodeId: node.id
+        }
+      });
+    };
+
     const indicatorId = computed(() => {
       return selectedNode.value?.parameter?.id ?? null;
     });
@@ -640,6 +654,7 @@ export default defineComponent({
       drivers,
       impacts,
       collapseNode,
+      openNeighborDrilldown,
       modelComponents,
       scenarios,
       selectedNodeScenarioData,
@@ -840,6 +855,7 @@ input[type="radio"] {
 .neighbor-node {
   margin-top: 10px;
   background: white;
+  cursor: pointer;
 }
 
 h5 {
