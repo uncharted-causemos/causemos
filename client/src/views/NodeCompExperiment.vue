@@ -532,7 +532,6 @@ export default defineComponent({
       let admin3 = '';
 
       if (this.selectedRegionIds.length > 0) {
-        console.log('!!', this.selectedRegionIds);
         const regionList = this.selectedRegionIds[0].split('__');
         if (regionList.length > 0) {
           if (regionList[0]) country = regionList[0];
