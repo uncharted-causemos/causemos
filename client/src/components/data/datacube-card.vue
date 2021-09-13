@@ -115,18 +115,17 @@
             FIXME: this should be done directly against allModelRunData
            -->
           <div
-            v-if="currentTabView === 'pre-rendered-viz' && outputSourceSpecs.length > 0">
+            v-if="currentTabView === 'pre-rendered-viz' && outputSourceSpecs.length > 0"
+            style="display: flex; height: 100%; flex-direction: column">
 
             <!-- a global list
               of all pre-rendered-viz items from all runs,
               and enable selection by item name/id instead of index
               which won't work when different model runs have different list of pre-rendered items -->
             <div v-if="preGenDataItems.length > 0"
-              style="display: flex; padding: 5px; flex-basis: 100%; height: fit-content;">
+              style="display: flex; padding: 5px;">
               <div style="padding-right: 10px">Selected Viz:</div>
-              <select name="pre-gen-outputs" style="width: max-content;"
-                @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]"
-              >
+              <select name="pre-gen-outputs" @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]">
                 <option
                   v-for="pregenItem in preGenDataItems" :key="pregenItem"
                   :selected="pregenItem === selectedPreGenDataItem"
@@ -136,7 +135,7 @@
               </select>
             </div>
 
-            <template class="column card-maps-container" style="flex-direction: revert;">
+            <div class="column card-maps-container" style="flex-direction: revert;">
               <div v-for="(spec, indx) in outputSourceSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec)"
                 class="card-map-container"
                 :style="{ borderColor: colorFromIndex(indx) }"
@@ -166,7 +165,7 @@
                   No pre-generated data available for some selected scenario(s)!
                 </template>
               </div>
-            </template>
+            </div>
           </div>
 
           <datacube-scenario-header
