@@ -199,6 +199,7 @@ function generateSelectableTimestamps(
         // skip if we do have a value for this timeseries
         const { color, name } = timeseries;
         if (valuesAtThisTimestamp.findIndex(e => e.name === name) < 0) {
+          // NOTE: adding this 'n/a' requires careful handling when sorting values
           valuesAtThisTimestamp.push({ color, name, value: 'n/a' });
         }
       });
@@ -265,7 +266,7 @@ function generateSelectableTimestamps(
       )
       .attr('fill', TOOLTIP_BORDER_COLOUR);
     // Notch background
-    // Extend side length of notch backgroundto make sure it covers the right
+    // Extend side length of notch background to make sure it covers the right
     //  half of the border rect
     tooltip
       .append('rect')
@@ -287,30 +288,23 @@ function generateSelectableTimestamps(
       .text(unit);
     // Display a line for each value at this timestamp
     (valuesAtEachTimestamp.get(timestamp) ?? [])
-    // values should be sorted matching the timeseries list
-      /*
       .sort(({ value: valueA }, { value: valueB }) => {
-        return (typeof valueA === 'number' && typeof valueB === 'number') ? (valueB - valueA) : -1;
+        // strings should always be sorted at the bottom
+        return (typeof valueA === 'number' && typeof valueB === 'number') ? (valueB - valueA) : 1;
       })
-      */
-      .sort(({ name: nameA }, { name: nameB }) => {
-        const timeseriesAIndx = timeseriesList.findIndex(t => t.name === nameA);
-        const timeseriesBIndx = timeseriesList.findIndex(t => t.name === nameB);
-
-        return timeseriesAIndx - timeseriesBIndx;
-      })
-      .forEach(({ color, /* name, */ value }, index) => {
+      .forEach(({ color, name, value }, index) => {
         // +1 line because the origin point for text elements is the bottom left corner
         // +1 line because the units are displayed above
         const yPosition = TOOLTIP_LINE_HEIGHT * (index + 2);
-        /*
+        // max number of chars before truncating the text of each qualifier value
+        // FIXME: this is a simplification rather than calculating the actual name/value pixel width and truncate accordingly
+        const maxNameLen = 10;
         tooltip
           .append('text')
           .attr('transform', translate(TOOLTIP_PADDING, yPosition))
           .style('fill', color)
           .style('font-weight', 'bold')
-          .text(name);
-        */
+          .text(name.length > maxNameLen ? name.substring(0, maxNameLen) + '...' : name);
         tooltip
           .append('text')
           .attr('transform', translate(TOOLTIP_WIDTH - TOOLTIP_PADDING, yPosition))
