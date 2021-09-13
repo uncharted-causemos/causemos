@@ -1,14 +1,13 @@
-
 const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
+const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const requestAsPromise = rootRequire('/util/request-as-promise');
+const { sendToPipeline } = rootRequire('services/external/prefect-queue-service');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
 const datacubeService = rootRequire('/services/datacube-service');
-
-const QUEUE_SERVICE_URL = 'http://10.65.18.52:4040/data-pipeline/enqueue';
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
@@ -54,9 +53,8 @@ const startModelOutputPostProcessing = async (metadata) => {
   Logger.info(`Start model output processing ${metadata.model_name} ${metadata.id} `);
   if (!metadata.model_id || !metadata.id) {
     Logger.error('Required ids for model output post processing were not provided');
-    return;
+    return {};
   }
-
   const filters = {
     clauses: [
       { field: 'id', operand: 'or', isNot: false, values: [metadata.model_id] }
@@ -106,16 +104,10 @@ const startModelOutputPostProcessing = async (metadata) => {
     compute_tiles: true
   };
 
-  const pipelinePayload = {
-    method: 'PUT',
-    url: QUEUE_SERVICE_URL,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: flowParameters
-  };
-  await requestAsPromise(pipelinePayload);
+  await sendToPipeline(flowParameters);
+  // Remove extra fields from Jataware
+  metadata.attributes = undefined;
+  metadata.default_run = undefined;
 
   return result;
 };
@@ -201,21 +193,9 @@ const startIndicatorPostProcessing = async (metadata) => {
     Logger.error('Required ids for indicator post processing were not provided');
     return;
   }
-
-  // Remove some unused Jataware fields
-  metadata.attributes = undefined;
-
-  // Apparently ES can't support negative timestamps
-  if (metadata.period && metadata.period.gte < 0) {
-    metadata.period.gte = 0;
-  }
-  if (metadata.period && metadata.period.lte < 0) {
-    metadata.period.lte = 0;
-  }
-
+  processFilteredData(metadata);
+  removeUnwantedData(metadata);
   metadata.type = 'indicator';
-  metadata.family_name = metadata.family_name || metadata.name;
-
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
   //        the following function would be called at:
@@ -254,8 +234,6 @@ const startIndicatorPostProcessing = async (metadata) => {
       const outputRes = output.data_resolution && output.data_resolution.temporal_resolution;
       const resIndex = resolutions.indexOf(outputRes || '');
       highestRes = Math.max(highestRes, resIndex);
-
-      output.id = undefined;
 
       const clonedMetadata = _.cloneDeep(metadata);
       clonedMetadata.data_id = metadata.id;
@@ -309,18 +287,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     qualifier_map: qualifierMap,
     is_indicator: true
   };
-
-  const pipelinePayload = {
-    method: 'PUT',
-    url: QUEUE_SERVICE_URL,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: flowParameters
-  };
-
-  await requestAsPromise(pipelinePayload);
+  await sendToPipeline(flowParameters);
   if (newIndicatorMetadata.length > 0) {
     const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
     const result = await connection.insert(newIndicatorMetadata, d => d.id);
