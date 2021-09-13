@@ -892,30 +892,6 @@ export default defineComponent({
   min-height: 0;
 }
 
-.checkbox {
-  user-select: none; /* Standard syntax */
-  display: inline-block;
-  margin: 0;
-  padding: 0;
-  align-self: center;
-  cursor: not-allowed;
-
-  .checkbox-enabled {
-    cursor: pointer;
-    color: black;
-  }
-
-  label {
-    font-weight: normal;
-    margin: 0;
-    padding: 0;
-    cursor: not-allowed;
-    color: gray;
-  }
-}
-
-
-
 .datacube-expanded {
   min-width: 0;
   flex: 1;

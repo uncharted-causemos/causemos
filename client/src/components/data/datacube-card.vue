@@ -463,19 +463,19 @@ export default defineComponent({
     const headerGroupButtons = ref([
       { label: 'Descriptions', value: 'description' },
       { label: 'Data', value: 'data' },
-      { label: 'Other Viz', value: 'pre-rendered-viz' }
+      { label: 'Media', value: 'pre-rendered-viz' }
     ]) as Ref<{label: string; value: string}[]>;
     watchEffect(() => {
       const headerGroupButtonsSimple = [
         { label: 'Descriptions', value: 'description' },
         { label: 'Data', value: 'data' }
       ];
-      // indicators should not have the 'Other Viz' tab
+      // indicators should not have the 'Media' tab
       const isIndicatorDatacube = metadata.value !== null && isIndicator(metadata.value);
       if (isIndicatorDatacube) {
         headerGroupButtons.value = headerGroupButtonsSimple;
       }
-      // models with no pre-generated data should not have the 'Other Viz' tab
+      // models with no pre-generated data should not have the 'Media' tab
       if (allModelRunData.value !== null && allModelRunData.value.length > 0) {
         const runsWithPreGenDataAvailable = _.some(allModelRunData.value, r => r.pre_gen_output_paths && _.some(r.pre_gen_output_paths, p => p.coords === undefined));
         if (!runsWithPreGenDataAvailable) {

@@ -722,28 +722,6 @@ export default defineComponent({
   margin-left: 10px;
 }
 
-.checkbox {
-  user-select: none; /* Standard syntax */
-  display: inline-block;
-  margin: 0;
-  padding: 0;
-  align-self: center;
-  cursor: not-allowed;
-
-  .checkbox-enabled {
-    cursor: pointer;
-    color: black;
-  }
-
-  label {
-    font-weight: normal;
-    margin: 0;
-    padding: 0;
-    cursor: not-allowed;
-    color: gray;
-  }
-}
-
 .search-button {
   align-self: center;
   margin: 10px 0;
