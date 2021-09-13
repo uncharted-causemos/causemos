@@ -2,6 +2,7 @@ const removeUnwantedData = (metadata) => {
   metadata.stochastic = undefined;
   metadata.attributes = undefined;
   metadata.image = undefined;
+  metadata.storedRegions = undefined;
   if (metadata.geography) {
     metadata.geography.coordinates = undefined;
   }
