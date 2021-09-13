@@ -526,6 +526,21 @@ export default defineComponent({
         return;
       }
       const timeseries = this.visibleTimeseriesData[0].points;
+      let country = '';
+      let admin1 = '';
+      let admin2 = '';
+      let admin3 = '';
+
+      if (this.selectedRegionIds.length > 0) {
+        const regionList = this.selectedRegionIds[0].split('__');
+        if (regionList.length > 0) {
+          if (regionList[0]) country = regionList[0];
+          if (regionList[1]) admin1 = regionList[1];
+          if (regionList[2]) admin2 = regionList[2];
+          if (regionList[3]) admin3 = regionList[3];
+        }
+      }
+
       const nodeParameters = {
         id: this.selectedNode.id,
         concept: this.selectedNode.concept,
@@ -535,10 +550,10 @@ export default defineComponent({
           id: this.metadata.id,
           name: this.metadata.name,
           unit: this.unit,
-          country: '',
-          admin1: '',
-          admin2: '',
-          admin3: '',
+          country,
+          admin1,
+          admin2,
+          admin3,
           period: 12,
           timeseries,
           max: null, // filled in by server

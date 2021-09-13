@@ -89,7 +89,7 @@
           </p>
 
           <h5 class="indicator-section-header restrict-max-width">
-            Parameterization for <span class="node-name">{{ nodeConceptName }}</span>
+            Parameterization for <span class="node-name">{{ nodeConceptName }} - {{ indicatorRegions }}</span>
           </h5>
           <div class="restrict-max-width indicator-title-row">
             <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
@@ -442,6 +442,7 @@ export default defineComponent({
     const selectedTemporalResolution = ref<string|null>(null);
     const indicatorPeriod = ref(1);
     const isSeasonalityActive = ref(false);
+    const indicatorRegions = ref('');
     watchEffect(() => {
       // if isSeasonalityActive is toggled on, indicatorPeriod should be at least 2,
       //  since a period of 1 is equivalent to no seasonality
@@ -458,6 +459,9 @@ export default defineComponent({
         selectedTemporalResolution.value = temporalResolution;
         indicatorPeriod.value = period;
         isSeasonalityActive.value = period > 1;
+        indicatorRegions.value = [
+          indicator.country, indicator.admin1, indicator.admin2, indicator.admin3
+        ].filter(d => d !== '').join(', ');
       }
     });
     const clearParameterization = async () => {
@@ -670,6 +674,7 @@ export default defineComponent({
       indicatorMax,
       isSeasonalityActive,
       indicatorPeriod,
+      indicatorRegions,
       areParameterValuesChanged,
       saveParameterValueChanges,
       selectedTemporalResolution,
