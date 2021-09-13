@@ -115,75 +115,58 @@
             FIXME: this should be done directly against allModelRunData
            -->
           <div
-            v-if="currentTabView === 'pre-rendered-viz' && outputSourceSpecs.length > 0"
-            class="column card-maps-container" style="flex-direction: revert;">
-            <div v-for="(spec, indx) in outputSourceSpecs" :key="spec.id"
-              class="card-map-container"
-              :style="{ borderColor: colorFromIndex(indx) }"
-              style="border-width: 2px; border-style: solid;"
-              :class="[
-                `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
-              ]"
-            >
-              <!-- spec here represents one selected model run -->
-              <template v-if="spec.preGeneratedOutput && preGenOutputList(spec).length > 0">
-                <!-- TODO: move this dropdown and make it global list
-                  of all pre-rendered-viz items from all runs,
-                  and enable selection by item name/id instead of index
-                  which won't work when different model runs have different list of pre-rendered items -->
-                <div v-if="selectedPreGenDataItemIndex !== -1" style="display: flex; padding: 5px">
-                  <div style="padding-right: 10px">Selected Viz:</div>
-                  <select name="pre-gen-outputs" :id="spec.id"
-                    style="width: max-content;"
-                    @change="selectedPreGenDataItemIndex=$event.target.selectedIndex"
-                  >
-                    <option
-                      v-for="(pregen, indx) in preGenOutputList(spec)" :key="pregen.file"
-                      :selected="indx === selectedPreGenDataItemIndex"
-                    >{{getPreGenItemDisplayName(pregen)}}</option>
-                  </select>
-                </div>
-                <!-- display only a single pre-rendered-viz item for each selected run -->
-                <template v-if="selectedPreGenDataItemIndex !== -1">
+            v-if="currentTabView === 'pre-rendered-viz' && outputSourceSpecs.length > 0">
+
+            <!-- a global list
+              of all pre-rendered-viz items from all runs,
+              and enable selection by item name/id instead of index
+              which won't work when different model runs have different list of pre-rendered items -->
+            <div v-if="preGenDataItems.length > 0"
+              style="display: flex; padding: 5px; flex-basis: 100%; height: fit-content;">
+              <div style="padding-right: 10px">Selected Viz:</div>
+              <select name="pre-gen-outputs" style="width: max-content;"
+                @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]"
+              >
+                <option
+                  v-for="pregenItem in preGenDataItems" :key="pregenItem"
+                  :selected="pregenItem === selectedPreGenDataItem"
+                >
+                  {{pregenItem}}
+                </option>
+              </select>
+            </div>
+
+            <template class="column card-maps-container" style="flex-direction: revert;">
+              <div v-for="(spec, indx) in outputSourceSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec)"
+                class="card-map-container"
+                :style="{ borderColor: colorFromIndex(indx) }"
+                style="border-width: 2px; border-style: solid;"
+                :class="[
+                  `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                ]"
+              >
+                <!-- spec here represents one selected model run -->
+                <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
+                  <!-- display only a single pre-rendered-viz item for each selected run -->
                   <img
-                    v-if="preGenOutputList(spec)[selectedPreGenDataItemIndex].type === 'image'"
-                    :src="preGenOutputList(spec)[selectedPreGenDataItemIndex].file"
+                    v-if="pregenDataForSpec.type === 'image'"
+                    :src="pregenDataForSpec.file"
                     alt="Pre-rendered Visualization"
                     class="pre-rendered-content"
                   >
                   <video
-                    v-if="preGenOutputList(spec)[selectedPreGenDataItemIndex].type === 'video'"
+                    v-if="pregenDataForSpec.type === 'video'"
                     controls muted
                     class="pre-rendered-content"
+                    :src="pregenDataForSpec.file"
                   >
-                    <source :src="preGenOutputList(spec)[selectedPreGenDataItemIndex].file" type="video/mp4">
-                    Your browser does not support the video tag.
                   </video>
                 </template>
-                <!-- display all pre-rendered-viz items for each model run -->
-                <template v-if="selectedPreGenDataItemIndex === -1">
-                  <template v-for="pregen in preGenOutputList(spec)" :key="pregen.file">
-                    <img
-                      v-if="pregen.type === 'image'"
-                      :src="pregen.file"
-                      class="pre-rendered-content"
-                      alt="Pre-rendered Visualization"
-                    >
-                    <video
-                      v-if="pregen.type === 'video'"
-                      controls muted
-                      class="pre-rendered-content"
-                    >
-                      <source :src="pregen.file" type="video/mp4">
-                      Your browser does not support the video tag.
-                    </video>
-                  </template>
+                <template v-else>
+                  No pre-generated data available for some selected scenario(s)!
                 </template>
-              </template>
-              <template v-else>
-                No pre-generated data available for some selected scenario(s)!
-              </template>
-            </div>
+              </div>
+            </template>
           </div>
 
           <datacube-scenario-header
@@ -501,6 +484,43 @@ export default defineComponent({
       }
     });
 
+    const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
+    const preGenDataItems = ref<string[]>([]);
+    const selectedPreGenDataItem = ref('');
+    watchEffect(() => {
+      if (allModelRunData.value !== null && allModelRunData.value.length > 0) {
+        // build a map of all pre-gen data indexed by run-id
+        preGenDataMap.value = Object.assign({}, ...allModelRunData.value.map((r) => ({ [r.id]: r.pre_gen_output_paths })));
+        if (Object.keys(preGenDataMap.value).length > 0) {
+          // note that some runs may not have valid pre-gen data (i.e., null)
+          const allPreGenData = Object.values(preGenDataMap.value).flat().filter(p => p !== null);
+
+          // assing each pre-gen data item (within each run) an id
+          allPreGenData.forEach(pregen => {
+            pregen.id = getPreGenItemDisplayName(pregen);
+          });
+
+          // dropdown selection utilize each pre-gen data item id as it display name
+          preGenDataItems.value = _.uniq(allPreGenData.map(pregen => pregen.id ?? ''));
+
+          // select first pre-gen data item once available
+          if (preGenDataItems.value.length > 0) {
+            selectedPreGenDataItem.value = preGenDataItems.value[0];
+          }
+        }
+      }
+    });
+
+    function getPreGenItemDisplayName(pregen: PreGeneratedModelRunData) {
+      // @REVIEW: use the resource file name
+      const lastSlashIndx = pregen.file.lastIndexOf('/');
+      return pregen.file.substring(lastSlashIndx + 1);
+    }
+
+    function getSelectedPreGenOutput(spec: OutputSpecWithId): PreGeneratedModelRunData | undefined {
+      return preGenDataMap.value[spec.id] ? preGenDataMap.value[spec.id].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataItem.value) : undefined;
+    }
+
     const validModelRunsAvailable = computed(() => {
       return (!_.isNull(metadata.value) && isIndicator(metadata.value)) || (!_.isNull(allModelRunData.value) &&
         !_.isNull(metadata.value) && isModel(metadata.value) &&
@@ -551,7 +571,10 @@ export default defineComponent({
       TemporalAggregationLevel,
       validModelRunsAvailable,
       tour,
-      headerGroupButtons
+      headerGroupButtons,
+      preGenDataItems,
+      selectedPreGenDataItem,
+      getSelectedPreGenOutput
     };
   },
   data: () => ({
@@ -566,8 +589,7 @@ export default defineComponent({
       [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
       [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
     ],
-    mapReady: false,
-    selectedPreGenDataItemIndex: 0 // TEMP: SET TO -1 TO SHOW ALL PRE-RENDERED VIZ INSTEAD OF A SINGLE ITEM BASED ON THE SELECTED INDEX
+    mapReady: false
   }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
@@ -596,22 +618,6 @@ export default defineComponent({
     }
   },
   methods: {
-    preGenOutputList(spec?: OutputSpecWithId): PreGeneratedModelRunData[] {
-      const result: PreGeneratedModelRunData[] = [];
-      if (this.outputSourceSpecs.length > 0) {
-        if (spec !== undefined && spec.preGeneratedOutput !== undefined) {
-          result.push(...spec.preGeneratedOutput);
-        } else {
-          const outputsWithPreGenData = this.outputSourceSpecs.filter(spec => spec.preGeneratedOutput !== undefined && spec.preGeneratedOutput.filter(p => p.coords === undefined).length > 0);
-          outputsWithPreGenData.forEach(spec => {
-            if (spec.preGeneratedOutput !== undefined) {
-              result.push(...spec.preGeneratedOutput);
-            }
-          });
-        }
-      }
-      return result;
-    },
     onTabClick(value: string) {
       if (value === 'description' && this.isModelMetadata) {
         this.$emit('set-selected-scenario-ids', []); // this will update the 'currentTabView'
@@ -642,11 +648,6 @@ export default defineComponent({
       if (tab === 'data' && this.tour && this.tour.id.startsWith('aggregations-tour')) {
         this.tour.next();
       }
-    },
-    getPreGenItemDisplayName(pregen: PreGeneratedModelRunData) {
-      // @REVIEW: use the resource file name
-      const lastSlashIndx = pregen.file.lastIndexOf('/');
-      return pregen.file.substring(lastSlashIndx + 1);
     },
     onMapLoad() {
       this.$emit('on-map-load');

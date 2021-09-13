@@ -16,6 +16,7 @@ export interface ModelRunRuntimeStage {
 }
 
 export interface PreGeneratedModelRunData {
+  id?: string; // run-id
   file: string; // url/path for the pre-generated resource
   timestamp?: number; // timestamp value associated with the resource
   type?: string; // resource type, e.g., image, video
