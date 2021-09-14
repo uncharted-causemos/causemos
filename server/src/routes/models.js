@@ -560,7 +560,7 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   // e.g in the current CAG, a indicator was manually added to a concept
   // so it will only increment frequency if an indicator is being added in multiple CAGs
   const beforeIndicatorId = _.get(nodeBeforeUpdate.parameter, 'id', null);
-  const currentIndicatorId = _.get(nodeBeforeUpdate.parameter, 'id', null);
+  const currentIndicatorId = _.get(nodeParameter.parameter, 'id', null);
   if (currentIndicatorId !== null && (beforeIndicatorId === null || currentIndicatorId !== beforeIndicatorId)) {
     const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
     const indicatorMatchPayload = [

@@ -91,6 +91,7 @@
                 :key="insight.id"
                 :insight="insight"
                 @delete-insight="removeInsight(insight.id)"
+                @edit-insight="editInsight(insight)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
                 @update-curation="updateCuration(insight.id)"
@@ -121,7 +122,7 @@
               style="margin-bottom: 5rem;">
               <h3 class="analysis-question">{{questionItem.question}}</h3>
               <insight-card
-                v-for="insight in fullLinkedInsights(questionItem.linked_insights)"
+                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
                 :key="insight.id"
                 :insight="insight"
                 :show-description="true"
@@ -206,25 +207,12 @@ export default {
     const store = useStore();
     const questions = computed(() => store.getters['analysisChecklist/questions']);
 
-    const insightsById = (id) => listInsights.value.find(i => i.id === id);
-
-    const fullLinkedInsights = (linked_insights) => {
-      const result = [];
-      linked_insights.forEach(insightId => {
-        const ins = insightsById(insightId);
-        if (ins) {
-          result.push(ins);
-        }
-      });
-      return result;
-    };
-
-    const { insights: listInsights, reFetchInsights } = useInsightsData();
+    const { insights: listInsights, getInsightsByIDs, reFetchInsights } = useInsightsData();
 
     return {
       listInsights,
       questions,
-      fullLinkedInsights,
+      getInsightsByIDs,
       reFetchInsights
     };
   },
@@ -265,7 +253,9 @@ export default {
   methods: {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCountInsights: 'insightPanel/setCountInsights'
+      setCountInsights: 'insightPanel/setCountInsights',
+      setCurrentPane: 'insightPanel/setCurrentPane',
+      setUpdatedInsight: 'insightPanel/setUpdatedInsight'
     }),
     dateFormatter,
     stringFormatter,
@@ -310,6 +300,10 @@ export default {
       matches.forEach(c => c.remove());
 
       evt.currentTarget.style.border = 'none';
+    },
+    editInsight(insight) {
+      this.setUpdatedInsight(insight);
+      this.setCurrentPane('edit-insight');
     },
     removeInsight(id) {
       deleteInsight(id).then(result => {

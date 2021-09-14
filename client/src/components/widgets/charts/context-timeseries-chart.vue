@@ -8,14 +8,14 @@
 <script lang="ts">
 import * as d3 from 'd3';
 import _ from 'lodash';
-import renderTimeline from '@/charts/timeline-renderer';
+import renderTimeline from '@/charts/context-timeseries-renderer';
 import { Timeseries } from '@/types/Timeseries';
 import { defineComponent, PropType, onMounted, ref, watch, toRefs } from 'vue';
 
 const RESIZE_DELAY = 15;
 
 export default defineComponent({
-  name: 'TimelineChart',
+  name: 'ContextTimeseriesChart',
   emits: ['select-timestamp', 'select-timestamp-range'],
   props: {
     timeseriesData: {

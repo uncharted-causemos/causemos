@@ -31,6 +31,15 @@
         @add-layer="onAddLayer"
         @update-source="onUpdateSource"
       />
+      <template v-if="showPreRenderedViz">
+        <wm-map-image
+          v-for="pregen in preRenderedData" :key="pregen.file"
+          :source="pregen.file"
+          :source-id="imageSourceId"
+          :layer-id="imageLayerId"
+          :coords="pregen.coords"
+        />
+      </template>
       <wm-map-popup
         v-if="showTooltip"
         :layer-id="baseLayerId"
@@ -45,7 +54,7 @@
 
 import _ from 'lodash';
 import * as d3 from 'd3';
-import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
+import { WmMap, WmMapVector, WmMapImage, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
@@ -58,6 +67,7 @@ import {
 } from '@/utils/map-util-new';
 import { chartValueFormatter } from '@/utils/string-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { mapActions, mapGetters } from 'vuex';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -116,6 +126,7 @@ export default {
   components: {
     WmMap,
     WmMapVector,
+    WmMapImage,
     WmMapPopup
   },
   emits: [
@@ -143,6 +154,10 @@ export default {
     showTooltip: {
       type: Boolean,
       default: false
+    },
+    showPreRenderedViz: {
+      type: Boolean,
+      default: true
     },
     selectedLayerId: {
       type: Number,
@@ -190,6 +205,9 @@ export default {
     extent: undefined
   }),
   computed: {
+    ...mapGetters({
+      tour: 'tour/tour'
+    }),
     mapFixedOptions() {
       const options = {
         minZoom: 1,
@@ -261,6 +279,10 @@ export default {
     },
     isFilterGlobal() {
       return this.filter && this.filter.global;
+    },
+    preRenderedData() {
+      // map supported overlays (received as pre-generated output) must have valid geo-coords
+      return this.selection.preGeneratedOutput ? this.selection.preGeneratedOutput.filter(p => p.coords !== undefined) : [];
     }
   },
   watch: {
@@ -293,11 +315,31 @@ export default {
       scaleFn: d3.scaleLinear
     };
 
+    // the following are needed to render pre-generated overlay
+    this.imageSourceId = 'maas-image-source';
+    this.imageLayerId = 'image-layer';
+
     this.debouncedRefresh = _.debounce(function() {
       this.refresh();
     }, 50);
+
+    // Init layer objects
+    this.refreshLayers();
+  },
+  mounted() {
+    this.refresh();
+    //
+    // @REVIEW
+    // the map component is visible as well as the spatial-aggregation dropdown config
+    // allow the relevant tour to advance to the next step
+    if (this.tour && this.tour.id.startsWith('aggregations-tour')) {
+      this.enableNextStep();
+    }
   },
   methods: {
+    ...mapActions({
+      enableNextStep: 'tour/enableNextStep'
+    }),
     refresh() {
       if (!this.map || !this.selection) return;
       this.setFeatureStates();

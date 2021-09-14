@@ -1,135 +1,35 @@
 <template>
-  <div class="new-insight-modal-container">
-    <full-screen-modal-header>
-      <h5>New Insight</h5>
-    </full-screen-modal-header>
-    <div class="pane-wrapper">
-      <div class="pane-row">
-        <div class="fields">
-          <div class="preview" v-if="imagePreview !== null">
-            <img :src="imagePreview">
-          </div>
-          <disclaimer
-            v-else
-            style="text-align: center; color: black"
-            :message="'No image preview!'"
-          />
-          <div class="form-group">
-            <form>
-              <label> Name* </label>
-              <input
-                v-model="name"
-                v-focus
-                type="text"
-                class="form-control"
-                placeholder="Untitled insight"
-                @keyup.enter.stop="saveInsight"
-              >
-              <div
-                v-if="hasError === true"
-                class="error-msg">
-                {{ errorMsg }}
-              </div>
-              <label>Description</label>
-              <textarea
-                rows="2"
-                v-model="description"
-                class="form-control" />
-            </form>
-          </div>
-          <div class="controls">
-            <button
-              type="button"
-              class="btn btn-light"
-              @click="closeInsightPanel"
-            >
-              Cancel
-            </button>
-            <button
-              class="btn btn-primary"
-              @click="autofillInsight"
-            >
-              Autofill
-            </button>
-            <button
-              type="button"
-              class="btn btn-primary"
-              :class="{ 'disabled': name.length === 0}"
-              @click="saveInsight"
-            >
-              Save
-            </button>
-          </div>
-        </div>
-
-        <drilldown-panel
-          class="metadata-drilldown-panel"
-          is-open
-          :tabs="drilldownTabs"
-          :activeTabId="drilldownTabs[0].id"
-          only-display-icons
-        >
-          <template #content>
-            <div>
-              <ul>
-                <!--
-                <li>
-                  <i :class="iconToDisplay" /> {{ viewName }}
-                </li>
-                -->
-                <li
-                  v-for="metadataAttr in metadataDetails"
-                  :key="metadataAttr.key">
-                  <b>{{metadataAttr.key}}</b> {{ metadataAttr.value }}
-                </li>
-              </ul>
-            </div>
-          </template>
-        </drilldown-panel>
-
-      </div>
-    </div>
-  </div>
+  <new-edit-modal-layout
+    v-model:name="name"
+    v-model:description="description"
+    :has-error="hasError"
+    :image-preview="imagePreview"
+    :metadata-details="metadataDetails"
+    title="New Insight"
+    @auto-fill="autofillInsight()"
+    @cancel="closeInsight()"
+    @save="saveInsight()"
+  />
 </template>
 
 <script>
 import html2canvas from 'html2canvas';
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
-
-import DrilldownPanel from '@/components/drilldown-panel';
-import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header';
-import FilterValueFormatter from '@/formatters/filter-value-formatter';
-import FilterKeyFormatter from '@/formatters/filter-key-formatter';
+import NewEditModalLayout from '@/components/insight-manager/new-edit-modal-layout';
 import modelService from '@/services/model-service';
-import { VIEWS_LIST } from '@/utils/views-util';
+import insightUtil from '@/utils/insight-util';
 import { INSIGHTS } from '@/utils/messages-util';
 import { ProjectType } from '@/types/Enums';
-import Disclaimer from '@/components/widgets/disclaimer';
 import { addInsight } from '@/services/insight-service';
-
-
-const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
-
-const METDATA_DRILLDOWN_TABS = [
-  {
-    name: 'Metadata',
-    id: 'metadata',
-    icon: 'fa-info-circle'
-  }
-];
 
 export default {
   name: 'NewInsightModal',
   components: {
-    DrilldownPanel,
-    FullScreenModalHeader,
-    Disclaimer
+    NewEditModalLayout
   },
   data: () => ({
     description: '',
-    drilldownTabs: METDATA_DRILLDOWN_TABS,
-    errorMsg: MSG_EMPTY_INSIGHT_NAME,
     hasError: false,
     imagePreview: null,
     metadata: '',
@@ -142,40 +42,17 @@ export default {
       projectType: 'app/projectType',
       currentCAG: 'app/currentCAG',
       projectMetadata: 'app/projectMetadata',
-
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
       countInsights: 'insightPanel/countInsights',
-
       dataState: 'insightPanel/dataState',
       viewState: 'insightPanel/viewState',
       contextId: 'insightPanel/contextId',
       project: 'app/project',
-
-      filters: 'dataSearch/filters',
-      ontologyConcepts: 'dataSearch/ontologyConcepts',
-
-      view: 'query/view'
+      filters: 'dataSearch/filters'
     }),
-    iconToDisplay() {
-      const view = VIEWS_LIST.find(item => item.id === this.currentView);
-      return _.isNil(view)
-        ? ''
-        : view.icon;
-    },
-    viewName() {
-      const view = VIEWS_LIST.find(item => item.id === this.currentView);
-      return _.isNil(view)
-        ? ''
-        : view.name;
-    },
     formattedFilterString() {
-      const filterString = this.filters?.clauses?.reduce((a, c) => {
-        return a + `${a.length > 0 ? ' AND ' : ''} ` +
-          `${FilterKeyFormatter(c.field)} ${c.isNot ? 'is not' : 'is'} ` +
-          `${c.values.map(v => FilterValueFormatter(v)).join(', ')}`;
-      }, '');
-      return `${filterString.length > 0 ? filterString : ''}`;
+      return insightUtil.getFormattedFilterString(this.filters);
     },
     insightVisibility() {
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
@@ -189,138 +66,17 @@ export default {
       // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
       return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
     },
-    isQuantitativeView() {
-      return this.currentView === 'modelPublishingExperiment' ||
-      this.currentView === 'data' ||
-      this.currentView === 'dataPreview' ||
-      this.currentView === 'dataComparative';
-    },
+
     metadataDetails() {
-      //
-      // currentView dictates what kind of metadata should be visible
-      //
-      // common (from projectMetadata)
-      //  - project name
-      //  - analysis name
-      //
-      // datacube drilldown:
-      //  - datacube titles
-      //  - selected scenario counts
-      //  - region(s): top 5
-      //
-      // comparative analysis
-      //  - datacube titles
-      //  - region(s): top 5
-      //
-      // CAG-based views
-      //  - corpus
-      //  - ontology
-      //  - selected scenario id (if any)
-      //  - selected node/edge (if any)
-      //  - last modified date
-      //  - filters (if any)
-
-      const arr = [];
-      // @Review: The content of this function needs to be revised and cleaned
-      arr.push({
-        key: 'Project Name:',
-        value: this.projectMetadata.name
-      });
-      if (this.dataState) {
-        if (this.dataState.datacubeTitles) {
-          this.dataState.datacubeTitles.forEach((title, indx) => {
-            arr.push({
-              key: 'Name(' + indx.toString() + '):',
-              value: title.datacubeOutputName + ' | ' + title.datacubeName
-            });
-          });
-        }
-        if (this.dataState.selectedScenarioIds) {
-          arr.push({
-            key: 'Selected Scenarios: ',
-            value: this.dataState.selectedScenarioIds.length
-          });
-        }
-        if (this.dataState.datacubeRegions) {
-          arr.push({
-            key: 'Region(s): ',
-            value: this.dataState.datacubeRegions
-          });
-        }
-        if (this.dataState.modelName) {
-          arr.push({
-            key: 'CAG: ',
-            value: this.dataState.modelName
-          });
-        }
-        if (this.dataState.nodesCount) {
-          arr.push({
-            key: 'Nodes Count: ',
-            value: this.dataState.nodesCount
-          });
-        }
-        if (this.dataState.selectedNode) {
-          arr.push({
-            key: 'Selected Node: ',
-            value: this.dataState.selectedNode
-          });
-        }
-        if (this.dataState.selectedEdge) {
-          arr.push({
-            key: 'Selected Edge: ',
-            value: this.dataState.selectedEdge
-          });
-        }
-        if (this.dataState.selectedScenarioId) {
-          arr.push({
-            key: 'Selected Scenario: ',
-            value: this.dataState.selectedScenarioId
-          });
-        }
-        if (this.dataState.currentEngine) {
-          arr.push({
-            key: 'Engine: ',
-            value: this.dataState.currentEngine
-          });
-        }
-      }
-
-      if (!this.isQuantitativeView) {
-        arr.push({
-          key: 'Ontology:',
-          value: this.projectMetadata.ontology
-        });
-        arr.push({
-          key: 'Created:',
-          value: this.projectMetadata.created_at
-        });
-        arr.push({
-          key: 'Modified:',
-          value: this.projectMetadata.modified_at
-        });
-        arr.push({
-          key: 'Corpus:',
-          value: this.projectMetadata.corpus_id
-        });
-        if (this.formattedFilterString.length > 0) {
-          arr.push({
-            key: 'Filters:',
-            value: this.formattedFilterString
-          });
-        }
-      }
-
-      return arr;
+      return insightUtil.parseMetadataDetails(this.dataState, this.projectMetadata, this.formattedFilterString, this.currentView);
     }
   },
   watch: {
     name(n) {
       if (_.isEmpty(n) && this.isPanelOpen) {
         this.hasError = true;
-        this.errorMsg = MSG_EMPTY_INSIGHT_NAME;
       } else {
         this.hasError = false;
-        this.errorMsg = null;
       }
     },
     currentPane() {
@@ -337,7 +93,7 @@ export default {
       hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
       setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane'
     }),
-    closeInsightPanel() {
+    closeInsight() {
       this.hideInsightPanel();
       this.setCurrentPane('');
     },
@@ -384,7 +140,7 @@ export default {
           } else {
             this.toaster(message, 'error', true);
           }
-          this.closeInsightPanel();
+          this.closeInsight();
           this.initInsight();
           // also hide the context insight panel if opened, to force refresh upon re-open
           this.closeContextInsightPanel();
@@ -405,89 +161,3 @@ export default {
   }
 };
 </script>
-
-<style lang="scss" scoped>
-@import "~styles/variables";
-
-.new-insight-modal-container {
-  display: flex;
-  flex-direction: column;
-  flex-wrap: nowrap;
-  justify-content: center;
-  align-content: stretch;
-  align-items: stretch;
-  height: 100vh;
-  overflow: hidden;
-
-  .pane-wrapper {
-    flex: 1 1 auto;
-    display: flex;
-    flex-direction: column;
-    overflow-x: hidden;
-    overflow-y: hidden;
-    padding: 1em 0 0;
-    .pane-row {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: row;
-      height: 100%;
-      .fields {
-        flex: 1 1 auto;
-        display: flex;
-        flex-direction: column;
-        overflow: hidden;
-        padding-left: 1rem;
-        padding-right: 1rem;
-        height: 100%;
-        .preview {
-          flex: 1 1 auto;
-          margin: 0 0 1rem;
-          overflow: hidden;
-          align-self: center;
-          img {
-            max-height: 100%;
-            max-width: 100%;
-          }
-        }
-        .form-group {
-          flex: 0 0 auto;
-          margin-bottom: 3px;
-          form {
-            display: flex;
-            flex-direction: column;
-            width: 100%;
-            textarea {
-              flex: 1 1 auto;
-              resize: none;
-              outline: none;
-              box-sizing: border-box;
-            }
-          }
-        }
-        .controls {
-          flex: 0 0 auto;
-          display: flex;
-          justify-content: flex-end;
-          padding: 1rem;
-          button {
-            margin-left: 1rem;
-          }
-        }
-      }
-    }
-  }
-
-
-}
-
-.error-msg {
-  color: $negative;
-}
-
-h6 {
-  @include header-secondary;
-  font-size: $font-size-medium;
-}
-
-</style>
-

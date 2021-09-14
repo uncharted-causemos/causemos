@@ -53,8 +53,8 @@ export const createAnalysis = async({ title = '', description = '', projectId, s
  * Update the analysis with given ID
  * @param {string} analysisId Analysis ID
  * @param {object} payload Analysis update payload
- * @param {string} payload.title Analysis title
- * @param {string} payload.description Analysis description
+ * @param {string} [payload.title] Analysis title
+ * @param {string} [payload.description] Analysis description
  */
 export const updateAnalysis = async(analysisId, payload) => {
   if (!payload) return console.error(new Error('payload object must be provided'));

@@ -12,7 +12,6 @@ import Vue3Resize from 'vue3-resize';
 import 'vue-toastification/dist/index.css';
 import 'v-tooltip/dist/v-tooltip.css';
 
-
 sync(store, router);
 
 const app = createApp(App).use(store).use(router).use(VTooltip).use(Vue3Resize);

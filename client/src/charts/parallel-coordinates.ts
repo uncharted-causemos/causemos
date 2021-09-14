@@ -21,6 +21,7 @@ interface BrushType {
   dimName: string;
   start: string | number;
   end: string | number;
+  brushLabel?: string | number;
 }
 
 type D3ScaleFunc = (name: string) => D3Scale;
@@ -273,12 +274,15 @@ function renderParallelCoordinates(
     const fn = dataDrivenDimensionSet.map(function(p: DimensionInfo) {
       const dimName = p.name;
       const scaleX = getXScaleFromMap(dimName);
-      const val = d[dimName];
+      let val = d[dimName];
       let xPos = scaleX(val as any) as number;
       if (isCategoricalAxis(dimName)) {
         // ordinal axis, so instead of mapping to one position in this segment,
         // lets attempt to distribute the values randomly on the segment
         // with the goal of improving lines visibility and reducing overlap
+        //
+        // get the corresponding label for this value if suitable
+        val = findLabelForValue(p, val);
         const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), val.toString());
         if (options.newRunsMode) {
           // special case when rendering potential scenario lines in the new-runs mode
@@ -483,8 +487,9 @@ function renderParallelCoordinates(
         }
         if (selection) {
           const xScale = getXScaleFromMap(dimName);
-          let start;
+          let start: string | number;
           let end;
+          let brushLabel;
           const skip = false;
           if (!isCategoricalAxis(dimName)) {
             start = (xScale as D3ScaleLinear).invert(selection[0] as number).toFixed(2);
@@ -492,12 +497,28 @@ function renderParallelCoordinates(
           } else {
             start = selection[0];
             end = selection[1];
+
+            // note for categorical axes with choices labels,
+            //  this may refer to a label choice rather than an actual valid value
+            const dim = dimensions.find(d => d.name === dimName);
+            if ((dim as ModelParameter) !== undefined && (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform) {
+              // ensure that any choice label is mapped back to its underlying value
+              if (dim?.choices_labels !== undefined && dim.choices_labels.length > 0) {
+                const choiceIndex = dim.choices_labels?.findIndex(c => c === start) ?? 0;
+                if (dim.choices !== undefined && choiceIndex >= 0 && choiceIndex < dim.choices_labels.length) {
+                  start = dim?.choices[choiceIndex];
+                  end = start;
+                  brushLabel = selection[0];
+                }
+              }
+            }
           }
           if (!skip) {
             brushes.push({
               dimName,
               start,
-              end
+              end,
+              brushLabel
             });
           }
         }
@@ -608,12 +629,28 @@ function renderParallelCoordinates(
 
       if (selectedLineData) {
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
-          deselectLine(selectedLine, event, lineStrokeWidthNormal);
           currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
+          deselectLine(selectedLine, event, lineStrokeWidthNormal);
+          const lineDict = currentLineSelection.reduce((acc: Map<string|number, number>, sl, i) => {
+            acc.set(sl.run_id, i);
+            return acc;
+          }, new Map());
+          const lines = d3.select(this.parentElement).selectAll('.line');
+          lines.data(data).each(function(lineData) {
+            const index = lineDict.get(lineData.run_id);
+            if (index !== undefined) {
+              const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
+              if (lineData.status === ModelRunStatus.Ready) {
+                // set an incremental index for this line as part of the selected line collection
+                selectedLine.attr('selection-index', index);
+                selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthSelected);
+              }
+            }
+          });
         } else {
-          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
           currentLineSelection.push(selectedLineData);
           updateSelectionTooltips(svgElement, selectedLine);
+          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
         }
       } else {
         currentLineSelection.length = 0;
@@ -655,6 +692,8 @@ function renderParallelCoordinates(
         if (!isCategoricalAxis(dimName)) {
           const numValue = +value as number;
           formattedValue = Number.isInteger(numValue) ? numberIntegerFormat(numValue) : numberFloatFormat(numValue);
+        } else {
+          formattedValue = findLabelForValue(d, formattedValue);
         }
         // ignore tooltip for non-existing values (e.g., output value for active model runs that are not completed yet)
         if (formattedValue === 'NaN') {
@@ -666,7 +705,9 @@ function renderParallelCoordinates(
           .attr('visibility', 'visible')
           .attr('x', function() {
             const xScale = getXScaleFromMap(dimName);
-            return xScale(value as any) as number;
+            // get the corresponding label for this value if suitable
+            formattedValue = findLabelForValue(d, formattedValue);
+            return xScale(formattedValue as any) as number;
           });
       });
 
@@ -1183,7 +1224,9 @@ function renderBaselineMarkers() {
       const scaleX = getXScaleFromMap(dimName);
       let xPos: number = scaleX(axisDefault as any) as number;
       if (isCategoricalAxis(dimName)) {
-        const axisDefaultStr = axisDefault.toString();
+        let axisDefaultStr = axisDefault.toString();
+        // get the corresponding label for this value if suitable
+        axisDefaultStr = findLabelForValue(d, axisDefaultStr) as string;
         const { min, max } = getPositionRangeOnOrdinalAxis(xPos, axisRange, scaleX.domain(), axisDefaultStr);
         xPos = min + (max - min) / 2;
       }
@@ -1445,21 +1488,7 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         isTooltipVisible = 'hidden';
         const brushRange = brushes.find(b => b.dimName === dimName);
         if (brushRange) {
-          /*
-          if (!isCategoricalAxis(dimName)) {
-            // note that since brush is a (moving) range then it will mostly have float range
-            // but we could check the axis domain to figure out a more accurate data type
-            const xScaleDomain = xScale.domain();
-            let d3FormatFunc = numberFloatFormat;
-            if (Number.isInteger(+xScaleDomain[0]) && Number.isInteger(+xScaleDomain[1])) {
-              d3FormatFunc = numberIntegerFormat;
-            }
-            value = d3FormatFunc(brushRange.start as number) + ' : ' + d3FormatFunc(brushRange.end as number);
-          } else {
-            value = brushRange.start + ' : ' + brushRange.end;
-          }
-          */
-          value = brushRange.start + ' : ' + brushRange.end;
+          value = brushRange.brushLabel !== undefined ? brushRange.brushLabel : brushRange.start + ' : ' + brushRange.end;
 
           isTooltipVisible = 'visible';
           formattedValue = value;
@@ -1473,7 +1502,11 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
         const brushTooltipRectWidth = 100;
         xPos = centerAxisXPos - brushTooltipRectWidth / 2;
       } else {
+        // showing labels for lines that were selected by direct click
         value = selectedLineData ? selectedLineData[dimName] : 'undefined';
+        // get the corresponding label for this value if suitable
+        value = findLabelForValue(d, value);
+
         formattedValue = value;
         if (!isCategoricalAxis(dimName)) {
           const numValue = +value as number;
@@ -1541,11 +1574,29 @@ function updateSelectionToolTipsRect(svgElement: D3Selection) {
     });
 }
 
+function findLabelForValue(dim: DimensionInfo, value: string | number) {
+  let labelValue = value;
+  if ((dim as ModelParameter) !== undefined && (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform) {
+    // check if we have label choices array
+    if (dim.choices_labels !== undefined && dim.choices_labels.length > 0) {
+      const choiceIndex = dim.choices?.findIndex(c => c === value) ?? 0;
+      if (choiceIndex >= 0 && choiceIndex < dim.choices_labels.length) {
+        labelValue = dim.choices_labels[choiceIndex];
+      }
+    }
+  }
+  return labelValue;
+}
+
 function selectLine(selectedLine: D3LineSelection, event: PointerEvent | undefined, d: ScenarioData, lineWidth: number) {
   const selectedLineData = selectedLine.datum();
-
   if (selectedLineData) {
     // Use D3 to select the line, change color and size
+    const selectedLineIndex = currentLineSelection.findIndex((sl) => sl.run_id === selectedLineData.run_id);
+    if (selectedLineIndex > -1) {
+      selectedLine.attr('selection-index', selectedLineIndex);
+    }
+
     selectedLine
       .classed('selected', true)
       .transition().duration(highlightDuration)
@@ -1791,12 +1842,19 @@ const createScales = (
       dataExtent = dataChoices;
     }
 
+    let isFreeformParam = false;
+
     // ensure that dataExtent and dataChoices are merged as one list (including the default value)
     const outputVarName = getOutputDimension(dimensions).name;
     if (outputVarName !== name) {
       dataChoices.push((dim as ModelParameter).default);
+      isFreeformParam = (dim as ModelParameter).data_type === ModelParameterDataType.Freeform;
     }
-    dataExtent = _.uniq(_.union(dataExtent, dataChoices));
+    if (isFreeformParam) {
+      // only freeform params can have combined list of choices.
+      // other ordinal params, however, should have a fixed list of choices
+      dataExtent = _.uniq(_.union(dataExtent, dataChoices));
+    }
 
     if (dataExtent[0] === undefined || dataExtent[1] === undefined) {
       console.warn('Unable to derive extent from data for ' + name + '. A default point scale will be created!', data);
