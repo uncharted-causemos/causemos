@@ -3,7 +3,7 @@ const yaml = require('js-yaml');
 const uuid = require('uuid');
 
 const Logger = rootRequire('/config/logger');
-const { Adapter, RESOURCE, RESOURCE_HIGHLIGHT_SETTINGS, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
+const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
 const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
