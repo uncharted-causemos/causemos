@@ -3,11 +3,15 @@
     class="side-panel-container"
     :class="{'large': isLarge}"
   >
-    <side-panel-nav
-      :tabs="tabs"
-      :current-tab-name="currentTabName"
-      @set-active="tabName => $emit('set-active', tabName)"
-    />
+    <div class="tab-column">
+      <side-panel-nav
+        class="side-panel-nav"
+        :tabs="tabs"
+        :current-tab-name="currentTabName"
+        @set-active="tabName => $emit('set-active', tabName)"
+      />
+      <slot name="below-tabs"/>
+    </div>
     <transition name="slide-fade">
       <div
         v-if="isPanelOpen"
@@ -121,6 +125,19 @@ $large-width: 380px;
       opacity: 0;
     }
   }
+}
+
+.tab-column {
+  position: absolute;
+  top: 0;
+  right: 0;
+  width: $navbar-outer-height;
+  display: flex;
+  flex-direction: column;
+}
+
+.side-panel-nav {
+  margin-bottom: 10px;
 }
 
 .side-panel-header {

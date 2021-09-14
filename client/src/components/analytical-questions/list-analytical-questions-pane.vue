@@ -107,8 +107,8 @@
               <i
                 class="step-icon-common fa fa-lg fa-border"
                 :class="{
-                  'fa-check-circle step-complete': fullLinkedInsights(questionItem.linked_insights).length > 0,
-                  'fa-circle step-not-complete': fullLinkedInsights(questionItem.linked_insights).length === 0,
+                  'fa-check-circle step-complete': getInsightsByIDs(questionItem.linked_insights).length > 0,
+                  'fa-circle step-not-complete': getInsightsByIDs(questionItem.linked_insights).length === 0,
                 }"
                 @mousedown.stop.prevent
               />
@@ -118,11 +118,19 @@
                 :class="{ 'private-question-title': questionItem.visibility === 'private' }">
                   {{ questionItem.question }}
               </span>
+              <i
+                v-if="hasTour(questionItem)"
+                class="fa fa-lg fa-info-circle"
+                :style="{ color: canStartTour ? '#000000' : '#707070' }"
+                :disabled="!canStartTour"
+                @click.stop.prevent="startTour(questionItem)"
+                @mousedown.stop.prevent
+              />
             </div>
             <!-- second row display a list of linked insights -->
             <div class="checklist-item-insights">
               <div
-                v-for="insight in fullLinkedInsights(questionItem.linked_insights)"
+                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
                 :key="insight.id"
                 class="checklist-item-insight">
                   <i @mousedown.stop.prevent class="fa fa-star" style="color: orange" />
@@ -144,16 +152,18 @@
 </template>
 
 <script lang="ts">
-import { mapActions, mapGetters, useStore } from 'vuex';
+import { mapActions, mapGetters } from 'vuex';
 
 import { getInsightById, updateInsight } from '@/services/insight-service';
 import { AnalyticalQuestion, Insight } from '@/types/Insight';
-import { computed, defineComponent, ref, watchEffect } from 'vue';
+import { defineComponent } from 'vue';
 import _ from 'lodash';
 import { QUESTIONS } from '@/utils/messages-util';
-import { getAllQuestions, addQuestion, deleteQuestion, updateQuestion, getContextSpecificQuestions } from '@/services/question-service';
+import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
 import DropdownControl from '@/components/dropdown-control.vue';
-import useInsightsData from '@/services/composables/useInsightsData';
+import { ProjectType } from '@/types/Enums';
+import useQuestionsData from '@/services/composables/useQuestionsData';
+import Shepherd from 'shepherd.js';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
@@ -161,69 +171,11 @@ export default defineComponent({
     DropdownControl
   },
   setup() {
-    const questionsList = ref<AnalyticalQuestion[]>([]);
-
-    const store = useStore();
-    const contextId = computed(() => store.getters['insightPanel/contextId']);
-    const project = computed(() => store.getters['app/project']);
-    const currentView = computed(() => store.getters['app/currentView']);
-
-    const questionsFetchedAt = ref(0);
-
-    // save a local copy of all insights for quick reference whenever needed
-    // FIXME: ideally this should be from a store so that changes to the insight list externally are captured
-    const { insights: allInsights } = useInsightsData();
-
-    const insightsById = (id: string) => allInsights.value.find(i => i.id === id);
-
-    const fullLinkedInsights = (linked_insights: string[]) => {
-      const result: Insight[] = [];
-      linked_insights.forEach(insightId => {
-        const ins = insightsById(insightId);
-        if (ins) {
-          result.push(ins);
-        }
-      });
-      return result;
-    };
-
-    // FIXME: refactor into a composable
-    watchEffect(onInvalidate => {
-      console.log('refetching questions at: ' + new Date(questionsFetchedAt.value).toTimeString());
-      let isCancelled = false;
-      async function fetchQuestions() {
-        let allQuestions;
-        // allQuestions = await getAllQuestions(project.value);
-
-        if (contextId.value === '') {
-          allQuestions = await getAllQuestions(project.value);
-        } else {
-          allQuestions = await getContextSpecificQuestions(project.value, contextId.value, currentView.value);
-        }
-
-        if (isCancelled) {
-          // Dependencies have changed since the fetch started, so ignore the
-          //  fetch results to avoid a race condition.
-          return;
-        }
-
-        // update the store to facilitate questions consumption in other UI places
-        store.dispatch('analysisChecklist/setQuestions', allQuestions);
-
-        questionsList.value = allQuestions;
-      }
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      fetchQuestions();
-    });
+    const { questionsList, reFetchQuestions, getInsightsByIDs } = useQuestionsData();
     return {
       questionsList,
-      contextId,
-      project,
-      questionsFetchedAt,
-      insightsById,
-      fullLinkedInsights
+      reFetchQuestions,
+      getInsightsByIDs
     };
   },
   data: () => ({
@@ -235,18 +187,59 @@ export default defineComponent({
     showNewAnalyticalQuestion: false,
     newQuestionText: '',
     showDeleteModal: false,
-    isOpenEditor: false
+    isOpenEditor: false,
+    toursMetadata: [
+      {
+        baseQuestion: 'What are the appropriate aggregation functions?',
+        targetView: 'data'
+      },
+      {
+        baseQuestion: 'What are the key influences causing change in a node?',
+        targetView: 'quantitative'
+      }
+    ]
   }),
   computed: {
     ...mapGetters({
       viewState: 'insightPanel/viewState',
-      currentView: 'app/currentView'
-    })
+      currentView: 'app/currentView',
+      projectType: 'app/projectType',
+      project: 'app/project',
+      contextId: 'insightPanel/contextId',
+      isReadyForNextStep: 'tour/isReadyForNextStep',
+      isPanelOpen: 'insightPanel/isPanelOpen'
+    }),
+    // @REVIEW: this is similar to insightTargetView
+    questionTargetView(): string[] {
+      // an insight created during model publication should be listed either
+      //  in the full list of insights,
+      //  or as a context specific insight when opening the page of the corresponding model family instance
+      //  (the latter is currently supported via a special route named dataPreview)
+      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+    },
+    canStartTour(): boolean {
+      // if the tour's target-view is compatible with currentView and no modal is shown
+      return !this.isPanelOpen &&
+             this.toursMetadata.findIndex(t => t.targetView === this.currentView) >= 0;
+    }
+  },
+  mounted() {
+    this.showSidePanel();
   },
   methods: {
     ...mapActions({
-      setQuestions: 'analysisChecklist/setQuestions'
+      setQuestions: 'analysisChecklist/setQuestions',
+      showSidePanel: 'panel/showSidePanel',
+      setTour: 'tour/setTour'
     }),
+    hasTour(questionItem: AnalyticalQuestion): boolean {
+      return this.toursMetadata.findIndex(t => t.baseQuestion === questionItem.question) >= 0;
+    },
+    questionVisibility() {
+      return this.projectType === ProjectType.Analysis ? 'private' : 'public';
+      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
+    },
     promote() {
       // update selectedQuestion to be public, i.e., visible in all projects
       if (this.selectedQuestion) {
@@ -276,11 +269,11 @@ export default defineComponent({
       const newQuestion: AnalyticalQuestion = {
         question: this.newQuestionText,
         description: '',
-        visibility: 'private', // questions are always added with private visibility but can be promoted to be public
+        visibility: this.questionVisibility(),
         project_id: this.project,
         context_id: this.contextId,
         url,
-        target_view: this.currentView,
+        target_view: this.questionTargetView,
         pre_actions: null,
         post_actions: null,
         linked_insights: [],
@@ -292,7 +285,7 @@ export default defineComponent({
         if (message === QUESTIONS.SUCCESSFUL_ADDITION) {
           (this as any).toaster(message, 'success', false);
           // refresh the latest list from the server
-          this.questionsFetchedAt = Date.now();
+          this.reFetchQuestions();
         } else {
           (this as any).toaster(message, 'error', true);
         }
@@ -442,13 +435,291 @@ export default defineComponent({
       this.removeQuestionFromInsight(questionItem, insightId);
     },
     removeQuestionFromInsight(questionItem: AnalyticalQuestion, insightId: string) {
-      const insight: any = this.insightsById(insightId);
+      const insight: any = this.getInsightsByIDs([insightId]);
       if (insight) {
         insight.analytical_question = insight?.analytical_question.filter(
           (qid: string) => qid !== questionItem.id
         );
         updateInsight(insight?.id as string, insight);
       }
+    },
+    startTour(question: AnalyticalQuestion) {
+      if (this.canStartTour) {
+        // @NOTE: tours are linked with questions via question's text
+        switch (question.question) {
+          case 'What are the key influences causing change in a node?':
+            this.startMatrixTour();
+            break;
+          case 'What are the appropriate aggregation functions?':
+            this.startAggregationsTour();
+            break;
+        }
+      }
+    },
+    startMatrixTour() {
+      const tour = new Shepherd.Tour({
+        tourName: 'sensitivity-matrix-tour',
+        useModalOverlay: true,
+        defaultStepOptions: {
+          // enable X button to cancel from any step
+          cancelIcon: {
+            enabled: true
+          },
+          classes: 'my-container my-title my-text' // default CSS classes for all steps
+        }
+      });
+
+      // NOTE
+      // step one assumes the context of a CAG in the qualitative view with the flow-tab
+      const stepOne = {
+        id: 'step-1-matrix-tab-click',
+        text: 'Clicking the Matrix tab will show the sensitivity matrix.',
+        title: 'Click the Matrix tab',
+        attachTo: {
+          element: '.tour-matrix-tab', // this.$refs.newrunsbuttonref // also element can be referenced with id, e.g. #some-id
+          on: 'bottom'
+        },
+        buttons: [
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          }
+        ],
+        modalOverlayOpeningPadding: 0, // padding applied to the highlight on the target element
+        highlightClass: 'my-highlight'
+        // classes: 'my-title my-text' // CSS classes for this step
+      };
+
+      const stepTwo = {
+        id: 'step-2-sensitivity-matrix',
+        text: 'This is the sensitivity analysis matrix. <br>To see the top influencers for a node, click on its column header.',
+        attachTo: {
+          element: '.tour-x-axis-sensitivity-matrix', // this DOM element is dynamic and will only be available once the sensitivity-analysis-matrix is rendered
+          on: 'bottom'
+        },
+        buttons: [
+          {
+            text: 'Next',
+            action: function() {
+              return tour.next();
+            }
+          },
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          }
+        ],
+        beforeShowPromise: () => {
+          return new Promise<void>(resolve => {
+            // check every 1 second for the next step to be flagged as ready
+            //  i.e., until the sensitivity matrix is visible
+            //  kill the timer if the operation is taking too long!
+            let elapsedTime = 0;
+            const wait = () => {
+              if (this.isReadyForNextStep) {
+                resolve();
+              } else {
+                elapsedTime += 1000;
+                if (elapsedTime > 30000) { // wait 30 seconds
+                  console.warn('operation took too long... killing the tour timer!');
+                  resolve();
+                }
+                // we should only continue waiting/checking for the ready-signal unless as long as the tour is active
+                if (tour.isActive()) {
+                  _.debounce(wait, 1000)();
+                }
+              }
+            };
+            wait();
+          });
+        }
+        // advanceOn: { selector: '', event: 'click' }
+      };
+
+      const stepThree = {
+        id: 'step-3-sensitivity-matrix-click',
+        text: '<b>Key influences</b> causing change in malnutrition are the darker cells ones.<br> <b>Influence score</b> is based on structure of graph and weight of relationships',
+        attachTo: {
+          element: '.tour-grid-lines',
+          on: 'right'
+        },
+        buttons: [
+          {
+            text: 'Got it',
+            action: function() {
+              return tour.complete();
+            }
+          }
+        ]
+      };
+
+      tour.addSteps([stepOne, stepTwo, stepThree]);
+      tour.start();
+
+      // save this newly created tour in the store
+      this.setTour(tour);
+    },
+    startAggregationsTour() {
+      // FIXME: starting a tour may switch the user context to the approperiate context where the tour is applicable
+      //        ideally, a warning is needed and ideally saving the tour details (e.g., steps) in ES and having a more flexible way to create them
+      const tour = new Shepherd.Tour({
+        tourName: 'aggregations-tour',
+        useModalOverlay: true,
+        defaultStepOptions: {
+          classes: 'my-container my-title my-text' // default CSS classes for all steps
+        }
+      });
+
+      const stepOne = {
+        id: 'step-1-overview',
+        text: `On the <b>Descriptions</b> tab, review the <b>units</b> and identify if it is:
+          <br>
+          <ul>
+            <li>a count (e.g. number of people)</li>
+            <li>a percentage, rate or probability (e.g. % of population)</li>
+            <li>an index (e.g. rank)</li>
+          </ul>
+          <br>
+          Then click on the <b>Data</b> tab.
+        `,
+        title: 'Review Description and Click Data tab',
+        attachTo: {
+          element: '.tour-datacube-desc',
+          on: 'right'
+        },
+        buttons: [
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          }
+        ],
+        highlightClass: 'my-highlight',
+        // @FIXME: temp solution to expand the highlighted-target area to include
+        //  the Data/Desc buttons since they live in different components in the DOM hierarchy
+        //  and won't be clickable if not within the highlighted area
+        modalOverlayOpeningPadding: 50
+      };
+
+      const stepTwo = {
+        id: 'step-2-select-spatial-aggregation',
+        text: `Select the appropriate <b>Spatial Aggregation</b>:
+               e.g. if there are values at regional level, how should they be aggregated at the country level?
+          <br>
+          <ul>
+            <li>a count: <b>sum</b></li>
+            <li>a percentage, rate or probability: <b>mean</b></li>
+            <li>an index: <b>mean</b></li>
+          </ul>
+        `,
+        title: 'Select Spatial Aggregation',
+        attachTo: {
+          element: '.tour-spatial-agg-dropdown-config',
+          on: 'right'
+        },
+        buttons: [
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          },
+          {
+            text: 'Next',
+            action: function() {
+              return tour.next();
+            }
+          }
+        ],
+        beforeShowPromise: () => {
+          return new Promise<void>(resolve => {
+            // check every 1 second for the next step to be flagged as ready
+            //  i.e., until the map and the spatial-aggregation config are visible
+            //  kill the timer if the operation is taking too long!
+            let elapsedTime = 0;
+            const wait = () => {
+              if (this.isReadyForNextStep) {
+                resolve();
+              } else {
+                elapsedTime += 1000;
+                if (elapsedTime > 30000) { // wait 30 seconds
+                  console.warn('operation took too long... killing the tour timer!');
+                  resolve();
+                }
+                // we should only continue waiting/checking for the ready-signal unless as long as the tour is active
+                if (tour.isActive()) {
+                  _.debounce(wait, 1000)();
+                }
+              }
+            };
+            wait();
+          });
+        },
+        highlightClass: 'my-highlight',
+        // @FIXME: temp solution to expand the highlighted-target area to include
+        //  the dropdown config options to allow the user to select one of them before advancing the tour
+        modalOverlayOpeningPadding: 100
+      };
+
+      const stepThree = {
+        id: 'step-3-select-temporal-aggregation',
+        text: `Select the appropriate <b>Temporal Aggregation</b>:
+               e.g. if there are values for multiple days in a month, how should they be aggregated as one value for that month?
+          <br>
+          <ul>
+            <li>a count: <b>sum</b></li>
+            <li>a percentage, rate or probability: <b>mean</b></li>
+            <li>an index: <b>mean</b></li>
+          </ul>
+        `,
+        title: 'Select Temporal Aggregation',
+        attachTo: {
+          element: '.tour-temporal-agg-dropdown-config',
+          on: 'right'
+        },
+        buttons: [
+          {
+            text: 'Skip tutorial!',
+            action: function() {
+              return tour.cancel();
+            }
+          },
+          {
+            text: 'Next',
+            action: function() {
+              return tour.next();
+            }
+          }
+        ],
+        highlightClass: 'my-highlight',
+        // @FIXME: temp solution to expand the highlighted-target area to include
+        //  the dropdown config options to allow the user to select one of them before advancing the tour
+        modalOverlayOpeningPadding: 100
+      };
+
+      const stepFour = {
+        id: 'step-4-aggregation-summary',
+        text: 'These configuration options will be remembered in this quantitative analysis.',
+        buttons: [
+          {
+            text: 'Got it',
+            action: function() {
+              return tour.complete();
+            }
+          }
+        ]
+      };
+
+      tour.addSteps([stepOne, stepTwo, stepThree, stepFour]);
+      tour.start();
+
+      // save this newly created tour in the store
+      this.setTour(tour);
     }
   }
 });

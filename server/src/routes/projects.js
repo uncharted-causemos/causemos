@@ -361,7 +361,8 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   // FIXME: These fields are array fields and do not
   // aggregate. We need to use nested or use es-native suggestion api.
   // This is a quick hack to attemp to clean the results
-  if (field === 'docLocation' || field === 'docOrganization') {
+  const arrayFields = ['docLocation', 'docOrganization', 'docByodTag', 'docLabel'];
+  if (arrayFields.includes(field)) {
     const tokens = queryString.toLowerCase().split(' ').filter(d => d.length > 0);
     results = results.filter(d => {
       for (let i = 0; i < tokens.length; i++) {

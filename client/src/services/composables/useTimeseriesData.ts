@@ -68,7 +68,8 @@ export default function useTimeseriesData(
   selectedTimestamp: Ref<number | null>,
   onNewLastTimestamp: (lastTimestamp: number) => void,
   regionIds: Ref<string[]>,
-  selectedQualifierValues: Ref<Set<string>>
+  selectedQualifierValues: Ref<Set<string>>,
+  initialSelectedYears: Ref<string[]>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
@@ -282,6 +283,7 @@ export default function useTimeseriesData(
     const dataHasLoaded =
       rawTimeseriesData.value.length > 0 && timeseriesData.value.length > 0;
     if (!dataHasLoaded) return;
+
     // If no timeseries has an ID of `year`, then remove it from the list of
     //  selected years.
     // This also means that all years will be deselected when the breakdown
@@ -295,6 +297,17 @@ export default function useTimeseriesData(
       .forEach(year => {
         filteredSelectedYears.add(year);
       });
+    selectedYears.value = filteredSelectedYears;
+  });
+  watchEffect(() => {
+    const filteredSelectedYears = new Set<string>();
+
+    if (initialSelectedYears.value && initialSelectedYears.value.length > 0) {
+      initialSelectedYears.value.forEach(year => {
+        filteredSelectedYears.add(year);
+      });
+    }
+
     selectedYears.value = filteredSelectedYears;
   });
   const toggleIsYearSelected = (year: string) => {

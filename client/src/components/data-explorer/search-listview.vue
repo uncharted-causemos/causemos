@@ -65,7 +65,7 @@
                 </div>
               </td>
               <td class="desc-col">
-                <div>{{ formatDescription(d) }}</div>
+                <multiline-description :text="formatDescription(d)" />
               </td>
               <td class="period-col">
                 <div class="text-bold">{{ formatPeriod(d) }}</div>
@@ -91,13 +91,15 @@
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
+import MultilineDescription from '@/components/widgets/multiline-description';
 import { DatacubeStatus } from '@/types/Enums';
 import { isIndicator, isModel } from '../../utils/datacube-util';
 
 export default {
   name: 'SearchListview',
   components: {
-    Sparkline
+    Sparkline,
+    MultilineDescription
   },
   props: {
     datacubes: {

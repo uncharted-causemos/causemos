@@ -33,7 +33,7 @@ export default function useDatacubeHierarchy(
   metadata: Ref<Model | Indicator | null>,
   selectedAdminLevel: Ref<number>,
   breakdownOption: Ref<string | null>,
-  initialSelectedRegionIds?: string[]
+  initialSelectedRegionIds: Ref<string[]>
 ) {
   /**
    * Contains the lists of regions at each admin level across all timestamps
@@ -97,15 +97,15 @@ export default function useDatacubeHierarchy(
   const selectedRegionIdsAtAllLevels = ref<AdminRegionSets>(
     _.clone(EMPTY_ADMIN_REGION_SETS)
   );
-  watch([datacubeHierarchy], () => {
+  watch([datacubeHierarchy, initialSelectedRegionIds], () => {
     // Reset the selected region list when the list of all regions changes
 
     const emptyRegionSets = _.clone(EMPTY_ADMIN_REGION_SETS) as any;
 
-    if (initialSelectedRegionIds !== undefined && initialSelectedRegionIds.length > 0) {
+    if (initialSelectedRegionIds.value !== undefined && initialSelectedRegionIds.value.length > 0) {
       const adminLevel: string = ADMIN_LEVEL_KEYS[selectedAdminLevel.value];
 
-      initialSelectedRegionIds.forEach(regionId => {
+      initialSelectedRegionIds.value.forEach(regionId => {
         emptyRegionSets[adminLevel].add(regionId);
       });
     }

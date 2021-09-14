@@ -12,6 +12,10 @@
 
       <list-context-insight-pane
         v-if="currentTab === 'Context Insights'" />
+
+      <template #below-tabs>
+        <slot name="below-tabs" />
+      </template>
   </side-panel>
 </template>
 
@@ -47,7 +51,7 @@ export default defineComponent({
   @import "~styles/variables";
 
   .analytical-questions-and-insights-panel-container {
-    margin-top: 5px;
+    margin-top: 10px;
 
     .context-insights-container {
       margin-left: 1rem;

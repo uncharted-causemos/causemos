@@ -32,6 +32,7 @@
             :aggregation-level-type="'Admin level'"
             :aggregation-level-title="aggregationLevels[aggregationLevel]"
             :raw-data="adminLevelData"
+            :should-show-deselected-bars="true"
             @aggregation-level-change="(newVal) => { aggregationLevel = newVal }"
           />
         </template>
