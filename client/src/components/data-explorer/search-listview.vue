@@ -5,8 +5,8 @@
       <table>
         <thead>
           <tr>
-            <th><span class="left-cover" />VARIABLE and SOURCE</th>
-            <th>DESCRIPTION</th>
+            <th><span class="left-cover" />VARIABLE INFORMATION</th>
+            <th>SOURCE and DESCRIPTION</th>
             <th>PERIOD</th>
             <th>REGION</th>
             <th><!-- Timeseries chart--> <span class="right-cover" /></th>
@@ -55,8 +55,7 @@
                         Processing
                       </button>
                       <div class="text-bold">{{ d.default_feature }}</div>
-                      <div>{{ d.name }}</div>
-                      <div>{{ d.source }}</div>
+                      <multiline-description :text="formatOutputDescription(d)" />
                       <div v-if="isExpanded(d) && d.parameters?.length > 0" class="knobs">
                         Input Knobs:<br/>
                         {{ formatParameters(d) }}
@@ -65,6 +64,7 @@
                 </div>
               </td>
               <td class="desc-col">
+                <div class="text-bold">{{ d.name }}</div>
                 <multiline-description :text="formatDescription(d)" />
               </td>
               <td class="period-col">
@@ -74,7 +74,10 @@
               <td class="region-col">
                 <div> {{ formatCountry(d) }} </div>
               </td>
-              <td class="timeseries-col">
+              <td
+                v-if="d.timeseries"
+                class="timeseries-col"
+              >
                 <div class="timeseries-container">
                   <sparkline :data="formatTimeSeries(d)" />
                 </div>
@@ -207,6 +210,12 @@ export default {
         ? d.description
         : `${d.description.substring(0, 140)}...`;
     },
+    formatOutputDescription(d) {
+      if (!d.outputs?.[0]?.description) return '';
+      return this.isExpanded(d) || d.outputs[0].description.length < 100
+        ? d.outputs[0].description
+        : `${d.outputs[0].description.substring(0, 100)}...`;
+    },
     getTypeIcon(d) {
       return 'fa ' + (d.type === 'model' ? 'fa-connectdevelop' : 'fa-table');
     }
@@ -285,7 +294,7 @@ $selected-background: #EBF1FC;
       border-left: 4px solid $selected-border;
     }
     td {
-      background-color: $selected-background
+      background-color: $selected-background;
     }
   }
   .tr-item.deactive {
@@ -306,7 +315,7 @@ $selected-background: #EBF1FC;
       .radio {
         flex: 0 0 auto;
         align-self: flex-start;
-        margin: 15px 10px 0 0;
+        margin: 3px 5px 0 0;
         .disabled {
           color: $background-light-3;
         }
@@ -318,7 +327,6 @@ $selected-background: #EBF1FC;
           border: none;
           border-radius: 5px;
           background-color: $background-light-3;
-          margin-top: 5px;
         }
         .knobs {
           margin-top: 10px;
