@@ -270,8 +270,90 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   const queryString = req.query.q;
   let results = null;
   if (field === 'subjConcept' || field == 'objConcept') {
-    const q = await projectService.searchOntologyExamples(projectId, queryString);
+    const prefixes = queryString.split(" ").map(query => {
+      return {
+        prefix: {
+          examples: query
+        }
+      };
+    });
+    const filters = {
+      bool: {
+        must: [
+          {
+            term: {
+              project_id: projectId
+            },
+          },
+          {
+            bool: {
+              should: prefixes
+            }
+          }
+        ]
+      }
+    };
+    // const ontologyMatches = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, "", RESOURCE_HIGHLIGHT_SETTINGS.ONTOLOGY, filters);
+    // const ontologyMatches1 = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, queryString);
+    // const ontologyMatches2 = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, queryString, [{
+    //   term: {
+    //     project_id: projectId
+    //   }
+    // }]);
+    const ontologyMatches = [
+      {
+        "_source": {
+          "definition": "",
+          "examples": [
+            "antibiotics",
+            "antimicrobial",
+            "antiretroviral",
+            "antiviral",
+            "antivirals",
+            "aspirin",
+            "corticosteroid",
+            "drugs",
+            "medication",
+            "medicine",
+            "paracetamol",
+            "penicillin",
+            "pharmaceuticals",
+            "steroid",
+            "tetracycline",
+            "therapeutic"
+          ],
+          "project_id": "project-a234adcd-7fbe-416c-98d6-d5c518b88233",
+          "label": "wm/concept/goods/medicine"
+        },
+        "highlight": {
+          "examples": [
+            "<i>antibiotics</i>"
+          ]
+        }
+      }
+    ];
+    // need to keep track of what concept maps to what highlights
+    const source_highlights = {};
+    // need to associate words with a concept, this can be modified as more than
+    // one mapping is possible due to overlap of words in concepts
+    const words_to_label = {};
+    // create one big string
+    const q = queryString + " " + [...new Set(_.flatten(ontologyMatches.map(match => {
+      source_highlights[match._source.label] = match.highlight;
+      // reformatting to deal with the concept path
+      const label = match._source.label.split("/").splice(-1)[0];
+      const words = label.split("_");
+      words.forEach(word => words_to_label[word] = match._source.label);
+      return words;
+    })))].join(" ");
+
     results = await projectService.searchFields(projectId, field, q, 'OR');
+    mapResultsToHighlights(results, source_highlights, words_to_label);
+
+    results = {
+      results: results,
+      highlights: source_highlights
+    };
   } else {
     results = await projectService.searchFields(projectId, field, queryString);
   }
@@ -293,6 +375,24 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
 
   res.json(results);
 }));
+
+const mapResultsToHighlights = (results, source_highlights, words_to_label) => {
+  results.forEach(result => {
+    const label_words = result.split("/").splice(-1)[0].split("_");
+    label_words.forEach(word => {
+      if (!(result in source_highlights) && word in words_to_label) {
+        // match concepts with the original label
+        // word -> first label that contains the word -> highlights for the label
+        source_highlights[result] = source_highlights[words_to_label[word]];
+      }
+    });
+    // no highlight exists, likely because it was a straightforward match
+    // e.g q=anti returns antibodies
+    if (!(result in source_highlights)) {
+      source_highlights[result] = {};
+    }
+  });
+};
 
 /**
  * GET Search path between source and target nodes

@@ -46,6 +46,19 @@ const RESOURCE = Object.freeze({
   PROJECT_EXTENSION: 'project-extension'
 });
 
+// store which fields in what index are highlightable
+// and highlight settings for the index
+const RESOURCE_HIGHLIGHT_SETTINGS = Object.freeze({
+  ONTOLOGY: {
+    fields: {
+      examples: {}
+    },
+    type: 'fvh',
+    pre_tags: '<m>',
+    post_tags: '</m>'
+  }
+});
+
 class Adapter {
   static get(type, id) {
     if (type === RESOURCE.STATEMENT) {
@@ -65,6 +78,7 @@ class Adapter {
 module.exports = {
   Adapter,
   RESOURCE,
+  RESOURCE_HIGHLIGHT_SETTINGS,
   SEARCH_LIMIT,
   MAX_ES_BUCKET_SIZE
 };
