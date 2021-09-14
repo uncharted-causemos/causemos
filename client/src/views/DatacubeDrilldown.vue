@@ -170,6 +170,7 @@ import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState, DataState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
 import useQualifiers from '@/services/composables/useQualifiers';
+import { useRoute } from 'vue-router';
 
 const DRILLDOWN_TABS = [
   {
@@ -207,7 +208,8 @@ export default defineComponent({
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
-    const selectedItem = computed(() => store.getters['dataAnalysis/selectedItem']);
+    const route = useRoute();
+    const datacubeId = route.query.datacubeId as any;
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
     // apply initial data config for this datacube
@@ -216,9 +218,8 @@ export default defineComponent({
     const initialSelectedYears = ref<string[]>([]);
 
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
-    const datacubeId = selectedItem.value.id;
-    const initialViewConfig: ViewState = selectedItem.value.viewConfig;
-    const initialDataConfig: DataState = selectedItem.value.dataConfig;
+    const initialViewConfig: ViewState = analysisId.value[0].viewConfig;
+    const initialDataConfig: DataState = analysisId.value[0].dataConfig;
 
     // apply initial view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
@@ -423,7 +424,7 @@ export default defineComponent({
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === selectedItem.value.id);
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
       if (currentAnalysisItem.viewConfig === undefined) {
         currentAnalysisItem.viewConfig = {} as ViewState;
       }

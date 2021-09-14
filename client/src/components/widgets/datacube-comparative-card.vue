@@ -278,16 +278,16 @@ export default defineComponent({
       // ensure that the current datacubeId is at 0 index
       const workingAnalysisItems = this.analysisItems.map((item: AnalysisItem): AnalysisItem => item);
       const updatedAnalysisInfo = { currentAnalysisId: this.analysisId, analysisItems: workingAnalysisItems };
-      console.log(this.props.id);
-      await this.store.dispatch('dataAnalysis/loadState', this.analysisId);
       await this.store.dispatch('dataAnalysis/updateAnalysisItems', updatedAnalysisInfo);
-
       router.push({
         name: 'data',
         params: {
           project: this.project,
           analysisId: this.analysisId,
           projectType: ProjectType.Analysis
+        },
+        query: {
+          datacubeId: this.props.id
         }
       }).catch(() => {});
     },
