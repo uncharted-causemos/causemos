@@ -220,6 +220,7 @@
                     @sync-bounds="onSyncMapBounds"
                     @on-map-load="onMapLoad"
                     @zoom-change="updateMapCurSyncedZoom"
+                    @map-update="recalculateDiffStats"
                   />
                 </div>
               </div>
@@ -230,7 +231,7 @@
                 <!-- Empty div to reduce jumpiness when the maps are loading -->
                 <div class="card-map" />
               </div>
-              <div class="card-maps-legend-container">
+              <div v-if="outputSourceSpecs.length > 0" class="card-maps-legend-container">
                 <div v-for="(data, index) in (isGridLayer ? gridMapLayerLegendData : adminMapLayerLegendData)" :key="index">
                   <map-legend :ramp="data" />
                 </div>
@@ -262,7 +263,7 @@ import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vu
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX, createMapLegendData } from '@/utils/map-util';
-import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
@@ -423,32 +424,36 @@ export default defineComponent({
     const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
     const adminLayerStats = ref<any>({});
     watchEffect(() => {
-      if (!regionalData.value) return;
+      if (!regionalData.value) {
+        adminMapLayerLegendData.value = [];
+        return;
+      }
       adminLayerStats.value = computeRegionalStats(regionalData.value, (relativeTo.value || undefined));
       if (relativeTo.value) {
         const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
         const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
-        adminMapLayerLegendData.value = [
+        adminMapLayerLegendData.value = (baseline && difference) ? [
           createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
           createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
-        ];
+        ] : [];
       } else {
-        const { min, max } = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
-        adminMapLayerLegendData.value = [
-          createMapLegendData([min, max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
-        ];
+        const global = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
+        adminMapLayerLegendData.value = global ? [
+          createMapLegendData([global.min, global.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+        ] : [];
       }
-      console.log('From regionDataChange: ', adminLayerStats.value);
     });
 
+    const outputStats = ref<OutputStatsResult[]>([]);
     const gridLayerStats = ref<any>({});
     const mapCurZoom = ref<number>(0);
-    const updateMapCurSyncedZoom = (data: { zoom: number }) => {
-      if (mapCurZoom.value === data.zoom) return;
-      mapCurZoom.value = data.zoom;
+    const updateMapCurSyncedZoom = (data: { component: any }) => {
+      if (mapCurZoom.value === data.component.curZoom) return;
+      mapCurZoom.value = data.component.curZoom;
     };
 
     watchEffect(async onInvalidate => {
+      // Update outputStats when ouputSourceSpecs changes
       if (outputSourceSpecs.value.length === 0) return;
       let isCancelled = false;
       onInvalidate(() => {
@@ -456,31 +461,56 @@ export default defineComponent({
       });
       const result = await getOutputStats(outputSourceSpecs.value);
       if (isCancelled) return;
-      gridLayerStats.value = computeGridLayerStats(result, (relativeTo.value || undefined));
+      outputStats.value = result;
     });
+    watchEffect(() => {
+      // update gridLayerStats when either outputStats or relativeTo changes
+      gridLayerStats.value = {
+        ...gridLayerStats.value,
+        ...computeGridLayerStats(outputStats.value, (relativeTo.value || undefined))
+      };
+    });
+
+    const recalculateDiffStats = _.debounce(function({ component }: { component: any }) {
+      if (!relativeTo.value || !component.isGridMap) return;
+      const baselineProp = relativeTo.value;
+      const features = component.map.querySourceFeatures(component.vectorSourceId, { sourceLayer: component.vectorSourceLayer });
+      const values = [];
+      for (const feature of features) {
+        for (const item of component.outputSourceSpecs) {
+          const diff = feature.properties[item.id] - feature.properties[baselineProp];
+          if (_.isFinite(diff)) values.push(diff);
+        }
+      }
+      gridLayerStats.value = {
+        ...gridLayerStats.value,
+        difference: { diff: { min: Math.min(...values), max: Math.max(...values) } }
+      };
+    }, 50);
 
     watchEffect(() => {
       // Update map legend data for grid map
-      if (_.isEmpty(gridLayerStats.value)) return;
-      if (relativeTo.value) return;
-      // if (relativeTo.value) {
-      //   const baseline = gridLayerStats.value.baseline[String(mapCurZoom.value)];
-      //   const difference = gridLayerStats.value.difference[String(mapCurZoom.value)];
-      //   if (!baseline || !difference) return;
-      //   gridMapLayerLegendData.value = [
-      //     createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
-      //     createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
-      //   ];
-      // } else {
-      const global = gridLayerStats.value.global[String(mapCurZoom.value)];
-      if (!global) return;
-      gridMapLayerLegendData.value = [
-        createMapLegendData([global.min, global.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
-      ];
-      // }
+      if (_.isEmpty(gridLayerStats.value)) {
+        gridMapLayerLegendData.value = [];
+        return;
+      }
+      if (relativeTo.value) {
+        const baseline = gridLayerStats.value?.baseline[String(mapCurZoom.value)];
+        const difference = gridLayerStats.value?.difference?.diff;
+        gridMapLayerLegendData.value = (baseline && difference) ? [
+          createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
+          createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
+        ] : [];
+      } else {
+        const global = gridLayerStats.value.global[String(mapCurZoom.value)];
+        gridMapLayerLegendData.value = global ? [
+          createMapLegendData([global.min, global.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+        ] : [];
+      }
     });
 
     return {
+      recalculateDiffStats,
       updateMapCurSyncedZoom,
       adminLayerStats,
       gridLayerStats,
