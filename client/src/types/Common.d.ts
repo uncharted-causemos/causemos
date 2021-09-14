@@ -70,3 +70,7 @@ export interface AnalysisMapRange {
   min: number;
   max: number;
 }
+export interface MapLegendColor {
+  color: string;
+  label?: string;
+}

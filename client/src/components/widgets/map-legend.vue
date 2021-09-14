@@ -12,11 +12,7 @@
 </template>
 <script lang="ts">
 import { defineComponent, PropType } from 'vue';
-
-export interface MapLegendColor {
-  color: string;
-  label?: string;
-}
+import { MapLegendColor } from '@/types/Common';
 
 export default defineComponent({
   name: 'MapLegend',

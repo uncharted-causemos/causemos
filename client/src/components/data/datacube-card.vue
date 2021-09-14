@@ -220,7 +220,7 @@
                     @sync-bounds="onSyncMapBounds"
                     @on-map-load="onMapLoad"
                     @zoom-change="updateMapCurSyncedZoom"
-                    @map-update="recalculateDiffStats"
+                    @map-update="recalculateGridMapDiffStats"
                   />
                 </div>
               </div>
@@ -255,24 +255,21 @@ import { ModelRun } from '@/types/ModelRun';
 import { ScenarioData } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
-import { getOutputStats } from '@/services/runoutput-service';
-import { colorFromIndex, COLOR_SCHEME } from '@/utils/colors-util';
+import useAnalysisMaps from '@/services/composables/useAnalysisMaps';
+import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
-import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX, createMapLegendData } from '@/utils/map-util';
-import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
-import { DATA_LAYER, computeRegionalStats, adminLevelToString, computeGridLayerStats } from '@/utils/map-util-new';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
-import MapLegend, { MapLegendColor } from '@/components/widgets/map-legend.vue';
-import * as d3 from 'd3';
-
+import MapLegend from '@/components/widgets/map-legend.vue';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -384,6 +381,7 @@ export default defineComponent({
       outputSourceSpecs,
       regionalData,
       relativeTo,
+      selectedDataLayer,
       selectedAdminLevel
     } = toRefs(props);
 
@@ -420,97 +418,25 @@ export default defineComponent({
         _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
     });
 
-    const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
-    const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
-    const adminLayerStats = ref<any>({});
-    watchEffect(() => {
-      if (!regionalData.value) {
-        adminMapLayerLegendData.value = [];
-        return;
-      }
-      adminLayerStats.value = computeRegionalStats(regionalData.value, (relativeTo.value || undefined));
-      if (relativeTo.value) {
-        const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
-        const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
-        adminMapLayerLegendData.value = (baseline && difference) ? [
-          createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
-          createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
-        ] : [];
-      } else {
-        const global = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
-        adminMapLayerLegendData.value = global ? [
-          createMapLegendData([global.min, global.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
-        ] : [];
-      }
-    });
-
-    const outputStats = ref<OutputStatsResult[]>([]);
-    const gridLayerStats = ref<any>({});
-    const mapCurZoom = ref<number>(0);
-    const updateMapCurSyncedZoom = (data: { component: any }) => {
-      if (mapCurZoom.value === data.component.curZoom) return;
-      mapCurZoom.value = data.component.curZoom;
-    };
-
-    watchEffect(async onInvalidate => {
-      // Update outputStats when ouputSourceSpecs changes
-      if (outputSourceSpecs.value.length === 0) return;
-      let isCancelled = false;
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      const result = await getOutputStats(outputSourceSpecs.value);
-      if (isCancelled) return;
-      outputStats.value = result;
-    });
-    watchEffect(() => {
-      // update gridLayerStats when either outputStats or relativeTo changes
-      gridLayerStats.value = {
-        ...gridLayerStats.value,
-        ...computeGridLayerStats(outputStats.value, (relativeTo.value || undefined))
-      };
-    });
-
-    const recalculateDiffStats = _.debounce(function({ component }: { component: any }) {
-      if (!relativeTo.value || !component.isGridMap) return;
-      const baselineProp = relativeTo.value;
-      const features = component.map.querySourceFeatures(component.vectorSourceId, { sourceLayer: component.vectorSourceLayer });
-      const values = [];
-      for (const feature of features) {
-        for (const item of component.outputSourceSpecs) {
-          const diff = feature.properties[item.id] - feature.properties[baselineProp];
-          if (_.isFinite(diff)) values.push(diff);
-        }
-      }
-      gridLayerStats.value = {
-        ...gridLayerStats.value,
-        difference: { diff: { min: Math.min(...values), max: Math.max(...values) } }
-      };
-    }, 50);
-
-    watchEffect(() => {
-      // Update map legend data for grid map
-      if (_.isEmpty(gridLayerStats.value)) {
-        gridMapLayerLegendData.value = [];
-        return;
-      }
-      if (relativeTo.value) {
-        const baseline = gridLayerStats.value?.baseline[String(mapCurZoom.value)];
-        const difference = gridLayerStats.value?.difference?.diff;
-        gridMapLayerLegendData.value = (baseline && difference) ? [
-          createMapLegendData([baseline.min, baseline.max], COLOR_SCHEME.GREYS_7, d3.scaleLinear),
-          createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
-        ] : [];
-      } else {
-        const global = gridLayerStats.value.global[String(mapCurZoom.value)];
-        gridMapLayerLegendData.value = global ? [
-          createMapLegendData([global.min, global.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
-        ] : [];
-      }
-    });
+    const {
+      onSyncMapBounds,
+      mapBounds,
+      updateMapCurSyncedZoom,
+      recalculateGridMapDiffStats,
+      adminLayerStats,
+      gridLayerStats,
+      gridMapLayerLegendData,
+      adminMapLayerLegendData,
+      isGridLayer,
+      mapSelectedLayer
+    } = useAnalysisMaps(outputSourceSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
 
     return {
-      recalculateDiffStats,
+      mapBounds,
+      onSyncMapBounds,
+      isGridLayer,
+      mapSelectedLayer,
+      recalculateGridMapDiffStats,
       updateMapCurSyncedZoom,
       adminLayerStats,
       gridLayerStats,
@@ -537,10 +463,6 @@ export default defineComponent({
     potentialScenarios: [] as Array<ScenarioData>,
     showNewRunsModal: false,
     showModelRunsExecutionStatus: false,
-    mapBounds: [ // Default bounds to Ethiopia
-      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-    ],
     mapReady: false
   }),
   created() {
@@ -562,12 +484,6 @@ export default defineComponent({
       } else {
         return [];
       }
-    },
-    isGridLayer(): boolean {
-      return this.selectedDataLayer === DATA_LAYER.TILES;
-    },
-    mapSelectedLayer(): number {
-      return this.isGridLayer ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
@@ -583,9 +499,6 @@ export default defineComponent({
     },
     onMapLoad() {
       this.$emit('on-map-load');
-    },
-    onSyncMapBounds(mapBounds: Array<Array<number>>) {
-      this.mapBounds = mapBounds;
     },
     toggleNewRunsMode() {
       this.showNewRunsMode = !this.showNewRunsMode;
