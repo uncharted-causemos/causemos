@@ -4,7 +4,7 @@ const _ = require('lodash');
 const uuid = require('uuid');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE, RESOURCE_HIGHLIGHT_SETTINGS } = rootRequire('/adapters/es/adapter');
 // const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const { get } = rootRequire('/cache/node-lru-cache');
@@ -269,7 +269,7 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   const field = req.query.field;
   const queryString = req.query.q;
   let results = null;
-  if (field === 'subjConcept' || field == 'objConcept') {
+  if (field === 'subjConcept' || field === 'objConcept') {
     const prefixes = queryString.split(" ").map(query => {
       return {
         prefix: {
@@ -295,26 +295,26 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
     };
     const ontologyMatches = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, "", RESOURCE_HIGHLIGHT_SETTINGS.ONTOLOGY, filters);
     // need to keep track of what concept maps to what highlights
-    const source_highlights = {};
+    const sourceHighlights = {};
     // need to associate words with a concept, this can be modified as more than
     // one mapping is possible due to overlap of words in concepts
-    const words_to_label = {};
+    const wordsToLabel = {};
     // create one big string
     const q = queryString + " " + [...new Set(_.flatten(ontologyMatches.map(match => {
-      source_highlights[match._source.label] = match.highlight;
+      sourceHighlights[match._source.label] = match.highlight;
       // reformatting to deal with the concept path
       const label = match._source.label.split("/").splice(-1)[0];
       const words = label.split("_");
-      words.forEach(word => words_to_label[word] = match._source.label);
+      words.forEach(word => { wordsToLabel[word] = match._source.label });
       return words;
     })))].join(" ");
 
     results = await projectService.searchFields(projectId, field, q, 'OR');
-    mapResultsToHighlights(results, source_highlights, words_to_label);
+    mapResultsToHighlights(results, sourceHighlights, wordsToLabel);
 
     results = {
       results: results,
-      highlights: source_highlights
+      highlights: sourceHighlights
     };
   } else {
     results = await projectService.searchFields(projectId, field, queryString);
@@ -339,20 +339,20 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   res.json(results);
 }));
 
-const mapResultsToHighlights = (results, source_highlights, words_to_label) => {
+const mapResultsToHighlights = (results, sourceHighlights, wordsToLabel) => {
   results.forEach(result => {
-    const label_words = result.split("/").splice(-1)[0].split("_");
-    label_words.forEach(word => {
-      if (!(result in source_highlights) && word in words_to_label) {
+    const labelWords = result.split("/").splice(-1)[0].split("_");
+    labelWords.forEach(word => {
+      if (!(result in sourceHighlights) && word in wordsToLabel) {
         // match concepts with the original label
         // word -> first label that contains the word -> highlights for the label
-        source_highlights[result] = source_highlights[words_to_label[word]];
+        sourceHighlights[result] = sourceHighlights[wordsToLabel[word]];
       }
     });
     // no highlight exists, likely because it was a straightforward match
     // e.g q=anti returns antibodies
-    if (!(result in source_highlights)) {
-      source_highlights[result] = {};
+    if (!(result in sourceHighlights)) {
+      sourceHighlights[result] = {};
     }
   });
 };
