@@ -638,7 +638,6 @@ const getProjectEdges = async (projectId, filters) => {
  */
 const searchAndHighlight = async (index, queryString, highlightSettings, filters = {}) => {
   const adapter = Adapter.get(index);
-  const fieldsToHighlight = {};
   let query = {};
   if (queryString === "") {
     query = filters;

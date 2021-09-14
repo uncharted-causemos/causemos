@@ -293,45 +293,7 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
         ]
       }
     };
-    // const ontologyMatches = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, "", RESOURCE_HIGHLIGHT_SETTINGS.ONTOLOGY, filters);
-    // const ontologyMatches1 = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, queryString);
-    // const ontologyMatches2 = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, queryString, [{
-    //   term: {
-    //     project_id: projectId
-    //   }
-    // }]);
-    const ontologyMatches = [
-      {
-        "_source": {
-          "definition": "",
-          "examples": [
-            "antibiotics",
-            "antimicrobial",
-            "antiretroviral",
-            "antiviral",
-            "antivirals",
-            "aspirin",
-            "corticosteroid",
-            "drugs",
-            "medication",
-            "medicine",
-            "paracetamol",
-            "penicillin",
-            "pharmaceuticals",
-            "steroid",
-            "tetracycline",
-            "therapeutic"
-          ],
-          "project_id": "project-a234adcd-7fbe-416c-98d6-d5c518b88233",
-          "label": "wm/concept/goods/medicine"
-        },
-        "highlight": {
-          "examples": [
-            "<i>antibiotics</i>"
-          ]
-        }
-      }
-    ];
+    const ontologyMatches = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, "", RESOURCE_HIGHLIGHT_SETTINGS.ONTOLOGY, filters);
     // need to keep track of what concept maps to what highlights
     const source_highlights = {};
     // need to associate words with a concept, this can be modified as more than
