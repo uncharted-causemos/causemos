@@ -89,9 +89,9 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
     for (const stat of item.stats) {
       const zoom = stat.zoom - Z_DIFF;
       if (global[zoom]) {
-        global[zoom] = { min: Math.min(global[zoom].min, stat.min), max: Math.max(global[zoom].max, stat.max) };
+        global[zoom] = resolveSameMinMaxValue({ min: Math.min(global[zoom].min, stat.min), max: Math.max(global[zoom].max, stat.max) });
       } else {
-        global[zoom] = { min: stat.min, max: stat.max };
+        global[zoom] = resolveSameMinMaxValue({ min: stat.min, max: stat.max });
       }
     }
   }
@@ -99,7 +99,7 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
     // Stats for the baseline map
     const stats = gridOutputStats.find(item => item.outputSpecId === baselineProp)?.stats;
     (stats || []).forEach(stat => {
-      baseline[stat.zoom - Z_DIFF] = { min: stat.min, max: stat.max };
+      baseline[stat.zoom - Z_DIFF] = resolveSameMinMaxValue({ min: stat.min, max: stat.max });
     });
   }
   return {

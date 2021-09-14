@@ -12,8 +12,17 @@
       <wm-map-vector
         v-if="vectorSource"
         :key="layerRerenderTrigger"
-        :source-id="vectorSourceId"
         :source="vectorSource"
+        :source-id="vectorSourceId"
+        :source-layer="vectorSourceLayer"
+        :promote-id="idPropName"
+        :layer-id="baseLayerId"
+        :layer="baseLayer"
+      />
+      <wm-map-vector
+        v-if="vectorSource && colorLayer"
+        :key="layerRerenderTrigger"
+        :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
         :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
@@ -21,15 +30,6 @@
         :layer="colorLayer"
         @add-layer="onAddLayer"
         @update-source="onUpdateSource"
-      />
-      <wm-map-vector
-        v-if="vectorSource"
-        :key="layerRerenderTrigger"
-        :source-id="vectorSourceId"
-        :source-layer="vectorSourceLayer"
-        :promote-id="idPropName"
-        :layer-id="baseLayerId"
-        :layer="baseLayer"
       />
       <wm-map-popup
         v-if="showTooltip"
@@ -44,7 +44,7 @@
 <script>
 
 import _ from 'lodash';
-import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
+import * as d3 from 'd3';
 import { WmMap, WmMapVector, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
@@ -250,9 +250,6 @@ export default {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
-    colorOption() {
-      return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
-    },
     colorScheme() {
       if (!_.isNil(this.relativeTo)) {
         return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
@@ -292,6 +289,9 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+    this.colorOption = {
+      scaleFn: d3.scaleLinear
+    };
 
     this.debouncedRefresh = _.debounce(function() {
       this.refresh();
@@ -344,7 +344,6 @@ export default {
       }
     },
     refreshLayers() {
-      if (this.colorOption === undefined) return;
       const useFeatureState = !this.isGridMap;
       this.baseLayer = baseLayer(this.valueProp, useFeatureState, this.baselineSpec?.id);
       this.refreshColorLayer(useFeatureState);
