@@ -211,10 +211,20 @@ export default {
         : `${d.description.substring(0, 140)}...`;
     },
     formatOutputDescription(d) {
-      if (!d.outputs?.[0]?.description) return '';
-      return this.isExpanded(d) || d.outputs[0].description.length < 100
-        ? d.outputs[0].description
-        : `${d.outputs[0].description.substring(0, 100)}...`;
+      if (!d.outputs.length === 0) return '';
+      // match the default feature to it's full output info, such that we can retrieve
+      // the output description as it is distinct from the top level description that
+      // we include for each indicator/model datacube.
+      const defaultOutputDescription = d.outputs.reduce((desc, output) => {
+        // indicators and model use different information from the output for the default feature field
+        if (output.display_name === d.default_feature || output.name === d.default_feature) {
+          desc = output.description;
+        }
+        return desc;
+      }, '');
+      return this.isExpanded(d) || defaultOutputDescription.length < 100
+        ? defaultOutputDescription
+        : `${defaultOutputDescription.substring(0, 100)}...`;
     },
     getTypeIcon(d) {
       return 'fa ' + (d.type === 'model' ? 'fa-connectdevelop' : 'fa-table');
