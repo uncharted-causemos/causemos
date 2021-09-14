@@ -40,7 +40,7 @@
           :selected-spatial-aggregation="selectedSpatialAggregation"
           :regional-data="regionalData"
           :output-source-specs="outputSpecs"
-          :is-description-view="isDescriptionView"
+          :current-tab-view="currentTabView"
           :metadata="metadata"
           :timeseries-data="visibleTimeseriesData"
           :relative-to="relativeTo"
@@ -52,7 +52,7 @@
           @set-selected-scenario-ids="setSelectedScenarioIds"
           @select-timestamp="updateSelectedTimestamp"
           @check-model-metadata-validity="checkModelMetadataValidity"
-          @update-desc-view="updateDescView"
+          @update-tab-view="updateTabView"
           @set-relative-to="setRelativeTo"
           @new-runs-mode="newRunsMode=!newRunsMode"
         >
@@ -283,11 +283,19 @@ export default defineComponent({
           // this would be the case of the user selected a scenario on the PC plot while the model publishing step is still assuming description view
           store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Tweak_Visualization);
         }
+
+        // selecting a run or multiple runs when the desc tab is active should always open the data tab
+        //  selecting a run or multiple runs otherwise should respect the current tab
+        if (currentTabView.value === 'description') {
+          currentTabView.value = 'data';
+        }
       } else {
         // if no scenario selection is made, ensure we are back to the first step
         if (currentPublishStep.value !== ModelPublishingStepID.Enrich_Description) {
           store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Enrich_Description);
         }
+
+        currentTabView.value = 'description';
       }
     }
 
@@ -311,7 +319,7 @@ export default defineComponent({
       }
     ]);
 
-    const isDescriptionView = ref<boolean>(true);
+    const currentTabView = ref<string>('description');
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -341,8 +349,6 @@ export default defineComponent({
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Indicator) {
         setSelectedScenarioIds([DatacubeType.Indicator.toString()]);
-      } else {
-        isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
     });
 
@@ -407,7 +413,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      allModelRunData
     );
 
     const {
@@ -437,7 +444,7 @@ export default defineComponent({
         spatialAggregation: selectedSpatialAggregation.value,
         temporalAggregation: selectedTemporalAggregation.value,
         temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
+        isDescriptionView: currentTabView.value === 'description', // FIXME
         selectedOutputIndex: currentOutputIndex.value,
         selectedMapBaseLayer: selectedBaseLayer.value,
         selectedMapDataLayer: selectedDataLayer.value,
@@ -470,7 +477,7 @@ export default defineComponent({
       metadata,
       regionalData,
       outputSpecs,
-      isDescriptionView,
+      currentTabView,
       currentOutputIndex,
       setSelectedTimestamp,
       visibleTimeseriesData,
@@ -698,7 +705,8 @@ export default defineComponent({
           this.setSelectedTemporalResolution(loadedInsight.view_state?.temporalResolution);
         }
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-          this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+          // FIXME
+          this.updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
         }
         if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
           const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
@@ -788,8 +796,8 @@ export default defineComponent({
         });
       }
     },
-    updateDescView(val: boolean) {
-      this.isDescriptionView = val;
+    updateTabView(val: string) {
+      this.currentTabView = val;
     },
     updateSelectedTimestamp(value: number) {
       if (this.selectedTimestamp === value) return;

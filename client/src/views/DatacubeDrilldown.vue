@@ -17,7 +17,7 @@
           :selected-spatial-aggregation="selectedSpatialAggregation"
           :regional-data="regionalData"
           :output-source-specs="outputSpecs"
-          :is-description-view="isDescriptionView"
+          :current-tab-view="currentTabView"
           :metadata="metadata"
           :timeseries-data="visibleTimeseriesData"
           :relative-to="relativeTo"
@@ -32,7 +32,7 @@
           @set-relative-to="setRelativeTo"
           @refetch-data="fetchData"
           @new-runs-mode="newRunsMode=!newRunsMode"
-          @update-desc-view="updateDescView"
+          @update-tab-view="updateTabView"
         >
           <template #datacube-model-header>
             <h5
@@ -307,7 +307,7 @@ export default defineComponent({
         : null
     );
 
-    const isDescriptionView = ref<boolean>(true);
+    const currentTabView = ref<string>('description');
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     watchEffect(() => {
@@ -337,8 +337,6 @@ export default defineComponent({
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
-      } else {
-        isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
     });
 
@@ -409,7 +407,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      allModelRunData
     );
 
     const {
@@ -430,7 +429,7 @@ export default defineComponent({
         spatialAggregation: selectedSpatialAggregation.value,
         temporalAggregation: selectedTemporalAggregation.value,
         temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
+        isDescriptionView: currentTabView.value === 'description', // FIXME
         selectedOutputIndex: currentOutputIndex.value,
         selectedMapBaseLayer: selectedBaseLayer.value,
         selectedMapDataLayer: selectedDataLayer.value,
@@ -489,7 +488,7 @@ export default defineComponent({
       unit,
       regionalData,
       outputSpecs,
-      isDescriptionView,
+      currentTabView,
       selectedRegionIds,
       toggleIsRegionSelected,
       outputs,
@@ -590,8 +589,8 @@ export default defineComponent({
       updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
       this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     },
-    updateDescView(val: boolean) {
-      this.isDescriptionView = val;
+    updateTabView(val: string) {
+      this.currentTabView = val;
     },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight: Insight = await getInsightById(insight_id);
@@ -629,7 +628,8 @@ export default defineComponent({
           this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
         }
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-          this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+          // FIXME
+          this.updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
         }
         if (loadedInsight.view_state?.selectedOutputIndex) {
           const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
@@ -676,7 +676,18 @@ export default defineComponent({
         if (_.isEqual(this.selectedScenarioIds, newIds)) return;
       }
       this.selectedScenarioIds = newIds;
+
       this.clearRouteParam();
+
+      if (newIds.length > 0) {
+        // selecting a run or multiple runs when the desc tab is active should always open the data tab
+        //  selecting a run or multiple runs otherwise should respect the current tab
+        if (this.currentTabView === 'description') {
+          this.updateTabView('data');
+        }
+      } else {
+        this.updateTabView('description');
+      }
     }
   }
 });

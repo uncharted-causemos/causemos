@@ -32,7 +32,7 @@
         :selected-spatial-aggregation="selectedSpatialAggregation"
         :regional-data="regionalData"
         :output-source-specs="outputSpecs"
-        :is-description-view="isDescriptionView"
+        :current-tab-view="currentTabView"
         :metadata="metadata"
         :timeseries-data="visibleTimeseriesData"
         :relative-to="relativeTo"
@@ -46,7 +46,7 @@
         @set-relative-to="setRelativeTo"
         @refetch-data="fetchData"
         @new-runs-mode="newRunsMode=!newRunsMode"
-        @update-desc-view="updateDescView"
+        @update-tab-view="updateTabView"
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
@@ -276,7 +276,7 @@ export default defineComponent({
         : null
     );
 
-    const isDescriptionView = ref<boolean>(true);
+    const currentTabView = ref<string>('description');
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
@@ -289,8 +289,6 @@ export default defineComponent({
 
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
-      } else {
-        isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
     });
 
@@ -412,7 +410,7 @@ export default defineComponent({
       unit,
       regionalData,
       outputSpecs,
-      isDescriptionView,
+      currentTabView,
       outputs,
       currentOutputIndex,
       datacubeCurrentOutputsMap,
@@ -595,14 +593,24 @@ export default defineComponent({
       updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
       this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     },
-    updateDescView(val: boolean) {
-      this.isDescriptionView = val;
+    updateTabView(val: string) {
+      this.currentTabView = val;
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {
         if (_.isEqual(this.selectedScenarioIds, newIds)) return;
       }
       this.selectedScenarioIds = newIds;
+
+      if (newIds.length > 0) {
+        // selecting a run or multiple runs when the desc tab is active should always open the data tab
+        //  selecting a run or multiple runs otherwise should respect the current tab
+        if (this.currentTabView === 'description') {
+          this.updateTabView('data');
+        }
+      } else {
+        this.updateTabView('description');
+      }
     }
   }
 });
