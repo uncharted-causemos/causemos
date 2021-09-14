@@ -16,7 +16,6 @@ const saveState = _.debounce((state: AnalysisState) => {
 // Default state for state that can be saved/loaded
 const DEFAULT_STATE: AnalysisState = {
   currentAnalysisId: '',
-  selectedAnalysisId: '',
   analysisItems: [],
   timeSelectionSyncing: false
 };
@@ -26,10 +25,6 @@ const state = { ...DEFAULT_STATE };
 const getters: GetterTree<AnalysisState, any> = {
   analysisItems: state => state.analysisItems,
   analysisId: state => state.currentAnalysisId,
-  selectedItem: state => {
-    const itemForId = state.analysisItems.find(item => item.id === state.selectedAnalysisId);
-    return _.isUndefined(itemForId) ? state.analysisItems[0] : itemForId;
-  },
   timeSelectionSyncing: state => state.timeSelectionSyncing
 };
 
@@ -60,9 +55,6 @@ const actions: ActionTree<AnalysisState, any> = {
     const items = state.analysisItems.filter(item => !analysisItemIds.includes(item.id));
     commit('setAnalysisItems', items);
   },
-  setSelectedAnalysisId({ commit }, newId: string) {
-    commit('setSelectedItemId', newId);
-  },
   setTimeSelectionSyncing({ commit }, newValue: boolean) {
     commit('setTimeSelectionSyncing', newValue);
   }
@@ -72,9 +64,6 @@ const mutations: MutationTree<AnalysisState> = {
   loadState(state, { analysisId, payload }: { analysisId: string; payload: AnalysisItem}) {
     Object.assign(state, DEFAULT_STATE, payload);
     state.currentAnalysisId = analysisId;
-  },
-  setSelectedItemId(state, analysisId) {
-    state.selectedAnalysisId = analysisId;
   },
   setAnalysisItems(state, items = []) {
     state.analysisItems = items;
