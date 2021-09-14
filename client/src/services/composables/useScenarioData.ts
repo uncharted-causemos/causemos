@@ -46,7 +46,7 @@ export default function useScenarioData(
         });
       }
       if (newDataIsDifferent) {
-        newMetadata.forEach(run => {
+        newMetadata.forEach((run, indx) => {
           /*
           //
           // @TEMP: EXAMPLE OF PRE-GEN DATA WITH TIMESTAMP AND GEO
@@ -95,6 +95,13 @@ export default function useScenarioData(
                 }
               }
             });
+          }
+
+          //
+          // assign consistent run-name if not available
+          //
+          if (!run.run_name) {
+            run.run_name = 'Run ' + indx.toString();
           }
         });
 

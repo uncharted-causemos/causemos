@@ -7,6 +7,7 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel
 } from '@/types/Enums';
+import { ModelRun } from '@/types/ModelRun';
 import { QualifierTimeseriesResponse, Timeseries } from '@/types/Timeseries';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { colorFromIndex } from '@/utils/colors-util';
@@ -69,7 +70,8 @@ export default function useTimeseriesData(
   onNewLastTimestamp: (lastTimestamp: number) => void,
   regionIds: Ref<string[]>,
   selectedQualifierValues: Ref<Set<string>>,
-  initialSelectedYears: Ref<string[]>
+  initialSelectedYears: Ref<string[]>,
+  modelRuns?: Ref<ModelRun[]>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
   const { activeFeature } = useActiveDatacubeFeature(metadata);
@@ -182,8 +184,11 @@ export default function useTimeseriesData(
         breakdownOption.value === TemporalAggregationLevel.Year ||
         breakdownOption.value === null
       ) {
+        // use run names if available
+        const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.run_name) : modelRunIds.value;
+
         rawTimeseriesData.value = fetchResults.map((points, index) => {
-          const name = `Run ${index}`;
+          const name = modeRunNames[index];
           const id = modelRunIds.value[index];
           const color = colorFromIndex(index);
           return { name, id, color, points };
