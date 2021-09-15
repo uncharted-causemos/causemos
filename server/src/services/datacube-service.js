@@ -20,6 +20,13 @@ const getDatacubes = async(filter, options) => {
   if (!options.size) {
     options.size = SEARCH_LIMIT;
   }
+  if (!options.excludes) {
+    options.excludes = [
+      'outputs.ontologies',
+      'qualifier_outputs.ontologies',
+      'ontology_matches'
+    ];
+  }
   return await connection.find(filter, options);
 };
 
