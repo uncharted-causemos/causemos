@@ -43,7 +43,7 @@ import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 import TabPanel from '@/components/quantitative/tab-panel';
 import modelService from '@/services/model-service';
-import csrUtil from '@/utils/csr-util';
+// import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
@@ -451,36 +451,16 @@ export default {
       this.isEditConstraintsOpen = false;
     },
     async fetchSensitivityAnalysisResults() {
-      if (this.currentEngine !== 'dyse' || _.isNil(this.scenarios) || this.scenarios.length === 0) return;
-
-      const selectedScenario = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId);
-
-      // Ensure we are ready to run, sync up with engines if necessary
-      if (this.modelSummary.status === 0) {
-        await modelService.initializeModel(this.currentCAG);
-        await this.refreshModel();
-      }
-      if (selectedScenario.is_valid === false) {
-        modelService.resetScenarioParameter(selectedScenario, this.modelSummary, this.modelComponents.nodes);
-      }
-
-      this.sensitivityMatrixData = null;
-      const now = Date.now();
-      this.sensitivityDataTimestamp = now;
-      const constraints = modelService.cleanConstraints(selectedScenario.parameter.constraints);
-
-      const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
-
-      // If another sensitivity analysis started running before this one returns an ID,
-      //  then don't bother fetching/processing the results to avoid a race condition
-      if (this.sensitivityDataTimestamp !== now) return;
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50);
-
-      if (this.sensitivityDataTimestamp !== now) return;
-      const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
-      csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
-      csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
-      this.sensitivityMatrixData = csrResults;
+      const create = (v) => {
+        const r = { columns: [], rows: [], value: [] };
+        for (let i = 1; i <= v; i++) {
+          r.columns.push(i + '');
+          r.rows.push(i + '');
+          r.value.push(Math.random());
+        }
+        return r;
+      };
+      this.sensitivityMatrixData = create(4);
     },
     setSensitivityAnalysisType(newValue) {
       this.sensitivityAnalysisType = newValue;
