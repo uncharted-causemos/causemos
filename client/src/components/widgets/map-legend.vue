@@ -5,10 +5,9 @@
       :key="d.color"
       class="color-row"
     >
-      <span class="color-label">{{ d.label }}</span>
+      <span class="color-label"><span>{{ d.label }}</span><span>{{d.decor}}</span></span>
       <div class="color" v-bind:style="{backgroundColor: d.color }"></div>
     </div>
-    <span v-if="labelPosition.top" class="bottom-label">{{bottomLabel}}</span>
   </div>
 </template>
 <script lang="ts">
@@ -26,11 +25,6 @@ export default defineComponent({
     labelPosition: {
       type: Object as PropType<{ top: boolean; right: boolean }>,
       default: { top: true, right: true }
-    },
-    // Optional label placed on the bottom of the legend (when label position is top)
-    bottomLabel: {
-      type: String,
-      default: ''
     }
   }
 });
@@ -56,12 +50,6 @@ export default defineComponent({
   display: inline-flex;
   align-items: center;
 }
-.bottom-label {
-  font-size: 10px;
-  position: absolute;
-  right: 24px;
-  bottom: -5px;
-}
 .label-right {
   .color-row {
     flex-direction: row-reverse;
@@ -70,10 +58,6 @@ export default defineComponent({
     padding-right: 0px;
     padding-left: 2px;
   }
-  .bottom-label {
-    left: 20px;
-    bottom: -5px;
-  }
 }
 .label-top {
   .color-label {
@@ -81,6 +65,7 @@ export default defineComponent({
     top: -8px;
     flex-direction: column;
     justify-content: space-between;
+    align-items: flex-start;
   }
 }
 </style>

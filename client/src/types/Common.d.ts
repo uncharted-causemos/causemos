@@ -73,4 +73,5 @@ export interface AnalysisMapRange {
 export interface MapLegendColor {
   color: string;
   label?: string;
+  decor?: string; // optional label decorator to provide extra text in addition to the label text
 }

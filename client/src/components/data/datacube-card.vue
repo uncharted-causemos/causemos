@@ -901,4 +901,12 @@ $marginSize: 5px;
     color: $selected-dark;
   }
 }
+.map-legend-container {
+  ::v-deep(.color-label) {
+    span:nth-child(2) {
+      position: relative;
+      bottom: -16px;
+    }
+  }
+}
 </style>
