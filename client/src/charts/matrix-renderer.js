@@ -54,8 +54,6 @@ export default function(
     .domain(columnOrder || data.columns)
     .range([margin.left, svgWidth]);
 
-  console.log(data.columns.length);
-
   const yScale = d3
     .scaleBand()
     .domain(rowOrder || data.rows)
