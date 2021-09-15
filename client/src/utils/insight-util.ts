@@ -7,6 +7,23 @@ interface MetadataSummary {
   value: string | number | null;
 }
 
+function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string) {
+  if (insightURL.includes('insight_id')) return insightURL;
+  // is the url has some params already at its end?
+  if (insightURL.includes('?') && insightURL.includes('=')) {
+    // append
+    if (insightURL.includes('datacubeid=')) {
+      return insightURL + '&insight_id=' + insightId;
+    }
+    return insightURL + '&insight_id=' + insightId + '&datacubeid=' + datacubeId;
+  }
+  // add
+  if (insightURL.includes('datacubeid=')) {
+    return insightURL + '?insight_id=' + insightId;
+  }
+  return insightURL + '?insight_id=' + insightId + '&datacubeid=' + datacubeId;
+}
+
 function getFormattedFilterString(filters: Filters) {
   const filterString = filters?.clauses?.reduce((a: string, c: Clause) => {
     return a + `${a.length > 0 ? ' AND ' : ''} ` +
@@ -149,5 +166,6 @@ function parseMetadataDetails (
 
 export default {
   parseMetadataDetails,
-  getFormattedFilterString
+  getFormattedFilterString,
+  getSourceUrlForExport
 };
