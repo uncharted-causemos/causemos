@@ -30,7 +30,6 @@ export default function(
     columnOrder,
     showRankLabels = false
   } = options;
-
   const margin = {
     top: axisLabelMargin,
     bottom: 0,
@@ -47,21 +46,15 @@ export default function(
     });
   });
 
-  const svgWidth = margin.left + (data.columns.length * 2);
-  const svgHeight = margin.top + (data.rows.length);
   const xScale = d3
     .scaleBand()
     .domain(columnOrder || data.columns)
-    .range([margin.left, svgWidth]);
+    .range([margin.left, width - margin.right]);
 
   const yScale = d3
     .scaleBand()
     .domain(rowOrder || data.rows)
-    .range([margin.top, svgHeight]);
-
-  svgElement
-    .attr('width', svgWidth)
-    .attr('height', svgHeight);
+    .range([margin.top, height - margin.bottom]);
 
 
   const valueDomain = [d3.min(data.value), (clampColourRange ? d3.max(data.value) : 1)];
