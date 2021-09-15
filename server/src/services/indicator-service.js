@@ -154,6 +154,9 @@ const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
       return words.map(word => word.split('_')).flat(1);
     }).flat(1))];
 
+    // to match at least the number of words in the original concepts
+    // const minimumConceptWords = concept.split('/').slice(3)[0].split('_').length;
+
     const searchPayload = {
       index: RESOURCE.DATA_DATACUBE,
       size: 1,
@@ -178,13 +181,14 @@ const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
                       terms: {
                         description: compositionalKeywords
                       }
-                    },
-                    {
-                      terms: {
-                        'outputs.description': compositionalKeywords
-                      }
                     }
+                    // {
+                    //   terms: {
+                    //     'outputs.description': compositionalKeywords
+                    //   }
+                    // }
                   ]
+                  // minimum_should_match: minimumConceptWords
                 }
               },
               {

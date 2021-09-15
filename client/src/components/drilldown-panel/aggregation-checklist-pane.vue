@@ -55,6 +55,7 @@
       <aggregation-checklist-item
         v-for="(row, rowIndex) of visibleRows"
         :key="rowIndex"
+        :histogram-visible="shouldShowDeselectedBars || row.isChecked"
         :item-data="row"
         :max-visible-bar-value="maxVisibleBarValue"
         :min-visible-bar-value="minVisibleBarValue"
@@ -85,6 +86,7 @@ import {
   computed
 } from '@vue/runtime-core';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { SpatialAggregationLevel } from '@/types/Enums';
 
 const SORT_OPTIONS = {
   Name: { label: 'Name', value: 'name' },
@@ -305,6 +307,10 @@ export default defineComponent({
       type: Object as PropType<string[]>,
       default: []
     },
+    shouldShowDeselectedBars: {
+      type: Boolean,
+      required: true
+    },
     checkboxType: {
       type: String as PropType<'checkbox' | 'radio' | null>,
       default: null
@@ -316,6 +322,7 @@ export default defineComponent({
       rawData,
       aggregationLevel,
       orderedAggregationLevelKeys,
+      shouldShowDeselectedBars,
       selectedTimeseriesPoints,
       selectedItemIds
     } = toRefs(props);
@@ -404,7 +411,8 @@ export default defineComponent({
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        const values = isStatefulDataNode(node)
+        const values = isStatefulDataNode(node) &&
+          (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars.value)
           ? node.bars.map(bar => bar.value)
           : [];
         return _.max(values) ?? 0;
@@ -425,7 +433,8 @@ export default defineComponent({
       levelsUntilSelectedDepth: number
     ) => {
       if (levelsUntilSelectedDepth === 0) {
-        const values = isStatefulDataNode(node)
+        const values = isStatefulDataNode(node) &&
+        (_.includes(selectedItemIds.value, node.path.join(REGION_ID_DELIMETER)) || shouldShowDeselectedBars.value)
           ? node.bars.map(bar => bar.value)
           : [];
         return _.min(values) ?? 0;
@@ -506,6 +515,7 @@ export default defineComponent({
       isAllSelected,
       toggleChecked,
       setAllChecked,
+      SpatialAggregationLevel,
       SORT_OPTIONS,
       sortValue
     };

@@ -25,6 +25,7 @@
       :units="unit"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :selected-item-ids="selectedRegionIds"
+      :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
       :checkbox-type="
         selectedBreakdownOption === SpatialAggregationLevel.Region
           ? 'checkbox'
@@ -62,6 +63,7 @@
       :ordered-aggregation-level-keys="[qualifierVariable.name]"
       :raw-data="qualifierVariable.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
+      :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
       :units="unit"
       :checkbox-type="
         selectedBreakdownOption === qualifierVariable.name ? 'checkbox' : null
@@ -101,6 +103,7 @@
       :ordered-aggregation-level-keys="['Year']"
       :raw-data="temporalBreakdownData"
       :units="unit"
+      :should-show-deselected-bars="true"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :checkbox-type="
         selectedBreakdownOption === TemporalAggregationLevel.Year

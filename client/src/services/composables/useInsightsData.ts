@@ -14,17 +14,38 @@ export default function useInsightsData() {
     insightsFetchedAt.value = Date.now();
   };
 
+  const getInsightsByIDs = (insightIDs: string[]) => {
+    const result: Insight[] = [];
+    insightIDs.forEach(insightId => {
+      const ins = insights.value.find(i => i.id === insightId);
+      if (ins) {
+        result.push(ins);
+      }
+    });
+    return result;
+  };
+
   const store = useStore();
   const contextIds = computed(() => store.getters['insightPanel/contextId']);
   const project = computed(() => store.getters['app/project']);
   const projectType = computed(() => store.getters['app/projectType']);
 
-  const isPanelOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
+  const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
+  const isContextInsightPanelOpen = computed(() => store.getters['contextInsightPanel/isPanelOpen']);
 
   watchEffect(onInvalidate => {
     console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function getInsights() {
+      // do not fetch if the panel is not open
+      if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true)) {
+        return;
+      }
+      // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
+      if (contextIds.value === undefined) {
+        return;
+      }
+
       // @HACK: ignore context-id(s) when the insight explorer is open
       //  (i.e., when clicking 'Review All Insights')
       // NOTE: this only makes sense for analysis projects
@@ -32,7 +53,7 @@ export default function useInsightsData() {
       // a more proper solution would be to store all context-id(s) for an analysis project,
       // and set those everytime prior to opening the insight explorer,
       // and finally restore that specific context-id once the insight explorer is closed!
-      const ignoreContextId = isPanelOpen.value && projectType.value === ProjectType.Analysis;
+      const ignoreContextId = isInsightExplorerOpen.value === true && projectType.value === ProjectType.Analysis;
 
       //
       // fetch public insights
@@ -43,20 +64,12 @@ export default function useInsightsData() {
         // when fetching public insights, then project-id is only relevant in domain projects
         publicInsightsSearchFields.project_id = project.value;
       }
-      const publicFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
-        contextIds.value.forEach((contextId: string) => {
-          // context-id must be ignored when fetching insights at the project landing page
-          const searchFilter = _.clone(publicInsightsSearchFields);
-          searchFilter.context_id = contextId;
-          publicFilterArray.push(searchFilter);
-        });
-      } else {
-        publicFilterArray.push(publicInsightsSearchFields);
+        publicInsightsSearchFields.context_id = contextIds.value; // note passing potentially an array of context to match against
       }
       // Note that when 'ignoreContextId' is true, this means we are fetching insights for the insight explorer within an analysis project
       // For this case, public insights should not be listed
-      const publicInsights = ignoreContextId ? [] : await fetchInsights(publicFilterArray);
+      const publicInsights = ignoreContextId ? [] : await fetchInsights([publicInsightsSearchFields]);
 
       //
       // fetch project-specific insights
@@ -67,17 +80,10 @@ export default function useInsightsData() {
         contextInsightsSearchFields.project_id = project.value;
       }
       contextInsightsSearchFields.visibility = 'private';
-      const contextFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
-        contextIds.value.forEach((contextId: string) => {
-          const searchFilter = _.clone(contextInsightsSearchFields);
-          searchFilter.context_id = contextId;
-          contextFilterArray.push(searchFilter);
-        });
-      } else {
-        contextFilterArray.push(contextInsightsSearchFields);
+        contextInsightsSearchFields.context_id = contextIds.value; // note passing potentially an array of context to match against
       }
-      const contextInsights = await fetchInsights(contextFilterArray);
+      const contextInsights = await fetchInsights([contextInsightsSearchFields]);
 
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
@@ -96,6 +102,7 @@ export default function useInsightsData() {
 
   return {
     insights,
+    getInsightsByIDs,
     reFetchInsights
   };
 }

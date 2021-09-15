@@ -168,6 +168,14 @@ export function isIndicator(datacube: Datacube): datacube is Indicator {
   return datacube.type === DatacubeType.Indicator;
 }
 
+// supported pre-rendered datacube images
+export function isImage(url: string) {
+  return url.endsWith('.png') || url.endsWith('.jpg') || url.endsWith('.gif');
+}
+export function isVideo(url: string) {
+  return url.endsWith('.mp4');
+}
+
 export default {
   CODE_TABLE,
   SUGGESTION_CODE_TABLE,

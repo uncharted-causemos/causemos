@@ -5,8 +5,8 @@
       <table>
         <thead>
           <tr>
-            <th><span class="left-cover" />VARIABLE and SOURCE</th>
-            <th>DESCRIPTION</th>
+            <th><span class="left-cover" />VARIABLE INFORMATION</th>
+            <th>SOURCE and DESCRIPTION</th>
             <th>PERIOD</th>
             <th>REGION</th>
             <th><!-- Timeseries chart--> <span class="right-cover" /></th>
@@ -55,8 +55,7 @@
                         Processing
                       </button>
                       <div class="text-bold">{{ d.default_feature }}</div>
-                      <div>{{ d.name }}</div>
-                      <div>{{ d.source }}</div>
+                      <multiline-description :text="formatOutputDescription(d)" />
                       <div v-if="isExpanded(d) && d.parameters?.length > 0" class="knobs">
                         Input Knobs:<br/>
                         {{ formatParameters(d) }}
@@ -65,7 +64,8 @@
                 </div>
               </td>
               <td class="desc-col">
-                <div>{{ formatDescription(d) }}</div>
+                <div class="text-bold">{{ d.name }}</div>
+                <multiline-description :text="formatDescription(d)" />
               </td>
               <td class="period-col">
                 <div class="text-bold">{{ formatPeriod(d) }}</div>
@@ -74,7 +74,10 @@
               <td class="region-col">
                 <div> {{ formatCountry(d) }} </div>
               </td>
-              <td class="timeseries-col">
+              <td
+                v-if="d.timeseries"
+                class="timeseries-col"
+              >
                 <div class="timeseries-container">
                   <sparkline :data="formatTimeSeries(d)" />
                 </div>
@@ -91,13 +94,15 @@
 import moment from 'moment';
 import { mapActions, mapGetters } from 'vuex';
 import Sparkline from '@/components/widgets/charts/sparkline';
+import MultilineDescription from '@/components/widgets/multiline-description';
 import { DatacubeStatus } from '@/types/Enums';
-import { isModel } from '../../utils/datacube-util';
+import { isIndicator, isModel } from '../../utils/datacube-util';
 
 export default {
   name: 'SearchListview',
   components: {
-    Sparkline
+    Sparkline,
+    MultilineDescription
   },
   props: {
     datacubes: {
@@ -128,7 +133,7 @@ export default {
       return datacube.status !== DatacubeStatus.Ready && isModel(datacube);
     },
     isProcessing(datacube) {
-      return datacube.status === DatacubeStatus.Processing && isModel(datacube);
+      return datacube.status === DatacubeStatus.Processing && isIndicator(datacube);
     },
     isNotPublished(datacube) {
       return datacube.status === DatacubeStatus.Registered && isModel(datacube);
@@ -204,6 +209,22 @@ export default {
       return this.isExpanded(d) || d.description.length < 140
         ? d.description
         : `${d.description.substring(0, 140)}...`;
+    },
+    formatOutputDescription(d) {
+      if (!d.outputs.length === 0) return '';
+      // match the default feature to it's full output info, such that we can retrieve
+      // the output description as it is distinct from the top level description that
+      // we include for each indicator/model datacube.
+      const defaultOutputDescription = d.outputs.reduce((desc, output) => {
+        // indicators and model use different information from the output for the default feature field
+        if (output.display_name === d.default_feature || output.name === d.default_feature) {
+          desc = output.description;
+        }
+        return desc;
+      }, '');
+      return this.isExpanded(d) || defaultOutputDescription.length < 100
+        ? defaultOutputDescription
+        : `${defaultOutputDescription.substring(0, 100)}...`;
     },
     getTypeIcon(d) {
       return 'fa ' + (d.type === 'model' ? 'fa-connectdevelop' : 'fa-table');
@@ -283,7 +304,7 @@ $selected-background: #EBF1FC;
       border-left: 4px solid $selected-border;
     }
     td {
-      background-color: $selected-background
+      background-color: $selected-background;
     }
   }
   .tr-item.deactive {
@@ -304,7 +325,7 @@ $selected-background: #EBF1FC;
       .radio {
         flex: 0 0 auto;
         align-self: flex-start;
-        margin: 15px 10px 0 0;
+        margin: 3px 5px 0 0;
         .disabled {
           color: $background-light-3;
         }
@@ -316,7 +337,6 @@ $selected-background: #EBF1FC;
           border: none;
           border-radius: 5px;
           background-color: $background-light-3;
-          margin-top: 5px;
         }
         .knobs {
           margin-top: 10px;

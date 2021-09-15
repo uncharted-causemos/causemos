@@ -1,20 +1,23 @@
 <template>
   <div class="comp-analysis-container">
-    <action-bar />
+    <teleport to="#navbar-trailing-teleport-destination">
+      <analysis-options-button />
+    </teleport>
+    <analytical-questions-and-insights-panel class="side-panel">
+      <template #below-tabs>
+        <comments-button />
+      </template>
+    </analytical-questions-and-insights-panel>
     <main>
-    <analytical-questions-and-insights-panel />
-    <div class="flex-row">
+      <action-bar />
       <div class="column insight-capture" v-if="analysisItems.length">
         <datacube-comparative-card
           v-for="item in analysisItems"
           :key="item.id"
           class="datacube-comparative-card"
-          :class="{ 'selected': selectedDatacubeId === item.id }"
           :id="item.id"
-          :isSelected="selectedDatacubeId === item.id"
           :selected-timestamp="selectedTimestamp"
           :selected-timestamp-range="selectedTimestampRange"
-          @click="selectedDatacubeId = item.id"
           @loaded-timeseries="onLoadedTimeseries"
         />
       </div>
@@ -27,13 +30,12 @@
         @select-timestamp="setSelectedTimestamp"
         @select-timestamp-range="handleTimestampRangeSelection"
       />
-    </div>
     </main>
   </div>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
@@ -43,31 +45,43 @@ import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import _ from 'lodash';
 import { DataState } from '@/types/Insight';
+import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
+import { getAnalysis } from '@/services/analysis-service';
+import CommentsButton from '@/components/widgets/comments-button.vue';
 
 export default defineComponent({
   name: 'CompAnalysis',
   components: {
     DatacubeComparativeCard,
+    CommentsButton,
     ActionBar,
     EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,
-    DatacubeComparativeTimelineSync
+    DatacubeComparativeTimelineSync,
+    AnalysisOptionsButton
   },
   setup() {
     const store = useStore();
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const timeSelectionSyncing = computed(() => store.getters['dataAnalysis/timeSelectionSyncing']);
+    const quantitativeAnalysisId = computed(
+      () => store.getters['dataAnalysis/analysisId']
+    );
 
-    const selectedDatacubeId = ref('');
+    onMounted(async () => {
+      store.dispatch('app/setAnalysisName', '');
+      const result = await getAnalysis(quantitativeAnalysisId.value);
+      store.dispatch('app/setAnalysisName', result.title);
+    });
 
     watchEffect(() => {
       if (analysisItems.value && analysisItems.value.length > 0) {
-        // @FIXME: select first one by default
-        selectedDatacubeId.value = analysisItems.value[0].id;
-
         // set context-ids to fetch insights correctly for all datacubes in this analysis
         const contextIDs = analysisItems.value.map((dc: any) => dc.id);
         store.dispatch('insightPanel/setContextId', contextIDs);
+      } else {
+        // no datacubes in this analysis, so do not fetch any insights/questions
+        store.dispatch('insightPanel/setContextId', undefined);
       }
     });
 
@@ -115,7 +129,6 @@ export default defineComponent({
     );
 
     return {
-      selectedDatacubeId,
       analysisItems,
       allTimeseriesMap,
       allDatacubesMetadataMap,
@@ -129,8 +142,6 @@ export default defineComponent({
       initialSelectedTimestampRange,
       timeSelectionSyncing
     };
-  },
-  unmounted(): void {
   },
   mounted() {
     // ensure the insight explorer panel is closed in case the user has
@@ -260,45 +271,30 @@ export default defineComponent({
 .comp-analysis-container {
   height: $content-full-height;
   display: flex;
-  flex-direction: column;
   overflow: hidden;
 }
 
-.flex-row {
-  display: flex;
-  flex: 1;
-  min-height: 0;
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
+.side-panel {
+  isolation: isolate;
+  z-index: 1;
 }
 
 main {
-  flex: 1;
   display: flex;
-  min-height: 0;
+  flex-direction: column;
+  flex: 1;
+  min-width: 0;
+  margin-right: 10px;
 }
 
-.datacube-comparative-timeline-sync {
-  background-color: rgb(235, 235, 235);
+.datacube-comparative-card:not(:first-child) {
+  margin-top: 10px;
 }
 
 .column {
+  margin: 10px 0;
   overflow-y: auto;
-  background-color: rgb(242, 242, 242);
-
-  .datacube-comparative-card {
-    border: 2px outset #ddd;
-    margin: 1rem;
-    padding: 0 1rem 1rem 0;
-    &:hover {
-      border-color: blue;
-    }
-  }
-  .selected {
-    border-color: black;
-  }
+  padding-bottom: 80px;
 }
 
 </style>

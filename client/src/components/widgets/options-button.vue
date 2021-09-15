@@ -54,6 +54,7 @@ export default defineComponent({
   height: 32px;
   border-radius: 50%;
   cursor: pointer;
+  position: relative;
 
   i {
     text-align: center;

@@ -1,6 +1,8 @@
 const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const domainProjectService = rootRequire('/services/domain-project-service');
+const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
+const Logger = rootRequire('/config/logger');
 
 /**
  * Return all datacubes
@@ -18,6 +20,13 @@ const getDatacubes = async(filter, options) => {
   if (!options.size) {
     options.size = SEARCH_LIMIT;
   }
+  if (!options.excludes) {
+    options.excludes = [
+      'outputs.ontologies',
+      'qualifier_outputs.ontologies',
+      'ontology_matches'
+    ];
+  }
   return await connection.find(filter, options);
 };
 
@@ -33,37 +42,22 @@ const countDatacubes = async (filter) => {
  * Insert a new datacube
  */
 const insertDatacube = async(metadata) => {
+  Logger.info(`Start insert datacube ${metadata.name} ${metadata.id}`);
   // TODO: Fix all this copypasta from maas-service startIndicatorPostProcessing
 
-  // Remove some unused Jataware fields
+  metadata.type = metadata.type || 'model'; // Assume these ar all models for now
   metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
-  metadata.stochastic = undefined;
-  metadata.attributes = undefined;
-  metadata.image = undefined;
-  if (metadata.geography) {
-    metadata.geography.coordinates = undefined;
-  }
-
-  // Apparently ES can't support negative timestamps
-  if (metadata.period && metadata.period.gte < 0) {
-    metadata.period.gte = 0;
-  }
-  if (metadata.period && metadata.period.lte < 0) {
-    metadata.period.lte = 0;
-  }
+  processFilteredData(metadata);
+  removeUnwantedData(metadata);
 
   metadata.data_id = metadata.id;
-  metadata.type = metadata.type || 'model'; // Assume these ar all models for now
   metadata.status = 'REGISTERED';
-  metadata.family_name = metadata.family_name || metadata.name;
 
   // Take the first numeric output, others are not currently supported
   const validOutput = metadata.outputs.filter(o =>
     o.type === 'int' || o.type === 'float' || o.type === 'boolean'
   )[0] || metadata.outputs[0];
   metadata.default_feature = validOutput.name;
-  metadata.outputs.forEach(output => { output.id = undefined; });
-  metadata.parameters.forEach(param => { param.id = undefined; });
 
   // Combine all concept matches into one list at the root
   const fields = [metadata.outputs, metadata.parameters];

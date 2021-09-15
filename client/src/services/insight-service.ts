@@ -2,6 +2,7 @@ import API from '@/api/api';
 import { Insight } from '@/types/Insight';
 import _ from 'lodash';
 
+// FIXME: the following filter fields are also used when fetching questions, rename accordingly
 export interface InsightFilterFields {
   project_id?: string;
   context_id?: string;
@@ -63,20 +64,4 @@ export const fetchInsights = async (fetchParamsArray: InsightFilterFields[]) => 
   const allFlatResults = allRawResponses.flatMap(res => res.data);
 
   return _.uniqBy(allFlatResults, 'id');
-};
-
-/**
- * Fetch insights for a given array of fetch parameters
- * @param fetchParamsArray an array where each element is a combination of filter fields
- * @returns the result is a unique flat array with a union of all fetch operations
- */
-export const fetchInsightsCount = async (fetchParamsArray: any[]) => {
-  // but we may also run the loop in parallel; map the array to promises
-  const promises = fetchParamsArray.map(async (fetchParams) => {
-    return API.get('insights/counts', { params: fetchParams });
-  });
-  // wait until all promises are resolved
-  const allRawResponses = await Promise.all(promises);
-  const allFlatResults = allRawResponses.flatMap(res => res.data);
-  return _.sum(allFlatResults);
 };
