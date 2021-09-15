@@ -36,6 +36,8 @@ import suggestionService from '@/services/suggestion-service';
 
 const CODE_TABLE = codeUtil.CODE_TABLE;
 const CONCEPTS_MSG = 'Select one or more ontological concepts';
+const LABEL_MSG = 'Select a tag';
+const BYOD_TAG_MSG = 'Select a label';
 const AUTHOR_MSG = 'Select an author';
 const ORGANIZATION_MSG = 'Select an organization';
 const GEO_LOCATION_MSG = 'Select a location';
@@ -154,6 +156,16 @@ export default {
       new TextPill(CODE_TABLE.DOC_FILE_TYPE),
       new TextPill(CODE_TABLE.DOC_PUBLICATION_YEAR),
       new TextPill(CODE_TABLE.DOC_SOURCE_DOMAIN),
+      new DynamicValuePill(CODE_TABLE.DOC_LABEL,
+        suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_LABEL.field),
+        LABEL_MSG,
+        true,
+        SingleRelationState),
+      new DynamicValuePill(CODE_TABLE.DOC_BYOD_TAG,
+        suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_BYOD_TAG.field),
+        BYOD_TAG_MSG,
+        true,
+        SingleRelationState),
       new DynamicValuePill(CODE_TABLE.DOC_AUTHOR,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_AUTHOR.field),
         AUTHOR_MSG,

@@ -1,9 +1,18 @@
 <template>
   <div class="project-overview-container">
-    <div class="row" style="height: 20vh; margin-bottom: 2rem">
-      <div class="col-md-7">
-        <h3>
-          {{projectMetadata.name}}
+    <header>
+      <div class="metadata-column">
+        <h3>{{ projectMetadata.name }}</h3>
+        <div class="description">
+          <div v-if="!isEditingDesc">
+            {{ projectMetadata.description }}
+          </div>
+          <textarea
+            v-else
+            v-model="projectMetadata.description"
+            type="text"
+            class="model-attribute-desc"
+          />
           <span
             class="edit-model-desc"
             @click="updateDesc"
@@ -11,100 +20,78 @@
           >
             <i class="fa fa-edit" />
           </span>
-        </h3>
-        <!-- datacube desc -->
-        <div v-if="!isEditingDesc">
-          {{projectMetadata.description}}
         </div>
-        <textarea
-          v-if="isEditingDesc"
-          v-model="projectMetadata.description"
-          type="text"
-          class="model-attribute-desc"
-        />
-        <div style="padding-top: 5px; ">
-          <a
-            :href="maintainerWebsite"
-            target="_blank"
-            rel="noopener noreferrer"
-            style="color: blue">
-            {{ maintainerWebsite }}
-          </a>
-        </div>
-        <div style="padding-top: 5px; ">
-          <b>Maintainer: </b>
-          <span class="maintainer">{{projectMetadata.source}}</span>
+        <a
+          :href="maintainerWebsite"
+          target="_blank"
+          rel="noopener noreferrer"
+          style="color: blue"
+        >
+          {{ maintainerWebsite }}
+        </a>
+        <div>
+          <strong>Maintainer</strong>
+          <span class="maintainer">{{ projectMetadata.source }}</span>
         </div>
       </div>
-      <div class="col-md-3 tags-container">
-        <b style="flex-basis: 100%">Tags:</b>
-        <div
-          v-for="tag in tags"
-          :key="tag"
-          class="tag">
+      <div v-if="tags.length > 0" class="tags-column">
+        <strong>Tags</strong>
+        <span v-for="tag in tags" :key="tag" class="tag">
           {{ tag }}
-        </div>
+        </span>
       </div>
-      <div class="col-md-2" style="backgroundColor: darkgray; height: 100%">
+      <div class="map">
         <!-- placeholder for family regional image -->
       </div>
-    </div>
-    <hr />
-    <div class="col-md-12">
-      <div class="col-md-3 max-content-height" style="backgroundColor: white; padding-top: 1rem">
-        <list-context-insight-pane :allow-new-insights="false" />
-      </div>
-      <div class="col-md-9">
-        <div class="row">
-          <div style="justify-content: space-between; display: flex">
-            <div class="instances-title"># Instances</div>
-            <div class="controls">
-              <input
-                v-model="searchDatacubeInstances"
-                type="text"
-                placeholder="Search ..."
-                class="form-control"
-              >
-              <div class="sorting">
-                <div>
-                  <button
-                    type="button"
-                    class="btn btn-default"
-                    @click="toggleSortingDropdownDatacubeInstances"
-                  ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
-                    <i class="fa fa-caret-down" />
-                  </button>
-                </div>
-                <div v-if="showSortingDropdownDatacubeInstances">
-                  <dropdown-control class="dropdown">
-                    <template #content>
-                      <div
-                        v-for="option in sortingOptionsDatacubeInstances"
-                        :key="option"
-                        class="dropdown-option"
-                        @click="sortDatacubeInstances(option)">
-                        {{ option }}
-                      </div>
-                    </template>
-                  </dropdown-control>
-                </div>
+    </header>
+    <main>
+      <list-context-insight-pane class="insights" :allow-new-insights="false" />
+      <div class="instance-list-column">
+        <div class="instance-list-header">
+          <div class="instances-title">Instances</div>
+          <div class="controls">
+            <input
+              v-model="searchDatacubeInstances"
+              type="text"
+              placeholder="Search ..."
+              class="form-control"
+            >
+            <div class="sorting">
+              <div>
+                <button
+                  type="button"
+                  class="btn btn-default"
+                  @click="toggleSortingDropdownDatacubeInstances"
+                ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDatacubeInstances }}
+                  <i class="fa fa-caret-down" />
+                </button>
+              </div>
+              <div v-if="showSortingDropdownDatacubeInstances">
+                <dropdown-control class="dropdown">
+                  <template #content>
+                    <div
+                      v-for="option in sortingOptionsDatacubeInstances"
+                      :key="option"
+                      class="dropdown-option"
+                      @click="sortDatacubeInstances(option)">
+                      {{ option }}
+                    </div>
+                  </template>
+                </dropdown-control>
               </div>
             </div>
           </div>
         </div>
-        <div class="row projects-list">
-          <div class="instances-list-elements max-content-height">
-            <div
-              v-for="instance in filteredDatacubeInstances"
-              :key="instance.id">
-              <domain-datacube-instance-card
-                :datacube="instance"
-                @unpublish="unpublishDatacubeInstance(instance)" />
-            </div>
-          </div>
+        <div class="instance-list">
+          <domain-datacube-instance-card
+            v-for="instance in filteredDatacubeInstances"
+            :key="instance.id"
+            :datacube="instance"
+            @unpublish="unpublishDatacubeInstance(instance)"
+          />
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -272,10 +259,37 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "@/styles/variables";
 
 $padding-size: 3vh;
 .project-overview-container {
-  padding-top: 0;
+  display: flex;
+  flex-direction: column;
+  height: $content-full-height;
+}
+
+header {
+  height: 20vh;
+  display: flex;
+  padding: 20px;
+}
+
+.metadata-column {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+
+  h3 {
+    margin: 0;
+  }
+
+  & > *:not(:first-child) {
+    margin-top: 5px;
+  }
+
+  .description {
+    max-width: 90ch;
+  }
 }
 
 .edit-model-desc {
@@ -291,10 +305,21 @@ $padding-size: 3vh;
   flex-basis: 100%;
 }
 
-.tags-container {
+.tags-column {
+  width: 20vw;
   display: flex;
-  padding-top: 10px;
   flex-wrap: wrap;
+  align-self: flex-start;
+
+  strong {
+    align-self: center;
+    margin-right: 5px;
+  }
+}
+
+.map {
+  width: 20vw;
+  background: #ddd;
 }
 
 .tag {
@@ -311,12 +336,40 @@ $padding-size: 3vh;
   font-size: x-large;
 }
 
-.max-content-height {
-  height: 60vh;
+main {
+  flex: 1;
+  min-height: 0;
+  padding: 20px;
+  display: flex;
 }
 
-.instances-list-elements {
+.insights {
+  flex: 1;
+  background: white;
+  padding: 10px;
+}
+
+.instance-list-column {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  margin-left: 10px;
+}
+
+.instance-list-header {
+  display: flex;
+  justify-content: space-between;
+}
+
+.instance-list {
+  margin-top: 10px;
+  flex: 1;
+  min-height: 0;
   overflow-y: auto;
+}
+
+.max-content-height {
+  height: 60vh;
 }
 
 .maintainer {

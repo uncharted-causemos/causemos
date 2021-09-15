@@ -4,7 +4,7 @@
   >
     <template #content>
       <div
-        class="dropdown-option disabled"
+        class="dropdown-option"
         @click="editContextInsight"
       >
         <i class="fa fa-edit" />
@@ -30,6 +30,7 @@ export default {
   components: {
     DropdownControl
   },
+  emits: ['edit', 'delete'],
   methods: {
     editContextInsight() {
       this.$emit('edit');

@@ -1,42 +1,41 @@
 <template>
   <div class="comp-analysis-container">
-    <navbar-new
-      :show-help-button="true"
-      :changed-analysis-name="changedAnalysisName"
-    >
-      <analysis-options-button @on-analysis-renamed="onAnalysisRenamed" />
-    </navbar-new>
-    <div class="flex-row">
-      <analytical-questions-and-insights-panel class="side-panel" />
-      <main>
-        <action-bar />
-        <div class="column insight-capture" v-if="analysisItems.length">
-          <datacube-comparative-card
-            v-for="item in analysisItems"
-            :key="item.id"
-            class="datacube-comparative-card"
-            :id="item.id"
-            :selected-timestamp="selectedTimestamp"
-            :selected-timestamp-range="selectedTimestampRange"
-            @loaded-timeseries="onLoadedTimeseries"
-          />
-        </div>
-        <empty-state-instructions v-else />
-        <datacube-comparative-timeline-sync
-          v-if="globalTimeseries.length > 0 && timeSelectionSyncing"
-          class="datacube-comparative-timeline-sync"
-          :timeseriesData="globalTimeseries"
+    <teleport to="#navbar-trailing-teleport-destination">
+      <analysis-options-button />
+    </teleport>
+    <analytical-questions-and-insights-panel class="side-panel">
+      <template #below-tabs>
+        <comments-button />
+      </template>
+    </analytical-questions-and-insights-panel>
+    <main>
+      <action-bar />
+      <div class="column insight-capture" v-if="analysisItems.length">
+        <datacube-comparative-card
+          v-for="item in analysisItems"
+          :key="item.id"
+          class="datacube-comparative-card"
+          :id="item.id"
           :selected-timestamp="selectedTimestamp"
-          @select-timestamp="setSelectedTimestamp"
-          @select-timestamp-range="handleTimestampRangeSelection"
+          :selected-timestamp-range="selectedTimestampRange"
+          @loaded-timeseries="onLoadedTimeseries"
         />
-      </main>
-    </div>
+      </div>
+      <empty-state-instructions v-else />
+      <datacube-comparative-timeline-sync
+        v-if="globalTimeseries.length > 0 && timeSelectionSyncing"
+        class="datacube-comparative-timeline-sync"
+        :timeseriesData="globalTimeseries"
+        :selected-timestamp="selectedTimestamp"
+        @select-timestamp="setSelectedTimestamp"
+        @select-timestamp-range="handleTimestampRangeSelection"
+      />
+    </main>
   </div>
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, Ref, ref, watch, watchEffect } from 'vue';
+import { computed, defineComponent, onMounted, Ref, ref, watch, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import DatacubeComparativeCard from '@/components/widgets/datacube-comparative-card.vue';
 import ActionBar from '@/components/data/action-bar.vue';
@@ -46,24 +45,34 @@ import { Timeseries } from '@/types/Timeseries';
 import DatacubeComparativeTimelineSync from '@/components/widgets/datacube-comparative-timeline-sync.vue';
 import _ from 'lodash';
 import { DataState } from '@/types/Insight';
-import NavbarNew from '@/components/navbar-new.vue';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
+import { getAnalysis } from '@/services/analysis-service';
+import CommentsButton from '@/components/widgets/comments-button.vue';
 
 export default defineComponent({
   name: 'CompAnalysis',
   components: {
     DatacubeComparativeCard,
+    CommentsButton,
     ActionBar,
     EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,
     DatacubeComparativeTimelineSync,
-    NavbarNew,
     AnalysisOptionsButton
   },
   setup() {
     const store = useStore();
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const timeSelectionSyncing = computed(() => store.getters['dataAnalysis/timeSelectionSyncing']);
+    const quantitativeAnalysisId = computed(
+      () => store.getters['dataAnalysis/analysisId']
+    );
+
+    onMounted(async () => {
+      store.dispatch('app/setAnalysisName', '');
+      const result = await getAnalysis(quantitativeAnalysisId.value);
+      store.dispatch('app/setAnalysisName', result.title);
+    });
 
     watchEffect(() => {
       if (analysisItems.value && analysisItems.value.length > 0) {
@@ -119,11 +128,6 @@ export default defineComponent({
       }
     );
 
-    const changedAnalysisName = ref<string | null>(null);
-    const onAnalysisRenamed = (newName: string) => {
-      changedAnalysisName.value = newName;
-    };
-
     return {
       analysisItems,
       allTimeseriesMap,
@@ -136,9 +140,7 @@ export default defineComponent({
       reCalculateGlobalTimeseries,
       initialSelectedTimestamp,
       initialSelectedTimestampRange,
-      timeSelectionSyncing,
-      changedAnalysisName,
-      onAnalysisRenamed
+      timeSelectionSyncing
     };
   },
   mounted() {
@@ -267,16 +269,9 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-container {
-  height: 100vh;
+  height: $content-full-height;
   display: flex;
-  flex-direction: column;
   overflow: hidden;
-}
-
-.flex-row {
-  flex: 1;
-  display: flex;
-  min-height: 0;
 }
 
 .side-panel {

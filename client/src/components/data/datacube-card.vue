@@ -9,6 +9,7 @@
         v-if="isModelMetadata && showNewRunsModal === true"
         :metadata="metadata"
         :potential-scenarios="potentialScenarios"
+        :selected-dimensions="dimensions"
         @close="onNewScenarioRunsModalClose" />
       <modal-check-runs-execution-status
         v-if="isModelMetadata & showModelRunsExecutionStatus === true"
@@ -58,15 +59,9 @@
           <div class="button-row">
             <div class="button-row-group">
               <radio-button-group
-                :selected-button-value="isDescriptionView"
-                :buttons="[
-                  { label: 'Descriptions', value: true},
-                  { label: 'Data', value: false},
-                ]"
-                @button-clicked="(value) => value
-                  ? $emit('update-desc-view', true)
-                  : clickData()
-                "
+                :selected-button-value="currentTabView"
+                :buttons="headerGroupButtons"
+                @button-clicked="onTabClick"
               />
               <small-text-button
                 v-if="dataPaths.length > 0"
@@ -75,7 +70,7 @@
               />
             </div>
             <div
-              v-if="!isDescriptionView && (timeseriesData.length > 1 || relativeTo !== null)"
+              v-if="currentTabView === 'data' && (timeseriesData.length > 1 || relativeTo !== null)"
               class="relative-box"
             >
               Relative to
@@ -110,9 +105,71 @@
               </dropdown-control>
             </div>
           </div>
-          <slot name="datacube-description" v-if="isDescriptionView" />
+
+          <!-- Description tab content -->
+          <slot name="datacube-description" v-if="currentTabView === 'description'" />
+
+          <!-- Pre-rendered viz tab content -->
+          <!--
+            outputSourceSpecs.length > 0 means we have one or more selected run
+            FIXME: this should be done directly against allModelRunData
+           -->
+          <div
+            v-if="currentTabView === 'pre-rendered-viz' && outputSourceSpecs.length > 0"
+            style="display: flex; height: 100%; flex-direction: column">
+
+            <!-- a global list
+              of all pre-rendered-viz items from all runs,
+              and enable selection by item name/id instead of index
+              which won't work when different model runs have different list of pre-rendered items -->
+            <div v-if="preGenDataItems.length > 0"
+              style="display: flex; padding: 5px;">
+              <div style="padding-right: 10px">Selected Viz:</div>
+              <select name="pre-gen-outputs" @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]">
+                <option
+                  v-for="pregenItem in preGenDataItems" :key="pregenItem"
+                  :selected="pregenItem === selectedPreGenDataItem"
+                >
+                  {{pregenItem}}
+                </option>
+              </select>
+            </div>
+
+            <div class="column card-maps-container" style="flex-direction: revert;">
+              <div v-for="(spec, indx) in outputSourceSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec)"
+                class="card-map-container"
+                :style="{ borderColor: colorFromIndex(indx) }"
+                style="border-width: 2px; border-style: solid;"
+                :class="[
+                  `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                ]"
+              >
+                <!-- spec here represents one selected model run -->
+                <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
+                  <!-- display only a single pre-rendered-viz item for each selected run -->
+                  <img
+                    v-if="pregenDataForSpec.type === 'image'"
+                    :src="pregenDataForSpec.file"
+                    alt="Pre-rendered Visualization"
+                    class="pre-rendered-content"
+                  >
+                  <video
+                    v-if="pregenDataForSpec.type === 'video'"
+                    controls muted
+                    class="pre-rendered-content"
+                    :src="pregenDataForSpec.file"
+                  >
+                  </video>
+                </template>
+                <template v-else>
+                  No pre-generated data available for some selected scenario(s)!
+                </template>
+              </div>
+            </div>
+          </div>
+
           <datacube-scenario-header
-            v-if="isExpanded && !isDescriptionView && mainModelOutput && isModelMetadata"
+            v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
             :metadata="metadata"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
@@ -140,19 +197,21 @@
               </div>
             </template>
           </modal>
-          <div class="column">
+
+          <!-- Data tab content -->
+          <div v-if="currentTabView === 'data'" class="column">
             <div class="dropdown-row">
               <slot
                 name="temporal-aggregation-config"
-                v-if="!isDescriptionView && timeseriesData.length > 0"
+                v-if="currentTabView === 'data' && timeseriesData.length > 0"
               />
               <slot
                 name="temporal-resolution-config"
-                v-if="!isDescriptionView && timeseriesData.length > 0"
+                v-if="currentTabView === 'data' && timeseriesData.length > 0"
               />
             </div>
             <timeseries-chart
-              v-if="!isDescriptionView && timeseriesData.length > 0"
+              v-if="currentTabView === 'data' && timeseriesData.length > 0"
               class="timeseries-chart"
               :timeseries-data="timeseriesData"
               :selected-temporal-resolution="selectedTemporalResolution"
@@ -163,7 +222,7 @@
             />
             <p
               v-if="
-                !isDescriptionView &&
+                currentTabView === 'data' &&
                 breakdownOption !== null &&
                 timeseriesData.length === 0
               "
@@ -179,13 +238,13 @@
               , or choose 'Split by none'.
             </p>
             <div
-              v-if="!isDescriptionView && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
+              v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
               class="dropdown-row"
             >
-              <slot name="spatial-aggregation-config" v-if="!isDescriptionView" />
+              <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
             </div>
             <div
-              v-if="mapReady && !isDescriptionView && regionalData !== null"
+              v-if="mapReady && currentTabView === 'data' && regionalData !== null"
               class="card-maps-container">
               <div
                 v-for="(spec, indx) in outputSourceSpecs"
@@ -201,7 +260,6 @@
                 >
                   {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
                 </span>
-
                 <data-analysis-map
                   class="card-map"
                   :style="{ borderColor: colorFromIndex(indx) }"
@@ -223,7 +281,7 @@
               </div>
             </div>
             <div
-              v-else-if="!isDescriptionView"
+              v-else-if="currentTabView === 'data'"
               class="card-maps-container"
             >
               <!-- Empty div to reduce jumpiness when the maps are loading -->
@@ -238,12 +296,12 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect } from 'vue';
+import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect, Ref } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ModelRun } from '@/types/ModelRun';
+import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
@@ -272,7 +330,7 @@ export default defineComponent({
     'check-model-metadata-validity',
     'refetch-data',
     'new-runs-mode',
-    'update-desc-view',
+    'update-tab-view',
     'set-relative-to'
   ],
   props: {
@@ -280,9 +338,9 @@ export default defineComponent({
       type: Boolean,
       default: true
     },
-    isDescriptionView: {
-      type: Boolean,
-      default: true
+    currentTabView: {
+      type: String,
+      default: 'description'
     },
     selectedAdminLevel: {
       type: Number,
@@ -365,6 +423,7 @@ export default defineComponent({
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const tour = computed(() => store.getters['tour/tour']);
 
     const {
       selectedScenarioIds,
@@ -399,6 +458,67 @@ export default defineComponent({
     const isModelMetadata = computed(() => {
       return metadata.value !== null && isModel(metadata.value);
     });
+
+    const headerGroupButtons = ref([
+      { label: 'Descriptions', value: 'description' },
+      { label: 'Data', value: 'data' },
+      { label: 'Media', value: 'pre-rendered-viz' }
+    ]) as Ref<{label: string; value: string}[]>;
+    watchEffect(() => {
+      const headerGroupButtonsSimple = [
+        { label: 'Descriptions', value: 'description' },
+        { label: 'Data', value: 'data' }
+      ];
+      // indicators should not have the 'Media' tab
+      const isIndicatorDatacube = metadata.value !== null && isIndicator(metadata.value);
+      if (isIndicatorDatacube) {
+        headerGroupButtons.value = headerGroupButtonsSimple;
+      }
+      // models with no pre-generated data should not have the 'Media' tab
+      if (allModelRunData.value !== null && allModelRunData.value.length > 0) {
+        const runsWithPreGenDataAvailable = _.some(allModelRunData.value, r => r.pre_gen_output_paths && _.some(r.pre_gen_output_paths, p => p.coords === undefined));
+        if (!runsWithPreGenDataAvailable) {
+          headerGroupButtons.value = headerGroupButtonsSimple;
+        }
+      }
+    });
+
+    const preGenDataMap = ref<{[key: string]: PreGeneratedModelRunData[]}>({}); // map all pre-gen data for each run
+    const preGenDataItems = ref<string[]>([]);
+    const selectedPreGenDataItem = ref('');
+    watchEffect(() => {
+      if (allModelRunData.value !== null && allModelRunData.value.length > 0) {
+        // build a map of all pre-gen data indexed by run-id
+        preGenDataMap.value = Object.assign({}, ...allModelRunData.value.map((r) => ({ [r.id]: r.pre_gen_output_paths })));
+        if (Object.keys(preGenDataMap.value).length > 0) {
+          // note that some runs may not have valid pre-gen data (i.e., null)
+          const allPreGenData = Object.values(preGenDataMap.value).flat().filter(p => p !== null);
+
+          // assing each pre-gen data item (within each run) an id
+          allPreGenData.forEach(pregen => {
+            pregen.id = getPreGenItemDisplayName(pregen);
+          });
+
+          // dropdown selection utilize each pre-gen data item id as it display name
+          preGenDataItems.value = _.uniq(allPreGenData.map(pregen => pregen.id ?? ''));
+
+          // select first pre-gen data item once available
+          if (preGenDataItems.value.length > 0) {
+            selectedPreGenDataItem.value = preGenDataItems.value[0];
+          }
+        }
+      }
+    });
+
+    function getPreGenItemDisplayName(pregen: PreGeneratedModelRunData) {
+      // @REVIEW: use the resource file name
+      const lastSlashIndx = pregen.file.lastIndexOf('/');
+      return pregen.file.substring(lastSlashIndx + 1);
+    }
+
+    function getSelectedPreGenOutput(spec: OutputSpecWithId): PreGeneratedModelRunData | undefined {
+      return preGenDataMap.value[spec.id] ? preGenDataMap.value[spec.id].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataItem.value) : undefined;
+    }
 
     const validModelRunsAvailable = computed(() => {
       return (!_.isNull(metadata.value) && isIndicator(metadata.value)) || (!_.isNull(allModelRunData.value) &&
@@ -448,7 +568,12 @@ export default defineComponent({
       emitRelativeToSelection,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
-      validModelRunsAvailable
+      validModelRunsAvailable,
+      tour,
+      headerGroupButtons,
+      preGenDataItems,
+      selectedPreGenDataItem,
+      getSelectedPreGenOutput
     };
   },
   data: () => ({
@@ -471,6 +596,8 @@ export default defineComponent({
   unmounted() {
     disableConcurrentTileRequestsCaching();
   },
+  mounted() {
+  },
   computed: {
     dataPaths(): string[] {
       if (!_.isNull(this.metadata)) {
@@ -490,15 +617,36 @@ export default defineComponent({
     }
   },
   methods: {
-    clickData() {
+    onTabClick(value: string) {
+      if (value === 'description' && this.isModelMetadata) {
+        this.$emit('set-selected-scenario-ids', []); // this will update the 'currentTabView'
+      }
+      this.clickData(value);
+    },
+    clickData(tab: string) {
       // FIXME: This code to select a model run when switching to the data tab
       //  should be in a watcher on the parent component to be more robust,
       //  rather than in this button's click handler.
+      this.$emit('update-tab-view', tab);
+
       if (this.isModelMetadata && this.selectedScenarioIds.length === 0) {
-        const newIds = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready).map(run => run.id).slice(0, 1);
+        // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
+        const readyRuns = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
+        if (readyRuns.length === 0) {
+          console.warn('cannot find a baseline model run indicated by the is_default_run');
+          // failed to find baseline using the 'is_default_run' flag
+          // FIXME: so, try to find a model run that has values matching the default values of all inputs
+        }
+        const newIds = readyRuns.map(run => run.id).slice(0, 1);
         this.$emit('set-selected-scenario-ids', newIds);
       }
-      this.$emit('update-desc-view', false);
+
+      //
+      // advance the relevant tour if it is active
+      //
+      if (tab === 'data' && this.tour && this.tour.id.startsWith('aggregations-tour')) {
+        this.tour.next();
+      }
     },
     onMapLoad() {
       this.$emit('on-map-load');
@@ -538,8 +686,8 @@ export default defineComponent({
         // console.log('no line is selected');
         this.$emit('set-selected-scenario-ids', []);
       } else {
-        // console.log('user selected: ' + e.scenarios.length);
-        this.$emit('set-selected-scenario-ids', selectedScenarios.map(s => s.run_id));
+        const selectedRunIDs = selectedScenarios.map(s => s.run_id);
+        this.$emit('set-selected-scenario-ids', selectedRunIDs);
       }
     },
     updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
@@ -643,6 +791,10 @@ header {
 
 $marginSize: 5px;
 
+.pre-rendered-content {
+  max-width: 100%;
+}
+
 .card-map-container {
   flex: 1;
   min-width: 0;
@@ -658,14 +810,13 @@ $marginSize: 5px;
       border: none;
     }
   }
+  &.card-count-2,
   &.card-count-3,
   &.card-count-4 {
-    height: 50%;
     min-width: calc(50% - #{$marginSize / 2});
     max-width: calc(50% - #{$marginSize / 2});
   }
   &.card-count-n {
-    height: 50%;
     min-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
     max-width: calc(calc(100% / 3) - #{$marginSize * 2 / 3});
   }

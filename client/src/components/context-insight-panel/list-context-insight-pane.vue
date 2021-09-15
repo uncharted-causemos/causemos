@@ -57,6 +57,7 @@
               <context-insight-editor
                 v-if="activeContextInsight === contextInsight.id"
                 @delete="deleteContextInsight(contextInsight.id)"
+                @edit="editContextInsight(contextInsight)"
               />
             </div>
           </div>
@@ -169,7 +170,8 @@ export default {
     ...mapActions({
       showContextInsightPanel: 'contextInsightPanel/showContextInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
-      setCurrentPane: 'insightPanel/setCurrentPane'
+      setCurrentPane: 'insightPanel/setCurrentPane',
+      setUpdatedInsight: 'insightPanel/setUpdatedInsight'
     }),
     stringFormatter,
     redirectToAnalysisInsight() {
@@ -237,6 +239,12 @@ export default {
           savedURL = '/analysis/' + this.project + '/data/' + this.analysisId;
         }
 
+        if (this.projectType === ProjectType.Model) {
+          // this is an insight created by the domain modeler during model publication:
+          //  needed since an existing url may have insight_id with old/invalid value
+          savedURL = '/model/' + this.project + '/model-publishing-experiment';
+        }
+
         // add 'insight_id' as a URL param so that the target page can apply it
         const finalURL = this.getSourceUrlForExport(savedURL, this.selectedContextInsight.id);
 
@@ -273,6 +281,11 @@ export default {
           this.toaster(message, 'error', true);
         }
       });
+    },
+    editContextInsight(insight) {
+      this.showInsightPanel();
+      this.setUpdatedInsight(insight);
+      this.setCurrentPane('edit-insight');
     },
     openExport() {
       this.exportActive = true;

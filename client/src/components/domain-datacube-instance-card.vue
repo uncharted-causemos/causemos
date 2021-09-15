@@ -8,62 +8,51 @@
     >
       <template #title>Unpublish Datacube Instance</template>
       <template #message>
-        <p>Are you sure you want to unpublish <strong>{{ datacube.name }}</strong>?</p>
+        <p>Are you sure you want to unpublish<strong>{{ datacube.name }}</strong>?</p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
         />
       </template>
     </modal-confirmation>
-    <div class="row project-card-header">
+    <div>
       <b>
-      {{datacube.name}} : <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
+      {{datacube.name}}: <span style="padding: 4px" :style="{ backgroundColor: statusColor }">{{ statusLabel }}</span>
       </b>
     </div>
-    <div class="row">
-      <div class="col-sm-3 instance-header" style="margin-left: 2rem">
-        Inputs
-      </div>
-      <div class="col-sm-2 instance-header">
-        Outputs
-      </div>
-      <div class="col-sm-2 instance-header">
-        Scope
-      </div>
-      <div class="col-sm-2 instance-header">
-        Analyses
-      </div>
-      <div class="col-sm-2 instance-header">
-        Scenarios
-      </div>
-    </div>
-    <div class="row">
-      <div class="col-sm-3 fixed-height-column" style="margin-left: 2rem">
+
+    <div class="card-body">
+      <div class="card-column card-column-wider">
+        <div class="column-title">Inputs</div>
         <div
           v-for="input in inputKnobs"
           :key="input.name">
           {{ input.display_name }}
         </div>
       </div>
-      <div class="col-sm-2 fixed-height-column">
+      <div class="card-column">
+        <div class="column-title">Outputs</div>
         <div
           v-for="output in validatedOutputs"
           :key="output.name">
           {{ output.name }}
         </div>
       </div>
-      <div class="col-sm-2">
+      <div class="card-column">
+        <div class="column-title">Scope</div>
         <!-- placeholder for map or image for regional context -->
-        <div style="backgroundColor: darkgray; height: 100px"></div>
+        <div style="backgroundColor: #ddd; height: 100px"></div>
       </div>
-      <div class="col-sm-2 fixed-height-column">
+      <div class="card-column">
+        <div class="column-title">Analyses</div>
         <div
           v-for="analysis in ['analysis x', 'analysis y', 'analysis z']"
           :key="analysis">
           {{ analysis }}
         </div>
       </div>
-      <div class="col-sm-2" style="display: flex; flex-direction: column">
+      <div class="card-column" style="display: flex; flex-direction: column">
+        <div class="column-title">Scenarios</div>
         <div><b>Scenarios</b></div>
         <div>55</div>
         <div><b>Insights</b></div>
@@ -73,40 +62,37 @@
       </div>
     </div>
 
-    <div class="row">
-      <div class="col-sm-7"></div>
-      <div class="col-sm-3">
-        <!--
-        <button
-          v-tooltip.top-center="'Open datacube instance for review'"
-          type="button"
-          class="btn btn-primary button-spacing btn-call-for-action"
-          @click="open(datacube.data_id)"
-        ><i class="fa fa-folder-open-o" />
-          Open
-        </button>
-        -->
-          <button
-          v-tooltip.top-center="'Edit datacube instance publication'"
-          type="button"
-          class="btn btn-primary button-spacing"
-          @click="edit(datacube.data_id)"
-        ><i class="fa fa-edit" />
-          Edit</button>
-      </div>
-      <div class="col-sm-2">
-        <button
-          v-tooltip.top-center="'Unpublish the datacube instance'"
-          type="button"
-          class="remove-button button-spacing"
-          :class="{ 'disabled': datacube.status === DatacubeStatus.Registered}"
-          :disabled="datacube.status === DatacubeStatus.Registered"
-          @click.stop="showWarningModal"
-        >
-          <i class="fa fa-trash" />
-          Unpublish
-        </button>
-      </div>
+    <div class="button-row">
+      <!--
+      <button
+        v-tooltip.top-center="'Open datacube instance for review'"
+        type="button"
+        class="btn btn-primary button-spacing btn-call-for-action"
+        @click="open(datacube.data_id)"
+      ><i class="fa fa-folder-open-o" />
+        Open
+      </button>
+      -->
+      <button
+        v-tooltip.top-center="'Edit datacube instance publication'"
+        type="button"
+        class="btn btn-primary"
+        @click="edit(datacube.data_id)"
+      >
+        <i class="fa fa-edit" />
+        Edit
+      </button>
+      <button
+        v-tooltip.top-center="'Unpublish the datacube instance'"
+        type="button"
+        class="remove-button"
+        :class="{ 'disabled': datacube.status === DatacubeStatus.Registered}"
+        :disabled="datacube.status === DatacubeStatus.Registered"
+        @click.stop="showWarningModal"
+      >
+        <i class="fa fa-trash" />
+        Unpublish
+      </button>
     </div>
   </div>
 </template>
@@ -235,44 +221,58 @@ export default defineComponent({
 <style scoped lang="scss">
 @import "~styles/variables";
 
-.instance-header {
+.project-card-container {
+  background: white;
+  margin-top: 5px;
+  padding: 10px;
+  display: flex;
+  flex-direction: column;
+  height: 250px;
+}
+
+.column-title {
   @include header-secondary;
   font-weight: bold;
   color: darkgrey;
   padding-bottom: 5px;
 }
 
-.fixed-height-column {
-  height: 12vh;
-  overflow: auto;
+.card-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  margin: 10px 0;
 }
 
-.project-card-container {
-  background: #fcfcfc;
-  border: 1px solid #dedede;
-  margin: 1px 0;
-  padding: 6px;
+.card-column {
+  flex: 2;
+  overflow: hidden;
+
+  div {
+    text-overflow: ellipsis;
+  }
+
+  &:not(:first-child) {
+    margin-left: 5px;
+  }
 }
 
-.project-card-container:hover {
-  border-color: $selected;
+.card-column-wider {
+  flex: 3;
+}
+
+.button-row {
+  display: flex;
+  justify-content: flex-end;
+
+  button:not(:first-child) {
+    margin-left: 5px;
+  }
 }
 
 .selected {
   border-left: 4px solid $selected;
   background-color: #ffffff;
-}
-
-.project-card-header {
-  padding-bottom: 5px;
-  padding-top: 5px;
-  padding-left: 3rem;
-}
-
-.button-spacing {
-  padding: 4px;
-  margin: 2px;
-  border-radius: 8px;
 }
 
 .remove-button {

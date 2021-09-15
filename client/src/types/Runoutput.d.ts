@@ -3,6 +3,7 @@
 
 import { AdminLevel } from '@/types/Enums';
 import { AnalysisMapRange } from './Common';
+import { PreGeneratedModelRunData } from './ModelRun';
 
 export interface OutputSpecWithId extends OutputSpec {
   id: string; // User defined id for identifying the output for this spec
@@ -25,6 +26,7 @@ export interface OutputSpec {
   temporalAggregation: string;
   spatialAggregation: string;
   timestamp: number;
+  preGeneratedOutput?: PreGeneratedModelRunData[];
 }
 export type RegionalAggregation = {
   [key in AdminLevel]?: { id: string; value: number }[];

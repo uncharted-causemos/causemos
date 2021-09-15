@@ -91,6 +91,7 @@
                 :key="insight.id"
                 :insight="insight"
                 @delete-insight="removeInsight(insight.id)"
+                @edit-insight="editInsight(insight)"
                 @open-editor="openEditor(insight.id)"
                 @select-insight="selectInsight(insight)"
                 @update-curation="updateCuration(insight.id)"
@@ -252,7 +253,9 @@ export default {
   methods: {
     ...mapActions({
       hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCountInsights: 'insightPanel/setCountInsights'
+      setCountInsights: 'insightPanel/setCountInsights',
+      setCurrentPane: 'insightPanel/setCurrentPane',
+      setUpdatedInsight: 'insightPanel/setUpdatedInsight'
     }),
     dateFormatter,
     stringFormatter,
@@ -297,6 +300,10 @@ export default {
       matches.forEach(c => c.remove());
 
       evt.currentTarget.style.border = 'none';
+    },
+    editInsight(insight) {
+      this.setUpdatedInsight(insight);
+      this.setCurrentPane('edit-insight');
     },
     removeInsight(id) {
       deleteInsight(id).then(result => {

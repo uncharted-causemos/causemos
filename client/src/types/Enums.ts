@@ -3,7 +3,8 @@ export enum ModelRunStatus {
   Ready = 'READY',
   Submitted = 'SUBMITTED',
   Processing = 'PROCESSING',
-  ExecutionFailed = 'EXECUTION FAILED'
+  ExecutionFailed = 'EXECUTION FAILED',
+  Test = 'TEST'
 }
 
 export enum DatacubeStatus {

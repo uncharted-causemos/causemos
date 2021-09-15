@@ -1,3 +1,4 @@
+import { Insight } from '@/types/Insight';
 import { GetterTree, MutationTree, ActionTree } from 'vuex';
 
 interface InsightState {
@@ -8,6 +9,7 @@ interface InsightState {
   dataState: any;
   contextId: string[] | undefined;
   analysisId: string;
+  updatedInsight: Insight | null;
 }
 
 /**
@@ -20,7 +22,8 @@ const state: InsightState = {
   viewState: {},
   dataState: {},
   contextId: undefined,
-  analysisId: ''
+  analysisId: '',
+  updatedInsight: null
 };
 
 
@@ -31,7 +34,8 @@ const getters: GetterTree<InsightState, any> = {
   viewState: state => state.viewState,
   dataState: state => state.dataState,
   contextId: state => state.contextId,
-  analysisId: state => state.analysisId
+  analysisId: state => state.analysisId,
+  updatedInsight: state => state.updatedInsight
 };
 
 
@@ -59,6 +63,9 @@ const actions: ActionTree<InsightState, any> = {
   },
   setAnalysisId: ({ commit }, newValue) => {
     commit('setAnalysisId', newValue);
+  },
+  setUpdatedInsight: ({ commit }, newValue) => {
+    commit('setUpdatedInsight', newValue);
   }
 };
 
@@ -87,6 +94,9 @@ const mutations: MutationTree<InsightState> = {
   },
   setAnalysisId(state, value) {
     state.analysisId = value;
+  },
+  setUpdatedInsight(state, value) {
+    state.updatedInsight = value;
   }
 };
 
