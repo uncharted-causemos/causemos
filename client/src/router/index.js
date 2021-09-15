@@ -5,7 +5,6 @@ import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
 import DataStart from '@/views/DataStart.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
-import CreateDataCube from '@/views/CreateDataCube.vue';
 import TileExperiment from '@/views/TileExperiment.vue';
 import GraphExperiment from '@/views/GraphExperiment.vue';
 import QualitativeView from '@/views/QualitativeView.vue';
@@ -98,11 +97,6 @@ const routes = [
     name: 'dataExplorer',
     component: DataExplorer,
     beforeEnter: loadAnalysisState
-  },
-  {
-    path: '/:projectType/:project/data/:analysisId/create-data-cube',
-    name: 'createDataCube',
-    component: CreateDataCube
   },
   {
     path: '/tile-experiment',
