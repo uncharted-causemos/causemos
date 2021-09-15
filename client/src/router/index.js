@@ -3,15 +3,11 @@ import Home from '@/views/Home.vue';
 import DomainProjectOverview from '@/views/DomainProjectOverview.vue';
 import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
-import DataStart from '@/views/DataStart.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
-import CreateDataCube from '@/views/CreateDataCube.vue';
 import TileExperiment from '@/views/TileExperiment.vue';
 import GraphExperiment from '@/views/GraphExperiment.vue';
 import QualitativeView from '@/views/QualitativeView.vue';
-import QualitativeStart from '@/views/QualitativeStart.vue';
 import KnowledgeBaseExplorer from '@/views/KnowledgeBaseExplorer.vue';
-import QuantitativeStart from '@/views/QuantitativeStart.vue';
 import QuantitativeView from '@/views/QuantitativeView.vue';
 import AuditTrail from '@/views/AuditTrail.vue';
 import NotFound from '@/views/NotFound.vue';
@@ -71,11 +67,6 @@ const routes = [
     component: DomainProjectOverview
   },
   {
-    path: '/:projectType/:project/data',
-    name: 'dataStart',
-    component: DataStart
-  },
-  {
     path: '/:projectType/:project/data/:analysisId',
     name: 'data',
     component: DatacubeDrilldown,
@@ -100,11 +91,6 @@ const routes = [
     beforeEnter: loadAnalysisState
   },
   {
-    path: '/:projectType/:project/data/:analysisId/create-data-cube',
-    name: 'createDataCube',
-    component: CreateDataCube
-  },
-  {
     path: '/tile-experiment',
     name: 'tileExperiment',
     component: TileExperiment
@@ -120,11 +106,6 @@ const routes = [
     component: GraphExperiment
   },
   {
-    path: '/:projectType/:project/qualitative',
-    name: 'qualitativeStart',
-    component: QualitativeStart
-  },
-  {
     path: '/:projectType/:project/qualitative/:currentCAG',
     name: 'qualitative',
     component: QualitativeView
@@ -133,11 +114,6 @@ const routes = [
     path: '/:projectType/:project/kb-explorer',
     name: 'kbExplorer',
     component: KnowledgeBaseExplorer
-  },
-  {
-    path: '/:projectType/:project/quantitative',
-    name: 'quantitativeStart',
-    component: QuantitativeStart
   },
   {
     path: '/:projectType/:project/quantitative/:currentCAG',
