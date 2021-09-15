@@ -58,20 +58,13 @@ export default function useQuestionsData() {
         // when fetching public insights, then project-id is only relevant in domain projects
         publicQuestionsSearchFields.project_id = project.value;
       }
-      const publicFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
-        contextIds.value.forEach((contextId: string) => {
-          // context-id must be ignored when fetching questions at the project landing page
-          const searchFilter = _.clone(publicQuestionsSearchFields);
-          searchFilter.context_id = contextId;
-          publicFilterArray.push(searchFilter);
-        });
-      } else {
-        publicFilterArray.push(publicQuestionsSearchFields);
+        // context-id must be ignored when fetching questions at the project landing page
+        publicQuestionsSearchFields.context_id = contextIds.value;
       }
       // Note that when 'ignoreContextId' is true, this means we are fetching questions for the insight explorer within an analysis project
       // For this case, public questions should not be listed
-      const publicQuestions = ignoreContextId ? [] : await fetchQuestions(publicFilterArray);
+      const publicQuestions = ignoreContextId ? [] : await fetchQuestions([publicQuestionsSearchFields]);
 
       //
       // fetch context-specific questions
@@ -82,17 +75,10 @@ export default function useQuestionsData() {
         contextQuestionsSearchFields.project_id = project.value;
       }
       contextQuestionsSearchFields.visibility = 'private';
-      const contextFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
-        contextIds.value.forEach((contextId: string) => {
-          const searchFilter = _.clone(contextQuestionsSearchFields);
-          searchFilter.context_id = contextId;
-          contextFilterArray.push(searchFilter);
-        });
-      } else {
-        contextFilterArray.push(contextQuestionsSearchFields);
+        contextQuestionsSearchFields.context_id = contextIds.value;
       }
-      const contextQuestions = await fetchQuestions(contextFilterArray);
+      const contextQuestions = await fetchQuestions([contextQuestionsSearchFields]);
 
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the
