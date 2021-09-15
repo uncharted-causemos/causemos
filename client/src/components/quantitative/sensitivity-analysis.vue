@@ -160,19 +160,17 @@ export default {
     setAnalysisType(e) {
       this.$emit('set-analysis-type', e.target.value);
     },
-    render(width, height) {
+    render() {
       if (this.matrixData === null) return;
-      // console.log(this.matrixData);
-      console.log(width, height);
-      // const svgWidth = width || this.$refs['matrix-container'].clientWidth;
-      // const svgHeight = height || this.$refs['matrix-container'].clientHeight;
+
       const refSelection = d3.select(this.$refs['matrix-container']);
       const svgWidth = _.uniq(this.matrixData.columns).length * 60 + AXIS_LABEL_MARGIN_PX;
       const svgHeight = _.uniq(this.matrixData.rows).length * 30 + AXIS_LABEL_MARGIN_PX;
-      console.log(svgHeight);
+
       refSelection
         .attr('height', svgHeight)
         .attr('width', svgWidth);
+
       const options = {
         axisLabelMargin: AXIS_LABEL_MARGIN_PX,
         width: svgWidth,
