@@ -1,16 +1,13 @@
 const _ = require('lodash');
 const uuid = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
-const { filterAndLog } = rootRequire('util/joi-util.ts');
-const { processFilteredData } = rootRequire('util/post-processing-util.ts');
+const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const requestAsPromise = rootRequire('/util/request-as-promise');
+const { sendToPipeline } = rootRequire('services/external/prefect-queue-service');
 const Logger = rootRequire('/config/logger');
 const auth = rootRequire('/util/auth-util');
 const domainProjectService = rootRequire('/services/domain-project-service');
 const datacubeService = rootRequire('/services/datacube-service');
-
-
-const QUEUE_SERVICE_URL = 'http://10.65.18.52:4040/data-pipeline/enqueue';
 const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process.env.DOJO_PASSWORD);
 
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
@@ -79,15 +76,15 @@ const submitModelRun = async(metadata) => {
  * @param {ModelRun} metadata - model run metadata
  */
 const startModelOutputPostProcessing = async (metadata) => {
-  let filteredMetadata;
-  try {
-    filteredMetadata = filterAndLog(Logger, './src/schemas/model-run.schema.json', metadata);
-  } catch (err) {
+  Logger.info(`Start model output processing ${metadata.model_name} ${metadata.id} `);
+  if (!metadata.model_id || !metadata.id) {
+    const err = 'Required ids for model output post processing were not provided';
+    Logger.error(err);
     return { result: err, code: 400 };
   }
   const filters = {
     clauses: [
-      { field: 'id', operand: 'or', isNot: false, values: [filteredMetadata.model_id] }
+      { field: 'id', operand: 'or', isNot: false, values: [metadata.model_id] }
     ]
   };
   const modelMetadata = (await datacubeService.getDatacubes(filters, {
@@ -107,41 +104,47 @@ const startModelOutputPostProcessing = async (metadata) => {
     });
   }
 
+  // Remove extra fields from Jataware
+  metadata.attributes = undefined;
+  metadata.default_run = undefined;
+
+  let httpResponse;
+  let docIds = [];
+  let result;
+  try {
+    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+    if (await connection.exists([{ field: 'id', value: metadata.id }])) {
+      result = await connection.update({
+        ...metadata,
+        status: 'PROCESSING'
+      }, d => d.id);
+      docIds = [metadata.id];
+      httpResponse = { result, code: 200 };
+    } else {
+      result = await connection.insert({
+        ...metadata,
+        status: 'TEST'
+      }, d => d.id);
+      httpResponse = { result, code: 201 };
+    }
+  } catch (err) {
+    httpResponse = { result: err, code: 500 };
+  }
+
   const flowParameters = {
-    model_id: filteredMetadata.model_id,
-    run_id: filteredMetadata.id,
-    doc_ids: [filteredMetadata.id],
-    data_paths: filteredMetadata.data_paths,
+    model_id: metadata.model_id,
+    run_id: metadata.id,
+    doc_ids: docIds,
+    data_paths: metadata.data_paths,
     qualifier_map: qualifierMap,
     compute_tiles: true
   };
-
-  const pipelinePayload = {
-    method: 'PUT',
-    url: QUEUE_SERVICE_URL,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: flowParameters
-  };
-
   try {
-    await requestAsPromise(pipelinePayload);
+    await sendToPipeline(flowParameters);
   } catch (err) {
     return { result: err, code: 500 };
   }
-  try {
-    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-    // TODO: Handle insert here with 201 code when data gets inserted.
-    const result = await connection.update({
-      ...filteredMetadata,
-      status: 'PROCESSING'
-    }, d => d.id);
-    return { result, code: 200 };
-  } catch (err) {
-    return { result: err, code: 500 };
-  }
+  return httpResponse;
 };
 
 /**
@@ -225,23 +228,24 @@ const getJobStatus = async (runId) => {
  * @param {Indicator} metadata -indicator metadata
  */
 const startIndicatorPostProcessing = async (metadata) => {
-  let filteredMetadata;
-  try {
-    filteredMetadata = filterAndLog(Logger, './src/schemas/indicator.schema.json', metadata);
-  } catch (err) {
+  Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
+  if (!metadata.id) {
+    const err = 'Required ids for indicator post processing were not provided';
+    Logger.error(err);
     return { result: err, code: 400 };
   }
-  processFilteredData(filteredMetadata);
-  filteredMetadata.type = 'indicator';
+  processFilteredData(metadata);
+  removeUnwantedData(metadata);
+  metadata.type = 'indicator';
   // ensure for each newly registered indicator datacube a corresponding domain project
   // @TODO: when indicator publish workflow is added,
   //        the following function would be called at:
   //        insertDatacube() in server/src/services/datacube-service
-  await domainProjectService.updateDomainProjects(filteredMetadata);
+  await domainProjectService.updateDomainProjects(metadata);
 
   const filters = {
     clauses: [
-      { field: 'dataId', operand: 'or', isNot: false, values: [filteredMetadata.id] },
+      { field: 'dataId', operand: 'or', isNot: false, values: [metadata.id] },
       { field: 'type', operand: 'or', isNot: false, values: ['indicator'] },
       { field: 'status', operand: 'or', isNot: false, values: ['READY'] }
     ]
@@ -253,7 +257,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   // Since id is a random uuid, ES will not provide any duplicate protection
   // We will check ourselves using data_id and feature
   if (existingIndicators.length > 0) {
-    Logger.warn(`Indicators with data_id ${filteredMetadata.id} already exist. Duplicates will not be processed.`);
+    Logger.warn(`Indicators with data_id ${metadata.id} already exist. Duplicates will not be processed.`);
   }
 
   const acceptedTypes = ['int', 'float', 'boolean', 'datetime'];
@@ -263,7 +267,7 @@ const startIndicatorPostProcessing = async (metadata) => {
   const qualifierMap = {};
 
   // Create data now to send to elasticsearch
-  const newIndicatorMetadata = filteredMetadata.outputs
+  const newIndicatorMetadata = metadata.outputs
     .filter(output => acceptedTypes.includes(output.type)) // Don't process non-numeric data
     .filter(output => !existingIndicators.some(item => item.default_feature === output.name))
     .map(output => {
@@ -272,19 +276,19 @@ const startIndicatorPostProcessing = async (metadata) => {
       const resIndex = resolutions.indexOf(outputRes || '');
       highestRes = Math.max(highestRes, resIndex);
 
-      const clonedMetadata = _.cloneDeep(filteredMetadata);
-      clonedMetadata.data_id = filteredMetadata.id;
+      const clonedMetadata = _.cloneDeep(metadata);
+      clonedMetadata.data_id = metadata.id;
       clonedMetadata.id = uuid();
       clonedMetadata.outputs = [output];
-      clonedMetadata.family_name = filteredMetadata.family_name;
+      clonedMetadata.family_name = metadata.family_name;
       clonedMetadata.default_feature = output.name;
-      clonedMetadata.type = filteredMetadata.type;
+      clonedMetadata.type = metadata.type;
       clonedMetadata.status = 'PROCESSING';
 
       let qualifierMatches = [];
-      if (filteredMetadata.qualifier_outputs) {
+      if (metadata.qualifier_outputs) {
         // Filter out unrelated qualifiers
-        clonedMetadata.qualifier_outputs = filteredMetadata.qualifier_outputs.filter(
+        clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
           qualifier => qualifier.related_features.includes(output.name));
 
         qualifierMap[output.name] = clonedMetadata.qualifier_outputs.filter(
@@ -308,35 +312,24 @@ const startIndicatorPostProcessing = async (metadata) => {
       return clonedMetadata;
     });
 
-  if (newIndicatorMetadata.length < filteredMetadata.outputs.length) {
-    Logger.warn(`Filtered out ${filteredMetadata.outputs.length - newIndicatorMetadata.length} indicators`);
+  if (newIndicatorMetadata.length < metadata.outputs.length) {
+    Logger.warn(`Filtered out ${metadata.outputs.length - newIndicatorMetadata.length} indicators`);
     if (newIndicatorMetadata.length === 0) {
       Logger.warn('No indicators left to process.');
     }
   }
 
   const flowParameters = {
-    model_id: filteredMetadata.id,
+    model_id: metadata.id,
     doc_ids: newIndicatorMetadata.map(indicatorMetadata => indicatorMetadata.id),
     run_id: 'indicator',
-    data_paths: filteredMetadata.data_paths,
+    data_paths: metadata.data_paths,
     temporal_resolution: resolutions[highestRes],
     qualifier_map: qualifierMap,
     is_indicator: true
   };
-
-  const pipelinePayload = {
-    method: 'PUT',
-    url: QUEUE_SERVICE_URL,
-    headers: {
-      'Content-type': 'application/json',
-      'Accept': 'application/json'
-    },
-    json: flowParameters
-  };
-
   try {
-    await requestAsPromise(pipelinePayload);
+    await sendToPipeline(flowParameters);
   } catch (err) {
     return { result: err, code: 500 };
   }

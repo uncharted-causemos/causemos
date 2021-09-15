@@ -63,7 +63,7 @@
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
-import { Model, ModelParameter } from '@/types/Datacube';
+import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import API from '@/api/api';
 import { mapGetters } from 'vuex';
@@ -84,6 +84,10 @@ export default defineComponent({
     },
     metadata: {
       type: Object as PropType<Model>,
+      default: null
+    },
+    selectedDimensions: {
+      type: Array as PropType<DimensionInfo[]>,
       default: null
     }
   },
@@ -113,6 +117,8 @@ export default defineComponent({
         }
       });
     });
+    // FIXME:
+    // also, when rendering potential run(s) values, use label choices if available
     this.potentialRuns = potentialRuns;
   },
   methods: {
@@ -122,6 +128,22 @@ export default defineComponent({
 
       const outputs = this.metadata.validatedOutputs ? this.metadata.validatedOutputs : this.metadata.outputs;
       const drilldownParams = this.metadata.parameters.filter(d => d.is_drilldown);
+
+      //
+      // ensure that any choice label is mapped back to its underlying value
+      //
+      this.selectedDimensions.forEach(d => {
+        if (d.choices_labels && d.choices !== undefined && d.is_visible) {
+          // update all generatedLines accordingly
+          this.potentialRuns.forEach(gl => {
+            const currLabelValue = (gl[d.name]).toString();
+            const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
+            if (d.choices !== undefined) {
+              gl[d.name] = d.choices[labelIndex];
+            }
+          });
+        }
+      });
 
       const promises = this.potentialRuns.map(async (modelRun) => {
         const paramArray: any[] = [];

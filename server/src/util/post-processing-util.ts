@@ -1,14 +1,31 @@
-const processFilteredData = (filteredMetadata) => {
+const removeUnwantedData = (metadata) => {
+  metadata.stochastic = undefined;
+  metadata.attributes = undefined;
+  metadata.image = undefined;
+  metadata.storedRegions = undefined;
+  if (metadata.geography) {
+    metadata.geography.coordinates = undefined;
+  }
+  if (metadata.outputs) {
+    metadata.outputs.forEach(output => { output.id = undefined; });
+  }
+  if (metadata.parameters) {
+    metadata.parameters.forEach(param => { param.id = undefined; });
+  }
+}
+
+const processFilteredData = (metadata) => {
   // Apparently ES can't support negative timestamps
-  if (filteredMetadata.period && filteredMetadata.period.gte < 0) {
-    filteredMetadata.period.gte = 0;
+  if (metadata.period && metadata.period.gte < 0) {
+    metadata.period.gte = 0;
   }
-  if (filteredMetadata.period && filteredMetadata.period.lte < 0) {
-    filteredMetadata.period.lte = 0;
+  if (metadata.period && metadata.period.lte < 0) {
+    metadata.period.lte = 0;
   }
-  filteredMetadata.family_name = filteredMetadata.family_name || filteredMetadata.name;
+  metadata.family_name = metadata.family_name || metadata.name;
 };
 
 module.exports = {
-  processFilteredData
+  processFilteredData,
+  removeUnwantedData
 };

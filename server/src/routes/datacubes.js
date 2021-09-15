@@ -9,13 +9,8 @@ const filtersUtil = rootRequire('/util/filters-util');
  */
 router.post('/', asyncHandler(async (req, res) => {
   const metadata = req.body;
-  try {
-    const result = await datacubeService.insertDatacube(metadata);
-    res.status(200).json(result);
-  } catch (err) {
-    console.log(err);
-    res.status(500).send('Internal request returned: ' + err.message);
-  }
+  const result = await datacubeService.insertDatacube(metadata);
+  res.json(result);
 }));
 
 /**

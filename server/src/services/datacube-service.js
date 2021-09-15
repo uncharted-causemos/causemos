@@ -1,8 +1,7 @@
 const _ = require('lodash');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const domainProjectService = rootRequire('/services/domain-project-service');
-const { filterAndLog } = rootRequire('util/joi-util.ts');
-const { processFilteredData } = rootRequire('util/post-processing-util.ts');
+const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const Logger = rootRequire('/config/logger');
 
 /**
@@ -21,6 +20,13 @@ const getDatacubes = async(filter, options) => {
   if (!options.size) {
     options.size = SEARCH_LIMIT;
   }
+  if (!options.excludes) {
+    options.excludes = [
+      'outputs.ontologies',
+      'qualifier_outputs.ontologies',
+      'ontology_matches'
+    ];
+  }
   return await connection.find(filter, options);
 };
 
@@ -36,26 +42,27 @@ const countDatacubes = async (filter) => {
  * Insert a new datacube
  */
 const insertDatacube = async(metadata) => {
+  Logger.info(`Start insert datacube ${metadata.name} ${metadata.id}`);
   // TODO: Fix all this copypasta from maas-service startIndicatorPostProcessing
 
   metadata.type = metadata.type || 'model'; // Assume these ar all models for now
   metadata.is_stochastic = metadata.is_stochastic || metadata.stochastic;
-  const filteredMetadata = filterAndLog(Logger, './src/schemas/model.schema.json', metadata);
-  processFilteredData(filteredMetadata);
+  processFilteredData(metadata);
+  removeUnwantedData(metadata);
 
-  filteredMetadata.data_id = filteredMetadata.id;
-  filteredMetadata.status = 'REGISTERED';
+  metadata.data_id = metadata.id;
+  metadata.status = 'REGISTERED';
 
   // Take the first numeric output, others are not currently supported
-  const validOutput = filteredMetadata.outputs.filter(o =>
+  const validOutput = metadata.outputs.filter(o =>
     o.type === 'int' || o.type === 'float' || o.type === 'boolean'
-  )[0] || filteredMetadata.outputs[0];
-  filteredMetadata.default_feature = validOutput.name;
+  )[0] || metadata.outputs[0];
+  metadata.default_feature = validOutput.name;
 
   // Combine all concept matches into one list at the root
-  const fields = [filteredMetadata.outputs, filteredMetadata.parameters];
-  if (filteredMetadata.qualifier_outputs) {
-    fields.push(filteredMetadata.qualifier_outputs);
+  const fields = [metadata.outputs, metadata.parameters];
+  if (metadata.qualifier_outputs) {
+    fields.push(metadata.qualifier_outputs);
   }
 
   const ontologyMatches = fields.map(field => {
@@ -67,14 +74,14 @@ const insertDatacube = async(metadata) => {
       ]);
   }).flat(2);
 
-  filteredMetadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
+  metadata.ontology_matches = _.sortedUniqBy(_.orderBy(ontologyMatches, ['name', 'score'], ['desc', 'desc']), 'name');
 
   // a new datacube (model or indicator) is being added
   // ensure for each newly registered datacube a corresponding domain project
-  await domainProjectService.updateDomainProjects(filteredMetadata);
+  await domainProjectService.updateDomainProjects(metadata);
 
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.insert([filteredMetadata]);
+  return await connection.insert([metadata]);
 };
 
 /**

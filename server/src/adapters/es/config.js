@@ -255,11 +255,13 @@ const FIELDS = Object.freeze({
   },
   docLabel: {
     fields: [docPath('label')],
+    aggFields: [docPath('label.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   },
   docByodTag: {
     fields: [docPath('origin.byod_tag')],
+    aggFields: [docPath('origin.byod_tag.raw')],
     type: FIELD_TYPES.NORMAL,
     level: FIELD_LEVELS.EVIDENCE
   }

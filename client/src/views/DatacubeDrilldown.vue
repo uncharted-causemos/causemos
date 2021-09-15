@@ -1,12 +1,5 @@
 <template>
   <div class="comp-analysis-experiment-container">
-    <full-screen-modal-header
-      v-if="projectType === ProjectType.Analysis"
-      icon="angle-left"
-      :nav-back-label="navBackLabel"
-      @close="onClose"
-    >
-    </full-screen-modal-header>
     <main class="main">
       <analytical-questions-and-insights-panel />
       <div class="main insight-capture">
@@ -24,7 +17,7 @@
           :selected-spatial-aggregation="selectedSpatialAggregation"
           :regional-data="regionalData"
           :output-source-specs="outputSpecs"
-          :is-description-view="isDescriptionView"
+          :current-tab-view="currentTabView"
           :metadata="metadata"
           :timeseries-data="visibleTimeseriesData"
           :relative-to="relativeTo"
@@ -39,7 +32,7 @@
           @set-relative-to="setRelativeTo"
           @refetch-data="fetchData"
           @new-runs-mode="newRunsMode=!newRunsMode"
-          @update-desc-view="updateDescView"
+          @update-tab-view="updateTabView"
         >
           <template #datacube-model-header>
             <h5
@@ -73,7 +66,7 @@
 
           <template #temporal-aggregation-config>
             <dropdown-button
-              class="dropdown-config"
+              class="dropdown-config tour-temporal-agg-dropdown-config"
               :inner-button-label="'Temporal Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedTemporalAggregation"
@@ -93,7 +86,7 @@
 
           <template #spatial-aggregation-config>
             <dropdown-button
-              class="dropdown-config"
+              class="dropdown-config tour-spatial-agg-dropdown-config"
               :inner-button-label="'Spatial Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedSpatialAggregation"
@@ -172,7 +165,6 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { getAnalysis } from '@/services/analysis-service';
-import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState, DataState } from '@/types/Insight';
@@ -197,7 +189,6 @@ export default defineComponent({
     DatacubeDescription,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
-    FullScreenModalHeader,
     MapDropdown
   },
   setup() {
@@ -219,8 +210,9 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
     // apply initial data config for this datacube
-    const initialSelectedRegionIds: string[] = [];
+    const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
+    const initialSelectedYears = ref<string[]>([]);
 
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const datacubeId = analysisItems.value[0].id;
@@ -259,9 +251,7 @@ export default defineComponent({
 
     if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
       if (initialDataConfig.selectedRegionIds !== undefined) {
-        initialDataConfig.selectedRegionIds.forEach(regionId => {
-          initialSelectedRegionIds.push(regionId);
-        });
+        initialSelectedRegionIds.value = _.clone(initialDataConfig.selectedRegionIds);
       }
       if (initialDataConfig.selectedQualifierValues !== undefined) {
         initialSelectedQualifierValues.value = _.clone(initialDataConfig.selectedQualifierValues);
@@ -317,7 +307,7 @@ export default defineComponent({
         : null
     );
 
-    const isDescriptionView = ref<boolean>(true);
+    const currentTabView = ref<string>('description');
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     watchEffect(() => {
@@ -347,8 +337,6 @@ export default defineComponent({
     watchEffect(() => {
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
-      } else {
-        isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
     });
 
@@ -400,7 +388,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      selectedQualifierValues
+      selectedQualifierValues,
+      initialSelectedYears
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -418,7 +407,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      allModelRunData
     );
 
     const {
@@ -439,7 +429,7 @@ export default defineComponent({
         spatialAggregation: selectedSpatialAggregation.value,
         temporalAggregation: selectedTemporalAggregation.value,
         temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: isDescriptionView.value,
+        isDescriptionView: currentTabView.value === 'description', // FIXME
         selectedOutputIndex: currentOutputIndex.value,
         selectedMapBaseLayer: selectedBaseLayer.value,
         selectedMapDataLayer: selectedDataLayer.value,
@@ -465,7 +455,8 @@ export default defineComponent({
         datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
         selectedRegionIds: selectedRegionIds.value,
         relativeTo: relativeTo.value,
-        selectedQualifierValues: [...selectedQualifierValues.value]
+        selectedQualifierValues: [...selectedQualifierValues.value],
+        selectedYears: [...selectedYears.value]
       };
       store.dispatch('insightPanel/setDataState', dataState);
 
@@ -497,7 +488,7 @@ export default defineComponent({
       unit,
       regionalData,
       outputSpecs,
-      isDescriptionView,
+      currentTabView,
       selectedRegionIds,
       toggleIsRegionSelected,
       outputs,
@@ -524,7 +515,8 @@ export default defineComponent({
       selectedYears,
       toggleIsYearSelected,
       initialSelectedQualifierValues,
-      initialSelectedRegionIds
+      initialSelectedRegionIds,
+      initialSelectedYears
     };
   },
   data: () => ({
@@ -561,13 +553,7 @@ export default defineComponent({
     ...mapGetters({
       project: 'app/project',
       projectType: 'app/projectType'
-    }),
-    navBackLabel(): string {
-      if (this.analysis) {
-        return 'Back to ' + (this.analysis as any).title;
-      }
-      return 'Back to analysis';
-    }
+    })
   },
   methods: {
     ...mapActions({
@@ -603,8 +589,8 @@ export default defineComponent({
       updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
       this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     },
-    updateDescView(val: boolean) {
-      this.isDescriptionView = val;
+    updateTabView(val: string) {
+      this.currentTabView = val;
     },
     async updateStateFromInsight(insight_id: string) {
       const loadedInsight: Insight = await getInsightById(insight_id);
@@ -631,9 +617,6 @@ export default defineComponent({
         if (loadedInsight.data_state?.relativeTo !== undefined) {
           this.setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
-        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
-          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
-        }
         // view state
         if (loadedInsight.view_state?.spatialAggregation) {
           this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation as AggregationOption;
@@ -645,11 +628,13 @@ export default defineComponent({
           this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
         }
         if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-          this.isDescriptionView = loadedInsight.view_state?.isDescriptionView;
+          // FIXME
+          this.updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
         }
         if (loadedInsight.view_state?.selectedOutputIndex) {
           const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-          updatedCurrentOutputsMap[this.metadata?.id ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
           this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
         }
         if (loadedInsight.view_state?.selectedMapBaseLayer) {
@@ -664,9 +649,16 @@ export default defineComponent({
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
         // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
         if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
           this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedYears !== undefined) {
+          this.initialSelectedYears = _.clone(loadedInsight.data_state?.selectedYears);
         }
       }
     },
@@ -684,7 +676,18 @@ export default defineComponent({
         if (_.isEqual(this.selectedScenarioIds, newIds)) return;
       }
       this.selectedScenarioIds = newIds;
+
       this.clearRouteParam();
+
+      if (newIds.length > 0) {
+        // selecting a run or multiple runs when the desc tab is active should always open the data tab
+        //  selecting a run or multiple runs otherwise should respect the current tab
+        if (this.currentTabView === 'description') {
+          this.updateTabView('data');
+        }
+      } else {
+        this.updateTabView('description');
+      }
     }
   }
 });
@@ -693,7 +696,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 @import '~styles/variables';
 .comp-analysis-experiment-container {
-  height: 100vh;
+  height: $content-full-height;
   display: flex;
   flex-direction: column;
   overflow: hidden;

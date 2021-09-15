@@ -32,7 +32,7 @@
         :selected-spatial-aggregation="selectedSpatialAggregation"
         :regional-data="regionalData"
         :output-source-specs="outputSpecs"
-        :is-description-view="isDescriptionView"
+        :current-tab-view="currentTabView"
         :metadata="metadata"
         :timeseries-data="visibleTimeseriesData"
         :relative-to="relativeTo"
@@ -46,7 +46,7 @@
         @set-relative-to="setRelativeTo"
         @refetch-data="fetchData"
         @new-runs-mode="newRunsMode=!newRunsMode"
-        @update-desc-view="updateDescView"
+        @update-tab-view="updateTabView"
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
@@ -251,7 +251,8 @@ export default defineComponent({
       selectedScenarioIds,
       metadata,
       selectedAdminLevel,
-      breakdownOption
+      breakdownOption,
+      ref([])
     );
 
     const timeInterval = 10000;
@@ -275,7 +276,7 @@ export default defineComponent({
         : null
     );
 
-    const isDescriptionView = ref<boolean>(true);
+    const currentTabView = ref<string>('description');
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
@@ -288,8 +289,6 @@ export default defineComponent({
 
       if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
-      } else {
-        isDescriptionView.value = selectedScenarioIds.value.length === 0;
       }
     });
 
@@ -337,7 +336,8 @@ export default defineComponent({
       selectedTimestamp,
       setSelectedTimestamp,
       selectedRegionIds,
-      selectedQualifierValues
+      selectedQualifierValues,
+      ref([])
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -410,7 +410,7 @@ export default defineComponent({
       unit,
       regionalData,
       outputSpecs,
-      isDescriptionView,
+      currentTabView,
       outputs,
       currentOutputIndex,
       datacubeCurrentOutputsMap,
@@ -524,6 +524,21 @@ export default defineComponent({
         return;
       }
       const timeseries = this.visibleTimeseriesData[0].points;
+      let country = '';
+      let admin1 = '';
+      let admin2 = '';
+      let admin3 = '';
+
+      if (this.selectedRegionIds.length > 0) {
+        const regionList = this.selectedRegionIds[0].split('__');
+        if (regionList.length > 0) {
+          if (regionList[0]) country = regionList[0];
+          if (regionList[1]) admin1 = regionList[1];
+          if (regionList[2]) admin2 = regionList[2];
+          if (regionList[3]) admin3 = regionList[3];
+        }
+      }
+
       const nodeParameters = {
         id: this.selectedNode.id,
         concept: this.selectedNode.concept,
@@ -533,10 +548,10 @@ export default defineComponent({
           id: this.metadata.id,
           name: this.metadata.name,
           unit: this.unit,
-          country: '',
-          admin1: '',
-          admin2: '',
-          admin3: '',
+          country,
+          admin1,
+          admin2,
+          admin3,
           period: 12,
           timeseries,
           max: null, // filled in by server
@@ -578,14 +593,24 @@ export default defineComponent({
       updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
       this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     },
-    updateDescView(val: boolean) {
-      this.isDescriptionView = val;
+    updateTabView(val: string) {
+      this.currentTabView = val;
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {
         if (_.isEqual(this.selectedScenarioIds, newIds)) return;
       }
       this.selectedScenarioIds = newIds;
+
+      if (newIds.length > 0) {
+        // selecting a run or multiple runs when the desc tab is active should always open the data tab
+        //  selecting a run or multiple runs otherwise should respect the current tab
+        if (this.currentTabView === 'description') {
+          this.updateTabView('data');
+        }
+      } else {
+        this.updateTabView('description');
+      }
     }
   }
 });

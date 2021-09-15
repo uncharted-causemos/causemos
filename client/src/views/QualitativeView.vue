@@ -390,12 +390,15 @@ export default defineComponent({
   methods: {
     ...mapActions({
       setUpdateToken: 'app/setUpdateToken',
+      setAnalysisName: 'app/setAnalysisName',
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
     }),
     async refresh() {
       // Get CAG data
+      this.setAnalysisName('');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
+      this.setAnalysisName(this.modelSummary?.name ?? '');
       this.modelComponents = await modelService.getComponents(this.currentCAG);
       if (this.edgeToSelectOnNextRefresh !== null) {
         const { source, target } = this.edgeToSelectOnNextRefresh;

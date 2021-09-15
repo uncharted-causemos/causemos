@@ -4,7 +4,7 @@
       v-if="overlayActivated"
       :message="overlayMessage"
     />
-    <nav-bar v-if="!isNavBarHidden" />
+    <nav-bar />
     <insight-manager />
     <router-view />
   </div>
@@ -24,16 +24,6 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
 
-const viewsWithNoNavbar = [
-  'dataComparative',
-  'nodeCompExperiment',
-  'nodeDataExplorer',
-  'data',
-  'kbExplorer',
-  'dataExplorer',
-  'createDataCube'
-];
-
 export default {
   name: 'App',
   components: {
@@ -43,15 +33,11 @@ export default {
   },
   computed: {
     ...mapGetters({
-      currentView: 'app/currentView',
       overlayMessage: 'app/overlayMessage',
       overlayActivated: 'app/overlayActivated',
       project: 'app/project',
       projectType: 'app/projectType'
-    }),
-    isNavBarHidden() {
-      return viewsWithNoNavbar.includes(this.currentView);
-    }
+    })
   },
   watch: {
     project: function() {
@@ -127,6 +113,44 @@ export default {
 </script>
 
 <style lang="scss">
+
+/* Shepherd site tour (i.e., onboarding) */
+@import '~shepherd.js/dist/css/shepherd.css';
+// override default CSS from shepherd
+/*
+.shepherd-element {
+  border-style: solid;
+  border-color: red;
+  border-width: 5px;
+  .shepherd-content {
+    .shepherd-header {
+      .shepherd-title {
+        color: red;
+      }
+    }
+  }
+}
+*/
+.shepherd-target.my-highlight {
+  border-style: solid;
+  border-color: red;
+  border-width: 3px;
+}
+.shepherd-element.my-container {
+  border-style: solid;
+  border-color: gray;
+  border-width: 1px;
+}
+.shepherd-element.my-title .shepherd-title {
+  color: black;
+  font-size: large;
+  font-weight: bold;
+  padding: 0;
+}
+.shepherd-element.my-text .shepherd-text {
+  color: rgb(37, 36, 36);
+  font-size: medium;
+}
 
 /* Font awesome */
 $fa-font-path: '~font-awesome/fonts';
