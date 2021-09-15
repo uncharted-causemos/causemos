@@ -100,8 +100,8 @@ export default function useScenarioData(
           //
           // assign consistent run-name if not available
           //
-          if (!run.run_name) {
-            run.run_name = 'Run ' + indx.toString();
+          if (!run.name) {
+            run.name = 'Run ' + indx.toString();
           }
         });
 

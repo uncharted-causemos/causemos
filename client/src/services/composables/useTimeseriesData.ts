@@ -185,7 +185,7 @@ export default function useTimeseriesData(
         breakdownOption.value === null
       ) {
         // use run names if available
-        const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.run_name) : modelRunIds.value;
+        const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.name) : modelRunIds.value;
 
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           const name = modeRunNames[index];
