@@ -35,6 +35,7 @@
 
 <script>
 import { mapActions, mapGetters } from 'vuex';
+import _ from 'lodash';
 
 import FacetsPanel from '../components/data-explorer/facets-panel.vue';
 import ModalHeader from '../components/data-explorer/modal-header.vue';
@@ -161,6 +162,9 @@ export default {
               project: this.project,
               analysisId: this.analysisId,
               projectType: ProjectType.Analysis
+            },
+            query: {
+              datacubeId: _.first(this.selectedDatacubes).datacubeId
             }
           });
         }
