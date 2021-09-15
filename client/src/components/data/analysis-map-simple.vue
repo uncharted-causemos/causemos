@@ -111,12 +111,13 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
         'fill-color': 'grey',
         'fill-opacity': [
           'case',
+          // ['==', 'NaN', ['to-string', ['get', property]]], 0.0,
           ...caseRelativeToMissing,
           ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
         ]
       },
-      filter: ['all', ['has', property]]
+      filter: ['all', ['has', property], ['!=', 'NaN', ['to-string', ['get', property]]]]
     });
   }
 };
@@ -503,7 +504,9 @@ export default {
         }, []);
         const relativeToProp = this.baselineSpec && this.baselineSpec.id;
         if (relativeToProp) filter.unshift(['has', relativeToProp]);
-        this.colorLayer.filter = ['all', ['has', this.valueProp], ...filter];
+        const hasProperty = ['has', this.valueProp];
+        const notNaN = ['!=', 'NaN', ['to-string', ['get', this.valueProp]]];
+        this.colorLayer.filter = ['all', hasProperty, notNaN, ...filter];
       } else {
         this.refreshLayers();
       }
