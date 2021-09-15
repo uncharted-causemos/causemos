@@ -1,6 +1,8 @@
-import { ModelRun } from '@/types/ModelRun';
+import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
+import { isImage, isVideo } from '@/utils/datacube-util';
+
 
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
@@ -13,7 +15,7 @@ export default function useScenarioData(
   const runData = ref([]) as Ref<ModelRun[]>;
 
   watchEffect(onInvalidate => {
-    console.log('refetching data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
+    console.log('refetching scenario-data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function fetchRunData() {
       if (dataId.value === null || dataId.value === undefined) return;
@@ -44,6 +46,58 @@ export default function useScenarioData(
         });
       }
       if (newDataIsDifferent) {
+        newMetadata.forEach(run => {
+          /*
+          //
+          // @TEMP: EXAMPLE OF PRE-GEN DATA WITH TIMESTAMP AND GEO
+          //
+          if (run.pre_gen_output_paths === null) {
+            const preRenderedData: PreGeneratedModelRunData[] = [
+              {
+                file: 'https://docs.mapbox.com/mapbox-gl-js/assets/radar.gif',
+                type: 'image',
+                target: 'map',
+                timestamp: 1609459200000, // from MaxHop
+                // example for Ethiopia
+                coords: [
+                  // top-left
+                  {
+                    lat: 12.1, long: 30.4
+                  },
+                  // bottom-right
+                  {
+                    lat: 3.1, long: 48.1
+                  }
+                ]
+              },
+              {
+                file: 'https://docs.mapbox.com/mapbox-gl-js/assets/cat.png',
+                timestamp: 1609459200000, // from MaxHop
+                type: 'image'
+              }
+            ];
+            run.pre_gen_output_paths = preRenderedData;
+          }
+          */
+
+          //
+          // attempt to annotate each pre-rendered resource type
+          //  (ideally, this would be done at dojo side)
+          //
+          if (run.pre_gen_output_paths !== null) {
+            (run.pre_gen_output_paths as PreGeneratedModelRunData[]).forEach(pregen => {
+              if (pregen.type === undefined) {
+                if (isImage(pregen.file)) {
+                  pregen.type = 'image';
+                }
+                if (isVideo(pregen.file)) {
+                  pregen.type = 'video';
+                }
+              }
+            });
+          }
+        });
+
         runData.value = newMetadata;
       }
     }
