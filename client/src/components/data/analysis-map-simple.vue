@@ -393,7 +393,10 @@ export default {
     },
     refreshColorLayer(useFeatureState = false) {
       this.extent = this.getExtent();
-      if (!this.extent) return;
+      if (!this.extent) {
+        this.colorLayer = undefined;
+        return;
+      }
       const { min, max } = this.extent;
       const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec?.id;

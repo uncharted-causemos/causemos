@@ -70,7 +70,7 @@ export default function useOutputSpecs(
   const recalculateGridMapDiffStats = _.debounce(function({ component }: { component: any }) {
     if (!relativeTo.value || !component.isGridMap) return;
     const baselineProp = relativeTo.value;
-    const features = component.map.querySourceFeatures(component.vectorSourceId, { sourceLayer: component.vectorSourceLayer });
+    const features = component.map.queryRenderedFeatures({ layers: [component.baseLayerId] });
     const values = [];
     for (const feature of features) {
       for (const item of component.outputSourceSpecs) {
