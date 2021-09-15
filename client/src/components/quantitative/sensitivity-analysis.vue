@@ -166,8 +166,8 @@ export default {
       const svgHeight = height || this.$refs['matrix-container'].clientHeight;
       const options = {
         axisLabelMargin: AXIS_LABEL_MARGIN_PX,
-        width: 4 * svgWidth,
-        height: 4 * svgHeight,
+        width: svgWidth,
+        height: svgHeight,
         rowOrder: this.rowOrder,
         columnOrder: this.columnOrder,
         showRankLabels: true
