@@ -47,25 +47,23 @@ export default function(
     });
   });
 
-  console.log(cleanData);
-  // other option: add viewbox to svg
-  // just make grid static size
+  const svgWidth = margin.left + (data.columns.length * 2);
+  const svgHeight = margin.top + (data.rows.length);
   const xScale = d3
     .scaleBand()
     .domain(columnOrder || data.columns)
-    .range([margin.left, width - margin.right]);
+    .range([margin.left, svgWidth]);
+
+  console.log(data.columns.length);
 
   const yScale = d3
     .scaleBand()
     .domain(rowOrder || data.rows)
-    .range([margin.top, height - margin.bottom]);
+    .range([margin.top, svgHeight]);
 
-  let rowHeight = yScale.bandwidth();
-  console.log('before: ', rowHeight);
-  if (rowHeight < 10) {
-    rowHeight = 10;
-  }
-  console.log('after: ', rowHeight);
+  svgElement
+    .attr('width', svgWidth)
+    .attr('height', svgHeight);
 
 
   const valueDomain = [d3.min(data.value), (clampColourRange ? d3.max(data.value) : 1)];
@@ -73,8 +71,6 @@ export default function(
   valueScale = valueScale
     .domain(valueDomain)
     .interpolator(d3.interpolateGreys);
-
-  // svgElement.attr('overflow', 'scroll').attr('viewBox', '0,0,150,420');
 
   const xAxis = svgElement
     .append('g')

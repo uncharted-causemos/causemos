@@ -198,7 +198,7 @@ export default {
       const columnIndex = Math.ceil((x - AXIS_LABEL_MARGIN_PX) / columnSize) - 1;
       const rowName = rowIndex > -1 ? this.rowOrder[rowIndex] : null;
       const columnName = columnIndex > -1 ? this.columnOrder[columnIndex] : null;
-      const tooltipText = this.tooltipTexts[rowName][columnName];
+      const tooltipText = this.tooltipTexts[rowName][columnName]; // FIXME this is throwing errors on scroll, cant figure out why
 
       return tooltipText || null;
     }
@@ -279,8 +279,6 @@ export default {
     overflow: scroll;
 
     svg {
-      // width: 100%; // could make svg as big as needed, then scroll svg in container
-      // height: 100%;
       transition: opacity 0.3s ease-out;
 
       &.faded {
