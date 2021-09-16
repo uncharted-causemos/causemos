@@ -222,7 +222,7 @@ export default {
       const columnIndex = Math.ceil((x - AXIS_LABEL_MARGIN_PX) / columnSize) - 1;
       const rowName = rowIndex > -1 ? this.rowOrder[rowIndex] : null;
       const columnName = columnIndex > -1 ? this.columnOrder[columnIndex] : null;
-      const tooltipText = this.tooltipTexts[rowName][columnName]; // FIXME this is throwing errors on scroll, cant figure out why
+      const tooltipText = this.tooltipTexts[rowName][columnName];
 
       return tooltipText || null;
     }
