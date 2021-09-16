@@ -63,6 +63,9 @@ const RESIZE_DELAY = 50;
 
 const AXIS_LABEL_MARGIN_PX = 90;
 
+const CELL_WIDTH_PX = 60;
+const CELL_HEIGHT_PX = 30;
+
 export default {
   name: 'SensitivityAnalysisView',
   components: { SensitivityAnalysisLegend },
@@ -164,8 +167,8 @@ export default {
       if (this.matrixData === null) return;
 
       const refSelection = d3.select(this.$refs['matrix-container']);
-      const svgWidth = _.uniq(this.matrixData.columns).length * 60 + AXIS_LABEL_MARGIN_PX;
-      const svgHeight = _.uniq(this.matrixData.rows).length * 30 + AXIS_LABEL_MARGIN_PX;
+      const svgWidth = _.uniq(this.matrixData.columns).length * CELL_WIDTH_PX + AXIS_LABEL_MARGIN_PX;
+      const svgHeight = _.uniq(this.matrixData.rows).length * CELL_HEIGHT_PX + AXIS_LABEL_MARGIN_PX;
 
       refSelection
         .attr('height', svgHeight)
