@@ -1,37 +1,53 @@
 <template>
-  <div class="model-header">
-    <div
-      v-for="attr in modelAttributes"
-      :key="attr.name"
-      class="model-attribute-pair"
-      :style="[attr.type === 'textarea' ? 'width: 100%' : '' ]"
+  <div v-if="metadata" class="model-header">
+    <div class="model-attribute-pair">
+      <label style="font-weight: normal;">Model family</label>
+      <input
+        :value="modelFamilyName"
+        type="text"
+        class="disabled"
+        style="border-width: 1px;"
       >
-        <label style="font-weight: normal;">{{ attr.name }} </label>
+    </div>
+    <div class="model-attribute-pair">
+      <label style="font-weight: normal;">Model</label>
+      <input
+        :value="modelName"
+        type="text"
+        class="disabled"
+        style="border-width: 1px;"
+      >
+    </div>
+    <div class="model-attribute-pair">
+      <label style="font-weight: normal;">Default output variable</label>
+      <select name="outputs" id="outputs" @change="onOutputSelectionChange($event)" style="height: 100%">
+        <option
+          v-for="(selectValue, indx) in modelOutputs"
+          :key="selectValue"
+          :selected="indx === currentOutputIndex"
+        >{{selectValue}}</option>
+      </select>
+    </div>
+    <div class="model-attribute-pair">
+      <label style="font-weight: normal;">Maintainer</label>
+      <div>
         <input
-          v-if="attr.type === 'text'"
-          v-model="attr.value"
-          v-on:change="updateAttributeValue(attr)"
+          v-model="maintainerName"
+          placeholder="name"
           type="text"
-          :class="{ 'disabled': !attr.tweakable }"
           style="border-width: 1px;"
         >
-        <textarea
-          v-if="attr.type === 'textarea'"
-          v-model="attr.value"
-          v-on:change="updateAttributeValue(attr)"
-          rows="2"
-          :class="{ 'disabled': !attr.tweakable }"
-        />
-        <select name="outputs" id="outputs"
-          v-if="attr.type === 'select'"
-          @change="onOutputSelectionChange($event)"
+        <input
+          v-model="maintainerEmail"
+          placeholder="email"
+          type="text"
+          style="border-width: 1px;"
         >
-          <option
-            v-for="(selectValue, indx) in attr.value"
-            :key="selectValue"
-            :selected="indx === currentOutputIndex"
-          >{{selectValue}}</option>
-        </select>
+      </div>
+    </div>
+    <div class="model-attribute-pair" style="flex-grow: inherit">
+      <label style="font-weight: normal;">Model description</label>
+      <textarea v-model="modelDescription" rows="2" />
     </div>
   </div>
 </template>
@@ -40,13 +56,6 @@
 import { Model } from '@/types/Datacube';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { mapActions, useStore } from 'vuex';
-
-interface ModelAttribute {
-  name: string;
-  value: string | string[];
-  tweakable: boolean;
-  type?: string;
-}
 
 export default defineComponent({
   name: 'DatacubeModelHeader',
@@ -59,37 +68,28 @@ export default defineComponent({
   setup(props) {
     const { metadata } = toRefs(props);
 
-    const modelAttributes = computed<ModelAttribute[]>(() => {
-      const attributes: ModelAttribute[] = [];
-      if (metadata.value === null) return attributes;
-      // fill in the model attribute
-      // TODO: how spacing and label names are used
-      attributes.push({
-        name: 'Model family',
-        value: metadata.value.family_name,
-        tweakable: false,
-        type: 'text'
-      });
-      attributes.push({
-        name: 'Model',
-        value: metadata.value.name,
-        tweakable: false,
-        type: 'text'
-      });
+    const modelName = computed<string>(() => {
+      return metadata.value?.name ?? '';
+    });
+
+    const modelFamilyName = computed<string>(() => {
+      return metadata.value?.family_name ?? '';
+    });
+
+    const modelDescription = computed<string>(() => {
+      return metadata.value?.description ?? '';
+    });
+
+    const maintainerName = computed<string>(() => {
+      return metadata.value?.maintainer.name ?? '';
+    });
+    const maintainerEmail = computed<string>(() => {
+      return metadata.value?.maintainer.email ?? '';
+    });
+
+    const modelOutputs = computed<string[]>(() => {
       const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-      attributes.push({
-        name: 'Default output variable',
-        value: outputs.map(o => o.display_name),
-        tweakable: true,
-        type: 'select'
-      });
-      attributes.push({
-        name: 'Model description',
-        value: metadata.value.description,
-        tweakable: true,
-        type: 'textarea'
-      });
-      return attributes;
+      return outputs?.map(o => o.display_name) ?? [];
     });
 
     const store = useStore();
@@ -97,7 +97,12 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     return {
-      modelAttributes,
+      modelName,
+      modelFamilyName,
+      modelDescription,
+      maintainerName,
+      maintainerEmail,
+      modelOutputs,
       currentOutputIndex
     };
   },
@@ -105,10 +110,6 @@ export default defineComponent({
     ...mapActions({
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
     }),
-    updateAttributeValue(attr: ModelAttribute) {
-      console.log(attr.value);
-      // TODO: update the local data or the back end to ensure other components are synced up
-    },
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync

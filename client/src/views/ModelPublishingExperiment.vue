@@ -768,6 +768,9 @@ export default defineComponent({
         //
         const updateResult = await updateDatacube(modelToUpdate.id, modelToUpdate);
         console.log('model update status: ' + JSON.stringify(updateResult));
+        // FIXME: notify dojo of the metadata update
+        //  so that their version of the datacube metadata is in sync with our ES version
+
         // also, update the project stats count
         const domainProject = await domainProjectService.getProject(this.project);
         // add the instance to list of published instances
