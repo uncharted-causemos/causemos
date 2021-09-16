@@ -46,7 +46,7 @@ export default function useScenarioData(
         });
       }
       if (newDataIsDifferent) {
-        newMetadata.forEach((run, indx) => {
+        newMetadata.forEach(run => {
           /*
           //
           // @TEMP: EXAMPLE OF PRE-GEN DATA WITH TIMESTAMP AND GEO
@@ -84,7 +84,7 @@ export default function useScenarioData(
           // attempt to annotate each pre-rendered resource type
           //  (ideally, this would be done at dojo side)
           //
-          if (run.pre_gen_output_paths !== null) {
+          if (run.pre_gen_output_paths !== null && run.pre_gen_output_paths !== undefined) {
             (run.pre_gen_output_paths as PreGeneratedModelRunData[]).forEach(pregen => {
               if (pregen.type === undefined) {
                 if (isImage(pregen.file)) {
@@ -95,13 +95,6 @@ export default function useScenarioData(
                 }
               }
             });
-          }
-
-          //
-          // assign consistent run-name if not available
-          //
-          if (!run.name) {
-            run.name = 'Run ' + indx.toString();
           }
         });
 

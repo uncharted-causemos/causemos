@@ -493,7 +493,7 @@ export default defineComponent({
         preGenDataMap.value = Object.assign({}, ...allModelRunData.value.map((r) => ({ [r.id]: r.pre_gen_output_paths })));
         if (Object.keys(preGenDataMap.value).length > 0) {
           // note that some runs may not have valid pre-gen data (i.e., null)
-          const allPreGenData = Object.values(preGenDataMap.value).flat().filter(p => p !== null);
+          const allPreGenData = Object.values(preGenDataMap.value).flat().filter(p => p !== null && p !== undefined);
 
           // assing each pre-gen data item (within each run) an id
           allPreGenData.forEach(pregen => {

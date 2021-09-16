@@ -188,7 +188,7 @@ export default function useTimeseriesData(
         const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.name) : modelRunIds.value;
 
         rawTimeseriesData.value = fetchResults.map((points, index) => {
-          const name = modeRunNames[index];
+          const name = modeRunNames[index] ?? 'no name: ' + index;
           const id = modelRunIds.value[index];
           const color = colorFromIndex(index);
           return { name, id, color, points };
