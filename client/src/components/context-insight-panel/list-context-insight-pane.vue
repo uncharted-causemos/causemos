@@ -299,6 +299,7 @@ export default {
       const docxMaxImageSize = 612;
 
       const sections = this.listContextInsights.map((bm) => {
+        const datacubeId = _.first(bm.context_id);
         const imageSize = this.scaleImage(bm.thumbnail, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(bm.modified_at);
         return {
@@ -370,7 +371,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(bm.url)
+                  link: this.slideURL(InsightUtil.getSourceUrlForExport(bm.url, bm.id, datacubeId))
                 })
               ]
             })
@@ -405,6 +406,7 @@ export default {
       });
 
       this.listContextInsights.forEach((bm) => {
+        const datacubeId = _.first(bm.context_id);
         const imageSize = this.scaleImage(bm.thumbnail, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(bm.modified_at);
         const slide = pres.addSlide();
@@ -436,7 +438,7 @@ export default {
             options: {
               bold: true,
               hyperlink: {
-                url: this.slideURL(InsightUtil.getSourceUrlForExport(bm.url))
+                url: this.slideURL(InsightUtil.getSourceUrlForExport(bm.url, bm.id, datacubeId))
               }
             }
           },
