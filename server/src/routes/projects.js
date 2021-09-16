@@ -4,7 +4,7 @@ const _ = require('lodash');
 const uuid = require('uuid');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
-const { Adapter, RESOURCE, RESOURCE_HIGHLIGHT_SETTINGS } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 // const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const { get } = rootRequire('/cache/node-lru-cache');
@@ -271,29 +271,17 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   let results = null;
   if (field === 'subjConcept' || field === 'objConcept') {
     const prefixes = queryString.split(" ").map(query => {
-      return {
-        prefix: {
-          examples: query
-        }
-      };
-    });
-    const filters = {
-      bool: {
-        must: [
-          {
-            term: {
-              project_id: projectId
-            },
-          },
-          {
-            bool: {
-              should: prefixes
-            }
-          }
-        ]
-      }
-    };
-    const ontologyMatches = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, "", RESOURCE_HIGHLIGHT_SETTINGS.ONTOLOGY, filters);
+      return query + "*";
+    }).join(" ");
+    const filters = [
+      {
+        term: {
+          project_id: projectId
+        },
+      },
+    ];
+    const ontologyMatches = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, prefixes, filters, ["examples", "label"]);
+
     // need to keep track of what concept maps to what highlights
     const sourceHighlights = {};
     // need to associate words with a concept, this can be modified as more than

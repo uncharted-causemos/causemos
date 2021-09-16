@@ -624,30 +624,29 @@ const getProjectEdges = async (projectId, filters) => {
 
 /**
  * Returns elasticsearch highlights with the search results.
- * Only works for indices with fields that have highlight support.
+ * Highlights only works for fields that are specified.
  * 
- * If an empty queryString is not provided, it will assume ES filters are provided
- * If a queryString is provided, it will do a query_string search, with any provided filters
+ * Completes a query_string search, with any provided filters
  * 
  * Filters must be in the form of a list of objects, containing simple filters, e.g term filters
  * 
- * @param {string} index 
- * @param {string} queryString 
- * @param {object} highlightSettings 
- * @param {object} filters 
+ * @param {string} index
+ * @param {string} queryString
+ * @param {list} filters
+ * @param {list} fields
  */
-const searchAndHighlight = async (index, queryString, highlightSettings, filters = {}) => {
+const searchAndHighlight = async (index, queryString, filters = [], fields = []) => {
   const adapter = Adapter.get(index);
+  const fieldsToHighlight = {};
+  fields.forEach(f => fieldsToHighlight[f] = {});
   let query = {};
-  if (queryString === "") {
-    query = filters;
-  } else if (queryString !== "" && _.isEmpty(filters)) {
+  if (_.isEmpty(filters)) {
     query = {
       query_string: {
         query: queryString
       }
     };
-  } else if (queryString !== "" && !_.isEmpty(filters)) {
+  } else {
     query = {
       bool: {
         must: [
@@ -665,7 +664,9 @@ const searchAndHighlight = async (index, queryString, highlightSettings, filters
     index: index,
     body: {
       query,
-      highlight: highlightSettings
+      highlight: {
+        fields: fieldsToHighlight
+      }
     }
   });
   return matches.body.hits.hits;
