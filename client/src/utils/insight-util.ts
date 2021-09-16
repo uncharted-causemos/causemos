@@ -18,9 +18,9 @@ function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId
   if (!searchParams.has(insightIdKey)) {
     searchParams.set(insightIdKey, insightId);
   }
-  const datacubeid = 'datacubeid';
-  if (!searchParams.has(datacubeid)) {
-    searchParams.set(datacubeid, datacubeId);
+  const datacubeIdKey = 'datacubeid';
+  if (!searchParams.has(datacubeIdKey)) {
+    searchParams.set(datacubeIdKey, datacubeId);
   }
   return urlPrefix + separator + searchParams.toString();
 }
