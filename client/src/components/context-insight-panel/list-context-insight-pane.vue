@@ -436,7 +436,7 @@ export default {
             options: {
               bold: true,
               hyperlink: {
-                url: this.slideURL(bm.url)
+                url: this.slideURL(InsightUtil.getSourceUrlForExport(bm.url))
               }
             }
           },
