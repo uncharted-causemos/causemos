@@ -345,7 +345,8 @@ export default defineComponent({
     const clearRouteParam = () => {
       router.push({
         query: {
-          insight_id: undefined
+          insight_id: undefined,
+          datacubeid: selectedModelId.value
         }
       }).catch(() => {});
     };
