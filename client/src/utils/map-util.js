@@ -256,23 +256,26 @@ export function transformMapData(mapData = {}, options = {}) {
 }
 
 export const createMapLegendData = (domain, colors, scaleFn, isDiverging) => {
+  const absMax = Math.max(...domain.map(Math.abs));
+  const min = isDiverging ? -absMax : domain[0];
+  const max = isDiverging ? absMax : domain[1];
   const stops = isDiverging
     ? createDivergingColorStops(domain, colors, scaleFn)
     : createColorStops(domain, colors, scaleFn);
   const labels = [];
   // process with color stops (e.g [c1, v1, c2, v2, c3]) where cn is color and vn is value.
   // const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 2])(v);
-  const format = (v) => chartValueFormatter(domain[0], domain[1])(v);
+  const format = (v) => chartValueFormatter(min, max)(v);
   stops.forEach((item, index) => {
     if (index % 2 !== 0) {
       labels.push(format(item));
     }
   });
-  labels.push(format(domain[1]));
+  labels.push(format(max));
   const data = [];
   colors.forEach((item, index) => {
     data.push({ color: item, label: labels[index] });
   });
-  data[0].decor = format(domain[0]);
+  data[0].decor = format(min);
   return data.reverse();
 };
