@@ -269,44 +269,34 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   const field = req.query.field;
   const queryString = req.query.q;
   let results = null;
-  if (field === 'subjConcept' || field === 'objConcept') {
-    const prefixes = queryString.split(" ").map(query => {
-      return query + "*";
-    }).join(" ");
-    const filters = [
-      {
-        term: {
-          project_id: projectId
-        },
-      },
-    ];
-    const ontologyMatches = await projectService.searchAndHighlight(RESOURCE.ONTOLOGY, prefixes, filters, ["examples", "label"]);
+  // if (field === 'subjConcept' || field === 'objConcept') {
+  //   const ontologyMatches = await projectService.searchOntologyAndHighlight(queryString, projectId);
 
-    // need to keep track of what concept maps to what highlights
-    const sourceHighlights = {};
-    // need to associate words with a concept, this can be modified as more than
-    // one mapping is possible due to overlap of words in concepts
-    const wordsToLabel = {};
-    // create one big string
-    const q = queryString + " " + [...new Set(_.flatten(ontologyMatches.map(match => {
-      sourceHighlights[match._source.label] = match.highlight;
-      // reformatting to deal with the concept path
-      const label = match._source.label.split("/").splice(-1)[0];
-      const words = label.split("_");
-      words.forEach(word => { wordsToLabel[word] = match._source.label });
-      return words;
-    })))].join(" ");
+  //   // need to keep track of what concept maps to what highlights
+  //   const sourceHighlights = {};
+  //   // need to associate words with a concept, this can be modified as more than
+  //   // one mapping is possible due to overlap of words in concepts
+  //   const wordsToLabel = {};
+  //   // create one big string
+  //   const q = queryString + " " + [...new Set(_.flatten(ontologyMatches.map(match => {
+  //     sourceHighlights[match._source.label] = match.highlight;
+  //     // reformatting to deal with the concept path
+  //     const label = match._source.label.split("/").splice(-1)[0];
+  //     const words = label.split("_");
+  //     words.forEach(word => { wordsToLabel[word] = match._source.label });
+  //     return words;
+  //   })))].join(" ");
 
-    results = await projectService.searchFields(projectId, field, q, 'OR');
-    mapResultsToHighlights(results, sourceHighlights, wordsToLabel);
+  //   results = await projectService.searchFields(projectId, field, q, 'OR');
+  //   mapResultsToHighlights(results, sourceHighlights, wordsToLabel);
 
-    results = {
-      results: results,
-      highlights: sourceHighlights
-    };
-  } else {
-    results = await projectService.searchFields(projectId, field, queryString);
-  }
+  //   results = {
+  //     results: results,
+  //     highlights: sourceHighlights
+  //   };
+  // } else {
+  results = await projectService.searchFields(projectId, field, queryString);
+  // }
 
   // FIXME: These fields are array fields and do not
   // aggregate. We need to use nested or use es-native suggestion api.

@@ -4,6 +4,7 @@ const uuid = require('uuid');
 
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
+const { searchAndHighlight } = rootRequire('adapters/es/client');
 const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
@@ -623,54 +624,26 @@ const getProjectEdges = async (projectId, filters) => {
 };
 
 /**
- * Returns elasticsearch highlights with the search results.
- * Highlights only works for fields that are specified.
+ * Used for grabbing related ontology labels to assist in searching
+ * subj and obj concepts in projects
  * 
- * Completes a query_string search, with any provided filters
- * 
- * Filters must be in the form of a list of objects, containing simple filters, e.g term filters
- * 
- * @param {string} index
- * @param {string} queryString
- * @param {list} filters
- * @param {list} fields
+ * @param {string} queryString 
+ * @param {string} projectId 
+ * @returns 
  */
-const searchAndHighlight = async (index, queryString, filters = [], fields = []) => {
-  const adapter = Adapter.get(index);
-  const fieldsToHighlight = {};
-  fields.forEach(f => fieldsToHighlight[f] = {});
-  let query = {};
-  if (_.isEmpty(filters)) {
-    query = {
-      query_string: {
-        query: queryString
-      }
-    };
-  } else {
-    query = {
-      bool: {
-        must: [
-          ...filters,
-          {
-            query_string: {
-              query: queryString
-            }
-          }
-        ]
-      }
-    };
-  }
-  const matches = await adapter.client.search({
-    index: index,
-    body: {
-      query,
-      highlight: {
-        fields: fieldsToHighlight
-      }
-    }
-  });
-  return matches.body.hits.hits;
-};
+const searchOntologyAndHighlight = async (queryString, projectId) => {
+  const prefixes = queryString.split(" ").map(query => {
+    return query + "*";
+  }).join(" ");
+  const filters = [
+    {
+      term: {
+        project_id: projectId
+      },
+    },
+  ];
+  return await searchAndHighlight(RESOURCE.ONTOLOGY, prefixes, filters, ["examples", "label"]);
+}
 
 /**
  * Search various fields in ES for terms starting with the queryString
@@ -885,6 +858,7 @@ module.exports = {
   getProjectStatementsScores,
   getProjectEdges,
 
+  searchOntologyAndHighlight,
   searchFields,
   searchPath,
   bustProjectGraphCache,
