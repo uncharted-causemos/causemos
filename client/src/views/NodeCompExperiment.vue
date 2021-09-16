@@ -41,12 +41,13 @@
         :selected-timeseries-points="selectedTimeseriesPoints"
         :selected-base-layer="selectedBaseLayer"
         :selected-data-layer="selectedDataLayer"
+        :unit="unit"
         @set-selected-scenario-ids="setSelectedScenarioIds"
-        @select-timestamp="setSelectedTimestamp"
         @set-relative-to="setRelativeTo"
-        @refetch-data="fetchData"
         @new-runs-mode="newRunsMode=!newRunsMode"
         @update-tab-view="updateTabView"
+        @select-timestamp="setSelectedTimestamp"
+        @refetch-data="fetchData"
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
@@ -80,9 +81,9 @@
           <dropdown-button
             class="dropdown-config"
             :inner-button-label="'Spatial Aggregation'"
-            :items="['mean', 'sum']"
+            :items="Object.values(AggregationOption)"
             :selected-item="selectedSpatialAggregation"
-            @item-selected="item => selectedSpatialAggregation = item"
+            @item-selected="setSpatialAggregationSelection"
           />
           <map-dropdown
             class="dropdown-config"
@@ -92,13 +93,11 @@
             @set-data-layer="setDataLayer"
           />
         </template>
-
         <template #datacube-description>
           <datacube-description
             :metadata="metadata"
           />
         </template>
-
       </datacube-card>
       <drilldown-panel
           class="drilldown"
@@ -113,16 +112,16 @@
               :qualifier-breakdown-data="qualifierBreakdownData"
               :regional-data="regionalData"
               :temporal-breakdown-data="temporalBreakdownData"
-              :unit="unit"
               :selected-spatial-aggregation="selectedSpatialAggregation"
+              :selected-temporal-resolution="selectedTemporalResolution"
               :selected-timestamp="selectedTimestamp"
               :selected-scenario-ids="selectedScenarioIds"
               :selected-region-ids="selectedRegionIds"
               :selected-qualifier-values="selectedQualifierValues"
               :selected-breakdown-option="breakdownOption"
-              :selected-temporal-resolution="selectedTemporalResolution"
               :selected-timeseries-points="selectedTimeseriesPoints"
               :selected-years="selectedYears"
+              :unit="unit"
               @toggle-is-region-selected="toggleIsRegionSelected"
               @toggle-is-qualifier-selected="toggleIsQualifierSelected"
               @toggle-is-year-selected="toggleIsYearSelected"
@@ -139,7 +138,6 @@
 import _ from 'lodash';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import { mapActions, useStore } from 'vuex';
-
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
@@ -148,22 +146,20 @@ import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
-
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
+import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
-
 import { DatacubeFeature } from '@/types/Datacube';
-import { AggregationOption, DatacubeType, ProjectType, TemporalResolutionOption } from '@/types/Enums';
-
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
-import modelService from '@/services/model-service';
-import { ViewState } from '@/types/Insight';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useQualifiers from '@/services/composables/useQualifiers';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { ViewState } from '@/types/Insight';
+import modelService from '@/services/model-service';
+
 
 const DRILLDOWN_TABS = [
   {
@@ -192,14 +188,13 @@ export default defineComponent({
     }
   }),
   setup() {
+    const store = useStore();
     const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
       selectedAdminLevel.value = newValue;
     }
 
     const isExpanded = true;
-
-    const store = useStore();
 
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const nodeId = computed(() => store.getters['app/nodeId']);
@@ -322,8 +317,8 @@ export default defineComponent({
       visibleTimeseriesData,
       relativeTo,
       baselineMetadata,
-      temporalBreakdownData,
       setRelativeTo,
+      temporalBreakdownData,
       selectedYears,
       toggleIsYearSelected
     } = useTimeseriesData(
@@ -394,52 +389,53 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedSpatialAggregation,
       selectedAdminLevel,
-      setSelectedAdminLevel,
       selectedModelId,
       selectedScenarioIds,
       selectedTimestamp,
-      isExpanded,
-      metadata,
-      mainModelOutput,
       allModelRunData,
       allScenarioIds,
-      scenarioCount,
-      fetchData,
-      newRunsMode,
-      timerHandler,
-      unit,
       regionalData,
       outputSpecs,
       currentTabView,
-      outputs,
+      metadata,
       currentOutputIndex,
-      datacubeCurrentOutputsMap,
       setSelectedTimestamp,
       visibleTimeseriesData,
       baselineMetadata,
       relativeTo,
       setRelativeTo,
       breakdownOption,
-      setBreakdownOption,
-      selectLabel,
-      navBackLabel,
+      temporalBreakdownData,
+      AggregationOption,
       selectedTimeseriesPoints,
-      currentCAG,
-      nodeId,
-      project,
-      stepsBeforeCanConfirm,
       selectedBaseLayer,
       selectedDataLayer,
-      setBaseLayer: (val: BASE_LAYER) => { selectedBaseLayer.value = val; },
-      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; },
+      datacubeCurrentOutputsMap,
       toggleIsRegionSelected,
       selectedRegionIds,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
       selectedQualifierValues,
-      temporalBreakdownData,
       selectedYears,
-      toggleIsYearSelected
+      toggleIsYearSelected,
+      timerHandler,
+      newRunsMode,
+      scenarioCount,
+      fetchData,
+      unit,
+      outputs,
+      setSelectedAdminLevel,
+      isExpanded,
+      mainModelOutput,
+      setBreakdownOption,
+      selectLabel,
+      navBackLabel,
+      currentCAG,
+      nodeId,
+      project,
+      stepsBeforeCanConfirm,
+      setBaseLayer: (val: BASE_LAYER) => { selectedBaseLayer.value = val; },
+      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; }
     };
   },
   unmounted(): void {
@@ -595,6 +591,10 @@ export default defineComponent({
     },
     updateTabView(val: string) {
       this.currentTabView = val;
+    },
+
+    setSpatialAggregationSelection(spatialAgg: AggregationOption) {
+      this.selectedSpatialAggregation = spatialAgg;
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {

@@ -24,15 +24,15 @@
           :breakdown-option="breakdownOption"
           :baseline-metadata="baselineMetadata"
           :selected-timeseries-points="selectedTimeseriesPoints"
-          :selectedBaseLayer="selectedBaseLayer"
-          :selectedDataLayer="selectedDataLayer"
+          :selected-base-layer="selectedBaseLayer"
+          :selected-data-layer="selectedDataLayer"
           :unit="unit"
           @set-selected-scenario-ids="setSelectedScenarioIds"
-          @select-timestamp="setSelectedTimestamp"
           @set-relative-to="setRelativeTo"
-          @refetch-data="fetchData"
           @new-runs-mode="newRunsMode=!newRunsMode"
           @update-tab-view="updateTabView"
+          @select-timestamp="setSelectedTimestamp"
+          @refetch-data="fetchData"
         >
           <template #datacube-model-header>
             <h5
@@ -119,7 +119,6 @@
                 :qualifier-breakdown-data="qualifierBreakdownData"
                 :regional-data="regionalData"
                 :temporal-breakdown-data="temporalBreakdownData"
-                :unit="unit"
                 :selected-spatial-aggregation="selectedSpatialAggregation"
                 :selected-temporal-aggregation="selectedTemporalAggregation"
                 :selected-temporal-resolution="selectedTemporalResolution"
@@ -130,6 +129,7 @@
                 :selected-breakdown-option="breakdownOption"
                 :selected-timeseries-points="selectedTimeseriesPoints"
                 :selected-years="selectedYears"
+                :unit="unit"
                 @toggle-is-region-selected="toggleIsRegionSelected"
                 @toggle-is-qualifier-selected="toggleIsQualifierSelected"
                 @toggle-is-year-selected="toggleIsYearSelected"
@@ -144,32 +144,32 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
+import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { mapActions, mapGetters, useStore } from 'vuex';
+import router from '@/router';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
-import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
-import { DatacubeFeature } from '@/types/Datacube';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
+import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
-import useModelMetadata from '@/services/composables/useModelMetadata';
-import router from '@/router';
-import _ from 'lodash';
 import { AggregationOption, TemporalResolutionOption, DatacubeType, ProjectType } from '@/types/Enums';
-import { mapActions, mapGetters, useStore } from 'vuex';
 import { getInsightById } from '@/services/insight-service';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import { DatacubeFeature } from '@/types/Datacube';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import { getAnalysis } from '@/services/analysis-service';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import useQualifiers from '@/services/composables/useQualifiers';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState, DataState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
-import useQualifiers from '@/services/composables/useQualifiers';
+import { getAnalysis } from '@/services/analysis-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -192,6 +192,14 @@ export default defineComponent({
     MapDropdown
   },
   setup() {
+    const store = useStore();
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const selectedAdminLevel = ref(0);
     const isExpanded = true;
 
@@ -199,15 +207,7 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
 
-    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
 
-    const store = useStore();
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
-    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
@@ -348,10 +348,18 @@ export default defineComponent({
       }).catch(() => {});
     };
 
-    const setSelectedTimestamp = (value: number) => {
-      if (selectedTimestamp.value === value) return;
-      selectedTimestamp.value = value;
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
+    };
+
+    const setSelectedTimestamp = (timestamp: number | null) => {
+      if (selectedTimestamp.value === timestamp) return;
+      selectedTimestamp.value = timestamp;
       clearRouteParam();
+    };
+
+    const setSelectedAdminLevel = (newValue: number) => {
+      selectedAdminLevel.value = newValue;
     };
 
     const {
@@ -476,25 +484,14 @@ export default defineComponent({
       selectedModelId,
       selectedScenarioIds,
       selectedTimestamp,
-      isExpanded,
-      metadata,
-      mainModelOutput,
       allModelRunData,
       allScenarioIds,
-      scenarioCount,
-      fetchData,
-      newRunsMode,
-      timerHandler,
-      unit,
       regionalData,
       outputSpecs,
       currentTabView,
-      selectedRegionIds,
-      toggleIsRegionSelected,
-      outputs,
+      metadata,
       currentOutputIndex,
       setSelectedTimestamp,
-      clearRouteParam,
       visibleTimeseriesData,
       baselineMetadata,
       relativeTo,
@@ -507,16 +504,29 @@ export default defineComponent({
       selectedBaseLayer,
       selectedDataLayer,
       datacubeCurrentOutputsMap,
-      analysisItems,
-      analysisId,
+      toggleIsRegionSelected,
+      selectedRegionIds,
       qualifierBreakdownData,
       toggleIsQualifierSelected,
       selectedQualifierValues,
       selectedYears,
       toggleIsYearSelected,
-      initialSelectedQualifierValues,
+      timerHandler,
       initialSelectedRegionIds,
-      initialSelectedYears
+      initialSelectedQualifierValues,
+      newRunsMode,
+      initialSelectedYears,
+      setBreakdownOption,
+      setSelectedAdminLevel,
+      isExpanded,
+      mainModelOutput,
+      scenarioCount,
+      fetchData,
+      unit,
+      outputs,
+      clearRouteParam,
+      analysisItems,
+      analysisId
     };
   },
   data: () => ({
@@ -560,17 +570,11 @@ export default defineComponent({
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
       hideInsightPanel: 'insightPanel/hideInsightPanel'
     }),
-    setSelectedAdminLevel(newValue: number) {
-      this.selectedAdminLevel = newValue;
-    },
     setBaseLayer(val: BASE_LAYER) {
       this.selectedBaseLayer = val;
     },
     setDataLayer(val: DATA_LAYER) {
       this.selectedDataLayer = val;
-    },
-    setBreakdownOption(newValue: string | null) {
-      this.breakdownOption = newValue;
     },
     async onClose() {
       this.$router.push({
@@ -611,7 +615,7 @@ export default defineComponent({
           // this would only be valid and effective if/after datacube runs are reloaded
           this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
         }
-        if (loadedInsight.data_state?.selectedTimestamp) {
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
           this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
         }
         if (loadedInsight.data_state?.relativeTo !== undefined) {
@@ -631,7 +635,7 @@ export default defineComponent({
           // FIXME
           this.updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
         }
-        if (loadedInsight.view_state?.selectedOutputIndex) {
+        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
           const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
           const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
           updatedCurrentOutputsMap[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;

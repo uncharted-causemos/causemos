@@ -35,8 +35,8 @@
           :all-model-run-data="allModelRunData"
           :selected-scenario-ids="selectedScenarioIds"
           :selected-timestamp="selectedTimestamp"
-          :selected-temporal-aggregation="selectedTemporalAggregation"
           :selected-temporal-resolution="selectedTemporalResolution"
+          :selected-temporal-aggregation="selectedTemporalAggregation"
           :selected-spatial-aggregation="selectedSpatialAggregation"
           :regional-data="regionalData"
           :output-source-specs="outputSpecs"
@@ -47,14 +47,14 @@
           :breakdown-option="breakdownOption"
           :baseline-metadata="baselineMetadata"
           :selected-timeseries-points="selectedTimeseriesPoints"
-          :selectedBaseLayer="selectedBaseLayer"
-          :selectedDataLayer="selectedDataLayer"
+          :selected-base-layer="selectedBaseLayer"
+          :selected-data-layer="selectedDataLayer"
           @set-selected-scenario-ids="setSelectedScenarioIds"
-          @select-timestamp="updateSelectedTimestamp"
-          @check-model-metadata-validity="checkModelMetadataValidity"
-          @update-tab-view="updateTabView"
           @set-relative-to="setRelativeTo"
           @new-runs-mode="newRunsMode=!newRunsMode"
+          @update-tab-view="updateTabView"
+          @select-timestamp="updateSelectedTimestamp"
+          @check-model-metadata-validity="checkModelMetadataValidity"
         >
           <template v-slot:datacube-model-header>
             <datacube-model-header
@@ -95,7 +95,7 @@
               :inner-button-label="'Spatial Aggregation'"
               :items="Object.values(AggregationOption)"
               :selected-item="selectedSpatialAggregation"
-              @item-selected="handleSpatialAggregationSelection"
+              @item-selected="setSpatialAggregationSelection"
             />
             <map-dropdown
               class="dropdown-config"
@@ -117,19 +117,17 @@
                 v-if="activeDrilldownTab ==='breakdown'"
                 :selected-admin-level="selectedAdminLevel"
                 :qualifier-breakdown-data="qualifierBreakdownData"
-                :selected-model-id="selectedModelId"
-                :selected-scenario-ids="selectedScenarioIds"
-                :selected-timestamp="selectedTimestamp"
+                :regional-data="regionalData"
+                :temporal-breakdown-data="temporalBreakdownData"
                 :selected-spatial-aggregation="selectedSpatialAggregation"
                 :selected-temporal-aggregation="selectedTemporalAggregation"
                 :selected-temporal-resolution="selectedTemporalResolution"
-                :regional-data="regionalData"
-                :output-source-specs="outputSpecs"
-                :selected-breakdown-option="breakdownOption"
-                :temporal-breakdown-data="temporalBreakdownData"
-                :selected-timeseries-points="selectedTimeseriesPoints"
+                :selected-timestamp="selectedTimestamp"
+                :selected-scenario-ids="selectedScenarioIds"
                 :selected-region-ids="selectedRegionIds"
                 :selected-qualifier-values="selectedQualifierValues"
+                :selected-breakdown-option="breakdownOption"
+                :selected-timeseries-points="selectedTimeseriesPoints"
                 :selected-years="selectedYears"
                 @toggle-is-region-selected="toggleIsRegionSelected"
                 @toggle-is-qualifier-selected="toggleIsQualifierSelected"
@@ -356,8 +354,9 @@ export default defineComponent({
       breakdownOption.value = newValue;
     };
 
-    const setSelectedTimestamp = (timestamp: number | null) =>
+    const setSelectedTimestamp = (timestamp: number | null) => {
       store.dispatch('modelPublishStore/setSelectedTimestamp', timestamp);
+    };
 
 
     const {
@@ -426,6 +425,18 @@ export default defineComponent({
     );
 
     watchEffect(() => {
+      const viewState: ViewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        isDescriptionView: currentTabView.value === 'description', // FIXME
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value
+      };
+      store.dispatch('insightPanel/setViewState', viewState);
       const dataState: DataState = {
         selectedModelId: selectedModelId.value,
         selectedScenarioIds: selectedScenarioIds.value,
@@ -440,19 +451,7 @@ export default defineComponent({
         selectedQualifierValues: [...selectedQualifierValues.value],
         selectedYears: [...selectedYears.value]
       };
-      const viewState: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: currentTabView.value === 'description', // FIXME
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value
-      };
 
-      store.dispatch('insightPanel/setViewState', viewState);
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
@@ -460,24 +459,19 @@ export default defineComponent({
     return {
       drilldownTabs: DRILLDOWN_TABS,
       activeDrilldownTab: 'breakdown',
-      selectedAdminLevel,
-      setSelectedAdminLevel,
-      selectedModelId,
-      allScenarioIds,
-      allModelRunData,
-      selectedScenarioIds,
-      setSelectedScenarioIds,
-      selectedTimestamp,
-      openPublishAccordion,
-      publishingSteps,
-      currentPublishStep,
+      selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
-      selectedTemporalResolution,
-      metadata,
+      selectedAdminLevel,
+      selectedModelId,
+      selectedScenarioIds,
+      selectedTimestamp,
+      allModelRunData,
+      allScenarioIds,
       regionalData,
       outputSpecs,
       currentTabView,
+      metadata,
       currentOutputIndex,
       setSelectedTimestamp,
       visibleTimeseriesData,
@@ -485,8 +479,6 @@ export default defineComponent({
       relativeTo,
       setRelativeTo,
       breakdownOption,
-      setBreakdownOption,
-      projectId,
       temporalBreakdownData,
       AggregationOption,
       TemporalResolutionOption,
@@ -499,13 +491,21 @@ export default defineComponent({
       qualifierBreakdownData,
       toggleIsQualifierSelected,
       selectedQualifierValues,
-      timerHandler,
-      newRunsMode,
       selectedYears,
       toggleIsYearSelected,
+      timerHandler,
       initialSelectedRegionIds,
       initialSelectedQualifierValues,
-      initialSelectedYears
+      newRunsMode,
+      initialSelectedYears,
+      setBreakdownOption,
+      setSelectedAdminLevel,
+      setSelectedScenarioIds,
+      openPublishAccordion,
+      publishingSteps,
+      currentPublishStep,
+      projectId
+
     };
   },
   watch: {
@@ -628,12 +628,12 @@ export default defineComponent({
   },
   methods: {
     ...mapActions({
+      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
       setCurrentPublishStep: 'modelPublishStore/setCurrentPublishStep',
       setSelectedTemporalAggregation: 'modelPublishStore/setSelectedTemporalAggregation',
       setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
-      setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution',
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
+      setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution'
     }),
     async getPublicInsights() {
       const publicInsightsSearchFields: InsightFilterFields = {};
@@ -836,7 +836,7 @@ export default defineComponent({
       this.setSelectedTemporalResolution(tempRes);
       this.checkStepForCompleteness();
     },
-    handleSpatialAggregationSelection(spatialAgg: string) {
+    setSpatialAggregationSelection(spatialAgg: string) {
       this.setSelectedSpatialAggregation(spatialAgg);
       this.checkStepForCompleteness();
     },
