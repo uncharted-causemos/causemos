@@ -524,6 +524,10 @@ export default {
       map.touchZoomRotate.disableRotation();
       this.updateCurrentZoomLevel();
       this.$emit('on-map-load');
+
+      // force map sync after being loaded since a resize event (called during map load)
+      //  may have caused the bounds to be out of sync
+      this.$emit('sync-bounds', map.getBounds().toArray());
     },
     onMapMove(event) {
       this.updateCurrentZoomLevel();
