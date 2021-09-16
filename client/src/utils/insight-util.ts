@@ -1,6 +1,7 @@
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import { Clause, Filters } from '@/types/Filters';
+import _ from 'lodash';
 
 interface MetadataSummary {
   key: string;
@@ -8,20 +9,20 @@ interface MetadataSummary {
 }
 
 function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string) {
-  if (insightURL.includes('insight_id')) return insightURL;
-  // is the url has some params already at its end?
-  if (insightURL.includes('?') && insightURL.includes('=')) {
-    // append
-    if (insightURL.includes('datacubeid=')) {
-      return insightURL + '&insight_id=' + insightId;
-    }
-    return insightURL + '&insight_id=' + insightId + '&datacubeid=' + datacubeId;
+  const separator = '?';
+  const insightUrlSeparated = insightURL.split(separator);
+  const urlPrefix = _.first(insightUrlSeparated);
+  const urlSuffix = insightUrlSeparated.slice(1).join(separator);
+  const searchParams = new URLSearchParams(urlSuffix);
+  const insightIdKey = 'insight_id';
+  if (!searchParams.has(insightIdKey)) {
+    searchParams.set(insightIdKey, insightId);
   }
-  // add
-  if (insightURL.includes('datacubeid=')) {
-    return insightURL + '?insight_id=' + insightId;
+  const datacubeid = 'datacubeid';
+  if (!searchParams.has(datacubeid)) {
+    searchParams.set(datacubeid, datacubeId);
   }
-  return insightURL + '?insight_id=' + insightId + '&datacubeid=' + datacubeId;
+  return urlPrefix + separator + searchParams.toString();
 }
 
 function getFormattedFilterString(filters: Filters) {
