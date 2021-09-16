@@ -84,7 +84,7 @@ export default function useScenarioData(
           // attempt to annotate each pre-rendered resource type
           //  (ideally, this would be done at dojo side)
           //
-          if (run.pre_gen_output_paths !== null && run.pre_gen_output_paths !== undefined) {
+          if (run.pre_gen_output_paths) {
             (run.pre_gen_output_paths as PreGeneratedModelRunData[]).forEach(pregen => {
               if (pregen.type === undefined) {
                 if (isImage(pregen.file)) {
