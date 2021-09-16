@@ -12,7 +12,8 @@ import {
   CAGModelSummary,
   CAGGraph,
   ScenarioResult,
-  NodeScenarioData
+  NodeScenarioData,
+  ScenarioParameter
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
@@ -201,7 +202,14 @@ const createScenario = async (scenario: NewScenario) => {
   const result = await API.post('scenarios', scenario);
   return result.data;
 };
-const updateScenario = async (scenario: Scenario) => {
+const updateScenario = async (scenario: {
+  id: string;
+  model_id: string;
+  is_valid: boolean;
+  experiment_id: string;
+  parameter?: ScenarioParameter;
+  result?: ScenarioResult[];
+}) => {
   const result = await API.put(`scenarios/${scenario.id}`, scenario);
   return result.data;
 };
