@@ -143,34 +143,34 @@
 </template>
 
 <script lang="ts">
+import _ from 'lodash';
+import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
+import { mapActions, mapGetters, useStore } from 'vuex';
+import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
-import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
+import ModelDescription from '@/components/data/model-description.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import MapDropdown from '@/components/data/map-dropdown.vue';
 import ModelPublishingChecklist from '@/components/widgets/model-publishing-checklist.vue';
 import DatacubeModelHeader from '@/components/data/datacube-model-header.vue';
-import ModelDescription from '@/components/data/model-description.vue';
-import { AggregationOption, TemporalResolutionOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
-import { DatacubeFeature, ModelPublishingStep } from '@/types/Datacube';
-import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import { mapActions, mapGetters, useStore } from 'vuex';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useScenarioData from '@/services/composables/useScenarioData';
-import DropdownButton from '@/components/dropdown-button.vue';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useRegionalData from '@/services/composables/useRegionalData';
+import { AggregationOption, TemporalResolutionOption, DatacubeStatus, DatacubeType, ModelPublishingStepID } from '@/types/Enums';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
+import { DatacubeFeature, ModelPublishingStep } from '@/types/Datacube';
+import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import { updateDatacube } from '@/services/new-datacube-service';
-import _ from 'lodash';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
+import useQualifiers from '@/services/composables/useQualifiers';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import MapDropdown from '@/components/data/map-dropdown.vue';
-import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
 import { DataState, Insight, ViewState } from '@/types/Insight';
+import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
 import domainProjectService from '@/services/domain-project-service';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import useQualifiers from '@/services/composables/useQualifiers';
 
 const DRILLDOWN_TABS = [
   {
@@ -224,7 +224,6 @@ export default defineComponent({
 
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
-
     const breakdownOption = ref<string | null>(null);
 
     const selectedModelId = ref('');
