@@ -2,7 +2,7 @@ import * as d3 from 'd3';
 import _ from 'lodash';
 import { Ref, ref, computed } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
-import { MapLegendColor } from '@/types/Common';
+import { MapLegendColor, AnalysisMapStats } from '@/types/Common';
 import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { createMapLegendData, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
@@ -18,13 +18,13 @@ export default function useAnalysisMaps(
 ) {
   const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
-  const adminLayerStats = ref<any>({});
+  const adminLayerStats = ref<AnalysisMapStats>();
   watchEffect(() => {
     if (!regionalData.value) {
       adminMapLayerLegendData.value = [];
       return;
     }
-    adminLayerStats.value = computeRegionalStats(regionalData.value, (relativeTo.value || undefined));
+    adminLayerStats.value = computeRegionalStats(regionalData.value, relativeTo.value);
     if (relativeTo.value) {
       const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
       const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
@@ -33,15 +33,15 @@ export default function useAnalysisMaps(
         createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
       ] : [];
     } else {
-      const global = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
-      adminMapLayerLegendData.value = global ? [
-        createMapLegendData([global.min, global.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+      const globalStats = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
+      adminMapLayerLegendData.value = globalStats ? [
+        createMapLegendData([globalStats.min, globalStats.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
       ] : [];
     }
   });
 
   const outputStats = ref<OutputStatsResult[]>([]);
-  const gridLayerStats = ref<any>({});
+  const gridLayerStats = ref<AnalysisMapStats>();
   const mapCurZoom = ref<number>(0);
   const updateMapCurSyncedZoom = (data: { component: any }) => {
     if (mapCurZoom.value === data.component.curZoom) return;
@@ -62,8 +62,8 @@ export default function useAnalysisMaps(
   watchEffect(() => {
     // update gridLayerStats when either outputStats or relativeTo changes
     gridLayerStats.value = {
-      ...gridLayerStats.value,
-      ...computeGridLayerStats(outputStats.value, (relativeTo.value || undefined))
+      ...computeGridLayerStats(outputStats.value, relativeTo.value),
+      difference: (gridLayerStats.value?.difference || {})
     };
   });
 
@@ -79,7 +79,8 @@ export default function useAnalysisMaps(
       }
     }
     gridLayerStats.value = {
-      ...gridLayerStats.value,
+      global: (gridLayerStats.value?.global || {}),
+      baseline: (gridLayerStats.value?.baseline || {}),
       difference: { diff: { min: Math.min(...values), max: Math.max(...values) } }
     };
   }, 50);
@@ -98,9 +99,9 @@ export default function useAnalysisMaps(
         createMapLegendData([difference.min, difference.max], COLOR_SCHEME.PIYG_7, d3.scaleLinear, true)
       ] : [];
     } else {
-      const global = gridLayerStats.value.global[String(mapCurZoom.value)];
-      gridMapLayerLegendData.value = global ? [
-        createMapLegendData([global.min, global.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+      const globalStats = gridLayerStats.value?.global[String(mapCurZoom.value)];
+      gridMapLayerLegendData.value = globalStats ? [
+        createMapLegendData([globalStats.min, globalStats.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
       ] : [];
     }
   });

@@ -1,10 +1,6 @@
 import _ from 'lodash';
 import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
-// import { AdminLevel } from '@/types/Enums';
-
-interface MapLayerStats {
-  [key: string]: { min: number; max: number };
-}
+import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -23,12 +19,11 @@ export function adminLevelToString(level: number) {
 
 // Resolve edge case where min and max are equal. Often happens when there's single data point when calculating min/max
 // Eg. Region data only has Ethiopia at country level.
-function resolveSameMinMaxValue(minMax: { min: number; max: number}) {
-  const { min, max } = minMax;
+function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {
   if (min === 0 && max === 0) {
     return { min: -1, max: 1 };
   }
-  const result = { ...minMax };
+  const result = { min, max };
   if (min === max) {
     result[Math.sign(result.min) === -1 ? 'max' : 'min'] = 0;
   }
@@ -36,7 +31,7 @@ function resolveSameMinMaxValue(minMax: { min: number; max: number}) {
 }
 
 // Compute min/max stats for regional data
-export function computeRegionalStats(regionData: RegionalAggregations, baselineProp?: string) {
+export function computeRegionalStats(regionData: RegionalAggregations, baselineProp: string | null): AnalysisMapStats {
   const global: MapLayerStats = {};
   // Stats globally across all runs
   for (const [key, data] of Object.entries(regionData)) {
@@ -78,7 +73,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
   };
 }
 
-export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], baselineProp?: string) {
+export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], baselineProp: string | null): AnalysisMapStats {
   // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
   // The difference is 6 so we subtract the difference to make the lowest level 0.
   const Z_DIFF = 6;
@@ -104,6 +99,7 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
   }
   return {
     global,
-    baseline
+    baseline,
+    difference: {}
   };
 }
