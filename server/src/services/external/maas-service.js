@@ -100,7 +100,7 @@ const startModelOutputPostProcessing = async (metadata) => {
     includes: ['outputs', 'qualifier_outputs'],
     size: 1
   }))[0];
-  if (_.isUndefined(modelMetadata)) {
+  if (!modelMetadata) {
     return { result: '', code: 409 };
   }
 
@@ -164,7 +164,7 @@ const startModelOutputPostProcessing = async (metadata) => {
 const markModelRunFailed = async (metadata) => {
   Logger.info(`Marking model run as failed ${metadata.model_name} ${metadata.id} `);
   if (!metadata.id) {
-    return { result: 'Model run id missing', code: 500 };
+    return { result: 'Model run id missing', code: 400 };
   }
 
   try {
