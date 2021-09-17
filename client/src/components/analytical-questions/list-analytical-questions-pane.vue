@@ -104,17 +104,9 @@
             <!-- first row display the question -->
             <div class="checklist-item-question">
               <i class="fa fa-bars checklist-item-menu" />
-              <i
-                class="step-icon-common fa fa-lg fa-border"
-                :class="{
-                  'fa-check-circle step-complete': getInsightsByIDs(questionItem.linked_insights).length > 0,
-                  'fa-circle step-not-complete': getInsightsByIDs(questionItem.linked_insights).length === 0,
-                }"
-                @mousedown.stop.prevent
-              />
               <span
                 @mousedown.stop.prevent
-                class="checklist-item-text"
+                class="question-title"
                 :class="{ 'private-question-title': questionItem.visibility === 'private' }">
                   {{ questionItem.question }}
               </span>
@@ -128,22 +120,26 @@
               />
             </div>
             <!-- second row display a list of linked insights -->
-            <div class="checklist-item-insights">
-              <div
-                v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
-                :key="insight.id"
-                class="checklist-item-insight">
-                  <i @mousedown.stop.prevent class="fa fa-star" style="color: orange" />
-                  <span
-                    @mousedown.stop.prevent
-                    class="insight-style"
-                    :class="{ 'insight-style-private': insight.visibility === 'private' }">
-                    {{ insight.name }}
-                  </span>
-                  <i class="fa fa-fw fa-close"
-                    style="pointer-events: all; cursor: pointer; margin-left: auto;"
-                    @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
-              </div>
+            <message-display
+              v-if="getInsightsByIDs(questionItem.linked_insights).length === 0"
+              class="no-insight-warning"
+              :message-type="'alert-warning'"
+              :message="'No insights assigned to this question.'"
+            />
+            <div
+              v-for="insight in getInsightsByIDs(questionItem.linked_insights)"
+              :key="insight.id"
+              class="checklist-item-insight">
+                <i @mousedown.stop.prevent class="fa fa-star" />
+                <span
+                  @mousedown.stop.prevent
+                  class="insight-name"
+                  :class="{ 'private-insight-name': insight.visibility === 'private' }">
+                  {{ insight.name }}
+                </span>
+                <i class="fa fa-fw fa-close"
+                  style="pointer-events: all; cursor: pointer; margin-left: auto;"
+                  @click="removeRelationBetweenInsightAndQuestion($event, questionItem, insight.id)" />
             </div>
           </div>
       </div>
@@ -164,11 +160,13 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import { ProjectType } from '@/types/Enums';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import Shepherd from 'shepherd.js';
+import MessageDisplay from '../widgets/message-display.vue';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
   components: {
-    DropdownControl
+    DropdownControl,
+    MessageDisplay
   },
   setup() {
     const { questionsList, reFetchQuestions, getInsightsByIDs } = useQuestionsData();
@@ -751,30 +749,7 @@ export default defineComponent({
   }
 
   .step-selected {
-    // background-color: lightblue;
     border: 2px solid darkgray;
-  }
-  .step-icon-common {
-    border-width: 1px;
-    border-style: solid;
-    border-radius: 100% 100% 100% 100%;
-    padding: 0;
-  }
-
-  .step-complete {
-    color: black;
-  }
-
-  .step-not-complete {
-    border-color: black;
-    color: transparent;
-  }
-
-  .drag-over {
-    border-style: solid;
-    border: blue;
-    border-width: 1px;
-    background-color: red;
   }
 
   .insight-action {
@@ -794,34 +769,24 @@ export default defineComponent({
   }
 
   .analytical-questions-panel-container {
-    margin-top: 5px;
     display: flex;
     flex-direction: column;
-
-    .analytical-questions-header-promote {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      padding-bottom: 1rem;
-    }
 
     .analytical-questions-header {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      padding-bottom: 1rem;
+      margin-bottom: 1rem;
     }
 
     .analytical-questions-container {
       overflow-y: auto;
-      height: 100%;
 
       .checklist-item {
         flex-direction: column;
         display: flex;
         font-size: $font-size-medium;
-        margin-bottom: 10px;
-        padding: 5px;
+        margin-bottom: 20px;
 
         .checklist-item-question {
           flex-direction: row;
@@ -830,50 +795,45 @@ export default defineComponent({
           cursor: pointer;
 
           .checklist-item-menu {
-            padding: 5px;
             cursor: move;
+            margin-right: 5px;
           }
 
-          .checklist-item-text {
+          .question-title {
             user-select: none;
-            padding: 0 10px;
-            width: 170px;
-            display: inline-block;
-            color: gray;
+            flex: 1;
+            min-width: 0;
+            margin-left: 5px;
+            font-size: $font-size-large;
           }
           .private-question-title {
             color: black;
           }
         }
-
-        .checklist-item-insights {
-          flex-direction: column;
+        .checklist-item-insight {
           display: flex;
-
-          .checklist-item-insight {
-            background-color: lightgray;
-            margin: 2px;
+          justify-content: space-between;
+          align-items: center;
+          user-select: none;
+          margin-left: 20px;
+          margin-top: 5px;
+          .insight-name {
             padding-left: 1rem;
             padding-right: 1rem;
-            border: 1px solid darkgray;
-            border-radius: 15px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            user-select: none;
-            .insight-style {
-              padding-left: 1rem;
-              padding-right: 1rem;
-              color: gray;
-              font-style: italic;
-            }
-            .insight-style-private {
-              color: black;
-              font-style: normal;
-            }
+            color: gray;
+            font-style: italic;
+          }
+          .private-insight-name {
+            color: black;
+            font-style: normal;
           }
         }
       }
     }
+  }
+
+  .no-insight-warning {
+    margin-top: 5px;
+    margin-left: 20px;
   }
 </style>
