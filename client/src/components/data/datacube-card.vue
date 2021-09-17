@@ -243,49 +243,61 @@
             >
               <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
             </div>
-            <div
-              v-if="mapReady && currentTabView === 'data' && regionalData !== null"
-              class="card-maps-container">
-              <div
-                v-for="(spec, indx) in outputSourceSpecs"
-                :key="spec.id"
-                class="card-map-container"
-                :class="[
-                  `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
-                ]"
-              >
-                <span
-                  v-if="outputSourceSpecs.length > 1"
-                  :style="{ color: colorFromIndex(indx)}"
-                >
-                  {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
-                </span>
-                <data-analysis-map
-                  class="card-map"
-                  :style="{ borderColor: colorFromIndex(indx) }"
-                  :output-source-specs="outputSourceSpecs"
-                  :output-selection=spec.id
-                  :relative-to="relativeTo"
-                  :show-tooltip="true"
-                  :selected-layer-id="mapSelectedLayer"
-                  :filters="mapFilters"
-                  :map-bounds="mapBounds"
-                  :region-data="regionalData"
-                  :grid-layer-stats="gridLayerStats"
-                  :selected-base-layer="selectedBaseLayer"
-                  :unit="unit"
-                  @sync-bounds="onSyncMapBounds"
-                  @on-map-load="onMapLoad"
-                  @slide-handle-change="updateMapFilters"
-                />
+            <div class="card-maps-box">
+              <div v-if="outputSourceSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
+                <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" />
               </div>
-            </div>
-            <div
-              v-else-if="currentTabView === 'data'"
-              class="card-maps-container"
-            >
-              <!-- Empty div to reduce jumpiness when the maps are loading -->
-              <div class="card-map" />
+              <div
+                v-if="mapReady && currentTabView === 'data' && regionalData !== null"
+                class="card-maps-container">
+                <div
+                  v-for="(spec, indx) in outputSourceSpecs"
+                  :key="spec.id"
+                  class="card-map-container"
+                  :class="[
+                    `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                  ]"
+                >
+                  <span
+                    v-if="outputSourceSpecs.length > 1"
+                    :style="{ color: colorFromIndex(indx)}"
+                  >
+                    {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
+                  </span>
+
+                  <data-analysis-map
+                    class="card-map"
+                    :style="{ borderColor: colorFromIndex(indx) }"
+                    :output-source-specs="outputSourceSpecs"
+                    :output-selection=spec.id
+                    :relative-to="relativeTo"
+                    :show-tooltip="true"
+                    :selected-layer-id="mapSelectedLayer"
+                    :map-bounds="mapBounds"
+                    :region-data="regionalData"
+                    :admin-layer-stats="adminLayerStats"
+                    :grid-layer-stats="gridLayerStats"
+                    :selected-base-layer="selectedBaseLayer"
+                    :unit="unit"
+                    @sync-bounds="onSyncMapBounds"
+                    @on-map-load="onMapLoad"
+                    @zoom-change="updateMapCurSyncedZoom"
+                    @map-update="recalculateGridMapDiffStats"
+                  />
+                </div>
+              </div>
+              <div
+                v-else-if="currentTabView === 'data'"
+                class="card-maps-container"
+              >
+                <!-- Empty div to reduce jumpiness when the maps are loading -->
+                <div class="card-map" />
+              </div>
+              <div v-if="outputSourceSpecs.length > 0" class="card-maps-legend-container">
+                <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" />
+              </div>
             </div>
           </div>
         </div>
@@ -296,30 +308,30 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect, Ref } from 'vue';
+import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
-import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
+import { ScenarioData } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
-import { getOutputStats } from '@/services/runoutput-service';
+import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
 import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
-import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
-import { OutputSpecWithId, RegionalAggregations, OutputStatsResult } from '@/types/Runoutput';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { useStore } from 'vuex';
 import { isIndicator, isModel } from '@/utils/datacube-util';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
-import { DATA_LAYER } from '@/utils/map-util-new';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import MapLegend from '@/components/widgets/map-legend.vue';
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -417,7 +429,8 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus,
     Modal,
     SmallTextButton,
-    RadioButtonGroup
+    RadioButtonGroup,
+    MapLegend
   },
   setup(props, { emit }) {
     const store = useStore();
@@ -426,10 +439,13 @@ export default defineComponent({
     const tour = computed(() => store.getters['tour/tour']);
 
     const {
-      selectedScenarioIds,
       allModelRunData,
       metadata,
-      outputSourceSpecs
+      outputSourceSpecs,
+      regionalData,
+      relativeTo,
+      selectedDataLayer,
+      selectedAdminLevel
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -526,38 +542,32 @@ export default defineComponent({
         _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
     });
 
-    const gridLayerStats = ref<OutputStatsResult[]>([]);
-
-    watchEffect(async onInvalidate => {
-      if (outputSourceSpecs.value.length === 0) return;
-      let isCancelled = false;
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      const result = await getOutputStats(outputSourceSpecs.value);
-      if (isCancelled) return;
-      gridLayerStats.value = result;
-    });
-
-    const mapFilters = ref<AnalysisMapFilter[]>([]);
-    const updateMapFilters = (data: AnalysisMapFilter) => {
-      mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
-    };
-    // When the list of selected scenario IDs changes, remove any map filters
-    //  that no longer apply to any of the selected scenarios
-    watch(
-      () => selectedScenarioIds.value,
-      () => {
-        mapFilters.value = mapFilters.value.filter(filter => {
-          return selectedScenarioIds.value.find(scenarioId => filter.id === scenarioId);
-        });
-      }
-    );
+    const {
+      onSyncMapBounds,
+      mapBounds,
+      updateMapCurSyncedZoom,
+      recalculateGridMapDiffStats,
+      adminLayerStats,
+      gridLayerStats,
+      gridMapLayerLegendData,
+      adminMapLayerLegendData,
+      mapLegendData,
+      isGridLayer,
+      mapSelectedLayer
+    } = useAnalysisMaps(outputSourceSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
 
     return {
+      mapBounds,
+      onSyncMapBounds,
+      isGridLayer,
+      mapSelectedLayer,
+      recalculateGridMapDiffStats,
+      updateMapCurSyncedZoom,
+      adminLayerStats,
       gridLayerStats,
-      updateMapFilters,
-      mapFilters,
+      adminMapLayerLegendData,
+      gridMapLayerLegendData,
+      mapLegendData,
       colorFromIndex,
       emitTimestampSelection,
       dimensions,
@@ -584,10 +594,6 @@ export default defineComponent({
     potentialScenarios: [] as Array<ScenarioData>,
     showNewRunsModal: false,
     showModelRunsExecutionStatus: false,
-    mapBounds: [ // Default bounds to Ethiopia
-      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-    ],
     mapReady: false
   }),
   created() {
@@ -611,9 +617,6 @@ export default defineComponent({
       } else {
         return [];
       }
-    },
-    mapSelectedLayer(): number {
-      return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
@@ -650,9 +653,6 @@ export default defineComponent({
     },
     onMapLoad() {
       this.$emit('on-map-load');
-    },
-    onSyncMapBounds(mapBounds: Array<Array<number>>) {
-      this.mapBounds = mapBounds;
     },
     toggleNewRunsMode() {
       this.showNewRunsMode = !this.showNewRunsMode;
@@ -795,9 +795,35 @@ $marginSize: 5px;
   max-width: 100%;
 }
 
+.card-maps-box {
+  flex: 3;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+}
+
 .card-map-container {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.card-maps-legend-container {
+    display: flex;
+    flex-direction: column;
+    .top-padding {
+      height: 19px;
+    }
+    div {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+}
+
+.card-map-container {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
 
@@ -878,6 +904,14 @@ $marginSize: 5px;
 
   .timestamp {
     color: $selected-dark;
+  }
+}
+.map-legend-container {
+  ::v-deep(.color-label) {
+    span:nth-child(2) {
+      position: relative;
+      bottom: -16px;
+    }
   }
 }
 </style>
