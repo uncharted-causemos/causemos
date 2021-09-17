@@ -1,7 +1,5 @@
 const _ = require('lodash');
 const { Client } = require('@elastic/elasticsearch');
-// const { Adapter } = require('./adapter');
-// const adapter = rootRequire('/adapters/es/adapter');
 const client = new Client({ node: `${process.env.TD_DATA_URL}` });
 
 /**
@@ -38,10 +36,10 @@ const getBulkErrors = (body, num = 2) => {
  *
  * Filters must be in the form of a list of objects, containing simple filters, e.g term filters
  *
- * @param {object} adapter
+ * @param {string} index - index to search
  * @param {string} queryString
- * @param {list} filters
- * @param {list} fields
+ * @param {array} filters - additional filter criteria
+ * @param {array} fields - fields to highlight
  */
 const searchAndHighlight = async (index, queryString, filters = [], fields = []) => {
   const fieldsToHighlight = {};
