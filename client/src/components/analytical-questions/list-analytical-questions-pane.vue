@@ -50,9 +50,6 @@
       </ul>
     </template>
     <template v-if="showDeleteModal === false && showNewAnalyticalQuestion === false">
-      <div class="analytical-questions-header">
-        <span>Questions ({{questionsList.length}})</span>
-      </div>
       <button
         v-tooltip.top-center="'Add a new analytical question'"
         type="button"
@@ -763,13 +760,6 @@ export default defineComponent({
   .analytical-questions-panel-container {
     display: flex;
     flex-direction: column;
-
-    .analytical-questions-header {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      margin-bottom: 1rem;
-    }
 
     .analytical-questions-container {
       overflow-y: auto;
