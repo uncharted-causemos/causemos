@@ -111,6 +111,10 @@ export default function useAnalysisMaps(
 
   const mapSelectedLayer = computed(() => isGridLayer.value ? 4 : selectedAdminLevel.value);
 
+  const mapLegendData = computed(() => {
+    return isGridLayer.value ? gridMapLayerLegendData.value : adminMapLayerLegendData.value;
+  });
+
   const mapBounds = ref<number[][]>([
     [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
     [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
@@ -128,6 +132,7 @@ export default function useAnalysisMaps(
     gridLayerStats,
     gridMapLayerLegendData,
     adminMapLayerLegendData,
+    mapLegendData,
     isGridLayer,
     mapSelectedLayer,
     mapBounds

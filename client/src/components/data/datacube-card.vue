@@ -244,6 +244,10 @@
               <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
             </div>
             <div class="card-maps-box">
+              <div v-if="outputSourceSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
+                <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" />
+              </div>
               <div
                 v-if="mapReady && currentTabView === 'data' && regionalData !== null"
                 class="card-maps-container">
@@ -291,9 +295,8 @@
                 <div class="card-map" />
               </div>
               <div v-if="outputSourceSpecs.length > 0" class="card-maps-legend-container">
-                <div v-for="(data, index) in (isGridLayer ? gridMapLayerLegendData : adminMapLayerLegendData)" :key="index">
-                  <map-legend :ramp="data" />
-                </div>
+                <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" />
               </div>
             </div>
           </div>
@@ -548,6 +551,7 @@ export default defineComponent({
       gridLayerStats,
       gridMapLayerLegendData,
       adminMapLayerLegendData,
+      mapLegendData,
       isGridLayer,
       mapSelectedLayer
     } = useAnalysisMaps(outputSourceSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
@@ -563,6 +567,7 @@ export default defineComponent({
       gridLayerStats,
       adminMapLayerLegendData,
       gridMapLayerLegendData,
+      mapLegendData,
       colorFromIndex,
       emitTimestampSelection,
       dimensions,
@@ -807,13 +812,13 @@ $marginSize: 5px;
 .card-maps-legend-container {
     display: flex;
     flex-direction: column;
+    .top-padding {
+      height: 19px;
+    }
     div {
       flex-grow: 1;
       display: flex;
       flex-direction: column;
-    }
-    div:nth-child(2) {
-      margin-top: 30px;
     }
 }
 
