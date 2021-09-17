@@ -1,8 +1,5 @@
 <template>
   <div class="analysis-map-container">
-    <div class="value-filter">
-      <map-legend :ramp="legendData" />
-    </div>
     <wm-map
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
@@ -14,9 +11,18 @@
     >
       <wm-map-vector
         v-if="vectorSource"
-        :key="baseLayerTrigger"
-        :source-id="vectorSourceId"
+        :key="layerRerenderTrigger"
         :source="vectorSource"
+        :source-id="vectorSourceId"
+        :source-layer="vectorSourceLayer"
+        :promote-id="idPropName"
+        :layer-id="baseLayerId"
+        :layer="baseLayer"
+      />
+      <wm-map-vector
+        v-if="vectorSource && colorLayer"
+        :key="layerRerenderTrigger"
+        :source-id="vectorSourceId"
         :source-layer="vectorSourceLayer"
         :source-maxzoom="vectorSourceMaxzoom"
         :promote-id="idPropName"
@@ -24,15 +30,6 @@
         :layer="colorLayer"
         @add-layer="onAddLayer"
         @update-source="onUpdateSource"
-      />
-      <wm-map-vector
-        v-if="vectorSource"
-        :key="baseLayerTrigger"
-        :source-id="vectorSourceId"
-        :source-layer="vectorSourceLayer"
-        :promote-id="idPropName"
-        :layer-id="baseLayerId"
-        :layer="baseLayer"
       />
       <template v-if="showPreRenderedViz">
         <wm-map-image
@@ -56,21 +53,19 @@
 <script>
 
 import _ from 'lodash';
-// import { getOutputStats } from '@/services/runoutput-service';
-import { DEFAULT_MODEL_OUTPUT_COLOR_OPTION } from '@/utils/model-output-util';
+import * as d3 from 'd3';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup } from '@/wm-map';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
   createHeatmapLayerStyle,
   ETHIOPIA_BOUNDING_BOX,
-  isLayerLoaded,
-  createDivergingColorStops,
-  createColorStops,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
+import {
+  adminLevelToString
+} from '@/utils/map-util-new';
 import { chartValueFormatter } from '@/utils/string-util';
-import MapLegend from '@/components/widgets/map-legend';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { mapActions, mapGetters } from 'vuex';
 
@@ -116,39 +111,15 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
         'fill-color': 'grey',
         'fill-opacity': [
           'case',
+          // ['==', 'NaN', ['to-string', ['get', property]]], 0.0,
           ...caseRelativeToMissing,
           ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
         ]
       },
-      filter: ['all', ['has', property]]
+      filter: ['all', ['has', property], ['!=', 'NaN', ['to-string', ['get', property]]]]
     });
   }
-};
-
-const createMapLegendData = (domain, colors, scaleFn, relativeTo) => {
-  const stops = !_.isNil(relativeTo)
-    ? createDivergingColorStops(domain, colors, scaleFn)
-    : createColorStops(domain, colors, scaleFn);
-  const labels = [];
-  // process with color stops (e.g [c1, v1, c2, v2, c3]) where cn is color and vn is value.
-  const format = (v) => chartValueFormatter(stops[1], stops[stops.length - 2])(v);
-  stops.forEach((item, index) => {
-    if (index === 1) {
-      labels.push(`< ${format(item)}`);
-    } else if (index % 2 !== 0) {
-      labels.push(`${format(stops[index - 2])} - ${format(item)}`);
-    }
-    // if last stop value
-    if (index === stops.length - 2) {
-      labels.push(`> ${format(item)}`);
-    }
-  });
-  const data = [];
-  colors.forEach((item, index) => {
-    data.push({ color: item, label: labels[index] });
-  });
-  return data.reverse();
 };
 
 export default {
@@ -157,14 +128,15 @@ export default {
     WmMap,
     WmMapVector,
     WmMapImage,
-    WmMapPopup,
-    MapLegend
+    WmMapPopup
   },
   emits: [
     'on-map-load',
     'aggregation-level-change',
     'slide-handle-change',
-    'sync-bounds'
+    'sync-bounds',
+    'zoom-change',
+    'map-update'
   ],
   props: {
     // Provide multiple ouput source specs in order to fetch map tiles or data that includes multiple output data (eg. multiple runs, different model ouputs etc.)
@@ -207,9 +179,13 @@ export default {
       type: Object,
       default: () => undefined
     },
+    adminLayerStats: {
+      type: Object,
+      default: () => undefined
+    },
     gridLayerStats: {
-      type: Array,
-      default: () => []
+      type: Object,
+      default: () => undefined
     },
     selectedBaseLayer: {
       type: String,
@@ -222,12 +198,12 @@ export default {
   },
   data: () => ({
     baseLayer: undefined,
-    baseLayerTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
+    layerRerenderTrigger: undefined, // This is used specifically to trigger data layer re-rendering.
     colorLayer: undefined,
     hoverId: undefined,
     map: undefined,
-    legendData: [],
-    curZoom: 0
+    curZoom: 0,
+    extent: undefined
   }),
   computed: {
     ...mapGetters({
@@ -264,88 +240,7 @@ export default {
     },
     adminLevel() {
       if (this.selectedLayerId > 3) return undefined;
-      return this.selectedLayerId === 0 ? 'country' : 'admin' + this.selectedLayerId;
-    },
-    stats() {
-      const stats = {};
-      if (!this.regionData) return stats;
-      if (this.baselineSpec) {
-        // Stats relative to the baseline. (min/max of the difference relative to the baseline)
-        const baselineProp = this.baselineSpec.id;
-        for (const [key, data] of Object.entries(this.regionData)) {
-          const values = [];
-          data.filter(v => v.values[baselineProp] !== undefined).forEach(v => {
-            const diffs = Object.values(v.values).map(value => value - v.values[baselineProp]);
-            values.push(...diffs);
-          });
-          if (values.length) {
-            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
-          }
-        }
-      } else if (this.relativeTo === this.outputSelection) {
-        // Stats for the baseline map
-        for (const [key, data] of Object.entries(this.regionData)) {
-          const values = data.filter(v => v.values[this.valueProp] !== undefined).map(v => v.values[this.valueProp]);
-          if (values.length) {
-            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
-          }
-        }
-      } else {
-        // Stats globally across all maps
-        for (const [key, data] of Object.entries(this.regionData)) {
-          const values = [];
-          for (const v of data) {
-            values.push(...Object.values(_.omit(v.values, 'unselected region')));
-          }
-          if (values.length) {
-            stats[key] = { min: Math.min(...values), max: Math.max(...values) };
-          }
-        }
-      }
-      return stats;
-    },
-    gridStats() {
-      const result = {};
-      // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
-      // The difference is 6 so we subtract the difference to make the lowest level 0.
-      const Z_DIFF = 6;
-      if (!this.gridLayerStats.length) return result;
-      if (this.baselineSpec) {
-        // Do nothing. computeGridRelativeStats method capture this case.
-      } else if (this.relativeTo === this.outputSelection) {
-        // Stats for the baseline map
-        const stats = this.gridLayerStats.find(elem => elem.outputSpecId === this.outputSelection)?.stats;
-        (stats || []).forEach(stat => {
-          result[stat.zoom - Z_DIFF] = { min: stat.min, max: stat.max };
-        });
-      } else {
-        // Stats globally across all maps
-        for (const item of this.gridLayerStats) {
-          for (const stat of item.stats) {
-            const zoom = stat.zoom - Z_DIFF;
-            if (result[zoom]) {
-              result[zoom] = { min: Math.min(result[zoom].min, stat.min), max: Math.max(result[zoom].max, stat.max) };
-            } else {
-              result[zoom] = { min: stat.min, max: stat.max };
-            }
-          }
-        }
-      }
-      return result;
-    },
-    gridStatsForCurZoom() {
-      const zoomLevels = Object.keys(this.gridStats).map(Number);
-      const maxZoom = Math.max(...zoomLevels);
-      const zoom = Math.min(maxZoom, this.curZoom);
-      return this.gridStats[zoom];
-    },
-    extent() {
-      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom;
-      if (!extent) return { min: 0, max: 1 };
-      if (extent.min === extent.max) {
-        extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
-      }
-      return extent;
+      return adminLevelToString(this.selectedLayerId);
     },
     selectedBaseLayerEndpoint() {
       return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
@@ -374,9 +269,6 @@ export default {
         return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
       }
     },
-    colorOption() {
-      return DEFAULT_MODEL_OUTPUT_COLOR_OPTION;
-    },
     colorScheme() {
       if (!_.isNil(this.relativeTo)) {
         return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
@@ -398,17 +290,21 @@ export default {
     filters() {
       this.updateLayerFilter();
     },
-    selection() {
-      this.refresh();
-    },
     relativeTo() {
-      this.refresh();
+      this.triggerMapUpdateEvent();
+      this.debouncedRefresh();
     },
     regionData() {
-      this.refresh();
+      this.debouncedRefresh();
     },
     selectedLayer() {
-      this.refreshLayers();
+      this.debouncedRefresh();
+    },
+    adminLayerStats() {
+      this.debouncedRefresh();
+    },
+    gridLayerStats() {
+      this.debouncedRefresh();
     }
   },
   created() {
@@ -416,13 +312,16 @@ export default {
     this.vectorSourceMaxzoom = 8;
     this.colorLayerId = 'color-layer';
     this.baseLayerId = 'base-layer';
+    this.colorOption = {
+      scaleFn: d3.scaleLinear
+    };
 
     // the following are needed to render pre-generated overlay
     this.imageSourceId = 'maas-image-source';
     this.imageLayerId = 'image-layer';
 
-    this.debouncedRefreshGridMap = _.debounce(function() {
-      this.refreshGridMap();
+    this.debouncedRefresh = _.debounce(function() {
+      this.refresh();
     }, 50);
 
     // Init layer objects
@@ -444,34 +343,67 @@ export default {
     }),
     refresh() {
       if (!this.map || !this.selection) return;
-
       this.setFeatureStates();
       this.refreshLayers();
       this.updateLayerFilter();
     },
+    triggerMapUpdateEvent() {
+      this.$emit('map-update', {
+        outputSpecId: this.outputSelection,
+        map: this.map,
+        component: this
+      });
+    },
     getExtent() {
-      const extent = this.stats[this.adminLevel] || this.gridStatsForCurZoom || this.computeGridRelativeStats();
-      if (!extent) return { min: 0, max: 1 };
-      if (extent.min === extent.max) {
-        extent[Math.sign(extent.min) === -1 ? 'max' : 'min'] = 0;
+      if (this.isGridMap) {
+        return this.getGridMapExtent();
       }
-      return extent;
+      return this.getAdminMapExtent();
+    },
+    getGridMapExtent() {
+      if (!this.gridLayerStats) return;
+      if (this.baselineSpec) {
+        return this.gridLayerStats?.difference?.diff;
+      } else if (this.outputSelection === this.relativeTo) {
+        const zoomLevels = Object.keys(this.gridLayerStats.baseline).map(Number);
+        const maxZoom = Math.max(...zoomLevels);
+        const zoom = Math.min(maxZoom, this.curZoom);
+        return this.gridLayerStats?.baseline[String(zoom)];
+      } else {
+        const zoomLevels = Object.keys(this.gridLayerStats.global).map(Number);
+        const maxZoom = Math.max(...zoomLevels);
+        const zoom = Math.min(maxZoom, this.curZoom);
+        return this.gridLayerStats?.global[String(zoom)];
+      }
+    },
+    getAdminMapExtent() {
+      if (!this.adminLayerStats) return;
+      if (this.baselineSpec) {
+        return this.adminLayerStats?.difference[this.adminLevel];
+      } else if (this.outputSelection === this.relativeTo) {
+        return this.adminLayerStats?.baseline[this.adminLevel];
+      } else {
+        return this.adminLayerStats?.global[this.adminLevel];
+      }
     },
     refreshLayers() {
-      if (this.colorOption === undefined) return;
       const useFeatureState = !this.isGridMap;
       this.baseLayer = baseLayer(this.valueProp, useFeatureState, this.baselineSpec?.id);
       this.refreshColorLayer(useFeatureState);
     },
     refreshColorLayer(useFeatureState = false) {
-      const { min, max } = this.getExtent();
+      this.extent = this.getExtent();
+      if (!this.extent) {
+        this.colorLayer = undefined;
+        return;
+      }
+      const { min, max } = this.extent;
       const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec?.id;
       this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
-      this.legendData = createMapLegendData([min, max], this.colorScheme, scaleFn, relativeToProp);
     },
     setFeatureStates() {
-      if (!this.adminLevel) return;
+      if (!this.map || !this.adminLevel || this.isGridMap) return;
 
       // Remove all states of the source. This doens't seem to remove the keys of target feature id already loaded in memory.
       this.map.removeFeatureState({
@@ -504,7 +436,7 @@ export default {
     onUpdateSource() {
       setTimeout(() => {
         // Hack: give enough time to map to render features from updated source
-        this.refreshGridMap();
+        if (this.isGridMap) this.refresh();
       }, 500);
     },
     updateCurrentZoomLevel() {
@@ -512,6 +444,12 @@ export default {
       const zoom = Math.floor(this.map.getZoom());
       if (this.curZoom !== zoom) {
         this.curZoom = zoom;
+        this.$emit('zoom-change', {
+          outputSpecId: this.outputSelection,
+          map: this.map,
+          component: this,
+          zoom: this.curZoom
+        });
       }
     },
     onMapLoad(event) {
@@ -523,12 +461,21 @@ export default {
       map.dragRotate.disable();
       map.touchZoomRotate.disableRotation();
       this.updateCurrentZoomLevel();
+
+      // Init layers
+      this.refreshLayers();
+
       this.$emit('on-map-load');
+
+      // force map sync after being loaded since a resize event (called during map load)
+      //  may have caused the bounds to be out of sync
+      this.$emit('sync-bounds', map.getBounds().toArray());
     },
     onMapMove(event) {
       this.updateCurrentZoomLevel();
-      this.debouncedRefreshGridMap();
+      this.isGridMap && this.debouncedRefresh();
       this.syncBounds(event);
+      this.triggerMapUpdateEvent();
     },
     syncBounds(event) {
       // Skip if move event is not originated from dom event (eg. not triggered by user interaction with dom)
@@ -560,7 +507,9 @@ export default {
         }, []);
         const relativeToProp = this.baselineSpec && this.baselineSpec.id;
         if (relativeToProp) filter.unshift(['has', relativeToProp]);
-        this.colorLayer.filter = ['all', ['has', this.valueProp], ...filter];
+        const hasProperty = ['has', this.valueProp];
+        const notNaN = ['!=', 'NaN', ['to-string', ['get', this.valueProp]]];
+        this.colorLayer.filter = ['all', hasProperty, notNaN, ...filter];
       } else {
         this.refreshLayers();
       }
@@ -599,16 +548,21 @@ export default {
       this._unsetHover(event.map);
     },
     onStyleChange() {
-      // This line of code must be executed after map style is changed so that the data layer shows up.
+      // HACK: This line of code must be executed after map style is changed so that the data layer shows up.
       // The data layer only shows up if wm-map-vector is re-rendered using :key after the style change.
-      this.baseLayerTrigger = this.selectedBaseLayerEndpoint;
+      // Also force rerender when selected data layer cahnges (grid <-> admin)
+      setTimeout(() => {
+        this.layerRerenderTrigger = this.selectedBaseLayerEndpoint + this.isGridMap;
+      }, 200);
     },
     popupValueFormatter(feature) {
       const prop = this.isGridMap ? feature?.properties : feature?.state;
       if (_.isNil(prop && prop[this.valueProp])) return null;
 
       const value = prop[this.valueProp];
-      const format = v => chartValueFormatter(this.extent.min, this.extent.max)(v);
+      const format = v => this.extnet
+        ? chartValueFormatter(this.extent.min, this.extent.max)(v)
+        : chartValueFormatter()(v);
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
         const diff = prop[this.valueProp] - prop[this.baselineSpec.id];
@@ -617,32 +571,6 @@ export default {
       }
       if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
       return rows.filter(field => !_.isNil(field)).join('<br />');
-    },
-    refreshGridMap() {
-      if (!this.map) return;
-      // Exit early if the layer hasn't finished loading
-      if (!isLayerLoaded(this.map, this.baseLayerId)) return;
-      // This only applies to grid map
-      if (!this.isGridMap) return;
-      this.refreshColorLayer();
-      this.updateLayerFilter();
-    },
-    isSourceLayerLoaded(sourceLayer) {
-      return Boolean(this.map?.getLayer(this.colorLayerId)?.sourceLayer === sourceLayer);
-    },
-    computeGridRelativeStats() {
-      if (!this.isSourceLayerLoaded(this.vectorSourceLayer) || !this.baselineSpec) return;
-      // Stats relative to the baseline. (min/max of the difference relative to the baseline)
-      const baselineProp = this.baselineSpec.id;
-      const features = this.map.queryRenderedFeatures({ layers: [this.baseLayerId] });
-      const values = [];
-      for (const feature of features) {
-        for (const item of this.outputSourceSpecs) {
-          const diff = feature.properties[item.id] - feature.properties[baselineProp];
-          if (_.isNumber(diff)) values.push(diff);
-        }
-      }
-      return { min: Math.min(...values), max: Math.max(...values) };
     }
   }
 };
@@ -651,25 +579,5 @@ export default {
 <style lang="scss" scoped>
 .analysis-map-container {
   position: relative;
-}
-.value-filter {
-  position: absolute;
-  right: 5px;
-  top: 5px;
-  padding: 5px;
-  z-index: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  cursor: pointer;
-  .filter-toggle-button {
-    padding: 5px;
-    border: 1px solid #888;
-    border-radius: 3px;
-    background-color: #ccc;
-    &.active {
-      background-color: #6FC5DE;
-    }
-  }
 }
 </style>

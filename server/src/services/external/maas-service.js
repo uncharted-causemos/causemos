@@ -58,13 +58,22 @@ const submitModelRun = async(metadata) => {
   Logger.info(`Model execution response ${result}`);
 
   try {
-    // If API call succeeded, insert metadata into ES
+    // Insert into ES
     const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-    const result = await connection.insert({
-      ...filteredMetadata,
-      status: 'SUBMITTED'
+
+    // Assign run name for this newly created model run with a
+    // special case if this run is the default run
+    const existingRunsCount = await connection.count([
+      { field: 'model_id', value: metadata.model_id },
+      { field: 'is_default_run', value: false }
+    ]);
+    const runName = metadata.is_default_run ? 'Default' : 'Run ' + (existingRunsCount + 1);
+
+    return await connection.insert({
+      ...metadata,
+      status: 'SUBMITTED',
+      name: runName
     }, d => d.id);
-    return { result, code: 200 };
   } catch (err) {
     return { result: err, code: 500 };
   }
