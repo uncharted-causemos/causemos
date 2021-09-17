@@ -15,69 +15,61 @@
         />
       </template>
     </modal-confirmation>
-    <div class="pane-header">
-      <button
-        v-if="allowNewInsights"
-        type="button"
-        class="row btn btn-primary btn-call-for-action"
-        style="padding: 2px"
-        @click.stop="newInsight">
-          <i class="fa fa-fw fa-star fa-lg" />
-          New Insight
-      </button>
-      <div class="title-header">
-        <h4>Insights: {{listContextInsights.length}}</h4>
-        <dropdown-button
-          class="export-dropdown"
-          :inner-button-label="'Export'"
-          :items="['Powerpoint', 'Word']"
-          @item-selected="exportContextInsight"
-        />
-      </div>
-    </div>
+    <dropdown-button
+      :inner-button-label="'Export'"
+      :is-dropdown-left-aligned="true"
+      :items="['Powerpoint', 'Word']"
+      class="export-dropdown"
+      @item-selected="exportContextInsight"
+    />
+    <button
+      v-if="allowNewInsights"
+      type="button"
+      class="row btn btn-primary btn-call-for-action"
+      @click.stop="newInsight">
+        <i class="fa fa-fw fa-star fa-lg" />
+        New Insight
+    </button>
     <div
       v-if="listContextInsights.length > 0"
-      class="pane-content">
+      class="pane-content"
+    >
       <div
         v-for="contextInsight in listContextInsights"
-        :key="contextInsight.id">
-        <div
-          class="context-insight"
-          :class="{ 'selected': selectedContextInsight === contextInsight, '': selectedContextInsight !== contextInsight }"
-          @click="selectContextInsight(contextInsight)">
-          <div class="context-insight-header">
-            <div
-              class="context-insight-title"
-              :class="{ 'private-insight-title': contextInsight.visibility === 'private' }">
-              <i class="fa fa-star"></i>
-              {{ contextInsight.name }}
-            </div>
-            <div class="context-insight-action" @click.stop="openEditor(contextInsight.id)">
-              <i class="fa fa-ellipsis-h context-insight-header-btn" />
-              <context-insight-editor
-                v-if="activeContextInsight === contextInsight.id"
-                @delete="deleteContextInsight(contextInsight.id)"
-                @edit="editContextInsight(contextInsight)"
-              />
-            </div>
-          </div>
+        :key="contextInsight.id"
+        class="context-insight"
+        :class="{ 'selected': selectedContextInsight === contextInsight, '': selectedContextInsight !== contextInsight }"
+        @click="selectContextInsight(contextInsight)">
+        <div class="context-insight-header">
           <div
-            class="context-insight-content">
-            <div class="context-insight-thumbnail">
-              <img
-                :src="contextInsight.thumbnail"
-                class="thumbnail">
-            </div>
-            <div
-              v-if="contextInsight.description.length > 0"
-              class="context-insight-description"
-              :class="{ 'private-insight-description': contextInsight.visibility === 'private' }">
-              {{ contextInsight.description }}
-            </div>
-            <div
-              v-else
-              class="context-insight-empty-description">No description provided</div>
+            class="context-insight-title"
+            :class="{ 'private-insight-title': contextInsight.visibility === 'private' }">
+            {{ contextInsight.name }}
           </div>
+          <div class="context-insight-action" @click.stop="openEditor(contextInsight.id)">
+            <i class="fa fa-ellipsis-h context-insight-header-btn" />
+            <context-insight-editor
+              v-if="activeContextInsight === contextInsight.id"
+              @delete="deleteContextInsight(contextInsight.id)"
+              @edit="editContextInsight(contextInsight)"
+            />
+          </div>
+        </div>
+        <div class="context-insight-content">
+          <img
+            :src="contextInsight.thumbnail"
+            class="context-insight-thumbnail"
+          >
+          <div
+            v-if="contextInsight.description.length > 0"
+            class="context-insight-description"
+            :class="{ 'private-insight-description': contextInsight.visibility === 'private' }">
+            {{ contextInsight.description }}
+          </div>
+          <span
+            v-else
+            class="context-insight-empty-description">No description.
+          </span>
         </div>
       </div>
     </div>
@@ -85,16 +77,13 @@
       v-else
       :message="messageNoData"
     />
-    <div class="pane-footer">
-      <button
-        type="button"
-        class="btn btn-primary btn-call-for-action"
-        style="padding: 2px; padding-top: 1rem; margin-top: 1rem;"
-        @click.stop="openInsightsExplorer">
-          <i class="fa fa-fw fa-star fa-lg" />
-          Review All Insights
-      </button>
-    </div>
+    <button
+      type="button"
+      class="btn btn-default pane-footer"
+      @click="openInsightsExplorer">
+        <i class="fa fa-fw fa-star fa-lg" />
+        Review All Insights
+    </button>
   </div>
 </template>
 
@@ -506,36 +495,28 @@ export default {
   color: #707070;
   overflow-y: hidden;
   height: 100%;
-  .pane-header{
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: column;
-    .title-header{
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      flex-direction: row;
-      width: 100%;
-    }
-  }
+  display: flex;
+  flex-direction: column;
+
   .pane-content {
     display: flex;
     flex-direction: row;
     flex-wrap: wrap;
     overflow-y: auto;
-    height: 75%;
+    flex: 1;
+    min-height: 0;
   }
   .pane-footer {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-direction: column;
+    margin: 10px 0;
   }
   .context-insight {
     cursor: pointer;
-    padding: 5px 5px 10px;
-    border-bottom: 1px solid #e5e5e5;
+    margin-bottom: 40px;
+
+    &:first-child {
+      margin-top: 20px;
+    }
+
     .context-insight-header {
       display: flex;
       justify-content: space-between;
@@ -550,9 +531,9 @@ export default {
       }
       .context-insight-title {
         flex: 1 1 auto;
-        font-weight: bold;
         color: gray;
         font-style: italic;
+        font-size: $font-size-large;
       }
       .private-insight-title {
         color: black;
@@ -561,10 +542,8 @@ export default {
     }
     .context-insight-content {
       .context-insight-thumbnail {
-        .thumbnail {
-          width:  100%;
-          min-height: 100px;
-        }
+        width:  100%;
+        min-height: 100px;
       }
       .context-insight-description {
         color: gray;
@@ -575,7 +554,8 @@ export default {
         font-style: normal;
       }
       .context-insight-empty-description {
-        color: #D6DBDF;
+        color: black;
+        opacity: 0.4;
       }
     }
   }
@@ -585,7 +565,7 @@ export default {
 }
 
 .export-dropdown {
-  margin-right: 3rem;
+  margin-bottom: 10px;
 }
 
 </style>
