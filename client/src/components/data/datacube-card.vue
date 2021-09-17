@@ -171,6 +171,7 @@
           <datacube-scenario-header
             v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
             :metadata="metadata"
+            :all-model-run-data="allModelRunData"
             :selected-scenario-ids="selectedScenarioIds"
             :color-from-index="colorFromIndex"
           />

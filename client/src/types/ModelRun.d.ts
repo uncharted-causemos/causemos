@@ -28,6 +28,7 @@ export interface PreGeneratedModelRunData {
 // Model run metadata
 export interface ModelRun {
   id: string;
+  name: string;
   model_name: string;
   model_id: string;
   created_at: number;

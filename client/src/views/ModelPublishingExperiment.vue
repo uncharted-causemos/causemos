@@ -173,6 +173,7 @@ import { DataState, Insight, ViewState } from '@/types/Insight';
 import domainProjectService from '@/services/domain-project-service';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useQualifiers from '@/services/composables/useQualifiers';
+import { ModelRun } from '@/types/ModelRun';
 
 const DRILLDOWN_TABS = [
   {
@@ -216,8 +217,6 @@ export default defineComponent({
     const selectedTimestamp: ComputedRef<number> = computed(() => store.getters['modelPublishStore/selectedTimestamp']);
     const selectedScenarioIds: ComputedRef<string[]> = computed(() => store.getters['modelPublishStore/selectedScenarioIds']);
 
-    const breakdownOption = ref<string | null>(null);
-
     watchEffect(() => {
       // If more than one run is selected, make sure "split by" is set to none.
       if (selectedScenarioIds.value.length > 1) {
@@ -235,6 +234,10 @@ export default defineComponent({
 
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+
+    const breakdownOption = ref<string | null>(null);
+
+    const selectedScenarios = ref<ModelRun[]>([]);
 
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
@@ -296,6 +299,15 @@ export default defineComponent({
         if (currentTabView.value === 'description') {
           currentTabView.value = 'data';
         }
+
+        // once the list of selected scenario changes,
+        //  extract model runs that match the selected scenario IDs
+        selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
+          allModelRunData.value.some(run => {
+            return runId === run.id && filteredRuns.push(run);
+          });
+          return filteredRuns;
+        }, []);
       } else {
         // if no scenario selection is made, ensure we are back to the first step
         if (currentPublishStep.value !== ModelPublishingStepID.Enrich_Description) {
@@ -402,7 +414,8 @@ export default defineComponent({
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
-      initialSelectedYears
+      initialSelectedYears,
+      selectedScenarios
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -512,7 +525,8 @@ export default defineComponent({
       toggleIsYearSelected,
       initialSelectedRegionIds,
       initialSelectedQualifierValues,
-      initialSelectedYears
+      initialSelectedYears,
+      selectedScenarios
     };
   },
   watch: {

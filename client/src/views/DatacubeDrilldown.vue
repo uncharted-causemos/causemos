@@ -171,6 +171,7 @@ import { Insight, ViewState, DataState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
 import useQualifiers from '@/services/composables/useQualifiers';
 import { useRoute } from 'vue-router';
+import { ModelRun } from '@/types/ModelRun';
 
 const DRILLDOWN_TABS = [
   {
@@ -267,6 +268,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
 
     watchEffect(() => {
       // If more than one run is selected, make sure "split by" is set to none.
@@ -399,7 +401,8 @@ export default defineComponent({
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
-      initialSelectedYears
+      initialSelectedYears,
+      selectedScenarios
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -526,7 +529,8 @@ export default defineComponent({
       toggleIsYearSelected,
       initialSelectedQualifierValues,
       initialSelectedRegionIds,
-      initialSelectedYears
+      initialSelectedYears,
+      selectedScenarios
     };
   },
   data: () => ({
@@ -695,6 +699,15 @@ export default defineComponent({
         if (this.currentTabView === 'description') {
           this.updateTabView('data');
         }
+
+        // once the list of selected scenario changes,
+        //  extract model runs that match the selected scenario IDs
+        this.selectedScenarios = newIds.reduce((filteredRuns: ModelRun[], runId) => {
+          this.allModelRunData.some(run => {
+            return runId === run.id && filteredRuns.push(run);
+          });
+          return filteredRuns;
+        }, []);
       } else {
         this.updateTabView('description');
       }
