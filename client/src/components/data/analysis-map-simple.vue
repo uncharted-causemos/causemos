@@ -436,7 +436,7 @@ export default {
     onUpdateSource() {
       setTimeout(() => {
         // Hack: give enough time to map to render features from updated source
-        this.isGridMap && this.refresh();
+        if (this.isGridMap) this.refresh();
       }, 500);
     },
     updateCurrentZoomLevel() {

@@ -317,7 +317,7 @@ import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { ScenarioData } from '@/types/Common';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
-import useAnalysisMaps from '@/services/composables/useAnalysisMaps';
+import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
 import { colorFromIndex } from '@/utils/colors-util';
 import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import Modal from '@/components/modals/modal.vue';

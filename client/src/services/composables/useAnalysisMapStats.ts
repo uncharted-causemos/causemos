@@ -9,7 +9,7 @@ import { createMapLegendData, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { COLOR_SCHEME } from '@/utils/colors-util';
 import { getOutputStats } from '@/services/runoutput-service';
 
-export default function useAnalysisMaps(
+export default function useAnalysisMapStats(
   outputSourceSpecs: Ref<OutputSpecWithId[]>,
   regionalData: Ref<RegionalAggregations | null>,
   relativeTo: Ref<string | null>,
