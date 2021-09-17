@@ -19,7 +19,7 @@ function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId
     searchParams.set(insightIdKey, insightId);
   }
   const datacubeIdKey = 'datacubeid';
-  if (!searchParams.has(datacubeIdKey)) {
+  if (!searchParams.has(datacubeIdKey) && !_.isUndefined(datacubeIdKey)) {
     searchParams.set(datacubeIdKey, datacubeId);
   }
   return urlPrefix + separator + searchParams.toString();

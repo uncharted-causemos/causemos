@@ -578,13 +578,14 @@ export default {
       this.selectedInsight = insight;
       const savedURL = insight.url;
       const currentURL = this.$route.fullPath;
-      const datacubeId = _.first(this.selectedInsight.context_id);
       if (savedURL !== currentURL) {
         // FIXME: applying (private) insights that belong to analyses that no longer exist
         // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
 
         // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id, datacubeId);
+        const finalURL = savedURL.includes('/data/')
+          ? InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id, _.first(this.selectedInsight.context_id))
+          : InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id);
 
         // special case
         if (this.projectType !== ProjectType.Analysis && this.selectedInsight.visibility === 'private') {
