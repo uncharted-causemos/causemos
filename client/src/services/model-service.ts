@@ -206,7 +206,7 @@ const updateScenario = async (scenario: {
   id: string;
   model_id: string;
   is_valid: boolean;
-  experiment_id: string;
+  experiment_id: string | undefined;
   parameter?: ScenarioParameter;
   result?: ScenarioResult[];
 }) => {
@@ -484,8 +484,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
         projection_start: modelSummary.parameter.projection_start
       },
       engine: modelSummary.parameter.engine,
-      is_baseline: true,
-      is_valid: true
+      is_baseline: true
     };
     await createScenario(scenario);
   } catch (error) {

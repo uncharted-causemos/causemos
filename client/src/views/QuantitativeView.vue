@@ -355,7 +355,7 @@ export default defineComponent({
         id: id,
         model_id: this.currentCAG,
         is_valid: true,
-        experiment_id: draft.experimentId,
+        experiment_id: draft.experiment_id,
         parameter: draft.parameter,
         result: draft.result
       };
@@ -391,7 +391,7 @@ export default defineComponent({
       }
       const newScenario = {
         model_id: this.currentCAG,
-        experiment_id: draft.experimentId,
+        experiment_id: draft.experiment_id,
         result: draft.result,
         name: name,
         description: description,
@@ -453,7 +453,7 @@ export default defineComponent({
           is_valid: true,
           is_baseline: false,
           parameter: {
-            constraints: _.cloneDeep(selectedScenario.parameter.constraints),
+            constraints: _.cloneDeep(selectedScenario.parameter?.constraints ?? []),
             num_steps: this.projectionSteps,
             indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
             projection_start: this.modelSummary.parameter.projection_start
@@ -518,7 +518,7 @@ export default defineComponent({
       let result = null;
 
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.cleanConstraints(selectedScenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.cleanConstraints(selectedScenario.parameter?.constraints ?? []));
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         console.error(error);
@@ -529,7 +529,7 @@ export default defineComponent({
       this.setDraftScenarioDirty(false);
 
       // FIXME: Not great to directly write into draft
-      selectedScenario.experimentId = experimentId;
+      selectedScenario.experiment_id = experimentId;
       // FIXME: Add type for return value of modelService.getExperimentResult()
       selectedScenario.result = (result as any).results.data;
       selectedScenario.is_valid = true;
@@ -541,7 +541,7 @@ export default defineComponent({
           id: selectedScenario.id,
           model_id: this.currentCAG,
           is_valid: true,
-          experiment_id: selectedScenario.experimentId,
+          experiment_id: selectedScenario.experiment_id,
           parameter: selectedScenario.parameter,
           result: selectedScenario.result
         });
@@ -584,7 +584,7 @@ export default defineComponent({
       this.sensitivityMatrixData = null;
       const now = Date.now();
       this.sensitivityDataTimestamp = now;
-      const constraints = modelService.cleanConstraints(selectedScenario.parameter.constraints);
+      const constraints = modelService.cleanConstraints(selectedScenario.parameter?.constraints ?? []);
 
       const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
 
