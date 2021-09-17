@@ -49,6 +49,19 @@
           :selected-timeseries-points="selectedTimeseriesPoints"
           :selected-base-layer="selectedBaseLayer"
           :selected-data-layer="selectedDataLayer"
+          :qualifier-breakdown-data="qualifierBreakdownData"
+          :temporal-breakdown-data="temporalBreakdownData"
+          :selected-region-ids="selectedRegionIds"
+          :selected-qualifier-values="selectedQualifierValues"
+          :selected-breakdown-option="breakdownOption"
+          :selected-years="selectedYears"
+
+          @toggle-is-region-selected="toggleIsRegionSelected"
+          @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+          @toggle-is-year-selected="toggleIsYearSelected"
+          @set-selected-admin-level="setSelectedAdminLevel"
+          @set-breakdown-option="setBreakdownOption"
+
           @set-selected-scenario-ids="setSelectedScenarioIds"
           @set-relative-to="setRelativeTo"
           @new-runs-mode="newRunsMode=!newRunsMode"
@@ -106,37 +119,6 @@
             />
           </template>
         </datacube-card>
-        <drilldown-panel
-            class="drilldown"
-            :is-open="activeDrilldownTab !== null"
-            :tabs="drilldownTabs"
-            :active-tab-id="activeDrilldownTab"
-          >
-            <template #content>
-              <breakdown-pane
-                v-if="activeDrilldownTab ==='breakdown'"
-                :selected-admin-level="selectedAdminLevel"
-                :qualifier-breakdown-data="qualifierBreakdownData"
-                :regional-data="regionalData"
-                :temporal-breakdown-data="temporalBreakdownData"
-                :selected-spatial-aggregation="selectedSpatialAggregation"
-                :selected-temporal-aggregation="selectedTemporalAggregation"
-                :selected-temporal-resolution="selectedTemporalResolution"
-                :selected-timestamp="selectedTimestamp"
-                :selected-scenario-ids="selectedScenarioIds"
-                :selected-region-ids="selectedRegionIds"
-                :selected-qualifier-values="selectedQualifierValues"
-                :selected-breakdown-option="breakdownOption"
-                :selected-timeseries-points="selectedTimeseriesPoints"
-                :selected-years="selectedYears"
-                @toggle-is-region-selected="toggleIsRegionSelected"
-                @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-                @toggle-is-year-selected="toggleIsYearSelected"
-                @set-selected-admin-level="setSelectedAdminLevel"
-                @set-breakdown-option="setBreakdownOption"
-              />
-            </template>
-        </drilldown-panel>
       </div>
     </main>
   </div>
@@ -147,9 +129,7 @@ import _ from 'lodash';
 import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
 import ModelDescription from '@/components/data/model-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
@@ -185,8 +165,6 @@ export default defineComponent({
   name: 'ModelPublishingExperiment',
   components: {
     DatacubeCard,
-    DrilldownPanel,
-    BreakdownPane,
     DatacubeModelHeader,
     ModelPublishingChecklist,
     ModelDescription,

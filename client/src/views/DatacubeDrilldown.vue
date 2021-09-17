@@ -27,6 +27,20 @@
           :selected-base-layer="selectedBaseLayer"
           :selected-data-layer="selectedDataLayer"
           :unit="unit"
+
+          :qualifier-breakdown-data="qualifierBreakdownData"
+          :temporal-breakdown-data="temporalBreakdownData"
+          :selected-region-ids="selectedRegionIds"
+          :selected-qualifier-values="selectedQualifierValues"
+          :selected-breakdown-option="breakdownOption"
+          :selected-years="selectedYears"
+
+          @toggle-is-region-selected="toggleIsRegionSelected"
+          @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+          @toggle-is-year-selected="toggleIsYearSelected"
+          @set-selected-admin-level="setSelectedAdminLevel"
+          @set-breakdown-option="setBreakdownOption"
+
           @set-selected-scenario-ids="setSelectedScenarioIds"
           @set-relative-to="setRelativeTo"
           @new-runs-mode="newRunsMode=!newRunsMode"
@@ -106,38 +120,7 @@
             />
           </template>
         </datacube-card>
-        <drilldown-panel
-            class="drilldown"
-            :is-open="activeDrilldownTab !== null"
-            :tabs="drilldownTabs"
-            :active-tab-id="activeDrilldownTab"
-          >
-            <template #content>
-              <breakdown-pane
-                v-if="activeDrilldownTab ==='breakdown'"
-                :selected-admin-level="selectedAdminLevel"
-                :qualifier-breakdown-data="qualifierBreakdownData"
-                :regional-data="regionalData"
-                :temporal-breakdown-data="temporalBreakdownData"
-                :selected-spatial-aggregation="selectedSpatialAggregation"
-                :selected-temporal-aggregation="selectedTemporalAggregation"
-                :selected-temporal-resolution="selectedTemporalResolution"
-                :selected-timestamp="selectedTimestamp"
-                :selected-scenario-ids="selectedScenarioIds"
-                :selected-region-ids="selectedRegionIds"
-                :selected-qualifier-values="selectedQualifierValues"
-                :selected-breakdown-option="breakdownOption"
-                :selected-timeseries-points="selectedTimeseriesPoints"
-                :selected-years="selectedYears"
-                :unit="unit"
-                @toggle-is-region-selected="toggleIsRegionSelected"
-                @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-                @toggle-is-year-selected="toggleIsYearSelected"
-                @set-selected-admin-level="setSelectedAdminLevel"
-                @set-breakdown-option="setBreakdownOption"
-              />
-            </template>
-        </drilldown-panel>
+
       </div>
     </main>
   </div>
@@ -149,9 +132,7 @@ import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import { mapActions, mapGetters, useStore } from 'vuex';
 import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
-import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
@@ -167,25 +148,14 @@ import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useQualifiers from '@/services/composables/useQualifiers';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { Insight, ViewState, DataState } from '@/types/Insight';
+import { DataState, Insight, ViewState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
 import { getAnalysis } from '@/services/analysis-service';
-
-const DRILLDOWN_TABS = [
-  {
-    name: 'Breakdown',
-    id: 'breakdown',
-    // TODO: our version of FA doesn't include fa-chart
-    icon: 'fa-question'
-  }
-];
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
   components: {
     DatacubeCard,
-    DrilldownPanel,
-    BreakdownPane,
     DatacubeDescription,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
@@ -475,8 +445,6 @@ export default defineComponent({
     });
 
     return {
-      drilldownTabs: DRILLDOWN_TABS,
-      activeDrilldownTab: 'breakdown',
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
@@ -580,8 +548,8 @@ export default defineComponent({
       this.$router.push({
         name: 'dataComparative',
         params: {
-          project: this.project,
           analysisId: this.analysisId,
+          project: this.project,
           projectType: ProjectType.Analysis
         }
       });
@@ -744,5 +712,4 @@ export default defineComponent({
 .dropdown-config:not(:first-child) {
   margin-left: 5px;
 }
-
 </style>

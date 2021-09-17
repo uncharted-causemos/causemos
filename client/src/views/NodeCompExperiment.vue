@@ -42,6 +42,20 @@
         :selected-base-layer="selectedBaseLayer"
         :selected-data-layer="selectedDataLayer"
         :unit="unit"
+
+        :qualifier-breakdown-data="qualifierBreakdownData"
+        :temporal-breakdown-data="temporalBreakdownData"
+        :selected-region-ids="selectedRegionIds"
+        :selected-qualifier-values="selectedQualifierValues"
+        :selected-breakdown-option="breakdownOption"
+        :selected-years="selectedYears"
+
+        @toggle-is-region-selected="toggleIsRegionSelected"
+        @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+        @toggle-is-year-selected="toggleIsYearSelected"
+        @set-selected-admin-level="setSelectedAdminLevel"
+        @set-breakdown-option="setBreakdownOption"
+
         @set-selected-scenario-ids="setSelectedScenarioIds"
         @set-relative-to="setRelativeTo"
         @new-runs-mode="newRunsMode=!newRunsMode"
@@ -99,37 +113,6 @@
           />
         </template>
       </datacube-card>
-      <drilldown-panel
-          class="drilldown"
-          :is-open="activeDrilldownTab !== null"
-          :tabs="drilldownTabs"
-          :active-tab-id="activeDrilldownTab"
-        >
-          <template #content>
-            <breakdown-pane
-              v-if="activeDrilldownTab ==='breakdown'"
-              :selected-admin-level="selectedAdminLevel"
-              :qualifier-breakdown-data="qualifierBreakdownData"
-              :regional-data="regionalData"
-              :temporal-breakdown-data="temporalBreakdownData"
-              :selected-spatial-aggregation="selectedSpatialAggregation"
-              :selected-temporal-resolution="selectedTemporalResolution"
-              :selected-timestamp="selectedTimestamp"
-              :selected-scenario-ids="selectedScenarioIds"
-              :selected-region-ids="selectedRegionIds"
-              :selected-qualifier-values="selectedQualifierValues"
-              :selected-breakdown-option="breakdownOption"
-              :selected-timeseries-points="selectedTimeseriesPoints"
-              :selected-years="selectedYears"
-              :unit="unit"
-              @toggle-is-region-selected="toggleIsRegionSelected"
-              @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-              @toggle-is-year-selected="toggleIsYearSelected"
-              @set-selected-admin-level="setSelectedAdminLevel"
-              @set-breakdown-option="setBreakdownOption"
-            />
-          </template>
-      </drilldown-panel>
     </main>
   </div>
 </template>
@@ -138,9 +121,7 @@
 import _ from 'lodash';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import { mapActions, useStore } from 'vuex';
-import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
-import DrilldownPanel from '@/components/drilldown-panel.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
@@ -160,22 +141,10 @@ import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { ViewState } from '@/types/Insight';
 import modelService from '@/services/model-service';
 
-
-const DRILLDOWN_TABS = [
-  {
-    name: 'Breakdown',
-    id: 'breakdown',
-    // TODO: our version of FA doesn't include fa-chart
-    icon: 'fa-question'
-  }
-];
-
 export default defineComponent({
   name: 'NodeCompExperiment',
   components: {
     DatacubeCard,
-    DrilldownPanel,
-    BreakdownPane,
     Disclaimer,
     DatacubeDescription,
     DropdownButton,
@@ -383,8 +352,6 @@ export default defineComponent({
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     return {
-      drilldownTabs: DRILLDOWN_TABS,
-      activeDrilldownTab: 'breakdown',
       selectedTemporalResolution,
       selectedTemporalAggregation,
       selectedSpatialAggregation,
@@ -420,14 +387,14 @@ export default defineComponent({
       toggleIsYearSelected,
       timerHandler,
       newRunsMode,
+      setBreakdownOption,
+      setSelectedAdminLevel,
+      isExpanded,
+      mainModelOutput,
       scenarioCount,
       fetchData,
       unit,
       outputs,
-      setSelectedAdminLevel,
-      isExpanded,
-      mainModelOutput,
-      setBreakdownOption,
       selectLabel,
       navBackLabel,
       currentCAG,
@@ -580,8 +547,6 @@ export default defineComponent({
         }
       });
     },
-
-    // eslint-disable-next-line @typescript-eslint/no-unused-vars
     onOutputSelectionChange(event: any) {
       const selectedOutputIndex = event.target.selectedIndex;
       // update the store so that other components can sync
@@ -592,9 +557,14 @@ export default defineComponent({
     updateTabView(val: string) {
       this.currentTabView = val;
     },
-
+    setTemporalAggregationSelection(temporalAgg: AggregationOption) {
+      this.selectedTemporalAggregation = temporalAgg;
+    },
     setSpatialAggregationSelection(spatialAgg: AggregationOption) {
       this.selectedSpatialAggregation = spatialAgg;
+    },
+    setTemporalResolutionSelection(temporalRes: TemporalResolutionOption) {
+      this.selectedTemporalResolution = temporalRes;
     },
     setSelectedScenarioIds(newIds: string[]) {
       if (this.metadata?.type !== DatacubeType.Indicator) {
