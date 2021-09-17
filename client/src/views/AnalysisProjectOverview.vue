@@ -531,7 +531,7 @@ $padding-size: 2vh;
   overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding-top: 1rem;
+  padding: 10px;
 }
 
 .edit-model-desc {
