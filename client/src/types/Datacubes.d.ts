@@ -44,6 +44,7 @@ export interface BreakdownData {
 }
 
 export interface NamedBreakdownData {
+  id: string;
   name: string;
   data: BreakdownData;
 }

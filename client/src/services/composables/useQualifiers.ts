@@ -9,19 +9,23 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const convertResponsesToBreakdownData = (
   responses: QualifierBreakdownResponse[][],
-  modelRunIds: string[]
+  modelRunIds: string[],
+  qualifierIdToNameMap: Map<string, string>
 ) => {
   const breakdownDataList: NamedBreakdownData[] = [];
   responses.forEach((breakdownVariables, index) => {
     const runId = modelRunIds[index];
     breakdownVariables.forEach(breakdownVariable => {
-      const { name: breakdownVariableName, options } = breakdownVariable;
+      const { name: breakdownVariableId, options } = breakdownVariable;
+      const breakdownVariableDisplayName =
+        qualifierIdToNameMap.get(breakdownVariableId) ?? breakdownVariableId;
       let potentiallyExistingEntry = breakdownDataList.find(
-        breakdownData => breakdownData.name === breakdownVariableName
+        breakdownData => breakdownData.id === breakdownVariableId
       );
       if (potentiallyExistingEntry === undefined) {
         potentiallyExistingEntry = {
-          name: breakdownVariableName,
+          id: breakdownVariableId,
+          name: breakdownVariableDisplayName,
           data: {}
         };
         breakdownDataList.push(potentiallyExistingEntry);
@@ -29,17 +33,17 @@ const convertResponsesToBreakdownData = (
       // We've confirmed that potentiallyExistingEntry is not undefined, so
       //  rename and strengthen Typescript type
       const existingEntry = potentiallyExistingEntry;
-      if (existingEntry.data[breakdownVariableName] === undefined) {
-        existingEntry.data[breakdownVariableName] = [];
+      if (existingEntry.data[breakdownVariableId] === undefined) {
+        existingEntry.data[breakdownVariableId] = [];
       }
       options.forEach(option => {
         const { name: optionId, value } = option;
         let potentiallyExistingOption = existingEntry.data[
-          breakdownVariableName
+          breakdownVariableId
         ].find(option => option.id === optionId);
         if (potentiallyExistingOption === undefined) {
           potentiallyExistingOption = { id: optionId, values: {} };
-          existingEntry.data[breakdownVariableName].push(
+          existingEntry.data[breakdownVariableId].push(
             potentiallyExistingOption
           );
         }
@@ -125,6 +129,14 @@ export default function useQualifiers(
     const qualifierVariableIds = filteredQualifierVariables.value.map(
       variable => variable.name
     );
+    const qualifierVariableNames = filteredQualifierVariables.value.map(
+      variable => variable.display_name
+    );
+    const qualifierIdToNameMap = new Map<string, string>();
+    qualifierVariableIds.forEach((id, index) => {
+      const name = qualifierVariableNames[index];
+      qualifierIdToNameMap.set(id, name);
+    });
     const promises = selectedScenarioIds.value.map(runId =>
       getQualifierBreakdown(
         data_id,
@@ -145,7 +157,8 @@ export default function useQualifiers(
     if (isCancelled) return;
     qualifierBreakdownData.value = convertResponsesToBreakdownData(
       responses,
-      selectedScenarioIds.value
+      selectedScenarioIds.value,
+      qualifierIdToNameMap
     );
   });
 
