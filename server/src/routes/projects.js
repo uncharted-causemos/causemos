@@ -317,23 +317,23 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   res.json(results);
 }));
 
-const mapResultsToHighlights = (results, sourceHighlights, wordsToLabel) => {
-  results.forEach(result => {
-    const labelWords = result.split("/").splice(-1)[0].split("_");
-    labelWords.forEach(word => {
-      if (!(result in sourceHighlights) && word in wordsToLabel) {
-        // match concepts with the original label
-        // word -> first label that contains the word -> highlights for the label
-        sourceHighlights[result] = sourceHighlights[wordsToLabel[word]];
-      }
-    });
-    // no highlight exists, likely because it was a straightforward match
-    // e.g q=anti returns antibodies
-    if (!(result in sourceHighlights)) {
-      sourceHighlights[result] = {};
-    }
-  });
-};
+// const mapResultsToHighlights = (results, sourceHighlights, wordsToLabel) => {
+//   results.forEach(result => {
+//     const labelWords = result.split("/").splice(-1)[0].split("_");
+//     labelWords.forEach(word => {
+//       if (!(result in sourceHighlights) && word in wordsToLabel) {
+//         // match concepts with the original label
+//         // word -> first label that contains the word -> highlights for the label
+//         sourceHighlights[result] = sourceHighlights[wordsToLabel[word]];
+//       }
+//     });
+//     // no highlight exists, likely because it was a straightforward match
+//     // e.g q=anti returns antibodies
+//     if (!(result in sourceHighlights)) {
+//       sourceHighlights[result] = {};
+//     }
+//   });
+// };
 
 /**
  * GET Search path between source and target nodes
