@@ -46,14 +46,24 @@
             :class="{ 'private-insight-title': contextInsight.visibility === 'private' }">
             {{ contextInsight.name }}
           </div>
-          <div class="context-insight-action" @click.stop="openEditor(contextInsight.id)">
-            <i class="fa fa-ellipsis-h context-insight-header-btn" />
-            <context-insight-editor
-              v-if="activeContextInsight === contextInsight.id"
-              @delete="deleteContextInsight(contextInsight.id)"
-              @edit="editContextInsight(contextInsight)"
-            />
-          </div>
+          <options-button :dropdown-below="true">
+            <template #content>
+              <div
+                class="dropdown-option"
+                @click="editContextInsight(contextInsight)"
+              >
+                <i class="fa fa-edit" />
+                Edit
+              </div>
+              <div
+                class="dropdown-option"
+                @click="deleteContextInsight(contextInsight.id)"
+              >
+                <i class="fa fa-trash" />
+                Delete
+              </div>
+            </template>
+          </options-button>
         </div>
         <div class="context-insight-content">
           <img
@@ -96,8 +106,6 @@ import DropdownButton from '@/components/dropdown-button.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
 
-import ContextInsightEditor from '@/components/context-insight-panel/context-insight-editor';
-
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
 
@@ -107,14 +115,15 @@ import useInsightsData from '@/services/composables/useInsightsData';
 import { ProjectType } from '@/types/Enums';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import MessageDisplay from '@/components/widgets/message-display';
+import OptionsButton from '@/components/widgets/options-button.vue';
 
 export default {
   name: 'ListContextInsightPane',
   components: {
-    ContextInsightEditor,
     DropdownButton,
     MessageDisplay,
-    ModalConfirmation
+    ModalConfirmation,
+    OptionsButton
   },
   props: {
     allowNewInsights: {
@@ -123,7 +132,6 @@ export default {
     }
   },
   data: () => ({
-    activeContextInsight: null,
     exportActive: false,
     messageNoData: INSIGHTS.NO_DATA,
     selectedContextInsight: null,
@@ -189,13 +197,6 @@ export default {
         default:
           break;
       }
-    },
-    openEditor(id) {
-      if (id === this.activeContextInsight) {
-        this.activeContextInsight = null;
-        return;
-      }
-      this.activeContextInsight = id;
     },
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
@@ -521,14 +522,6 @@ export default {
       display: flex;
       justify-content: space-between;
       align-items: center;
-      .context-insight-header-btn {
-        cursor: pointer;
-        padding: 5px;
-        color: gray;
-      }
-      .context-insight-action {
-        flex: 0 1 auto;
-      }
       .context-insight-title {
         flex: 1 1 auto;
         color: gray;
