@@ -583,6 +583,7 @@ export default {
         // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
 
         // add 'insight_id' as a URL param so that the target page can apply it
+        // /data/ will be in the url if we are in the datacube drilldown page in which case datacube_id should be in the route.
         const finalURL = savedURL.includes('/data/')
           ? InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id, _.first(this.selectedInsight.context_id))
           : InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id);
