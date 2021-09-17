@@ -63,8 +63,6 @@
           v-for="questionItem in questionsList"
           :key="questionItem.id"
           class="checklist-item"
-          :class="{'step-selected': selectedQuestion && questionItem.question === selectedQuestion.question}"
-          @click="applyQuestionContext(questionItem)"
           @drop='onDrop($event, questionItem)'
           @dragover='onDragOver($event)'
           @dragenter='onDragEnter($event)'
@@ -75,13 +73,13 @@
             <!-- first row display the question -->
             <div class="checklist-item-question">
               <i class="fa fa-bars checklist-item-menu" />
+              <span class="question-title"> {{ questionItem.question }}</span>
               <span
                 v-if="questionItem.visibility !== 'private'"
                 class="public-question-label"
               >
                 Public
               </span>
-              <span class="question-title"> {{ questionItem.question }}</span>
               <i
                 v-if="hasTour(questionItem)"
                 class="fa fa-lg fa-info-circle"
@@ -317,15 +315,7 @@ export default defineComponent({
     setActive(tab: string) {
       this.currentTab = tab;
     },
-    applyQuestionContext(analyticalQuestion: AnalyticalQuestion) {
-      if (this.selectedQuestion && this.selectedQuestion.question === analyticalQuestion.question) {
-        this.selectedQuestion = null;
-      } else {
-        this.selectedQuestion = analyticalQuestion;
-      }
-    },
     onDragStart(evt: any, questionItem: AnalyticalQuestion) {
-      this.selectedQuestion = null;
       evt.dataTransfer.dropEffect = 'move';
       evt.dataTransfer.effectAllowed = 'move';
       evt.dataTransfer.setData('question_id', questionItem.id);
@@ -737,10 +727,6 @@ export default defineComponent({
     }
   }
 
-  .step-selected {
-    border: 2px solid darkgray;
-  }
-
   .insight-action {
     flex: 1 1 auto;
     text-align: right;
@@ -774,7 +760,6 @@ export default defineComponent({
           flex-direction: row;
           display: flex;
           align-items: baseline;
-          cursor: pointer;
 
           .checklist-item-menu {
             cursor: move;
@@ -785,7 +770,7 @@ export default defineComponent({
             user-select: none;
             flex: 1;
             min-width: 0;
-            margin-left: 5px;
+            margin-right: 5px;
             font-size: $font-size-large;
           }
           .public-question-label {
