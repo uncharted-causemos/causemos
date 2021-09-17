@@ -120,7 +120,6 @@
             />
           </template>
         </datacube-card>
-
       </div>
     </main>
   </div>
