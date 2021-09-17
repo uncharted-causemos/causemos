@@ -13,16 +13,6 @@ const basicAuthToken = auth.getBasicAuthToken(process.env.DOJO_USERNAME, process
 const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3', 'lat', 'lng', 'feature', 'value'];
 
 /**
- * Return count of all model runs belonging to a model
- *
- * @param{string} modelId - model id
- */
-const getAllModelRunsCount = async(modelId) => {
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return connection.count([{ field: 'model_id', value: modelId }]);
-};
-
-/**
  * Submit a new model run to Jataware and store information about it in ES.
  *
  * @param {ModelRun} metadata - model run metadata
@@ -46,13 +36,17 @@ const submitModelRun = async(metadata) => {
   const result = await requestAsPromise(pipelinePayload);
   Logger.info(`Model execution response ${result}`);
 
-  // Assign run name for this newly created model run
-  const existingRunsCount = await getAllModelRunsCount(metadata.model_id);
-  // special case if this run is the default run
-  const runName = metadata.is_default_run ? 'default' : 'Run ' + (existingRunsCount + 1);
-
-  // If API call succeeded, insert metadata into ES
+  // Insert into ES
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+
+  // Assign run name for this newly created model run with a
+  // special case if this run is the default run
+  const existingRunsCount = await connection.count([
+    { field: 'model_id', value: metadata.model_id },
+    { field: 'is_default_run', value: false }
+  ]);
+  const runName = metadata.is_default_run ? 'Default' : 'Run ' + (existingRunsCount + 1);
+
   return await connection.insert({
     ...metadata,
     status: 'SUBMITTED',
