@@ -52,41 +52,15 @@
     <template v-if="showDeleteModal === false && showNewAnalyticalQuestion === false">
       <div class="analytical-questions-header">
         <span>Questions ({{questionsList.length}})</span>
-        <div style="display: flex; align-items: center">
-          <button
-            v-tooltip.top-center="'Delete the selected analytical question'"
-            type="button"
-            class="btn remove-button button-spacing"
-            :disabled="selectedQuestion === null"
-            @click="initiateQuestionDeletion">
-              <i class="fa fa-trash" />
-              Delete
-          </button>
-          <button
-            v-tooltip.top-center="'Add a new analytical question'"
-            type="button"
-            class="btn btn-primary btn-call-for-action button-spacing"
-            @click="addNewQuestion">
-              <i class="fa fa-plus-circle" />
-              Add
-          </button>
-          <div class="insight-action" @click.stop="isOpenEditor=!isOpenEditor">
-            <i class="fa fa-ellipsis-v insight-header-btn" />
-            <dropdown-control v-if="isOpenEditor" class="insight-editor-dropdown">
-              <template #content>
-                <div
-                  class="dropdown-option"
-                  :class="{'disabled': selectedQuestion === null}"
-                  @click="promote"
-                >
-                  <i class="fa fa-edit" />
-                  Promote
-                </div>
-              </template>
-            </dropdown-control>
-          </div>
-        </div>
       </div>
+      <button
+        v-tooltip.top-center="'Add a new analytical question'"
+        type="button"
+        class="btn btn-default new-question-button"
+        @click="addNewQuestion">
+          <i class="fa fa-plus-circle" />
+          Add new question
+      </button>
       <div v-if="questionsList.length > 0" class="analytical-questions-container">
         <div
           v-for="questionItem in questionsList"
@@ -105,11 +79,12 @@
             <div class="checklist-item-question">
               <i class="fa fa-bars checklist-item-menu" />
               <span
-                @mousedown.stop.prevent
-                class="question-title"
-                :class="{ 'private-question-title': questionItem.visibility === 'private' }">
-                  {{ questionItem.question }}
+                v-if="questionItem.visibility !== 'private'"
+                class="public-question-label"
+              >
+                Public
               </span>
+              <span class="question-title"> {{ questionItem.question }}</span>
               <i
                 v-if="hasTour(questionItem)"
                 class="fa fa-lg fa-info-circle"
@@ -118,6 +93,28 @@
                 @click.stop.prevent="startTour(questionItem)"
                 @mousedown.stop.prevent
               />
+              <options-button
+                :dropdown-below="true"
+                :wider-dropdown-options="true"
+                class="options-button"
+              >
+                <template #content>
+                  <div
+                    class="dropdown-option"
+                    @click="promote(questionItem)"
+                  >
+                    <i class="fa fa-edit" />
+                    Make public
+                  </div>
+                  <div
+                    class="dropdown-option"
+                    @click="initiateQuestionDeletion(questionItem)"
+                  >
+                    <i class="fa fa-trash" />
+                    Delete
+                  </div>
+                </template>
+              </options-button>
             </div>
             <!-- second row display a list of linked insights -->
             <message-display
@@ -156,17 +153,17 @@ import { defineComponent } from 'vue';
 import _ from 'lodash';
 import { QUESTIONS } from '@/utils/messages-util';
 import { addQuestion, deleteQuestion, updateQuestion } from '@/services/question-service';
-import DropdownControl from '@/components/dropdown-control.vue';
 import { ProjectType } from '@/types/Enums';
 import useQuestionsData from '@/services/composables/useQuestionsData';
 import Shepherd from 'shepherd.js';
 import MessageDisplay from '../widgets/message-display.vue';
+import OptionsButton from '../widgets/options-button.vue';
 
 export default defineComponent({
   name: 'ListAnalyticalQuestionsPane',
   components: {
-    DropdownControl,
-    MessageDisplay
+    MessageDisplay,
+    OptionsButton
   },
   setup() {
     const { questionsList, reFetchQuestions, getInsightsByIDs } = useQuestionsData();
@@ -185,7 +182,6 @@ export default defineComponent({
     showNewAnalyticalQuestion: false,
     newQuestionText: '',
     showDeleteModal: false,
-    isOpenEditor: false,
     toursMetadata: [
       {
         baseQuestion: 'What are the appropriate aggregation functions?',
@@ -238,14 +234,14 @@ export default defineComponent({
       return this.projectType === ProjectType.Analysis ? 'private' : 'public';
       // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
     },
-    promote() {
-      // update selectedQuestion to be public, i.e., visible in all projects
-      if (this.selectedQuestion) {
-        this.selectedQuestion.visibility = 'public';
-        this.selectedQuestion.project_id = '';
-        this.selectedQuestion.context_id = [''];
-        this.selectedQuestion.url = '';
-        updateQuestion(this.selectedQuestion.id as string, this.selectedQuestion).then(result => {
+    promote(question: AnalyticalQuestion) {
+      // update question to be public, i.e., visible in all projects
+      if (question) {
+        question.visibility = 'public';
+        question.project_id = '';
+        question.context_id = [''];
+        question.url = '';
+        updateQuestion(question.id as string, question).then(result => {
           const message = result.status === 200 ? QUESTIONS.SUCCESFUL_UPDATE : QUESTIONS.ERRONEOUS_UPDATE;
           // FIXME: cast to 'any' since typescript cannot see mixins yet!
           if (message === QUESTIONS.SUCCESFUL_UPDATE) {
@@ -289,8 +285,9 @@ export default defineComponent({
         }
       });
     },
-    initiateQuestionDeletion() {
-      if (this.selectedQuestion?.visibility === 'public') {
+    initiateQuestionDeletion(question: AnalyticalQuestion) {
+      this.selectedQuestion = question;
+      if (question.visibility === 'public') {
         this.showDeleteModal = true;
       } else {
         this.deleteSelectedQuestion();
@@ -732,11 +729,6 @@ export default defineComponent({
     border-width: thin;
   }
 
-  .button-spacing {
-    padding: 4px;
-    margin: 2px;
-  }
-
   .remove-button {
     background: #F44336;
     color: white;
@@ -786,12 +778,12 @@ export default defineComponent({
         flex-direction: column;
         display: flex;
         font-size: $font-size-medium;
-        margin-bottom: 20px;
+        margin-bottom: 30px;
 
         .checklist-item-question {
           flex-direction: row;
           display: flex;
-          align-items: center;
+          align-items: baseline;
           cursor: pointer;
 
           .checklist-item-menu {
@@ -806,8 +798,10 @@ export default defineComponent({
             margin-left: 5px;
             font-size: $font-size-large;
           }
-          .private-question-title {
-            color: black;
+          .public-question-label {
+            @include header-secondary;
+            // Make label the same height as the question so it is centered
+            line-height: $font-size-large;
           }
         }
         .checklist-item-insight {
@@ -835,5 +829,13 @@ export default defineComponent({
   .no-insight-warning {
     margin-top: 5px;
     margin-left: 20px;
+  }
+
+  .new-question-button {
+    margin: 10px 0;
+  }
+
+  .options-button {
+    align-self: flex-start;
   }
 </style>
