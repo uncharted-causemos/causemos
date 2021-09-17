@@ -32,7 +32,7 @@ function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {
 
 // Compute min/max stats for regional data
 export function computeRegionalStats(regionData: RegionalAggregations, baselineProp: string | null): AnalysisMapStats {
-  const global: MapLayerStats = {};
+  const globalStats: MapLayerStats = {};
   // Stats globally across all runs
   for (const [key, data] of Object.entries(regionData)) {
     const values = [];
@@ -40,7 +40,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
       values.push(...Object.values(_.omit(v.values, 'unselected region')));
     }
     if (values.length) {
-      global[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
+      globalStats[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
     }
   }
   const baseline: MapLayerStats = {};
@@ -67,7 +67,7 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
     }
   }
   return {
-    global,
+    global: globalStats,
     baseline,
     difference
   };
@@ -77,16 +77,16 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
   // NOTE: stat data is stored in the backend with subtile (grid cell) precision (zoom) level instead of the tile zoom level.
   // The difference is 6 so we subtract the difference to make the lowest level 0.
   const Z_DIFF = 6;
-  const global: MapLayerStats = {};
+  const globalStats: MapLayerStats = {};
   const baseline: MapLayerStats = {};
   // Stats globally across all maps
   for (const item of gridOutputStats) {
     for (const stat of item.stats) {
       const zoom = stat.zoom - Z_DIFF;
-      if (global[zoom]) {
-        global[zoom] = resolveSameMinMaxValue({ min: Math.min(global[zoom].min, stat.min), max: Math.max(global[zoom].max, stat.max) });
+      if (globalStats[zoom]) {
+        globalStats[zoom] = resolveSameMinMaxValue({ min: Math.min(globalStats[zoom].min, stat.min), max: Math.max(globalStats[zoom].max, stat.max) });
       } else {
-        global[zoom] = resolveSameMinMaxValue({ min: stat.min, max: stat.max });
+        globalStats[zoom] = resolveSameMinMaxValue({ min: stat.min, max: stat.max });
       }
     }
   }
@@ -98,7 +98,7 @@ export function computeGridLayerStats(gridOutputStats: OutputStatsResult[], base
     });
   }
   return {
-    global,
+    global: globalStats,
     baseline,
     difference: {}
   };
