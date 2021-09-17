@@ -128,7 +128,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
-import { mapActions, mapGetters, useStore } from 'vuex';
+import { useStore } from 'vuex';
 import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
@@ -169,6 +169,12 @@ export default defineComponent({
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+    const project = computed(() => store.getters['app/project']);
+    const projectType = computed(() => store.getters['app/projectType']);
+
+
+    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
+    const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
     const selectedAdminLevel = ref(0);
     const isExpanded = true;
 
@@ -331,6 +337,138 @@ export default defineComponent({
       selectedAdminLevel.value = newValue;
     };
 
+    const setSpatialAggregationSelection = (spatialAgg: AggregationOption) => {
+      selectedSpatialAggregation.value = spatialAgg;
+    };
+    const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
+      selectedTemporalResolution.value = temporalRes;
+    };
+    const setSelectedScenarioIds = (newIds: string[]) => {
+      if (metadata?.value?.type !== DatacubeType.Indicator) {
+        if (_.isEqual(selectedScenarioIds.value, newIds)) return;
+      }
+      selectedScenarioIds.value = newIds;
+
+      clearRouteParam();
+
+      if (newIds.length > 0) {
+        // selecting a run or multiple runs when the desc tab is active should always open the data tab
+        //  selecting a run or multiple runs otherwise should respect the current tab
+        if (currentTabView.value === 'description') {
+          updateTabView('data');
+        }
+      } else {
+        updateTabView('description');
+      }
+    };
+
+    const setTemporalAggregationSelection = (temporalAgg: AggregationOption) => {
+      selectedTemporalAggregation.value = temporalAgg;
+    };
+
+    const updateTabView = (val: string) => {
+      currentTabView.value = val;
+    };
+
+    const setBaseLayer = (val: BASE_LAYER) => {
+      selectedBaseLayer.value = val;
+    };
+    const setDataLayer = (val: DATA_LAYER) => {
+      selectedDataLayer.value = val;
+    };
+
+
+    const onClose = async () => {
+      router.push({
+        name: 'dataComparative',
+        params: {
+          analysisId: analysisId.value,
+          project: project.value,
+          projectType: ProjectType.Analysis
+        }
+      });
+    };
+
+    const onOutputSelectionChange = (event: any) => {
+      const selectedOutputIndex = event.target.selectedIndex;
+      // update the store so that other components can sync
+      const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+      updatedCurrentOutputsMap[metadata?.value?.id ?? ''] = selectedOutputIndex;
+      setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+    };
+
+
+    const updateStateFromInsight = async (insight_id: string) => {
+      const loadedInsight: Insight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedModelId) {
+          // this will reload datacube metadata as well as scenario runs
+          selectedModelId.value = loadedInsight.data_state?.selectedModelId;
+        }
+        if (loadedInsight.data_state?.selectedScenarioIds) {
+          // this would only be valid and effective if/after datacube runs are reloaded
+          setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+          setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          setRelativeTo(loadedInsight.data_state?.relativeTo);
+        }
+        // view state
+        if (loadedInsight.view_state?.spatialAggregation) {
+          selectedSpatialAggregation.value = loadedInsight.view_state?.spatialAggregation as AggregationOption;
+        }
+        if (loadedInsight.view_state?.temporalAggregation) {
+          selectedTemporalAggregation.value = loadedInsight.view_state?.temporalAggregation as AggregationOption;
+        }
+        if (loadedInsight.view_state?.temporalResolution) {
+          selectedTemporalResolution.value = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
+        }
+        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
+          // FIXME
+          updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
+        }
+        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
+          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
+          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.view_state?.selectedMapBaseLayer) {
+          setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
+        }
+        if (loadedInsight.view_state?.selectedMapDataLayer) {
+          setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
+        }
+        if (loadedInsight.view_state?.breakdownOption !== undefined) {
+          setBreakdownOption(loadedInsight.view_state?.breakdownOption);
+        }
+        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
+          setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedYears !== undefined) {
+          initialSelectedYears.value = _.clone(loadedInsight.data_state?.selectedYears);
+        }
+      }
+    };
+
     const {
       qualifierBreakdownData,
       toggleIsQualifierSelected,
@@ -444,56 +582,70 @@ export default defineComponent({
     });
 
     return {
-      selectedTemporalResolution,
-      selectedTemporalAggregation,
-      selectedSpatialAggregation,
-      selectedAdminLevel,
-      selectedModelId,
-      selectedScenarioIds,
-      selectedTimestamp,
+      AggregationOption,
       allModelRunData,
       allScenarioIds,
-      regionalData,
-      outputSpecs,
-      currentTabView,
-      metadata,
-      currentOutputIndex,
-      setSelectedTimestamp,
-      visibleTimeseriesData,
+      analysisId,
+      analysisItems,
       baselineMetadata,
-      relativeTo,
-      setRelativeTo,
       breakdownOption,
-      temporalBreakdownData,
-      AggregationOption,
-      TemporalResolutionOption,
-      selectedTimeseriesPoints,
-      selectedBaseLayer,
-      selectedDataLayer,
+      clearRouteParam,
+      currentOutputIndex,
+      currentTabView,
       datacubeCurrentOutputsMap,
-      toggleIsRegionSelected,
-      selectedRegionIds,
-      qualifierBreakdownData,
-      toggleIsQualifierSelected,
-      selectedQualifierValues,
-      selectedYears,
-      toggleIsYearSelected,
-      timerHandler,
-      initialSelectedRegionIds,
+      fetchData,
+      hideInsightPanel,
       initialSelectedQualifierValues,
-      newRunsMode,
+      initialSelectedRegionIds,
       initialSelectedYears,
-      setBreakdownOption,
-      setSelectedAdminLevel,
       isExpanded,
       mainModelOutput,
-      scenarioCount,
-      fetchData,
-      unit,
+      metadata,
+      newRunsMode,
+      onClose,
+      onOutputSelectionChange,
       outputs,
-      clearRouteParam,
-      analysisItems,
-      analysisId
+      outputSpecs,
+      project,
+      projectType,
+      qualifierBreakdownData,
+      regionalData,
+      relativeTo,
+      scenarioCount,
+      selectedAdminLevel,
+      selectedBaseLayer,
+      selectedDataLayer,
+      selectedModelId,
+      selectedQualifierValues,
+      selectedRegionIds,
+      selectedScenarioIds,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      selectedTimeseriesPoints,
+      selectedTimestamp,
+      selectedYears,
+      setBaseLayer,
+      setBreakdownOption,
+      setDatacubeCurrentOutputsMap,
+      setDataLayer,
+      setRelativeTo,
+      setSelectedAdminLevel,
+      setSelectedScenarioIds,
+      setSelectedTimestamp,
+      setSpatialAggregationSelection,
+      setTemporalAggregationSelection,
+      setTemporalResolutionSelection,
+      temporalBreakdownData,
+      TemporalResolutionOption,
+      timerHandler,
+      toggleIsQualifierSelected,
+      toggleIsRegionSelected,
+      toggleIsYearSelected,
+      unit,
+      updateStateFromInsight,
+      updateTabView,
+      visibleTimeseriesData
     };
   },
   data: () => ({
@@ -524,141 +676,6 @@ export default defineComponent({
 
     if (this.projectType === ProjectType.Analysis) {
       this.analysis = await getAnalysis(this.analysisId);
-    }
-  },
-  computed: {
-    ...mapGetters({
-      project: 'app/project',
-      projectType: 'app/projectType'
-    })
-  },
-  methods: {
-    ...mapActions({
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
-      hideInsightPanel: 'insightPanel/hideInsightPanel'
-    }),
-    setBaseLayer(val: BASE_LAYER) {
-      this.selectedBaseLayer = val;
-    },
-    setDataLayer(val: DATA_LAYER) {
-      this.selectedDataLayer = val;
-    },
-    async onClose() {
-      this.$router.push({
-        name: 'dataComparative',
-        params: {
-          analysisId: this.analysisId,
-          project: this.project,
-          projectType: ProjectType.Analysis
-        }
-      });
-    },
-    onOutputSelectionChange(event: any) {
-      const selectedOutputIndex = event.target.selectedIndex;
-      // update the store so that other components can sync
-      const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-      updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
-      this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
-    },
-    updateTabView(val: string) {
-      this.currentTabView = val;
-    },
-    async updateStateFromInsight(insight_id: string) {
-      const loadedInsight: Insight = await getInsightById(insight_id);
-      // FIXME: before applying the insight, which will overwrite current state,
-      //  consider pushing current state to the url to support browser hsitory
-      //  in case the user wants to navigate to the original state using back button
-      if (loadedInsight) {
-        //
-        // insight was found and loaded
-        //
-        // data state
-        // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedModelId) {
-          // this will reload datacube metadata as well as scenario runs
-          this.selectedModelId = loadedInsight.data_state?.selectedModelId;
-        }
-        if (loadedInsight.data_state?.selectedScenarioIds) {
-          // this would only be valid and effective if/after datacube runs are reloaded
-          this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
-        }
-        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
-          this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
-        }
-        if (loadedInsight.data_state?.relativeTo !== undefined) {
-          this.setRelativeTo(loadedInsight.data_state?.relativeTo);
-        }
-        // view state
-        if (loadedInsight.view_state?.spatialAggregation) {
-          this.selectedSpatialAggregation = loadedInsight.view_state?.spatialAggregation as AggregationOption;
-        }
-        if (loadedInsight.view_state?.temporalAggregation) {
-          this.selectedTemporalAggregation = loadedInsight.view_state?.temporalAggregation as AggregationOption;
-        }
-        if (loadedInsight.view_state?.temporalResolution) {
-          this.selectedTemporalResolution = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
-        }
-        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-          // FIXME
-          this.updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
-        }
-        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
-          updatedCurrentOutputsMap[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
-          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
-        }
-        if (loadedInsight.view_state?.selectedMapBaseLayer) {
-          this.setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
-        }
-        if (loadedInsight.view_state?.selectedMapDataLayer) {
-          this.setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
-        }
-        if (loadedInsight.view_state?.breakdownOption !== undefined) {
-          this.setBreakdownOption(loadedInsight.view_state?.breakdownOption);
-        }
-        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
-          this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
-        }
-        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
-          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
-        }
-        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
-          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
-        }
-        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.selectedYears !== undefined) {
-          this.initialSelectedYears = _.clone(loadedInsight.data_state?.selectedYears);
-        }
-      }
-    },
-    setTemporalAggregationSelection(temporalAgg: AggregationOption) {
-      this.selectedTemporalAggregation = temporalAgg;
-    },
-    setSpatialAggregationSelection(spatialAgg: AggregationOption) {
-      this.selectedSpatialAggregation = spatialAgg;
-    },
-    setTemporalResolutionSelection(temporalRes: TemporalResolutionOption) {
-      this.selectedTemporalResolution = temporalRes;
-    },
-    setSelectedScenarioIds(newIds: string[]) {
-      if (this.metadata?.type !== DatacubeType.Indicator) {
-        if (_.isEqual(this.selectedScenarioIds, newIds)) return;
-      }
-      this.selectedScenarioIds = newIds;
-
-      this.clearRouteParam();
-
-      if (newIds.length > 0) {
-        // selecting a run or multiple runs when the desc tab is active should always open the data tab
-        //  selecting a run or multiple runs otherwise should respect the current tab
-        if (this.currentTabView === 'description') {
-          this.updateTabView('data');
-        }
-      } else {
-        this.updateTabView('description');
-      }
     }
   }
 });
