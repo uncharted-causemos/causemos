@@ -33,11 +33,11 @@ const getBulkErrors = (body, num = 2) => {
 /**
  * Returns elasticsearch highlights with the search results.
  * Highlights only works for fields that are specified.
- * 
+ *
  * Completes a query_string search, with any provided filters
- * 
+ *
  * Filters must be in the form of a list of objects, containing simple filters, e.g term filters
- * 
+ *
  * @param {object} adapter
  * @param {string} queryString
  * @param {list} filters
@@ -45,7 +45,9 @@ const getBulkErrors = (body, num = 2) => {
  */
 const searchAndHighlight = async (index, queryString, filters = [], fields = []) => {
   const fieldsToHighlight = {};
-  fields.forEach(f => { fieldsToHighlight[f] = {} });
+  fields.forEach(f => {
+    fieldsToHighlight[f] = {};
+  });
   let query = {};
   if (_.isEmpty(filters)) {
     query = {
@@ -73,8 +75,8 @@ const searchAndHighlight = async (index, queryString, filters = [], fields = [])
       query,
       highlight: {
         fields: fieldsToHighlight,
-        pre_tags: "<m>",
-        post_tags: "</m>"
+        pre_tags: '<m>',
+        post_tags: '</m>'
       }
     }
   });

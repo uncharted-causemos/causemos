@@ -626,24 +626,24 @@ const getProjectEdges = async (projectId, filters) => {
 /**
  * Used for grabbing related ontology labels to assist in searching
  * subj and obj concepts in projects
- * 
- * @param {string} queryString 
- * @param {string} projectId 
- * @returns 
+ *
+ * @param {string} queryString
+ * @param {string} projectId
+ * @returns
  */
 const searchOntologyAndHighlight = async (queryString, projectId) => {
-  const prefixes = queryString.split(" ").map(query => {
-    return query + "*";
-  }).join(" ");
+  const prefixes = queryString.split(' ').map(query => {
+    return query + '*';
+  }).join(' ');
   const filters = [
     {
       term: {
         project_id: projectId
-      },
-    },
+      }
+    }
   ];
-  return await searchAndHighlight(RESOURCE.ONTOLOGY, prefixes, filters, ["examples", "label"]);
-}
+  return await searchAndHighlight(RESOURCE.ONTOLOGY, prefixes, filters, ['examples', 'label']);
+};
 
 /**
  * Search various fields in ES for terms starting with the queryString
