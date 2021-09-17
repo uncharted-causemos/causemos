@@ -207,7 +207,7 @@ export default defineComponent({
       // redirect
       this.$router.push({
         name: 'modelPublishingExperiment',
-        query: { datacubeid: id },
+        query: { datacube_id: id },
         params: {
           project: this.project,
           projectType: this.projectMetadata.type
