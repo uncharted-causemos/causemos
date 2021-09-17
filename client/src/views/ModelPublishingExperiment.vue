@@ -513,12 +513,12 @@ export default defineComponent({
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'model publishing experiment' space
         if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
-          // check for 'insight_id' first to apply insight, then if not found, then 'datacubeid'
+          // check for 'insight_id' first to apply insight, then if not found, then 'datacube_id'
           const insight_id = this.$route.query.insight_id as any;
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
           } else {
-            const datacubeid = this.$route.query.datacubeid as any;
+            const datacubeid = this.$route.query.datacube_id as any;
             if (datacubeid !== undefined) {
               // re-fetch model data
               this.setSelectedTimestamp(null);

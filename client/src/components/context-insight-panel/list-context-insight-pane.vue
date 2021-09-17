@@ -257,7 +257,7 @@ export default {
         router.push({
           query: {
             insight_id: this.selectedContextInsight.id,
-            datacubeid: datacubeId
+            datacube_id: datacubeId
           }
         }).catch(() => {});
       }

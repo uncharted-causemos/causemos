@@ -209,7 +209,7 @@ export default defineComponent({
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const route = useRoute();
-    const datacubeId = route.query.datacubeid as any;
+    const datacubeId = route.query.datacube_id as any;
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
     // apply initial data config for this datacube
@@ -346,7 +346,7 @@ export default defineComponent({
       router.push({
         query: {
           insight_id: undefined,
-          datacubeid: selectedModelId.value
+          datacube_id: selectedModelId.value
         }
       }).catch(() => {});
     };

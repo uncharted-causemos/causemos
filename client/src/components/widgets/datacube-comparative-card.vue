@@ -287,7 +287,7 @@ export default defineComponent({
           projectType: ProjectType.Analysis
         },
         query: {
-          datacubeid: this.props.id
+          datacube_id: this.props.id
         }
       }).catch(() => {});
     },
