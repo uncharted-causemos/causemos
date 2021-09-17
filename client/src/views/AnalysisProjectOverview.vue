@@ -87,7 +87,7 @@
       <div class="col-md-3 insight-container">
         <button
           type="button"
-          class="btn btn-primary btn-call-for-action button-spacing"
+          class="btn btn-primary btn-call-for-action"
           @click.stop="openInsightsExplorer">
             <i class="fa fa-fw fa-star fa-lg" />
             Review Analysis Checklist
