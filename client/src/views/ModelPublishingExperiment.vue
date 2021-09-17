@@ -217,6 +217,15 @@ export default defineComponent({
     const selectedTimestamp: ComputedRef<number> = computed(() => store.getters['modelPublishStore/selectedTimestamp']);
     const selectedScenarioIds: ComputedRef<string[]> = computed(() => store.getters['modelPublishStore/selectedScenarioIds']);
 
+    const breakdownOption = ref<string | null>(null);
+
+    watchEffect(() => {
+      // If more than one run is selected, make sure "split by" is set to none.
+      if (selectedScenarioIds.value.length > 1) {
+        breakdownOption.value = null;
+      }
+    });
+
     // reset on init:
     store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Enrich_Description);
 

@@ -268,6 +268,13 @@ export default defineComponent({
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
 
+    watchEffect(() => {
+      // If more than one run is selected, make sure "split by" is set to none.
+      if (selectedScenarioIds.value.length > 1) {
+        breakdownOption.value = null;
+      }
+    });
+
     const selectedTimestamp = ref(null) as Ref<number | null>;
 
     const newRunsMode = ref(false);
