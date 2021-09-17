@@ -241,8 +241,8 @@ export default {
 
         // add 'insight_id' as a URL param so that the target page can apply it
         const finalURL = savedURL.includes('/data/')
-          ? InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id, _.first(this.selectedInsight.context_id))
-          : InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id);
+          ? InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, _.first(this.selectedContextInsight.context_id))
+          : InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id);
 
         // special case
         if (this.projectType !== ProjectType.Analysis && this.selectedContextInsight.visibility === 'private') {
