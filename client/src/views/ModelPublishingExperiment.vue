@@ -127,7 +127,8 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, ComputedRef, defineComponent, Ref, ref, watchEffect } from 'vue';
-import { mapActions, mapGetters, useStore } from 'vuex';
+import { useStore } from 'vuex';
+import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import ModelDescription from '@/components/data/model-description.vue';
@@ -152,15 +153,6 @@ import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/i
 import domainProjectService from '@/services/domain-project-service';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 
-const DRILLDOWN_TABS = [
-  {
-    name: 'Breakdown',
-    id: 'breakdown',
-    // TODO: our version of FA doesn't include fa-chart
-    icon: 'fa-question'
-  }
-];
-
 export default defineComponent({
   name: 'ModelPublishingExperiment',
   components: {
@@ -172,16 +164,10 @@ export default defineComponent({
     AnalyticalQuestionsAndInsightsPanel,
     MapDropdown
   },
-  computed: {
-    ...mapGetters({
-      countInsights: 'insightPanel/countInsights',
-      project: 'app/project',
-      projectMetadata: 'app/projectMetadata'
-    })
-  },
   setup() {
     const store = useStore();
     const projectId: ComputedRef<string> = computed(() => store.getters['app/project']);
+    const countInsights = computed(() => store.getters['insightPanel/countInsights']);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
@@ -192,8 +178,14 @@ export default defineComponent({
     const selectedTimestamp: ComputedRef<number> = computed(() => store.getters['modelPublishStore/selectedTimestamp']);
     const selectedScenarioIds: ComputedRef<string[]> = computed(() => store.getters['modelPublishStore/selectedScenarioIds']);
 
+    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
+    const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
+    const setCurrentPublishStep = (step: ModelPublishingStepID) => store.dispatch('modelPublishStore/setCurrentPublishStep', step);
+    const setSelectedTemporalAggregation = (tempAgg: string) => store.dispatch('modelPublishStore/setSelectedTemporalAggregation', tempAgg);
+    const setSelectedSpatialAggregation = (spatAgg: string) => store.dispatch('modelPublishStore/setSelectedSpatialAggregation', spatAgg);
+    const setSelectedTemporalResolution = (tempRes: string) => store.dispatch('modelPublishStore/setSelectedTemporalResolution', tempRes);
     // reset on init:
-    store.dispatch('modelPublishStore/setCurrentPublishStep', ModelPublishingStepID.Enrich_Description);
+    setCurrentPublishStep(ModelPublishingStepID.Enrich_Description);
 
     const selectedAdminLevel = ref(0);
     function setSelectedAdminLevel(newValue: number) {
@@ -335,6 +327,122 @@ export default defineComponent({
       store.dispatch('modelPublishStore/setSelectedTimestamp', timestamp);
     };
 
+    const getPublicInsights = async () => {
+      const publicInsightsSearchFields: InsightFilterFields = {};
+      publicInsightsSearchFields.visibility = 'public';
+      publicInsightsSearchFields.project_id = projectId.value;
+      publicInsightsSearchFields.context_id = metadata?.value?.id;
+      const publicInsights = await fetchInsights([publicInsightsSearchFields]);
+      return publicInsights as Insight[];
+    };
+
+    const refreshMetadata = () => {
+      if (metadata.value !== null) {
+        const cloneMetadata = _.cloneDeep(metadata.value);
+
+        // re-create the validatedOutputs array
+        cloneMetadata.validatedOutputs = getValidatedOutputs(cloneMetadata.outputs);
+
+        metadata.value = cloneMetadata;
+      }
+    };
+
+    const setBaseLayer = (val: BASE_LAYER) => {
+      selectedBaseLayer.value = val;
+    };
+
+    const setDataLayer = (val: DATA_LAYER) => {
+      selectedDataLayer.value = val;
+    };
+
+    const updateTabView = (val: string) => {
+      currentTabView.value = val;
+    };
+    const updateSelectedTimestamp = (value: number) => {
+      if (selectedTimestamp.value === value) return;
+      setSelectedTimestamp(value);
+    };
+    const updateStateFromInsight = async (insight_id: string) => {
+      const loadedInsight: Insight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedModelId) {
+          // this will reload datacube metadata as well as scenario runs
+          selectedModelId.value = loadedInsight.data_state?.selectedModelId;
+        }
+        if (loadedInsight.data_state?.datacubeTitles !== undefined && loadedInsight.data_state?.datacubeTitles.length > 0) {
+          // this will reload datacube metadata as well as scenario runs
+          const selectedOutput = loadedInsight.data_state?.datacubeTitles[0].datacubeOutputName;
+          const outputIndex = metadata?.value?.validatedOutputs?.findIndex(o => o.name === selectedOutput) ?? 0;
+          // update the store
+          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
+          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap.value[datacubeId ?? ''] = outputIndex;
+          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.data_state?.selectedScenarioIds) {
+          // this would only be valid and effective if/after datacube runs are reloaded
+          setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+          setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          setRelativeTo(loadedInsight.data_state?.relativeTo);
+        }
+        // view state
+        // view state
+        if (loadedInsight.view_state?.spatialAggregation) {
+          setSelectedSpatialAggregation(loadedInsight.view_state?.spatialAggregation);
+        }
+        if (loadedInsight.view_state?.temporalAggregation) {
+          setSelectedTemporalAggregation(loadedInsight.view_state?.temporalAggregation);
+        }
+        if (loadedInsight.view_state?.temporalResolution) {
+          setSelectedTemporalResolution(loadedInsight.view_state?.temporalResolution);
+        }
+        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
+          // FIXME
+          updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
+        }
+        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
+          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
+          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.view_state?.selectedMapBaseLayer) {
+          setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
+        }
+        if (loadedInsight.view_state?.selectedMapDataLayer) {
+          setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
+        }
+        if (loadedInsight.view_state?.breakdownOption !== undefined) {
+          setBreakdownOption(loadedInsight.view_state?.breakdownOption);
+        }
+        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
+          setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedYears !== undefined) {
+          initialSelectedYears.value = _.clone(loadedInsight.data_state?.selectedYears);
+        }
+      }
+    };
 
     const {
       qualifierBreakdownData,
@@ -432,6 +540,123 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
+    const updatePublishingStep = (completed: boolean) => {
+      const currStep = publishingSteps.value.find(ps => ps.id === currentPublishStep.value);
+      if (currStep) {
+        currStep.completed = completed;
+      }
+    };
+    const showPublishingStep = (publishStepInfo: {publishStep: ModelPublishingStep}) => {
+      setCurrentPublishStep(publishStepInfo.publishStep.id);
+      openPublishAccordion.value = !openPublishAccordion.value;
+
+      if (allScenarioIds.value.length > 0) {
+        let selectedIds = selectedScenarioIds.value;
+        if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
+          selectedIds = [];
+        } else {
+          // we should have at least one valid scenario selected. If not, then select the first one
+          selectedIds = selectedScenarioIds.value.length > 0 ? selectedScenarioIds.value : [allScenarioIds.value[0]];
+        }
+        setSelectedScenarioIds(selectedIds);
+      }
+
+      if (currentPublishStep.value === ModelPublishingStepID.Tweak_Visualization) {
+        checkStepForCompleteness();
+      }
+    };
+    const handleTemporalAggregationSelection = (tempAgg: string) => {
+      setSelectedTemporalAggregation(tempAgg);
+      checkStepForCompleteness();
+    };
+    const handleTemporalResolutionSelection = (tempRes: string) => {
+      setSelectedTemporalResolution(tempRes);
+      checkStepForCompleteness();
+    };
+    const setSpatialAggregationSelection = (spatialAgg: string) => {
+      setSelectedSpatialAggregation(spatialAgg);
+      checkStepForCompleteness();
+    };
+    const checkStepForCompleteness = () => {
+      // mark this step as complete
+      if (selectedSpatialAggregation.value !== '' &&
+          selectedTemporalAggregation.value !== '' &&
+          selectedTemporalResolution.value !== '') {
+        updatePublishingStep(true);
+      }
+    };
+    const checkModelMetadataValidity = (info: { valid: boolean }) => {
+      const ps = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Enrich_Description);
+      if (ps) { ps.completed = info.valid; }
+    };
+    const toggleAccordion = (event: any) => {
+      openPublishAccordion.value = !openPublishAccordion.value;
+      const target = event.target.nodeName === 'I' ? event.target.parentElement : event.target;
+      const panel = target.nextElementSibling as HTMLElement;
+      if (panel) {
+        if (!openPublishAccordion.value) {
+          panel.style.display = 'none';
+        } else {
+          panel.style.display = 'block';
+        }
+      }
+    };
+    const publishModel = async () => {
+      // call the backend to update model metadata and finalize model publication
+      if (metadata.value && isModel(metadata.value)) {
+        // mark this datacube as published
+        metadata.value.status = DatacubeStatus.Ready;
+        // update the default output feature
+        const validatedOutputs = metadata.value.validatedOutputs ?? [];
+        if (validatedOutputs.length > 0) {
+          metadata.value.default_feature = validatedOutputs[currentOutputIndex.value].name;
+        }
+        // remove newly-added fields such as 'validatedOutputs' so that ES can update
+        const modelToUpdate = _.cloneDeep(metadata.value);
+        delete modelToUpdate.validatedOutputs;
+        const drilldownParams = modelToUpdate.parameters.filter(p => p.is_drilldown);
+        drilldownParams.forEach((p: any) => {
+          if (p.roles) {
+            delete p.roles;
+          }
+          if (p.related_features) {
+            delete p.related_features;
+          }
+        });
+
+        //
+        // update server data
+        //
+        const updateResult = await updateDatacube(modelToUpdate.id, modelToUpdate);
+        console.log('model update status: ' + JSON.stringify(updateResult));
+        // also, update the project stats count
+        const domainProject = await domainProjectService.getProject(projectId.value);
+        // add the instance to list of published instances
+        const updatedReadyInstances = domainProject.ready_instances;
+        if (!updatedReadyInstances.includes(modelToUpdate.name)) {
+          updatedReadyInstances.push(modelToUpdate.name);
+        }
+        // remove the instance from the list of ready/published instances
+        const updatedDraftInstances = domainProject.ready_instances.filter((n: string) => n !== modelToUpdate.name);
+        // update the project doc at the server
+        domainProjectService.updateDomainProject(
+          projectId.value,
+          {
+            draft_instances: updatedDraftInstances,
+            ready_instances: updatedReadyInstances
+          }
+        );
+
+        // redirect to model family page
+        router.push({
+          name: 'domainDatacubeOverview',
+          params: {
+            project: projectId.value,
+            projectType: modelToUpdate.type
+          }
+        });
+      }
+    };
 
     return {
       AggregationOption,
@@ -439,10 +664,16 @@ export default defineComponent({
       allScenarioIds,
       baselineMetadata,
       breakdownOption,
+      checkModelMetadataValidity,
+      countInsights,
       currentOutputIndex,
       currentPublishStep,
       currentTabView,
       datacubeCurrentOutputsMap,
+      getPublicInsights,
+      handleTemporalAggregationSelection,
+      handleTemporalResolutionSelection,
+      hideInsightPanel,
       initialSelectedQualifierValues,
       initialSelectedRegionIds,
       initialSelectedYears,
@@ -451,8 +682,10 @@ export default defineComponent({
       openPublishAccordion,
       outputSpecs,
       projectId,
+      publishModel,
       publishingSteps,
       qualifierBreakdownData,
+      refreshMetadata,
       regionalData,
       relativeTo,
       selectedAdminLevel,
@@ -468,17 +701,30 @@ export default defineComponent({
       selectedTimeseriesPoints,
       selectedTimestamp,
       selectedYears,
+      setBaseLayer,
       setBreakdownOption,
+      setDatacubeCurrentOutputsMap,
+      setDataLayer,
+      setCurrentPublishStep,
       setRelativeTo,
       setSelectedAdminLevel,
       setSelectedScenarioIds,
+      setSelectedSpatialAggregation,
+      setSelectedTemporalAggregation,
+      setSelectedTemporalResolution,
       setSelectedTimestamp,
+      setSpatialAggregationSelection,
+      showPublishingStep,
       temporalBreakdownData,
       TemporalResolutionOption,
       timerHandler,
+      toggleAccordion,
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
+      updateSelectedTimestamp,
+      updateStateFromInsight,
+      updateTabView,
       visibleTimeseriesData
     };
   },
@@ -597,244 +843,6 @@ export default defineComponent({
         this.setSelectedTemporalAggregation(AggregationOption.None);
         this.setSelectedTemporalResolution(TemporalResolutionOption.None);
         this.setSelectedSpatialAggregation(AggregationOption.None);
-      }
-    }
-  },
-  methods: {
-    ...mapActions({
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap',
-      hideInsightPanel: 'insightPanel/hideInsightPanel',
-      setCurrentPublishStep: 'modelPublishStore/setCurrentPublishStep',
-      setSelectedTemporalAggregation: 'modelPublishStore/setSelectedTemporalAggregation',
-      setSelectedSpatialAggregation: 'modelPublishStore/setSelectedSpatialAggregation',
-      setSelectedTemporalResolution: 'modelPublishStore/setSelectedTemporalResolution'
-    }),
-    async getPublicInsights() {
-      const publicInsightsSearchFields: InsightFilterFields = {};
-      publicInsightsSearchFields.visibility = 'public';
-      publicInsightsSearchFields.project_id = this.project;
-      publicInsightsSearchFields.context_id = this.metadata?.id;
-      const publicInsights = await fetchInsights([publicInsightsSearchFields]);
-      return publicInsights as Insight[];
-    },
-    refreshMetadata() {
-      if (this.metadata !== null) {
-        const cloneMetadata = _.cloneDeep(this.metadata);
-
-        // re-create the validatedOutputs array
-        cloneMetadata.validatedOutputs = getValidatedOutputs(cloneMetadata.outputs);
-
-        this.metadata = cloneMetadata;
-      }
-    },
-    setBaseLayer(val: BASE_LAYER) {
-      this.selectedBaseLayer = val;
-    },
-    setDataLayer(val: DATA_LAYER) {
-      this.selectedDataLayer = val;
-    },
-    async updateStateFromInsight(insight_id: string) {
-      const loadedInsight: Insight = await getInsightById(insight_id);
-      // FIXME: before applying the insight, which will overwrite current state,
-      //  consider pushing current state to the url to support browser hsitory
-      //  in case the user wants to navigate to the original state using back button
-      if (loadedInsight) {
-        //
-        // insight was found and loaded
-        //
-        // data state
-        // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedModelId) {
-          // this will reload datacube metadata as well as scenario runs
-          this.selectedModelId = loadedInsight.data_state?.selectedModelId;
-        }
-        if (loadedInsight.data_state?.datacubeTitles !== undefined && loadedInsight.data_state?.datacubeTitles.length > 0) {
-          // this will reload datacube metadata as well as scenario runs
-          const selectedOutput = loadedInsight.data_state?.datacubeTitles[0].datacubeOutputName;
-          const outputIndex = this.metadata?.validatedOutputs?.findIndex(o => o.name === selectedOutput) ?? 0;
-          // update the store
-          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
-          updatedCurrentOutputsMap[datacubeId ?? ''] = outputIndex;
-          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
-        }
-        if (loadedInsight.data_state?.selectedScenarioIds) {
-          // this would only be valid and effective if/after datacube runs are reloaded
-          this.setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
-        }
-        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
-          this.setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
-        }
-        if (loadedInsight.data_state?.relativeTo !== undefined) {
-          this.setRelativeTo(loadedInsight.data_state?.relativeTo);
-        }
-        // view state
-        if (loadedInsight.view_state?.spatialAggregation) {
-          this.setSelectedSpatialAggregation(loadedInsight.view_state?.spatialAggregation);
-        }
-        if (loadedInsight.view_state?.temporalAggregation) {
-          this.setSelectedTemporalAggregation(loadedInsight.view_state?.temporalAggregation);
-        }
-        if (loadedInsight.view_state?.temporalResolution) {
-          this.setSelectedTemporalResolution(loadedInsight.view_state?.temporalResolution);
-        }
-        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-          // FIXME
-          this.updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
-        }
-        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-          const datacubeId = this.metadata ? this.metadata?.id : loadedInsight.data_state?.selectedModelId;
-          updatedCurrentOutputsMap[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
-          this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
-        }
-        if (loadedInsight.view_state?.selectedMapBaseLayer) {
-          this.setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
-        }
-        if (loadedInsight.view_state?.selectedMapDataLayer) {
-          this.setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
-        }
-        if (loadedInsight.view_state?.breakdownOption !== undefined) {
-          this.setBreakdownOption(loadedInsight.view_state?.breakdownOption);
-        }
-        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
-          this.setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
-        }
-        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
-          this.initialSelectedRegionIds = _.clone(loadedInsight.data_state?.selectedRegionIds);
-        }
-        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
-          this.initialSelectedQualifierValues = _.clone(loadedInsight.data_state?.selectedQualifierValues);
-        }
-        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.selectedYears !== undefined) {
-          this.initialSelectedYears = _.clone(loadedInsight.data_state?.selectedYears);
-        }
-      }
-    },
-    async publishModel() {
-      // call the backend to update model metadata and finalize model publication
-      if (this.metadata && isModel(this.metadata)) {
-        // mark this datacube as published
-        this.metadata.status = DatacubeStatus.Ready;
-        // update the default output feature
-        const validatedOutputs = this.metadata.validatedOutputs ?? [];
-        if (validatedOutputs.length > 0) {
-          this.metadata.default_feature = validatedOutputs[this.currentOutputIndex].name;
-        }
-        // remove newly-added fields such as 'validatedOutputs' so that ES can update
-        const modelToUpdate = _.cloneDeep(this.metadata);
-        delete modelToUpdate.validatedOutputs;
-        const drilldownParams = modelToUpdate.parameters.filter(p => p.is_drilldown);
-        drilldownParams.forEach((p: any) => {
-          if (p.roles) {
-            delete p.roles;
-          }
-          if (p.related_features) {
-            delete p.related_features;
-          }
-        });
-
-        //
-        // update server data
-        //
-        const updateResult = await updateDatacube(modelToUpdate.id, modelToUpdate);
-        console.log('model update status: ' + JSON.stringify(updateResult));
-        // also, update the project stats count
-        const domainProject = await domainProjectService.getProject(this.project);
-        // add the instance to list of published instances
-        const updatedReadyInstances = domainProject.ready_instances;
-        if (!updatedReadyInstances.includes(modelToUpdate.name)) {
-          updatedReadyInstances.push(modelToUpdate.name);
-        }
-        // remove the instance from the list of ready/published instances
-        const updatedDraftInstances = domainProject.ready_instances.filter((n: string) => n !== modelToUpdate.name);
-        // update the project doc at the server
-        domainProjectService.updateDomainProject(
-          this.project,
-          {
-            draft_instances: updatedDraftInstances,
-            ready_instances: updatedReadyInstances
-          }
-        );
-
-        // redirect to model family page
-        this.$router.push({
-          name: 'domainDatacubeOverview',
-          params: {
-            project: this.project,
-            projectType: modelToUpdate.type
-          }
-        });
-      }
-    },
-    updateTabView(val: string) {
-      this.currentTabView = val;
-    },
-    updateSelectedTimestamp(value: number) {
-      if (this.selectedTimestamp === value) return;
-      this.setSelectedTimestamp(value);
-    },
-    updatePublishingStep(completed: boolean) {
-      const currStep = this.publishingSteps.find(ps => ps.id === this.currentPublishStep);
-      if (currStep) {
-        currStep.completed = completed;
-      }
-    },
-    showPublishingStep(publishStepInfo: {publishStep: ModelPublishingStep}) {
-      this.setCurrentPublishStep(publishStepInfo.publishStep.id);
-      this.openPublishAccordion = !this.openPublishAccordion;
-
-      if (this.allScenarioIds.length > 0) {
-        let selectedIds = this.selectedScenarioIds;
-        if (this.currentPublishStep === ModelPublishingStepID.Enrich_Description) {
-          selectedIds = [];
-        } else {
-          // we should have at least one valid scenario selected. If not, then select the first one
-          selectedIds = this.selectedScenarioIds.length > 0 ? this.selectedScenarioIds : [this.allScenarioIds[0]];
-        }
-        this.setSelectedScenarioIds(selectedIds);
-      }
-
-      if (this.currentPublishStep === ModelPublishingStepID.Tweak_Visualization) {
-        this.checkStepForCompleteness();
-      }
-    },
-    handleTemporalAggregationSelection(tempAgg: string) {
-      this.setSelectedTemporalAggregation(tempAgg);
-      this.checkStepForCompleteness();
-    },
-    handleTemporalResolutionSelection(tempRes: string) {
-      this.setSelectedTemporalResolution(tempRes);
-      this.checkStepForCompleteness();
-    },
-    setSpatialAggregationSelection(spatialAgg: string) {
-      this.setSelectedSpatialAggregation(spatialAgg);
-      this.checkStepForCompleteness();
-    },
-    checkStepForCompleteness() {
-      // mark this step as complete
-      if (this.selectedSpatialAggregation !== '' &&
-          this.selectedTemporalAggregation !== '' &&
-          this.selectedTemporalResolution !== '') {
-        this.updatePublishingStep(true);
-      }
-    },
-    checkModelMetadataValidity(info: { valid: boolean }) {
-      const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Enrich_Description);
-      if (ps) { ps.completed = info.valid; }
-    },
-    toggleAccordion(event: any) {
-      this.openPublishAccordion = !this.openPublishAccordion;
-      const target = event.target.nodeName === 'I' ? event.target.parentElement : event.target;
-      const panel = target.nextElementSibling as HTMLElement;
-      if (panel) {
-        if (!this.openPublishAccordion) {
-          panel.style.display = 'none';
-        } else {
-          panel.style.display = 'block';
-        }
       }
     }
   }

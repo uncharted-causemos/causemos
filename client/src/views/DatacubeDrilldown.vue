@@ -287,10 +287,9 @@ export default defineComponent({
 
     watchEffect(() => {
       if (metadata.value) {
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        store.dispatch('insightPanel/setContextId', [metadata.value.id]);
 
-        // note: this value of metadata may be undefined while model is still being loaded
-        store.dispatch('insightPanel/setContextId', [metadata.value?.id]);
+        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
 
         let initialOutputIndex = 0;
         const currentOutputEntry = datacubeCurrentOutputsMap.value[metadata.value.id];
@@ -373,6 +372,7 @@ export default defineComponent({
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
     };
+
     const setDataLayer = (val: DATA_LAYER) => {
       selectedDataLayer.value = val;
     };

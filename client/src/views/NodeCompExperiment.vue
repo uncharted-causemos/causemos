@@ -241,7 +241,6 @@ export default defineComponent({
     );
 
     const currentTabView = ref<string>('description');
-
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     watchEffect(() => {
