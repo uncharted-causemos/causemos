@@ -120,7 +120,8 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
-import { mapActions, useStore } from 'vuex';
+import { useStore } from 'vuex';
+import router from '@/router';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
@@ -151,20 +152,16 @@ export default defineComponent({
     FullScreenModalHeader,
     MapDropdown
   },
-  data: () => ({
-    modelComponents: {
-      nodes: []
-    }
-  }),
   setup() {
     const store = useStore();
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
     const selectedAdminLevel = ref(0);
-    function setSelectedAdminLevel(newValue: number) {
-      selectedAdminLevel.value = newValue;
-    }
-
     const isExpanded = true;
 
+    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+    const breakdownOption = ref<string | null>(null);
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const nodeId = computed(() => store.getters['app/nodeId']);
     const project = computed(() => store.getters['app/project']);
@@ -172,8 +169,6 @@ export default defineComponent({
 
     // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
     const indicatorId = computed(() => store.getters['app/indicatorId']);
-
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
 
     const currentOutputIndex = computed(() => {
       if (
@@ -186,9 +181,19 @@ export default defineComponent({
       }
     });
 
+
+
     const metadata = useModelMetadata(indicatorId);
 
     const selectedModelId = ref(metadata.value?.data_id ?? '');
+
+    const modelComponents = ref(null) as Ref<any>;
+    const selectedNode = computed(() => {
+      if (nodeId.value === undefined || modelComponents.value === null) {
+        return null;
+      }
+      return modelComponents.value.nodes.find((node: { id: any }) => node.id === nodeId.value);
+    });
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
@@ -202,7 +207,6 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
-    const breakdownOption = ref<string | null>(null);
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };
@@ -255,13 +259,76 @@ export default defineComponent({
       }
     });
 
-    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
-
     const setSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
+    };
+    const setSelectedAdminLevel = (newValue: number) => {
+      selectedAdminLevel.value = newValue;
+    };
+
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const setSpatialAggregationSelection = (spatialAgg: AggregationOption) => {
+      selectedSpatialAggregation.value = spatialAgg;
+    };
+    const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
+      selectedTemporalResolution.value = temporalRes;
+    };
+
+    const setSelectedScenarioIds = (newIds: string[]) => {
+      if (metadata?.value?.type !== DatacubeType.Indicator) {
+        if (_.isEqual(selectedScenarioIds.value, newIds)) return;
+      }
+      selectedScenarioIds.value = newIds;
+      if (newIds.length > 0) {
+        // selecting a run or multiple runs when the desc tab is active should always open the data tab
+        //  selecting a run or multiple runs otherwise should respect the current tab
+        if (currentTabView.value === 'description') {
+          updateTabView('data');
+        }
+      } else {
+        updateTabView('description');
+      }
+    };
+    const setTemporalAggregationSelection = (temporalAgg: AggregationOption) => {
+      selectedTemporalAggregation.value = temporalAgg;
+    };
+
+    const updateTabView = (val: string) => {
+      console.log(currentTabView.value);
+      currentTabView.value = val;
+    };
+    const setBaseLayer = (val: BASE_LAYER) => {
+      selectedBaseLayer.value = val;
+    };
+
+    const setDataLayer = (val: DATA_LAYER) => {
+      selectedDataLayer.value = val;
+    };
+    const onBack = () => {
+      if (window.history.length > 1) {
+        window.history.go(-1);
+      } else {
+        router.push({
+          name: 'nodeDataExplorer',
+          params: {
+            currentCAG: currentCAG.value,
+            nodeId: nodeId.value,
+            project: project.value,
+            projectType: ProjectType.Analysis
+          }
+        });
+      }
+    };
+
+    const onOutputSelectionChange = (event: any) => {
+      const selectedOutputIndex = event.target.selectedIndex;
+      // update the store so that other components can sync
+      const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
+      updatedCurrentOutputsMap[metadata?.value?.id ?? ''] = selectedOutputIndex;
+      setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     };
 
     const {
@@ -278,7 +345,6 @@ export default defineComponent({
       selectedTimestamp,
       ref([])
     );
-
 
     const {
       timeseriesData,
@@ -348,8 +414,77 @@ export default defineComponent({
     const selectLabel = 'Quantify Node';
     const navBackLabel = 'Select A Different Datacube';
 
-    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
-    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+    const onSelection = async () => {
+      if (metadata === null) {
+        console.error('Confirm should not be clickable until metadata is loaded.');
+        return;
+      }
+      if (visibleTimeseriesData.value.length !== 1) {
+        console.error('There should be exactly one timeseries visible.', visibleTimeseriesData);
+        return;
+      }
+      const timeseries = visibleTimeseriesData.value[0].points;
+      let country = '';
+      let admin1 = '';
+      let admin2 = '';
+      let admin3 = '';
+
+      if (selectedRegionIds.value.length > 0) {
+        const regionList = selectedRegionIds.value[0].split('__');
+        if (regionList.length > 0) {
+          if (regionList[0]) country = regionList[0];
+          if (regionList[1]) admin1 = regionList[1];
+          if (regionList[2]) admin2 = regionList[2];
+          if (regionList[3]) admin3 = regionList[3];
+        }
+      }
+
+      const nodeParameters = {
+        id: selectedNode?.value?.id,
+        concept: selectedNode?.value?.concept,
+        label: selectedNode?.value?.label,
+        model_id: selectedNode?.value?.model_id,
+        parameter: {
+          id: metadata?.value?.id,
+          name: metadata?.value?.name,
+          unit: unit,
+          country,
+          admin1,
+          admin2,
+          admin3,
+          period: 12,
+          timeseries,
+          max: null, // filled in by server
+          min: null // filled in by server
+        }
+      };
+      // save view config options when quantifying the node along with the node parameters
+      const viewConfig: ViewState = {
+        spatialAggregation: selectedSpatialAggregation.value,
+        temporalAggregation: selectedTemporalAggregation.value,
+        temporalResolution: selectedTemporalResolution.value,
+        breakdownOption: breakdownOption.value,
+        selectedAdminLevel: selectedAdminLevel.value,
+        selectedOutputIndex: currentOutputIndex.value,
+        selectedMapBaseLayer: selectedBaseLayer.value,
+        selectedMapDataLayer: selectedDataLayer.value
+      };
+      Object.keys(viewConfig).forEach(key => {
+        (nodeParameters.parameter as any)[key] = viewConfig[key];
+      });
+      await modelService.updateNodeParameter(selectedNode.value.model_id, nodeParameters);
+
+      router.push({
+        name: 'nodeDrilldown',
+        params: {
+          currentCAG: currentCAG.value,
+          nodeId: nodeId.value,
+          project: project.value,
+          projectType: ProjectType.Analysis
+        }
+      });
+    };
+
     return {
       AggregationOption,
       allModelRunData,
@@ -364,9 +499,13 @@ export default defineComponent({
       isExpanded,
       mainModelOutput,
       metadata,
+      modelComponents,
       navBackLabel,
       newRunsMode,
       nodeId,
+      onBack,
+      onOutputSelectionChange,
+      onSelection,
       outputs,
       outputSpecs,
       project,
@@ -378,6 +517,7 @@ export default defineComponent({
       selectedBaseLayer,
       selectedDataLayer,
       selectedModelId,
+      selectedNode,
       selectedQualifierValues,
       selectedRegionIds,
       selectedScenarioIds,
@@ -388,19 +528,25 @@ export default defineComponent({
       selectedTimestamp,
       selectedYears,
       selectLabel,
-      setBaseLayer: (val: BASE_LAYER) => { selectedBaseLayer.value = val; },
+      setBaseLayer,
       setBreakdownOption,
-      setDataLayer: (val: DATA_LAYER) => { selectedDataLayer.value = val; },
+      setDatacubeCurrentOutputsMap,
+      setDataLayer,
       setRelativeTo,
       setSelectedAdminLevel,
+      setSelectedScenarioIds,
       setSelectedTimestamp,
       stepsBeforeCanConfirm,
+      setSpatialAggregationSelection,
+      setTemporalAggregationSelection,
+      setTemporalResolutionSelection,
       temporalBreakdownData,
       timerHandler,
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
       unit,
+      updateTabView,
       visibleTimeseriesData
     };
   },
@@ -411,10 +557,11 @@ export default defineComponent({
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
+      console.log(this.modelComponents, _modelComponents, this.selectedNode);
 
       if (this.selectedNode !== null) {
         // restore view config options, if any
-        const initialViewConfig = this.selectedNode.parameter;
+        const initialViewConfig = this.selectedNode?.parameter;
         if (initialViewConfig) {
           if (initialViewConfig.temporalResolution !== undefined) {
             this.selectedTemporalResolution = initialViewConfig.temporalResolution;
@@ -445,142 +592,6 @@ export default defineComponent({
         }
       }
     });
-  },
-
-
-  computed: {
-    selectedNode(): any {
-      if (this.nodeId === undefined || this.modelComponents === null) {
-        return null;
-      }
-      return this.modelComponents.nodes.find((node: { id: any }) => node.id === this.nodeId);
-    }
-  },
-  methods: {
-    ...mapActions({
-      setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
-    }),
-
-    onBack() {
-      if (window.history.length > 1) {
-        window.history.go(-1);
-      } else {
-        this.$router.push({
-          name: 'nodeDataExplorer',
-          params: {
-            currentCAG: this.currentCAG,
-            nodeId: this.nodeId,
-            project: this.project,
-            projectType: ProjectType.Analysis
-          }
-        });
-      }
-    },
-    async onSelection() {
-      if (this.metadata === null) {
-        console.error('Confirm should not be clickable until metadata is loaded.');
-        return;
-      }
-      if (this.visibleTimeseriesData.length !== 1) {
-        console.error('There should be exactly one timeseries visible.', this.visibleTimeseriesData);
-        return;
-      }
-      const timeseries = this.visibleTimeseriesData[0].points;
-      let country = '';
-      let admin1 = '';
-      let admin2 = '';
-      let admin3 = '';
-
-      if (this.selectedRegionIds.length > 0) {
-        const regionList = this.selectedRegionIds[0].split('__');
-        if (regionList.length > 0) {
-          if (regionList[0]) country = regionList[0];
-          if (regionList[1]) admin1 = regionList[1];
-          if (regionList[2]) admin2 = regionList[2];
-          if (regionList[3]) admin3 = regionList[3];
-        }
-      }
-
-      const nodeParameters = {
-        id: this.selectedNode.id,
-        concept: this.selectedNode.concept,
-        label: this.selectedNode.label,
-        model_id: this.selectedNode.model_id,
-        parameter: {
-          id: this.metadata.id,
-          name: this.metadata.name,
-          unit: this.unit,
-          country,
-          admin1,
-          admin2,
-          admin3,
-          period: 12,
-          timeseries,
-          max: null, // filled in by server
-          min: null // filled in by server
-        }
-      };
-      // save view config options when quantifying the node along with the node parameters
-      const viewConfig: ViewState = {
-        spatialAggregation: this.selectedSpatialAggregation,
-        temporalAggregation: this.selectedTemporalAggregation,
-        temporalResolution: this.selectedTemporalResolution,
-        breakdownOption: this.breakdownOption,
-        selectedAdminLevel: this.selectedAdminLevel,
-        selectedOutputIndex: this.currentOutputIndex,
-        selectedMapBaseLayer: this.selectedBaseLayer,
-        selectedMapDataLayer: this.selectedDataLayer
-      };
-      Object.keys(viewConfig).forEach(key => {
-        (nodeParameters.parameter as any)[key] = viewConfig[key];
-      });
-      await modelService.updateNodeParameter(this.selectedNode.model_id, nodeParameters);
-
-      this.$router.push({
-        name: 'nodeDrilldown',
-        params: {
-          currentCAG: this.currentCAG,
-          nodeId: this.nodeId,
-          project: this.project,
-          projectType: ProjectType.Analysis
-        }
-      });
-    },
-    onOutputSelectionChange(event: any) {
-      const selectedOutputIndex = event.target.selectedIndex;
-      // update the store so that other components can sync
-      const updatedCurrentOutputsMap = _.cloneDeep(this.datacubeCurrentOutputsMap);
-      updatedCurrentOutputsMap[this.metadata?.id ?? ''] = selectedOutputIndex;
-      this.setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
-    },
-    updateTabView(val: string) {
-      this.currentTabView = val;
-    },
-    setTemporalAggregationSelection(temporalAgg: AggregationOption) {
-      this.selectedTemporalAggregation = temporalAgg;
-    },
-    setSpatialAggregationSelection(spatialAgg: AggregationOption) {
-      this.selectedSpatialAggregation = spatialAgg;
-    },
-    setTemporalResolutionSelection(temporalRes: TemporalResolutionOption) {
-      this.selectedTemporalResolution = temporalRes;
-    },
-    setSelectedScenarioIds(newIds: string[]) {
-      if (this.metadata?.type !== DatacubeType.Indicator) {
-        if (_.isEqual(this.selectedScenarioIds, newIds)) return;
-      }
-      this.selectedScenarioIds = newIds;
-
-      if (newIds.length > 0) {
-        // selecting a run or multiple runs when the desc tab is active should always open the data tab
-        //  selecting a run or multiple runs otherwise should respect the current tab
-        if (this.currentTabView === 'description') {
-          this.updateTabView('data');
-        }
-      } else {
-        this.updateTabView('description');
-      }
-    }
   }
 });
 </script>
