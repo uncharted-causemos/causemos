@@ -376,6 +376,7 @@ import MapLegend from '@/components/widgets/map-legend.vue';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
+import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
@@ -544,6 +545,7 @@ export default defineComponent({
     ModalNewScenarioRuns,
     ModalCheckRunsExecutionStatus,
     Modal,
+    ParallelCoordinatesChart,
     RadioButtonGroup,
     SmallTextButton
   },
