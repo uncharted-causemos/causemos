@@ -81,7 +81,11 @@ const insertDatacube = async(metadata) => {
   await domainProjectService.updateDomainProjects(metadata);
 
   const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-  return await connection.insert([metadata]);
+  try {
+    return { result: { es_response: await connection.insert([metadata]) }, code: 201 };
+  } catch (err) {
+    return { error: err, code: 500 };
+  }
 };
 
 /**
