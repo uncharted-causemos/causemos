@@ -717,17 +717,6 @@ export default defineComponent({
     border-width: thin;
   }
 
-  .remove-button {
-    background: #F44336;
-    color: white;
-    font-weight: 600;
-    border: none;
-    user-select: none;
-    &:hover {
-      color: white;
-    }
-  }
-
   .insight-action {
     flex: 1 1 auto;
     text-align: right;
