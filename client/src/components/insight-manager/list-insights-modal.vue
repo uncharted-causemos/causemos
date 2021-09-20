@@ -22,49 +22,49 @@
         />
       </template>
     </modal-confirmation>
-
-    <div class="tab-controls">
-      <tab-bar
-        class="tabs"
-        :active-tab-id="activeTabId"
-        :tabs="tabs"
-        @tab-click="switchTab"
-      />
-      <div class="export">
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="toggleExportMenu"
-        >
-          <span class="lbl">Export</span>
-          <i
-            class="fa fa-fw"
-            :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
-          />
-        </button>
-        <dropdown-control v-if="exportActive" class="below">
-          <template #content>
-            <div
-              class="dropdown-option"
-              @click="exportPPTX"
-            >
-              Powerpoint
-            </div>
-            <div
-              class="dropdown-option"
-              @click="exportDOCX"
-            >
-              Word
-            </div>
-          </template>
-        </dropdown-control>
-      </div>
-    </div>
     <div class="body flex">
       <analytical-questions-panel />
 
       <!-- body -->
       <div class="body-main-content flex-col">
+
+        <div class="tab-controls">
+          <tab-bar
+            class="tabs"
+            :active-tab-id="activeTabId"
+            :tabs="tabs"
+            @tab-click="switchTab"
+          />
+          <div class="export">
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="toggleExportMenu"
+            >
+              <span class="lbl">Export</span>
+              <i
+                class="fa fa-fw"
+                :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
+              />
+            </button>
+            <dropdown-control v-if="exportActive" class="below">
+              <template #content>
+                <div
+                  class="dropdown-option"
+                  @click="exportPPTX"
+                >
+                  Powerpoint
+                </div>
+                <div
+                  class="dropdown-option"
+                  @click="exportDOCX"
+                >
+                  Word
+                </div>
+              </template>
+            </dropdown-control>
+          </div>
+        </div>
         <div
           v-if="activeTabId === tabs[0].id"
           class="cards"
@@ -78,34 +78,32 @@
               placeholder="Search insights"
             >
           </div>
-          <div class="pane-wrapper">
-            <div
-              v-if="searchedInsights.length > 0"
-              class="pane-content"
-            >
-              <insight-card
-                v-for="insight in searchedInsights"
-                :active-insight="activeInsight"
-                :card-mode="true"
-                :curated="isCuratedInsight(insight.id)"
-                :key="insight.id"
-                :insight="insight"
-                @delete-insight="removeInsight(insight.id)"
-                @edit-insight="editInsight(insight)"
-                @open-editor="openEditor(insight.id)"
-                @select-insight="selectInsight(insight)"
-                @update-curation="updateCuration(insight.id)"
-                draggable='true'
-                @dragstart="startDrag($event, insight)"
-                @dragend="dragEnd($event)"
-              />
-            </div>
-            <message-display
-              class="pane-content"
-              v-else
-              :message="messageNoData"
+          <div
+            v-if="searchedInsights.length > 0"
+            class="pane-content"
+          >
+            <insight-card
+              v-for="insight in searchedInsights"
+              :active-insight="activeInsight"
+              :card-mode="true"
+              :curated="isCuratedInsight(insight.id)"
+              :key="insight.id"
+              :insight="insight"
+              @delete-insight="removeInsight(insight.id)"
+              @edit-insight="editInsight(insight)"
+              @open-editor="openEditor(insight.id)"
+              @select-insight="selectInsight(insight)"
+              @update-curation="updateCuration(insight.id)"
+              draggable='true'
+              @dragstart="startDrag($event, insight)"
+              @dragend="dragEnd($event)"
             />
           </div>
+          <message-display
+            class="pane-content"
+            v-else
+            :message="messageNoData"
+          />
         </div>
 
         <div
@@ -643,7 +641,6 @@ export default {
 .list-insights-modal-container {
   display: flex;
   flex-direction: column;
-  justify-content: top;
   align-items: stretch;
   height: 100vh;
   .tab-controls {
@@ -674,10 +671,11 @@ export default {
   }
   .cards {
     background-color: $background-light-2;
-    display: inline-block;
-    height: 100%;
-    overflow: auto;
+    flex: 1;
+    min-height: 0;
     padding: 1rem;
+    display: flex;
+    flex-direction: column;
     .search {
       display: flex;
       padding: 0 0 1rem;
@@ -685,16 +683,13 @@ export default {
         flex: 1 1 auto;
       }
     }
-    .pane-wrapper {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
+    .pane-content {
+      flex: 1;
+      min-height: 0;
       overflow: auto;
-      .pane-content {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
     }
   }
   .list {
