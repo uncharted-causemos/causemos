@@ -166,6 +166,8 @@ import useInsightsData from '@/services/composables/useInsightsData';
 import { ProjectType } from '@/types/Enums';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import MessageDisplay from '@/components/widgets/message-display';
+import InsightUtil from '@/utils/insight-util';
+import _ from 'lodash';
 
 const INSIGHT_TABS = [
   {
@@ -326,22 +328,13 @@ export default {
         return this.listInsights;
       }
     },
-    getSourceUrlForExport(insightURL, insightId) {
-      if (insightURL.includes('insight_id')) return insightURL;
-      // is the url has some params already at its end?
-      if (insightURL.includes('?') && insightURL.includes('=')) {
-        // append
-        return insightURL + '&insight_id=' + insightId;
-      }
-      // add
-      return insightURL + '?insight_id=' + insightId;
-    },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexingly uses pixels
       // same height as width so that we can attempt to be consistent with the layout.
       const docxMaxImageSize = 612;
       const insightSet = this.selectedInsights;
       const sections = insightSet.map((i) => {
+        const datacubeId = _.first(i.context_id);
         const imageSize = this.scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(i.modified_at);
         return {
@@ -413,7 +406,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
+                  link: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
                 })
               ]
             })
@@ -448,6 +441,7 @@ export default {
       });
       const insightSet = this.selectedInsights;
       insightSet.forEach((i) => {
+        const datacubeId = _.first(i.context_id);
         const imageSize = this.scaleImage(i.thumbnail, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(i.modified_at);
         const slide = pres.addSlide();
@@ -480,7 +474,7 @@ export default {
               bold: true,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
+                url: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
               }
             }
           },
@@ -502,7 +496,7 @@ export default {
               break: false,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
+                url: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
               }
             }
           },
@@ -587,7 +581,10 @@ export default {
         // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
 
         // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = this.getSourceUrlForExport(savedURL, this.selectedInsight.id);
+        // /data/ will be in the url if we are in the datacube drilldown page in which case datacube_id should be in the route.
+        const finalURL = savedURL.includes('/data/')
+          ? InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id, _.first(this.selectedInsight.context_id))
+          : InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id);
 
         // special case
         if (this.projectType !== ProjectType.Analysis && this.selectedInsight.visibility === 'private') {

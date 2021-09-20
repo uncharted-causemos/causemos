@@ -68,7 +68,7 @@ export const getRegionAggregations = async (
     Object.values(AdminLevel).forEach(level => {
       (result[level] || []).forEach(item => {
         if (!dict[level][item.id]) {
-          console.error(
+          console.warn(
             "getRegionAggregation returned a region that doesn't exist in the hierarchy",
             item.id,
             allRegions

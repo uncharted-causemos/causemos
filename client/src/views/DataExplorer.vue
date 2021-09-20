@@ -18,7 +18,7 @@
           class="search"
           :facets="facets"
           :filtered-datacubes="filteredDatacubes"
-          :enableMultipleSelection="enableMultipleSelection"
+          :enableMultipleSelection="true"
           :initialDatacubeSelection="initialDatacubeSelection"
         />
         <simple-pagination
@@ -34,6 +34,7 @@
 </template>
 
 <script>
+
 import { mapActions, mapGetters } from 'vuex';
 
 import FacetsPanel from '../components/data-explorer/facets-panel.vue';
@@ -63,7 +64,6 @@ export default {
     filteredFacets: null,
     selectLabel: 'Add To Analysis',
     analysis: undefined,
-    enableMultipleSelection: true,
     pageCount: 0,
     pageSize: 100
   }),
@@ -144,26 +144,14 @@ export default {
       try {
         // save the selected datacubes in the analysis object in the store/server
         await this.updateAnalysisItems({ currentAnalysisId: this.analysisId, analysisItems: this.selectedDatacubes });
-
-        if (this.enableMultipleSelection) {
-          this.$router.push({
-            name: 'dataComparative',
-            params: {
-              project: this.project,
-              analysisId: this.analysisId,
-              projectType: ProjectType.Analysis
-            }
-          });
-        } else {
-          this.$router.push({
-            name: 'data',
-            params: {
-              project: this.project,
-              analysisId: this.analysisId,
-              projectType: ProjectType.Analysis
-            }
-          });
-        }
+        this.$router.push({
+          name: 'dataComparative',
+          params: {
+            project: this.project,
+            analysisId: this.analysisId,
+            projectType: ProjectType.Analysis
+          }
+        });
       } catch (e) {
         this.toaster(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
       }

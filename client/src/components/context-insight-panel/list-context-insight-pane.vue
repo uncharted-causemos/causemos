@@ -98,6 +98,8 @@
 </template>
 
 <script>
+import _ from 'lodash';
+
 import pptxgen from 'pptxgenjs';
 import { Packer, Document, SectionType, Footer, Paragraph, AlignmentType, ImageRun, TextRun, HeadingLevel, ExternalHyperlink, UnderlineType } from 'docx';
 import { saveAs } from 'file-saver';
@@ -105,6 +107,7 @@ import { mapGetters, mapActions } from 'vuex';
 import DropdownButton from '@/components/dropdown-button.vue';
 
 import { INSIGHTS } from '@/utils/messages-util';
+import InsightUtil from '@/utils/insight-util';
 
 import dateFormatter from '@/formatters/date-formatter';
 import stringFormatter from '@/formatters/string-formatter';
@@ -201,16 +204,6 @@ export default {
     toggleExportMenu() {
       this.exportActive = !this.exportActive;
     },
-    getSourceUrlForExport(insightURL, insightId) {
-      if (insightURL.includes('insight_id')) return insightURL;
-      // is the url has some params already at its end?
-      if (insightURL.includes('?') && insightURL.includes('=')) {
-        // append
-        return insightURL + '&insight_id=' + insightId;
-      }
-      // add
-      return insightURL + '?insight_id=' + insightId;
-    },
     selectContextInsight(contextInsight) {
       if (contextInsight === this.selectedContextInsight) {
         this.selectedContextInsight = null;
@@ -220,6 +213,7 @@ export default {
 
       let savedURL = this.selectedContextInsight.url;
       const currentURL = this.$route.fullPath;
+      const datacubeId = _.first(contextInsight.context_id);
       if (savedURL !== currentURL) {
         // special case
         if (this.projectType === ProjectType.Analysis && this.selectedContextInsight.visibility === 'public') {
@@ -236,7 +230,9 @@ export default {
         }
 
         // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = this.getSourceUrlForExport(savedURL, this.selectedContextInsight.id);
+        const finalURL = savedURL.includes('/data/')
+          ? InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, _.first(this.selectedContextInsight.context_id))
+          : InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id);
 
         // special case
         if (this.projectType !== ProjectType.Analysis && this.selectedContextInsight.visibility === 'private') {
@@ -252,7 +248,8 @@ export default {
       } else {
         router.push({
           query: {
-            insight_id: this.selectedContextInsight.id
+            insight_id: this.selectedContextInsight.id,
+            datacube_id: datacubeId
           }
         }).catch(() => {});
       }
@@ -294,6 +291,7 @@ export default {
       const docxMaxImageSize = 612;
 
       const sections = this.listContextInsights.map((bm) => {
+        const datacubeId = _.first(bm.context_id);
         const imageSize = this.scaleImage(bm.thumbnail, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(bm.modified_at);
         return {
@@ -365,7 +363,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(bm.url)
+                  link: this.slideURL(InsightUtil.getSourceUrlForExport(bm.url, bm.id, datacubeId))
                 })
               ]
             })
@@ -400,6 +398,7 @@ export default {
       });
 
       this.listContextInsights.forEach((bm) => {
+        const datacubeId = _.first(bm.context_id);
         const imageSize = this.scaleImage(bm.thumbnail, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(bm.modified_at);
         const slide = pres.addSlide();
@@ -431,7 +430,7 @@ export default {
             options: {
               bold: true,
               hyperlink: {
-                url: this.slideURL(bm.url)
+                url: this.slideURL(InsightUtil.getSourceUrlForExport(bm.url, bm.id, datacubeId))
               }
             }
           },

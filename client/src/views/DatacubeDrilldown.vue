@@ -170,6 +170,8 @@ import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { Insight, ViewState, DataState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
 import useQualifiers from '@/services/composables/useQualifiers';
+import { useRoute } from 'vue-router';
+import { ModelRun } from '@/types/ModelRun';
 
 const DRILLDOWN_TABS = [
   {
@@ -207,6 +209,8 @@ export default defineComponent({
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+    const route = useRoute();
+    const datacubeId = route.query.datacube_id as any;
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
 
     // apply initial data config for this datacube
@@ -215,9 +219,8 @@ export default defineComponent({
     const initialSelectedYears = ref<string[]>([]);
 
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
-    const datacubeId = analysisItems.value[0].id;
-    const initialViewConfig: ViewState = analysisItems.value[0].viewConfig;
-    const initialDataConfig: DataState = analysisItems.value[0].dataConfig;
+    const initialViewConfig: ViewState = analysisId.value[0].viewConfig;
+    const initialDataConfig: DataState = analysisId.value[0].dataConfig;
 
     // apply initial view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
@@ -265,6 +268,7 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
 
     watchEffect(() => {
       // If more than one run is selected, make sure "split by" is set to none.
@@ -350,7 +354,8 @@ export default defineComponent({
     const clearRouteParam = () => {
       router.push({
         query: {
-          insight_id: undefined
+          insight_id: undefined,
+          datacube_id: selectedModelId.value
         }
       }).catch(() => {});
     };
@@ -396,7 +401,8 @@ export default defineComponent({
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
-      initialSelectedYears
+      initialSelectedYears,
+      selectedScenarios
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -428,7 +434,7 @@ export default defineComponent({
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems[0];
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
       if (currentAnalysisItem.viewConfig === undefined) {
         currentAnalysisItem.viewConfig = {} as ViewState;
       }
@@ -523,7 +529,8 @@ export default defineComponent({
       toggleIsYearSelected,
       initialSelectedQualifierValues,
       initialSelectedRegionIds,
-      initialSelectedYears
+      initialSelectedYears,
+      selectedScenarios
     };
   },
   data: () => ({
@@ -692,6 +699,15 @@ export default defineComponent({
         if (this.currentTabView === 'description') {
           this.updateTabView('data');
         }
+
+        // once the list of selected scenario changes,
+        //  extract model runs that match the selected scenario IDs
+        this.selectedScenarios = newIds.reduce((filteredRuns: ModelRun[], runId) => {
+          this.allModelRunData.some(run => {
+            return runId === run.id && filteredRuns.push(run);
+          });
+          return filteredRuns;
+        }, []);
       } else {
         this.updateTabView('description');
       }
