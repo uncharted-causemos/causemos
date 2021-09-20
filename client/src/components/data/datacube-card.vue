@@ -326,39 +326,39 @@
         </div>
       </div>
       </div>
-      <drilldown-panel
-        class="drilldown"
-        :is-open="activeDrilldownTab !== null"
-        :tabs="drilldownTabs"
-        :active-tab-id="activeDrilldownTab"
-      >
-        <template #content>
-          <breakdown-pane
-            v-if="activeDrilldownTab ==='breakdown'"
-            :selected-admin-level="selectedAdminLevel"
-            :qualifier-breakdown-data="qualifierBreakdownData"
-            :regional-data="regionalData"
-            :temporal-breakdown-data="temporalBreakdownData"
-            :selected-spatial-aggregation="selectedSpatialAggregation"
-            :selected-temporal-aggregation="selectedTemporalAggregation"
-            :selected-temporal-resolution="selectedTemporalResolution"
-            :selected-timestamp="selectedTimestamp"
-            :selected-scenario-ids="selectedScenarioIds"
-            :selected-region-ids="selectedRegionIds"
-            :selected-qualifier-values="selectedQualifierValues"
-            :selected-breakdown-option="breakdownOption"
-            :selected-timeseries-points="selectedTimeseriesPoints"
-            :selected-years="selectedYears"
-            :unit="unit"
-            @toggle-is-region-selected="toggleIsRegionSelected"
-            @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-            @toggle-is-year-selected="toggleIsYearSelected"
-            @set-selected-admin-level="setSelectedAdminLevel"
-            @set-breakdown-option="emitBreakdownOptionSelection"
-          />
-        </template>
-    </drilldown-panel>
     </div>
+    <drilldown-panel
+      class="drilldown"
+      :is-open="activeDrilldownTab !== null"
+      :tabs="drilldownTabs"
+      :active-tab-id="activeDrilldownTab"
+    >
+      <template #content>
+        <breakdown-pane
+          v-if="activeDrilldownTab ==='breakdown'"
+          :selected-admin-level="selectedAdminLevel"
+          :qualifier-breakdown-data="qualifierBreakdownData"
+          :regional-data="regionalData"
+          :temporal-breakdown-data="temporalBreakdownData"
+          :selected-spatial-aggregation="selectedSpatialAggregation"
+          :selected-temporal-aggregation="selectedTemporalAggregation"
+          :selected-temporal-resolution="selectedTemporalResolution"
+          :selected-timestamp="selectedTimestamp"
+          :selected-scenario-ids="selectedScenarioIds"
+          :selected-region-ids="selectedRegionIds"
+          :selected-qualifier-values="selectedQualifierValues"
+          :selected-breakdown-option="breakdownOption"
+          :selected-timeseries-points="selectedTimeseriesPoints"
+          :selected-years="selectedYears"
+          :unit="unit"
+          @toggle-is-region-selected="toggleIsRegionSelected"
+          @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+          @toggle-is-year-selected="toggleIsYearSelected"
+          @set-selected-admin-level="setSelectedAdminLevel"
+          @set-breakdown-option="emitBreakdownOptionSelection"
+        />
+      </template>
+    </drilldown-panel>
   </div>
 </template>
 
