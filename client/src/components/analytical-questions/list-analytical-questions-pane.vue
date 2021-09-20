@@ -82,6 +82,7 @@
               </span>
               <i
                 v-if="hasTour(questionItem)"
+                v-tooltip.top="'Tutorial available for this question'"
                 class="fa fa-lg fa-info-circle"
                 :style="{ color: canStartTour ? '#000000' : '#707070' }"
                 :disabled="!canStartTour"
@@ -754,7 +755,8 @@ export default defineComponent({
         flex-direction: column;
         display: flex;
         font-size: $font-size-medium;
-        margin-bottom: 30px;
+        margin-bottom: 25px;
+        margin-top: 5px;
 
         .checklist-item-question {
           flex-direction: row;
@@ -818,6 +820,8 @@ export default defineComponent({
 
   .options-button {
     align-self: flex-start;
+    position: relative;
+    bottom: 5px;
   }
 
   .unstyled-list > *:not(:first-child) {
