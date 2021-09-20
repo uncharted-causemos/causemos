@@ -355,7 +355,7 @@ const startIndicatorPostProcessing = async (metadata) => {
             new_ids: flowParameters.doc_ids,
             existing_ids: existingIndicators.map(indicator => indicator.id)
           },
-        code: 200
+        code: existingIndicators.length === 0 ? 201 : 200
       };
     } catch (err) {
       return { result: { error: err }, code: 500 };
