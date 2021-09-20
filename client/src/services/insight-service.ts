@@ -65,19 +65,3 @@ export const fetchInsights = async (fetchParamsArray: InsightFilterFields[]) => 
 
   return _.uniqBy(allFlatResults, 'id');
 };
-
-/**
- * Fetch insights for a given array of fetch parameters
- * @param fetchParamsArray an array where each element is a combination of filter fields
- * @returns the result is a unique flat array with a union of all fetch operations
- */
-export const fetchInsightsCount = async (fetchParamsArray: any[]) => {
-  // but we may also run the loop in parallel; map the array to promises
-  const promises = fetchParamsArray.map(async (fetchParams) => {
-    return API.get('insights/counts', { params: fetchParams });
-  });
-  // wait until all promises are resolved
-  const allRawResponses = await Promise.all(promises);
-  const allFlatResults = allRawResponses.flatMap(res => res.data);
-  return _.sum(allFlatResults);
-};

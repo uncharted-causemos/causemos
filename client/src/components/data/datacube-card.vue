@@ -169,47 +169,22 @@
               </div>
             </div>
 
-            <datacube-scenario-header
-              v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
-              :metadata="metadata"
-              :selected-scenario-ids="selectedScenarioIds"
-              :color-from-index="colorFromIndex"
-            />
-            <modal v-if="showDatasets">
-              <template #header>
-                <h4 class="header"> Parquet files used to populate this datacube </h4>
-              </template>
-              <template #body>
-                <div v-for="dataPath in dataPaths" :key="dataPath">
-                  <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
-                  <br/>
-                  <br/>
-                </div>
-                <p>
-                  <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
-                </p>
-              </template>
-              <template #footer>
-                <div
-                  class="btn btn-primary btn-call-for-action"
-                  @click="showDatasets = false"
-                >
-                  Close
-                </div>
-              </template>
-            </modal>
-
-            <!-- Data tab content -->
-            <div v-if="currentTabView === 'data'" class="column">
-              <div class="dropdown-row">
-                <slot
-                  name="temporal-aggregation-config"
-                  v-if="currentTabView === 'data' && timeseriesData.length > 0"
-                />
-                <slot
-                  name="temporal-resolution-config"
-                  v-if="currentTabView === 'data' && timeseriesData.length > 0"
-                />
+          <datacube-scenario-header
+            v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
+            :metadata="metadata"
+            :all-model-run-data="allModelRunData"
+            :selected-scenario-ids="selectedScenarioIds"
+            :color-from-index="colorFromIndex"
+          />
+          <modal v-if="showDatasets">
+            <template #header>
+              <h4 class="header"> Parquet files used to populate this datacube </h4>
+            </template>
+            <template #body>
+              <div v-for="dataPath in dataPaths" :key="dataPath">
+                <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
+                <br/>
+                <br/>
               </div>
               <timeseries-chart
                 v-if="currentTabView === 'data' && timeseriesData.length > 0"
@@ -244,6 +219,59 @@
               >
                 <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
               </div>
+            </template>
+          </modal>
+
+          <!-- Data tab content -->
+          <div v-if="currentTabView === 'data'" class="column">
+            <div class="dropdown-row">
+              <slot
+                name="temporal-aggregation-config"
+                v-if="currentTabView === 'data' && timeseriesData.length > 0"
+              />
+              <slot
+                name="temporal-resolution-config"
+                v-if="currentTabView === 'data' && timeseriesData.length > 0"
+              />
+            </div>
+            <timeseries-chart
+              v-if="currentTabView === 'data' && timeseriesData.length > 0"
+              class="timeseries-chart"
+              :timeseries-data="timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
+              :selected-timestamp="selectedTimestamp"
+              :breakdown-option="breakdownOption"
+              :unit="mainModelOutput?.unit"
+              @select-timestamp="emitTimestampSelection"
+            />
+            <p
+              v-if="
+                currentTabView === 'data' &&
+                breakdownOption !== null &&
+                timeseriesData.length === 0
+              "
+            >
+              Please select one or more
+              {{
+                breakdownOption === SpatialAggregationLevel.Region
+                  ? 'regions'
+                  : breakdownOption === TemporalAggregationLevel.Year
+                  ? 'years'
+                  : 'qualifier values'
+              }}
+              , or choose 'Split by none'.
+            </p>
+            <div
+              v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
+              class="dropdown-row"
+            >
+              <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
+            </div>
+            <div class="card-maps-box">
+              <div v-if="outputSourceSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
+                <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" />
+              </div>
               <div
                 v-if="mapReady && currentTabView === 'data' && regionalData !== null"
                 class="card-maps-container">
@@ -269,15 +297,16 @@
                     :relative-to="relativeTo"
                     :show-tooltip="true"
                     :selected-layer-id="mapSelectedLayer"
-                    :filters="mapFilters"
                     :map-bounds="mapBounds"
                     :region-data="regionalData"
+                    :admin-layer-stats="adminLayerStats"
                     :grid-layer-stats="gridLayerStats"
                     :selected-base-layer="selectedBaseLayer"
                     :unit="unit"
                     @sync-bounds="onSyncMapBounds"
                     @on-map-load="onMapLoad"
-                    @slide-handle-change="updateMapFilters"
+                    @zoom-change="updateMapCurSyncedZoom"
+                    @map-update="recalculateGridMapDiffStats"
                   />
                 </div>
               </div>
@@ -288,65 +317,73 @@
                 <!-- Empty div to reduce jumpiness when the maps are loading -->
                 <div class="card-map" />
               </div>
+              <div v-if="outputSourceSpecs.length > 0" class="card-maps-legend-container">
+                <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" />
+              </div>
             </div>
           </div>
         </div>
       </div>
+      </div>
+      <drilldown-panel
+        class="drilldown"
+        :is-open="activeDrilldownTab !== null"
+        :tabs="drilldownTabs"
+        :active-tab-id="activeDrilldownTab"
+      >
+        <template #content>
+          <breakdown-pane
+            v-if="activeDrilldownTab ==='breakdown'"
+            :selected-admin-level="selectedAdminLevel"
+            :qualifier-breakdown-data="qualifierBreakdownData"
+            :regional-data="regionalData"
+            :temporal-breakdown-data="temporalBreakdownData"
+            :selected-spatial-aggregation="selectedSpatialAggregation"
+            :selected-temporal-aggregation="selectedTemporalAggregation"
+            :selected-temporal-resolution="selectedTemporalResolution"
+            :selected-timestamp="selectedTimestamp"
+            :selected-scenario-ids="selectedScenarioIds"
+            :selected-region-ids="selectedRegionIds"
+            :selected-qualifier-values="selectedQualifierValues"
+            :selected-breakdown-option="breakdownOption"
+            :selected-timeseries-points="selectedTimeseriesPoints"
+            :selected-years="selectedYears"
+            :unit="unit"
+            @toggle-is-region-selected="toggleIsRegionSelected"
+            @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+            @toggle-is-year-selected="toggleIsYearSelected"
+            @set-selected-admin-level="setSelectedAdminLevel"
+            @set-breakdown-option="emitBreakdownOptionSelection"
+          />
+        </template>
+    </drilldown-panel>
     </div>
-    <drilldown-panel
-      class="drilldown"
-      :is-open="activeDrilldownTab !== null"
-      :tabs="drilldownTabs"
-      :active-tab-id="activeDrilldownTab"
-    >
-      <template #content>
-        <breakdown-pane
-          v-if="activeDrilldownTab ==='breakdown'"
-          :selected-admin-level="selectedAdminLevel"
-          :qualifier-breakdown-data="qualifierBreakdownData"
-          :regional-data="regionalData"
-          :temporal-breakdown-data="temporalBreakdownData"
-          :selected-spatial-aggregation="selectedSpatialAggregation"
-          :selected-temporal-aggregation="selectedTemporalAggregation"
-          :selected-temporal-resolution="selectedTemporalResolution"
-          :selected-timestamp="selectedTimestamp"
-          :selected-scenario-ids="selectedScenarioIds"
-          :selected-region-ids="selectedRegionIds"
-          :selected-qualifier-values="selectedQualifierValues"
-          :selected-breakdown-option="breakdownOption"
-          :selected-timeseries-points="selectedTimeseriesPoints"
-          :selected-years="selectedYears"
-          :unit="unit"
-          @toggle-is-region-selected="toggleIsRegionSelected"
-          @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-          @toggle-is-year-selected="toggleIsYearSelected"
-          @set-selected-admin-level="setSelectedAdminLevel"
-          @set-breakdown-option="emitBreakdownOptionSelection"
-        />
-      </template>
-  </drilldown-panel>
   </div>
 </template>
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, watch, toRefs, computed, watchEffect, Ref } from 'vue';
+import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
+import { useStore } from 'vuex';
+
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
+import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
-import { ScenarioData, AnalysisMapFilter } from '@/types/Common';
-import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
-import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
-import { getOutputStats } from '@/services/runoutput-service';
-import { colorFromIndex } from '@/utils/colors-util';
-import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
+import MapLegend from '@/components/widgets/map-legend.vue';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
+import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
+import SmallTextButton from '@/components/widgets/small-text-button.vue';
+import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
+
+import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
+import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
+
+import { ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
   ModelRunStatus,
@@ -354,15 +391,15 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
-import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
-import { OutputSpecWithId, RegionalAggregations, OutputStatsResult } from '@/types/Runoutput';
-import { useStore } from 'vuex';
-import { isIndicator, isModel } from '@/utils/datacube-util';
-import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
-import { DATA_LAYER } from '@/utils/map-util-new';
-import SmallTextButton from '@/components/widgets/small-text-button.vue';
-import RadioButtonGroup from '../widgets/radio-button-group.vue';
+import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
 import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+
+import { colorFromIndex } from '@/utils/colors-util';
+import { isIndicator, isModel } from '@/utils/datacube-util';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 
 const DRILLDOWN_TABS = [
   {
@@ -384,7 +421,6 @@ export default defineComponent({
     'new-runs-mode',
     'update-tab-view',
     'set-relative-to',
-
     'set-selected-admin-level',
     'toggle-is-region-selected',
     'toggle-is-qualifier-selected',
@@ -504,10 +540,10 @@ export default defineComponent({
     DataAnalysisMap,
     DrilldownPanel,
     DropdownControl,
+    MapLegend,
     ModalNewScenarioRuns,
     ModalCheckRunsExecutionStatus,
     Modal,
-    ParallelCoordinatesChart,
     RadioButtonGroup,
     SmallTextButton
   },
@@ -518,10 +554,13 @@ export default defineComponent({
     const tour = computed(() => store.getters['tour/tour']);
 
     const {
-      selectedScenarioIds,
       allModelRunData,
       metadata,
-      outputSourceSpecs
+      outputSourceSpecs,
+      regionalData,
+      relativeTo,
+      selectedDataLayer,
+      selectedAdminLevel
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -606,7 +645,7 @@ export default defineComponent({
         preGenDataMap.value = Object.assign({}, ...allModelRunData.value.map((r) => ({ [r.id]: r.pre_gen_output_paths })));
         if (Object.keys(preGenDataMap.value).length > 0) {
           // note that some runs may not have valid pre-gen data (i.e., null)
-          const allPreGenData = Object.values(preGenDataMap.value).flat().filter(p => p !== null);
+          const allPreGenData = Object.values(preGenDataMap.value).flat().filter(p => p !== null && p !== undefined);
 
           // assing each pre-gen data item (within each run) an id
           allPreGenData.forEach(pregen => {
@@ -640,40 +679,34 @@ export default defineComponent({
         _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
     });
 
-    const gridLayerStats = ref<OutputStatsResult[]>([]);
-
-    watchEffect(async onInvalidate => {
-      if (outputSourceSpecs.value.length === 0) return;
-      let isCancelled = false;
-      onInvalidate(() => {
-        isCancelled = true;
-      });
-      const result = await getOutputStats(outputSourceSpecs.value);
-      if (isCancelled) return;
-      gridLayerStats.value = result;
-    });
-
-    const mapFilters = ref<AnalysisMapFilter[]>([]);
-    const updateMapFilters = (data: AnalysisMapFilter) => {
-      mapFilters.value = [...mapFilters.value.filter(d => d.id !== data.id), data];
-    };
-    // When the list of selected scenario IDs changes, remove any map filters
-    //  that no longer apply to any of the selected scenarios
-    watch(
-      () => selectedScenarioIds.value,
-      () => {
-        mapFilters.value = mapFilters.value.filter(filter => {
-          return selectedScenarioIds.value.find(scenarioId => filter.id === scenarioId);
-        });
-      }
-    );
+    const {
+      onSyncMapBounds,
+      mapBounds,
+      updateMapCurSyncedZoom,
+      recalculateGridMapDiffStats,
+      adminLayerStats,
+      gridLayerStats,
+      gridMapLayerLegendData,
+      adminMapLayerLegendData,
+      mapLegendData,
+      isGridLayer,
+      mapSelectedLayer
+    } = useAnalysisMaps(outputSourceSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
 
     return {
       activeDrilldownTab: 'breakdown',
       drilldownTabs: DRILLDOWN_TABS,
+      mapBounds,
+      onSyncMapBounds,
+      isGridLayer,
+      mapSelectedLayer,
+      recalculateGridMapDiffStats,
+      updateMapCurSyncedZoom,
+      adminLayerStats,
       gridLayerStats,
-      updateMapFilters,
-      mapFilters,
+      adminMapLayerLegendData,
+      gridMapLayerLegendData,
+      mapLegendData,
       colorFromIndex,
       emitTimestampSelection,
       dimensions,
@@ -705,10 +738,6 @@ export default defineComponent({
     potentialScenarios: [] as Array<ScenarioData>,
     showNewRunsModal: false,
     showModelRunsExecutionStatus: false,
-    mapBounds: [ // Default bounds to Ethiopia
-      [ETHIOPIA_BOUNDING_BOX.LEFT, ETHIOPIA_BOUNDING_BOX.BOTTOM],
-      [ETHIOPIA_BOUNDING_BOX.RIGHT, ETHIOPIA_BOUNDING_BOX.TOP]
-    ],
     mapReady: false
   }),
   created() {
@@ -732,9 +761,6 @@ export default defineComponent({
       } else {
         return [];
       }
-    },
-    mapSelectedLayer(): number {
-      return this.selectedDataLayer === DATA_LAYER.TILES ? 4 : this.selectedAdminLevel;
     }
   },
   methods: {
@@ -771,9 +797,6 @@ export default defineComponent({
     },
     onMapLoad() {
       this.$emit('on-map-load');
-    },
-    onSyncMapBounds(mapBounds: Array<Array<number>>) {
-      this.mapBounds = mapBounds;
     },
     toggleNewRunsMode() {
       this.showNewRunsMode = !this.showNewRunsMode;
@@ -924,9 +947,35 @@ $marginSize: 5px;
   max-width: 100%;
 }
 
+.card-maps-box {
+  flex: 3;
+  min-width: 0;
+  display: flex;
+  flex-direction: row;
+}
+
 .card-map-container {
   flex: 1;
   min-width: 0;
+  display: flex;
+  flex-direction: row;
+}
+
+.card-maps-legend-container {
+    display: flex;
+    flex-direction: column;
+    .top-padding {
+      height: 19px;
+    }
+    div {
+      flex-grow: 1;
+      display: flex;
+      flex-direction: column;
+    }
+}
+
+.card-map-container {
+  flex-grow: 1;
   display: flex;
   flex-direction: column;
 
@@ -1007,6 +1056,14 @@ $marginSize: 5px;
 
   .timestamp {
     color: $selected-dark;
+  }
+}
+.map-legend-container {
+  ::v-deep(.color-label) {
+    span:nth-child(2) {
+      position: relative;
+      bottom: -16px;
+    }
   }
 }
 </style>

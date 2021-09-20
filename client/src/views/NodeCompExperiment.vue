@@ -141,6 +141,8 @@ import useQualifiers from '@/services/composables/useQualifiers';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { ViewState } from '@/types/Insight';
 import modelService from '@/services/model-service';
+import { ModelRun } from '@/types/ModelRun';
+
 
 export default defineComponent({
   name: 'NodeCompExperiment',
@@ -198,6 +200,14 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
+
+    watchEffect(() => {
+      // If more than one run is selected, make sure "split by" is set to none.
+      if (selectedScenarioIds.value.length > 1) {
+        breakdownOption.value = null;
+      }
+    });
 
     const selectedTimestamp = ref(null) as Ref<number | null>;
 
@@ -288,6 +298,14 @@ export default defineComponent({
         if (currentTabView.value === 'description') {
           updateTabView('data');
         }
+        // once the list of selected scenario changes,
+        // extract model runs that match the selected scenario IDs
+        selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
+          allModelRunData.value.some(run => {
+            return runId === run.id && filteredRuns.push(run);
+          });
+          return filteredRuns;
+        }, []);
       } else {
         updateTabView('description');
       }
@@ -366,7 +384,8 @@ export default defineComponent({
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
-      ref([])
+      ref([]),
+      selectedScenarios
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -521,6 +540,7 @@ export default defineComponent({
       selectedQualifierValues,
       selectedRegionIds,
       selectedScenarioIds,
+      selectedScenarios,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,

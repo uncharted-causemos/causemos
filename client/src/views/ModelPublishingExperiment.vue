@@ -152,6 +152,7 @@ import { DataState, Insight, ViewState } from '@/types/Insight';
 import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
 import domainProjectService from '@/services/domain-project-service';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
+import { ModelRun } from '@/types/ModelRun';
 
 export default defineComponent({
   name: 'ModelPublishingExperiment',
@@ -184,6 +185,13 @@ export default defineComponent({
     const setSelectedTemporalAggregation = (tempAgg: string) => store.dispatch('modelPublishStore/setSelectedTemporalAggregation', tempAgg);
     const setSelectedSpatialAggregation = (spatAgg: string) => store.dispatch('modelPublishStore/setSelectedSpatialAggregation', spatAgg);
     const setSelectedTemporalResolution = (tempRes: string) => store.dispatch('modelPublishStore/setSelectedTemporalResolution', tempRes);
+    watchEffect(() => {
+      // If more than one run is selected, make sure "split by" is set to none.
+      if (selectedScenarioIds.value.length > 1) {
+        breakdownOption.value = null;
+      }
+    });
+
     // reset on init:
     setCurrentPublishStep(ModelPublishingStepID.Enrich_Description);
 
@@ -195,6 +203,8 @@ export default defineComponent({
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
+
+    const selectedScenarios = ref<ModelRun[]>([]);
 
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
@@ -252,10 +262,19 @@ export default defineComponent({
         }
 
         // selecting a run or multiple runs when the desc tab is active should always open the data tab
-        //  selecting a run or multiple runs otherwise should respect the current tab
+        // selecting a run or multiple runs otherwise should respect the current tab
         if (currentTabView.value === 'description') {
           currentTabView.value = 'data';
         }
+
+        // once the list of selected scenario changes,
+        // extract model runs that match the selected scenario IDs
+        selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
+          allModelRunData.value.some(run => {
+            return runId === run.id && filteredRuns.push(run);
+          });
+          return filteredRuns;
+        }, []);
       } else {
         // if no scenario selection is made, ensure we are back to the first step
         if (currentPublishStep.value !== ModelPublishingStepID.Enrich_Description) {
@@ -479,7 +498,8 @@ export default defineComponent({
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
-      initialSelectedYears
+      initialSelectedYears,
+      selectedScenarios
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -694,6 +714,7 @@ export default defineComponent({
       selectedModelId,
       selectedQualifierValues,
       selectedRegionIds,
+      selectedScenarios,
       selectedScenarioIds,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
@@ -733,12 +754,12 @@ export default defineComponent({
       handler(/* newValue, oldValue */) {
         // NOTE:  this is only valid when the route is focused on the 'model publishing experiment' space
         if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
-          // check for 'insight_id' first to apply insight, then if not found, then 'datacubeid'
+          // check for 'insight_id' first to apply insight, then if not found, then 'datacube_id'
           const insight_id = this.$route.query.insight_id as any;
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);
           } else {
-            const datacubeid = this.$route.query.datacubeid as any;
+            const datacubeid = this.$route.query.datacube_id as any;
             if (datacubeid !== undefined) {
               // re-fetch model data
               this.setSelectedTimestamp(null);

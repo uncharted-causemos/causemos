@@ -64,20 +64,12 @@ export default function useInsightsData() {
         // when fetching public insights, then project-id is only relevant in domain projects
         publicInsightsSearchFields.project_id = project.value;
       }
-      const publicFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
-        contextIds.value.forEach((contextId: string) => {
-          // context-id must be ignored when fetching insights at the project landing page
-          const searchFilter = _.clone(publicInsightsSearchFields);
-          searchFilter.context_id = contextId;
-          publicFilterArray.push(searchFilter);
-        });
-      } else {
-        publicFilterArray.push(publicInsightsSearchFields);
+        publicInsightsSearchFields.context_id = contextIds.value; // note passing potentially an array of context to match against
       }
       // Note that when 'ignoreContextId' is true, this means we are fetching insights for the insight explorer within an analysis project
       // For this case, public insights should not be listed
-      const publicInsights = ignoreContextId ? [] : await fetchInsights(publicFilterArray);
+      const publicInsights = ignoreContextId ? [] : await fetchInsights([publicInsightsSearchFields]);
 
       //
       // fetch project-specific insights
@@ -88,17 +80,10 @@ export default function useInsightsData() {
         contextInsightsSearchFields.project_id = project.value;
       }
       contextInsightsSearchFields.visibility = 'private';
-      const contextFilterArray = [];
       if (contextIds.value && contextIds.value.length > 0 && !ignoreContextId) {
-        contextIds.value.forEach((contextId: string) => {
-          const searchFilter = _.clone(contextInsightsSearchFields);
-          searchFilter.context_id = contextId;
-          contextFilterArray.push(searchFilter);
-        });
-      } else {
-        contextFilterArray.push(contextInsightsSearchFields);
+        contextInsightsSearchFields.context_id = contextIds.value; // note passing potentially an array of context to match against
       }
-      const contextInsights = await fetchInsights(contextFilterArray);
+      const contextInsights = await fetchInsights([contextInsightsSearchFields]);
 
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the

@@ -129,7 +129,6 @@ export default defineComponent({
       // 'nodeDataExplorer',
       // 'kbExplorer',
       // 'dataExplorer',
-      // 'createDataCube'
     }));
 
     const currentView = computed(() => store.getters['app/currentView']);

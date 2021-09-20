@@ -150,6 +150,8 @@ import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
 import { getAnalysis } from '@/services/analysis-service';
+import { useRoute } from 'vue-router';
+import { ModelRun } from '@/types/ModelRun';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
@@ -161,6 +163,7 @@ export default defineComponent({
     MapDropdown
   },
   setup() {
+    const route = useRoute();
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
@@ -182,17 +185,15 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
 
-
-
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
 
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
-    const datacubeId = analysisItems.value[0].id;
-    const initialViewConfig: ViewState = analysisItems.value[0].viewConfig;
-    const initialDataConfig: DataState = analysisItems.value[0].dataConfig;
+    const datacubeId = route.query.datacube_id as any;
+    const initialViewConfig: ViewState = analysisId.value[0].viewConfig;
+    const initialDataConfig: DataState = analysisId.value[0].dataConfig;
 
     // apply initial view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
@@ -240,6 +241,14 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
+
+    watchEffect(() => {
+      // If more than one run is selected, make sure "split by" is set to none.
+      if (selectedScenarioIds.value.length > 1) {
+        breakdownOption.value = null;
+      }
+    });
 
     const selectedTimestamp = ref(null) as Ref<number | null>;
 
@@ -317,7 +326,8 @@ export default defineComponent({
     const clearRouteParam = () => {
       router.push({
         query: {
-          insight_id: undefined
+          insight_id: undefined,
+          datacube_id: selectedModelId.value
         }
       }).catch(() => {});
     };
@@ -356,6 +366,14 @@ export default defineComponent({
         if (currentTabView.value === 'description') {
           updateTabView('data');
         }
+        // once the list of selected scenario changes,
+        // extract model runs that match the selected scenario IDs
+        selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
+          allModelRunData.value.some(run => {
+            return runId === run.id && filteredRuns.push(run);
+          });
+          return filteredRuns;
+        }, []);
       } else {
         updateTabView('description');
       }
@@ -504,7 +522,8 @@ export default defineComponent({
       setSelectedTimestamp,
       selectedRegionIds,
       selectedQualifierValues,
-      initialSelectedYears
+      initialSelectedYears,
+      selectedScenarios
     );
 
     const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
@@ -536,7 +555,7 @@ export default defineComponent({
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems[0];
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
       if (currentAnalysisItem.viewConfig === undefined) {
         currentAnalysisItem.viewConfig = {} as ViewState;
       }
@@ -618,6 +637,7 @@ export default defineComponent({
       selectedModelId,
       selectedQualifierValues,
       selectedRegionIds,
+      selectedScenarios,
       selectedScenarioIds,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
