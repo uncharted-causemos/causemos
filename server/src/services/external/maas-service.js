@@ -102,7 +102,7 @@ const startModelOutputPostProcessing = async (metadata) => {
     size: 1
   }))[0];
   if (!modelMetadata) {
-    return { result: { message: '' }, code: 409 };
+    return { result: { error: `Unable to process run. Model metadata for model id ${metadata.model_id} was not found.` }, code: 409 };
   }
 
   const qualifierMap = {};
