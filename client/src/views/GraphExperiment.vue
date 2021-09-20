@@ -32,9 +32,9 @@
 <script>
 /* eslint-disable */
 import _ from 'lodash';
-import API from '@/api/api';
+// import API from '@/api/api';
 import * as d3 from 'd3';
-import { SVGRenderer, group, nodeSize, highlight, expandCollapse } from 'svg-flowgraph';
+import { SVGRenderer, group, nodeSize, highlight, expandCollapse, panZoom } from 'svg-flowgraph';
 
 import ELKAdapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
@@ -198,7 +198,7 @@ export default {
       el: this.$refs.test,
       adapter: new ELKAdapter({ nodeWidth: 100, nodeHeight: 60, layout: layered }),
       renderMode: 'delta',
-      addons: [expandCollapse, group, nodeSize, highlight],
+      addons: [expandCollapse, group, nodeSize, highlight, panZoom],
       useEdgeControl: false,
     });
     this.renderer.setCallback('nodeClick', (evt, node, renderer, event) => {
