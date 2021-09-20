@@ -355,6 +355,8 @@ main {
 .insights {
   background: white;
   padding: 10px;
+  // Pane already contains bottom margin
+  padding-bottom: 0;
   margin-top: 18px;
   flex: 1;
   min-height: 0;
