@@ -1,17 +1,17 @@
 <template>
   <div class="analytical-questions-panel-container">
     <template v-if="showDeleteModal">
-      <h5 class="title"><i class="fa fa-fw fa-question" /> Delete Public Question</h5>
-      <p>
-        Are you sure you want to delete?
-        <br/>
-        <b style="color: red">Note this deletion will remove the question from all projects!</b>
-      </p>
-
+      <h5 class="title">Delete Public Question</h5>
+      <p>Are you sure you want to delete?</p>
+      <message-display
+        class="delete-confirm-alert"
+        :message-type="'alert-warning'"
+        :message="'This deletion will remove the question from all projects.'"
+      />
       <ul class="unstyled-list">
         <button
           type="button"
-          class="btn first-button"
+          class="btn"
           @click.stop="showDeleteModal = false">
             Cancel
         </button>
@@ -24,19 +24,19 @@
       </ul>
     </template>
     <template v-if="showNewAnalyticalQuestion">
-      <h5 class="title"><i class="fa fa-fw fa-question" /> New Analytical Question</h5>
+      <h5 class="title">New Analytical Question</h5>
       <textarea
         v-model="newQuestionText"
         v-focus
         type="text"
-        placeholder="Enter a new analytical question"
+        placeholder="Enter question"
         rows="10"
-        class="row question-text col-md-11"
+        class="question-text"
       />
       <ul class="unstyled-list">
         <button
           type="button"
-          class="btn first-button"
+          class="btn"
           @click.stop="showNewAnalyticalQuestion = false">
             Cancel
         </button>
@@ -711,7 +711,7 @@ export default defineComponent({
   @import "~styles/variables";
 
   .question-text {
-    margin: 1rem;
+    margin-bottom: 1rem;
     border-color: gray;
     border-width: thin;
   }
@@ -806,11 +806,19 @@ export default defineComponent({
     margin-left: 20px;
   }
 
+  .delete-confirm-alert {
+    margin-bottom: 10px;
+  }
+
   .new-question-button {
     margin: 10px 0;
   }
 
   .options-button {
     align-self: flex-start;
+  }
+
+  .unstyled-list > *:not(:first-child) {
+    margin-left: 5px;
   }
 </style>
