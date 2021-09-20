@@ -25,7 +25,7 @@
     <button
       v-if="allowNewInsights"
       type="button"
-      class="row btn btn-primary btn-call-for-action"
+      class="btn btn-primary btn-call-for-action"
       @click.stop="newInsight">
         <i class="fa fa-fw fa-star fa-lg" />
         New Insight
