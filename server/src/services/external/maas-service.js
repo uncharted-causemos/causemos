@@ -64,13 +64,13 @@ const submitModelRun = async(metadata) => {
     // Assign run name for this newly created model run with a
     // special case if this run is the default run
     const existingRunsCount = await connection.count([
-      { field: 'model_id', value: metadata.model_id },
+      { field: 'model_id', value: filteredMetadata.model_id },
       { field: 'is_default_run', value: false }
     ]);
-    const runName = metadata.is_default_run ? 'Default' : 'Run ' + (existingRunsCount + 1);
+    const runName = filteredMetadata.is_default_run ? 'Default' : 'Run ' + (existingRunsCount + 1);
 
     const result = await connection.insert({
-      ...metadata,
+      ...filteredMetadata,
       status: 'SUBMITTED',
       name: runName
     }, d => d.id);
