@@ -15,8 +15,6 @@ const DEFAULT_ENGINE = 'dyse';
 export default function useDraftScenario(
   selectedNode: Ref<NodeParameter | null>,
   scenarios: Ref<Scenario[]>,
-  selectedScenarioId: Ref<string | null>,
-  setSelectedScenarioId: (scenarioId: string) => Promise<void>,
   constraints: Ref<ProjectionConstraint[]>,
   currentEngine: Ref<string | null>,
   modelSummary: Ref<CAGModelSummary | null>,
@@ -26,6 +24,19 @@ export default function useDraftScenario(
   const draftScenario = computed<Scenario | null>(
     () => store.getters['model/draftScenario']
   );
+
+  const selectedScenarioId = computed<string | null>(() => {
+    const scenarioId = store.getters['model/selectedScenarioId'];
+    if (scenarios.value.filter(d => d.id === scenarioId).length === 0) {
+      const baselineScenario = scenarios.value.find(d => d.is_baseline);
+      return baselineScenario?.id ?? null;
+    }
+    return scenarioId;
+  });
+
+  const setSelectedScenarioId =
+    (newId: string) => store.dispatch('model/setSelectedScenarioId', newId);
+
   const updateDraftScenarioConstraints = (
     newConstraints: ConceptProjectionConstraints
   ) => {
