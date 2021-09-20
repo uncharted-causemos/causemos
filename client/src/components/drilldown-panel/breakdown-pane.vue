@@ -56,20 +56,20 @@
     <aggregation-checklist-pane
       class="checklist-section"
       v-for="qualifierVariable in qualifierBreakdownData"
-      :key="qualifierVariable.name"
+      :key="qualifierVariable.id"
       :aggregation-level-count="1"
       :aggregation-level="0"
       :aggregation-level-title="qualifierVariable.name"
-      :ordered-aggregation-level-keys="[qualifierVariable.name]"
+      :ordered-aggregation-level-keys="[qualifierVariable.id]"
       :raw-data="qualifierVariable.data"
       :selected-timeseries-points="selectedTimeseriesPoints"
-      :should-show-deselected-bars="selectedBreakdownOption !== SpatialAggregationLevel.Region"
+      :should-show-deselected-bars="selectedBreakdownOption === SpatialAggregationLevel.Region || selectedBreakdownOption === TemporalAggregationLevel.Year || selectedBreakdownOption === null"
       :units="unit"
       :checkbox-type="
-        selectedBreakdownOption === qualifierVariable.name ? 'checkbox' : null
+        selectedBreakdownOption === qualifierVariable.id ? 'checkbox' : null
       "
       :selected-item-ids="
-        selectedBreakdownOption === qualifierVariable.name
+        selectedBreakdownOption === qualifierVariable.id
           ? Array.from(selectedQualifierValues)
           : []
       "
@@ -103,7 +103,7 @@
       :ordered-aggregation-level-keys="['Year']"
       :raw-data="temporalBreakdownData"
       :units="unit"
-      :should-show-deselected-bars="true"
+      :should-show-deselected-bars="selectedBreakdownOption !== TemporalAggregationLevel.Year"
       :selected-timeseries-points="selectedTimeseriesPoints"
       :checkbox-type="
         selectedBreakdownOption === TemporalAggregationLevel.Year
@@ -283,8 +283,8 @@ export default defineComponent({
           displayName: 'Split by year'
         });
         options.push(
-          ...qualifierBreakdownData.value.map(({ name }) => ({
-            value: name,
+          ...qualifierBreakdownData.value.map(({ id, name }) => ({
+            value: id,
             displayName: `Split by ${name}`
           }))
         );
