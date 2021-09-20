@@ -3,7 +3,7 @@
     <div class="model-attribute-pair">
       <label style="font-weight: normal;">Model family</label>
       <input
-        :value="modelFamilyName"
+        :value="metadata.family_name"
         type="text"
         class="disabled"
         style="border-width: 1px;"
@@ -12,7 +12,7 @@
     <div class="model-attribute-pair">
       <label style="font-weight: normal;">Model</label>
       <input
-        :value="modelName"
+        :value="metadata.name"
         type="text"
         class="disabled"
         style="border-width: 1px;"
@@ -32,13 +32,13 @@
       <label style="font-weight: normal;">Maintainer</label>
       <div>
         <input
-          v-model="maintainerName"
+          v-model="maintainer.name"
           placeholder="name"
           type="text"
           style="border-width: 1px;"
         >
         <input
-          v-model="maintainerEmail"
+          v-model="maintainer.email"
           placeholder="email"
           type="text"
           style="border-width: 1px;"
@@ -47,7 +47,7 @@
     </div>
     <div class="model-attribute-pair" style="flex-grow: inherit">
       <label style="font-weight: normal;">Model description</label>
-      <textarea v-model="modelDescription" rows="2" />
+      <textarea :value="metadata.description" @input="updateDesc" rows="2" />
     </div>
   </div>
 </template>
@@ -68,23 +68,8 @@ export default defineComponent({
   setup(props) {
     const { metadata } = toRefs(props);
 
-    const modelName = computed<string>(() => {
-      return metadata.value?.name ?? '';
-    });
-
-    const modelFamilyName = computed<string>(() => {
-      return metadata.value?.family_name ?? '';
-    });
-
-    const modelDescription = computed<string>(() => {
-      return metadata.value?.description ?? '';
-    });
-
-    const maintainerName = computed<string>(() => {
-      return metadata.value?.maintainer.name ?? '';
-    });
-    const maintainerEmail = computed<string>(() => {
-      return metadata.value?.maintainer.email ?? '';
+    const maintainer = computed<any>(() => {
+      return metadata.value?.maintainer ?? {};
     });
 
     const modelOutputs = computed<string[]>(() => {
@@ -92,16 +77,20 @@ export default defineComponent({
       return outputs?.map(o => o.display_name) ?? [];
     });
 
+    function updateDesc (e: InputEvent) {
+      if (metadata.value) {
+        const textArea = e.target as HTMLTextAreaElement;
+        metadata.value.description = textArea.value;
+      }
+    }
+
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     return {
-      modelName,
-      modelFamilyName,
-      modelDescription,
-      maintainerName,
-      maintainerEmail,
+      updateDesc,
+      maintainer,
       modelOutputs,
       currentOutputIndex
     };
