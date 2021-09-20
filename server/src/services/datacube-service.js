@@ -85,7 +85,7 @@ const insertDatacube = async(metadata) => {
     const result = await connection.insert([metadata]);
     return { result: { es_response: result }, code: 201 };
   } catch (err) {
-    return { error: err, code: 500 };
+    return { result: { error: err }, code: 500 };
   }
 };
 
