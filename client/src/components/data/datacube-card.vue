@@ -535,25 +535,36 @@ export default defineComponent({
     }
   },
   components: {
-    timeseriesChart,
     BreakdownPane,
-    DatacubeScenarioHeader,
     DataAnalysisMap,
+    DatacubeScenarioHeader,
     DrilldownPanel,
     DropdownControl,
     MapLegend,
-    ModalNewScenarioRuns,
-    ModalCheckRunsExecutionStatus,
     Modal,
+    ModalCheckRunsExecutionStatus,
+    ModalNewScenarioRuns,
     ParallelCoordinatesChart,
     RadioButtonGroup,
-    SmallTextButton
+    SmallTextButton,
+    timeseriesChart
   },
   setup(props, { emit }) {
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const tour = computed(() => store.getters['tour/tour']);
+    const activeDrilldownTab = ref<string|null>('breakdown');
+    const potentialScenarioCount = ref<number|null>(0);
+    const potentialScenarios = ref<ScenarioData[]>([]);
+    const showDatasets = ref<boolean>(false);
+    const showNewRunsMode = ref<boolean>(false);
+    const isRelativeDropdownOpen = ref<boolean>(false);
+    const showNewRunsModal = ref<boolean>(false);
+    const showModelRunsExecutionStatus = ref<boolean>(false);
+    const mapReady = ref<boolean>(false);
+
+
 
     const {
       allModelRunData,
@@ -561,8 +572,9 @@ export default defineComponent({
       outputSourceSpecs,
       regionalData,
       relativeTo,
+      selectedAdminLevel,
       selectedDataLayer,
-      selectedAdminLevel
+      selectedScenarioIds
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -593,6 +605,86 @@ export default defineComponent({
 
     const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
       emit('set-breakdown-option', breakdownOption);
+    };
+
+    const onMapLoad = () => {
+      emit('on-map-load');
+    };
+
+
+
+    const clickData = (tab: string) => {
+      // FIXME: This code to select a model run when switching to the data tab
+      //  should be in a watcher on the parent component to be more robust,
+      //  rather than in this button's click handler.
+      emit('update-tab-view', tab);
+
+      if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
+        // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
+        const readyRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
+        if (readyRuns.length === 0) {
+          console.warn('cannot find a baseline model run indicated by the is_default_run');
+          // failed to find baseline using the 'is_default_run' flag
+          // FIXME: so, try to find a model run that has values matching the default values of all inputs
+        }
+        const newIds = readyRuns.map(run => run.id).slice(0, 1);
+        emit('set-selected-scenario-ids', newIds);
+      }
+
+      //
+      // advance the relevant tour if it is active
+      //
+      if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour')) {
+        tour.value.next();
+      }
+    };
+
+    const onTabClick = (value: string) => {
+      if (value === 'description' && isModelMetadata) {
+        emit('set-selected-scenario-ids', []); // this will update the 'currentTabView'
+      }
+      clickData(value);
+    };
+
+    const requestNewModelRuns = () => {
+      showNewRunsModal.value = true;
+    };
+
+    const showModelExecutionStatus = () => {
+      showModelRunsExecutionStatus.value = true;
+    };
+
+    const toggleNewRunsMode = () => {
+      showNewRunsMode.value = !showNewRunsMode.value;
+      potentialScenarioCount.value = 0;
+
+      if (showNewRunsMode.value) {
+        // clear any selected scenario and show the model desc page
+        updateScenarioSelection({ scenarios: [] });
+      }
+      emit('new-runs-mode', { newRunsMode: showNewRunsMode });
+    };
+
+    const onNewScenarioRunsModalClose = (status: any) => {
+      showNewRunsModal.value = false;
+      if (status.cancel === false) {
+        // execution has just started for some new runs so start the hot-reload cycle
+        // first, exit new-runs-mode
+        toggleNewRunsMode();
+        // then, re-fetch data from server (wait some time to give the server a chance to update)
+        _.delay(() => emit('refetch-data'), 2000);
+      }
+    };
+
+    const updateScenarioSelection = (e: { scenarios: Array<ScenarioData> }) => {
+      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
+      if (selectedScenarios.length === 0) {
+        // console.log('no line is selected');
+        emit('set-selected-scenario-ids', []);
+      } else {
+        const selectedRunIDs = selectedScenarios.map(s => s.run_id);
+        emit('set-selected-scenario-ids', selectedRunIDs);
+      }
     };
 
     const {
@@ -675,11 +767,24 @@ export default defineComponent({
       return preGenDataMap.value[spec.id] ? preGenDataMap.value[spec.id].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataItem.value) : undefined;
     }
 
-    const validModelRunsAvailable = computed(() => {
-      return (!_.isNull(metadata.value) && isIndicator(metadata.value)) || (!_.isNull(allModelRunData.value) &&
-        !_.isNull(metadata.value) && isModel(metadata.value) &&
-        _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
+    const dataPaths = computed((): string[] => {
+      if (!_.isNull(metadata.value)) {
+        const isAModel: boolean = isModel(metadata.value);
+        return _.compact(isAModel
+          ? allModelRunData.value
+            .filter(modelRun => selectedScenarioIds.value.indexOf(modelRun.id) >= 0)
+            .flatMap(modelRun => _.head(modelRun.data_paths))
+          : isIndicator(metadata.value) ? metadata.value.data_paths : []
+        );
+      } else {
+        return [];
+      }
     });
+
+    const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
+      potentialScenarioCount.value = e.scenarios.length;
+      potentialScenarios.value = e.scenarios;
+    };
 
     const {
       onSyncMapBounds,
@@ -688,158 +793,63 @@ export default defineComponent({
       recalculateGridMapDiffStats,
       adminLayerStats,
       gridLayerStats,
-      gridMapLayerLegendData,
-      adminMapLayerLegendData,
       mapLegendData,
-      isGridLayer,
       mapSelectedLayer
     } = useAnalysisMaps(outputSourceSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
 
     return {
-      activeDrilldownTab: 'breakdown',
-      drilldownTabs: DRILLDOWN_TABS,
-      mapBounds,
-      onSyncMapBounds,
-      isGridLayer,
-      mapSelectedLayer,
-      recalculateGridMapDiffStats,
-      updateMapCurSyncedZoom,
+      activeDrilldownTab,
       adminLayerStats,
-      gridLayerStats,
-      adminMapLayerLegendData,
-      gridMapLayerLegendData,
-      mapLegendData,
       colorFromIndex,
-      emitTimestampSelection,
+      dataPaths,
       dimensions,
-      ordinalDimensionNames,
-      runParameterValues,
-      mainModelOutput,
-      isModelMetadata,
+      drilldownTabs: DRILLDOWN_TABS,
+      emitBreakdownOptionSelection,
       emitRelativeToSelection,
+      emitTimestampSelection,
+      getSelectedPreGenOutput,
+      gridLayerStats,
+      headerGroupButtons,
+      isModelMetadata,
+      isRelativeDropdownOpen,
+      mainModelOutput,
+      mapBounds,
+      mapLegendData,
+      mapReady,
+      mapSelectedLayer,
+      onMapLoad,
+      onNewScenarioRunsModalClose,
+      onSyncMapBounds,
+      onTabClick,
+      ordinalDimensionNames,
+      potentialScenarioCount,
+      preGenDataItems,
+      recalculateGridMapDiffStats,
+      requestNewModelRuns,
+      runParameterValues,
+      selectedPreGenDataItem,
+      setSelectedAdminLevel,
+      showDatasets,
+      showModelExecutionStatus,
+      showModelRunsExecutionStatus,
+      showNewRunsModal,
+      showNewRunsMode,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
-      validModelRunsAvailable,
-      tour,
-      headerGroupButtons,
-      preGenDataItems,
-      selectedPreGenDataItem,
-      getSelectedPreGenOutput,
-      setSelectedAdminLevel,
-      toggleIsRegionSelected,
       toggleIsQualifierSelected,
+      toggleIsRegionSelected,
       toggleIsYearSelected,
-      emitBreakdownOptionSelection
+      toggleNewRunsMode,
+      updateGeneratedScenarios,
+      updateMapCurSyncedZoom,
+      updateScenarioSelection
     };
   },
-  data: () => ({
-    showDatasets: false,
-    showNewRunsMode: false,
-    potentialScenarioCount: 0,
-    isRelativeDropdownOpen: false,
-    potentialScenarios: [] as Array<ScenarioData>,
-    showNewRunsModal: false,
-    showModelRunsExecutionStatus: false,
-    mapReady: false
-  }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
   },
   unmounted() {
     disableConcurrentTileRequestsCaching();
-  },
-  mounted() {
-  },
-  computed: {
-    dataPaths(): string[] {
-      if (!_.isNull(this.metadata)) {
-        const isAModel: boolean = isModel(this.metadata);
-        return _.compact(isAModel
-          ? this.allModelRunData
-            .filter(modelRun => this.selectedScenarioIds.indexOf(modelRun.id) >= 0)
-            .flatMap(modelRun => _.head(modelRun.data_paths))
-          : isIndicator(this.metadata) ? this.metadata.data_paths : []
-        );
-      } else {
-        return [];
-      }
-    }
-  },
-  methods: {
-    onTabClick(value: string) {
-      if (value === 'description' && this.isModelMetadata) {
-        this.$emit('set-selected-scenario-ids', []); // this will update the 'currentTabView'
-      }
-      this.clickData(value);
-    },
-    clickData(tab: string) {
-      // FIXME: This code to select a model run when switching to the data tab
-      //  should be in a watcher on the parent component to be more robust,
-      //  rather than in this button's click handler.
-      this.$emit('update-tab-view', tab);
-
-      if (this.isModelMetadata && this.selectedScenarioIds.length === 0) {
-        // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
-        const readyRuns = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
-        if (readyRuns.length === 0) {
-          console.warn('cannot find a baseline model run indicated by the is_default_run');
-          // failed to find baseline using the 'is_default_run' flag
-          // FIXME: so, try to find a model run that has values matching the default values of all inputs
-        }
-        const newIds = readyRuns.map(run => run.id).slice(0, 1);
-        this.$emit('set-selected-scenario-ids', newIds);
-      }
-
-      //
-      // advance the relevant tour if it is active
-      //
-      if (tab === 'data' && this.tour && this.tour.id.startsWith('aggregations-tour')) {
-        this.tour.next();
-      }
-    },
-    onMapLoad() {
-      this.$emit('on-map-load');
-    },
-    toggleNewRunsMode() {
-      this.showNewRunsMode = !this.showNewRunsMode;
-      this.potentialScenarioCount = 0;
-
-      if (this.showNewRunsMode) {
-        // clear any selected scenario and show the model desc page
-        this.updateScenarioSelection({ scenarios: [] });
-      }
-      this.$emit('new-runs-mode', { newRunsMode: this.showNewRunsMode });
-    },
-    requestNewModelRuns() {
-      this.showNewRunsModal = true;
-    },
-    onNewScenarioRunsModalClose (status: any) {
-      this.showNewRunsModal = false;
-      if (status.cancel === false) {
-        // execution has just started for some new runs so start the hot-reload cycle
-        // first, exit new-runs-mode
-        this.toggleNewRunsMode();
-        // then, re-fetch data from server (wait some time to give the server a chance to update)
-        _.delay(() => this.$emit('refetch-data'), 2000);
-      }
-    },
-    showModelExecutionStatus() {
-      this.showModelRunsExecutionStatus = true;
-    },
-    updateScenarioSelection(e: { scenarios: Array<ScenarioData> }) {
-      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
-      if (selectedScenarios.length === 0) {
-        // console.log('no line is selected');
-        this.$emit('set-selected-scenario-ids', []);
-      } else {
-        const selectedRunIDs = selectedScenarios.map(s => s.run_id);
-        this.$emit('set-selected-scenario-ids', selectedRunIDs);
-      }
-    },
-    updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
-      this.potentialScenarioCount = e.scenarios.length;
-      this.potentialScenarios = e.scenarios;
-    }
   }
 });
 </script>
