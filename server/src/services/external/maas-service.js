@@ -347,7 +347,16 @@ const startIndicatorPostProcessing = async (metadata) => {
     try {
       const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
       const result = await connection.insert(newIndicatorMetadata, d => d.id);
-      return { result: { es_response: result, message: 'Documents inserted', new_ids: flowParameters.doc_ids }, code: 200 };
+      return {
+        result:
+          {
+            es_response: result,
+            message: 'Documents inserted',
+            new_ids: flowParameters.doc_ids,
+            existing_ids: existingIndicators.map(indicator => indicator.id)
+          },
+        code: 200
+      };
     } catch (err) {
       return { result: { error: err }, code: 500 };
     }
