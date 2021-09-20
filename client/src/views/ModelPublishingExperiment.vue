@@ -145,13 +145,14 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 import { DatacubeFeature, ModelPublishingStep } from '@/types/Datacube';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import { updateDatacube } from '@/services/new-datacube-service';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useQualifiers from '@/services/composables/useQualifiers';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { fetchInsights, getInsightById, InsightFilterFields } from '@/services/insight-service';
 import domainProjectService from '@/services/domain-project-service';
-import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import { ModelRun } from '@/types/ModelRun';
 
 export default defineComponent({
@@ -171,7 +172,7 @@ export default defineComponent({
     const countInsights = computed(() => store.getters['insightPanel/countInsights']);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const currentPublishStep: ComputedRef<number> = computed(() => store.getters['modelPublishStore/currentPublishStep']);
     const selectedTemporalAggregation: ComputedRef<AggregationOption> = computed(() => store.getters['modelPublishStore/selectedTemporalAggregation']);
     const selectedTemporalResolution: ComputedRef<TemporalResolutionOption> = computed(() => store.getters['modelPublishStore/selectedTemporalResolution']);
@@ -530,32 +531,29 @@ export default defineComponent({
     );
 
     watchEffect(() => {
-      const viewState: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        isDescriptionView: currentTabView.value === 'description', // FIXME
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value
-      };
+      const viewState: ViewState = initViewStateFromRefs(
+        breakdownOption,
+        currentOutputIndex,
+        currentTabView,
+        selectedAdminLevel,
+        selectedBaseLayer,
+        selectedDataLayer,
+        selectedSpatialAggregation,
+        selectedTemporalAggregation,
+        selectedTemporalResolution
+      );
       store.dispatch('insightPanel/setViewState', viewState);
-      const dataState: DataState = {
-        selectedModelId: selectedModelId.value,
-        selectedScenarioIds: selectedScenarioIds.value,
-        selectedTimestamp: selectedTimestamp.value,
-        datacubeTitles: [{
-          datacubeName: metadata.value?.name ?? '',
-          datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
-        }],
-        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
-        selectedRegionIds: selectedRegionIds.value,
-        relativeTo: relativeTo.value,
-        selectedQualifierValues: [...selectedQualifierValues.value],
-        selectedYears: [...selectedYears.value]
-      };
+      const dataState: DataState = initDataStateFromRefs(
+        mainModelOutput,
+        metadata,
+        relativeTo,
+        selectedModelId,
+        selectedQualifierValues,
+        selectedRegionIds,
+        selectedScenarioIds,
+        selectedTimestamp,
+        selectedYears
+      );
 
       store.dispatch('insightPanel/setDataState', dataState);
     });

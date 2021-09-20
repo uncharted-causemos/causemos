@@ -139,6 +139,7 @@ import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useQualifiers from '@/services/composables/useQualifiers';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { initViewStateFromRefs } from '@/utils/drilldown-util';
 import { ViewState } from '@/types/Insight';
 import modelService from '@/services/model-service';
 import { ModelRun } from '@/types/ModelRun';
@@ -463,19 +464,19 @@ export default defineComponent({
           min: null // filled in by server
         }
       };
-      // save view config options when quantifying the node along with the node parameters
-      const viewConfig: ViewState = {
-        spatialAggregation: selectedSpatialAggregation.value,
-        temporalAggregation: selectedTemporalAggregation.value,
-        temporalResolution: selectedTemporalResolution.value,
-        breakdownOption: breakdownOption.value,
-        selectedAdminLevel: selectedAdminLevel.value,
-        selectedOutputIndex: currentOutputIndex.value,
-        selectedMapBaseLayer: selectedBaseLayer.value,
-        selectedMapDataLayer: selectedDataLayer.value
-      };
-      Object.keys(viewConfig).forEach(key => {
-        (nodeParameters.parameter as any)[key] = viewConfig[key];
+      const viewState: ViewState = initViewStateFromRefs(
+        breakdownOption,
+        currentOutputIndex,
+        currentTabView,
+        selectedAdminLevel,
+        selectedBaseLayer,
+        selectedDataLayer,
+        selectedSpatialAggregation,
+        selectedTemporalAggregation,
+        selectedTemporalResolution
+      );
+      Object.keys(viewState).forEach(key => {
+        (nodeParameters.parameter as any)[key] = viewState[key];
       });
       await modelService.updateNodeParameter(selectedNode.value.model_id, nodeParameters);
 
