@@ -53,7 +53,7 @@ const submitModelRun = async(metadata) => {
   try {
     result = await requestAsPromise(pipelinePayload);
   } catch (err) {
-    return { error: err, code: 500 };
+    return { result: { error: err }, code: 500 };
   }
   Logger.info(`Model execution response ${result}`);
 
