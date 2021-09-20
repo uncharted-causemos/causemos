@@ -791,6 +791,8 @@ export default defineComponent({
             padding-right: 1rem;
             color: gray;
             font-style: italic;
+            flex: 1;
+            min-width: 0;
           }
           .private-insight-name {
             color: black;
