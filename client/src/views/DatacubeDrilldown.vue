@@ -185,6 +185,10 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const breakdownOption = ref<string | null>(null);
 
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+    const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
+
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
@@ -194,6 +198,8 @@ export default defineComponent({
     const datacubeId = route.query.datacube_id as any;
     const initialViewConfig: ViewState = analysisId.value[0].viewConfig;
     const initialDataConfig: DataState = analysisId.value[0].dataConfig;
+    const selectedModelId = ref(datacubeId);
+    const metadata = useModelMetadata(selectedModelId);
 
     // apply initial view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
@@ -233,15 +239,6 @@ export default defineComponent({
         initialSelectedQualifierValues.value = _.clone(initialDataConfig.selectedQualifierValues);
       }
     }
-
-    const selectedModelId = ref(datacubeId);
-
-    const metadata = useModelMetadata(selectedModelId);
-
-    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-
-    const selectedScenarioIds = ref([] as string[]);
-    const selectedScenarios = ref([] as ModelRun[]);
 
     watchEffect(() => {
       // If more than one run is selected, make sure "split by" is set to none.
@@ -345,7 +342,6 @@ export default defineComponent({
     const setSelectedAdminLevel = (newValue: number) => {
       selectedAdminLevel.value = newValue;
     };
-
     const setSpatialAggregationSelection = (spatialAgg: AggregationOption) => {
       selectedSpatialAggregation.value = spatialAgg;
     };

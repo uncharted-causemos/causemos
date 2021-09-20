@@ -366,16 +366,16 @@ export default defineComponent({
       }
     };
 
+    const updateTabView = (val: string) => {
+      currentTabView.value = val;
+    };
+
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
     };
 
     const setDataLayer = (val: DATA_LAYER) => {
       selectedDataLayer.value = val;
-    };
-
-    const updateTabView = (val: string) => {
-      currentTabView.value = val;
     };
     const updateSelectedTimestamp = (value: number) => {
       if (selectedTimestamp.value === value) return;
@@ -548,9 +548,9 @@ export default defineComponent({
         selectedTimestamp: selectedTimestamp.value,
         datacubeTitles: [{
           datacubeName: metadata.value?.name ?? '',
-          datacubeOutputName: mainModelOutput.value?.display_name ?? ''
+          datacubeOutputName: mainModelOutput?.value?.display_name ?? ''
         }],
-        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube,
+        datacubeRegions: metadata.value?.geography.country, // FIXME: later this could be the selected region for each datacube
         selectedRegionIds: selectedRegionIds.value,
         relativeTo: relativeTo.value,
         selectedQualifierValues: [...selectedQualifierValues.value],

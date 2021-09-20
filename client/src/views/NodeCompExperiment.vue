@@ -157,6 +157,10 @@ export default defineComponent({
   setup() {
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
     const selectedAdminLevel = ref(0);
     const isExpanded = true;
@@ -167,23 +171,13 @@ export default defineComponent({
     const currentCAG = computed(() => store.getters['app/currentCAG']);
     const nodeId = computed(() => store.getters['app/nodeId']);
     const project = computed(() => store.getters['app/project']);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+    const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
 
 
     // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
     const indicatorId = computed(() => store.getters['app/indicatorId']);
-
-    const currentOutputIndex = computed(() => {
-      if (
-        metadata.value?.id !== undefined &&
-        datacubeCurrentOutputsMap.value[metadata.value?.id] !== undefined
-      ) {
-        return datacubeCurrentOutputsMap.value[metadata.value?.id];
-      } else {
-        return 0;
-      }
-    });
-
-
 
     const metadata = useModelMetadata(indicatorId);
 
@@ -197,10 +191,7 @@ export default defineComponent({
       return modelComponents.value.nodes.find((node: { id: any }) => node.id === nodeId.value);
     });
 
-    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
-    const selectedScenarioIds = ref([] as string[]);
-    const selectedScenarios = ref([] as ModelRun[]);
 
     watchEffect(() => {
       // If more than one run is selected, make sure "split by" is set to none.
@@ -216,10 +207,6 @@ export default defineComponent({
     const modelRunsFetchedAt = ref(0);
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
-
-    const setBreakdownOption = (newValue: string | null) => {
-      breakdownOption.value = newValue;
-    };
 
     const {
       datacubeHierarchy,
@@ -273,20 +260,19 @@ export default defineComponent({
       if (selectedTimestamp.value === value) return;
       selectedTimestamp.value = value;
     };
+
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
+    };
     const setSelectedAdminLevel = (newValue: number) => {
       selectedAdminLevel.value = newValue;
     };
-
-    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const setSpatialAggregationSelection = (spatialAgg: AggregationOption) => {
       selectedSpatialAggregation.value = spatialAgg;
     };
     const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
       selectedTemporalResolution.value = temporalRes;
     };
-
     const setSelectedScenarioIds = (newIds: string[]) => {
       if (metadata?.value?.type !== DatacubeType.Indicator) {
         if (_.isEqual(selectedScenarioIds.value, newIds)) return;
