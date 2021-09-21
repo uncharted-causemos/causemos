@@ -1,26 +1,5 @@
 <template>
   <div>
-    <div style="margin: 5px 0">
-      <button
-        class="btn btn-primary btn-xs"
-        @click="loadDefault()">Config 1
-      </button>
-      &nbsp;
-      <button
-        class="btn btn-primary btn-xs"
-        @click="loadConfig2()">Config 2
-      </button>
-      &nbsp;
-      <button
-        class="btn btn-primary btn-xs"
-        @click="loadConfig3()">Config 3
-      </button>
-      &nbsp;
-      <button
-        class="btn btn-primary btn-xs"
-        @click="toggleHelp()">Toggle Help
-      </button>
-    </div>
     <div
       ref="test"
       style="width:100%; height: 450px; border: 1px solid #888; background: #FCFCFC"
