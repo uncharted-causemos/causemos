@@ -278,8 +278,6 @@ export default defineComponent({
     // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
     const timerHandler = setInterval(fetchData, timeInterval);
 
-    const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
-    const scenarioCount = computed(() => allModelRunData.value.length);
     const unit = computed(() =>
       mainModelOutput.value &&
       mainModelOutput.value.unit &&
@@ -598,20 +596,13 @@ export default defineComponent({
     return {
       AggregationOption,
       allModelRunData,
-      allScenarioIds,
       analysisId,
-      analysisItems,
       baselineMetadata,
       breakdownOption,
-      clearRouteParam,
       currentOutputIndex,
       currentTabView,
-      datacubeCurrentOutputsMap,
       fetchData,
       hideInsightPanel,
-      initialSelectedQualifierValues,
-      initialSelectedRegionIds,
-      initialSelectedYears,
       isExpanded,
       mainModelOutput,
       metadata,
@@ -620,12 +611,10 @@ export default defineComponent({
       onOutputSelectionChange,
       outputs,
       outputSpecs,
-      project,
       projectType,
       qualifierBreakdownData,
       regionalData,
       relativeTo,
-      scenarioCount,
       selectedAdminLevel,
       selectedBaseLayer,
       selectedDataLayer,
@@ -642,7 +631,6 @@ export default defineComponent({
       selectedYears,
       setBaseLayer,
       setBreakdownOption,
-      setDatacubeCurrentOutputsMap,
       setDataLayer,
       setRelativeTo,
       setSelectedAdminLevel,

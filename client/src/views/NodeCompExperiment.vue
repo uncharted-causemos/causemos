@@ -231,7 +231,6 @@ export default defineComponent({
     // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
     const timerHandler = setInterval(fetchData, timeInterval);
 
-    const allScenarioIds = computed(() => allModelRunData.value.length > 0 ? allModelRunData.value.map(run => run.id) : []);
     const scenarioCount = computed(() => allModelRunData.value.length);
     const unit = computed(() =>
       mainModelOutput.value &&
@@ -495,7 +494,6 @@ export default defineComponent({
     return {
       AggregationOption,
       allModelRunData,
-      allScenarioIds,
       baselineMetadata,
       breakdownOption,
       currentCAG,
