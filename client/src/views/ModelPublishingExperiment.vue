@@ -558,6 +558,17 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
+    watchEffect(async () => {
+      if (countInsights.value > 0) {
+        const publicInsights = await getPublicInsights();
+        if (publicInsights.length > 0) {
+          // we have at least one insight, so mark the relevant step as completed
+          const ps = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Capture_Insight);
+          if (ps) { ps.completed = true; }
+        }
+      }
+    });
+
     const updatePublishingStep = (completed: boolean) => {
       const currStep = publishingSteps.value.find(ps => ps.id === currentPublishStep.value);
       if (currStep) {
@@ -763,19 +774,6 @@ export default defineComponent({
               this.setSelectedTimestamp(null);
               this.selectedModelId = datacubeid;
             }
-          }
-        }
-      },
-      immediate: true
-    },
-    countInsights: {
-      async handler(/* newValue, oldValue */) {
-        if (this.countInsights > 0) {
-          const publicInsights = await this.getPublicInsights();
-          if (publicInsights.length > 0) {
-            // we have at least one insight, so mark the relevant step as completed
-            const ps = this.publishingSteps.find(s => s.id === ModelPublishingStepID.Capture_Insight);
-            if (ps) { ps.completed = true; }
           }
         }
       },
