@@ -622,8 +622,6 @@ export default defineComponent({
     const { draftScenario, saveDraft } = useDraftScenario(
       selectedNode,
       scenarios,
-      selectedScenarioId,
-      setSelectedScenarioId,
       constraints,
       currentEngine,
       modelSummary,
