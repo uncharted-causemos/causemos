@@ -70,3 +70,16 @@ export interface AnalysisMapRange {
   min: number;
   max: number;
 }
+export interface MapLegendColor {
+  color: string;
+  label?: string;
+  decor?: string; // optional label decorator to provide extra text in addition to the label text
+}
+export interface AnalysisMapStats {
+  global: MapLayerStats;
+  baseline: MapLayerStats;
+  difference: MapLayerStats;
+}
+export interface MapLayerStats {
+  [key: string]: AnalysisMapRange;
+}

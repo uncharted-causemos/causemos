@@ -22,49 +22,49 @@
         />
       </template>
     </modal-confirmation>
-
-    <div class="tab-controls">
-      <tab-bar
-        class="tabs"
-        :active-tab-id="activeTabId"
-        :tabs="tabs"
-        @tab-click="switchTab"
-      />
-      <div class="export">
-        <button
-          type="button"
-          class="btn btn-primary"
-          @click="toggleExportMenu"
-        >
-          <span class="lbl">Export</span>
-          <i
-            class="fa fa-fw"
-            :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
-          />
-        </button>
-        <dropdown-control v-if="exportActive" class="below">
-          <template #content>
-            <div
-              class="dropdown-option"
-              @click="exportPPTX"
-            >
-              Powerpoint
-            </div>
-            <div
-              class="dropdown-option"
-              @click="exportDOCX"
-            >
-              Word
-            </div>
-          </template>
-        </dropdown-control>
-      </div>
-    </div>
     <div class="body flex">
       <analytical-questions-panel />
 
       <!-- body -->
       <div class="body-main-content flex-col">
+
+        <div class="tab-controls">
+          <tab-bar
+            class="tabs"
+            :active-tab-id="activeTabId"
+            :tabs="tabs"
+            @tab-click="switchTab"
+          />
+          <div class="export">
+            <button
+              type="button"
+              class="btn btn-primary"
+              @click="toggleExportMenu"
+            >
+              <span class="lbl">Export</span>
+              <i
+                class="fa fa-fw"
+                :class="{ 'fa-angle-down': !exportActive, 'fa-angle-up': exportActive }"
+              />
+            </button>
+            <dropdown-control v-if="exportActive" class="below">
+              <template #content>
+                <div
+                  class="dropdown-option"
+                  @click="exportPPTX"
+                >
+                  Powerpoint
+                </div>
+                <div
+                  class="dropdown-option"
+                  @click="exportDOCX"
+                >
+                  Word
+                </div>
+              </template>
+            </dropdown-control>
+          </div>
+        </div>
         <div
           v-if="activeTabId === tabs[0].id"
           class="cards"
@@ -78,34 +78,32 @@
               placeholder="Search insights"
             >
           </div>
-          <div class="pane-wrapper">
-            <div
-              v-if="searchedInsights.length > 0"
-              class="pane-content"
-            >
-              <insight-card
-                v-for="insight in searchedInsights"
-                :active-insight="activeInsight"
-                :card-mode="true"
-                :curated="isCuratedInsight(insight.id)"
-                :key="insight.id"
-                :insight="insight"
-                @delete-insight="removeInsight(insight.id)"
-                @edit-insight="editInsight(insight)"
-                @open-editor="openEditor(insight.id)"
-                @select-insight="selectInsight(insight)"
-                @update-curation="updateCuration(insight.id)"
-                draggable='true'
-                @dragstart="startDrag($event, insight)"
-                @dragend="dragEnd($event)"
-              />
-            </div>
-            <message-display
-              class="pane-content"
-              v-else
-              :message="messageNoData"
+          <div
+            v-if="searchedInsights.length > 0"
+            class="pane-content"
+          >
+            <insight-card
+              v-for="insight in searchedInsights"
+              :active-insight="activeInsight"
+              :card-mode="true"
+              :curated="isCuratedInsight(insight.id)"
+              :key="insight.id"
+              :insight="insight"
+              @delete-insight="removeInsight(insight.id)"
+              @edit-insight="editInsight(insight)"
+              @open-editor="openEditor(insight.id)"
+              @select-insight="selectInsight(insight)"
+              @update-curation="updateCuration(insight.id)"
+              draggable='true'
+              @dragstart="startDrag($event, insight)"
+              @dragend="dragEnd($event)"
             />
           </div>
+          <message-display
+            class="pane-content"
+            v-else
+            :message="messageNoData"
+          />
         </div>
 
         <div
@@ -168,6 +166,8 @@ import useInsightsData from '@/services/composables/useInsightsData';
 import { ProjectType } from '@/types/Enums';
 import ModalConfirmation from '@/components/modals/modal-confirmation';
 import MessageDisplay from '@/components/widgets/message-display';
+import InsightUtil from '@/utils/insight-util';
+import _ from 'lodash';
 
 const INSIGHT_TABS = [
   {
@@ -328,22 +328,13 @@ export default {
         return this.listInsights;
       }
     },
-    getSourceUrlForExport(insightURL, insightId) {
-      if (insightURL.includes('insight_id')) return insightURL;
-      // is the url has some params already at its end?
-      if (insightURL.includes('?') && insightURL.includes('=')) {
-        // append
-        return insightURL + '&insight_id=' + insightId;
-      }
-      // add
-      return insightURL + '?insight_id=' + insightId;
-    },
     exportDOCX() {
       // 72dpi * 8.5 inches width, as word perplexingly uses pixels
       // same height as width so that we can attempt to be consistent with the layout.
       const docxMaxImageSize = 612;
       const insightSet = this.selectedInsights;
       const sections = insightSet.map((i) => {
+        const datacubeId = _.first(i.context_id);
         const imageSize = this.scaleImage(i.thumbnail, docxMaxImageSize, docxMaxImageSize);
         const insightDate = dateFormatter(i.modified_at);
         return {
@@ -415,7 +406,7 @@ export default {
                       type: UnderlineType.SINGLE
                     }
                   }),
-                  link: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
+                  link: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
                 })
               ]
             })
@@ -450,6 +441,7 @@ export default {
       });
       const insightSet = this.selectedInsights;
       insightSet.forEach((i) => {
+        const datacubeId = _.first(i.context_id);
         const imageSize = this.scaleImage(i.thumbnail, widthLimitImage, heightLimitImage);
         const insightDate = dateFormatter(i.modified_at);
         const slide = pres.addSlide();
@@ -482,7 +474,7 @@ export default {
               bold: true,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
+                url: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
               }
             }
           },
@@ -504,7 +496,7 @@ export default {
               break: false,
               color: '000088',
               hyperlink: {
-                url: this.slideURL(this.getSourceUrlForExport(i.url, i.id))
+                url: this.slideURL(InsightUtil.getSourceUrlForExport(i.url, i.id, datacubeId))
               }
             }
           },
@@ -589,7 +581,10 @@ export default {
         // TODO LATER: consider removing (private) insights once their owner (analysis or cag) is removed
 
         // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = this.getSourceUrlForExport(savedURL, this.selectedInsight.id);
+        // /data/ will be in the url if we are in the datacube drilldown page in which case datacube_id should be in the route.
+        const finalURL = savedURL.includes('/data/')
+          ? InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id, _.first(this.selectedInsight.context_id))
+          : InsightUtil.getSourceUrlForExport(savedURL, this.selectedInsight.id);
 
         // special case
         if (this.projectType !== ProjectType.Analysis && this.selectedInsight.visibility === 'private') {
@@ -643,7 +638,6 @@ export default {
 .list-insights-modal-container {
   display: flex;
   flex-direction: column;
-  justify-content: top;
   align-items: stretch;
   height: 100vh;
   .tab-controls {
@@ -674,10 +668,11 @@ export default {
   }
   .cards {
     background-color: $background-light-2;
-    display: inline-block;
-    height: 100%;
-    overflow: auto;
+    flex: 1;
+    min-height: 0;
     padding: 1rem;
+    display: flex;
+    flex-direction: column;
     .search {
       display: flex;
       padding: 0 0 1rem;
@@ -685,16 +680,11 @@ export default {
         flex: 1 1 auto;
       }
     }
-    .pane-wrapper {
-      flex: 1 1 auto;
-      display: flex;
-      flex-direction: column;
+    .pane-content {
       overflow: auto;
-      .pane-content {
-        display: flex;
-        flex-direction: row;
-        flex-wrap: wrap;
-      }
+      display: flex;
+      flex-direction: row;
+      flex-wrap: wrap;
     }
   }
   .list {

@@ -25,9 +25,8 @@ import {
   toRefs,
   watchEffect
 } from 'vue';
-import { ModelRunParameter } from '@/types/ModelRun';
+import { ModelRun, ModelRunParameter } from '@/types/ModelRun';
 import { Model } from '@/types/Datacube';
-import { getModelRunMetadata } from '@/services/new-datacube-service';
 
 type ScenarioDescription = ModelRunParameter[];
 
@@ -45,10 +44,14 @@ export default defineComponent({
     metadata: {
       type: Object as PropType<Model | null>,
       default: null
+    },
+    allModelRunData: {
+      type: Array as PropType<ModelRun[]>,
+      default: []
     }
   },
   setup(props) {
-    const { metadata, selectedScenarioIds } = toRefs(props);
+    const { metadata, selectedScenarioIds, allModelRunData } = toRefs(props);
     const inputNames = computed(() => {
       if (metadata.value === null) return {};
       const inputNamesMap: { [key: string]: string } = {};
@@ -58,23 +61,16 @@ export default defineComponent({
       return inputNamesMap;
     });
     const scenarioDescriptions = ref<ScenarioDescription[]>([]);
-    watchEffect(async onInvalidate => {
+    watchEffect(() => {
       scenarioDescriptions.value = [];
-      if (metadata.value === null || selectedScenarioIds.value.length === 0) {
+      if (metadata.value === null || selectedScenarioIds.value.length === 0 || allModelRunData.value.length === 0) {
         return [];
       }
-      let isCancelled = false;
-      // Fetch scenario descriptions
-      const allMetadata = await getModelRunMetadata(metadata.value.data_id);
-      if (isCancelled) return;
-      scenarioDescriptions.value = allMetadata
+      scenarioDescriptions.value = allModelRunData.value
         .filter((run) => selectedScenarioIds.value.includes(run.id))
         .map((scenarioMetadata) => {
           return scenarioMetadata.parameters;
         });
-      onInvalidate(() => {
-        isCancelled = true;
-      });
     });
     const inputParameters = computed(() => {
       return Object.keys(inputNames.value).map(inputName => ({

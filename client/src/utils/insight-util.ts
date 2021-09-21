@@ -1,10 +1,28 @@
 import FilterValueFormatter from '@/formatters/filter-value-formatter';
 import FilterKeyFormatter from '@/formatters/filter-key-formatter';
 import { Clause, Filters } from '@/types/Filters';
+import _ from 'lodash';
 
 interface MetadataSummary {
   key: string;
   value: string | number | null;
+}
+
+function getSourceUrlForExport(insightURL: string, insightId: string, datacubeId: string) {
+  const separator = '?';
+  const insightUrlSeparated = insightURL.split(separator);
+  const urlPrefix = _.first(insightUrlSeparated);
+  const urlSuffix = insightUrlSeparated.slice(1).join(separator);
+  const searchParams = new URLSearchParams(urlSuffix);
+  const insightIdKey = 'insight_id';
+  if (!searchParams.has(insightIdKey)) {
+    searchParams.set(insightIdKey, insightId);
+  }
+  const datacubeIdKey = 'datacube_id';
+  if (!searchParams.has(datacubeIdKey) && !_.isUndefined(datacubeIdKey)) {
+    searchParams.set(datacubeIdKey, datacubeId);
+  }
+  return urlPrefix + separator + searchParams.toString();
 }
 
 function getFormattedFilterString(filters: Filters) {
@@ -149,5 +167,6 @@ function parseMetadataDetails (
 
 export default {
   parseMetadataDetails,
-  getFormattedFilterString
+  getFormattedFilterString,
+  getSourceUrlForExport
 };

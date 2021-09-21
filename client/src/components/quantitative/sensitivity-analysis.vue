@@ -63,6 +63,9 @@ const RESIZE_DELAY = 50;
 
 const AXIS_LABEL_MARGIN_PX = 90;
 
+const CELL_WIDTH_PX = 60;
+const CELL_HEIGHT_PX = 30;
+
 export default {
   name: 'SensitivityAnalysisView',
   components: { SensitivityAnalysisLegend },
@@ -160,10 +163,17 @@ export default {
     setAnalysisType(e) {
       this.$emit('set-analysis-type', e.target.value);
     },
-    render(width, height) {
+    render() {
       if (this.matrixData === null) return;
-      const svgWidth = width || this.$refs['matrix-container'].clientWidth;
-      const svgHeight = height || this.$refs['matrix-container'].clientHeight;
+
+      const refSelection = d3.select(this.$refs['matrix-container']);
+      const svgWidth = _.uniq(this.matrixData.columns).length * CELL_WIDTH_PX + AXIS_LABEL_MARGIN_PX;
+      const svgHeight = _.uniq(this.matrixData.rows).length * CELL_HEIGHT_PX + AXIS_LABEL_MARGIN_PX;
+
+      refSelection
+        .attr('height', svgHeight)
+        .attr('width', svgWidth);
+
       const options = {
         axisLabelMargin: AXIS_LABEL_MARGIN_PX,
         width: svgWidth,
@@ -172,7 +182,6 @@ export default {
         columnOrder: this.columnOrder,
         showRankLabels: true
       };
-      const refSelection = d3.select(this.$refs['matrix-container']);
       refSelection.selectAll('*').remove();
       renderSensitivityMatrix(
         refSelection,
@@ -294,10 +303,9 @@ export default {
   .matrix-container {
     grid-area: matrix;
     position: relative;
+    overflow: scroll;
 
     svg {
-      width: 100%;
-      height: 100%;
       transition: opacity 0.3s ease-out;
 
       &.faded {
