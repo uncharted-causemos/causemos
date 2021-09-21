@@ -38,27 +38,38 @@
   </div>
 </template>
 
-<script>
+<script lang="ts">
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
-import TabPanel from '@/components/quantitative/tab-panel';
+import TabPanel from '@/components/quantitative/tab-panel.vue';
 import modelService from '@/services/model-service';
 import csrUtil from '@/utils/csr-util';
-import ActionBar from '@/components/quantitative/action-bar';
-import ModalEditParameters from '@/components/modals/modal-edit-parameters';
+import ActionBar from '@/components/quantitative/action-bar.vue';
+import ModalEditParameters from '@/components/modals/modal-edit-parameters.vue';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { getInsightById } from '@/services/insight-service';
+import { defineComponent } from '@vue/runtime-core';
+import useToaster from '@/services/composables/useToaster';
+import { CsrMatrix } from '@/types/CsrMatrix';
+import { CAGGraph, CAGModelSummary, NodeParameter, Scenario } from '@/types/CAG';
+import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
 
-export default {
+export default defineComponent({
   name: 'QuantitativeView',
   components: {
     TabPanel,
     ActionBar,
     ModalEditParameters,
     AnalyticalQuestionsAndInsightsPanel
+  },
+  setup() {
+    return {
+      toaster: useToaster(),
+      ontologyFormatter: useOntologyFormatter()
+    };
   },
   data: () => ({
     // States
@@ -70,13 +81,13 @@ export default {
     selectedStatements: [],
 
     // Core data relating to model and projections
-    modelSummary: null,
-    modelComponents: null,
-    scenarios: null,
+    modelSummary: null as CAGModelSummary | null,
+    modelComponents: null as CAGGraph | null,
+    scenarios: null as Scenario[] | null,
 
-    sensitivityMatrixData: null,
+    sensitivityMatrixData: null as CsrMatrix | null,
     sensitivityAnalysisType: 'GLOBAL',
-    sensitivityDataTimestamp: null,
+    sensitivityDataTimestamp: null as number | null,
 
     // Tracking draft scenario
     previousScenarioId: null,
@@ -92,16 +103,20 @@ export default {
       draftScenarioDirty: 'model/draftScenarioDirty',
       tour: 'tour/tour'
     }),
-    ready() {
-      return this.modelSummary && this.modelComponents && this.scenarios;
+    ready(): boolean {
+      return (
+        this.modelSummary !== null &&
+        this.modelComponents !== null &&
+        this.scenarios !== null
+      );
     },
-    currentEngine() {
-      return this.modelSummary.parameter.engine;
+    currentEngine(): string {
+      return this.modelSummary?.parameter?.engine ?? 'dyse';
     },
-    projectionSteps() {
-      return this.modelSummary.parameter.num_steps;
+    projectionSteps(): number | undefined {
+      return this.modelSummary?.parameter.num_steps;
     },
-    onMatrixTab() {
+    onMatrixTab(): boolean {
       return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
     }
   },
@@ -122,7 +137,7 @@ export default {
         // NOTE:  this is only valid when the route is focused on the 'data' space
         if (this.$route.name === 'quantitative' && this.$route.query) {
           const insight_id = this.$route.query.insight_id;
-          if (insight_id !== undefined) {
+          if (typeof insight_id === 'string') {
             this.updateStateFromInsight(insight_id);
             this.$router.push({
               query: {
@@ -156,7 +171,7 @@ export default {
       setContextId: 'insightPanel/setContextId',
       setDataState: 'insightPanel/setDataState'
     }),
-    async updateStateFromInsight(insight_id) {
+    async updateStateFromInsight(insight_id: string) {
       const loadedInsight = await getInsightById(insight_id);
       // FIXME: before applying the insight, which will overwrite current state,
       //  consider pushing current state to the url to support browser hsitory
@@ -195,6 +210,11 @@ export default {
       this.enableOverlay('Loading');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
+      if (this.modelSummary === null) {
+        console.error(`Failed to fetch model summary for "currentCAG" id: ${this.currentCAG}`);
+        return;
+      }
+
       // If we have topology changes, then we should sync with inference engines
       if (this.modelSummary.is_quantified === false) {
         // Check model is ready to be used for experiments
@@ -212,8 +232,14 @@ export default {
       this.disableOverlay();
 
       // Check if model is still training
-      if (this.modelSummary.status === modelService.MODEL_STATUS.TRAINING) {
-        const r = await modelService.checkAndUpdateRegisteredStatus(this.modelSummary.id, this.currentEngine);
+      if (
+        this.modelSummary &&
+        this.modelSummary.status === modelService.MODEL_STATUS.TRAINING
+      ) {
+        const r = await modelService.checkAndUpdateRegisteredStatus(
+          this.modelSummary.id,
+          this.currentEngine
+        );
         // FIXME: use status code
         if (r.status === 'training') {
           this.enableOverlay(MODEL_MSGS.MODEL_TRAINING);
@@ -222,7 +248,7 @@ export default {
         }
       }
 
-      let scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+      let scenarios: Scenario[] = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
       await this.refreshModel();
 
@@ -252,7 +278,12 @@ export default {
 
       let scenarioId = this.selectedScenarioId;
       if (_.isNil(this.selectedScenarioId) || scenarios.filter(d => d.id === this.selectedScenarioId).length === 0) {
-        scenarioId = scenarios.find(d => d.is_baseline).id;
+        const baselineScenario = scenarios.find(d => d.is_baseline);
+        if (baselineScenario === undefined) {
+          console.error('No scenario is flagged as baseline.', scenarios);
+        } else {
+          scenarioId = baselineScenario.id;
+        }
       }
       this.setSelectedScenarioId(scenarioId);
 
@@ -269,6 +300,14 @@ export default {
       this.updateDataState();
     },
     updateDataState() {
+      if (this.modelSummary === null) {
+        console.error('Trying to update data state while modelSummary is null.');
+        return;
+      }
+      if (this.modelComponents === null) {
+        console.error('Trying to update data state while modelComponents is null.');
+        return;
+      }
       // save the scenario-id in the insight store so that it will be part of any insight captured from this view
       const dataState = {
         selectedScenarioId: this.selectedScenarioId,
@@ -279,25 +318,44 @@ export default {
       this.setDataState(dataState);
     },
     revertDraftChanges() {
+      if (this.scenarios === null) {
+        console.error('Failed to revert draft changes because scenarios list is null.');
+        return;
+      }
       if (!_.isNil(this.previousScenarioId)) {
         this.setSelectedScenarioId(this.previousScenarioId);
       } else {
-        const id = this.scenarios.find(s => s.is_baseline === true).id;
-        this.setSelectedScenarioId(id);
+        const baselineScenario = this.scenarios.find(s => s.is_baseline === true);
+        if (baselineScenario === undefined) {
+          console.error('Failed to revert draft changes because no scenario is flagged as baseline.', this.scenarios);
+        } else {
+          const id = baselineScenario.id;
+          this.setSelectedScenarioId(id);
+        }
       }
       const temp = this.scenarios.filter(s => s.id !== DRAFT_SCENARIO_ID);
 
       this.setDraftScenario(null);
       this.scenarios = temp;
     },
-    async overwriteScenario(id) {
+    async overwriteScenario(id: string) {
+      if (this.scenarios === null) {
+        console.error('Failed to overwrite scenario, scenarios list is null.');
+        return;
+      }
       // Transfer draft data to overwrite existing scenario
       const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
+      if (draft === undefined) {
+        console.error(
+        `Failed to overwrite scenario, unable to find scenario with draft ID '${DRAFT_SCENARIO_ID}'.`
+        );
+        return;
+      }
       const existingScenario = {
         id: id,
         model_id: this.currentCAG,
         is_valid: true,
-        experiment_id: draft.experimentId,
+        experiment_id: draft.experiment_id,
         parameter: draft.parameter,
         result: draft.result
       };
@@ -312,12 +370,28 @@ export default {
       this.setSelectedScenarioId(id);
       this.disableOverlay();
     },
-    async saveNewScenario({ name, description }) {
+    async saveNewScenario({
+      name,
+      description
+    }: {
+      name: string;
+      description: string;
+    }) {
+      if (this.scenarios === null) {
+        console.error('Failed to save new scenario, scenarios list is null.');
+        return;
+      }
       // Transfer draft data
       const draft = this.scenarios.find(s => s.id === DRAFT_SCENARIO_ID);
+      if (draft === undefined) {
+        console.error(
+          `Failed to save new scenario, unable to find scenario with draft ID '${DRAFT_SCENARIO_ID}'.`
+        );
+        return;
+      }
       const newScenario = {
         model_id: this.currentCAG,
-        experiment_id: draft.experimentId,
+        experiment_id: draft.experiment_id,
         result: draft.result,
         name: name,
         description: description,
@@ -343,7 +417,7 @@ export default {
     showModelParameters() {
       this.isModelParametersOpen = true;
     },
-    async saveModelParameter(newParameter) {
+    async saveModelParameter(newParameter: NodeParameter) {
       this.isModelParametersOpen = false;
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.refresh();
@@ -351,12 +425,26 @@ export default {
     closeModelParameters() {
       this.isModelParametersOpen = false;
     },
-    async saveDraft({ concept, values }) {
+    async saveDraft({ concept, values }: { concept: string; values: any[] }) {
       this.isEditConstraintsOpen = false;
+      if (this.scenarios === null) {
+        console.error('Failed to save draft, scenarios list is null.');
+        return;
+      }
+      if (this.modelSummary === null) {
+        console.error('Failed to save draft, modelSummary is null.');
+        return;
+      }
 
       // 1. If no draft scenario we need to create one
       if (_.isNil(this.draftScenario)) {
         const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+        if (selectedScenario === undefined) {
+          console.error(
+            `Failed to save draft, unable to find scenario with selected scenario ID '${this.selectedScenarioId}'.`
+          );
+          return;
+        }
         const draft = {
           id: 'draft',
           name: 'Draft',
@@ -365,7 +453,7 @@ export default {
           is_valid: true,
           is_baseline: false,
           parameter: {
-            constraints: _.cloneDeep(selectedScenario.parameter.constraints),
+            constraints: _.cloneDeep(selectedScenario.parameter?.constraints ?? []),
             num_steps: this.projectionSteps,
             indicator_time_series_range: this.modelSummary.parameter.indicator_time_series_range,
             projection_start: this.modelSummary.parameter.projection_start
@@ -390,14 +478,30 @@ export default {
       this.scenarios = temp;
     },
     async runScenario() {
+      if (this.scenarios === null) {
+        console.error('Failed to run scenario, scenarios list is null.');
+        return;
+      }
+      if (this.modelSummary === null) {
+        console.error('Failed to run scenario, modelSummary is null.');
+        return;
+      }
+      if (this.modelComponents === null) {
+        console.error('Failed to run scenario, modelComponents is null.');
+        return;
+      }
+      if (this.projectionSteps === undefined) {
+        console.error('Failed to run scenario, projectionSteps is undefined.');
+        return;
+      }
       const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
 
-      if (_.isEmpty(selectedScenario)) return;
+      if (selectedScenario === undefined) return;
 
 
       // 0. Refresh
       this.enableOverlay('Synchronizing model');
-      if (this.modelSummary.status === 0) {
+      if (this.modelSummary && this.modelSummary.status === 0) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
       }
@@ -410,11 +514,11 @@ export default {
 
       // 2. Run experiment and wait for results
       this.enableOverlay(`Running experiment on ${this.currentEngine}`);
-      let experimentId = 0;
+      let experimentId = '';
       let result = null;
 
       try {
-        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.cleanConstraints(selectedScenario.parameter.constraints));
+        experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.cleanConstraints(selectedScenario.parameter?.constraints ?? []));
         result = await modelService.getExperimentResult(this.currentCAG, experimentId);
       } catch (error) {
         console.error(error);
@@ -425,8 +529,9 @@ export default {
       this.setDraftScenarioDirty(false);
 
       // FIXME: Not great to directly write into draft
-      selectedScenario.experimentId = experimentId;
-      selectedScenario.result = result.results.data;
+      selectedScenario.experiment_id = experimentId;
+      // FIXME: Add type for return value of modelService.getExperimentResult()
+      selectedScenario.result = (result as any).results.data;
       selectedScenario.is_valid = true;
 
       // 3. We have rerun an existing scenario, need to update
@@ -436,7 +541,7 @@ export default {
           id: selectedScenario.id,
           model_id: this.currentCAG,
           is_valid: true,
-          experiment_id: selectedScenario.experimentId,
+          experiment_id: selectedScenario.experiment_id,
           parameter: selectedScenario.parameter,
           result: selectedScenario.result
         });
@@ -451,9 +556,21 @@ export default {
       this.isEditConstraintsOpen = false;
     },
     async fetchSensitivityAnalysisResults() {
-      if (this.currentEngine !== 'dyse' || _.isNil(this.scenarios) || this.scenarios.length === 0) return;
+      if (
+        this.currentEngine !== 'dyse' ||
+        _.isNil(this.scenarios) ||
+        _.isNil(this.modelSummary) ||
+        _.isNil(this.modelComponents) ||
+        this.scenarios.length === 0
+      ) return;
 
       const selectedScenario = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId);
+      if (selectedScenario === undefined) {
+        console.error(
+          `Failed to fetch sensitivity analysis results, unable to find scenario with selected scenario ID '${this.selectedScenarioId}'.`
+        );
+        return;
+      }
 
       // Ensure we are ready to run, sync up with engines if necessary
       if (this.modelSummary.status === 0) {
@@ -467,7 +584,7 @@ export default {
       this.sensitivityMatrixData = null;
       const now = Date.now();
       this.sensitivityDataTimestamp = now;
-      const constraints = modelService.cleanConstraints(selectedScenario.parameter.constraints);
+      const constraints = modelService.cleanConstraints(selectedScenario.parameter?.constraints ?? []);
 
       const experimentId = await modelService.runSensitivityAnalysis(this.modelSummary, this.sensitivityAnalysisType, 'DYNAMIC', constraints);
 
@@ -477,15 +594,16 @@ export default {
       const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50);
 
       if (this.sensitivityDataTimestamp !== now) return;
-      const csrResults = csrUtil.resultsToCsrFormat(results.results[this.sensitivityAnalysisType.toLowerCase()]);
+      // FIXME: Add type for return value of modelService.getExperimentResult()
+      const csrResults = csrUtil.resultsToCsrFormat((results as any).results[this.sensitivityAnalysisType.toLowerCase()]);
       csrResults.rows = csrResults.rows.map(this.ontologyFormatter);
       csrResults.columns = csrResults.columns.map(this.ontologyFormatter);
       this.sensitivityMatrixData = csrResults;
     },
-    setSensitivityAnalysisType(newValue) {
+    setSensitivityAnalysisType(newValue: string) {
       this.sensitivityAnalysisType = newValue;
     },
-    tabClick(tab) {
+    tabClick(tab: string) {
       if (tab === 'matrix') {
         this.fetchSensitivityAnalysisResults();
         // advance the tour if it is active
@@ -498,7 +616,7 @@ export default {
       this.resetLayoutToken = Date.now();
     }
   }
-};
+});
 </script>
 
 <style lang="scss">

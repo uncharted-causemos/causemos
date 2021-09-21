@@ -450,6 +450,7 @@ export default defineComponent({
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
+        // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
         }
@@ -457,7 +458,7 @@ export default defineComponent({
         if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
           initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
         }
-        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
         if (loadedInsight.data_state?.selectedYears !== undefined) {
           initialSelectedYears.value = _.clone(loadedInsight.data_state?.selectedYears);
         }

@@ -8,6 +8,7 @@ import {
 export default class BaseCAGRenderer extends SVGRenderer {
   displayGraphStats() {
     const graph = this.layout;
+    if (!graph.nodes) return; // avoids null error when first node is being added
     const svg = d3.select(this.svgEl);
     const foregroundLayer = svg.select('.foreground-layer');
     const edgeCount = graph.edges.length;

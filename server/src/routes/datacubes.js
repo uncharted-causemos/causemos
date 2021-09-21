@@ -3,14 +3,13 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const datacubeService = rootRequire('/services/datacube-service');
 const filtersUtil = rootRequire('/util/filters-util');
+const { respondUsingCode } = rootRequire('/util/model-run-util.ts');
 
 /**
  * Insert a new model or indicator metadata doc
  */
 router.post('/', asyncHandler(async (req, res) => {
-  const metadata = req.body;
-  const result = await datacubeService.insertDatacube(metadata);
-  res.json(result);
+  await respondUsingCode(req, res, datacubeService.insertDatacube);
 }));
 
 /**
