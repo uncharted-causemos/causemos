@@ -50,7 +50,7 @@
                 >{{output.display_name !== '' ? output.display_name : output.name}}</option>
               </select>
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <span class="datacube-name">{{metadata.name}}</span>
+              <span class="datacube-name" @click="onClickDatacubeName">{{metadata.name}}</span>
             </h5>
           </template>
 
@@ -586,6 +586,11 @@ export default defineComponent({
     setBreakdownOption(newValue: string | null) {
       this.breakdownOption = newValue;
     },
+    onClickDatacubeName() {
+      const analysisId = this.analysisId ?? '';
+      const metadataName = this.metadata ? (this.metadata.name ?? '') : '';
+      this.$router.push({ name: 'dataExplorer', query: { analysisId, datacubeName: metadataName } });
+    },
     async onClose() {
       this.$router.push({
         name: 'dataComparative',
@@ -743,6 +748,7 @@ export default defineComponent({
   font-weight: normal;
   color: $label-color;
   margin-left: 10px;
+  cursor: pointer;
 }
 
 .search-button {
