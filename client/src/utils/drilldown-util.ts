@@ -5,6 +5,9 @@ import { DataState, ViewState } from '@/types/Insight';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { BASE_LAYER, DATA_LAYER } from './map-util-new';
 
+export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);
+export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
+
 export function initDataStateFromRefs (
   mainModelOutput: Ref<DatacubeFeature|undefined>,
   metadata: Ref<Model|Indicator|null>,
@@ -31,7 +34,6 @@ export function initDataStateFromRefs (
     selectedYears: [...selectedYears.value]
   };
 }
-
 
 export function initViewStateFromRefs (
   breakdownOption: Ref<string|null>,

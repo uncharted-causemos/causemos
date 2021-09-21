@@ -80,8 +80,9 @@
           <template #temporal-aggregation-config>
             <dropdown-button
               class="dropdown-config tour-temporal-agg-dropdown-config"
+              :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
               :inner-button-label="'Temporal Aggregation'"
-              :items="Object.values(AggregationOption)"
+              :items="aggregationOptionFiltered"
               :selected-item="selectedTemporalAggregation"
               @item-selected="setTemporalAggregationSelection"
             />
@@ -90,8 +91,9 @@
           <template #temporal-resolution-config>
             <dropdown-button
               class="dropdown-config"
+              :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
               :inner-button-label="'Temporal Resolution'"
-              :items="Object.values(TemporalResolutionOption)"
+              :items="temporalResolutionOptionFiltered"
               :selected-item="selectedTemporalResolution"
               @item-selected="setTemporalResolutionSelection"
             />
@@ -101,7 +103,7 @@
             <dropdown-button
               class="dropdown-config tour-spatial-agg-dropdown-config"
               :inner-button-label="'Spatial Aggregation'"
-              :items="Object.values(AggregationOption)"
+              :items="aggregationOptionFiltered"
               :selected-item="selectedSpatialAggregation"
               @item-selected="setSpatialAggregationSelection"
             />
@@ -146,7 +148,7 @@ import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useQualifiers from '@/services/composables/useQualifiers';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
+import { initDataStateFromRefs, initViewStateFromRefs, aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { AnalysisItem } from '@/types/Analysis';
 import { getAnalysis } from '@/services/analysis-service';
@@ -547,6 +549,7 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy
     );
+    console.log(aggregationOptionFiltered, temporalResolutionOptionFiltered);
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
@@ -592,9 +595,8 @@ export default defineComponent({
       currentAnalysisItem.dataConfig = dataState;
       store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
     });
-
     return {
-      AggregationOption,
+      aggregationOptionFiltered,
       allModelRunData,
       analysisId,
       baselineMetadata,
@@ -640,7 +642,7 @@ export default defineComponent({
       setTemporalAggregationSelection,
       setTemporalResolutionSelection,
       temporalBreakdownData,
-      TemporalResolutionOption,
+      temporalResolutionOptionFiltered,
       timerHandler,
       toggleIsQualifierSelected,
       toggleIsRegionSelected,

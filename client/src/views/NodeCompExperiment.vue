@@ -94,7 +94,7 @@
           <dropdown-button
             class="dropdown-config"
             :inner-button-label="'Spatial Aggregation'"
-            :items="Object.values(AggregationOption)"
+            :items="aggregationOptionFiltered"
             :selected-item="selectedSpatialAggregation"
             @item-selected="setSpatialAggregationSelection"
           />
@@ -138,7 +138,7 @@ import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useQualifiers from '@/services/composables/useQualifiers';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { initViewStateFromRefs } from '@/utils/drilldown-util';
+import { initViewStateFromRefs, aggregationOptionFiltered } from '@/utils/drilldown-util';
 import { ViewState } from '@/types/Insight';
 import modelService from '@/services/model-service';
 import { ModelRun } from '@/types/ModelRun';
@@ -492,7 +492,7 @@ export default defineComponent({
     };
 
     return {
-      AggregationOption,
+      aggregationOptionFiltered,
       allModelRunData,
       baselineMetadata,
       breakdownOption,
