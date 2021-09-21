@@ -207,13 +207,13 @@ export default defineComponent({
 
     const selectedScenarios = ref<ModelRun[]>([]);
 
-    const selectedModelId = ref('');
-    const metadata = useModelMetadata(selectedModelId);
-
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
+
+    const selectedModelId = ref('');
+    const metadata = useModelMetadata(selectedModelId);
 
     const {
       datacubeHierarchy,

@@ -257,13 +257,14 @@ export default defineComponent({
       }
     });
 
-    const setSelectedTimestamp = (value: number) => {
-      if (selectedTimestamp.value === value) return;
-      selectedTimestamp.value = value;
-    };
 
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
+    };
+
+    const setSelectedTimestamp = (timestamp: number) => {
+      if (selectedTimestamp.value === timestamp) return;
+      selectedTimestamp.value = timestamp;
     };
     const setSelectedAdminLevel = (newValue: number) => {
       selectedAdminLevel.value = newValue;
@@ -297,14 +298,15 @@ export default defineComponent({
         updateTabView('description');
       }
     };
+
     const setTemporalAggregationSelection = (temporalAgg: AggregationOption) => {
       selectedTemporalAggregation.value = temporalAgg;
     };
 
     const updateTabView = (val: string) => {
-      console.log(currentTabView.value);
       currentTabView.value = val;
     };
+
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
     };

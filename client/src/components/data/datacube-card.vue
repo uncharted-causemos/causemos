@@ -186,6 +186,9 @@
                 <br/>
                 <br/>
               </div>
+              <p>
+                <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
+              </p>
               <timeseries-chart
                 v-if="currentTabView === 'data' && timeseriesData.length > 0"
                 class="timeseries-chart"
