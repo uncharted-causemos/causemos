@@ -45,10 +45,13 @@
       </div>
     </header>
     <main>
-      <list-context-insight-pane class="insights" :allow-new-insights="false" />
+      <div class="insights-column">
+        <div class="column-title">Insights</div>
+        <list-context-insight-pane class="insights" :allow-new-insights="false" />
+      </div>
       <div class="instance-list-column">
         <div class="instance-list-header">
-          <div class="instances-title">Instances</div>
+          <div class="column-title">Instances</div>
           <div class="controls">
             <input
               v-model="searchDatacubeInstances"
@@ -332,7 +335,7 @@ header {
   border-radius: 4px;
 }
 
-.instances-title {
+.column-title {
   font-size: x-large;
 }
 
@@ -343,10 +346,20 @@ main {
   display: flex;
 }
 
-.insights {
+.insights-column {
   flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.insights {
   background: white;
   padding: 10px;
+  // Pane already contains bottom margin
+  padding-bottom: 0;
+  margin-top: 18px;
+  flex: 1;
+  min-height: 0;
 }
 
 .instance-list-column {

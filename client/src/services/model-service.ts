@@ -12,7 +12,8 @@ import {
   CAGModelSummary,
   CAGGraph,
   ScenarioResult,
-  NodeScenarioData
+  NodeScenarioData,
+  ScenarioParameter
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
@@ -201,7 +202,14 @@ const createScenario = async (scenario: NewScenario) => {
   const result = await API.post('scenarios', scenario);
   return result.data;
 };
-const updateScenario = async (scenario: Scenario) => {
+const updateScenario = async (scenario: {
+  id: string;
+  model_id: string;
+  is_valid: boolean;
+  experiment_id: string | undefined;
+  parameter?: ScenarioParameter;
+  result?: ScenarioResult[];
+}) => {
   const result = await API.put(`scenarios/${scenario.id}`, scenario);
   return result.data;
 };
@@ -476,8 +484,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
         projection_start: modelSummary.parameter.projection_start
       },
       engine: modelSummary.parameter.engine,
-      is_baseline: true,
-      is_valid: true
+      is_baseline: true
     };
     await createScenario(scenario);
   } catch (error) {
