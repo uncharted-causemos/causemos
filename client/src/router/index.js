@@ -45,7 +45,7 @@ async function loadAnalysisState(to, from, next) {
   next();
 }
 
-// Load analysis state for dataAnalysis store before route enter
+// Load datacube name for datacubeName store before route enter
 // NOTE: this is specific to the new data space (and the new data explorer)
 async function loadDatacubeName(to, from, next) {
   const datacubeName = to.query.datacubeName;
@@ -61,6 +61,7 @@ async function loadDatacubeName(to, from, next) {
       ]
     };
     await store.dispatch('dataSearch/setSearchFilters', filters);
+    console.log(store.getters['dataSearch/filters']);
   }
   next();
 }
