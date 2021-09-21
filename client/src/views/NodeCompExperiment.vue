@@ -42,7 +42,6 @@
         :selected-base-layer="selectedBaseLayer"
         :selected-data-layer="selectedDataLayer"
         :unit="unit"
-
         :qualifier-breakdown-data="qualifierBreakdownData"
         :temporal-breakdown-data="temporalBreakdownData"
         :selected-region-ids="selectedRegionIds"

@@ -418,7 +418,6 @@ export default defineComponent({
           setRelativeTo(loadedInsight.data_state?.relativeTo);
         }
         // view state
-        // view state
         if (loadedInsight.view_state?.spatialAggregation) {
           setSelectedSpatialAggregation(loadedInsight.view_state?.spatialAggregation);
         }

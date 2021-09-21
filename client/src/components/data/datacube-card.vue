@@ -868,10 +868,8 @@ $fullscreenTransition: all 0.5s ease-in-out;
 }
 
 .datacube-card-parent {
-  height: 100%;
   width: 100%;
   display: flex;
-  padding-bottom: 20px;
 }
 
 .datacube-card-container {
