@@ -39,12 +39,6 @@
         ref="matrix-container"
         :class="{'faded': matrixData === null}"
       />
-      <span
-        v-if="matrixData === null"
-        class="loading-message"
-      >
-        <i class="fa fa-spin fa-spinner" /> Analyzing sensitivity
-      </span>
     </div>
   </div>
 </template>
@@ -313,15 +307,6 @@ export default {
         transition: opacity 1s ease;
       }
     }
-  }
-
-  .loading-message {
-    font-size: 28px;
-    color: black;
-    position: absolute;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
   }
 
   ::v-deep(.grid-lines path) {

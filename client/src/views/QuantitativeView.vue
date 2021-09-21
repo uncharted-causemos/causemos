@@ -591,7 +591,12 @@ export default defineComponent({
       // If another sensitivity analysis started running before this one returns an ID,
       //  then don't bother fetching/processing the results to avoid a race condition
       if (this.sensitivityDataTimestamp !== now) return;
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50);
+      const progressFn = (current: number, max: number) => {
+        this.enableOverlay(`Polling ${current} of ${max}`);
+      };
+      this.enableOverlay('Analyzing sensitivity');
+      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50, progressFn);
+      this.disableOverlay();
 
       if (this.sensitivityDataTimestamp !== now) return;
       // FIXME: Add type for return value of modelService.getExperimentResult()
