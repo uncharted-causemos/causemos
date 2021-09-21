@@ -41,7 +41,7 @@ const getBulkErrors = (body, num = 2) => {
  * @param {array} filters - additional filter criteria
  * @param {array} fields - fields to highlight
  */
-const searchAndHighlight = async (index, queryString, filters = [], fields = []) => {
+const searchAndHighlight = async (index, queryString, filters, fields) => {
   const fieldsToHighlight = {};
   fields.forEach(f => {
     fieldsToHighlight[f] = {};
