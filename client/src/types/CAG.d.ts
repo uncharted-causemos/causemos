@@ -46,7 +46,6 @@ export interface NewScenario {
   description: string;
   model_id: string;
   engine: string;
-  is_valid: boolean;
   is_baseline: boolean;
   parameter?: ScenarioParameter;
   result?: ScenarioResult[];

@@ -43,8 +43,6 @@ export default defineComponent({
     margin-top: 5px;
 
     .analytical-questions-container {
-      margin-left: 1rem;
-      margin-right: 1rem;
       overflow-y: auto;
     }
   }
