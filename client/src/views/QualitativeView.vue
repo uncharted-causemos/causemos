@@ -427,8 +427,8 @@ export default defineComponent({
       }
       this.setDataState(dataState);
     },
-    async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[]) {
-      return modelService.addComponents(this.currentCAG, nodes, edges);
+    async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[], updateType: string) {
+      return modelService.addComponents(this.currentCAG, nodes, edges, updateType);
     },
     async removeCAGComponents(
       nodes: { id: string }[],
@@ -471,7 +471,7 @@ export default defineComponent({
           this.pathSuggestionSource = formattedEdge.source;
           this.pathSuggestionTarget = formattedEdge.target;
         } else {
-          const data = await this.addCAGComponents([], [formattedEdge]);
+          const data = await this.addCAGComponents([], [formattedEdge], 'MANUAL');
           this.setUpdateToken(data.updateToken);
         }
       } else {
@@ -530,7 +530,7 @@ export default defineComponent({
       //  with an empty value
       const { model_id, concept, label, modified_at, parameter } = node;
       const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter };
-      const data = await this.addCAGComponents([cleanedNode], []);
+      const data = await this.addCAGComponents([cleanedNode], [], 'MANUAL');
       this.setUpdateToken(data.updateToken);
     },
     async onModalConfirm() {
@@ -751,7 +751,7 @@ export default defineComponent({
         });
     },
     async onAddToCAG(subgraph: CAGGraphInterface) {
-      const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges);
+      const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges, 'SUGGESTION');
       this.setUpdateToken(data.updateToken);
     },
     async onRemoveRelationship(edges: EdgeParameter[]) {
@@ -854,7 +854,7 @@ export default defineComponent({
         };
       });
 
-      await this.addCAGComponents(nodes, edges);
+      await this.addCAGComponents(nodes, edges, 'MERGE');
 
       // Make sure the reference_ids are not stale
       this.recalculateCAG();
@@ -932,7 +932,7 @@ export default defineComponent({
           label: this.ontologyFormatter(concept)
         };
       });
-      const result = await this.addCAGComponents(newNodesPayload, newEdges);
+      const result = await this.addCAGComponents(newNodesPayload, newEdges, 'PATH');
       this.setUpdateToken(result.updateToken);
     },
     async resetCAGLayout() {
@@ -992,7 +992,7 @@ export default defineComponent({
       });
 
       // update and refresh
-      const data = await this.addCAGComponents(nodePayload, edgePayload);
+      const data = await this.addCAGComponents(nodePayload, edgePayload, 'CURATION');
       this.setUpdateToken(data.updateToken);
     }
   }

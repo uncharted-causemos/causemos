@@ -321,7 +321,7 @@ export default {
           };
         }
       });
-      await modelService.addComponents(this.cag, formattedNodes, formattedEdges);
+      await modelService.addComponents(this.cag, formattedNodes, formattedEdges, 'KB');
 
       this.numberOfRelationsAdded = formattedEdges.length;
       this.showModalAddedToCag = true;

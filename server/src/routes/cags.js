@@ -97,17 +97,18 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
   const {
     operation,
     edges,
-    nodes
+    nodes,
+    updateType
   } = req.body;
 
   // Perform the specified operation, or if it's not a supported operation
   // throw an error
   switch (operation) {
     case OPERATION.REMOVE:
-      await cagService.pruneCAG(modelId, edges, nodes);
+      await cagService.pruneCAG(modelId, edges, nodes, updateType);
       break;
     case OPERATION.UPDATE:
-      await cagService.updateCAG(modelId, edges, nodes);
+      await cagService.updateCAG(modelId, edges, nodes, updateType);
       break;
     default:
       throw new Error('Operation not supported: ' + operation);
