@@ -752,6 +752,9 @@ export default defineComponent({
   color: $label-color;
   margin-left: 10px;
   cursor: pointer;
+  &:hover {
+    color: $link-color;
+  }
 }
 
 .search-button {
