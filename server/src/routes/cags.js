@@ -161,7 +161,6 @@ router.post('/:mid/change-concept', asyncHandler(async (req, res) => {
   const modelId = req.params.mid;
 
   await cagService.changeConcept(modelId, change);
-
   const editTime = Date.now();
   res.status(200).send({ updateToken: editTime });
 }));

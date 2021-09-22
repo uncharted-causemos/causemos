@@ -649,27 +649,49 @@ const getStatementsByNode = async (modelId, concept) => {
 
 const changeConcept = async (modelId, change) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-  const concept = change.concept;
+  const nodeAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+
+  const newConcept = change.concept;
+  const nodeId = change.id;
+
+  // Find node
+  const node = await edgeAdapter.findOne([
+    { field: 'id', value: nodeId }
+  ]);
+
+  if (!node) {
+    throw new Error(`Node ${nodeId} not found`);
+  }
 
   // Find edges
   const sourceEdges = await edgeAdapter.find([
     { field: 'model_id', value: modelId },
-    { field: 'source', value: concept }
+    { field: 'source', value: node.concept }
   ], { size: SEARCH_LIMIT });
 
   const targetEdges = await edgeAdapter.find([
     { field: 'model_id', value: modelId },
-    { field: 'source', value: concept }
+    { field: 'source', value: node.concept }
   ], { size: SEARCH_LIMIT });
 
   const edges = _.uniqBy([...sourceEdges, ...targetEdges], 'id');
 
-  // Update nodes
+  Logger.info(`Change concept ${node.concept} to ${newConcept} in ${modelId}, affecting ${edges.length} edges`);
 
+  // Apply concept updates
+  for (let i = 0; i < edges.length; i++) {
+    const edge = edges[i];
+    if (edge.source === node.concept) edge.source = newConcept;
+    if (edge.target === node.concept) edge.target = newConcept;
+  }
+  node.concept = newConcept;
 
-  // update edges
+  // FIXME: may need to shorten label or run some human-readable heuristic if changing to compositional
+  node.label = newConcept;
 
-  console.log(edges);
+  // Reindex
+  await nodeAdapter.update(node, d => d.id);
+  await edgeAdapter.update(edges, d => d.id);
 };
 
 module.exports = {
