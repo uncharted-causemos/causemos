@@ -5,7 +5,7 @@ export const layered = {
     const layerBound = 6;
 
     let spacingOptions = null;
-    if (graph.nodes.length > 35) {
+    if (graph && graph.nodes && graph.nodes.length > 35) {
       spacingOptions = {
         'elk.layered.layering.strategy': 'COFFMAN_GRAHAM',
         'elk.layered.layering.coffmanGraham.layerBound': layerBound + 2,
