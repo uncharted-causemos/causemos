@@ -549,7 +549,6 @@ export default defineComponent({
       breakdownOption,
       datacubeHierarchy
     );
-    console.log(aggregationOptionFiltered, temporalResolutionOptionFiltered);
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
