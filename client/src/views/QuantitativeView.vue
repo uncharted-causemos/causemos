@@ -592,9 +592,11 @@ export default defineComponent({
       //  then don't bother fetching/processing the results to avoid a race condition
       if (this.sensitivityDataTimestamp !== now) return;
       const progressFn = (current: number, max: number) => {
-        this.enableOverlay(`Polling ${current} of ${max}`);
+        if (current > 2) {
+          this.enableOverlay(`Will await result for  ${(max - current) * 3} more seconds`);
+        }
       };
-      this.enableOverlay('Analyzing sensitivity');
+      this.enableOverlay('Running sensitivity analysis');
       const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50, progressFn);
       this.disableOverlay();
 
