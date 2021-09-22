@@ -646,6 +646,32 @@ const getStatementsByNode = async (modelId, concept) => {
   ]);
 };
 
+
+const changeConcept = async (modelId, change) => {
+  const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
+  const concept = change.concept;
+
+  // Find edges
+  const sourceEdges = await edgeAdapter.find([
+    { field: 'model_id', value: modelId },
+    { field: 'source', value: concept }
+  ], { size: SEARCH_LIMIT });
+
+  const targetEdges = await edgeAdapter.find([
+    { field: 'model_id', value: modelId },
+    { field: 'source', value: concept }
+  ], { size: SEARCH_LIMIT });
+
+  const edges = _.uniqBy([...sourceEdges, ...targetEdges], 'id');
+
+  // Update nodes
+
+
+  // update edges
+
+  console.log(edges);
+};
+
 module.exports = {
   createCAG,
   updateCAG,
@@ -659,5 +685,7 @@ module.exports = {
 
   getAllComponents,
   getStatementsByEdge,
-  getStatementsByNode
+  getStatementsByNode,
+
+  changeConcept
 };
