@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const uuid = require('uuid');
+const { v4: uuid } = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const requestAsPromise = rootRequire('/util/request-as-promise');
