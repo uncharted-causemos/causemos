@@ -4,6 +4,12 @@
       <div class="capture-box">
         <header>
           <slot name="datacube-model-header" />
+          <button
+            class="btn btn-default breakdown-button"
+            :onClick="() => activeDrilldownTab = (activeDrilldownTab === null ? 'breakdown' : null)"
+          >
+            Toggle Breakdown
+          </button>
           <slot name="datacube-model-header-collapse" />
         </header>
         <modal-new-scenario-runs
@@ -169,29 +175,82 @@
               </div>
             </div>
 
-          <datacube-scenario-header
-            v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
-            :metadata="metadata"
-            :all-model-run-data="allModelRunData"
-            :selected-scenario-ids="selectedScenarioIds"
-            :color-from-index="colorFromIndex"
-          />
-          <modal v-if="showDatasets">
-            <template #header>
-              <h4 class="header"> Parquet files used to populate this datacube </h4>
-            </template>
-            <template #body>
-              <div v-for="dataPath in dataPaths" :key="dataPath">
-                <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
-                <br/>
-                <br/>
+            <datacube-scenario-header
+              v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
+              :metadata="metadata"
+              :all-model-run-data="allModelRunData"
+              :selected-scenario-ids="selectedScenarioIds"
+              :color-from-index="colorFromIndex"
+            />
+            <modal
+              v-if="showDatasets"
+              :showCloseButton="true"
+              @close="() => showDatasets = false"
+            >
+              <template #header>
+                <h4 class="header"> Parquet files used to populate this datacube </h4>
+              </template>
+              <template #body>
+                <div v-for="dataPath in dataPaths" :key="dataPath">
+                  <a class="dataset-link" :href=dataPath>{{ dataPath.length > 50 ? dataPath.slice(0, 50) + '...' : dataPath }}</a>
+                  <br/>
+                  <br/>
+                </div>
+                <p>
+                  <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
+                </p>
+                <timeseries-chart
+                  v-if="currentTabView === 'data' && timeseriesData.length > 0"
+                  class="timeseries-chart"
+                  :timeseries-data="timeseriesData"
+                  :selected-temporal-resolution="selectedTemporalResolution"
+                  :selected-timestamp="selectedTimestamp"
+                  :breakdown-option="breakdownOption"
+                  :unit="mainModelOutput?.unit"
+                  @select-timestamp="emitTimestampSelection"
+                />
+                <p
+                  v-if="
+                    currentTabView === 'data' &&
+                    breakdownOption !== null &&
+                    timeseriesData.length === 0
+                  "
+                >
+                  Please select one or more
+                  {{
+                    breakdownOption === SpatialAggregationLevel.Region
+                      ? 'regions'
+                      : breakdownOption === TemporalAggregationLevel.Year
+                      ? 'years'
+                      : 'qualifier values'
+                  }}
+                  , or choose 'Split by none'.
+                </p>
+                <div
+                  v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
+                  class="dropdown-row"
+                >
+                  <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
+                </div>
+              </template>
+            </modal>
+
+            <!-- Data tab content -->
+            <div v-if="currentTabView === 'data'" class="column">
+              <div class="dropdown-row">
+                <slot
+                  name="temporal-aggregation-config"
+                  v-if="currentTabView === 'data' && timeseriesData.length > 0"
+                />
+                <slot
+                  name="temporal-resolution-config"
+                  v-if="currentTabView === 'data' && timeseriesData.length > 0"
+                />
               </div>
-              <p>
-                <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
-              </p>
               <timeseries-chart
                 v-if="currentTabView === 'data' && timeseriesData.length > 0"
                 class="timeseries-chart"
+                :key="activeDrilldownTab"
                 :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
@@ -222,146 +281,100 @@
               >
                 <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
               </div>
-            </template>
-          </modal>
-
-          <!-- Data tab content -->
-          <div v-if="currentTabView === 'data'" class="column">
-            <div class="dropdown-row">
-              <slot
-                name="temporal-aggregation-config"
-                v-if="currentTabView === 'data' && timeseriesData.length > 0"
-              />
-              <slot
-                name="temporal-resolution-config"
-                v-if="currentTabView === 'data' && timeseriesData.length > 0"
-              />
-            </div>
-            <timeseries-chart
-              v-if="currentTabView === 'data' && timeseriesData.length > 0"
-              class="timeseries-chart"
-              :timeseries-data="timeseriesData"
-              :selected-temporal-resolution="selectedTemporalResolution"
-              :selected-timestamp="selectedTimestamp"
-              :breakdown-option="breakdownOption"
-              :unit="mainModelOutput?.unit"
-              @select-timestamp="emitTimestampSelection"
-            />
-            <p
-              v-if="
-                currentTabView === 'data' &&
-                breakdownOption !== null &&
-                timeseriesData.length === 0
-              "
-            >
-              Please select one or more
-              {{
-                breakdownOption === SpatialAggregationLevel.Region
-                  ? 'regions'
-                  : breakdownOption === TemporalAggregationLevel.Year
-                  ? 'years'
-                  : 'qualifier values'
-              }}
-              , or choose 'Split by none'.
-            </p>
-            <div
-              v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
-              class="dropdown-row"
-            >
-              <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
-            </div>
-            <div class="card-maps-box">
-              <div v-if="outputSourceSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
-                <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
-                <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" />
-              </div>
-              <div
-                v-if="mapReady && currentTabView === 'data' && regionalData !== null"
-                class="card-maps-container">
-                <div
-                  v-for="(spec, indx) in outputSourceSpecs"
-                  :key="spec.id"
-                  class="card-map-container"
-                  :class="[
-                    `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
-                  ]"
-                >
-                  <span
-                    v-if="outputSourceSpecs.length > 1"
-                    :style="{ color: colorFromIndex(indx)}"
-                  >
-                    {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
-                  </span>
-                  <data-analysis-map
-                    class="card-map"
-                    :style="{ borderColor: colorFromIndex(indx) }"
-                    :output-source-specs="outputSourceSpecs"
-                    :output-selection=spec.id
-                    :relative-to="relativeTo"
-                    :show-tooltip="true"
-                    :selected-layer-id="mapSelectedLayer"
-                    :map-bounds="mapBounds"
-                    :region-data="regionalData"
-                    :admin-layer-stats="adminLayerStats"
-                    :grid-layer-stats="gridLayerStats"
-                    :selected-base-layer="selectedBaseLayer"
-                    :unit="unit"
-                    @sync-bounds="onSyncMapBounds"
-                    @on-map-load="onMapLoad"
-                    @zoom-change="updateMapCurSyncedZoom"
-                    @map-update="recalculateGridMapDiffStats"
-                  />
+              <div class="card-maps-box">
+                <div v-if="outputSourceSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
+                  <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                  <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" />
                 </div>
-              </div>
-              <div
-                v-else-if="currentTabView === 'data'"
-                class="card-maps-container"
-              >
-                <!-- Empty div to reduce jumpiness when the maps are loading -->
-                <div class="card-map" />
-              </div>
-              <div v-if="outputSourceSpecs.length > 0" class="card-maps-legend-container">
-                <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
-                <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" />
+                <div
+                  v-if="mapReady && currentTabView === 'data' && regionalData !== null"
+                  class="card-maps-container">
+                  <div
+                    v-for="(spec, indx) in outputSourceSpecs"
+                    :key="spec.id"
+                    class="card-map-container"
+                    :class="[
+                      `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                    ]"
+                  >
+                    <span
+                      v-if="outputSourceSpecs.length > 1"
+                      :style="{ color: colorFromIndex(indx)}"
+                    >
+                      {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
+                    </span>
+                    <data-analysis-map
+                      class="card-map"
+                      :style="{ borderColor: colorFromIndex(indx) }"
+                      :output-source-specs="outputSourceSpecs"
+                      :output-selection=spec.id
+                      :relative-to="relativeTo"
+                      :show-tooltip="true"
+                      :selected-layer-id="mapSelectedLayer"
+                      :map-bounds="mapBounds"
+                      :region-data="regionalData"
+                      :admin-layer-stats="adminLayerStats"
+                      :grid-layer-stats="gridLayerStats"
+                      :selected-base-layer="selectedBaseLayer"
+                      :unit="unit"
+                      @sync-bounds="onSyncMapBounds"
+                      @on-map-load="onMapLoad"
+                      @zoom-change="updateMapCurSyncedZoom"
+                      @map-update="recalculateGridMapDiffStats"
+                    />
+                  </div>
+                </div>
+                <div
+                  v-else-if="currentTabView === 'data'"
+                  class="card-maps-container"
+                >
+                  <!-- Empty div to reduce jumpiness when the maps are loading -->
+                  <div class="card-map" />
+                </div>
+                <div v-if="outputSourceSpecs.length > 0" class="card-maps-legend-container">
+                  <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                  <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" />
+                </div>
               </div>
             </div>
           </div>
+          <drilldown-panel
+            class="drilldown"
+            :active-tab-id="activeDrilldownTab"
+            :hasTransition="false"
+            :is-open="activeDrilldownTab !== null"
+            :tabs="drilldownTabs"
+            @close="() => { activeDrilldownTab = null }"
+          >
+            <template #content>
+              <breakdown-pane
+                v-if="activeDrilldownTab ==='breakdown'"
+                :selected-admin-level="selectedAdminLevel"
+                :qualifier-breakdown-data="qualifierBreakdownData"
+                :regional-data="regionalData"
+                :temporal-breakdown-data="temporalBreakdownData"
+                :selected-spatial-aggregation="selectedSpatialAggregation"
+                :selected-temporal-aggregation="selectedTemporalAggregation"
+                :selected-temporal-resolution="selectedTemporalResolution"
+                :selected-timestamp="selectedTimestamp"
+                :selected-scenario-ids="selectedScenarioIds"
+                :selected-region-ids="selectedRegionIds"
+                :selected-qualifier-values="selectedQualifierValues"
+                :selected-breakdown-option="breakdownOption"
+                :selected-timeseries-points="selectedTimeseriesPoints"
+                :selected-years="selectedYears"
+                :unit="unit"
+                @toggle-is-region-selected="toggleIsRegionSelected"
+                @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+                @toggle-is-year-selected="toggleIsYearSelected"
+                @set-selected-admin-level="setSelectedAdminLevel"
+                @set-breakdown-option="emitBreakdownOptionSelection"
+              />
+            </template>
+          </drilldown-panel>
         </div>
       </div>
-      </div>
     </div>
-    <drilldown-panel
-      class="drilldown"
-      :is-open="activeDrilldownTab !== null"
-      :tabs="drilldownTabs"
-      :active-tab-id="activeDrilldownTab"
-    >
-      <template #content>
-        <breakdown-pane
-          v-if="activeDrilldownTab ==='breakdown'"
-          :selected-admin-level="selectedAdminLevel"
-          :qualifier-breakdown-data="qualifierBreakdownData"
-          :regional-data="regionalData"
-          :temporal-breakdown-data="temporalBreakdownData"
-          :selected-spatial-aggregation="selectedSpatialAggregation"
-          :selected-temporal-aggregation="selectedTemporalAggregation"
-          :selected-temporal-resolution="selectedTemporalResolution"
-          :selected-timestamp="selectedTimestamp"
-          :selected-scenario-ids="selectedScenarioIds"
-          :selected-region-ids="selectedRegionIds"
-          :selected-qualifier-values="selectedQualifierValues"
-          :selected-breakdown-option="breakdownOption"
-          :selected-timeseries-points="selectedTimeseriesPoints"
-          :selected-years="selectedYears"
-          :unit="unit"
-          @toggle-is-region-selected="toggleIsRegionSelected"
-          @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-          @toggle-is-year-selected="toggleIsYearSelected"
-          @set-selected-admin-level="setSelectedAdminLevel"
-          @set-breakdown-option="emitBreakdownOptionSelection"
-        />
-      </template>
-    </drilldown-panel>
   </div>
 </template>
 
@@ -863,6 +876,10 @@ export default defineComponent({
 
 $fullscreenTransition: all 0.5s ease-in-out;
 
+.breakdown-button {
+  margin: 0 1rem;
+};
+
 .dataset-link {
   text-decoration: underline;
 }
@@ -879,6 +896,12 @@ $fullscreenTransition: all 0.5s ease-in-out;
   display: flex;
   flex: 1 1 auto;
 }
+
+
+.drilldown {
+  margin-left: 1rem;
+}
+
 .capture-box {
   padding: 10px;
   display: flex;
@@ -940,6 +963,7 @@ header {
 .timeseries-chart {
   flex: 1;
   min-height: 0;
+  min-width: 0;
 }
 
 

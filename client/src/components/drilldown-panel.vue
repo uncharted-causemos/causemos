@@ -1,5 +1,5 @@
 <template>
-  <transition name="slide-fade">
+  <transition :name="transitionName">
     <div
       v-if="isOpen === null || isOpen"
       class="drilldown-panel-container"
@@ -84,6 +84,10 @@ export default defineComponent({
     isOverlayOpen: {
       type: Boolean,
       default: false
+    },
+    hasTransition: {
+      type: Boolean,
+      default: true
     }
   },
   emits: [
@@ -95,6 +99,9 @@ export default defineComponent({
     paneTitle(): string {
       const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
       return activeTab === undefined ? '[Panel Title]' : activeTab.name;
+    },
+    transitionName(): string {
+      return this.hasTransition ? 'slide-fade' : '';
     }
   },
   mounted() {
