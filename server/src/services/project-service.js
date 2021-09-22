@@ -4,6 +4,7 @@ const uuid = require('uuid');
 
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
+const { searchAndHighlight } = rootRequire('adapters/es/client');
 const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
@@ -120,7 +121,7 @@ const createProject = async (kbId, name, description) => {
  * @param {string} projectId - project id
  * @param {object} projectFields - project fields
  */
-const updateProject = async(projectId, projectFields) => {
+const updateProject = async (projectId, projectFields) => {
   const project = Adapter.get(RESOURCE.PROJECT);
 
   const keyFn = (doc) => {
@@ -525,7 +526,7 @@ const facets = async (projectId, filters, fields) => {
  * Retrieves a map of concept => definitions for a given project
  * @param {string} projectId - project identifier
  */
-const getOntologyDefinitions = async(projectId) => {
+const getOntologyDefinitions = async (projectId) => {
   const MAX_SIZE = 5000;
   const ontology = Adapter.get(RESOURCE.ONTOLOGY);
 
@@ -547,7 +548,7 @@ const getOntologyDefinitions = async(projectId) => {
  * @param {string} projectId - project identifier
  * @param {array} ids - list of statement identifiers
  */
-const getProjectStatementsScores = async(projectId, ids) => {
+const getProjectStatementsScores = async (projectId, ids) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
 
   if (ids.length > SEARCH_LIMIT) {
@@ -614,7 +615,7 @@ const getProjectEdgesByPartition = async (projectId, filters, totalPartitions, p
  * @param {string} projectId  - project identifier
  * @param {object} filters    - statement filters
  */
-const getProjectEdges = async(projectId, filters) => {
+const getProjectEdges = async (projectId, filters) => {
   const totalPartitions = 50;
   const partitionsOfEdges = (await Promise.all([...Array(totalPartitions).keys()].map(partition =>
     getProjectEdgesByPartition(projectId, filters, totalPartitions, partition)
@@ -623,12 +624,34 @@ const getProjectEdges = async(projectId, filters) => {
 };
 
 /**
+ * Used for grabbing related ontology labels to assist in searching
+ * subj and obj concepts in projects
+ *
+ * @param {string} queryString
+ * @param {string} projectId
+ * @returns
+ */
+const searchOntologyAndHighlight = async (queryString, projectId) => {
+  const prefixes = queryString.split(' ').map(query => {
+    return query + '*';
+  }).join(' ');
+  const filters = [
+    {
+      term: {
+        project_id: projectId
+      }
+    }
+  ];
+  return await searchAndHighlight(RESOURCE.ONTOLOGY, prefixes, filters, ['examples', 'label']);
+};
+
+/**
  * Search various fields in ES for terms starting with the queryString
  *
  */
-const searchFields = async (projectId, searchField, queryString) => {
+const searchFields = async (projectId, searchField, queryString, defaultOperator = 'AND') => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
-  const matchedTerms = await statement.searchFields(projectId, searchField, queryString);
+  const matchedTerms = await statement.searchFields(projectId, searchField, queryString, defaultOperator);
   return matchedTerms;
 };
 
@@ -830,10 +853,12 @@ module.exports = {
   countStats,
   facets,
   getOntologyDefinitions,
+  searchAndHighlight,
 
   getProjectStatementsScores,
   getProjectEdges,
 
+  searchOntologyAndHighlight,
   searchFields,
   searchPath,
   bustProjectGraphCache,
