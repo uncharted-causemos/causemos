@@ -13,8 +13,7 @@ const convertResponsesToBreakdownData = (
   qualifierIdToNameMap: Map<string, string>
 ) => {
   const breakdownDataList: NamedBreakdownData[] = [];
-  responses.forEach((breakdownVariables, index) => {
-    const runId = modelRunIds[index];
+  responses.forEach((breakdownVariables) => {
     breakdownVariables.forEach(breakdownVariable => {
       const { name: breakdownVariableId, options } = breakdownVariable;
       const breakdownVariableDisplayName =
@@ -52,7 +51,7 @@ const convertResponsesToBreakdownData = (
         //  data list so that the user can select that qualifier option to see
         //  its timeseries.
         if (value !== null) {
-          potentiallyExistingOption.values[runId] = value;
+          potentiallyExistingOption.values[optionId] = value;
         }
       });
     });
