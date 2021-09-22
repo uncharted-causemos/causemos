@@ -45,27 +45,6 @@ async function loadAnalysisState(to, from, next) {
   next();
 }
 
-// Load datacube name for datacubeName store before route enter
-// NOTE: this is specific to the new data space (and the new data explorer)
-async function loadDatacubeName(to, from, next) {
-  const datacubeName = to.query.datacubeName;
-  if (datacubeName) {
-    const filters = {
-      clauses: [
-        {
-          field: 'name',
-          operand: 'or',
-          isNot: false,
-          values: [datacubeName]
-        }
-      ]
-    };
-    await store.dispatch('dataSearch/setSearchFilters', filters);
-    console.log(store.getters['dataSearch/filters']);
-  }
-  next();
-}
-
 const routes = [
   {
     path: '/',
@@ -109,7 +88,7 @@ const routes = [
     path: '/:projectType/:project/data/:analysisId/explorer',
     name: 'dataExplorer',
     component: DataExplorer,
-    beforeEnter: [loadDatacubeName, loadAnalysisState]
+    beforeEnter: loadAnalysisState
   },
   {
     path: '/tile-experiment',

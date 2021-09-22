@@ -172,6 +172,7 @@ import { AnalysisItem } from '@/types/Analysis';
 import useQualifiers from '@/services/composables/useQualifiers';
 import { useRoute } from 'vue-router';
 import { ModelRun } from '@/types/ModelRun';
+import filtersUtil from '@/utils/filters-util';
 
 const DRILLDOWN_TABS = [
   {
@@ -589,7 +590,9 @@ export default defineComponent({
     onClickDatacubeName() {
       const analysisId = this.analysisId ?? '';
       const metadataName = this.metadata ? (this.metadata.name ?? '') : '';
-      this.$router.push({ name: 'dataExplorer', query: { analysisId, datacubeName: metadataName } });
+      const filters: any = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, 'name', [metadataName], 'or', false);
+      this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
     },
     async onClose() {
       this.$router.push({
