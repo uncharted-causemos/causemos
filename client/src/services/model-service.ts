@@ -287,14 +287,14 @@ const runProjectionExperiment = async (
  * @param {string} experimentId - eperiment id/hash
  * @param {number} threshold - optional, number of times to poll
  */
-const getExperimentResult = async (modelId: string, experimentId: string, threshold = 30) => {
+const getExperimentResult = async (modelId: string, experimentId: string, threshold = 30, progressFn: (Function | null) = null) => {
   const model = await getSummary(modelId);
   const taskFn = async () => {
     const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: model.parameter.engine, experiment_id: experimentId } });
     return _.isEmpty(data.results) ? [false, null] : [true, data];
   };
 
-  return startPolling(taskFn, {
+  return startPolling(taskFn, progressFn, {
     interval: 3000,
     threshold: threshold
   });
@@ -469,7 +469,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const numSteps = modelSummary.parameter.num_steps;
   try {
     const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
-    const result: any = await getExperimentResult(modelId, experimentId);
+    const result: any = await getExperimentResult(modelId, experimentId, 30);
 
     const scenario: NewScenario = {
       model_id: modelId,
