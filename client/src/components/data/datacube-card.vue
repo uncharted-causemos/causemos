@@ -891,7 +891,7 @@ $fullscreenTransition: all 0.5s ease-in-out;
 
 .datacube-card-container {
   background-color: $background-light-1;
-  box-shadow: $shadow-level-1;
+  border: 3px outset $separator;
   border-radius: 3px;
   display: flex;
   flex: 1 1 auto;
