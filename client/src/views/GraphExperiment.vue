@@ -1,26 +1,5 @@
 <template>
   <div>
-    <div style="margin: 5px 0">
-      <button
-        class="btn btn-primary btn-xs"
-        @click="loadDefault()">Config 1
-      </button>
-      &nbsp;
-      <button
-        class="btn btn-primary btn-xs"
-        @click="loadConfig2()">Config 2
-      </button>
-      &nbsp;
-      <button
-        class="btn btn-primary btn-xs"
-        @click="loadConfig3()">Config 3
-      </button>
-      &nbsp;
-      <button
-        class="btn btn-primary btn-xs"
-        @click="toggleHelp()">Toggle Help
-      </button>
-    </div>
     <div
       ref="test"
       style="width:100%; height: 450px; border: 1px solid #888; background: #FCFCFC"
@@ -32,9 +11,9 @@
 <script>
 /* eslint-disable */
 import _ from 'lodash';
-import API from '@/api/api';
+// import API from '@/api/api';
 import * as d3 from 'd3';
-import { SVGRenderer, group, nodeSize, highlight, expandCollapse } from 'svg-flowgraph';
+import { SVGRenderer, group, nodeSize, highlight, expandCollapse, panZoom } from 'svg-flowgraph';
 
 import ELKAdapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
@@ -147,6 +126,7 @@ class TestRenderer extends SVGRenderer {
           return d.nodes ? '#F80' : '#2EF';
         })
         .style('stroke', '#888')
+        .style('stroke-opacity', 0.4)
         .style('stroke-width', 2);
 
       if (selection.datum().type === 'custom') {
@@ -171,7 +151,7 @@ class TestRenderer extends SVGRenderer {
       .attr('cursor', 'pointer')
       .attr('d', d => pathFn(d.points))
       .style('fill', 'none')
-      .style('stroke', '#000')
+      .style('stroke', '#02D')
       .style('stroke-width', 2)
       .attr('marker-end', d => {
         const source = d.data.source.replace(/\s/g, '');
@@ -197,7 +177,7 @@ export default {
       el: this.$refs.test,
       adapter: new ELKAdapter({ nodeWidth: 100, nodeHeight: 60, layout: layered }),
       renderMode: 'delta',
-      addons: [expandCollapse, group, nodeSize, highlight],
+      addons: [expandCollapse, group, nodeSize, highlight, panZoom],
       useEdgeControl: false,
     });
     this.renderer.setCallback('nodeClick', (evt, node, renderer, event) => {
@@ -226,23 +206,41 @@ export default {
     this.renderer.setData({
       id: 'root', concept: 'root',
       nodes: [
-        { ...nd('outside'),
+        { ...nd('L1.1'),
           nodes: [
-            { ...nd('inside'),
+            { ...nd('L2'),
               nodes: [
-                nd('n1'),
-                nd('n2')
+                nd('L3.1'),
+                {
+                  ...nd('L3.2'),
+                  nodes: [
+                    {
+                      ...nd('L4.1'),
+                      nodes: [
+                        {
+                          ...nd('L5.1')
+                        }
+                      ]
+                    }
+                  ]
+                }
               ],
               edges: [
-                { id: 'e1', source: 'n1', target: 'n2' }
               ]
             }
+          ],
+          edges: [
           ]
         },
-        nd('hi')
+        nd('L1.2')
       ],
       edges: [
-        { id: 'e2', source: 'hi', target: 'n1' }
+        { id: 'e1', source: 'L3.1', target: 'L3.2' },
+        { id: 'e2', source: 'L1.2', target: 'L3.1' },
+        { id: 'e3', source: 'L1.1', target: 'L3.2' },
+        { id: 'e4', source: 'L4.1', target: 'L3.1' },
+        { id: 'e5', source: 'L5.1', target: 'L3.1' },
+        { id: 'e6', source: 'L1.1', target: 'L4.1' }
       ]
     });
 
