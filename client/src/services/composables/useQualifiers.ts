@@ -2,8 +2,6 @@ import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
 import {
   AggregationOption,
-  SpatialAggregationLevel,
-  TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
 import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
@@ -58,11 +56,11 @@ const convertResponsesToBreakdownData = (
         //  data list so that the user can select that qualifier option to see
         //  its timeseries.
         if (value !== null) {
-          if (breakdownOption.value === TemporalAggregationLevel.Year || breakdownOption.value === SpatialAggregationLevel.Region || breakdownOption.value !== null) {
+          if (_.isNull(breakdownOption.value)) {
+            potentiallyExistingOption.values[runId] = value;
+          } else {
             // Key values here will change when we implement the missing functionality for these key values.
             potentiallyExistingOption.values[optionId] = value;
-          } else {
-            potentiallyExistingOption.values[runId] = value;
           }
         }
       });
