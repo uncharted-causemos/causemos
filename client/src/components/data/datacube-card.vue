@@ -601,9 +601,7 @@ export default defineComponent({
     };
 
     const updateSelectedScenarioIds = (newIds: (string|number)[]) => {
-      if (metadata?.value && !isIndicator(metadata.value)) {
-        emit('set-selected-scenario-ids', newIds);
-      }
+      emit('set-selected-scenario-ids', newIds);
     };
 
 
@@ -635,7 +633,7 @@ export default defineComponent({
     };
 
     const onTabClick = (value: string) => {
-      if (value === 'description' && isModelMetadata) {
+      if (value === 'description' && isModelMetadata.value) {
         updateSelectedScenarioIds([]); // this will update the 'currentTabView'
       }
       clickData(value);
