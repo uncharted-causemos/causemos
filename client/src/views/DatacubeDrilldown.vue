@@ -50,7 +50,7 @@
                 >{{output.display_name !== '' ? output.display_name : output.name}}</option>
               </select>
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <span class="datacube-name" @click="onClickDatacubeName">{{metadata.name}}</span>
+              <span v-tooltip.top-center="'Explore related indicators'" class="datacube-name" @click="onClickDatacubeName">{{metadata.name}}</span>
             </h5>
           </template>
 
@@ -173,6 +173,7 @@ import useQualifiers from '@/services/composables/useQualifiers';
 import { useRoute } from 'vue-router';
 import { ModelRun } from '@/types/ModelRun';
 import filtersUtil from '@/utils/filters-util';
+import { DATASET_NAME } from '@/utils/datacube-util';
 
 const DRILLDOWN_TABS = [
   {
@@ -591,7 +592,7 @@ export default defineComponent({
       const analysisId = this.analysisId ?? '';
       const metadataName = this.metadata?.name ?? '';
       const filters: any = filtersUtil.newFilters();
-      filtersUtil.setClause(filters, 'name', [metadataName], 'or', false);
+      filtersUtil.setClause(filters, DATASET_NAME, [metadataName], 'or', false);
       this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
     },
     async onClose() {
@@ -751,9 +752,11 @@ export default defineComponent({
   font-weight: normal;
   color: $label-color;
   margin-left: 10px;
-  cursor: pointer;
+  cursor: -moz-zoom-in;
+  cursor: -webkit-zoom-in;
+  cursor: zoom-in;
   &:hover {
-    color: $link-color;
+    filter: brightness(60%);
   }
 }
 
