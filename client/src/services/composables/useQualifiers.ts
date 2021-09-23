@@ -131,6 +131,7 @@ export default function useQualifiers(
 
   watchEffect(async onInvalidate => {
     const timestamp = selectedTimestamp.value;
+    const _breakdownOption = breakdownOption;
     if (metadata.value === null || timestamp === null) return;
     let isCancelled = false;
     onInvalidate(() => {
@@ -168,7 +169,7 @@ export default function useQualifiers(
     if (isCancelled) return;
     qualifierBreakdownData.value = convertResponsesToBreakdownData(
       responses,
-      breakdownOption,
+      _breakdownOption,
       selectedScenarioIds.value,
       qualifierIdToNameMap
     );
