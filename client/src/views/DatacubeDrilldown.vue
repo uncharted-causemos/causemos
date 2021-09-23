@@ -589,7 +589,7 @@ export default defineComponent({
     },
     onClickDatacubeName() {
       const analysisId = this.analysisId ?? '';
-      const metadataName = this.metadata ? (this.metadata.name ?? '') : '';
+      const metadataName = this.metadata?.name ?? '';
       const filters: any = filtersUtil.newFilters();
       filtersUtil.setClause(filters, 'name', [metadataName], 'or', false);
       this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
