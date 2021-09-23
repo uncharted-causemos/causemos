@@ -59,7 +59,7 @@ const createProject = async (baseId: string, projectName: string, projectDescrip
     interval: 2000,
     threshold: 10
   };
-  await startPolling(taskFn, pollerConfig);
+  await startPolling(taskFn, null, pollerConfig);
   return id;
 };
 

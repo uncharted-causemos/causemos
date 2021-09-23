@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const uuid = require('uuid');
+const { v4: uuid } = require('uuid');
 const { get, set } = rootRequire('/cache/node-lru-cache');
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 

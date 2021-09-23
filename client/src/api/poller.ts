@@ -10,6 +10,8 @@ class Poller {
   _success: Function = NOOP;
   _failure: Function = NOOP;
   _poll: Function = NOOP;
+  _progress: Function = NOOP;
+
   _interval: number;
   _threshold: number;
   _numPolls: number;
@@ -34,6 +36,11 @@ class Poller {
 
   poll(func: Function) {
     this._poll = func;
+    return this;
+  }
+
+  progress(func: Function) {
+    this._progress = func;
     return this;
   }
 
@@ -64,6 +71,7 @@ class Poller {
             this._stop();
             this._success(result);
           } else {
+            this._progress(this._numPolls, this._threshold, result);
             this.start();
           }
         })
@@ -77,10 +85,17 @@ class Poller {
 
 export default Poller;
 
-export function startPolling(taskFn: Function, { interval, threshold }: { interval: number; threshold: number }) {
+export function startPolling(
+  taskFn: Function,
+  progressFn: Function | null,
+  { interval, threshold }: { interval: number; threshold: number }
+) {
   const poller = new Poller(interval, threshold);
   const taskFunction = () => Promise.resolve(taskFn());
   const promise = new Promise((resolve, reject) => {
+    if (progressFn) {
+      poller.progress(progressFn);
+    }
     poller.poll(taskFunction).success(resolve).failure(reject).start();
   });
   return promise;

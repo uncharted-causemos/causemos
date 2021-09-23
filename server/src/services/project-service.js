@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const yaml = require('js-yaml');
-const uuid = require('uuid');
+const { v4: uuid } = require('uuid');
 
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');

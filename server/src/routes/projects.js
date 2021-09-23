@@ -1,7 +1,7 @@
 const express = require('express');
 const moment = require('moment');
 const _ = require('lodash');
-const uuid = require('uuid');
+const { v4: uuid } = require('uuid');
 const router = express.Router();
 const asyncHandler = require('express-async-handler');
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
