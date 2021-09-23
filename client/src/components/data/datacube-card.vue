@@ -182,11 +182,7 @@
               :selected-scenario-ids="selectedScenarioIds"
               :color-from-index="colorFromIndex"
             />
-            <modal
-              v-if="showDatasets"
-              :showCloseButton="true"
-              @close="() => showDatasets = false"
-            >
+            <modal v-if="showDatasets">
               <template #header>
                 <h4 class="header"> Parquet files used to populate this datacube </h4>
               </template>
@@ -199,18 +195,17 @@
                 <p>
                   <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
                 </p>
-                <timeseries-chart
-                  v-if="currentTabView === 'data' && timeseriesData.length > 0"
-                  class="timeseries-chart"
-                  :timeseries-data="timeseriesData"
-                  :selected-temporal-resolution="selectedTemporalResolution"
-                  :selected-timestamp="selectedTimestamp"
-                  :breakdown-option="breakdownOption"
-                  :unit="mainModelOutput?.unit"
-                  @select-timestamp="emitTimestampSelection"
-                />
+              </template>
+              <template #footer>
+                <div
+                  class="btn btn-primary btn-call-for-action"
+                  @click="showDatasets = false"
+                >
+                  Close
+                </div>
               </template>
             </modal>
+
 
             <!-- Data tab content -->
             <div v-if="currentTabView === 'data'" class="column">
