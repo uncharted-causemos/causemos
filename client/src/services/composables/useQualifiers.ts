@@ -1,6 +1,11 @@
 import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import {
+  AggregationOption,
+  SpatialAggregationLevel,
+  TemporalAggregationLevel,
+  TemporalResolutionOption
+} from '@/types/Enums';
 import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
@@ -9,11 +14,13 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const convertResponsesToBreakdownData = (
   responses: QualifierBreakdownResponse[][],
+  breakdownOption: Ref<string | null>,
   modelRunIds: string[],
   qualifierIdToNameMap: Map<string, string>
 ) => {
   const breakdownDataList: NamedBreakdownData[] = [];
-  responses.forEach((breakdownVariables) => {
+  responses.forEach((breakdownVariables, index) => {
+    const runId = modelRunIds[index];
     breakdownVariables.forEach(breakdownVariable => {
       const { name: breakdownVariableId, options } = breakdownVariable;
       const breakdownVariableDisplayName =
@@ -51,7 +58,11 @@ const convertResponsesToBreakdownData = (
         //  data list so that the user can select that qualifier option to see
         //  its timeseries.
         if (value !== null) {
-          potentiallyExistingOption.values[optionId] = value;
+          if (breakdownOption.value === TemporalAggregationLevel.Year || breakdownOption.value === SpatialAggregationLevel.Region) {
+            potentiallyExistingOption.values[optionId] = value;
+          } else {
+            potentiallyExistingOption.values[runId] = value;
+          }
         }
       });
     });
@@ -156,6 +167,7 @@ export default function useQualifiers(
     if (isCancelled) return;
     qualifierBreakdownData.value = convertResponsesToBreakdownData(
       responses,
+      breakdownOption,
       selectedScenarioIds.value,
       qualifierIdToNameMap
     );
