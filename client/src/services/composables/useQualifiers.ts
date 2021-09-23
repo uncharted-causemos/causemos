@@ -58,7 +58,8 @@ const convertResponsesToBreakdownData = (
         //  data list so that the user can select that qualifier option to see
         //  its timeseries.
         if (value !== null) {
-          if (breakdownOption.value === TemporalAggregationLevel.Year || breakdownOption.value === SpatialAggregationLevel.Region) {
+          if (breakdownOption.value === TemporalAggregationLevel.Year || breakdownOption.value === SpatialAggregationLevel.Region || breakdownOption.value !== null) {
+            // Key values here will change when we implement the missing functionality for these key values.
             potentiallyExistingOption.values[optionId] = value;
           } else {
             potentiallyExistingOption.values[runId] = value;
