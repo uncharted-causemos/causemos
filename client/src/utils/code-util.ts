@@ -127,6 +127,10 @@ export const CODE_TABLE: FieldMap = {
   },
 
   // Document level
+  DOC_ID: {
+    ...field('docId', 'Document Id'),
+    ...searchable('Document Id', false)
+  },
   DOC_FILE_TYPE: {
     ...field('docFileType', 'File type'),
     ...searchable('File type', false)

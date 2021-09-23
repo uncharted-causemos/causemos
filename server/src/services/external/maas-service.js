@@ -1,5 +1,5 @@
 const _ = require('lodash');
-const uuid = require('uuid');
+const { v4: uuid } = require('uuid');
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { processFilteredData, removeUnwantedData } = rootRequire('util/post-processing-util.ts');
 const requestAsPromise = rootRequire('/util/request-as-promise');
@@ -18,6 +18,22 @@ const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3
  * @param {ModelRun} metadata - model run metadata
  */
 const submitModelRun = async(metadata) => {
+  const {
+    model_id,
+    model_name,
+    parameters,
+    is_default_run = false
+  } = metadata;
+  const filteredMetadata = {
+    id: uuid(),
+    model_id,
+    model_name,
+    parameters,
+    data_paths: [],
+    is_default_run,
+    created_at: Date.now(),
+    tags: []
+  };
   Logger.info('Submitting model run for execution');
 
   const pipelinePayload = {
@@ -29,29 +45,39 @@ const submitModelRun = async(metadata) => {
       'Content-type': 'application/json',
       'Accept': 'application/json'
     },
-    json: metadata
+    json: filteredMetadata
   };
 
-  Logger.info(`Submitting execution request for id: ${metadata.id}`);
-  const result = await requestAsPromise(pipelinePayload);
+  Logger.info(`Submitting execution request for id: ${filteredMetadata.id}`);
+  let result;
+  try {
+    result = await requestAsPromise(pipelinePayload);
+  } catch (err) {
+    return { result: { error: err }, code: 500 };
+  }
   Logger.info(`Model execution response ${result}`);
 
-  // Insert into ES
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  try {
+    // Insert into ES
+    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
 
-  // Assign run name for this newly created model run with a
-  // special case if this run is the default run
-  const existingRunsCount = await connection.count([
-    { field: 'model_id', value: metadata.model_id },
-    { field: 'is_default_run', value: false }
-  ]);
-  const runName = metadata.is_default_run ? 'Default' : 'Run ' + (existingRunsCount + 1);
+    // Assign run name for this newly created model run with a
+    // special case if this run is the default run
+    const existingRunsCount = await connection.count([
+      { field: 'model_id', value: filteredMetadata.model_id },
+      { field: 'is_default_run', value: false }
+    ]);
+    const runName = filteredMetadata.is_default_run ? 'Default' : 'Run ' + (existingRunsCount + 1);
 
-  return await connection.insert({
-    ...metadata,
-    status: 'SUBMITTED',
-    name: runName
-  }, d => d.id);
+    const result = await connection.insert({
+      ...filteredMetadata,
+      status: 'SUBMITTED',
+      name: runName
+    }, d => d.id);
+    return { result: { es_response: result, run_id: filteredMetadata.id }, code: 201 };
+  } catch (err) {
+    return { result: { error: err }, code: 500 };
+  }
 };
 
 /**
@@ -62,8 +88,9 @@ const submitModelRun = async(metadata) => {
 const startModelOutputPostProcessing = async (metadata) => {
   Logger.info(`Start model output processing ${metadata.model_name} ${metadata.id} `);
   if (!metadata.model_id || !metadata.id) {
-    Logger.error('Required ids for model output post processing were not provided');
-    return {};
+    const err = 'Required ids for model output post processing were not provided';
+    Logger.error(err);
+    return { result: { error: err }, code: 400 };
   }
   const filters = {
     clauses: [
@@ -74,6 +101,9 @@ const startModelOutputPostProcessing = async (metadata) => {
     includes: ['outputs', 'qualifier_outputs'],
     size: 1
   }))[0];
+  if (!modelMetadata) {
+    return { result: { error: `Unable to process run. Model metadata for model id ${metadata.model_id} was not found.` }, code: 409 };
+  }
 
   const qualifierMap = {};
   if (modelMetadata.qualifier_outputs) {
@@ -88,21 +118,27 @@ const startModelOutputPostProcessing = async (metadata) => {
   metadata.attributes = undefined;
   metadata.default_run = undefined;
 
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-
+  let httpResponse;
   let docIds = [];
   let result;
-  if (await connection.exists([{ field: 'id', value: metadata.id }])) {
-    result = await connection.update({
-      ...metadata,
-      status: 'PROCESSING'
-    }, d => d.id);
-    docIds = [metadata.id];
-  } else {
-    result = await connection.insert({
-      ...metadata,
-      status: 'TEST'
-    }, d => d.id);
+  try {
+    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+    if (await connection.exists([{ field: 'id', value: metadata.id }])) {
+      result = await connection.update({
+        ...metadata,
+        status: 'PROCESSING'
+      }, d => d.id);
+      docIds = [metadata.id];
+      httpResponse = { result: { es_response: result }, code: 200 };
+    } else {
+      result = await connection.insert({
+        ...metadata,
+        status: 'TEST'
+      }, d => d.id);
+      httpResponse = { result: { es_response: result }, code: 201 };
+    }
+  } catch (err) {
+    httpResponse = { result: { error: err }, code: 500 };
   }
 
   const flowParameters = {
@@ -113,13 +149,12 @@ const startModelOutputPostProcessing = async (metadata) => {
     qualifier_map: qualifierMap,
     compute_tiles: true
   };
-
-  await sendToPipeline(flowParameters);
-  // Remove extra fields from Jataware
-  metadata.attributes = undefined;
-  metadata.default_run = undefined;
-
-  return result;
+  try {
+    await sendToPipeline(flowParameters);
+  } catch (err) {
+    return { result: { error: err }, code: 500 };
+  }
+  return httpResponse;
 };
 
 /**
@@ -130,14 +165,19 @@ const startModelOutputPostProcessing = async (metadata) => {
 const markModelRunFailed = async (metadata) => {
   Logger.info(`Marking model run as failed ${metadata.model_name} ${metadata.id} `);
   if (!metadata.id) {
-    throw new Error('Model run id missing');
+    return { result: { error: 'Model run id missing' }, code: 400 };
   }
 
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return await connection.update({
-    id: metadata.id,
-    status: 'EXECUTION FAILED'
-  }, d => d.id);
+  try {
+    const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+    const result = await connection.update({
+      id: metadata.id,
+      status: 'EXECUTION FAILED'
+    }, d => d.id);
+    return { result: { es_response: result }, code: 200 };
+  } catch (err) {
+    return { result: { error: err }, code: 500 };
+  }
 };
 
 /**
@@ -200,8 +240,9 @@ const getJobStatus = async (runId) => {
 const startIndicatorPostProcessing = async (metadata) => {
   Logger.info(`Start indicator processing ${metadata.name} ${metadata.id} `);
   if (!metadata.id) {
-    Logger.error('Required ids for indicator post processing were not provided');
-    return;
+    const err = 'Required ids for indicator post processing were not provided';
+    Logger.error(err);
+    return { result: { error: err }, code: 400 };
   }
   processFilteredData(metadata);
   removeUnwantedData(metadata);
@@ -297,13 +338,30 @@ const startIndicatorPostProcessing = async (metadata) => {
     qualifier_map: qualifierMap,
     is_indicator: true
   };
-  await sendToPipeline(flowParameters);
-  if (newIndicatorMetadata.length > 0) {
-    const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
-    const result = await connection.insert(newIndicatorMetadata, d => d.id);
-    return result;
+  try {
+    await sendToPipeline(flowParameters);
+  } catch (err) {
+    return { result: { error: err }, code: 500 };
   }
-  return 'No documents added';
+  if (newIndicatorMetadata.length > 0) {
+    try {
+      const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+      const result = await connection.insert(newIndicatorMetadata, d => d.id);
+      return {
+        result:
+          {
+            es_response: result,
+            message: 'Documents inserted',
+            new_ids: flowParameters.doc_ids,
+            existing_ids: existingIndicators.map(indicator => indicator.id)
+          },
+        code: existingIndicators.length === 0 ? 201 : 200
+      };
+    } catch (err) {
+      return { result: { error: err }, code: 500 };
+    }
+  }
+  return { result: { message: 'No documents added' }, code: 202 };
 };
 
 module.exports = {

@@ -12,7 +12,8 @@ import {
   CAGModelSummary,
   CAGGraph,
   ScenarioResult,
-  NodeScenarioData
+  NodeScenarioData,
+  ScenarioParameter
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
@@ -201,7 +202,14 @@ const createScenario = async (scenario: NewScenario) => {
   const result = await API.post('scenarios', scenario);
   return result.data;
 };
-const updateScenario = async (scenario: Scenario) => {
+const updateScenario = async (scenario: {
+  id: string;
+  model_id: string;
+  is_valid: boolean;
+  experiment_id: string | undefined;
+  parameter?: ScenarioParameter;
+  result?: ScenarioResult[];
+}) => {
   const result = await API.put(`scenarios/${scenario.id}`, scenario);
   return result.data;
 };
@@ -279,14 +287,14 @@ const runProjectionExperiment = async (
  * @param {string} experimentId - eperiment id/hash
  * @param {number} threshold - optional, number of times to poll
  */
-const getExperimentResult = async (modelId: string, experimentId: string, threshold = 30) => {
+const getExperimentResult = async (modelId: string, experimentId: string, threshold = 30, progressFn: (Function | null) = null) => {
   const model = await getSummary(modelId);
   const taskFn = async () => {
     const { data } = await API.get(`models/${modelId}/experiments`, { params: { engine: model.parameter.engine, experiment_id: experimentId } });
     return _.isEmpty(data.results) ? [false, null] : [true, data];
   };
 
-  return startPolling(taskFn, {
+  return startPolling(taskFn, progressFn, {
     interval: 3000,
     threshold: threshold
   });
@@ -461,7 +469,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const numSteps = modelSummary.parameter.num_steps;
   try {
     const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
-    const result: any = await getExperimentResult(modelId, experimentId);
+    const result: any = await getExperimentResult(modelId, experimentId, 30);
 
     const scenario: NewScenario = {
       model_id: modelId,
@@ -476,8 +484,7 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
         projection_start: modelSummary.parameter.projection_start
       },
       engine: modelSummary.parameter.engine,
-      is_baseline: true,
-      is_valid: true
+      is_baseline: true
     };
     await createScenario(scenario);
   } catch (error) {

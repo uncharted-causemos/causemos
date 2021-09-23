@@ -1,172 +1,173 @@
 <template>
-  <div class="datacube-card-container">
-    <div class="capture-box">
-      <header>
-        <slot name="datacube-model-header" />
-        <slot name="datacube-model-header-collapse" />
-      </header>
-      <modal-new-scenario-runs
-        v-if="isModelMetadata && showNewRunsModal === true"
-        :metadata="metadata"
-        :potential-scenarios="potentialScenarios"
-        :selected-dimensions="dimensions"
-        @close="onNewScenarioRunsModalClose" />
-      <modal-check-runs-execution-status
-        v-if="isModelMetadata & showModelRunsExecutionStatus === true"
-        :metadata="metadata"
-        :potential-scenarios="runParameterValues"
-        @close="showModelRunsExecutionStatus = false" />
-      <div class="flex-row">
-        <!-- if has multiple scenarios -->
-        <div v-if="isModelMetadata" class="scenario-selector">
-          <parallel-coordinates-chart
-            class="pc-chart"
-            :dimensions-data="runParameterValues"
-            :selected-dimensions="dimensions"
-            :ordinal-dimensions="ordinalDimensionNames"
-            :initial-data-selection="selectedScenarioIds"
-            :new-runs-mode="showNewRunsMode"
-            @select-scenario="updateScenarioSelection"
-            @generated-scenarios="updateGeneratedScenarios"
-          />
-          <button
-            class="btn toggle-new-runs-button"
-            :class="{
-              'btn-primary btn-call-for-action': !showNewRunsMode,
-              'btn-default': showNewRunsMode
-            }"
-            @click="toggleNewRunsMode()"
-          >
-            {{ showNewRunsMode ? 'Cancel' : 'Request new runs' }}
-          </button>
-          <button
-            v-if="showNewRunsMode"
-            class="btn btn-primary btn-call-for-action"
-            :class="{ 'disabled': potentialScenarioCount === 0}"
-            @click="requestNewModelRuns()"
-          >
-            Review {{ potentialScenarioCount }} new scenario{{ potentialScenarioCount !== 1 ? 's' : '' }}
-          </button>
-          <button
-            v-else
-            class="btn btn-default"
-            @click="showModelExecutionStatus()"
-          >
-            Check execution status
-          </button>
-        </div>
-        <div class="column">
-          <div class="button-row">
-            <div class="button-row-group">
-              <radio-button-group
-                :selected-button-value="currentTabView"
-                :buttons="headerGroupButtons"
-                @button-clicked="onTabClick"
-              />
-              <small-text-button
-                v-if="dataPaths.length > 0"
-                :label="'Download raw data'"
-                @click="showDatasets = true"
-              />
-            </div>
-            <div
-              v-if="currentTabView === 'data' && (timeseriesData.length > 1 || relativeTo !== null)"
-              class="relative-box"
+  <div class="datacube-card-parent">
+    <div class="datacube-card-container">
+      <div class="capture-box">
+        <header>
+          <slot name="datacube-model-header" />
+          <slot name="datacube-model-header-collapse" />
+        </header>
+        <modal-new-scenario-runs
+          v-if="isModelMetadata && showNewRunsModal === true"
+          :metadata="metadata"
+          :potential-scenarios="potentialScenarios"
+          :selected-dimensions="dimensions"
+          @close="onNewScenarioRunsModalClose" />
+        <modal-check-runs-execution-status
+          v-if="isModelMetadata & showModelRunsExecutionStatus === true"
+          :metadata="metadata"
+          :potential-scenarios="runParameterValues"
+          @close="showModelRunsExecutionStatus = false" />
+        <div class="flex-row">
+          <!-- if has multiple scenarios -->
+          <div v-if="isModelMetadata" class="scenario-selector">
+            <parallel-coordinates-chart
+              class="pc-chart"
+              :dimensions-data="runParameterValues"
+              :selected-dimensions="dimensions"
+              :ordinal-dimensions="ordinalDimensionNames"
+              :initial-data-selection="selectedScenarioIds"
+              :new-runs-mode="showNewRunsMode"
+              @select-scenario="updateScenarioSelection"
+              @generated-scenarios="updateGeneratedScenarios"
+            />
+            <button
+              class="btn toggle-new-runs-button"
+              :class="{
+                'btn-primary btn-call-for-action': !showNewRunsMode,
+                'btn-default': showNewRunsMode
+              }"
+              @click="toggleNewRunsMode()"
             >
-              Relative to
-              <button
-                class="btn btn-default"
-                @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
-                :style="{ color: baselineMetadata?.color ?? 'black' }"
-              >
-                {{baselineMetadata?.name ?? 'none'}}</button
-              >
-              <dropdown-control
-                v-if="isRelativeDropdownOpen"
-                class="relative-dropdown">
-                <template #content>
-                  <div
-                    v-if="relativeTo !== null"
-                    class="dropdown-option"
-                    @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
-                  >
-                    none
-                  </div>
-                  <div
-                    v-for="(timeseries, index) in timeseriesData"
-                    class="dropdown-option"
-                    :style="{ color: timeseries.color }"
-                    :key="index"
-                    @click="emitRelativeToSelection(timeseries.id); isRelativeDropdownOpen = false;"
-                  >
-                    {{timeseries.name}}
-                  </div>
-                </template>
-              </dropdown-control>
-            </div>
+              {{ showNewRunsMode ? 'Cancel' : 'Request new runs' }}
+            </button>
+            <button
+              v-if="showNewRunsMode"
+              class="btn btn-primary btn-call-for-action"
+              :class="{ 'disabled': potentialScenarioCount === 0}"
+              @click="requestNewModelRuns()"
+            >
+              Review {{ potentialScenarioCount }} new scenario{{ potentialScenarioCount !== 1 ? 's' : '' }}
+            </button>
+            <button
+              v-else
+              class="btn btn-default"
+              @click="showModelExecutionStatus()"
+            >
+              Check execution status
+            </button>
           </div>
-
-          <!-- Description tab content -->
-          <slot name="datacube-description" v-if="currentTabView === 'description'" />
-
-          <!-- Pre-rendered viz tab content -->
-          <!--
-            outputSourceSpecs.length > 0 means we have one or more selected run
-            FIXME: this should be done directly against allModelRunData
-           -->
-          <div
-            v-if="currentTabView === 'pre-rendered-viz' && outputSourceSpecs.length > 0"
-            style="display: flex; height: 100%; flex-direction: column">
-
-            <!-- a global list
-              of all pre-rendered-viz items from all runs,
-              and enable selection by item name/id instead of index
-              which won't work when different model runs have different list of pre-rendered items -->
-            <div v-if="preGenDataItems.length > 0"
-              style="display: flex; padding: 5px;">
-              <div style="padding-right: 10px">Selected Viz:</div>
-              <select name="pre-gen-outputs" @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]">
-                <option
-                  v-for="pregenItem in preGenDataItems" :key="pregenItem"
-                  :selected="pregenItem === selectedPreGenDataItem"
-                >
-                  {{pregenItem}}
-                </option>
-              </select>
-            </div>
-
-            <div class="column card-maps-container" style="flex-direction: revert;">
-              <div v-for="(spec, indx) in outputSourceSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec)"
-                class="card-map-container"
-                :style="{ borderColor: colorFromIndex(indx) }"
-                style="border-width: 2px; border-style: solid;"
-                :class="[
-                  `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
-                ]"
+          <div class="column">
+            <div class="button-row">
+              <div class="button-row-group">
+                <radio-button-group
+                  :selected-button-value="currentTabView"
+                  :buttons="headerGroupButtons"
+                  @button-clicked="onTabClick"
+                />
+                <small-text-button
+                  v-if="dataPaths.length > 0"
+                  :label="'Download raw data'"
+                  @click="showDatasets = true"
+                />
+              </div>
+              <div
+                v-if="currentTabView === 'data' && (timeseriesData.length > 1 || relativeTo !== null)"
+                class="relative-box"
               >
-                <!-- spec here represents one selected model run -->
-                <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
-                  <!-- display only a single pre-rendered-viz item for each selected run -->
-                  <img
-                    v-if="pregenDataForSpec.type === 'image'"
-                    :src="pregenDataForSpec.file"
-                    alt="Pre-rendered Visualization"
-                    class="pre-rendered-content"
-                  >
-                  <video
-                    v-if="pregenDataForSpec.type === 'video'"
-                    controls muted
-                    class="pre-rendered-content"
-                    :src="pregenDataForSpec.file"
-                  >
-                  </video>
-                </template>
-                <template v-else>
-                  No pre-generated data available for some selected scenario(s)!
-                </template>
+                Relative to
+                <button
+                  class="btn btn-default"
+                  @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
+                  :style="{ color: baselineMetadata?.color ?? 'black' }"
+                >
+                  {{baselineMetadata?.name ?? 'none'}}</button
+                >
+                <dropdown-control
+                  v-if="isRelativeDropdownOpen"
+                  class="relative-dropdown">
+                  <template #content>
+                    <div
+                      v-if="relativeTo !== null"
+                      class="dropdown-option"
+                      @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
+                    >
+                      none
+                    </div>
+                    <div
+                      v-for="(timeseries, index) in timeseriesData"
+                      class="dropdown-option"
+                      :style="{ color: timeseries.color }"
+                      :key="index"
+                      @click="emitRelativeToSelection(timeseries.id); isRelativeDropdownOpen = false;"
+                    >
+                      {{timeseries.name}}
+                    </div>
+                  </template>
+                </dropdown-control>
               </div>
             </div>
-          </div>
+
+            <!-- Description tab content -->
+            <slot name="datacube-description" v-if="currentTabView === 'description'" />
+
+            <!-- Pre-rendered viz tab content -->
+            <!--
+              outputSourceSpecs.length > 0 means we have one or more selected run
+              FIXME: this should be done directly against allModelRunData
+            -->
+            <div
+              v-if="currentTabView === 'pre-rendered-viz' && outputSourceSpecs.length > 0"
+              style="display: flex; height: 100%; flex-direction: column">
+
+              <!-- a global list
+                of all pre-rendered-viz items from all runs,
+                and enable selection by item name/id instead of index
+                which won't work when different model runs have different list of pre-rendered items -->
+              <div v-if="preGenDataItems.length > 0"
+                style="display: flex; padding: 5px;">
+                <div style="padding-right: 10px">Selected Viz:</div>
+                <select name="pre-gen-outputs" @change="selectedPreGenDataItem=preGenDataItems[$event.target.selectedIndex]">
+                  <option
+                    v-for="pregenItem in preGenDataItems" :key="pregenItem"
+                    :selected="pregenItem === selectedPreGenDataItem"
+                  >
+                    {{pregenItem}}
+                  </option>
+                </select>
+              </div>
+
+              <div class="column card-maps-container" style="flex-direction: revert;">
+                <div v-for="(spec, indx) in outputSourceSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec)"
+                  class="card-map-container"
+                  :style="{ borderColor: colorFromIndex(indx) }"
+                  style="border-width: 2px; border-style: solid;"
+                  :class="[
+                    `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                  ]"
+                >
+                  <!-- spec here represents one selected model run -->
+                  <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
+                    <!-- display only a single pre-rendered-viz item for each selected run -->
+                    <img
+                      v-if="pregenDataForSpec.type === 'image'"
+                      :src="pregenDataForSpec.file"
+                      alt="Pre-rendered Visualization"
+                      class="pre-rendered-content"
+                    >
+                    <video
+                      v-if="pregenDataForSpec.type === 'video'"
+                      controls muted
+                      class="pre-rendered-content"
+                      :src="pregenDataForSpec.file"
+                    >
+                    </video>
+                  </template>
+                  <template v-else>
+                    No pre-generated data available for some selected scenario(s)!
+                  </template>
+                </div>
+              </div>
+            </div>
 
           <datacube-scenario-header
             v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
@@ -188,13 +189,38 @@
               <p>
                 <a href="https://github.com/uncharted-causemos/parquet-to-csv">View code used to process the parquet files.</a>
               </p>
-            </template>
-            <template #footer>
-              <div
-                class="btn btn-primary btn-call-for-action"
-                @click="showDatasets = false"
+              <timeseries-chart
+                v-if="currentTabView === 'data' && timeseriesData.length > 0"
+                class="timeseries-chart"
+                :timeseries-data="timeseriesData"
+                :selected-temporal-resolution="selectedTemporalResolution"
+                :selected-timestamp="selectedTimestamp"
+                :breakdown-option="breakdownOption"
+                :unit="mainModelOutput?.unit"
+                @select-timestamp="emitTimestampSelection"
+              />
+              <p
+                v-if="
+                  currentTabView === 'data' &&
+                  breakdownOption !== null &&
+                  timeseriesData.length === 0
+                "
               >
-                Close
+                Please select one or more
+                {{
+                  breakdownOption === SpatialAggregationLevel.Region
+                    ? 'regions'
+                    : breakdownOption === TemporalAggregationLevel.Year
+                    ? 'years'
+                    : 'qualifier values'
+                }}
+                , or choose 'Split by none'.
+              </p>
+              <div
+                v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
+                class="dropdown-row"
+              >
+                <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
               </div>
             </template>
           </modal>
@@ -266,7 +292,6 @@
                   >
                     {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
                   </span>
-
                   <data-analysis-map
                     class="card-map"
                     :style="{ borderColor: colorFromIndex(indx) }"
@@ -303,36 +328,91 @@
           </div>
         </div>
       </div>
+      </div>
     </div>
+    <drilldown-panel
+      class="drilldown"
+      :is-open="activeDrilldownTab !== null"
+      :tabs="drilldownTabs"
+      :active-tab-id="activeDrilldownTab"
+    >
+      <template #content>
+        <breakdown-pane
+          v-if="activeDrilldownTab ==='breakdown'"
+          :selected-admin-level="selectedAdminLevel"
+          :qualifier-breakdown-data="qualifierBreakdownData"
+          :regional-data="regionalData"
+          :temporal-breakdown-data="temporalBreakdownData"
+          :selected-spatial-aggregation="selectedSpatialAggregation"
+          :selected-temporal-aggregation="selectedTemporalAggregation"
+          :selected-temporal-resolution="selectedTemporalResolution"
+          :selected-timestamp="selectedTimestamp"
+          :selected-scenario-ids="selectedScenarioIds"
+          :selected-region-ids="selectedRegionIds"
+          :selected-qualifier-values="selectedQualifierValues"
+          :selected-breakdown-option="breakdownOption"
+          :selected-timeseries-points="selectedTimeseriesPoints"
+          :selected-years="selectedYears"
+          :unit="unit"
+          @toggle-is-region-selected="toggleIsRegionSelected"
+          @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+          @toggle-is-year-selected="toggleIsYearSelected"
+          @set-selected-admin-level="setSelectedAdminLevel"
+          @set-breakdown-option="emitBreakdownOptionSelection"
+        />
+      </template>
+    </drilldown-panel>
   </div>
 </template>
 
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
+import { useStore } from 'vuex';
+
+import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
+import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
-import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
-import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
-import { ScenarioData } from '@/types/Common';
-import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
-import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
-import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
-import { colorFromIndex } from '@/utils/colors-util';
-import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
+import DrilldownPanel from '@/components/drilldown-panel.vue';
+import MapLegend from '@/components/widgets/map-legend.vue';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
-import { ModelRunStatus, SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
-import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
-import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
-import { useStore } from 'vuex';
-import { isIndicator, isModel } from '@/utils/datacube-util';
-import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
+import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
+import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
-import RadioButtonGroup from '../widgets/radio-button-group.vue';
-import MapLegend from '@/components/widgets/map-legend.vue';
+import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
+
+import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
+import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
+
+import { ScenarioData } from '@/types/Common';
+import {
+  AggregationOption,
+  ModelRunStatus,
+  SpatialAggregationLevel,
+  TemporalAggregationLevel,
+  TemporalResolutionOption
+} from '@/types/Enums';
+import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
+import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+
+import { colorFromIndex } from '@/utils/colors-util';
+import { isIndicator, isModel } from '@/utils/datacube-util';
+import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
+
+const DRILLDOWN_TABS = [
+  {
+    name: 'Breakdown',
+    id: 'breakdown',
+    // TODO: our version of FA doesn't include fa-chart
+    icon: 'fa-question'
+  }
+];
 
 export default defineComponent({
   name: 'DatacubeCard',
@@ -344,7 +424,12 @@ export default defineComponent({
     'refetch-data',
     'new-runs-mode',
     'update-tab-view',
-    'set-relative-to'
+    'set-relative-to',
+    'set-selected-admin-level',
+    'toggle-is-region-selected',
+    'toggle-is-qualifier-selected',
+    'toggle-is-year-selected',
+    'set-breakdown-option'
   ],
   props: {
     isExpanded: {
@@ -367,9 +452,17 @@ export default defineComponent({
       type: Array as PropType<string[]>,
       default: []
     },
+    selectedSpatialAggregation: {
+      type: String as PropType<AggregationOption | null>,
+      default: AggregationOption.Mean
+    },
+    selectedTemporalAggregation: {
+      type: String as PropType<AggregationOption | null>,
+      default: AggregationOption.Mean
+    },
     selectedTemporalResolution: {
-      type: String,
-      default: ''
+      type: String as PropType<TemporalResolutionOption | null>,
+      default: null
     },
     selectedTimestamp: {
       type: Number,
@@ -415,29 +508,66 @@ export default defineComponent({
       type: String,
       required: true
     },
+    qualifierBreakdownData: {
+      type: Array as PropType<NamedBreakdownData[]>,
+      default: () => []
+    },
+    selectedBreakdownOption: {
+      type: String as PropType<string | null>,
+      default: null
+    },
+    selectedQualifierValues: {
+      type: Object as PropType<Set<string>>,
+      default: () => new Set()
+    },
+    selectedYears: {
+      type: Object as PropType<Set<string>>,
+      default: () => new Set()
+    },
+    selectedRegionIds: {
+      type: Object as PropType<string[] | null>,
+      default: null
+    },
+    temporalBreakdownData: {
+      type: Object as PropType<BreakdownData | null>,
+      default: null
+    },
     unit: {
       type: String as PropType<string>,
       default: null
     }
   },
   components: {
-    timeseriesChart,
-    DatacubeScenarioHeader,
-    ParallelCoordinatesChart,
+    BreakdownPane,
     DataAnalysisMap,
+    DatacubeScenarioHeader,
+    DrilldownPanel,
     DropdownControl,
-    ModalNewScenarioRuns,
-    ModalCheckRunsExecutionStatus,
+    MapLegend,
     Modal,
-    SmallTextButton,
+    ModalCheckRunsExecutionStatus,
+    ModalNewScenarioRuns,
+    ParallelCoordinatesChart,
     RadioButtonGroup,
-    MapLegend
+    SmallTextButton,
+    timeseriesChart
   },
   setup(props, { emit }) {
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const tour = computed(() => store.getters['tour/tour']);
+    const activeDrilldownTab = ref<string|null>('breakdown');
+    const potentialScenarioCount = ref<number|null>(0);
+    const potentialScenarios = ref<ScenarioData[]>([]);
+    const showDatasets = ref<boolean>(false);
+    const showNewRunsMode = ref<boolean>(false);
+    const isRelativeDropdownOpen = ref<boolean>(false);
+    const showNewRunsModal = ref<boolean>(false);
+    const showModelRunsExecutionStatus = ref<boolean>(false);
+    const mapReady = ref<boolean>(false);
+
+
 
     const {
       allModelRunData,
@@ -445,8 +575,9 @@ export default defineComponent({
       outputSourceSpecs,
       regionalData,
       relativeTo,
+      selectedAdminLevel,
       selectedDataLayer,
-      selectedAdminLevel
+      selectedScenarioIds
     } = toRefs(props);
 
     const emitTimestampSelection = (newTimestamp: number) => {
@@ -455,6 +586,108 @@ export default defineComponent({
 
     const emitRelativeToSelection = (newValue: number | null) => {
       emit('set-relative-to', newValue);
+    };
+
+    const setSelectedAdminLevel = (level: number) => {
+      emit('set-selected-admin-level', level);
+    };
+
+    const toggleIsRegionSelected = (adminLevel: string, regionId: string) => {
+      emit('toggle-is-region-selected', adminLevel, regionId);
+    };
+
+    const toggleIsQualifierSelected = (
+      qualifierValue: string
+    ) => {
+      emit('toggle-is-qualifier-selected', qualifierValue);
+    };
+
+    const toggleIsYearSelected = (year: string) => {
+      emit('toggle-is-year-selected', year);
+    };
+
+    const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
+      emit('set-breakdown-option', breakdownOption);
+    };
+
+    const onMapLoad = () => {
+      emit('on-map-load');
+    };
+
+
+
+    const clickData = (tab: string) => {
+      // FIXME: This code to select a model run when switching to the data tab
+      //  should be in a watcher on the parent component to be more robust,
+      //  rather than in this button's click handler.
+      emit('update-tab-view', tab);
+
+      if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
+        // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
+        const readyRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
+        if (readyRuns.length === 0) {
+          console.warn('cannot find a baseline model run indicated by the is_default_run');
+          // failed to find baseline using the 'is_default_run' flag
+          // FIXME: so, try to find a model run that has values matching the default values of all inputs
+        }
+        const newIds = readyRuns.map(run => run.id).slice(0, 1);
+        emit('set-selected-scenario-ids', newIds);
+      }
+
+      //
+      // advance the relevant tour if it is active
+      //
+      if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour')) {
+        tour.value.next();
+      }
+    };
+
+    const onTabClick = (value: string) => {
+      if (value === 'description' && isModelMetadata) {
+        emit('set-selected-scenario-ids', []); // this will update the 'currentTabView'
+      }
+      clickData(value);
+    };
+
+    const requestNewModelRuns = () => {
+      showNewRunsModal.value = true;
+    };
+
+    const showModelExecutionStatus = () => {
+      showModelRunsExecutionStatus.value = true;
+    };
+
+    const toggleNewRunsMode = () => {
+      showNewRunsMode.value = !showNewRunsMode.value;
+      potentialScenarioCount.value = 0;
+
+      if (showNewRunsMode.value) {
+        // clear any selected scenario and show the model desc page
+        updateScenarioSelection({ scenarios: [] });
+      }
+      emit('new-runs-mode', { newRunsMode: showNewRunsMode });
+    };
+
+    const onNewScenarioRunsModalClose = (status: any) => {
+      showNewRunsModal.value = false;
+      if (status.cancel === false) {
+        // execution has just started for some new runs so start the hot-reload cycle
+        // first, exit new-runs-mode
+        toggleNewRunsMode();
+        // then, re-fetch data from server (wait some time to give the server a chance to update)
+        _.delay(() => emit('refetch-data'), 2000);
+      }
+    };
+
+    const updateScenarioSelection = (e: { scenarios: Array<ScenarioData> }) => {
+      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
+      if (selectedScenarios.length === 0) {
+        // console.log('no line is selected');
+        emit('set-selected-scenario-ids', []);
+      } else {
+        const selectedRunIDs = selectedScenarios.map(s => s.run_id);
+        emit('set-selected-scenario-ids', selectedRunIDs);
+      }
     };
 
     const {
@@ -537,11 +770,24 @@ export default defineComponent({
       return preGenDataMap.value[spec.id] ? preGenDataMap.value[spec.id].find(pregen => getPreGenItemDisplayName(pregen) === selectedPreGenDataItem.value) : undefined;
     }
 
-    const validModelRunsAvailable = computed(() => {
-      return (!_.isNull(metadata.value) && isIndicator(metadata.value)) || (!_.isNull(allModelRunData.value) &&
-        !_.isNull(metadata.value) && isModel(metadata.value) &&
-        _.some(allModelRunData.value, r => r.status === ModelRunStatus.Ready));
+    const dataPaths = computed((): string[] => {
+      if (!_.isNull(metadata.value)) {
+        const isAModel: boolean = isModel(metadata.value);
+        return _.compact(isAModel
+          ? allModelRunData.value
+            .filter(modelRun => selectedScenarioIds.value.indexOf(modelRun.id) >= 0)
+            .flatMap(modelRun => _.head(modelRun.data_paths))
+          : isIndicator(metadata.value) ? metadata.value.data_paths : []
+        );
+      } else {
+        return [];
+      }
     });
+
+    const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
+      potentialScenarioCount.value = e.scenarios.length;
+      potentialScenarios.value = e.scenarios;
+    };
 
     const {
       onSyncMapBounds,
@@ -550,151 +796,63 @@ export default defineComponent({
       recalculateGridMapDiffStats,
       adminLayerStats,
       gridLayerStats,
-      gridMapLayerLegendData,
-      adminMapLayerLegendData,
       mapLegendData,
-      isGridLayer,
       mapSelectedLayer
     } = useAnalysisMaps(outputSourceSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
 
     return {
-      mapBounds,
-      onSyncMapBounds,
-      isGridLayer,
-      mapSelectedLayer,
-      recalculateGridMapDiffStats,
-      updateMapCurSyncedZoom,
+      activeDrilldownTab,
       adminLayerStats,
-      gridLayerStats,
-      adminMapLayerLegendData,
-      gridMapLayerLegendData,
-      mapLegendData,
       colorFromIndex,
-      emitTimestampSelection,
+      dataPaths,
       dimensions,
-      ordinalDimensionNames,
-      runParameterValues,
-      mainModelOutput,
-      isModelMetadata,
+      drilldownTabs: DRILLDOWN_TABS,
+      emitBreakdownOptionSelection,
       emitRelativeToSelection,
+      emitTimestampSelection,
+      getSelectedPreGenOutput,
+      gridLayerStats,
+      headerGroupButtons,
+      isModelMetadata,
+      isRelativeDropdownOpen,
+      mainModelOutput,
+      mapBounds,
+      mapLegendData,
+      mapReady,
+      mapSelectedLayer,
+      onMapLoad,
+      onNewScenarioRunsModalClose,
+      onSyncMapBounds,
+      onTabClick,
+      ordinalDimensionNames,
+      potentialScenarioCount,
+      preGenDataItems,
+      recalculateGridMapDiffStats,
+      requestNewModelRuns,
+      runParameterValues,
+      selectedPreGenDataItem,
+      setSelectedAdminLevel,
+      showDatasets,
+      showModelExecutionStatus,
+      showModelRunsExecutionStatus,
+      showNewRunsModal,
+      showNewRunsMode,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
-      validModelRunsAvailable,
-      tour,
-      headerGroupButtons,
-      preGenDataItems,
-      selectedPreGenDataItem,
-      getSelectedPreGenOutput
+      toggleIsQualifierSelected,
+      toggleIsRegionSelected,
+      toggleIsYearSelected,
+      toggleNewRunsMode,
+      updateGeneratedScenarios,
+      updateMapCurSyncedZoom,
+      updateScenarioSelection
     };
   },
-  data: () => ({
-    showDatasets: false,
-    showNewRunsMode: false,
-    potentialScenarioCount: 0,
-    isRelativeDropdownOpen: false,
-    potentialScenarios: [] as Array<ScenarioData>,
-    showNewRunsModal: false,
-    showModelRunsExecutionStatus: false,
-    mapReady: false
-  }),
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
   },
   unmounted() {
     disableConcurrentTileRequestsCaching();
-  },
-  mounted() {
-  },
-  computed: {
-    dataPaths(): string[] {
-      if (!_.isNull(this.metadata)) {
-        const isAModel: boolean = isModel(this.metadata);
-        return _.compact(isAModel
-          ? this.allModelRunData
-            .filter(modelRun => this.selectedScenarioIds.indexOf(modelRun.id) >= 0)
-            .flatMap(modelRun => _.head(modelRun.data_paths))
-          : isIndicator(this.metadata) ? this.metadata.data_paths : []
-        );
-      } else {
-        return [];
-      }
-    }
-  },
-  methods: {
-    onTabClick(value: string) {
-      if (value === 'description' && this.isModelMetadata) {
-        this.$emit('set-selected-scenario-ids', []); // this will update the 'currentTabView'
-      }
-      this.clickData(value);
-    },
-    clickData(tab: string) {
-      // FIXME: This code to select a model run when switching to the data tab
-      //  should be in a watcher on the parent component to be more robust,
-      //  rather than in this button's click handler.
-      this.$emit('update-tab-view', tab);
-
-      if (this.isModelMetadata && this.selectedScenarioIds.length === 0) {
-        // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
-        const readyRuns = this.allModelRunData.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
-        if (readyRuns.length === 0) {
-          console.warn('cannot find a baseline model run indicated by the is_default_run');
-          // failed to find baseline using the 'is_default_run' flag
-          // FIXME: so, try to find a model run that has values matching the default values of all inputs
-        }
-        const newIds = readyRuns.map(run => run.id).slice(0, 1);
-        this.$emit('set-selected-scenario-ids', newIds);
-      }
-
-      //
-      // advance the relevant tour if it is active
-      //
-      if (tab === 'data' && this.tour && this.tour.id.startsWith('aggregations-tour')) {
-        this.tour.next();
-      }
-    },
-    onMapLoad() {
-      this.$emit('on-map-load');
-    },
-    toggleNewRunsMode() {
-      this.showNewRunsMode = !this.showNewRunsMode;
-      this.potentialScenarioCount = 0;
-
-      if (this.showNewRunsMode) {
-        // clear any selected scenario and show the model desc page
-        this.updateScenarioSelection({ scenarios: [] });
-      }
-      this.$emit('new-runs-mode', { newRunsMode: this.showNewRunsMode });
-    },
-    requestNewModelRuns() {
-      this.showNewRunsModal = true;
-    },
-    onNewScenarioRunsModalClose (status: any) {
-      this.showNewRunsModal = false;
-      if (status.cancel === false) {
-        // execution has just started for some new runs so start the hot-reload cycle
-        // first, exit new-runs-mode
-        this.toggleNewRunsMode();
-        // then, re-fetch data from server (wait some time to give the server a chance to update)
-        _.delay(() => this.$emit('refetch-data'), 2000);
-      }
-    },
-    showModelExecutionStatus() {
-      this.showModelRunsExecutionStatus = true;
-    },
-    updateScenarioSelection(e: { scenarios: Array<ScenarioData> }) {
-      const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
-      if (selectedScenarios.length === 0) {
-        // console.log('no line is selected');
-        this.$emit('set-selected-scenario-ids', []);
-      } else {
-        const selectedRunIDs = selectedScenarios.map(s => s.run_id);
-        this.$emit('set-selected-scenario-ids', selectedRunIDs);
-      }
-    },
-    updateGeneratedScenarios(e: { scenarios: Array<ScenarioData> }) {
-      this.potentialScenarioCount = e.scenarios.length;
-      this.potentialScenarios = e.scenarios;
-    }
   }
 });
 </script>
@@ -709,11 +867,17 @@ $fullscreenTransition: all 0.5s ease-in-out;
   text-decoration: underline;
 }
 
+.datacube-card-parent {
+  width: 100%;
+  display: flex;
+}
+
 .datacube-card-container {
   background-color: $background-light-1;
   box-shadow: $shadow-level-1;
   border-radius: 3px;
   display: flex;
+  flex: 1 1 auto;
 }
 .capture-box {
   padding: 10px;

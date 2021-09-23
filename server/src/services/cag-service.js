@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const moment = require('moment');
-const uuid = require('uuid');
+const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 
 const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');

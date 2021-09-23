@@ -1,5 +1,5 @@
 const moment = require('moment');
-const uuid = require('uuid');
+const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const es = rootRequire('adapters/es/adapter');
 
