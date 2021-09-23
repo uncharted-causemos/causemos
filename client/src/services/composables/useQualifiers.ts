@@ -12,7 +12,7 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const convertResponsesToBreakdownData = (
   responses: QualifierBreakdownResponse[][],
-  breakdownOption: Ref<string | null>,
+  breakdownOption: string | null,
   modelRunIds: string[],
   qualifierIdToNameMap: Map<string, string>
 ) => {
@@ -56,7 +56,7 @@ const convertResponsesToBreakdownData = (
         //  data list so that the user can select that qualifier option to see
         //  its timeseries.
         if (value !== null) {
-          if (_.isNull(breakdownOption.value)) {
+          if (_.isNull(breakdownOption)) {
             potentiallyExistingOption.values[runId] = value;
           } else {
             // Key values here will change when we implement the missing functionality for these key values.
@@ -129,7 +129,7 @@ export default function useQualifiers(
 
   watchEffect(async onInvalidate => {
     const timestamp = selectedTimestamp.value;
-    const _breakdownOption = breakdownOption;
+    const _breakdownOption = breakdownOption.value;
     if (metadata.value === null || timestamp === null) return;
     let isCancelled = false;
     onInvalidate(() => {
