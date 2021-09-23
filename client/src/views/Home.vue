@@ -23,7 +23,7 @@
             <button
               v-tooltip.top-center="'Create a new project'"
               type="button"
-              class="btn btn-primary new-project"
+              class="btn btn-primary"
               @click="gotoNewProject"
             >New Project</button>
           </div>
@@ -136,12 +136,11 @@
                 Ready (Y | N)
               </div>
               <div class="col-sm-2 number-col" style="padding: 0;">
-                <div>Type</div>
-                (
-                  <span class="datacube-link" @click="addDomainModels=!addDomainModels">M</span>
+                <span>Type
+                (<span class="datacube-link" @click="addDomainModels=!addDomainModels">M</span>
                     &nbsp;|&nbsp;
-                  <span class="datacube-link" @click="addDomainIndicators=!addDomainIndicators">I</span>
-                )
+                  <span class="datacube-link" @click="addDomainIndicators=!addDomainIndicators">I</span>)
+                </span>
               </div>
               <div class="col-sm-3 number-col" style="padding: 0;">
                 Source
@@ -356,7 +355,7 @@ $padding-size: 12.5vh;
 
 .page-container {
   display: flex;
-  padding: 3rem;
+  padding: 2rem;
   background-color: ghostwhite;
 }
 
@@ -394,9 +393,6 @@ $padding-size: 12.5vh;
   align-items: center;
   h3 {
     flex: 1;
-  }
-  .btn-primary {
-    margin: 20px 5px 10px;
   }
   div {
     flex: 1;
