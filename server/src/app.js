@@ -141,10 +141,6 @@ app.use('/api/maas/indicators', [
   indicatorsRouter
 ]);
 
-app.use('/api/maas/new-datacubes', [
-  datacubeRouter
-]);
-
 app.use('/api/maas/datacubes', [
   datacubeRouter
 ]);

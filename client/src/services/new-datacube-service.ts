@@ -10,7 +10,7 @@ import fu from '@/utils/filters-util';
  * @param {object} options - ES options
  */
 export const getDatacubes = async (filters: Filters, options = {}) => {
-  const { data } = await API.get('maas/new-datacubes', {
+  const { data } = await API.get('maas/datacubes', {
     params: {
       filters: filters,
       options: options
@@ -26,7 +26,7 @@ export const getDatacubes = async (filters: Filters, options = {}) => {
  */
 export const getDatacubeFacets = async (facets: string[], filters: Filters) => {
   const { data } = await API.get(
-    `maas/new-datacubes/facets?facets=${JSON.stringify(
+    `maas/datacubes/facets?facets=${JSON.stringify(
       facets
     )}&filters=${JSON.stringify(filters)}`
   );
@@ -50,7 +50,7 @@ export const getDatacubeById = async (datacubeId: string) => {
  * @returns {Promise<number>}
  */
 export const getDatacubesCount = async (filters: Filters) => {
-  const { data } = await API.get('maas/new-datacubes/count', {
+  const { data } = await API.get('maas/datacubes/count', {
     params: { filters: filters }
   });
   return data || 0;
@@ -88,7 +88,7 @@ const _getDatacubesCount = async (datacubeType: string) => {
  * @returns success or error on failure
  */
 export const updateDatacube = async (datacubeId: string, metadata: Model) => {
-  const result = await API.put(`maas/new-datacubes/${datacubeId}`, metadata);
+  const result = await API.put(`maas/datacubes/${datacubeId}`, metadata);
   return result.data;
 };
 
@@ -106,7 +106,7 @@ export const getModelRunMetadata = async (dataId: string) => {
  * @param {string} queryString - string to use to get suggestions
  */
 export const getSuggestions = async (field: string, queryString: string) => {
-  const { data } = await API.get('maas/new-datacubes/suggestions', {
+  const { data } = await API.get('maas/datacubes/suggestions', {
     params: {
       field,
       q: queryString
