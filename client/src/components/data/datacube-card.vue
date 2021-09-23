@@ -601,7 +601,7 @@ export default defineComponent({
     };
 
     const updateSelectedScenarioIds = (newIds: (string|number)[]) => {
-      if (metadata?.value && isIndicator(metadata.value)) {
+      if (metadata?.value && !isIndicator(metadata.value)) {
         emit('set-selected-scenario-ids', newIds);
       }
     };
