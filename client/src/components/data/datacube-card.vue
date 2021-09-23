@@ -8,7 +8,7 @@
             class="btn btn-default breakdown-button"
             :onClick="() => activeDrilldownTab = (activeDrilldownTab === null ? 'breakdown' : null)"
           >
-            Toggle Breakdown
+            {{ activeDrilldownTab === null ? 'Show' : 'Hide' }} Breakdown
           </button>
           <slot name="datacube-model-header-collapse" />
         </header>
@@ -209,29 +209,6 @@
                   :unit="mainModelOutput?.unit"
                   @select-timestamp="emitTimestampSelection"
                 />
-                <p
-                  v-if="
-                    currentTabView === 'data' &&
-                    breakdownOption !== null &&
-                    timeseriesData.length === 0
-                  "
-                >
-                  Please select one or more
-                  {{
-                    breakdownOption === SpatialAggregationLevel.Region
-                      ? 'regions'
-                      : breakdownOption === TemporalAggregationLevel.Year
-                      ? 'years'
-                      : 'qualifier values'
-                  }}
-                  , or choose 'Split by none'.
-                </p>
-                <div
-                  v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
-                  class="dropdown-row"
-                >
-                  <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
-                </div>
               </template>
             </modal>
 
@@ -341,7 +318,8 @@
           <drilldown-panel
             class="drilldown"
             :active-tab-id="activeDrilldownTab"
-            :hasTransition="false"
+            :has-transition="false"
+            :hide-close="true"
             :is-open="activeDrilldownTab !== null"
             :tabs="drilldownTabs"
             @close="() => { activeDrilldownTab = null }"

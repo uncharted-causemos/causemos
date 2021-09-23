@@ -15,7 +15,7 @@
       <div class="panel-header">
         <h5>{{ paneTitle }}</h5>
         <close-button
-          v-if="isOpen !== null"
+          v-if="isOpen !== null && !hideClose"
           class="navigation-button close-button"
           @click="onClose"
         />
@@ -88,6 +88,10 @@ export default defineComponent({
     hasTransition: {
       type: Boolean,
       default: true
+    },
+    hideClose: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [
