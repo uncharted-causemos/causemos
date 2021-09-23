@@ -315,7 +315,7 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      if (metadata.value?.type === DatacubeType.Indicator && selectedScenarioIds.value) {
+      if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       }
     });

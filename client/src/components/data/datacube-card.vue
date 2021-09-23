@@ -376,6 +376,7 @@ import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
 import { ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
+  DatacubeType,
   ModelRunStatus,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
@@ -608,7 +609,7 @@ export default defineComponent({
       //  rather than in this button's click handler.
       emit('update-tab-view', tab);
 
-      if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
+      if (isModelMetadata.value && selectedScenarioIds.value.length === 0 && metadata?.value?.type !== DatacubeType.Indicator) {
         // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
         const readyRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
         if (readyRuns.length === 0) {
@@ -629,7 +630,7 @@ export default defineComponent({
     };
 
     const onTabClick = (value: string) => {
-      if (value === 'description' && isModelMetadata) {
+      if (value === 'description' && isModelMetadata && metadata?.value?.type !== DatacubeType.Indicator) {
         emit('set-selected-scenario-ids', []); // this will update the 'currentTabView'
       }
       clickData(value);

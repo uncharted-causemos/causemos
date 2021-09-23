@@ -250,7 +250,7 @@ export default defineComponent({
         mainModelOutput.value = outputs.value[currentOutputIndex.value];
       }
 
-      if (metadata.value?.type === DatacubeType.Indicator && selectedScenarioIds.value) {
+      if (metadata.value?.type === DatacubeType.Indicator) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       }
     });
