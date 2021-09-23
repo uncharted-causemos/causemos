@@ -647,6 +647,15 @@ const getStatementsByNode = async (modelId, concept) => {
 };
 
 
+/**
+ * Change the name/label of a given node, if the node is connected then also
+ * change the target/source of connected edges.
+ *
+ * @param {string} modelId
+ * @param {object} change
+ * @param {string} change.id - id of node
+ * @param {string} change.concept - new concept name
+ */
 const changeConcept = async (modelId, change) => {
   const edgeAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
   const nodeAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
@@ -655,9 +664,9 @@ const changeConcept = async (modelId, change) => {
   const nodeId = change.id;
 
   // Find node
-  const node = await edgeAdapter.findOne([
+  const node = await nodeAdapter.findOne([
     { field: 'id', value: nodeId }
-  ]);
+  ], {});
 
   if (!node) {
     throw new Error(`Node ${nodeId} not found`);
@@ -671,7 +680,7 @@ const changeConcept = async (modelId, change) => {
 
   const targetEdges = await edgeAdapter.find([
     { field: 'model_id', value: modelId },
-    { field: 'source', value: node.concept }
+    { field: 'target', value: node.concept }
   ], { size: SEARCH_LIMIT });
 
   const edges = _.uniqBy([...sourceEdges, ...targetEdges], 'id');
