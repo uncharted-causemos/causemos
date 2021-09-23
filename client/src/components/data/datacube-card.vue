@@ -601,6 +601,12 @@ export default defineComponent({
       emit('on-map-load');
     };
 
+    const updateSelectedScenarioIds = (newIds: string[]|number[]) => {
+      if (metadata?.value && isIndicator(metadata.value)) {
+        emit('set-selected-scenario-ids', newIds);
+      }
+    };
+
 
 
     const clickData = (tab: string) => {
@@ -609,7 +615,7 @@ export default defineComponent({
       //  rather than in this button's click handler.
       emit('update-tab-view', tab);
 
-      if (isModelMetadata.value && selectedScenarioIds.value.length === 0 && metadata?.value?.type !== DatacubeType.Indicator) {
+      if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
         // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
         const readyRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
         if (readyRuns.length === 0) {
@@ -618,7 +624,7 @@ export default defineComponent({
           // FIXME: so, try to find a model run that has values matching the default values of all inputs
         }
         const newIds = readyRuns.map(run => run.id).slice(0, 1);
-        emit('set-selected-scenario-ids', newIds);
+        updateSelectedScenarioIds(newIds);
       }
 
       //
@@ -630,8 +636,8 @@ export default defineComponent({
     };
 
     const onTabClick = (value: string) => {
-      if (value === 'description' && isModelMetadata && metadata?.value?.type !== DatacubeType.Indicator) {
-        emit('set-selected-scenario-ids', []); // this will update the 'currentTabView'
+      if (value === 'description' && isModelMetadata) {
+        updateSelectedScenarioIds([]); // this will update the 'currentTabView'
       }
       clickData(value);
     };
@@ -670,10 +676,10 @@ export default defineComponent({
       const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
       if (selectedScenarios.length === 0) {
         // console.log('no line is selected');
-        emit('set-selected-scenario-ids', []);
+        updateSelectedScenarioIds([]);
       } else {
         const selectedRunIDs = selectedScenarios.map(s => s.run_id);
-        emit('set-selected-scenario-ids', selectedRunIDs);
+        updateSelectedScenarioIds(selectedRunIDs);
       }
     };
 
