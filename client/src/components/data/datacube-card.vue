@@ -376,7 +376,6 @@ import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
 import { ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
-  DatacubeType,
   ModelRunStatus,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
@@ -601,7 +600,7 @@ export default defineComponent({
       emit('on-map-load');
     };
 
-    const updateSelectedScenarioIds = (newIds: string[]|number[]) => {
+    const updateSelectedScenarioIds = (newIds: (string|number)[]) => {
       if (metadata?.value && isIndicator(metadata.value)) {
         emit('set-selected-scenario-ids', newIds);
       }
