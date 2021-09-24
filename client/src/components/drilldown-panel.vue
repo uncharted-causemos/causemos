@@ -1,5 +1,5 @@
 <template>
-  <transition name="slide-fade">
+  <transition :name="transitionName">
     <div
       v-if="isOpen === null || isOpen"
       class="drilldown-panel-container"
@@ -15,7 +15,7 @@
       <div class="panel-header">
         <h5>{{ paneTitle }}</h5>
         <close-button
-          v-if="isOpen !== null"
+          v-if="isOpen !== null && !hideClose"
           class="navigation-button close-button"
           @click="onClose"
         />
@@ -84,6 +84,14 @@ export default defineComponent({
     isOverlayOpen: {
       type: Boolean,
       default: false
+    },
+    hasTransition: {
+      type: Boolean,
+      default: true
+    },
+    hideClose: {
+      type: Boolean,
+      default: false
     }
   },
   emits: [
@@ -95,6 +103,9 @@ export default defineComponent({
     paneTitle(): string {
       const activeTab = this.tabs.find(tab => tab.id === this.activeTabId);
       return activeTab === undefined ? '[Panel Title]' : activeTab.name;
+    },
+    transitionName(): string {
+      return this.hasTransition ? 'slide-fade' : '';
     }
   },
   mounted() {
