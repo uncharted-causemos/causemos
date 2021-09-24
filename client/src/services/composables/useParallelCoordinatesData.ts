@@ -5,6 +5,7 @@ import { ModelRun } from '@/types/ModelRun';
 import { ModelRunStatus } from '@/types/Enums';
 import { useStore } from 'vuex';
 import { isModel } from '@/utils/datacube-util';
+import DurationFormatter from '@/formatters/duration-formatter';
 
 /**
  * Takes a model ID and a list of scenario IDs, fetches
@@ -28,8 +29,10 @@ export default function useParallelCoordinatesData(
     return allModelRunData.value.map((modelRun, runIndex) => {
       const run_id = allModelRunData.value[runIndex].id;
       const runStatus = allModelRunData.value[runIndex].status;
+      const time_since_execution = DurationFormatter(Date.now() - allModelRunData.value[runIndex].created_at);
       const run: ScenarioData = {
         run_id,
+        time_since_execution,
         status: runStatus ?? ModelRunStatus.Ready
       };
       if (run.status === ModelRunStatus.Ready) {
