@@ -6,7 +6,6 @@
       </div>
     </template>
     <template #body>
-      <a href="https://dojo-test.com/runs/{run_id}/logs">Execution Logs</a>
       <table class="table">
         <tr>
           <td>ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
@@ -15,20 +14,16 @@
             :key="idx">
             <div class="params-header">{{ dim }}</div>
           </td>
-          <td>execution logs</td>
           <td>&nbsp;</td>
         </tr>
         <tr
           v-for="(run, sidx) in potentialRuns"
           :key="sidx">
           <td>{{ sidx }}</td>
-          <td v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
+          <td v-for="(dimName, idx) in Object.keys(run)"
             :key="idx"
             class="params-value">
             <label>{{ run[dimName] }}</label>
-          </td>
-          <td>
-            <a :href=dojoExecutionLink(run.runId)>See Logs</a>
           </td>
           <td>
             <div
@@ -69,8 +64,6 @@ import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
 
-const OmittedColumns = ['run_id'];
-
 // TODO: add table header with interactivity to rank/re-order
 
 // allow the user to review potential mode runs before kicking off execution
@@ -94,14 +87,14 @@ export default defineComponent({
   },
   computed: {
     potentialRunsParameters(): Array<any> {
-      return this.potentialRuns.length > 0 ? this.withoutOmittedColumns(Object.keys(this.potentialRuns[0])) : [];
+      return this.potentialRuns.length > 0 ? Object.keys(this.potentialRuns[0]) : [];
     },
     potentialRuns(): Array<any> {
       const runs = this.potentialScenarios.filter(r => r.status !== ModelRunStatus.Ready);
       const drilldownParamNames = this.metadata.parameters.filter((p: any) => p.is_drilldown).map(p => p.name);
       const sortedRuns = _.sortBy(runs, r => r.status);
       const newArray = _.map(sortedRuns, function (row) {
-        return _.omit(row, [...drilldownParamNames]);
+        return _.omit(row, ['run_id', ...drilldownParamNames]);
       });
       return newArray;
     }
@@ -114,12 +107,6 @@ export default defineComponent({
   methods: {
     close() {
       this.$emit('close');
-    },
-    dojoExecutionLink(runId: string) {
-      return `https://dojo-test.com/runs/${runId}/logs`;
-    },
-    withoutOmittedColumns(columns: string[]) {
-      return columns.filter(column => !_.includes(OmittedColumns, column));
     }
   }
 });
