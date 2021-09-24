@@ -63,7 +63,7 @@
                 >{{output.display_name !== '' ? output.display_name : output.name}}</option>
               </select>
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <span v-tooltip.top-center="'Explore related indicators'" class="datacube-name" @click="onClickDatacubeName">{{metadata.name}}</span>
+              <span v-tooltip.top-center="'Explore related indicators'" class="datacube-name" @click="onClickDatacubeName">{{metadata.name}} <i class="fa fa-link"></i></span>
             </h5>
           </template>
 
@@ -723,9 +723,7 @@ export default defineComponent({
   font-weight: normal;
   color: $label-color;
   margin-left: 10px;
-  cursor: -moz-zoom-in;
-  cursor: -webkit-zoom-in;
-  cursor: zoom-in;
+  cursor: pointer;
   &:hover {
     filter: brightness(60%);
   }
