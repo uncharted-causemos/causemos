@@ -26,6 +26,7 @@
           @delete="onDelete"
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
+          @rename-node="renameNode"
         />
       </div>
       <drilldown-panel
@@ -520,7 +521,8 @@ export default defineComponent({
       const node = {
         id: new Date().getTime().toString(),
         concept: suggestion.concept,
-        label: suggestion.label
+        label: suggestion.label,
+        components: [suggestion.concept]
       };
       this.saveNodeToGraph(node);
     },
@@ -528,8 +530,8 @@ export default defineComponent({
     async saveNodeToGraph(node: NodeParameter) {
       // Creates a shallow clone of `node`, replacing the `id` property
       //  with an empty value
-      const { model_id, concept, label, modified_at, parameter } = node;
-      const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter };
+      const { model_id, concept, label, modified_at, parameter, components } = node;
+      const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter, components };
       const data = await this.addCAGComponents([cleanedNode], []);
       this.setUpdateToken(data.updateToken);
     },
@@ -850,7 +852,8 @@ export default defineComponent({
           id: n.id,
           concept: n.concept,
           label: n.label,
-          parameter: n.parameter
+          parameter: n.parameter,
+          components: n.components
         };
       });
 
@@ -929,7 +932,8 @@ export default defineComponent({
         return {
           id: '',
           concept: concept,
-          label: this.ontologyFormatter(concept)
+          label: this.ontologyFormatter(concept),
+          components: [concept]
         };
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges);
@@ -984,7 +988,8 @@ export default defineComponent({
               nodePayload.push({
                 id: '',
                 concept: concept,
-                label: this.ontologyFormatter(concept)
+                label: this.ontologyFormatter(concept),
+                components: [concept]
               });
             }
           });
@@ -994,6 +999,10 @@ export default defineComponent({
       // update and refresh
       const data = await this.addCAGComponents(nodePayload, edgePayload);
       this.setUpdateToken(data.updateToken);
+    },
+    async renameNode(node: NodeParameter) {
+      console.log('Renaming', node);
+      modelService.renameNode(this.currentCAG, node.id, Date.now() + '');
     }
   }
 });
