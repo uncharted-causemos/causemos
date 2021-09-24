@@ -524,15 +524,11 @@ const recalculateCAG = async (modelId) => {
   // same composition with respect to the edge's source/target
   for (let i = 0; i < edges.length; i++) {
     const e = edges[i];
-    const subjConcept = e.source;
-    const objConcept = e.target;
     const referenceIds = e.reference_ids;
 
     // Filter out changed and discarded edges
     promises.push(statementAdapter.find({
       clauses: [
-        { field: 'subjConcept', values: [subjConcept], isNot: false, operand: 'OR' },
-        { field: 'objConcept', values: [objConcept], isNot: false, operand: 'OR' },
         { field: 'id', values: referenceIds }
       ]
     }, { size: SEARCH_LIMIT, includes: ['id', 'wm.statement_polarity'] }));
