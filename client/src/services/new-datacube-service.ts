@@ -194,5 +194,5 @@ export default {
   getModelDatacubesCount,
   getIndicatorDatacubesCount,
   getModelRunMetadata,
-  getSuggestions,
+  getSuggestions
 };
