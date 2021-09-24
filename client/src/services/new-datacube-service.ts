@@ -185,25 +185,6 @@ export const getQualifierBreakdown = async (
   return data as QualifierBreakdownResponse[];
 };
 
-// DEPRECATED - NO LONGER WORK
-// TODO: REMOVE
-
-/**
- * @deprecated
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const getModelRuns = async (modelId: any) => {
-  return [];
-};
-
-/**
- * @deprecated
- */
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-export const getModelParameters = async (modelId: any) => {
-  return [];
-};
-
 export default {
   updateDatacube,
   getDatacubes,
@@ -214,7 +195,4 @@ export default {
   getIndicatorDatacubesCount,
   getModelRunMetadata,
   getSuggestions,
-
-  getModelRuns,
-  getModelParameters
 };
