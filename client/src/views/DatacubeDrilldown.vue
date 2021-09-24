@@ -26,7 +26,6 @@
           :selected-timeseries-points="selectedTimeseriesPoints"
           :selected-base-layer="selectedBaseLayer"
           :selected-data-layer="selectedDataLayer"
-          :unit="unit"
           :qualifier-breakdown-data="qualifierBreakdownData"
           :temporal-breakdown-data="temporalBreakdownData"
           :selected-region-ids="selectedRegionIds"
@@ -279,14 +278,6 @@ export default defineComponent({
 
     // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
     const timerHandler = setInterval(fetchData, timeInterval);
-
-    const unit = computed(() =>
-      mainModelOutput.value &&
-      mainModelOutput.value.unit &&
-      mainModelOutput.value.unit !== ''
-        ? mainModelOutput.value.unit
-        : null
-    );
 
     const currentTabView = ref<string>('description');
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
@@ -646,7 +637,6 @@ export default defineComponent({
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
-      unit,
       updateStateFromInsight,
       updateTabView,
       visibleTimeseriesData

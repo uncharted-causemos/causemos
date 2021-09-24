@@ -227,7 +227,7 @@
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
-                :unit="mainModelOutput?.unit"
+                :unit="unit"
                 @select-timestamp="emitTimestampSelection"
               />
               <p
@@ -517,10 +517,6 @@ export default defineComponent({
     temporalBreakdownData: {
       type: Object as PropType<BreakdownData | null>,
       default: null
-    },
-    unit: {
-      type: String as PropType<string>,
-      default: null
     }
   },
   components: {
@@ -552,8 +548,6 @@ export default defineComponent({
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
     const mapReady = ref<boolean>(false);
-
-
 
     const {
       allModelRunData,
@@ -774,6 +768,14 @@ export default defineComponent({
       }
     });
 
+
+    const unit = computed(() =>
+      mainModelOutput?.value?.unit &&
+        mainModelOutput.value.unit !== ''
+        ? mainModelOutput.value.unit
+        : null
+    );
+
     const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
       potentialScenarioCount.value = e.scenarios.length;
       potentialScenarios.value = e.scenarios;
@@ -833,6 +835,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
+      unit,
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
       updateScenarioSelection

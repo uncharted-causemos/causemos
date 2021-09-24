@@ -67,7 +67,6 @@
           @new-runs-mode="newRunsMode=!newRunsMode"
           @update-tab-view="updateTabView"
           @select-timestamp="updateSelectedTimestamp"
-          @check-model-metadata-validity="checkModelMetadataValidity"
         >
           <template v-slot:datacube-model-header>
             <datacube-model-header
@@ -614,10 +613,6 @@ export default defineComponent({
         updatePublishingStep(true);
       }
     };
-    const checkModelMetadataValidity = (info: { valid: boolean }) => {
-      const ps = publishingSteps.value.find(s => s.id === ModelPublishingStepID.Enrich_Description);
-      if (ps) { ps.completed = info.valid; }
-    };
     const toggleAccordion = (event: any) => {
       openPublishAccordion.value = !openPublishAccordion.value;
       const target = event.target.nodeName === 'I' ? event.target.parentElement : event.target;
@@ -692,7 +687,6 @@ export default defineComponent({
       allModelRunData,
       baselineMetadata,
       breakdownOption,
-      checkModelMetadataValidity,
       currentPublishStep,
       currentTabView,
       getPublicInsights,

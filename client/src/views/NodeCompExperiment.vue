@@ -41,7 +41,6 @@
         :selected-timeseries-points="selectedTimeseriesPoints"
         :selected-base-layer="selectedBaseLayer"
         :selected-data-layer="selectedDataLayer"
-        :unit="unit"
         :qualifier-breakdown-data="qualifierBreakdownData"
         :temporal-breakdown-data="temporalBreakdownData"
         :selected-region-ids="selectedRegionIds"
@@ -232,14 +231,6 @@ export default defineComponent({
     const timerHandler = setInterval(fetchData, timeInterval);
 
     const scenarioCount = computed(() => allModelRunData.value.length);
-    const unit = computed(() =>
-      mainModelOutput.value &&
-      mainModelOutput.value.unit &&
-      mainModelOutput.value.unit !== ''
-        ? mainModelOutput.value.unit
-        : null
-    );
-
     const currentTabView = ref<string>('description');
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
@@ -452,7 +443,7 @@ export default defineComponent({
         parameter: {
           id: metadata?.value?.id,
           name: metadata?.value?.name,
-          unit: unit,
+          unit: mainModelOutput?.value?.unit,
           country,
           admin1,
           admin2,
@@ -550,7 +541,6 @@ export default defineComponent({
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
-      unit,
       updateTabView,
       visibleTimeseriesData
     };
