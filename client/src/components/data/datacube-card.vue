@@ -32,22 +32,22 @@
               :selected-dimensions="dimensions"
               :ordinal-dimensions="ordinalDimensionNames"
               :initial-data-selection="selectedScenarioIds"
-              :new-runs-mode="showNewRunsMode"
+              :new-runs-mode="newRunsMode"
               @select-scenario="updateScenarioSelection"
               @generated-scenarios="updateGeneratedScenarios"
             />
             <button
               class="btn toggle-new-runs-button"
               :class="{
-                'btn-primary btn-call-for-action': !showNewRunsMode,
-                'btn-default': showNewRunsMode
+                'btn-primary btn-call-for-action': !newRunsMode,
+                'btn-default': newRunsMode
               }"
               @click="toggleNewRunsMode()"
             >
-              {{ showNewRunsMode ? 'Cancel' : 'Request new runs' }}
+              {{ newRunsMode ? 'Cancel' : 'Request new runs' }}
             </button>
             <button
-              v-if="showNewRunsMode"
+              v-if="newRunsMode"
               class="btn btn-primary btn-call-for-action"
               :class="{ 'disabled': potentialScenarioCount === 0}"
               @click="requestNewModelRuns()"
@@ -77,7 +77,7 @@
                 />
               </div>
               <div
-                v-if="currentTabView === 'data' && (timeseriesData.length > 1 || relativeTo !== null)"
+                v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
                 class="relative-box"
               >
                 Relative to
@@ -95,16 +95,16 @@
                     <div
                       v-if="relativeTo !== null"
                       class="dropdown-option"
-                      @click="emitRelativeToSelection(null); isRelativeDropdownOpen = false;"
+                      @click="setRelativeTo(null); isRelativeDropdownOpen = false;"
                     >
                       none
                     </div>
                     <div
-                      v-for="(timeseries, index) in timeseriesData"
+                      v-for="(timeseries, index) in visibleTimeseriesData"
                       class="dropdown-option"
                       :style="{ color: timeseries.color }"
                       :key="index"
-                      @click="emitRelativeToSelection(timeseries.id); isRelativeDropdownOpen = false;"
+                      @click="setRelativeTo(timeseries.id); isRelativeDropdownOpen = false;"
                     >
                       {{timeseries.name}}
                     </div>
@@ -118,11 +118,11 @@
 
             <!-- Pre-rendered viz tab content -->
             <!--
-              outputSourceSpecs.length > 0 means we have one or more selected run
+              outputSpecs.length > 0 means we have one or more selected run
               FIXME: this should be done directly against allModelRunData
             -->
             <div
-              v-if="currentTabView === 'pre-rendered-viz' && outputSourceSpecs.length > 0"
+              v-if="currentTabView === 'pre-rendered-viz' && outputSpecs.length > 0"
               style="display: flex; height: 100%; flex-direction: column">
 
               <!-- a global list
@@ -143,12 +143,12 @@
               </div>
 
               <div class="column card-maps-container" style="flex-direction: revert;">
-                <div v-for="(spec, indx) in outputSourceSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec)"
+                <div v-for="(spec, indx) in outputSpecs" :key="spec.id" :set="pregenDataForSpec = getSelectedPreGenOutput(spec)"
                   class="card-map-container"
                   :style="{ borderColor: colorFromIndex(indx) }"
                   style="border-width: 2px; border-style: solid;"
                   :class="[
-                    `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                    `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
                   ]"
                 >
                   <!-- spec here represents one selected model run -->
@@ -212,29 +212,29 @@
               <div class="dropdown-row">
                 <slot
                   name="temporal-aggregation-config"
-                  v-if="currentTabView === 'data' && timeseriesData.length > 0"
+                  v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 />
                 <slot
                   name="temporal-resolution-config"
-                  v-if="currentTabView === 'data' && timeseriesData.length > 0"
+                  v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 />
               </div>
               <timeseries-chart
-                v-if="currentTabView === 'data' && timeseriesData.length > 0"
+                v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
                 :key="activeDrilldownTab"
-                :timeseries-data="timeseriesData"
+                :timeseries-data="visibleTimeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
                 :unit="unit"
-                @select-timestamp="emitTimestampSelection"
+                @select-timestamp="setSelectedTimestamp"
               />
               <p
                 v-if="
                   currentTabView === 'data' &&
                   breakdownOption !== null &&
-                  timeseriesData.length === 0
+                  visibleTimeseriesData.length === 0
                 "
               >
                 Please select one or more
@@ -248,29 +248,44 @@
                 , or choose 'Split by none'.
               </p>
               <div
-                v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSourceSpecs.length > 0"
+                v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSpecs.length > 0"
                 class="dropdown-row"
               >
-                <slot name="spatial-aggregation-config" v-if="currentTabView === 'data'" />
+                <div v-if="currentTabView === 'data'">
+                  <dropdown-button
+                    class="dropdown-config tour-spatial-agg-dropdown-config"
+                    :inner-button-label="'Spatial Aggregation'"
+                    :items="aggregationOptionFiltered"
+                    :selected-item="selectedSpatialAggregation"
+                    @item-selected="setSpatialAggregationSelection"
+                  />
+                  <map-dropdown
+                    class="dropdown-config"
+                    :selectedBaseLayer="selectedBaseLayer"
+                    :selectedDataLayer="selectedDataLayer"
+                    @set-base-layer="setBaseLayer"
+                    @set-data-layer="setDataLayer"
+                  />
+                </div>
               </div>
               <div class="card-maps-box">
-                <div v-if="outputSourceSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
-                  <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
+                  <span v-if="outputSpecs.length > 1" class="top-padding"></span>
                   <map-legend :ramp="mapLegendData[0]" :label-position="{ top: true, right: false }" />
                 </div>
                 <div
                   v-if="mapReady && currentTabView === 'data' && regionalData !== null"
                   class="card-maps-container">
                   <div
-                    v-for="(spec, indx) in outputSourceSpecs"
+                    v-for="(spec, indx) in outputSpecs"
                     :key="spec.id"
                     class="card-map-container"
                     :class="[
-                      `card-count-${outputSourceSpecs.length < 5 ? outputSourceSpecs.length : 'n'}`
+                      `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
                     ]"
                   >
                     <span
-                      v-if="outputSourceSpecs.length > 1"
+                      v-if="outputSpecs.length > 1"
                       :style="{ color: colorFromIndex(indx)}"
                     >
                       {{ selectedTimeseriesPoints[indx]?.timeseriesName ?? '--' }}
@@ -278,7 +293,7 @@
                     <data-analysis-map
                       class="card-map"
                       :style="{ borderColor: colorFromIndex(indx) }"
-                      :output-source-specs="outputSourceSpecs"
+                      :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
                       :show-tooltip="true"
@@ -303,8 +318,8 @@
                   <!-- Empty div to reduce jumpiness when the maps are loading -->
                   <div class="card-map" />
                 </div>
-                <div v-if="outputSourceSpecs.length > 0" class="card-maps-legend-container">
-                  <span v-if="outputSourceSpecs.length > 1" class="top-padding"></span>
+                <div v-if="outputSpecs.length > 0" class="card-maps-legend-container">
+                  <span v-if="outputSpecs.length > 1" class="top-padding"></span>
                   <map-legend :ramp="mapLegendData.length === 2 ? mapLegendData[1] : mapLegendData[0]" />
                 </div>
               </div>
@@ -341,7 +356,7 @@
                 @toggle-is-qualifier-selected="toggleIsQualifierSelected"
                 @toggle-is-year-selected="toggleIsYearSelected"
                 @set-selected-admin-level="setSelectedAdminLevel"
-                @set-breakdown-option="emitBreakdownOptionSelection"
+                @set-breakdown-option="setBreakdownOption"
               />
             </template>
           </drilldown-panel>
@@ -354,13 +369,17 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
+import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
+import router from '@/router';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
+import MapDropdown from '@/components/data/map-dropdown.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import Modal from '@/components/modals/modal.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
@@ -370,26 +389,43 @@ import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
-import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
-import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
 
+import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
+import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+import useOutputSpecs from '@/services/composables/useOutputSpecs';
+import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
+import useQualifiers from '@/services/composables/useQualifiers';
+import useRegionalData from '@/services/composables/useRegionalData';
+import useScenarioData from '@/services/composables/useScenarioData';
+import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
+import useTimeseriesData from '@/services/composables/useTimeseriesData';
+
+import { getAnalysis } from '@/services/analysis-service';
+import { getInsightById } from '@/services/insight-service';
+
+import { AnalysisItem } from '@/types/Analysis';
 import { ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
+  DatacubeType,
   ModelRunStatus,
+  ProjectType,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
-import { Model, DatacubeFeature, Indicator } from '@/types/Datacube';
-import { BreakdownData, NamedBreakdownData } from '@/types/Datacubes';
+import { DatacubeFeature } from '@/types/Datacube';
+import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
-import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
+import { OutputSpecWithId } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
 import { isIndicator, isModel } from '@/utils/datacube-util';
+import { aggregationOptionFiltered, initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
-import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
 
 const DRILLDOWN_TABS = [
   {
@@ -403,120 +439,28 @@ const DRILLDOWN_TABS = [
 export default defineComponent({
   name: 'DatacubeCard',
   emits: [
-    'on-map-load',
-    'set-selected-scenario-ids',
-    'select-timestamp',
-    'check-model-metadata-validity',
-    'refetch-data',
-    'new-runs-mode',
-    'update-tab-view',
-    'set-relative-to',
-    'set-selected-admin-level',
-    'toggle-is-region-selected',
-    'toggle-is-qualifier-selected',
-    'toggle-is-year-selected',
-    'set-breakdown-option'
+    'on-map-load'
   ],
   props: {
     isExpanded: {
       type: Boolean,
       default: true
     },
-    currentTabView: {
-      type: String,
-      default: 'description'
-    },
-    selectedAdminLevel: {
-      type: Number,
-      default: 0
-    },
-    allModelRunData: {
-      type: Array as PropType<ModelRun[]>,
-      default: []
-    },
-    selectedScenarioIds: {
-      type: Array as PropType<string[]>,
-      default: []
-    },
     selectedSpatialAggregation: {
-      type: String as PropType<AggregationOption | null>,
+      type: String as PropType<AggregationOption>,
       default: AggregationOption.Mean
     },
     selectedTemporalAggregation: {
-      type: String as PropType<AggregationOption | null>,
+      type: String as PropType<AggregationOption>,
       default: AggregationOption.Mean
     },
     selectedTemporalResolution: {
-      type: String as PropType<TemporalResolutionOption | null>,
-      default: null
-    },
-    selectedTimestamp: {
-      type: Number,
-      default: 0
-    },
-    regionalData: {
-      type: Object as PropType<RegionalAggregations | null>,
-      default: null
-    },
-    outputSourceSpecs: {
-      type: Array as PropType<OutputSpecWithId[]>,
-      default: () => []
-    },
-    metadata: {
-      type: Object as PropType<Model | Indicator | null>,
-      default: null
-    },
-    timeseriesData: {
-      type: Array as PropType<Timeseries[]>,
-      default: []
-    },
-    relativeTo: {
-      type: String as PropType<string | null>,
-      default: null
-    },
-    breakdownOption: {
-      type: String as PropType<string | null>,
-      default: null
-    },
-    baselineMetadata: {
-      type: Object as PropType<{name: string; color: string} | null>,
-      default: null
-    },
-    selectedTimeseriesPoints: {
-      type: Array as PropType<TimeseriesPointSelection[]>,
-      default: []
-    },
-    selectedBaseLayer: {
-      type: String,
-      required: true
-    },
-    selectedDataLayer: {
-      type: String,
-      required: true
-    },
-    qualifierBreakdownData: {
-      type: Array as PropType<NamedBreakdownData[]>,
-      default: () => []
-    },
-    selectedBreakdownOption: {
-      type: String as PropType<string | null>,
+      type: String as PropType<TemporalResolutionOption>,
       default: null
     },
     selectedQualifierValues: {
       type: Object as PropType<Set<string>>,
       default: () => new Set()
-    },
-    selectedYears: {
-      type: Object as PropType<Set<string>>,
-      default: () => new Set()
-    },
-    selectedRegionIds: {
-      type: Object as PropType<string[] | null>,
-      default: null
-    },
-    temporalBreakdownData: {
-      type: Object as PropType<BreakdownData | null>,
-      default: null
     }
   },
   components: {
@@ -524,7 +468,9 @@ export default defineComponent({
     DataAnalysisMap,
     DatacubeScenarioHeader,
     DrilldownPanel,
+    DropdownButton,
     DropdownControl,
+    MapDropdown,
     MapLegend,
     Modal,
     ModalCheckRunsExecutionStatus,
@@ -535,67 +481,152 @@ export default defineComponent({
     timeseriesChart
   },
   setup(props, { emit }) {
+    const timeInterval = 10000;
+    const route = useRoute();
     const store = useStore();
+    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
+
     const activeDrilldownTab = ref<string|null>('breakdown');
+    const analysis = ref<any>(undefined);
+    const currentTabView = ref<string>('description');
     const potentialScenarioCount = ref<number|null>(0);
     const potentialScenarios = ref<ScenarioData[]>([]);
     const showDatasets = ref<boolean>(false);
-    const showNewRunsMode = ref<boolean>(false);
+    const newRunsMode = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
     const mapReady = ref<boolean>(false);
+    const selectedTimestamp = ref(null) as Ref<number | null>;
+    const breakdownOption = ref<string | null>(null);
+    const datacubeId = route.query.datacube_id as any;
+    const selectedAdminLevel = ref(0);
+    const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+    const selectedScenarioIds = ref([] as string[]);
+    const selectedScenarios = ref([] as ModelRun[]);
+    const selectedModelId = ref(datacubeId);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+    const metadata = useModelMetadata(selectedModelId);
+    const modelRunsFetchedAt = ref(0);
+
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+    const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
+    const isIndicatorDatacube = computed(() => metadata.value !== null && isIndicator(metadata.value));
+
+    const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
     const {
-      allModelRunData,
-      metadata,
-      outputSourceSpecs,
-      regionalData,
-      relativeTo,
-      selectedAdminLevel,
-      selectedDataLayer,
-      selectedScenarioIds
+      dimensions,
+      ordinalDimensionNames,
+      runParameterValues
+    } = useParallelCoordinatesData(metadata, allModelRunData);
+
+
+
+    // apply initial data config for this datacube
+    const initialSelectedRegionIds = ref<string[]>([]);
+    const initialSelectedQualifierValues = ref<string[]>([]);
+    const initialSelectedYears = ref<string[]>([]);
+
+    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
+    const initialViewConfig: ViewState = analysisId.value[0].viewConfig;
+    const initialDataConfig: DataState = analysisId.value[0].dataConfig;
+
+    const {
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution
     } = toRefs(props);
 
-    const emitTimestampSelection = (newTimestamp: number) => {
-      emit('select-timestamp', newTimestamp);
+    const setBaseLayer = (val: BASE_LAYER) => {
+      selectedBaseLayer.value = val;
     };
 
-    const emitRelativeToSelection = (newValue: number | null) => {
-      emit('set-relative-to', newValue);
+    const setDataLayer = (val: DATA_LAYER) => {
+      selectedDataLayer.value = val;
     };
+
 
     const setSelectedAdminLevel = (level: number) => {
-      emit('set-selected-admin-level', level);
+      selectedAdminLevel.value = level;
     };
 
-    const toggleIsRegionSelected = (adminLevel: string, regionId: string) => {
-      emit('toggle-is-region-selected', adminLevel, regionId);
+    const setBreakdownOption = (newValue: string | null) => {
+      breakdownOption.value = newValue;
     };
 
-    const toggleIsQualifierSelected = (
-      qualifierValue: string
-    ) => {
-      emit('toggle-is-qualifier-selected', qualifierValue);
+    const updateTabView = (val: string) => {
+      currentTabView.value = val;
     };
-
-    const toggleIsYearSelected = (year: string) => {
-      emit('toggle-is-year-selected', year);
-    };
-
-    const emitBreakdownOptionSelection = (breakdownOption: string | null) => {
-      emit('set-breakdown-option', breakdownOption);
-    };
-
     const onMapLoad = () => {
       emit('on-map-load');
     };
 
-    const updateSelectedScenarioIds = (newIds: (string|number)[]) => {
-      emit('set-selected-scenario-ids', newIds);
+    // apply initial view config for this datacube
+    if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
+      if (initialViewConfig.selectedMapBaseLayer !== undefined) {
+        selectedBaseLayer.value = initialViewConfig.selectedMapBaseLayer;
+      }
+      if (initialViewConfig.selectedMapDataLayer !== undefined) {
+        selectedDataLayer.value = initialViewConfig.selectedMapDataLayer;
+      }
+      if (initialViewConfig.breakdownOption !== undefined) {
+        breakdownOption.value = initialViewConfig.breakdownOption;
+      }
+      if (initialViewConfig.selectedAdminLevel !== undefined) {
+        selectedAdminLevel.value = initialViewConfig.selectedAdminLevel;
+      }
+    }
+
+    if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
+      if (initialDataConfig.selectedRegionIds !== undefined) {
+        initialSelectedRegionIds.value = _.clone(initialDataConfig.selectedRegionIds);
+      }
+      if (initialDataConfig.selectedQualifierValues !== undefined) {
+        initialSelectedQualifierValues.value = _.clone(initialDataConfig.selectedQualifierValues);
+      }
+    }
+
+    const clearRouteParam = () => {
+      // fix to avoid double history later
+      router.push({
+        query: {
+          insight_id: undefined,
+          datacube_id: selectedModelId.value
+        }
+      }).catch(() => {});
+    };
+
+    const setSelectedScenarioIds = (newIds: string[]) => {
+      if (isIndicatorDatacube.value) {
+        if (_.isEqual(selectedScenarioIds.value, newIds)) return;
+      }
+      selectedScenarioIds.value = newIds;
+
+      clearRouteParam();
+
+      if (newIds.length > 0) {
+        // selecting a run or multiple runs when the desc tab is active should always open the data tab
+        //  selecting a run or multiple runs otherwise should respect the current tab
+        if (currentTabView.value === 'description') {
+          updateTabView('data');
+        }
+        // once the list of selected scenario changes,
+        // extract model runs that match the selected scenario IDs
+        selectedScenarios.value = newIds.reduce((filteredRuns: ModelRun[], runId) => {
+          allModelRunData.value.some(run => {
+            return runId === run.id && filteredRuns.push(run);
+          });
+          return filteredRuns;
+        }, []);
+      } else {
+        updateTabView('description');
+      }
     };
 
 
@@ -604,7 +635,7 @@ export default defineComponent({
       // FIXME: This code to select a model run when switching to the data tab
       //  should be in a watcher on the parent component to be more robust,
       //  rather than in this button's click handler.
-      emit('update-tab-view', tab);
+      updateTabView(tab);
 
       if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
         // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
@@ -615,7 +646,7 @@ export default defineComponent({
           // FIXME: so, try to find a model run that has values matching the default values of all inputs
         }
         const newIds = readyRuns.map(run => run.id).slice(0, 1);
-        updateSelectedScenarioIds(newIds);
+        setSelectedScenarioIds(newIds);
       }
 
       //
@@ -628,7 +659,7 @@ export default defineComponent({
 
     const onTabClick = (value: string) => {
       if (value === 'description' && isModelMetadata.value) {
-        updateSelectedScenarioIds([]); // this will update the 'currentTabView'
+        setSelectedScenarioIds([]); // this will update the 'currentTabView'
       }
       clickData(value);
     };
@@ -642,15 +673,23 @@ export default defineComponent({
     };
 
     const toggleNewRunsMode = () => {
-      showNewRunsMode.value = !showNewRunsMode.value;
+      newRunsMode.value = !newRunsMode.value;
       potentialScenarioCount.value = 0;
 
-      if (showNewRunsMode.value) {
+      if (newRunsMode.value) {
         // clear any selected scenario and show the model desc page
         updateScenarioSelection({ scenarios: [] });
       }
-      emit('new-runs-mode', { newRunsMode: showNewRunsMode });
     };
+
+    function fetchData() {
+      if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
+        modelRunsFetchedAt.value = Date.now();
+      }
+    }
+
+    // @REVIEW: consider notifying the user of new data and only fetch/reload if confirmed
+    const timerHandler = setInterval(fetchData, timeInterval);
 
     const onNewScenarioRunsModalClose = (status: any) => {
       showNewRunsModal.value = false;
@@ -659,39 +698,19 @@ export default defineComponent({
         // first, exit new-runs-mode
         toggleNewRunsMode();
         // then, re-fetch data from server (wait some time to give the server a chance to update)
-        _.delay(() => emit('refetch-data'), 2000);
+        _.delay(() => fetchData(), 2000);
       }
     };
 
     const updateScenarioSelection = (e: { scenarios: Array<ScenarioData> }) => {
       const selectedScenarios = e.scenarios.filter(s => s.status === ModelRunStatus.Ready);
       if (selectedScenarios.length === 0) {
-        // console.log('no line is selected');
-        updateSelectedScenarioIds([]);
+        setSelectedScenarioIds([]);
       } else {
-        const selectedRunIDs = selectedScenarios.map(s => s.run_id);
-        updateSelectedScenarioIds(selectedRunIDs);
+        const selectedRunIDs = selectedScenarios.map(s => s.run_id.toString());
+        setSelectedScenarioIds(selectedRunIDs);
       }
     };
-
-    const {
-      dimensions,
-      ordinalDimensionNames,
-      runParameterValues
-    } = useParallelCoordinatesData(metadata, allModelRunData);
-
-    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-
-    watchEffect(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
-        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-        mainModelOutput.value = outputs[currentOutputIndex.value];
-      }
-    });
-
-    const isModelMetadata = computed(() => {
-      return metadata.value !== null && isModel(metadata.value);
-    });
 
     const headerGroupButtons = ref([
       { label: 'Descriptions', value: 'description' },
@@ -704,8 +723,7 @@ export default defineComponent({
         { label: 'Data', value: 'data' }
       ];
       // indicators should not have the 'Media' tab
-      const isIndicatorDatacube = metadata.value !== null && isIndicator(metadata.value);
-      if (isIndicatorDatacube) {
+      if (isIndicatorDatacube.value) {
         headerGroupButtons.value = headerGroupButtonsSimple;
       }
       // models with no pre-generated data should not have the 'Media' tab
@@ -776,10 +794,93 @@ export default defineComponent({
         : null
     );
 
+    const setSelectedTimestamp = (timestamp: number | null) => {
+      if (selectedTimestamp.value === timestamp) return;
+      selectedTimestamp.value = timestamp;
+    };
+
     const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
       potentialScenarioCount.value = e.scenarios.length;
       potentialScenarios.value = e.scenarios;
     };
+
+    const {
+      datacubeHierarchy,
+      selectedRegionIds,
+      toggleIsRegionSelected
+    } = useDatacubeHierarchy(
+      selectedScenarioIds,
+      metadata,
+      selectedAdminLevel,
+      breakdownOption,
+      initialSelectedRegionIds
+    );
+
+    const {
+      qualifierBreakdownData,
+      toggleIsQualifierSelected,
+      selectedQualifierValues
+    } = useQualifiers(
+      metadata,
+      breakdownOption,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      selectedTimestamp,
+      initialSelectedQualifierValues
+    );
+
+    const {
+      timeseriesData,
+      visibleTimeseriesData,
+      relativeTo,
+      baselineMetadata,
+      setRelativeTo,
+      temporalBreakdownData,
+      selectedYears,
+      toggleIsYearSelected
+    } = useTimeseriesData(
+      metadata,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      breakdownOption,
+      selectedTimestamp,
+      setSelectedTimestamp,
+      selectedRegionIds,
+      selectedQualifierValues,
+      initialSelectedYears,
+      selectedScenarios
+    );
+
+    const { selectedTimeseriesPoints } = useSelectedTimeseriesPoints(
+      breakdownOption,
+      timeseriesData,
+      selectedTimestamp,
+      selectedScenarioIds
+    );
+
+
+    const {
+      outputSpecs
+    } = useOutputSpecs(
+      selectedModelId,
+      selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
+      metadata,
+      selectedTimeseriesPoints
+    );
+
+    const {
+      regionalData
+    } = useRegionalData(
+      outputSpecs,
+      breakdownOption,
+      datacubeHierarchy
+    );
 
     const {
       onSyncMapBounds,
@@ -790,18 +891,160 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMaps(outputSourceSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
+    } = useAnalysisMaps(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
+
+
+    const updateStateFromInsight = async (insight_id: string) => {
+      const loadedInsight: Insight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedModelId) {
+          // this will reload datacube metadata as well as scenario runs
+          selectedModelId.value = loadedInsight.data_state?.selectedModelId;
+        }
+        if (loadedInsight.data_state?.selectedScenarioIds) {
+          // this would only be valid and effective if/after datacube runs are reloaded
+          setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+          setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          setRelativeTo(loadedInsight.data_state?.relativeTo);
+        }
+        // view state
+        if (loadedInsight.view_state?.spatialAggregation) {
+          selectedSpatialAggregation.value = loadedInsight.view_state?.spatialAggregation as AggregationOption;
+        }
+        if (loadedInsight.view_state?.temporalAggregation) {
+          selectedTemporalAggregation.value = loadedInsight.view_state?.temporalAggregation as AggregationOption;
+        }
+        if (loadedInsight.view_state?.temporalResolution) {
+          selectedTemporalResolution.value = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
+        }
+        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
+          // FIXME
+          updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
+        }
+        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
+          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
+          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.view_state?.selectedMapBaseLayer) {
+          setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
+        }
+        if (loadedInsight.view_state?.selectedMapDataLayer) {
+          setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
+        }
+        if (loadedInsight.view_state?.breakdownOption !== undefined) {
+          setBreakdownOption(loadedInsight.view_state?.breakdownOption);
+        }
+        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
+          setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
+        }
+        // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedYears !== undefined) {
+          initialSelectedYears.value = _.clone(loadedInsight.data_state?.selectedYears);
+        }
+      }
+    };
+
+    watchEffect(() => {
+      if (metadata.value && currentOutputIndex.value >= 0) {
+        const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        mainModelOutput.value = outputs[currentOutputIndex.value];
+      }
+    });
+
+    watchEffect(() => {
+      if (isIndicatorDatacube.value) {
+        selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
+      }
+    });
+
+    watchEffect(() => {
+      // If more than one run is selected, make sure "split by" is set to none.
+      if (selectedScenarioIds.value.length > 1) {
+        breakdownOption.value = null;
+      }
+    });
+
+    watchEffect(() => {
+      const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
+      if (currentAnalysisItem.viewConfig === undefined) {
+        currentAnalysisItem.viewConfig = {} as ViewState;
+      }
+      const viewState: ViewState = initViewStateFromRefs(
+        breakdownOption,
+        currentOutputIndex,
+        currentTabView,
+        selectedAdminLevel,
+        selectedBaseLayer,
+        selectedDataLayer,
+        selectedSpatialAggregation,
+        selectedTemporalAggregation,
+        selectedTemporalResolution
+      );
+      store.dispatch('insightPanel/setViewState', viewState);
+
+      //
+      // data state
+      //
+      if (currentAnalysisItem.dataConfig === undefined) {
+        currentAnalysisItem.dataConfig = {} as DataState;
+      }
+      const dataState: DataState = initDataStateFromRefs(
+        mainModelOutput,
+        metadata,
+        relativeTo,
+        selectedModelId,
+        selectedQualifierValues,
+        selectedRegionIds,
+        selectedScenarioIds,
+        selectedTimestamp,
+        selectedYears
+      );
+
+      store.dispatch('insightPanel/setDataState', dataState);
+
+      // FIXME: state is now stored in two places: dataAnalysis and insightPanel
+      currentAnalysisItem.viewConfig = viewState;
+      currentAnalysisItem.dataConfig = dataState;
+      store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+    });
+    console.log(selectedTimeseriesPoints.value);
 
     return {
+      analysis,
+      analysisId,
+      aggregationOptionFiltered,
       activeDrilldownTab,
       adminLayerStats,
+      baselineMetadata,
+      breakdownOption,
       colorFromIndex,
+      currentTabView,
       dataPaths,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
-      emitBreakdownOptionSelection,
-      emitRelativeToSelection,
-      emitTimestampSelection,
       getSelectedPreGenOutput,
       gridLayerStats,
       headerGroupButtons,
@@ -812,40 +1055,80 @@ export default defineComponent({
       mapLegendData,
       mapReady,
       mapSelectedLayer,
+      metadata,
+      newRunsMode,
       onMapLoad,
       onNewScenarioRunsModalClose,
       onSyncMapBounds,
       onTabClick,
       ordinalDimensionNames,
+      outputSpecs,
       potentialScenarioCount,
+      projectType,
       preGenDataItems,
+      qualifierBreakdownData,
       recalculateGridMapDiffStats,
+      regionalData,
       requestNewModelRuns,
       runParameterValues,
+      selectedBaseLayer,
+      selectedDataLayer,
       selectedPreGenDataItem,
+      selectedRegionIds,
+      selectedScenarioIds,
+      selectedTimeseriesPoints,
+      selectedYears,
       setSelectedAdminLevel,
+      setBreakdownOption,
+      setBaseLayer,
+      setDataLayer,
+      setRelativeTo,
+      setSelectedTimestamp,
       showDatasets,
       showModelExecutionStatus,
       showModelRunsExecutionStatus,
       showNewRunsModal,
-      showNewRunsMode,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
+      temporalBreakdownData,
+      timerHandler,
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
       unit,
+      updateStateFromInsight,
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
-      updateScenarioSelection
+      updateScenarioSelection,
+      visibleTimeseriesData
     };
+  },
+  watch: {
+    $route: {
+      handler(/* newValue, oldValue */) {
+        // NOTE:  this is only valid when the route is focused on the 'data' space
+        if (this.$route.name === 'data' && this.$route.query) {
+          const insight_id = this.$route.query.insight_id as any;
+          if (insight_id !== undefined) {
+            this.updateStateFromInsight(insight_id);
+          }
+        }
+      },
+      immediate: true
+    }
   },
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
   },
+  async mounted() {
+    if (this.projectType === ProjectType.Analysis) {
+      this.analysis = await getAnalysis(this.analysisId);
+    }
+  },
   unmounted() {
     disableConcurrentTileRequestsCaching();
+    clearInterval(this.timerHandler);
   }
 });
 </script>
