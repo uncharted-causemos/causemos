@@ -33,10 +33,10 @@
             <a :href=dojoExecutionLink(run.runId)>See Logs</a>
           </td>
           <td class="params-value">
-            <i class="fa fa-repeat" />
+            <i class="fa fa-repeat" @click="retryRun(run.run_id)"/>
           </td>
           <td class="params-value">
-            <i class="fa fa-trash" />
+            <i class="fa fa-trash" @click="deleteRun(run.run_id)"/>
           </td>
           <td class="params-value">
             <div
@@ -128,6 +128,12 @@ export default defineComponent({
     },
     withoutOmittedColumns(columns: string[]) {
       return columns.filter(column => !_.includes(OmittedColumns, column));
+    },
+    deleteRun(runId: string) {
+      console.log(runId);
+    },
+    retryRun(runId: string) {
+      console.log(runId);
     }
   }
 });
@@ -167,5 +173,8 @@ export default defineComponent({
   padding-right: 1rem;
   align-content: center;
   text-align: center;
+  .fa-repeat, .fa-trash {
+    cursor: pointer;
+  }
 }
 </style>
