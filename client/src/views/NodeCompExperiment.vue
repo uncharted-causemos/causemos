@@ -255,7 +255,6 @@ export default defineComponent({
       }
     });
 
-
     const setBreakdownOption = (newValue: string | null) => {
       breakdownOption.value = newValue;
     };

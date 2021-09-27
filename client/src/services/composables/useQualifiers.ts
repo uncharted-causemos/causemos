@@ -1,6 +1,9 @@
 import { Indicator, Model, QualifierBreakdownResponse } from '@/types/Datacube';
 import { NamedBreakdownData } from '@/types/Datacubes';
-import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
+import {
+  AggregationOption,
+  TemporalResolutionOption
+} from '@/types/Enums';
 import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 import _ from 'lodash';
 import { computed, Ref, ref, watch, watchEffect } from 'vue';
@@ -9,6 +12,7 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 
 const convertResponsesToBreakdownData = (
   responses: QualifierBreakdownResponse[][],
+  breakdownOption: string | null,
   modelRunIds: string[],
   qualifierIdToNameMap: Map<string, string>
 ) => {
@@ -52,7 +56,12 @@ const convertResponsesToBreakdownData = (
         //  data list so that the user can select that qualifier option to see
         //  its timeseries.
         if (value !== null) {
-          potentiallyExistingOption.values[runId] = value;
+          if (breakdownOption) {
+            // Key values here will change when we implement the missing functionality for these key values.
+            potentiallyExistingOption.values[optionId] = value;
+          } else {
+            potentiallyExistingOption.values[runId] = value;
+          }
         }
       });
     });
@@ -120,6 +129,7 @@ export default function useQualifiers(
 
   watchEffect(async onInvalidate => {
     const timestamp = selectedTimestamp.value;
+    const _breakdownOption = breakdownOption.value;
     if (metadata.value === null || timestamp === null) return;
     let isCancelled = false;
     onInvalidate(() => {
@@ -157,6 +167,7 @@ export default function useQualifiers(
     if (isCancelled) return;
     qualifierBreakdownData.value = convertResponsesToBreakdownData(
       responses,
+      _breakdownOption,
       selectedScenarioIds.value,
       qualifierIdToNameMap
     );
