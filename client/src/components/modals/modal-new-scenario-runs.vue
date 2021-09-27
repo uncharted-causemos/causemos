@@ -65,8 +65,8 @@ import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
+import API from '@/api/api';
 import { mapGetters } from 'vuex';
-import modelService from '@/services/model-service';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -164,7 +164,13 @@ export default defineComponent({
             value: p.default
           });
         });
-        modelService.createModelRun(this.metadata.data_id, this.metadata?.name, paramArray);
+
+        // send the request to the server
+        return API.post('maas/model-runs', {
+          model_id: this.metadata.data_id,
+          model_name: this.metadata?.name,
+          parameters: paramArray
+        });
       });
       // wait until all promises are resolved
       await Promise.all(promises);

@@ -673,14 +673,6 @@ const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
   });
 };
 
-export const createModelRun = (model_id: string, model_name: string, parameters: any[]) => {
-  // send the request to the server
-  return API.post('maas/model-runs', {
-    model_id,
-    model_name,
-    parameters
-  });
-}
 
 export default {
   getProjectModels,
