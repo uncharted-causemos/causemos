@@ -49,4 +49,13 @@ router.get('/:runId/post-process', asyncHandler(async (req, res) => {
   }
 }));
 
+/**
+ * Update a model run
+ */
+router.put('/', asyncHandler(async (req, res) => {
+  const modelRun = req.body;
+  const result = await maasService.updateModelRun(modelRun);
+  res.json(result);
+}));
+
 module.exports = router;
