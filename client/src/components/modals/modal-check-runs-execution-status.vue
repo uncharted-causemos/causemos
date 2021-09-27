@@ -9,28 +9,36 @@
       <a href="https://dojo-test.com/runs/{run_id}/logs">Execution Logs</a>
       <table class="table">
         <tr>
-          <td>ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+          <td class="params-header">ID</td>
           <td
             v-for="(dim, idx) in potentialRunsParameters"
             :key="idx">
             <div class="params-header">{{ dim }}</div>
           </td>
-          <td>execution logs</td>
-          <td>&nbsp;</td>
+          <td class="params-header">execution logs</td>
+          <td class="params-header">retry</td>
+          <td class="params-header">delete</td>
+          <td class="params-header">status</td>
         </tr>
         <tr
           v-for="(run, sidx) in potentialRuns"
           :key="sidx">
-          <td>{{ sidx }}</td>
+          <td class="params-value">{{ sidx }}</td>
           <td v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
             :key="idx"
             class="params-value">
             <label>{{ run[dimName] }}</label>
           </td>
-          <td>
+          <td class="params-value">
             <a :href=dojoExecutionLink(run.runId)>See Logs</a>
           </td>
-          <td>
+          <td class="params-value">
+            <i class="fa fa-repeat" />
+          </td>
+          <td class="params-value">
+            <i class="fa fa-trash" />
+          </td>
+          <td class="params-value">
             <div
               class="run-status"
               :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
@@ -151,11 +159,13 @@ export default defineComponent({
   font-weight: bold;
   padding-left: 1rem;
   padding-right: 1rem;
+  text-align: center;
 }
 
 .params-value {
   padding-left: 1rem;
   padding-right: 1rem;
   align-content: center;
+  text-align: center;
 }
 </style>
