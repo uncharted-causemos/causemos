@@ -9,7 +9,6 @@
           :class="{ 'datacube-expanded': true }"
           :selected-temporal-resolution="selectedTemporalResolution"
           :selected-temporal-aggregation="selectedTemporalAggregation"
-          :selected-spatial-aggregation="selectedSpatialAggregation"
         >
           <template #datacube-model-header>
             <h5
@@ -105,7 +104,6 @@ export default defineComponent({
     const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
-    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const project = computed(() => store.getters['app/project']);
     const projectType = computed(() => store.getters['app/projectType']);
@@ -128,9 +126,6 @@ export default defineComponent({
       }
       if (initialViewConfig.temporalAggregation !== undefined) {
         selectedTemporalAggregation.value = initialViewConfig.temporalAggregation as AggregationOption;
-      }
-      if (initialViewConfig.spatialAggregation !== undefined) {
-        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation as AggregationOption;
       }
       if (initialViewConfig.selectedOutputIndex !== undefined) {
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
@@ -164,9 +159,6 @@ export default defineComponent({
       }
     });
 
-    const setSpatialAggregationSelection = (spatialAgg: AggregationOption) => {
-      selectedSpatialAggregation.value = spatialAgg;
-    };
     const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
       selectedTemporalResolution.value = temporalRes;
     };
@@ -206,10 +198,8 @@ export default defineComponent({
       outputs,
       projectType,
       selectedModelId,
-      selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
-      setSpatialAggregationSelection,
       setTemporalAggregationSelection,
       setTemporalResolutionSelection,
       temporalResolutionOptionFiltered

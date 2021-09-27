@@ -249,9 +249,8 @@
               </p>
               <div
                 v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSpecs.length > 0"
-                class="dropdown-row"
               >
-                <div v-if="currentTabView === 'data'">
+                <div v-if="currentTabView === 'data'" class="dropdown-row">
                   <dropdown-button
                     class="dropdown-config tour-spatial-agg-dropdown-config"
                     :inner-button-label="'Spatial Aggregation'"
@@ -446,10 +445,6 @@ export default defineComponent({
       type: Boolean,
       default: true
     },
-    selectedSpatialAggregation: {
-      type: String as PropType<AggregationOption>,
-      default: AggregationOption.Mean
-    },
     selectedTemporalAggregation: {
       type: String as PropType<AggregationOption>,
       default: AggregationOption.Mean
@@ -457,10 +452,6 @@ export default defineComponent({
     selectedTemporalResolution: {
       type: String as PropType<TemporalResolutionOption>,
       default: null
-    },
-    selectedQualifierValues: {
-      type: Object as PropType<Set<string>>,
-      default: () => new Set()
     }
   },
   components: {
@@ -509,6 +500,7 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
+    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedModelId = ref(datacubeId);
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const metadata = useModelMetadata(selectedModelId);
@@ -538,7 +530,6 @@ export default defineComponent({
     const initialDataConfig: DataState = analysisId.value[0].dataConfig;
 
     const {
-      selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution
     } = toRefs(props);
@@ -551,6 +542,9 @@ export default defineComponent({
       selectedDataLayer.value = val;
     };
 
+    const setSpatialAggregationSelection = (spatialAgg: AggregationOption) => {
+      selectedSpatialAggregation.value = spatialAgg;
+    };
 
     const setSelectedAdminLevel = (level: number) => {
       selectedAdminLevel.value = level;
@@ -569,6 +563,9 @@ export default defineComponent({
 
     // apply initial view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
+      if (initialViewConfig.spatialAggregation !== undefined) {
+        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation as AggregationOption;
+      }
       if (initialViewConfig.selectedMapBaseLayer !== undefined) {
         selectedBaseLayer.value = initialViewConfig.selectedMapBaseLayer;
       }
@@ -628,8 +625,6 @@ export default defineComponent({
         updateTabView('description');
       }
     };
-
-
 
     const clickData = (tab: string) => {
       // FIXME: This code to select a model run when switching to the data tab
@@ -804,6 +799,78 @@ export default defineComponent({
       potentialScenarios.value = e.scenarios;
     };
 
+    const updateStateFromInsight = async (insight_id: string) => {
+      const loadedInsight: Insight = await getInsightById(insight_id);
+      // FIXME: before applying the insight, which will overwrite current state,
+      //  consider pushing current state to the url to support browser hsitory
+      //  in case the user wants to navigate to the original state using back button
+      if (loadedInsight) {
+        //
+        // insight was found and loaded
+        //
+        // data state
+        // FIXME: the order of resetting the state is important
+        if (loadedInsight.data_state?.selectedModelId) {
+          // this will reload datacube metadata as well as scenario runs
+          selectedModelId.value = loadedInsight.data_state?.selectedModelId;
+        }
+        if (loadedInsight.data_state?.selectedScenarioIds) {
+          // this would only be valid and effective if/after datacube runs are reloaded
+          setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
+        }
+        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
+          setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
+        }
+        if (loadedInsight.data_state?.relativeTo !== undefined) {
+          setRelativeTo(loadedInsight.data_state?.relativeTo);
+        }
+        // view state
+        if (loadedInsight.view_state?.spatialAggregation) {
+          selectedSpatialAggregation.value = loadedInsight.view_state?.spatialAggregation as AggregationOption;
+        }
+        if (loadedInsight.view_state?.temporalAggregation) {
+          selectedTemporalAggregation.value = loadedInsight.view_state?.temporalAggregation as AggregationOption;
+        }
+        if (loadedInsight.view_state?.temporalResolution) {
+          selectedTemporalResolution.value = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
+        }
+        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
+          // FIXME
+          updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
+        }
+        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
+          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
+          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
+          updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
+          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
+        }
+        if (loadedInsight.view_state?.selectedMapBaseLayer) {
+          setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
+        }
+        if (loadedInsight.view_state?.selectedMapDataLayer) {
+          setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
+        }
+        if (loadedInsight.view_state?.breakdownOption !== undefined) {
+          setBreakdownOption(loadedInsight.view_state?.breakdownOption);
+        }
+        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
+          setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
+        }
+        // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
+        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
+          initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
+        }
+        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
+          initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
+        }
+        // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
+        if (loadedInsight.data_state?.selectedYears !== undefined) {
+          initialSelectedYears.value = _.clone(loadedInsight.data_state?.selectedYears);
+        }
+      }
+    };
+
     const {
       datacubeHierarchy,
       selectedRegionIds,
@@ -893,79 +960,6 @@ export default defineComponent({
       mapSelectedLayer
     } = useAnalysisMaps(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
 
-
-    const updateStateFromInsight = async (insight_id: string) => {
-      const loadedInsight: Insight = await getInsightById(insight_id);
-      // FIXME: before applying the insight, which will overwrite current state,
-      //  consider pushing current state to the url to support browser hsitory
-      //  in case the user wants to navigate to the original state using back button
-      if (loadedInsight) {
-        //
-        // insight was found and loaded
-        //
-        // data state
-        // FIXME: the order of resetting the state is important
-        if (loadedInsight.data_state?.selectedModelId) {
-          // this will reload datacube metadata as well as scenario runs
-          selectedModelId.value = loadedInsight.data_state?.selectedModelId;
-        }
-        if (loadedInsight.data_state?.selectedScenarioIds) {
-          // this would only be valid and effective if/after datacube runs are reloaded
-          setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
-        }
-        if (loadedInsight.data_state?.selectedTimestamp !== undefined) {
-          setSelectedTimestamp(loadedInsight.data_state?.selectedTimestamp);
-        }
-        if (loadedInsight.data_state?.relativeTo !== undefined) {
-          setRelativeTo(loadedInsight.data_state?.relativeTo);
-        }
-        // view state
-        if (loadedInsight.view_state?.spatialAggregation) {
-          selectedSpatialAggregation.value = loadedInsight.view_state?.spatialAggregation as AggregationOption;
-        }
-        if (loadedInsight.view_state?.temporalAggregation) {
-          selectedTemporalAggregation.value = loadedInsight.view_state?.temporalAggregation as AggregationOption;
-        }
-        if (loadedInsight.view_state?.temporalResolution) {
-          selectedTemporalResolution.value = loadedInsight.view_state?.temporalResolution as TemporalResolutionOption;
-        }
-        if (loadedInsight.view_state?.isDescriptionView !== undefined) {
-          // FIXME
-          updateTabView(loadedInsight.view_state?.isDescriptionView ? 'description' : 'data');
-        }
-        if (loadedInsight.view_state?.selectedOutputIndex !== undefined) {
-          const updatedCurrentOutputsMap = _.cloneDeep(datacubeCurrentOutputsMap);
-          const datacubeId = metadata?.value ? metadata.value.id : loadedInsight.data_state?.selectedModelId;
-          updatedCurrentOutputsMap.value[datacubeId ?? ''] = loadedInsight.view_state?.selectedOutputIndex;
-          setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
-        }
-        if (loadedInsight.view_state?.selectedMapBaseLayer) {
-          setBaseLayer(loadedInsight.view_state?.selectedMapBaseLayer);
-        }
-        if (loadedInsight.view_state?.selectedMapDataLayer) {
-          setDataLayer(loadedInsight.view_state?.selectedMapDataLayer);
-        }
-        if (loadedInsight.view_state?.breakdownOption !== undefined) {
-          setBreakdownOption(loadedInsight.view_state?.breakdownOption);
-        }
-        if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
-          setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
-        }
-        // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
-        if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
-          initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
-        }
-        // @NOTE: 'initialSelectedQualifierValues' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.selectedQualifierValues !== undefined) {
-          initialSelectedQualifierValues.value = _.clone(loadedInsight.data_state?.selectedQualifierValues);
-        }
-        // @NOTE: 'initialSelectedYears' must be set after 'breakdownOption'
-        if (loadedInsight.data_state?.selectedYears !== undefined) {
-          initialSelectedYears.value = _.clone(loadedInsight.data_state?.selectedYears);
-        }
-      }
-    };
-
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
         const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
@@ -1030,9 +1024,9 @@ export default defineComponent({
       currentAnalysisItem.dataConfig = dataState;
       store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
     });
-    console.log(selectedTimeseriesPoints.value);
 
     return {
+      allModelRunData,
       analysis,
       analysisId,
       aggregationOptionFiltered,
@@ -1071,18 +1065,23 @@ export default defineComponent({
       regionalData,
       requestNewModelRuns,
       runParameterValues,
+      selectedAdminLevel,
       selectedBaseLayer,
       selectedDataLayer,
       selectedPreGenDataItem,
+      selectedQualifierValues,
       selectedRegionIds,
       selectedScenarioIds,
+      selectedSpatialAggregation,
       selectedTimeseriesPoints,
+      selectedTimestamp,
       selectedYears,
       setSelectedAdminLevel,
       setBreakdownOption,
       setBaseLayer,
       setDataLayer,
       setRelativeTo,
+      setSpatialAggregationSelection,
       setSelectedTimestamp,
       showDatasets,
       showModelExecutionStatus,
@@ -1324,6 +1323,9 @@ $marginSize: 5px;
 .dropdown-row {
   display: flex;
   margin-top: 5px;
+  .dropdown-config:not(:first-child) {
+    margin-left: 5px;
+  }
 }
 
 .data-analysis-card-container {
