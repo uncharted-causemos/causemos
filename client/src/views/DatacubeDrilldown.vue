@@ -63,8 +63,8 @@
                 >{{output.display_name !== '' ? output.display_name : output.name}}</option>
               </select>
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <span v-if="metadata.type===indicatorType" v-tooltip.top-center="'Explore related indicators'" class="datacube-name indicator" @click="onClickDatacubeName">{{metadata.name}}<i class="fa fa-search"></i></span>
-              <span v-else class="datacube-name">{{metadata.name}}</span>
+              <span v-if="metadata.type===indicatorType" v-tooltip.top-center="'Explore related indicators'" class="datacube-name indicator" @click="onClickDatacubeName">{{metadata.name}} <i class="fa fa-search"></i></span>
+              <span v-else class="datacube-name">{{metadata.name}} </span>
             </h5>
           </template>
 
