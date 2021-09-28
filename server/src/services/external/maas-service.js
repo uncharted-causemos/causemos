@@ -38,8 +38,7 @@ const submitModelRun = async(metadata) => {
 
   const pipelinePayload = {
     method: 'POST',
-    // url: process.env.DOJO_URL + '/runs',
-    url: 'https://dojo-test.com/runs',
+    url: process.env.DOJO_URL + '/runs',
     headers: {
       'Authorization': basicAuthToken,
       'Content-type': 'application/json',
