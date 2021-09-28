@@ -26,11 +26,13 @@ export default function useParallelCoordinatesData(
     }
     const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
     const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
-    return allModelRunData.value.map((modelRun, runIndex) => {
+    return allModelRunData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted).map((modelRun, runIndex) => {
       const run_id = allModelRunData.value[runIndex].id;
       const runStatus = allModelRunData.value[runIndex].status;
+      const created_at = allModelRunData.value[runIndex].created_at;
       const time_since_execution = DurationFormatter(Date.now() - allModelRunData.value[runIndex].created_at);
       const run: ScenarioData = {
+        created_at,
         run_id,
         time_since_execution,
         status: runStatus ?? ModelRunStatus.Ready

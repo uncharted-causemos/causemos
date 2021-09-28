@@ -33,10 +33,10 @@
             <a :href=dojoExecutionLink(run.runId)>See Logs</a>
           </td>
           <td class="params-value">
-            <i class="fa fa-repeat" @click="retryRun(run.run_id)"/>
+            <i v-if="canRetryDelete(run)" class="fa fa-repeat" @click="retryRun(run.run_id)"/>
           </td>
           <td class="params-value">
-            <i class="fa fa-trash" @click="deleteRun(run.run_id)"/>
+            <i v-if="canRetryDelete(run)" class="fa fa-trash" @click="deleteRun(run.run_id)"/>
           </td>
           <td class="params-value">
             <div
@@ -70,6 +70,7 @@
 </template>
 
 <script lang="ts">
+
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
@@ -77,7 +78,7 @@ import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
 
-const OmittedColumns = ['run_id'];
+const OmittedColumns = ['run_id', 'created_at'];
 
 // TODO: add table header with interactivity to rank/re-order
 
@@ -119,9 +120,10 @@ export default defineComponent({
   data: () => ({
     ModelRunStatus
   }),
-  mounted() {
-  },
   methods: {
+    canRetryDelete(run: any) {
+      return run.status === ModelRunStatus.ExecutionFailed || (run.created_at && Date.now() - run.created_at > 1000 * 60 * 60 * 48);
+    },
     close() {
       this.$emit('close');
     },
