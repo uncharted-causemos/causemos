@@ -22,7 +22,10 @@
           v-if="isModelMetadata & showModelRunsExecutionStatus === true"
           :metadata="metadata"
           :potential-scenarios="runParameterValues"
-          @close="showModelRunsExecutionStatus = false" />
+          @close="showModelRunsExecutionStatus = false"
+          @delete="deleteRun"
+          @retry="retryRun"
+        />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
@@ -843,6 +846,14 @@ export default defineComponent({
   },
   unmounted() {
     disableConcurrentTileRequestsCaching();
+  },
+  methods: {
+    deleteRun(runId: string) {
+      console.log(runId);
+    },
+    retryRun(runId: string) {
+      console.log(runId);
+    }
   }
 });
 </script>

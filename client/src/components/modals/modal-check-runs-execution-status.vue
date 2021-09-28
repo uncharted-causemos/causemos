@@ -130,10 +130,10 @@ export default defineComponent({
       return columns.filter(column => !_.includes(OmittedColumns, column));
     },
     deleteRun(runId: string) {
-      console.log(runId);
+      this.$emit('delete', runId);
     },
     retryRun(runId: string) {
-      console.log(runId);
+      this.$emit('retry', runId);
     }
   }
 });
