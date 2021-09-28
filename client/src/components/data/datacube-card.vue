@@ -209,14 +209,27 @@
 
             <!-- Data tab content -->
             <div v-if="currentTabView === 'data'" class="column">
-              <div class="dropdown-row">
-                <slot
-                  name="temporal-aggregation-config"
-                  v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
+              <div
+                class="dropdown-row"
+                v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
+              >
+                <dropdown-button
+                  v-if="temporalAggregationOptions.length > 0"
+                  class="dropdown-config tour-temporal-agg-dropdown-config"
+                  :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
+                  :inner-button-label="'Temporal Aggregation'"
+                  :items="temporalAggregationOptions"
+                  :selected-item="selectedTemporalAggregation"
+                  @item-selected="setTemporalAggregationSelection"
                 />
-                <slot
-                  name="temporal-resolution-config"
-                  v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
+                <dropdown-button
+                  v-if="temporalResolutionOptions.length > 0"
+                  class="dropdown-config"
+                  :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
+                  :inner-button-label="'Temporal Resolution'"
+                  :items="temporalResolutionOptions"
+                  :selected-item="selectedTemporalResolution"
+                  @item-selected="setTemporalResolutionSelection"
                 />
               </div>
               <timeseries-chart
@@ -252,9 +265,11 @@
               >
                 <div v-if="currentTabView === 'data'" class="dropdown-row">
                   <dropdown-button
+                    v-if="spatialAggregationOptions.length > 0"
                     class="dropdown-config tour-spatial-agg-dropdown-config"
+                    :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
                     :inner-button-label="'Spatial Aggregation'"
-                    :items="aggregationOptionFiltered"
+                    :items="spatialAggregationOptions"
                     :selected-item="selectedSpatialAggregation"
                     @item-selected="setSpatialAggregationSelection"
                   />
@@ -417,7 +432,7 @@ import { OutputSpecWithId } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
 import { isIndicator, isModel } from '@/utils/datacube-util';
-import { aggregationOptionFiltered, initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
+import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
@@ -449,17 +464,34 @@ export default defineComponent({
       type: Object as PropType<ViewState>,
       default: null
     },
+
+    defaultSpatialAggregation: {
+      type: Object as PropType<AggregationOption>,
+      default: AggregationOption.Mean
+    },
+    defaultTemporalAggregation: {
+      type: Object as PropType<AggregationOption>,
+      default: AggregationOption.Mean
+    },
+    defaultTemporalResolution: {
+      type: Object as PropType<TemporalResolutionOption>,
+      default: TemporalResolutionOption.Month
+    },
     selectedModelId: {
       type: String,
       default: ''
     },
-    selectedTemporalAggregation: {
-      type: String as PropType<AggregationOption>,
-      default: AggregationOption.Mean
+    spatialAggregationOptions: {
+      type: Array as PropType<AggregationOption[]>,
+      default: []
     },
-    selectedTemporalResolution: {
-      type: String as PropType<TemporalResolutionOption>,
-      default: null
+    temporalAggregationOptions: {
+      type: Array as PropType<AggregationOption[]>,
+      default: []
+    },
+    temporalResolutionOptions: {
+      type: Array as PropType<AggregationOption[]>,
+      default: []
     }
   },
   components: {
@@ -484,11 +516,12 @@ export default defineComponent({
     const store = useStore();
 
     const {
+      defaultSpatialAggregation,
+      defaultTemporalAggregation,
+      defaultTemporalResolution,
       initialDataConfig,
       initialViewConfig,
-      selectedModelId,
-      selectedTemporalAggregation,
-      selectedTemporalResolution
+      selectedModelId
     } = toRefs(props);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -512,7 +545,10 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
-    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedSpatialAggregation = ref<AggregationOption>(defaultSpatialAggregation.value);
+    const selectedTemporalAggregation = ref<AggregationOption>(defaultTemporalAggregation.value);
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(defaultTemporalResolution.value);
+
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const metadata = useModelMetadata(selectedModelId);
     const modelRunsFetchedAt = ref(0);
@@ -550,6 +586,14 @@ export default defineComponent({
       selectedSpatialAggregation.value = spatialAgg;
     };
 
+    const setTemporalAggregationSelection = (temporalAgg: AggregationOption) => {
+      selectedTemporalAggregation.value = temporalAgg;
+    };
+
+    const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
+      selectedTemporalResolution.value = temporalRes;
+    };
+
     const setSelectedAdminLevel = (level: number) => {
       selectedAdminLevel.value = level;
     };
@@ -569,6 +613,12 @@ export default defineComponent({
     if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
       if (initialViewConfig.value.spatialAggregation !== undefined) {
         selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;
+      }
+      if (initialViewConfig.value.temporalResolution !== undefined) {
+        selectedTemporalResolution.value = initialViewConfig.value.temporalResolution as TemporalResolutionOption;
+      }
+      if (initialViewConfig.value.temporalAggregation !== undefined) {
+        selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation as AggregationOption;
       }
       if (initialViewConfig.value.selectedMapBaseLayer !== undefined) {
         selectedBaseLayer.value = initialViewConfig.value.selectedMapBaseLayer;
@@ -1014,7 +1064,6 @@ export default defineComponent({
 
     return {
       allModelRunData,
-      aggregationOptionFiltered,
       activeDrilldownTab,
       adminLayerStats,
       baselineMetadata,
@@ -1058,6 +1107,8 @@ export default defineComponent({
       selectedRegionIds,
       selectedScenarioIds,
       selectedSpatialAggregation,
+      selectedTemporalAggregation,
+      selectedTemporalResolution,
       selectedTimeseriesPoints,
       selectedTimestamp,
       selectedYears,
@@ -1068,6 +1119,8 @@ export default defineComponent({
       setRelativeTo,
       setSpatialAggregationSelection,
       setSelectedTimestamp,
+      setTemporalAggregationSelection,
+      setTemporalResolutionSelection,
       showDatasets,
       showModelExecutionStatus,
       showModelRunsExecutionStatus,
@@ -1091,8 +1144,8 @@ export default defineComponent({
   watch: {
     $route: {
       handler(/* newValue, oldValue */) {
-        // NOTE:  this is only valid when the route is focused on the 'data' space
-        if (this.$route.name === 'data' && this.$route.query) {
+        // NOTE:  this is only valid when the route is focused on the 'data' or 'modelPublishingExperiment' spaces
+        if ((this.$route.name === 'data' || this.$route.name === 'modelPublishingExperiment') && this.$route.query) {
           const insight_id = this.$route.query.insight_id as any;
           if (insight_id !== undefined) {
             this.updateStateFromInsight(insight_id);

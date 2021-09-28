@@ -10,8 +10,9 @@
           :initial-data-config="initialDataConfig"
           :initial-view-config="initialViewConfig"
           :selected-model-id="selectedModelId"
-          :selected-temporal-resolution="selectedTemporalResolution"
-          :selected-temporal-aggregation="selectedTemporalAggregation"
+          :spatial-aggregation-options="aggregationOptionFiltered"
+          :temporal-aggregation-options="aggregationOptionFiltered"
+          :temporal-resolution-options="temporalResolutionOptionFiltered"
         >
           <template #datacube-model-header>
             <h5
@@ -42,28 +43,6 @@
               <i class="fa fa-fw fa-compress" />
             </button>
           </template>
-
-          <template #temporal-aggregation-config>
-            <dropdown-button
-              class="dropdown-config tour-temporal-agg-dropdown-config"
-              :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
-              :inner-button-label="'Temporal Aggregation'"
-              :items="aggregationOptionFiltered"
-              :selected-item="selectedTemporalAggregation"
-              @item-selected="setTemporalAggregationSelection"
-            />
-          </template>
-
-          <template #temporal-resolution-config>
-            <dropdown-button
-              class="dropdown-config"
-              :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
-              :inner-button-label="'Temporal Resolution'"
-              :items="temporalResolutionOptionFiltered"
-              :selected-item="selectedTemporalResolution"
-              @item-selected="setTemporalResolutionSelection"
-            />
-          </template>
           <template #datacube-description>
             <datacube-description
               :metadata="metadata"
@@ -84,14 +63,13 @@ import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
-import DropdownButton from '@/components/dropdown-button.vue';
 
 import { getAnalysis } from '@/services/analysis-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature } from '@/types/Datacube';
-import { AggregationOption, TemporalResolutionOption, ProjectType } from '@/types/Enums';
+import { ProjectType } from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
@@ -101,7 +79,6 @@ export default defineComponent({
   components: {
     DatacubeCard,
     DatacubeDescription,
-    DropdownButton,
     AnalyticalQuestionsAndInsightsPanel
   },
   setup() {
@@ -123,9 +100,6 @@ export default defineComponent({
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
-    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
-
     const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
@@ -133,12 +107,6 @@ export default defineComponent({
 
     // apply initial view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
-      if (initialViewConfig.temporalResolution !== undefined) {
-        selectedTemporalResolution.value = initialViewConfig.temporalResolution as TemporalResolutionOption;
-      }
-      if (initialViewConfig.temporalAggregation !== undefined) {
-        selectedTemporalAggregation.value = initialViewConfig.temporalAggregation as AggregationOption;
-      }
       if (initialViewConfig.selectedOutputIndex !== undefined) {
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
         defaultOutputMap[datacubeId] = initialViewConfig.selectedOutputIndex;
@@ -168,14 +136,6 @@ export default defineComponent({
         mainModelOutput.value = outputs.value[initialOutputIndex];
       }
     });
-
-    const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
-      selectedTemporalResolution.value = temporalRes;
-    };
-
-    const setTemporalAggregationSelection = (temporalAgg: AggregationOption) => {
-      selectedTemporalAggregation.value = temporalAgg;
-    };
 
     const onClose = async () => {
       router.push({
@@ -227,10 +187,6 @@ export default defineComponent({
       outputs,
       projectType,
       selectedModelId,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      setTemporalAggregationSelection,
-      setTemporalResolutionSelection,
       temporalResolutionOptionFiltered
     };
   },

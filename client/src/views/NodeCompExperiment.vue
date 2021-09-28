@@ -24,8 +24,7 @@
         :class="{ 'datacube-expanded': true }"
         :initial-view-config="initialViewConfig"
         :selected-model-id="indicatorId"
-        :selected-temporal-resolution="selectedTemporalResolution"
-        :selected-temporal-aggregation="selectedTemporalAggregation"
+        :spatial-aggregation-options="aggregationOptionFiltered"
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
@@ -74,7 +73,7 @@ import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header
 import modelService from '@/services/model-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { DatacubeFeature } from '@/types/Datacube';
-import { AggregationOption, TemporalResolutionOption, ProjectType } from '@/types/Enums';
+import { ProjectType } from '@/types/Enums';
 
 import { aggregationOptionFiltered } from '@/utils/drilldown-util';
 
@@ -104,9 +103,6 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelComponents = ref(null) as Ref<any>;
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
-
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined &&
       datacubeCurrentOutputsMap.value[metadata.value?.id] !== undefined
       ? datacubeCurrentOutputsMap.value[metadata.value?.id]
@@ -142,14 +138,6 @@ export default defineComponent({
       }
       return steps;
     });
-
-    const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
-      selectedTemporalResolution.value = temporalRes;
-    };
-
-    const setTemporalAggregationSelection = (temporalAgg: AggregationOption) => {
-      selectedTemporalAggregation.value = temporalAgg;
-    };
 
     const onBack = () => {
       if (window.history.length > 1) {
@@ -261,10 +249,6 @@ export default defineComponent({
       outputs,
       selectedNode,
       selectLabel,
-      selectedTemporalAggregation,
-      selectedTemporalResolution,
-      setTemporalAggregationSelection,
-      setTemporalResolutionSelection,
       stepsBeforeCanConfirm
     };
   },
@@ -272,18 +256,6 @@ export default defineComponent({
     // Load the CAG so we can find relevant components
     modelService.getComponents(this.currentCAG).then(_modelComponents => {
       this.modelComponents = _modelComponents;
-
-      if (this.selectedNode !== null) {
-        // restore view config options, if any
-        if (this.initialViewConfig) {
-          if (this.initialViewConfig.temporalResolution !== undefined) {
-            this.selectedTemporalResolution = this.initialViewConfig.temporalResolution as TemporalResolutionOption;
-          }
-          if (this.initialViewConfig.temporalAggregation !== undefined) {
-            this.selectedTemporalAggregation = this.initialViewConfig.temporalAggregation as AggregationOption;
-          }
-        }
-      }
     });
   }
 });
