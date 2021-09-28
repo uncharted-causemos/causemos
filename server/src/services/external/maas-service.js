@@ -369,7 +369,7 @@ const startIndicatorPostProcessing = async (metadata) => {
  */
 const updateModelRun = async(modelRun) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return await connection.update([modelRun]);
+  return await connection.update(modelRun, doc => doc.id);
 };
 
 module.exports = {

@@ -1,4 +1,12 @@
 <template>
+  <modal-confirmation
+    v-if="showDelete"
+    :autofocus-confirm="false"
+    @confirm="deleteRun"
+    @close="hideDeleteModal"
+  >
+    <template #title> DELETE MODEL RUN </template>
+  </modal-confirmation>
   <div class="datacube-card-parent">
     <div class="datacube-card-container">
       <div class="capture-box">
@@ -23,7 +31,7 @@
           :metadata="metadata"
           :potential-scenarios="runParameterValues"
           @close="showModelRunsExecutionStatus = false"
-          @delete="deleteRun"
+          @delete="prepareDelete"
           @retry="retryRun"
         />
         <div class="flex-row">
@@ -366,6 +374,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import Modal from '@/components/modals/modal.vue';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -394,7 +403,7 @@ import { isIndicator, isModel } from '@/utils/datacube-util';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import { updateModelRun } from '@/services/new-datacube-service';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
-import modelService from "@/services/model-service";
+import modelService from '@/services/model-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -537,6 +546,7 @@ export default defineComponent({
     MapLegend,
     Modal,
     ModalCheckRunsExecutionStatus,
+    ModalConfirmation,
     ModalNewScenarioRuns,
     ParallelCoordinatesChart,
     RadioButtonGroup,
@@ -849,24 +859,44 @@ export default defineComponent({
   unmounted() {
     disableConcurrentTileRequestsCaching();
   },
+  data: () => ({
+    idToDelete: '',
+    showDelete: false
+  }),
   methods: {
-    getModelRunById(runId) {
+    getModelRunById(runId: string) {
       return this.allModelRunData.find(runData => runData.id === runId);
     },
-    deleteRun(runId: string) {
-      const modelRun = this.getModelRunById(runId);
+    prepareDelete(runId: string) {
+      this.idToDelete = runId;
+      this.showDeleteModal();
+    },
+    async deleteWithRun(modelRun: any) {
       if (modelRun) {
         const modelRunDeleted = _.cloneDeep(modelRun);
         modelRunDeleted.status = ModelRunStatus.Deleted;
-        this.updateModelRun(modelRunDeleted);
+        await updateModelRun(modelRunDeleted);
       }
     },
-    retryRun(runId: string) {
+    async deleteRun() {
+      const modelRun = this.getModelRunById(this.idToDelete);
+      await this.deleteWithRun(modelRun);
+      this.hideDeleteModal();
+    },
+    hideDeleteModal() {
+      this.showDelete = false;
+      this.showModelRunsExecutionStatus = true;
+    },
+    showDeleteModal() {
+      this.showDelete = true;
+      this.showModelRunsExecutionStatus = false;
+    },
+    async retryRun(runId: string) {
       const modelRun = this.getModelRunById(runId);
       if (modelRun) {
         modelService.createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters);
       }
-      this.deleteRun(runId);
+      await this.deleteWithRun(modelRun);
     }
   }
 });
