@@ -19,6 +19,10 @@ const _getModel = async (modelId) => {
   const modelData = await connection.findOne([{ field: 'id', value: modelId }], {
     excludes: ['thumbnail_source']
   });
+  const connection2 = Adapter.get(RESOURCE.NODE_GROUP);
+  const modelGroups = await connection2.find([{ field: 'model_id', value: modelId }], {});
+  modelData.groups = modelGroups;
+  console.log(modelData);
   return modelData;
 };
 
