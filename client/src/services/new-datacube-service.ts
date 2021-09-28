@@ -188,7 +188,7 @@ export const getQualifierBreakdown = async (
 export const updateModelRun = async (modelRun: any) => {
   const result = await API.put('maas/model-runs', modelRun);
   return result.data;
-}
+};
 
 export default {
   updateDatacube,

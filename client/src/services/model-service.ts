@@ -680,7 +680,7 @@ export const createModelRun = (model_id: string, model_name: string, parameters:
     model_name,
     parameters
   });
-}
+};
 
 export default {
   getProjectModels,
@@ -727,6 +727,7 @@ export default {
 
   calculateScenarioPercentageChange,
   cleanConstraints,
+  createModelRun,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,

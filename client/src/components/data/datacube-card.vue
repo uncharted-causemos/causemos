@@ -392,7 +392,9 @@ import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { colorFromIndex } from '@/utils/colors-util';
 import { isIndicator, isModel } from '@/utils/datacube-util';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import { updateModelRun } from '@/services/new-datacube-service';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
+import modelService from "@/services/model-service";
 
 const DRILLDOWN_TABS = [
   {
@@ -848,11 +850,23 @@ export default defineComponent({
     disableConcurrentTileRequestsCaching();
   },
   methods: {
+    getModelRunById(runId) {
+      return this.allModelRunData.find(runData => runData.id === runId);
+    },
     deleteRun(runId: string) {
-      console.log(runId);
+      const modelRun = this.getModelRunById(runId);
+      if (modelRun) {
+        const modelRunDeleted = _.cloneDeep(modelRun);
+        modelRunDeleted.status = ModelRunStatus.Deleted;
+        this.updateModelRun(modelRunDeleted);
+      }
     },
     retryRun(runId: string) {
-      console.log(runId);
+      const modelRun = this.getModelRunById(runId);
+      if (modelRun) {
+        modelService.createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters);
+      }
+      this.deleteRun(runId);
     }
   }
 });

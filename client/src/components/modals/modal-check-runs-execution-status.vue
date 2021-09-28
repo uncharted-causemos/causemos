@@ -88,7 +88,9 @@ export default defineComponent({
     Modal
   },
   emits: [
-    'close'
+    'close',
+    'delete',
+    'retry'
   ],
   props: {
     potentialScenarios: {
