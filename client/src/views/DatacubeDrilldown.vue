@@ -15,7 +15,7 @@
         >
           <template #datacube-model-header>
             <h5
-              v-if="metadata && mainModelOutput && isExpanded"
+              v-if="metadata && mainModelOutput"
               class="datacube-header"
             >
               <select name="outputs" id="outputs"
@@ -105,7 +105,6 @@ export default defineComponent({
     AnalyticalQuestionsAndInsightsPanel
   },
   setup() {
-    const isExpanded = true;
     const route = useRoute();
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -221,7 +220,6 @@ export default defineComponent({
       hideInsightPanel,
       initialDataConfig,
       initialViewConfig,
-      isExpanded,
       mainModelOutput,
       metadata,
       onClose,

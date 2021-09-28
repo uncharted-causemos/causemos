@@ -29,29 +29,27 @@
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
-            <div v-if="isExpanded">
-              <h5>
-                <select name="outputs" id="outputs"
-                  v-if="outputs.length > 1"
-                  @change="onOutputSelectionChange($event)"
-                >
-                  <option
-                    v-for="(output, indx) in outputs"
-                    :key="output.name"
-                    :selected="indx === currentOutputIndex"
-                  >{{output.display_name !== '' ? output.display_name : output.name}}</option>
-                </select>
-                <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-                <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
-              </h5>
-              <disclaimer
-                v-if="scenarioCount > 0"
-                :message="
-                  scenarioCount +
-                    ' scenarios. Click a vertical line to select or deselect it.'
-                "
-              />
-            </div>
+            <h5>
+              <select name="outputs" id="outputs"
+                v-if="outputs.length > 1"
+                @change="onOutputSelectionChange($event)"
+              >
+                <option
+                  v-for="(output, indx) in outputs"
+                  :key="output.name"
+                  :selected="indx === currentOutputIndex"
+                >{{output.display_name !== '' ? output.display_name : output.name}}</option>
+              </select>
+              <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
+              <label style="margin-left: 1rem; font-weight: normal;">| {{metadata.name}}</label>
+            </h5>
+            <disclaimer
+              v-if="scenarioCount > 0"
+              :message="
+                scenarioCount +
+                  ' scenarios. Click a vertical line to select or deselect it.'
+              "
+            />
           </div>
         </template>
         <template #datacube-description>
@@ -90,7 +88,6 @@ export default defineComponent({
     FullScreenModalHeader
   },
   setup() {
-    const isExpanded = true;
     const selectLabel = 'Quantify Node';
     const navBackLabel = 'Select A Different Datacube';
     const store = useStore();
@@ -254,7 +251,6 @@ export default defineComponent({
       currentOutputIndex,
       indicatorId,
       initialViewConfig,
-      isExpanded,
       mainModelOutput,
       metadata,
       modelComponents,
@@ -330,7 +326,6 @@ main {
 
 .datacube-header {
   flex: 1;
-  min-height: 70px;
 }
 
 .dropdown-config:not(:first-child) {
