@@ -90,31 +90,32 @@ export default defineComponent({
     FullScreenModalHeader
   },
   setup() {
+    const isExpanded = true;
     const selectLabel = 'Quantify Node';
     const navBackLabel = 'Select A Different Datacube';
     const store = useStore();
-    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
-    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
     const currentCAG = computed(() => store.getters['app/currentCAG']);
+    const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
+    const indicatorId = computed(() => store.getters['app/indicatorId']);
+    const metadata = useModelMetadata(indicatorId);
     const nodeId = computed(() => store.getters['app/nodeId']);
     const project = computed(() => store.getters['app/project']);
     const dataState = computed(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
 
-
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
-
-    // NOTE: only one indicator id (model or indicator) will be provided as a selection from the data explorer
-    const indicatorId = computed(() => store.getters['app/indicatorId']);
-
-    const metadata = useModelMetadata(indicatorId);
-
-    const isExpanded = true;
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-
     const modelComponents = ref(null) as Ref<any>;
+    const outputs = ref([]) as Ref<DatacubeFeature[]>;
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+
+    const currentOutputIndex = computed(() => metadata.value?.id !== undefined &&
+      datacubeCurrentOutputsMap.value[metadata.value?.id] !== undefined
+      ? datacubeCurrentOutputsMap.value[metadata.value?.id]
+      : 0
+    );
+
     const selectedNode = computed(() => {
       if (nodeId.value === undefined || modelComponents.value === null) {
         return null;
@@ -122,6 +123,7 @@ export default defineComponent({
       return modelComponents.value.nodes.find((node: { id: any }) => node.id === nodeId.value);
     });
 
+    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
     const initialViewConfig = computed(() => {
       return selectedNode?.value?.parameter;
@@ -142,14 +144,6 @@ export default defineComponent({
         steps.push('Please set "split by" to "none".');
       }
       return steps;
-    });
-    const outputs = ref([]) as Ref<DatacubeFeature[]>;
-
-    watchEffect(() => {
-      if (metadata.value && currentOutputIndex.value >= 0) {
-        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-        mainModelOutput.value = outputs.value[currentOutputIndex.value];
-      }
     });
 
     const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
@@ -246,6 +240,14 @@ export default defineComponent({
         }
       });
     };
+
+    watchEffect(() => {
+      if (metadata.value && currentOutputIndex.value >= 0) {
+        outputs.value = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+        mainModelOutput.value = outputs.value[currentOutputIndex.value];
+      }
+    });
+
     return {
       aggregationOptionFiltered,
       currentCAG,

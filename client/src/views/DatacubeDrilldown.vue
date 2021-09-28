@@ -105,30 +105,32 @@ export default defineComponent({
     AnalyticalQuestionsAndInsightsPanel
   },
   setup() {
+    const isExpanded = true;
     const route = useRoute();
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
-    const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
-    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
-    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
-    const project = computed(() => store.getters['app/project']);
-    const projectType = computed(() => store.getters['app/projectType']);
-    const dataState = computed(() => store.getters['insightPanel/dataState']);
-    const viewState = computed(() => store.getters['insightPanel/viewState']);
-
-
-    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
-    const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
-    const isExpanded = true;
-    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-    // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const datacubeId = route.query.datacube_id as any;
     const initialViewConfig = analysisId.value[0].viewConfig;
     const initialDataConfig = analysisId.value[0].dataConfig;
     const selectedModelId = ref(datacubeId);
     const metadata = useModelMetadata(selectedModelId);
+    const project = computed(() => store.getters['app/project']);
+    const projectType = computed(() => store.getters['app/projectType']);
+    const dataState = computed(() => store.getters['insightPanel/dataState']);
+    const viewState = computed(() => store.getters['insightPanel/viewState']);
+    const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+
+    const outputs = ref([]) as Ref<DatacubeFeature[]>;
+    // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+
+    const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
+
+    const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
+    const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
 
     // apply initial view config for this datacube
     if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
@@ -141,11 +143,9 @@ export default defineComponent({
       if (initialViewConfig.selectedOutputIndex !== undefined) {
         const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
         defaultOutputMap[datacubeId] = initialViewConfig.selectedOutputIndex;
-        store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+        setDatacubeCurrentOutputsMap(defaultOutputMap);
       }
     }
-
-    const outputs = ref([]) as Ref<DatacubeFeature[]>;
 
     watchEffect(() => {
       if (metadata.value) {
@@ -164,7 +164,7 @@ export default defineComponent({
           // update the store
           const defaultOutputMap = _.cloneDeep(datacubeCurrentOutputsMap.value);
           defaultOutputMap[metadata.value.id] = initialOutputIndex;
-          store.dispatch('app/setDatacubeCurrentOutputsMap', defaultOutputMap);
+          setDatacubeCurrentOutputsMap(defaultOutputMap);
         }
         mainModelOutput.value = outputs.value[initialOutputIndex];
       }
