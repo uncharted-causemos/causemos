@@ -6,6 +6,9 @@
     @close="hideDeleteModal"
   >
     <template #title> DELETE MODEL RUN </template>
+    <template #message>
+      <p>Are you sure you want to delete this model run?</p>
+    </template>
   </modal-confirmation>
   <div class="datacube-card-parent">
     <div class="datacube-card-container">
