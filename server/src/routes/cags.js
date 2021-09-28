@@ -152,4 +152,17 @@ router.post('/:mid/recalculate', asyncHandler(async (req, res) => {
   res.json(result);
 }));
 
+
+/**
+ * Change node's concept and the corresponding source/target on edges
+ */
+router.post('/:mid/change-concept', asyncHandler(async (req, res) => {
+  const change = req.body;
+  const modelId = req.params.mid;
+
+  await cagService.changeConcept(modelId, change);
+  const editTime = Date.now();
+  res.status(200).send({ updateToken: editTime });
+}));
+
 module.exports = router;

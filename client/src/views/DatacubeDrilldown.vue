@@ -63,7 +63,8 @@
                 >{{output.display_name !== '' ? output.display_name : output.name}}</option>
               </select>
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <span class="datacube-name">{{metadata.name}}</span>
+              <span v-if="metadata.type===indicatorType" v-tooltip.top-center="'Explore related indicators'" class="datacube-name indicator" @click="onClickDatacubeName">{{metadata.name}} <i class="fa fa-search"></i></span>
+              <span v-else class="datacube-name">{{metadata.name}} </span>
             </h5>
           </template>
 
@@ -154,6 +155,8 @@ import { AnalysisItem } from '@/types/Analysis';
 import { getAnalysis } from '@/services/analysis-service';
 import { useRoute } from 'vue-router';
 import { ModelRun } from '@/types/ModelRun';
+import filtersUtil from '@/utils/filters-util';
+import { DATASET_NAME } from '@/utils/datacube-util';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
@@ -654,6 +657,7 @@ export default defineComponent({
   },
   data: () => ({
     analysis: undefined,
+    indicatorType: DatacubeType.Indicator,
     ProjectType
   }),
   watch: {
@@ -680,6 +684,15 @@ export default defineComponent({
 
     if (this.projectType === ProjectType.Analysis) {
       this.analysis = await getAnalysis(this.analysisId);
+    }
+  },
+  methods: {
+    onClickDatacubeName() {
+      const analysisId = this.analysisId ?? '';
+      const metadataName = this.metadata?.name ?? '';
+      const filters: any = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, DATASET_NAME, [metadataName], 'or', false);
+      this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
     }
   }
 });
@@ -712,6 +725,12 @@ export default defineComponent({
   font-weight: normal;
   color: $label-color;
   margin-left: 10px;
+}
+.datacube-name.indicator {
+  cursor: pointer;
+  &:hover {
+    filter: brightness(60%);
+  }
 }
 
 .search-button {
