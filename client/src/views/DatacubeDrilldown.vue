@@ -7,6 +7,9 @@
         be dynamic later -->
         <datacube-card
           :class="{ 'datacube-expanded': true }"
+          :initial-data-config="initialDataConfig"
+          :initial-view-config="initialViewConfig"
+          :selected-model-id="selectedModelId"
           :selected-temporal-resolution="selectedTemporalResolution"
           :selected-temporal-aggregation="selectedTemporalAggregation"
         >
@@ -82,12 +85,16 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
-import useModelMetadata from '@/services/composables/useModelMetadata';
-import { AggregationOption, TemporalResolutionOption, ProjectType } from '@/types/Enums';
-import { DatacubeFeature } from '@/types/Datacube';
-import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
-import { ViewState } from '@/types/Insight';
+
 import { getAnalysis } from '@/services/analysis-service';
+import useModelMetadata from '@/services/composables/useModelMetadata';
+
+import { AnalysisItem } from '@/types/Analysis';
+import { DatacubeFeature } from '@/types/Datacube';
+import { AggregationOption, TemporalResolutionOption, ProjectType } from '@/types/Enums';
+import { DataState, ViewState } from '@/types/Insight';
+
+import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
@@ -105,8 +112,11 @@ export default defineComponent({
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const project = computed(() => store.getters['app/project']);
     const projectType = computed(() => store.getters['app/projectType']);
+    const dataState = computed(() => store.getters['insightPanel/dataState']);
+    const viewState = computed(() => store.getters['insightPanel/viewState']);
 
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
@@ -115,7 +125,8 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const datacubeId = route.query.datacube_id as any;
-    const initialViewConfig: ViewState = analysisId.value[0].viewConfig;
+    const initialViewConfig = analysisId.value[0].viewConfig;
+    const initialDataConfig = analysisId.value[0].dataConfig;
     const selectedModelId = ref(datacubeId);
     const metadata = useModelMetadata(selectedModelId);
 
@@ -185,11 +196,31 @@ export default defineComponent({
       updatedCurrentOutputsMap[metadata?.value?.id ?? ''] = selectedOutputIndex;
       setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     };
+
+
+    watchEffect(() => {
+      const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
+      if (currentAnalysisItem.viewConfig === undefined) {
+        currentAnalysisItem.viewConfig = {} as ViewState;
+      }
+
+      if (currentAnalysisItem.dataConfig === undefined) {
+        currentAnalysisItem.dataConfig = {} as DataState;
+      }
+
+      currentAnalysisItem.viewConfig = viewState;
+      currentAnalysisItem.dataConfig = dataState;
+      store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+    });
+
     return {
       aggregationOptionFiltered,
       analysisId,
       currentOutputIndex,
       hideInsightPanel,
+      initialDataConfig,
+      initialViewConfig,
       isExpanded,
       mainModelOutput,
       metadata,

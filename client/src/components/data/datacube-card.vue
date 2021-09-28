@@ -368,7 +368,6 @@
 <script lang="ts">
 import _ from 'lodash';
 import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
-import { useRoute } from 'vue-router';
 import { useStore } from 'vuex';
 import router from '@/router';
 
@@ -400,16 +399,13 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
-import { getAnalysis } from '@/services/analysis-service';
 import { getInsightById } from '@/services/insight-service';
 
-import { AnalysisItem } from '@/types/Analysis';
 import { ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
   DatacubeType,
   ModelRunStatus,
-  ProjectType,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption
@@ -445,6 +441,18 @@ export default defineComponent({
       type: Boolean,
       default: true
     },
+    initialDataConfig: {
+      type: Object as PropType<DataState>,
+      default: null
+    },
+    initialViewConfig: {
+      type: Object as PropType<ViewState>,
+      default: null
+    },
+    selectedModelId: {
+      type: String,
+      default: ''
+    },
     selectedTemporalAggregation: {
       type: String as PropType<AggregationOption>,
       default: AggregationOption.Mean
@@ -473,16 +481,21 @@ export default defineComponent({
   },
   setup(props, { emit }) {
     const timeInterval = 10000;
-    const route = useRoute();
     const store = useStore();
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
-    const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
+
+    const {
+      initialDataConfig,
+      initialViewConfig,
+      selectedModelId,
+      selectedTemporalAggregation,
+      selectedTemporalResolution
+    } = toRefs(props);
+
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
 
     const activeDrilldownTab = ref<string|null>('breakdown');
-    const analysis = ref<any>(undefined);
     const currentTabView = ref<string>('description');
     const potentialScenarioCount = ref<number|null>(0);
     const potentialScenarios = ref<ScenarioData[]>([]);
@@ -494,14 +507,12 @@ export default defineComponent({
     const mapReady = ref<boolean>(false);
     const selectedTimestamp = ref(null) as Ref<number | null>;
     const breakdownOption = ref<string | null>(null);
-    const datacubeId = route.query.datacube_id as any;
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
-    const selectedModelId = ref(datacubeId);
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const metadata = useModelMetadata(selectedModelId);
     const modelRunsFetchedAt = ref(0);
@@ -526,13 +537,6 @@ export default defineComponent({
     const initialSelectedYears = ref<string[]>([]);
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
-    const initialViewConfig: ViewState = analysisId.value[0].viewConfig;
-    const initialDataConfig: DataState = analysisId.value[0].dataConfig;
-
-    const {
-      selectedTemporalAggregation,
-      selectedTemporalResolution
-    } = toRefs(props);
 
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
@@ -562,30 +566,30 @@ export default defineComponent({
     };
 
     // apply initial view config for this datacube
-    if (initialViewConfig && !_.isEmpty(initialViewConfig)) {
-      if (initialViewConfig.spatialAggregation !== undefined) {
-        selectedSpatialAggregation.value = initialViewConfig.spatialAggregation as AggregationOption;
+    if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
+      if (initialViewConfig.value.spatialAggregation !== undefined) {
+        selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;
       }
-      if (initialViewConfig.selectedMapBaseLayer !== undefined) {
-        selectedBaseLayer.value = initialViewConfig.selectedMapBaseLayer;
+      if (initialViewConfig.value.selectedMapBaseLayer !== undefined) {
+        selectedBaseLayer.value = initialViewConfig.value.selectedMapBaseLayer;
       }
-      if (initialViewConfig.selectedMapDataLayer !== undefined) {
-        selectedDataLayer.value = initialViewConfig.selectedMapDataLayer;
+      if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
+        selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
       }
-      if (initialViewConfig.breakdownOption !== undefined) {
-        breakdownOption.value = initialViewConfig.breakdownOption;
+      if (initialViewConfig.value.breakdownOption) {
+        breakdownOption.value = initialViewConfig.value.breakdownOption;
       }
-      if (initialViewConfig.selectedAdminLevel !== undefined) {
-        selectedAdminLevel.value = initialViewConfig.selectedAdminLevel;
+      if (initialViewConfig.value.selectedAdminLevel !== undefined) {
+        selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
       }
     }
 
-    if (initialDataConfig && !_.isEmpty(initialDataConfig)) {
-      if (initialDataConfig.selectedRegionIds !== undefined) {
-        initialSelectedRegionIds.value = _.clone(initialDataConfig.selectedRegionIds);
+    if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+      if (initialDataConfig.value.selectedRegionIds !== undefined) {
+        initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
       }
-      if (initialDataConfig.selectedQualifierValues !== undefined) {
-        initialSelectedQualifierValues.value = _.clone(initialDataConfig.selectedQualifierValues);
+      if (initialDataConfig.value.selectedQualifierValues !== undefined) {
+        initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
       }
     }
 
@@ -965,9 +969,7 @@ export default defineComponent({
         const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
         mainModelOutput.value = outputs[currentOutputIndex.value];
       }
-    });
 
-    watchEffect(() => {
       if (isIndicatorDatacube.value) {
         selectedScenarioIds.value = [DatacubeType.Indicator.toString()];
       }
@@ -981,11 +983,6 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
-      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
-      if (currentAnalysisItem.viewConfig === undefined) {
-        currentAnalysisItem.viewConfig = {} as ViewState;
-      }
       const viewState: ViewState = initViewStateFromRefs(
         breakdownOption,
         currentOutputIndex,
@@ -995,16 +992,11 @@ export default defineComponent({
         selectedDataLayer,
         selectedSpatialAggregation,
         selectedTemporalAggregation,
-        selectedTemporalResolution
+        selectedTemporalResolution,
+        visibleTimeseriesData
       );
       store.dispatch('insightPanel/setViewState', viewState);
 
-      //
-      // data state
-      //
-      if (currentAnalysisItem.dataConfig === undefined) {
-        currentAnalysisItem.dataConfig = {} as DataState;
-      }
       const dataState: DataState = initDataStateFromRefs(
         mainModelOutput,
         metadata,
@@ -1018,17 +1010,10 @@ export default defineComponent({
       );
 
       store.dispatch('insightPanel/setDataState', dataState);
-
-      // FIXME: state is now stored in two places: dataAnalysis and insightPanel
-      currentAnalysisItem.viewConfig = viewState;
-      currentAnalysisItem.dataConfig = dataState;
-      store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
     });
 
     return {
       allModelRunData,
-      analysis,
-      analysisId,
       aggregationOptionFiltered,
       activeDrilldownTab,
       adminLayerStats,
@@ -1119,11 +1104,6 @@ export default defineComponent({
   },
   created() {
     enableConcurrentTileRequestsCaching().then(() => (this.mapReady = true));
-  },
-  async mounted() {
-    if (this.projectType === ProjectType.Analysis) {
-      this.analysis = await getAnalysis(this.analysisId);
-    }
   },
   unmounted() {
     disableConcurrentTileRequestsCaching();
