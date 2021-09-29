@@ -18,7 +18,8 @@ export function initDataStateFromRefs (
   selectedRegionIds: Ref<string[]>,
   selectedScenarioIds: Ref<string[]>,
   selectedTimestamp: Ref<number|null>,
-  selectedYears: Ref<Set<string>>
+  selectedYears: Ref<Set<string>>,
+  visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
 ): DataState {
   return {
     selectedModelId: selectedModelId.value,
@@ -32,7 +33,8 @@ export function initDataStateFromRefs (
     selectedRegionIds: selectedRegionIds.value,
     relativeTo: relativeTo.value,
     selectedQualifierValues: [...selectedQualifierValues.value],
-    selectedYears: [...selectedYears.value]
+    selectedYears: [...selectedYears.value],
+    visibleTimeseriesData: visibleTimeseriesData?.value
   };
 }
 
@@ -45,8 +47,7 @@ export function initViewStateFromRefs (
   selectedDataLayer: Ref<DATA_LAYER>,
   selectedSpatialAggregation: Ref<AggregationOption>,
   selectedTemporalAggregation: Ref<AggregationOption>,
-  selectedTemporalResolution: Ref<TemporalResolutionOption>,
-  visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
+  selectedTemporalResolution: Ref<TemporalResolutionOption>
 ): ViewState {
   return {
     spatialAggregation: selectedSpatialAggregation.value,
@@ -57,7 +58,6 @@ export function initViewStateFromRefs (
     selectedMapBaseLayer: selectedBaseLayer.value,
     selectedMapDataLayer: selectedDataLayer.value,
     breakdownOption: breakdownOption.value,
-    selectedAdminLevel: selectedAdminLevel.value,
-    visibleTimeseriesData: visibleTimeseriesData?.value
+    selectedAdminLevel: selectedAdminLevel.value
   };
 }

@@ -102,7 +102,6 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
-    // NOTE: only one datacube id (model or indicator) will be provided as the analysis-item at 0-index
     const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);

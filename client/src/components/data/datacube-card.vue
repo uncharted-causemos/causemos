@@ -627,7 +627,7 @@ export default defineComponent({
       if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
         selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
       }
-      if (initialViewConfig.value.breakdownOption) {
+      if (initialViewConfig.value.breakdownOption !== undefined) {
         breakdownOption.value = initialViewConfig.value.breakdownOption;
       }
       if (initialViewConfig.value.selectedAdminLevel !== undefined) {
@@ -1043,8 +1043,7 @@ export default defineComponent({
         selectedDataLayer,
         selectedSpatialAggregation,
         selectedTemporalAggregation,
-        selectedTemporalResolution,
-        visibleTimeseriesData
+        selectedTemporalResolution
       );
       store.dispatch('insightPanel/setViewState', viewState);
 
@@ -1057,7 +1056,8 @@ export default defineComponent({
         selectedRegionIds,
         selectedScenarioIds,
         selectedTimestamp,
-        selectedYears
+        selectedYears,
+        visibleTimeseriesData
       );
 
       store.dispatch('insightPanel/setDataState', dataState);

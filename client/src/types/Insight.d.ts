@@ -1,3 +1,4 @@
+import { Timeseries } from '@/types/Timeseries';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 // @base/abstract type
@@ -80,6 +81,7 @@ export interface DataState {
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];
   relativeTo?: string | null;
+  visibleTimeseriesData?: Timeseries[];
 
   // knowledge/model space specific
   selectedScenarioId?: string;

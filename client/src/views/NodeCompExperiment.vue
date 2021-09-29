@@ -169,7 +169,7 @@ export default defineComponent({
         console.error('Confirm should not be clickable until metadata is loaded.');
         return;
       }
-      const visibleTimeseriesData = viewState.value.visibleTimeseriesData;
+      const visibleTimeseriesData = dataState.value.visibleTimeseriesData;
       if (visibleTimeseriesData.length !== 1) {
         console.error('There should be exactly one timeseries visible.', visibleTimeseriesData);
         return;
