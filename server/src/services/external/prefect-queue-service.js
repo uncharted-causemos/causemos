@@ -1,4 +1,4 @@
-const QUEUE_SERVICE_URL = 'http://10.65.18.52:4040/data-pipeline/enqueue';
+const QUEUE_SERVICE_URL = process.env.WM_QUEUE_SERVICE_URL + '/data-pipeline/enqueue';
 const requestAsPromise = rootRequire('/util/request-as-promise');
 
 const sendToPipeline = async(flowParameters) => {

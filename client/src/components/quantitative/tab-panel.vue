@@ -3,7 +3,7 @@
     class="tab-panel-container">
     <div class="main-content h-100 flex flex-col">
       <div class="tab-nav-bar">
-        <quantitative-model-options />
+        <quantitative-model-options @download-experiment="downloadExperiment" />
         <tab-bar
           class="tab-bar tour-matrix-tab"
           :tabs="validTabs"
@@ -101,8 +101,10 @@
     </div>
   </div>
 </template>
+
 <script>
 import { mapGetters } from 'vuex';
+import moment from 'moment';
 
 import router from '@/router';
 import QuantitativeModelOptions from '@/components/quantitative/quantitative-model-options';
@@ -227,7 +229,8 @@ export default {
   computed: {
     ...mapGetters({
       project: 'app/project',
-      currentCAG: 'app/currentCAG'
+      currentCAG: 'app/currentCAG',
+      selectedScenarioId: 'model/selectedScenarioId'
     }),
     activeTab() {
       // if we ever need more state than this
@@ -356,6 +359,25 @@ export default {
       graphOptions.useStableLayout = false;
       await modelGraph.refresh();
       graphOptions.useStableLayout = prevStabilitySetting;
+    },
+    downloadExperiment() {
+      const scenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
+      const start = scenario.parameter.projection_start;
+      const numTimeSteps = scenario.parameter.num_steps;
+
+      const experimentPayload = {
+        experimentType: 'PROJECTION',
+        experimentParams: {
+          numTimeSteps: numTimeSteps,
+          startTime: start,
+          endTime: moment(start).add(numTimeSteps - 1, 'M').valueOf(),
+          constraints: scenario.parameter.constraints
+        }
+      };
+      const file = new Blob([JSON.stringify(experimentPayload)], {
+        type: 'application/json'
+      });
+      window.saveAs(file, 'experiment.json');
     }
   }
 };

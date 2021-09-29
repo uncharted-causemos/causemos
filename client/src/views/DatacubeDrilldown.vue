@@ -30,7 +30,8 @@
                 >{{output.display_name !== '' ? output.display_name : output.name}}</option>
               </select>
               <span v-else>{{mainModelOutput.display_name !== '' ? mainModelOutput.display_name : mainModelOutput.name}}</span>
-              <span class="datacube-name">{{metadata.name}}</span>
+              <span v-if="isIndicator(metadata)" v-tooltip.top-center="'Explore related indicators'" class="datacube-name indicator" @click="onClickDatacubeName">{{metadata.name}} <i class="fa fa-search"></i></span>
+              <span v-else class="datacube-name">{{metadata.name}} </span>
             </h5>
           </template>
 
@@ -72,7 +73,9 @@ import { DatacubeFeature } from '@/types/Datacube';
 import { ProjectType } from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 
+import { DATASET_NAME, isIndicator } from '@/utils/datacube-util';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
+import filtersUtil from '@/utils/filters-util';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
@@ -179,6 +182,7 @@ export default defineComponent({
       hideInsightPanel,
       initialDataConfig,
       initialViewConfig,
+      isIndicator,
       mainModelOutput,
       metadata,
       onClose,
@@ -200,6 +204,15 @@ export default defineComponent({
 
     if (this.projectType === ProjectType.Analysis) {
       this.analysis = await getAnalysis(this.analysisId);
+    }
+  },
+  methods: {
+    onClickDatacubeName() {
+      const analysisId = this.analysisId ?? '';
+      const metadataName = this.metadata?.name ?? '';
+      const filters: any = filtersUtil.newFilters();
+      filtersUtil.setClause(filters, DATASET_NAME, [metadataName], 'or', false);
+      this.$router.push({ name: 'dataExplorer', query: { analysisId, filters } });
     }
   }
 });
@@ -232,6 +245,12 @@ export default defineComponent({
   font-weight: normal;
   color: $label-color;
   margin-left: 10px;
+}
+.datacube-name.indicator {
+  cursor: pointer;
+  &:hover {
+    filter: brightness(60%);
+  }
 }
 
 .search-button {
