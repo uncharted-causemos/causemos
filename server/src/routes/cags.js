@@ -3,6 +3,7 @@ const moment = require('moment');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const cagService = rootRequire('/services/cag-service');
+const historyService = rootRequire('/services/history-service');
 const { MODEL_STATUS } = rootRequire('/util/model-util');
 
 
@@ -85,6 +86,8 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
     is_quantified: false
   });
 
+  historyService.logHistory(newId, 'duplicate', nodes, edges);
+
   res.status(200).send({ updateToken: editTime, id: newId });
 }));
 
@@ -97,17 +100,20 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
   const {
     operation,
     edges,
-    nodes
+    nodes,
+    updateType
   } = req.body;
 
   // Perform the specified operation, or if it's not a supported operation
   // throw an error
   switch (operation) {
     case OPERATION.REMOVE:
-      await cagService.pruneCAG(modelId, edges, nodes);
+      await cagService.pruneCAG(modelId, edges, nodes, updateType);
+      historyService.logHistory(modelId, updateType, nodes, edges);
       break;
     case OPERATION.UPDATE:
-      await cagService.updateCAG(modelId, edges, nodes);
+      await cagService.updateCAG(modelId, edges, nodes, updateType);
+      historyService.logHistory(modelId, updateType, nodes, edges);
       break;
     default:
       throw new Error('Operation not supported: ' + operation);
