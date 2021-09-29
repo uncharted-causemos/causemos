@@ -106,6 +106,10 @@ class CAGRenderer extends BaseCAGRenderer {
       .text(d => d.label)
       .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
 
+
+    // FIXME: weird, seem like there is a double-render issue
+    if (nodeSelection.size() === 0) return;
+
     // Show components
     const components = nodeSelection.datum().data.components;
     for (let i = 0; i < components.length; i++) {

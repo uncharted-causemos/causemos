@@ -296,7 +296,7 @@ export default {
         this.filters);
 
       const formattedNodes = nodesToAdd.map(node => {
-        return { id: '', concept: node.id, label: this.ontologyFormatter(node.id) };
+        return { id: '', concept: node.id, label: this.ontologyFormatter(node.id), components: [node.id] };
       });
 
       const formattedEdges = selectedEdges.map(selectedEdge => {
