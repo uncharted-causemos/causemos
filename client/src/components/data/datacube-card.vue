@@ -683,9 +683,8 @@ export default defineComponent({
 
     const clickData = (tab: string) => {
       // FIXME: This code to select a model run when switching to the data tab
-      //  should be in a watcher on the parent component to be more robust,
-      //  rather than in this button's click handler.
-      updateTabView(tab);
+      // should be in a watcher on the parent component to be more robust,
+      // rather than in this button's click handler.
 
       if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
         // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
@@ -699,6 +698,7 @@ export default defineComponent({
         setSelectedScenarioIds(newIds);
       }
 
+      updateTabView(tab);
       //
       // advance the relevant tour if it is active
       //

@@ -269,9 +269,9 @@ export default defineComponent({
 
     watchEffect(() => {
       // mark this step as complete
-      if (selectedSpatialAggregation.value !== '' &&
-          selectedTemporalAggregation.value !== '' &&
-          selectedTemporalResolution.value !== '') {
+      if (selectedSpatialAggregation.value !== AggregationOption.None &&
+          selectedTemporalAggregation.value !== AggregationOption.None &&
+          selectedTemporalResolution.value !== TemporalResolutionOption.None) {
         updatePublishingStep(true);
       }
       if (selectedScenarioIds?.value?.length > 0) {
