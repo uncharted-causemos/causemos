@@ -8,8 +8,8 @@
         <datacube-card
           :class="{ 'datacube-expanded': true }"
           :initial-data-config="initialDataConfig"
+          :initial-selected-model-id="selectedModelId"
           :initial-view-config="initialViewConfig"
-          :selected-model-id="selectedModelId"
           :spatial-aggregation-options="aggregationOptionFiltered"
           :temporal-aggregation-options="aggregationOptionFiltered"
           :temporal-resolution-options="temporalResolutionOptionFiltered"
@@ -155,7 +155,6 @@ export default defineComponent({
       updatedCurrentOutputsMap[metadata?.value?.id ?? ''] = selectedOutputIndex;
       setDatacubeCurrentOutputsMap(updatedCurrentOutputsMap);
     };
-
 
     watchEffect(() => {
       const updatedAnalysisItems = _.cloneDeep(analysisItems.value);

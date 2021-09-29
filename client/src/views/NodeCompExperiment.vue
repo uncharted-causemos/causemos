@@ -23,7 +23,7 @@
       <datacube-card
         :class="{ 'datacube-expanded': true }"
         :initial-view-config="initialViewConfig"
-        :selected-model-id="indicatorId"
+        :initial-selected-model-id="indicatorId"
         :spatial-aggregation-options="aggregationOptionFiltered"
       >
         <template #datacube-model-header>

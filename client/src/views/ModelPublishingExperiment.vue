@@ -33,7 +33,7 @@
           :default-spatial-aggregation="AggregationOption.None"
           :default-temporal-aggregation="AggregationOption.None"
           :default-temporal-resolution="TemporalResolutionOption.None"
-          :selected-model-id="selectedModelId"
+          :initial-selected-model-id="selectedModelId"
           :spatial-aggregation-options="Object.values(AggregationOption)"
           :temporal-aggregation-options="Object.values(AggregationOption)"
           :temporal-resolution-options="Object.values(TemporalResolutionOption)"
@@ -274,7 +274,7 @@ export default defineComponent({
           selectedTemporalResolution.value !== '') {
         updatePublishingStep(true);
       }
-      if (selectedScenarioIds.value.length > 0) {
+      if (selectedScenarioIds?.value?.length > 0) {
         if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
           // user attempted to select one or more scenarios but the model publishing step is not correct
           // this would be the case of the user selected a scenario on the PC plot while the model publishing step is still assuming description view

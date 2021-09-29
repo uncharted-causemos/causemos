@@ -382,7 +382,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
+import { defineComponent, ref, PropType, toRefs, computed, watch, watchEffect, Ref } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 
@@ -477,7 +477,7 @@ export default defineComponent({
       type: Object as PropType<TemporalResolutionOption>,
       default: TemporalResolutionOption.Month
     },
-    selectedModelId: {
+    initialSelectedModelId: {
       type: String,
       default: ''
     },
@@ -521,7 +521,7 @@ export default defineComponent({
       defaultTemporalResolution,
       initialDataConfig,
       initialViewConfig,
-      selectedModelId
+      initialSelectedModelId
     } = toRefs(props);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -543,6 +543,7 @@ export default defineComponent({
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
+    const selectedModelId = ref(initialSelectedModelId.value);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
     const selectedSpatialAggregation = ref<AggregationOption>(defaultSpatialAggregation.value);
@@ -1060,6 +1061,12 @@ export default defineComponent({
       );
 
       store.dispatch('insightPanel/setDataState', dataState);
+    });
+
+    watch(initialSelectedModelId, (curr, prev) => {
+      if (!_.isEqual(curr, prev)) {
+        selectedModelId.value = initialSelectedModelId.value;
+      }
     });
 
     return {
