@@ -1,4 +1,5 @@
 const _ = require('lodash');
+const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 
@@ -45,7 +46,7 @@ const resolveComponents = async(modelId, resource, components) => {
     return doc.id;
   };
 
-  const modifiedAt = Date.now();
+  const modifiedAt = moment().valueOf();
   const updateList = [];
   const indexList = [];
 
@@ -130,7 +131,7 @@ const createCAG = async (modelFields, edges, nodes) => {
   const keyFn = (doc) => {
     return doc.id;
   };
-  const now = Date.now();
+  const now = moment().valueOf();
   const results = await CAGConnection.insert({
     id: CAGId,
     ...modelFields,
@@ -203,7 +204,7 @@ const updateCAGMetadata = async(modelId, modelFields) => {
       id: modelId,
       status: currentStatus,
       is_quantified: currentQuantified,
-      modified_at: Date.now(),
+      modified_at: moment().valueOf(),
       ...modelFields
     }, keyFn);
   }
@@ -306,15 +307,13 @@ const updateCAG = async(modelId, edges, nodes) => {
   await resolveComponents(modelId, RESOURCE.EDGE_PARAMETER, edges);
   await resolveComponents(modelId, RESOURCE.NODE_PARAMETER, nodes);
 
-  const ts = Date.now();
-
   // Mark model as unsynced
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
     is_quantified: false,
     status: MODEL_STATUS.UNSYNCED,
-    modified_at: ts
+    modified_at: moment().valueOf()
   }, d => d.id);
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
@@ -337,19 +336,18 @@ const pruneCAG = async(modelId, edges, nodes) => {
   const edgeResults = await deleteComponents(modelId, RESOURCE.EDGE_PARAMETER, edges);
   const nodeResults = await deleteComponents(modelId, RESOURCE.NODE_PARAMETER, nodes);
 
-  const ts = Date.now();
-
   // Mark model as unsynced
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
     is_quantified: false,
     status: MODEL_STATUS.UNSYNCED,
-    modified_at: ts
+    modified_at: moment().valueOf()
   }, d => d.id);
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
   }
+
 
   return {
     id: modelId,
@@ -486,7 +484,7 @@ const checkStaleCAGs = async (projectId, updatedStatementIds) => {
   if (_.isEmpty(staleModels)) return []; // nothing to do
 
   // 4) Mark CAGs as stale
-  const timestamp = Date.now();
+  const timestamp = moment().valueOf();
   const updatePayload = staleModels.map(id => {
     return {
       id: id,
@@ -518,7 +516,7 @@ const recalculateCAG = async (modelId) => {
 
 
   // Remove invalid reference_ids
-  const timestamp = Date.now();
+  const timestamp = moment().valueOf();
   const updatePayload = [];
   const promises = [];
 
