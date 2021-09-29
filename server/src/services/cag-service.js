@@ -155,15 +155,6 @@ const createCAG = async (modelFields, edges, nodes) => {
   projectCache.stat.model_count += 1;
   set(projectId, projectCache);
 
-  // Instrument history loggin
-  const historyConnection = Adapter.get(RESOURCE.MODEL_HISTORY);
-  historyConnection.insert({
-    model_id: CAGId,
-    type: 'CREATE',
-    modified_at: now,
-    description: _description(nodes, edges)
-  }, () => uuid());
-
   // Acknowledge success
   return {
     id: CAGId
@@ -309,15 +300,8 @@ const getComponents = async(modelId) => {
  * @param {string} modelId - model id
  * @param {array}  edges - edges
  * @param {array}  nodes - nodes
- * @param {string} updateType - denote the source of the update
  */
-const _description = (nodes, edges) => {
-  const nodeNames = nodes.map(n => n.concept).join(', ');
-  const edgeNames = edges.map(e => `${e.source} => ${e.target}`).join(', ');
-  return `Nodes: [${nodeNames}] Edges: [${edgeNames}]`;
-};
-
-const updateCAG = async(modelId, edges, nodes, updateType) => {
+const updateCAG = async(modelId, edges, nodes) => {
   // Add edges and nodes to the CAG
   await resolveComponents(modelId, RESOURCE.EDGE_PARAMETER, edges);
   await resolveComponents(modelId, RESOURCE.NODE_PARAMETER, nodes);
@@ -336,15 +320,6 @@ const updateCAG = async(modelId, edges, nodes, updateType) => {
     throw new Error(JSON.stringify(results.items[0]));
   }
 
-  // Instrument history loggin
-  const historyConnection = Adapter.get(RESOURCE.MODEL_HISTORY);
-  historyConnection.insert({
-    model_id: modelId,
-    type: updateType,
-    modified_at: ts,
-    description: _description(nodes, edges)
-  }, () => uuid());
-
   return {
     id: results.id
   };
@@ -362,18 +337,19 @@ const pruneCAG = async(modelId, edges, nodes) => {
   const edgeResults = await deleteComponents(modelId, RESOURCE.EDGE_PARAMETER, edges);
   const nodeResults = await deleteComponents(modelId, RESOURCE.NODE_PARAMETER, nodes);
 
+  const ts = Date.now();
+
   // Mark model as unsynced
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
     is_quantified: false,
     status: MODEL_STATUS.UNSYNCED,
-    modified_at: Date.now()
+    modified_at: ts
   }, d => d.id);
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
   }
-
 
   return {
     id: modelId,
