@@ -46,7 +46,7 @@ export function initViewStateFromRefs (
   selectedSpatialAggregation: Ref<AggregationOption>,
   selectedTemporalAggregation: Ref<AggregationOption>,
   selectedTemporalResolution: Ref<TemporalResolutionOption>,
-  visibleTimeseriesData?: Ref<Timeseries[]>
+  visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
 ): ViewState {
   return {
     spatialAggregation: selectedSpatialAggregation.value,
