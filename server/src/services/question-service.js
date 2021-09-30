@@ -1,4 +1,3 @@
-const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const es = rootRequire('adapters/es/adapter');
@@ -37,7 +36,7 @@ const createQuestion = async (
     id: newId,
     question,
     description,
-    modified_at: moment().valueOf(),
+    modified_at: Date.now(),
     visibility,
     project_id: projectId,
     analysis_id: analysisId,
