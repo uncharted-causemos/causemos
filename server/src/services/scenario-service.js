@@ -1,6 +1,5 @@
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
-const moment = require('moment');
 const Logger = rootRequire('/config/logger');
 
 const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
@@ -61,7 +60,7 @@ const create = async ({ result, parameter, name, description, model_id: modelId,
     id,
     name,
     description,
-    modified_at: moment().valueOf(),
+    modified_at: Date.now(),
     model_id: modelId,
     engine,
     is_valid: true,
@@ -100,7 +99,7 @@ const update = async (scenarioId, payload) => {
   // create payload
   const updatePayload = {
     id: scenarioId,
-    modified_at: moment().valueOf(),
+    modified_at: Date.now(),
     ...payload
   };
   // update scenario

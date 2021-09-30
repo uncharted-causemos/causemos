@@ -1,5 +1,4 @@
 const express = require('express');
-const moment = require('moment');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const cagService = rootRequire('/services/cag-service');
@@ -16,7 +15,7 @@ const OPERATION = Object.freeze({
  * POST an edge polarity
  */
 router.put('/:mid/edge-polarity', asyncHandler(async (req, res) => {
-  const editTime = moment().valueOf();
+  const editTime = Date.now();
   const modelId = req.params.mid;
   const {
     edge_id: edgeId,
@@ -32,7 +31,7 @@ router.put('/:mid/edge-polarity', asyncHandler(async (req, res) => {
  * POST a new CAG from an Existing CAG
  */
 router.post('/:mid/', asyncHandler(async (req, res) => {
-  const editTime = moment().valueOf();
+  const editTime = Date.now();
   const modelId = req.params.mid;
   const CAG = await cagService.getComponents(modelId);
 
@@ -95,7 +94,7 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
  * PUT new data in an existing CAG
  */
 router.put('/:mid/components/', asyncHandler(async (req, res) => {
-  const editTime = moment().valueOf();
+  const editTime = Date.now();
   const modelId = req.params.mid;
   const {
     operation,

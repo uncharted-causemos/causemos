@@ -1,7 +1,6 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const _ = require('lodash');
-const moment = require('moment');
 const router = express.Router();
 
 const scenarioService = rootRequire('/services/scenario-service');
@@ -66,7 +65,7 @@ router.put('/:sId/', asyncHandler(async (req, res) => {
   const payload = req.body;
   // TODO: Add a payload validation here to not just allow any fields to be updated/added
   await scenarioService.update(scenarioId, payload);
-  res.status(200).send({ updateToken: moment.utc().valueOf() });
+  res.status(200).send({ updateToken: Date.now() });
 }));
 
 /**
@@ -75,7 +74,7 @@ router.put('/:sId/', asyncHandler(async (req, res) => {
 router.delete('/:sId/', asyncHandler(async (req, res) => {
   const scenarioId = req.params.sId;
   await scenarioService.remove(scenarioId);
-  res.status(200).send({ updateToken: moment.utc().valueOf() });
+  res.status(200).send({ updateToken: Date.now() });
 }));
 
 module.exports = router;
