@@ -10,6 +10,7 @@
       <table class="table">
         <tr>
           <td class="params-header">ID</td>
+          <td class="params-header">status</td>
           <td
             v-for="(dim, idx) in potentialRunsParameters"
             :key="idx">
@@ -19,12 +20,29 @@
           <td class="params-header">execution logs</td>
           <td class="params-header">retry</td>
           <td class="params-header">delete</td>
-          <td class="params-header">status</td>
         </tr>
         <tr
           v-for="(run, sidx) in potentialRuns"
           :key="sidx">
           <td class="params-value">{{ sidx }}</td>
+          <td class="params-value">
+            <div class="status-contents">
+              <label>{{ run.status }}</label>
+              <div
+                class="run-status"
+                :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
+              >
+                <i
+                  v-if="run['status'] === ModelRunStatus.Submitted"
+                  class="fa fa-fw fa-spinner"
+                />
+                <i
+                  v-else
+                  class="fa fa-fw fa-times-circle"
+                />
+              </div>
+            </div>
+          </td>
           <td v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
             :key="idx"
             class="params-value">
@@ -41,21 +59,6 @@
           </td>
           <td class="params-value">
             <i v-if="canRetryDelete(run)" class="fa fa-trash" @click="deleteRun(run.run_id)"/>
-          </td>
-          <td class="params-value">
-            <div
-              class="run-status"
-              :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
-              >
-              <i
-                v-if="run['status'] === ModelRunStatus.Submitted"
-                class="fa fa-fw fa-spinner"
-              />
-              <i
-                v-else
-                class="fa fa-fw fa-times-circle"
-              />
-            </div>
           </td>
         </tr>
       </table>
@@ -84,7 +87,7 @@ import { ModelRunStatus } from '@/types/Enums';
 import DurationFormatter from '@/formatters/duration-formatter';
 import { ModelRun } from '@/types/ModelRun';
 
-const OmittedColumns = ['run_id', 'created_at'];
+const OmittedColumns = ['run_id', 'created_at', 'status'];
 
 // TODO: add table header with interactivity to rank/re-order
 
@@ -165,6 +168,13 @@ export default defineComponent({
   .modal-body {
     height: 300px;
     overflow-y: scroll;
+  }
+}
+
+.status-contents {
+  display: flex;
+  label {
+    margin: auto 0;
   }
 }
 
