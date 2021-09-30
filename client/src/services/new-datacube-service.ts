@@ -185,7 +185,7 @@ export const getQualifierBreakdown = async (
   return data as QualifierBreakdownResponse[];
 };
 
-export const updateModelRun = async (modelRun: any) => {
+export const updateModelRun = async (modelRun: ModelRun) => {
   const result = await API.put('maas/model-runs', modelRun);
   return result.data;
 };

@@ -15,6 +15,7 @@
             :key="idx">
             <div class="params-header">{{ dim }}</div>
           </td>
+          <td class="params-header">time since execution</td>
           <td class="params-header">execution logs</td>
           <td class="params-header">retry</td>
           <td class="params-header">delete</td>
@@ -28,6 +29,9 @@
             :key="idx"
             class="params-value">
             <label>{{ run[dimName] }}</label>
+          </td>
+          <td class="params-value">
+            {{ getTimeSinceExecution(run) }}
           </td>
           <td class="params-value">
             <a :href=dojoExecutionLink(run.runId)>See Logs</a>
@@ -77,6 +81,8 @@ import { ScenarioData } from '@/types/Common';
 import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
+import DurationFormatter from '@/formatters/duration-formatter';
+import { ModelRun } from '@/types/ModelRun';
 
 const OmittedColumns = ['run_id', 'created_at'];
 
@@ -118,6 +124,7 @@ export default defineComponent({
     }
   },
   data: () => ({
+    currentTime: Date.now(),
     ModelRunStatus
   }),
   methods: {
@@ -129,6 +136,9 @@ export default defineComponent({
     },
     dojoExecutionLink(runId: string) {
       return `https://dojo-test.com/runs/${runId}/logs`;
+    },
+    getTimeSinceExecution(run: ModelRun) {
+      return DurationFormatter(this.currentTime - run.created_at);
     },
     withoutOmittedColumns(columns: string[]) {
       return columns.filter(column => !_.includes(OmittedColumns, column));
