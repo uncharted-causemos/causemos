@@ -560,6 +560,17 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
+    // If there are no default runs then set a run to default if it matches the default parameters
+    if (allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
+      const groupedParameters = _.groupBy(metadata.value.parameters, p => p.name);
+      const parameterDictionary = _.mapValues(groupedParameters, value => _.first(value.map(item => item.default)));
+      const newDefaultRun = allModelRunData.value.find(run => {
+        const runParameterDictionary = _.mapValues(_.groupBy(run.parameters, p => p.name), value => _.first(value.map(item => item.value)));
+        return Object.keys(parameterDictionary).every(p => runParameterDictionary[p] === parameterDictionary[p]);
+      });
+      if (newDefaultRun) newDefaultRun.is_default_run = true;
+    }
+
     const {
       dimensions,
       ordinalDimensionNames,
