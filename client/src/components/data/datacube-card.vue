@@ -879,6 +879,8 @@ export default defineComponent({
         const modelRunDeleted = _.cloneDeep(modelRun);
         modelRunDeleted.status = ModelRunStatus.Deleted;
         await updateModelRun(modelRunDeleted);
+        // This is done for responsiveness so that the user immediately knows when a run is deleted
+        this.runParameterValues = this.runParameterValues.filter(run => run.run_id === modelRun.run_id);
       }
     },
     async deleteRun() {

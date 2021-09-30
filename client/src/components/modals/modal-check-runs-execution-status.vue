@@ -15,7 +15,7 @@
             :key="idx">
             <div class="params-header">{{ dim }}</div>
           </td>
-          <td class="params-header">time since execution</td>
+          <td class="params-header">time requested</td>
           <td class="params-header">execution logs</td>
           <td class="params-header">retry</td>
           <td class="params-header">delete</td>
@@ -34,7 +34,7 @@
             {{ timeSinceExecutionFormatted(run) }}
           </td>
           <td class="params-value">
-            <a :href=dojoExecutionLink(run.runId)>See Logs</a>
+            <a :href=dojoExecutionLink(run.run_id)>See Logs</a>
           </td>
           <td class="params-value">
             <i v-if="canRetryDelete(run)" class="fa fa-repeat" @click="retryRun(run.run_id)"/>
@@ -138,7 +138,7 @@ export default defineComponent({
       return `https://dojo-test.com/runs/${runId}/logs`;
     },
     timeSinceExecutionFormatted(run: ModelRun) {
-      return DurationFormatter(this.timeSinceExecution(run));
+      return `${DurationFormatter(this.timeSinceExecution(run))} ago`;
     },
     timeSinceExecution(run: ModelRun) {
       return this.currentTime - run.created_at;
