@@ -31,7 +31,7 @@
             <label>{{ run[dimName] }}</label>
           </td>
           <td class="params-value">
-            {{ getTimeSinceExecution(run) }}
+            {{ timeSinceExecutionFormatted(run) }}
           </td>
           <td class="params-value">
             <a :href=dojoExecutionLink(run.runId)>See Logs</a>
@@ -129,7 +129,7 @@ export default defineComponent({
   }),
   methods: {
     canRetryDelete(run: any) {
-      return run.status === ModelRunStatus.ExecutionFailed || (run.created_at && Date.now() - run.created_at > 1000 * 60 * 60 * 48);
+      return run.status === ModelRunStatus.ExecutionFailed || (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
     },
     close() {
       this.$emit('close');
@@ -137,8 +137,11 @@ export default defineComponent({
     dojoExecutionLink(runId: string) {
       return `https://dojo-test.com/runs/${runId}/logs`;
     },
-    getTimeSinceExecution(run: ModelRun) {
-      return DurationFormatter(this.currentTime - run.created_at);
+    timeSinceExecutionFormatted(run: ModelRun) {
+      return DurationFormatter(this.timeSinceExecution(run));
+    },
+    timeSinceExecution(run: ModelRun) {
+      return this.currentTime - run.created_at;
     },
     withoutOmittedColumns(columns: string[]) {
       return columns.filter(column => !_.includes(OmittedColumns, column));
