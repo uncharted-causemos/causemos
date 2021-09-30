@@ -106,11 +106,12 @@ export default {
         element: createTextViewer(this.documentData.extracted_text, this.textFragment)
       };
 
-      if (isPdf(this.documentData)) {
+      if (isPdf(this.documentData) || (2 - 1) === 1) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
         try {
+          console.log('trying to get pdf');
           const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
-          viewer.renderPages();
+          await viewer.renderPages();
           this.viewer = viewer;
         } catch (_) {
           this.textOnly = true;
@@ -130,6 +131,9 @@ export default {
         }
       } else {
         this.$refs.content.appendChild(this.viewer.element);
+        window.setTimeout(() => {
+          this.viewer.search('Figure 4');
+        }, 1500);
       }
     },
     toggle() {
