@@ -1,5 +1,4 @@
 const express = require('express');
-const moment = require('moment');
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
 const router = express.Router();
@@ -67,7 +66,7 @@ router.put('/:projectId/metadata', asyncHandler(async (req, res) => {
 
   projectService.updateProject(projectId, payload);
 
-  const editTime = moment().valueOf();
+  const editTime = Date.now();
   res.status(200).send({ updateToken: editTime });
 }));
 
@@ -100,14 +99,14 @@ router.put('/:projectId', asyncHandler(async (req, res) => {
     projectService.bustProjectGraphCache(projectId);
   }
 
-  const editTime = moment().valueOf();
+  const editTime = Date.now();
   res.status(200).send({ updateToken: editTime });
 }));
 
 /* DELETE project */
 router.delete('/:projectId', asyncHandler(async (req, res) => {
   const projectId = req.params.projectId;
-  const timestamp = moment().valueOf();
+  const timestamp = Date.now();
   await projectService.deleteProject(projectId);
   res.status(200).send({ updateToken: timestamp });
 }));
@@ -239,7 +238,7 @@ router.get('/:projectId/ontology-definitions', asyncHandler(async (req, res) => 
 
 /* POST update belief score */
 router.post('/:projectId/update-belief-score', asyncHandler(async (req, res) => {
-  const modifiedAt = moment.utc().valueOf();
+  const modifiedAt = Date.now();
   const projectId = req.params.projectId;
   const project = get(projectId);
   const corpusId = project.corpus_id;
