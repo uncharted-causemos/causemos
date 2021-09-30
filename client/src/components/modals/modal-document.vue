@@ -55,13 +55,17 @@ const isPdf = (data) => {
   return fileType === 'pdf' || fileType === 'application/pdf';
 };
 
-const createTextViewer = (text) => {
+const createTextViewer = (text, textFragment) => {
   const el = document.createElement('div');
+  if (textFragment) {
+    text = text.replace(textFragment, `<strong class='anchor'>${textFragment}</strong>`);
+  }
   el.innerHTML = text;
   el.style.paddingTop = '30px';
   el.style.paddingLeft = '15px';
   el.style.paddingRight = '15px';
   el.style.paddingBottom = '15px';
+
   return el;
 };
 
@@ -74,6 +78,10 @@ export default {
     documentId: {
       type: String,
       required: true
+    },
+    textFragment: {
+      type: String,
+      default: null
     }
   },
   data: () => ({
@@ -95,7 +103,7 @@ export default {
       const url = `documents/${this.documentId}`;
       this.documentData = (await API.get(url)).data;
       this.textViewer = {
-        element: createTextViewer(this.documentData.extracted_text)
+        element: createTextViewer(this.documentData.extracted_text, this.textFragment)
       };
 
       if (isPdf(this.documentData)) {
@@ -114,6 +122,12 @@ export default {
       removeChildren(this.$refs.content);
       if (this.textOnly === true) {
         this.$refs.content.appendChild(this.textViewer.element);
+
+        const anchor = document.getElementsByClassName('anchor')[0];
+        if (anchor) {
+          const scroller = document.getElementsByClassName('modal-body')[0];
+          scroller.scrollTop = anchor.offsetTop - 100;
+        }
       } else {
         this.$refs.content.appendChild(this.viewer.element);
       }
