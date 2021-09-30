@@ -1,15 +1,4 @@
 <template>
-  <modal-confirmation
-    v-if="showDelete"
-    :autofocus-confirm="false"
-    @confirm="deleteRun"
-    @close="hideDeleteModal"
-  >
-    <template #title> DELETE MODEL RUN </template>
-    <template #message>
-      <p>Are you sure you want to delete this model run?</p>
-    </template>
-  </modal-confirmation>
   <div class="datacube-card-parent">
     <div class="datacube-card-container">
       <div class="capture-box">
@@ -363,6 +352,17 @@
       </div>
     </div>
   </div>
+  <modal-confirmation
+    v-if="showDelete"
+    :autofocus-confirm="false"
+    @confirm="deleteRun"
+    @close="hideDeleteModal"
+  >
+    <template #title> DELETE MODEL RUN </template>
+    <template #message>
+      <p>Are you sure you want to delete this model run?</p>
+    </template>
+  </modal-confirmation>
 </template>
 
 <script lang="ts">
@@ -890,11 +890,9 @@ export default defineComponent({
     },
     hideDeleteModal() {
       this.showDelete = false;
-      this.showModelRunsExecutionStatus = true;
     },
     showDeleteModal() {
       this.showDelete = true;
-      this.showModelRunsExecutionStatus = false;
     },
     async retryRun(runId: string) {
       const modelRun = this.getModelRunById(runId);
