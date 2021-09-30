@@ -550,7 +550,8 @@ export default defineComponent({
     } = useRegionalData(
       outputSpecs,
       breakdownOption,
-      datacubeHierarchy
+      datacubeHierarchy,
+      relativeTo
     );
 
     watchEffect(() => {
