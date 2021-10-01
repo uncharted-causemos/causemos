@@ -365,7 +365,7 @@ const startIndicatorPostProcessing = async (metadata) => {
 };
 
 /**
- * Update a datacube with the specified changes
+ * Update a model run  with the specified changes
  */
 const updateModelRun = async(modelRun) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
