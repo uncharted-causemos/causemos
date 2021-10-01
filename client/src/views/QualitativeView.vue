@@ -468,6 +468,7 @@ export default defineComponent({
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
         const relationsToAdd: SourceTargetPair[] = [];
 
+        // Search for all possible combinations of soruce/target
         source.components.forEach(source => {
           target.components.forEach(target => {
             relationsToAdd.push({ source, target });
@@ -496,35 +497,9 @@ export default defineComponent({
             target: target.concept,
             reference_ids: backingStatements
           };
-          console.log('new edge', newEdge);
           const data = await this.addCAGComponents([], [newEdge]);
           this.setUpdateToken(data.updateToken);
         }
-
-        // const edgeData = await projectService.getProjectStatementIdsByEdges(
-        //   this.project,
-        //   [edge],
-        //   filtersUtil.newFilters()
-        // );
-        // const formattedEdge = Object.assign(
-        //   { user_polarity: null, id: '' },
-        //   edge,
-        //   {
-        //     reference_ids: edgeData[edge.source + '///' + edge.target] || []
-        //   }
-        // );
-        // this.edgeToSelectOnNextRefresh = {
-        //   source: edge.source,
-        //   target: edge.target
-        // };
-        // if (formattedEdge.reference_ids.length === 0) {
-        //   this.showPathSuggestions = true;
-        //   this.pathSuggestionSource = formattedEdge.source;
-        //   this.pathSuggestionTarget = formattedEdge.target;
-        // } else {
-        //   const data = await this.addCAGComponents([], [formattedEdge]);
-        //   this.setUpdateToken(data.updateToken);
-        // }
       } else {
         // FIXME: We should allow partial cases
         this.toaster(
