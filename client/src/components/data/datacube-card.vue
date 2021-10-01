@@ -896,7 +896,7 @@ export default defineComponent({
     async retryRun(runId: string) {
       const modelRun = this.getModelRunById(runId);
       if (modelRun) {
-        createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters);
+        createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters, modelRun.is_default_run);
       }
       await this.deleteWithRun(modelRun);
     }

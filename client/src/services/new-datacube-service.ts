@@ -190,12 +190,13 @@ export const updateModelRun = async (modelRun: ModelRun) => {
   return result.data;
 };
 
-export const createModelRun = (model_id: string, model_name: string, parameters: any[]) => {
+export const createModelRun = (model_id: string, model_name: string, parameters: any[], is_default_run: boolean) => {
   // send the request to the server
   return API.post('maas/model-runs', {
     model_id,
     model_name,
-    parameters
+    parameters,
+    is_default_run
   });
 };
 
