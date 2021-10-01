@@ -66,7 +66,7 @@ import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
-import modelService from '@/services/model-service';
+import datacubeService from '@/services/new-datacube-service.ts';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
@@ -164,7 +164,7 @@ export default defineComponent({
             value: p.default
           });
         });
-        modelService.createModelRun(this.metadata.data_id, this.metadata?.name, paramArray);
+        datacubeService.createModelRun(this.metadata.data_id, this.metadata?.name, paramArray);
       });
       // wait until all promises are resolved
       await Promise.all(promises);

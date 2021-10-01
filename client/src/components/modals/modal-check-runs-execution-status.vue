@@ -6,7 +6,6 @@
       </div>
     </template>
     <template #body>
-      <a href="https://dojo-test.com/runs/{run_id}/logs">Execution Logs</a>
       <table class="table">
         <tr>
           <td class="params-header">ID</td>
@@ -23,7 +22,7 @@
         </tr>
         <tr
           v-for="(run, sidx) in potentialRuns"
-          :key="sidx">
+          :key="run.run_id">
           <td class="params-value">{{ sidx }}</td>
           <td class="params-value">
             <div class="status-contents">

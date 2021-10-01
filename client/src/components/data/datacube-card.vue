@@ -404,9 +404,8 @@ import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { colorFromIndex } from '@/utils/colors-util';
 import { isIndicator, isModel } from '@/utils/datacube-util';
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
-import { updateModelRun } from '@/services/new-datacube-service';
+import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
 import { Timeseries, TimeseriesPointSelection } from '@/types/Timeseries';
-import modelService from '@/services/model-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -897,7 +896,7 @@ export default defineComponent({
     async retryRun(runId: string) {
       const modelRun = this.getModelRunById(runId);
       if (modelRun) {
-        modelService.createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters);
+        createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters);
       }
       await this.deleteWithRun(modelRun);
     }
