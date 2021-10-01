@@ -443,8 +443,8 @@ export default defineComponent({
       }
       this.setDataState(dataState);
     },
-    async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[]) {
-      return modelService.addComponents(this.currentCAG, nodes, edges);
+    async addCAGComponents(nodes: NodeParameter[], edges: EdgeParameter[], updateType: string) {
+      return modelService.addComponents(this.currentCAG, nodes, edges, updateType);
     },
     async removeCAGComponents(
       nodes: { id: string }[],
@@ -497,7 +497,7 @@ export default defineComponent({
             target: target.concept,
             reference_ids: backingStatements
           };
-          const data = await this.addCAGComponents([], [newEdge]);
+          const data = await this.addCAGComponents([], [newEdge], 'manual');
           this.setUpdateToken(data.updateToken);
         }
       } else {
@@ -558,7 +558,7 @@ export default defineComponent({
       //  with an empty value
       const { model_id, concept, label, modified_at, parameter, components } = node;
       const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter, components };
-      const data = await this.addCAGComponents([cleanedNode], []);
+      const data = await this.addCAGComponents([cleanedNode], [], 'manual');
       this.setUpdateToken(data.updateToken);
     },
     async onModalConfirm() {
@@ -779,7 +779,7 @@ export default defineComponent({
         });
     },
     async onAddToCAG(subgraph: CAGGraphInterface) {
-      const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges);
+      const data = await this.addCAGComponents(subgraph.nodes, subgraph.edges, 'suggestion');
       this.setUpdateToken(data.updateToken);
     },
     async onRemoveRelationship(edges: EdgeParameter[]) {
@@ -883,7 +883,7 @@ export default defineComponent({
         };
       });
 
-      await this.addCAGComponents(nodes, edges);
+      await this.addCAGComponents(nodes, edges, 'merge');
 
       // Make sure the reference_ids are not stale
       this.recalculateCAG();
@@ -962,7 +962,7 @@ export default defineComponent({
           components: [concept]
         };
       });
-      const result = await this.addCAGComponents(newNodesPayload, newEdges);
+      const result = await this.addCAGComponents(newNodesPayload, newEdges, 'path');
       this.setUpdateToken(result.updateToken);
     },
     async resetCAGLayout() {
@@ -1023,7 +1023,7 @@ export default defineComponent({
       });
 
       // update and refresh
-      const data = await this.addCAGComponents(nodePayload, edgePayload);
+      const data = await this.addCAGComponents(nodePayload, edgePayload, 'curation');
       this.setUpdateToken(data.updateToken);
     },
     async renameNode(newName: string) {

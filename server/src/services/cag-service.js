@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 
@@ -46,7 +45,7 @@ const resolveComponents = async(modelId, resource, components) => {
     return doc.id;
   };
 
-  const modifiedAt = moment().valueOf();
+  const modifiedAt = Date.now();
   const updateList = [];
   const indexList = [];
 
@@ -131,7 +130,7 @@ const createCAG = async (modelFields, edges, nodes) => {
   const keyFn = (doc) => {
     return doc.id;
   };
-  const now = moment().valueOf();
+  const now = Date.now();
   const results = await CAGConnection.insert({
     id: CAGId,
     ...modelFields,
@@ -204,7 +203,7 @@ const updateCAGMetadata = async(modelId, modelFields) => {
       id: modelId,
       status: currentStatus,
       is_quantified: currentQuantified,
-      modified_at: moment().valueOf(),
+      modified_at: Date.now(),
       ...modelFields
     }, keyFn);
   }
@@ -313,7 +312,7 @@ const updateCAG = async(modelId, edges, nodes) => {
     id: modelId,
     is_quantified: false,
     status: MODEL_STATUS.UNSYNCED,
-    modified_at: moment().valueOf()
+    modified_at: Date.now()
   }, d => d.id);
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
@@ -342,7 +341,7 @@ const pruneCAG = async(modelId, edges, nodes) => {
     id: modelId,
     is_quantified: false,
     status: MODEL_STATUS.UNSYNCED,
-    modified_at: moment().valueOf()
+    modified_at: Date.now()
   }, d => d.id);
   if (results.errors) {
     throw new Error(JSON.stringify(results.items[0]));
@@ -484,7 +483,7 @@ const checkStaleCAGs = async (projectId, updatedStatementIds) => {
   if (_.isEmpty(staleModels)) return []; // nothing to do
 
   // 4) Mark CAGs as stale
-  const timestamp = moment().valueOf();
+  const timestamp = Date.now();
   const updatePayload = staleModels.map(id => {
     return {
       id: id,
@@ -516,7 +515,7 @@ const recalculateCAG = async (modelId) => {
 
 
   // Remove invalid reference_ids
-  const timestamp = moment().valueOf();
+  const timestamp = Date.now();
   const updatePayload = [];
   const promises = [];
 
