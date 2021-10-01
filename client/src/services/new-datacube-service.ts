@@ -186,11 +186,11 @@ export const getQualifierBreakdown = async (
 };
 
 export const updateModelRun = async (modelRun: ModelRun) => {
-  const result = await API.put('maas/model-runs', modelRun);
+  const result = await API.put(`maas/model-runs/${modelRun.id}`, modelRun);
   return result.data;
 };
 
-export const createModelRun = (model_id: string, model_name: string, parameters: any[], is_default_run: boolean) => {
+export const createModelRun = (model_id: string, model_name: string, parameters: any[], is_default_run: boolean | undefined = undefined) => {
   // send the request to the server
   return API.post('maas/model-runs', {
     model_id,
