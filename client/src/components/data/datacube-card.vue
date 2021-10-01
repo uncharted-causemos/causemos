@@ -570,6 +570,7 @@ export default defineComponent({
       });
       if (newDefaultRun) newDefaultRun.is_default_run = true;
     }
+    const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run));
 
     const {
       dimensions,
@@ -713,7 +714,7 @@ export default defineComponent({
       //
       // advance the relevant tour if it is active
       //
-      if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour')) {
+      if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour') && hasDefaultRun) {
         tour.value.next();
       }
     };
@@ -1093,6 +1094,7 @@ export default defineComponent({
       drilldownTabs: DRILLDOWN_TABS,
       getSelectedPreGenOutput,
       gridLayerStats,
+      hasDefaultRun,
       headerGroupButtons,
       isModelMetadata,
       isRelativeDropdownOpen,
