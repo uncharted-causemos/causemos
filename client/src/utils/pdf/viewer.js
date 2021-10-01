@@ -52,7 +52,7 @@ export async function createPDFViewer({ url, contentWidth = DEFAULT_WIDTH }) {
   const pdfDoc = await pdfjs.getDocument(url).promise;
   viewer.setDocument(pdfDoc);
   linkService.setViewer(viewer);
-  linkService.setDocument(document, null);
+  linkService.setDocument(pdfDoc, null);
 
   console.log('###');
   console.log(viewer);
@@ -70,6 +70,11 @@ export async function createPDFViewer({ url, contentWidth = DEFAULT_WIDTH }) {
     search(query) {
       console.log('search ...', query);
       findController.executeCommand('find', {
+        query: query,
+        phraseSearch: true
+      });
+      /*
+      findController.executeCommand('find', {
         caseSensitive: false,
         findPrevious: true,
         highlightAll: true,
@@ -77,63 +82,10 @@ export async function createPDFViewer({ url, contentWidth = DEFAULT_WIDTH }) {
         // phraseSearch: true,
         query: query
       });
+      */
     },
     element: container,
     async renderPages() {
     }
   };
-
-
-
-
-  /*
-  const container = document.createElement('div');
-  container.classList.add('pdf-viewer-container');
-  container.style.cssText = `
-    height: 100%;
-    background-color: #fff;
-    text-align: center;
-  `;
-
-  const fragment = document.createDocumentFragment();
-  const renderContexts = [];
-  const pagePromises = _.range(0, pdfDoc.numPages).map(num => pdfDoc.getPage(num + 1));
-  const pages = await Promise.all(pagePromises);
-
-  const firstPage = pages[0].getViewport({ scale: 1 });
-
-  const pageWidth = firstPage.width;
-  const pageHeight = firstPage.height;
-  const pageRatio = pageWidth / pageHeight;
-
-  const canvasWidth = contentWidth * window.devicePixelRatio;
-  const canvasHeight = Math.floor(canvasWidth / pageRatio) || 0;
-  const scale = canvasWidth / pageWidth;
-
-  pages.forEach(page => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const viewport = page.getViewport({ scale: scale });
-    canvas.height = canvasHeight;
-    canvas.width = canvasWidth;
-    canvas.style.cssText = `
-      width: ${contentWidth}px;
-      height: ${contentWidth / pageRatio}px;
-    `;
-    fragment.appendChild(canvas);
-    renderContexts.push({ page, ctx, viewport });
-  });
-
-  container.appendChild(fragment);
-
-  return {
-    element: container,
-    async renderPages() {
-      for (const context of renderContexts) {
-        const { ctx, page, viewport } = context;
-        await page.render({ canvasContext: ctx, viewport }).promise;
-      }
-    }
-  };
-  */
 }
