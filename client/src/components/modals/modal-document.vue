@@ -131,7 +131,7 @@ export default {
         }
       } else {
         this.$refs.content.appendChild(this.viewer.element);
-        this.viewer.search('Mozilla');
+        this.viewer.search('Overview');
       }
     },
     toggle() {

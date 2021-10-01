@@ -16,47 +16,31 @@ export async function createPDFViewer({ url, contentWidth = DEFAULT_WIDTH }) {
   ]);
   pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
 
-  console.log('pdfjs', pdfjs);
-  console.log('pdfviewer', PDFViewer);
   const container = document.createElement('div');
+  container.style.position = 'absolute';
+  container.style.overflow = 'auto';
+  container.style.width = '100%';
+  container.style.height = '100%';
+
   const pdfViewerElement = document.createElement('div');
   pdfViewerElement.classList = 'pdfViewer';
   container.appendChild(pdfViewerElement);
-  console.log('\tcontainer', container);
 
   const eventBus = new PDFViewer.EventBus();
-  console.log('\teventBus', eventBus);
 
   const linkService = new PDFViewer.PDFLinkService({ eventBus });
-  console.log('\tlinkService', linkService);
 
-  let findController;
-  try {
-    findController = new PDFViewer.PDFFindController({
-      eventBus: eventBus,
-      linkService
-    });
-    console.log('\t\t', findController);
-  } catch (err) {
-    console.log(err);
-  }
+  const findController = new PDFViewer.PDFFindController({
+    eventBus: eventBus,
+    linkService
+  });
 
-  let viewer;
-  try {
-    // viewer = new PDFViewer.PDFViewer({ container, eventBus, linkService });
-    viewer = new PDFViewer.PDFViewer({ container, eventBus, linkService, findController });
-  } catch (err) {
-    console.log(err);
-  }
+  const viewer = new PDFViewer.PDFViewer({ container, eventBus, linkService, findController });
 
   const pdfDoc = await pdfjs.getDocument(url).promise;
   viewer.setDocument(pdfDoc);
   linkService.setViewer(viewer);
   linkService.setDocument(pdfDoc, null);
-
-  console.log('###');
-  console.log(viewer);
-  console.log('###');
 
   eventBus.on('pagesinit', () => {
     console.log('ready??');
