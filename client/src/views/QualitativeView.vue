@@ -26,7 +26,7 @@
           @delete="onDelete"
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
-          @rename-node="renameNode"
+          @rename-node="openRenameModal"
         />
       </div>
       <drilldown-panel
@@ -162,6 +162,14 @@
       @add-paths="addSuggestedPath"
       @close="showPathSuggestions = false"
     />
+
+    <rename-modal
+      v-if="showModalRename"
+      @confirm="renameNode"
+      :modal-title="'Rename node'"
+      :current-name="renameNodeName"
+      @close="showModalRename = false"
+    />
   </div>
 </template>
 
@@ -170,6 +178,7 @@ import _ from 'lodash';
 import html2canvas from 'html2canvas';
 import { mapActions, mapGetters } from 'vuex';
 
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import ActionBar from '@/components/qualitative/action-bar.vue';
 import CAGGraph from '@/components/qualitative/CAG-graph.vue';
@@ -254,6 +263,7 @@ export default defineComponent({
     ModalImportCag,
     ModalImportConflict,
     ModalPathFind,
+    RenameModal,
     AnalyticalQuestionsAndInsightsPanel
   },
   setup() {
@@ -275,6 +285,11 @@ export default defineComponent({
     showModalConflict: false,
     showModalImportCAG: false,
     showPathSuggestions: false,
+
+    showModalRename: false,
+    renameNodeId: '',
+    renameNodeName: '',
+
 
     drilldownTabs: [] as { name: string; id: string }[],
     activeDrilldownTab: null as string | null,
@@ -451,31 +466,67 @@ export default defineComponent({
       );
 
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
+        const relationsToAdd: SourceTargetPair[] = [];
+
+        source.components.forEach(source => {
+          target.components.forEach(target => {
+            relationsToAdd.push({ source, target });
+          });
+        });
         const edgeData = await projectService.getProjectStatementIdsByEdges(
           this.project,
-          [edge],
+          relationsToAdd,
           filtersUtil.newFilters()
         );
-        const formattedEdge = Object.assign(
-          { user_polarity: null, id: '' },
-          edge,
-          {
-            reference_ids: edgeData[edge.source + '///' + edge.target] || []
-          }
-        );
-        this.edgeToSelectOnNextRefresh = {
-          source: edge.source,
-          target: edge.target
-        };
-        if (formattedEdge.reference_ids.length === 0) {
-          this.showPathSuggestions = true;
-          this.pathSuggestionSource = formattedEdge.source;
-          this.pathSuggestionTarget = formattedEdge.target;
+        console.log('edgedata', edgeData);
+
+        const backingStatements: string[] = _.uniq(_.flatten(Object.values(edgeData)));
+        console.log('backing statements', backingStatements);
+
+        if (backingStatements.length === 0) {
+          // FIXME: Initiates the path suggestions
+          // this.showPathSuggestions = true;
+          // this.pathSuggestionSource = formattedEdge.source;
+          // this.pathSuggestionTarget = formattedEdge.target;
         } else {
-          const data = await this.addCAGComponents([], [formattedEdge]);
+          const newEdge = {
+            id: '',
+            user_polarity: null,
+            source: source.concept,
+            target: target.concept,
+            reference_ids: backingStatements
+          };
+          console.log('new edge', newEdge);
+          const data = await this.addCAGComponents([], [newEdge]);
           this.setUpdateToken(data.updateToken);
         }
+
+        // const edgeData = await projectService.getProjectStatementIdsByEdges(
+        //   this.project,
+        //   [edge],
+        //   filtersUtil.newFilters()
+        // );
+        // const formattedEdge = Object.assign(
+        //   { user_polarity: null, id: '' },
+        //   edge,
+        //   {
+        //     reference_ids: edgeData[edge.source + '///' + edge.target] || []
+        //   }
+        // );
+        // this.edgeToSelectOnNextRefresh = {
+        //   source: edge.source,
+        //   target: edge.target
+        // };
+        // if (formattedEdge.reference_ids.length === 0) {
+        //   this.showPathSuggestions = true;
+        //   this.pathSuggestionSource = formattedEdge.source;
+        //   this.pathSuggestionTarget = formattedEdge.target;
+        // } else {
+        //   const data = await this.addCAGComponents([], [formattedEdge]);
+        //   this.setUpdateToken(data.updateToken);
+        // }
       } else {
+        // FIXME: We should allow partial cases
         this.toaster(
           this.ontologyFormatter(edge.source) +
             ' ' +
@@ -1000,9 +1051,16 @@ export default defineComponent({
       const data = await this.addCAGComponents(nodePayload, edgePayload);
       this.setUpdateToken(data.updateToken);
     },
-    async renameNode(node: NodeParameter) {
-      console.log('Renaming', node);
-      modelService.renameNode(this.currentCAG, node.id, Date.now() + '');
+    async renameNode(newName: string) {
+      console.log('Renaming', newName);
+      this.showModalRename = false;
+      await modelService.renameNode(this.currentCAG, this.renameNodeId, newName);
+      this.refresh();
+    },
+    openRenameModal(node: NodeParameter) {
+      this.showModalRename = true;
+      this.renameNodeId = node.id;
+      this.renameNodeName = node.concept;
     }
   }
 });

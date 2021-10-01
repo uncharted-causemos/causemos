@@ -569,7 +569,7 @@ class CAGRenderer extends BaseCAGRenderer {
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
         temporaryNewEdge = { sourceNode, targetNode };
 
-        this.options.newEdgeFn(sourceNode, targetNode);
+        this.options.newEdgeFn(sourceNode.data, targetNode.data);
       });
     handles.call(drag);
   }
@@ -706,7 +706,7 @@ class CAGRenderer extends BaseCAGRenderer {
       height: 30,
       width: 130,
       type: 'normal',
-      data: {},
+      data: { components: [] },
       nodes: []
     });
 
