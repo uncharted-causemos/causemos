@@ -64,12 +64,11 @@ const _facetPostProcess = (fields, facets) => {
 };
 
 /**
- * Return statement id
+ * Return unique id
  * @param {object} doc - object to insert/update to Elasticsearch
  */
-
 const _keyFn = (doc) => {
-  return doc.id;
+  return doc.matches_hash;
 };
 
 class Statement {

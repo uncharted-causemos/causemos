@@ -17,6 +17,7 @@ async function runStartup() {
   Logger.info(`\tTD_DATA_URL: ${process.env.TD_DATA_URL}`);
   Logger.info(`\tWM GO URL: ${process.env.WM_GO_URL}`);
   Logger.info(`\tPipeline URL: ${process.env.WM_PIPELINE_URL}`);
+  Logger.info(`\tQueue Service URL: ${process.env.WM_QUEUE_SERVICE_URL}`);
   Logger.info(`\tDELPHI_URL: ${process.env.DELPHI_URL}`);
   Logger.info(`\tDYSE_URL: ${process.env.DYSE_URL}`);
   Logger.info(`\tWM_CURATION_SERVICE_URL: ${process.env.WM_CURATION_SERVICE_URL}`);
