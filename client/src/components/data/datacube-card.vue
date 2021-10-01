@@ -1001,7 +1001,8 @@ export default defineComponent({
     } = useRegionalData(
       outputSpecs,
       breakdownOption,
-      datacubeHierarchy
+      datacubeHierarchy,
+      relativeTo
     );
 
     const {
@@ -1104,6 +1105,7 @@ export default defineComponent({
       qualifierBreakdownData,
       recalculateGridMapDiffStats,
       regionalData,
+      relativeTo,
       requestNewModelRuns,
       runParameterValues,
       selectedAdminLevel,
