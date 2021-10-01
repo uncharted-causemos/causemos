@@ -63,7 +63,7 @@ export default function useRegionalData(
   outputSpecs: Ref<OutputSpecWithId[]>,
   breakdownOption: Ref<string | null>,
   datacubeHierarchy: Ref<DatacubeGeography | null>,
-  realativeTo?: Ref<string | null>
+  relativeTo?: Ref<string | null>
 ) {
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
@@ -88,7 +88,7 @@ export default function useRegionalData(
     if (isCancelled) return;
 
     regionalData.value = breakdownOption.value === SpatialAggregationLevel.Region
-      ? applySplitByRegion(result, outputSpecs.value, (realativeTo && realativeTo.value))
+      ? applySplitByRegion(result, outputSpecs.value, (relativeTo && relativeTo.value))
       : result;
   });
 
