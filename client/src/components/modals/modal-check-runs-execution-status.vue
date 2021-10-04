@@ -26,7 +26,6 @@
           <td class="params-value">{{ sidx }}</td>
           <td class="params-value">
             <div class="status-contents">
-              <label>{{ run.status }}</label>
               <div
                 class="run-status"
                 :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
@@ -40,6 +39,7 @@
                   class="fa fa-fw fa-times-circle"
                 />
               </div>
+              <label>{{ run.status }}</label>
             </div>
           </td>
           <td v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
