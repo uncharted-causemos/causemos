@@ -169,6 +169,10 @@ export default defineComponent({
     title: {
       type: String,
       default: ''
+    },
+    previousAnnotation: {
+      type: Object,
+      default: undefined
     }
   },
   emits: ['auto-fill', 'cancel', 'save', 'update:description', 'update:name'],
@@ -176,7 +180,7 @@ export default defineComponent({
     drilldownTabs: METDATA_DRILLDOWN_TABS,
     errorMsg: MSG_EMPTY_INSIGHT_NAME,
     insightMetadata: '',
-    annotationState: undefined as MarkerAreaState | undefined,
+    markerAreaState: undefined as MarkerAreaState | undefined,
     markerArea: undefined as MarkerArea | undefined,
     cropArea: undefined as CropArea | undefined,
     cropState: undefined as CropAreaState | undefined,
@@ -188,7 +192,19 @@ export default defineComponent({
   watch: {
     imagePreview() {
       if (this.imagePreview !== null) {
-        this.originalImagePreview = this.imagePreview;
+        if (this.previousAnnotation) {
+          this.originalImagePreview = this.previousAnnotation.imagePreview;
+          this.markerAreaState = this.previousAnnotation.markerAreaState;
+          this.cropState = this.previousAnnotation.cropAreaState;
+          nextTick(() => {
+            const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
+            refAnnotatedImage.src = this.originalImagePreview;
+            this.annotateImage();
+            (this.markerArea as MarkerArea).startRenderAndClose();
+          });
+        } else {
+          this.originalImagePreview = this.imagePreview;
+        }
       }
     }
   },
@@ -202,7 +218,7 @@ export default defineComponent({
         this.cropArea.close();
       }
 
-      this.annotationState = undefined;
+      this.markerAreaState = undefined;
       this.cropState = undefined;
       this.lastCroppedImage = '';
       this.showCropInfoMessage = false;
@@ -255,15 +271,15 @@ export default defineComponent({
         refAnnotatedImage.src = dataUrl;
 
         // save state
-        this.annotationState = state;
+        this.markerAreaState = state;
       });
 
       // finally, call the show() method and marker.js UI opens
       this.markerArea.show();
 
       // if previous state is present - restore it
-      if (this.annotationState) {
-        this.markerArea.restoreState(this.annotationState);
+      if (this.markerAreaState) {
+        this.markerArea.restoreState(this.markerAreaState);
       }
     },
     cropImage() {
@@ -365,7 +381,13 @@ export default defineComponent({
       this.$emit('cancel');
     },
     save() {
-      this.$emit('save');
+      const refFinalImage = this.$refs.finalImagePreview as HTMLImageElement;
+      this.$emit('save', {
+        annotatedImagePreview: refFinalImage.src,
+        croppedNonAnnotatedImagePreview: this.lastCroppedImage !== '' ? this.lastCroppedImage : this.originalImagePreview,
+        markerAreaState: this.markerAreaState,
+        cropState: this.cropState
+      });
     },
     updateName(event: any) {
       this.$emit('update:name', event.target.value);

@@ -5,10 +5,11 @@
     :has-error="hasError"
     :image-preview="imagePreview"
     :metadata-details="metadataDetails"
+    :previous-annotation="annotationState"
     :is-new-insight="false"
     title="Edit Insight"
     @cancel="closeInsight()"
-    @save="saveInsight()"
+    @save="saveInsight"
   />
 </template>
 
@@ -30,7 +31,8 @@ export default {
     hasError: false,
     imagePreview: null,
     metadata: '',
-    name: ''
+    name: '',
+    annotationState: undefined
   }),
   computed: {
     ...mapGetters({
@@ -80,11 +82,20 @@ export default {
       this.description = '';
       this.hasError = false;
     },
-    async saveInsight() {
+    getAnnotatedState(eventData) {
+      return !eventData ? undefined : {
+        markerAreaState: eventData.markerAreaState,
+        cropAreaState: eventData.cropState,
+        imagePreview: eventData.croppedNonAnnotatedImagePreview
+      };
+    },
+    async saveInsight(eventData) {
       if (this.hasError || _.isEmpty(this.name) || this.updatedInsight === '') return;
       const updatedInsight = this.updatedInsight;
       updatedInsight.name = this.name;
       updatedInsight.description = this.description;
+      updatedInsight.thumbnail = eventData ? eventData.annotatedImagePreview : updatedInsight.thumbnail;
+      updatedInsight.annotation_state = this.getAnnotatedState(eventData);
       updateInsight(this.updatedInsight.id, updatedInsight)
         .then((result) => {
           if (result.updated === 'success') {
@@ -107,6 +118,7 @@ export default {
     this.name = this.updatedInsight.name;
     this.description = this.updatedInsight.description;
     this.imagePreview = this.updatedInsight.thumbnail;
+    this.annotationState = this.updatedInsight.annotation_state;
   }
 };
 </script>

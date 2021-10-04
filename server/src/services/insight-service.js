@@ -28,7 +28,9 @@ const createInsight = async (
   analytical_question,
   thumbnail,
   viewState,
-  dataState) => {
+  dataState,
+  // eslint-disable-next-line camelcase
+  annotation_state) => {
   const newId = uuid();
   Logger.info('Creating insight entry: ' + newId);
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
@@ -51,7 +53,8 @@ const createInsight = async (
     analytical_question: analytical_question,
     thumbnail,
     view_state: viewState,
-    data_state: dataState
+    data_state: dataState,
+    annotation_state: annotation_state
   }, keyFn);
 
   // Acknowledge success

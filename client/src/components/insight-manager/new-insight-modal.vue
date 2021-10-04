@@ -8,7 +8,7 @@
     title="New Insight"
     @auto-fill="autofillInsight()"
     @cancel="closeInsight()"
-    @save="saveInsight()"
+    @save="saveInsight"
   />
 </template>
 
@@ -111,7 +111,14 @@ export default {
 
       this.description = this.formattedFilterString.length > 0 ? `Filters: ${this.formattedFilterString} ` : '';
     },
-    async saveInsight() {
+    getAnnotatedState(eventData) {
+      return !eventData ? undefined : {
+        markerAreaState: eventData.markerAreaState,
+        cropAreaState: eventData.cropState,
+        imagePreview: eventData.croppedNonAnnotatedImagePreview
+      };
+    },
+    async saveInsight(eventData) {
       if (this.hasError || _.isEmpty(this.name)) return;
       const url = this.$route.fullPath;
       const newInsight = {
@@ -126,7 +133,8 @@ export default {
         post_actions: null,
         is_default: true,
         analytical_question: [],
-        thumbnail: this.imagePreview,
+        thumbnail: eventData ? eventData.annotatedImagePreview : this.imagePreview,
+        annotation_state: this.getAnnotatedState(eventData),
         view_state: this.viewState,
         data_state: this.dataState
       };
