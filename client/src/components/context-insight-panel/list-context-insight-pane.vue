@@ -154,13 +154,22 @@ export default {
       countContextInsights: 'contextInsightPanel/countContextInsights',
       projectType: 'app/projectType',
       project: 'app/project',
-      analysisId: 'dataAnalysis/analysisId'
+      analysisId: 'dataAnalysis/analysisId',
+      shouldRefetchInsights: 'contextInsightPanel/shouldRefetchInsights'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
       const projectModifiedDate = new Date(this.projectMetadata.modified_at);
       return `Project: ${this.projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
         `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
+    }
+  },
+  watch: {
+    shouldRefetchInsights() {
+      if (this.shouldRefetchInsights) {
+        // refresh the latest list from the server
+        this.reFetchInsights();
+      }
     }
   },
   mounted() {
