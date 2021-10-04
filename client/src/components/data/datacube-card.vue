@@ -635,15 +635,6 @@ export default defineComponent({
       }
     }
 
-    if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-      if (initialDataConfig.value.selectedRegionIds !== undefined) {
-        initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
-      }
-      if (initialDataConfig.value.selectedQualifierValues !== undefined) {
-        initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
-      }
-    }
-
     const clearRouteParam = () => {
       // fix to avoid double history later
       router.push({
@@ -680,6 +671,18 @@ export default defineComponent({
         updateTabView('description');
       }
     };
+
+    if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+      if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+        setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
+      }
+      if (initialDataConfig.value.selectedRegionIds !== undefined) {
+        initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+      }
+      if (initialDataConfig.value.selectedQualifierValues !== undefined) {
+        initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+      }
+    }
 
     const clickData = (tab: string) => {
       // FIXME: This code to select a model run when switching to the data tab
