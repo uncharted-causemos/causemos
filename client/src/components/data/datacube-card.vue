@@ -40,8 +40,8 @@
               v-if="!hasDefaultRun"
               class="btn toggle-new-runs-button"
               :class="{
-                'btn-primary btn-call-for-action': !newRunsMode,
-                'btn-default': newRunsMode
+                'btn-primary btn-call-for-action': !runningDefaultRun,
+                'btn-default': runningDefaultRun
               }"
               @click="createRunWithDefaults()"
             >
