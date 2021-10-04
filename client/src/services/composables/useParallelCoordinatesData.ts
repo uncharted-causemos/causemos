@@ -25,7 +25,7 @@ export default function useParallelCoordinatesData(
     }
     const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
     const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
-    return allModelRunData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted).map(modelRun => {
+    return allModelRunData.value.map(modelRun => {
       const run_id = modelRun.id;
       const runStatus = modelRun.status;
       const created_at = modelRun.created_at;
