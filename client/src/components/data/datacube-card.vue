@@ -37,6 +37,17 @@
               @generated-scenarios="updateGeneratedScenarios"
             />
             <button
+              v-if="!hasDefaultRun"
+              class="btn toggle-new-runs-button"
+              :class="{
+                'btn-primary btn-call-for-action': !newRunsMode,
+                'btn-default': newRunsMode
+              }"
+              @click="createRunWithDefaults()"
+            >
+              {{ runningDefaultRun ? 'Running' : defaultRunButtonCaption }}
+            </button>
+            <button
               class="btn toggle-new-runs-button"
               :class="{
                 'btn-primary btn-call-for-action': !newRunsMode,
@@ -436,6 +447,10 @@ import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import API from '@/api/api';
+import useToaster from '@/services/composables/useToaster';
+
+const defaultRunButtonCaption = 'Request run with default parameters';
 
 const DRILLDOWN_TABS = [
   {
@@ -511,6 +526,29 @@ export default defineComponent({
     SmallTextButton,
     timeseriesChart
   },
+  methods: {
+    // TODO: Refactor this to use the function for creating model runs.
+    async createRunWithDefaults() {
+      // send the request to the server
+      const metadata = this.metadata;
+      this.runningDefaultRun = true;
+      try {
+        if (metadata && isModel(metadata)) {
+          await API.post('maas/model-runs', {
+            model_id: metadata.data_id,
+            model_name: metadata?.name,
+            parameters: metadata.parameters
+          });
+        }
+      } catch (e) {
+        this.toaster('Run failed', 'error', true);
+      }
+      this.runningDefaultRun = false;
+    }
+  },
+  data: () => ({
+    runningDefaultRun: false
+  }),
   setup(props, { emit }) {
     const timeInterval = 10000;
     const store = useStore();
@@ -693,29 +731,34 @@ export default defineComponent({
       }
     };
 
+    const toaster = useToaster();
     const clickData = (tab: string) => {
-      // FIXME: This code to select a model run when switching to the data tab
-      // should be in a watcher on the parent component to be more robust,
-      // rather than in this button's click handler.
+      if (hasDefaultRun.value || (metadata.value && isIndicator(metadata.value))) {
+        // FIXME: This code to select a model run when switching to the data tab
+        // should be in a watcher on the parent component to be more robust,
+        // rather than in this button's click handler.
 
-      if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
-        // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
-        const readyRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
-        if (readyRuns.length === 0) {
-          console.warn('cannot find a baseline model run indicated by the is_default_run');
-          // failed to find baseline using the 'is_default_run' flag
-          // FIXME: so, try to find a model run that has values matching the default values of all inputs
+        if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
+          // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
+          const readyRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
+          if (readyRuns.length === 0) {
+            console.warn('cannot find a baseline model run indicated by the is_default_run');
+            // failed to find baseline using the 'is_default_run' flag
+            // FIXME: so, try to find a model run that has values matching the default values of all inputs
+          }
+          const newIds = readyRuns.map(run => run.id).slice(0, 1);
+          setSelectedScenarioIds(newIds);
         }
-        const newIds = readyRuns.map(run => run.id).slice(0, 1);
-        setSelectedScenarioIds(newIds);
-      }
 
-      updateTabView(tab);
-      //
-      // advance the relevant tour if it is active
-      //
-      if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour') && hasDefaultRun) {
-        tour.value.next();
+        updateTabView(tab);
+        //
+        // advance the relevant tour if it is active
+        //
+        if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour')) {
+          tour.value.next();
+        }
+      } else {
+        toaster(`At least one run must match the default parameters. Click "${defaultRunButtonCaption}"`, 'error', true);
       }
     };
 
@@ -1090,6 +1133,7 @@ export default defineComponent({
       colorFromIndex,
       currentTabView,
       dataPaths,
+      defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
       getSelectedPreGenOutput,
@@ -1149,6 +1193,7 @@ export default defineComponent({
       TemporalAggregationLevel,
       temporalBreakdownData,
       timerHandler,
+      toaster,
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
