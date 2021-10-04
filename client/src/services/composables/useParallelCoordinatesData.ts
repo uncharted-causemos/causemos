@@ -25,17 +25,17 @@ export default function useParallelCoordinatesData(
     }
     const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
     const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
-    return allModelRunData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted).map((modelRun, runIndex) => {
-      const run_id = allModelRunData.value[runIndex].id;
-      const runStatus = allModelRunData.value[runIndex].status;
-      const created_at = allModelRunData.value[runIndex].created_at;
+    return allModelRunData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted).map(modelRun => {
+      const run_id = modelRun.id;
+      const runStatus = modelRun.status;
+      const created_at = modelRun.created_at;
       const run: ScenarioData = {
         created_at,
         run_id,
         status: runStatus ?? ModelRunStatus.Ready
       };
       if (run.status === ModelRunStatus.Ready) {
-        const currRunData = allModelRunData.value[runIndex];
+        const currRunData = modelRun;
         const outputValue = currRunData.output_agg_values.find(val => val.name === outputParameterName);
         if (outputValue) {
           run[outputParameterName] = outputValue.value;
