@@ -10,7 +10,7 @@ import { ModelRunStatus } from '@/types/Enums';
  * returns the metadata for each scenario in one list.
  */
 export default function useScenarioData(
-  dataId: Ref<string>,
+  dataId: Ref<string | null>,
   modelRunsFetchedAt: Ref<number>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
@@ -19,7 +19,7 @@ export default function useScenarioData(
     console.log('refetching scenario-data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function fetchRunData() {
-      if (dataId.value === null || dataId.value === undefined) return;
+      if (dataId.value === null) return;
       const newMetadata = await getModelRunMetadata(dataId.value);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the

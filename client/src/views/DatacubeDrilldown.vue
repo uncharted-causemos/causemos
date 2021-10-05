@@ -8,7 +8,7 @@
         <datacube-card
           :class="{ 'datacube-expanded': true }"
           :initial-data-config="initialDataConfig"
-          :initial-selected-model-id="selectedModelId"
+          :metadata="metadata"
           :initial-view-config="initialViewConfig"
           :spatial-aggregation-options="aggregationOptionFiltered"
           :temporal-aggregation-options="aggregationOptionFiltered"
