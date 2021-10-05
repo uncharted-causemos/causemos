@@ -50,7 +50,7 @@
               :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
           </td>
-          <td style="padding-right: 0">
+          <td style="padding-right: 0; padding-left: 0; display: flex; flex-direction: column">
             <div class="checkbox">
               <label
                 @click="updateInputKnobVisibility(param)"
@@ -59,16 +59,7 @@
                   class="fa fa-lg fa-fw"
                   :class="{ 'fa-check-square-o': param.is_visible, 'fa-square-o': !param.is_visible }"
                 />
-                Visibility
-              </label>
-            </div>
-            <div class="checkbox">
-              <label>
-                <i
-                  class="fa fa-lg fa-fw"
-                  :class="{ 'fa-check-square-o': param.data_type === ModelParameterDataType.Freeform, 'fa-square-o': param.data_type !== ModelParameterDataType.Freeform }"
-                />
-                Freeform
+                Visible
               </label>
             </div>
             <button
@@ -76,7 +67,7 @@
               type="button"
               class="btn btn-link edit-choices"
               @click="editParamChoices(param)">
-              Rename Choices
+              Edit Options
             </button>
           </td>
         </tr>
@@ -127,7 +118,7 @@
               :class="{ 'attribute-invalid': !isValid(param.description) }"
             />
           </td>
-          <td style="padding-right: 0">
+          <td style="padding-right: 0; padding-left: 0">
             <div class="checkbox">
               <label
                 @click="updateOutputVisibility(param)"
@@ -136,7 +127,7 @@
                   class="fa fa-lg fa-fw"
                   :class="{ 'fa-check-square-o': param.is_visible, 'fa-square-o': !param.is_visible }"
                 />
-                Visibility
+                Visible
               </label>
             </div>
           </td>
@@ -149,7 +140,6 @@
           <tr>
               <th class="name-col">Qualifiers</th>
               <th class="desc-col">Description</th>
-              <th class="additional-col"></th>
           </tr>
       </thead>
       <tbody v-if="metadata && qualifiers">
@@ -171,22 +161,16 @@
               placeholder="unit"
               :class="{ 'attribute-invalid': !isValid(qualifier.unit) }"
             >
-            <div>Related Features</div>
-            <select disabled ame="related_features" id="related_features">
-              <option
-                v-for="relatedFeature in qualifier.related_features"
-                :key="relatedFeature"
-              >{{relatedFeature}}</option>
-            </select>
           </td>
           <td>
             <textarea
               v-model="qualifier.description"
               type="text"
-              rows="3"
+              rows="2"
               class="model-attribute-desc"
               :class="{ 'attribute-invalid': !isValid(qualifier.description) }"
             />
+            <!--
             <div class="checkbox">
               <label
                 @click="updateDrilldownVisibility(qualifier)"
@@ -195,10 +179,12 @@
                   class="fa fa-lg fa-fw"
                   :class="{ 'fa-check-square-o': qualifier.is_visible, 'fa-square-o': !qualifier.is_visible }"
                 />
-                Visibility
+                Visible
               </label>
             </div>
+            -->
           </td>
+          <!--
           <td>
             <div>Role</div>
             <div
@@ -221,6 +207,7 @@
                 </div>
             </div>
           </td>
+          -->
         </tr>
       </tbody>
     </table>
@@ -234,6 +221,7 @@ import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/type
 import { mapActions, useStore } from 'vuex';
 import { FeatureQualifierRoles, ModelParameterDataType } from '@/types/Enums';
 import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.vue';
+import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 
 export default defineComponent({
   name: 'ModelDescription',
@@ -295,7 +283,7 @@ export default defineComponent({
     },
     qualifiers(): Array<any> {
       // includes both drilldown-inputs and output-qualifiers
-      const qualifiers = [];
+      let qualifiers = [];
       // first, add actual output qualifiers
       qualifiers.push(...this.metadata?.qualifier_outputs ?? []);
       // then, add all drilldown params as qualifiers
@@ -314,6 +302,8 @@ export default defineComponent({
         }
       });
       qualifiers.push(...drilldownParams);
+      // hide implicit qualifiers, e.g., admin1, admin2, lat, lng, etc.
+      qualifiers = qualifiers.filter(q => !QUALIFIERS_TO_EXCLUDE.includes(q.name));
       return qualifiers;
     }
   },
@@ -380,9 +370,9 @@ export default defineComponent({
         return;
       }
       let isValid = true;
-      const invalidInputs = this.inputParameters.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
-      const invalidOutputs = this.outputVariables.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
-      const outputQualifiers = this.qualifiers.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.unit) || !this.isValid(p.description));
+      const invalidInputs = this.inputParameters.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.description));
+      const invalidOutputs = this.outputVariables.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.description));
+      const outputQualifiers = this.qualifiers.filter((p: any) => !this.isValid(p.display_name) || !this.isValid(p.description));
 
       if (invalidInputs.length > 0 || invalidOutputs.length > 0 || outputQualifiers.length > 0) {
         isValid = false;
@@ -442,11 +432,11 @@ export default defineComponent({
 }
 
 .desc-col {
-  width: 60%
+  width: 70%
 }
 
 .additional-col {
-  width: 20%
+  width: 10%
 }
 
 .role-list {
@@ -540,10 +530,8 @@ table.model-table thead tr th {
 }
 
 .edit-choices {
-  padding-top: 0;
-  padding-bottom: 0;
-  margin-bottom: 0;
-  margin-top: 0;
+  padding: 0;
+  margin: 0;
   color: black;
 }
 

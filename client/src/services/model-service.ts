@@ -674,7 +674,6 @@ const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
   });
 };
 
-
 export default {
   getProjectModels,
   getSummary,

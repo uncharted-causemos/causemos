@@ -91,7 +91,8 @@ export default {
       setCountInsights: 'insightPanel/setCountInsights',
       setCurrentPane: 'insightPanel/setCurrentPane',
       hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
-      setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane'
+      setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane',
+      setRefetchInsights: 'contextInsightPanel/setRefetchInsights'
     }),
     closeInsight() {
       this.hideInsightPanel();
@@ -140,6 +141,7 @@ export default {
           } else {
             this.toaster(message, 'error', true);
           }
+          this.setRefetchInsights(true);
           this.closeInsight();
           this.initInsight();
           // also hide the context insight panel if opened, to force refresh upon re-open

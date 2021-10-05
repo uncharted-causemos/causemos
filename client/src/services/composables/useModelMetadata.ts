@@ -9,14 +9,19 @@ import _ from 'lodash';
  * Takes an id then fetches and returns the metadata associated
  * with that model/indicator.
  */
-export default function useModelMetadata(id: Ref<string | null>): Ref<Model | Indicator | null> {
+export default function useModelMetadata(
+  id: Ref<string | null>,
+  modelFetchTimestamp?: Ref<number>): Ref<Model | Indicator | null> {
   const metadata = ref<Model | Indicator | null>(null);
 
   watchEffect(onInvalidate => {
     metadata.value = null;
     let isCancelled = false;
+    if (modelFetchTimestamp) {
+      console.log('re-constructing model metadata at: ' + new Date(modelFetchTimestamp.value).toTimeString());
+    }
     async function fetchMetadata() {
-      if (id.value === null || id.value === '') return;
+      if (id.value === null || id.value === undefined || id.value === '') return;
       const rawMetadata: Model | Indicator = await getDatacubeById(id.value);
       if (isCancelled) {
         // Dependencies have changed since the fetch started, so ignore the

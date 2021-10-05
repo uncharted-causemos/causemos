@@ -22,7 +22,10 @@
           v-if="isModelMetadata & showModelRunsExecutionStatus === true"
           :metadata="metadata"
           :potential-scenarios="runParameterValues"
-          @close="showModelRunsExecutionStatus = false" />
+          @close="showModelRunsExecutionStatus = false"
+          @delete="prepareDelete"
+          @retry="retryRun"
+        />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
@@ -378,11 +381,22 @@
       </div>
     </div>
   </div>
+  <modal-confirmation
+    v-if="showDelete"
+    :autofocus-confirm="false"
+    @confirm="deleteRun"
+    @close="hideDeleteModal"
+  >
+    <template #title> DELETE MODEL RUN </template>
+    <template #message>
+      <p>Are you sure you want to delete this model run?</p>
+    </template>
+  </modal-confirmation>
 </template>
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, toRefs, computed, watch, watchEffect, Ref } from 'vue';
+import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 
@@ -395,6 +409,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import Modal from '@/components/modals/modal.vue';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -405,7 +420,6 @@ import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import useQualifiers from '@/services/composables/useQualifiers';
@@ -425,7 +439,7 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
-import { DatacubeFeature } from '@/types/Datacube';
+import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
@@ -436,6 +450,7 @@ import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
 
 const DRILLDOWN_TABS = [
   {
@@ -477,9 +492,9 @@ export default defineComponent({
       type: Object as PropType<TemporalResolutionOption>,
       default: TemporalResolutionOption.Month
     },
-    initialSelectedModelId: {
-      type: String,
-      default: ''
+    metadata: {
+      type: Object as PropType<Model | Indicator | null>,
+      default: null
     },
     spatialAggregationOptions: {
       type: Array as PropType<AggregationOption[]>,
@@ -505,6 +520,7 @@ export default defineComponent({
     MapLegend,
     Modal,
     ModalCheckRunsExecutionStatus,
+    ModalConfirmation,
     ModalNewScenarioRuns,
     ParallelCoordinatesChart,
     RadioButtonGroup,
@@ -521,7 +537,7 @@ export default defineComponent({
       defaultTemporalResolution,
       initialDataConfig,
       initialViewConfig,
-      initialSelectedModelId
+      metadata
     } = toRefs(props);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -543,7 +559,6 @@ export default defineComponent({
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
-    const selectedModelId = ref(initialSelectedModelId.value);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
     const selectedSpatialAggregation = ref<AggregationOption>(defaultSpatialAggregation.value);
@@ -551,8 +566,10 @@ export default defineComponent({
     const selectedTemporalResolution = ref<TemporalResolutionOption>(defaultTemporalResolution.value);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-    const metadata = useModelMetadata(selectedModelId);
     const modelRunsFetchedAt = ref(0);
+
+    // we are receiving metadata from above (i.e. consumers) and we should not be setting a new model-id here at this level
+    const selectedModelId = computed(() => metadata.value?.id ?? null);
 
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
@@ -635,15 +652,6 @@ export default defineComponent({
       }
     }
 
-    if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-      if (initialDataConfig.value.selectedRegionIds !== undefined) {
-        initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
-      }
-      if (initialDataConfig.value.selectedQualifierValues !== undefined) {
-        initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
-      }
-    }
-
     const clearRouteParam = () => {
       // fix to avoid double history later
       router.push({
@@ -680,6 +688,18 @@ export default defineComponent({
         updateTabView('description');
       }
     };
+
+    if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+      if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+        setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
+      }
+      if (initialDataConfig.value.selectedRegionIds !== undefined) {
+        initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+      }
+      if (initialDataConfig.value.selectedQualifierValues !== undefined) {
+        initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+      }
+    }
 
     const clickData = (tab: string) => {
       // FIXME: This code to select a model run when switching to the data tab
@@ -867,7 +887,10 @@ export default defineComponent({
         // FIXME: the order of resetting the state is important
         if (loadedInsight.data_state?.selectedModelId) {
           // this will reload datacube metadata as well as scenario runs
-          selectedModelId.value = loadedInsight.data_state?.selectedModelId;
+          // NOTE: emit an event to the parent to reset the model metadata based on the new ID
+          //  Seems to be not needed anymore since applying an insight also involves passing the datacube_id as a query param
+          //  but will leave old code here for reference
+          // selectedModelId.value = loadedInsight.data_state?.selectedModelId;
         }
         if (loadedInsight.data_state?.selectedScenarioIds) {
           // this would only be valid and effective if/after datacube runs are reloaded
@@ -1064,12 +1087,6 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    watch(initialSelectedModelId, (curr, prev) => {
-      if (!_.isEqual(curr, prev)) {
-        selectedModelId.value = initialSelectedModelId.value;
-      }
-    });
-
     return {
       allModelRunData,
       activeDrilldownTab,
@@ -1081,6 +1098,7 @@ export default defineComponent({
       dataPaths,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
+      fetchData,
       getSelectedPreGenOutput,
       gridLayerStats,
       headerGroupButtons,
@@ -1091,7 +1109,6 @@ export default defineComponent({
       mapLegendData,
       mapReady,
       mapSelectedLayer,
-      metadata,
       newRunsMode,
       onMapLoad,
       onNewScenarioRunsModalClose,
@@ -1170,6 +1187,46 @@ export default defineComponent({
   unmounted() {
     disableConcurrentTileRequestsCaching();
     clearInterval(this.timerHandler);
+  },
+  data: () => ({
+    idToDelete: '',
+    showDelete: false
+  }),
+  methods: {
+    getModelRunById(runId: string) {
+      return this.allModelRunData.find(runData => runData.id === runId);
+    },
+    prepareDelete(runId: string) {
+      this.idToDelete = runId;
+      this.showDeleteModal();
+    },
+    async deleteWithRun(modelRun: any) {
+      if (modelRun) {
+        const modelRunDeleted = _.cloneDeep(modelRun);
+        modelRunDeleted.status = ModelRunStatus.Deleted;
+        await updateModelRun(modelRunDeleted);
+        // This is done for responsiveness so that the user immediately knows when a run is deleted
+        this.fetchData();
+      }
+    },
+    async deleteRun() {
+      const modelRun = this.getModelRunById(this.idToDelete);
+      await this.deleteWithRun(modelRun);
+      this.hideDeleteModal();
+    },
+    hideDeleteModal() {
+      this.showDelete = false;
+    },
+    showDeleteModal() {
+      this.showDelete = true;
+    },
+    async retryRun(runId: string) {
+      const modelRun = this.getModelRunById(runId);
+      if (modelRun) {
+        createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters, modelRun.is_default_run);
+      }
+      await this.deleteWithRun(modelRun);
+    }
   }
 });
 </script>
