@@ -607,7 +607,7 @@ export default defineComponent({
       if (newDefaultRun) newDefaultRun.is_default_run = true;
     }
     const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
-
+    const canClickDataTab = computed(() => hasDefaultRun.value || (metadata.value && isIndicator(metadata.value)));
     const {
       dimensions,
       ordinalDimensionNames,
@@ -705,7 +705,9 @@ export default defineComponent({
         // selecting a run or multiple runs when the desc tab is active should always open the data tab
         //  selecting a run or multiple runs otherwise should respect the current tab
         if (currentTabView.value === 'description') {
-          updateTabView('data');
+          if (canClickDataTab.value) {
+            updateTabView('data');
+          }
         }
         // once the list of selected scenario changes,
         // extract model runs that match the selected scenario IDs
@@ -734,7 +736,7 @@ export default defineComponent({
     }
 
     const clickData = (tab: string) => {
-      if (hasDefaultRun.value || (metadata.value && isIndicator(metadata.value))) {
+      if (canClickDataTab.value) {
         // FIXME: This code to select a model run when switching to the data tab
         // should be in a watcher on the parent component to be more robust,
         // rather than in this button's click handler.
