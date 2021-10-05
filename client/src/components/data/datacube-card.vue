@@ -605,6 +605,7 @@ export default defineComponent({
       });
       if (newDefaultRun) {
         await updateModelRun({ id: newDefaultRun.id, is_default_run: newDefaultRun.is_default_run });
+        fetchData();
       }
     }
     const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
