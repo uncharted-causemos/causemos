@@ -600,7 +600,7 @@ export default defineComponent({
     if (allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
       const parameterDictionary = _.mapValues(_.keyBy(metadata.value.parameters, 'name'), 'default');
       const newDefaultRun = allModelRunData.value.find(run => {
-        const runParameterDictionary = _.mapValues(_.groupBy(run.parameters, p => p.name), value => _.first(value.map(item => item.value)));
+        const runParameterDictionary = _.mapValues(_.keyBy(run.parameters, 'name'), 'value');
         return Object.keys(parameterDictionary).every(p => runParameterDictionary[p] === parameterDictionary[p]);
       });
       if (newDefaultRun) newDefaultRun.is_default_run = true;
