@@ -50,17 +50,33 @@ export default function useParallelCoordinatesData(
     });
   });
 
+  const inputDimensions = computed(() => {
+    if (metadata.value !== null && isModel(metadata.value)) {
+      return metadata.value.parameters;
+    }
+    return [];
+  });
+
+  const outputDimension = computed(() => {
+    if (metadata.value === null || !isModel(metadata.value)) {
+      return undefined;
+    }
+    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+    // Restructure the output parameter
+    const outputDimension = outputs[currentOutputIndex.value];
+    if (outputDimension === undefined) {
+      console.warn('Missing output!', metadata.value);
+      return undefined;
+    }
+    return outputs[currentOutputIndex.value];
+  });
+
   const dimensions = computed(() => {
     if (metadata.value === null || !isModel(metadata.value)) {
       return [];
     }
-    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-
-    // Restructure the output parameter
-    const outputDimension = outputs[currentOutputIndex.value];
-    const inputDimensions = metadata.value.parameters;
     // Append the output parameter to the list of input parameters
-    return [...inputDimensions, outputDimension] as ModelParameter[];
+    return [...inputDimensions.value, outputDimension.value] as ModelParameter[];
   });
 
   // The parallel coordinates component expects data as a collection of name/value pairs

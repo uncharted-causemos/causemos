@@ -396,7 +396,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, toRefs, computed, watch, watchEffect, Ref } from 'vue';
+import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 
@@ -420,7 +420,6 @@ import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
-import useModelMetadata from '@/services/composables/useModelMetadata';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
 import useQualifiers from '@/services/composables/useQualifiers';
@@ -440,7 +439,7 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
-import { DatacubeFeature } from '@/types/Datacube';
+import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
@@ -493,9 +492,9 @@ export default defineComponent({
       type: Object as PropType<TemporalResolutionOption>,
       default: TemporalResolutionOption.Month
     },
-    initialSelectedModelId: {
-      type: String,
-      default: ''
+    metadata: {
+      type: Object as PropType<Model | Indicator | null>,
+      default: null
     },
     spatialAggregationOptions: {
       type: Array as PropType<AggregationOption[]>,
@@ -538,7 +537,7 @@ export default defineComponent({
       defaultTemporalResolution,
       initialDataConfig,
       initialViewConfig,
-      initialSelectedModelId
+      metadata
     } = toRefs(props);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -560,7 +559,6 @@ export default defineComponent({
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
-    const selectedModelId = ref(initialSelectedModelId.value);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
     const selectedSpatialAggregation = ref<AggregationOption>(defaultSpatialAggregation.value);
@@ -568,8 +566,10 @@ export default defineComponent({
     const selectedTemporalResolution = ref<TemporalResolutionOption>(defaultTemporalResolution.value);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
-    const metadata = useModelMetadata(selectedModelId);
     const modelRunsFetchedAt = ref(0);
+
+    // we are receiving metadata from above (i.e. consumers) and we should not be setting a new model-id here at this level
+    const selectedModelId = computed(() => metadata.value?.id ?? null);
 
     const currentOutputIndex = computed(() => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
     const isModelMetadata = computed(() => metadata.value !== null && isModel(metadata.value));
@@ -887,7 +887,10 @@ export default defineComponent({
         // FIXME: the order of resetting the state is important
         if (loadedInsight.data_state?.selectedModelId) {
           // this will reload datacube metadata as well as scenario runs
-          selectedModelId.value = loadedInsight.data_state?.selectedModelId;
+          // NOTE: emit an event to the parent to reset the model metadata based on the new ID
+          //  Seems to be not needed anymore since applying an insight also involves passing the datacube_id as a query param
+          //  but will leave old code here for reference
+          // selectedModelId.value = loadedInsight.data_state?.selectedModelId;
         }
         if (loadedInsight.data_state?.selectedScenarioIds) {
           // this would only be valid and effective if/after datacube runs are reloaded
@@ -1084,12 +1087,6 @@ export default defineComponent({
       store.dispatch('insightPanel/setDataState', dataState);
     });
 
-    watch(initialSelectedModelId, (curr, prev) => {
-      if (!_.isEqual(curr, prev)) {
-        selectedModelId.value = initialSelectedModelId.value;
-      }
-    });
-
     return {
       allModelRunData,
       activeDrilldownTab,
@@ -1112,7 +1109,6 @@ export default defineComponent({
       mapLegendData,
       mapReady,
       mapSelectedLayer,
-      metadata,
       newRunsMode,
       onMapLoad,
       onNewScenarioRunsModalClose,
