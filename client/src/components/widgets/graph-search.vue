@@ -33,9 +33,8 @@ export default defineComponent({
     const search = ref('');
     const searchNodes = () => {
       const matches = nodes.value.filter((n) => {
-        return n.label === search.value;
+        return n.label.toLowerCase() === search.value.toLowerCase();
       });
-      console.log(search.value, nodes.value, matches);
       if (matches.length > 0) {
         emit('search', matches[0].concept);
       }
@@ -50,9 +49,9 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 .search-box {
-  position: fixed;
+  position: absolute;
   right: 5px;
-  top: 110px;
+  top: 5px;
 }
 </style>
 
