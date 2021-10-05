@@ -1,4 +1,3 @@
-const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const es = rootRequire('adapters/es/adapter');
@@ -40,7 +39,7 @@ const createInsight = async (
     id: newId,
     name,
     description,
-    modified_at: moment().valueOf(),
+    modified_at: Date.now(),
     visibility,
     project_id: projectId,
     context_id: contextId,

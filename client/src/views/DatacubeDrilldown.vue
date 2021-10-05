@@ -91,8 +91,8 @@ export default defineComponent({
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
     const datacubeId = route.query.datacube_id as any;
-    const initialViewConfig = analysisId.value[0].viewConfig;
-    const initialDataConfig = analysisId.value[0].dataConfig;
+    const initialViewConfig = analysisItems.value[0].viewConfig;
+    const initialDataConfig = analysisItems.value[0].dataConfig;
     const selectedModelId = ref(datacubeId);
     const metadata = useModelMetadata(selectedModelId);
     const project = computed(() => store.getters['app/project']);
@@ -169,8 +169,8 @@ export default defineComponent({
         currentAnalysisItem.dataConfig = {} as DataState;
       }
 
-      currentAnalysisItem.viewConfig = viewState;
-      currentAnalysisItem.dataConfig = dataState;
+      currentAnalysisItem.viewConfig = viewState.value;
+      currentAnalysisItem.dataConfig = dataState.value;
       store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
     });
 

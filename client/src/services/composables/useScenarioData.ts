@@ -2,6 +2,7 @@ import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
 import { isImage, isVideo } from '@/utils/datacube-util';
+import { ModelRunStatus } from '@/types/Enums';
 
 
 /**
@@ -98,7 +99,7 @@ export default function useScenarioData(
           }
         });
 
-        runData.value = newMetadata;
+        runData.value = newMetadata.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted);
       }
     }
     onInvalidate(() => {

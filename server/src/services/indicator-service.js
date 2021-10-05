@@ -1,5 +1,4 @@
 const _ = require('lodash');
-const moment = require('moment');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const modelUtil = rootRequire('/util/model-util');
@@ -256,7 +255,7 @@ const setDefaultIndicators = async (modelId) => {
 
   // All of these indicators are set by the same action, so they should
   // all have the same modified_at time
-  const editTime = moment.valueOf();
+  const editTime = Date.now();
 
 
   // Set default candidates

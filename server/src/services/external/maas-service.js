@@ -363,12 +363,21 @@ const startIndicatorPostProcessing = async (metadata) => {
   return { result: { message: 'No documents added' }, code: 202 };
 };
 
+/**
+ * Update a model run  with the specified changes
+ */
+const updateModelRun = async(modelRun) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  return await connection.update(modelRun, doc => doc.id);
+};
+
 module.exports = {
   submitModelRun,
   startModelOutputPostProcessing,
   markModelRunFailed,
   getAllModelRuns,
   getJobStatus,
-  startIndicatorPostProcessing
+  startIndicatorPostProcessing,
+  updateModelRun
 };
 

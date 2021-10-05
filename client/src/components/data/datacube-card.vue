@@ -22,7 +22,10 @@
           v-if="isModelMetadata & showModelRunsExecutionStatus === true"
           :metadata="metadata"
           :potential-scenarios="runParameterValues"
-          @close="showModelRunsExecutionStatus = false" />
+          @close="showModelRunsExecutionStatus = false"
+          @delete="prepareDelete"
+          @retry="retryRun"
+        />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
@@ -391,6 +394,17 @@
       </div>
     </div>
   </div>
+  <modal-confirmation
+    v-if="showDelete"
+    :autofocus-confirm="false"
+    @confirm="deleteRun"
+    @close="hideDeleteModal"
+  >
+    <template #title> DELETE MODEL RUN </template>
+    <template #message>
+      <p>Are you sure you want to delete this model run?</p>
+    </template>
+  </modal-confirmation>
 </template>
 
 <script lang="ts">
@@ -409,6 +423,7 @@ import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import Modal from '@/components/modals/modal.vue';
+import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -449,6 +464,7 @@ import { isIndicator, isModel } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
+import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -524,30 +540,12 @@ export default defineComponent({
     MapLegend,
     Modal,
     ModalCheckRunsExecutionStatus,
+    ModalConfirmation,
     ModalNewScenarioRuns,
     ParallelCoordinatesChart,
     RadioButtonGroup,
     SmallTextButton,
     timeseriesChart
-  },
-  methods: {
-    // TODO: Refactor this to use the function for creating model runs.
-    async createRunWithDefaults() {
-      // send the request to the server
-      const metadata = this.metadata;
-      try {
-        if (metadata && isModel(metadata)) {
-          await API.post('maas/model-runs', {
-            model_id: metadata.data_id,
-            model_name: metadata?.name,
-            parameters: metadata.parameters,
-            is_default_run: true
-          });
-        }
-      } catch (e) {
-        this.toaster('Run failed', 'error', true);
-      }
-    }
   },
   setup(props, { emit }) {
     const timeInterval = 10000;
@@ -685,15 +683,6 @@ export default defineComponent({
       }
     }
 
-    if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-      if (initialDataConfig.value.selectedRegionIds !== undefined) {
-        initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
-      }
-      if (initialDataConfig.value.selectedQualifierValues !== undefined) {
-        initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
-      }
-    }
-
     const clearRouteParam = () => {
       // fix to avoid double history later
       router.push({
@@ -732,6 +721,18 @@ export default defineComponent({
     };
 
     const toaster = useToaster();
+    if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+      if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+        setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
+      }
+      if (initialDataConfig.value.selectedRegionIds !== undefined) {
+        initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+      }
+      if (initialDataConfig.value.selectedQualifierValues !== undefined) {
+        initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+      }
+    }
+
     const clickData = (tab: string) => {
       if (hasDefaultRun.value || (metadata.value && isIndicator(metadata.value))) {
         // FIXME: This code to select a model run when switching to the data tab
@@ -1056,7 +1057,8 @@ export default defineComponent({
     } = useRegionalData(
       outputSpecs,
       breakdownOption,
-      datacubeHierarchy
+      datacubeHierarchy,
+      relativeTo
     );
 
     const {
@@ -1136,6 +1138,7 @@ export default defineComponent({
       defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
+      fetchData,
       getSelectedPreGenOutput,
       gridLayerStats,
       hasDefaultRun,
@@ -1161,6 +1164,7 @@ export default defineComponent({
       qualifierBreakdownData,
       recalculateGridMapDiffStats,
       regionalData,
+      relativeTo,
       requestNewModelRuns,
       runningDefaultRun,
       runParameterValues,
@@ -1227,6 +1231,63 @@ export default defineComponent({
   unmounted() {
     disableConcurrentTileRequestsCaching();
     clearInterval(this.timerHandler);
+  },
+  data: () => ({
+    idToDelete: '',
+    showDelete: false
+  }),
+  methods: {
+    getModelRunById(runId: string) {
+      return this.allModelRunData.find(runData => runData.id === runId);
+    },
+    prepareDelete(runId: string) {
+      this.idToDelete = runId;
+      this.showDeleteModal();
+    },
+    async deleteWithRun(modelRun: any) {
+      if (modelRun) {
+        const modelRunDeleted = _.cloneDeep(modelRun);
+        modelRunDeleted.status = ModelRunStatus.Deleted;
+        await updateModelRun(modelRunDeleted);
+        // This is done for responsiveness so that the user immediately knows when a run is deleted
+        this.fetchData();
+      }
+    },
+    async deleteRun() {
+      const modelRun = this.getModelRunById(this.idToDelete);
+      await this.deleteWithRun(modelRun);
+      this.hideDeleteModal();
+    },
+    hideDeleteModal() {
+      this.showDelete = false;
+    },
+    showDeleteModal() {
+      this.showDelete = true;
+    },
+    async retryRun(runId: string) {
+      const modelRun = this.getModelRunById(runId);
+      if (modelRun) {
+        createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters, modelRun.is_default_run);
+      }
+      await this.deleteWithRun(modelRun);
+    },
+    // TODO: Refactor this to use the function for creating model runs.
+    async createRunWithDefaults() {
+      // send the request to the server
+      const metadata = this.metadata;
+      try {
+        if (metadata && isModel(metadata)) {
+          await API.post('maas/model-runs', {
+            model_id: metadata.data_id,
+            model_name: metadata?.name,
+            parameters: metadata.parameters,
+            is_default_run: true
+          });
+        }
+      } catch (e) {
+        this.toaster('Run failed', 'error', true);
+      }
+    }
   }
 });
 </script>
