@@ -38,10 +38,7 @@
             />
             <button
               v-if="!hasDefaultRun && !runningDefaultRun"
-              class="btn toggle-new-runs-button"
-              :class="{
-                'btn-primary btn-call-for-action': !runningDefaultRun
-              }"
+              class="btn toggle-new-runs-button btn-primary btn-call-for-action"
               @click="createRunWithDefaults()"
             >
               defaultRunButtonCaption
@@ -393,8 +390,8 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, toRefs, computed, watch, watchEffect, Ref } from 'vue';
-import { useStore } from 'vuex';
+import {computed, defineComponent, PropType, ref, Ref, toRefs, watch, watchEffect} from 'vue';
+import {useStore} from 'vuex';
 import router from '@/router';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
@@ -425,9 +422,9 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
-import { getInsightById } from '@/services/insight-service';
+import {getInsightById} from '@/services/insight-service';
 
-import { ScenarioData } from '@/types/Common';
+import {ScenarioData} from '@/types/Common';
 import {
   AggregationOption,
   DatacubeType,
@@ -436,17 +433,17 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
-import { DatacubeFeature } from '@/types/Datacube';
-import { DataState, Insight, ViewState } from '@/types/Insight';
-import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
-import { OutputSpecWithId } from '@/types/Runoutput';
+import {DatacubeFeature} from '@/types/Datacube';
+import {DataState, Insight, ViewState} from '@/types/Insight';
+import {ModelRun, PreGeneratedModelRunData} from '@/types/ModelRun';
+import {OutputSpecWithId} from '@/types/Runoutput';
 
-import { colorFromIndex } from '@/utils/colors-util';
-import { isIndicator, isModel } from '@/utils/datacube-util';
-import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import {colorFromIndex} from '@/utils/colors-util';
+import {isIndicator, isModel} from '@/utils/datacube-util';
+import {initDataStateFromRefs, initViewStateFromRefs} from '@/utils/drilldown-util';
+import {BASE_LAYER, DATA_LAYER} from '@/utils/map-util-new';
 
-import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import {disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching} from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
 
@@ -531,7 +528,6 @@ export default defineComponent({
     async createRunWithDefaults() {
       // send the request to the server
       const metadata = this.metadata;
-      this.runningDefaultRun = true;
       try {
         if (metadata && isModel(metadata)) {
           await API.post('maas/model-runs', {
@@ -544,12 +540,8 @@ export default defineComponent({
       } catch (e) {
         this.toaster('Run failed', 'error', true);
       }
-      this.runningDefaultRun = false;
     }
   },
-  data: () => ({
-    runningDefaultRun: false
-  }),
   setup(props, { emit }) {
     const timeInterval = 10000;
     const store = useStore();
@@ -609,7 +601,7 @@ export default defineComponent({
       });
       if (newDefaultRun) newDefaultRun.is_default_run = true;
     }
-    const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run));
+    const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
 
     const {
       dimensions,
@@ -617,7 +609,7 @@ export default defineComponent({
       runParameterValues
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
-
+    const runningDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)));
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
@@ -1163,6 +1155,7 @@ export default defineComponent({
       recalculateGridMapDiffStats,
       regionalData,
       requestNewModelRuns,
+      runningDefaultRun,
       runParameterValues,
       selectedAdminLevel,
       selectedBaseLayer,
