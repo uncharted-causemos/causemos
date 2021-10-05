@@ -8,37 +8,56 @@
     <template #body>
       <table class="table">
         <tr>
-          <td>ID&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+          <td class="params-header">ID</td>
+          <td class="params-header">status</td>
           <td
             v-for="(dim, idx) in potentialRunsParameters"
             :key="idx">
             <div class="params-header">{{ dim }}</div>
           </td>
-          <td>&nbsp;</td>
+          <td class="params-header">time requested</td>
+          <td class="params-header">execution logs</td>
+          <td class="params-header">retry</td>
+          <td class="params-header">delete</td>
         </tr>
         <tr
           v-for="(run, sidx) in potentialRuns"
-          :key="sidx">
-          <td>{{ sidx }}</td>
-          <td v-for="(dimName, idx) in Object.keys(run)"
+          :key="run.run_id">
+          <td class="params-value">{{ sidx }}</td>
+          <td class="params-value">
+            <div class="status-contents">
+              <div
+                class="run-status"
+                :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
+              >
+                <i
+                  v-if="run['status'] === ModelRunStatus.Submitted"
+                  class="fa fa-fw fa-spinner"
+                />
+                <i
+                  v-else
+                  class="fa fa-fw fa-times-circle"
+                />
+              </div>
+              <label>{{ run.status }}</label>
+            </div>
+          </td>
+          <td v-for="(dimName, idx) in withoutOmittedColumns(Object.keys(run))"
             :key="idx"
             class="params-value">
             <label>{{ run[dimName] }}</label>
           </td>
-          <td>
-            <div
-              class="run-status"
-              :style="{color: run['status'] === ModelRunStatus.ExecutionFailed ? 'red' : 'blue'}"
-              >
-              <i
-                v-if="run['status'] === ModelRunStatus.Submitted"
-                class="fa fa-fw fa-spinner"
-              />
-              <i
-                v-else
-                class="fa fa-fw fa-times-circle"
-              />
-            </div>
+          <td class="params-value">
+            {{ timeSinceExecutionFormatted(run) }}
+          </td>
+          <td class="params-value">
+            <a :href=dojoExecutionLink(run.run_id)>See Logs</a>
+          </td>
+          <td class="params-value">
+            <i v-if="canRetryDelete(run)" class="fa fa-repeat" @click="retryRun(run.run_id)"/>
+          </td>
+          <td class="params-value">
+            <i v-if="canRetryDelete(run)" class="fa fa-trash" @click="deleteRun(run.run_id)"/>
           </td>
         </tr>
       </table>
@@ -57,12 +76,17 @@
 </template>
 
 <script lang="ts">
+
 import { defineComponent, PropType } from 'vue';
 import Modal from '@/components/modals/modal.vue';
 import { ScenarioData } from '@/types/Common';
 import { Model } from '@/types/Datacube';
 import _ from 'lodash';
 import { ModelRunStatus } from '@/types/Enums';
+import DurationFormatter from '@/formatters/duration-formatter';
+import { ModelRun } from '@/types/ModelRun';
+
+const OmittedColumns = ['run_id', 'created_at', 'status'];
 
 // TODO: add table header with interactivity to rank/re-order
 
@@ -73,7 +97,9 @@ export default defineComponent({
     Modal
   },
   emits: [
-    'close'
+    'close',
+    'delete',
+    'retry'
   ],
   props: {
     potentialScenarios: {
@@ -87,26 +113,46 @@ export default defineComponent({
   },
   computed: {
     potentialRunsParameters(): Array<any> {
-      return this.potentialRuns.length > 0 ? Object.keys(this.potentialRuns[0]) : [];
+      return this.potentialRuns.length > 0 ? this.withoutOmittedColumns(Object.keys(this.potentialRuns[0])) : [];
     },
     potentialRuns(): Array<any> {
       const runs = this.potentialScenarios.filter(r => r.status !== ModelRunStatus.Ready);
       const drilldownParamNames = this.metadata.parameters.filter((p: any) => p.is_drilldown).map(p => p.name);
       const sortedRuns = _.sortBy(runs, r => r.status);
       const newArray = _.map(sortedRuns, function (row) {
-        return _.omit(row, ['run_id', ...drilldownParamNames]);
+        return _.omit(row, [...drilldownParamNames]);
       });
       return newArray;
     }
   },
   data: () => ({
+    currentTime: Date.now(),
     ModelRunStatus
   }),
-  mounted() {
-  },
   methods: {
+    canRetryDelete(run: any) {
+      return run.status === ModelRunStatus.ExecutionFailed || (run.created_at && this.timeSinceExecution(run) > 1000 * 60 * 60 * 48);
+    },
     close() {
       this.$emit('close');
+    },
+    dojoExecutionLink(runId: string) {
+      return `https://dojo-test.com/runs/${runId}/logs`;
+    },
+    timeSinceExecutionFormatted(run: ModelRun) {
+      return `${DurationFormatter(this.timeSinceExecution(run))} ago`;
+    },
+    timeSinceExecution(run: ModelRun) {
+      return this.currentTime - run.created_at;
+    },
+    withoutOmittedColumns(columns: string[]) {
+      return columns.filter(column => !_.includes(OmittedColumns, column));
+    },
+    deleteRun(runId: string) {
+      this.$emit('delete', runId);
+    },
+    retryRun(runId: string) {
+      this.$emit('retry', runId);
     }
   }
 });
@@ -124,6 +170,13 @@ export default defineComponent({
   }
 }
 
+.status-contents {
+  display: flex;
+  label {
+    margin: auto 0;
+  }
+}
+
 .run-status {
   font-size: $font-size-large;
   width: 32px;
@@ -138,11 +191,16 @@ export default defineComponent({
   font-weight: bold;
   padding-left: 1rem;
   padding-right: 1rem;
+  text-align: center;
 }
 
 .params-value {
   padding-left: 1rem;
   padding-right: 1rem;
   align-content: center;
+  text-align: center;
+  .fa-repeat, .fa-trash {
+    cursor: pointer;
+  }
 }
 </style>
