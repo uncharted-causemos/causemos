@@ -37,17 +37,17 @@
               @generated-scenarios="updateGeneratedScenarios"
             />
             <button
-              v-if="!hasDefaultRun"
+              v-if="!hasDefaultRun && !runningDefaultRun"
               class="btn toggle-new-runs-button"
               :class="{
-                'btn-primary btn-call-for-action': !runningDefaultRun,
-                'btn-default': runningDefaultRun
+                'btn-primary btn-call-for-action': !runningDefaultRun
               }"
               @click="createRunWithDefaults()"
             >
-              {{ runningDefaultRun ? 'Running' : defaultRunButtonCaption }}
+              defaultRunButtonCaption
             </button>
             <button
+              v-if="hasDefaultRun"
               class="btn toggle-new-runs-button"
               :class="{
                 'btn-primary btn-call-for-action': !newRunsMode,
