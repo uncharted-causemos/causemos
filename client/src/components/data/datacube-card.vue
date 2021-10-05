@@ -36,12 +36,17 @@
               @select-scenario="updateScenarioSelection"
               @generated-scenarios="updateGeneratedScenarios"
             />
+            <disclaimer
+              style="text-align: center; color: black"
+              v-if="!hasDefaultRun"
+              :message="runningDefaultRun ? 'The default run is currently being executed' : 'You must execute a default run by clicking the button below'"
+            />
             <button
               v-if="!hasDefaultRun && !runningDefaultRun"
               class="btn toggle-new-runs-button btn-primary btn-call-for-action"
               @click="createRunWithDefaults()"
             >
-              defaultRunButtonCaption
+              {{ defaultRunButtonCaption }}
             </button>
             <button
               v-if="hasDefaultRun"
@@ -390,13 +395,14 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import {computed, defineComponent, PropType, ref, Ref, toRefs, watch, watchEffect} from 'vue';
-import {useStore} from 'vuex';
+import { computed, defineComponent, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
+import { useStore } from 'vuex';
 import router from '@/router';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
+import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
@@ -422,9 +428,9 @@ import useScenarioData from '@/services/composables/useScenarioData';
 import useSelectedTimeseriesPoints from '@/services/composables/useSelectedTimeseriesPoints';
 import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
-import {getInsightById} from '@/services/insight-service';
+import { getInsightById } from '@/services/insight-service';
 
-import {ScenarioData} from '@/types/Common';
+import { ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
   DatacubeType,
@@ -433,17 +439,17 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
-import {DatacubeFeature} from '@/types/Datacube';
-import {DataState, Insight, ViewState} from '@/types/Insight';
-import {ModelRun, PreGeneratedModelRunData} from '@/types/ModelRun';
-import {OutputSpecWithId} from '@/types/Runoutput';
+import { DatacubeFeature } from '@/types/Datacube';
+import { DataState, Insight, ViewState } from '@/types/Insight';
+import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
+import { OutputSpecWithId } from '@/types/Runoutput';
 
-import {colorFromIndex} from '@/utils/colors-util';
-import {isIndicator, isModel} from '@/utils/datacube-util';
-import {initDataStateFromRefs, initViewStateFromRefs} from '@/utils/drilldown-util';
-import {BASE_LAYER, DATA_LAYER} from '@/utils/map-util-new';
+import { colorFromIndex } from '@/utils/colors-util';
+import { isIndicator, isModel } from '@/utils/datacube-util';
+import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
+import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
-import {disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching} from '@/utils/map-util';
+import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
 
@@ -510,6 +516,7 @@ export default defineComponent({
     BreakdownPane,
     DataAnalysisMap,
     DatacubeScenarioHeader,
+    Disclaimer,
     DrilldownPanel,
     DropdownButton,
     DropdownControl,
