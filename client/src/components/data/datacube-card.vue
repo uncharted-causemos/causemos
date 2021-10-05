@@ -1097,6 +1097,7 @@ export default defineComponent({
       dataPaths,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
+      fetchData,
       getSelectedPreGenOutput,
       gridLayerStats,
       headerGroupButtons,
@@ -1204,7 +1205,7 @@ export default defineComponent({
         modelRunDeleted.status = ModelRunStatus.Deleted;
         await updateModelRun(modelRunDeleted);
         // This is done for responsiveness so that the user immediately knows when a run is deleted
-        this.runParameterValues = this.runParameterValues.filter(run => run.run_id === modelRun.run_id);
+        this.fetchData();
       }
     },
     async deleteRun() {
