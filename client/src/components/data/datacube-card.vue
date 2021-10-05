@@ -596,6 +596,12 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
+    const updateAndFetch = async (newDefaultRun: ModelRun) => {
+      const defaultRunModified = { ...newDefaultRun, is_default_run: true };
+      await updateModelRun(defaultRunModified);
+      fetchData();
+    };
+
     // If there are no default runs then set a run to default if it matches the default parameters
     if (allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
       const parameterDictionary = _.mapValues(_.keyBy(metadata.value.parameters, 'name'), 'default');
@@ -604,8 +610,7 @@ export default defineComponent({
         return Object.keys(parameterDictionary).every(p => runParameterDictionary[p] === parameterDictionary[p]);
       });
       if (newDefaultRun) {
-        await updateModelRun({ id: newDefaultRun.id, is_default_run: newDefaultRun.is_default_run });
-        fetchData();
+        updateAndFetch(newDefaultRun);
       }
     }
     const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
