@@ -603,7 +603,9 @@ export default defineComponent({
         const runParameterDictionary = _.mapValues(_.keyBy(run.parameters, 'name'), 'value');
         return Object.keys(parameterDictionary).every(p => runParameterDictionary[p] === parameterDictionary[p]);
       });
-      if (newDefaultRun) newDefaultRun.is_default_run = true;
+      if (newDefaultRun) {
+        await updateModelRun({ id: newDefaultRun.id, is_default_run: newDefaultRun.is_default_run });
+      }
     }
     const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
     const canClickDataTab = computed(() => hasDefaultRun.value || (metadata.value && isIndicator(metadata.value)));
