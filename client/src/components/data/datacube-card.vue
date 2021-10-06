@@ -39,10 +39,10 @@
               @select-scenario="updateScenarioSelection"
               @generated-scenarios="updateGeneratedScenarios"
             />
-            <disclaimer
-              style="text-align: center; color: black"
+            <message-display
               v-if="!hasDefaultRun"
               :message="runningDefaultRun ? 'The default run is currently being executed' : 'You must execute a default run by clicking the button below'"
+              :message-type="'warning'"
             />
             <button
               v-if="!hasDefaultRun && !runningDefaultRun"
@@ -416,12 +416,12 @@ import router from '@/router';
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
-import Disclaimer from '@/components/widgets/disclaimer.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 import Modal from '@/components/modals/modal.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
@@ -532,12 +532,12 @@ export default defineComponent({
     BreakdownPane,
     DataAnalysisMap,
     DatacubeScenarioHeader,
-    Disclaimer,
     DrilldownPanel,
     DropdownButton,
     DropdownControl,
     MapDropdown,
     MapLegend,
+    MessageDisplay,
     Modal,
     ModalCheckRunsExecutionStatus,
     ModalConfirmation,
