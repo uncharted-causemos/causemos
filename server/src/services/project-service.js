@@ -67,13 +67,7 @@ const createProject = async (kbId, name, description) => {
     }
   ], () => projectId);
 
-  // Ontology
   const projectData = await projectAdapter.findOne([{ field: 'id', value: projectId }], {});
-  const options = {
-    url: projectData.ontology,
-    method: 'GET'
-  };
-  const response = await requestAsPromise(options);
 
   // Need to set the project in the cache
   Logger.info(`Caching Project data for ${projectId}`);
@@ -84,23 +78,20 @@ const createProject = async (kbId, name, description) => {
       data_analysis_count: 0
     }
   });
-
   Logger.info(`Cached ${projectId}`);
 
+  // Ontology
   Logger.info(`Processing ontology ${projectData.ontology}`);
-  const processed = yaml.safeLoad(response);
-  const definitions = {};
-  processed.forEach(conceptObj => {
-    conceptUtil.extractConceptMetadata(definitions, conceptObj, '');
-  });
+  const ontologyMetadata = await parseOntology(projectData.ontology);
 
-  const conceptsPayload = Object.keys(definitions).map(key => {
+  // FIXME: May need idempotent id to support ontology updates from upstream
+  const conceptsPayload = Object.keys(ontologyMetadata).map(key => {
     return {
       project_id: projectId,
       id: uuid(),
       label: key,
-      definition: definitions[key].definition,
-      examples: definitions[key].examples
+      definition: _.isEmpty(ontologyMetadata[key].description) ? '' : ontologyMetadata[key].description[0],
+      examples: ontologyMetadata[key].examples
     };
   });
   const ontologyAdapter = Adapter.get(RESOURCE.ONTOLOGY);
@@ -836,6 +827,22 @@ const extendProject = async (projectId, docs) => {
   });
 };
 
+
+/**
+ * Parse compositional ontology metadata
+ *
+ * See https://github.com/WorldModelers/Ontologies/blob/master/CompositionalOntology_metadata.yml
+ */
+const parseOntology = async (url) => {
+  const options = { url: url, method: 'GET' };
+  const response = await requestAsPromise(options);
+  const ontology = yaml.safeLoad(response);
+  const metadata = {};
+  conceptUtil.extractOntologyMetadata(metadata, ontology.node, '');
+  return metadata;
+};
+
+
 module.exports = {
   listProjects,
   findProject,
@@ -869,5 +876,6 @@ module.exports = {
   extendProject,
 
   // misc
-  ontologyComposition
+  ontologyComposition,
+  parseOntology
 };
