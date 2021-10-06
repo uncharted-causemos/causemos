@@ -154,13 +154,22 @@ export default {
       countContextInsights: 'contextInsightPanel/countContextInsights',
       projectType: 'app/projectType',
       project: 'app/project',
-      analysisId: 'dataAnalysis/analysisId'
+      analysisId: 'dataAnalysis/analysisId',
+      shouldRefetchInsights: 'contextInsightPanel/shouldRefetchInsights'
     }),
     metadataSummary() {
       const projectCreatedDate = new Date(this.projectMetadata.created_at);
       const projectModifiedDate = new Date(this.projectMetadata.modified_at);
       return `Project: ${this.projectMetadata.name} - Created: ${projectCreatedDate.toLocaleString()} - ` +
         `Modified: ${projectModifiedDate.toLocaleString()} - Corpus: ${this.projectMetadata.corpus_id}`;
+    }
+  },
+  watch: {
+    shouldRefetchInsights() {
+      if (this.shouldRefetchInsights) {
+        // refresh the latest list from the server
+        this.reFetchInsights();
+      }
     }
   },
   mounted() {
@@ -230,9 +239,7 @@ export default {
         }
 
         // add 'insight_id' as a URL param so that the target page can apply it
-        const finalURL = savedURL.includes('/data/')
-          ? InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, _.first(this.selectedContextInsight.context_id))
-          : InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id);
+        const finalURL = InsightUtil.getSourceUrlForExport(savedURL, this.selectedContextInsight.id, _.first(this.selectedContextInsight.context_id));
 
         // special case
         if (this.projectType !== ProjectType.Analysis && this.selectedContextInsight.visibility === 'private') {

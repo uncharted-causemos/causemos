@@ -4,6 +4,7 @@ interface ContextInsightState {
   isPanelOpen: boolean;
   currentPane: string;
   countContextInsights: number;
+  refetchInsights: boolean;
 }
 
 /**
@@ -12,14 +13,16 @@ interface ContextInsightState {
 const state: ContextInsightState = {
   isPanelOpen: false,
   currentPane: '',
-  countContextInsights: 0
+  countContextInsights: 0,
+  refetchInsights: false
 };
 
 
 const getters: GetterTree<ContextInsightState, any> = {
   isPanelOpen: state => state.isPanelOpen,
   currentPane: state => state.currentPane,
-  countContextInsights: state => state.countContextInsights
+  countContextInsights: state => state.countContextInsights,
+  shouldRefetchInsights: state => state.refetchInsights
 };
 
 
@@ -35,6 +38,9 @@ const actions: ActionTree<ContextInsightState, any> = {
   },
   setCountContextInsights: ({ commit }, newValue) => {
     commit('setCountContextInsights', newValue);
+  },
+  setRefetchInsights: ({ commit }, newValue) => {
+    commit('setRefetchInsights', newValue);
   }
 };
 
@@ -51,6 +57,9 @@ const mutations: MutationTree<ContextInsightState> = {
   },
   setCountContextInsights(state, value) {
     state.countContextInsights = value;
+  },
+  setRefetchInsights(state, value) {
+    state.refetchInsights = value;
   }
 };
 

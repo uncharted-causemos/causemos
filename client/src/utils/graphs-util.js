@@ -1,11 +1,17 @@
 import _ from 'lodash';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 
 /**
  * Get the neighborhood graph for a selected node
  * @param {object} graph - an object of nodes/edges arrays
  * @param {string} node - a node id
  */
+
+export const highlightOptions = {
+  duration: 4000,
+  color: SELECTED_COLOR
+};
 
 export function calculateNeighborhood(graph, node) {
   const neighborEdges = graph.edges.filter(edge => {

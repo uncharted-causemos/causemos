@@ -5,10 +5,11 @@
     :has-error="hasError"
     :image-preview="imagePreview"
     :metadata-details="metadataDetails"
+    :annotation="annotationState"
     :is-new-insight="false"
     title="Edit Insight"
     @cancel="closeInsight()"
-    @save="saveInsight()"
+    @save="saveInsight"
   />
 </template>
 
@@ -30,7 +31,8 @@ export default {
     hasError: false,
     imagePreview: null,
     metadata: '',
-    name: ''
+    name: '',
+    annotationState: undefined
   }),
   computed: {
     ...mapGetters({
@@ -68,7 +70,8 @@ export default {
       setCurrentPane: 'insightPanel/setCurrentPane',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
-      setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane'
+      setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane',
+      setRefetchInsights: 'contextInsightPanel/setRefetchInsights'
     }),
     closeInsight() {
       this.hideInsightPanel();
@@ -80,11 +83,20 @@ export default {
       this.description = '';
       this.hasError = false;
     },
-    async saveInsight() {
+    getAnnotatedState(eventData) {
+      return !eventData ? undefined : {
+        markerAreaState: eventData.markerAreaState,
+        cropAreaState: eventData.cropState,
+        imagePreview: eventData.croppedNonAnnotatedImagePreview
+      };
+    },
+    async saveInsight(eventData) {
       if (this.hasError || _.isEmpty(this.name) || this.updatedInsight === '') return;
       const updatedInsight = this.updatedInsight;
       updatedInsight.name = this.name;
       updatedInsight.description = this.description;
+      updatedInsight.thumbnail = eventData ? eventData.annotatedImagePreview : updatedInsight.thumbnail;
+      updatedInsight.annotation_state = this.getAnnotatedState(eventData);
       updateInsight(this.updatedInsight.id, updatedInsight)
         .then((result) => {
           if (result.updated === 'success') {
@@ -92,6 +104,7 @@ export default {
           } else {
             this.toaster(INSIGHTS.ERRONEOUS_UPDATE, 'error', true);
           }
+          this.setRefetchInsights(true);
           this.closeInsight();
           this.initInsight();
           // also hide the context insight panel if opened, to force refresh upon re-open
@@ -107,6 +120,7 @@ export default {
     this.name = this.updatedInsight.name;
     this.description = this.updatedInsight.description;
     this.imagePreview = this.updatedInsight.thumbnail;
+    this.annotationState = this.updatedInsight.annotation_state;
   }
 };
 </script>
