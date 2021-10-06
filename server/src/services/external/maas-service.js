@@ -19,11 +19,16 @@ const IMPLICIT_QUALIFIERS = ['timestamp', 'country', 'admin1', 'admin2', 'admin3
  */
 const submitModelRun = async(metadata) => {
   const {
+    model_id,
+    model_name,
+    parameters,
     is_default_run = false
   } = metadata;
   const isDevEnvironment = process.env.TD_DATA_URL.includes('10.65.18.69');
   const filteredMetadata = {
-    ...metadata,
+    model_id,
+    model_name,
+    parameters,
     id: uuid(),
     data_paths: [],
     is_default_run,
