@@ -278,7 +278,7 @@ const startIndicatorPostProcessing = async (metadata) => {
     q => !IMPLICIT_QUALIFIERS.includes(q.name));
 
   const qualifierMap = {};
-  for (const output in metadata.outputs) {
+  for (const output of metadata.outputs) {
     if (acceptedTypes.includes(output.type)) {
       qualifierMap[output.name] = validQualifiers
         .filter(qualifier => qualifier.related_features.includes(output.name))
