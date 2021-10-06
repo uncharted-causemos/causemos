@@ -207,7 +207,8 @@ export default defineComponent({
           timeseries,
           max: null, // filled in by server
           min: null // filled in by server
-        }
+        },
+        components: selectedNode?.value?.components
       };
 
       Object.keys(viewState).forEach(key => {

@@ -27,7 +27,6 @@
 import _ from 'lodash';
 import moment from 'moment';
 import * as d3 from 'd3';
-import { mapGetters } from 'vuex';
 import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
@@ -106,6 +105,24 @@ class CAGRenderer extends BaseCAGRenderer {
       .style('pointer-events', 'none')
       .text(d => d.label)
       .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
+
+
+    // FIXME: weird, seem like there is a double-render issue
+    if (nodeSelection.size() === 0) return;
+
+    // Show components
+    const components = nodeSelection.datum().data.components;
+    for (let i = 0; i < components.length; i++) {
+      nodeSelection
+        .append('text')
+        .classed('node-component-abel', true)
+        .attr('x', 10)
+        .attr('y', 40 + i * 15)
+        .style('pointer-events', 'none')
+        .style('fill', '#888')
+        .text(components[i])
+        .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
+    }
   }
 
   // Override render function to also check for ambigous edges and highlight them
@@ -459,38 +476,48 @@ class CAGRenderer extends BaseCAGRenderer {
         const project_id = graph.project_id;
         const nodesInGraph = graph.nodes;
 
-        const edgesInGraph = graph.edges;
-        const edgesFromSource = edgesInGraph.filter(edge => edge.source === sourceNode.concept);
-        const conceptsInGraph = nodesInGraph.map(node => node.concept);
+        const edges = graph.edges;
+        const nodesToCheck = nodesInGraph
+          .filter(node => node.components)
+          .filter(node => {
+            return !_.some(edges, edge => edge.source === sourceNode.concept && edge.target === node.concept);
+          });
+        const componentsInGraph = _.uniq(_.flatten(nodesToCheck.map(node => node.components)));
 
         const svg = this.svgEl;
         const foregroundLayer = d3.select(svg).select('.data-layer');
 
         const filters = {
           clauses: [
-            { field: 'subjConcept', values: [sourceNode.concept], isNot: false, operand: 'or' },
-            { field: 'objConcept', values: conceptsInGraph, isNot: false, operand: 'or' }]
+            { field: 'subjConcept', values: sourceNode.data.components, isNot: false, operand: 'or' },
+            { field: 'objConcept', values: componentsInGraph, isNot: false, operand: 'or' }]
         };
 
+        // Get the edges, then reverse-map the edges back into containers
         projectService.getProjectGraph(project_id, filters).then(d => {
-          const resultEdges = d.edges; // contains all possible edges in the project originating from the source
-          const resultEdgesTrimmed = resultEdges.filter(edge => !edgesFromSource.some(edgeFromSource => edge.target === edgeFromSource.target)); // trim nodes that already have edge from this source
+          // Contains all possible edges in the knowledge-base originating from the source
+          const resultEdges = d.edges;
 
-          resultEdgesTrimmed.forEach(edge => {
-            const targetNode = getLayoutNodeById(edge.target);
-            const pointerX = targetNode.x;
-            const pointerY = targetNode.y + (targetNode.height * 0.5);
-            foregroundLayer
-              .append('svg:path')
-              .attr('d', svgUtil.ARROW)
-              .classed('edge-possibility-indicator', true)
-              .attr('transform', `translate(${pointerX}, ${pointerY}) scale(1.5)`)
-              .attr('fill', calcEdgeColor(edge))
-              .attr('opactiy', 0)
-              .style('pointer-events', 'none')
-              .transition()
-              .duration(300)
-              .attr('opacity', 1);
+          resultEdges.forEach(edge => {
+            const nodes = nodesToCheck.filter(n => n.components.includes(edge.target));
+
+            nodes.forEach(nodeData => {
+              const targetNode = getLayoutNodeById(nodeData.concept);
+
+              const pointerX = targetNode.x;
+              const pointerY = targetNode.y + (targetNode.height * 0.5);
+              foregroundLayer
+                .append('svg:path')
+                .attr('d', svgUtil.ARROW)
+                .classed('edge-possibility-indicator', true)
+                .attr('transform', `translate(${pointerX}, ${pointerY}) scale(1.8)`)
+                .attr('fill', calcEdgeColor(edge))
+                .attr('opactiy', 0)
+                .style('pointer-events', 'none')
+                .transition()
+                .duration(300)
+                .attr('opacity', 1);
+            });
           });
         });
       })
@@ -542,7 +569,7 @@ class CAGRenderer extends BaseCAGRenderer {
         if (_.isNil(sourceNode) || _.isNil(targetNode)) return;
         temporaryNewEdge = { sourceNode, targetNode };
 
-        this.options.newEdgeFn(sourceNode, targetNode);
+        this.options.newEdgeFn(sourceNode.data, targetNode.data);
       });
     handles.call(drag);
   }
@@ -679,7 +706,7 @@ class CAGRenderer extends BaseCAGRenderer {
       height: 30,
       width: 130,
       type: 'normal',
-      data: {},
+      data: { components: [] },
       nodes: []
     });
 
@@ -710,7 +737,8 @@ export default {
   },
   emits: [
     'delete', 'refresh',
-    'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click'
+    'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click',
+    'rename-node'
   ],
   data: () => ({
     selectedNode: '',
@@ -721,9 +749,6 @@ export default {
     showCustomConcept: false
   }),
   computed: {
-    ...mapGetters({
-      ontologyConcepts: 'app/ontologyConcepts'
-    }),
     conceptsInCag() {
       return this.data.nodes.map(node => node.concept);
     }
@@ -753,7 +778,7 @@ export default {
   mounted() {
     this.renderer = new CAGRenderer({
       el: this.$refs.container,
-      adapter: new Adapter({ nodeWidth: 130, nodeHeight: 30, layout: layered }),
+      adapter: new Adapter({ nodeWidth: 130, nodeHeight: 50, layout: layered }),
       renderMode: 'delta',
       addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
@@ -762,7 +787,9 @@ export default {
       newEdgeFn: (source, target) => {
         this.$emit('new-edge', { source, target });
       },
-      ontologyConcepts: this.ontologyConcepts
+      renameFn: (node) => {
+        this.$emit('rename-node', node);
+      }
     });
 
     this.mouseTrap = new Mousetrap(document);
@@ -815,6 +842,52 @@ export default {
       if (data.label !== node.select('.node-label').text()) {
         svgUtil.showSvgTooltip(renderer.chart, data.label, [data.x + data.width / 2, data.y]);
       }
+
+      const H = node.datum().height;
+      const control = node.append('g')
+        .classed('node-control', true);
+
+      control.append('rect')
+        .attr('x', 0)
+        .attr('y', H)
+        .attr('width', 130)
+        .attr('height', 30)
+        .style('fill', 'transparent');
+
+      control.append('rect')
+        .attr('x', 0)
+        .attr('y', H + 4)
+        .attr('width', 60)
+        .attr('height', 20)
+        .style('fill', '#333')
+        .on('click', (evt, node) => {
+          renderer.options.renameFn(node.data);
+          evt.stopPropagation();
+        });
+
+      control.append('text')
+        .attr('x', 4)
+        .attr('y', H + 4 + 15)
+        .style('fill', '#eee')
+        .text('Rename')
+        .style('pointer-events', 'none');
+
+      control.append('rect')
+        .attr('x', 70)
+        .attr('y', H + 4)
+        .attr('width', 60)
+        .attr('height', 20)
+        .style('fill', '#E11')
+        .on('click', (evt) => {
+          evt.stopPropagation();
+        });
+
+      control.append('text')
+        .attr('x', 74)
+        .attr('y', H + 4 + 15)
+        .style('fill', '#eee')
+        .text('Delete')
+        .style('pointer-events', 'none');
     });
 
     this.renderer.setCallback('nodeMouseLeave', (_evt, node, renderer) => {
@@ -827,6 +900,8 @@ export default {
         renderer.selectNode(node);
       }
       svgUtil.hideSvgTooltip(renderer.chart);
+
+      node.select('.node-control').remove();
     });
 
     this.renderer.setCallback('edgeMouseEnter', (evt, edge) => {

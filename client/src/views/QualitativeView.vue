@@ -26,6 +26,7 @@
           @delete="onDelete"
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
+          @rename-node="openRenameModal"
         />
       </div>
       <drilldown-panel
@@ -161,6 +162,14 @@
       @add-paths="addSuggestedPath"
       @close="showPathSuggestions = false"
     />
+
+    <rename-modal
+      v-if="showModalRename"
+      @confirm="renameNode"
+      :modal-title="'Rename node'"
+      :current-name="renameNodeName"
+      @close="showModalRename = false"
+    />
   </div>
 </template>
 
@@ -169,6 +178,7 @@ import _ from 'lodash';
 import html2canvas from 'html2canvas';
 import { mapActions, mapGetters } from 'vuex';
 
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import ActionBar from '@/components/qualitative/action-bar.vue';
 import CAGGraph from '@/components/qualitative/CAG-graph.vue';
@@ -253,6 +263,7 @@ export default defineComponent({
     ModalImportCag,
     ModalImportConflict,
     ModalPathFind,
+    RenameModal,
     AnalyticalQuestionsAndInsightsPanel
   },
   setup() {
@@ -274,6 +285,11 @@ export default defineComponent({
     showModalConflict: false,
     showModalImportCAG: false,
     showPathSuggestions: false,
+
+    showModalRename: false,
+    renameNodeId: '',
+    renameNodeName: '',
+
 
     drilldownTabs: [] as { name: string; id: string }[],
     activeDrilldownTab: null as string | null,
@@ -450,31 +466,42 @@ export default defineComponent({
       );
 
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
+        const relationsToAdd: SourceTargetPair[] = [];
+
+        // Search for all possible combinations of soruce/target
+        source.components.forEach(source => {
+          target.components.forEach(target => {
+            relationsToAdd.push({ source, target });
+          });
+        });
         const edgeData = await projectService.getProjectStatementIdsByEdges(
           this.project,
-          [edge],
+          relationsToAdd,
           filtersUtil.newFilters()
         );
-        const formattedEdge = Object.assign(
-          { user_polarity: null, id: '' },
-          edge,
-          {
-            reference_ids: edgeData[edge.source + '///' + edge.target] || []
-          }
-        );
-        this.edgeToSelectOnNextRefresh = {
-          source: edge.source,
-          target: edge.target
-        };
-        if (formattedEdge.reference_ids.length === 0) {
-          this.showPathSuggestions = true;
-          this.pathSuggestionSource = formattedEdge.source;
-          this.pathSuggestionTarget = formattedEdge.target;
+        console.log('edgedata', edgeData);
+
+        const backingStatements: string[] = _.uniq(_.flatten(Object.values(edgeData)));
+        console.log('backing statements', backingStatements);
+
+        if (backingStatements.length === 0) {
+          // FIXME: Initiates the path suggestions
+          // this.showPathSuggestions = true;
+          // this.pathSuggestionSource = formattedEdge.source;
+          // this.pathSuggestionTarget = formattedEdge.target;
         } else {
-          const data = await this.addCAGComponents([], [formattedEdge], 'manual');
+          const newEdge = {
+            id: '',
+            user_polarity: null,
+            source: source.concept,
+            target: target.concept,
+            reference_ids: backingStatements
+          };
+          const data = await this.addCAGComponents([], [newEdge], 'manual');
           this.setUpdateToken(data.updateToken);
         }
       } else {
+        // FIXME: We should allow partial cases
         this.toaster(
           this.ontologyFormatter(edge.source) +
             ' ' +
@@ -520,7 +547,8 @@ export default defineComponent({
       const node = {
         id: new Date().getTime().toString(),
         concept: suggestion.concept,
-        label: suggestion.label
+        label: suggestion.label,
+        components: [suggestion.concept]
       };
       this.saveNodeToGraph(node);
     },
@@ -528,8 +556,8 @@ export default defineComponent({
     async saveNodeToGraph(node: NodeParameter) {
       // Creates a shallow clone of `node`, replacing the `id` property
       //  with an empty value
-      const { model_id, concept, label, modified_at, parameter } = node;
-      const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter };
+      const { model_id, concept, label, modified_at, parameter, components } = node;
+      const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter, components };
       const data = await this.addCAGComponents([cleanedNode], [], 'manual');
       this.setUpdateToken(data.updateToken);
     },
@@ -850,7 +878,8 @@ export default defineComponent({
           id: n.id,
           concept: n.concept,
           label: n.label,
-          parameter: n.parameter
+          parameter: n.parameter,
+          components: n.components
         };
       });
 
@@ -929,7 +958,8 @@ export default defineComponent({
         return {
           id: '',
           concept: concept,
-          label: this.ontologyFormatter(concept)
+          label: this.ontologyFormatter(concept),
+          components: [concept]
         };
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges, 'path');
@@ -984,7 +1014,8 @@ export default defineComponent({
               nodePayload.push({
                 id: '',
                 concept: concept,
-                label: this.ontologyFormatter(concept)
+                label: this.ontologyFormatter(concept),
+                components: [concept]
               });
             }
           });
@@ -994,6 +1025,17 @@ export default defineComponent({
       // update and refresh
       const data = await this.addCAGComponents(nodePayload, edgePayload, 'curation');
       this.setUpdateToken(data.updateToken);
+    },
+    async renameNode(newName: string) {
+      console.log('Renaming', newName);
+      this.showModalRename = false;
+      await modelService.renameNode(this.currentCAG, this.renameNodeId, newName);
+      this.refresh();
+    },
+    openRenameModal(node: NodeParameter) {
+      this.showModalRename = true;
+      this.renameNodeId = node.id;
+      this.renameNodeName = node.concept;
     }
   }
 });
