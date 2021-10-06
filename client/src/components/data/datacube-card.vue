@@ -40,6 +40,7 @@
               @generated-scenarios="updateGeneratedScenarios"
             />
             <message-display
+              style="margin-bottom: 10px;"
               v-if="!hasDefaultRun"
               :message="runningDefaultRun ? 'The default run is currently being executed' : 'You must execute a default run by clicking the button below'"
               :message-type="'warning'"
@@ -469,7 +470,7 @@ import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCachi
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
 
-const defaultRunButtonCaption = 'Request run with default parameters';
+const defaultRunButtonCaption = 'Run with default parameters';
 
 const DRILLDOWN_TABS = [
   {
