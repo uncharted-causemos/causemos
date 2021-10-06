@@ -602,17 +602,19 @@ export default defineComponent({
       fetchData();
     };
 
-    // If there are no default runs then set a run to default if it matches the default parameters
-    if (allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
-      const parameterDictionary = _.mapValues(_.keyBy(metadata.value.parameters, 'name'), 'default');
-      const newDefaultRun = allModelRunData.value.find(run => {
-        const runParameterDictionary = _.mapValues(_.keyBy(run.parameters, 'name'), 'value');
-        return Object.keys(parameterDictionary).every(p => runParameterDictionary[p] === parameterDictionary[p]);
-      });
-      if (newDefaultRun) {
-        updateAndFetch(newDefaultRun);
+    watchEffect(() => {
+      // If there are no default runs then set a run to default if it matches the default parameters
+      if (allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
+        const parameterDictionary = _.mapValues(_.keyBy(metadata.value.parameters, 'name'), 'default');
+        const newDefaultRun = allModelRunData.value.find(run => {
+          const runParameterDictionary = _.mapValues(_.keyBy(run.parameters, 'name'), 'value');
+          return Object.keys(parameterDictionary).every(p => runParameterDictionary[p] === parameterDictionary[p]);
+        });
+        if (newDefaultRun) {
+          updateAndFetch(newDefaultRun);
+        }
       }
-    }
+    });
     const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
     const canClickDataTab = computed(() => hasDefaultRun.value || (metadata.value && isIndicator(metadata.value)));
     const {
@@ -1141,6 +1143,7 @@ export default defineComponent({
       adminLayerStats,
       baselineMetadata,
       breakdownOption,
+      canClickDataTab,
       colorFromIndex,
       currentTabView,
       dataPaths,
