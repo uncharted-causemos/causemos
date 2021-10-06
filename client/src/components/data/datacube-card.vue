@@ -1116,6 +1116,7 @@ export default defineComponent({
       onTabClick,
       ordinalDimensionNames,
       outputSpecs,
+      potentialScenarios,
       potentialScenarioCount,
       projectType,
       preGenDataItems,
