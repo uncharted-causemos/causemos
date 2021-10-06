@@ -11,6 +11,7 @@
       @keydown.enter="onEnter"
     >
     <div
+      v-if="showSuggestions"
       class="autocomplete-results-container">
       <ul
         class="autocomplete-results">
@@ -75,7 +76,8 @@ export default defineComponent({
   },
   methods: {
     onArrowDown() {
-      if (this.selectedIndex < this.suggestions.length) {
+      console.log('test', this.selectedIndex, this.suggestions.length);
+      if (this.selectedIndex < this.suggestions.length - 1) {
         this.selectedIndex = this.selectedIndex + 1;
       }
     },
@@ -130,7 +132,10 @@ $input-element-height: 37px;
   .autocomplete-results {
     padding: 0;
     z-index: 52;
-    background-color: white;
+    background-color: $background-light-1;
+    .is-active {
+      background-color: $background-light-3;
+    }
   }
   ::v-deep(.autocomplete-result) {
     list-style: none;
