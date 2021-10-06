@@ -4,6 +4,10 @@
       ref="container"
       class="CAG-graph"
     />
+    <graph-search
+      :nodes="data.nodes"
+      @search="search"
+    />
     <new-node-concept-select
       v-if="showNewNode"
       ref="newNode"
@@ -37,11 +41,12 @@ import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
-import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
+import { calculateNeighborhood, hasBackingEvidence, highlightOptions } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
+import GraphSearch from '@/components/widgets/graph-search.vue';
 
 import projectService from '@/services/project-service';
 
@@ -696,7 +701,8 @@ export default {
   components: {
     NewNodeConceptSelect,
     ColorLegend,
-    ModalCustomConcept
+    ModalCustomConcept,
+    GraphSearch
   },
   props: {
     data: {
@@ -868,6 +874,12 @@ export default {
         hasEvidence: false
       });
     },
+    search(nodeId) {
+      this.renderer.moveTo(nodeId, 1500);
+      this.renderer.highlight({
+        nodes: [nodeId]
+      }, highlightOptions);
+    },
     async refresh() {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data);
@@ -885,15 +897,11 @@ export default {
       this.$emit('refresh', null);
     },
     highlight() {
-      const options = {
-        duration: 4000,
-        color: SELECTED_COLOR
-      };
       // Check if the subgraph was added less than 1 min ago
       const thresholdTime = moment().subtract(THRESHOLD_TIME, 'minutes').valueOf();
       const nodes = this.data.nodes.filter(n => n.modified_at >= thresholdTime).map(n => n.concept);
       const edges = this.data.edges.filter(e => e.modified_at >= thresholdTime);
-      this.renderer.highlight({ nodes, edges }, options);
+      this.renderer.highlight({ nodes, edges }, highlightOptions);
     },
     onSuggestionSelected(suggestion) {
       // HACK This is leveraing the svg-flowgraph internals.
