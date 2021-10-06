@@ -76,7 +76,6 @@ export default defineComponent({
   },
   methods: {
     onArrowDown() {
-      console.log('test', this.selectedIndex, this.suggestions.length);
       if (this.selectedIndex < this.suggestions.length - 1) {
         this.selectedIndex = this.selectedIndex + 1;
       }
