@@ -33,7 +33,7 @@
           :default-spatial-aggregation="AggregationOption.None"
           :default-temporal-aggregation="AggregationOption.None"
           :default-temporal-resolution="TemporalResolutionOption.None"
-          :initial-selected-model-id="selectedModelId"
+          :metadata="metadata"
           :spatial-aggregation-options="Object.values(AggregationOption)"
           :temporal-aggregation-options="Object.values(AggregationOption)"
           :temporal-resolution-options="Object.values(TemporalResolutionOption)"
@@ -105,7 +105,6 @@ export default defineComponent({
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
 
-
     const openPublishAccordion = ref(false);
 
     const publishingSteps = ref<ModelPublishingStep[]>([
@@ -176,7 +175,6 @@ export default defineComponent({
         metadata.value = cloneMetadata;
       }
     };
-
 
     watchEffect(async () => {
       if (countInsights.value > 0) {
@@ -310,9 +308,9 @@ export default defineComponent({
         // NOTE:  this is only valid when the route is focused on the 'model publishing experiment' space
         if (this.$route.name === 'modelPublishingExperiment' && this.$route.query) {
           // check for 'insight_id' first to apply insight, then if not found, then 'datacube_id'
-          const insight_id = this.$route.query.insight_id as any;
+          // const insight_id = this.$route.query.insight_id as any;
           const datacubeid = this.$route.query.datacube_id as any;
-          if (!insight_id && datacubeid !== undefined) {
+          if (datacubeid !== undefined) {
             // update selected model id to start datacube card update
             this.selectedModelId = datacubeid;
           }
