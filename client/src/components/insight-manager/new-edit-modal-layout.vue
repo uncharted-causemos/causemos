@@ -170,7 +170,7 @@ export default defineComponent({
       type: String,
       default: ''
     },
-    previousAnnotation: {
+    annotation: {
       type: Object,
       default: undefined
     }
@@ -192,10 +192,11 @@ export default defineComponent({
   watch: {
     imagePreview() {
       if (this.imagePreview !== null) {
-        if (this.previousAnnotation) {
-          this.originalImagePreview = this.previousAnnotation.imagePreview;
-          this.markerAreaState = this.previousAnnotation.markerAreaState;
-          this.cropState = this.previousAnnotation.cropAreaState;
+        // apply previously saved annotation, if any
+        if (this.annotation) {
+          this.originalImagePreview = this.annotation.imagePreview;
+          this.markerAreaState = this.annotation.markerAreaState;
+          this.cropState = this.annotation.cropAreaState;
           nextTick(() => {
             const refAnnotatedImage = this.$refs.finalImagePreview as HTMLImageElement;
             refAnnotatedImage.src = this.originalImagePreview;

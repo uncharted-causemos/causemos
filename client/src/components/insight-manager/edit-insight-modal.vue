@@ -5,7 +5,7 @@
     :has-error="hasError"
     :image-preview="imagePreview"
     :metadata-details="metadataDetails"
-    :previous-annotation="annotationState"
+    :annotation="annotationState"
     :is-new-insight="false"
     title="Edit Insight"
     @cancel="closeInsight()"
