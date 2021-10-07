@@ -646,6 +646,7 @@ export default defineComponent({
       temporalBreakdownData,
       temporalResolutionOptionFiltered,
       timerHandler,
+      timeseriesData,
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
