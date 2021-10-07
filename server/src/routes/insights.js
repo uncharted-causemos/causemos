@@ -25,7 +25,8 @@ router.post('/', asyncHandler(async (req, res) => {
     analytical_question,
     thumbnail,
     view_state,
-    data_state
+    data_state,
+    annotation_state
   } = req.body;
   const result = await insightService.createInsight(
     name,
@@ -41,7 +42,8 @@ router.post('/', asyncHandler(async (req, res) => {
     analytical_question,
     thumbnail,
     view_state,
-    data_state);
+    data_state,
+    annotation_state);
   res.json(result);
 }));
 

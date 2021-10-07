@@ -1,4 +1,3 @@
-const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const es = rootRequire('adapters/es/adapter');
@@ -29,7 +28,9 @@ const createInsight = async (
   analytical_question,
   thumbnail,
   viewState,
-  dataState) => {
+  dataState,
+  // eslint-disable-next-line camelcase
+  annotation_state) => {
   const newId = uuid();
   Logger.info('Creating insight entry: ' + newId);
   const insightsConnection = Adapter.get(RESOURCE.INSIGHT);
@@ -40,7 +41,7 @@ const createInsight = async (
     id: newId,
     name,
     description,
-    modified_at: moment().valueOf(),
+    modified_at: Date.now(),
     visibility,
     project_id: projectId,
     context_id: contextId,
@@ -52,7 +53,8 @@ const createInsight = async (
     analytical_question: analytical_question,
     thumbnail,
     view_state: viewState,
-    data_state: dataState
+    data_state: dataState,
+    annotation_state: annotation_state
   }, keyFn);
 
   // Acknowledge success

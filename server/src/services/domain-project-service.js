@@ -1,4 +1,3 @@
-const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 const es = rootRequire('adapters/es/adapter');
@@ -34,7 +33,7 @@ const createProject = async (
     id: newId,
     name,
     description,
-    modified_at: moment().valueOf(),
+    modified_at: Date.now(),
     source,
     type,
     ready_instances,

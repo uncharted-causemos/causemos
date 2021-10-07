@@ -1,3 +1,5 @@
+
+import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
 import { SpatialAggregationLevel } from '@/types/Enums';
@@ -5,11 +7,11 @@ import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations } from '../runoutput-service';
 import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
-import _ from 'lodash';
 
 const applySplitByRegion = (
   regionalData: RegionalAggregations,
-  specs: OutputSpecWithId[]
+  specs: OutputSpecWithId[],
+  relativeTo?: string | null
 ) => {
   if (specs.length === 0) return regionalData;
   const ancestorCount = specs[0].id.split(REGION_ID_DELIMETER).length - 1;
@@ -21,8 +23,7 @@ const applySplitByRegion = (
   //  timeseries, and there is one timeseries for each selected region.
   const timeseriesIds = specs.map(spec => spec.id);
   // Assign the value for each selected region to the the corresponding
-  //  timeseries ID (eventually this will be used to color it), and assign
-  //  the other values to an arbitrary 'unselected region' ID.
+  //  timeseries ID (eventually this will be used to color it)
   clonedData[selectedAdminLevel] = valuesAtSelectedLevel.map(
     ({ id: regionId, values }) => {
       const filteredValues = {} as any;
@@ -32,8 +33,6 @@ const applySplitByRegion = (
       Object.values(values).forEach(value => {
         if (timeseriesIds.includes(regionId)) {
           filteredValues[regionId] = value;
-        } else {
-          filteredValues['unselected region'] = value;
         }
       });
       return {
@@ -42,13 +41,29 @@ const applySplitByRegion = (
       };
     }
   );
+  // When relativeTo mode is on, add baseline value to each region
+  // '_baseline' property is special private property to store the baseline value
+  if (!relativeTo) return clonedData;
+  // Find baseline value
+  const baselineValue = valuesAtSelectedLevel.find(({ id }) => {
+    return id === relativeTo;
+  })?.values[specs[0].id];
+
+  (clonedData[selectedAdminLevel] || []).forEach(
+    ({ id: regionId, values }) => {
+      if (baselineValue && timeseriesIds.includes(regionId)) {
+        values._baseline = baselineValue;
+      }
+    }
+  );
   return clonedData;
 };
 
 export default function useRegionalData(
   outputSpecs: Ref<OutputSpecWithId[]>,
   breakdownOption: Ref<string | null>,
-  datacubeHierarchy: Ref<DatacubeGeography | null>
+  datacubeHierarchy: Ref<DatacubeGeography | null>,
+  relativeTo?: Ref<string | null>
 ) {
   // Fetch regional data for selected model and scenarios
   const regionalData = ref<RegionalAggregations | null>(null);
@@ -73,7 +88,7 @@ export default function useRegionalData(
     if (isCancelled) return;
 
     regionalData.value = breakdownOption.value === SpatialAggregationLevel.Region
-      ? applySplitByRegion(result, outputSpecs.value)
+      ? applySplitByRegion(result, outputSpecs.value, (relativeTo && relativeTo.value))
       : result;
   });
 

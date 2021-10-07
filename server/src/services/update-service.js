@@ -1,4 +1,3 @@
-const moment = require('moment');
 const _ = require('lodash');
 const { v4: uuid } = require('uuid');
 
@@ -154,7 +153,7 @@ const updateFnGenerator = (projectId, updateConfig) => {
     const audits = [];
     statements.forEach(statement => {
       const auditEntry = {
-        modified_at: moment().valueOf(),
+        modified_at: Date.now(),
         project_id: projectId,
         batch_id: batchId,
         statement_id: statement.id,
@@ -195,7 +194,7 @@ const updateAllBeliefScores = async (projectId, statementBeliefScores) => {
   const BATCH_SIZE = 5000;
   const statementConnection = Adapter.get(RESOURCE.STATEMENT, projectId);
   const statementIds = Object.keys(statementBeliefScores);
-  const modifiedAt = moment().valueOf();
+  const modifiedAt = Date.now();
   while (true) {
     if (_.isEmpty(statementIds)) break;
     const batchIds = statementIds.splice(0, BATCH_SIZE);

@@ -22,6 +22,7 @@ const MODEL_STATUS = {
   READY: 2
 };
 
+
 const MODEL_MSGS = {
   MODEL_STALE: 'Model is stale',
   MODEL_TRAINING: 'Model training is in progress, please check back in a few minutes'
@@ -119,8 +120,8 @@ const recalculate = async (modelId: string) => {
   await API.post(`cags/${modelId}/recalculate`);
 };
 
-const addComponents = async (modelId: string, nodes: NodeParameter[], edges: EdgeParameter[]) => {
-  const result = await API.put(`cags/${modelId}/components`, { operation: 'update', nodes, edges });
+const addComponents = async (modelId: string, nodes: NodeParameter[], edges: EdgeParameter[], updateType = '') => {
+  const result = await API.put(`cags/${modelId}/components`, { operation: 'update', nodes, edges, updateType });
   return result.data;
 };
 
@@ -672,7 +673,6 @@ const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
     return !_.isEmpty(d.values);
   });
 };
-
 
 export default {
   getProjectModels,

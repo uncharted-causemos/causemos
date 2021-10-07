@@ -1,4 +1,8 @@
 <template>
+  <graph-search
+    :nodes="data.graph.nodes"
+    @search="search"
+  />
   <div
     ref="container"
     class="model-graph-container"
@@ -9,14 +13,19 @@
 import _ from 'lodash';
 
 import { mapGetters } from 'vuex';
+import GraphSearch from '@/components/widgets/graph-search.vue';
 import ModelRenderer from '@/graphs/model-renderer';
 import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 // import { calculateNeighborhood } from '@/utils/graphs-util';
+import { highlightOptions } from '@/utils/graphs-util';
 import { highlight, nodeDrag, panZoom } from 'svg-flowgraph';
 
 export default {
   name: 'ModelGraph',
+  components: {
+    GraphSearch
+  },
   props: {
     data: {
       type: Object,
@@ -108,6 +117,12 @@ export default {
     this.refresh();
   },
   methods: {
+    search(nodeId) {
+      this.renderer.moveTo(nodeId, 1500);
+      this.renderer.highlight({
+        nodes: [nodeId]
+      }, highlightOptions);
+    },
     async refresh() {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data.graph);

@@ -1,4 +1,5 @@
 export enum ModelRunStatus {
+  Deleted = 'DELETED',
   Draft = 'NOT SUBMITTED', // un-submitted
   Ready = 'READY',
   Submitted = 'SUBMITTED',

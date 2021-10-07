@@ -273,7 +273,18 @@ const startIndicatorPostProcessing = async (metadata) => {
   const resolutions = ['annual', 'monthly', 'dekad', 'weekly', 'daily', 'other'];
   let highestRes = 0;
 
+  // Exclude all implicit qualifiers
+  const validQualifiers = metadata.qualifier_outputs.filter(
+    q => !IMPLICIT_QUALIFIERS.includes(q.name));
+
   const qualifierMap = {};
+  for (const output of metadata.outputs) {
+    if (acceptedTypes.includes(output.type)) {
+      qualifierMap[output.name] = validQualifiers
+        .filter(qualifier => qualifier.related_features.includes(output.name))
+        .map(q => q.name);
+    }
+  }
 
   // Create data now to send to elasticsearch
   const newIndicatorMetadata = metadata.outputs
@@ -299,10 +310,6 @@ const startIndicatorPostProcessing = async (metadata) => {
         // Filter out unrelated qualifiers
         clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
           qualifier => qualifier.related_features.includes(output.name));
-
-        qualifierMap[output.name] = clonedMetadata.qualifier_outputs.filter(
-          q => !IMPLICIT_QUALIFIERS.includes(q.name)
-        ).map(q => q.name);
 
         // Combine all concepts from the qualifiers into one list
         qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
@@ -363,12 +370,21 @@ const startIndicatorPostProcessing = async (metadata) => {
   return { result: { message: 'No documents added' }, code: 202 };
 };
 
+/**
+ * Update a model run  with the specified changes
+ */
+const updateModelRun = async(modelRun) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  return await connection.update(modelRun, doc => doc.id);
+};
+
 module.exports = {
   submitModelRun,
   startModelOutputPostProcessing,
   markModelRunFailed,
   getAllModelRuns,
   getJobStatus,
-  startIndicatorPostProcessing
+  startIndicatorPostProcessing,
+  updateModelRun
 };
 
