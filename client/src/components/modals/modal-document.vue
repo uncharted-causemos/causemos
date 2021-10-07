@@ -61,29 +61,31 @@ const reformat = (v) => {
 const createTextViewer = (text, textFragment) => {
   const el = document.createElement('div');
 
-  if (text.search(textFragment) >= 0) {
-    text = text.replace(textFragment, `<strong class='anchor'>${textFragment}</strong>`);
-  } else {
-    let fragment = textFragment;
+  if (textFragment) {
+    if (text.search(textFragment) >= 0) {
+      text = text.replace(textFragment, `<strong class='anchor'>${textFragment}</strong>`);
+    } else {
+      let fragment = textFragment;
 
-    // Not a loop, just hijacking the break-controls to fast-exit if a match is found
-    while (true) {
-      fragment = fragment.replaceAll(' .', '.');
-      if (text.search(fragment) >= 0) {
-        text = text.replace(fragment, reformat(fragment));
+      // Not a loop, just hijacking the break-controls to fast-exit if a match is found
+      while (true) {
+        fragment = fragment.replaceAll(' .', '.');
+        if (text.search(fragment) >= 0) {
+          text = text.replace(fragment, reformat(fragment));
+          break;
+        }
+        fragment = fragment.replaceAll(' ;', ';');
+        if (text.search(fragment) >= 0) {
+          text = text.replace(fragment, reformat(fragment));
+          break;
+        }
+        fragment = fragment.replaceAll(' ,', ',');
+        if (text.search(fragment) >= 0) {
+          text = text.replace(fragment, reformat(fragment));
+          break;
+        }
         break;
       }
-      fragment = fragment.replaceAll(' ;', ';');
-      if (text.search(fragment) >= 0) {
-        text = text.replace(fragment, reformat(fragment));
-        break;
-      }
-      fragment = fragment.replaceAll(' ,', ',');
-      if (text.search(fragment) >= 0) {
-        text = text.replace(fragment, reformat(fragment));
-        break;
-      }
-      break;
     }
   }
 
@@ -157,7 +159,9 @@ export default {
         }
       } else {
         this.$refs.content.appendChild(this.viewer.element);
-        this.viewer.search(this.textFragment);
+        if (this.textFragment) {
+          this.viewer.search(this.textFragment);
+        }
       }
     },
     toggle() {
