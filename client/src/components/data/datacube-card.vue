@@ -41,19 +41,19 @@
             />
             <message-display
               style="margin-bottom: 10px;"
-              v-if="!hasDefaultRun"
+              v-if="isPublishing && !hasDefaultRun"
               :message="runningDefaultRun ? 'The default run is currently being executed' : 'You must execute a default run by clicking the button below'"
               :message-type="'warning'"
             />
             <button
-              v-if="!hasDefaultRun && !runningDefaultRun"
+              v-if="isPublishing && !hasDefaultRun && !runningDefaultRun"
               class="btn toggle-new-runs-button btn-primary btn-call-for-action"
               @click="createRunWithDefaults()"
             >
               {{ defaultRunButtonCaption }}
             </button>
             <button
-              v-if="hasDefaultRun"
+              v-if="!isPublishing || hasDefaultRun"
               class="btn toggle-new-runs-button"
               :class="{
                 'btn-primary btn-call-for-action': !newRunsMode,
@@ -490,6 +490,10 @@ export default defineComponent({
       type: Boolean,
       default: true
     },
+    isPublishing: {
+      type: Boolean,
+      default: false
+    },
     initialDataConfig: {
       type: Object as PropType<DataState>,
       default: null
@@ -543,6 +547,7 @@ export default defineComponent({
     const store = useStore();
 
     const {
+      isPublishing,
       initialDataConfig,
       initialViewConfig,
       metadata,
@@ -594,7 +599,7 @@ export default defineComponent({
 
     watchEffect(() => {
       // If there are no default runs then set a run to default if it matches the default parameters
-      if (allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
+      if (isPublishing.value && allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
         const parameterDictionary = _.mapValues(_.keyBy(metadata.value.parameters, 'name'), 'default');
         const newDefaultRun = allModelRunData.value.find(run => {
           const runParameterDictionary = _.mapValues(_.keyBy(run.parameters, 'name'), 'value');
@@ -606,7 +611,7 @@ export default defineComponent({
       }
     });
     const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
-    const canClickDataTab = computed(() => hasDefaultRun.value || (metadata.value && isIndicator(metadata.value)));
+    const canClickDataTab = computed(() => !isPublishing.value || hasDefaultRun.value || (metadata.value && isIndicator(metadata.value)));
     const {
       dimensions,
       ordinalDimensionNames,
@@ -739,7 +744,7 @@ export default defineComponent({
 
     const toaster = useToaster();
     const clickData = (tab: string) => {
-      if (canClickDataTab.value) {
+      if (tab !== 'data' || canClickDataTab.value) {
         // FIXME: This code to select a model run when switching to the data tab
         // should be in a watcher on the parent component to be more robust,
         // rather than in this button's click handler.
@@ -847,7 +852,7 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      if (tabState.value) {
+      if (isPublishing.value && tabState.value) {
         onTabClick(tabState.value);
       }
     });
