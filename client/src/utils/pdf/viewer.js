@@ -1,11 +1,5 @@
-// import _ from 'lodash';
-
-const DEFAULT_WIDTH = 800;
-
 // See https://observablehq.com/@mbostock/hello-pdf-js-pdfpageview
-
-export async function createPDFViewer({ url, contentWidth = DEFAULT_WIDTH }) {
-  console.log(contentWidth);
+export async function createPDFViewer({ url }) {
   // lazy load pdfjs lib
   // Set the pdf workerSrc explicitly for firefox
   // For more detail see: https://github.com/mozilla/pdf.js/issues/8204
@@ -43,30 +37,19 @@ export async function createPDFViewer({ url, contentWidth = DEFAULT_WIDTH }) {
   linkService.setDocument(pdfDoc, null);
 
   eventBus.on('pagesinit', () => {
-    console.log('ready??');
     viewer.currentScaleValue = 'page-width';
   });
-  eventBus.on('updatefindcontrolstate', data => {
-    console.log('EB', data);
-  });
+
+  // eventBus.on('updatefindcontrolstate', data => {
+  //   console.log('EB', data);
+  // });
 
   return {
     search(query) {
-      console.log('search ...', query);
       findController.executeCommand('find', {
         query: query,
         phraseSearch: true
       });
-      /*
-      findController.executeCommand('find', {
-        caseSensitive: false,
-        findPrevious: true,
-        highlightAll: true,
-        scrollMatches: true,
-        // phraseSearch: true,
-        query: query
-      });
-      */
     },
     element: container,
     async renderPages() {

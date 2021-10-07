@@ -48,8 +48,6 @@ import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
 
-const CONTENT_WIDTH = 800;
-
 const isPdf = (data) => {
   const fileType = data && data.file_type;
   return fileType === 'pdf' || fileType === 'application/pdf';
@@ -138,7 +136,7 @@ export default {
       if (isPdf(this.documentData) || (2 - 1) === 1) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
         try {
-          const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
+          const viewer = await createPDFViewer({ url: rawDocUrl });
           await viewer.renderPages();
           this.viewer = viewer;
         } catch (_) {
@@ -159,7 +157,6 @@ export default {
         }
       } else {
         this.$refs.content.appendChild(this.viewer.element);
-        // this.viewer.search('Overview of trace tree');
         this.viewer.search(this.textFragment);
       }
     },
