@@ -19,7 +19,7 @@
           :output-source-specs="outputSpecs"
           :current-tab-view="currentTabView"
           :metadata="metadata"
-          :timeseries-data="visibleTimeseriesData"
+          :timeseries-data="timeseriesData"
           :relative-to="relativeTo"
           :breakdown-option="breakdownOption"
           :baseline-metadata="baselineMetadata"
