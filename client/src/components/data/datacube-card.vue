@@ -239,7 +239,7 @@
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
                 :key="activeDrilldownTab"
-                :timeseries-data="visibleTimeseriesData"
+                :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
@@ -1156,6 +1156,7 @@ export default defineComponent({
       TemporalAggregationLevel,
       temporalBreakdownData,
       timerHandler,
+      timeseriesData,
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
