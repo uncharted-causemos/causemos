@@ -135,7 +135,7 @@ export default {
         element: createTextViewer(this.documentData.extracted_text, this.textFragment)
       };
 
-      if (isPdf(this.documentData) || (2 - 1) === 1) {
+      if (isPdf(this.documentData)) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
         try {
           const viewer = await createPDFViewer({ url: rawDocUrl });
