@@ -2,7 +2,7 @@
   <div class="search-box">
     <auto-complete
       :display-type="'ConceptDisplay'"
-      placeholder-message="Search Nodes..."
+      placeholder-message="Search..."
       :search-fn="searchNodes"
       @item-selected="emitSearchResult"
     />
@@ -32,10 +32,10 @@ export default defineComponent({
       nodes
     } = toRefs(props);
 
-    const emitSearchResult = (query: string) => {
-      if (query) {
+    const emitSearchResult = (concept: string) => {
+      if (concept) {
         const matches = nodes.value.filter((n) => {
-          return n.label.toLowerCase() === query.toLowerCase();
+          return n.concept === concept;
         });
         if (matches.length > 0) {
           emit('search', matches[0].concept);
@@ -46,8 +46,8 @@ export default defineComponent({
     const searchNodes = (query: string) => {
       if (query.length < 1) return [];
       return nodes.value
-        .map((n) => n.label)
-        .filter((n) => n.toLowerCase().includes(query.toLowerCase()));
+        .filter((n) => n.label.toLowerCase().includes(query.toLowerCase()))
+        .map(n => n.concept);
     };
     return {
       emitSearchResult,

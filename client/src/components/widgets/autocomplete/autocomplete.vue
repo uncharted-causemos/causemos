@@ -9,6 +9,7 @@
       @keydown.down="onArrowDown"
       @keydown.up="onArrowUp"
       @keydown.enter="onEnter"
+      @blur="onBlur"
     >
     <div
       v-if="showSuggestions"
@@ -92,14 +93,17 @@ export default defineComponent({
       }
     },
     onEnter() {
-      this.searchTerm = this.suggestions[this.selectedIndex];
+      const suggestion = this.suggestions[this.selectedIndex];
       this.selectedIndex = -1;
-      this.$emit('item-selected', this.searchTerm);
+      this.$emit('item-selected', suggestion);
+      this.showSuggestions = false;
+    },
+    onBlur() {
       this.showSuggestions = false;
     },
     setSearchTerm(suggestion: string) {
-      this.searchTerm = suggestion;
-      this.$emit('item-selected', this.searchTerm);
+      // this.searchTerm = suggestion;
+      this.$emit('item-selected', suggestion);
       this.showSuggestions = false;
     },
     handleClickOutside(evt: Event) {
