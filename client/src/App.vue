@@ -23,7 +23,7 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
-import 'pdfjs-dist/legacy/web/pdf_viewer.css';
+// import 'pdfjs-dist/legacy/web/pdf_viewer.css';
 
 export default {
   name: 'App',
@@ -166,20 +166,5 @@ $icon-font-path: '~@uncharted/uncharted-bootstrap/dist/fonts/bootstrap-sass/asse
 /* Sass entrypoint */
 @import "/styles/wm";
 
-.pdfViewer {
-  overflow: hidden;
-  margin-bottom: -1em;
-}
-
-.pdfViewer .page {
-  border: solid 1px #ccc;
-  margin-bottom: 1em;
-}
-
-.annotationLayer .linkAnnotation > a:hover,
-.annotationLayer .buttonWidgetAnnotation.pushButton > a:hover {
-  opacity: initial;
-  background: initial;
-  box-shadow: initial;
-}
+@import '~pdfjs-dist/legacy/web/pdf_viewer.css';
 </style>

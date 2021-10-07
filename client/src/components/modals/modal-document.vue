@@ -55,11 +55,40 @@ const isPdf = (data) => {
   return fileType === 'pdf' || fileType === 'application/pdf';
 };
 
+
+const reformat = (v) => {
+  return `<strong class='anchor'>${v}</strong>`;
+};
+
 const createTextViewer = (text, textFragment) => {
   const el = document.createElement('div');
-  if (textFragment) {
+
+  if (text.search(textFragment) >= 0) {
     text = text.replace(textFragment, `<strong class='anchor'>${textFragment}</strong>`);
+  } else {
+    let fragment = textFragment;
+
+    // Not a loop, just hijacking the break-controls to fast-exit if a match is found
+    while (true) {
+      fragment = fragment.replaceAll(' .', '.');
+      if (text.search(fragment) >= 0) {
+        text = text.replace(fragment, reformat(fragment));
+        break;
+      }
+      fragment = fragment.replaceAll(' ;', ';');
+      if (text.search(fragment) >= 0) {
+        text = text.replace(fragment, reformat(fragment));
+        break;
+      }
+      fragment = fragment.replaceAll(' ,', ',');
+      if (text.search(fragment) >= 0) {
+        text = text.replace(fragment, reformat(fragment));
+        break;
+      }
+      break;
+    }
   }
+
   el.innerHTML = text;
   el.style.paddingTop = '30px';
   el.style.paddingLeft = '15px';
@@ -109,7 +138,6 @@ export default {
       if (isPdf(this.documentData) || (2 - 1) === 1) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
         try {
-          console.log('trying to get pdf');
           const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
           await viewer.renderPages();
           this.viewer = viewer;
@@ -131,7 +159,8 @@ export default {
         }
       } else {
         this.$refs.content.appendChild(this.viewer.element);
-        this.viewer.search('Overview');
+        // this.viewer.search('Overview of trace tree');
+        this.viewer.search(this.textFragment);
       }
     },
     toggle() {
@@ -185,5 +214,11 @@ export default {
   .toolbar {
     padding: 5px;
   }
+
+  /* Bootstrap sets all box-sizing to border-box, which messes up the pdf-js library */
+  ::v-deep(.page) {
+    box-sizing: content-box !important;
+  }
+
 }
 </style>
