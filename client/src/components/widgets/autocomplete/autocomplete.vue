@@ -9,8 +9,10 @@
       @keydown.down="onArrowDown"
       @keydown.up="onArrowUp"
       @keydown.enter="onEnter"
+      @blur="onBlur"
     >
     <div
+      v-if="showSuggestions"
       class="autocomplete-results-container">
       <ul
         class="autocomplete-results">
@@ -75,7 +77,7 @@ export default defineComponent({
   },
   methods: {
     onArrowDown() {
-      if (this.selectedIndex < this.suggestions.length) {
+      if (this.selectedIndex < this.suggestions.length - 1) {
         this.selectedIndex = this.selectedIndex + 1;
       }
     },
@@ -91,14 +93,17 @@ export default defineComponent({
       }
     },
     onEnter() {
-      this.searchTerm = this.suggestions[this.selectedIndex];
+      const suggestion = this.suggestions[this.selectedIndex];
       this.selectedIndex = -1;
-      this.$emit('item-selected', this.searchTerm);
+      this.$emit('item-selected', suggestion);
+      this.showSuggestions = false;
+    },
+    onBlur() {
       this.showSuggestions = false;
     },
     setSearchTerm(suggestion: string) {
-      this.searchTerm = suggestion;
-      this.$emit('item-selected', this.searchTerm);
+      // this.searchTerm = suggestion;
+      this.$emit('item-selected', suggestion);
       this.showSuggestions = false;
     },
     handleClickOutside(evt: Event) {
@@ -130,7 +135,10 @@ $input-element-height: 37px;
   .autocomplete-results {
     padding: 0;
     z-index: 52;
-    background-color: white;
+    background-color: $background-light-1;
+    .is-active {
+      background-color: $background-light-3;
+    }
   }
   ::v-deep(.autocomplete-result) {
     list-style: none;

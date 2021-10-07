@@ -1,15 +1,6 @@
 <template>
   <div v-if="metadata" class="model-header">
     <div class="model-attribute-pair">
-      <label style="font-weight: normal;">Model family</label>
-      <input
-        :value="metadata.family_name"
-        type="text"
-        class="disabled"
-        style="border-width: 1px;"
-      >
-    </div>
-    <div class="model-attribute-pair">
       <label style="font-weight: normal;">Model</label>
       <input
         :value="metadata.name"
@@ -20,30 +11,13 @@
     </div>
     <div class="model-attribute-pair">
       <label style="font-weight: normal;">Default output variable</label>
-      <select name="outputs" id="outputs" @change="onOutputSelectionChange($event)" style="height: 100%">
+      <select name="outputs" id="outputs" @change="onOutputSelectionChange($event)">
         <option
           v-for="(selectValue, indx) in modelOutputs"
           :key="selectValue"
           :selected="indx === currentOutputIndex"
         >{{selectValue}}</option>
       </select>
-    </div>
-    <div class="model-attribute-pair">
-      <label style="font-weight: normal;">Maintainer</label>
-      <div>
-        <input
-          v-model="maintainer.name"
-          placeholder="name"
-          type="text"
-          style="border-width: 1px;"
-        >
-        <input
-          v-model="maintainer.email"
-          placeholder="email"
-          type="text"
-          style="border-width: 1px;"
-        >
-      </div>
     </div>
     <div class="model-attribute-pair" style="flex-grow: inherit">
       <label style="font-weight: normal;">Model description</label>

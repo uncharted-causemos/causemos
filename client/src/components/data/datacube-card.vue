@@ -498,18 +498,9 @@ export default defineComponent({
       type: Object as PropType<ViewState>,
       default: null
     },
-
-    defaultSpatialAggregation: {
-      type: Object as PropType<AggregationOption>,
-      default: AggregationOption.Mean
-    },
-    defaultTemporalAggregation: {
-      type: Object as PropType<AggregationOption>,
-      default: AggregationOption.Mean
-    },
-    defaultTemporalResolution: {
-      type: Object as PropType<TemporalResolutionOption>,
-      default: TemporalResolutionOption.Month
+    tabState: {
+      type: String,
+      default: 'description'
     },
     metadata: {
       type: Object as PropType<Model | Indicator | null>,
@@ -552,12 +543,10 @@ export default defineComponent({
     const store = useStore();
 
     const {
-      defaultSpatialAggregation,
-      defaultTemporalAggregation,
-      defaultTemporalResolution,
       initialDataConfig,
       initialViewConfig,
-      metadata
+      metadata,
+      tabState
     } = toRefs(props);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -581,9 +570,9 @@ export default defineComponent({
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
-    const selectedSpatialAggregation = ref<AggregationOption>(defaultSpatialAggregation.value);
-    const selectedTemporalAggregation = ref<AggregationOption>(defaultTemporalAggregation.value);
-    const selectedTemporalResolution = ref<TemporalResolutionOption>(defaultTemporalResolution.value);
+    const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
+    const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelRunsFetchedAt = ref(0);
@@ -669,29 +658,31 @@ export default defineComponent({
     };
 
     // apply initial view config for this datacube
-    if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
-      if (initialViewConfig.value.spatialAggregation !== undefined) {
-        selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;
+    watchEffect(() => {
+      if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
+        if (initialViewConfig.value.spatialAggregation !== undefined) {
+          selectedSpatialAggregation.value = initialViewConfig.value.spatialAggregation as AggregationOption;
+        }
+        if (initialViewConfig.value.temporalResolution !== undefined) {
+          selectedTemporalResolution.value = initialViewConfig.value.temporalResolution as TemporalResolutionOption;
+        }
+        if (initialViewConfig.value.temporalAggregation !== undefined) {
+          selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation as AggregationOption;
+        }
+        if (initialViewConfig.value.selectedMapBaseLayer !== undefined) {
+          selectedBaseLayer.value = initialViewConfig.value.selectedMapBaseLayer;
+        }
+        if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
+          selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
+        }
+        if (initialViewConfig.value.breakdownOption !== undefined) {
+          breakdownOption.value = initialViewConfig.value.breakdownOption;
+        }
+        if (initialViewConfig.value.selectedAdminLevel !== undefined) {
+          selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
+        }
       }
-      if (initialViewConfig.value.temporalResolution !== undefined) {
-        selectedTemporalResolution.value = initialViewConfig.value.temporalResolution as TemporalResolutionOption;
-      }
-      if (initialViewConfig.value.temporalAggregation !== undefined) {
-        selectedTemporalAggregation.value = initialViewConfig.value.temporalAggregation as AggregationOption;
-      }
-      if (initialViewConfig.value.selectedMapBaseLayer !== undefined) {
-        selectedBaseLayer.value = initialViewConfig.value.selectedMapBaseLayer;
-      }
-      if (initialViewConfig.value.selectedMapDataLayer !== undefined) {
-        selectedDataLayer.value = initialViewConfig.value.selectedMapDataLayer;
-      }
-      if (initialViewConfig.value.breakdownOption !== undefined) {
-        breakdownOption.value = initialViewConfig.value.breakdownOption;
-      }
-      if (initialViewConfig.value.selectedAdminLevel !== undefined) {
-        selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
-      }
-    }
+    });
 
     const clearRouteParam = () => {
       // fix to avoid double history later
@@ -732,19 +723,21 @@ export default defineComponent({
       }
     };
 
-    const toaster = useToaster();
-    if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-      if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-        setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
+    watchEffect(() => {
+      if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+        if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+          setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
+        }
+        if (initialDataConfig.value.selectedRegionIds !== undefined) {
+          initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+        }
+        if (initialDataConfig.value.selectedQualifierValues !== undefined) {
+          initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+        }
       }
-      if (initialDataConfig.value.selectedRegionIds !== undefined) {
-        initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
-      }
-      if (initialDataConfig.value.selectedQualifierValues !== undefined) {
-        initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
-      }
-    }
+    });
 
+    const toaster = useToaster();
     const clickData = (tab: string) => {
       if (canClickDataTab.value) {
         // FIXME: This code to select a model run when switching to the data tab
@@ -850,6 +843,12 @@ export default defineComponent({
         if (!runsWithPreGenDataAvailable) {
           headerGroupButtons.value = headerGroupButtonsSimple;
         }
+      }
+    });
+
+    watchEffect(() => {
+      if (tabState.value) {
+        onTabClick(tabState.value);
       }
     });
 
@@ -1167,6 +1166,7 @@ export default defineComponent({
       onTabClick,
       ordinalDimensionNames,
       outputSpecs,
+      potentialScenarios,
       potentialScenarioCount,
       projectType,
       preGenDataItems,

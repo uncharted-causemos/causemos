@@ -1,24 +1,26 @@
 <template>
   <div class="search-box">
-    <input
-      v-model="search"
-      type="text"
-      class="form-control"
-      placeholder="Search Nodes..."
-      @keyup.enter="searchNodes"
-      @dblclick.stop=""
+    <auto-complete
+      :display-type="'ConceptDisplay'"
+      placeholder-message="Search..."
+      :search-fn="searchNodes"
+      @item-selected="emitSearchResult"
     />
   </div>
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref, toRefs } from 'vue';
+import { defineComponent, PropType, toRefs } from 'vue';
+import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
 
 export default defineComponent({
   name: 'GraphSearch',
   emits: [
     'search'
   ],
+  components: {
+    AutoComplete
+  },
   props: {
     nodes: {
       type: Array as PropType<any[]>,
@@ -30,17 +32,25 @@ export default defineComponent({
       nodes
     } = toRefs(props);
 
-    const search = ref('');
-    const searchNodes = () => {
-      const matches = nodes.value.filter((n) => {
-        return n.label.toLowerCase() === search.value.toLowerCase();
-      });
-      if (matches.length > 0) {
-        emit('search', matches[0].concept);
+    const emitSearchResult = (concept: string) => {
+      if (concept) {
+        const matches = nodes.value.filter((n) => {
+          return n.concept === concept;
+        });
+        if (matches.length > 0) {
+          emit('search', matches[0].concept);
+        }
       }
     };
+
+    const searchNodes = (query: string) => {
+      if (query.length < 1) return [];
+      return nodes.value
+        .filter((n) => n.label.toLowerCase().includes(query.toLowerCase()))
+        .map(n => n.concept);
+    };
     return {
-      search,
+      emitSearchResult,
       searchNodes
     };
   }
