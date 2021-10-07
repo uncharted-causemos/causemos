@@ -24,11 +24,12 @@ const submitModelRun = async(metadata) => {
     parameters,
     is_default_run = false
   } = metadata;
+  const isDevEnvironment = process.env.TD_DATA_URL.includes('10.65.18.69');
   const filteredMetadata = {
-    id: uuid(),
     model_id,
     model_name,
     parameters,
+    id: uuid(),
     data_paths: [],
     is_default_run,
     created_at: Date.now(),
@@ -50,7 +51,9 @@ const submitModelRun = async(metadata) => {
   Logger.info(`Submitting execution request for id: ${filteredMetadata.id}`);
   let result;
   try {
-    result = await requestAsPromise(pipelinePayload);
+    if (!isDevEnvironment) {
+      result = await requestAsPromise(pipelinePayload);
+    }
   } catch (err) {
     return { result: { error: err }, code: 500 };
   }
@@ -73,6 +76,17 @@ const submitModelRun = async(metadata) => {
       status: 'SUBMITTED',
       name: runName
     }, d => d.id);
+    if (isDevEnvironment) {
+      setTimeout(async () => {
+        await connection.update({
+          ...filteredMetadata,
+          status: 'PROCESSING'
+        }, d => d.id);
+        setTimeout(async () => {
+          await markModelRunFailed(filteredMetadata);
+        }, 20000);
+      }, 10000);
+    }
     return { result: { es_response: result, run_id: filteredMetadata.id }, code: 201 };
   } catch (err) {
     return { result: { error: err }, code: 500 };
