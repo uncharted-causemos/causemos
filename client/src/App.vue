@@ -23,7 +23,6 @@ import InsightManager from '@/components/insight-manager/insight-manager.vue';
 
 /* Vue Resize helper */
 import 'vue3-resize/dist/vue3-resize.css';
-// import 'pdfjs-dist/legacy/web/pdf_viewer.css';
 
 export default {
   name: 'App',

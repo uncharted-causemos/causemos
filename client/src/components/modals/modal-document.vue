@@ -53,39 +53,34 @@ const isPdf = (data) => {
   return fileType === 'pdf' || fileType === 'application/pdf';
 };
 
-
 const reformat = (v) => {
-  return `<strong class='anchor'>${v}</strong>`;
+  return `<span class='extract-text-anchor' style='background: #56b3e9'>${v}</span>`;
 };
+
+// Run through a list of sucessive transform to try to find the correct match
+const lossySearch = (text, textFragment) => {
+  let fragment = textFragment;
+  fragment = fragment.replaceAll(' .', '.');
+  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+
+  fragment = fragment.replaceAll(' ;', ';');
+  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+
+  fragment = fragment.replaceAll(' ,', ',');
+  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+
+  return text;
+};
+
 
 const createTextViewer = (text, textFragment) => {
   const el = document.createElement('div');
 
   if (textFragment) {
     if (text.search(textFragment) >= 0) {
-      text = text.replace(textFragment, `<strong class='anchor'>${textFragment}</strong>`);
+      text = text.replace(textFragment, reformat(textFragment));
     } else {
-      let fragment = textFragment;
-
-      // Not a loop, just hijacking the break-controls to fast-exit if a match is found
-      while (true) {
-        fragment = fragment.replaceAll(' .', '.');
-        if (text.search(fragment) >= 0) {
-          text = text.replace(fragment, reformat(fragment));
-          break;
-        }
-        fragment = fragment.replaceAll(' ;', ';');
-        if (text.search(fragment) >= 0) {
-          text = text.replace(fragment, reformat(fragment));
-          break;
-        }
-        fragment = fragment.replaceAll(' ,', ',');
-        if (text.search(fragment) >= 0) {
-          text = text.replace(fragment, reformat(fragment));
-          break;
-        }
-        break;
-      }
+      text = lossySearch(text, textFragment);
     }
   }
 
@@ -152,7 +147,7 @@ export default {
       if (this.textOnly === true) {
         this.$refs.content.appendChild(this.textViewer.element);
 
-        const anchor = document.getElementsByClassName('anchor')[0];
+        const anchor = document.getElementsByClassName('extract-text-anchor')[0];
         if (anchor) {
           const scroller = document.getElementsByClassName('modal-body')[0];
           scroller.scrollTop = anchor.offsetTop - 100;
