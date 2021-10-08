@@ -125,7 +125,7 @@ export default function(
       [xScale.range()[0], 0],
       [xScale.range()[1], X_AXIS_HEIGHT]
     ])
-    .on('brush', brushed);
+    .on('start brush end', brushed);
 
   groupElement
     .append('g') // create brush element and move to default
@@ -141,9 +141,47 @@ export default function(
     .attr('stroke', CONTEXT_RANGE_STROKE)
     .attr('opacity', CONTEXT_RANGE_OPACITY);
 
+  function brushHandle(g: D3GElementSelection, selection: number[]) {
+    const enterFn = (enter: D3Selection) => {
+      const handleW = 9;
+      const handleWGap = -2;
+      const handleHGap = 0;
+      const handleH = X_AXIS_HEIGHT - 2 * handleHGap;
+
+      const container = enter.append('g')
+        .attr('class', 'custom-handle')
+        .attr('cursor', 'ew-resize');
+
+      container.append('rect')
+        .attr('fill', '#f8f8f8')
+        .attr('stroke', '#888888')
+        .attr('y', handleHGap)
+        .attr('x', (d, i) => i === 0 ? -(handleW + handleWGap) : handleWGap)
+        .attr('rx', 4)
+        .attr('ry', 4)
+        .attr('width', handleW)
+        .attr('height', handleH);
+
+      // Vertical dots
+      [0.3, 0.5, 0.7].forEach(value => {
+        container.append('circle')
+          .attr('cx', (d, i) => i === 0 ? -(0.5 * handleW + handleWGap) : 0.5 * handleW + handleWGap)
+          .attr('cy', handleHGap + handleH * value)
+          .attr('r', 1.25)
+          .attr('fill', '#888888');
+      });
+    };
+
+    g.selectAll('.custom-handle')
+      .data([{ type: 'w' }, { type: 'e' }])
+      .join(enterFn as any)
+      .attr('transform', (d, i) => translate(selection[i], 0));
+  }
+
   function brushed({ selection }: { selection: number[] }) {
     const [x0, x1] = selection.map(xScale.invert);
     onTimestampRangeSelected(x0, x1);
+    groupElement.select('.brush').call(brushHandle as any, selection);
   }
 
   generateSelectableTimestamps(
