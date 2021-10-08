@@ -3,6 +3,7 @@
     <modal-document
       v-if="!!documentModalData"
       :document-id="documentModalData.doc_id"
+      :text-fragment="textFragment"
       @close="documentModalData = null"
     />
     <div class="pane-summary">
@@ -94,7 +95,7 @@
                 :key="sentIdx"
                 :evidence="evidence"
                 :resource-type="statement.subj.concept === selectedItem.concept ? 'subj' : 'obj'"
-                @click-evidence="openDocumentModal(evidence.document_context)"
+                @click-evidence="openDocumentModal(evidence)"
               />
             </div>
           </template>
@@ -192,6 +193,7 @@ export default {
     currentItem: null,
     activeCorrection: null,
     documentModalData: null,
+    textFragment: null,
     summaryData: { children: [], meta: { checked: false } },
     CORRECTION_TYPES: CORRECTION_TYPES,
     loadingMessage: 'Loading factors...',
@@ -265,8 +267,9 @@ export default {
         this.ontologyComposition = d;
       });
     },
-    openDocumentModal(documentMeta) {
-      this.documentModalData = documentMeta;
+    openDocumentModal(evidence) {
+      this.documentModalData = evidence.document_context;
+      this.textFragment = evidence.evidence_context.text;
     },
     async openEditor(item, type) {
       if (item === this.currentItem && type === this.activeCorrection) {

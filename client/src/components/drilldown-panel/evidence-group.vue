@@ -104,7 +104,7 @@
           v-for="(evidence, sentIdx) of statement.evidence"
           :key="sentIdx"
           :evidence="evidence"
-          @click-evidence="clickEvidence(evidence.document_context)"
+          @click-evidence="clickEvidence(evidence)"
         />
       </div>
     </template>
@@ -118,7 +118,7 @@ import EvidenceItem from '@/components/evidence-item.vue';
 import SmallIconButton from '@/components/widgets/small-icon-button.vue';
 import { CORRECTION_TYPES, CURATION_STATES } from '@/services/curation-service';
 import polarityUtil, { STATEMENT_POLARITY } from '@/utils/polarity-util';
-import { StatementGroup, DocumentContext } from '@/types/Statement';
+import { StatementGroup, Evidence } from '@/types/Statement';
 
 /* A subcomponent to display evidence detail for evidence-pane */
 export default defineComponent({
@@ -185,8 +185,8 @@ export default defineComponent({
     vet(item: StatementGroup) {
       this.$emit('vet', item);
     },
-    clickEvidence(documentContext: DocumentContext) {
-      this.$emit('click-evidence', documentContext);
+    clickEvidence(evidence: Evidence) {
+      this.$emit('click-evidence', evidence);
     },
 
     // States

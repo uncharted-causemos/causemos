@@ -12,7 +12,8 @@
       <small-icon-button
         v-tooltip.top="'Open source document'"
       >
-        <i class="fa fa-book fa-lg" />
+        <i class="fa fa-fw fa-lg"
+           :class="fileIcon" />
       </small-icon-button>
     </div>
   </div>
@@ -47,6 +48,13 @@ export default defineComponent({
   computed: {
     metadataDisplayString(): string {
       return evidenceMetadataUtil.constructDisplayString(this.evidence);
+    },
+    fileIcon(): string {
+      const type = this.evidence.document_context.file_type || '';
+      if (['application/pdf', 'pdf'].includes(type)) {
+        return 'fa-file-pdf-o';
+      }
+      return 'fa-file-text-o';
     }
   },
   methods: {

@@ -3,6 +3,7 @@
     <modal-document
       v-if="!!documentModalData"
       :document-id="documentModalData.doc_id"
+      :text-fragment="textFragment"
       @close="documentModalData = null"
     />
     <div class="pane-summary">
@@ -223,6 +224,7 @@ export default {
     activeCorrection: null,
     activeItem: null,
     documentModalData: null,
+    textFragment: null,
 
     // States
     expandAll: null,
@@ -316,8 +318,9 @@ export default {
       if (this.shouldShowStatementGroup(value.key)) return '';
       else return '(' + value.count + ' statement' + (value.count !== 1 ? 's' : '') + ', not used in modeling)';
     },
-    openDocumentModal(documentMeta) {
-      this.documentModalData = documentMeta;
+    openDocumentModal(evidence) {
+      this.documentModalData = evidence.document_context;
+      this.textFragment = evidence.evidence_context.text;
     },
     toggle(item) {
       // Recursive helpers

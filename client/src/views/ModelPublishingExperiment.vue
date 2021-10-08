@@ -14,6 +14,7 @@
         <datacube-card
           :class="{ 'datacube-expanded': true }"
           :isExpanded="false"
+          :isPublishing="true"
           :initial-data-config="initialDataConfig"
           :initial-view-config="initialViewConfig"
           :metadata="metadata"
