@@ -4020,11 +4020,6 @@ create-hmac@^1.1.0, create-hmac@^1.1.4, create-hmac@^1.1.7:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
-cropro@^1.1.0:
-  version "1.1.0"
-  resolved "https://registry.yarnpkg.com/cropro/-/cropro-1.1.0.tgz#958cacc90f44ffc5ba8faf2a2d35d806bce66487"
-  integrity sha512-sIDTWAB52Wdw/NL5LpTnNHcJu8iqsva97zJsMK4vTBgSjGUwn2f0mHbYIpKtQy9PBzkdcZlGbhrm6KiXj/euAA==
-
 cross-spawn@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-3.0.1.tgz#1256037ecb9f0c5f79e3d6ef135e30770184b982"
@@ -8302,11 +8297,6 @@ mapbox-gl@^1.10.0:
     tinyqueue "^2.0.3"
     vt-pbf "^3.1.1"
 
-markerjs2@^2.13.0:
-  version "2.13.0"
-  resolved "https://registry.yarnpkg.com/markerjs2/-/markerjs2-2.13.0.tgz#78a30c7b72949acbcb57334d60f5dcd651042f4f"
-  integrity sha512-MzYqhni1vEhCVkXDWqTPt0rG7gObU7T+ArXFgJ55NwvK6s4H2RSFL5MdHR6kR07N3ZPqYyInGMRW3jAMvE65lw==
-
 md5.js@^1.3.4:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/md5.js/-/md5.js-1.3.5.tgz#b5d07b8e3216e3e27cd728d72f70d1e6a342005f"
@@ -9580,10 +9570,10 @@ pbkdf2@^3.0.3:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
-pdfjs-dist@^2.1.266:
-  version "2.5.207"
-  resolved "https://registry.yarnpkg.com/pdfjs-dist/-/pdfjs-dist-2.5.207.tgz#b5e8c19627be64269cd3fb6df3eaaf45ddffe7b6"
-  integrity sha512-xGDUhnCYPfHy+unMXCLCJtlpZaaZ17Ew3WIL0tnSgKFUZXHAPD49GO9xScyszSsQMoutNDgRb+rfBXIaX/lJbw==
+pdfjs-dist@^2.10.377:
+  version "2.10.377"
+  resolved "https://registry.yarnpkg.com/pdfjs-dist/-/pdfjs-dist-2.10.377.tgz#feadc9f31bf1790795994e54b18930974cf4970a"
+  integrity sha512-i0jRShtvgfsVQUNCoFYH4SVhPO3U0yhtiFLfZ0RR0B+68N+Vnwq+8B3cjWjLEwWGh8wg1XQ/sYMYKUlHn/Qpsw==
 
 performance-now@^2.1.0:
   version "2.1.0"

@@ -39,7 +39,21 @@
               @select-scenario="updateScenarioSelection"
               @generated-scenarios="updateGeneratedScenarios"
             />
+            <message-display
+              style="margin-bottom: 10px;"
+              v-if="isPublishing && !hasDefaultRun"
+              :message="runningDefaultRun ? 'The default run is currently being executed' : 'You must execute a default run by clicking the button below'"
+              :message-type="'warning'"
+            />
             <button
+              v-if="isPublishing && !hasDefaultRun && !runningDefaultRun"
+              class="btn toggle-new-runs-button btn-primary btn-call-for-action"
+              @click="createRunWithDefaults()"
+            >
+              {{ defaultRunButtonCaption }}
+            </button>
+            <button
+              v-if="!isPublishing || hasDefaultRun"
               class="btn toggle-new-runs-button"
               :class="{
                 'btn-primary btn-call-for-action': !newRunsMode,
@@ -239,7 +253,7 @@
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
                 :key="activeDrilldownTab"
-                :timeseries-data="visibleTimeseriesData"
+                :timeseries-data="timeseriesData"
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
@@ -396,7 +410,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { defineComponent, ref, PropType, toRefs, computed, watchEffect, Ref } from 'vue';
+import { computed, defineComponent, PropType, ref, Ref, toRefs, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 
@@ -408,6 +422,7 @@ import DrilldownPanel from '@/components/drilldown-panel.vue';
 import DropdownButton from '@/components/dropdown-button.vue';
 import MapDropdown from '@/components/data/map-dropdown.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 import Modal from '@/components/modals/modal.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
@@ -449,8 +464,12 @@ import { isIndicator, isModel } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
-import { enableConcurrentTileRequestsCaching, disableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
+import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
+import API from '@/api/api';
+import useToaster from '@/services/composables/useToaster';
+
+const defaultRunButtonCaption = 'Run with default parameters';
 
 const DRILLDOWN_TABS = [
   {
@@ -470,6 +489,10 @@ export default defineComponent({
     isExpanded: {
       type: Boolean,
       default: true
+    },
+    isPublishing: {
+      type: Boolean,
+      default: false
     },
     initialDataConfig: {
       type: Object as PropType<DataState>,
@@ -509,6 +532,7 @@ export default defineComponent({
     DropdownControl,
     MapDropdown,
     MapLegend,
+    MessageDisplay,
     Modal,
     ModalCheckRunsExecutionStatus,
     ModalConfirmation,
@@ -523,6 +547,7 @@ export default defineComponent({
     const store = useStore();
 
     const {
+      isPublishing,
       initialDataConfig,
       initialViewConfig,
       metadata,
@@ -566,13 +591,34 @@ export default defineComponent({
 
     const allModelRunData = useScenarioData(selectedModelId, modelRunsFetchedAt);
 
+    const updateAndFetch = async (newDefaultRun: ModelRun) => {
+      const defaultRunModified = { ...newDefaultRun, is_default_run: true };
+      await updateModelRun(defaultRunModified);
+      fetchData();
+    };
+
+    watchEffect(() => {
+      // If there are no default runs then set a run to default if it matches the default parameters
+      if (isPublishing.value && allModelRunData.value.every(run => !run.is_default_run) && metadata.value && isModel(metadata.value)) {
+        const parameterDictionary = _.mapValues(_.keyBy(metadata.value.parameters, 'name'), 'default');
+        const newDefaultRun = allModelRunData.value.find(run => {
+          const runParameterDictionary = _.mapValues(_.keyBy(run.parameters, 'name'), 'value');
+          return Object.keys(parameterDictionary).every(p => runParameterDictionary[p] === parameterDictionary[p]);
+        });
+        if (newDefaultRun) {
+          updateAndFetch(newDefaultRun);
+        }
+      }
+    });
+    const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
+    const canClickDataTab = computed(() => !isPublishing.value || hasDefaultRun.value || (metadata.value && isIndicator(metadata.value)));
     const {
       dimensions,
       ordinalDimensionNames,
       runParameterValues
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
-
+    const runningDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)));
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
@@ -665,7 +711,9 @@ export default defineComponent({
         // selecting a run or multiple runs when the desc tab is active should always open the data tab
         //  selecting a run or multiple runs otherwise should respect the current tab
         if (currentTabView.value === 'description') {
-          updateTabView('data');
+          if (canClickDataTab.value) {
+            updateTabView('data');
+          }
         }
         // once the list of selected scenario changes,
         // extract model runs that match the selected scenario IDs
@@ -694,29 +742,34 @@ export default defineComponent({
       }
     });
 
+    const toaster = useToaster();
     const clickData = (tab: string) => {
-      // FIXME: This code to select a model run when switching to the data tab
-      // should be in a watcher on the parent component to be more robust,
-      // rather than in this button's click handler.
+      if (tab !== 'data' || canClickDataTab.value) {
+        // FIXME: This code to select a model run when switching to the data tab
+        // should be in a watcher on the parent component to be more robust,
+        // rather than in this button's click handler.
 
-      if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
-        // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
-        const readyRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
-        if (readyRuns.length === 0) {
-          console.warn('cannot find a baseline model run indicated by the is_default_run');
-          // failed to find baseline using the 'is_default_run' flag
-          // FIXME: so, try to find a model run that has values matching the default values of all inputs
+        if (isModelMetadata.value && selectedScenarioIds.value.length === 0) {
+          // clicking on either the 'data' or 'pre-rendered-viz' tabs when no runs is selected should always pick the baseline run
+          const readyRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.is_default_run);
+          if (readyRuns.length === 0) {
+            console.warn('cannot find a baseline model run indicated by the is_default_run');
+            // failed to find baseline using the 'is_default_run' flag
+            // FIXME: so, try to find a model run that has values matching the default values of all inputs
+          }
+          const newIds = readyRuns.map(run => run.id).slice(0, 1);
+          setSelectedScenarioIds(newIds);
         }
-        const newIds = readyRuns.map(run => run.id).slice(0, 1);
-        setSelectedScenarioIds(newIds);
-      }
 
-      updateTabView(tab);
-      //
-      // advance the relevant tour if it is active
-      //
-      if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour')) {
-        tour.value.next();
+        updateTabView(tab);
+        //
+        // advance the relevant tour if it is active
+        //
+        if (tab === 'data' && tour.value && tour.value.id.startsWith('aggregations-tour')) {
+          tour.value.next();
+        }
+      } else {
+        toaster(`At least one run must match the default parameters. Click "${defaultRunButtonCaption}"`, 'error', true);
       }
     };
 
@@ -799,7 +852,7 @@ export default defineComponent({
     });
 
     watchEffect(() => {
-      if (tabState.value) {
+      if (isPublishing.value && tabState.value) {
         onTabClick(tabState.value);
       }
     });
@@ -1092,14 +1145,17 @@ export default defineComponent({
       adminLayerStats,
       baselineMetadata,
       breakdownOption,
+      canClickDataTab,
       colorFromIndex,
       currentTabView,
       dataPaths,
+      defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
       fetchData,
       getSelectedPreGenOutput,
       gridLayerStats,
+      hasDefaultRun,
       headerGroupButtons,
       isModelMetadata,
       isRelativeDropdownOpen,
@@ -1124,6 +1180,7 @@ export default defineComponent({
       regionalData,
       relativeTo,
       requestNewModelRuns,
+      runningDefaultRun,
       runParameterValues,
       selectedAdminLevel,
       selectedBaseLayer,
@@ -1155,6 +1212,8 @@ export default defineComponent({
       TemporalAggregationLevel,
       temporalBreakdownData,
       timerHandler,
+      timeseriesData,
+      toaster,
       toggleIsQualifierSelected,
       toggleIsRegionSelected,
       toggleIsYearSelected,
@@ -1226,6 +1285,23 @@ export default defineComponent({
         createModelRun(modelRun.model_id, modelRun.model_name, modelRun.parameters, modelRun.is_default_run);
       }
       await this.deleteWithRun(modelRun);
+    },
+    // TODO: Refactor this to use the function for creating model runs.
+    async createRunWithDefaults() {
+      // send the request to the server
+      const metadata = this.metadata;
+      try {
+        if (metadata && isModel(metadata)) {
+          await API.post('maas/model-runs', {
+            model_id: metadata.data_id,
+            model_name: metadata?.name,
+            parameters: metadata.parameters,
+            is_default_run: true
+          });
+        }
+      } catch (e) {
+        this.toaster('Run failed', 'error', true);
+      }
     }
   }
 });
