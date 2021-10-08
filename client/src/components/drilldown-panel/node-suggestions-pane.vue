@@ -39,13 +39,13 @@
           class="suggestions-title"
         >
           <span v-if="relationshipGroup.key === 'cause'">
-            Top Drivers ( ? <i
+            Drivers ( ? <i
               class="fa fa-fw  fa-long-arrow-right"
             />
             {{ ontologyFormatter(selectedNode.concept) }} )
           </span>
           <span v-else>
-            Top Impacts ({{ ontologyFormatter(selectedNode.concept) }} <i
+            Impacts ({{ ontologyFormatter(selectedNode.concept) }} <i
               class="fa fa-fw  fa-long-arrow-right"
             />
             ?)
@@ -129,9 +129,7 @@ export default {
   ],
   data: () => ({
     summaryData: { children: [], meta: { checked: false, isSomeChildChecked: false } },
-    hasError: false,
-    errorMsg: MSG_EMPTY_SELECTION,
-    loadingMessage: 'Loading suggestions...'
+    hasError: false
   }),
   computed: {
     ...mapGetters({
@@ -154,6 +152,10 @@ export default {
       this.refresh();
     }
   },
+  created() {
+    this.errorMsg = MSG_EMPTY_SELECTION;
+    this.loadingMessage = 'Loading suggestions...';
+  },
   mounted() {
     this.refresh();
   },
@@ -162,10 +164,10 @@ export default {
       setSearchClause: 'query/setSearchClause'
     }),
     refresh() {
-      const topic = this.selectedNode.concept;
+      const components = this.selectedNode.components;
 
-      const causeStatement = this.statements.filter(s => s.obj.concept === topic);
-      const effectStatement = this.statements.filter(s => s.subj.concept === topic);
+      const causeStatement = this.statements.filter(s => components.includes(s.obj.concept));
+      const effectStatement = this.statements.filter(s => components.includes(s.subj.concept));
 
       const causes = this.groupRelationships(causeStatement);
       const slicedCauses = causes.slice(0, 5); // Get top 5
@@ -209,7 +211,7 @@ export default {
             meta.num_evidence = _.sumBy(s.dataArray, d => {
               return d.wm.num_evidence;
             });
-            meta.disabled = this.isEdgeinCAG({ source: splitted[0], target: splitted[1] }); // Check if the relationship already exists in the CAG
+            meta.disabled = this.isStatementEdgeinCAG({ source: splitted[0], target: splitted[1] }); // Check if the relationship already exists in the CAG
             return meta;
           }
         }
@@ -275,12 +277,49 @@ export default {
         this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters } });
       }
     },
-    isEdgeinCAG(edge) {
+    isStatementEdgeinCAG(edge) {
       const graphData = this.graphData;
+
+      const nodeSource = graphData.nodes.find(n => n.components.includes(edge.source));
+      const nodeTarget = graphData.nodes.find(n => n.components.includes(edge.target));
+      if (_.isNil(nodeSource) || _.isNil(nodeTarget)) {
+        return false;
+      }
       const edges = graphData.edges.map(edge => edge.source + '///' + edge.target);
-      return edges.indexOf(edge.source + '///' + edge.target) !== -1;
+      return edges.indexOf(nodeSource.concept + '///' + nodeTarget.concept) !== -1;
     },
     addToCAG() {
+      if (this.numselectedRelationships < 1) {
+        this.hasError = true;
+        return;
+      }
+      const causeGroup = this.summaryData.children[0];
+      const effectGroup = this.summaryData.children[1];
+      const rootConcept = this.selectedNode.concept;
+
+      const newEdges = [];
+      if (!_.isEmpty(causeGroup.children)) {
+        causeGroup.children.forEach(edge => {
+          newEdges.push({
+            source: edge.meta.source,
+            target: rootConcept,
+            reference_ids: edge.dataArray.map(s => s.id)
+          });
+        });
+      }
+      if (!_.isEmpty(effectGroup.children)) {
+        effectGroup.children.forEach(edge => {
+          newEdges.push({
+            source: rootConcept,
+            target: edge.meta.target,
+            reference_ids: edge.dataArray.map(s => s.id)
+          });
+        });
+      }
+      console.log(newEdges);
+      this.$emit('add-to-CAG', { nodes: [], edges: newEdges });
+    },
+    addToCAG2() {
       if (this.numselectedRelationships > 0) {
         this.hasError = false;
 
