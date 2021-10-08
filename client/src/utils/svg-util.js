@@ -383,7 +383,7 @@ export const showSvgTooltip = (svgContainer, text, position, preferredAngle = -M
   const originalBBox = svgContainer.node().getBBox();
 
   const padding = 10;
-  const lineSpacing = 12;
+  const lineSpacing = 13;
 
   const svgTooltip = svgContainer.append('g')
     .classed('svg-tooltip', true)
@@ -409,8 +409,8 @@ export const showSvgTooltip = (svgContainer, text, position, preferredAngle = -M
 
   const svgTooltipText = svgTooltipContents
     .append('text')
-    .style('font-weight', 600)
-    .style('font-size', '10px')
+    // .style('font-weight', 600)
+    .style('font-size', '12px')
     .style('fill', 'white');
 
   const tspans = String(text).replace(/<br \/>/g, '\n').split('\n')
