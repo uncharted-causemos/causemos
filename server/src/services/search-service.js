@@ -37,6 +37,7 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
 
 
 const buildSubjObjAggregation = (concepts) => {
+  const limit = 10;
   return {
     filteredSubj: {
       filter: {
@@ -53,7 +54,7 @@ const buildSubjObjAggregation = (concepts) => {
         fieldAgg: {
           terms: {
             field: 'subj.concept.raw',
-            size: 10
+            size: limit
           }
         }
       }
@@ -73,7 +74,7 @@ const buildSubjObjAggregation = (concepts) => {
         fieldAgg: {
           terms: {
             field: 'obj.concept.raw',
-            size: 10
+            size: limit
           }
         }
       }
@@ -90,8 +91,6 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
   // FIXME: wm_compositional => wm
   const matchedRawConcepts = rawResult.map(d => d.doc.label).map(d => d.replace('wm', 'wm_compositional'));
-  // console.log('first match', rawResult);
-
   const aggFilter = buildSubjObjAggregation(matchedRawConcepts);
 
   const result = await client.search({
@@ -126,14 +125,12 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
       doc_type: 'xyz',
       doc: {
         concept: item.key,
-        members: matchedMembers
+        highlight: matchedMembers
       }
     };
     finalResults.push(r);
     dupeMap.set(item.key, 1);
   }
-
-  // return [...subjItems, ...objItems];
   return finalResults;
 };
 
