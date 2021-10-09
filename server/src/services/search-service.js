@@ -17,10 +17,18 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
     'examples'
   ]);
 
+  const mapSource = (d) => {
+    return {
+      label: d.label,
+      definition: d.definition,
+      examples: d.examples
+    };
+  };
+
   return results.map(d => {
     return {
       doc_type: 'concept',
-      doc: d._source,
+      doc: mapSource(d._source),
       highlight: d.highlight
     };
   });
@@ -82,7 +90,7 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
   // FIXME: wm_compositional => wm
   const matchedRawConcepts = rawResult.map(d => d.doc.label).map(d => d.replace('wm', 'wm_compositional'));
-  console.log('first match', matchedRawConcepts);
+  // console.log('first match', rawResult);
 
   const aggFilter = buildSubjObjAggregation(matchedRawConcepts);
 
@@ -95,24 +103,38 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   });
 
   const aggResult = result.body.aggregations;
-  const subjItems = aggResult.filteredSubj.fieldAgg.buckets;
-  const objItems = aggResult.filteredObj.fieldAgg.buckets;
+  const items = [
+    ...aggResult.filteredSubj.fieldAgg.buckets,
+    ...aggResult.filteredObj.fieldAgg.buckets
+  ];
 
   // Start post processing, unique and attach matched metadata
   const dupeMap = new Map();
+  const finalResults = [];
 
-  for (let i = 0; i < subjItems.length; i++) {
-    const item = subjItems[i];
+  for (let i = 0; i < items.length; i++) {
+    const item = items[i];
     if (dupeMap.has(item.key)) continue;
 
+    const shortKey = _.last(item.key.split('/'));
+    const matchedMembers = rawResult.filter(r => {
+      const matchShortKey = _.last(r.doc.label.split('/'));
+      return shortKey.includes(matchShortKey);
+    });
 
-
+    const r = {
+      doc_type: 'xyz',
+      doc: {
+        concept: item.key,
+        members: matchedMembers
+      }
+    };
+    finalResults.push(r);
     dupeMap.set(item.key, 1);
   }
 
-
-
-  return [...subjItems, ...objItems];
+  // return [...subjItems, ...objItems];
+  return finalResults;
 };
 
 
