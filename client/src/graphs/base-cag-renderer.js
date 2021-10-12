@@ -1,8 +1,80 @@
 import * as d3 from 'd3';
 import { SVGRenderer } from 'svg-flowgraph';
 import {
-  translate
+  translate,
+  showSvgTooltip,
+  hideSvgTooltip
 } from '@/utils/svg-util';
+
+const AMBIGUOUS_MSG = 'To make model projections easier to interpret, <br /> select each grey edge and clarify its polarity in the side panel.';
+
+// Returns the stats control group if it exist, if not then create
+// and initialize it.
+const createStatsGroup = (foregroundLayer) => {
+  const squareSize = 22;
+  let statsGroup = d3.select('.graph-stats-info');
+  if (statsGroup.size() === 0) {
+    statsGroup = foregroundLayer.append('g')
+      .attr('transform', translate(5, 10))
+      .classed('graph-stats-info', true);
+
+    const infoGroup = statsGroup.append('g')
+      .classed('infoGroup', true);
+
+    statsGroup.append('text')
+      .classed('graph-stats-ambiguouity', true)
+      .attr('fill', '#D80')
+      .attr('x', 28)
+      .attr('y', 15)
+      .text('');
+
+    infoGroup
+      .append('rect')
+      .style('width', squareSize.toString())
+      .style('height', squareSize.toString())
+      .style('rx', '6')
+      .style('fill', 'white')
+      .style('fill-opacity', '0')
+      .style('stroke', '#545353');
+
+    infoGroup
+      .append('text')
+      .style('font-family', 'FontAwesome')
+      .style('font-size', '16px')
+      .style('stroke', 'none')
+      .style('fill', '#545353')
+      .style('cursor', 'pointer')
+      .style('text-anchor', 'middle')
+      .style('alignment-baseline', 'middle')
+      .attr('x', (squareSize / 2).toString())
+      .attr('y', ((squareSize / 2) + 1).toString())
+      .text('\uf05a');
+
+    statsGroup
+      .append('text')
+      .classed('graph-stats-text', true)
+      .style('font-size', '14px')
+      .style('stroke', 'none')
+      .style('fill', '#545353')
+      .style('text-anchor', 'left')
+      .style('alignment-baseline', 'middle')
+      .attr('y', (squareSize + 15).toString())
+      .style('opacity', 0)
+      .attr('pointer-events', 'none');
+
+    infoGroup
+      .on('click', function() {
+        const selection = statsGroup.selectAll('.graph-stats-text');
+        const active = selection.style('opacity');
+        const newOpacity = parseInt(active) ? 0 : 1;
+        selection
+          .transition()
+          .duration(300)
+          .style('opacity', newOpacity);
+      });
+  }
+  return statsGroup;
+};
 
 
 export default class BaseCAGRenderer extends SVGRenderer {
@@ -14,70 +86,31 @@ export default class BaseCAGRenderer extends SVGRenderer {
     const edgeCount = graph.edges.length;
     const nodeCount = graph.nodes.length;
 
-    const squareSize = 22;
-    let statsGroup = null;
-    let clickGroup = null;
+    const statsGroup = createStatsGroup(foregroundLayer);
 
-    if (d3.select('.graph-stats-info').node()) {
-      statsGroup = d3.select('.graph-stats-info');
-      const selection = statsGroup.selectAll('.graph-stats-text');
-      selection.text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`);
-      clickGroup = statsGroup.selectAll('clickGroup');
-    } else {
-      statsGroup = foregroundLayer.append('g')
-        .attr('transform', translate(5, 10))
-        .classed('graph-stats-info', true)
-        .style('cursor', 'pointer');
-
-      clickGroup = statsGroup.append('g')
-        .classed('clickGroup', true);
-
-      clickGroup
-        .append('rect')
-        .style('width', squareSize.toString())
-        .style('height', squareSize.toString())
-        .style('rx', '6')
-        .style('fill', 'white')
-        .style('fill-opacity', '0')
-        .style('stroke', '#545353');
-
-      clickGroup
-        .append('text')
-        .style('font-family', 'FontAwesome')
-        .style('font-size', '16px')
-        .style('stroke', 'none')
-        .style('fill', '#545353')
-        .style('cursor', 'pointer')
-        .style('text-anchor', 'middle')
-        .style('alignment-baseline', 'middle')
-        .attr('x', (squareSize / 2).toString())
-        .attr('y', ((squareSize / 2) + 1).toString())
-        .text('\uf05a');
-
-      statsGroup
-        .append('text')
-        .classed('graph-stats-text', true)
-        .style('font-size', '14px')
-        .style('stroke', 'none')
-        .style('fill', '#545353')
-        .style('text-anchor', 'left')
-        .style('alignment-baseline', 'middle')
-        .attr('y', (squareSize + 15).toString())
-        .text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`)
-        .style('opacity', 0)
-        .attr('pointer-events', 'none');
+    let hasAmbiguousEdges = false;
+    for (const edge of graph.edges) {
+      const polarity = edge.data.polarity;
+      if (polarity !== 1 && polarity !== -1) {
+        hasAmbiguousEdges = true;
+        break;
+      }
     }
 
-    clickGroup
-      .on('click', function() {
-        const selection = statsGroup.selectAll('.graph-stats-text');
-        const active = selection.style('opacity');
-        const newOpacity = parseInt(active) ? 0 : 1;
+    // Update ambiguouity status
+    if (hasAmbiguousEdges) {
+      statsGroup.select('.graph-stats-ambiguouity').text('Ambiguous edges detected').on('mouseover', (evt) => {
+        const point = d3.pointer(evt);
 
-        selection
-          .transition()
-          .duration(300)
-          .style('opacity', newOpacity);
-      });
+        // Force tooltip to go near the end of the text
+        const x = +statsGroup.select('.graph-stats-ambiguouity').attr('x') + 150;
+        showSvgTooltip(foregroundLayer, AMBIGUOUS_MSG, [x, point[1]], Math.PI / 2);
+      }).on('mouseout', () => hideSvgTooltip(foregroundLayer));
+    } else {
+      statsGroup.select('.graph-stats-ambiguouity').text('').on('mouseover', null).on('mouseout', null);
+    }
+
+    // Update node and edge counts
+    statsGroup.select('.graph-stats-text').text(`Nodes: ${nodeCount},\nEdges: ${edgeCount}`);
   }
 }
