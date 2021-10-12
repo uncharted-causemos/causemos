@@ -8,7 +8,8 @@ import {
 
 const AMBIGUOUS_MSG = 'To make model projections easier to interpret, <br /> select each grey edge and clarify its polarity in the side panel.';
 
-// Either creates and returns the stats group
+// Returns the stats control group if it exist, if not then create
+// and initialize it.
 const createStatsGroup = (foregroundLayer) => {
   const squareSize = 22;
   let statsGroup = d3.select('.graph-stats-info');

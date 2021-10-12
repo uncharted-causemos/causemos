@@ -409,7 +409,6 @@ export const showSvgTooltip = (svgContainer, text, position, preferredAngle = -M
 
   const svgTooltipText = svgTooltipContents
     .append('text')
-    // .style('font-weight', 600)
     .style('font-size', '12px')
     .style('fill', 'white');
 
