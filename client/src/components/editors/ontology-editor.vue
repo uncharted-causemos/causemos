@@ -1,14 +1,11 @@
 <template>
   <div class="ontology-editor-container">
     <dropdown-control>
-      <template
-        #content
-        class="dropdown">
-
+      <template #content>
         <div class="dropdown-title">
           <h5>Select a Different Concept
             <span v-if="selectedOption === 'pick'">
-              - Search All Concepts
+              - Search
             </span>
             <span v-if="selectedOption === 'new'">
               - Add New Concept
@@ -53,7 +50,7 @@
         class="ontology-options">
         <div class="ontology-footer-options-container">
           <small-text-button
-            :label="'Search All Concepts'"
+            :label="'Search'"
             @click="selectOption('pick')"
           />
           <small-text-button

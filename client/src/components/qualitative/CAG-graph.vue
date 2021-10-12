@@ -133,7 +133,6 @@ class CAGRenderer extends BaseCAGRenderer {
   // Override render function to also check for ambigous edges and highlight them
   async render() {
     await super.render();
-    this.displayAmbiguousEdgeWarning();
     this.displayGraphStats();
   }
 
@@ -637,60 +636,6 @@ class CAGRenderer extends BaseCAGRenderer {
       .style('border-radius', DEFAULT_STYLE.nodeHeader.borderRadius)
       .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
       .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
-  }
-
-  displayAmbiguousEdgeWarning() {
-    const graph = this.layout;
-    const svg = d3.select(this.svgEl);
-    const foregroundLayer = svg.select('.foreground-layer');
-
-    const highlightFunction = this.highlight;
-    const highlightAmbiguousEdgesFunction = this.highlightAmbiguousEdges;
-
-    const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
-      ? d3.select('.ambiguous-edge-warning') // select it
-      : foregroundLayer.append('text') // or create it if it hasn't been already
-        .attr('x', parseInt(svg.style('width')) - 310)
-        .style('text-anchor', 'right')
-        .attr('y', 20)
-        .attr('opacity', 0)
-        .attr('fill', 'red')
-        .attr('font-size', '1.6rem')
-        .classed('ambiguous-edge-warning', true)
-        .text('Warning: ambiguous edges detected in graph') // not very pretty, could update in the future
-        .on('mouseover', function () {
-          highlightAmbiguousEdgesFunction(graph, highlightFunction);
-        });
-
-    for (const edge of graph.edges) {
-      const polarity = edge.data.polarity;
-      if (polarity !== 1 && polarity !== -1) {
-        warning
-          .attr('opacity', 1)
-          .attr('x', parseInt(svg.style('width')) - 310); // FIXME this doesn't move the warning if the window resizes, svg size doesnt change
-        return;
-      }
-    }
-    warning.attr('opacity', 0);
-  }
-
-  highlightAmbiguousEdges(graph, highlight) {
-    const highlightOptions = {
-      color: 'red',
-      duration: 1000
-    };
-    const ambigEdges = [];
-
-    for (const edge of graph.edges) {
-      const polarity = edge.data.polarity;
-      if (polarity !== 1 && polarity !== -1) {
-        ambigEdges.push(edge);
-      }
-    }
-
-    if (ambigEdges.length > 0) {
-      highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
-    }
   }
 
   /**
