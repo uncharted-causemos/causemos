@@ -4,7 +4,7 @@ const { startProjectCache } = require('./project-cache-task');
 const { startBYOD } = require('./byod-task');
 
 const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
-const PROJECT_CACHE_UPDDATE_INTERVAL = 10 * 60 * 1000;
+const PROJECT_CACHE_UPDATE_INTERVAL = 10 * 60 * 1000;
 
 /**
  * Runs start up jobs, e.g. any type of prefetching of sanity checks
@@ -23,7 +23,7 @@ async function runStartup() {
   Logger.info(`\tWM_CURATION_SERVICE_URL: ${process.env.WM_CURATION_SERVICE_URL}`);
 
   // Periodic jobs
-  startProjectCache(PROJECT_CACHE_UPDDATE_INTERVAL);
+  startProjectCache(PROJECT_CACHE_UPDATE_INTERVAL);
   startBYOD(READER_OUTPUT_POLL_INTERVAL);
 }
 module.exports = { runStartup };
