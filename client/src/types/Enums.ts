@@ -96,3 +96,8 @@ export enum TemporalResolutionOption {
   Year = 'year',
   Month = 'month'
 }
+
+export const DefaultAggreggations = [
+  TemporalAggregationLevel.Year.toString(),
+  SpatialAggregationLevel.Region.toString()
+];

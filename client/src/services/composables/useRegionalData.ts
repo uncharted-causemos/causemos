@@ -83,7 +83,8 @@ export default function useRegionalData(
       : outputSpecs.value;
     const result = await getRegionAggregations(
       _outputSpecs,
-      datacubeHierarchy.value
+      datacubeHierarchy.value,
+      breakdownOption.value
     );
     if (isCancelled) return;
 
