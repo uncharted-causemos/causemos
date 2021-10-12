@@ -6,7 +6,7 @@ import {
   hideSvgTooltip
 } from '@/utils/svg-util';
 
-const AMBIGUOUS_MSG = 'To make model projections easier to interpret, <br /> select grey edges to clarify its polarity in the side panel.';
+const AMBIGUOUS_MSG = 'To make model projections easier to interpret, <br /> select each grey edge and clarify its polarity in the side panel.';
 
 // Either creates and returns the stats group
 const createStatsGroup = (foregroundLayer) => {
