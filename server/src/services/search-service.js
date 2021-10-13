@@ -2,6 +2,16 @@
 const _ = require('lodash');
 const { client, searchAndHighlight } = rootRequire('/adapters/es/client');
 const { RESOURCE } = rootRequire('/adapters/es/adapter');
+const { get: getCache } = rootRequire('/cache/node-lru-cache');
+
+// Remove unneeded fields from compositional ontology
+const mapSource = (d) => {
+  return {
+    label: d.label,
+    definition: d.definition,
+    examples: d.examples
+  };
+};
 
 
 // Search against ontology concepts
@@ -17,13 +27,6 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
     'examples'
   ]);
 
-  const mapSource = (d) => {
-    return {
-      label: d.label,
-      definition: d.definition,
-      examples: d.examples
-    };
-  };
 
   return results.map(d => {
     return {
@@ -111,26 +114,41 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   const dupeMap = new Map();
   const finalResults = [];
 
+  const ontologyMap = getCache(projectId).ontologyMap;
+  const ontologyValues = Object.values(ontologyMap);
+
   for (let i = 0; i < items.length; i++) {
     const item = items[i];
     if (dupeMap.has(item.key)) continue;
 
+    // Used to reverse-engineer compositional-ontology from flattened
     const shortKey = _.last(item.key.split('/'));
-    const matchedMembers = rawResult.filter(r => {
-      const matchShortKey = _.last(r.doc.label.split('/'));
+    const members = ontologyValues.filter(d => {
+      const matchShortKey = _.last(d.label.split('/'));
       return shortKey.includes(matchShortKey);
-    });
+    }).map(mapSource);
+
+    // Attach highlight if applicable
+    for (let j = 0; j < members.length; j++) {
+      const highlightMatch = rawResult.find(d => d.doc.label === members[j].label);
+      if (_.isNil(highlightMatch)) continue;
+
+      members[j].highlight = highlightMatch.highlight;
+    }
 
     const r = {
       doc_type: 'xyz',
       doc: {
-        concept: item.key,
-        highlight: matchedMembers
+        key: item.key,
+        memebers: members
       }
     };
     finalResults.push(r);
     dupeMap.set(item.key, 1);
   }
+
+  // FIXME: Also attach concept matches
+
   return finalResults;
 };
 
