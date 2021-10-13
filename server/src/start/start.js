@@ -1,6 +1,5 @@
 const Logger = rootRequire('/config/logger');
 const serverConfiguration = rootRequire('/config/yargs-wrapper');
-const searchService = rootRequire('/services/search-service');
 const { startProjectCache, refreshProjectCache } = require('./project-cache-task');
 const { startBYOD } = require('./byod-task');
 
@@ -29,16 +28,5 @@ async function runStartup() {
   // Periodic jobs
   startProjectCache(PROJECT_CACHE_UPDATE_INTERVAL);
   startBYOD(READER_OUTPUT_POLL_INTERVAL);
-
-
-  try {
-    // const projectId = 'project-d0e4ecc0-4f0b-4383-8d71-ef0f3a3492a4';
-    // const projectId = 'project-0f6c6466-b53f-4189-9fd1-e1f8b53f7787';
-    const projectId = 'project-b1420fd8-8915-4f50-906b-e95cb96cabb6';
-    const xyz = await searchService.entitySearch(projectId, 'c*');
-    console.log(JSON.stringify(xyz, null, 2));
-  } catch (err) {
-    console.error(err);
-  }
 }
 module.exports = { runStartup };

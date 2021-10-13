@@ -1,4 +1,3 @@
-// /* eslint-disable */
 const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
 const { client, searchAndHighlight } = rootRequire('/adapters/es/client');
@@ -14,7 +13,6 @@ const mapSource = (d) => {
   };
 };
 
-
 // Search against ontology concepts
 const rawConceptEntitySearch = async (projectId, queryString) => {
   const filters = [{
@@ -28,7 +26,6 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
     'examples'
   ]);
 
-
   return results.map(d => {
     return {
       doc_type: 'concept',
@@ -39,7 +36,8 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
 };
 
 
-function reverseFlattenedConcept(name, set) {
+// Given a flattened-concept, return a list of compositional ontology concepts
+const reverseFlattenedConcept = (name, set) => {
   const token = _.last(name.split('/')) || '';
 
   if (set.has(token)) return [token];
@@ -69,8 +67,14 @@ function reverseFlattenedConcept(name, set) {
     return concepts;
   }
   return [token];
-}
+};
 
+
+/**
+ * Build an ES query to search by compositional ontology concepts
+ *
+ * FIXME: Need to handle user-created??
+ */
 const buildSubjObjAggregation = (concepts) => {
   const limit = 10;
   return {
@@ -125,8 +129,6 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   const rawResult = await rawConceptEntitySearch(projectId, queryString + '*');
   if (_.isEmpty(rawResult)) return [];
 
-  // FIXME: wm_compositional => wm
-  // const matchedRawConcepts = rawResult.map(d => d.doc.label).map(d => d.replace('wm', 'wm_compositional'));
   const matchedRawConcepts = rawResult.map(d => d.doc.label);
   const aggFilter = buildSubjObjAggregation(matchedRawConcepts);
 
@@ -157,7 +159,6 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     const item = items[i];
     if (dupeMap.has(item.key)) continue;
 
-
     const memberStrings = reverseFlattenedConcept(item.key, set);
     const members = ontologyValues.filter(d => {
       return memberStrings.includes(_.last(d.label.split('/'))) && !_.isEmpty(d.examples);
@@ -186,20 +187,6 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   return finalResults;
 };
 
-
-/**
- * Searches for first class documents
- */
-const entitySearch = async (projectId, queryString) => {
-  // const rawConcepts = await rawConceptEntitySearch(projectId, queryString);
-  // return rawConcepts;
-
-  const rawConcepts = await statementConceptEntitySearch(projectId, queryString);
-  return rawConcepts;
-};
-
-
 module.exports = {
-  entitySearch,
   statementConceptEntitySearch
 };
