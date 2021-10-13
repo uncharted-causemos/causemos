@@ -1,7 +1,7 @@
 import _ from 'lodash';
 
 import API from '@/api/api';
-import modelService from '@/services/model-service';
+import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
 
 /**
@@ -16,8 +16,8 @@ const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>
   return _.debounce(async function(hint = '') {
     let result = ontology;
     if (!_.isEmpty(hint)) {
-      const suggestions = await modelService.getConceptSuggestions(projectId, hint, ontology);
-      result = suggestions.map(s => s.concept);
+      const suggestions = await projectService.getConceptSuggestions(projectId, hint);
+      result = suggestions.map((s: any) => s.doc.key);
     }
     if (postProcessFn) {
       return postProcessFn(result, hint);
@@ -41,7 +41,7 @@ const getSuggestionFunction = (projectId: string, field: string, postProcessFn?:
   return _.debounce(async function(hint = '') {
     let result = [];
     if (!_.isEmpty(hint)) {
-      result = await modelService.getSuggestions(projectId, field, hint);
+      result = await projectService.getSuggestions(projectId, field, hint);
     }
     if (postProcessFn) {
       return postProcessFn(result, hint);

@@ -249,6 +249,8 @@ export default {
 }
 .right-column {
   flex-grow: 1;
+  padding: 8px;
+  border-left: 1px solid #DDD;
 }
 
 </style>
