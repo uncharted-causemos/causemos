@@ -1,12 +1,12 @@
-
 import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
-import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel } from '@/types/Enums';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 import { getRegionAggregations, getRegionAggregationsWithQualifiers } from '../runoutput-service';
 import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import isQualifierActive from '@/utils/qualifier-util';
 
 const applySplitByRegion = (
   regionalData: RegionalAggregations,
@@ -57,15 +57,6 @@ const applySplitByRegion = (
     }
   );
   return clonedData;
-};
-
-const isQualifierActive = (breakdownOption: string | null) => {
-  if (
-    breakdownOption === null ||
-    breakdownOption === SpatialAggregationLevel.Region ||
-    breakdownOption === TemporalAggregationLevel.Year
-  ) return false;
-  return true;
 };
 
 export default function useRegionalData(

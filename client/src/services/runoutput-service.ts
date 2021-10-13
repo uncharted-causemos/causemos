@@ -37,7 +37,7 @@ export const getRegionAggregationWithQualifiers = async (
     const { data } = await API.get('/maas/output/qualifier-regional', {
       params: {
         data_id: spec.modelId,
-        run_id: 'indicator',
+        run_id: spec.runId,
         feature: spec.outputVariable,
         resolution: spec.temporalResolution,
         temporal_agg: spec.temporalAggregation,
