@@ -5,7 +5,7 @@ const { startProjectCache, refreshProjectCache } = require('./project-cache-task
 const { startBYOD } = require('./byod-task');
 
 const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
-const PROJECT_CACHE_UPDDATE_INTERVAL = 10 * 60 * 1000;
+const PROJECT_CACHE_UPDATE_INTERVAL = 10 * 60 * 1000;
 
 /**
  * Runs start up jobs, e.g. any type of prefetching of sanity checks
@@ -27,8 +27,9 @@ async function runStartup() {
   await refreshProjectCache();
 
   // Periodic jobs
-  startProjectCache(PROJECT_CACHE_UPDDATE_INTERVAL);
+  startProjectCache(PROJECT_CACHE_UPDATE_INTERVAL);
   startBYOD(READER_OUTPUT_POLL_INTERVAL);
+
 
   try {
     // const projectId = 'project-d0e4ecc0-4f0b-4383-8d71-ef0f3a3492a4';
