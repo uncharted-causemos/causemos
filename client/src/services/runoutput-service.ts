@@ -1,6 +1,6 @@
 import API from '@/api/api';
 import { DatacubeGeography } from '@/types/Common';
-import { AdminLevel, DefaultAggreggations } from '@/types/Enums';
+import { AdminLevel, DefaultAggregations } from '@/types/Enums';
 import { OutputSpec, OutputSpecWithId, RegionalAggregations, RegionAgg, RegionalAggregation, OutputStatWithZoom, OutputStatsResult } from '@/types/Runoutput';
 
 export const getRegionAggregation = async (
@@ -59,7 +59,7 @@ export const getRegionAggregations = async (
 ): Promise<RegionalAggregations> => {
   // Fetch and restructure the result
   const results = await Promise.all(
-    breakdownOption && !DefaultAggreggations.includes(breakdownOption)
+    breakdownOption && !DefaultAggregations.includes(breakdownOption)
       ? specs.map((spec) => getRegionAggregationWithQualifiers(spec, breakdownOption))
       : specs.map(getRegionAggregation)
   );
