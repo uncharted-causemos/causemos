@@ -145,6 +145,7 @@ export default {
     },
     mouseEnter(index) {
       this.mouseOverIndex = index;
+      this.focusedSuggestionIndex = index;
     },
     mouseLeave(index) {
       if (this.mouseOverIndex === index) {
@@ -157,7 +158,12 @@ export default {
       this.selectSuggestion(suggestion);
     },
     selectSuggestion(suggestion) {
-      this.$emit('suggestion-selected', suggestion);
+      this.$emit('suggestion-selected', {
+        concept: suggestion.doc.key,
+        label: this.ontologyFormatter(suggestion.doc.key),
+        shortName: '', // FIXME unused
+        hasEvidence: false // FIXME unused
+      });
       this.userInput = '';
     },
     focusInput() {
@@ -239,7 +245,7 @@ export default {
 }
 
 .left-column {
-  min-width: 250px;
+  min-width: 280px;
 }
 .right-column {
   flex-grow: 1;
