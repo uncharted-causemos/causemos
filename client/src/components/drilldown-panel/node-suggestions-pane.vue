@@ -165,6 +165,7 @@ export default {
     }),
     refresh() {
       const components = this.selectedNode.components;
+      const graphData = this.graphData;
 
       const causeStatement = this.statements.filter(s => components.includes(s.obj.concept));
       const effectStatement = this.statements.filter(s => components.includes(s.subj.concept));
@@ -173,6 +174,36 @@ export default {
       const slicedCauses = causes.slice(0, 5); // Get top 5
       const effects = this.groupRelationships(effectStatement);
       const slicedEffects = effects.slice(0, 5); // Get top 5
+
+      // Munge back into node containers
+      let len = 0;
+      len = slicedCauses.length;
+      for (let i = 0; i < len; i++) {
+        const source = slicedCauses[i].meta.source;
+        const matchingNodes = graphData.nodes.filter(n => {
+          return n.concept !== source && n.components.includes(source);
+        });
+        matchingNodes.forEach(n => {
+          const clone = _.cloneDeep(slicedCauses[i]);
+          clone.meta.source = n.concept;
+          clone.key = `${n.concept}///${clone.meta.effect}`;
+          slicedCauses.push(clone);
+        });
+      }
+
+      // len = slicedEffects.length;
+      // for (let i = 0; i < len; i++) {
+      //   const matchingNodes = graphData.nodes.filter(n => {
+      //     return n.concept !== slicedEffects[i].key &&
+      //       n.components.includes(slicedEffects[i].key);
+      //   });
+      //   matchingNodes.forEach(n => {
+      //     const clone = _.cloneDeep(slicedEffects[i]);
+      //     clone.key = n.concept;
+      //     slicedEffects.push(clone);
+      //   });
+      // }
+
 
       // Massage the structure a bit to fit into the common aggregated schema
       this.summaryData = {
@@ -299,7 +330,7 @@ export default {
 
       const newEdges = [];
       if (!_.isEmpty(causeGroup.children)) {
-        causeGroup.children.forEach(edge => {
+        causeGroup.children.filter(c => c.meta.checked).forEach(edge => {
           newEdges.push({
             source: edge.meta.source,
             target: rootConcept,
@@ -308,7 +339,7 @@ export default {
         });
       }
       if (!_.isEmpty(effectGroup.children)) {
-        effectGroup.children.forEach(edge => {
+        effectGroup.children.filter(c => c.meta.checked).forEach(edge => {
           newEdges.push({
             source: rootConcept,
             target: edge.meta.target,
@@ -316,8 +347,9 @@ export default {
           });
         });
       }
+      console.log('!!!!!!!!!!!!!!!!!!!');
       console.log(newEdges);
-      this.$emit('add-to-CAG', { nodes: [], edges: newEdges });
+      // this.$emit('add-to-CAG', { nodes: [], edges: newEdges });
     },
     addToCAG2() {
       if (this.numselectedRelationships > 0) {
