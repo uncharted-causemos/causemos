@@ -99,10 +99,11 @@ export default defineComponent({
       this.showSuggestions = false;
     },
     onBlur() {
-      this.showSuggestions = false;
+      window.setTimeout(() => {
+        this.showSuggestions = false;
+      }, 250);
     },
     setSearchTerm(suggestion: string) {
-      // this.searchTerm = suggestion;
       this.$emit('item-selected', suggestion);
       this.showSuggestions = false;
     },
@@ -124,13 +125,12 @@ $input-element-height: 37px;
   margin-bottom: 10px;
   position: relative;
   flex-grow: 1;
-  height: calc(400px - #{$input-element-height}); //Includes default height - 37px(input element height)
   overflow: hidden;
 
   .autocomplete-results-container {
     flex-grow: 1;
     overflow-y: scroll;
-    height: calc(100% - #{$input-element-height});
+    max-height: 300px;
   }
   .autocomplete-results {
     padding: 0;
