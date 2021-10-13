@@ -2,9 +2,9 @@
 import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
-import { SpatialAggregationLevel } from '@/types/Enums';
+import { SpatialAggregationLevel, TemporalAggregationLevel } from '@/types/Enums';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
-import { getRegionAggregations } from '../runoutput-service';
+import { getRegionAggregations, getRegionAggregationsWithQualifiers } from '../runoutput-service';
 import { DatacubeGeography } from '@/types/Common';
 import { ADMIN_LEVEL_KEYS, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
@@ -59,6 +59,15 @@ const applySplitByRegion = (
   return clonedData;
 };
 
+const isQualifierActive = (breakdownOption: string | null) => {
+  if (
+    breakdownOption === null ||
+    breakdownOption === SpatialAggregationLevel.Region ||
+    breakdownOption === TemporalAggregationLevel.Year
+  ) return false;
+  return true;
+};
+
 export default function useRegionalData(
   outputSpecs: Ref<OutputSpecWithId[]>,
   breakdownOption: Ref<string | null>,
@@ -81,11 +90,9 @@ export default function useRegionalData(
     const _outputSpecs = breakdownOption.value === SpatialAggregationLevel.Region
       ? outputSpecs.value.slice(0, 1)
       : outputSpecs.value;
-    const result = await getRegionAggregations(
-      _outputSpecs,
-      datacubeHierarchy.value,
-      breakdownOption.value
-    );
+    const result = isQualifierActive(breakdownOption.value)
+      ? await getRegionAggregationsWithQualifiers(_outputSpecs, datacubeHierarchy.value, breakdownOption.value as string)
+      : await getRegionAggregations(_outputSpecs, datacubeHierarchy.value);
     if (isCancelled) return;
 
     regionalData.value = breakdownOption.value === SpatialAggregationLevel.Region

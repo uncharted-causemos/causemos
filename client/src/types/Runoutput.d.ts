@@ -31,8 +31,7 @@ export interface OutputSpec {
 export type RegionalAggregation = {
   [key in AdminLevel]?: {
     id: string;
-    value?: number;
-    values?: Record<string, number>;
+    value: number;
   }[];
 }
 export type RegionalAggregations = {
