@@ -1,6 +1,6 @@
 const path = require('path');
 
-const dotenvConfigResult = require('dotenv').config(); // This line of code reads the contents of the .env file in root into the process.env file.
+const dotenvConfigResult = require('dotenv').config(); // This line of code reads the contents of the .env file in root into the process.env variable.
 
 global.rootRequire = function(name) {
   return require(path.join(__dirname, name));
