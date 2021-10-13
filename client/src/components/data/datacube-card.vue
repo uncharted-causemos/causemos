@@ -331,6 +331,7 @@
                       :selected-layer-id="mapSelectedLayer"
                       :map-bounds="mapBounds"
                       :region-data="regionalData"
+                      :selected-region-ids="selectedRegionIds"
                       :admin-layer-stats="adminLayerStats"
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
