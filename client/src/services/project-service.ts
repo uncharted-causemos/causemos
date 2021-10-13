@@ -136,6 +136,13 @@ const addNewConceptToOntology = async(projectId: string, label: string, examples
   return result.data;
 };
 
+const getConceptSuggestions = async(projectId: string, q: string) => {
+  const result = await API.get(`projects/${projectId}/concept-suggestions`, {
+    params: { q }
+  });
+  return result.data;
+};
+
 export default {
   getKBs,
   getProjects,
@@ -157,6 +164,8 @@ export default {
   addNewConceptToOntology,
 
   createAssemblyRequest,
+
+  getConceptSuggestions,
 
   STATEMENT_LIMIT
 };

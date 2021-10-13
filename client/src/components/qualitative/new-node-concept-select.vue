@@ -22,21 +22,39 @@
     </div>
     <dropdown-control class="suggestion-dropdown">
       <template #content>
-        <div
-          v-for="(suggestion, index) in suggestions"
-          :key="index"
-          v-tooltip.right="{
-            content: 'No evidence found',
-            show: !suggestion.hasEvidence && (index === focusedSuggestionIndex || index === mouseOverIndex),
-            triggers: ['manual'],
-          }"
-          class="dropdown-option"
-          :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"
-          @click="selectSuggestion(suggestion)"
-          @mouseenter="mouseEnter(index)"
-          @mouseleave="mouseLeave(index)"
-        >
-          {{ suggestion.label }}
+        <div style="display: flex; flex-direction: row">
+          <div class="left-column">
+            <div
+              v-for="(suggestion, index) in suggestions"
+              :key="index"
+              class="dropdown-option"
+              :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"
+              @click="selectSuggestion(suggestion)"
+              @mouseenter="mouseEnter(index)"
+              @mouseleave="mouseLeave(index)"
+            >
+              {{ ontologyFormatter(suggestion.doc.key) }}
+            </div>
+          </div>
+          <div
+            v-if="suggestions.length"
+            class="right-column">
+            <div>
+              <div
+                v-for="(member, idx) in currentSuggestion.doc.memebers"
+                :key="idx">
+                <strong>{{ ontologyFormatter(member.label) }} </strong>
+                <br>
+                <div v-if="member.definition !== ''">
+                  <small>Definition: {{ member.definition }} </small>
+                </div>
+                <div v-if="member.examples">
+                  <small>Examples: {{ member.examples.join(', ') }} </small>
+                </div>
+                <br>
+              </div>
+            </div>
+          </div>
         </div>
       </template>
     </dropdown-control>
@@ -47,9 +65,10 @@
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import DropdownControl from '@/components/dropdown-control';
-import modelService from '@/services/model-service';
+// import modelService from '@/services/model-service';
+import projectServcie from '@/services/project-service';
 
-const CONCEPT_SUGGESTION_COUNT = 8;
+// const CONCEPT_SUGGESTION_COUNT = 8;
 
 export default {
   name: 'NewNodeConceptSelect',
@@ -80,7 +99,13 @@ export default {
     ...mapGetters({
       ontologyConcepts: 'app/ontologyConcepts',
       project: 'app/project'
-    })
+    }),
+    currentSuggestion() {
+      if (this.suggestions.length && this.focusedSuggestionIndex > -1) {
+        return this.suggestions[this.focusedSuggestionIndex];
+      }
+      return null;
+    }
   },
   watch: {
     userInput() {
@@ -145,14 +170,8 @@ export default {
       if (_.isEmpty(this.userInput)) {
         this.suggestions = [];
       } else {
-        const allSuggestions = await modelService.getConceptSuggestions(
-          this.project, this.userInput, this.ontologyConcepts);
-        this.suggestions = allSuggestions.filter(this.conceptNotInCag)
-          .slice(0, CONCEPT_SUGGESTION_COUNT);
-
-        this.suggestions.forEach(suggestion => {
-          suggestion.label = this.ontologyFormatter(suggestion.concept);
-        });
+        const suggestions = await projectServcie.getConceptSuggestions(this.project, this.userInput);
+        this.suggestions = suggestions.splice(0, 10);
       }
     }, 500, { trailing: true, leading: false })
   }
@@ -188,7 +207,7 @@ export default {
 
 .suggestion-dropdown {
   top: 3px; /* Don't overlap border */
-  width: 25vw;
+  width: 45vw;
 }
 
 .dropdown-option {
@@ -217,6 +236,13 @@ export default {
       background: $selected;
     }
   }
+}
+
+.left-column {
+  min-width: 250px;
+}
+.right-column {
+  flex-grow: 1;
 }
 
 </style>

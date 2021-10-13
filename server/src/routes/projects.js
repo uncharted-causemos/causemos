@@ -13,6 +13,7 @@ const filtersUtil = rootRequire('/util/filters-util');
 const projectService = rootRequire('/services/project-service');
 const updateService = rootRequire('/services/update-service');
 const cagService = rootRequire('/services/cag-service');
+const searchService = rootRequire('/services/search-service');
 
 /* GET Retrieve projects */
 router.get('/', asyncHandler(async (req, res) => {
@@ -259,6 +260,20 @@ router.post('/:projectId/statements-scores', asyncHandler(async (req, res) => {
   const results = await projectService.getProjectStatementsScores(projectId, ids);
   res.json(results);
 }));
+
+
+/**
+ * GET search for concepts for a given project
+ * This is different than regular suggestions as it involves a multi-step process
+ * to recontruct a concept object/document
+ */
+router.get('/:projectId/concept-suggestions', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const queryString = req.query.q;
+  const results = await searchService.statementConceptEntitySearch(projectId, queryString);
+  res.json(results);
+}));
+
 
 /**
  * GET Search fields based on partial matches
