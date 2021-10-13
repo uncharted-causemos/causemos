@@ -29,10 +29,7 @@ export interface OutputSpec {
   preGeneratedOutput?: PreGeneratedModelRunData[];
 }
 export type RegionalAggregation = {
-  [key in AdminLevel]?: {
-    id: string;
-    value: number;
-  }[];
+  [key in AdminLevel]?: { id: string; value: number }[];
 }
 export type RegionalAggregations = {
   [key in AdminLevel]?: RegionAgg[];
