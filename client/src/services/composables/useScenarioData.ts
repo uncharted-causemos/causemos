@@ -14,6 +14,7 @@ export default function useScenarioData(
   modelRunsFetchedAt: Ref<number>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
+  const filteredRunData = ref([]) as Ref<ModelRun[]>;
 
   watchEffect(onInvalidate => {
     console.log('refetching scenario-data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
@@ -99,7 +100,8 @@ export default function useScenarioData(
           }
         });
 
-        runData.value = newMetadata.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted);
+        runData.value = newMetadata;
+        filteredRunData.value = runData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted);
       }
     }
     onInvalidate(() => {
@@ -108,5 +110,5 @@ export default function useScenarioData(
     fetchRunData();
   });
 
-  return runData;
+  return filteredRunData;
 }
