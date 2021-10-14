@@ -104,6 +104,10 @@ const RELATIONSHIP_GROUP_KEY = {
 
 const MSG_EMPTY_SELECTION = 'There are no selected relationships';
 
+// const statementsToEdge = (statements) => {
+// };
+
+
 export default {
   name: 'NodeSuggestionsPane',
   props: {
@@ -164,6 +168,97 @@ export default {
       setSearchClause: 'query/setSearchClause'
     }),
     refresh() {
+      const graphData = this.graphData;
+      const components = this.selectedNode.components;
+
+      const causeStatements = this.statements.filter(s => components.includes(s.obj.concept));
+      const effectStatements = this.statements.filter(s => components.includes(s.subj.concept));
+
+      // Map to node-container level if applicable
+      const causeMap = new Map();
+      for (let i = 0; i < causeStatements.length; i++) {
+        const statement = causeStatements[i];
+        const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.subj.concept));
+        if (nodeContainters.length === 0) {
+          if (!causeMap.has(statement.subj.concept)) {
+            causeMap.set(statement.subj.concept, []);
+          }
+          causeMap.get(statement.subj.concept).push(statement);
+        } else {
+          for (let j = 0; j < nodeContainters.length; j++) {
+            const causeConcept = nodeContainters[j].concept;
+            if (!causeMap.has(causeConcept)) {
+              causeMap.set(causeConcept, []);
+            }
+            causeMap.get(causeConcept).push(statement);
+          }
+        }
+      }
+
+      // Map to node-container level if applicable
+      const effectMap = new Map();
+      for (let i = 0; i < effectStatements.length; i++) {
+        const statement = effectStatements[i];
+        const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.obj.concept));
+        if (nodeContainters.length === 0) {
+          if (!effectMap.has(statement.obj.concept)) {
+            effectMap.set(statement.obj.concept, []);
+          }
+          effectMap.get(statement.obj.concept).push(statement);
+        } else {
+          for (let j = 0; j < nodeContainters.length; j++) {
+            const effectConcept = nodeContainters[j].concept;
+            if (!effectMap.has(effectConcept)) {
+              effectMap.set(effectConcept, []);
+            }
+            effectMap.get(effectConcept).push(statement);
+          }
+        }
+      }
+
+      console.log('Cause', causeMap);
+      const causeEntries = [...causeMap.entries()];
+      const causeEdges = [];
+      for (let i = 0; i < causeEntries.length; i++) {
+        const [key, statements] = causeEntries[i];
+        console.log('\t', key, statements);
+        causeEdges.push({
+          meta: {
+            checked: false,
+            source: key,
+            target: this.selectedNode.concept
+          },
+          dataArray: statements
+        });
+      }
+
+      console.log('Effect', effectMap);
+      const effectEntries = [...effectMap.entries()];
+      for (let i = 0; i < effectEntries.length; i++) {
+        const [key, statements] = effectEntries[i];
+        console.log('\t', key, statements);
+      }
+
+      this.summaryData = {
+        children: [
+          {
+            key: RELATIONSHIP_GROUP_KEY.CAUSE,
+            count: causeEntries.length,
+            children: causeEdges,
+            meta: { checked: false }
+          } /*,
+          {
+            key: RELATIONSHIP_GROUP_KEY.EFFECT,
+            count: effectEntries.length,
+            children: slicedEffects,
+            meta: { checked: false }
+          }
+          */
+        ],
+        meta: { checked: false, isSomeChildChecked: false }
+      };
+    },
+    refresh2() {
       const components = this.selectedNode.components;
       const graphData = this.graphData;
 
