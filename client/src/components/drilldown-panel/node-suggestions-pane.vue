@@ -186,24 +186,24 @@ export default {
         matchingNodes.forEach(n => {
           const clone = _.cloneDeep(slicedCauses[i]);
           clone.meta.source = n.concept;
-          clone.key = `${n.concept}///${clone.meta.effect}`;
+          clone.key = `${clone.meta.source}///${clone.meta.target}`;
           slicedCauses.push(clone);
         });
       }
 
-      // len = slicedEffects.length;
-      // for (let i = 0; i < len; i++) {
-      //   const matchingNodes = graphData.nodes.filter(n => {
-      //     return n.concept !== slicedEffects[i].key &&
-      //       n.components.includes(slicedEffects[i].key);
-      //   });
-      //   matchingNodes.forEach(n => {
-      //     const clone = _.cloneDeep(slicedEffects[i]);
-      //     clone.key = n.concept;
-      //     slicedEffects.push(clone);
-      //   });
-      // }
-
+      len = slicedEffects.length;
+      for (let i = 0; i < len; i++) {
+        const target = slicedEffects[i].meta.target;
+        const matchingNodes = graphData.nodes.filter(n => {
+          return n.concept !== target && n.components.includes(target);
+        });
+        matchingNodes.forEach(n => {
+          const clone = _.cloneDeep(slicedEffects[i]);
+          clone.meta.target = n.concept;
+          clone.key = `${clone.meta.source}///${clone.meta.target}`;
+          slicedEffects.push(clone);
+        });
+      }
 
       // Massage the structure a bit to fit into the common aggregated schema
       this.summaryData = {
@@ -347,61 +347,44 @@ export default {
           });
         });
       }
-      console.log('!!!!!!!!!!!!!!!!!!!');
-      console.log(newEdges);
-      // this.$emit('add-to-CAG', { nodes: [], edges: newEdges });
-    },
-    addToCAG2() {
-      if (this.numselectedRelationships > 0) {
-        this.hasError = false;
 
-        const causeGroup = this.summaryData.children[0];
-        const effectGroup = this.summaryData.children[1];
+      // Calculate if there are new nodes
+      const graphNodes = this.graphData.nodes;
+      const newNodes = [];
 
-        let causeNodes = [];
-        const causeEdges = [];
-        let effectNodes = [];
-        const effectEdges = [];
+      for (let i = 0; i < newEdges.length; i++) {
+        const edge = newEdges[i];
+        const source = edge.source;
+        const target = edge.target;
 
-        // Cause edges
-        if (!_.isEmpty(causeGroup.children)) {
-          // Get selected edges
-          causeGroup.children.forEach(edge => {
-            if (edge.meta.checked) {
-              const referenceIds = edge.dataArray.map(statement => statement.id);
-              causeEdges.push({ source: edge.meta.source, target: edge.meta.target, reference_ids: referenceIds });
-            }
-          });
-          // Check existing nodes in the CAG. We don't need to check existing edges because we don't allow to add existing edges from the list.
-          const nodes = _.flatten(causeEdges.map(edge => [{ concept: edge.source, label: this.ontologyFormatter(edge.source) }, { concept: edge.target, label: this.ontologyFormatter(edge.target) }]));
-          causeNodes = _.differenceWith(nodes, this.graphData.nodes, (selected, current) => {
-            return selected.concept === current.concept;
-          });
+        // Check source
+        if (!_.some(graphNodes, d => d.concept === source)) {
+          if (!_.some(newNodes, d => d.concept === source)) {
+            newNodes.push({
+              concept: source,
+              label: this.ontologyFormatter(source),
+              components: [source]
+            });
+          }
         }
 
-        // Effect edges
-        if (!_.isEmpty(effectGroup.children)) {
-          effectGroup.children.forEach(edge => {
-            if (edge.meta.checked) {
-              const referenceIds = edge.dataArray.map(statement => statement.id);
-              effectEdges.push({ source: edge.meta.source, target: edge.meta.target, reference_ids: referenceIds });
-            }
-          });
-
-          // Check existing nodes in the CAG
-          const nodes = _.flatten(effectEdges.map(edge => [{ concept: edge.source, label: this.ontologyFormatter(edge.source) }, { concept: edge.target, label: this.ontologyFormatter(edge.target) }]));
-          effectNodes = _.differenceWith(nodes, this.graphData.nodes, (selected, current) => {
-            return selected.concept === current.concept;
-          });
+        // Check target
+        if (!_.some(graphNodes, d => d.concept === target)) {
+          if (!_.some(newNodes, d => d.concept === target)) {
+            newNodes.push({
+              concept: target,
+              label: this.ontologyFormatter(target),
+              components: [target]
+            });
+          }
         }
-
-        const nodesToAdd = _.uniqBy(causeNodes.concat(effectNodes), 'concept'); // Remove duplicated nodes
-        const edgesToAdd = causeEdges.concat(effectEdges);
-
-        this.$emit('add-to-CAG', { nodes: nodesToAdd, edges: edgesToAdd });
-      } else {
-        this.hasError = true;
       }
+
+      console.log('new edges', newEdges);
+      console.log('new nodes', newNodes);
+      // FIXME: Need to handle multi-edges eg X(s1) and X(s2)
+
+      this.$emit('add-to-CAG', { nodes: [], edges: newEdges });
     }
   }
 };
