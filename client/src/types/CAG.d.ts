@@ -101,7 +101,7 @@ export interface NodeParameter {
   label: string;
   model_id?: string;
   modified_at?: number;
-  parameter?: any; // FIXME maybe this can be specified
+  parameter?: any;
 }
 
 export interface EdgeParameter {
