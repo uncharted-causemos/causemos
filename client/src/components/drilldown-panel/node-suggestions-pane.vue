@@ -104,8 +104,22 @@ const RELATIONSHIP_GROUP_KEY = {
 
 const MSG_EMPTY_SELECTION = 'There are no selected relationships';
 
-// const statementsToEdge = (statements) => {
-// };
+// Extract edge attributes
+const statementsToEdgeAttributes = (statements) => {
+  const edgeAttributes = statements.reduce((accumulator, s) => {
+    const wm = s.wm;
+    const p = wm.statement_polarity;
+
+    accumulator.belief_score += s.belief;
+    accumulator.same += p === STATEMENT_POLARITY.SAME ? 1 : 0;
+    accumulator.opposite += p === STATEMENT_POLARITY.OPPOSITE ? 1 : 0;
+    accumulator.unknown += p === STATEMENT_POLARITY.UNKNOWN ? 1 : 0;
+    return accumulator;
+  }, { same: 0, opposite: 0, unknown: 0, belief_score: 0 });
+
+  edgeAttributes.belief_score = edgeAttributes.belief_score / statements.length;
+  return edgeAttributes;
+};
 
 
 export default {
@@ -226,7 +240,8 @@ export default {
           meta: {
             checked: false,
             source: key,
-            target: this.selectedNode.concept
+            target: this.selectedNode.concept,
+            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) }
           },
           dataArray: statements
         });
@@ -234,9 +249,19 @@ export default {
 
       console.log('Effect', effectMap);
       const effectEntries = [...effectMap.entries()];
+      const effectEdges = [];
       for (let i = 0; i < effectEntries.length; i++) {
         const [key, statements] = effectEntries[i];
         console.log('\t', key, statements);
+        effectEdges.push({
+          meta: {
+            checked: false,
+            source: this.selectedNode.concept,
+            target: key,
+            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) }
+          },
+          dataArray: statements
+        });
       }
 
       this.summaryData = {
@@ -246,14 +271,13 @@ export default {
             count: causeEntries.length,
             children: causeEdges,
             meta: { checked: false }
-          } /*,
+          },
           {
             key: RELATIONSHIP_GROUP_KEY.EFFECT,
             count: effectEntries.length,
-            children: slicedEffects,
+            children: effectEdges,
             meta: { checked: false }
           }
-          */
         ],
         meta: { checked: false, isSomeChildChecked: false }
       };
@@ -392,14 +416,14 @@ export default {
         : relationship.target;
     },
     openKBExplorer(relationshipGroupKey) {
-      const concept = this.selectedNode.concept;
+      const components = this.selectedNode.components;
       const filters = filtersUtil.newFilters();
 
       if (relationshipGroupKey === RELATIONSHIP_GROUP_KEY.CAUSE) {
-        filtersUtil.addSearchTerm(filters, 'objConcept', concept, 'or', false);
+        filtersUtil.setClause(filters, 'objConcept', components, 'or', false);
         this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters } });
       } else {
-        filtersUtil.addSearchTerm(filters, 'subjConcept', concept, 'or', false);
+        filtersUtil.setClause(filters, 'subjConcept', components, 'or', false);
         this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters } });
       }
     },
@@ -477,8 +501,6 @@ export default {
 
       console.log('new edges', newEdges);
       console.log('new nodes', newNodes);
-      // FIXME: Need to handle multi-edges eg X(s1) and X(s2)
-
       this.$emit('add-to-CAG', { nodes: [], edges: newEdges });
     }
   }
