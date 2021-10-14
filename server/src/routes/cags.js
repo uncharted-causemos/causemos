@@ -68,7 +68,8 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
     return {
       concept: n.concept,
       parameter: n.parameter,
-      label: n.label
+      label: n.label,
+      components: n.components
     };
   });
 
