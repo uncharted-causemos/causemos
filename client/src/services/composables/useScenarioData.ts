@@ -1,5 +1,5 @@
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
-import { ref, Ref, watchEffect } from 'vue';
+import { computed, ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
 import { isImage, isVideo } from '@/utils/datacube-util';
 import { ModelRunStatus } from '@/types/Enums';
@@ -14,7 +14,7 @@ export default function useScenarioData(
   modelRunsFetchedAt: Ref<number>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
-  const filteredRunData = ref([]) as Ref<ModelRun[]>;
+  const filteredRunData = computed(() => runData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted));
 
   watchEffect(onInvalidate => {
     console.log('refetching scenario-data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
@@ -101,7 +101,6 @@ export default function useScenarioData(
         });
 
         runData.value = newMetadata;
-        filteredRunData.value = runData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted);
       }
     }
     onInvalidate(() => {
