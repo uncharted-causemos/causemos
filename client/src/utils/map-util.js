@@ -223,6 +223,7 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
       ...missingProperty,
       ['<', propertyGetter, filterDomain.min], 0.0,
       ['>', propertyGetter, filterDomain.max], 0.0,
+      ['==', true, ['feature-state', '_isHidden']], 0.0,
       1
     ];
   }
