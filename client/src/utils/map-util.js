@@ -129,6 +129,14 @@ export function isLayerLoaded(map, layerId) {
   return typeof map.getLayer(layerId) !== 'undefined';
 }
 
+
+function diffExpr(oldValExpr, newValExpr, isPercentage = true) {
+  if (isPercentage) {
+    return ['*', ['/', ['-', newValExpr, oldValExpr], ['abs', oldValExpr]], 100];
+  }
+  return ['-', newValExpr, oldValExpr];
+}
+
 /**
  * @param {String} property - Name of the property for the geojson feature for applying color
  * @param {Array} dataDomain - Data domain in the form of [min, max]
@@ -143,7 +151,7 @@ function discreteColors(property, domain, colors, scaleFn = d3.scaleLinear, useF
   const getter = useFeatureState ? 'feature-state' : 'get';
   const baselineValueExpr = ['case', ['!=', null, [getter, relativeTo]], [getter, relativeTo], [getter, '_baseline']];
   const valueExpr = !_.isNil(relativeTo)
-    ? ['-', [getter, property], baselineValueExpr]
+    ? diffExpr(baselineValueExpr, [getter, property])
     : [getter, property];
   return [
     'step',
@@ -217,7 +225,7 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
     const baselineValueExpr = ['case', ['!=', null, ['feature-state', relativeTo]], ['feature-state', relativeTo], ['feature-state', '_baseline']];
     const propertyGetter = _.isNil(relativeTo)
       ? ['feature-state', property]
-      : ['-', ['feature-state', property], baselineValueExpr];
+      : diffExpr(baselineValueExpr, ['feature-state', property]);
     style.paint['fill-opacity'] = [
       'case',
       ...missingProperty,

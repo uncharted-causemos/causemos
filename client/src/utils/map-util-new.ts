@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
+import { calculateDiff } from '@/utils/value-util';
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -57,9 +58,9 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
     // Stats relative to the baseline. (min/max of the difference relative to the baseline)
     for (const [key, data] of Object.entries(regionData)) {
       const values: number[] = [];
-      (data || []).filter(v => (v.values[baselineProp] || v.values._baseline) !== undefined).forEach(v => {
-        const diffs = Object.values(v.values).map(value => value - (v.values[baselineProp] || v.values._baseline));
-        values.push(...diffs);
+      (data || []).forEach(v => {
+        const diffs = Object.values(v.values).map(value => calculateDiff(v.values[baselineProp] || v.values._baseline, value));
+        values.push(...diffs.filter(v => _.isFinite(v)));
       });
       if (values.length) {
         difference[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });

@@ -7,6 +7,7 @@ import { OutputSpecWithId, OutputStatsResult, RegionalAggregations } from '@/typ
 import { computeRegionalStats, adminLevelToString, computeGridLayerStats, DATA_LAYER } from '@/utils/map-util-new';
 import { createMapLegendData, ETHIOPIA_BOUNDING_BOX } from '@/utils/map-util';
 import { COLOR_SCHEME } from '@/utils/colors-util';
+import { calculateDiff } from '@/utils/value-util';
 import { getOutputStats } from '@/services/runoutput-service';
 
 export default function useAnalysisMapStats(
@@ -74,7 +75,7 @@ export default function useAnalysisMapStats(
     const values = [];
     for (const feature of features) {
       for (const item of component.outputSourceSpecs) {
-        const diff = feature.properties[item.id] - feature.properties[baselineProp];
+        const diff = calculateDiff(feature.properties[baselineProp], feature.properties[item.id]);
         if (_.isFinite(diff)) values.push(diff);
       }
     }

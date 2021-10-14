@@ -3,6 +3,7 @@ import moment from 'moment';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
+import { calculateDiff } from '@/utils/value-util';
 
 
 const DEFAULT_LINE_COLOR = '#000';
@@ -37,7 +38,7 @@ export function applyRelativeTo(
           ?.value ?? 0;
       return {
         timestamp,
-        value: value - baselineValue
+        value: calculateDiff(baselineValue, value)
       };
     });
     returnValue.push({
