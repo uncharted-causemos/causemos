@@ -1,8 +1,8 @@
 const express = require('express');
-const moment = require('moment');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const cagService = rootRequire('/services/cag-service');
+const historyService = rootRequire('/services/history-service');
 const { MODEL_STATUS } = rootRequire('/util/model-util');
 
 
@@ -15,7 +15,7 @@ const OPERATION = Object.freeze({
  * POST an edge polarity
  */
 router.put('/:mid/edge-polarity', asyncHandler(async (req, res) => {
-  const editTime = moment().valueOf();
+  const editTime = Date.now();
   const modelId = req.params.mid;
   const {
     edge_id: edgeId,
@@ -31,7 +31,7 @@ router.put('/:mid/edge-polarity', asyncHandler(async (req, res) => {
  * POST a new CAG from an Existing CAG
  */
 router.post('/:mid/', asyncHandler(async (req, res) => {
-  const editTime = moment().valueOf();
+  const editTime = Date.now();
   const modelId = req.params.mid;
   const CAG = await cagService.getComponents(modelId);
 
@@ -85,6 +85,8 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
     is_quantified: false
   });
 
+  historyService.logHistory(newId, 'duplicate', nodes, edges);
+
   res.status(200).send({ updateToken: editTime, id: newId });
 }));
 
@@ -92,22 +94,25 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
  * PUT new data in an existing CAG
  */
 router.put('/:mid/components/', asyncHandler(async (req, res) => {
-  const editTime = moment().valueOf();
+  const editTime = Date.now();
   const modelId = req.params.mid;
   const {
     operation,
     edges,
-    nodes
+    nodes,
+    updateType
   } = req.body;
 
   // Perform the specified operation, or if it's not a supported operation
   // throw an error
   switch (operation) {
     case OPERATION.REMOVE:
-      await cagService.pruneCAG(modelId, edges, nodes);
+      await cagService.pruneCAG(modelId, edges, nodes, updateType);
+      historyService.logHistory(modelId, updateType, nodes, edges);
       break;
     case OPERATION.UPDATE:
-      await cagService.updateCAG(modelId, edges, nodes);
+      await cagService.updateCAG(modelId, edges, nodes, updateType);
+      historyService.logHistory(modelId, updateType, nodes, edges);
       break;
     default:
       throw new Error('Operation not supported: ' + operation);

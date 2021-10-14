@@ -141,8 +141,9 @@ function discreteColors(property, domain, colors, scaleFn = d3.scaleLinear, useF
     ? createDivergingColorStops(domain, colors, scaleFn)
     : createColorStops(domain, colors, scaleFn);
   const getter = useFeatureState ? 'feature-state' : 'get';
+  const baselineValueExpr = ['case', ['!=', null, [getter, relativeTo]], [getter, relativeTo], [getter, '_baseline']];
   const valueExpr = !_.isNil(relativeTo)
-    ? ['-', [getter, property], [getter, relativeTo]]
+    ? ['-', [getter, property], baselineValueExpr]
     : [getter, property];
   return [
     'step',
@@ -198,16 +199,6 @@ export function createDivergingColorStops(domain, colors, scaleFn) {
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
 export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo) {
-  // TODO: split this into two functions (one for feature state and one for grid map style)
-  const missingProperty = [
-    ['==', null, ['feature-state', property]], 0.0
-  ];
-  !_.isNil(relativeTo) && missingProperty.push(
-    ['==', null, ['feature-state', relativeTo]], 0.0
-  );
-  const propertyGetter = _.isNil(relativeTo)
-    ? ['feature-state', property]
-    : ['-', ['feature-state', property], ['feature-state', relativeTo]];
   const style = {
     type: 'fill',
     paint: {
@@ -216,11 +207,23 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
     }
   };
   if (useFeatureState) {
+    // TODO: split this into two functions (one for feature state and one for grid map style)
+    const missingProperty = [
+      ['==', null, ['feature-state', property]], 0.0
+    ];
+    !_.isNil(relativeTo) && missingProperty.push(
+      ['all', ['==', null, ['feature-state', relativeTo]], ['==', null, ['feature-state', '_baseline']]], 0.0
+    );
+    const baselineValueExpr = ['case', ['!=', null, ['feature-state', relativeTo]], ['feature-state', relativeTo], ['feature-state', '_baseline']];
+    const propertyGetter = _.isNil(relativeTo)
+      ? ['feature-state', property]
+      : ['-', ['feature-state', property], baselineValueExpr];
     style.paint['fill-opacity'] = [
       'case',
       ...missingProperty,
       ['<', propertyGetter, filterDomain.min], 0.0,
       ['>', propertyGetter, filterDomain.max], 0.0,
+      ['==', true, ['feature-state', '_isHidden']], 0.0,
       1
     ];
   }

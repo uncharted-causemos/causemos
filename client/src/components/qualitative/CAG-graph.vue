@@ -4,6 +4,10 @@
       ref="container"
       class="CAG-graph"
     />
+    <graph-search
+      :nodes="data.nodes"
+      @search="search"
+    />
     <new-node-concept-select
       v-if="showNewNode"
       ref="newNode"
@@ -37,11 +41,12 @@ import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
-import { calculateNeighborhood, hasBackingEvidence } from '@/utils/graphs-util';
+import { calculateNeighborhood, hasBackingEvidence, highlightOptions } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
+import GraphSearch from '@/components/widgets/graph-search.vue';
 
 import projectService from '@/services/project-service';
 
@@ -111,7 +116,6 @@ class CAGRenderer extends BaseCAGRenderer {
   // Override render function to also check for ambigous edges and highlight them
   async render() {
     await super.render();
-    this.displayAmbiguousEdgeWarning();
     this.displayGraphStats();
   }
 
@@ -607,60 +611,6 @@ class CAGRenderer extends BaseCAGRenderer {
       .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
   }
 
-  displayAmbiguousEdgeWarning() {
-    const graph = this.layout;
-    const svg = d3.select(this.svgEl);
-    const foregroundLayer = svg.select('.foreground-layer');
-
-    const highlightFunction = this.highlight;
-    const highlightAmbiguousEdgesFunction = this.highlightAmbiguousEdges;
-
-    const warning = d3.select('.ambiguous-edge-warning').node() // check if warning element is already present
-      ? d3.select('.ambiguous-edge-warning') // select it
-      : foregroundLayer.append('text') // or create it if it hasn't been already
-        .attr('x', parseInt(svg.style('width')) - 310)
-        .style('text-anchor', 'right')
-        .attr('y', 20)
-        .attr('opacity', 0)
-        .attr('fill', 'red')
-        .attr('font-size', '1.6rem')
-        .classed('ambiguous-edge-warning', true)
-        .text('Warning: ambiguous edges detected in graph') // not very pretty, could update in the future
-        .on('mouseover', function () {
-          highlightAmbiguousEdgesFunction(graph, highlightFunction);
-        });
-
-    for (const edge of graph.edges) {
-      const polarity = edge.data.polarity;
-      if (polarity !== 1 && polarity !== -1) {
-        warning
-          .attr('opacity', 1)
-          .attr('x', parseInt(svg.style('width')) - 310); // FIXME this doesn't move the warning if the window resizes, svg size doesnt change
-        return;
-      }
-    }
-    warning.attr('opacity', 0);
-  }
-
-  highlightAmbiguousEdges(graph, highlight) {
-    const highlightOptions = {
-      color: 'red',
-      duration: 1000
-    };
-    const ambigEdges = [];
-
-    for (const edge of graph.edges) {
-      const polarity = edge.data.polarity;
-      if (polarity !== 1 && polarity !== -1) {
-        ambigEdges.push(edge);
-      }
-    }
-
-    if (ambigEdges.length > 0) {
-      highlight({ nodes: [], edges: ambigEdges }, highlightOptions);
-    }
-  }
-
   /**
    * Used for creating new CAG node and retain existing xy-position.
    * We are building a blueprint, so the next iteration, when we have actual
@@ -696,7 +646,8 @@ export default {
   components: {
     NewNodeConceptSelect,
     ColorLegend,
-    ModalCustomConcept
+    ModalCustomConcept,
+    GraphSearch
   },
   props: {
     data: {
@@ -868,6 +819,12 @@ export default {
         hasEvidence: false
       });
     },
+    search(nodeId) {
+      this.renderer.moveTo(nodeId, 1500);
+      this.renderer.highlight({
+        nodes: [nodeId]
+      }, highlightOptions);
+    },
     async refresh() {
       if (_.isEmpty(this.data)) return;
       this.renderer.setData(this.data);
@@ -885,15 +842,11 @@ export default {
       this.$emit('refresh', null);
     },
     highlight() {
-      const options = {
-        duration: 4000,
-        color: SELECTED_COLOR
-      };
       // Check if the subgraph was added less than 1 min ago
       const thresholdTime = moment().subtract(THRESHOLD_TIME, 'minutes').valueOf();
       const nodes = this.data.nodes.filter(n => n.modified_at >= thresholdTime).map(n => n.concept);
       const edges = this.data.edges.filter(e => e.modified_at >= thresholdTime);
-      this.renderer.highlight({ nodes, edges }, options);
+      this.renderer.highlight({ nodes, edges }, highlightOptions);
     },
     onSuggestionSelected(suggestion) {
       // HACK This is leveraing the svg-flowgraph internals.

@@ -37,6 +37,11 @@
           @click="onDownload">
           Download
         </div>
+        <div
+          class="dropdown-option"
+          @click="onDownloadExperiment">
+          Download Experiment
+        </div>
       </template>
     </dropdown-control>
   </li>
@@ -83,7 +88,7 @@ export default defineComponent({
       default: 'qualitativeView'
     }
   },
-  emits: ['rename', 'duplicate'],
+  emits: ['rename', 'duplicate', 'download-experiment'],
   methods: {
     onShowModelOptionsDropdown() {
       this.showModelOptionsDropdown = !this.showModelOptionsDropdown;
@@ -109,6 +114,10 @@ export default defineComponent({
     },
     onDownload() {
       window.location.href = this.downloadURL;
+    },
+    onDownloadExperiment() {
+      this.$emit('download-experiment');
+      this.showModelOptionsDropdown = false;
     },
     onDuplicate() {
       this.$emit('duplicate');

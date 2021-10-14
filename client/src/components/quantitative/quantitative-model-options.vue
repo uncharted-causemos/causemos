@@ -6,6 +6,7 @@
       :view-after-deletion="'overview'"
       @rename="openRenameModal"
       @duplicate="openDuplicateModal"
+      @download-experiment="$emit('download-experiment')"
     />
     <rename-modal
       v-if="showRenameModal"
@@ -43,6 +44,7 @@ export default defineComponent({
     ModelOptions,
     DuplicateModal
   },
+  emits: ['download-experiment'],
   setup() {
     const store = useStore();
     const showRenameModal = ref(false);

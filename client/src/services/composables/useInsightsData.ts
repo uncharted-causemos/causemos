@@ -10,10 +10,6 @@ export default function useInsightsData() {
 
   const insightsFetchedAt = ref(0);
 
-  const reFetchInsights = () => {
-    insightsFetchedAt.value = Date.now();
-  };
-
   const getInsightsByIDs = (insightIDs: string[]) => {
     const result: Insight[] = [];
     insightIDs.forEach(insightId => {
@@ -33,16 +29,27 @@ export default function useInsightsData() {
   const isInsightExplorerOpen = computed(() => store.getters['insightPanel/isPanelOpen']);
   const isContextInsightPanelOpen = computed(() => store.getters['contextInsightPanel/isPanelOpen']);
 
+  const shouldRefetchInsights = computed(() => store.getters['contextInsightPanel/shouldRefetchInsights']);
+
+  const reFetchInsights = () => {
+    insightsFetchedAt.value = Date.now();
+    store.dispatch('contextInsightPanel/setRefetchInsights', true);
+  };
+
   watchEffect(onInvalidate => {
     console.log('refetching insights at: ' + new Date(insightsFetchedAt.value).toTimeString());
     let isCancelled = false;
     async function getInsights() {
-      // do not fetch if the panel is not open
-      if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true)) {
-        return;
+      if (shouldRefetchInsights.value === false) {
+        // do not fetch if the panel is not open
+        if (!(isInsightExplorerOpen.value === true || isContextInsightPanelOpen.value === true)) {
+          return;
+        }
       }
+
       // if context-id is undefined, then it means no datacubes/CAGs are listed, so ignore fetch
       if (contextIds.value === undefined) {
+        store.dispatch('contextInsightPanel/setRefetchInsights', false);
         return;
       }
 
@@ -93,6 +100,8 @@ export default function useInsightsData() {
       insights.value = _.uniqBy([...publicInsights, ...contextInsights], 'id');
       store.dispatch('contextInsightPanel/setCountContextInsights', insights.value.length);
       store.dispatch('insightPanel/setCountInsights', insights.value.length);
+
+      store.dispatch('contextInsightPanel/setRefetchInsights', false);
     }
     onInvalidate(() => {
       isCancelled = true;

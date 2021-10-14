@@ -7,7 +7,7 @@ import useActiveDatacubeFeature from './useActiveDatacubeFeature';
 import { ModelRun } from '@/types/ModelRun';
 
 export default function useOutputSpecs(
-  selectedModelId: Ref<string>,
+  selectedModelId: Ref<string | null>,
   selectedSpatialAggregation: Ref<string>,
   selectedTemporalAggregation: Ref<string>,
   selectedTemporalResolution: Ref<string>,

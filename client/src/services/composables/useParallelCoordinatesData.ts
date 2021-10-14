@@ -25,15 +25,17 @@ export default function useParallelCoordinatesData(
     }
     const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
     const outputParameterName = outputs[currentOutputIndex.value].name ?? 'Undefined output parameter';
-    return allModelRunData.value.map((modelRun, runIndex) => {
-      const run_id = allModelRunData.value[runIndex].id;
-      const runStatus = allModelRunData.value[runIndex].status;
+    return allModelRunData.value.map(modelRun => {
+      const run_id = modelRun.id;
+      const runStatus = modelRun.status;
+      const created_at = modelRun.created_at;
       const run: ScenarioData = {
+        created_at,
         run_id,
         status: runStatus ?? ModelRunStatus.Ready
       };
       if (run.status === ModelRunStatus.Ready) {
-        const currRunData = allModelRunData.value[runIndex];
+        const currRunData = modelRun;
         const outputValue = currRunData.output_agg_values.find(val => val.name === outputParameterName);
         if (outputValue) {
           run[outputParameterName] = outputValue.value;
@@ -48,17 +50,33 @@ export default function useParallelCoordinatesData(
     });
   });
 
+  const inputDimensions = computed(() => {
+    if (metadata.value !== null && isModel(metadata.value)) {
+      return metadata.value.parameters;
+    }
+    return [];
+  });
+
+  const outputDimension = computed(() => {
+    if (metadata.value === null || !isModel(metadata.value)) {
+      return undefined;
+    }
+    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
+    // Restructure the output parameter
+    const outputDimension = outputs[currentOutputIndex.value];
+    if (outputDimension === undefined) {
+      console.warn('Missing output!', metadata.value);
+      return undefined;
+    }
+    return outputs[currentOutputIndex.value];
+  });
+
   const dimensions = computed(() => {
     if (metadata.value === null || !isModel(metadata.value)) {
       return [];
     }
-    const outputs = metadata.value?.validatedOutputs ? metadata.value?.validatedOutputs : metadata.value?.outputs;
-
-    // Restructure the output parameter
-    const outputDimension = outputs[currentOutputIndex.value];
-    const inputDimensions = metadata.value.parameters;
     // Append the output parameter to the list of input parameters
-    return [...inputDimensions, outputDimension] as ModelParameter[];
+    return [...inputDimensions.value, outputDimension.value] as ModelParameter[];
   });
 
   // The parallel coordinates component expects data as a collection of name/value pairs

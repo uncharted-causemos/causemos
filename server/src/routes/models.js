@@ -12,6 +12,7 @@ const cagService = rootRequire('/services/cag-service');
 const scenarioService = rootRequire('/services/scenario-service');
 const indicatorService = rootRequire('/services/indicator-service');
 const modelService = rootRequire('/services/model-service');
+const historyService = rootRequire('/services/history-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
 const { MODEL_STATUS } = rootRequire('/util/model-util');
@@ -186,6 +187,8 @@ router.post('/', asyncHandler(async (req, res) => {
     description,
     thumbnail_source
   }, edges, nodes);
+
+  historyService.logHistory(result.id, 'create', nodes, edges);
   res.json(result);
 }));
 
@@ -497,6 +500,9 @@ router.get('/:modelId/experiments', asyncHandler(async (req, res) => {
 router.put('/:modelId/nodes/:nodeId/clear-parameter', asyncHandler(async (req, res) => {
   const { modelId, nodeId } = req.params;
   await modelService.clearNodeParameter(modelId, nodeId);
+
+  historyService.logHistory(modelId, 'clear parameter', [{ id: nodeId }], []);
+
   res.status(200).send({ updateToken: moment.utc().valueOf() });
 }));
 
@@ -596,6 +602,9 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
   await scenarioService.invalidateByModel(modelId);
 
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
+
+  historyService.logHistory(modelId, 'set parameter', [nodeBeforeUpdate], []);
+
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);
@@ -646,6 +655,9 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
   await scenarioService.invalidateByModel(modelId);
 
   await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
+
+  historyService.logHistory(modelId, 'set weights', [], [{ source, target, parameter }]);
+
   res.status(200).send({ updateToken: moment().valueOf() });
 
   releaseLock(modelId);

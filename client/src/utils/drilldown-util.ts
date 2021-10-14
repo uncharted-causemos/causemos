@@ -4,6 +4,7 @@ import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { DataState, ViewState } from '@/types/Insight';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
 import { BASE_LAYER, DATA_LAYER } from './map-util-new';
+import { Timeseries } from '@/types/Timeseries';
 
 export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);
 export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
@@ -17,7 +18,8 @@ export function initDataStateFromRefs (
   selectedRegionIds: Ref<string[]>,
   selectedScenarioIds: Ref<string[]>,
   selectedTimestamp: Ref<number|null>,
-  selectedYears: Ref<Set<string>>
+  selectedYears: Ref<Set<string>>,
+  visibleTimeseriesData?: Ref<Timeseries[]> // useful for the node view's validation, but ignoreable by everything else, so optional
 ): DataState {
   return {
     selectedModelId: selectedModelId.value,
@@ -31,7 +33,8 @@ export function initDataStateFromRefs (
     selectedRegionIds: selectedRegionIds.value,
     relativeTo: relativeTo.value,
     selectedQualifierValues: [...selectedQualifierValues.value],
-    selectedYears: [...selectedYears.value]
+    selectedYears: [...selectedYears.value],
+    visibleTimeseriesData: visibleTimeseriesData?.value
   };
 }
 

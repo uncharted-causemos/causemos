@@ -87,7 +87,7 @@ const createRangeFilter = ({ min, max }, prop) => {
 const baseLayer = (property, useFeatureState = false, relativeTo) => {
   const caseRelativeToMissing = [];
   const getter = useFeatureState ? 'feature-state' : 'get';
-  relativeTo && caseRelativeToMissing.push(['all', ['==', null, [getter, relativeTo]]], 1);
+  relativeTo && caseRelativeToMissing.push(['all', ['==', null, [getter, relativeTo]], ['==', null, [getter, '_baseline']]], 1);
   if (useFeatureState) {
     return Object.freeze({
       type: 'fill',
@@ -178,6 +178,10 @@ export default {
     regionData: {
       type: Object,
       default: () => undefined
+    },
+    selectedRegionIds: {
+      type: Array,
+      default: () => []
     },
     adminLayerStats: {
       type: Object,
@@ -305,6 +309,9 @@ export default {
     },
     gridLayerStats() {
       this.debouncedRefresh();
+    },
+    selectedRegionIds() {
+      this.debouncedRefresh();
     }
   },
   created() {
@@ -415,7 +422,7 @@ export default {
       // But once new state, lets's say {b: 4} is set by setFetureState afterwards, it just extends previous state instead of setting it to new state resulting something like
       // { id: 'Ethiopia', state: {a: 1, b:4, c:3 } where we don't want 'a' and 'c'
       // To work around above issue, explitly set undefined to each output value by default since removeFeatureState doesn't seem very reliable.
-      const featureStateBase = {};
+      const featureStateBase = { _baseline: undefined };
       this.outputSourceSpecs.forEach(spec => { featureStateBase[spec.id] = undefined; });
 
       this.regionData[this.adminLevel].forEach(row => {
@@ -425,7 +432,8 @@ export default {
           sourceLayer: this.vectorSourceLayer
         }, {
           ...featureStateBase,
-          ...row.values
+          ...row.values,
+          _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(row.id)
         });
       });
     },
@@ -565,7 +573,7 @@ export default {
         : chartValueFormatter()(v);
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
-        const diff = prop[this.valueProp] - prop[this.baselineSpec.id];
+        const diff = prop[this.valueProp] - (prop[this.baselineSpec.id] || prop._baseline);
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
         rows.push(text);
       }

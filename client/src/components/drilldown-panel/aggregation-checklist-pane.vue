@@ -364,7 +364,7 @@ export default defineComponent({
           });
           // Convert values from { [timeseriesId]: value } to an array where
           //  the value of each timeseries is augmented with its color
-          const valueArray = Object.keys(values).map(timeseriesId => {
+          const valueArray = Object.keys(values).filter(key => key !== '_baseline').map(timeseriesId => {
             return {
               color: getColorFromTimeseriesId(timeseriesId),
               value: values[timeseriesId]

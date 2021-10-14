@@ -1,3 +1,4 @@
+import { Timeseries } from '@/types/Timeseries';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
 // @base/abstract type
@@ -26,6 +27,12 @@ export interface Snapshot {
   // components may be flagged to react to the actions in a given mode -> Karl's suggestion (editable, displayable, etc.)
 }
 
+export interface AnnotationState {
+  markerAreaState: any;
+  cropAreaState: any;
+  imagePreview: string;
+}
+
 // @concrete type
 export interface Insight extends Snapshot {
   name: string;
@@ -33,6 +40,7 @@ export interface Insight extends Snapshot {
   is_default: boolean; // is this the default insight?
   analytical_question: string[]; // question(s) this insight may answer
   thumbnail: string; // e.g., image url or base64 encoding
+  annotation_state?: AnnotationState;
 }
 
 // @concrete type
@@ -80,6 +88,7 @@ export interface DataState {
   datacubeTitles?: {datacubeName: string; datacubeOutputName: string}[];
   datacubeRegions?: string[];
   relativeTo?: string | null;
+  visibleTimeseriesData?: Timeseries[];
 
   // knowledge/model space specific
   selectedScenarioId?: string;

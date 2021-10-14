@@ -24,11 +24,12 @@ const submitModelRun = async(metadata) => {
     parameters,
     is_default_run = false
   } = metadata;
+  const isDevEnvironment = process.env.TD_DATA_URL.includes('10.65.18.69');
   const filteredMetadata = {
-    id: uuid(),
     model_id,
     model_name,
     parameters,
+    id: uuid(),
     data_paths: [],
     is_default_run,
     created_at: Date.now(),
@@ -38,8 +39,7 @@ const submitModelRun = async(metadata) => {
 
   const pipelinePayload = {
     method: 'POST',
-    // url: process.env.DOJO_URL + '/runs',
-    url: 'https://dojo-test.com/runs',
+    url: process.env.DOJO_URL + '/runs',
     headers: {
       'Authorization': basicAuthToken,
       'Content-type': 'application/json',
@@ -51,7 +51,9 @@ const submitModelRun = async(metadata) => {
   Logger.info(`Submitting execution request for id: ${filteredMetadata.id}`);
   let result;
   try {
-    result = await requestAsPromise(pipelinePayload);
+    if (!isDevEnvironment) {
+      result = await requestAsPromise(pipelinePayload);
+    }
   } catch (err) {
     return { result: { error: err }, code: 500 };
   }
@@ -74,6 +76,17 @@ const submitModelRun = async(metadata) => {
       status: 'SUBMITTED',
       name: runName
     }, d => d.id);
+    if (isDevEnvironment) {
+      setTimeout(async () => {
+        await connection.update({
+          ...filteredMetadata,
+          status: 'PROCESSING'
+        }, d => d.id);
+        setTimeout(async () => {
+          await markModelRunFailed(filteredMetadata);
+        }, 20000);
+      }, 10000);
+    }
     return { result: { es_response: result, run_id: filteredMetadata.id }, code: 201 };
   } catch (err) {
     return { result: { error: err }, code: 500 };
@@ -274,7 +287,18 @@ const startIndicatorPostProcessing = async (metadata) => {
   const resolutions = ['annual', 'monthly', 'dekad', 'weekly', 'daily', 'other'];
   let highestRes = 0;
 
+  // Exclude all implicit qualifiers
+  const validQualifiers = metadata.qualifier_outputs.filter(
+    q => !IMPLICIT_QUALIFIERS.includes(q.name));
+
   const qualifierMap = {};
+  for (const output of metadata.outputs) {
+    if (acceptedTypes.includes(output.type)) {
+      qualifierMap[output.name] = validQualifiers
+        .filter(qualifier => qualifier.related_features.includes(output.name))
+        .map(q => q.name);
+    }
+  }
 
   // Create data now to send to elasticsearch
   const newIndicatorMetadata = metadata.outputs
@@ -300,10 +324,6 @@ const startIndicatorPostProcessing = async (metadata) => {
         // Filter out unrelated qualifiers
         clonedMetadata.qualifier_outputs = metadata.qualifier_outputs.filter(
           qualifier => qualifier.related_features.includes(output.name));
-
-        qualifierMap[output.name] = clonedMetadata.qualifier_outputs.filter(
-          q => !IMPLICIT_QUALIFIERS.includes(q.name)
-        ).map(q => q.name);
 
         // Combine all concepts from the qualifiers into one list
         qualifierMatches = clonedMetadata.qualifier_outputs.map(qualifier => [
@@ -364,12 +384,21 @@ const startIndicatorPostProcessing = async (metadata) => {
   return { result: { message: 'No documents added' }, code: 202 };
 };
 
+/**
+ * Update a model run  with the specified changes
+ */
+const updateModelRun = async(modelRun) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+  return await connection.update(modelRun, doc => doc.id);
+};
+
 module.exports = {
   submitModelRun,
   startModelOutputPostProcessing,
   markModelRunFailed,
   getAllModelRuns,
   getJobStatus,
-  startIndicatorPostProcessing
+  startIndicatorPostProcessing,
+  updateModelRun
 };
 

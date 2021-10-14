@@ -44,7 +44,8 @@ const RESOURCE = Object.freeze({
 
   // Tracking
   ASSEMBLY_REQUEST: 'assembly-request',
-  PROJECT_EXTENSION: 'project-extension'
+  PROJECT_EXTENSION: 'project-extension',
+  MODEL_HISTORY: 'model-history'
 });
 
 class Adapter {
