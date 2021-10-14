@@ -64,9 +64,9 @@
                 class="fa fa-lg fa-fw"
                 :class="{ 'fa-check-square-o': relationship.meta.checked, 'fa-square-o': !relationship.meta.checked }"
                 @click.stop="toggle(relationship)" />
-              <span
-                :style="relationship.meta.style"
-              >{{ ontologyFormatter(filterRedundantConcept(relationshipGroup.key, relationship.meta)) }}
+              <span :style="relationship.meta.style" >
+                {{ ontologyFormatter(filterRedundantConcept(relationshipGroup.key, relationship.meta)) }}
+                {{ relationship.meta.numEvidence }}
               </span>
             </div>
             <button
@@ -189,6 +189,7 @@ export default {
       const effectStatements = this.statements.filter(s => components.includes(s.subj.concept));
 
       // Map to node-container level if applicable
+      // FIXME: should remove edges already in graph
       const causeMap = new Map();
       for (let i = 0; i < causeStatements.length; i++) {
         const statement = causeStatements[i];
@@ -210,6 +211,7 @@ export default {
       }
 
       // Map to node-container level if applicable
+      // FIXME: should remove edges already in graph
       const effectMap = new Map();
       for (let i = 0; i < effectStatements.length; i++) {
         const statement = effectStatements[i];
@@ -235,13 +237,13 @@ export default {
       const causeEdges = [];
       for (let i = 0; i < causeEntries.length; i++) {
         const [key, statements] = causeEntries[i];
-        console.log('\t', key, statements);
         causeEdges.push({
           meta: {
             checked: false,
             source: key,
             target: this.selectedNode.concept,
-            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) }
+            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) },
+            numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
           },
           dataArray: statements
         });
@@ -252,30 +254,40 @@ export default {
       const effectEdges = [];
       for (let i = 0; i < effectEntries.length; i++) {
         const [key, statements] = effectEntries[i];
-        console.log('\t', key, statements);
         effectEdges.push({
           meta: {
             checked: false,
             source: this.selectedNode.concept,
             target: key,
-            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) }
+            style: { color: calcEdgeColor(statementsToEdgeAttributes(statements)) },
+            numEvidence: _.sumBy(statements, s => s.wm.num_evidence)
           },
           dataArray: statements
         });
       }
 
+      // Get "top" edges by number of evidence
+      const topCauseEdges = _.take(
+        causeEdges.sort((a, b) => b.meta.numEvidence - a.meta.numEvidence),
+        5
+      );
+      const topEffectEdges = _.take(
+        effectEdges.sort((a, b) => b.meta.numEvidence - a.meta.numEevidence),
+        5
+      );
+
       this.summaryData = {
         children: [
           {
             key: RELATIONSHIP_GROUP_KEY.CAUSE,
-            count: causeEntries.length,
-            children: causeEdges,
+            count: causeEdges.length,
+            children: topCauseEdges,
             meta: { checked: false }
           },
           {
             key: RELATIONSHIP_GROUP_KEY.EFFECT,
-            count: effectEntries.length,
-            children: effectEdges,
+            count: effectEdges.length,
+            children: topEffectEdges,
             meta: { checked: false }
           }
         ],
