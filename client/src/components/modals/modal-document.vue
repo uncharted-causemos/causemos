@@ -3,7 +3,7 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
-      <div v-if="viewer"
+      <div v-if="pdfViewer"
         class="toolbar">
         Show raw text
         <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
@@ -14,7 +14,7 @@
       </div>
       <div>
         <hr>
-        <table v-if="documentData">
+        <table v-if="documentData && textOnly">
           <tr>
             <td class="doc-label">Publication Date</td>
             <td>{{ dateFormatter(documentData.publication_date.date, 'YYYY-MM-DD') }}</td>
@@ -73,24 +73,37 @@ const lossySearch = (text, textFragment) => {
 };
 
 
-const createTextViewer = (text, textFragment) => {
+const createTextViewer = (text) => {
   const el = document.createElement('div');
+  const originalText = text;
 
-  if (textFragment) {
-    if (text.search(textFragment) >= 0) {
-      text = text.replace(textFragment, reformat(textFragment));
-    } else {
-      text = lossySearch(text, textFragment);
+  function search(textFragment) {
+    let t = originalText;
+    if (textFragment) {
+      if (text.search(textFragment) >= 0) {
+        t = t.replace(textFragment, reformat(textFragment));
+      } else {
+        t = lossySearch(t, textFragment);
+      }
+      el.innerHTML = t;
+      const anchor = document.getElementsByClassName('extract-text-anchor')[0];
+      if (anchor) {
+        const scroller = document.getElementsByClassName('modal-body')[0];
+        scroller.scrollTop = anchor.offsetTop - 100;
+      }
     }
   }
 
-  el.innerHTML = text;
+  el.innerHTML = originalText;
   el.style.paddingTop = '30px';
   el.style.paddingLeft = '15px';
   el.style.paddingRight = '15px';
   el.style.paddingBottom = '15px';
 
-  return el;
+  return {
+    search,
+    element: el
+  };
 };
 
 export default {
@@ -111,7 +124,7 @@ export default {
   data: () => ({
     documentData: null,
     textViewer: null,
-    viewer: null,
+    pdfViewer: null,
     textOnly: false,
     showTextViewer: false
   }),
@@ -126,16 +139,12 @@ export default {
     async fetchReaderContent() {
       const url = `documents/${this.documentId}`;
       this.documentData = (await API.get(url)).data;
-      this.textViewer = {
-        element: createTextViewer(this.documentData.extracted_text, this.textFragment)
-      };
+      this.textViewer = createTextViewer(this.documentData.extracted_text);
 
       if (isPdf(this.documentData)) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
         try {
-          const viewer = await createPDFViewer({ url: rawDocUrl });
-          await viewer.renderPages();
-          this.viewer = viewer;
+          this.pdfViewer = await createPDFViewer({ url: rawDocUrl });
         } catch (_) {
           this.textOnly = true;
         }
@@ -146,16 +155,13 @@ export default {
       removeChildren(this.$refs.content);
       if (this.textOnly === true) {
         this.$refs.content.appendChild(this.textViewer.element);
-
-        const anchor = document.getElementsByClassName('extract-text-anchor')[0];
-        if (anchor) {
-          const scroller = document.getElementsByClassName('modal-body')[0];
-          scroller.scrollTop = anchor.offsetTop - 100;
+        if (this.textFragment) {
+          this.textViewer.search(this.textFragment);
         }
       } else {
-        this.$refs.content.appendChild(this.viewer.element);
+        this.$refs.content.appendChild(this.pdfViewer.element);
         if (this.textFragment) {
-          this.viewer.search(this.textFragment);
+          this.pdfViewer.search(this.textFragment);
         }
       }
     },
@@ -166,7 +172,7 @@ export default {
       if (this.showTextViewer === true) {
         this.$refs.content.appendChild(this.textViewer.element);
       } else {
-        this.$refs.content.appendChild(this.viewer.element);
+        this.$refs.content.appendChild(this.pdfViewer.element);
       }
     },
     close() {
