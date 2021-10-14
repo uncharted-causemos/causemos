@@ -3,7 +3,7 @@ const moment = require('moment');
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 
-const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE, SEARCH_LIMIT, NODE_GROUP } = rootRequire('/adapters/es/adapter');
 const { client } = rootRequire('/adapters/es/client');
 
 const { get, set } = rootRequire('/cache/node-lru-cache');
@@ -26,7 +26,57 @@ const _getModel = async (modelId) => {
   return modelData;
 };
 
+/**
+ * Create or Update a new group(s)
+ *
+ * @param {string} modelId - model id
+ * @param {object} groups - groups
+ */
+const updateGroups = async(modelId, groups) => {
+  // If the components is an empty array return null
+  if (_.isEmpty(groups)) return null;
 
+  // Ensure components is an array
+  if (!_.isArray(groups)) {
+    groups = [groups];
+  }
+
+  Logger.info(`Adding ${groups.length} groups to: ${modelId}`);
+  const groupConnection = Adapter.get(NODE_GROUP);
+  const keyFn = (doc) => {
+    return doc.id;
+  };
+
+  const modifiedAt = moment().valueOf();
+  const updateList = [];
+  const indexList = [];
+
+  groups.forEach(group => {
+    group.model_id = modelId;
+    group.modified_at = modifiedAt;
+
+    if (_.isNil(group.id) || group.id === '') {
+      group.id = uuid();
+      indexList.push(group);
+    } else {
+      updateList.push(group);
+    }
+  });
+
+  let results = null;
+  if (indexList.length > 0) {
+    results = await groupConnection.insert(indexList, keyFn);
+    if (results.errors) {
+      throw new Error(JSON.stringify(results.items[0]));
+    }
+  }
+  if (updateList.length > 0) {
+    results = await groupConnection.update(updateList, keyFn);
+    if (results.errors) {
+      throw new Error(JSON.stringify(results.items[0]));
+    }
+  }
+};
 // -------------- Helper Functions for Components of the CAG -----------------
 /**
  * Create or Update a new Component(s)
@@ -710,6 +760,7 @@ const changeConcept = async (modelId, change) => {
 module.exports = {
   createCAG,
   updateCAG,
+  updateGroups,
   updateCAGMetadata,
   getComponents,
   pruneCAG,

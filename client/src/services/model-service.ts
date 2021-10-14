@@ -129,6 +129,16 @@ const removeComponents = async (modelId: string, nodes: { id: string }[], edges:
   return result.data;
 };
 
+const addGroups = async (modelId: string, groups: {groupId: string; nodeIds: string[]}[]) => {
+  const result = await API.put(`cags/${modelId}/components`, { operation: 'update', groups });
+  return result;
+};
+
+const removeGroups = async (modelId: string, groupIds: string[]) => {
+  const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', groupIds });
+  return result;
+};
+
 const removeModel = async (modelId: string) => {
   const result = await API.delete(`models/${modelId}`);
   return result.data;
@@ -703,6 +713,8 @@ export default {
   recalculate,
   addComponents,
   removeComponents,
+  addGroups,
+  removeGroups,
   removeModel,
   duplicateModel,
   newModel,
