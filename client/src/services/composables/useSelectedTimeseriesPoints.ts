@@ -5,7 +5,7 @@ import {
   TimeseriesPointSelection
 } from '@/types/Timeseries';
 import { getTimestampMillis } from '@/utils/date-util';
-import isQualifierActive from '@/utils/qualifier-util';
+import isSplitByQualifierActive from '@/utils/qualifier-util';
 import { computed, Ref } from 'vue';
 
 const isTimestampInPoints = (timestamp: number, points: TimeseriesPoint[]) => {
@@ -47,7 +47,7 @@ export default function useSelectedTimeseriesPoints(
         scenarioId = selectedScenarioIds.value[0];
         // Each timeseries uses the same timestamp
         timestamp = _selectedTimestamp;
-      } else if (isQualifierActive(breakdownOption.value)) {
+      } else if (isSplitByQualifierActive(breakdownOption.value)) {
         // If split by qualifer is active, each timeseries ID is the qualifier it
         // represents. Each timeseries represents a qualifier from the same scenario
         // ASSUMPTION: breakdown by qualifier can only be active when exactly 1 scenario

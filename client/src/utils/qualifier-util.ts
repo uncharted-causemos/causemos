@@ -11,7 +11,7 @@ export const QUALIFIERS_TO_EXCLUDE = [
 ];
 
 
-export default function isQualifierActive(breakdownOption: string | null) {
+export default function isSplitByQualifierActive(breakdownOption: string | null) {
   if (
     breakdownOption === null ||
     breakdownOption === SpatialAggregationLevel.Region ||
