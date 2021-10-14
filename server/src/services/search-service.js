@@ -5,7 +5,7 @@ const { RESOURCE } = rootRequire('/adapters/es/adapter');
 const { get: getCache } = rootRequire('/cache/node-lru-cache');
 
 // Remove unneeded fields from compositional ontology
-const mapSource = (d) => {
+const formatOntologyDoc = (d) => {
   return {
     label: d.label,
     definition: d.definition,
@@ -29,18 +29,28 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
   return results.map(d => {
     return {
       doc_type: 'concept',
-      doc: mapSource(d._source),
+      doc: formatOntologyDoc(d._source),
       highlight: d.highlight
     };
   });
 };
 
 
-// Given a flattened-concept, return a list of compositional ontology concepts
-const reverseFlattenedConcept = (name, set) => {
+/**
+ * Given a flattened-concept, return a list of compositional ontology concepts.
+ * This is a greedy-recursive algorithm.
+ *
+ * For example given name = a_b_c_d, and conceptSet = {a_b, c_d, x_y}
+ * 0. set str = [a, b, c, d]
+ * 1. check [d], no match
+ * 2. check [c, d], match, make str = [a, b]
+ * 3. check [b], no match
+ * 4. check [a, b] match, make str = []
+ */
+const reverseFlattenedConcept = (name, conceptSet) => {
   const token = _.last(name.split('/')) || '';
 
-  if (set.has(token)) return [token];
+  if (conceptSet.has(token)) return [token];
 
   // Recursively tease out components - greedy
   let str = token;
@@ -50,7 +60,7 @@ const reverseFlattenedConcept = (name, set) => {
     let found = false;
     for (let i = fragments.length; i > 0; i--) {
       const concept = _.take(fragments, i).join('_');
-      if (set.has(concept)) {
+      if (conceptSet.has(concept)) {
         concepts.push(concept);
         str = _.takeRight(fragments, fragments.length - i).join('_');
         found = true;
@@ -162,7 +172,7 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     const memberStrings = reverseFlattenedConcept(item.key, set);
     const members = ontologyValues.filter(d => {
       return memberStrings.includes(_.last(d.label.split('/'))) && !_.isEmpty(d.examples);
-    }).map(mapSource);
+    }).map(formatOntologyDoc);
 
     // Attach highlight if applicable
     for (let j = 0; j < members.length; j++) {
@@ -172,7 +182,7 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     }
 
     const r = {
-      doc_type: 'xyz',
+      doc_type: 'concept',
       doc: {
         key: item.key,
         members: members
