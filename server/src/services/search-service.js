@@ -175,7 +175,7 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
       doc_type: 'xyz',
       doc: {
         key: item.key,
-        memebers: members
+        members: members
       }
     };
     finalResults.push(r);

@@ -41,7 +41,7 @@
             class="right-column">
             <div>
               <div
-                v-for="(member, idx) in currentSuggestion.doc.memebers"
+                v-for="(member, idx) in currentSuggestion.doc.members"
                 :key="idx">
                 <strong>{{ ontologyFormatter(member.label) }} </strong>
                 <br>
@@ -66,9 +66,9 @@ import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import DropdownControl from '@/components/dropdown-control';
 // import modelService from '@/services/model-service';
-import projectServcie from '@/services/project-service';
+import projectService from '@/services/project-service';
 
-// const CONCEPT_SUGGESTION_COUNT = 8;
+const CONCEPT_SUGGESTION_COUNT = 8;
 
 export default {
   name: 'NewNodeConceptSelect',
@@ -176,8 +176,8 @@ export default {
       if (_.isEmpty(this.userInput)) {
         this.suggestions = [];
       } else {
-        const suggestions = await projectServcie.getConceptSuggestions(this.project, this.userInput);
-        this.suggestions = suggestions.splice(0, 10);
+        const suggestions = await projectService.getConceptSuggestions(this.project, this.userInput);
+        this.suggestions = suggestions.splice(0, CONCEPT_SUGGESTION_COUNT);
       }
     }, 500, { trailing: true, leading: false })
   }
