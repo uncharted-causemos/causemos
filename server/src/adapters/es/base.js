@@ -157,6 +157,8 @@ class Base {
       p = [payload];
     }
 
+    console.log('INDEX: ', this.index);
+
     const bulk = [];
     p.forEach(d => {
       bulk.push({ index: { _index: this.index, _id: keyFn(d) } });

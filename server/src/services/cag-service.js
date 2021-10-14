@@ -2,7 +2,7 @@ const _ = require('lodash');
 const { v4: uuid } = require('uuid');
 const Logger = rootRequire('/config/logger');
 
-const { Adapter, RESOURCE, SEARCH_LIMIT, NODE_GROUP } = rootRequire('/adapters/es/adapter');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 const { client } = rootRequire('/adapters/es/client');
 
 const { get, set } = rootRequire('/cache/node-lru-cache');
@@ -37,42 +37,39 @@ const updateGroups = async(modelId, groups) => {
 
   // Ensure components is an array
   if (!_.isArray(groups)) {
-    groups = [groups];
+    groups = [groups]; // doesnt really need to be a array
   }
 
   Logger.info(`Adding ${groups.length} groups to: ${modelId}`);
-  const groupConnection = Adapter.get(NODE_GROUP);
+  const groupConnection = Adapter.get(RESOURCE.NODE_GROUP);
   const keyFn = (doc) => {
     return doc.id;
   };
 
-  const modifiedAt = moment().valueOf();
-  const updateList = [];
+  const modifiedAt = Date.now();
+  // const updateList = []; // dont need this, data structure isn't complex enough for this to be needed
   const indexList = [];
 
   groups.forEach(group => {
     group.model_id = modelId;
     group.modified_at = modifiedAt;
-
-    if (_.isNil(group.id) || group.id === '') {
+    if (_.isNil(group.id)) {
       group.id = uuid();
-      indexList.push(group);
-    } else {
-      updateList.push(group);
     }
+    indexList.push(group);
   });
+
+  console.log(indexList);
 
   let results = null;
   if (indexList.length > 0) {
-    results = await groupConnection.insert(indexList, keyFn);
-    if (results.errors) {
-      throw new Error(JSON.stringify(results.items[0]));
-    }
-  }
-  if (updateList.length > 0) {
-    results = await groupConnection.update(updateList, keyFn);
-    if (results.errors) {
-      throw new Error(JSON.stringify(results.items[0]));
+    try {
+      results = await groupConnection.insert(indexList, keyFn);
+      if (results.errors) {
+        throw new Error(JSON.stringify(results.items[0]));
+      }
+    } catch (e) {
+      console.log(e);
     }
   }
 };
