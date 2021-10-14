@@ -179,6 +179,10 @@ export default {
       type: Object,
       default: () => undefined
     },
+    selectedRegionIds: {
+      type: Array,
+      default: () => []
+    },
     adminLayerStats: {
       type: Object,
       default: () => undefined
@@ -305,6 +309,9 @@ export default {
     },
     gridLayerStats() {
       this.debouncedRefresh();
+    },
+    selectedRegionIds() {
+      this.debouncedRefresh();
     }
   },
   created() {
@@ -425,7 +432,8 @@ export default {
           sourceLayer: this.vectorSourceLayer
         }, {
           ...featureStateBase,
-          ...row.values
+          ...row.values,
+          _isHidden: this.selectedRegionIds.length === 0 ? false : !this.selectedRegionIds.includes(row.id)
         });
       });
     },
