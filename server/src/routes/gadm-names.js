@@ -13,7 +13,7 @@ router.get('/suggestions', asyncHandler(async (req, res) => {
   const filters = [
     {
       term: {
-        level: queryString
+        level: field
       }
     }
   ];
