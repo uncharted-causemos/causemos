@@ -2,7 +2,6 @@ const { Project } = require('./project');
 const { DocumentContext } = require('./document-context');
 const { Statement } = require('./statement');
 const { Datacube } = require('./datacube');
-const { Gadm } = require('./gadm');
 const { Base } = require('./base');
 
 const SEARCH_LIMIT = 10000;
@@ -59,8 +58,6 @@ class Adapter {
       return new Project(type);
     } else if (type === RESOURCE.DATA_DATACUBE) {
       return new Datacube(type);
-    } else if (type === RESOURCE.GADM_NAME) {
-      return new Gadm(type);
     } else {
       return new Base(type);
     }
