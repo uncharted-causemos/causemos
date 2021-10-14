@@ -492,6 +492,7 @@ export default {
         if (!_.some(graphNodes, d => d.concept === source)) {
           if (!_.some(newNodes, d => d.concept === source)) {
             newNodes.push({
+              id: '',
               concept: source,
               label: this.ontologyFormatter(source),
               components: [source]
@@ -503,6 +504,7 @@ export default {
         if (!_.some(graphNodes, d => d.concept === target)) {
           if (!_.some(newNodes, d => d.concept === target)) {
             newNodes.push({
+              id: '',
               concept: target,
               label: this.ontologyFormatter(target),
               components: [target]
@@ -513,7 +515,7 @@ export default {
 
       console.log('new edges', newEdges);
       console.log('new nodes', newNodes);
-      this.$emit('add-to-CAG', { nodes: [], edges: newEdges });
+      this.$emit('add-to-CAG', { nodes: newNodes, edges: newEdges });
     }
   }
 };
