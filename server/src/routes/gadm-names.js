@@ -1,7 +1,8 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
 const router = express.Router();
-const gadmService = rootRequire('/services/gadm-service');
+const { RESOURCE } = rootRequire('adapters/es/adapter');
+const { searchAndHighlight } = rootRequire('adapters/es/client');
 
 /**
  * GET Search fields based on partial matches
@@ -9,7 +10,14 @@ const gadmService = rootRequire('/services/gadm-service');
 router.get('/suggestions', asyncHandler(async (req, res) => {
   const field = req.query.field;
   const queryString = req.query.q;
-  const results = await gadmService.searchFields(field, queryString);
+  const filters = [
+    {
+      term: {
+        level: queryString
+      }
+    }
+  ];
+  const results = await searchAndHighlight(RESOURCE.GADM_NAME, `${queryString}*`, filters, [field]);
   res.json(results);
 }));
 
