@@ -42,6 +42,7 @@ const margin = { top: 40, right: 30, bottom: 35, left: 35 };
 // line styling in normal mode
 const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
+// const lineStrokeWidthDefault = 8;
 const lineStrokeWidthHover = 2.5;
 const lineOpacityVisible = 1;
 const lineOpacityHidden = 0.25;
@@ -310,7 +311,11 @@ function renderParallelCoordinates(
       .attr('stroke-width', lineStrokeWidthNormal)
       .style('stroke', colorFunc)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
-      .style('stroke-dasharray', function(d) { return d.status === ModelRunStatus.Ready ? 0 : ('3, 3'); })
+      .style('stroke-dasharray', function(d) {
+        console.log('Data');
+        console.log(d);
+        return d.status === ModelRunStatus.Ready ? 0 : ('3, 3');
+      })
     ;
 
     // scenario lines are only interactive in the normal mode
