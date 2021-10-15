@@ -14,14 +14,13 @@ const MODEL_STATUS = modelUtil.MODEL_STATUS;
 
 // Get model with no thumbnail
 const _getModel = async (modelId) => {
-  const connection = Adapter.get(RESOURCE.CAG);
-  const modelData = await connection.findOne([{ field: 'id', value: modelId }], {
+  const cagConnection = Adapter.get(RESOURCE.CAG);
+  const modelData = await cagConnection.findOne([{ field: 'id', value: modelId }], {
     excludes: ['thumbnail_source']
   });
-  const connection2 = Adapter.get(RESOURCE.NODE_GROUP);
-  const modelGroups = await connection2.find([{ field: 'model_id', value: modelId }], {});
+  const groupConnection = Adapter.get(RESOURCE.NODE_GROUP);
+  const modelGroups = await groupConnection.find([{ field: 'model_id', value: modelId }], {});
   modelData.groups = modelGroups;
-  console.log(modelData);
   return modelData;
 };
 
@@ -59,17 +58,11 @@ const updateGroups = async(modelId, groups) => {
     indexList.push(group);
   });
 
-  console.log(indexList);
-
   let results = null;
   if (indexList.length > 0) {
-    try {
-      results = await groupConnection.insert(indexList, keyFn);
-      if (results.errors) {
-        throw new Error(JSON.stringify(results.items[0]));
-      }
-    } catch (e) {
-      console.log(e);
+    results = await groupConnection.insert(indexList, keyFn);
+    if (results.errors) {
+      throw new Error(JSON.stringify(results.items[0]));
     }
   }
 };
