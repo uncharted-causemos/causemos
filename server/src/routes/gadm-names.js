@@ -9,7 +9,7 @@ const { searchAndHighlight } = rootRequire('adapters/es/client');
  **/
 router.get('/suggestions', asyncHandler(async (req, res) => {
   const field = req.query.field;
-  const queryString = req.query.q;
+  const unmodifiedQueryString = req.query.q;
   const filters = [
     {
       term: {
@@ -17,7 +17,8 @@ router.get('/suggestions', asyncHandler(async (req, res) => {
       }
     }
   ];
-  const results = await searchAndHighlight(RESOURCE.GADM_NAME, `${queryString}*`, filters, [field]);
+  const queryString = unmodifiedQueryString.split(' ').filter(el => el !== '').map(el => `${el}*`).join(' ');
+  const results = await searchAndHighlight(RESOURCE.GADM_NAME, queryString, filters, [field]);
   res.json(results);
 }));
 
