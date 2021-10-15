@@ -49,8 +49,7 @@ const searchAndHighlight = async (index, queryString, filters, fields) => {
   const queryStringObject = {
     query_string: {
       query: queryString,
-      fields,
-      default_operator: 'AND'
+      fields
     }
   };
   const query = _.isEmpty(filters)
