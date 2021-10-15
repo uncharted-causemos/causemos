@@ -66,6 +66,25 @@ const updateGroups = async(modelId, groups) => {
     }
   }
 };
+const deleteGroups = async(modelId, groups) => {
+  if (_.isEmpty(groups)) return null;
+
+  Logger.info(`Removing ${groups.length} group(s) from model: ` + modelId);
+  const groupConnection = Adapter.get(RESOURCE.NODE_GROUP);
+
+  // Check to see if edges is an array
+  if (!_.isArray(groups)) {
+    groups = [groups];
+  }
+
+  const results = await groupConnection.removeMany({ id: groups.map(group => group.id) });
+  if (!results.deleted) {
+    throw new Error(`Unable to delete group of model: ${modelId}`);
+  }
+
+  Logger.info('Deleted groups(s)');
+  return results;
+};
 // -------------- Helper Functions for Components of the CAG -----------------
 /**
  * Create or Update a new Component(s)
@@ -750,6 +769,7 @@ module.exports = {
   createCAG,
   updateCAG,
   updateGroups,
+  deleteGroups,
   updateCAGMetadata,
   getComponents,
   pruneCAG,

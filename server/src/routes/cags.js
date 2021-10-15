@@ -129,13 +129,11 @@ router.put('/:mid/groups/', asyncHandler(async (req, res) => {
     groups
   } = req.body;
 
-  console.log('THIS IS A TEST: ', req.body);
-
   // Perform the specified operation, or if it's not a supported operation
   // throw an error
   switch (operation) {
     case OPERATION.REMOVE:
-      await cagService.removeGroups(modelId, groups);
+      await cagService.deleteGroups(modelId, groups);
       break;
     case OPERATION.UPDATE:
       await cagService.updateGroups(modelId, groups);
@@ -152,7 +150,6 @@ router.put('/:mid/groups/', asyncHandler(async (req, res) => {
  */
 router.get('/:mid/components/', asyncHandler(async (req, res) => {
   const modelId = req.params.mid;
-  console.log('HERE!!!!!!!: ', modelId);
   const result = await cagService.getComponents(modelId);
   res.json(result);
 }));
