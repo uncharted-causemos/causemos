@@ -188,46 +188,65 @@ export default {
       const causeStatements = this.statements.filter(s => components.includes(s.obj.concept));
       const effectStatements = this.statements.filter(s => components.includes(s.subj.concept));
 
+      // Helper
+      const addToMap = (map, key, val) => {
+        if (!map.has(key)) {
+          map.set(key, []);
+        }
+        map.get(key).push(val);
+      };
+
       // Map to node-container level if applicable
-      // FIXME: should remove edges already in graph
       const causeMap = new Map();
       for (let i = 0; i < causeStatements.length; i++) {
         const statement = causeStatements[i];
         const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.subj.concept));
         if (nodeContainters.length === 0) {
-          if (!causeMap.has(statement.subj.concept)) {
-            causeMap.set(statement.subj.concept, []);
-          }
-          causeMap.get(statement.subj.concept).push(statement);
+          addToMap(causeMap, statement.subj.concept, statement);
+          // if (!causeMap.has(statement.subj.concept)) {
+          //   causeMap.set(statement.subj.concept, []);
+          // }
+          // causeMap.get(statement.subj.concept).push(statement);
         } else {
           for (let j = 0; j < nodeContainters.length; j++) {
             const causeConcept = nodeContainters[j].concept;
-            if (!causeMap.has(causeConcept)) {
-              causeMap.set(causeConcept, []);
+            if (_.some(graphData.edges, edge => edge.source === causeConcept && edge.target === this.selectedNode.concept)) {
+              console.log('dupe', statement.subj.concept, statement.obj.concept);
+              continue;
             }
-            causeMap.get(causeConcept).push(statement);
+
+            addToMap(causeMap, causeConcept, statement);
+            // if (!causeMap.has(causeConcept)) {
+            //   causeMap.set(causeConcept, []);
+            // }
+            // causeMap.get(causeConcept).push(statement);
           }
         }
       }
 
       // Map to node-container level if applicable
-      // FIXME: should remove edges already in graph
       const effectMap = new Map();
       for (let i = 0; i < effectStatements.length; i++) {
         const statement = effectStatements[i];
         const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.obj.concept));
         if (nodeContainters.length === 0) {
-          if (!effectMap.has(statement.obj.concept)) {
-            effectMap.set(statement.obj.concept, []);
-          }
-          effectMap.get(statement.obj.concept).push(statement);
+          addToMap(effectMap, statement.obj.concept, statement);
+          // if (!effectMap.has(statement.obj.concept)) {
+          //   effectMap.set(statement.obj.concept, []);
+          // }
+          // effectMap.get(statement.obj.concept).push(statement);
         } else {
           for (let j = 0; j < nodeContainters.length; j++) {
             const effectConcept = nodeContainters[j].concept;
-            if (!effectMap.has(effectConcept)) {
-              effectMap.set(effectConcept, []);
+            if (_.some(graphData.edges, edge => edge.source === this.selectedNode.concept && edge.target === effectConcept)) {
+              console.log('dupe');
+              continue;
             }
-            effectMap.get(effectConcept).push(statement);
+            addToMap(effectMap, effectConcept, statement);
+            // if (!effectMap.has(effectConcept)) {
+            //   effectMap.set(effectConcept, []);
+            // }
+            // effectMap.get(effectConcept).push(statement);
           }
         }
       }
