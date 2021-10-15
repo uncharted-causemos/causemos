@@ -109,6 +109,13 @@ const attrsQuery = (ids) => {
  */
 class DocumentContext {
   constructor(index, corpusIndex) {
+    if (_.isNil(index) || _.isEmpty(index)) {
+      throw new Error('Index is empty or undefined');
+    }
+    if (_.isNil(corpusIndex) || _.isEmpty(corpusIndex)) {
+      throw new Error('Corpus-ndex is empty or undefined');
+    }
+
     this.index = index;
     this.corpusIndex = corpusIndex;
     this.client = ES.client;

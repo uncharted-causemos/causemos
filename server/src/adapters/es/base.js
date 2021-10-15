@@ -47,6 +47,9 @@ const parseSimpleFilters = (simpleFilters) => {
  */
 class Base {
   constructor(index) {
+    if (_.isNil(index) || _.isEmpty(index)) {
+      throw new Error('Index is empty or undefined');
+    }
     this.index = index;
     this.client = ES.client;
   }
