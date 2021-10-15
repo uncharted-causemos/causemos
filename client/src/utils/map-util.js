@@ -130,9 +130,15 @@ export function isLayerLoaded(map, layerId) {
 }
 
 
-function diffExpr(oldValExpr, newValExpr, isPercentage = true) {
+export function diffExpr(oldValExpr, newValExpr, isPercentage = true) {
   if (isPercentage) {
-    return ['*', ['/', ['-', newValExpr, oldValExpr], ['abs', oldValExpr]], 100];
+    return [
+      'case',
+      // Both zero, return 0
+      ['all', ['==', 0, oldValExpr], ['==', 0, newValExpr]], 0,
+      // Otherwise, calculate the percentage
+      ['*', ['/', ['-', newValExpr, oldValExpr], ['abs', oldValExpr]], 100]
+    ];
   }
   return ['-', newValExpr, oldValExpr];
 }
@@ -229,6 +235,7 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
     style.paint['fill-opacity'] = [
       'case',
       ...missingProperty,
+      ['==', 'NaN', ['to-string', propertyGetter]], 0.0,
       ['<', propertyGetter, filterDomain.min], 0.0,
       ['>', propertyGetter, filterDomain.max], 0.0,
       ['==', true, ['feature-state', '_isHidden']], 0.0,

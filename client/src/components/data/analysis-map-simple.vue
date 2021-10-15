@@ -571,9 +571,10 @@ export default {
         : chartValueFormatter()(v);
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
-        const diff = calculateDiff((prop[this.baselineSpec.id] || prop._baseline), prop[this.valueProp]);
+        const baselineValue = _.isFinite(prop[this.baselineSpec.id]) ? prop[this.baselineSpec.id] : prop._baseline;
+        const diff = calculateDiff(baselineValue, prop[this.valueProp]);
         const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}%`;
-        const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + diffString;
+        const text = _.isNaN(diff) ? 'Diff: Baseline has no data or is zero for this area' : 'Diff: ' + diffString;
         rows.push(text);
       }
       if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));
