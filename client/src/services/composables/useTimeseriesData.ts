@@ -71,6 +71,7 @@ export default function useTimeseriesData(
   regionIds: Ref<string[]>,
   selectedQualifierValues: Ref<Set<string>>,
   initialSelectedYears: Ref<string[]>,
+  usePercentageDiff: Ref<boolean>,
   modelRuns?: Ref<ModelRun[]>
 ) {
   const rawTimeseriesData = ref<Timeseries[]>([]);
@@ -344,7 +345,7 @@ export default function useTimeseriesData(
       breakdownOption.value,
       selectedYears.value
     );
-    return applyRelativeTo(afterApplyingBreakdown, relativeTo.value);
+    return applyRelativeTo(afterApplyingBreakdown, relativeTo.value, usePercentageDiff.value);
   });
 
   // Whenever the selected breakdown option or timeseries data changes,

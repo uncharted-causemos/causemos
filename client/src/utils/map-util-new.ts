@@ -32,7 +32,7 @@ function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {
 }
 
 // Compute min/max stats for regional data
-export function computeRegionalStats(regionData: RegionalAggregations, baselineProp: string | null): AnalysisMapStats {
+export function computeRegionalStats(regionData: RegionalAggregations, baselineProp: string | null, usePercentageDiff: boolean): AnalysisMapStats {
   const globalStats: MapLayerStats = {};
   // Stats globally across all runs
   for (const [key, data] of Object.entries(regionData)) {
@@ -59,7 +59,8 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
     for (const [key, data] of Object.entries(regionData)) {
       const values: number[] = [];
       (data || []).forEach(v => {
-        const diffs = Object.values(v.values).map(value => calculateDiff(v.values[baselineProp] || v.values._baseline, value));
+        const baselineValue = _.isFinite(v.values[baselineProp]) ? v.values[baselineProp] : v.values._baseline;
+        const diffs = Object.values(v.values).map(value => calculateDiff(baselineValue, value, usePercentageDiff));
         values.push(...diffs.filter(v => _.isFinite(v)));
       });
       if (values.length) {

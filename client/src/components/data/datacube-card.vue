@@ -336,6 +336,7 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
+                      :use-percentage-diff="usePercentageDiff"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
                       @zoom-change="updateMapCurSyncedZoom"
@@ -434,7 +435,7 @@ import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 
-import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
+import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
@@ -564,6 +565,7 @@ export default defineComponent({
     const potentialScenarioCount = ref<number|null>(0);
     const potentialScenarios = ref<ScenarioData[]>([]);
     const showDatasets = ref<boolean>(false);
+    const usePercentageDiff = ref<boolean>(false);
     const newRunsMode = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
     const showNewRunsModal = ref<boolean>(false);
@@ -1050,6 +1052,7 @@ export default defineComponent({
       selectedRegionIds,
       selectedQualifierValues,
       initialSelectedYears,
+      usePercentageDiff,
       selectedScenarios
     );
 
@@ -1090,7 +1093,7 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMaps(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
+    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, usePercentageDiff);
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -1224,6 +1227,7 @@ export default defineComponent({
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
       updateScenarioSelection,
+      usePercentageDiff,
       visibleTimeseriesData
     };
   },

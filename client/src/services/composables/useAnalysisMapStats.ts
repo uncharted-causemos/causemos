@@ -15,7 +15,8 @@ export default function useAnalysisMapStats(
   regionalData: Ref<RegionalAggregations | null>,
   relativeTo: Ref<string | null>,
   selectedDataLayer: Ref<string>,
-  selectedAdminLevel: Ref<number>
+  selectedAdminLevel: Ref<number>,
+  usePercentageDiff: Ref<boolean>
 ) {
   const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
@@ -25,7 +26,7 @@ export default function useAnalysisMapStats(
       adminMapLayerLegendData.value = [];
       return;
     }
-    adminLayerStats.value = computeRegionalStats(regionalData.value, relativeTo.value);
+    adminLayerStats.value = computeRegionalStats(regionalData.value, relativeTo.value, usePercentageDiff.value);
     if (relativeTo.value) {
       const baseline = adminLayerStats.value.baseline[adminLevelToString(selectedAdminLevel.value)];
       const difference = adminLayerStats.value.difference[adminLevelToString(selectedAdminLevel.value)];
@@ -75,7 +76,7 @@ export default function useAnalysisMapStats(
     const values = [];
     for (const feature of features) {
       for (const item of component.outputSourceSpecs) {
-        const diff = calculateDiff(feature.properties[baselineProp], feature.properties[item.id]);
+        const diff = calculateDiff(feature.properties[baselineProp], feature.properties[item.id], usePercentageDiff.value);
         if (_.isFinite(diff)) values.push(diff);
       }
     }
