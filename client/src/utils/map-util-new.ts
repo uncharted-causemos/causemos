@@ -17,6 +17,11 @@ export function adminLevelToString(level: number) {
   return adminLevel;
 }
 
+export function stringToAdminLevel(geoString: string) {
+  const adminLevel = geoString === 'country' ? 0 : +(geoString[geoString.length - 1]);
+  return adminLevel;
+}
+
 // Resolve edge case where min and max are equal. Often happens when there's single data point when calculating min/max
 // Eg. Region data only has Ethiopia at country level.
 function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {

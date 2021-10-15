@@ -2,13 +2,11 @@
   <transition name="modal">
     <div class="modal-mask">
       <div
-        class="modal-wrapper"
-        @click.stop="close()">
+        class="modal-wrapper">
         <div
           class="modal-container"
           @mousedown="hasContext = true"
           @mouseup="hasContext = false"
-          @click.stop=""
         >
 
           <div
