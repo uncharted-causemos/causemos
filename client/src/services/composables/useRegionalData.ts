@@ -1,4 +1,3 @@
-
 import _ from 'lodash';
 import { Ref, ref } from '@vue/reactivity';
 import { watchEffect } from '@vue/runtime-core';
@@ -81,10 +80,7 @@ export default function useRegionalData(
     const _outputSpecs = breakdownOption.value === SpatialAggregationLevel.Region
       ? outputSpecs.value.slice(0, 1)
       : outputSpecs.value;
-    const result = await getRegionAggregations(
-      _outputSpecs,
-      datacubeHierarchy.value
-    );
+    const result = await getRegionAggregations(_outputSpecs, datacubeHierarchy.value, breakdownOption.value as string);
     if (isCancelled) return;
 
     regionalData.value = breakdownOption.value === SpatialAggregationLevel.Region

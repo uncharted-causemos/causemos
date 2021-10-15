@@ -51,8 +51,6 @@ export async function createPDFViewer({ url }) {
         phraseSearch: true
       });
     },
-    element: container,
-    async renderPages() {
-    }
+    element: container
   };
 }
