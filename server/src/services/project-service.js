@@ -517,8 +517,6 @@ const facets = async (projectId, filters, fields) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
   const documentContext = Adapter.get(RESOURCE.DOCUMENT_CONTEXT, projectId);
 
-
-  // FIXME: A bit awkward
   const statementFacets = await statement.getFacets(filters, fields);
   const documentContextFacets = await documentContext.getFacets(filters, fields);
 
