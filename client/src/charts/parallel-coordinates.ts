@@ -636,7 +636,7 @@ function renderParallelCoordinates(
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
           currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
           deselectLine(selectedLine, event, lineStrokeWidthNormal);
-          const lineDict = currentLineSelection.reduce((acc: Map<string|number, number>, sl, i) => {
+          const lineDict = currentLineSelection.reduce((acc: Map<boolean|string|number, number>, sl, i) => {
             acc.set(sl.run_id, i);
             return acc;
           }, new Map());
@@ -1509,8 +1509,8 @@ function updateSelectionTooltips(svgElement: D3Selection, selectedLine?: D3LineS
     .each(function(d) {
       const dimName = d.name;
       let isTooltipVisible = 'visible';
-      let value: string | number = '';
-      let formattedValue: string | number = value;
+      let value: boolean | string | number = '';
+      let formattedValue: boolean | string | number = value;
       let xPos: number;
       const xScale = getXScaleFromMap(dimName);
       // override the tooltip content if there is a brush applied to this dimension
@@ -1604,7 +1604,7 @@ function updateSelectionToolTipsRect(svgElement: D3Selection) {
     });
 }
 
-function findLabelForValue(dim: DimensionInfo, value: string | number) {
+function findLabelForValue(dim: DimensionInfo, value: boolean | string | number) {
   let labelValue = value;
   if ((dim as ModelParameter) !== undefined && (dim as ModelParameter).data_type !== ModelParameterDataType.Freeform) {
     // check if we have label choices array
@@ -1694,10 +1694,13 @@ function getOutputDimension(dimensions: Array<DimensionInfo>) {
 const toType = (v: string | number) => {
   return (({}).toString.call(v).match(/\s([a-zA-Z]+)/) ?? [])[1].toLowerCase();
 };
-const toTypeCoerceNumbers = (v: string | number) => {
+const toTypeCoerceNumbers = (v: boolean | string | number) => {
   // if the following condition is === instead of == then all numeric dimensions will be detected as ordinal
   // eslint-disable-next-line eqeqeq
-  if ((parseFloat(v as string) == v) && (v !== null)) {
+  if (typeof v === 'boolean') {
+    return 'boolean';
+  }
+  if ((parseFloat(v as string) === v) && (v !== null)) {
     return 'number';
   }
   return toType(v);
@@ -1859,7 +1862,7 @@ const createScales = (
   };
 
   const stringFunc = function(name: string) {
-    let dataExtent: Array<string | number> = [];
+    let dataExtent: Array<boolean | string | number> = [];
     const dim = dimensions.find(d => d.name === name);
 
     if (useAxisRangeFromData) {
@@ -1913,7 +1916,7 @@ const createScales = (
       dataExtent.push('dummay-last');
       dataExtent.unshift('dummy-first');
     }
-    return d3.scalePoint<string | number>()
+    return d3.scalePoint<boolean | string | number>()
       .domain(dataExtent)
       .range(axisRange)
       // .padding(0.25) // a percet of the axis step() (i.e., segment)

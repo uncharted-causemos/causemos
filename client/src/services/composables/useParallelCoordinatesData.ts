@@ -29,8 +29,10 @@ export default function useParallelCoordinatesData(
       const run_id = modelRun.id;
       const runStatus = modelRun.status;
       const created_at = modelRun.created_at;
+      const is_default_run = modelRun.is_default_run;
       const run: ScenarioData = {
         created_at,
+        is_default_run,
         run_id,
         status: runStatus ?? ModelRunStatus.Ready
       };
