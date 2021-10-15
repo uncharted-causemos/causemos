@@ -97,6 +97,13 @@
                 v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
                 class="relative-box"
               >
+                <small-text-button
+                  v-if="relativeTo"
+                  class="use-percent-button"
+                  v-bind:class="{ active: usePercentChange }"
+                  :label="'Use % Change'"
+                  @click="usePercentChange = !usePercentChange"
+                />
                 Relative to
                 <button
                   class="btn btn-default"
@@ -257,7 +264,7 @@
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
-                :unit="unit"
+                :unit="(relativeTo && usePercentChange) ? '%' : unit"
                 @select-timestamp="setSelectedTimestamp"
               />
               <p
@@ -336,7 +343,7 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
-                      :use-percentage-diff="usePercentageDiff"
+                      :use-percent-change="usePercentChange"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
                       @zoom-change="updateMapCurSyncedZoom"
@@ -565,7 +572,7 @@ export default defineComponent({
     const potentialScenarioCount = ref<number|null>(0);
     const potentialScenarios = ref<ScenarioData[]>([]);
     const showDatasets = ref<boolean>(false);
-    const usePercentageDiff = ref<boolean>(false);
+    const usePercentChange = ref<boolean>(true);
     const newRunsMode = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
     const showNewRunsModal = ref<boolean>(false);
@@ -1052,7 +1059,7 @@ export default defineComponent({
       selectedRegionIds,
       selectedQualifierValues,
       initialSelectedYears,
-      usePercentageDiff,
+      usePercentChange,
       selectedScenarios
     );
 
@@ -1093,7 +1100,7 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, usePercentageDiff);
+    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, usePercentChange);
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -1227,7 +1234,7 @@ export default defineComponent({
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
       updateScenarioSelection,
-      usePercentageDiff,
+      usePercentChange,
       visibleTimeseriesData
     };
   },
@@ -1394,6 +1401,18 @@ header {
 
 .relative-box {
   position: relative;
+  display: flex;
+  align-items: center;
+  .btn {
+    margin-left: 2px;
+  }
+  .use-percent-button {
+    margin-right: 2px;
+    &.active {
+      font-weight: bold;
+      color: black;
+    }
+  }
 }
 
 .relative-dropdown {

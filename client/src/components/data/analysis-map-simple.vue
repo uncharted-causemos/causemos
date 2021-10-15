@@ -197,7 +197,7 @@ export default {
       type: String,
       default: null
     },
-    usePercentageDiff: {
+    usePercentChange: {
       type: Boolean,
       default: false
     }
@@ -315,7 +315,7 @@ export default {
     selectedRegionIds() {
       this.debouncedRefresh();
     },
-    usePercentageDiff() {
+    usePercentChange() {
       this.debouncedRefresh();
     }
   },
@@ -412,7 +412,7 @@ export default {
       const { min, max } = this.extent;
       const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec?.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp, this.usePercentageDiff);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp, this.usePercentChange);
     },
     setFeatureStates() {
       if (!this.map || !this.adminLevel || this.isGridMap) return;
@@ -579,8 +579,8 @@ export default {
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
         const baselineValue = _.isFinite(prop[this.baselineSpec.id]) ? prop[this.baselineSpec.id] : prop._baseline;
-        const diff = calculateDiff(baselineValue, prop[this.valueProp], this.usePercentageDiff);
-        const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}${this.usePercentageDiff ? '%' : ' ' + this.unit}`;
+        const diff = calculateDiff(baselineValue, prop[this.valueProp], this.usePercentChange);
+        const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}${this.usePercentChange ? '%' : ' ' + this.unit}`;
         const text = _.isNaN(diff) ? 'Diff: Baseline has no data or is zero for this area' : 'Diff: ' + diffString;
         rows.push(text);
       }
