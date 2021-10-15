@@ -92,7 +92,6 @@
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
-import aggregationsUtil from '@/utils/aggregations-util';
 import { STATEMENT_POLARITY } from '@/utils/polarity-util';
 import { calcEdgeColor } from '@/utils/scales-util';
 import filtersUtil from '@/utils/filters-util';
@@ -195,6 +194,8 @@ export default {
         }
         map.get(key).push(val);
       };
+      const edgeSorter = (a, b) => b.meta.numEvidence - a.meta.numEvidence;
+
 
       // Map to node-container level if applicable
       const causeMap = new Map();
@@ -203,23 +204,13 @@ export default {
         const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.subj.concept));
         if (nodeContainters.length === 0) {
           addToMap(causeMap, statement.subj.concept, statement);
-          // if (!causeMap.has(statement.subj.concept)) {
-          //   causeMap.set(statement.subj.concept, []);
-          // }
-          // causeMap.get(statement.subj.concept).push(statement);
         } else {
           for (let j = 0; j < nodeContainters.length; j++) {
             const causeConcept = nodeContainters[j].concept;
             if (_.some(graphData.edges, edge => edge.source === causeConcept && edge.target === this.selectedNode.concept)) {
-              console.log('dupe', statement.subj.concept, statement.obj.concept);
               continue;
             }
-
             addToMap(causeMap, causeConcept, statement);
-            // if (!causeMap.has(causeConcept)) {
-            //   causeMap.set(causeConcept, []);
-            // }
-            // causeMap.get(causeConcept).push(statement);
           }
         }
       }
@@ -231,22 +222,13 @@ export default {
         const nodeContainters = graphData.nodes.filter(n => n.components.includes(statement.obj.concept));
         if (nodeContainters.length === 0) {
           addToMap(effectMap, statement.obj.concept, statement);
-          // if (!effectMap.has(statement.obj.concept)) {
-          //   effectMap.set(statement.obj.concept, []);
-          // }
-          // effectMap.get(statement.obj.concept).push(statement);
         } else {
           for (let j = 0; j < nodeContainters.length; j++) {
             const effectConcept = nodeContainters[j].concept;
             if (_.some(graphData.edges, edge => edge.source === this.selectedNode.concept && edge.target === effectConcept)) {
-              console.log('dupe');
               continue;
             }
             addToMap(effectMap, effectConcept, statement);
-            // if (!effectMap.has(effectConcept)) {
-            //   effectMap.set(effectConcept, []);
-            // }
-            // effectMap.get(effectConcept).push(statement);
           }
         }
       }
@@ -286,14 +268,8 @@ export default {
       }
 
       // Get "top" edges by number of evidence
-      const topCauseEdges = _.take(
-        causeEdges.sort((a, b) => b.meta.numEvidence - a.meta.numEvidence),
-        5
-      );
-      const topEffectEdges = _.take(
-        effectEdges.sort((a, b) => b.meta.numEvidence - a.meta.numEevidence),
-        5
-      );
+      const topCauseEdges = _.take(causeEdges.sort(edgeSorter), 5);
+      const topEffectEdges = _.take(effectEdges.sort(edgeSorter), 5);
 
       this.summaryData = {
         children: [
@@ -312,106 +288,6 @@ export default {
         ],
         meta: { checked: false, isSomeChildChecked: false }
       };
-    },
-    refresh2() {
-      const components = this.selectedNode.components;
-      const graphData = this.graphData;
-
-      const causeStatement = this.statements.filter(s => components.includes(s.obj.concept));
-      const effectStatement = this.statements.filter(s => components.includes(s.subj.concept));
-
-      const causes = this.groupRelationships(causeStatement);
-      const slicedCauses = causes.slice(0, 5); // Get top 5
-      const effects = this.groupRelationships(effectStatement);
-      const slicedEffects = effects.slice(0, 5); // Get top 5
-
-      // Munge back into node containers
-      let len = 0;
-      len = slicedCauses.length;
-      for (let i = 0; i < len; i++) {
-        const source = slicedCauses[i].meta.source;
-        const matchingNodes = graphData.nodes.filter(n => {
-          return n.concept !== source && n.components.includes(source);
-        });
-        matchingNodes.forEach(n => {
-          const clone = _.cloneDeep(slicedCauses[i]);
-          clone.meta.source = n.concept;
-          clone.key = `${clone.meta.source}///${clone.meta.target}`;
-          slicedCauses.push(clone);
-        });
-      }
-
-      len = slicedEffects.length;
-      for (let i = 0; i < len; i++) {
-        const target = slicedEffects[i].meta.target;
-        const matchingNodes = graphData.nodes.filter(n => {
-          return n.concept !== target && n.components.includes(target);
-        });
-        matchingNodes.forEach(n => {
-          const clone = _.cloneDeep(slicedEffects[i]);
-          clone.meta.target = n.concept;
-          clone.key = `${clone.meta.source}///${clone.meta.target}`;
-          slicedEffects.push(clone);
-        });
-      }
-
-      // Massage the structure a bit to fit into the common aggregated schema
-      this.summaryData = {
-        children: [
-          {
-            key: RELATIONSHIP_GROUP_KEY.CAUSE,
-            count: causes.length,
-            children: slicedCauses,
-            meta: { checked: false }
-          },
-          {
-            key: RELATIONSHIP_GROUP_KEY.EFFECT,
-            count: effects.length,
-            children: slicedEffects,
-            meta: { checked: false }
-          }
-        ],
-        meta: { checked: false, isSomeChildChecked: false }
-      };
-    },
-    groupRelationships(statements) {
-      const group = aggregationsUtil.groupDataArray(statements, [
-        // 1. Group by subj.concept and obj.concept (edge precomputes this)
-        {
-          keyFn: (s) => s.wm.edge,
-          sortFn: (s) => {
-            // Sort by total number of evidence
-            return -s.meta.num_evidence;
-          },
-          metaFn: (s) => {
-            const splitted = s.key.split('///');
-            const meta = {};
-            meta.checked = false;
-            meta.source = splitted[0];
-            meta.target = splitted[1];
-            meta.num_evidence = _.sumBy(s.dataArray, d => {
-              return d.wm.num_evidence;
-            });
-            meta.disabled = this.isStatementEdgeinCAG({ source: splitted[0], target: splitted[1] }); // Check if the relationship already exists in the CAG
-            return meta;
-          }
-        }
-      ]);
-      group.forEach(d => {
-        const reducedStatements = d.dataArray.reduce((accumulator, s) => {
-          const wm = s.wm;
-          const p = wm.statement_polarity;
-
-          accumulator.belief_score += s.belief;
-          accumulator.same += p === STATEMENT_POLARITY.SAME ? 1 : 0;
-          accumulator.opposite += p === STATEMENT_POLARITY.OPPOSITE ? 1 : 0;
-          accumulator.unknown += p === STATEMENT_POLARITY.UNKNOWN ? 1 : 0;
-          return accumulator;
-        }, { same: 0, opposite: 0, unknown: 0, belief_score: 0 });
-        reducedStatements.belief_score = reducedStatements.belief_score / d.dataArray.length;
-        d.meta.style = { color: calcEdgeColor(reducedStatements) };
-      });
-      return group;
     },
     toggle(item) {
       // Recursive helpers
@@ -457,17 +333,6 @@ export default {
         filtersUtil.setClause(filters, 'subjConcept', components, 'or', false);
         this.$router.push({ name: 'kbExplorer', query: { cag: this.currentCAG, view: 'graphs', filters: filters } });
       }
-    },
-    isStatementEdgeinCAG(edge) {
-      const graphData = this.graphData;
-
-      const nodeSource = graphData.nodes.find(n => n.components.includes(edge.source));
-      const nodeTarget = graphData.nodes.find(n => n.components.includes(edge.target));
-      if (_.isNil(nodeSource) || _.isNil(nodeTarget)) {
-        return false;
-      }
-      const edges = graphData.edges.map(edge => edge.source + '///' + edge.target);
-      return edges.indexOf(nodeSource.concept + '///' + nodeTarget.concept) !== -1;
     },
     addToCAG() {
       if (this.numselectedRelationships < 1) {
