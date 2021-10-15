@@ -42,10 +42,10 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
  *
  * For example given name = a_b_c_d, and conceptSet = {a_b, c_d, x_y}
  * 0. set str = [a, b, c, d]
- * 1. check [d], no match
- * 2. check [c, d], match, make str = [a, b]
- * 3. check [b], no match
- * 4. check [a, b] match, make str = []
+ * 1. check [a, b, c, d], no match
+ * 2. check [a, b, c], no match
+ * 3. check [a, b], match, set str = [c, d]
+ * 4. check [c, d] match, make str = []
  */
 const reverseFlattenedConcept = (name, conceptSet) => {
   const token = _.last(name.split('/')) || '';
