@@ -66,7 +66,6 @@
                 @click.stop="toggle(relationship)" />
               <span :style="relationship.meta.style" >
                 {{ ontologyFormatter(filterRedundantConcept(relationshipGroup.key, relationship.meta)) }}
-                {{ relationship.meta.numEvidence }}
               </span>
             </div>
             <button
@@ -233,7 +232,6 @@ export default {
         }
       }
 
-      console.log('Cause', causeMap);
       const causeEntries = [...causeMap.entries()];
       const causeEdges = [];
       for (let i = 0; i < causeEntries.length; i++) {
@@ -250,7 +248,6 @@ export default {
         });
       }
 
-      console.log('Effect', effectMap);
       const effectEntries = [...effectMap.entries()];
       const effectEdges = [];
       for (let i = 0; i < effectEntries.length; i++) {
@@ -396,9 +393,6 @@ export default {
           }
         }
       }
-
-      console.log('new edges', newEdges);
-      console.log('new nodes', newNodes);
       this.$emit('add-to-CAG', { nodes: newNodes, edges: newEdges });
     }
   }
