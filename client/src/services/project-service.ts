@@ -136,6 +136,26 @@ const addNewConceptToOntology = async(projectId: string, label: string, examples
   return result.data;
 };
 
+const getConceptSuggestions = async(projectId: string, q: string) => {
+  const result = await API.get(`projects/${projectId}/concept-suggestions`, {
+    params: { q }
+  });
+  return result.data;
+};
+
+/**
+ * Find suggested terms for the specified string, looking in the provided field
+ *
+ * @param {string} projectId
+ * @param {string} field - field which should be searched
+ * @param {string} queryString - string to use to get suggestions
+ */
+const getSuggestions = async (projectId: string, field: string, queryString: string) => {
+  const { data } = await API.get(`projects/${projectId}/suggestions`, { params: { field, q: queryString } });
+  return data;
+};
+
+
 export default {
   getKBs,
   getProjects,
@@ -157,6 +177,9 @@ export default {
   addNewConceptToOntology,
 
   createAssemblyRequest,
+
+  getConceptSuggestions,
+  getSuggestions,
 
   STATEMENT_LIMIT
 };

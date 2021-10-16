@@ -1,7 +1,5 @@
 import _ from 'lodash';
 import API from '@/api/api';
-import { CODE_TABLE } from '@/utils/code-util';
-import { conceptShortName } from '@/utils/concept-util';
 import { startPolling } from '@/api/poller';
 import {
   Scenario,
@@ -376,52 +374,6 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
   return result;
 };
 
-
-/**
- * Find suggested concepts for the specified string
- *
- * @param {string} projectId
- * @param {string} queryString - string to use to get suggestions
- * @param {array} ontology - array of all the concepts in the ontology
- */
-const getConceptSuggestions = async (projectId: string, queryString: string, ontology: string[]) => {
-  const subjPromise = getSuggestions(projectId, CODE_TABLE.SUBJ_CONCEPT.field, queryString);
-  const objPromise = getSuggestions(projectId, CODE_TABLE.OBJ_CONCEPT.field, queryString);
-  const results: [string[], string[]] = await Promise.all([subjPromise, objPromise]);
-
-  const evidenceSuggestions = _.union(results[0], results[1])
-    .map(_markConceptHasEvidence(true));
-  const ontologySuggestions = ontology.map(_markConceptHasEvidence(false))
-    .filter(concept => concept.shortName.indexOf(queryString) > -1);
-
-  const suggestions = _.unionBy(evidenceSuggestions, ontologySuggestions, 'shortName');
-  return suggestions;
-};
-
-const _markConceptHasEvidence = (hasEvidence: boolean) =>
-  function(concept: string) {
-    return {
-      concept,
-      hasEvidence,
-      shortName: conceptShortName(concept) || '',
-      label: ''
-    };
-  };
-
-
-/**
- * Find suggested terms for the specified string, looking in the provided field
- * FIXME: Not model related, move out
- *
- * @param {string} projectId
- * @param {string} field - field which should be searched
- * @param {string} queryString - string to use to get suggestions
- */
-const getSuggestions = async (projectId: string, field: string, queryString: string) => {
-  const { data } = await API.get(`projects/${projectId}/suggestions`, { params: { field, q: queryString } });
-  return data;
-};
-
 /**
  * Constructs and sends a request for a new sensitivity analysis
  *
@@ -709,9 +661,6 @@ export default {
   quantifyModelNodes,
 
   buildNodeChartData,
-
-  getSuggestions,
-  getConceptSuggestions,
 
   mergeCAG,
   hasMergeConflictNodes,

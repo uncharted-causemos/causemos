@@ -80,7 +80,7 @@ import CloseButton from '@/components/widgets/close-button.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import precisionFormatter from '@/formatters/precision-formatter';
 import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
-import modelService from '@/services/model-service';
+import projectService from '@/services/project-service';
 
 const CONCEPT_SUGGESTION_COUNT = 15;
 
@@ -126,7 +126,6 @@ export default defineComponent({
   },
   computed: {
     ...mapGetters({
-      ontologyConcepts: 'app/ontologyConcepts',
       project: 'app/project'
     })
   },
@@ -136,8 +135,8 @@ export default defineComponent({
       if (_.isEmpty(searchTerm)) {
         return this.ontologyConcepts;
       }
-      const suggestions = await modelService.getConceptSuggestions(this.project, searchTerm, this.ontologyConcepts);
-      return suggestions.slice(0, CONCEPT_SUGGESTION_COUNT).map(suggestion => suggestion.concept);
+      const suggestions = await projectService.getConceptSuggestions(this.project, searchTerm);
+      return suggestions.slice(0, CONCEPT_SUGGESTION_COUNT).map((suggestion: any) => suggestion.doc.key);
     },
     select(suggestion: string) {
       if (!_.isEmpty(suggestion) && (this.concept !== suggestion)) {
