@@ -60,6 +60,10 @@ import AutoComplete from '@/components/widgets/autocomplete/autocomplete.vue';
 import { ModelParameter } from '@/types/Datacube';
 import GeoSelectionMap from '@/components/data/geo-selection-map.vue';
 import { stringToAdminLevel, BASE_LAYER } from '@/utils/map-util-new';
+import { getGADMSuggestions } from '@/services/suggestion-service';
+import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
+import { RegionalGADMDetail } from '@/types/Common';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 export default defineComponent({
   name: 'ModalGeoSelection',
@@ -90,24 +94,35 @@ export default defineComponent({
     BASE_LAYER
   }),
   methods: {
+    getGADMDisplayName(item: RegionalGADMDetail) {
+      let displayName = '';
+      Object.values(DatacubeGeoAttributeVariableType).forEach(l => {
+        if (item[l] !== undefined) {
+          displayName += item[l] + REGION_ID_DELIMETER;
+        }
+      });
+      return displayName.endsWith(REGION_ID_DELIMETER) ? displayName.substring(0, displayName.lastIndexOf(REGION_ID_DELIMETER)) : displayName;
+    },
     searchRegions(query: string) {
-      // TEMP code, replace with the actual end-point call to retrieve valid region names
-      if (query.length < 1) return [];
-      return [
-        'United arab',
-        'United states',
-        'Canada',
-        'Egypt',
-        'Spain',
-        'Japan',
-        'China',
-        'Ethiopia',
-        'Sudan',
-        'Kenya',
-        'South Sudan',
-        'Ethiopia__Afar',
-        'Ethiopia__Oromia'
-      ].filter(s => s.toLowerCase().includes(query.toLowerCase()));
+      return new Promise(resolve => {
+        let suggestionResults: string[] = [];
+
+        if (query.length < 1) resolve(suggestionResults); // early exit
+
+        const level = this.modelParam.type as string; // e.g., country
+        const debouncedFetchFunction = getGADMSuggestions(level, query);
+        const fetchedResults = debouncedFetchFunction(); // NOTE: a debounced function may return undefined
+        if (fetchedResults !== undefined) {
+          fetchedResults.then((res) => {
+            suggestionResults = res.map(item => {
+              return this.getGADMDisplayName(item);
+            });
+            resolve(suggestionResults);
+          });
+        } else {
+          resolve(suggestionResults);
+        }
+      });
     },
     addSelectedRegion(region: string) {
       this.selectedRegions = [region];

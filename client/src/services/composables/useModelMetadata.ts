@@ -82,10 +82,12 @@ export default function useModelMetadata(
         });
       }
 
-      // TEMP:
+      // TEMP: @Ahmed Oct. 18 2021
+      //  ONLY FOR TESTING GEO INPUTS
+      //  REMOVE PRIOR TO MERGING
       if (isModel(rawMetadata) && rawMetadata.name === 'MaxHop') {
         // force its country input param to be of type geo
-        const p = rawMetadata.parameters.filter(p => p.name === 'country')[0];
+        const p = rawMetadata.parameters.filter(p => p.name === DatacubeGeoAttributeVariableType.Country)[0];
         p.type = DatacubeGeoAttributeVariableType.Country;
         p.data_type = ModelParameterDataType.Freeform;
       }

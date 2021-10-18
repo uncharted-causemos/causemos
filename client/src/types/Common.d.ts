@@ -52,6 +52,14 @@ export interface DatacubeGeography {
   admin3: string[];
 }
 
+export interface RegionalGADMDetail {
+  country?: string;
+  admin1?: string;
+  admin2?: string;
+  admin3?: string;
+  [key: string]: string;
+}
+
 export interface DatacubePeriod {
   gte: number;
   lte: number;
