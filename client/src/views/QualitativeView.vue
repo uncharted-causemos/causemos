@@ -764,9 +764,11 @@ export default defineComponent({
       this.selectedStatements = [];
       if (this.selectedNode === null) return;
       const searchFilters = filtersUtil.newFilters();
-      const concept = this.selectedNode.concept;
-      filtersUtil.addSearchTerm(searchFilters, 'topic', concept, 'or', false);
-
+      // const concept = this.selectedNode.concept;
+      const concepts = this.selectedNode.components;
+      for (let i = 0; i < concepts.length; i++) {
+        filtersUtil.addSearchTerm(searchFilters, 'topic', concepts[i], 'or', false);
+      }
       this.isFetchingStatements = true;
 
       projectService
