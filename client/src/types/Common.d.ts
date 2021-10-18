@@ -59,7 +59,7 @@ export interface DatacubePeriod {
 
 // any scenario data is represented as a map of {name, value}
 export interface ScenarioData {
-  [key: string]: boolean | string | number;
+  [key: string]: string | number;
 }
 
 export interface AnalysisMapFilter {
