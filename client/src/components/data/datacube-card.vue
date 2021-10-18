@@ -29,6 +29,15 @@
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
+            <button
+              class="btn"
+              @click="switchFacetData=!switchFacetData"
+            >
+              Switch
+            </button>
+            <temporal-facet
+              :switch-data="switchFacetData"
+            />
             <parallel-coordinates-chart
               class="pc-chart"
               :dimensions-data="runParameterValues"
@@ -431,6 +440,7 @@ import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
+import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 
@@ -541,6 +551,7 @@ export default defineComponent({
     ParallelCoordinatesChart,
     RadioButtonGroup,
     SmallTextButton,
+    TemporalFacet,
     timeseriesChart
   },
   setup(props, { emit }) {
@@ -558,6 +569,9 @@ export default defineComponent({
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
+
+    const switchFacetData = ref<boolean>(false);
+
 
     const activeDrilldownTab = ref<string|null>('breakdown');
     const currentTabView = ref<string>('description');
@@ -1224,7 +1238,8 @@ export default defineComponent({
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
       updateScenarioSelection,
-      visibleTimeseriesData
+      visibleTimeseriesData,
+      switchFacetData
     };
   },
   watch: {
