@@ -19,7 +19,7 @@ router.get('/suggestions', asyncHandler(async (req, res) => {
   ];
   const queryString = unmodifiedQueryString.split(' ').filter(el => el !== '').map(el => `${el}*`).join(' ');
   const results = await searchAndHighlight(RESOURCE.GADM_NAME, queryString, filters, [field]);
-  res.json(results);
+  res.json(results.map(result => result._source));
 }));
 
 module.exports = router;
