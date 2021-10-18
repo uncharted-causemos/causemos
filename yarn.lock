@@ -4021,9 +4021,9 @@ create-hmac@^1.1.0, create-hmac@^1.1.4, create-hmac@^1.1.7:
     sha.js "^2.4.8"
 
 cropro@^1.1.0:
-  version "1.1.1"
-  resolved "https://registry.yarnpkg.com/cropro/-/cropro-1.1.1.tgz#d744d650f8612a53a7b7be3d97c905796ab3ea35"
-  integrity sha512-jXEOlKRAY5WJL7l9QGjkSLiUxj/Bnx3nSjSYrPz5a1BykiecLiIdhvzmNMcXOk8tV4nMSOArzKHLUKlb930fKw==
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/cropro/-/cropro-1.1.2.tgz#08032187b2786f03748a6bf3f33c3d861b46e57c"
+  integrity sha512-UJyBOmgP3ey28V7mJDsw0vwT65oduXzJJHfj0n9j6e6g88WGkgkK++CqcciUVMsSP9dzt3qc8rBANSjhbmN6oA==
 
 cross-spawn@^3.0.0:
   version "3.0.1"
@@ -8303,9 +8303,9 @@ mapbox-gl@^1.10.0:
     vt-pbf "^3.1.1"
 
 markerjs2@^2.13.0:
-  version "2.14.0"
-  resolved "https://registry.yarnpkg.com/markerjs2/-/markerjs2-2.14.0.tgz#f10e95edd3c5b3087de58b9dd4a31faf92a36447"
-  integrity sha512-pAta3DaynP3dBYVqmJCSct7qGZSXhN/tXyB9qvwu4/Cfo/luxNXxz4iFQozT7GgR6q48p7S3831v9q9Sex40Ig==
+  version "2.15.0"
+  resolved "https://registry.yarnpkg.com/markerjs2/-/markerjs2-2.15.0.tgz#01517e1ba32eb4fe9168eea55262e3abfac99752"
+  integrity sha512-6ueErJGxJvgPfHnnTEnJykyObph27yUZoI6zB/IxHOCVf5yRKNKZ7oyMr+ZnzFteRL64d77rm+lJNzbrKxTlKg==
 
 md5.js@^1.3.4:
   version "1.3.5"
