@@ -246,7 +246,7 @@ function renderParallelCoordinates(
         const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
         selectedLine.attr('selection-index', selectionIndex++);
 
-        selectLine(selectedLine, undefined /* event */, d, getLineSelectedWidth(selectedLine));
+        selectLine(selectedLine, undefined /* event */, d, getLineSelectedWidth(d));
       });
   }
 
@@ -654,14 +654,14 @@ function renderParallelCoordinates(
               if (lineData.status === ModelRunStatus.Ready) {
                 // set an incremental index for this line as part of the selected line collection
                 selectedLine.attr('selection-index', index);
-                selectLine(selectedLine, undefined /* event */, lineData, getLineSelectedWidth(selectedLine));
+                selectLine(selectedLine, undefined /* event */, lineData, getLineSelectedWidth(lineData));
               }
             }
           });
         } else {
           currentLineSelection.push(selectedLineData);
           updateSelectionTooltips(svgElement, selectedLine);
-          selectLine(selectedLine, event, d, getLineSelectedWidth(selectedLine));
+          selectLine(selectedLine, event, d, getLineSelectedWidth(selectedLineData));
         }
       } else {
         currentLineSelection.length = 0;
