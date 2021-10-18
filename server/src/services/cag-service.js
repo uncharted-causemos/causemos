@@ -46,7 +46,6 @@ const updateGroups = async(modelId, groups) => {
   };
 
   const modifiedAt = Date.now();
-  // const updateList = []; // dont need this, data structure isn't complex enough for this to be needed
   const indexList = [];
 
   groups.forEach(group => {
