@@ -320,8 +320,6 @@ function renderParallelCoordinates(
       .style('stroke', colorFunc)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
       .style('stroke-dasharray', function(d) {
-        console.log('Data');
-        console.log(d);
         return d.status === ModelRunStatus.Ready ? 0 : ('3, 3');
       })
     ;
