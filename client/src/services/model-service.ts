@@ -131,12 +131,12 @@ const removeComponents = async (modelId: string, nodes: { id: string }[], edges:
 };
 
 const addGroups = async (modelId: string, groups: {id: string; children: string[]}[]) => {
-  const result = await API.put(`cags/${modelId}/components`, { operation: 'update', groups });
+  const result = await API.put(`cags/${modelId}/groups`, { operation: 'update', groups });
   return result;
 };
 
 const removeGroups = async (modelId: string, groups: { id: string }[]) => {
-  const result = await API.put(`cags/${modelId}/components`, { operation: 'remove', groups });
+  const result = await API.put(`cags/${modelId}/groups`, { operation: 'remove', groups });
   return result;
 };
 
