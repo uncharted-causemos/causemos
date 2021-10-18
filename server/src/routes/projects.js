@@ -13,6 +13,7 @@ const filtersUtil = rootRequire('/util/filters-util');
 const projectService = rootRequire('/services/project-service');
 const updateService = rootRequire('/services/update-service');
 const cagService = rootRequire('/services/cag-service');
+const searchService = rootRequire('/services/search-service');
 
 /* GET Retrieve projects */
 router.get('/', asyncHandler(async (req, res) => {
@@ -260,6 +261,20 @@ router.post('/:projectId/statements-scores', asyncHandler(async (req, res) => {
   res.json(results);
 }));
 
+
+/**
+ * GET search for concepts for a given project
+ * This is different than regular suggestions as it involves a multi-step process
+ * to recontruct a concept object/document
+ */
+router.get('/:projectId/concept-suggestions', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const queryString = req.query.q;
+  const results = await searchService.statementConceptEntitySearch(projectId, queryString);
+  res.json(results);
+}));
+
+
 /**
  * GET Search fields based on partial matches
  **/
@@ -268,34 +283,7 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
   const field = req.query.field;
   const queryString = req.query.q;
   let results = null;
-  // if (field === 'subjConcept' || field === 'objConcept') {
-  //   const ontologyMatches = await projectService.searchOntologyAndHighlight(queryString, projectId);
-
-  //   // need to keep track of what concept maps to what highlights
-  //   const sourceHighlights = {};
-  //   // need to associate words with a concept, this can be modified as more than
-  //   // one mapping is possible due to overlap of words in concepts
-  //   const wordsToLabel = {};
-  //   // create one big string
-  //   const q = queryString + " " + [...new Set(_.flatten(ontologyMatches.map(match => {
-  //     sourceHighlights[match._source.label] = match.highlight;
-  //     // reformatting to deal with the concept path
-  //     const label = match._source.label.split("/").splice(-1)[0];
-  //     const words = label.split("_");
-  //     words.forEach(word => { wordsToLabel[word] = match._source.label });
-  //     return words;
-  //   })))].join(" ");
-
-  //   results = await projectService.searchFields(projectId, field, q, 'OR');
-  //   mapResultsToHighlights(results, sourceHighlights, wordsToLabel);
-
-  //   results = {
-  //     results: results,
-  //     highlights: sourceHighlights
-  //   };
-  // } else {
   results = await projectService.searchFields(projectId, field, queryString);
-  // }
 
   // FIXME: These fields are array fields and do not
   // aggregate. We need to use nested or use es-native suggestion api.
@@ -315,24 +303,6 @@ router.get('/:projectId/suggestions', asyncHandler(async (req, res) => {
 
   res.json(results);
 }));
-
-// const mapResultsToHighlights = (results, sourceHighlights, wordsToLabel) => {
-//   results.forEach(result => {
-//     const labelWords = result.split("/").splice(-1)[0].split("_");
-//     labelWords.forEach(word => {
-//       if (!(result in sourceHighlights) && word in wordsToLabel) {
-//         // match concepts with the original label
-//         // word -> first label that contains the word -> highlights for the label
-//         sourceHighlights[result] = sourceHighlights[wordsToLabel[word]];
-//       }
-//     });
-//     // no highlight exists, likely because it was a straightforward match
-//     // e.g q=anti returns antibodies
-//     if (!(result in sourceHighlights)) {
-//       sourceHighlights[result] = {};
-//     }
-//   });
-// };
 
 /**
  * GET Search path between source and target nodes

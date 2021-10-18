@@ -46,27 +46,23 @@ const searchAndHighlight = async (index, queryString, filters, fields) => {
   fields.forEach(f => {
     fieldsToHighlight[f] = {};
   });
-  let query = {};
-  if (_.isEmpty(filters)) {
-    query = {
-      query_string: {
-        query: queryString
-      }
-    };
-  } else {
-    query = {
+  const queryStringObject = {
+    query_string: {
+      query: queryString,
+      fields,
+      default_operator: 'AND'
+    }
+  };
+  const query = _.isEmpty(filters)
+    ? queryStringObject
+    : {
       bool: {
         must: [
           ...filters,
-          {
-            query_string: {
-              query: queryString
-            }
-          }
+          queryStringObject
         ]
       }
     };
-  }
   const matches = await client.search({
     index: index,
     body: {

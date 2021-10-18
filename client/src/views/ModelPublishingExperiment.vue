@@ -1,27 +1,11 @@
 <template>
   <div class="model-publishing-experiment-container">
-    <div class="model-publishing-experiment-header">
-      <button
-        class="accordion"
-        :class="{ 'active' : openPublishAccordion }"
-        @click="toggleAccordion($event)"
-      >
-        Publish
-        <i
-          class="fa fa-fw"
-          :class="{ 'fa-angle-down': !openPublishAccordion, 'fa-angle-up': openPublishAccordion }"
-        />
-      </button>
-      <div class="accordion-panel">
-        <model-publishing-checklist
-          v-if="openPublishAccordion"
-          :publishingSteps="publishingSteps"
-          :currentPublishStep="currentPublishStep"
-          @navigate-to-publishing-step="showPublishingStep"
-          @publish-model="publishModel"
-        />
-      </div>
-    </div>
+    <model-publishing-checklist
+      :publishingSteps="publishingSteps"
+      :currentPublishStep="currentPublishStep"
+      @navigate-to-publishing-step="showPublishingStep"
+      @publish-model="publishModel"
+    />
     <main class="main">
       <analytical-questions-and-insights-panel />
       <div class="main insight-capture">
@@ -30,13 +14,14 @@
         <datacube-card
           :class="{ 'datacube-expanded': true }"
           :isExpanded="false"
-          :default-spatial-aggregation="AggregationOption.None"
-          :default-temporal-aggregation="AggregationOption.None"
-          :default-temporal-resolution="TemporalResolutionOption.None"
+          :isPublishing="true"
+          :initial-data-config="initialDataConfig"
+          :initial-view-config="initialViewConfig"
           :metadata="metadata"
           :spatial-aggregation-options="Object.values(AggregationOption)"
           :temporal-aggregation-options="Object.values(AggregationOption)"
           :temporal-resolution-options="Object.values(TemporalResolutionOption)"
+          :tab-state="tabState"
         >
           <template v-slot:datacube-model-header>
             <datacube-model-header
@@ -71,7 +56,7 @@ import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
 import { updateDatacube } from '@/services/new-datacube-service';
 import { DatacubeFeature, ModelPublishingStep } from '@/types/Datacube';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
-import { Insight } from '@/types/Insight';
+import { DataState, Insight, ViewState } from '@/types/Insight';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
 import domainProjectService from '@/services/domain-project-service';
 
@@ -99,13 +84,19 @@ export default defineComponent({
     const hideInsightPanel = () => store.dispatch('insightPanel/hideInsightPanel');
     const setCurrentPublishStep = (step: ModelPublishingStepID) => store.dispatch('modelPublishStore/setCurrentPublishStep', step);
 
+    const initialDataConfig = ref<DataState | null>(null);
+    const initialViewConfig = ref<ViewState | null>({
+      temporalAggregation: AggregationOption.None,
+      spatialAggregation: AggregationOption.None,
+      temporalResolution: TemporalResolutionOption.None
+    });
+
     // reset on init:
     setCurrentPublishStep(ModelPublishingStepID.Enrich_Description);
 
+    const tabState = ref('');
     const selectedModelId = ref('');
     const metadata = useModelMetadata(selectedModelId);
-
-    const openPublishAccordion = ref(false);
 
     const publishingSteps = ref<ModelPublishingStep[]>([
       {
@@ -155,7 +146,6 @@ export default defineComponent({
       }
     });
 
-
     const getPublicInsights = async () => {
       const publicInsightsSearchFields: InsightFilterFields = {};
       publicInsightsSearchFields.visibility = 'public';
@@ -195,19 +185,9 @@ export default defineComponent({
     };
     const showPublishingStep = (publishStepInfo: {publishStep: ModelPublishingStep}) => {
       setCurrentPublishStep(publishStepInfo.publishStep.id);
+      tabState.value = publishStepInfo.publishStep.id === ModelPublishingStepID.Enrich_Description ? 'description' : 'data';
     };
-    const toggleAccordion = (event: any) => {
-      openPublishAccordion.value = !openPublishAccordion.value;
-      const target = event.target.nodeName === 'I' ? event.target.parentElement : event.target;
-      const panel = target.nextElementSibling as HTMLElement;
-      if (panel) {
-        if (!openPublishAccordion.value) {
-          panel.style.display = 'none';
-        } else {
-          panel.style.display = 'block';
-        }
-      }
-    };
+
     const publishModel = async () => {
       // call the backend to update model metadata and finalize model publication
       if (metadata.value && isModel(metadata.value)) {
@@ -267,11 +247,11 @@ export default defineComponent({
 
     watchEffect(() => {
       // mark this step as complete
-      if (selectedSpatialAggregation.value !== AggregationOption.None &&
-          selectedTemporalAggregation.value !== AggregationOption.None &&
-          selectedTemporalResolution.value !== TemporalResolutionOption.None) {
-        updatePublishingStep(true);
-      }
+      updatePublishingStep(
+        selectedSpatialAggregation.value !== AggregationOption.None &&
+        selectedTemporalAggregation.value !== AggregationOption.None &&
+        selectedTemporalResolution.value !== TemporalResolutionOption.None);
+
       if (selectedScenarioIds?.value?.length > 0) {
         if (currentPublishStep.value === ModelPublishingStepID.Enrich_Description) {
           // user attempted to select one or more scenarios but the model publishing step is not correct
@@ -292,14 +272,15 @@ export default defineComponent({
       getPublicInsights,
       hideInsightPanel,
       metadata,
-      openPublishAccordion,
       publishModel,
       publishingSteps,
       refreshMetadata,
       selectedModelId,
       showPublishingStep,
+      tabState,
       TemporalResolutionOption,
-      toggleAccordion
+      initialDataConfig,
+      initialViewConfig
     };
   },
   watch: {
@@ -324,13 +305,12 @@ export default defineComponent({
     //  previously opened it and clicked the browser back button
     this.hideInsightPanel();
 
+    let markStepsAsCompleted = false;
+
     // we have some insights, some/all of which relates to the current model instance
     const insight_id = this.$route.query.insight_id as any;
     if (insight_id !== undefined) {
-      // just mark all steps as completed
-      this.publishingSteps.forEach(step => {
-        step.completed = true;
-      });
+      markStepsAsCompleted = true;
     } else {
       // check if a public insight exist for this model instance
       // first, fetch public insights to load the publication status, as needed
@@ -341,11 +321,24 @@ export default defineComponent({
         //
         // we have at least one public insight, which we should use to fetch view configurations
         const defaultInsight: Insight = publicInsights[0]; // FIXME: pick the default insight instead
-        const viewConfig = defaultInsight.view_state;
-        if (viewConfig && defaultInsight.context_id?.includes(this.metadata?.id as string)) {
+        if (defaultInsight.context_id?.includes(this.metadata?.id as string)) {
+          markStepsAsCompleted = true;
+          // restore initial config from the insight, if available
+          if (defaultInsight.data_state !== undefined) {
+            this.initialDataConfig = defaultInsight.data_state;
+          }
+          if (defaultInsight.view_state !== undefined) {
+            this.initialViewConfig = defaultInsight.view_state;
+          }
           (this as any).toaster('An existing published insight was found!\nLoading default configurations...', 'success', false);
         }
       }
+    }
+    if (markStepsAsCompleted) {
+      // just mark all steps as completed
+      this.publishingSteps.forEach(step => {
+        step.completed = true;
+      });
     }
   }
 });

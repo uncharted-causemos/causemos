@@ -1,64 +1,56 @@
-import _ from 'lodash';
-
-const DEFAULT_WIDTH = 800;
-
-export async function createPDFViewer({ url, contentWidth = DEFAULT_WIDTH }) {
+// See https://observablehq.com/@mbostock/hello-pdf-js-pdfpageview
+export async function createPDFViewer({ url }) {
   // lazy load pdfjs lib
   // Set the pdf workerSrc explicitly for firefox
   // For more detail see: https://github.com/mozilla/pdf.js/issues/8204
-  const [pdfjs, pdfjsWorker] = await Promise.all([
-    import('pdfjs-dist'),
-    import('pdfjs-dist/build/pdf.worker.entry')
+  const [pdfjs, pdfjsWorker, PDFViewer] = await Promise.all([
+    import('pdfjs-dist/legacy/build/pdf.js'),
+    import('pdfjs-dist/legacy/build/pdf.worker.entry.js'),
+    import('pdfjs-dist/legacy/web/pdf_viewer.js')
   ]);
   pdfjs.GlobalWorkerOptions.workerSrc = pdfjsWorker;
-  const pdfDoc = await pdfjs.getDocument(url).promise;
 
   const container = document.createElement('div');
-  container.classList.add('pdf-viewer-container');
-  container.style.cssText = `
-    height: 100%;
-    background-color: #fff;
-    text-align: center;
-  `;
+  container.style.position = 'absolute';
+  container.style.overflow = 'auto';
+  container.style.width = '100%';
+  container.style.height = '100%';
 
-  const fragment = document.createDocumentFragment();
-  const renderContexts = [];
-  const pagePromises = _.range(0, pdfDoc.numPages).map(num => pdfDoc.getPage(num + 1));
-  const pages = await Promise.all(pagePromises);
+  const pdfViewerElement = document.createElement('div');
+  pdfViewerElement.classList = 'pdfViewer';
+  container.appendChild(pdfViewerElement);
 
-  const firstPage = pages[0].getViewport({ scale: 1 });
+  const eventBus = new PDFViewer.EventBus();
 
-  const pageWidth = firstPage.width;
-  const pageHeight = firstPage.height;
-  const pageRatio = pageWidth / pageHeight;
+  const linkService = new PDFViewer.PDFLinkService({ eventBus });
 
-  const canvasWidth = contentWidth * window.devicePixelRatio;
-  const canvasHeight = Math.floor(canvasWidth / pageRatio) || 0;
-  const scale = canvasWidth / pageWidth;
-
-  pages.forEach(page => {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    const viewport = page.getViewport({ scale: scale });
-    canvas.height = canvasHeight;
-    canvas.width = canvasWidth;
-    canvas.style.cssText = `
-      width: ${contentWidth}px;
-      height: ${contentWidth / pageRatio}px;
-    `;
-    fragment.appendChild(canvas);
-    renderContexts.push({ page, ctx, viewport });
+  const findController = new PDFViewer.PDFFindController({
+    eventBus: eventBus,
+    linkService
   });
 
-  container.appendChild(fragment);
+  const viewer = new PDFViewer.PDFViewer({ container, eventBus, linkService, findController });
+
+  const pdfDoc = await pdfjs.getDocument(url).promise;
+  viewer.setDocument(pdfDoc);
+  linkService.setViewer(viewer);
+  linkService.setDocument(pdfDoc, null);
+
+  eventBus.on('pagesinit', () => {
+    viewer.currentScaleValue = 'page-width';
+  });
+
+  // eventBus.on('updatefindcontrolstate', data => {
+  //   console.log('EB', data);
+  // });
 
   return {
-    element: container,
-    async renderPages() {
-      for (const context of renderContexts) {
-        const { ctx, page, viewport } = context;
-        await page.render({ canvasContext: ctx, viewport }).promise;
-      }
-    }
+    search(query) {
+      findController.executeCommand('find', {
+        query: query,
+        phraseSearch: true
+      });
+    },
+    element: container
   };
 }

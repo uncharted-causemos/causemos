@@ -69,15 +69,6 @@ const createProject = async (kbId, name, description) => {
 
   const projectData = await projectAdapter.findOne([{ field: 'id', value: projectId }], {});
 
-  // Need to set the project in the cache
-  Logger.info(`Caching Project data for ${projectId}`);
-  set(projectId, {
-    ...projectData,
-    stat: {
-      model_count: 0,
-      data_analysis_count: 0
-    }
-  });
   Logger.info(`Cached ${projectId}`);
 
   // Ontology
@@ -103,6 +94,21 @@ const createProject = async (kbId, name, description) => {
     console.log(err);
   }
 
+  // Need to set the project in the cache
+  const ontologyMap = {};
+  conceptsPayload.forEach(o => {
+    ontologyMap[o.label] = o;
+  });
+
+  Logger.info(`Caching Project data for ${projectId}`);
+  set(projectId, {
+    ...projectData,
+    ontologyMap,
+    stat: {
+      model_count: 0,
+      data_analysis_count: 0
+    }
+  });
   return result;
 };
 
@@ -502,8 +508,6 @@ const facets = async (projectId, filters, fields) => {
   const statement = Adapter.get(RESOURCE.STATEMENT, projectId);
   const documentContext = Adapter.get(RESOURCE.DOCUMENT_CONTEXT, projectId);
 
-
-  // FIXME: A bit awkward
   const statementFacets = await statement.getFacets(filters, fields);
   const documentContextFacets = await documentContext.getFacets(filters, fields);
 

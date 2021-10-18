@@ -1364,25 +1364,50 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
       text.raise();
     });
 
-  // freeform custom input support
-  axesLabels
-    .on('click', function(event: PointerEvent) {
-      if (options.newRunsMode) {
-        const d3text = d3.select(this);
-        const d = d3text.datum() as ModelParameter;
-        if (d.data_type === ModelParameterDataType.Freeform) {
+  // render additional UI for freeform params
+  renderedAxes
+    .filter(d => (d as ModelParameter).data_type === ModelParameterDataType.Freeform)
+    // add a button to allow adding a new freeform value
+    // visibility should follow options.newRunsMode
+    .each(function() {
+      const text = d3.select(this).select('.pc-axis-name-text');
+      const textNode = text.node() as SVGGraphicsElement;
+      const textBBox = textNode.getBBox();
+
+      d3.select(this)
+        .append('foreignObject')
+        .attr('class', 'freeform-button')
+        .attr('width', axisRange[1])
+        .attr('height', 25)
+        .attr('x', axisLabelOffsetX + textBBox.width + 10)
+        .attr('y', axisLabelOffsetY - textBBox.height)
+        .attr('visibility', options.newRunsMode ? 'visible' : 'hidden')
+        .append('xhtml:input')
+        .attr('value', '+')
+        .attr('type', 'button')
+        .style('border-style', 'none')
+        .style('border-radius', '16px')
+        .style('color', 'white')
+        .style('font-size', 'medium')
+        .style('line-height', 'normal')
+        .style('font-weight', 'bold')
+        .style('background-color', 'deepskyblue')
+        .on('click', function(this: any, event: PointerEvent) {
+          const d3Input = d3.select(this);
+          const d = d3Input.datum() as ModelParameter;
           event.stopPropagation();
-          const inputField = d3.select(this.parentElement)
+          const parentElement = this.parentElement.parentElement; // the axis element
+          const inputField = d3.select(parentElement)
             .append('foreignObject')
             .attr('class', 'freeform-input')
             .attr('width', axisRange[1])
-            .attr('height', 25)
-            .attr('x', axisLabelOffsetX)
-            .attr('y', axisLabelOffsetY)
+            .attr('height', '24')
+            .attr('x', axisLabelOffsetX + textBBox.width + 10)
+            .attr('y', axisLabelOffsetY - textBBox.height)
             .append('xhtml:input')
             .attr('placeholder', 'type new value')
             .attr('type', 'text')
-            .attr('width', 'inherit')
+            .style('font-size', 'small')
             .style('border-width', 'thin')
             .on('keyup', function(keyEvent) {
               if (keyEvent.keyCode === 13) {
@@ -1405,8 +1430,8 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
               event.stopPropagation();
             });
           (inputField.node() as any).focus();
-        }
-      }
+        })
+      ;
     });
 }
 

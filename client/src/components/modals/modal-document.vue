@@ -3,7 +3,7 @@
     class="modal-document-container"
     @close="close()">
     <template #body>
-      <div v-if="viewer"
+      <div v-if="pdfViewer"
         class="toolbar">
         Show raw text
         <i v-if="showTextViewer === false" class="fa fa-lg fa-fw fa-toggle-off" @click="toggle" />
@@ -14,7 +14,7 @@
       </div>
       <div>
         <hr>
-        <table v-if="documentData">
+        <table v-if="documentData && textOnly">
           <tr>
             <td class="doc-label">Publication Date</td>
             <td>{{ dateFormatter(documentData.publication_date.date, 'YYYY-MM-DD') }}</td>
@@ -48,21 +48,62 @@ import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
 
-const CONTENT_WIDTH = 800;
-
 const isPdf = (data) => {
   const fileType = data && data.file_type;
   return fileType === 'pdf' || fileType === 'application/pdf';
 };
 
+const reformat = (v) => {
+  return `<span class='extract-text-anchor' style='background: #56b3e9'>${v}</span>`;
+};
+
+// Run through a list of sucessive transform to try to find the correct match
+const lossySearch = (text, textFragment) => {
+  let fragment = textFragment;
+  fragment = fragment.replaceAll(' .', '.');
+  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+
+  fragment = fragment.replaceAll(' ;', ';');
+  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+
+  fragment = fragment.replaceAll(' ,', ',');
+  if (text.search(fragment) >= 0) return text.replace(fragment, reformat(fragment));
+
+  return text;
+};
+
+
 const createTextViewer = (text) => {
   const el = document.createElement('div');
-  el.innerHTML = text;
+  const originalText = text;
+
+  function search(textFragment) {
+    let t = originalText;
+    if (textFragment) {
+      if (text.search(textFragment) >= 0) {
+        t = t.replace(textFragment, reformat(textFragment));
+      } else {
+        t = lossySearch(t, textFragment);
+      }
+      el.innerHTML = t;
+      const anchor = document.getElementsByClassName('extract-text-anchor')[0];
+      if (anchor) {
+        const scroller = document.getElementsByClassName('modal-body')[0];
+        scroller.scrollTop = anchor.offsetTop - 100;
+      }
+    }
+  }
+
+  el.innerHTML = originalText;
   el.style.paddingTop = '30px';
   el.style.paddingLeft = '15px';
   el.style.paddingRight = '15px';
   el.style.paddingBottom = '15px';
-  return el;
+
+  return {
+    search,
+    element: el
+  };
 };
 
 export default {
@@ -74,12 +115,16 @@ export default {
     documentId: {
       type: String,
       required: true
+    },
+    textFragment: {
+      type: String,
+      default: null
     }
   },
   data: () => ({
     documentData: null,
     textViewer: null,
-    viewer: null,
+    pdfViewer: null,
     textOnly: false,
     showTextViewer: false
   }),
@@ -94,16 +139,12 @@ export default {
     async fetchReaderContent() {
       const url = `documents/${this.documentId}`;
       this.documentData = (await API.get(url)).data;
-      this.textViewer = {
-        element: createTextViewer(this.documentData.extracted_text)
-      };
+      this.textViewer = createTextViewer(this.documentData.extracted_text);
 
       if (isPdf(this.documentData)) {
         const rawDocUrl = `/api/dart/${this.documentId}/raw`;
         try {
-          const viewer = await createPDFViewer({ url: rawDocUrl, contentWidth: CONTENT_WIDTH });
-          viewer.renderPages();
-          this.viewer = viewer;
+          this.pdfViewer = await createPDFViewer({ url: rawDocUrl });
         } catch (_) {
           this.textOnly = true;
         }
@@ -114,8 +155,14 @@ export default {
       removeChildren(this.$refs.content);
       if (this.textOnly === true) {
         this.$refs.content.appendChild(this.textViewer.element);
+        if (this.textFragment) {
+          this.textViewer.search(this.textFragment);
+        }
       } else {
-        this.$refs.content.appendChild(this.viewer.element);
+        this.$refs.content.appendChild(this.pdfViewer.element);
+        if (this.textFragment) {
+          this.pdfViewer.search(this.textFragment);
+        }
       }
     },
     toggle() {
@@ -125,7 +172,7 @@ export default {
       if (this.showTextViewer === true) {
         this.$refs.content.appendChild(this.textViewer.element);
       } else {
-        this.$refs.content.appendChild(this.viewer.element);
+        this.$refs.content.appendChild(this.pdfViewer.element);
       }
     },
     close() {
@@ -169,5 +216,11 @@ export default {
   .toolbar {
     padding: 5px;
   }
+
+  /* Bootstrap sets all box-sizing to border-box, which messes up the pdf-js library */
+  ::v-deep(.page) {
+    box-sizing: content-box !important;
+  }
+
 }
 </style>
