@@ -5,12 +5,10 @@
 -->
   <facet-timeline
     :data.prop="facetData"
+    :view.prop="[0, facetData.length]"
     >
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
-    <facet-plugin-scrollbar slot="scrollbar"
-      min-bar-width="12"
-      auto-hide="false"
-      round-caps="true"></facet-plugin-scrollbar>
+    <facet-plugin-zoom-bar slot="scrollbar"/>
   </facet-timeline>
 </template>
 
