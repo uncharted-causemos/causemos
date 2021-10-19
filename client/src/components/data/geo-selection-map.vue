@@ -33,10 +33,7 @@ import { adminLevelToString } from '@/utils/map-util-new';
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
   vectorSourceLayer: `boundaries-adm${i}`,
   idPropName: { [`boundaries-adm${i}`]: 'id' }
-})).concat({
-  vectorSourceLayer: 'maas',
-  idPropName: { maas: 'id' }
-}));
+})));
 
 const baseLayer = () => {
   return Object.freeze({
