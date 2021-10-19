@@ -46,7 +46,7 @@ export function applyRelativeTo(
       id,
       name,
       color,
-      points: adjustedPoints
+      points: adjustedPoints.filter(point => !Number.isNaN(point.value))
     });
   });
   const baselineMetadata = {

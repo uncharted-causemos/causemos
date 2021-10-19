@@ -97,13 +97,17 @@
                 v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
                 class="relative-box"
               >
-                <small-text-button
-                  v-if="relativeTo"
-                  class="use-percent-button"
-                  v-bind:class="{ active: usePercentChange }"
-                  :label="'Use % Change'"
-                  @click="usePercentChange = !usePercentChange"
-                />
+                <div class="checkbox" v-if="relativeTo">
+                  <label
+                    @click="showPercentChange = !showPercentChange"
+                    style="cursor: pointer; color: black;">
+                    <i
+                      class="fa fa-lg fa-fw"
+                      :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
+                    />
+                    Use % Change
+                  </label>
+                </div>
                 Relative to
                 <button
                   class="btn btn-default"
@@ -264,7 +268,7 @@
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
-                :unit="(relativeTo && usePercentChange) ? '%' : unit"
+                :unit="(relativeTo && showPercentChange) ? '%' : unit"
                 @select-timestamp="setSelectedTimestamp"
               />
               <p
@@ -343,7 +347,7 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
-                      :use-percent-change="usePercentChange"
+                      :use-percent-change="showPercentChange"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
                       @zoom-change="updateMapCurSyncedZoom"
@@ -572,11 +576,11 @@ export default defineComponent({
     const potentialScenarioCount = ref<number|null>(0);
     const potentialScenarios = ref<ScenarioData[]>([]);
     const showDatasets = ref<boolean>(false);
-    const usePercentChange = ref<boolean>(true);
     const newRunsMode = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
+    const showPercentChange = ref<boolean>(true);
     const mapReady = ref<boolean>(false);
     const selectedTimestamp = ref(null) as Ref<number | null>;
     const breakdownOption = ref<string | null>(null);
@@ -1059,7 +1063,7 @@ export default defineComponent({
       selectedRegionIds,
       selectedQualifierValues,
       initialSelectedYears,
-      usePercentChange,
+      showPercentChange,
       selectedScenarios
     );
 
@@ -1100,7 +1104,7 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, usePercentChange);
+    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange);
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -1234,7 +1238,7 @@ export default defineComponent({
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
       updateScenarioSelection,
-      usePercentChange,
+      showPercentChange,
       visibleTimeseriesData
     };
   },
@@ -1406,12 +1410,8 @@ header {
   .btn {
     margin-left: 2px;
   }
-  .use-percent-button {
-    margin-right: 2px;
-    &.active {
-      font-weight: bold;
-      color: black;
-    }
+  .checkbox {
+    margin-right: 10px;
   }
 }
 
