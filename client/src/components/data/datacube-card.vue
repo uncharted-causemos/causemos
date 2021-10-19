@@ -30,13 +30,19 @@
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
             <button
-              class="btn"
               @click="switchFacetData=!switchFacetData"
             >
               Switch
             </button>
+            <button
+              @click="filterFacetData=!filterFacetData"
+            >
+              {{filterFacetData ? 'Unf' : 'F'}}ilter
+            </button>
             <temporal-facet
               :switch-data="switchFacetData"
+              :apply-filter="filterFacetData"
+              :all-model-run-data="allModelRunData"
             />
             <parallel-coordinates-chart
               class="pc-chart"
@@ -570,8 +576,8 @@ export default defineComponent({
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
 
-    const switchFacetData = ref<boolean>(false);
-
+    const switchFacetData = ref<boolean>(true);
+    const filterFacetData = ref<boolean>(false);
 
     const activeDrilldownTab = ref<string|null>('breakdown');
     const currentTabView = ref<string>('description');
@@ -1239,7 +1245,8 @@ export default defineComponent({
       updateMapCurSyncedZoom,
       updateScenarioSelection,
       visibleTimeseriesData,
-      switchFacetData
+      switchFacetData,
+      filterFacetData
     };
   },
   watch: {
