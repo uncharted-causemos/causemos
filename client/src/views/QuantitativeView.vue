@@ -607,7 +607,6 @@ export default defineComponent({
 
       this.enableOverlay('Running sensitivity analysis');
       const numPolls = Math.max(10, Math.round(this._getGraphDensity() * 50));
-      console.log('num Polls: ', numPolls);
       const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, numPolls, progressFn);
       this.disableOverlay();
 
