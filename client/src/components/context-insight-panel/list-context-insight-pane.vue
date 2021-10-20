@@ -542,7 +542,6 @@ export default {
     .context-insight-content {
       .context-insight-thumbnail {
         width:  100%;
-        min-height: 100px;
       }
       .context-insight-description {
         color: gray;
