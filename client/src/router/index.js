@@ -3,6 +3,7 @@ import Home from '@/views/Home.vue';
 import DomainProjectOverview from '@/views/DomainProjectOverview.vue';
 import AnalysisProjectOverview from '@/views/AnalysisProjectOverview.vue';
 import NewProject from '@/views/NewProject.vue';
+import NewDomainProject from '@/views/NewDomainProject.vue';
 import DataExplorer from '@/views/DataExplorer.vue';
 import TileExperiment from '@/views/TileExperiment.vue';
 import GraphExperiment from '@/views/GraphExperiment.vue';
@@ -55,6 +56,11 @@ const routes = [
     path: '/newProject',
     name: 'newProject',
     component: NewProject
+  },
+  {
+    path: '/newDomainProject',
+    name: 'newDomainProject',
+    component: NewDomainProject
   },
   {
     path: '/:projectType/:project/overview',

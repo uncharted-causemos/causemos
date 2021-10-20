@@ -37,7 +37,7 @@
         {{ project.type }}
       </div>
       <div class="col-sm-3 text-center no-padding overflow-ellipsis">
-        {{ project.source }}
+        {{ projectSource }}
       </div>
       <div class="col-sm-2 no-padding">
         {{ dateFormatter(project.modified_at, 'YYYY-MM-DD') }}
@@ -109,6 +109,19 @@ export default defineComponent({
     project: {
       type: Object as PropType<DomainProject>,
       default: () => ({})
+    }
+  },
+  computed: {
+    projectSource(): string {
+      if (this.project) {
+        if (this.project.source) {
+          return this.project.source;
+        }
+        if (this.project.maintainer && this.project.maintainer.length > 0) {
+          return this.project.maintainer[0].organization;
+        }
+      }
+      return '';
     }
   },
   setup() {
