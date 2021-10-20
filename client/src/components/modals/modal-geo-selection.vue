@@ -45,6 +45,7 @@
         <button
           type="button"
           class="btn btn-primary btn-call-for-action"
+          :class="{ 'disabled': selectedRegions.length === 0}"
           @click.stop="saveSelectedRegions()">
             Save
         </button>
@@ -120,11 +121,13 @@ export default defineComponent({
       });
     },
     addSelectedRegion(region: string) {
-      this.selectedRegions = [region];
-      // alternatively, enable multiple region selection
-      // if (!this.selectedRegions.includes(region)) {
-      //   this.selectedRegions.push(region);
-      // }
+      if (region && region !== '') {
+        this.selectedRegions = [region];
+        // alternatively, enable multiple region selection
+        // if (!this.selectedRegions.includes(region)) {
+        //   this.selectedRegions.push(region);
+        // }
+      }
     },
     removeSelectedRegion(region: string) {
       this.selectedRegions = this.selectedRegions.filter(r => r !== region);
