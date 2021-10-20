@@ -165,7 +165,8 @@
                   :style="{ borderColor: colorFromIndex(indx) }"
                   style="border-width: 2px; border-style: solid;"
                   :class="[
-                    `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
+                    `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`,
+                    {'is-default': spec.isDefaultRun }
                   ]"
                 >
                   <!-- spec here represents one selected model run -->
@@ -324,6 +325,7 @@
                     <data-analysis-map
                       class="card-map"
                       :style="{ borderColor: colorFromIndex(indx) }"
+                      :is-default="spec.is_default_run"
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
@@ -1069,7 +1071,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      allModelRunData
     );
 
     const {
@@ -1447,6 +1450,12 @@ $marginSize: 5px;
       display: flex;
       flex-direction: column;
     }
+}
+
+.card-map-container.is-default {
+  ::v-deep(.wm-map) {
+    border-width: 6px;
+  }
 }
 
 .card-map-container {
