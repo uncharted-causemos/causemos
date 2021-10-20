@@ -95,12 +95,7 @@ export default defineComponent({
   }),
   methods: {
     getGADMDisplayName(item: RegionalGADMDetail) {
-      let displayName = '';
-      Object.values(DatacubeGeoAttributeVariableType).forEach(l => {
-        if (item[l] !== undefined) {
-          displayName += item[l] + REGION_ID_DELIMETER;
-        }
-      });
+      const displayName = Object.values(DatacubeGeoAttributeVariableType).filter(l => item[l] !== undefined).map(l => item[l] + REGION_ID_DELIMETER).join('');
       return displayName.endsWith(REGION_ID_DELIMETER) ? displayName.substring(0, displayName.lastIndexOf(REGION_ID_DELIMETER)) : displayName;
     },
     searchRegions(query: string) {

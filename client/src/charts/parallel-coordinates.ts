@@ -1409,6 +1409,10 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
             //
             onGeoSelection(d);
           } else {
+            //
+            // this is a normal freeform param, e.g., search-term, so add an input box for the user to enter a new value
+            //  note how the input-box is added as foreign object since it is added within the SVG element
+            //
             const parentElement = this.parentElement.parentElement; // the axis element
             const inputField = d3.select(parentElement)
               .append('foreignObject')
