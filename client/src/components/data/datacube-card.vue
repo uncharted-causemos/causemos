@@ -33,6 +33,9 @@
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
+            <model-runs-search-bar
+              :data="modelRunsSearchData"
+              @filters-updated="onModelRunsFiltersUpdated" />
             <parallel-coordinates-chart
               class="pc-chart"
               :dimensions-data="runParameterValues"
@@ -434,6 +437,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalGeoSelection from '@/components/modals/modal-geo-selection.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
+import ModelRunsSearchBar from '@/components/data/model-runs-search-bar.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
@@ -546,6 +550,7 @@ export default defineComponent({
     ModalConfirmation,
     ModalGeoSelection,
     ModalNewScenarioRuns,
+    ModelRunsSearchBar,
     ParallelCoordinatesChart,
     RadioButtonGroup,
     SmallTextButton,
@@ -630,6 +635,38 @@ export default defineComponent({
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
     const runningDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)));
+
+    const modelRunsSearchData = computed(() => {
+      const result: {[key: string]: any} = {};
+      dimensions.value.forEach(dim => {
+        result[dim.name] = {
+          display_name: dim.display_name
+        };
+        if (dim.choices && dim.choices.length > 0) {
+          result[dim.name].values = _.uniq(Array.from(dim.choices));
+        }
+      });
+      return result;
+    });
+
+    const onModelRunsFiltersUpdated = (filters: any) => {
+      // parse and apply filters to the model runs data
+      const selectedRunIDS: string[] = [];
+      let filteredRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready);
+      if (_.isEmpty(filters) || filters.clauses.length === 0) {
+        // do nothing; since we need to cancel existing filters, if any
+      } else {
+        const clauses = filters.clauses;
+        clauses.forEach((c: any) => {
+          const filterField = c.field; // the field to filter on
+          const filterValues = c.values; // array of values to filter upon
+          const isNot = !c.isNot; // is the filter reversed?
+          filteredRuns = filteredRuns.filter(v => v.parameters.some(p => p.name === filterField && filterValues.includes(p.value.toString()) === isNot));
+        });
+        selectedRunIDS.push(...filteredRuns.map(r => r.id));
+      }
+      setSelectedScenarioIds(selectedRunIDS);
+    };
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
@@ -1176,8 +1213,10 @@ export default defineComponent({
       mapReady,
       mapSelectedLayer,
       modelParam,
+      modelRunsSearchData,
       newRunsMode,
       onMapLoad,
+      onModelRunsFiltersUpdated,
       onNewScenarioRunsModalClose,
       onSyncMapBounds,
       onTabClick,
