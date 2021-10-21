@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
+import { calculateDiff } from '@/utils/value-util';
 import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
 
 export enum BASE_LAYER {
@@ -37,7 +38,7 @@ function resolveSameMinMaxValue({ min, max }: { min: number; max: number}) {
 }
 
 // Compute min/max stats for regional data
-export function computeRegionalStats(regionData: RegionalAggregations, baselineProp: string | null): AnalysisMapStats {
+export function computeRegionalStats(regionData: RegionalAggregations, baselineProp: string | null, showPercentChange: boolean): AnalysisMapStats {
   const globalStats: MapLayerStats = {};
   // Stats globally across all runs
   for (const [key, data] of Object.entries(regionData)) {
@@ -63,9 +64,10 @@ export function computeRegionalStats(regionData: RegionalAggregations, baselineP
     // Stats relative to the baseline. (min/max of the difference relative to the baseline)
     for (const [key, data] of Object.entries(regionData)) {
       const values: number[] = [];
-      (data || []).filter(v => (v.values[baselineProp] || v.values._baseline) !== undefined).forEach(v => {
-        const diffs = Object.values(v.values).map(value => value - (v.values[baselineProp] || v.values._baseline));
-        values.push(...diffs);
+      (data || []).forEach(v => {
+        const baselineValue = _.isFinite(v.values[baselineProp]) ? v.values[baselineProp] : v.values._baseline;
+        const diffs = Object.values(v.values).map(value => calculateDiff(baselineValue, value, showPercentChange));
+        values.push(...diffs.filter(v => _.isFinite(v)));
       });
       if (values.length) {
         difference[key] = resolveSameMinMaxValue({ min: Math.min(...values), max: Math.max(...values) });
