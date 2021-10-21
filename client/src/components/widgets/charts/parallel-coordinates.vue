@@ -25,7 +25,7 @@ import _ from 'lodash';
 import { renderParallelCoordinates } from '@/charts/parallel-coordinates';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { ScenarioData } from '@/types/Common';
-import { DimensionInfo } from '@/types/Datacube';
+import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 
 const RESIZE_DELAY = 50;
@@ -56,7 +56,8 @@ export default defineComponent({
   },
   emits: [
     'select-scenario',
-    'generated-scenarios'
+    'generated-scenarios',
+    'geo-selection'
   ],
   setup(props) {
     const { dimensionsData } = toRefs(props);
@@ -131,6 +132,7 @@ export default defineComponent({
           this.ordinalDimensions,
           this.onLinesSelection,
           this.onGeneratedRuns,
+          this.onGeoSelection,
           rerenderChart
         );
       };
@@ -147,6 +149,9 @@ export default defineComponent({
       if (generatedLines && Array.isArray(generatedLines)) {
         this.$emit('generated-scenarios', { scenarios: generatedLines });
       }
+    },
+    onGeoSelection(d: ModelParameter): void {
+      this.$emit('geo-selection', d);
     }
   }
 });

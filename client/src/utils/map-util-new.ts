@@ -1,6 +1,7 @@
 import _ from 'lodash';
 import { OutputStatsResult, RegionalAggregations } from '@/types/Runoutput';
 import { AnalysisMapStats, MapLayerStats } from '@/types/Common';
+import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
 
 export enum BASE_LAYER {
   SATELLITE = 'satellite',
@@ -14,6 +15,11 @@ export enum DATA_LAYER {
 
 export function adminLevelToString(level: number) {
   const adminLevel = level === 0 ? 'country' : 'admin' + level;
+  return adminLevel;
+}
+
+export function stringToAdminLevel(geoString: string) {
+  const adminLevel = geoString === DatacubeGeoAttributeVariableType.Country ? 0 : +(geoString[geoString.length - 1]);
   return adminLevel;
 }
 

@@ -13,6 +13,7 @@
           :spatial-aggregation-options="aggregationOptionFiltered"
           :temporal-aggregation-options="aggregationOptionFiltered"
           :temporal-resolution-options="temporalResolutionOptionFiltered"
+          @update-model-parameter="onModelParamUpdated"
         >
           <template #datacube-model-header>
             <h5
@@ -69,11 +70,11 @@ import { getAnalysis } from '@/services/analysis-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 
 import { AnalysisItem } from '@/types/Analysis';
-import { DatacubeFeature } from '@/types/Datacube';
+import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { ProjectType } from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 
-import { DATASET_NAME, isIndicator } from '@/utils/datacube-util';
+import { DATASET_NAME, isIndicator, getValidatedOutputs } from '@/utils/datacube-util';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
 
@@ -174,6 +175,25 @@ export default defineComponent({
       store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
     });
 
+    const refreshMetadata = () => {
+      if (metadata.value !== null) {
+        const cloneMetadata = _.cloneDeep(metadata.value);
+
+        // re-create the validatedOutputs array
+        cloneMetadata.validatedOutputs = getValidatedOutputs(cloneMetadata.outputs);
+
+        metadata.value = cloneMetadata;
+      }
+    };
+
+    const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
+      if (metadata.value !== null) {
+        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(p => p.name === updatedModelParam.name);
+        (metadata.value as Model).parameters[updatedParamIndex] = updatedModelParam;
+        refreshMetadata();
+      }
+    };
+
     return {
       aggregationOptionFiltered,
       analysisId,
@@ -189,7 +209,8 @@ export default defineComponent({
       outputs,
       projectType,
       selectedModelId,
-      temporalResolutionOptionFiltered
+      temporalResolutionOptionFiltered,
+      onModelParamUpdated
     };
   },
   data: () => ({
