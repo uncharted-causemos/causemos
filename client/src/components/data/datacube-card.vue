@@ -26,6 +26,10 @@
           @delete="prepareDelete"
           @retry="retryRun"
         />
+        <modal-geo-selection
+          v-if="showGeoSelectionModal === true"
+          :model-param="modelParam"
+          @close="onGeoSelectionModalClose" />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
@@ -38,6 +42,7 @@
               :new-runs-mode="newRunsMode"
               @select-scenario="updateScenarioSelection"
               @generated-scenarios="updateGeneratedScenarios"
+              @geo-selection="openGeoSelectionModal"
             />
             <message-display
               style="margin-bottom: 10px;"
@@ -438,6 +443,7 @@ import MapLegend from '@/components/widgets/map-legend.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import Modal from '@/components/modals/modal.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
+import ModalGeoSelection from '@/components/modals/modal-geo-selection.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -467,7 +473,7 @@ import {
   TemporalAggregationLevel,
   TemporalResolutionOption
 } from '@/types/Enums';
-import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
+import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
@@ -496,7 +502,8 @@ const DRILLDOWN_TABS = [
 export default defineComponent({
   name: 'DatacubeCard',
   emits: [
-    'on-map-load'
+    'on-map-load',
+    'update-model-parameter'
   ],
   props: {
     isExpanded: {
@@ -549,6 +556,7 @@ export default defineComponent({
     Modal,
     ModalCheckRunsExecutionStatus,
     ModalConfirmation,
+    ModalGeoSelection,
     ModalNewScenarioRuns,
     ParallelCoordinatesChart,
     RadioButtonGroup,
@@ -578,6 +586,8 @@ export default defineComponent({
     const showDatasets = ref<boolean>(false);
     const newRunsMode = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
+    const showGeoSelectionModal = ref<boolean>(false);
+    const modelParam = ref<ModelParameter | null>(null);
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
     const showPercentChange = ref<boolean>(true);
@@ -1179,6 +1189,7 @@ export default defineComponent({
       mapLegendData,
       mapReady,
       mapSelectedLayer,
+      modelParam,
       newRunsMode,
       onMapLoad,
       onNewScenarioRunsModalClose,
@@ -1220,6 +1231,7 @@ export default defineComponent({
       setTemporalAggregationSelection,
       setTemporalResolutionSelection,
       showDatasets,
+      showGeoSelectionModal,
       showModelExecutionStatus,
       showModelRunsExecutionStatus,
       showNewRunsModal,
@@ -1268,6 +1280,30 @@ export default defineComponent({
     showDelete: false
   }),
   methods: {
+    openGeoSelectionModal(modelParam: ModelParameter) {
+      this.showGeoSelectionModal = true;
+      this.modelParam = modelParam;
+    },
+    onGeoSelectionModalClose(eventData: any) {
+      this.showGeoSelectionModal = false;
+      if (!eventData.cancel) {
+        if (eventData.selectedRegions && eventData.selectedRegions.length > 0) {
+          // update the PC with the selected region value(s)
+          const updatedModelParam = _.cloneDeep(this.modelParam) as ModelParameter;
+          const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
+          const updatedChoicesLabels = _.clone(updatedModelParam.choices_labels) as Array<string>;
+          eventData.selectedRegions.forEach((sr: string) => {
+            if (!updatedChoices.includes(sr)) {
+              updatedChoices.push(sr);
+              updatedChoicesLabels.push(sr);
+            }
+          });
+          updatedModelParam.choices = updatedChoices;
+          updatedModelParam.choices_labels = updatedChoicesLabels;
+          this.$emit('update-model-parameter', updatedModelParam);
+        }
+      }
+    },
     getModelRunById(runId: string) {
       return this.allModelRunData.find(runData => runData.id === runId);
     },
@@ -1348,6 +1384,7 @@ $fullscreenTransition: all 0.5s ease-in-out;
   border-radius: 3px;
   display: flex;
   flex: 1 1 auto;
+  width: 100%;
 }
 
 
