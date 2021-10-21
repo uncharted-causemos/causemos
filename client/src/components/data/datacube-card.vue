@@ -164,10 +164,7 @@
                   class="card-map-container"
                   :style="{ borderColor: colorFromIndex(indx) }"
                   style="border-width: 2px; border-style: solid;"
-                  :class="[
-                    `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`,
-                    {'is-default': spec.isDefaultRun }
-                  ]"
+                  :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
                 >
                   <!-- spec here represents one selected model run -->
                   <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
@@ -324,8 +321,7 @@
                     </span>
                     <data-analysis-map
                       class="card-map"
-                      :style="{ borderColor: colorFromIndex(indx) }"
-                      :is-default="spec.is_default_run"
+                      :style="{ borderColor: colorFromIndex(indx), borderWidth: spec.isDefaultRun ? 4 : 2 }"
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
@@ -1450,12 +1446,6 @@ $marginSize: 5px;
       display: flex;
       flex-direction: column;
     }
-}
-
-.card-map-container.is-default {
-  ::v-deep(.wm-map) {
-    border-width: 6px;
-  }
 }
 
 .card-map-container {

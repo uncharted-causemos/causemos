@@ -198,10 +198,6 @@ export default {
     unit: {
       type: String,
       default: null
-    },
-    isDefault: {
-      type: Number,
-      default: 0
     }
   },
   data: () => ({
