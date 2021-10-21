@@ -43,7 +43,7 @@ const margin = { top: 40, right: 30, bottom: 35, left: 35 };
 const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
 const lineStrokeWidthDefault = 8;
-const lineStrokeWidthSelectedDefault = 12;
+const lineStrokeWidthSelectedDefault = 10;
 const lineStrokeWidthHover = 2.5;
 const lineOpacityVisible = 1;
 const lineOpacityHidden = 0.25;
@@ -684,12 +684,18 @@ function renderParallelCoordinates(
       .transition().duration(highlightDuration)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
 
+    if (selectedLineData.is_default_run === 0) {
+      // stroke-width will overwrite for non default runs
+      selectedLine
+        .filter(function () { return d3.select(this).classed('selected') === false; })
+        .attr('stroke-width', lineStrokeWidthHover);
+    }
+
     // Use D3 to highlight the line; change its opacity
     selectedLine
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
       .style('stroke', colorFunc)
-      .attr('stroke-width', lineStrokeWidthHover)
       .style('opacity', lineOpacityVisible);
 
     // show tooltips
