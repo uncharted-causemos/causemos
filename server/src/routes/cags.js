@@ -121,6 +121,30 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
   res.status(200).send({ updateToken: editTime });
 }));
 
+router.put('/:mid/groups/', asyncHandler(async (req, res) => {
+  const editTime = Date.now();
+  const modelId = req.params.mid;
+  const {
+    operation,
+    groups
+  } = req.body;
+
+  // Perform the specified operation, or if it's not a supported operation
+  // throw an error
+  switch (operation) {
+    case OPERATION.REMOVE:
+      await cagService.deleteGroups(modelId, groups);
+      break;
+    case OPERATION.UPDATE:
+      await cagService.updateGroups(modelId, groups);
+      break;
+    default:
+      throw new Error('Operation not supported: ' + operation);
+  }
+
+  res.status(200).send({ updateToken: editTime });
+}));
+
 /**
  * GET CAG components
  */

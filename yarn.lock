@@ -11654,10 +11654,10 @@ supports-color@^8.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-svg-flowgraph@0.4.6:
-  version "0.4.6"
-  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.4.6.tgz#3edd219470fb797b187574d06dba0efb2e64661b"
-  integrity sha512-ZNWGQassAKBerDeSJVLocwhauxeMmQbUnMlOdzEj/rfPO/f2dkIXEeoNL3zQ92qO9G/Fi4IPXiwUkU09JlX/iQ==
+svg-flowgraph@0.4.7:
+  version "0.4.7"
+  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.4.7.tgz#0f5b49fc27da7c120f3b2ad430d231b8e915adfa"
+  integrity sha512-L3x36kS1IMHSB0yeRmQlp2OTZjFB/CkF6RhvmwTA9TwgMXp5T9huB9jHL3sQXZ1ObmZ9330pBb3TLh57KJsOfQ==
 
 svg-tags@^1.0.0:
   version "1.0.0"

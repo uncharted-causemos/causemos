@@ -1369,6 +1369,7 @@ $fullscreenTransition: all 0.5s ease-in-out;
   border-radius: 3px;
   display: flex;
   flex: 1 1 auto;
+  width: 100%;
 }
 
 
