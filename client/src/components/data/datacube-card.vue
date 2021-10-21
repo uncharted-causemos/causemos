@@ -352,7 +352,7 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
-                      :use-percent-change="showPercentChange"
+                      :show-percent-change="showPercentChange"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
                       @zoom-change="updateMapCurSyncedZoom"

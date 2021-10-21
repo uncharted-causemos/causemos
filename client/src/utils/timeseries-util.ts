@@ -13,7 +13,7 @@ const DEFAULT_LINE_WIDTH = 2;
 export function applyRelativeTo(
   timeseriesData: Timeseries[],
   relativeTo: string | null,
-  usePercentChange = false
+  showPercentChange = false
 ) {
   const baselineData = timeseriesData.find(
     timeseries => timeseries.id === relativeTo
@@ -39,7 +39,7 @@ export function applyRelativeTo(
           ?.value ?? 0;
       return {
         timestamp,
-        value: calculateDiff(baselineValue, value, usePercentChange)
+        value: calculateDiff(baselineValue, value, showPercentChange)
       };
     });
     returnValue.push({
