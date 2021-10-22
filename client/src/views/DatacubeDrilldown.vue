@@ -58,7 +58,7 @@
 import _ from 'lodash';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
@@ -212,7 +212,8 @@ export default defineComponent({
     };
   },
   data: () => ({
-    analysis: undefined,
+    // TODO: add Typescript type to replace `any`
+    analysis: undefined as (any | undefined),
     ProjectType
   }),
   async mounted() {
@@ -221,10 +222,15 @@ export default defineComponent({
     this.hideInsightPanel();
 
     if (this.projectType === ProjectType.Analysis) {
+      this.setAnalysisName('');
       this.analysis = await getAnalysis(this.analysisId);
+      this.setAnalysisName(this.analysis?.title ?? '');
     }
   },
   methods: {
+    ...mapActions({
+      setAnalysisName: 'app/setAnalysisName'
+    }),
     onClickDatacubeName() {
       const analysisId = this.analysisId ?? '';
       const metadataName = this.metadata?.name ?? '';
