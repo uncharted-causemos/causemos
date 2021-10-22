@@ -412,18 +412,18 @@
         </div>
       </div>
     </div>
+    <modal-confirmation
+      v-if="showDelete"
+      :autofocus-confirm="false"
+      @confirm="deleteRun"
+      @close="hideDeleteModal"
+    >
+      <template #title> DELETE MODEL RUN </template>
+      <template #message>
+        <p>Are you sure you want to delete this model run?</p>
+      </template>
+    </modal-confirmation>
   </div>
-  <modal-confirmation
-    v-if="showDelete"
-    :autofocus-confirm="false"
-    @confirm="deleteRun"
-    @close="hideDeleteModal"
-  >
-    <template #title> DELETE MODEL RUN </template>
-    <template #message>
-      <p>Are you sure you want to delete this model run?</p>
-    </template>
-  </modal-confirmation>
 </template>
 
 <script lang="ts">
