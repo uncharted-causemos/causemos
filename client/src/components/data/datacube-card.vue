@@ -209,7 +209,7 @@
             </div>
 
             <datacube-scenario-header
-              v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
+              v-if="currentTabView === 'data' && mainModelOutput && isModelMetadata"
               :metadata="metadata"
               :all-model-run-data="allModelRunData"
               :selected-scenario-ids="selectedScenarioIds"
@@ -506,10 +506,6 @@ export default defineComponent({
     'update-model-parameter'
   ],
   props: {
-    isExpanded: {
-      type: Boolean,
-      default: true
-    },
     isPublishing: {
       type: Boolean,
       default: false

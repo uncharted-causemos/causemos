@@ -11,7 +11,6 @@
       <div class="main insight-capture">
         <datacube-card
           class="datacube-card"
-          :isExpanded="false"
           :isPublishing="true"
           :initial-data-config="initialDataConfig"
           :initial-view-config="initialViewConfig"
