@@ -10,8 +10,35 @@
           >
             {{ activeDrilldownTab === null ? 'Show' : 'Hide' }} Breakdown
           </button>
+          <button
+            class="btn btn-default breakdown-button"
+            @click="toggleSearchBar=!toggleSearchBar"
+          >
+            <i class="fa fa-search"></i>
+          </button>
           <slot name="datacube-model-header-collapse" />
         </header>
+        <div
+          v-if="isModelMetadata && toggleSearchBar"
+          style="display: flex; align-items: center">
+          <model-runs-search-bar
+            :data="modelRunsSearchData"
+            :filters="searchFilters"
+            @filters-updated="onModelRunsFiltersUpdated" />
+          <button
+            class="btn btn-default"
+            style="margin: 2px"
+            v-tooltip.top-center="'Save filter query'"
+          >
+            <i class="fa fa-save"></i>
+          </button>
+          <dropdown-button
+            class="dropdown-config"
+            :inner-button-label="'Load Filter:'"
+            :items="[]"
+            @item-selected="console.log('hello')"
+          />
+        </div>
         <modal-new-scenario-runs
           v-if="isModelMetadata && showNewRunsModal === true"
           :metadata="metadata"
@@ -33,9 +60,6 @@
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
-            <model-runs-search-bar
-              :data="modelRunsSearchData"
-              @filters-updated="onModelRunsFiltersUpdated" />
             <parallel-coordinates-chart
               class="pc-chart"
               :dimensions-data="runParameterValues"
@@ -463,7 +487,8 @@ import {
   ModelRunStatus,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
-  TemporalResolutionOption
+  TemporalResolutionOption,
+  DatacubeGenericAttributeVariableType
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -595,6 +620,9 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
 
+    const toggleSearchBar = ref<boolean>(false);
+    const searchFilters = ref<any>({});
+
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelRunsFetchedAt = ref(0);
 
@@ -635,38 +663,6 @@ export default defineComponent({
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
     const runningDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)));
-
-    const modelRunsSearchData = computed(() => {
-      const result: {[key: string]: any} = {};
-      dimensions.value.forEach(dim => {
-        result[dim.name] = {
-          display_name: dim.display_name
-        };
-        if (dim.choices && dim.choices.length > 0) {
-          result[dim.name].values = _.uniq(Array.from(dim.choices));
-        }
-      });
-      return result;
-    });
-
-    const onModelRunsFiltersUpdated = (filters: any) => {
-      // parse and apply filters to the model runs data
-      const selectedRunIDS: string[] = [];
-      let filteredRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready);
-      if (_.isEmpty(filters) || filters.clauses.length === 0) {
-        // do nothing; since we need to cancel existing filters, if any
-      } else {
-        const clauses = filters.clauses;
-        clauses.forEach((c: any) => {
-          const filterField = c.field; // the field to filter on
-          const filterValues = c.values; // array of values to filter upon
-          const isNot = !c.isNot; // is the filter reversed?
-          filteredRuns = filteredRuns.filter(v => v.parameters.some(p => p.name === filterField && filterValues.includes(p.value.toString()) === isNot));
-        });
-        selectedRunIDS.push(...filteredRuns.map(r => r.id));
-      }
-      setSelectedScenarioIds(selectedRunIDS);
-    };
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
@@ -774,6 +770,62 @@ export default defineComponent({
       } else {
         updateTabView('description');
       }
+    };
+
+    const modelRunsSearchData = computed(() => {
+      const result: {[key: string]: any} = {};
+      dimensions.value.forEach(dim => {
+        result[dim.name] = {
+          display_name: dim.display_name,
+          type: dim.type
+        };
+        if (dim.choices && dim.choices.length > 0) {
+          result[dim.name].values = _.uniq(Array.from(dim.choices));
+        }
+      });
+      return result;
+    });
+
+    const onModelRunsFiltersUpdated = (filters: any) => {
+      // parse and apply filters to the model runs data
+      const selectedRunIDS: string[] = [];
+      let filteredRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready);
+      if (_.isEmpty(filters) || filters.clauses.length === 0) {
+        // do nothing; since we need to cancel existing filters, if any
+      } else {
+        const dimTypeMap: { [key: string]: string } = dimensions.value.reduce(
+          (obj, item) => Object.assign(obj, { [item.name]: item.type }), {});
+        const clauses = filters.clauses;
+        clauses.forEach((c: any) => {
+          const filterField: string = c.field; // the field to filter on
+          const filterValues = c.values; // array of values to filter upon
+          const isNot = !c.isNot; // is the filter reversed?
+          filteredRuns = filteredRuns.filter(v => {
+            const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
+            if (paramsMatchingFilterField !== undefined) {
+              // this is a param filter
+              // so we can search this parameters array directly
+              //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
+              if (dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Int || dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Float) {
+                const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+                return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
+              } else {
+                return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
+              }
+            } else {
+              // this is an output filter
+              //  we need to search the array of v.output_agg_values
+              // note: this will always be a numeric range
+              const runOutputValue = v.output_agg_values[0].value;
+              const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+              return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
+            }
+          });
+        });
+        selectedRunIDS.push(...filteredRuns.map(r => r.id));
+      }
+      searchFilters.value = filters;
+      setSelectedScenarioIds(selectedRunIDS);
     };
 
     watchEffect(() => {
@@ -1201,6 +1253,7 @@ export default defineComponent({
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
       fetchData,
+      searchFilters,
       getSelectedPreGenOutput,
       gridLayerStats,
       hasDefaultRun,
@@ -1270,6 +1323,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
+      toggleSearchBar,
       unit,
       updateStateFromInsight,
       updateGeneratedScenarios,

@@ -1,5 +1,5 @@
 <template>
-  <div class="row no-gutter">
+  <div class="row no-gutter" style="width: 100%">
     <div class="col-md-12 search-bar lex-bar-container">
       <div ref="lexContainer" class="lex-box-container" />
       <div class="clear-button-container">
@@ -18,11 +18,12 @@ import _ from 'lodash';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 
 import TextPill from '@/search/pills/text-pill';
+import RangePill from '@/search/pills/range-pill';
 import ValuePill from '@/search/pills/value-pill';
-// import RangePill from '@/search/pills/range-pill';
 
 import datacubeUtil from '@/utils/datacube-util';
 import filtersUtil from '@/utils/filters-util';
+import { DatacubeGenericAttributeVariableType } from '@/types/Enums';
 
 const CODE_TABLE = datacubeUtil.CODE_TABLE;
 
@@ -32,13 +33,16 @@ export default {
     data: {
       type: Object,
       default: () => {}
+    },
+    filters: {
+      type: Object,
+      default: () => {}
     }
   },
   emits: ['filters-updated'],
   created() {
     this.lexRef = null;
     this.pills = [];
-    this.filters = {};
   },
   mounted() {
     // Generates lex pills from select datacube columns
@@ -53,18 +57,19 @@ export default {
         const dcOptions = this.data[k].values;
         return new ValuePill(dcField, dcOptions);
       } else {
-        return new TextPill(dcField);
+        return (this.data[k].type === DatacubeGenericAttributeVariableType.Int || this.data[k].type === DatacubeGenericAttributeVariableType.Float)
+          ? new RangePill(dcField) : new TextPill(dcField);
       }
     });
 
     // Defines a list of searchable fields for LEX
     this.pills = [
-      new TextPill(CODE_TABLE.SEARCH), // keyword
-      // new RangePill(CODE_TABLE.PERIOD), // range field: user would need to specify start and end values for the range
+      new TextPill(CODE_TABLE.SEARCH), // keyword -> used for generic search where the search string matches certain tags and/or country name
       ...basicPills // searchable fields such as country, each would provide list of suggested values
     ];
 
-    const filteredPills = _.reject(this.pills, (pill) => _.find(this.filters.clauses, { field: pill.searchKey }));
+    const filtersClauses = this.filters ? this.filters.clauses : undefined;
+    const filteredPills = _.reject(this.pills, (pill) => _.find(filtersClauses, { field: pill.searchKey }));
     const suggestions = filteredPills.map(pill =>
       pill.makeOption()
     );
@@ -104,14 +109,9 @@ export default {
       });
 
       if (filtersUtil.isEqual(this.filters, newFilters) === false) {
-        // console.log(newFilters);
-        this.filters = newFilters;
-      } else {
-        // console.log('Same query model detected ... skipping');
-        this.filters = {};
+        // emit the filters so that the relevant components may react
+        this.$emit('filters-updated', newFilters);
       }
-      // emit the filters so that the relevant components may react
-      this.$emit('filters-updated', this.filters);
     });
 
     this.lexRef.render(this.$refs.lexContainer);
@@ -140,53 +140,5 @@ export default {
 </script>
 
 <style lang='scss'>
-.lex-bar-container {
-  display: flex;
-  width: 100%;
-  .clear-button-container {
-    position: relative;
-    display: flex;
-    align-items: center;
-    width: auto;
-    button {
-      border-radius: 25%;
-      background: lightyellow;
-      width: auto;
-      height: auto;
-      padding: 1px;
-    }
-  }
-  .lex-box-container {
-    width: 100%;
-    div:first-child {
-      padding: 0;
-      display: flex;
-      align-items: center;
-      div.token {
-        display: flex;
-        flex-wrap: wrap;
-        .button-group { // parent of the button classed .token-cancel
-          display: flex;
-          align-items: center;
-          span {
-            background: red;
-          }
-        }
-        .token-cancel {
-          position: relative;
-          transform: inherit;
-        }
-        .token-remove {
-          position: relative;
-          transform: inherit;
-          span {
-            background: red;
-          }
-        }
-      }
-    }
-  }
-}
-
 
 </style>
