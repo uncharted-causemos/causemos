@@ -48,7 +48,8 @@ const applyBreakdown = (
         name: year,
         id: year,
         color: colorFromIndex(index),
-        points: mappedToBreakdownDomain
+        points: mappedToBreakdownDomain,
+        isDefaultRun: timeseriesData[0].isDefaultRun
       };
     });
 };
@@ -176,9 +177,10 @@ export default function useTimeseriesData(
           const name =
             regionIds.value[index].split(REGION_ID_DELIMETER).pop() ??
             regionIds.value[index];
+          const isDefaultRun = modelRuns && modelRuns.value[index] ? modelRuns.value[index].is_default_run : false;
           const id = regionIds.value[index];
           const color = colorFromIndex(index);
-          return { name, id, color, points };
+          return { name, id, color, points, isDefaultRun };
         });
       } else if (
         breakdownOption.value === TemporalAggregationLevel.Year ||
@@ -186,12 +188,15 @@ export default function useTimeseriesData(
       ) {
         // use run names if available
         const modeRunNames = modelRuns && modelRuns.value && modelRuns.value.length > 0 ? modelRuns?.value.map(r => r.name) : modelRunIds.value;
+        const defaultRunData = modelRuns && modelRuns.value && modelRuns.value.length > 0
+          ? modelRuns?.value.map(r => r.is_default_run) : new Array(modelRunIds.value.length).fill(false);
 
         rawTimeseriesData.value = fetchResults.map((points, index) => {
           const name = modeRunNames[index] ?? 'no name: ' + index;
           const id = modelRunIds.value[index];
           const color = colorFromIndex(index);
-          return { name, id, color, points };
+          const isDefaultRun = defaultRunData[index] ?? 0;
+          return { name, id, color, points, isDefaultRun };
         });
       } else {
         // Breakdown by qualifier
@@ -201,7 +206,8 @@ export default function useTimeseriesData(
             name, // TODO: look up display name
             id: name,
             color: colorFromIndex(index),
-            points: timeseries
+            points: timeseries,
+            isDefaultRun: false
           };
         });
       }

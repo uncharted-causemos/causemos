@@ -576,7 +576,8 @@ export default defineComponent({
           name: scenarioName,
           id: scenarioId,
           color,
-          points: values
+          points: values,
+          isDefaultRun: false
         };
       });
       // Rescale timeseries relative to the baseline

@@ -30,7 +30,7 @@ export function applyRelativeTo(
   const returnValue: Timeseries[] = [];
   timeseriesData.forEach(timeseries => {
     // Adjust values
-    const { id, name, color, points } = timeseries;
+    const { id, name, color, points, isDefaultRun } = timeseries;
     const adjustedPoints = points.map(({ timestamp, value }) => {
       const baselineValue =
         baselineData.points.find(point => point.timestamp === timestamp)
@@ -42,6 +42,7 @@ export function applyRelativeTo(
     });
     returnValue.push({
       id,
+      isDefaultRun,
       name,
       color,
       points: adjustedPoints
