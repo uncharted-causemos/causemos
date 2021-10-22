@@ -117,7 +117,8 @@ const updateDomainProjects = async (metadata) => {
     await createProject(
       familyName,
       metadata.description,
-      metadata.maintainer.organization,
+      '', // website
+      [metadata.maintainer],
       metadata.type,
       [], // initial stats need to be set // ready_instances
       [instanceName]); // initial stats need to be set // draft_instances

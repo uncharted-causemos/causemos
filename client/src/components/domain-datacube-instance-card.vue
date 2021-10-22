@@ -74,7 +74,7 @@
       </button>
       -->
       <button
-        v-tooltip.top-center="'Update the metadata of this instance in Dojo'"
+        v-tooltip.top-center="'Update the model instance in Dojo'"
         type="button"
         disabled
         class="btn btn-primary"
@@ -82,7 +82,7 @@
         Update in DOJO
       </button>
       <button
-        v-tooltip.top-center="'Edit datacube instance publication'"
+        v-tooltip.top-center="'Edit the metadata and visualization'"
         type="button"
         class="btn btn-primary btn-call-for-action"
         @click="edit(datacube.data_id)"
