@@ -90,7 +90,13 @@
         </div>
         <div class="col-md-6 page-content">
           <div class="row title">
-            <h3>Domain Model/Indicator Projects</h3>
+            <h3>Domain Model Projects</h3>
+            <button
+              v-tooltip.top-center="'Create a new domain family project'"
+              type="button"
+              class="btn btn-primary"
+              @click="gotoNewFamilyProject"
+            >New Domain Model Project</button>
           </div>
           <hr>
           <div class="row">
@@ -286,6 +292,9 @@ export default defineComponent({
     },
     gotoNewProject() {
       this.$router.push('newProject');
+    },
+    gotoNewFamilyProject() {
+      this.$router.push('newDomainProject');
     },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;

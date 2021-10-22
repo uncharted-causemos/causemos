@@ -129,6 +129,17 @@
                 v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
                 class="relative-box"
               >
+                <div class="checkbox" v-if="relativeTo">
+                  <label
+                    @click="showPercentChange = !showPercentChange"
+                    style="cursor: pointer; color: black;">
+                    <i
+                      class="fa fa-lg fa-fw"
+                      :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
+                    />
+                    Use % Change
+                  </label>
+                </div>
                 Relative to
                 <button
                   class="btn btn-default"
@@ -225,7 +236,7 @@
             </div>
 
             <datacube-scenario-header
-              v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
+              v-if="currentTabView === 'data' && mainModelOutput && isModelMetadata"
               :metadata="metadata"
               :all-model-run-data="allModelRunData"
               :selected-scenario-ids="selectedScenarioIds"
@@ -289,7 +300,7 @@
                 :selected-temporal-resolution="selectedTemporalResolution"
                 :selected-timestamp="selectedTimestamp"
                 :breakdown-option="breakdownOption"
-                :unit="unit"
+                :unit="(relativeTo && showPercentChange) ? '%' : unit"
                 @select-timestamp="setSelectedTimestamp"
               />
               <p
@@ -368,6 +379,7 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
+                      :show-percent-change="showPercentChange"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
                       @zoom-change="updateMapCurSyncedZoom"
@@ -427,18 +439,18 @@
         </div>
       </div>
     </div>
+    <modal-confirmation
+      v-if="showDelete"
+      :autofocus-confirm="false"
+      @confirm="deleteRun"
+      @close="hideDeleteModal"
+    >
+      <template #title> DELETE MODEL RUN </template>
+      <template #message>
+        <p>Are you sure you want to delete this model run?</p>
+      </template>
+    </modal-confirmation>
   </div>
-  <modal-confirmation
-    v-if="showDelete"
-    :autofocus-confirm="false"
-    @confirm="deleteRun"
-    @close="hideDeleteModal"
-  >
-    <template #title> DELETE MODEL RUN </template>
-    <template #message>
-      <p>Are you sure you want to delete this model run?</p>
-    </template>
-  </modal-confirmation>
 </template>
 
 <script lang="ts">
@@ -468,7 +480,7 @@ import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 
-import useAnalysisMaps from '@/services/composables/useAnalysisMapStats';
+import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
 import useOutputSpecs from '@/services/composables/useOutputSpecs';
 import useParallelCoordinatesData from '@/services/composables/useParallelCoordinatesData';
@@ -523,10 +535,6 @@ export default defineComponent({
     'update-model-parameter'
   ],
   props: {
-    isExpanded: {
-      type: Boolean,
-      default: true
-    },
     isPublishing: {
       type: Boolean,
       default: false
@@ -608,6 +616,7 @@ export default defineComponent({
     const modelParam = ref<ModelParameter | null>(null);
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
+    const showPercentChange = ref<boolean>(true);
     const mapReady = ref<boolean>(false);
     const selectedTimestamp = ref(null) as Ref<number | null>;
     const breakdownOption = ref<string | null>(null);
@@ -1149,6 +1158,7 @@ export default defineComponent({
       selectedRegionIds,
       selectedQualifierValues,
       initialSelectedYears,
+      showPercentChange,
       selectedScenarios
     );
 
@@ -1189,7 +1199,7 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMaps(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel);
+    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange);
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -1329,6 +1339,7 @@ export default defineComponent({
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
       updateScenarioSelection,
+      showPercentChange,
       visibleTimeseriesData
     };
   },
@@ -1520,6 +1531,14 @@ header {
 
 .relative-box {
   position: relative;
+  display: flex;
+  align-items: center;
+  .btn {
+    margin-left: 2px;
+  }
+  .checkbox {
+    margin-right: 10px;
+  }
 }
 
 .relative-dropdown {

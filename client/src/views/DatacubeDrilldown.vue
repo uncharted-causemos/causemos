@@ -3,10 +3,8 @@
     <main class="main">
       <analytical-questions-and-insights-panel />
       <div class="main insight-capture">
-        <!-- TODO: whether a card is actually expanded or not will
-        be dynamic later -->
         <datacube-card
-          :class="{ 'datacube-expanded': true }"
+          class="datacube-card"
           :initial-data-config="initialDataConfig"
           :metadata="metadata"
           :initial-view-config="initialViewConfig"
@@ -254,7 +252,7 @@ export default defineComponent({
   min-width: 0;
 }
 
-.datacube-expanded {
+.datacube-card {
   min-width: 0;
   flex: 1;
   margin: 10px;
