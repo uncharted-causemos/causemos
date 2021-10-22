@@ -31,7 +31,7 @@
         </a>
         <div>
           <strong>Maintainer</strong>
-          <span class="maintainer">{{ projectMetadata.source }}</span>
+          <span class="maintainer">{{ projectSource }}</span>
         </div>
       </div>
       <div v-if="tags.length > 0" class="tags-column">
@@ -53,6 +53,11 @@
         <div class="instance-list-header">
           <div class="column-title">Instances</div>
           <div class="controls">
+            <button
+              class="btn btn-primary btn-call-for-action"
+              disabled>
+                Register New Model Instance in DOJO
+            </button>
             <input
               v-model="searchDatacubeInstances"
               type="text"
@@ -92,6 +97,11 @@
             :datacube="instance"
             @unpublish="unpublishDatacubeInstance(instance)"
           />
+          <message-display
+            v-if="filteredDatacubeInstances.length === 0"
+            :message-type="'alert-warning'"
+            :message="'No registered model instances!'"
+          />
         </div>
       </div>
     </main>
@@ -108,13 +118,15 @@ import _ from 'lodash';
 import ListContextInsightPane from '@/components/context-insight-panel/list-context-insight-pane.vue';
 import domainProjectService from '@/services/domain-project-service';
 import DropdownControl from '@/components/dropdown-control.vue';
+import MessageDisplay from '@/components/widgets/message-display.vue';
 
 export default {
   name: 'DomainProjectOverview',
   components: {
     DomainDatacubeInstanceCard,
     ListContextInsightPane,
-    DropdownControl
+    DropdownControl,
+    MessageDisplay
   },
   data: () => ({
     datacubeInstances: [],
@@ -146,6 +158,28 @@ export default {
       }
       // FIXME: maintainer name, website and tags should be saved at the project level and not fetched from a datacube instance
       return this.datacubeInstances[0].maintainer.website;
+    },
+    projectSource() {
+      if (this.projectMetadata) {
+        if (this.projectMetadata.source) {
+          return this.projectMetadata.source;
+        }
+        if (this.projectMetadata.maintainer && this.projectMetadata.maintainer.length > 0) {
+          let fullMaintainerInfo = '';
+          const name = this.projectMetadata.maintainer[0].name;
+          fullMaintainerInfo += name;
+          const organization = this.projectMetadata.maintainer[0].organization;
+          if (organization !== '') {
+            fullMaintainerInfo += ' | ' + organization;
+          }
+          const email = this.projectMetadata.maintainer[0].email;
+          if (email !== '') {
+            fullMaintainerInfo += ' | ' + email;
+          }
+          return fullMaintainerInfo;
+        }
+      }
+      return '';
     }
   },
   watch: {
@@ -272,9 +306,10 @@ $padding-size: 3vh;
 }
 
 header {
-  height: 20vh;
+  height: 25vh;
   display: flex;
   padding: 20px;
+  padding-bottom: 0;
 }
 
 .metadata-column {
