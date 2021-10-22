@@ -430,6 +430,7 @@
 import _ from 'lodash';
 import { computed, defineComponent, PropType, ref, Ref, toRefs, watchEffect } from 'vue';
 import { useStore } from 'vuex';
+import router from '@/router';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
@@ -712,11 +713,23 @@ export default defineComponent({
       }
     });
 
+    const clearRouteParam = () => {
+      // fix to avoid double history later
+      router.push({
+        query: {
+          insight_id: undefined,
+          datacube_id: selectedModelId.value
+        }
+      }).catch(() => {});
+    };
+
     const setSelectedScenarioIds = (newIds: string[]) => {
       if (isIndicatorDatacube.value) {
         if (_.isEqual(selectedScenarioIds.value, newIds)) return;
       }
       selectedScenarioIds.value = newIds;
+
+      clearRouteParam();
 
       if (newIds.length > 0) {
         // selecting a run or multiple runs when the desc tab is active should always open the data tab
