@@ -24,7 +24,7 @@
         class="datacube-card"
         :initial-view-config="initialViewConfig"
         :metadata="metadata"
-        :spatial-aggregation-options="aggregationOptionFiltered"
+        :aggregation-options="aggregationOptionFiltered"
         @update-model-parameter="onModelParamUpdated"
       >
         <template #datacube-model-header>
