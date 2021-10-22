@@ -209,7 +209,7 @@
             </div>
 
             <datacube-scenario-header
-              v-if="isExpanded && currentTabView === 'data' && mainModelOutput && isModelMetadata"
+              v-if="currentTabView === 'data' && mainModelOutput && isModelMetadata"
               :metadata="metadata"
               :all-model-run-data="allModelRunData"
               :selected-scenario-ids="selectedScenarioIds"
@@ -412,18 +412,18 @@
         </div>
       </div>
     </div>
+    <modal-confirmation
+      v-if="showDelete"
+      :autofocus-confirm="false"
+      @confirm="deleteRun"
+      @close="hideDeleteModal"
+    >
+      <template #title> DELETE MODEL RUN </template>
+      <template #message>
+        <p>Are you sure you want to delete this model run?</p>
+      </template>
+    </modal-confirmation>
   </div>
-  <modal-confirmation
-    v-if="showDelete"
-    :autofocus-confirm="false"
-    @confirm="deleteRun"
-    @close="hideDeleteModal"
-  >
-    <template #title> DELETE MODEL RUN </template>
-    <template #message>
-      <p>Are you sure you want to delete this model run?</p>
-    </template>
-  </modal-confirmation>
 </template>
 
 <script lang="ts">
@@ -506,10 +506,6 @@ export default defineComponent({
     'update-model-parameter'
   ],
   props: {
-    isExpanded: {
-      type: Boolean,
-      default: true
-    },
     isPublishing: {
       type: Boolean,
       default: false
