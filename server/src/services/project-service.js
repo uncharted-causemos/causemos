@@ -4,7 +4,6 @@ const { v4: uuid } = require('uuid');
 
 const Logger = rootRequire('/config/logger');
 const { Adapter, RESOURCE, SEARCH_LIMIT, MAX_ES_BUCKET_SIZE } = rootRequire('adapters/es/adapter');
-const { searchAndHighlight } = rootRequire('adapters/es/client');
 const indraService = rootRequire('/services/external/indra-service');
 
 const requestAsPromise = rootRequire('/util/request-as-promise');
@@ -619,28 +618,6 @@ const getProjectEdges = async (projectId, filters) => {
 };
 
 /**
- * Used for grabbing related ontology labels to assist in searching
- * subj and obj concepts in projects
- *
- * @param {string} queryString
- * @param {string} projectId
- * @returns
- */
-const searchOntologyAndHighlight = async (queryString, projectId) => {
-  const prefixes = queryString.split(' ').map(query => {
-    return query + '*';
-  }).join(' ');
-  const filters = [
-    {
-      term: {
-        project_id: projectId
-      }
-    }
-  ];
-  return await searchAndHighlight(RESOURCE.ONTOLOGY, prefixes, filters, ['examples', 'label']);
-};
-
-/**
  * Search various fields in ES for terms starting with the queryString
  *
  */
@@ -864,12 +841,10 @@ module.exports = {
   countStats,
   facets,
   getOntologyDefinitions,
-  searchAndHighlight,
 
   getProjectStatementsScores,
   getProjectEdges,
 
-  searchOntologyAndHighlight,
   searchFields,
   searchPath,
   bustProjectGraphCache,
