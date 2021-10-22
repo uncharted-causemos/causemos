@@ -21,7 +21,7 @@
     </full-screen-modal-header>
     <main class="insight-capture">
       <datacube-card
-        :class="{ 'datacube-expanded': true }"
+        class="datacube-card"
         :initial-view-config="initialViewConfig"
         :metadata="metadata"
         :spatial-aggregation-options="aggregationOptionFiltered"
@@ -302,7 +302,7 @@ main {
   min-height: 0;
 }
 
-.datacube-expanded {
+.datacube-card {
   min-width: 0;
   flex: 1;
   margin: 10px;
