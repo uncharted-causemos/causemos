@@ -1,6 +1,6 @@
 const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
-const { client, searchAndHighlight } = rootRequire('/adapters/es/client');
+const { client, searchAndHighlight, queryStringBuilder } = rootRequire('/adapters/es/client');
 const { RESOURCE } = rootRequire('/adapters/es/adapter');
 const { get: getCache } = rootRequire('/cache/node-lru-cache');
 
@@ -21,7 +21,10 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
     }
   }];
 
-  const results = await searchAndHighlight(RESOURCE.ONTOLOGY, queryString, filters, [
+  const builder = queryStringBuilder().setOperator('AND');
+  queryString.split(' ').forEach(v => builder.addWildCard(v));
+
+  const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
     'label',
     'examples'
   ]);
@@ -135,8 +138,9 @@ const buildSubjObjAggregation = (concepts) => {
 // Search for concepts within a given project's INDRA statements
 const statementConceptEntitySearch = async (projectId, queryString) => {
   Logger.info(`Query ${projectId} ${queryString}`);
+
   // Bootstrap from rawConcept
-  const rawResult = await rawConceptEntitySearch(projectId, queryString + '*');
+  const rawResult = await rawConceptEntitySearch(projectId, queryString);
   if (_.isEmpty(rawResult)) return [];
 
   const matchedRawConcepts = rawResult.map(d => d.doc.label);
