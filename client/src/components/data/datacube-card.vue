@@ -325,6 +325,7 @@
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
+                      :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
                       :selected-layer-id="mapSelectedLayer"
                       :map-bounds="mapBounds"
