@@ -7,6 +7,7 @@ export interface Timeseries {
   name: string;
   color: string;
   points: TimeseriesPoint[];
+  isDefaultRun: boolean;
 }
 
 /**

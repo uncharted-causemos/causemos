@@ -36,12 +36,17 @@ export default function useOutputSpecs(
         temporalResolution: selectedTemporalResolution.value,
         temporalAggregation: selectedTemporalAggregation.value,
         spatialAggregation: selectedSpatialAggregation.value,
-        preGeneratedOutput: undefined
+        preGeneratedOutput: undefined,
+        isDefaultRun: false
       };
 
-      const pregenDataForRun = allModelRunData?.value.find(run => run.id === scenarioId)?.pre_gen_output_paths;
+      const runModelData = allModelRunData?.value.find(run => run.id === scenarioId);
+      const pregenDataForRun = runModelData?.pre_gen_output_paths;
       if (pregenDataForRun && pregenDataForRun.length > 0) {
         outputSpec.preGeneratedOutput = pregenDataForRun;
+      }
+      if (runModelData) {
+        outputSpec.isDefaultRun = runModelData.is_default_run;
       }
 
       return outputSpec;

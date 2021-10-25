@@ -180,9 +180,7 @@
                   class="card-map-container"
                   :style="{ borderColor: colorFromIndex(indx) }"
                   style="border-width: 2px; border-style: solid;"
-                  :class="[
-                    `card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`
-                  ]"
+                  :class="[`card-count-${outputSpecs.length < 5 ? outputSpecs.length : 'n'}`]"
                 >
                   <!-- spec here represents one selected model run -->
                   <template v-if="spec.preGeneratedOutput && pregenDataForSpec !== undefined" >
@@ -329,6 +327,7 @@
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
+                      :is-default-run="spec.isDefaultRun"
                       :show-tooltip="true"
                       :selected-layer-id="mapSelectedLayer"
                       :map-bounds="mapBounds"
@@ -1073,7 +1072,8 @@ export default defineComponent({
       selectedTemporalAggregation,
       selectedTemporalResolution,
       metadata,
-      selectedTimeseriesPoints
+      selectedTimeseriesPoints,
+      allModelRunData
     );
 
     const {
