@@ -1,21 +1,25 @@
 <template>
   <card class="project-card-container" :is-hoverable="false">
     <div class="project-card-row" @click="openAnalysis()">
-      <div class="project-card-column">
+      <div class="project-card-column extra-wide">
         <h4>{{analysis.title}}</h4>
-        <img :src="analysis.previewImageSrc" style="height: 70px; border: 1px solid #eee">
+        <img
+          v-if="analysis.previewImageSrc !== null"
+          class="thumbnail-image"
+          :src="analysis.previewImageSrc"
+        >
       </div>
       <div class="project-card-column">
         <div>{{analysis.subtitle}}</div>
-        <div>{{analysis.description}}</div>
+        <div class="description">{{analysis.description}}</div>
       </div>
-      <div class="project-card-column instance-header">
-        {{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}
-        <div style="color: black">{{analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}</div>
+      <div class="project-card-column">
+        <span class="instance-header">{{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}</span>
+        <div>{{analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}</div>
       </div>
-      <div class="project-card-column instance-header">
-        {{analysis.type === 'quantitative' ? '': 'Relations'}}
-        <div style="color: black">{{analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
+      <div class="project-card-column">
+        <span class="instance-header">{{analysis.type === 'quantitative' ? '': 'Relations'}}</span>
+        <div>{{analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
       </div>
       <options-button :wider-dropdown-options="true" :dropdown-below="true">
         <template #content>
@@ -167,11 +171,24 @@ h4 {
 .project-card-column {
   flex: 1;
   min-width: 0;
+
+  &.extra-wide {
+    flex: 2;
+  }
+
+  .description, .thumbnail-image {
+    margin-top: 5px;
+  }
+}
+
+.thumbnail-image {
+  height: 150px;
+  border: 1px solid $separator
 }
 
 .instance-header {
   @include header-secondary;
-  color: #222;
+  font-weight: bold;
 }
 
 .destructive {
