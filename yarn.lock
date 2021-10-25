@@ -4020,6 +4020,11 @@ create-hmac@^1.1.0, create-hmac@^1.1.4, create-hmac@^1.1.7:
     safe-buffer "^5.0.1"
     sha.js "^2.4.8"
 
+cropro@^1.1.0:
+  version "1.1.2"
+  resolved "https://registry.yarnpkg.com/cropro/-/cropro-1.1.2.tgz#08032187b2786f03748a6bf3f33c3d861b46e57c"
+  integrity sha512-UJyBOmgP3ey28V7mJDsw0vwT65oduXzJJHfj0n9j6e6g88WGkgkK++CqcciUVMsSP9dzt3qc8rBANSjhbmN6oA==
+
 cross-spawn@^3.0.0:
   version "3.0.1"
   resolved "https://registry.yarnpkg.com/cross-spawn/-/cross-spawn-3.0.1.tgz#1256037ecb9f0c5f79e3d6ef135e30770184b982"
@@ -8297,6 +8302,11 @@ mapbox-gl@^1.10.0:
     tinyqueue "^2.0.3"
     vt-pbf "^3.1.1"
 
+markerjs2@^2.13.0:
+  version "2.15.0"
+  resolved "https://registry.yarnpkg.com/markerjs2/-/markerjs2-2.15.0.tgz#01517e1ba32eb4fe9168eea55262e3abfac99752"
+  integrity sha512-6ueErJGxJvgPfHnnTEnJykyObph27yUZoI6zB/IxHOCVf5yRKNKZ7oyMr+ZnzFteRL64d77rm+lJNzbrKxTlKg==
+
 md5.js@^1.3.4:
   version "1.3.5"
   resolved "https://registry.yarnpkg.com/md5.js/-/md5.js-1.3.5.tgz#b5d07b8e3216e3e27cd728d72f70d1e6a342005f"
@@ -11644,10 +11654,10 @@ supports-color@^8.1.0:
   dependencies:
     has-flag "^4.0.0"
 
-svg-flowgraph@0.4.6:
-  version "0.4.6"
-  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.4.6.tgz#3edd219470fb797b187574d06dba0efb2e64661b"
-  integrity sha512-ZNWGQassAKBerDeSJVLocwhauxeMmQbUnMlOdzEj/rfPO/f2dkIXEeoNL3zQ92qO9G/Fi4IPXiwUkU09JlX/iQ==
+svg-flowgraph@0.4.8:
+  version "0.4.8"
+  resolved "https://registry.yarnpkg.com/svg-flowgraph/-/svg-flowgraph-0.4.8.tgz#764cf3c9dec9ae9d1566f5922e2c2ae4764ce22d"
+  integrity sha512-K3sXmr4XUNkAJhKswxt0ojyS/Xxt2EXDIgnmBlRP5YtvAaBBDegK+8YW6kJrvvo4s2GVvoHa4JUOl0ODsx/ieg==
 
 svg-tags@^1.0.0:
   version "1.0.0"

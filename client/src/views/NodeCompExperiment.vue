@@ -21,10 +21,11 @@
     </full-screen-modal-header>
     <main class="insight-capture">
       <datacube-card
-        :class="{ 'datacube-expanded': true }"
+        class="datacube-card"
         :initial-view-config="initialViewConfig"
         :metadata="metadata"
         :spatial-aggregation-options="aggregationOptionFiltered"
+        @update-model-parameter="onModelParamUpdated"
       >
         <template #datacube-model-header>
           <div class="datacube-header" v-if="metadata && mainModelOutput">
@@ -72,8 +73,9 @@ import DatacubeDescription from '@/components/data/datacube-description.vue';
 import FullScreenModalHeader from '@/components/widgets/full-screen-modal-header.vue';
 import modelService from '@/services/model-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
-import { DatacubeFeature } from '@/types/Datacube';
+import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { ProjectType } from '@/types/Enums';
+import { getValidatedOutputs } from '@/utils/datacube-util';
 
 import { aggregationOptionFiltered } from '@/utils/drilldown-util';
 
@@ -234,6 +236,25 @@ export default defineComponent({
       }
     });
 
+    const refreshMetadata = () => {
+      if (metadata.value !== null) {
+        const cloneMetadata = _.cloneDeep(metadata.value);
+
+        // re-create the validatedOutputs array
+        cloneMetadata.validatedOutputs = getValidatedOutputs(cloneMetadata.outputs);
+
+        metadata.value = cloneMetadata;
+      }
+    };
+
+    const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
+      if (metadata.value !== null) {
+        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(p => p.name === updatedModelParam.name);
+        (metadata.value as Model).parameters[updatedParamIndex] = updatedModelParam;
+        refreshMetadata();
+      }
+    };
+
     return {
       aggregationOptionFiltered,
       currentCAG,
@@ -250,7 +271,8 @@ export default defineComponent({
       outputs,
       selectedNode,
       selectLabel,
-      stepsBeforeCanConfirm
+      stepsBeforeCanConfirm,
+      onModelParamUpdated
     };
   },
   mounted() {
@@ -281,7 +303,7 @@ main {
   min-height: 0;
 }
 
-.datacube-expanded {
+.datacube-card {
   min-width: 0;
   flex: 1;
   margin: 10px;

@@ -1,6 +1,6 @@
 const Logger = rootRequire('/config/logger');
 const serverConfiguration = rootRequire('/config/yargs-wrapper');
-const { startProjectCache } = require('./project-cache-task');
+const { startProjectCache, refreshProjectCache } = require('./project-cache-task');
 const { startBYOD } = require('./byod-task');
 
 const READER_OUTPUT_POLL_INTERVAL = 20 * 60 * 1000; // in milliseconds
@@ -21,6 +21,9 @@ async function runStartup() {
   Logger.info(`\tDELPHI_URL: ${process.env.DELPHI_URL}`);
   Logger.info(`\tDYSE_URL: ${process.env.DYSE_URL}`);
   Logger.info(`\tWM_CURATION_SERVICE_URL: ${process.env.WM_CURATION_SERVICE_URL}`);
+
+  // Force project cache to refresh the first time around
+  await refreshProjectCache();
 
   // Periodic jobs
   startProjectCache(PROJECT_CACHE_UPDATE_INTERVAL);

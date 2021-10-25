@@ -555,6 +555,14 @@ export default defineComponent({
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
     },
+    _getGraphDensity() {
+      if (_.isNil(this.modelComponents)) return 1;
+
+      const numEdges = this.modelComponents.edges.length;
+      const numNodes = this.modelComponents.nodes.length;
+
+      return 2 * numEdges / (numNodes * (numNodes - 1));
+    },
     async fetchSensitivityAnalysisResults() {
       if (
         this.currentEngine !== 'dyse' ||
@@ -596,8 +604,10 @@ export default defineComponent({
           this.enableOverlay(`Will await result for  ${(max - current) * 3} more seconds`);
         }
       };
+
       this.enableOverlay('Running sensitivity analysis');
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50, progressFn);
+      const numPolls = Math.max(10, Math.round(this._getGraphDensity() * 50));
+      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, numPolls, progressFn);
       this.disableOverlay();
 
       if (this.sensitivityDataTimestamp !== now) return;
