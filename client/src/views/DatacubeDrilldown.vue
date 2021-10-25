@@ -222,6 +222,10 @@ export default defineComponent({
     this.hideInsightPanel();
 
     if (this.projectType === ProjectType.Analysis) {
+      // If the analyst navigates directly to this page from another analysis,
+      //  the previous analysis's name will still be loaded. We clear it here
+      //  to prevent the previous name from showing while the getAnalysis
+      //  request is in flight.
       this.setAnalysisName('');
       this.analysis = await getAnalysis(this.analysisId);
       this.setAnalysisName(this.analysis?.title ?? '');
