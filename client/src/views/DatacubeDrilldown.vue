@@ -8,8 +8,7 @@
           :initial-data-config="initialDataConfig"
           :metadata="metadata"
           :initial-view-config="initialViewConfig"
-          :spatial-aggregation-options="aggregationOptionFiltered"
-          :temporal-aggregation-options="aggregationOptionFiltered"
+          :aggregation-options="aggregationOptionFiltered"
           :temporal-resolution-options="temporalResolutionOptionFiltered"
           @update-model-parameter="onModelParamUpdated"
         >

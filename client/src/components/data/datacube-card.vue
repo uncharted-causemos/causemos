@@ -247,13 +247,13 @@
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
               >
                 <dropdown-button
-                  v-if="temporalAggregationOptions.length > 0"
-                  class="dropdown-config tour-temporal-agg-dropdown-config"
-                  :class="{ 'attribute-invalid': selectedTemporalAggregation === '' }"
-                  :inner-button-label="'Temporal Aggregation'"
-                  :items="temporalAggregationOptions"
-                  :selected-item="selectedTemporalAggregation"
-                  @item-selected="setTemporalAggregationSelection"
+                  v-if="aggregationOptions.length > 0"
+                  class="dropdown-config tour-agg-dropdown-config"
+                  :class="{ 'attribute-invalid': selectedTemporalAggregation === '' || selectedSpatialAggregation === '' }"
+                  :inner-button-label="'Aggregated by'"
+                  :items="aggregationOptions"
+                  :selected-item="selectedSpatialAggregation"
+                  @item-selected="setAggregationSelection"
                 />
                 <dropdown-button
                   v-if="temporalResolutionOptions.length > 0"
@@ -263,6 +263,14 @@
                   :items="temporalResolutionOptions"
                   :selected-item="selectedTemporalResolution"
                   @item-selected="setTemporalResolutionSelection"
+                />
+                <map-dropdown
+                  v-if="mapReady && regionalData !== null && outputSpecs.length > 0"
+                  class="dropdown-config"
+                  :selectedBaseLayer="selectedBaseLayer"
+                  :selectedDataLayer="selectedDataLayer"
+                  @set-base-layer="setBaseLayer"
+                  @set-data-layer="setDataLayer"
                 />
               </div>
               <timeseries-chart
@@ -293,28 +301,6 @@
                 }}
                 , or choose 'Split by none'.
               </p>
-              <div
-                v-if="currentTabView === 'data' && mapReady && regionalData !== null && outputSpecs.length > 0"
-              >
-                <div v-if="currentTabView === 'data'" class="dropdown-row">
-                  <dropdown-button
-                    v-if="spatialAggregationOptions.length > 0"
-                    class="dropdown-config tour-spatial-agg-dropdown-config"
-                    :class="{ 'attribute-invalid': selectedSpatialAggregation === '' }"
-                    :inner-button-label="'Spatial Aggregation'"
-                    :items="spatialAggregationOptions"
-                    :selected-item="selectedSpatialAggregation"
-                    @item-selected="setSpatialAggregationSelection"
-                  />
-                  <map-dropdown
-                    class="dropdown-config"
-                    :selectedBaseLayer="selectedBaseLayer"
-                    :selectedDataLayer="selectedDataLayer"
-                    @set-base-layer="setBaseLayer"
-                    @set-data-layer="setDataLayer"
-                  />
-                </div>
-              </div>
               <div class="card-maps-box">
                 <div v-if="outputSpecs.length > 0 && mapLegendData.length === 2" class="card-maps-legend-container">
                   <span v-if="outputSpecs.length > 1" class="top-padding"></span>
@@ -526,11 +512,7 @@ export default defineComponent({
       type: Object as PropType<Model | Indicator | null>,
       default: null
     },
-    spatialAggregationOptions: {
-      type: Array as PropType<AggregationOption[]>,
-      default: []
-    },
-    temporalAggregationOptions: {
+    aggregationOptions: {
       type: Array as PropType<AggregationOption[]>,
       default: []
     },
@@ -655,12 +637,9 @@ export default defineComponent({
       selectedDataLayer.value = val;
     };
 
-    const setSpatialAggregationSelection = (spatialAgg: AggregationOption) => {
-      selectedSpatialAggregation.value = spatialAgg;
-    };
-
-    const setTemporalAggregationSelection = (temporalAgg: AggregationOption) => {
-      selectedTemporalAggregation.value = temporalAgg;
+    const setAggregationSelection = (aggOption: AggregationOption) => {
+      selectedTemporalAggregation.value = aggOption;
+      selectedSpatialAggregation.value = aggOption;
     };
 
     const setTemporalResolutionSelection = (temporalRes: TemporalResolutionOption) => {
@@ -1227,9 +1206,8 @@ export default defineComponent({
       setBaseLayer,
       setDataLayer,
       setRelativeTo,
-      setSpatialAggregationSelection,
       setSelectedTimestamp,
-      setTemporalAggregationSelection,
+      setAggregationSelection,
       setTemporalResolutionSelection,
       showDatasets,
       showGeoSelectionModal,
