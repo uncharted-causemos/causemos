@@ -709,7 +709,12 @@ export default defineComponent({
       }
     });
 
+    // HACK: please delete this
     const clearRouteParam = () => {
+      if (!selectedModelId.value) {
+        return; // yo dawg, I heard you like hacks so I put a hack in your hack
+      }
+
       // fix to avoid double history later
       router.push({
         query: {
