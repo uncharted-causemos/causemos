@@ -1,12 +1,12 @@
 const { set } = rootRequire('/cache/node-lru-cache');
-const { Adapter, RESOURCE } = rootRequire('adapters/es/adapter');
+const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('adapters/es/adapter');
 const projectService = rootRequire('/services/project-service');
 const Logger = rootRequire('/config/logger');
 
 /**
  * Refresh project data and counts
  */
-const refresh = async () => {
+const refreshProjectCache = async () => {
   Logger.info('Caching projects metadata');
   const projects = await projectService.listProjects();
 
@@ -22,20 +22,33 @@ const refresh = async () => {
     return acc;
   }, {});
 
-  projects.map(project => {
+
+  for (let i = 0; i < projects.length; i++) {
+    const project = projects[i];
+    const ontology = await Adapter.get(RESOURCE.ONTOLOGY).find([
+      { field: 'project_id', value: project.id }
+    ], {
+      size: SEARCH_LIMIT
+    });
+
+    const ontologyMap = {};
+    ontology.forEach(o => {
+      ontologyMap[o.label] = o;
+    });
+
     set(project.id, {
       ...project,
+      ontologyMap,
       stat: {
         model_count: projectModelsMap[project.id] || 0,
         data_analysis_count: projectAnalysesMap[project.id] || 0
       }
     });
-  });
+  }
 };
 
 const startProjectCache = (interval) => {
-  refresh();
-  setInterval(refresh, interval);
+  setInterval(refreshProjectCache, interval);
 };
 
-module.exports = { startProjectCache };
+module.exports = { startProjectCache, refreshProjectCache };

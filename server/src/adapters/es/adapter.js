@@ -14,6 +14,7 @@ const RESOURCE = Object.freeze({
   MODEL: 'model',
   ANALYSIS: 'analysis',
   CAG: 'model', // Duplicate for the time being
+  NODE_GROUP: 'node-group',
 
   DOMAIN_PROJECT: 'domain-project',
 
@@ -30,6 +31,7 @@ const RESOURCE = Object.freeze({
   // MAAS data
   DATA_MODEL_RUN: 'data-model-run',
   DATA_DATACUBE: 'data-datacube',
+  GADM_NAME: 'gadm-name',
 
   // Misc
   AUDIT: 'audit',

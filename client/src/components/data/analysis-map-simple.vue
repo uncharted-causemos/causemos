@@ -63,9 +63,8 @@ import {
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
-import {
-  adminLevelToString
-} from '@/utils/map-util-new';
+import { adminLevelToString } from '@/utils/map-util-new';
+import { calculateDiff } from '@/utils/value-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 import { mapActions, mapGetters } from 'vuex';
@@ -112,7 +111,6 @@ const baseLayer = (property, useFeatureState = false, relativeTo) => {
         'fill-color': 'grey',
         'fill-opacity': [
           'case',
-          // ['==', 'NaN', ['to-string', ['get', property]]], 0.0,
           ...caseRelativeToMissing,
           ['boolean', ['feature-state', 'hover'], false], 0.4, // opacity to 0.4 on hover
           0.1 // default
@@ -201,6 +199,10 @@ export default {
       default: null
     },
     isDefaultRun: {
+      type: Boolean,
+      default: false
+    },
+    showPercentChange: {
       type: Boolean,
       default: false
     }
@@ -317,6 +319,9 @@ export default {
     },
     selectedRegionIds() {
       this.debouncedRefresh();
+    },
+    showPercentChange() {
+      this.debouncedRefresh();
     }
   },
   created() {
@@ -412,7 +417,7 @@ export default {
       const { min, max } = this.extent;
       const { scaleFn } = this.colorOption;
       const relativeToProp = this.baselineSpec?.id;
-      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp);
+      this.colorLayer = createHeatmapLayerStyle(this.valueProp, [min, max], { min, max }, this.colorScheme, scaleFn, useFeatureState, relativeToProp, this.showPercentChange);
     },
     setFeatureStates() {
       if (!this.map || !this.adminLevel || this.isGridMap) return;
@@ -578,8 +583,10 @@ export default {
         : chartValueFormatter()(v);
       const rows = [`${format(value)} ${_.isNull(this.unit) ? '' : this.unit}`];
       if (this.baselineSpec) {
-        const diff = prop[this.valueProp] - (prop[this.baselineSpec.id] || prop._baseline);
-        const text = _.isNaN(diff) ? 'Diff: Baseline has no data for this area' : 'Diff: ' + format(diff);
+        const baselineValue = _.isFinite(prop[this.baselineSpec.id]) ? prop[this.baselineSpec.id] : prop._baseline;
+        const diff = calculateDiff(baselineValue, prop[this.valueProp], this.showPercentChange);
+        const diffString = `${Math.sign(diff) === -1 ? '' : '+'}${format(diff)}${this.showPercentChange ? '%' : ' ' + this.unit}`;
+        const text = _.isNaN(diff) ? 'Diff: Baseline has no data or is zero for this area' : 'Diff: ' + diffString;
         rows.push(text);
       }
       if (!this.isGridMap) rows.push('Region: ' + feature.id.replaceAll(REGION_ID_DELIMETER, '/'));

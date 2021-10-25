@@ -1,4 +1,5 @@
 import { DatacubeType } from '@/types/Enums';
+import { DatacubeMaintainer } from './Datacube';
 
 // Project metadata
 export interface Project {
@@ -20,6 +21,8 @@ export interface DomainProject {
   modified_at?: number;
   created_at?: number;
   source: string;
+  website: string;
+  maintainer: DatacubeMaintainer[];
   type: DatacubeType; // e.g., model, indicator
   ready_instances: string[];
   draft_instances: string[];
@@ -50,6 +53,14 @@ export interface DatacubeGeography {
   admin1: string[];
   admin2: string[];
   admin3: string[];
+}
+
+export interface RegionalGADMDetail {
+  country?: string;
+  admin1?: string;
+  admin2?: string;
+  admin3?: string;
+  [key: string]: string;
 }
 
 export interface DatacubePeriod {

@@ -1,19 +1,21 @@
 <template>
-  <div class="autocomplete-container">
+  <div class="autocomplete-container" ref="containerElement">
     <input
+      ref="inputElement"
       v-model="searchTerm"
       type="text"
       class="form-control"
+      :style="inputStyle"
       :placeholder="placeholderMessage"
       @input="onChange"
       @keydown.down="onArrowDown"
       @keydown.up="onArrowUp"
       @keydown.enter="onEnter"
-      @blur="onBlur"
     >
     <div
       v-if="showSuggestions"
-      class="autocomplete-results-container">
+      class="autocomplete-results-container"
+      :style="suggestionsResultStyle">
       <ul
         class="autocomplete-results">
         <li
@@ -23,9 +25,13 @@
           :class="{ 'is-active': (i === selectedIndex || selectedFn(suggestion)) }"
           @click.stop.prevent="setSearchTerm(suggestion)">
           <component
+            v-if="displayType && displayType !== ''"
             :is="displayType"
             :item="suggestion"
           />
+          <div v-else>
+            {{suggestion}}
+          </div>
         </li>
       </ul>
     </div>
@@ -49,8 +55,19 @@ export default defineComponent({
       default: () => ''
     },
     displayType: {
+      type: String
+    },
+    focusInput: {
+      type: Boolean,
+      default: false
+    },
+    styleResults: {
+      type: Boolean,
+      default: false
+    },
+    placeholderColor: {
       type: String,
-      required: true
+      default: 'black'
     },
     searchFn: {
       type: Function,
@@ -62,6 +79,14 @@ export default defineComponent({
     }
   },
   emits: ['item-selected'],
+  computed: {
+    inputStyle(): string {
+      return '--placeholder-color:' + this.placeholderColor;
+    },
+    suggestionsResultStyle(): string {
+      return 'position: ' + (this.styleResults ? 'absolute' : 'relative');
+    }
+  },
   data: () => ({
     searchTerm: '',
     suggestions: [],
@@ -69,11 +94,15 @@ export default defineComponent({
     showSuggestions: false
   }),
   mounted() {
-    document.addEventListener('click', this.handleClickOutside);
     this.onChange();
+    document.addEventListener('click', this.onClickOutside);
+
+    if (this.focusInput) {
+      (this.$refs.inputElement as HTMLInputElement).focus();
+    }
   },
   unmounted() {
-    document.removeEventListener('click', this.handleClickOutside);
+    document.removeEventListener('click', this.onClickOutside);
   },
   methods: {
     onArrowDown() {
@@ -97,20 +126,21 @@ export default defineComponent({
       this.selectedIndex = -1;
       this.$emit('item-selected', suggestion);
       this.showSuggestions = false;
+      this.searchTerm = suggestion;
     },
-    onBlur() {
-      window.setTimeout(() => {
-        this.showSuggestions = false;
-      }, 250);
-    },
-    setSearchTerm(suggestion: string) {
-      this.$emit('item-selected', suggestion);
+    onClickOutside(event: MouseEvent) {
+      const containerElement = (this.$refs.containerElement as HTMLElement);
+      // input just lost focus, but was that because the user clicked on one of the suggestions?
+      if ((event.target instanceof Element) && containerElement.contains(event.target)) {
+        // Click was within this element, so do nothing
+        return;
+      }
       this.showSuggestions = false;
     },
-    handleClickOutside(evt: Event) {
-      if (!this.$el.contains(evt.target)) {
-        this.selectedIndex = -1;
-      }
+    setSearchTerm(suggestion: string) {
+      this.searchTerm = suggestion;
+      this.$emit('item-selected', suggestion);
+      this.showSuggestions = false;
     }
   }
 });
@@ -122,19 +152,22 @@ export default defineComponent({
 $input-element-height: 37px;
 
 .autocomplete-container {
-  margin-bottom: 10px;
   position: relative;
   flex-grow: 1;
-  overflow: hidden;
+  height: auto;
 
   .autocomplete-results-container {
-    flex-grow: 1;
     overflow-y: scroll;
-    max-height: 300px;
+    flex-grow: 1;
+    width: 100%;
+    padding-right: 10px;
+    top: 85%; // Overlap the button slightly
+    max-height: 220px;
+    z-index: 1; // suggestion list on top of the map
   }
   .autocomplete-results {
     padding: 0;
-    z-index: 52;
+    margin-left: 1rem;
     background-color: $background-light-1;
     .is-active {
       background-color: $background-light-3;
@@ -151,5 +184,10 @@ $input-element-height: 37px;
   width: calc(100% - 20px); // 20px = 2*margin
   margin: 10px;
   padding: 0 10px;
+  --placeholder-color: black;
+}
+
+.form-control::placeholder {
+  color: var(--placeholder-color);
 }
 </style>

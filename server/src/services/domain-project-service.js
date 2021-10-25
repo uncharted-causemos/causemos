@@ -8,23 +8,20 @@ const RESOURCE = es.RESOURCE;
 const MAX_NUMBER_PROJECTS = 100;
 
 /**
- * Wrapper to create a new project.
- *
- * @param {string} projectId - project id
- * @param {string} description - insight description
- * @param {string} source - source
+ * Wrapper to create a new domain project.
  */
 const createProject = async (
   name,
   description,
-  source,
+  website,
+  maintainer,
   type,
   // eslint-disable-next-line camelcase
   ready_instances,
   // eslint-disable-next-line camelcase
   draft_instances) => {
   const newId = uuid();
-  Logger.info('Creating project entry: ' + newId);
+  Logger.info('Creating domain project entry: ' + newId);
   const domainProjectConnection = Adapter.get(RESOURCE.DOMAIN_PROJECT);
   const keyFn = (doc) => {
     return doc.id; // prevent duplicate doc based on the id field
@@ -34,7 +31,8 @@ const createProject = async (
     name,
     description,
     modified_at: Date.now(),
-    source,
+    website,
+    maintainer,
     type,
     ready_instances,
     draft_instances
@@ -119,7 +117,8 @@ const updateDomainProjects = async (metadata) => {
     await createProject(
       familyName,
       metadata.description,
-      metadata.maintainer.organization,
+      '', // website
+      [metadata.maintainer],
       metadata.type,
       [], // initial stats need to be set // ready_instances
       [instanceName]); // initial stats need to be set // draft_instances
@@ -165,6 +164,7 @@ const getFilterFields = (filterParams) => {
 
 
 module.exports = {
+  createProject,
   getAllProjects,
   getProject,
   remove,

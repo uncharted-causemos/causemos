@@ -1,8 +1,22 @@
 import _ from 'lodash';
 
 import API from '@/api/api';
-import modelService from '@/services/model-service';
+import projectService from '@/services/project-service';
 import datacubeService from '@/services/new-datacube-service';
+import { RegionalGADMDetail } from '@/types/Common';
+
+/**
+ * Returns a throttled function that can be used to fetch GADM suggestions from ES.
+ * @param field geo level, e.g., country, admin1, admin2, etc.
+ * @param query name of sub-name of the geo region to search for
+ * @returns an array of regional info matching the query
+ */
+export const getGADMSuggestions = (field: string, query: string) => {
+  return _.debounce(async () => {
+    const result = await API.get('gadm-names/suggestions', { params: { field, q: query } });
+    return result.data as Array<RegionalGADMDetail>;
+  }, 300, { trailing: true, leading: true });
+};
 
 /**
  * Returns a throttled function that can be used to fetch concept suggestions from ES.
@@ -16,8 +30,8 @@ const getConceptSuggestionFunction = (projectId: string, ontology: Array<string>
   return _.debounce(async function(hint = '') {
     let result = ontology;
     if (!_.isEmpty(hint)) {
-      const suggestions = await modelService.getConceptSuggestions(projectId, hint, ontology);
-      result = suggestions.map(s => s.concept);
+      const suggestions = await projectService.getConceptSuggestions(projectId, hint);
+      result = suggestions.map((s: any) => s.doc.key);
     }
     if (postProcessFn) {
       return postProcessFn(result, hint);
@@ -41,7 +55,7 @@ const getSuggestionFunction = (projectId: string, field: string, postProcessFn?:
   return _.debounce(async function(hint = '') {
     let result = [];
     if (!_.isEmpty(hint)) {
-      result = await modelService.getSuggestions(projectId, field, hint);
+      result = await projectService.getSuggestions(projectId, field, hint);
     }
     if (postProcessFn) {
       return postProcessFn(result, hint);

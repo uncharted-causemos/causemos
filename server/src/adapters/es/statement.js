@@ -73,6 +73,9 @@ const _keyFn = (doc) => {
 
 class Statement {
   constructor(index) {
+    if (_.isNil(index) || _.isEmpty(index)) {
+      throw new Error('Index is empty or undefined');
+    }
     this.index = index;
     this.client = ES.client;
   }

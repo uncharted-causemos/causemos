@@ -10,7 +10,7 @@ import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
-import { ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
+import { DatacubeGeoAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 
 import { colorFromIndex } from '@/utils/colors-util';
 
@@ -110,9 +110,13 @@ const brushes: Array<BrushType> = [];
 let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
+const isGeoParameter = (type: string) => {
+  return (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type);
+};
+
 const isCategoricalAxis = (name: string) => {
   const dim = dimensions.find(d => d.name === name) as ModelParameter;
-  return dim.type.startsWith('str') || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
+  return dim.type.startsWith('str') || isGeoParameter(dim.type) || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
 };
 
 function getLineWidth(datum: any) {
@@ -138,6 +142,8 @@ function renderParallelCoordinates(
   onLinesSelection: (selectedLines: Array<ScenarioData>) => void,
   // callback function that is called when one or more markers are added in the new-runs mode
   onNewRuns: (generatedLines: Array<ScenarioData>) => void,
+  // callback function to request showing the geo-selection modal
+  onGeoSelection: (d: ModelParameter) => void,
   // request re-render of the whole PC
   rerenderChart: () => void
 ) {
@@ -217,7 +223,7 @@ function renderParallelCoordinates(
   //
   // axis labels
   //
-  renderAxesLabels(svgElement, options, dimensions, rerenderChart);
+  renderAxesLabels(svgElement, options, dimensions, rerenderChart, onGeoSelection);
 
   //
   // hover tooltips
@@ -1325,7 +1331,7 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
   return axes;
 }
 
-function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesOptions, dimensions: Array<DimensionInfo>, rerenderChart: () => void) {
+function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesOptions, dimensions: Array<DimensionInfo>, rerenderChart: () => void, onGeoSelection: (d: ModelParameter) => void) {
   // Add label for each axis name
   const axesLabels = renderedAxes
     .append('text')
@@ -1381,11 +1387,10 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
       text.raise();
     });
 
-  // render additional UI for freeform params
+  // render additional UI for freeform and geo params
   renderedAxes
     .filter(d => (d as ModelParameter).data_type === ModelParameterDataType.Freeform)
-    // add a button to allow adding a new freeform value
-    // visibility should follow options.newRunsMode
+    // add a button to allow adding a new freeform value or a validated geo region
     .each(function() {
       const text = d3.select(this).select('.pc-axis-name-text');
       const textNode = text.node() as SVGGraphicsElement;
@@ -1413,40 +1418,53 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
           const d3Input = d3.select(this);
           const d = d3Input.datum() as ModelParameter;
           event.stopPropagation();
-          const parentElement = this.parentElement.parentElement; // the axis element
-          const inputField = d3.select(parentElement)
-            .append('foreignObject')
-            .attr('class', 'freeform-input')
-            .attr('width', axisRange[1])
-            .attr('height', '24')
-            .attr('x', axisLabelOffsetX + textBBox.width + 10)
-            .attr('y', axisLabelOffsetY - textBBox.height)
-            .append('xhtml:input')
-            .attr('placeholder', 'type new value')
-            .attr('type', 'text')
-            .style('font-size', 'small')
-            .style('border-width', 'thin')
-            .on('keyup', function(keyEvent) {
-              if (keyEvent.keyCode === 13) {
-                // Enter key pressed
-                const inputElement = this as HTMLInputElement;
-                const newInputValue = inputElement.value;
-                const currentChoices = d.choices as Array<string | number>;
-                if (!currentChoices.includes(newInputValue)) {
-                  // note that by adding the value, we have modified the metadata of the datacube
-                  // and that change will be discarded unless a model run is issued with this value
-                  currentChoices.push(newInputValue);
-                  // re-render (and possible add a marker)
-                  rerenderChart();
+
+          // is this a geo-parameter?
+          if (isGeoParameter(d.type)) {
+            //
+            // show a modal to enable searching for (one or more) valid GADM region name(s)
+            //
+            onGeoSelection(d);
+          } else {
+            //
+            // this is a normal freeform param, e.g., search-term, so add an input box for the user to enter a new value
+            //  note how the input-box is added as foreign object since it is added within the SVG element
+            //
+            const parentElement = this.parentElement.parentElement; // the axis element
+            const inputField = d3.select(parentElement)
+              .append('foreignObject')
+              .attr('class', 'freeform-input')
+              .attr('width', axisRange[1])
+              .attr('height', '24')
+              .attr('x', axisLabelOffsetX + textBBox.width + 10)
+              .attr('y', axisLabelOffsetY - textBBox.height)
+              .append('xhtml:input')
+              .attr('placeholder', 'type new value')
+              .attr('type', 'text')
+              .style('font-size', 'small')
+              .style('border-width', 'thin')
+              .on('keyup', function(keyEvent) {
+                if (keyEvent.keyCode === 13) {
+                  // Enter key pressed
+                  const inputElement = this as HTMLInputElement;
+                  const newInputValue = inputElement.value;
+                  const currentChoices = d.choices as Array<string | number>;
+                  if (!currentChoices.includes(newInputValue)) {
+                    // note that by adding the value, we have modified the metadata of the datacube
+                    // and that change will be discarded unless a model run is issued with this value
+                    currentChoices.push(newInputValue);
+                    // re-render (and possible add a marker)
+                    rerenderChart();
+                  }
+                  // clear the input box
+                  deleteFreeformInputs(svgElement);
                 }
-                // clear the input box
-                deleteFreeformInputs(svgElement);
-              }
-            })
-            .on('click', function(event: PointerEvent) {
-              event.stopPropagation();
-            });
-          (inputField.node() as any).focus();
+              })
+              .on('click', function(event: PointerEvent) {
+                event.stopPropagation();
+              });
+            (inputField.node() as any).focus();
+          }
         })
       ;
     });
@@ -1950,6 +1968,10 @@ const createScales = (
     str: stringFunc,
     boolean: numberFunc
   };
+  // add support for rendering geo-parameters
+  Object.values(DatacubeGeoAttributeVariableType).forEach(v => {
+    defaultScales[v] = stringFunc;
+  });
 
   // force some dimensions to be ordinal, if requested
   if (ordinalDimensions && Array.isArray(ordinalDimensions)) {
