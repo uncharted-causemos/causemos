@@ -88,16 +88,16 @@
               type="button"
               class="btn btn-primary btn-call-for-action"
               @click="onCreateCAG"
-              ><i class="fa fa-plus-circle" />
-                Qualitative Model
+              ><i class="fa fa-plus" />
+                Create Qualitative Model
             </button>
             <button
               v-tooltip.top-center="'Create a new Quantitative Analysis'"
               type="button"
               class="btn btn-primary btn-call-for-action"
               @click="onCreateDataAnalysis"
-              ><i class="fa fa-plus-circle" />
-                Quantitative Analysis
+              ><i class="fa fa-plus" />
+                Create Quantitative Analysis
             </button>
           </div>
         </div>
