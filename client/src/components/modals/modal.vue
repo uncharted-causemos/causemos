@@ -2,13 +2,13 @@
   <transition name="modal">
     <div class="modal-mask">
       <div
-        class="modal-wrapper">
+        class="modal-wrapper"
+        @click.stop="close()">
         <div
           class="modal-container"
           @mousedown="hasContext = true"
           @mouseup="hasContext = false"
         >
-
           <div
             class="modal-header"
             :class="{ 'modal-header-green': useGreenHeader }"
