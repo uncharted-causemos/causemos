@@ -25,19 +25,7 @@
             :data="modelRunsSearchData"
             :filters="searchFilters"
             @filters-updated="onModelRunsFiltersUpdated" />
-          <button
-            class="btn btn-default"
-            style="margin: 2px"
-            v-tooltip.top-center="'Save filter query'"
-          >
-            <i class="fa fa-save"></i>
-          </button>
-          <dropdown-button
-            class="dropdown-config"
-            :inner-button-label="'Load Filter:'"
-            :items="[]"
-            @item-selected="console.log('hello')"
-          />
+          <slot name="search-filters-controls" />
         </div>
         <modal-new-scenario-runs
           v-if="isModelMetadata && showNewRunsModal === true"
@@ -532,7 +520,8 @@ export default defineComponent({
   name: 'DatacubeCard',
   emits: [
     'on-map-load',
-    'update-model-parameter'
+    'update-model-parameter',
+    'search-filters-updated'
   ],
   props: {
     isPublishing: {
@@ -566,6 +555,10 @@ export default defineComponent({
     temporalResolutionOptions: {
       type: Array as PropType<AggregationOption[]>,
       default: []
+    },
+    initialSearchFilters: {
+      type: Object as PropType<any | null>,
+      default: null
     }
   },
   components: {
@@ -598,6 +591,7 @@ export default defineComponent({
       initialDataConfig,
       initialViewConfig,
       metadata,
+      initialSearchFilters,
       tabState
     } = toRefs(props);
 
@@ -630,6 +624,7 @@ export default defineComponent({
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
 
     const toggleSearchBar = ref<boolean>(false);
+
     const searchFilters = ref<any>({});
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
@@ -714,6 +709,12 @@ export default defineComponent({
     const onMapLoad = () => {
       emit('on-map-load');
     };
+
+    watchEffect(() => {
+      if (initialSearchFilters.value) {
+        searchFilters.value = initialSearchFilters.value;
+      }
+    });
 
     // apply initial view config for this datacube
     watchEffect(() => {
@@ -834,6 +835,7 @@ export default defineComponent({
         selectedRunIDS.push(...filteredRuns.map(r => r.id));
       }
       searchFilters.value = filters;
+      emit('search-filters-updated', searchFilters.value);
       setSelectedScenarioIds(selectedRunIDS);
     };
 
@@ -1263,7 +1265,6 @@ export default defineComponent({
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
       fetchData,
-      searchFilters,
       getSelectedPreGenOutput,
       gridLayerStats,
       hasDefaultRun,
@@ -1296,6 +1297,7 @@ export default defineComponent({
       requestNewModelRuns,
       runningDefaultRun,
       runParameterValues,
+      searchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
       selectedDataLayer,

@@ -2,6 +2,12 @@
   <div class="comp-analysis-experiment-container">
     <main class="main">
       <analytical-questions-and-insights-panel />
+      <rename-modal
+        v-if="showFilterNameModal"
+        :modal-title="'Search Filter Name'"
+        @confirm="onSaveSearchFilters"
+        @cancel="showFilterNameModal = false"
+      />
       <div class="main insight-capture">
         <datacube-card
           class="datacube-card"
@@ -11,7 +17,9 @@
           :spatial-aggregation-options="aggregationOptionFiltered"
           :temporal-aggregation-options="aggregationOptionFiltered"
           :temporal-resolution-options="temporalResolutionOptionFiltered"
+          :initial-search-filters="initialSearchFilters"
           @update-model-parameter="onModelParamUpdated"
+          @search-filters-updated="onSearchFiltersUpdated"
         >
           <template #datacube-model-header>
             <h5
@@ -43,9 +51,36 @@
               <i class="fa fa-fw fa-compress" />
             </button>
           </template>
+
           <template #datacube-description>
             <datacube-description
               :metadata="metadata"
+            />
+          </template>
+
+          <template #search-filters-controls>
+            <div class="filter-buttons-container">
+              <button
+                class="btn btn-default filter-buttons"
+                v-tooltip.top-center="'Save filter query'"
+                @click="showFilterNameModal = true"
+              >
+                <i class="fa fa-save"></i>
+              </button>
+              <button
+                class="btn btn-default filter-buttons"
+                v-tooltip.top-center="'Removed selected filter query'"
+                @click="removeSelectedSavedFilter"
+              >
+                <i class="fa fa-remove"></i>
+              </button>
+            </div>
+            <dropdown-button
+              style="padding-left: 1rem"
+              :inner-button-label="'Load Filter:'"
+              :items="savedSearchFiltersNames"
+              :selected-item="selectedSearchFilter"
+              @item-selected="applySelectedSearchFilter"
             />
           </template>
         </datacube-card>
@@ -63,9 +98,11 @@ import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
 import DatacubeDescription from '@/components/data/datacube-description.vue';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 import { getAnalysis } from '@/services/analysis-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
+import useToaster from '@/services/composables/useToaster';
 
 import { AnalysisItem } from '@/types/Analysis';
 import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
@@ -75,17 +112,22 @@ import { DataState, ViewState } from '@/types/Insight';
 import { DATASET_NAME, isIndicator, getValidatedOutputs } from '@/utils/datacube-util';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 
 export default defineComponent({
   name: 'DatacubeDrilldown',
   components: {
     DatacubeCard,
     DatacubeDescription,
-    AnalyticalQuestionsAndInsightsPanel
+    DropdownButton,
+    AnalyticalQuestionsAndInsightsPanel,
+    RenameModal
   },
   setup() {
     const route = useRoute();
     const store = useStore();
+    const toast = useToaster();
+
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
@@ -99,6 +141,12 @@ export default defineComponent({
     const dataState = computed(() => store.getters['insightPanel/dataState']);
     const viewState = computed(() => store.getters['insightPanel/viewState']);
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
+
+    const savedSearchFilters = computed(() => analysisItems.value[0].searchFilters);
+    const savedSearchFiltersNames = computed(() => savedSearchFilters.value && savedSearchFilters.value.length > 0 ? savedSearchFilters.value.map((savedFilter: any) => savedFilter.name) : []);
+    const initialSearchFilters = ref({});
+    const showFilterNameModal = ref(false);
+    const selectedSearchFilter = ref('');
 
     const outputs = ref([]) as Ref<DatacubeFeature[]>;
     const currentOutputIndex = computed((): number => metadata.value?.id !== undefined ? datacubeCurrentOutputsMap.value[metadata.value?.id] : 0);
@@ -192,13 +240,51 @@ export default defineComponent({
       }
     };
 
+    const applySelectedSearchFilter = (filterName: string) => {
+      selectedSearchFilter.value = filterName;
+      // FIXME: applying an existing filter does not actually apply nor appear in the lex
+      initialSearchFilters.value = savedSearchFilters.value.find((f: any) => f.name === filterName).query;
+    };
+
+    const onSearchFiltersUpdated = (filters: any) => {
+      // sync our local copy of filters
+      initialSearchFilters.value = filters;
+    };
+
+    const onSaveSearchFilters = (name: string) => {
+      // save the filters within the analysis item
+      const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
+      if (currentAnalysisItem.searchFilters === undefined) {
+        currentAnalysisItem.searchFilters = [] as Array<any>;
+      }
+      currentAnalysisItem.searchFilters.push({
+        name,
+        query: initialSearchFilters.value
+      });
+      store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+      toast('Search filter saved successfully', 'success', false);
+      showFilterNameModal.value = false;
+    };
+
+    const removeSelectedSavedFilter = () => {
+      const updatedAnalysisItems = _.cloneDeep(analysisItems.value);
+      const currentAnalysisItem: AnalysisItem = updatedAnalysisItems.find((item: AnalysisItem) => item.id === datacubeId);
+      currentAnalysisItem.searchFilters = currentAnalysisItem.searchFilters.filter(f => f.name !== selectedSearchFilter.value);
+      store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
+      toast('Selected saved filter removed successfully', 'success', false);
+      selectedSearchFilter.value = '';
+    };
+
     return {
       aggregationOptionFiltered,
       analysisId,
+      applySelectedSearchFilter,
       currentOutputIndex,
       hideInsightPanel,
       initialDataConfig,
       initialViewConfig,
+      initialSearchFilters,
       isIndicator,
       mainModelOutput,
       metadata,
@@ -206,9 +292,16 @@ export default defineComponent({
       onOutputSelectionChange,
       outputs,
       projectType,
+      removeSelectedSavedFilter,
+      savedSearchFilters,
+      savedSearchFiltersNames,
       selectedModelId,
+      selectedSearchFilter,
+      showFilterNameModal,
       temporalResolutionOptionFiltered,
-      onModelParamUpdated
+      onModelParamUpdated,
+      onSaveSearchFilters,
+      onSearchFiltersUpdated
     };
   },
   data: () => ({
@@ -274,6 +367,19 @@ export default defineComponent({
 .search-button {
   align-self: center;
   margin: 10px 0;
+}
+
+.filter-buttons-container {
+  padding-left: 1rem;
+  display: flex;
+  flex-direction: column;
+  margin-top: -4px;
+}
+
+.filter-buttons {
+  margin-top: 1px;
+  margin-bottom: 1px;
+  padding: 2px;
 }
 
 .comp-analysis-experiment-header {
