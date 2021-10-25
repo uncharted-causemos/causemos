@@ -102,17 +102,20 @@
           </div>
         </div>
         <div class="analysis-list">
-          <div
-            v-for="analysis in filteredAnalyses"
-            :key="analysis.id">
-            <analysis-overview-card
-              :analysis="analysis"
-              @open="onOpen(analysis)"
-              @delete="onDelete(analysis)"
-              @rename="onRename(analysis)"
-              @duplicate="onDuplicate(analysis)"
-            />
-          </div>
+          <!-- the z-index of each card is lower than the previous card, so
+          earlier cards display over later ones and each card's dropdown
+          doesn't get clipped -->
+          <analysis-overview-card
+            v-for="(analysis, index) in filteredAnalyses"
+            :key="analysis.id"
+            class="analysis-overview-card"
+            :style="{'z-index': filteredAnalyses.length - index}"
+            :analysis="analysis"
+            @open="onOpen(analysis)"
+            @delete="onDelete(analysis)"
+            @rename="onRename(analysis)"
+            @duplicate="onDuplicate(analysis)"
+          />
         </div>
       </div>
     </main>
@@ -604,9 +607,14 @@ main {
 
 .analysis-list {
   margin-top: 10px;
+  padding-bottom: 20px;
   flex: 1;
   min-height: 0;
   overflow-y: auto;
+}
+
+.analysis-overview-card:not(:first-child) {
+  margin-top: 5px;
 }
 
 .contributor {
