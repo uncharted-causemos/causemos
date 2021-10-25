@@ -27,6 +27,7 @@ export interface OutputSpec {
   spatialAggregation: string;
   timestamp: number;
   preGeneratedOutput?: PreGeneratedModelRunData[];
+  isDefaultRun: boolean;
 }
 export type RegionalAggregation = {
   [key in AdminLevel]?: { id: string; value: number }[];
