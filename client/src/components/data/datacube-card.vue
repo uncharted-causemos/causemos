@@ -321,7 +321,7 @@
                     </span>
                     <data-analysis-map
                       class="card-map"
-                      :style="{ borderColor: colorFromIndex(indx), borderWidth: spec.isDefaultRun ? 4 : 2 }"
+                      :style="{ borderColor: colorFromIndex(indx), borderWidth: spec.isDefaultRun ? '4px' : '2px' }"
                       :output-source-specs="outputSpecs"
                       :output-selection=spec.id
                       :relative-to="relativeTo"
