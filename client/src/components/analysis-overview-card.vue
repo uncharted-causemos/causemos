@@ -28,7 +28,7 @@
           <div class="dropdown-option" @click="duplicateAnalysis">
             <i class="fa fa-fw fa-copy" /> Duplicate
           </div>
-          <div class="dropdown-option" @click="showWarningModal">
+          <div class="dropdown-option destructive" @click="showWarningModal">
             <i class="fa fa-fw fa-trash" /> Delete
           </div>
         </template>
@@ -172,6 +172,10 @@ h4 {
 .instance-header {
   @include header-secondary;
   color: #222;
+}
+
+.destructive {
+  color: $negative;
 }
 
 </style>
