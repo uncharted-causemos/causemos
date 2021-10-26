@@ -413,7 +413,7 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, PropType, ref, Ref, toRefs, watchEffect } from 'vue';
+import { computed, defineComponent, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
 
@@ -583,6 +583,8 @@ export default defineComponent({
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelRunsFetchedAt = ref(0);
 
+    const runFromInsight = ref<boolean>(false); // do we have a run from loaded insight?
+
     // we are receiving metadata from above (i.e. consumers) and we should not be setting a new model-id here at this level
     const selectedModelId = computed(() => metadata.value?.id ?? null);
 
@@ -612,7 +614,9 @@ export default defineComponent({
       }
     });
     const hasDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && run.status === ModelRunStatus.Ready));
-    const canClickDataTab = computed(() => !isPublishing.value || hasDefaultRun.value || (metadata.value && isIndicator(metadata.value)));
+    const canClickDataTab = computed(() => {
+      return runFromInsight.value || !isPublishing.value || hasDefaultRun.value || (metadata.value && isIndicator(metadata.value));
+    });
     const {
       dimensions,
       ordinalDimensionNames,
@@ -731,19 +735,23 @@ export default defineComponent({
       }
     };
 
-    watchEffect(() => {
-      if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
-        if (initialDataConfig.value.selectedScenarioIds !== undefined) {
-          setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
-        }
-        if (initialDataConfig.value.selectedRegionIds !== undefined) {
-          initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
-        }
-        if (initialDataConfig.value.selectedQualifierValues !== undefined) {
-          initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+    watch(
+      [initialDataConfig],
+      () => {
+        if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
+          if (initialDataConfig.value.selectedScenarioIds !== undefined) {
+            runFromInsight.value = true;
+            setSelectedScenarioIds(_.clone(initialDataConfig.value.selectedScenarioIds));
+          }
+          if (initialDataConfig.value.selectedRegionIds !== undefined) {
+            initialSelectedRegionIds.value = _.clone(initialDataConfig.value.selectedRegionIds);
+          }
+          if (initialDataConfig.value.selectedQualifierValues !== undefined) {
+            initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
+          }
         }
       }
-    });
+    );
 
     const toaster = useToaster();
     const clickData = (tab: string) => {

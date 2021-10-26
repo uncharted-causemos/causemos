@@ -1894,7 +1894,7 @@ const createScales = (
 
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dim?.choices_labels ?? dim?.choices ?? [];
+      dataExtent = dim?.choices ?? dim?.choices ?? [];
     }
 
     const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs
