@@ -842,7 +842,13 @@ const parseOntology = async (url) => {
   const response = await requestAsPromise(options);
   const ontology = yaml.safeLoad(response);
   const metadata = {};
-  conceptUtil.extractOntologyMetadata(metadata, ontology.node, '');
+  if (_.isArray(ontology)) {
+    for (let i = 0; i < ontology.length; i++) {
+      conceptUtil.extractOntologyMetadata(metadata, ontology[i].node, '');
+    }
+  } else {
+    conceptUtil.extractOntologyMetadata(metadata, ontology.node, '');
+  }
   return metadata;
 };
 
