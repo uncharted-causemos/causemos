@@ -31,6 +31,7 @@
 import _ from 'lodash';
 import moment from 'moment';
 import * as d3 from 'd3';
+import { mapActions } from 'vuex';
 import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
@@ -48,8 +49,10 @@ import ModalCustomConcept from '@/components/modals/modal-custom-concept.vue';
 import GraphSearch from '@/components/widgets/graph-search.vue';
 
 import projectService from '@/services/project-service';
+import modelService from '@/services/model-service';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
+const targetNodeSelector = 'rect';
 
 const tweenEdgeAndNodes = false; // Flag to turn on/off path animation
 
@@ -886,6 +889,9 @@ export default {
     this.mouseTrap.reset();
   },
   methods: {
+    ...mapActions({
+      setUpdateToken: 'app/setUpdateToken'
+    }),
     saveCustomConcept(value) {
       this.$emit('suggestion-selected', {
         concept: value.theme,
@@ -913,8 +919,131 @@ export default {
         d3.select('.node input[type=text]').node().focus();
       }
 
-      this.renderer.enableDrag(true);
+      this.renderer.enableDrag(true, this.dragMoveCallback, this.dragEndCallback);
       this.$emit('refresh', null);
+    },
+    overlap(node1, node2, threshold) {
+      const rec1 = node1.getBoundingClientRect();
+      const rec2 = node2.getBoundingClientRect();
+
+      const xover = Math.max(0,
+        Math.min(rec1.left + rec1.width, rec2.left + rec2.width) - Math.max(rec1.left, rec2.left));
+
+      const yover = Math.max(0,
+        Math.min(rec1.top + rec1.height, rec2.top + rec2.height) - Math.max(rec1.top, rec2.top));
+
+      const aover = xover * yover;
+      const a1 = rec1.width * rec1.height;
+      const a2 = rec2.width * rec2.height;
+      const hasOverlap = ((aover / a1) >= threshold || (aover / a2) > threshold);
+      return hasOverlap;
+    },
+    dragMoveCallback(node, graph) {
+      const nodeUI = node.select('.node-ui');
+      const rect = nodeUI.select(targetNodeSelector);
+      const nodeUIRect = rect.node();
+      rect.style('fill', '#eee');
+
+      const others = graph.chart.selectAll('.node-ui').filter(d => {
+        return !d.nodes || d.nodes.length === 0;
+      }).filter(d => d.id !== nodeUI.datum().id);
+
+      const checkOverlap = this.overlap;
+      others.each(function() {
+        const otherNodeUI = d3.select(this);
+        const otherRect = otherNodeUI.select(targetNodeSelector);
+        const otherNodeUIRect = otherRect.node();
+        if (checkOverlap(otherNodeUIRect, nodeUIRect, 0.5)) {
+          otherRect
+            .transition()
+            .duration(150)
+            .style('fill', '#8f8')
+            .attr('height', d => d.height + 30);
+        } else {
+          otherRect
+            .style('fill', '#fff')
+            .attr('height', d => d.height);
+        }
+        rect.style('fill', '#fff');
+      });
+    },
+    dragEndCallback(node, graph) {
+      const nodeUI = node.select('.node-ui');
+      const rect = nodeUI.select(targetNodeSelector);
+      const nodeUIRect = rect.node();
+
+      const others = graph.chart.selectAll('.node-ui').filter(d => {
+        return !d.nodes || d.nodes.length === 0;
+      }).filter(d => d.id !== nodeUI.datum().id);
+
+      const checkOverlap = this.overlap;
+      const data = this.data;
+      const updateToken = this.setUpdateToken;
+
+      // check for overlaps, if they exist, merge the overlaping nodes.
+      others.each(async function() {
+        const otherNodeUI = d3.select(this);
+        const otherRect = otherNodeUI.select(targetNodeSelector);
+        const otherNodeUIRect = otherRect.node();
+        if (checkOverlap(otherNodeUIRect, nodeUIRect, 0.5)) {
+          // 1. collect all of the relevant data for the following steps
+          const mergeData = node.data()[0].data;
+          const targetData = otherNodeUI.data()[0].data;
+          const modelId = mergeData.model_id;
+
+          const updatedComponents = [...mergeData.components, ...targetData.components];
+          const mergeNodeEdges = data.edges.filter(e => e.target === mergeData.concept || e.source === mergeData.concept);
+          const removedEdges = mergeNodeEdges
+            .map(e => {
+              return { id: e.id };
+            });
+
+          const updatedEdges = mergeNodeEdges
+            .filter(e => e.target !== targetData.concept && e.source !== targetData.concept)
+            .map(e => {
+              const updatedEdge = {};
+              updatedEdge.id = '';
+              updatedEdge.user_polarity = null;
+              updatedEdge.reference_ids = e.reference_ids;
+              if (e.target === mergeData.concept) {
+                updatedEdge.target = targetData.concept;
+                updatedEdge.source = e.source;
+              } else if (e.source === mergeData.concept) {
+                updatedEdge.target = e.target;
+                updatedEdge.source = targetData.concept;
+              }
+              return updatedEdge;
+            }).filter(updatedEdge => {
+              const isDuplicateEdge = data.edges.reduce((isDupe, edge) => {
+                return (
+                  updatedEdge.source === edge.source &&
+                  updatedEdge.target === edge.target
+                ) || isDupe;
+              }, false);
+              return !isDuplicateEdge;
+            });
+
+
+
+          const removedNode = { id: mergeData.id };
+          const updatedNode = { ...data.nodes.filter(e => e.concept === targetData.concept)[0] };
+          updatedNode.components = updatedComponents;
+
+          // 2. remove the node to be merged and it's dependent edges
+          const removeResult = await modelService.removeComponents(modelId, [removedNode], removedEdges);
+          updateToken(removeResult.updateToken);
+
+          // 3. update the target node with new components and edges
+          const nodeUpdateResult = await modelService.addComponents(modelId, [updatedNode], [], 'manual');
+          updateToken(nodeUpdateResult.updateToken);
+          const edgeUpdateResult = await modelService.addComponents(modelId, [], updatedEdges, 'manual');
+          updateToken(edgeUpdateResult.updateToken);
+        }
+        otherRect
+          .style('fill', '#fff')
+          .attr('height', d => d.height);
+      });
+      rect.style('fill', '#fff');
     },
     highlight() {
       // Check if the subgraph was added less than 1 min ago
