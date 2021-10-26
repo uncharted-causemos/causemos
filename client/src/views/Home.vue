@@ -35,30 +35,12 @@
             placeholder="Search projects..."
             class="form-control"
           >
-          <div class="sorting">
-            <div>
-              <button
-                type="button"
-                class="btn btn-default"
-                @click="toggleSortingDropdown"
-              ><span class="lbl">Sort by</span> - {{ selectedSortingOption }}
-                <i class="fa fa-caret-down" />
-              </button>
-            </div>
-            <div v-if="showSortingDropdown">
-              <dropdown-control class="dropdown">
-                <template #content>
-                  <div
-                    v-for="option in sortingOptions"
-                    :key="option"
-                    class="dropdown-option"
-                    @click="sort(option)">
-                    {{ option }}
-                  </div>
-                </template>
-              </dropdown-control>
-            </div>
-          </div>
+          <dropdown-button
+            :inner-button-label="'Sort by'"
+            :items="sortingOptions"
+            :selected-item="selectedSortingOption"
+            @item-selected="sort"
+          />
         </div>
         <div class="projects-list">
           <div class="projects-list-header">
@@ -105,30 +87,12 @@
             placeholder="Search projects..."
             class="form-control"
           >
-          <div class="sorting">
-            <div>
-              <button
-                type="button"
-                class="btn btn-default"
-                @click="toggleSortingDropdownDomainDatacubes"
-              ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDomainDatacube }}
-                <i class="fa fa-caret-down" />
-              </button>
-            </div>
-            <div v-if="showSortingDropdownDomainDatacubes">
-              <dropdown-control class="dropdown">
-                <template #content>
-                  <div
-                    v-for="option in sortingOptionsDomainDatacubes"
-                    :key="option"
-                    class="dropdown-option"
-                    @click="sortDomainDatacubes(option)">
-                    {{ option }}
-                  </div>
-                </template>
-              </dropdown-control>
-            </div>
-          </div>
+          <dropdown-button
+            :inner-button-label="'Sort by'"
+            :items="sortingOptions"
+            :selected-item="selectedSortingOptionDomainDatacube"
+            @item-selected="sortDomainDatacubes"
+          />
         </div>
         <div class="projects-list">
           <div class="projects-list-header">
@@ -179,32 +143,30 @@ import { mapActions } from 'vuex';
 import projectService from '@/services/project-service';
 import ProjectCard from '@/components/project-card.vue';
 import DomainDatacubeProjectCard from '@/components/domain-datacube-project-card.vue';
-import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { Project, DomainProject, KnowledgeBase } from '@/types/Common';
 import domainProjectService from '@/services/domain-project-service';
 import { DatacubeType } from '@/types/Enums';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 export default defineComponent({
   name: 'Home',
   components: {
     ProjectCard,
     DomainDatacubeProjectCard,
-    DropdownControl,
-    MessageDisplay
+    MessageDisplay,
+    DropdownButton
   },
   data: () => ({
     search: '',
     projectsList: [] as Project[],
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Earliest'],
+    sortingOptions: ['Most recent', 'Oldest'],
     selectedSortingOption: 'Most recent',
     newKnowledgeBase: false,
-    //
     searchDomainDatacubes: '',
     projectsListDomainDatacubes: [] as DomainProject[],
     showSortingDropdownDomainDatacubes: false,
-    sortingOptionsDomainDatacubes: ['Most recent', 'Earliest'],
     selectedSortingOptionDomainDatacube: 'Most recent',
     addDomainModels: true,
     addDomainIndicators: false
@@ -341,10 +303,10 @@ export default defineComponent({
       this.selectedSortingOptionDomainDatacube = option;
       this.showSortingDropdownDomainDatacubes = false;
       switch (option) {
-        case this.sortingOptionsDomainDatacubes[0]:
+        case this.sortingOptions[0]:
           this.sortDomainDatacubesByMostRecentDate();
           break;
-        case this.sortingOptionsDomainDatacubes[1]:
+        case this.sortingOptions[1]:
           this.sortDomainDatacubesByEarliestDate();
           break;
         default:
