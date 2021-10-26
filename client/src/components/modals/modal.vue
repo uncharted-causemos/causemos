@@ -8,6 +8,7 @@
           class="modal-container"
           @mousedown="hasContext = true"
           @mouseup="hasContext = false"
+          @click.stop=""
         >
           <div
             class="modal-header"
