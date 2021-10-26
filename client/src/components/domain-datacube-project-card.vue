@@ -25,9 +25,6 @@
       <div class="table-column">
         <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
       </div>
-      <div class="table-column">
-        {{ project.type }}
-      </div>
       <div class="table-column extra-wide overflow-ellipsis">
         {{ projectSource }}
       </div>

@@ -105,13 +105,6 @@
             <div class="table-column">
               Registered Instances
             </div>
-            <div class="table-column">
-              <span>Type
-              (<span class="datacube-link" @click="addDomainModels=!addDomainModels">M</span>
-                  &nbsp;|&nbsp;
-                <span class="datacube-link" @click="addDomainIndicators=!addDomainIndicators">I</span>)
-              </span>
-            </div>
             <div class="table-column extra-wide">
               Source
             </div>
@@ -146,7 +139,6 @@ import DomainDatacubeProjectCard from '@/components/domain-datacube-project-card
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { Project, DomainProject, KnowledgeBase } from '@/types/Common';
 import domainProjectService from '@/services/domain-project-service';
-import { DatacubeType } from '@/types/Enums';
 import DropdownButton from '@/components/dropdown-button.vue';
 
 export default defineComponent({
@@ -167,9 +159,7 @@ export default defineComponent({
     searchDomainDatacubes: '',
     projectsListDomainDatacubes: [] as DomainProject[],
     showSortingDropdownDomainDatacubes: false,
-    selectedSortingOptionDomainDatacube: 'Most recent',
-    addDomainModels: true,
-    addDomainIndicators: false
+    selectedSortingOptionDomainDatacube: 'Most recent'
   }),
   computed: {
     filteredProjects(): Project[] {
@@ -179,15 +169,10 @@ export default defineComponent({
     },
     filteredDomainProjects(): DomainProject[] {
       return this.projectsListDomainDatacubes.filter(project => {
-        const filteredProject = _.get(project, 'name', '').toLowerCase().includes(this.searchDomainDatacubes.toLowerCase());
-
-        if (project.type === DatacubeType.Indicator) {
-          return filteredProject && this.addDomainIndicators;
-        } else if (project.type === DatacubeType.Model) {
-          return filteredProject && this.addDomainModels;
-        } else {
-          return filteredProject;
-        }
+        const matchesSearchQuery = _.get(project, 'name', '')
+          .toLowerCase()
+          .includes(this.searchDomainDatacubes.toLowerCase());
+        return matchesSearchQuery;
       });
     }
   },
@@ -352,16 +337,6 @@ $padding-size: 12.5vh;
     font-size: x-large;
     text-align: center;
     margin-bottom: calc(#{$padding-size / 2} - 10px);
-  }
-}
-
-.datacube-link {
-  color: blue;
-
-  &:hover {
-    border-bottom-width: 1px;
-    border-bottom-style: solid;
-    cursor: pointer;
   }
 }
 
