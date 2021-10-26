@@ -197,7 +197,6 @@ export default {
         field: 'docId',
         term: this.documentId
       });
-      console.log(this);
       this.close();
     },
     close() {
