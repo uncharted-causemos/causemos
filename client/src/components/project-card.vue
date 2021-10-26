@@ -116,6 +116,7 @@ export default defineComponent({
   padding: 10px;
   display: flex;
   cursor: pointer;
+  border-bottom: 1px solid $separator;
 }
 
 .project-card-header:hover .project-name {
