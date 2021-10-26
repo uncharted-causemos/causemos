@@ -48,16 +48,17 @@ export default {
     // Generates lex pills from select datacube columns
     const keys = Object.keys(this.data);
     const basicPills = keys.map(k => {
+      const keyData = this.data[k];
       const dcField = {
         field: k,
-        searchDisplay: this.data[k].display_name
+        searchDisplay: keyData.display_name
       };
-      if (this.data[k].values && this.data[k].values.length > 0) {
+      if (keyData.values && keyData.values.length > 0) {
         // suggestions are provided for this field
-        const dcOptions = this.data[k].values;
+        const dcOptions = keyData.values;
         return new ValuePill(dcField, dcOptions);
       } else {
-        return (this.data[k].type === DatacubeGenericAttributeVariableType.Int || this.data[k].type === DatacubeGenericAttributeVariableType.Float)
+        return (keyData.type === DatacubeGenericAttributeVariableType.Int || keyData.type === DatacubeGenericAttributeVariableType.Float)
           ? new RangePill(dcField) : new TextPill(dcField);
       }
     });
