@@ -20,9 +20,9 @@
       </template>
     </modal-confirmation>
     <div class="project-card-header" @click="open(project.id)">
-      <h3 class="overflow-ellipsis project-name table-column extra-wide">
+      <span class="overflow-ellipsis project-name table-column extra-wide">
         {{ project.name }}
-      </h3>
+      </span>
       <div class="table-column">
         {{ dataAnalysisCount + modelCount }}
       </div>
@@ -109,19 +109,13 @@ export default defineComponent({
 @import '~styles/variables';
 
 .project-card-container {
-  padding: 10px;
   background: white;
 }
 
 .project-card-header {
+  padding: 10px;
   display: flex;
   cursor: pointer;
-}
-
-.project-name {
-  margin: 0;
-  font-size: $font-size-medium;
-  font-weight: normal;
 }
 
 .project-card-header:hover .project-name {
@@ -141,7 +135,9 @@ export default defineComponent({
   }
 
   &.extra-small {
-    flex: 0.5;
+    width: 20px;
+    flex: 0;
+    min-width: auto;
   }
 }
 </style>

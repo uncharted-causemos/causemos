@@ -135,24 +135,27 @@
             <div class="table-column extra-wide">
               Family name
             </div>
-            <div class="table-column number-col">
+            <div class="table-column">
               Published Instances
             </div>
-            <div class="table-column number-col">
+            <div class="table-column">
               Registered Instances
             </div>
-            <div class="table-column number-col">
+            <div class="table-column">
               <span>Type
               (<span class="datacube-link" @click="addDomainModels=!addDomainModels">M</span>
                   &nbsp;|&nbsp;
                 <span class="datacube-link" @click="addDomainIndicators=!addDomainIndicators">I</span>)
               </span>
             </div>
-            <div class="table-column extra-wide number-col">
+            <div class="table-column extra-wide">
               Source
             </div>
-            <div class="table-column number-col">
+            <div class="table-column">
               Updated
+            </div>
+            <div class="table-column extra-small">
+              <!-- no title necessary for delete button column -->
             </div>
           </div>
           <div class="projects-list-elements">
@@ -417,11 +420,12 @@ $padding-size: 12.5vh;
   flex-direction: column;
 
   .projects-list-header {
-    @include header-secondary;
-    font-weight: bold;
     display: flex;
     margin-top: 10px;
     margin-bottom: 5px;
+    align-items: flex-end;
+    line-height: 20px;
+    min-height: 2 * 20px;
     padding-left: 10px;
     // Add 15px right padding to accommodate for scrollbar
     padding-right: 25px;
@@ -450,7 +454,9 @@ $padding-size: 12.5vh;
   }
 
   &.extra-small {
-    flex: .5;
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 20px;
   }
 }
 .controls {
