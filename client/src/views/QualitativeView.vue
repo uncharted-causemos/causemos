@@ -489,6 +489,15 @@ export default defineComponent({
           // this.showPathSuggestions = true;
           // this.pathSuggestionSource = formattedEdge.source;
           // this.pathSuggestionTarget = formattedEdge.target;
+          const newEdge = {
+            id: '',
+            user_polarity: null,
+            source: source.concept,
+            target: target.concept,
+            reference_ids: []
+          };
+          const data = await this.addCAGComponents([], [newEdge], 'manual');
+          this.setUpdateToken(data.updateToken);
         } else {
           const newEdge = {
             id: '',
@@ -500,6 +509,10 @@ export default defineComponent({
           const data = await this.addCAGComponents([], [newEdge], 'manual');
           this.setUpdateToken(data.updateToken);
         }
+        this.edgeToSelectOnNextRefresh = {
+          source: edge.source,
+          target: edge.target
+        };
       } else {
         // FIXME: We should allow partial cases
         this.toaster(

@@ -16,10 +16,11 @@
     <slot />
     <div class="pane-summary">Evidence ({{ numberFormatter(evidenceCount) }})</div>
     <collapsible-list-header
+      v-if="summaryData.children.length"
       @expand-all="expandAll={value: true}"
       @collapse-all="expandAll={value: false}"
     >
-      <template v-if="showCurationActions">
+      <template v-if="showCurationActions && summaryData.children.length">
         <i
           class="fa fa-lg fa-fw"
           :class="{
@@ -133,6 +134,36 @@
     </div>
     <div v-else>
       <message-display :message="messageNoData" />
+      <br/>
+      <div class="pane-summary">
+        Recommendations
+        <button class="btn btn-sm">Add</button>
+      </div>
+      <collapsible-item
+        v-for="(recommendation, statIdx) in recommendations"
+        :override="{value: false}"
+        :key="statIdx"
+        class="statements-container">
+        <template #title>
+          <div class="curration-recommendation-item-title" style="padding-top: 20px">
+            <i class="fa fa-lg fa-fw"
+               :class="{
+                'fa-check-square-o': recommendations[statIdx].isSelected,
+                'fa-square-o': !recommendations[statIdx].isSelected,
+              }"
+               @click="toggle(statIdx)"
+            />{{ recommendation.statement.subj.factor }} <i class="fa fa-long-arrow-right fa-lg" :class="(recommendation.statement.wm.statement_polarity === 1 ? 'blue' : 'red')" /> {{ recommendation.statement.obj.factor }}
+          </div>
+        </template>
+
+        <template #content>
+          <div v-for="(evidence, idx) in recommendation.statement.evidence"
+               :key="idx"
+            class="evidence">
+            {{ evidence.evidence_context.text }}
+          </div>
+        </template>
+      </collapsible-item>
     </div>
     <div
       v-if="isFetchingStatements"
@@ -156,7 +187,18 @@
 
 <script>
 import _ from 'lodash';
-import { CORRECTION_TYPES, getStatementConceptSuggestions, groupByPolarityAllFactors, discardStatements, vetStatements, reverseStatementsRelation, updateStatementsFactorGrounding, updateStatementsPolarity } from '@/services/curation-service';
+import {
+  CORRECTION_TYPES,
+  getStatementConceptSuggestions,
+  groupByPolarityAllFactors,
+  discardStatements,
+  vetStatements,
+  reverseStatementsRelation,
+  updateStatementsFactorGrounding,
+  updateStatementsPolarity,
+  getEvidenceRecommendations
+} from '@/services/curation-service';
+
 import OntologyEditor from '@/components/editors/ontology-editor';
 import PolarityEditor from '@/components/editors/polarity-editor';
 import UnknownPolarityEditor from '@/components/editors/unknown-polarity-editor';
@@ -225,6 +267,10 @@ export default {
     activeItem: null,
     documentModalData: null,
     textFragment: null,
+
+
+    // Evidence recommendations
+    recommendations: null,
 
     // States
     expandAll: null,
@@ -301,6 +347,14 @@ export default {
         children: groupByPolarityAllFactors(this.statements),
         meta: { checked: false, isSomeChildChecked: false }
       };
+
+      if (_.isEmpty(this.statements)) {
+        console.log('getting recommendations');
+        this.getRecommendations().then(r => {
+          console.log('!!', r);
+          this.recommendations = r.recommendations;
+        });
+      }
     },
     shouldShowStatementGroup(polarity) {
       // this.selectedRelationship.polarity === undefined in knowledge space
@@ -535,6 +589,12 @@ export default {
     closeConfirmCurationModal() {
       this.curationConfirmedCallback = () => null;
       this.showConfirmCurationModal = false;
+    },
+    async getRecommendations() {
+      const source = this.selectedRelationship.source;
+      const target = this.selectedRelationship.target;
+      const statements = await getEvidenceRecommendations(this.project, source, target);
+      return statements;
     }
   }
 };
@@ -569,4 +629,12 @@ export default {
     }
   }
 }
+.blue {
+  color: rgb(0, 114, 178);
+}
+
+.red {
+  color: rgb(213, 94, 0);
+}
+
 </style>
