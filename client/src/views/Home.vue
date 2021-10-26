@@ -421,8 +421,7 @@ $padding-size: 12.5vh;
 
   .projects-list-header {
     display: flex;
-    margin-top: 10px;
-    margin-bottom: 5px;
+    margin: 5px 0;
     align-items: flex-end;
     line-height: 20px;
     min-height: 2 * 20px;
@@ -461,8 +460,6 @@ $padding-size: 12.5vh;
 }
 .controls {
   display: flex;
-  padding-bottom: 5px;
-  margin-top: 5px;
   justify-content: space-between;
   input[type=text] {
     padding: 8px;
