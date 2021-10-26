@@ -38,12 +38,26 @@
         </table>
       </div>
     </template>
+    <template #footer>
+      <div>
+        <button
+          class="btn btn-md btn-primary"
+          @click="close()"
+        >Close</button>
+        <button
+          v-if="$route.name === 'kbExplorer'"
+          class="btn btn-md btn-primary"
+          @click="addToSearch()"
+        >Add to search</button>
+      </div>
+    </template>
   </modal>
 </template>
 
 <script>
 import API from '@/api/api';
 import Modal from '@/components/modals/modal';
+import { mapActions } from 'vuex';
 import { createPDFViewer } from '@/utils/pdf/viewer';
 import { removeChildren } from '@/utils/dom-util';
 import dateFormatter from '@/formatters/date-formatter';
@@ -132,6 +146,9 @@ export default {
     this.refresh();
   },
   methods: {
+    ...mapActions({
+      addSearchTerm: 'query/addSearchTerm'
+    }),
     dateFormatter,
     refresh() {
       this.fetchReaderContent();
@@ -175,6 +192,13 @@ export default {
         this.$refs.content.appendChild(this.pdfViewer.element);
       }
     },
+    addToSearch() {
+      this.addSearchTerm({
+        field: 'docId',
+        term: this.documentId
+      });
+      this.close();
+    },
     close() {
       this.$emit('close', null);
     }
@@ -203,8 +227,13 @@ export default {
     padding: 0;
     width: 800px;
 
-    .modal-header, .modal-footer {
+    .modal-header{
       display: none;
+    }
+
+    .modal-footer {
+      display: flex;
+      justify-content: center;
     }
     .modal-body {
       padding: 0;
