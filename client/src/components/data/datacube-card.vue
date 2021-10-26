@@ -1274,11 +1274,15 @@ export default defineComponent({
           eventData.selectedRegions.forEach((sr: string) => {
             if (!updatedChoices.includes(sr)) {
               updatedChoices.push(sr);
-              updatedChoicesLabels.push(sr);
+              if (updatedChoicesLabels) {
+                updatedChoicesLabels.push(sr);
+              }
             }
           });
           updatedModelParam.choices = updatedChoices;
-          updatedModelParam.choices_labels = updatedChoicesLabels;
+          if (updatedChoicesLabels) {
+            updatedModelParam.choices_labels = updatedChoicesLabels;
+          }
           this.$emit('update-model-parameter', updatedModelParam);
         }
       }
