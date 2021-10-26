@@ -1338,7 +1338,12 @@ export default defineComponent({
           await API.post('maas/model-runs', {
             model_id: metadata.data_id,
             model_name: metadata?.name,
-            parameters: metadata.parameters,
+            parameters: metadata.parameters.map(param => {
+              return {
+                name: param.name,
+                value: param.default
+              };
+            }),
             is_default_run: true
           });
         }
