@@ -847,6 +847,7 @@ const parseOntology = async (url) => {
       conceptUtil.extractOntologyMetadata(metadata, ontology[i].node, '');
     }
   } else {
+    // FIXME: Deprecated with https://github.com/WorldModelers/Ontologies/pull/154
     conceptUtil.extractOntologyMetadata(metadata, ontology.node, '');
   }
   return metadata;
