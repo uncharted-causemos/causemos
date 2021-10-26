@@ -42,6 +42,8 @@ const margin = { top: 40, right: 30, bottom: 35, left: 35 };
 // line styling in normal mode
 const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
+const lineStrokeWidthDefault = 8;
+const lineStrokeWidthSelectedDefault = 10;
 const lineStrokeWidthHover = 2.5;
 const lineOpacityVisible = 1;
 const lineOpacityHidden = 0.25;
@@ -117,6 +119,13 @@ const isCategoricalAxis = (name: string) => {
   return dim.type.startsWith('str') || isGeoParameter(dim.type) || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
 };
 
+function getLineWidth(datum: any) {
+  return datum.is_default_run === 0 ? lineStrokeWidthNormal : lineStrokeWidthDefault;
+}
+
+function getLineSelectedWidth(datum: any) {
+  return datum.is_default_run === 0 ? lineStrokeWidthSelected : lineStrokeWidthSelectedDefault;
+}
 
 function renderParallelCoordinates(
   // root svg selection element
@@ -243,7 +252,7 @@ function renderParallelCoordinates(
         const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
         selectedLine.attr('selection-index', selectionIndex++);
 
-        selectLine(selectedLine, undefined /* event */, d, lineStrokeWidthSelected);
+        selectLine(selectedLine, undefined /* event */, d, getLineSelectedWidth(d));
       });
   }
 
@@ -313,10 +322,12 @@ function renderParallelCoordinates(
       .attr('class', function () { return 'line'; }) // @REVIEW: this could be used to style lines externally
       .attr('d', pathDefinitionFunc)
       .style('fill', 'none')
-      .attr('stroke-width', lineStrokeWidthNormal)
+      .attr('stroke-width', (d) => getLineWidth(d))
       .style('stroke', colorFunc)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
-      .style('stroke-dasharray', function(d) { return d.status === ModelRunStatus.Ready ? 0 : ('3, 3'); })
+      .style('stroke-dasharray', function(d) {
+        return d.status === ModelRunStatus.Ready ? 0 : ('3, 3');
+      })
     ;
 
     // scenario lines are only interactive in the normal mode
@@ -569,7 +580,7 @@ function renderParallelCoordinates(
             // set an incremental index for this line as part of the selected line collection
             selectedLine.attr('selection-index', selectionIndex++);
 
-            selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthNormal);
+            selectLine(selectedLine, undefined /* event */, lineData, getLineWidth(lineData));
             // save selected line
             selectedLines.push(lineData);
           }
@@ -636,7 +647,7 @@ function renderParallelCoordinates(
       if (selectedLineData) {
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
           currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
-          deselectLine(selectedLine, event, lineStrokeWidthNormal);
+          deselectLine(selectedLine, event, getLineWidth(selectedLineData));
           const lineDict = currentLineSelection.reduce((acc: Map<string|number, number>, sl, i) => {
             acc.set(sl.run_id, i);
             return acc;
@@ -649,14 +660,14 @@ function renderParallelCoordinates(
               if (lineData.status === ModelRunStatus.Ready) {
                 // set an incremental index for this line as part of the selected line collection
                 selectedLine.attr('selection-index', index);
-                selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthSelected);
+                selectLine(selectedLine, undefined /* event */, lineData, getLineSelectedWidth(lineData));
               }
             }
           });
         } else {
           currentLineSelection.push(selectedLineData);
           updateSelectionTooltips(svgElement, selectedLine);
-          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
+          selectLine(selectedLine, event, d, getLineSelectedWidth(selectedLineData));
         }
       } else {
         currentLineSelection.length = 0;
@@ -679,12 +690,18 @@ function renderParallelCoordinates(
       .transition().duration(highlightDuration)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
 
+    if (selectedLineData.is_default_run === 0) {
+      // stroke-width will overwrite for non default runs
+      selectedLine
+        .filter(function () { return d3.select(this).classed('selected') === false; })
+        .attr('stroke-width', lineStrokeWidthHover);
+    }
+
     // Use D3 to highlight the line; change its opacity
     selectedLine
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
       .style('stroke', colorFunc)
-      .attr('stroke-width', lineStrokeWidthHover)
       .style('opacity', lineOpacityVisible);
 
     // show tooltips
@@ -1730,7 +1747,7 @@ const cancelPrevLineSelection = (svgElement: D3Selection) => {
     .classed('selected', false)
     .transition().duration(highlightDuration)
     .style('opacity', lineOpacityHidden)
-    .attr('stroke-width', lineStrokeWidthNormal)
+    .attr('stroke-width', (d) => getLineWidth(d))
     .attr('selection-index', 0);
 
   // hide tooltips
@@ -1877,7 +1894,7 @@ const createScales = (
 
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dim?.choices_labels ?? dim?.choices ?? [];
+      dataExtent = dim?.choices ?? dim?.choices ?? [];
     }
 
     const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs

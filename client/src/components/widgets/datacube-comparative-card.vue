@@ -45,8 +45,7 @@
       </div>
     </main>
     <div>
-      <div class="col-md-9">Temporal Aggregation: {{ selectedTemporalAggregation }} </div>
-      <div class="col-md-3">Spatial Aggregation: {{ selectedSpatialAggregation }} </div>
+      <div class="col-md-9">Aggregated by: {{ selectedSpatialAggregation }} </div>
     </div>
   </div>
 </template>
