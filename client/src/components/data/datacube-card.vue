@@ -45,9 +45,44 @@
           v-if="showGeoSelectionModal === true"
           :model-param="modelParam"
           @close="onGeoSelectionModalClose" />
+        <rename-modal
+          v-if="showTagNameModal"
+          :modal-title="'Tag Name'"
+          @confirm="addNewTag"
+          @cancel="showTagNameModal = false"
+        />
+        <modal-datacube-scenario-tags
+          v-if="showScenarioTagsModal === true"
+          :all-model-run-data="allModelRunData"
+          @close="showScenarioTagsModal=false" />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
+            <div class="tags-area-container">
+              <div class="tag-labels-container">
+                <div v-for="tag in topRunTags" :key="tag.label"
+                  class="tag-label"
+                  :style="{ backgroundColor: tag.selected ? 'lightblue' : 'lightgray' }"
+                  @click="onRunTagSelection(tag)">
+                  {{tag.label}}
+                  <span class="tags-label-runs-count">{{tag.count}}</span>
+                </div>
+              </div>
+              <div style="font-size: small; display: flex; align-items: center">
+                <a
+                  class="see-all-tags"
+                  @click="showScenarioTagsModal=true">
+                  see all tags
+                </a>
+                <i
+                  class="fa fa-plus-circle"
+                  :class="{
+                    'add-new-tag-disabled': selectedScenarioIds.length === 0,
+                    'add-new-tag': selectedScenarioIds.length > 0
+                  }"
+                  @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
+              </div>
+            </div>
             <parallel-coordinates-chart
               class="pc-chart"
               :dimensions-data="runParameterValues"
@@ -460,13 +495,14 @@ import Modal from '@/components/modals/modal.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalGeoSelection from '@/components/modals/modal-geo-selection.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
+import ModalDatacubeScenarioTags from '@/components/modals/modal-datacube-scenario-tags.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import ModelRunsSearchBar from '@/components/data/model-runs-search-bar.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-
 
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
@@ -492,7 +528,7 @@ import {
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
-import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
+import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
@@ -575,10 +611,12 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus,
     ModalConfirmation,
     ModalGeoSelection,
+    ModalDatacubeScenarioTags,
     ModalNewScenarioRuns,
     ModelRunsSearchBar,
     ParallelCoordinatesChart,
     RadioButtonGroup,
+    RenameModal,
     SmallTextButton,
     timeseriesChart
   },
@@ -624,6 +662,8 @@ export default defineComponent({
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
 
     const toggleSearchBar = ref<boolean>(false);
+    const showTagNameModal = ref<boolean>(false);
+    const showScenarioTagsModal = ref<boolean>(false);
 
     const searchFilters = ref<any>({});
 
@@ -672,6 +712,67 @@ export default defineComponent({
     const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
+
+    const addNewTag = (tagName: string) => {
+      selectedScenarios.value.forEach(s => s.tags.push(tagName));
+      showTagNameModal.value = false;
+      // TODO: update the backend for persistence
+    };
+
+    const runTags = ref<RunsTag[]>([]);
+
+    watchEffect(() => {
+      if (allModelRunData.value && allModelRunData.value.length > 0) {
+        const tags: RunsTag[] = [];
+        allModelRunData.value.forEach(run => {
+          run.tags.forEach(tag => {
+            const existingTagIndx = tags.findIndex(t => t.label === tag);
+            if (existingTagIndx >= 0) {
+              tags[existingTagIndx].count++;
+            } else {
+              tags.push({
+                label: tag,
+                count: 1,
+                selected: false
+              });
+            }
+          });
+        });
+        runTags.value = tags;
+      }
+    });
+
+    const topRunTags = computed(() => {
+      const sortedRunTags = _.cloneDeep(runTags.value).sort((a, b) => b.count - a.count);
+      return sortedRunTags.filter((item, indx) => indx < 3);
+    });
+
+    const onRunTagSelection = (tag: RunsTag) => {
+      // unselect all other tags (except this one being toggled) in case of a previous selection
+      const updatedRunTags = _.cloneDeep(runTags.value);
+      updatedRunTags.forEach(t => {
+        if (t.label !== tag.label) {
+          t.selected = false;
+        } else {
+          // toggle selection of the run tag
+          t.selected = !t.selected;
+          tag = t; // must overwrite the local param since it points to the old data
+        }
+      });
+      // update the ref so that DOM will pickup and rerender
+      runTags.value = updatedRunTags;
+
+      if (tag.selected) {
+        // select all runs that match this tag
+        const runsWithMatchingTag = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.tags.includes(tag.label));
+        if (runsWithMatchingTag.length > 0) {
+          setSelectedScenarioIds(runsWithMatchingTag.map(r => r.id));
+        }
+      } else {
+        // cancel run selection
+        setSelectedScenarioIds([]);
+      }
+    };
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
@@ -1252,6 +1353,7 @@ export default defineComponent({
     });
 
     return {
+      addNewTag,
       allModelRunData,
       activeDrilldownTab,
       adminLayerStats,
@@ -1282,6 +1384,7 @@ export default defineComponent({
       onMapLoad,
       onModelRunsFiltersUpdated,
       onNewScenarioRunsModalClose,
+      onRunTagSelection,
       onSyncMapBounds,
       onTabClick,
       ordinalDimensionNames,
@@ -1297,6 +1400,7 @@ export default defineComponent({
       requestNewModelRuns,
       runningDefaultRun,
       runParameterValues,
+      topRunTags,
       searchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
@@ -1324,7 +1428,9 @@ export default defineComponent({
       showGeoSelectionModal,
       showModelExecutionStatus,
       showModelRunsExecutionStatus,
+      showScenarioTagsModal,
       showNewRunsModal,
+      showTagNameModal,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
       temporalBreakdownData,
@@ -1695,4 +1801,65 @@ $marginSize: 5px;
     }
   }
 }
+
+.tags-area-container {
+  display: flex;
+  align-items: center;
+  font-size: smaller;
+  text-align: center;
+  justify-content: space-between;
+
+  .tag-labels-container {
+    display: flex;
+    align-items: center;
+
+    .tag-label {
+      background-color:lightgray;
+      margin-left: 2px;
+      padding: 4px;
+      border-style: solid;
+      border-radius: 4px;
+      border-width: 1px;
+      border-color: rgb(180, 180, 180);
+      cursor: pointer;
+
+      &:hover {
+        background-color: darkgray !important;
+      }
+
+      .tags-label-runs-count {
+        padding-left: 6px;
+        padding-right: 6px;
+        background-color: white;
+        border-style: solid;
+        border-radius: 50%;
+        border-width: 1px;
+        border-color: lightgray;
+      }
+    }
+  }
+
+  .see-all-tags {
+    color: blue;
+    cursor: pointer;
+    margin-left: 2px;
+    margin-right: 2px;
+  }
+
+  .add-new-tag {
+    cursor: pointer;
+    font-size: medium;
+    &:hover {
+      color: blue;
+    }
+  }
+  .add-new-tag-disabled {
+    color: lightgray;
+    font-size: medium;
+    &:hover {
+      cursor: not-allowed;
+    }
+  }
+}
+
 </style>
