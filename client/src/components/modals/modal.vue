@@ -4,6 +4,11 @@
       <div
         class="modal-wrapper"
         @click.stop="close()">
+
+        <!--
+          click.stop is needed in modal-container so the event doesn't
+          bubble up which triggers the close mechanism
+        -->
         <div
           class="modal-container"
           @mousedown="hasContext = true"
