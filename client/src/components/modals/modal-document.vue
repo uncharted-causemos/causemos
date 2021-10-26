@@ -39,12 +39,13 @@
       </div>
     </template>
     <template #footer>
-      <div v-if="$route.name === 'kbExplorer'">
+      <div>
         <button
           class="btn btn-md btn-primary"
           @click="close()"
         >Close</button>
         <button
+          v-if="$route.name === 'kbExplorer'"
           class="btn btn-md btn-primary"
           @click="addToSearch()"
         >Add to search</button>
@@ -232,7 +233,8 @@ export default {
     }
 
     .modal-footer {
-      // display: none;
+      display: flex;
+      justify-content: center;
     }
     .modal-body {
       padding: 0;
