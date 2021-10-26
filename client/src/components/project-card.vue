@@ -30,7 +30,7 @@
         {{ project.corpus_id }}
       </div>
       <div class="table-column">
-        {{ dateFormatter(project.modified_at, 'YYYY-MM-DD') }}
+        {{ dateFormatter(project.modified_at, 'MMM DD, YYYY') }}
       </div>
       <div class="table-column extra-small">
         <small-icon-button :use-white-bg="true" @click.stop="showWarningModal">
