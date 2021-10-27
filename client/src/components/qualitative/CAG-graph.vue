@@ -52,6 +52,7 @@ import projectService from '@/services/project-service';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
 const targetNodeSelector = 'rect';
+const mergeNodeColor = 'rgb(136, 255, 136)';
 
 const tweenEdgeAndNodes = false; // Flag to turn on/off path animation
 
@@ -945,12 +946,14 @@ export default {
           otherRect
             .transition()
             .duration(150)
-            .style('fill', '#8f8')
+            .style('fill', mergeNodeColor)
             .attr('height', d => d.height + 30);
         } else {
-          otherRect
-            .style('fill', '#fff')
-            .attr('height', d => d.height);
+          if (otherRect.style('fill') === mergeNodeColor) {
+            otherRect
+              .style('fill', '#fff')
+              .attr('height', d => d.height);
+          }
         }
         rect.style('fill', '#fff');
       });
