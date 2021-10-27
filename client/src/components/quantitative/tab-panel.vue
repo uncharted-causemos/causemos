@@ -20,7 +20,11 @@
         </div>
       </div>
       <div class="tab-content insight-capture">
-        <qualitative-side-panel class="side-panel">
+        <qualitative-side-panel
+          class="side-panel"
+          :is-experiment-download-visible="true"
+          @download-experiment="downloadExperiment"
+        >
           <template #below-tabs>
             <qualitative-comments-button :model-summary="modelSummary" />
           </template>

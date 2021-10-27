@@ -13,7 +13,10 @@
 
     <list-context-insight-pane v-if="currentTab === 'Context Insights'" />
 
-    <div v-if="currentTab === 'Details'">
+    <div
+      v-if="currentTab === 'Details'"
+      class="details-pane"
+    >
       <!-- TODO: put node/edge count here, remove it from CAG-graph -->
       <!-- <p>
           This CAG contains <strong>{{ nodeCount }}</strong> node{{ nodeCount !== 1 ? 's' : '' }}
@@ -21,6 +24,13 @@
         </p> -->
       <button class="btn btn-default" @click="onDownload">
         Download CAG as JSON
+      </button>
+      <button
+        v-if="isExperimentDownloadVisible"
+        class="btn btn-default"
+        @click="onDownloadExperiment"
+      >
+        Download experiment as JSON
       </button>
     </div>
 
@@ -44,6 +54,12 @@ export default defineComponent({
     ListContextInsightPane,
     ListAnalyticalQuestionsPane
   },
+  props: {
+    isExperimentDownloadVisible: {
+      type: Boolean,
+      default: false
+    }
+  },
   data: () => ({
     tabs: [
       { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
@@ -66,9 +82,22 @@ export default defineComponent({
     },
     onDownload() {
       window.location.href = this.downloadURL;
+    },
+    onDownloadExperiment() {
+      this.$emit('download-experiment');
     }
   }
 });
 </script>
 
-<style lang="scss" scoped></style>
+<style lang="scss" scoped>
+
+.details-pane button {
+  width: 100%;
+
+  &:not(:first-child) {
+    margin-top: 10px;
+  }
+}
+
+</style>
