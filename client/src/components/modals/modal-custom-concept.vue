@@ -12,24 +12,28 @@
         <label class="col-md-3 col-form-label">Theme</label>
         <div class="col-md-7">
           <input class="form-control" v-model="theme" type="text" placeholder="Type a theme"/>
+          <div class="input-error-message" v-if="error_messages.theme">{{error_messages.theme}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Theme property</label>
         <div class="col-md-7">
           <input class="form-control" v-model="theme_property" type="text" placeholder="Type the theme property (optional)"/>
+          <div class="input-error-message" v-if="error_messages.theme_property">{{error_messages.theme_property}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Process</label>
         <div class="col-md-7">
           <input class="form-control" v-model="process" type="text" placeholder="Type a process (optional)"/>
+          <div class="input-error-message" v-if="error_messages.process">{{error_messages.process}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Process property</label>
         <div class="col-md-7">
           <input class="form-control" v-model="process_property" type="text" placeholder="Type the process property (optional)"/>
+          <div class="input-error-message" v-if="error_messages.process_property">{{error_messages.process_property}}</div>
         </div>
       </div>
     </template>
@@ -43,7 +47,7 @@
         <button
           type="button"
           class="btn btn-primary btn-call-for-action"
-          :disabled="!haveData"
+          :disabled="!isValid"
           @click.stop="saveCustomConcept">Save Concept
         </button>
       </ul>
@@ -60,6 +64,40 @@ export default {
   name: 'modal-custom-concept',
   components: {
     Modal
+  },
+  watch: {
+    theme(value) {
+      if (value.length > 0) {
+        if (this.isAlphaNumeric(value)) {
+          this.error_messages.theme = '';
+        } else { // this error message can probably be worded better
+          this.error_messages.theme = 'This field can only contain alphanumeric characters and _';
+        }
+      } else {
+        this.error_messages.theme = 'This field is required';
+      }
+    },
+    theme_property(value) {
+      if (value === '' || this.isAlphaNumeric(value)) {
+        this.error_messages.theme_property = '';
+      } else {
+        this.error_messages.theme_property = 'This field can only contain alphanumeric characters and _';
+      }
+    },
+    process(value) {
+      if (value === '' || this.isAlphaNumeric(value)) {
+        this.error_messages.process = '';
+      } else {
+        this.error_messages.process = 'This field can only contain alphanumeric characters and _';
+      }
+    },
+    process_property(value) {
+      if (value === '' || this.isAlphaNumeric(value)) {
+        this.error_messages.process_property = '';
+      } else {
+        this.error_messages.process_property = 'This field can only contain alphanumeric characters and _';
+      }
+    }
   },
   methods: {
     ...mapActions({
@@ -81,6 +119,14 @@ export default {
     clearData() {
       this.newTheme = this.newThemeProperty = this.newProcess = this.newProcessProperty = '';
     },
+    isAlphaNumeric(str) {
+      try {
+        return str.match('^[A-Za-z0-9]+$');
+      } catch (e) {
+        console.error(e);
+        return null;
+      }
+    },
     close() {
       this.clearData();
       if (this.hasContext === true) {
@@ -94,7 +140,8 @@ export default {
     theme: '',
     theme_property: '',
     process: '',
-    process_property: ''
+    process_property: '',
+    error_messages: { theme: '', theme_property: '', process: '', process_property: '' }
   }),
 
   computed: {
@@ -102,11 +149,11 @@ export default {
       project: 'app/project',
       ontologySet: 'app/ontologySet'
     }),
-    haveData() {
-      if (this.theme.length > 0) {
-        return true;
+    isValid() {
+      if (this.error_messages.theme || this.error_messages.theme_property || this.error_messages.process || this.error_messages.process_property) {
+        return false;
       }
-      return false;
+      return true;
     },
     customGrounding() {
       return {
@@ -125,4 +172,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.input-error-message {
+  text-align: center;
+  color: red;
+}
 </style>
