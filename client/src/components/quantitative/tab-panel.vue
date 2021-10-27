@@ -1,6 +1,5 @@
 <template>
-  <div
-    class="tab-panel-container">
+  <div class="tab-panel-container">
     <div class="main-content h-100 flex flex-col">
       <div class="tab-nav-bar">
         <quantitative-model-options @download-experiment="downloadExperiment" />
@@ -21,6 +20,11 @@
         </div>
       </div>
       <div class="tab-content insight-capture">
+        <qualitative-side-panel class="side-panel">
+          <template #below-tabs>
+            <qualitative-comments-button :model-summary="modelSummary" />
+          </template>
+        </qualitative-side-panel>
         <main>
           <div
             v-if="activeTab === 'flow' && scenarioData && graphData"
@@ -98,6 +102,8 @@ import EvidencePane from '@/components/drilldown-panel/evidence-pane';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
+import QualitativeSidePanel from '../qualitative/qualitative-side-panel.vue';
+import QualitativeCommentsButton from '../qualitative/qualitative-comments-button.vue';
 
 const PANE_ID = {
   INDICATOR: 'indicator',
@@ -142,7 +148,9 @@ export default {
     EdgePolaritySwitcher,
     EdgeWeightSlider,
     EvidencePane,
-    ArrowButton
+    ArrowButton,
+    QualitativeSidePanel,
+    QualitativeCommentsButton
   },
   props: {
     currentEngine: {

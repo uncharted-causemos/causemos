@@ -1,10 +1,11 @@
 <template>
   <div class="quantitative-view-container">
-    <qualitative-side-panel class="side-panel">
-      <template #below-tabs>
-        <qualitative-comments-button :model-summary="modelSummary" />
-      </template>
-    </qualitative-side-panel>
+    <teleport to="#navbar-trailing-teleport-destination">
+      <qualitative-analysis-options-button
+        :model-summary="modelSummary"
+        :view-after-deletion="'overview'"
+      />
+    </teleport>
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -56,8 +57,7 @@ import useToaster from '@/services/composables/useToaster';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, NodeParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import QualitativeSidePanel from '@/components/qualitative/qualitative-side-panel.vue';
-import QualitativeCommentsButton from '@/components/qualitative/qualitative-comments-button.vue';
+import QualitativeAnalysisOptionsButton from '@/components/qualitative/qualitative-analysis-options-button.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -68,8 +68,7 @@ export default defineComponent({
     TabPanel,
     ActionBar,
     ModalEditParameters,
-    QualitativeSidePanel,
-    QualitativeCommentsButton
+    QualitativeAnalysisOptionsButton
   },
   setup() {
     return {
@@ -661,9 +660,5 @@ export default defineComponent({
 
 .quantitative-drilldown {
   z-index: 1;
-}
-
-.side-panel {
-  z-index: 2;
 }
 </style>
