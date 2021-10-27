@@ -121,7 +121,7 @@ export default {
     },
     isAlphaNumeric(str) {
       try {
-        return str.match('^[A-Za-z0-9]+$');
+        return str.match('^[A-Za-z0-9_]+$');
       } catch (e) {
         console.error(e);
         return null;
