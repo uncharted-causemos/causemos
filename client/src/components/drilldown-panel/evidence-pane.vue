@@ -134,6 +134,8 @@
     </div>
     <div v-else>
       <message-display :message="messageNoData" />
+    </div>
+    <div v-if="showEdgeRecommendations">
       <br/>
       <div class="pane-summary">
         Recommendations
@@ -157,7 +159,9 @@
         </template>
         <template #title>
           <div class="curration-recommendation-item-title">
-            {{ recommendation.statement.subj.factor }} <i class="fa fa-long-arrow-right fa-lg" :class="(recommendation.statement.wm.statement_polarity === 1 ? 'blue' : 'red')" /> {{ recommendation.statement.obj.factor }}
+            {{ recommendation.statement.subj.factor }}
+            <i class="fa fa-long-arrow-right fa-lg" :class="(recommendation.statement.wm.statement_polarity === 1 ? 'blue' : 'red')" />
+            {{ recommendation.statement.obj.factor }}
           </div>
         </template>
 
@@ -264,6 +268,10 @@ export default {
     shouldConfirmCurations: {
       type: Boolean,
       default: false
+    },
+    showEdgeRecommendations: {
+      type: Boolean,
+      default: false
     }
   },
   data: () => ({
@@ -353,7 +361,7 @@ export default {
         meta: { checked: false, isSomeChildChecked: false }
       };
 
-      if (_.isEmpty(this.statements)) {
+      if (_.isEmpty(this.statements) && this.showEdgeRecommendations === true) {
         this.getRecommendations().then(r => {
           r.recommendations.forEach(s => {
             s.isSelected = false;

@@ -42,14 +42,13 @@
       >
         <template #content>
           <evidence-pane
-            v-if="
-              activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null
-            "
+            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
             :selected-relationship="selectedEdge"
             :statements="selectedStatements"
             :project="project"
             :is-fetching-statements="isFetchingStatements"
             :should-confirm-curations="true"
+            :show-edge-recommendations="true"
             @updated-relations="resolveUpdatedRelations"
             @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
