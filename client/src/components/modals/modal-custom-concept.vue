@@ -121,7 +121,7 @@ export default {
     },
     isAlphaNumeric(str) {
       try {
-        return str.match('^[A-Za-z0-9_]+$');
+        return str.match('^[A-Za-z0-9 ]+$');
       } catch (e) {
         console.error(e);
         return null;
@@ -141,7 +141,7 @@ export default {
     theme_property: '',
     process: '',
     process_property: '',
-    error_messages: { theme: '', theme_property: '', process: '', process_property: '' }
+    error_messages: { theme: 'This field is required', theme_property: '', process: '', process_property: '' }
   }),
 
   computed: {
