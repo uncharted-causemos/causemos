@@ -1,6 +1,10 @@
 <template>
   <div class="quantitative-view-container">
-    <analytical-questions-and-insights-panel />
+    <qualitative-side-panel class="side-panel">
+      <template #below-tabs>
+        <qualitative-comments-button :model-summary="modelSummary" />
+      </template>
+    </qualitative-side-panel>
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -46,13 +50,14 @@ import modelService from '@/services/model-service';
 import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar.vue';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters.vue';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { getInsightById } from '@/services/insight-service';
 import { defineComponent } from '@vue/runtime-core';
 import useToaster from '@/services/composables/useToaster';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, NodeParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import QualitativeSidePanel from '@/components/qualitative/qualitative-side-panel.vue';
+import QualitativeCommentsButton from '@/components/qualitative/qualitative-comments-button.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -63,7 +68,8 @@ export default defineComponent({
     TabPanel,
     ActionBar,
     ModalEditParameters,
-    AnalyticalQuestionsAndInsightsPanel
+    QualitativeSidePanel,
+    QualitativeCommentsButton
   },
   setup() {
     return {
@@ -644,6 +650,7 @@ export default defineComponent({
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
+  isolation: isolate;
 
   .graph-container {
     width: 100%;
@@ -654,5 +661,9 @@ export default defineComponent({
 
 .quantitative-drilldown {
   z-index: 1;
+}
+
+.side-panel {
+  z-index: 2;
 }
 </style>

@@ -9,8 +9,8 @@
       <i
         class="fa fa-fw"
         :class="{
-          'fa-commenting': description !== '',
-          'fa-commenting-o': description === ''
+          'fa-commenting': comments !== '',
+          'fa-commenting-o': comments === ''
         }"
       />
     </button>
@@ -18,7 +18,7 @@
       v-if="isOpen"
       class="comment-box"
       :title="'Comments'"
-      :initial-text="description"
+      :initial-text="comments"
       @close="isOpen = false"
       @saveText="updateComments"
     />
@@ -26,43 +26,29 @@
 </template>
 
 <script lang="ts">
-import { getAnalysis, updateAnalysis } from '@/services/analysis-service';
-import useToaster from '@/services/composables/useToaster';
-import { EXPORT_MESSAGES } from '@/utils/messages-util';
-import { computed, defineComponent, onMounted, ref } from 'vue';
-import { useStore } from 'vuex';
+import { defineComponent, PropType, ref } from 'vue';
 import textAreaCard from '@/components/cards/text-area-card.vue';
+
 export default defineComponent({
   components: { textAreaCard },
   name: 'CommentsButton',
-  setup() {
-    const store = useStore();
-    const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
+  props: {
+    comments: {
+      type: String as PropType<null | string>,
+      default: null
+    }
+  },
+  emits: ['update-comments'],
+  setup(props, { emit }) {
     const isOpen = ref(false);
-    const description = ref('');
-    const toast = useToaster();
-
-    onMounted(async () => {
-      const result = await getAnalysis(analysisId.value);
-      description.value = result.description;
-    });
-
-    const updateComments = async (commentsText: string) => {
-      description.value = commentsText;
-      try {
-        await updateAnalysis(analysisId.value, { description: commentsText });
-      } catch (e) {
-        toast(EXPORT_MESSAGES.COMMENT_NOT_SAVED, 'error', true);
-      }
-    };
-
     return {
       isOpen,
       toggleIsOpen: () => {
         isOpen.value = !isOpen.value;
       },
-      updateComments,
-      description
+      updateComments: (newComments: string) => {
+        emit('update-comments', newComments);
+      }
     };
   }
 });

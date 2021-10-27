@@ -1,5 +1,8 @@
 <template>
   <div class="qualitative-view-container">
+    <teleport to="#navbar-trailing-teleport-destination">
+      <button class="btn btn-default" value="'fraf'"/>
+    </teleport>
     <action-bar
       :model-summary="modelSummary"
       :model-components="modelComponents"
@@ -8,7 +11,11 @@
       @reset-cag="resetCAGLayout()"
     />
     <main>
-      <analytical-questions-and-insights-panel />
+      <qualitative-side-panel class="side-panel">
+        <template #below-tabs>
+          <qualitative-comments-button :model-summary="modelSummary" />
+        </template>
+      </qualitative-side-panel>
       <div class="graph-container" @dblclick="onBackgroundDblClick">
         <empty-state-instructions v-if="showEmptyStateInstructions" />
         <CAG-graph
@@ -188,7 +195,6 @@ import ModalImportConflict from '@/components/qualitative/modal-import-conflict.
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { defineComponent, ref } from '@vue/runtime-core';
 import {
   CAGGraph as CAGGraphInterface,
@@ -200,6 +206,8 @@ import {
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
 import { DataState } from '@/types/Insight';
+import QualitativeCommentsButton from '@/components/qualitative/qualitative-comments-button.vue';
+import QualitativeSidePanel from '@/components/qualitative/qualitative-side-panel.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -253,7 +261,8 @@ export default defineComponent({
     ModalImportCag,
     ModalImportConflict,
     ModalPathFind,
-    AnalyticalQuestionsAndInsightsPanel
+    QualitativeCommentsButton,
+    QualitativeSidePanel
   },
   setup() {
     return {
@@ -1038,6 +1047,11 @@ export default defineComponent({
       margin-right: 5px;
     }
   }
+}
+
+.side-panel {
+  isolation: isolate;
+  z-index: 1;
 }
 
 .qualitative-drilldown {

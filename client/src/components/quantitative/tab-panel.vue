@@ -19,28 +19,6 @@
             @click="onAugmentCAG"
           />
         </div>
-
-        <div class="comment-btn">
-          <button
-            v-tooltip.top-center="'Comments'"
-            type="button"
-            class="btn btn-primary"
-            @click="toggleComments"
-          >
-            <i
-              class="fa fa-fw"
-              :class="{'fa-commenting': savedComment !== '', 'fa-commenting-o': savedComment === ''}"
-            />
-          </button>
-          <text-area-card
-            v-if="isCommentOpen"
-            class="comment-box"
-            :title="'Comments'"
-            :initial-text="savedComment"
-            @close="isCommentOpen = false"
-            @saveText="updateComments"
-          />
-        </div>
       </div>
       <div class="tab-content insight-capture">
         <main>
@@ -113,12 +91,10 @@ import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis'
 import ModelGraph from '@/components/quantitative/model-graph';
 import modelService from '@/services/model-service';
 import ColorLegend from '@/components/graph/color-legend';
-import TextAreaCard from '@/components/cards/text-area-card';
 import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
-import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
@@ -161,7 +137,6 @@ export default {
     ModelGraph,
     SensitivityAnalysis,
     ColorLegend,
-    TextAreaCard,
     TabBar,
     DrilldownPanel,
     EdgePolaritySwitcher,
@@ -221,10 +196,7 @@ export default {
     activeDrilldownTab: PANE_ID.INDICATOR,
     isDrilldownOpen: false,
     isFetchingStatements: false,
-    selectedEdge: null,
-
-    savedComment: '',
-    isCommentOpen: false
+    selectedEdge: null
   }),
   computed: {
     ...mapGetters({
@@ -262,7 +234,6 @@ export default {
     this.PANE_ID = PANE_ID;
   },
   mounted() {
-    this.savedComment = this.modelSummary.description;
     this.refresh();
   },
   methods: {
@@ -297,15 +268,6 @@ export default {
           projectType: ProjectType.Analysis,
           nodeId: node.id
         }
-      });
-    },
-    toggleComments() {
-      this.isCommentOpen = !this.isCommentOpen;
-    },
-    async updateComments(commentsText) {
-      this.savedComment = commentsText;
-      modelService.updateModelMetadata(this.currentCAG, { description: commentsText }).catch(() => {
-        this.toaster(EXPORT_MESSAGES.COMMENT_NOT_SAVED, 'error', true);
       });
     },
     onBackgroundClick() {
@@ -441,23 +403,6 @@ main {
       background-color: #255DCC;
     }
   }
-}
-
-.comment-btn {
-  margin-right: 5px;
-  margin-left: 5px;
-  position: relative;
-
-  .comment-box {
-    position: absolute;
-    right: 0;
-    top: calc(100% + 3px);
-    width: 25vw;
-  }
-}
-
-.comment-area {
-  margin-top: 50px;
 }
 
 ::v-deep(.tab-bar li.active) {

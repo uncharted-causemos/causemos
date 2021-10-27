@@ -54,27 +54,6 @@
         @click="onRunModel"
       />
     </div>
-    <div class="comment-btn">
-      <button
-        v-tooltip.top-center="'Comments'"
-        type="button"
-        class="btn btn-primary"
-        @click="toggleComments"
-      >
-        <i
-          class="fa fa-fw"
-          :class="{'fa-commenting': comment !== '', 'fa-commenting-o': comment === ''}"
-        />
-      </button>
-      <text-area-card
-        v-if="isCommentOpen"
-        class="comment-box"
-        :title="'Comments'"
-        :initial-text="comment"
-        @close="isCommentOpen = false"
-        @saveText="updateComments"
-      />
-    </div>
     <rename-modal
       v-if="showRenameModal"
       :current-name="cagNameToDisplay"
@@ -100,8 +79,7 @@ import modelService from '@/services/model-service';
 import DuplicateModal from '@/components/action-bar/duplicate-modal';
 import RenameModal from '@/components/action-bar/rename-modal';
 import ModelOptions from '@/components/action-bar/model-options';
-import TextAreaCard from '../cards/text-area-card';
-import { CAG, EXPORT_MESSAGES } from '@/utils/messages-util';
+import { CAG } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
 
@@ -111,7 +89,6 @@ export default {
     DuplicateModal,
     RenameModal,
     ModelOptions,
-    TextAreaCard,
     ArrowButton
   },
   props: {
@@ -131,9 +108,7 @@ export default {
     showDuplicateModal: false,
     showRenameModal: false,
     newCagName: '',
-    isRunningModel: false,
-    savedComment: null,
-    isCommentOpen: false
+    isRunningModel: false
   }),
   computed: {
     ...mapGetters({
@@ -143,15 +118,9 @@ export default {
     cagNameToDisplay() {
       return !_.isEmpty(this.newCagName) ? this.newCagName : _.get(this.modelSummary, 'name');
     },
-    comment() {
-      return this.savedComment === null ? _.get(this.modelSummary, 'description', null) : this.savedComment;
-    },
     numEdges() {
       return _.get(this.modelComponents, 'edges', []).length;
     }
-  },
-  mounted() {
-    this.savedComment = _.get(this.modelSummary, 'description', null);
   },
   methods: {
     ...mapActions({
@@ -210,15 +179,6 @@ export default {
     closeDuplicateModal() {
       this.showDuplicateModal = false;
     },
-    toggleComments() {
-      this.isCommentOpen = !this.isCommentOpen;
-    },
-    async updateComments(commentsText) {
-      this.savedComment = commentsText;
-      modelService.updateModelMetadata(this.currentCAG, { description: commentsText }).catch(() => {
-        this.toaster(EXPORT_MESSAGES.COMMENT_NOT_SAVED, 'error', true);
-      });
-    },
     async onRunModel() {
       this.isRunningModel = true;
       this.enableOverlay('Preparing & Initializing CAG nodes');
@@ -260,24 +220,6 @@ export default {
     flex-grow: 1;
     justify-content: flex-end;
     box-sizing: border-box;
-  }
-  .comment-btn {
-    margin-right: 5px;
-    margin-left: 10px;
-    display: flex;
-    align-items: flex-end;
-    position: relative;
-
-    i {
-      margin-right: 0;
-    }
-
-    .comment-box {
-      position: absolute;
-      right: 0;
-      top: calc(100% + 3px);
-      width: 25vw;
-    }
   }
   .nav-item {
     margin-left: 5px;
