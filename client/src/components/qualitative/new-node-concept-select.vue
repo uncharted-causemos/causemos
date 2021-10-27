@@ -26,7 +26,7 @@
           <div class="left-column">
             <div
               v-for="(suggestion, index) in suggestions"
-              :key="index"
+              :key="suggestion.doc.key"
               class="dropdown-option"
               :class="{'focused': index === focusedSuggestionIndex, 'light': !suggestion.hasEvidence}"
               @click="selectSuggestion(suggestion)"
@@ -49,7 +49,13 @@
                   <small>Definition: {{ member.definition }} </small>
                 </div>
                 <div v-if="member.examples">
-                  <small>Examples: {{ member.examples.join(', ') }} </small>
+                  <small>
+                    Examples:
+                    <highlight-text
+                      :text="member.examples.join(', ')"
+                      :highlights="member.highlight ? member.highlight.examples: []"
+                    />
+                  </small>
                 </div>
                 <br>
               </div>
@@ -65,7 +71,7 @@
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
 import DropdownControl from '@/components/dropdown-control';
-// import modelService from '@/services/model-service';
+import HighlightText from '@/components/widgets/highlight-text';
 import projectService from '@/services/project-service';
 
 const CONCEPT_SUGGESTION_COUNT = 8;
@@ -73,7 +79,8 @@ const CONCEPT_SUGGESTION_COUNT = 8;
 export default {
   name: 'NewNodeConceptSelect',
   components: {
-    DropdownControl
+    DropdownControl,
+    HighlightText
   },
   props: {
     conceptsInCag: {
