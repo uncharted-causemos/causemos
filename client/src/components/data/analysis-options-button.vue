@@ -1,47 +1,23 @@
 <template>
-  <div class="analysis-options-button-container">
-    <button type="button" @click="isDropdownOpen = !isDropdownOpen">
-      <i class="fa fa-fw fa-pencil" />
-    </button>
-    <dropdown-control
-      v-if="isDropdownOpen"
-      class="analysis-options-dropdown"
-    >
-      <template #content>
-        <div class="dropdown-option" @click="onRename">
-          Rename
-        </div>
-        <div class="dropdown-option disabled">
-          Duplicate
-        </div>
-        <div class="dropdown-option" @click="onDelete">
-          Delete
-        </div>
-      </template>
-    </dropdown-control>
-
-    <rename-modal
-      v-if="isRenameModalOpen"
-      :modal-title="'Rename Analysis'"
-      :current-name="analysisName"
-      @confirm="onRenameModalConfirm"
-      @cancel="isRenameModalOpen = false"
-    />
-  </div>
+  <analysis-options-button-widget
+    :initial-name="analysisName"
+    @rename="onRenameAnalysis"
+    @delete="onDeleteAnalysis"
+  />
 </template>
 
 <script lang="ts">
-import { computed, defineComponent, ref } from 'vue';
-import RenameModal from '@/components/action-bar/rename-modal.vue';
-import DropdownControl from '@/components/dropdown-control.vue';
+import { computed, defineComponent } from 'vue';
 import { deleteAnalysis, updateAnalysis } from '@/services/analysis-service';
 import { useStore } from 'vuex';
 import useToaster from '@/services/composables/useToaster';
 import { ANALYSIS } from '@/utils/messages-util';
 import router from '@/router';
 import { ProjectType } from '@/types/Enums';
+import AnalysisOptionsButtonWidget from '../widgets/analysis-options-button.vue';
+
 export default defineComponent({
-  components: { RenameModal, DropdownControl },
+  components: { AnalysisOptionsButtonWidget },
   name: 'AnalysisOptionsButton',
   setup() {
     const toast = useToaster();
@@ -50,14 +26,7 @@ export default defineComponent({
     const analysisName = computed(() => store.getters['app/analysisName']);
     const project = computed(() => store.getters['app/project']);
 
-    const isDropdownOpen = ref(false);
-    const isRenameModalOpen = ref(false);
-
-    const onRename = () => {
-      isRenameModalOpen.value = true;
-      isDropdownOpen.value = false;
-    };
-    const onRenameModalConfirm = async (newName: string) => {
+    const onRenameAnalysis = async (newName: string) => {
       const previousName = analysisName.value;
       try {
         // Optimistically set the new name
@@ -68,9 +37,8 @@ export default defineComponent({
         store.dispatch('app/setAnalysisName', previousName);
         toast(ANALYSIS.ERRONEOUS_RENAME, 'error', true);
       }
-      isRenameModalOpen.value = false;
     };
-    const onDelete = async () => {
+    const onDeleteAnalysis = async () => {
       try {
         await deleteAnalysis(analysisId.value);
         toast(ANALYSIS.SUCCESSFUL_DELETION, 'success', false);
@@ -78,8 +46,10 @@ export default defineComponent({
         //  start page, since ES can take some time to refresh its indices after
         //  the delete operation, meaning the deleted analysis would still show
         //  up in the start page list.
-        await new Promise<void>((resolve) => {
-          setTimeout(() => { resolve(); }, 500);
+        await new Promise<void>(resolve => {
+          setTimeout(() => {
+            resolve();
+          }, 500);
         });
         // Back to DataStart page
         router.push({
@@ -96,46 +66,12 @@ export default defineComponent({
     };
 
     return {
-      isDropdownOpen,
-      isRenameModalOpen,
       analysisName,
-      onRename,
-      onRenameModalConfirm,
-      onDelete
+      onRenameAnalysis,
+      onDeleteAnalysis
     };
   }
 });
 </script>
 
-<style lang="scss" scoped>
-@import "@/styles/variables";
-
-.analysis-options-button-container {
-  position: relative;
-}
-
-button {
-  appearance: none;
-  border: none;
-  margin: 0;
-  padding: 0;
-  height: .75 * $navbar-outer-height;
-  width: .75 * $navbar-outer-height;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, .1);
-  color: white;
-  font-weight: 600;
-  font-size: $font-size-large;
-
-  &:hover {
-    background: rgba(255, 255, 255, .2);
-  }
-}
-
-.analysis-options-dropdown {
-  position: absolute;
-  margin-top: 5px;
-  width: 100px;
-  right: 0;
-}
-</style>
+<style lang="scss" scoped></style>

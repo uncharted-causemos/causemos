@@ -1,7 +1,10 @@
 <template>
   <div class="qualitative-view-container">
     <teleport to="#navbar-trailing-teleport-destination">
-      <button class="btn btn-default" value="'fraf'"/>
+      <qualitative-analysis-options-button
+        :model-summary="modelSummary"
+        :view-after-deletion="'overview'"
+      />
     </teleport>
     <action-bar
       :model-summary="modelSummary"
@@ -208,6 +211,7 @@ import useToaster from '@/services/composables/useToaster';
 import { DataState } from '@/types/Insight';
 import QualitativeCommentsButton from '@/components/qualitative/qualitative-comments-button.vue';
 import QualitativeSidePanel from '@/components/qualitative/qualitative-side-panel.vue';
+import QualitativeAnalysisOptionsButton from '@/components/qualitative/qualitative-analysis-options-button.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -262,7 +266,8 @@ export default defineComponent({
     ModalImportConflict,
     ModalPathFind,
     QualitativeCommentsButton,
-    QualitativeSidePanel
+    QualitativeSidePanel,
+    QualitativeAnalysisOptionsButton
   },
   setup() {
     return {
