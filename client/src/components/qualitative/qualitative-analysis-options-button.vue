@@ -1,7 +1,9 @@
 <template>
   <analysis-options-button-widget
     :initial-name="cagNameToDisplay"
+    :id-to-duplicate="currentCAG"
     @rename="onRenameAnalysis"
+    @on-duplicate-success="onDuplicateSuccess"
     @delete="onDeleteAnalysis"
   />
 </template>
@@ -78,11 +80,23 @@ export default defineComponent({
           toast(CAG.ERRONEOUS_DELETION, 'error', true);
         });
     };
+    const onDuplicateSuccess = (name: string, newCagId: string) => {
+      router.push({
+        name: 'qualitative',
+        params: {
+          project: project.value,
+          currentCAG: newCagId,
+          projectType: ProjectType.Analysis
+        }
+      });
+    };
 
     return {
       cagNameToDisplay,
       onRenameAnalysis,
-      onDeleteAnalysis
+      onDuplicateSuccess,
+      onDeleteAnalysis,
+      currentCAG
     };
   }
 });

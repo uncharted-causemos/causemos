@@ -7,26 +7,26 @@
     :is-large="false"
     @set-active="setActive"
   >
-      <list-analytical-questions-pane
-        v-if="currentTab === 'Analysis Checklist'" />
+    <list-analytical-questions-pane
+      v-if="currentTab === 'Analysis Checklist'"
+    />
 
-      <list-context-insight-pane
-        v-if="currentTab === 'Context Insights'" />
+    <list-context-insight-pane v-if="currentTab === 'Context Insights'" />
 
-      <div v-if="currentTab === 'Details'">
-        <!-- TODO: put node/edge count here, remove it from CAG-graph -->
-        <!-- <p>
+    <div v-if="currentTab === 'Details'">
+      <!-- TODO: put node/edge count here, remove it from CAG-graph -->
+      <!-- <p>
           This CAG contains <strong>{{ nodeCount }}</strong> node{{ nodeCount !== 1 ? 's' : '' }}
           and <strong>{{ edgeCount }}</strong> edge{{ edgeCount !== 1 ? 's' : '' }}.
         </p> -->
-        <button class="btn btn-default" @click="onDownload">
-          Download CAG as JSON
-        </button>
-      </div>
+      <button class="btn btn-default" @click="onDownload">
+        Download CAG as JSON
+      </button>
+    </div>
 
-      <template #below-tabs>
-        <slot name="below-tabs" />
-      </template>
+    <template #below-tabs>
+      <slot name="below-tabs" />
+    </template>
   </side-panel>
 </template>
 
@@ -71,10 +71,4 @@ export default defineComponent({
 });
 </script>
 
-<style lang="scss" scoped>
-  @import "~styles/variables";
-
-  .qualitative-side-panel-container {
-    margin-top: 10px;
-  }
-</style>
+<style lang="scss" scoped></style>

@@ -8,7 +8,11 @@
         <div class="dropdown-option" @click="showRenameModal">
           Rename
         </div>
-        <div class="dropdown-option disabled">
+        <div
+          class="dropdown-option"
+          :class="{ disabled: idToDuplicate === null }"
+          @click="showDuplicateModal"
+        >
           Duplicate
         </div>
         <div class="dropdown-option" @click="onDelete">
@@ -24,6 +28,15 @@
       @confirm="onRenameModalConfirm"
       @cancel="isRenameModalOpen = false"
     />
+
+    <duplicate-modal
+      v-if="isDuplicateModalOpen"
+      :current-name="initialName"
+      :id-to-duplicate="idToDuplicate"
+      @success="onDuplicateSuccess"
+      @fail="isDuplicateModalOpen = false"
+      @cancel="isDuplicateModalOpen = false"
+    />
   </div>
 </template>
 
@@ -31,19 +44,25 @@
 import { defineComponent, PropType, ref } from 'vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
+import DuplicateModal from '../action-bar/duplicate-modal.vue';
 export default defineComponent({
-  components: { RenameModal, DropdownControl },
+  components: { RenameModal, DropdownControl, DuplicateModal },
   name: 'AnalysisOptionsButton',
   props: {
     initialName: {
       type: String as PropType<string | null>,
       default: null
+    },
+    idToDuplicate: {
+      type: String as PropType<string | null>,
+      default: null
     }
   },
-  emits: ['rename', 'delete'],
+  emits: ['rename', 'duplicate-success', 'delete'],
   setup(props, { emit }) {
     const isDropdownOpen = ref(false);
     const isRenameModalOpen = ref(false);
+    const isDuplicateModalOpen = ref(false);
 
     const showRenameModal = () => {
       isRenameModalOpen.value = true;
@@ -52,6 +71,14 @@ export default defineComponent({
     const onRenameModalConfirm = (newName: string) => {
       emit('rename', newName);
       isRenameModalOpen.value = false;
+    };
+    const showDuplicateModal = () => {
+      isDuplicateModalOpen.value = true;
+      isDropdownOpen.value = false;
+    };
+    const onDuplicateSuccess = (name: string, newCagId: string) => {
+      isDuplicateModalOpen.value = false;
+      emit('duplicate-success', newCagId);
     };
     const onDelete = () => {
       emit('delete');
@@ -62,6 +89,9 @@ export default defineComponent({
       isRenameModalOpen,
       showRenameModal,
       onRenameModalConfirm,
+      isDuplicateModalOpen,
+      showDuplicateModal,
+      onDuplicateSuccess,
       onDelete
     };
   }

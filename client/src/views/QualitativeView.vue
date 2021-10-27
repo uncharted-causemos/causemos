@@ -1027,7 +1027,6 @@ export default defineComponent({
     display: flex;
     min-height: 0;
     flex: 1;
-    box-shadow: $shadow-level-2;
   }
 
   .graph-container {
