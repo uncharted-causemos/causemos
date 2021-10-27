@@ -137,22 +137,27 @@
       <br/>
       <div class="pane-summary">
         Recommendations
-        <button class="btn btn-sm">Add</button>
+        <button
+          class="btn btn-sm"
+          @click="addRecommendations">Add</button>
       </div>
       <collapsible-item
         v-for="(recommendation, statIdx) in recommendations"
         :override="{value: false}"
         :key="statIdx"
         class="statements-container">
+        <template #controls>
+          <i class="fa fa-lg fa-fw"
+             :class="{
+              'fa-check-square-o': recommendations[statIdx].isSelected,
+              'fa-square-o': !recommendations[statIdx].isSelected,
+            }"
+            @click="toggleRecommendation(statIdx)"
+          />
+        </template>
         <template #title>
-          <div class="curration-recommendation-item-title" style="padding-top: 20px">
-            <i class="fa fa-lg fa-fw"
-               :class="{
-                'fa-check-square-o': recommendations[statIdx].isSelected,
-                'fa-square-o': !recommendations[statIdx].isSelected,
-              }"
-               @click="toggle(statIdx)"
-            />{{ recommendation.statement.subj.factor }} <i class="fa fa-long-arrow-right fa-lg" :class="(recommendation.statement.wm.statement_polarity === 1 ? 'blue' : 'red')" /> {{ recommendation.statement.obj.factor }}
+          <div class="curration-recommendation-item-title">
+            {{ recommendation.statement.subj.factor }} <i class="fa fa-long-arrow-right fa-lg" :class="(recommendation.statement.wm.statement_polarity === 1 ? 'blue' : 'red')" /> {{ recommendation.statement.obj.factor }}
           </div>
         </template>
 
@@ -320,7 +325,7 @@ export default {
       return statementPolarityColor(this.polarity);
     }
   },
-  emits: ['updated-relations'],
+  emits: ['updated-relations', 'add-edge-evidence-recommendations'],
   watch: {
     statements(n, o) {
       if (_.isEqual(n, o)) return;
@@ -349,9 +354,10 @@ export default {
       };
 
       if (_.isEmpty(this.statements)) {
-        console.log('getting recommendations');
         this.getRecommendations().then(r => {
-          console.log('!!', r);
+          r.recommendations.forEach(s => {
+            s.isSelected = false;
+          });
           this.recommendations = r.recommendations;
         });
       }
@@ -595,6 +601,15 @@ export default {
       const target = this.selectedRelationship.target;
       const statements = await getEvidenceRecommendations(this.project, source, target);
       return statements;
+    },
+    toggleRecommendation(idx) {
+      if (this.recommendations) {
+        this.recommendations[idx].isSelected = !this.recommendations.isSelected;
+      }
+    },
+    addRecommendations() {
+      const ids = this.recommendations.filter(d => d.isSelected).map(d => d.statement.id);
+      this.$emit('add-edge-evidence-recommendations', ids);
     }
   }
 };

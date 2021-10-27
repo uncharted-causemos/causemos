@@ -51,6 +51,7 @@
             :is-fetching-statements="isFetchingStatements"
             :should-confirm-curations="true"
             @updated-relations="resolveUpdatedRelations"
+            @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
             <edge-polarity-switcher
               :selected-relationship="selectedEdge"
@@ -1051,6 +1052,20 @@ export default defineComponent({
       this.showModalRename = true;
       this.renameNodeId = node.id;
       this.renameNodeName = node.concept;
+    },
+    async addEdgeEvidenceRecommendations(ids: string[]) {
+      if (this.selectedEdge) {
+        const payload = {
+          id: this.selectedEdge.id,
+          source: this.selectedEdge.source,
+          target: this.selectedEdge.target,
+          user_polarity: null,
+          reference_ids: ids
+        };
+        this.selectedEdge.reference_ids = ids;
+        const data = await this.addCAGComponents([], [payload], 'curation');
+        this.setUpdateToken(data.updateToken);
+      }
     }
   }
 });
