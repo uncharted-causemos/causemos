@@ -16,6 +16,7 @@ const setProcessingFailed = async(metadata) => {
       };
     });
     await datacubeService.updateDatacube(metadataDelta);
+    return { result: { message: 'Datacube updated' }, code: 200 };
   } else {
     const modelRun = docIds.map(docId => {
       return {
@@ -24,6 +25,7 @@ const setProcessingFailed = async(metadata) => {
       };
     });
     await maasService.updateModelRun(modelRun);
+    return { result: { message: 'Model run updated' }, code: 200 };
   }
 };
 
