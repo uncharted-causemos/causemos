@@ -135,8 +135,9 @@
     <div v-else>
       <message-display :message="messageNoData" />
     </div>
-    <div v-if="showEdgeRecommendations">
-      <br/>
+    <div
+      v-if="showEdgeRecommendations"
+      style="margin-top: 10px">
       <div class="pane-summary">
         Recommendations
         <button
@@ -653,11 +654,11 @@ export default {
   }
 }
 .blue {
-  color: rgb(0, 114, 178);
+  color: $positive;
 }
 
 .red {
-  color: rgb(213, 94, 0);
+  color: $negative;
 }
 
 </style>
