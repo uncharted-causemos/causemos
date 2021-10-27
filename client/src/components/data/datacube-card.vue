@@ -912,24 +912,30 @@ export default defineComponent({
           const filterValues = c.values; // array of values to filter upon
           const isNot = !c.isNot; // is the filter reversed?
           filteredRuns = filteredRuns.filter(v => {
-            const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
-            if (paramsMatchingFilterField !== undefined) {
-              // this is a param filter
-              // so we can search this parameters array directly
-              //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
-              if (dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Int || dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Float) {
-                const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
-                return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
-              } else {
-                return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
-              }
+            if (filterField === 'keyword') {
+              // special search, e.g. by keyword or tags
+              return v.tags && v.tags.length > 0 && filterValues.some((val: string) => v.tags.includes(val) === isNot);
             } else {
-              // this is an output filter
-              //  we need to search the array of v.output_agg_values
-              // note: this will always be a numeric range
-              const runOutputValue = v.output_agg_values[0].value;
-              const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
-              return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
+              // direct query against parameters or output features
+              const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
+              if (paramsMatchingFilterField !== undefined) {
+                // this is a param filter
+                // so we can search this parameters array directly
+                //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
+                if (dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Int || dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Float) {
+                  const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+                  return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
+                } else {
+                  return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
+                }
+              } else {
+                // this is an output filter
+                //  we need to search the array of v.output_agg_values
+                // note: this will always be a numeric range
+                const runOutputValue = v.output_agg_values[0].value;
+                const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+                return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
+              }
             }
           });
         });
