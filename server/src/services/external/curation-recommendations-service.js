@@ -106,8 +106,7 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
 const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, numRecommendations) => {
   Logger.info(`Edge recommendation: Project=${projectId}`);
   const payload = {
-    knowledge_base_id: 'indra-daeb4547-9dfe-4d76-be26-e7d7453ecaaa',
-    // knowledge_base_id: cache.get(projectId).kb_id,
+    knowledge_base_id: cache.get(projectId).kb_id,
     subj_concept: subjConcept,
     obj_concept: objConcept,
     num_recommendations: numRecommendations
