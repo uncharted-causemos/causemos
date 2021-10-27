@@ -2,7 +2,6 @@
   <div class="tab-panel-container">
     <div class="main-content h-100 flex flex-col">
       <div class="tab-nav-bar">
-        <quantitative-model-options @download-experiment="downloadExperiment" />
         <tab-bar
           class="tab-bar tour-matrix-tab"
           :tabs="validTabs"
@@ -93,7 +92,6 @@ import { mapGetters } from 'vuex';
 import moment from 'moment';
 
 import router from '@/router';
-import QuantitativeModelOptions from '@/components/quantitative/quantitative-model-options';
 import ConfigBar from '@/components/quantitative/config-bar';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis';
 import ModelGraph from '@/components/quantitative/model-graph';
@@ -142,7 +140,6 @@ const TABS = {
 export default {
   name: 'TabPanel',
   components: {
-    QuantitativeModelOptions,
     ConfigBar,
     ModelGraph,
     SensitivityAnalysis,
@@ -374,6 +371,15 @@ export default {
   display: flex;
   align-items: center;
   background: $background-light-3;
+
+  // Add an empty pseudo element at the left side of the bar to center the
+  //  action buttons
+  &::before {
+    display: block;
+    content: '';
+    flex: 1;
+    min-width: 0;
+  }
 }
 
 .tab-content {
@@ -400,6 +406,7 @@ main {
 .model-graph-layout-container {
   width: 100%;
   height: 100%;
+  position: relative;
 }
 
 .augment-model {
@@ -407,7 +414,8 @@ main {
   align-items: center;
   background-color: transparent;
   margin-right: 10px;
-  flex-grow: 1;
+  flex: 1;
+  min-width: 0;
   justify-content: flex-end;
   box-sizing: border-box;
   .btn {
