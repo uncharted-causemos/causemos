@@ -645,7 +645,7 @@ class CAGRenderer extends BaseCAGRenderer {
    */
   createNewNode(x, y, { concept, label }) {
     const chart = this.chart;
-    const node = chart.append('g').classed('node', true).attr('transform', svgUtil.translate(x, y));
+    const node = chart.select('.nodes-layer').append('g').classed('node', true).attr('transform', svgUtil.translate(x, y));
 
     node.datum({
       id: concept,
