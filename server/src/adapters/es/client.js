@@ -69,8 +69,8 @@ const searchAndHighlight = async (index, queryString, filters, fields) => {
       query,
       highlight: {
         fields: fieldsToHighlight,
-        pre_tags: '<m>',
-        post_tags: '</m>'
+        pre_tags: '',
+        post_tags: ''
       }
     }
   });
