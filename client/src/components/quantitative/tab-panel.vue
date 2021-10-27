@@ -398,6 +398,9 @@ main {
   flex: 1;
 }
 
+.side-panel {
+  margin-top: 10px;
+}
 
 .quantitative-drilldown {
   margin: 10px 0;
