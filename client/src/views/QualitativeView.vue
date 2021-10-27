@@ -1052,13 +1052,15 @@ export default defineComponent({
           return { id: e.id };
         });
 
+      // create replacement edges with updated targets & sources - these are the "updatedEdges"
       const updatedEdges = mergeNodeEdges
         .filter(e => e.target !== targetData.concept && e.source !== targetData.concept)
         .map(e => {
-          const updatedEdge = {} as any;
+          const updatedEdge = { } as any;
           updatedEdge.id = '';
-          updatedEdge.user_polarity = null;
+          updatedEdge.user_polarity = e.user_polarity !== undefined ? e.user_polarity : null;
           updatedEdge.reference_ids = e.reference_ids;
+          updatedEdge.parameter = e.parameter;
           if (e.target === mergeData.concept) {
             updatedEdge.target = targetData.concept;
             updatedEdge.source = e.source;
@@ -1067,26 +1069,40 @@ export default defineComponent({
             updatedEdge.source = targetData.concept;
           }
           return updatedEdge;
-        }).filter(updatedEdge => {
-          const isDuplicateEdge = this.modelComponents.edges.reduce((isDupe, edge) => {
-            return (
-              updatedEdge.source === edge.source &&
-              updatedEdge.target === edge.target
-            ) || isDupe;
-          }, false);
-          return !isDuplicateEdge;
         });
+
+      // find any duplicate edges that might exist the graph relative to the updatedEdges
+      // add the duplicates to the set to be removed, then combine their information like
+      // weights and supporting data in the updatedEdges
+      updatedEdges.forEach(e => {
+        const duplicateEdge = this.modelComponents.edges.reduce((dupe, edge) => {
+          if (e.source === edge.source && e.target === edge.target) {
+            dupe = edge;
+          }
+          return dupe;
+        }, null as any as EdgeParameter);
+        if (duplicateEdge !== null) {
+          removedEdges.push({ id: duplicateEdge.id });
+          e.reference_ids = e.reference_ids.concat(duplicateEdge.reference_ids);
+          if (duplicateEdge.parameter?.weights) {
+            if (e.parameter?.weights) {
+              e.parameter.weights = e.parameter.weights.concat(duplicateEdge.parameter.weights);
+            } else {
+              e.parameter = duplicateEdge.parameter;
+            }
+          }
+        }
+      });
 
       const removedNode = { id: mergeData.id };
       const updatedNode = { ...this.modelComponents.nodes.filter(e => e.concept === targetData.concept)[0] };
       updatedNode.components = updatedComponents;
 
-      // 2. remove the node to be merged and it's dependent edges
+      // 2. remove the node to be merged, it's dependent edges and the duplicate edges
       await this.removeCAGComponents([removedNode], removedEdges);
 
       // 3. update the target node with new components and edges
-      await this.addCAGComponents([updatedNode], [], 'manual');
-      const result = await this.addCAGComponents([], updatedEdges, 'manual');
+      const result = await this.addCAGComponents([updatedNode], updatedEdges, 'manual');
       this.setUpdateToken(result.updateToken);
     }
   }
