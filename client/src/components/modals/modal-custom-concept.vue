@@ -60,6 +60,9 @@ import { mapGetters, mapActions } from 'vuex';
 import Modal from '@/components/modals/modal';
 import projectService from '@/services/project-service';
 
+// this error message can probably be worded better
+const ALPHANUMERIC_ERROR = 'This field can only contain alphanumeric characters';
+
 export default {
   name: 'modal-custom-concept',
   components: {
@@ -70,8 +73,8 @@ export default {
       if (value.length > 0) {
         if (this.isAlphaNumeric(value)) {
           this.error_messages.theme = '';
-        } else { // this error message can probably be worded better
-          this.error_messages.theme = 'This field can only contain alphanumeric characters and _';
+        } else {
+          this.error_messages.theme = ALPHANUMERIC_ERROR;
         }
       } else {
         this.error_messages.theme = 'This field is required';
@@ -81,21 +84,21 @@ export default {
       if (value === '' || this.isAlphaNumeric(value)) {
         this.error_messages.theme_property = '';
       } else {
-        this.error_messages.theme_property = 'This field can only contain alphanumeric characters and _';
+        this.error_messages.theme_property = ALPHANUMERIC_ERROR;
       }
     },
     process(value) {
       if (value === '' || this.isAlphaNumeric(value)) {
         this.error_messages.process = '';
       } else {
-        this.error_messages.process = 'This field can only contain alphanumeric characters and _';
+        this.error_messages.process = ALPHANUMERIC_ERROR;
       }
     },
     process_property(value) {
       if (value === '' || this.isAlphaNumeric(value)) {
         this.error_messages.process_property = '';
       } else {
-        this.error_messages.process_property = 'This field can only contain alphanumeric characters and _';
+        this.error_messages.process_property = ALPHANUMERIC_ERROR;
       }
     }
   },
