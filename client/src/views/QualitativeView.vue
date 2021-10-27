@@ -27,6 +27,7 @@
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
           @rename-node="openRenameModal"
+          @merge-nodes="mergeNodes"
         />
       </div>
       <drilldown-panel
@@ -1038,6 +1039,55 @@ export default defineComponent({
       this.showModalRename = true;
       this.renameNodeId = node.id;
       this.renameNodeName = node.concept;
+    },
+    async mergeNodes(mergeNode: { data: NodeParameter }, targetNode: { data: NodeParameter }) {
+      // 1. collect all of the relevant data for the following steps
+      const mergeData = mergeNode.data;
+      const targetData = targetNode.data;
+
+      const updatedComponents = [...mergeData.components, ...targetData.components];
+      const mergeNodeEdges = this.modelComponents.edges.filter(e => e.target === mergeData.concept || e.source === mergeData.concept);
+      const removedEdges = mergeNodeEdges
+        .map(e => {
+          return { id: e.id };
+        });
+
+      const updatedEdges = mergeNodeEdges
+        .filter(e => e.target !== targetData.concept && e.source !== targetData.concept)
+        .map(e => {
+          const updatedEdge = {} as any;
+          updatedEdge.id = '';
+          updatedEdge.user_polarity = null;
+          updatedEdge.reference_ids = e.reference_ids;
+          if (e.target === mergeData.concept) {
+            updatedEdge.target = targetData.concept;
+            updatedEdge.source = e.source;
+          } else if (e.source === mergeData.concept) {
+            updatedEdge.target = e.target;
+            updatedEdge.source = targetData.concept;
+          }
+          return updatedEdge;
+        }).filter(updatedEdge => {
+          const isDuplicateEdge = this.modelComponents.edges.reduce((isDupe, edge) => {
+            return (
+              updatedEdge.source === edge.source &&
+              updatedEdge.target === edge.target
+            ) || isDupe;
+          }, false);
+          return !isDuplicateEdge;
+        });
+
+      const removedNode = { id: mergeData.id };
+      const updatedNode = { ...this.modelComponents.nodes.filter(e => e.concept === targetData.concept)[0] };
+      updatedNode.components = updatedComponents;
+
+      // 2. remove the node to be merged and it's dependent edges
+      await this.removeCAGComponents([removedNode], removedEdges);
+
+      // 3. update the target node with new components and edges
+      await this.addCAGComponents([updatedNode], [], 'manual');
+      const result = await this.addCAGComponents([], updatedEdges, 'manual');
+      this.setUpdateToken(result.updateToken);
     }
   }
 });
