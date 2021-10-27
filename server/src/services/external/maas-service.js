@@ -198,16 +198,6 @@ const markModelRunFailed = async (metadata) => {
  *
  * @param{string} modelId - model id
  */
-const getProcessingFailedRuns = async(modelId) => {
-  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
-  return connection.find([{ field: 'model_id', value: modelId }], { size: SEARCH_LIMIT });
-};
-
-/**
- * Return all model runs belonging to a model
- *
- * @param{string} modelId - model id
- */
 const getAllModelRuns = async(modelId) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
   return connection.find([{ field: 'model_id', value: modelId }], { size: SEARCH_LIMIT });
