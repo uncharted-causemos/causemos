@@ -123,12 +123,8 @@ export default {
       this.newTheme = this.newThemeProperty = this.newProcess = this.newProcessProperty = '';
     },
     isAlphaNumeric(str) {
-      try {
-        return str.match('^[A-Za-z0-9 ]+$');
-      } catch (e) {
-        console.error(e);
-        return null;
-      }
+      const regex = RegExp('^[A-Za-z0-9 ]+$');
+      return regex.test(str);
     },
     close() {
       this.clearData();
