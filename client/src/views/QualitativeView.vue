@@ -1072,25 +1072,16 @@ export default defineComponent({
         });
 
       // find any duplicate edges that might exist the graph relative to the updatedEdges
-      // add the duplicates to the set to be removed, then combine their information like
-      // weights and supporting data in the updatedEdges
+      // add the duplicates to the set to be removed, then combine their supporting data in the updatedEdges
       updatedEdges.forEach(e => {
-        const duplicateEdge = this.modelComponents.edges.reduce((dupe, edge) => {
-          if (e.source === edge.source && e.target === edge.target) {
-            dupe = edge;
-          }
-          return dupe;
-        }, null as any as EdgeParameter);
-        if (duplicateEdge !== null) {
+        const duplicateEdge = this.modelComponents.edges.find(edge => {
+          return e.source === edge.source && e.target === edge.target;
+        });
+
+        if (duplicateEdge) {
           removedEdges.push({ id: duplicateEdge.id });
           e.reference_ids = e.reference_ids.concat(duplicateEdge.reference_ids);
-          if (duplicateEdge.parameter?.weights) {
-            if (e.parameter?.weights) {
-              e.parameter.weights = e.parameter.weights.concat(duplicateEdge.parameter.weights);
-            } else {
-              e.parameter = duplicateEdge.parameter;
-            }
-          }
+          // FIXME: We may need to decide how to handle weights merges
         }
       });
 

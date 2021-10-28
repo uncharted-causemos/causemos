@@ -928,13 +928,23 @@ export default {
       const nodeUI = node.select('.node-ui');
       const rect = nodeUI.select(targetNodeSelector);
       const nodeUIRect = rect.node();
-      rect.style('fill', '#eee');
 
-      const others = graph.chart.selectAll('.node-ui').filter(d => {
-        return !d.nodes || d.nodes.length === 0;
-      }).filter(d => d.id !== nodeUI.datum().id);
+      // FIXME: Should do this in drag-start
+      if (nodeUI.select('.node-control').size() > 0) {
+        node.select('.node-control').remove();
+      }
+
+      const others = graph.chart.selectAll('.node-ui')
+        .filter(d => {
+          return !d.nodes || d.nodes.length === 0;
+        })
+        .filter(d => d.id !== nodeUI.datum().id);
 
       let targetNode = null;
+
+      others.selectAll(targetNodeSelector)
+        .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+        .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
 
       others.each(function () {
         const otherNodeUI = d3.select(this);
@@ -944,18 +954,9 @@ export default {
         if (overlap(otherNodeUIRect, nodeUIRect, 0.5)) {
           targetNode = otherNodeUI;
           otherRect
-            .transition()
-            .duration(150)
-            .style('fill', mergeNodeColor)
-            .attr('height', d => d.height + 30);
-        } else {
-          if (otherRect.style('fill') === mergeNodeColor) {
-            otherRect
-              .style('fill', '#fff')
-              .attr('height', d => d.height);
-          }
+            .style('stroke', mergeNodeColor)
+            .style('stroke-width', 12);
         }
-        rect.style('fill', '#fff');
       });
 
       this.targetNode = targetNode;

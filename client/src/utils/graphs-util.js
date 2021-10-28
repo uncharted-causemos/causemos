@@ -53,6 +53,9 @@ export function traverse (root, callBackFn, p) {
   }
 }
 
+/**
+ * Check if two elements are sufficiently overlapped
+ */
 export function overlap (node1, node2, threshold) {
   const rec1 = node1.getBoundingClientRect();
   const rec2 = node2.getBoundingClientRect();
