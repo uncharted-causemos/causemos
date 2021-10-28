@@ -27,6 +27,7 @@
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
           @rename-node="openRenameModal"
+          @merge-nodes="mergeNodes"
         />
       </div>
       <drilldown-panel
@@ -1038,6 +1039,62 @@ export default defineComponent({
       this.showModalRename = true;
       this.renameNodeId = node.id;
       this.renameNodeName = node.concept;
+    },
+    async mergeNodes(mergeNode: { data: NodeParameter }, targetNode: { data: NodeParameter }) {
+      // 1. collect all of the relevant data for the following steps
+      const mergeData = mergeNode.data;
+      const targetData = targetNode.data;
+
+      const updatedComponents = [...mergeData.components, ...targetData.components];
+      const mergeNodeEdges = this.modelComponents.edges.filter(e => e.target === mergeData.concept || e.source === mergeData.concept);
+      const removedEdges = mergeNodeEdges
+        .map(e => {
+          return { id: e.id };
+        });
+
+      // create replacement edges with updated targets & sources - these are the "updatedEdges"
+      const updatedEdges = mergeNodeEdges
+        .filter(e => e.target !== targetData.concept && e.source !== targetData.concept)
+        .map(e => {
+          const updatedEdge = { } as any;
+          updatedEdge.id = '';
+          updatedEdge.user_polarity = e.user_polarity !== undefined ? e.user_polarity : null;
+          updatedEdge.reference_ids = e.reference_ids;
+          updatedEdge.parameter = e.parameter;
+          if (e.target === mergeData.concept) {
+            updatedEdge.target = targetData.concept;
+            updatedEdge.source = e.source;
+          } else if (e.source === mergeData.concept) {
+            updatedEdge.target = e.target;
+            updatedEdge.source = targetData.concept;
+          }
+          return updatedEdge;
+        });
+
+      // find any duplicate edges that might exist the graph relative to the updatedEdges
+      // add the duplicates to the set to be removed, then combine their supporting data in the updatedEdges
+      updatedEdges.forEach(e => {
+        const duplicateEdge = this.modelComponents.edges.find(edge => {
+          return e.source === edge.source && e.target === edge.target;
+        });
+
+        if (duplicateEdge) {
+          removedEdges.push({ id: duplicateEdge.id });
+          e.reference_ids = e.reference_ids.concat(duplicateEdge.reference_ids);
+          // FIXME: We may need to decide how to handle weights merges
+        }
+      });
+
+      const removedNode = { id: mergeData.id };
+      const updatedNode = { ...this.modelComponents.nodes.filter(e => e.concept === targetData.concept)[0] };
+      updatedNode.components = updatedComponents;
+
+      // 2. remove the node to be merged, it's dependent edges and the duplicate edges
+      await this.removeCAGComponents([removedNode], removedEdges);
+
+      // 3. update the target node with new components and edges
+      const result = await this.addCAGComponents([updatedNode], updatedEdges, 'manual');
+      this.setUpdateToken(result.updateToken);
     }
   }
 });
