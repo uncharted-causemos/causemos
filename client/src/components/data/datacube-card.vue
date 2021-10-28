@@ -59,15 +59,9 @@
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
             <div class="tags-area-container">
-              <div class="tag-labels-container">
-                <div v-for="tag in topRunTags" :key="tag.label"
-                  class="tag-label"
-                  :style="{ backgroundColor: tag.selected ? 'lightblue' : 'lightgray' }"
-                  @click="onRunTagSelection(tag)">
-                  {{tag.label}}
-                  <span class="tags-label-runs-count">{{tag.count}}</span>
-                </div>
-              </div>
+              <span class="scenario-count">
+                {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
+              </span>
               <div style="font-size: small; display: flex; align-items: center">
                 <a
                   class="see-all-tags"
@@ -617,6 +611,7 @@ export default defineComponent({
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
+    const toaster = useToaster();
 
     const activeDrilldownTab = ref<string|null>('breakdown');
     const currentTabView = ref<string>('description');
@@ -691,6 +686,8 @@ export default defineComponent({
       runParameterValues
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
+    const scenarioCount = computed(() => runParameterValues.value.length);
+
     const runningDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)));
 
     // apply initial data config for this datacube
@@ -701,6 +698,7 @@ export default defineComponent({
     const addNewTag = (tagName: string) => {
       selectedScenarios.value.forEach(s => s.tags.push(tagName));
       showTagNameModal.value = false;
+      toaster('A new tag is added successfully for the selected run(s)', 'success', false);
       // TODO: update the backend for persistence
     };
 
@@ -726,38 +724,6 @@ export default defineComponent({
         runTags.value = tags;
       }
     });
-
-    const topRunTags = computed(() => {
-      const sortedRunTags = _.cloneDeep(runTags.value).sort((a, b) => b.count - a.count);
-      return sortedRunTags.filter((item, indx) => indx < 3);
-    });
-
-    const onRunTagSelection = (tag: RunsTag) => {
-      // unselect all other tags (except this one being toggled) in case of a previous selection
-      const updatedRunTags = _.cloneDeep(runTags.value);
-      updatedRunTags.forEach(t => {
-        if (t.label !== tag.label) {
-          t.selected = false;
-        } else {
-          // toggle selection of the run tag
-          t.selected = !t.selected;
-          tag = t; // must overwrite the local param since it points to the old data
-        }
-      });
-      // update the ref so that DOM will pickup and rerender
-      runTags.value = updatedRunTags;
-
-      if (tag.selected) {
-        // select all runs that match this tag
-        const runsWithMatchingTag = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready && r.tags.includes(tag.label));
-        if (runsWithMatchingTag.length > 0) {
-          setSelectedScenarioIds(runsWithMatchingTag.map(r => r.id));
-        }
-      } else {
-        // cancel run selection
-        setSelectedScenarioIds([]);
-      }
-    };
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
@@ -964,7 +930,6 @@ export default defineComponent({
       }
     );
 
-    const toaster = useToaster();
     const clickData = (tab: string) => {
       if (tab !== 'data' || canClickDataTab.value) {
         // FIXME: This code to select a model run when switching to the data tab
@@ -1395,7 +1360,6 @@ export default defineComponent({
       onMapLoad,
       onModelRunsFiltersUpdated,
       onNewScenarioRunsModalClose,
-      onRunTagSelection,
       onSyncMapBounds,
       onTabClick,
       ordinalDimensionNames,
@@ -1411,7 +1375,7 @@ export default defineComponent({
       requestNewModelRuns,
       runningDefaultRun,
       runParameterValues,
-      topRunTags,
+      scenarioCount,
       searchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
@@ -1828,36 +1792,6 @@ $marginSize: 5px;
   text-align: center;
   justify-content: space-between;
 
-  .tag-labels-container {
-    display: flex;
-    align-items: center;
-
-    .tag-label {
-      background-color:lightgray;
-      margin-left: 2px;
-      padding: 4px;
-      border-style: solid;
-      border-radius: 4px;
-      border-width: 1px;
-      border-color: rgb(180, 180, 180);
-      cursor: pointer;
-
-      &:hover {
-        background-color: darkgray !important;
-      }
-
-      .tags-label-runs-count {
-        padding-left: 6px;
-        padding-right: 6px;
-        background-color: white;
-        border-style: solid;
-        border-radius: 50%;
-        border-width: 1px;
-        border-color: lightgray;
-      }
-    }
-  }
-
   .see-all-tags {
     color: blue;
     cursor: pointer;
@@ -1879,6 +1813,10 @@ $marginSize: 5px;
       cursor: not-allowed;
     }
   }
+}
+
+.scenario-count {
+  color: $label-color;
 }
 
 </style>
