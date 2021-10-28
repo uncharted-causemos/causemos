@@ -897,10 +897,6 @@ export default defineComponent({
       }
     });
 
-    // TODO: update tags UI
-    //  - remove tag bills in datacube-card and only leave a link to the tags modal and a button to add a new tag
-    //  - utilize a dedicated tags search item in the lex-bar with auto-complete
-
     const onModelRunsFiltersUpdated = (filters: any) => {
       // parse and apply filters to the model runs data
       const selectedRunIDS: string[] = [];
