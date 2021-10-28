@@ -12,28 +12,28 @@
         <label class="col-md-3 col-form-label">Theme</label>
         <div class="col-md-7">
           <input class="form-control" v-model="theme" type="text" placeholder="Type a theme"/>
-          <div class="input-error-message" v-if="error_messages.theme">{{error_messages.theme}}</div>
+          <div class="input-error-message" v-if="errorMessages.theme">{{errorMessages.theme}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Theme property</label>
         <div class="col-md-7">
           <input class="form-control" v-model="theme_property" type="text" placeholder="Type the theme property (optional)"/>
-          <div class="input-error-message" v-if="error_messages.theme_property">{{error_messages.theme_property}}</div>
+          <div class="input-error-message" v-if="errorMessages.theme_property">{{errorMessages.theme_property}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Process</label>
         <div class="col-md-7">
           <input class="form-control" v-model="process" type="text" placeholder="Type a process (optional)"/>
-          <div class="input-error-message" v-if="error_messages.process">{{error_messages.process}}</div>
+          <div class="input-error-message" v-if="errorMessages.process">{{errorMessages.process}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Process property</label>
         <div class="col-md-7">
           <input class="form-control" v-model="process_property" type="text" placeholder="Type the process property (optional)"/>
-          <div class="input-error-message" v-if="error_messages.process_property">{{error_messages.process_property}}</div>
+          <div class="input-error-message" v-if="errorMessages.process_property">{{errorMessages.process_property}}</div>
         </div>
       </div>
     </template>
@@ -72,33 +72,33 @@ export default {
     theme(value) {
       if (value.length > 0) {
         if (this.isAlphaNumeric(value)) {
-          this.error_messages.theme = '';
+          this.errorMessages.theme = '';
         } else {
-          this.error_messages.theme = ALPHANUMERIC_ERROR;
+          this.errorMessages.theme = ALPHANUMERIC_ERROR;
         }
       } else {
-        this.error_messages.theme = 'This field is required';
+        this.errorMessages.theme = 'This field is required';
       }
     },
     theme_property(value) {
       if (value === '' || this.isAlphaNumeric(value)) {
-        this.error_messages.theme_property = '';
+        this.errorMessages.theme_property = '';
       } else {
-        this.error_messages.theme_property = ALPHANUMERIC_ERROR;
+        this.errorMessages.theme_property = ALPHANUMERIC_ERROR;
       }
     },
     process(value) {
       if (value === '' || this.isAlphaNumeric(value)) {
-        this.error_messages.process = '';
+        this.errorMessages.process = '';
       } else {
-        this.error_messages.process = ALPHANUMERIC_ERROR;
+        this.errorMessages.process = ALPHANUMERIC_ERROR;
       }
     },
     process_property(value) {
       if (value === '' || this.isAlphaNumeric(value)) {
-        this.error_messages.process_property = '';
+        this.errorMessages.process_property = '';
       } else {
-        this.error_messages.process_property = ALPHANUMERIC_ERROR;
+        this.errorMessages.process_property = ALPHANUMERIC_ERROR;
       }
     }
   },
@@ -144,7 +144,7 @@ export default {
     theme_property: '',
     process: '',
     process_property: '',
-    error_messages: { theme: 'This field is required', theme_property: '', process: '', process_property: '' }
+    errorMessages: { theme: 'This field is required', theme_property: '', process: '', process_property: '' }
   }),
 
   computed: {
@@ -153,7 +153,7 @@ export default {
       ontologySet: 'app/ontologySet'
     }),
     isValid() {
-      if (this.error_messages.theme || this.error_messages.theme_property || this.error_messages.process || this.error_messages.process_property) {
+      if (this.errorMessages.theme || this.errorMessages.theme_property || this.errorMessages.process || this.errorMessages.process_property) {
         return false;
       }
       return true;
@@ -176,7 +176,7 @@ export default {
 
 <style lang="scss" scoped>
 .input-error-message {
-  text-align: center;
+  text-align: left;
   color: red;
 }
 </style>
