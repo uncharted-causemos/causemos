@@ -43,15 +43,15 @@
       >
         <template #content>
           <evidence-pane
-            v-if="
-              activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null
-            "
+            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
             :selected-relationship="selectedEdge"
             :statements="selectedStatements"
             :project="project"
             :is-fetching-statements="isFetchingStatements"
             :should-confirm-curations="true"
+            :show-edge-recommendations="true"
             @updated-relations="resolveUpdatedRelations"
+            @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
             <edge-polarity-switcher
               :selected-relationship="selectedEdge"
@@ -490,6 +490,15 @@ export default defineComponent({
           // this.showPathSuggestions = true;
           // this.pathSuggestionSource = formattedEdge.source;
           // this.pathSuggestionTarget = formattedEdge.target;
+          const newEdge = {
+            id: '',
+            user_polarity: null,
+            source: source.concept,
+            target: target.concept,
+            reference_ids: []
+          };
+          const data = await this.addCAGComponents([], [newEdge], 'manual');
+          this.setUpdateToken(data.updateToken);
         } else {
           const newEdge = {
             id: '',
@@ -501,6 +510,10 @@ export default defineComponent({
           const data = await this.addCAGComponents([], [newEdge], 'manual');
           this.setUpdateToken(data.updateToken);
         }
+        this.edgeToSelectOnNextRefresh = {
+          source: edge.source,
+          target: edge.target
+        };
       } else {
         // FIXME: We should allow partial cases
         this.toaster(
@@ -1039,6 +1052,20 @@ export default defineComponent({
       this.showModalRename = true;
       this.renameNodeId = node.id;
       this.renameNodeName = node.concept;
+    },
+    async addEdgeEvidenceRecommendations(ids: string[]) {
+      if (this.selectedEdge) {
+        const payload = {
+          id: this.selectedEdge.id,
+          source: this.selectedEdge.source,
+          target: this.selectedEdge.target,
+          user_polarity: null,
+          reference_ids: ids
+        };
+        this.selectedEdge.reference_ids = ids;
+        const data = await this.addCAGComponents([], [payload], 'curation');
+        this.setUpdateToken(data.updateToken);
+      }
     },
     async mergeNodes(mergeNode: { data: NodeParameter }, targetNode: { data: NodeParameter }) {
       // 1. collect all of the relevant data for the following steps
