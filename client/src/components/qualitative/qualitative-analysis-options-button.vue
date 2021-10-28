@@ -3,7 +3,7 @@
     :initial-name="cagNameToDisplay"
     :id-to-duplicate="currentCAG"
     @rename="onRenameAnalysis"
-    @on-duplicate-success="onDuplicateSuccess"
+    @duplicate-success="onDuplicateSuccess"
     @delete="onDeleteAnalysis"
   />
 </template>
@@ -80,7 +80,7 @@ export default defineComponent({
           toast(CAG.ERRONEOUS_DELETION, 'error', true);
         });
     };
-    const onDuplicateSuccess = (name: string, newCagId: string) => {
+    const onDuplicateSuccess = (newCagId: string) => {
       router.push({
         name: 'qualitative',
         params: {
