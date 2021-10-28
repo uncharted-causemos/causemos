@@ -1,5 +1,43 @@
 <template>
-  <div :class="{ 'project-card-container': !showMore, 'project-card-container selected': showMore }">
+  <card class="project-card-container" :is-hoverable="false">
+    <div class="project-card-row" @click="openAnalysis()">
+      <div class="project-card-column extra-wide">
+        <h4>{{analysis.title}}</h4>
+        <img
+          v-if="analysis.previewImageSrc !== null"
+          class="thumbnail-image"
+          :src="analysis.previewImageSrc"
+        >
+      </div>
+      <div class="project-card-column">
+        <div>{{analysis.subtitle}}</div>
+        <div class="description">{{analysis.description}}</div>
+      </div>
+      <div class="project-card-column">
+        <span class="instance-header">{{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}</span>
+        <div>{{analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}</div>
+      </div>
+      <div class="project-card-column">
+        <span class="instance-header">{{analysis.type === 'quantitative' ? '': 'Relations'}}</span>
+        <div>{{analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
+      </div>
+      <options-button :wider-dropdown-options="true" :dropdown-below="true">
+        <template #content>
+          <div class="dropdown-option" @click="openAnalysis">
+            <i class="fa fa-fw fa-folder-open-o" /> Open
+          </div>
+          <div class="dropdown-option" @click="editAnalysis">
+            <i class="fa fa-fw fa-edit" /> Rename
+          </div>
+          <div class="dropdown-option" @click="duplicateAnalysis">
+            <i class="fa fa-fw fa-copy" /> Duplicate
+          </div>
+          <div class="dropdown-option destructive" @click="showWarningModal">
+            <i class="fa fa-fw fa-trash" /> Delete
+          </div>
+        </template>
+      </options-button>
+    </div>
     <modal-confirmation
       v-if="showModal"
       :autofocus-confirm="false"
@@ -15,77 +53,7 @@
         />
       </template>
     </modal-confirmation>
-    <div
-      class="row project-card-header"
-      @click="toggleShowMore()">
-      <div class="col-sm-4 instance-header no-padding">
-        <div class="analysis-title"
-          @click="openAnalysis">
-          <i :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }" />
-          <span>&nbsp;{{analysis.title}}</span>
-        </div>
-        <div>
-          <img :src="analysis.previewImageSrc" style="height: 70px; border: 1px solid #eee">
-        </div>
-      </div>
-      <div class="col-sm-4">
-        <div class="instance-header" style="margin-left: 0px">
-          <div style="left-margin: 0px">{{analysis.subtitle}}</div>
-        </div>
-        <div>{{analysis.description}}</div>
-      </div>
-      <div class="col-sm-1 instance-header">
-        {{analysis.type === 'quantitative' ? 'Datacubes' : 'Concepts'}}
-        <div style="color: black">{{analysis.type === 'quantitative' ? analysis.datacubesCount : analysis.nodeCount }}</div>
-      </div>
-      <div class="col-sm-1 instance-header">
-        {{analysis.type === 'quantitative' ? '': 'Relations'}}
-        <div style="color: black">{{analysis.type === 'quantitative' ? '' : analysis.edgeCount }}</div>
-      </div>
-    </div>
-    <div
-      v-if="showMore"
-      class="project-card-footer"
-    >
-      <div class="row">
-        <div class="col-sm-5 instance-header"></div>
-        <div class="col-sm-1 instance-header">
-          <button
-            v-tooltip.top-center="'Open analysis'"
-            type="button"
-            class="btn btn-primary button-spacing btn-call-for-action"
-            @click="openAnalysis">
-            <i class="fa fa-folder-open-o" /> Open
-          </button>
-        </div>
-        <div class="col-sm-3">
-          <button
-            v-tooltip.top-center="'Rename analysis'"
-            type="button"
-            class="btn btn-primary button-spacing"
-            @click="editAnalysis">
-            <i class="fa fa-edit" /> Rename
-          </button>
-          <button
-            v-tooltip.top-center="'Duplicate analysis'"
-            type="button"
-            class="btn btn-primary button-spacing"
-            @click="duplicateAnalysis">
-            <i class="fa fa-copy" /> Duplicate
-          </button>
-        </div>
-        <div class="col-sm-2">
-          <button
-            v-tooltip.top-center="'delete analysis'"
-            type="button"
-            class="remove-button button-spacing"
-            @click.stop="showWarningModal">
-            <i class="fa fa-trash" /> Delete
-          </button>
-        </div>
-      </div>
-    </div>
-  </div>
+  </card>
 </template>
 
 <script lang="ts">
@@ -97,6 +65,8 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
+import Card from './widgets/card.vue';
+import OptionsButton from './widgets/options-button.vue';
 
 interface AnalysisOverviewCard {
   id: string;
@@ -114,7 +84,9 @@ export default defineComponent({
   name: 'AnalysisOverviewCard',
   components: {
     ModalConfirmation,
-    MessageDisplay
+    MessageDisplay,
+    Card,
+    OptionsButton
   },
   emits: ['open', 'rename', 'delete', 'duplicate'],
   props: {
@@ -176,51 +148,51 @@ export default defineComponent({
 
 <style scoped lang="scss">
 @import "~styles/variables";
-
-.analysis-title {
-  text-decoration: underline;
+.project-card-container {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
   cursor: pointer;
+
+  &:hover h4 {
+    color: $selected-dark;
+  }
+}
+
+h4 {
+  margin: 0;
+  font-size: $font-size-large;
+}
+
+.project-card-row {
+  display: flex;
+}
+
+.project-card-column {
+  flex: 1;
+  min-width: 0;
+
+  &.extra-wide {
+    flex: 2;
+  }
+
+  .description, .thumbnail-image {
+    margin-top: 5px;
+  }
+}
+
+.thumbnail-image {
+  height: 150px;
+  border: 1px solid $separator
 }
 
 .instance-header {
   @include header-secondary;
-  color: #222;
-  padding-bottom: 5px;
-  margin-left: 1rem;
+  font-weight: bold;
 }
 
-.project-card-container {
-  background: #fcfcfc;
-  border: 1px solid #dedede;
-  margin: 1px 0;
-  padding: 6px;
+.destructive {
+  color: $negative;
 }
 
-.project-card-container:hover {
-  border-color: $selected;
-}
-
-.selected {
-  border-left: 4px solid $selected;
-  background-color: #ffffff;
-}
-
-.project-card-header {
-  padding-bottom: 5px;
-  padding-top: 5px;
-  padding-left: 3rem;
-}
-
-.button-spacing {
-  padding: 4px;
-  margin: 2px;
-}
-
-.remove-button {
-  background: #F44336;
-  color: white;
-  font-weight: 600;
-  border: none;
-  user-select: none;
-}
 </style>

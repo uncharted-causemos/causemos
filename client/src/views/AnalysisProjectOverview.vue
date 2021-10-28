@@ -7,10 +7,19 @@
     @cancel="onRenameModalClose"
   />
   <div class="project-overview-container">
-    <div class="row row-header" style="height: 20vh; margin-bottom: 1rem">
-      <div class="col-md-8">
-        <h3>
-          {{projectMetadata.name}}
+    <header>
+      <div class="metadata-column">
+        <h3>{{ projectMetadata.name }}</h3>
+        <div class="description">
+          <div v-if="!isEditingDesc">
+            {{ projectMetadata.description }}
+          </div>
+          <textarea
+            v-else
+            v-model="projectMetadata.description"
+            type="text"
+            class="model-attribute-desc"
+          />
           <span
             class="edit-model-desc"
             @click="updateDesc"
@@ -18,73 +27,38 @@
           >
             <i class="fa fa-edit" />
           </span>
-        </h3>
-        <!-- datacube desc -->
-        <div v-if="!isEditingDesc">
-          {{projectMetadata.description}}
         </div>
-        <div v-else style="display: flex;">
-          <textarea
-            v-model="projectDesc"
-            type="text"
-            class="model-attribute-desc"
-          />
-          <button
-            class="btn btn-primary button-spacing btn-call-for-action"
-            @click="updateDesc">
-              Save
-          </button>
-          <button
-            class="btn btn-default button-spacing"
-            @click="isEditingDesc=!isEditingDesc">
-              Cancel
-          </button>
-        </div>
-        <div style="padding-top: 5px; ">
-          <b>Contributors: </b>
-          <span v-for="analyst in ['Analyst 1', 'Analyst 2']"
-          :key="analyst" class="maintainer">{{analyst}}</span>
-        </div>
-        <div class="tags-container">
-          <b style="flex-basis: 100%">Tags:</b>
-          <div
-            v-for="tag in tags"
-            :key="tag"
-            class="tag">
-            {{ tag }}
-          </div>
+        <div>
+          <strong>Contributors</strong>
+          <span v-for="contributor in ['Analyst 1', 'Analyst 2']"
+          :key="contributor" class="contributor">{{contributor}}</span>
         </div>
       </div>
-      <div class="col-md-2 KBstats-container">
-        <b style="flex-basis: 100%">KNOWLEDGE BASE:</b>
+      <div v-if="tags.length > 0" class="tags-column">
+        <strong>Tags</strong>
+        <span v-for="tag in tags" :key="tag" class="tag">
+          {{ tag }}
+        </span>
+      </div>
+      <div class="kb-stats-column">
+        <strong>Knowledge Base</strong>
         <div>{{ KBname }}</div>
-        <br>
-        <div><b>{{ numberFormatter(numDocuments) }}</b> documents</div>
-        <div><b>{{ numberFormatter(numStatements) }}</b> causal relationships</div>
-        <div>
-          <button
-            class="button"
-            style="margin-top: 5px"
-            @click="showDocumentModal=true">
-              Add Documents
-          </button>
-        </div>
+        <div><strong>{{ numberFormatter(numDocuments) }}</strong> documents</div>
+        <div><strong>{{ numberFormatter(numStatements) }}</strong> causal relationships</div>
+        <button class="button" @click="showDocumentModal=true">
+          Add Documents
+        </button>
         <modal-upload-document
           v-if="showDocumentModal === true"
           @close="showDocumentModal = false" />
       </div>
-      <div class="col-md-2" style="height: 100%; padding-left: 0px; padding-right: 0px">
-        <img
-                class="map-image"
-                src="../assets/GenericWorld.png"
-                alt="Generic world map"
-          >
+      <div class="map">
+        <img src="../assets/GenericWorld.png" alt="Generic world map">
         <!-- placeholder for area-of-interest image -->
       </div>
-    </div>
-    <hr />
-    <div class="col-md-12">
-      <div class="col-md-3 insight-container">
+    </header>
+    <main>
+      <div class="insights-column">
         <button
           type="button"
           class="btn btn-primary btn-call-for-action"
@@ -92,76 +66,59 @@
             <i class="fa fa-fw fa-star fa-lg" />
             Review Analysis Checklist
         </button>
-        <list-analytical-questions-pane />
+        <list-analytical-questions-pane  class="insights"/>
       </div>
-      <div class="col-md-9">
-        <div class="row">
-          <div style="justify-content: space-between; display: flex">
-            <div class="controls">
-              <input
-                v-model="searchText"
-                type="text"
-                placeholder="Search ..."
-                class="form-control"
-              >
-              <div class="sorting">
-               <button
-                  type="button"
-                  class="btn btn-default"
-                  @click="toggleSortingDropdownAnalyses"
-                ><span class="lbl">Sort by</span> - {{ selectedAnalysisSortingOption }}
-                  <i class="fa fa-caret-down" />
-                </button>
-                <div v-if="showSortingDropdownAnalyses">
-                  <dropdown-control class="dropdown">
-                    <template #content>
-                      <div
-                        v-for="option in analysisSortingOptions"
-                        :key="option"
-                        class="dropdown-option"
-                        @click="sortAnalyses(option)">
-                        {{ option }}
-                      </div>
-                    </template>
-                  </dropdown-control>
-                </div>
-              </div>
-            </div>
-            <div class="button-container">
-              <button
-                v-tooltip.top-center="'Create a new Qualitative Model'"
-                type="button"
-                class="btn btn-primary button-spacing btn-call-for-action"
-                @click="onCreateCAG"
-                ><i class="fa fa-plus-circle" />
-                  Qualitative Model
-              </button>
-              <button
-                v-tooltip.top-center="'Create a new Quantitative Analysis'"
-                type="button"
-                class="btn btn-primary button-spacing btn-call-for-action"
-                @click="onCreateDataAnalysis"
-                ><i class="fa fa-plus-circle" />
-                  Quantitative Analysis
-              </button>
-            </div>
+      <div class="analysis-list-column">
+        <div class="analysis-list-header">
+          <input
+            v-model="searchText"
+            type="text"
+            placeholder="Search ..."
+            class="search-bar"
+          >
+          <dropdown-button
+            :items="analysisSortingOptions"
+            :selected-item="selectedAnalysisSortingOption"
+            :inner-button-label="'Sort by'"
+            @item-selected="sortAnalyses"
+          />
+          <div class="button-container">
+            <button
+              v-tooltip.top-center="'Create a new Qualitative Model'"
+              type="button"
+              class="btn btn-primary btn-call-for-action"
+              @click="onCreateCAG"
+              ><i class="fa fa-plus" />
+                Create Qualitative Model
+            </button>
+            <button
+              v-tooltip.top-center="'Create a new Quantitative Analysis'"
+              type="button"
+              class="btn btn-primary btn-call-for-action"
+              @click="onCreateDataAnalysis"
+              ><i class="fa fa-plus" />
+                Create Quantitative Analysis
+            </button>
           </div>
         </div>
-        <div class="row analyses-list-elements">
-          <div
-            v-for="analysis in filteredAnalyses"
-            :key="analysis.id">
-            <analysis-overview-card
-              :analysis="analysis"
-              @open="onOpen(analysis)"
-              @delete="onDelete(analysis)"
-              @rename="onRename(analysis)"
-              @duplicate="onDuplicate(analysis)"
-            />
-          </div>
+        <div class="analysis-list">
+          <!-- the z-index of each card is lower than the previous card, so
+          earlier cards display over later ones and each card's dropdown
+          doesn't get clipped -->
+          <analysis-overview-card
+            v-for="(analysis, index) in filteredAnalyses"
+            :key="analysis.id"
+            class="analysis-overview-card"
+            :style="{'z-index': filteredAnalyses.length - index}"
+            :analysis="analysis"
+            @open="onOpen(analysis)"
+            @delete="onDelete(analysis)"
+            @rename="onRename(analysis)"
+            @duplicate="onDuplicate(analysis)"
+          />
         </div>
       </div>
-    </div>
+    </main>
   </div>
 </template>
 
@@ -169,7 +126,6 @@
 import { mapGetters, mapActions } from 'vuex';
 import AnalysisOverviewCard from '@/components/analysis-overview-card.vue';
 import _ from 'lodash';
-import DropdownControl from '@/components/dropdown-control.vue';
 import { getAnalysisState, getAnalysesByProjectId, createAnalysis, deleteAnalysis, updateAnalysis, duplicateAnalysis } from '@/services/analysis-service';
 import dateFormatter from '@/formatters/date-formatter';
 import modelService from '@/services/model-service';
@@ -180,6 +136,7 @@ import RenameModal from '@/components/action-bar/rename-modal';
 import projectService from '@/services/project-service';
 import ListAnalyticalQuestionsPane from '@/components/analytical-questions/list-analytical-questions-pane.vue';
 import numberFormatter from '@/formatters/number-formatter';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 const toQuantitative = analysis => ({
   analysisId: analysis.id,
@@ -206,9 +163,9 @@ export default {
   components: {
     AnalysisOverviewCard,
     ListAnalyticalQuestionsPane,
-    DropdownControl,
     ModalUploadDocument,
-    RenameModal
+    RenameModal,
+    DropdownButton
   },
   data: () => ({
     analyses: [],
@@ -514,24 +471,37 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+@import "@/styles/variables";
 
-$padding-size: 2vh;
 .project-overview-container {
-  padding-top: 0;
-}
-
-.map-image {
-  height: 100%;
-  float: right;
-}
-
-.insight-container {
-  background-color: white;
-  height: 70vh;
-  overflow-y: auto;
   display: flex;
   flex-direction: column;
-  padding: 10px;
+  height: $content-full-height;
+}
+
+header {
+  height: 25vh;
+  display: flex;
+  padding: 20px;
+  padding-bottom: 0;
+}
+
+.metadata-column {
+  flex: 1;
+  min-width: 0;
+  overflow: auto;
+
+  h3 {
+    margin: 0;
+  }
+
+  & > *:not(:first-child) {
+    margin-top: 5px;
+  }
+
+  .description {
+    max-width: 90ch;
+  }
 }
 
 .edit-model-desc {
@@ -543,14 +513,29 @@ $padding-size: 2vh;
 .model-attribute-desc {
   border-width: 1px;
   border-color: rgb(216, 214, 214);
-  min-width: 85%;
-  flex-basis: 85%;
+  min-width: 100%;
+  flex-basis: 100%;
 }
 
-.tags-container {
+.tags-column {
+  width: 20vw;
   display: flex;
-  padding-top: 10px;
   flex-wrap: wrap;
+  align-self: flex-start;
+
+  strong {
+    align-self: center;
+    margin-right: 5px;
+  }
+}
+
+.map {
+  width: 20vw;
+
+  img {
+    width: 100%;
+    height: 100%;
+  }
 }
 
 .tag {
@@ -563,16 +548,76 @@ $padding-size: 2vh;
   border-radius: 4px;
 }
 
-.analyses-list-elements {
-  height: 65vh;
-  overflow-y: auto;
+.model-attribute-desc {
+  border-width: 1px;
+  border-color: rgb(216, 214, 214);
+  min-width: 85%;
+  flex-basis: 85%;
+}
+
+.kb-stats-column {
+  width: 20vw;
+
+  button {
+    margin-top: 5px;
+  }
+}
+
+main {
+  flex: 1;
+  min-height: 0;
+  padding: 20px;
+  display: flex;
+}
+
+.insights-column {
   flex: 1;
   display: flex;
   flex-direction: column;
-  margin-bottom: 20px;
 }
 
-.maintainer {
+.insights {
+  background: white;
+  padding: 10px;
+  // Pane already contains bottom margin
+  padding-bottom: 0;
+  margin-top: 10px;
+  flex: 1;
+  min-height: 0;
+}
+
+.analysis-list-column {
+  flex: 3;
+  display: flex;
+  flex-direction: column;
+  margin-left: 10px;
+}
+
+.analysis-list-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  .search-bar {
+    padding: 8px;
+    width: 250px;
+    margin-right: 5px;
+    border: 1px solid grey;
+  }
+}
+
+.analysis-list {
+  margin-top: 10px;
+  padding-bottom: 20px;
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+}
+
+.analysis-overview-card:not(:first-child) {
+  margin-top: 5px;
+}
+
+.contributor {
   background-color: lightgrey;
   border-style: solid;
   border-width: 1px;
@@ -582,89 +627,13 @@ $padding-size: 2vh;
   margin: 5px;
 }
 
-.row {
-  padding-left: $padding-size / 2;
-}
-
-.row-header {
-  padding-left: $padding-size;
-}
-
-.header-prompt {
-  font-weight: normal;
-  font-size: 28px;
-  margin-top: 0;
-  text-align: center;
-}
-
-.descriptions {
-  display: flex;
-  font-size: large;
-}
-
-.descriptions {
-  margin: 3vh 0;
-
-  & > p {
-    color: #747576;
-    width: 100%;
-  }
-}
-
-.cards > .overview-card-container:not(:first-child),
-.descriptions > p:not(:first-child) {
-  margin-left: 6.25vh;
-}
-
-.title {
-  display: flex;
-  align-items: center;
-  div {
-    flex: 1;
-  }
-  .btn-primary {
-    margin: 20px 5px 10px;
-  }
-}
-
 .button-container {
   display: flex;
   justify-content: space-between;
+
+  & > *:not(:first-child) {
+    margin-left: 5px;
+  }
 }
 
-.button-spacing {
-  padding: 4px;
-  margin: 2px;
-}
-
-.controls {
-  display: flex;
-  justify-content: space-between;
-  input[type=text] {
-    padding: 8px;
-    width: 250px;
-    margin-right: 5px;
-  }
-  .sorting {
-    position: relative;
-    .btn {
-      width: 180px !important;
-      text-align: left;
-      .lbl {
-        font-weight: normal;
-      }
-      .fa {
-        position:absolute;
-        right: 20px;
-      }
-    }
-    .dropdown {
-      position: absolute;
-      width: 100%;
-    }
-  }
-  .form-control {
-    background: #fff;
-  }
-}
 </style>
