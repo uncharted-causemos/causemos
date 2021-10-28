@@ -41,7 +41,7 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
   // to ignore the edges, nodes, and id.
   const modelData = {};
 
-  const attrBlacklist = ['edges', 'nodes', 'id', 'created_at', 'modified_at'];
+  const attrBlacklist = ['edges', 'nodes', 'id', 'created_at', 'modified_at', 'groups'];
   Object.keys(CAG).forEach(key => {
     if (attrBlacklist.indexOf(key) === -1) {
       if (key === 'name') {

@@ -20,6 +20,9 @@ export default {
     }
   },
   watch: {
+    text() {
+      this.refresh();
+    },
     highlight() {
       this.refresh();
     }
@@ -44,7 +47,7 @@ export default {
 
           let hElement = null;
           if (_.isNil(color)) {
-            hElement = `<span class='highlight'>${token}</span>`;
+            hElement = `<span class='highlight' style="background:#FEFE00">${token}</span>`;
           } else {
             hElement = `<span class='highlight' style='color:${color}'>${token}</span>`;
           }
@@ -68,7 +71,6 @@ export default {
   font-weight: 800;
 }
 .highlight-container {
-  color: $label-color;
   padding: 5px;
 }
 </style>
