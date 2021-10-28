@@ -46,6 +46,13 @@ export default {
     this.lexRef = null;
     this.pills = [];
   },
+  watch: {
+    filters: function filterChanged(n, o) {
+      if (filtersUtil.isEqual(n, o)) return;
+      this.$emit('filters-updated', this.filters);
+      this.setQuery();
+    }
+  },
   unmounted() {
     this.clearSearch();
   },

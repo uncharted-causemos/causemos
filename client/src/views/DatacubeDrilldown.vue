@@ -68,7 +68,7 @@
               </button>
               <button
                 class="btn btn-default filter-buttons"
-                v-tooltip.top-center="'Removed selected filter query'"
+                v-tooltip.top-center="'Remove selected filter query'"
                 @click="removeSelectedSavedFilter"
               >
                 <i class="fa fa-remove"></i>
@@ -241,7 +241,6 @@ export default defineComponent({
 
     const applySelectedSearchFilter = (filterName: string) => {
       selectedSearchFilter.value = filterName;
-      // FIXME: applying an existing filter does not actually apply nor appear in the lex
       initialSearchFilters.value = savedSearchFilters.value.find((f: any) => f.name === filterName).query;
     };
 
@@ -273,6 +272,8 @@ export default defineComponent({
       store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
       toast('Selected saved filter removed successfully', 'success', false);
       selectedSearchFilter.value = '';
+      // also, let the lex-bar clear its current query!?
+      // onSearchFiltersUpdated({ clauses: [] });
     };
 
     return {

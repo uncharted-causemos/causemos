@@ -760,7 +760,7 @@ export default defineComponent({
     };
 
     watchEffect(() => {
-      if (initialSearchFilters.value) {
+      if (initialSearchFilters.value && !_.isEmpty(initialSearchFilters.value)) {
         searchFilters.value = initialSearchFilters.value;
       }
     });
