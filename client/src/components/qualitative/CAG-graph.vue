@@ -31,6 +31,7 @@
 import _ from 'lodash';
 import moment from 'moment';
 import * as d3 from 'd3';
+import { mapActions } from 'vuex';
 import { interpolatePath } from 'd3-interpolate-path';
 import Mousetrap from 'mousetrap';
 
@@ -40,7 +41,7 @@ import Adapter from '@/graphs/elk/adapter';
 import { layered } from '@/graphs/elk/layouts';
 import svgUtil from '@/utils/svg-util';
 import { nodeBlurScale, calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
-import { calculateNeighborhood, hasBackingEvidence, highlightOptions } from '@/utils/graphs-util';
+import { calculateNeighborhood, hasBackingEvidence, highlightOptions, overlap } from '@/utils/graphs-util';
 import NewNodeConceptSelect from '@/components/qualitative/new-node-concept-select';
 import { SELECTED_COLOR, UNDEFINED_COLOR } from '@/utils/colors-util';
 import ColorLegend from '@/components/graph/color-legend';
@@ -50,6 +51,8 @@ import GraphSearch from '@/components/widgets/graph-search.vue';
 import projectService from '@/services/project-service';
 
 const pathFn = svgUtil.pathFn.curve(d3.curveBasis);
+const targetNodeSelector = 'rect';
+const mergeNodeColor = 'rgb(136, 255, 136)';
 
 const tweenEdgeAndNodes = false; // Flag to turn on/off path animation
 
@@ -689,7 +692,8 @@ export default {
   emits: [
     'delete', 'refresh',
     'new-edge', 'node-click', 'edge-click', 'background-click', 'background-dbl-click',
-    'rename-node'
+    'rename-node',
+    'merge-nodes'
   ],
   data: () => ({
     selectedNode: '',
@@ -697,7 +701,8 @@ export default {
     newNodeY: 0,
     svgX: 0,
     svgY: 0,
-    showCustomConcept: false
+    showCustomConcept: false,
+    targetNode: null
   }),
   computed: {
     conceptsInCag() {
@@ -886,6 +891,9 @@ export default {
     this.mouseTrap.reset();
   },
   methods: {
+    ...mapActions({
+      setUpdateToken: 'app/setUpdateToken'
+    }),
     saveCustomConcept(value) {
       this.$emit('suggestion-selected', {
         concept: value.theme,
@@ -913,8 +921,56 @@ export default {
         d3.select('.node input[type=text]').node().focus();
       }
 
-      this.renderer.enableDrag(true);
+      this.renderer.enableDrag(true, this.dragMoveCallback, this.dragEndCallback);
       this.$emit('refresh', null);
+    },
+    dragMoveCallback(node, graph) {
+      const nodeUI = node.select('.node-ui');
+      const rect = nodeUI.select(targetNodeSelector);
+      const nodeUIRect = rect.node();
+
+      // FIXME: Should do this in drag-start
+      if (nodeUI.select('.node-control').size() > 0) {
+        node.select('.node-control').remove();
+      }
+
+      const others = graph.chart.selectAll('.node-ui')
+        .filter(d => {
+          return !d.nodes || d.nodes.length === 0;
+        })
+        .filter(d => d.id !== nodeUI.datum().id);
+
+      let targetNode = null;
+
+      others.selectAll(targetNodeSelector)
+        .style('stroke', DEFAULT_STYLE.nodeHeader.stroke)
+        .style('stroke-width', DEFAULT_STYLE.nodeHeader.strokeWidth);
+
+      others.each(function () {
+        const otherNodeUI = d3.select(this);
+        const otherRect = otherNodeUI.select(targetNodeSelector);
+        const otherNodeUIRect = otherRect.node();
+
+        if (overlap(otherNodeUIRect, nodeUIRect, 0.5)) {
+          targetNode = otherNodeUI;
+          otherRect
+            .style('stroke', mergeNodeColor)
+            .style('stroke-width', 12);
+        }
+      });
+
+      this.targetNode = targetNode;
+    },
+    async dragEndCallback(node) {
+      if (this.targetNode !== null) {
+        this.$emit('merge-nodes', node.datum(), this.targetNode.datum());
+
+        // reset this.targetNode style, set null
+        this.targetNode.select(targetNodeSelector)
+          .style('fill', '#fff')
+          .attr('height', d => d.height);
+        this.targetNode = null;
+      }
     },
     highlight() {
       // Check if the subgraph was added less than 1 min ago
