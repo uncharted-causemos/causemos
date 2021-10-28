@@ -12,24 +12,28 @@
         <label class="col-md-3 col-form-label">Theme</label>
         <div class="col-md-7">
           <input class="form-control" v-model="theme" type="text" placeholder="Type a theme"/>
+          <div class="input-error-message" v-if="errorMessages.theme">{{errorMessages.theme}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Theme property</label>
         <div class="col-md-7">
           <input class="form-control" v-model="theme_property" type="text" placeholder="Type the theme property (optional)"/>
+          <div class="input-error-message" v-if="errorMessages.theme_property">{{errorMessages.theme_property}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Process</label>
         <div class="col-md-7">
           <input class="form-control" v-model="process" type="text" placeholder="Type a process (optional)"/>
+          <div class="input-error-message" v-if="errorMessages.process">{{errorMessages.process}}</div>
         </div>
       </div>
       <div class="row form-group">
         <label class="col-md-3 col-form-label">Process property</label>
         <div class="col-md-7">
           <input class="form-control" v-model="process_property" type="text" placeholder="Type the process property (optional)"/>
+          <div class="input-error-message" v-if="errorMessages.process_property">{{errorMessages.process_property}}</div>
         </div>
       </div>
     </template>
@@ -43,7 +47,7 @@
         <button
           type="button"
           class="btn btn-primary btn-call-for-action"
-          :disabled="!haveData"
+          :disabled="!isValid"
           @click.stop="saveCustomConcept">Save Concept
         </button>
       </ul>
@@ -56,10 +60,47 @@ import { mapGetters, mapActions } from 'vuex';
 import Modal from '@/components/modals/modal';
 import projectService from '@/services/project-service';
 
+// this error message can probably be worded better
+const ALPHANUMERIC_ERROR = 'This field can only contain alphanumeric characters';
+
 export default {
   name: 'modal-custom-concept',
   components: {
     Modal
+  },
+  watch: {
+    theme(value) {
+      if (value.length > 0) {
+        if (this.isAlphaNumeric(value)) {
+          this.errorMessages.theme = '';
+        } else {
+          this.errorMessages.theme = ALPHANUMERIC_ERROR;
+        }
+      } else {
+        this.errorMessages.theme = 'This field is required';
+      }
+    },
+    theme_property(value) {
+      if (value === '' || this.isAlphaNumeric(value)) {
+        this.errorMessages.theme_property = '';
+      } else {
+        this.errorMessages.theme_property = ALPHANUMERIC_ERROR;
+      }
+    },
+    process(value) {
+      if (value === '' || this.isAlphaNumeric(value)) {
+        this.errorMessages.process = '';
+      } else {
+        this.errorMessages.process = ALPHANUMERIC_ERROR;
+      }
+    },
+    process_property(value) {
+      if (value === '' || this.isAlphaNumeric(value)) {
+        this.errorMessages.process_property = '';
+      } else {
+        this.errorMessages.process_property = ALPHANUMERIC_ERROR;
+      }
+    }
   },
   methods: {
     ...mapActions({
@@ -81,6 +122,10 @@ export default {
     clearData() {
       this.newTheme = this.newThemeProperty = this.newProcess = this.newProcessProperty = '';
     },
+    isAlphaNumeric(str) {
+      const regex = RegExp('^[A-Za-z0-9 ]+$');
+      return regex.test(str);
+    },
     close() {
       this.clearData();
       if (this.hasContext === true) {
@@ -94,7 +139,8 @@ export default {
     theme: '',
     theme_property: '',
     process: '',
-    process_property: ''
+    process_property: '',
+    errorMessages: { theme: 'This field is required', theme_property: '', process: '', process_property: '' }
   }),
 
   computed: {
@@ -102,11 +148,11 @@ export default {
       project: 'app/project',
       ontologySet: 'app/ontologySet'
     }),
-    haveData() {
-      if (this.theme.length > 0) {
-        return true;
+    isValid() {
+      if (this.errorMessages.theme || this.errorMessages.theme_property || this.errorMessages.process || this.errorMessages.process_property) {
+        return false;
       }
-      return false;
+      return true;
     },
     customGrounding() {
       return {
@@ -125,4 +171,8 @@ export default {
 </script>
 
 <style lang="scss" scoped>
+.input-error-message {
+  text-align: left;
+  color: red;
+}
 </style>
