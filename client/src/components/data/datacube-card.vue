@@ -532,7 +532,7 @@ import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
-import { isIndicator, isModel } from '@/utils/datacube-util';
+import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
@@ -883,8 +883,15 @@ export default defineComponent({
       }
     };
 
-    const modelRunsSearchData = computed(() => {
+    const modelRunsSearchData = ref<{[key: string]: any}>({});
+    watchEffect(() => {
       const result: {[key: string]: any} = {};
+      // add a search item for searching by tags
+      result[TAGS] = {
+        display_name: 'Tag',
+        values: []
+      };
+      // add a search item for each (input/output) dimesion
       dimensions.value.forEach(dim => {
         result[dim.name] = {
           display_name: dim.display_name,
@@ -894,8 +901,18 @@ export default defineComponent({
           result[dim.name].values = _.uniq(Array.from(dim.choices));
         }
       });
-      return result;
+      modelRunsSearchData.value = result;
     });
+
+    watchEffect(() => {
+      if (runTags.value) {
+        modelRunsSearchData.value[TAGS].values = runTags.value.map(tagInfo => tagInfo.label);
+      }
+    });
+
+    // TODO: update tags UI
+    //  - remove tag bills in datacube-card and only leave a link to the tags modal and a button to add a new tag
+    //  - utilize a dedicated tags search item in the lex-bar with auto-complete
 
     const onModelRunsFiltersUpdated = (filters: any) => {
       // parse and apply filters to the model runs data
@@ -912,7 +929,7 @@ export default defineComponent({
           const filterValues = c.values; // array of values to filter upon
           const isNot = !c.isNot; // is the filter reversed?
           filteredRuns = filteredRuns.filter(v => {
-            if (filterField === 'keyword') {
+            if (filterField === TAGS) {
               // special search, e.g. by keyword or tags
               return v.tags && v.tags.length > 0 && filterValues.some((val: string) => v.tags.includes(val) === isNot);
             } else {

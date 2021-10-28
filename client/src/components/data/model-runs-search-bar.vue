@@ -17,15 +17,17 @@
 import _ from 'lodash';
 import { Lex, ValueState } from '@uncharted.software/lex/dist/lex';
 
-import TextPill from '@/search/pills/text-pill';
+import DynamicValuePill from '@/search/pills/dynamic-value-pill';
 import RangePill from '@/search/pills/range-pill';
+import TextPill from '@/search/pills/text-pill';
 import ValuePill from '@/search/pills/value-pill';
 
-import datacubeUtil from '@/utils/datacube-util';
+import SingleRelationState from '@/search/single-relation-state';
+
 import filtersUtil from '@/utils/filters-util';
 import { DatacubeGenericAttributeVariableType } from '@/types/Enums';
+import { TAGS } from '@/utils/datacube-util';
 
-const CODE_TABLE = datacubeUtil.CODE_TABLE;
 
 export default {
   name: 'ModelRunsSearchBar',
@@ -44,6 +46,9 @@ export default {
     this.lexRef = null;
     this.pills = [];
   },
+  unmounted() {
+    this.clearSearch();
+  },
   mounted() {
     // Generates lex pills from select datacube columns
     const keys = Object.keys(this.data);
@@ -51,8 +56,19 @@ export default {
       const keyData = this.data[k];
       const dcField = {
         field: k,
-        searchDisplay: keyData.display_name
+        searchDisplay: keyData.display_name,
+        searchable: true
       };
+      if (k === TAGS) {
+        return new DynamicValuePill(
+          dcField,
+          async () => {
+            return this.data && this.data[TAGS] ? this.data[TAGS].values : [];
+          },
+          'Select one or more tags to filter model runs',
+          true,
+          SingleRelationState);
+      }
       if (keyData.values && keyData.values.length > 0) {
         // suggestions are provided for this field
         const dcOptions = keyData.values;
@@ -65,7 +81,6 @@ export default {
 
     // Defines a list of searchable fields for LEX
     this.pills = [
-      new TextPill(CODE_TABLE.SEARCH), // keyword -> used for generic search where the search string matches certain tags and/or country name
       ...basicPills // searchable fields such as country, each would provide list of suggested values
     ];
 
@@ -76,7 +91,7 @@ export default {
     );
 
     const language = Lex.from('field', ValueState, {
-      name: 'Choose a field to search or search all with keyword',
+      name: 'Choose a field to search',
       suggestions,
       suggestionLimit: suggestions.length,
       autoAdvanceDefault: true,
