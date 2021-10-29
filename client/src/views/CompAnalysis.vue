@@ -5,7 +5,7 @@
     </teleport>
     <analytical-questions-and-insights-panel class="side-panel">
       <template #below-tabs>
-        <comments-button />
+        <analysis-comments-button />
       </template>
     </analytical-questions-and-insights-panel>
     <main>
@@ -47,13 +47,13 @@ import _ from 'lodash';
 import { DataState } from '@/types/Insight';
 import AnalysisOptionsButton from '@/components/data/analysis-options-button.vue';
 import { getAnalysis } from '@/services/analysis-service';
-import CommentsButton from '@/components/widgets/comments-button.vue';
+import AnalysisCommentsButton from '@/components/data/analysis-comments-button.vue';
 
 export default defineComponent({
   name: 'CompAnalysis',
   components: {
     DatacubeComparativeCard,
-    CommentsButton,
+    AnalysisCommentsButton,
     ActionBar,
     EmptyStateInstructions,
     AnalyticalQuestionsAndInsightsPanel,
