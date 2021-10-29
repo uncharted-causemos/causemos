@@ -3,7 +3,7 @@ const asyncHandler = require('express-async-handler');
 const router = express.Router();
 const cagService = rootRequire('/services/cag-service');
 const historyService = rootRequire('/services/history-service');
-const { MODEL_STATUS } = rootRequire('/util/model-util');
+const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 
 
 const OPERATION = Object.freeze({
@@ -22,7 +22,10 @@ router.put('/:mid/edge-polarity', asyncHandler(async (req, res) => {
     polarity
   } = req.body;
   await cagService.updateEdgeUserPolarity(modelId, edgeId, polarity);
-  await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
+  await cagService.updateCAGMetadata(modelId, {
+    status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS
+  });
 
   res.status(200).send({ polarity, updateToken: editTime });
 }));
@@ -81,9 +84,10 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
   await cagService.updateCAGMetadata(newId, {
     id: newId,
     name: name,
-    status: MODEL_STATUS.UNSYNCED,
+    status: MODEL_STATUS.NOT_REGISTERED,
     is_stale: CAG.is_stale,
-    is_quantified: false
+    is_quantified: false,
+    engine_status: RESET_ALL_ENGINE_STATUS
   });
 
   historyService.logHistory(newId, 'duplicate', nodes, edges);
