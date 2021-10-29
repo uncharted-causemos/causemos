@@ -14,7 +14,7 @@ import useToaster from '@/services/composables/useToaster';
 import { ANALYSIS } from '@/utils/messages-util';
 import router from '@/router';
 import { ProjectType } from '@/types/Enums';
-import AnalysisOptionsButtonWidget from '../widgets/analysis-options-button.vue';
+import AnalysisOptionsButtonWidget from '@/components/widgets/analysis-options-button-widget.vue';
 
 export default defineComponent({
   components: { AnalysisOptionsButtonWidget },

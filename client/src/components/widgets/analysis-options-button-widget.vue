@@ -47,7 +47,7 @@ import DropdownControl from '@/components/dropdown-control.vue';
 import DuplicateModal from '../action-bar/duplicate-modal.vue';
 export default defineComponent({
   components: { RenameModal, DropdownControl, DuplicateModal },
-  name: 'AnalysisOptionsButton',
+  name: 'AnalysisOptionsButtonWidget',
   props: {
     initialName: {
       type: String as PropType<string | null>,

@@ -15,7 +15,7 @@ import useToaster from '@/services/composables/useToaster';
 import { CAG } from '@/utils/messages-util';
 import router from '@/router';
 import { ProjectType } from '@/types/Enums';
-import AnalysisOptionsButtonWidget from '../widgets/analysis-options-button.vue';
+import AnalysisOptionsButtonWidget from '../widgets/analysis-options-button-widget.vue';
 import _ from 'lodash';
 import modelService from '@/services/model-service';
 
