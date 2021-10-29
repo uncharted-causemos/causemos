@@ -745,6 +745,10 @@ export default {
       },
       renameFn: (node) => {
         this.$emit('rename-node', node);
+      },
+      deleteFn: (node) => {
+        this.selectedNode = node;
+        this.$emit('delete', node.datum());
       }
     });
 
@@ -835,6 +839,7 @@ export default {
         .attr('height', 20)
         .style('fill', '#E11')
         .on('click', (evt) => {
+          renderer.options.deleteFn(node);
           evt.stopPropagation();
         });
 
