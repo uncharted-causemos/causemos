@@ -101,6 +101,7 @@ export interface NodeParameter {
   label: string;
   model_id?: string;
   modified_at?: number;
+  components: string[];
   parameter?: any;
 }
 

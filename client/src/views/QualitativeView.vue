@@ -26,6 +26,8 @@
           @delete="onDelete"
           @edge-set-user-polarity="setEdgeUserPolarity"
           @suggestion-selected="onSuggestionSelected"
+          @rename-node="openRenameModal"
+          @merge-nodes="mergeNodes"
         />
       </div>
       <drilldown-panel
@@ -41,15 +43,15 @@
       >
         <template #content>
           <evidence-pane
-            v-if="
-              activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null
-            "
+            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
             :selected-relationship="selectedEdge"
             :statements="selectedStatements"
             :project="project"
             :is-fetching-statements="isFetchingStatements"
             :should-confirm-curations="true"
+            :show-edge-recommendations="true"
             @updated-relations="resolveUpdatedRelations"
+            @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
             <edge-polarity-switcher
               :selected-relationship="selectedEdge"
@@ -161,6 +163,14 @@
       @add-paths="addSuggestedPath"
       @close="showPathSuggestions = false"
     />
+
+    <rename-modal
+      v-if="showModalRename"
+      @confirm="renameNode"
+      :modal-title="'Rename node'"
+      :current-name="renameNodeName"
+      @close="showModalRename = false"
+    />
   </div>
 </template>
 
@@ -169,6 +179,7 @@ import _ from 'lodash';
 import html2canvas from 'html2canvas';
 import { mapActions, mapGetters } from 'vuex';
 
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import EmptyStateInstructions from '@/components/empty-state-instructions.vue';
 import ActionBar from '@/components/qualitative/action-bar.vue';
 import CAGGraph from '@/components/qualitative/CAG-graph.vue';
@@ -253,6 +264,7 @@ export default defineComponent({
     ModalImportCag,
     ModalImportConflict,
     ModalPathFind,
+    RenameModal,
     AnalyticalQuestionsAndInsightsPanel
   },
   setup() {
@@ -274,6 +286,11 @@ export default defineComponent({
     showModalConflict: false,
     showModalImportCAG: false,
     showPathSuggestions: false,
+
+    showModalRename: false,
+    renameNodeId: '',
+    renameNodeName: '',
+
 
     drilldownTabs: [] as { name: string; id: string }[],
     activeDrilldownTab: null as string | null,
@@ -450,31 +467,55 @@ export default defineComponent({
       );
 
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
+        const relationsToAdd: SourceTargetPair[] = [];
+
+        // Search for all possible combinations of soruce/target
+        source.components.forEach(source => {
+          target.components.forEach(target => {
+            relationsToAdd.push({ source, target });
+          });
+        });
         const edgeData = await projectService.getProjectStatementIdsByEdges(
           this.project,
-          [edge],
+          relationsToAdd,
           filtersUtil.newFilters()
         );
-        const formattedEdge = Object.assign(
-          { user_polarity: null, id: '' },
-          edge,
-          {
-            reference_ids: edgeData[edge.source + '///' + edge.target] || []
-          }
-        );
+        console.log('edgedata', edgeData);
+
+        const backingStatements: string[] = _.uniq(_.flatten(Object.values(edgeData)));
+        console.log('backing statements', backingStatements);
+
+        if (backingStatements.length === 0) {
+          // FIXME: Initiates the path suggestions
+          // this.showPathSuggestions = true;
+          // this.pathSuggestionSource = formattedEdge.source;
+          // this.pathSuggestionTarget = formattedEdge.target;
+          const newEdge = {
+            id: '',
+            user_polarity: null,
+            source: source.concept,
+            target: target.concept,
+            reference_ids: []
+          };
+          const data = await this.addCAGComponents([], [newEdge], 'manual');
+          this.setUpdateToken(data.updateToken);
+        } else {
+          const newEdge = {
+            id: '',
+            user_polarity: null,
+            source: source.concept,
+            target: target.concept,
+            reference_ids: backingStatements
+          };
+          const data = await this.addCAGComponents([], [newEdge], 'manual');
+          this.setUpdateToken(data.updateToken);
+        }
         this.edgeToSelectOnNextRefresh = {
           source: edge.source,
           target: edge.target
         };
-        if (formattedEdge.reference_ids.length === 0) {
-          this.showPathSuggestions = true;
-          this.pathSuggestionSource = formattedEdge.source;
-          this.pathSuggestionTarget = formattedEdge.target;
-        } else {
-          const data = await this.addCAGComponents([], [formattedEdge], 'manual');
-          this.setUpdateToken(data.updateToken);
-        }
       } else {
+        // FIXME: We should allow partial cases
         this.toaster(
           this.ontologyFormatter(edge.source) +
             ' ' +
@@ -520,7 +561,8 @@ export default defineComponent({
       const node = {
         id: new Date().getTime().toString(),
         concept: suggestion.concept,
-        label: suggestion.label
+        label: suggestion.label,
+        components: [suggestion.concept]
       };
       this.saveNodeToGraph(node);
     },
@@ -528,8 +570,8 @@ export default defineComponent({
     async saveNodeToGraph(node: NodeParameter) {
       // Creates a shallow clone of `node`, replacing the `id` property
       //  with an empty value
-      const { model_id, concept, label, modified_at, parameter } = node;
-      const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter };
+      const { model_id, concept, label, modified_at, parameter, components } = node;
+      const cleanedNode = { id: '', model_id, concept, label, modified_at, parameter, components };
       const data = await this.addCAGComponents([cleanedNode], [], 'manual');
       this.setUpdateToken(data.updateToken);
     },
@@ -736,9 +778,11 @@ export default defineComponent({
       this.selectedStatements = [];
       if (this.selectedNode === null) return;
       const searchFilters = filtersUtil.newFilters();
-      const concept = this.selectedNode.concept;
-      filtersUtil.addSearchTerm(searchFilters, 'topic', concept, 'or', false);
-
+      // const concept = this.selectedNode.concept;
+      const concepts = this.selectedNode.components;
+      for (let i = 0; i < concepts.length; i++) {
+        filtersUtil.addSearchTerm(searchFilters, 'topic', concepts[i], 'or', false);
+      }
       this.isFetchingStatements = true;
 
       projectService
@@ -850,7 +894,8 @@ export default defineComponent({
           id: n.id,
           concept: n.concept,
           label: n.label,
-          parameter: n.parameter
+          parameter: n.parameter,
+          components: n.components
         };
       });
 
@@ -929,7 +974,8 @@ export default defineComponent({
         return {
           id: '',
           concept: concept,
-          label: this.ontologyFormatter(concept)
+          label: this.ontologyFormatter(concept),
+          components: [concept]
         };
       });
       const result = await this.addCAGComponents(newNodesPayload, newEdges, 'path');
@@ -984,7 +1030,8 @@ export default defineComponent({
               nodePayload.push({
                 id: '',
                 concept: concept,
-                label: this.ontologyFormatter(concept)
+                label: this.ontologyFormatter(concept),
+                components: [concept]
               });
             }
           });
@@ -994,6 +1041,87 @@ export default defineComponent({
       // update and refresh
       const data = await this.addCAGComponents(nodePayload, edgePayload, 'curation');
       this.setUpdateToken(data.updateToken);
+    },
+    async renameNode(newName: string) {
+      console.log('Renaming', newName);
+      this.showModalRename = false;
+      await modelService.renameNode(this.currentCAG, this.renameNodeId, newName);
+      this.refresh();
+    },
+    openRenameModal(node: NodeParameter) {
+      this.showModalRename = true;
+      this.renameNodeId = node.id;
+      this.renameNodeName = node.concept;
+    },
+    async addEdgeEvidenceRecommendations(ids: string[]) {
+      if (this.selectedEdge) {
+        const payload = {
+          id: this.selectedEdge.id,
+          source: this.selectedEdge.source,
+          target: this.selectedEdge.target,
+          user_polarity: null,
+          reference_ids: ids
+        };
+        this.selectedEdge.reference_ids = ids;
+        const data = await this.addCAGComponents([], [payload], 'curation');
+        this.setUpdateToken(data.updateToken);
+      }
+    },
+    async mergeNodes(mergeNode: { data: NodeParameter }, targetNode: { data: NodeParameter }) {
+      // 1. collect all of the relevant data for the following steps
+      const mergeData = mergeNode.data;
+      const targetData = targetNode.data;
+
+      const updatedComponents = [...mergeData.components, ...targetData.components];
+      const mergeNodeEdges = this.modelComponents.edges.filter(e => e.target === mergeData.concept || e.source === mergeData.concept);
+      const removedEdges = mergeNodeEdges
+        .map(e => {
+          return { id: e.id };
+        });
+
+      // create replacement edges with updated targets & sources - these are the "updatedEdges"
+      const updatedEdges = mergeNodeEdges
+        .filter(e => e.target !== targetData.concept && e.source !== targetData.concept)
+        .map(e => {
+          const updatedEdge = { } as any;
+          updatedEdge.id = '';
+          updatedEdge.user_polarity = e.user_polarity !== undefined ? e.user_polarity : null;
+          updatedEdge.reference_ids = e.reference_ids;
+          updatedEdge.parameter = e.parameter;
+          if (e.target === mergeData.concept) {
+            updatedEdge.target = targetData.concept;
+            updatedEdge.source = e.source;
+          } else if (e.source === mergeData.concept) {
+            updatedEdge.target = e.target;
+            updatedEdge.source = targetData.concept;
+          }
+          return updatedEdge;
+        });
+
+      // find any duplicate edges that might exist the graph relative to the updatedEdges
+      // add the duplicates to the set to be removed, then combine their supporting data in the updatedEdges
+      updatedEdges.forEach(e => {
+        const duplicateEdge = this.modelComponents.edges.find(edge => {
+          return e.source === edge.source && e.target === edge.target;
+        });
+
+        if (duplicateEdge) {
+          removedEdges.push({ id: duplicateEdge.id });
+          e.reference_ids = e.reference_ids.concat(duplicateEdge.reference_ids);
+          // FIXME: We may need to decide how to handle weights merges
+        }
+      });
+
+      const removedNode = { id: mergeData.id };
+      const updatedNode = { ...this.modelComponents.nodes.filter(e => e.concept === targetData.concept)[0] };
+      updatedNode.components = updatedComponents;
+
+      // 2. remove the node to be merged, it's dependent edges and the duplicate edges
+      await this.removeCAGComponents([removedNode], removedEdges);
+
+      // 3. update the target node with new components and edges
+      const result = await this.addCAGComponents([updatedNode], updatedEdges, 'manual');
+      this.setUpdateToken(result.updateToken);
     }
   }
 });
