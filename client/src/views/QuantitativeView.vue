@@ -56,6 +56,7 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
+const MODEL_STATUS = modelService.MODEL_STATUS;
 
 export default defineComponent({
   name: 'QuantitativeView',
@@ -215,8 +216,10 @@ export default defineComponent({
         return;
       }
 
+      const engineStatus = this.modelSummary.engine_status[this.currentEngine];
+
       // If we have topology changes, then we should sync with inference engines
-      if (this.modelSummary.is_quantified === false) {
+      if (engineStatus === MODEL_STATUS.NOT_REGISTERED) {
         // Check model is ready to be used for experiments
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
@@ -232,10 +235,7 @@ export default defineComponent({
       this.disableOverlay();
 
       // Check if model is still training
-      if (
-        this.modelSummary &&
-        this.modelSummary.status === modelService.MODEL_STATUS.TRAINING
-      ) {
+      if (engineStatus === MODEL_STATUS.TRAINING) {
         const r = await modelService.checkAndUpdateRegisteredStatus(
           this.modelSummary.id,
           this.currentEngine
@@ -498,10 +498,11 @@ export default defineComponent({
 
       if (selectedScenario === undefined) return;
 
+      const engineStatus = this.modelSummary.engine_status[this.currentEngine];
 
       // 0. Refresh
       this.enableOverlay('Synchronizing model');
-      if (this.modelSummary && this.modelSummary.status === 0) {
+      if (this.modelSummary && engineStatus === MODEL_STATUS.NOT_REGISTERED) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
       }
@@ -581,7 +582,8 @@ export default defineComponent({
       }
 
       // Ensure we are ready to run, sync up with engines if necessary
-      if (this.modelSummary.status === 0) {
+      const engineStatus = this.modelSummary.engine_status[this.currentEngine];
+      if (engineStatus === MODEL_STATUS.NOT_REGISTERED) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
       }

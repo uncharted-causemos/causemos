@@ -38,11 +38,11 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
 
   const model = await modelService.findOne(modelId);
 
-  if (model.is_stale === false) {
-    Logger.info(`Model is alraedy initialized ${modelId}`);
-    res.status(200).send({ updateToken: moment().valueOf() });
-    return;
-  }
+  // if (model.is_stale === false) {
+  //   Logger.info(`Model is alraedy initialized ${modelId}`);
+  //   res.status(200).send({ updateToken: moment().valueOf() });
+  //   return;
+  // }
 
   const modelFields = {};
   if (_.isEmpty(model.parameter)) {
@@ -377,6 +377,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   const modelPayload = {
     id: modelId,
     status: status,
+    engine_status: {
+      [engine]: status
+    },
     parameter: {
       engine: engine
     },
