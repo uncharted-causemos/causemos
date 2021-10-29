@@ -1,8 +1,5 @@
 <template>
   <div class="parallel-coordinates-container">
-    <span class="scenario-count">
-      {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
-    </span>
     <div class="chart-wrapper">
       <svg
         ref="pcsvg"
@@ -23,7 +20,7 @@
 import * as d3 from 'd3';
 import _ from 'lodash';
 import { renderParallelCoordinates } from '@/charts/parallel-coordinates';
-import { computed, defineComponent, PropType, toRefs } from 'vue';
+import { defineComponent, PropType } from 'vue';
 import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
@@ -59,12 +56,6 @@ export default defineComponent({
     'generated-scenarios',
     'geo-selection'
   ],
-  setup(props) {
-    const { dimensionsData } = toRefs(props);
-    return {
-      scenarioCount: computed(() => dimensionsData.value.length)
-    };
-  },
   data: () => ({
     lastSelectedLines: [] as Array<string>
   }),
@@ -163,10 +154,6 @@ export default defineComponent({
   .parallel-coordinates-container {
     display: flex;
     flex-direction: column;
-  }
-
-  .scenario-count {
-    color: $label-color;
   }
 
   .chart-wrapper {

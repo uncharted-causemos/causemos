@@ -10,8 +10,23 @@
           >
             {{ activeDrilldownTab === null ? 'Show' : 'Hide' }} Breakdown
           </button>
+          <button
+            class="btn btn-default breakdown-button"
+            @click="toggleSearchBar=!toggleSearchBar"
+          >
+            <i class="fa fa-search"></i>
+          </button>
           <slot name="datacube-model-header-collapse" />
         </header>
+        <div
+          v-if="isModelMetadata && toggleSearchBar"
+          style="display: flex; align-items: center">
+          <model-runs-search-bar
+            :data="modelRunsSearchData"
+            :filters="searchFilters"
+            @filters-updated="onModelRunsFiltersUpdated" />
+          <slot name="search-filters-controls" />
+        </div>
         <modal-new-scenario-runs
           v-if="isModelMetadata && showNewRunsModal === true"
           :metadata="metadata"
@@ -30,9 +45,38 @@
           v-if="showGeoSelectionModal === true"
           :model-param="modelParam"
           @close="onGeoSelectionModalClose" />
+        <rename-modal
+          v-if="showTagNameModal"
+          :modal-title="'Tag Name'"
+          @confirm="addNewTag"
+          @cancel="showTagNameModal = false"
+        />
+        <modal-datacube-scenario-tags
+          v-if="showScenarioTagsModal === true"
+          :all-model-run-data="allModelRunData"
+          @close="showScenarioTagsModal=false" />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
+            <div class="tags-area-container">
+              <span class="scenario-count">
+                {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
+              </span>
+              <div style="font-size: small; display: flex; align-items: center">
+                <a
+                  class="see-all-tags"
+                  @click="showScenarioTagsModal=true">
+                  see all tags
+                </a>
+                <i
+                  class="fa fa-plus-circle"
+                  :class="{
+                    'add-new-tag-disabled': selectedScenarioIds.length === 0,
+                    'add-new-tag': selectedScenarioIds.length > 0
+                  }"
+                  @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
+              </div>
+            </div>
             <parallel-coordinates-chart
               class="pc-chart"
               :dimensions-data="runParameterValues"
@@ -430,12 +474,14 @@ import Modal from '@/components/modals/modal.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalGeoSelection from '@/components/modals/modal-geo-selection.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
+import ModalDatacubeScenarioTags from '@/components/modals/modal-datacube-scenario-tags.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
+import ModelRunsSearchBar from '@/components/data/model-runs-search-bar.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
+import RenameModal from '@/components/action-bar/rename-modal.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-
 
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
 import useDatacubeHierarchy from '@/services/composables/useDatacubeHierarchy';
@@ -456,15 +502,16 @@ import {
   ModelRunStatus,
   SpatialAggregationLevel,
   TemporalAggregationLevel,
-  TemporalResolutionOption
+  TemporalResolutionOption,
+  DatacubeGenericAttributeVariableType
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
-import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
+import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
-import { isIndicator, isModel } from '@/utils/datacube-util';
+import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
@@ -488,7 +535,8 @@ export default defineComponent({
   name: 'DatacubeCard',
   emits: [
     'on-map-load',
-    'update-model-parameter'
+    'update-model-parameter',
+    'search-filters-updated'
   ],
   props: {
     isPublishing: {
@@ -518,6 +566,10 @@ export default defineComponent({
     temporalResolutionOptions: {
       type: Array as PropType<AggregationOption[]>,
       default: []
+    },
+    initialSearchFilters: {
+      type: Object as PropType<any | null>,
+      default: null
     }
   },
   components: {
@@ -534,9 +586,12 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus,
     ModalConfirmation,
     ModalGeoSelection,
+    ModalDatacubeScenarioTags,
     ModalNewScenarioRuns,
+    ModelRunsSearchBar,
     ParallelCoordinatesChart,
     RadioButtonGroup,
+    RenameModal,
     SmallTextButton,
     timeseriesChart
   },
@@ -549,12 +604,14 @@ export default defineComponent({
       initialDataConfig,
       initialViewConfig,
       metadata,
+      initialSearchFilters,
       tabState
     } = toRefs(props);
 
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const projectType = computed(() => store.getters['app/projectType']);
     const tour = computed(() => store.getters['tour/tour']);
+    const toaster = useToaster();
 
     const activeDrilldownTab = ref<string|null>('breakdown');
     const currentTabView = ref<string>('description');
@@ -579,6 +636,12 @@ export default defineComponent({
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+
+    const toggleSearchBar = ref<boolean>(false);
+    const showTagNameModal = ref<boolean>(false);
+    const showScenarioTagsModal = ref<boolean>(false);
+
+    const searchFilters = ref<any>({});
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
     const modelRunsFetchedAt = ref(0);
@@ -623,12 +686,44 @@ export default defineComponent({
       runParameterValues
     } = useParallelCoordinatesData(metadata, allModelRunData);
 
+    const scenarioCount = computed(() => runParameterValues.value.length);
+
     const runningDefaultRun = computed(() => allModelRunData.value.some(run => run.is_default_run && (run.status === ModelRunStatus.Processing || run.status === ModelRunStatus.Submitted)));
 
     // apply initial data config for this datacube
     const initialSelectedRegionIds = ref<string[]>([]);
     const initialSelectedQualifierValues = ref<string[]>([]);
     const initialSelectedYears = ref<string[]>([]);
+
+    const addNewTag = (tagName: string) => {
+      selectedScenarios.value.forEach(s => s.tags.push(tagName));
+      showTagNameModal.value = false;
+      toaster('A new tag is added successfully for the selected run(s)', 'success', false);
+      // TODO: update the backend for persistence
+    };
+
+    const runTags = ref<RunsTag[]>([]);
+
+    watchEffect(() => {
+      if (allModelRunData.value && allModelRunData.value.length > 0) {
+        const tags: RunsTag[] = [];
+        allModelRunData.value.forEach(run => {
+          run.tags.forEach(tag => {
+            const existingTagIndx = tags.findIndex(t => t.label === tag);
+            if (existingTagIndx >= 0) {
+              tags[existingTagIndx].count++;
+            } else {
+              tags.push({
+                label: tag,
+                count: 1,
+                selected: false
+              });
+            }
+          });
+        });
+        runTags.value = tags;
+      }
+    });
 
     const setDatacubeCurrentOutputsMap = (updatedMap: any) => store.dispatch('app/setDatacubeCurrentOutputsMap', updatedMap);
 
@@ -663,6 +758,12 @@ export default defineComponent({
     const onMapLoad = () => {
       emit('on-map-load');
     };
+
+    watchEffect(() => {
+      if (initialSearchFilters.value && !_.isEmpty(initialSearchFilters.value)) {
+        searchFilters.value = initialSearchFilters.value;
+      }
+    });
 
     // apply initial view config for this datacube
     watchEffect(() => {
@@ -735,6 +836,82 @@ export default defineComponent({
       }
     };
 
+    const modelRunsSearchData = ref<{[key: string]: any}>({});
+    watchEffect(() => {
+      const result: {[key: string]: any} = {};
+      // add a search item for searching by tags
+      result[TAGS] = {
+        display_name: 'Tag',
+        values: []
+      };
+      // add a search item for each (input/output) dimesion
+      dimensions.value.forEach(dim => {
+        result[dim.name] = {
+          display_name: dim.display_name,
+          type: dim.type
+        };
+        if (dim.choices && dim.choices.length > 0) {
+          result[dim.name].values = _.uniq(Array.from(dim.choices));
+        }
+      });
+      modelRunsSearchData.value = result;
+    });
+
+    watchEffect(() => {
+      if (runTags.value) {
+        modelRunsSearchData.value[TAGS].values = runTags.value.map(tagInfo => tagInfo.label);
+      }
+    });
+
+    const onModelRunsFiltersUpdated = (filters: any) => {
+      // parse and apply filters to the model runs data
+      const selectedRunIDS: string[] = [];
+      let filteredRuns = allModelRunData.value.filter(r => r.status === ModelRunStatus.Ready);
+      if (_.isEmpty(filters) || filters.clauses.length === 0) {
+        // do nothing; since we need to cancel existing filters, if any
+      } else {
+        const dimTypeMap: { [key: string]: string } = dimensions.value.reduce(
+          (obj, item) => Object.assign(obj, { [item.name]: item.type }), {});
+        const clauses = filters.clauses;
+        clauses.forEach((c: any) => {
+          const filterField: string = c.field; // the field to filter on
+          const filterValues = c.values; // array of values to filter upon
+          const isNot = !c.isNot; // is the filter reversed?
+          filteredRuns = filteredRuns.filter(v => {
+            if (filterField === TAGS) {
+              // special search, e.g. by keyword or tags
+              return v.tags && v.tags.length > 0 && filterValues.some((val: string) => v.tags.includes(val) === isNot);
+            } else {
+              // direct query against parameters or output features
+              const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
+              if (paramsMatchingFilterField !== undefined) {
+                // this is a param filter
+                // so we can search this parameters array directly
+                //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
+                if (dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Int || dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Float) {
+                  const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+                  return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
+                } else {
+                  return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
+                }
+              } else {
+                // this is an output filter
+                //  we need to search the array of v.output_agg_values
+                // note: this will always be a numeric range
+                const runOutputValue = v.output_agg_values[0].value;
+                const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+                return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
+              }
+            }
+          });
+        });
+        selectedRunIDS.push(...filteredRuns.map(r => r.id));
+      }
+      searchFilters.value = filters;
+      emit('search-filters-updated', searchFilters.value);
+      setSelectedScenarioIds(selectedRunIDS);
+    };
+
     watch(
       [initialDataConfig],
       () => {
@@ -753,7 +930,6 @@ export default defineComponent({
       }
     );
 
-    const toaster = useToaster();
     const clickData = (tab: string) => {
       if (tab !== 'data' || canClickDataTab.value) {
         // FIXME: This code to select a model run when switching to the data tab
@@ -1153,6 +1329,7 @@ export default defineComponent({
     });
 
     return {
+      addNewTag,
       allModelRunData,
       activeDrilldownTab,
       adminLayerStats,
@@ -1178,8 +1355,10 @@ export default defineComponent({
       mapReady,
       mapSelectedLayer,
       modelParam,
+      modelRunsSearchData,
       newRunsMode,
       onMapLoad,
+      onModelRunsFiltersUpdated,
       onNewScenarioRunsModalClose,
       onSyncMapBounds,
       onTabClick,
@@ -1196,6 +1375,8 @@ export default defineComponent({
       requestNewModelRuns,
       runningDefaultRun,
       runParameterValues,
+      scenarioCount,
+      searchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
       selectedDataLayer,
@@ -1221,7 +1402,9 @@ export default defineComponent({
       showGeoSelectionModal,
       showModelExecutionStatus,
       showModelRunsExecutionStatus,
+      showScenarioTagsModal,
       showNewRunsModal,
+      showTagNameModal,
       SpatialAggregationLevel,
       TemporalAggregationLevel,
       temporalBreakdownData,
@@ -1232,6 +1415,7 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
+      toggleSearchBar,
       unit,
       updateStateFromInsight,
       updateGeneratedScenarios,
@@ -1600,4 +1784,39 @@ $marginSize: 5px;
     }
   }
 }
+
+.tags-area-container {
+  display: flex;
+  align-items: center;
+  font-size: smaller;
+  text-align: center;
+  justify-content: space-between;
+
+  .see-all-tags {
+    color: blue;
+    cursor: pointer;
+    margin-left: 2px;
+    margin-right: 2px;
+  }
+
+  .add-new-tag {
+    cursor: pointer;
+    font-size: medium;
+    &:hover {
+      color: blue;
+    }
+  }
+  .add-new-tag-disabled {
+    color: lightgray;
+    font-size: medium;
+    &:hover {
+      cursor: not-allowed;
+    }
+  }
+}
+
+.scenario-count {
+  color: $label-color;
+}
+
 </style>
