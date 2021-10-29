@@ -115,7 +115,6 @@ button {
   border-radius: 50%;
   background: rgba(255, 255, 255, 0.1);
   color: white;
-  font-weight: 600;
   font-size: $font-size-large;
 
   &:hover {
