@@ -26,7 +26,7 @@
 </template>
 
 <script lang="ts">
-import { defineComponent, PropType, ref } from 'vue';
+import { defineComponent, ref } from 'vue';
 import textAreaCard from '@/components/cards/text-area-card.vue';
 
 export default defineComponent({
@@ -34,8 +34,8 @@ export default defineComponent({
   name: 'CommentsButtonWidget',
   props: {
     comments: {
-      type: String as PropType<null | string>,
-      default: null
+      type: String,
+      default: ''
     }
   },
   emits: ['update-comments'],
