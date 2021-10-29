@@ -25,7 +25,7 @@
           @download-experiment="downloadExperiment"
         >
           <template #below-tabs>
-            <qualitative-comments-button :model-summary="modelSummary" />
+            <cag-comments-button :model-summary="modelSummary" />
           </template>
         </qualitative-side-panel>
         <main>
@@ -105,7 +105,7 @@ import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
 import QualitativeSidePanel from '../qualitative/qualitative-side-panel.vue';
-import QualitativeCommentsButton from '../qualitative/qualitative-comments-button.vue';
+import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 
 const PANE_ID = {
   INDICATOR: 'indicator',
@@ -151,7 +151,7 @@ export default {
     EvidencePane,
     ArrowButton,
     QualitativeSidePanel,
-    QualitativeCommentsButton
+    CagCommentsButton
   },
   props: {
     currentEngine: {

@@ -16,7 +16,7 @@
     <main>
       <qualitative-side-panel class="side-panel">
         <template #below-tabs>
-          <qualitative-comments-button :model-summary="modelSummary" />
+          <cag-comments-button :model-summary="modelSummary" />
         </template>
       </qualitative-side-panel>
       <div class="graph-container" @dblclick="onBackgroundDblClick">
@@ -220,7 +220,7 @@ import {
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
 import { DataState } from '@/types/Insight';
-import QualitativeCommentsButton from '@/components/qualitative/qualitative-comments-button.vue';
+import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import QualitativeSidePanel from '@/components/qualitative/qualitative-side-panel.vue';
 import QualitativeAnalysisOptionsButton from '@/components/qualitative/qualitative-analysis-options-button.vue';
 
@@ -276,7 +276,7 @@ export default defineComponent({
     ModalImportCag,
     ModalImportConflict,
     ModalPathFind,
-    QualitativeCommentsButton,
+    CagCommentsButton,
     QualitativeSidePanel,
     QualitativeAnalysisOptionsButton,
     RenameModal
