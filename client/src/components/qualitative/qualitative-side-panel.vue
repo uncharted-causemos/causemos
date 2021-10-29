@@ -13,10 +13,7 @@
 
     <list-context-insight-pane v-if="currentTab === 'Context Insights'" />
 
-    <div
-      v-if="currentTab === 'Details'"
-      class="details-pane"
-    >
+    <div v-if="currentTab === 'Details'" class="details-pane">
       <!-- TODO: put node/edge count here, remove it from CAG-graph -->
       <!-- <p>
           This CAG contains <strong>{{ nodeCount }}</strong> node{{ nodeCount !== 1 ? 's' : '' }}
@@ -61,11 +58,11 @@ export default defineComponent({
     }
   },
   data: () => ({
-    tabs: [
+    tabs: Object.freeze([
       { name: 'Analysis Checklist', icon: 'fa fa-fw fa-question fa-lg' },
       { name: 'Context Insights', icon: 'fa fa-fw fa-star fa-lg' },
       { name: 'Details', icon: 'fa fa-fw fa-info-circle fa-lg' }
-    ],
+    ]),
     currentTab: ''
   }),
   computed: {
@@ -91,7 +88,6 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-
 .details-pane button {
   width: 100%;
 
@@ -99,5 +95,4 @@ export default defineComponent({
     margin-top: 10px;
   }
 }
-
 </style>
