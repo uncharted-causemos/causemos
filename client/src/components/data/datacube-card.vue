@@ -495,7 +495,7 @@ import useTimeseriesData from '@/services/composables/useTimeseriesData';
 
 import { getInsightById } from '@/services/insight-service';
 
-import { ScenarioData } from '@/types/Common';
+import { GeoRegionDetail, ScenarioData } from '@/types/Common';
 import {
   AggregationOption,
   DatacubeType,
@@ -503,7 +503,8 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
-  DatacubeGenericAttributeVariableType
+  DatacubeGenericAttributeVariableType,
+  GeoAttributeFormat
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -514,6 +515,7 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
@@ -1458,23 +1460,34 @@ export default defineComponent({
     onGeoSelectionModalClose(eventData: any) {
       this.showGeoSelectionModal = false;
       if (!eventData.cancel) {
-        if (eventData.selectedRegions && eventData.selectedRegions.length > 0) {
+        const selectedRegions: GeoRegionDetail[] = eventData.selectedRegions;
+        if (selectedRegions && selectedRegions.length > 0) {
           // update the PC with the selected region value(s)
           const updatedModelParam = _.cloneDeep(this.modelParam) as ModelParameter;
+          // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
-          const updatedChoicesLabels = _.clone(updatedModelParam.choices_labels) as Array<string>;
-          eventData.selectedRegions.forEach((sr: string) => {
-            if (!updatedChoices.includes(sr)) {
-              updatedChoices.push(sr);
-              if (updatedChoicesLabels) {
-                updatedChoicesLabels.push(sr);
-              }
+          const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
+          const formattedRegion = (region: GeoRegionDetail) => {
+            const validSelectedRegion = region.path.replaceAll(REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER);
+            switch (updatedModelParam.additional_options.geo_region_format) {
+              case undefined: // undefined preference for region format -> fall back to full region path
+              case GeoAttributeFormat.Full_GADM_PATH:
+                return validSelectedRegion;
+              case GeoAttributeFormat.GADM_Code:
+                return region.code;
+              case GeoAttributeFormat.Bounding_Box:
+                return region.bbox;
+            }
+          };
+          selectedRegions.forEach(sr => {
+            const selectedRegionValue = formattedRegion(sr);
+            if (!updatedChoices.includes(selectedRegionValue)) {
+              updatedChoices.push(selectedRegionValue);
+              updatedChoicesLabels.push(sr.label);
             }
           });
           updatedModelParam.choices = updatedChoices;
-          if (updatedChoicesLabels) {
-            updatedModelParam.choices_labels = updatedChoicesLabels;
-          }
+          updatedModelParam.choices_labels = updatedChoicesLabels;
           this.$emit('update-model-parameter', updatedModelParam);
         }
       }

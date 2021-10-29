@@ -44,10 +44,17 @@ export enum DatacubeGenericAttributeVariableType {
   Float = 'float',
   String = 'str',
   Boolean = 'boolean',
-  Datetime = 'datetime'
+  Datetime = 'datetime',
+  Geo = 'geo'
 }
 
 export type DatacubeAttributeVariableType = DatacubeGeoAttributeVariableType | DatacubeGenericAttributeVariableType;
+
+export enum GeoAttributeFormat {
+  Full_GADM_PATH = 'full_gadm_path',
+  GADM_Code = 'gadm_code',
+  Bounding_Box = 'bounding_box'
+}
 
 export enum ModelParameterDataType {
   Nominal = 'nominal', // discrete
