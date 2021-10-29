@@ -1,7 +1,7 @@
 <template>
   <div class="qualitative-view-container">
     <teleport to="#navbar-trailing-teleport-destination">
-      <qualitative-analysis-options-button
+      <cag-analysis-options-button
         :model-summary="modelSummary"
         :view-after-deletion="'overview'"
       />
@@ -222,7 +222,7 @@ import useToaster from '@/services/composables/useToaster';
 import { DataState } from '@/types/Insight';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
-import QualitativeAnalysisOptionsButton from '@/components/qualitative/qualitative-analysis-options-button.vue';
+import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -278,7 +278,7 @@ export default defineComponent({
     ModalPathFind,
     CagCommentsButton,
     CagSidePanel,
-    QualitativeAnalysisOptionsButton,
+    CagAnalysisOptionsButton,
     RenameModal
   },
   setup() {

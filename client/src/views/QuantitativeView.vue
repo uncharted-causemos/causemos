@@ -1,7 +1,7 @@
 <template>
   <div class="quantitative-view-container">
     <teleport to="#navbar-trailing-teleport-destination">
-      <qualitative-analysis-options-button
+      <cag-analysis-options-button
         :model-summary="modelSummary"
         :view-after-deletion="'overview'"
       />
@@ -57,7 +57,7 @@ import useToaster from '@/services/composables/useToaster';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, NodeParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
-import QualitativeAnalysisOptionsButton from '@/components/qualitative/qualitative-analysis-options-button.vue';
+import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -68,7 +68,7 @@ export default defineComponent({
     TabPanel,
     ActionBar,
     ModalEditParameters,
-    QualitativeAnalysisOptionsButton
+    CagAnalysisOptionsButton
   },
   setup() {
     return {
