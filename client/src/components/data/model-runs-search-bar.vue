@@ -53,9 +53,6 @@ export default {
       this.setQuery();
     }
   },
-  unmounted() {
-    this.clearSearch();
-  },
   mounted() {
     // Generates lex pills from select datacube columns
     const keys = Object.keys(this.data);

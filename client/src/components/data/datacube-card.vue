@@ -25,7 +25,6 @@
             :data="modelRunsSearchData"
             :filters="searchFilters"
             @filters-updated="onModelRunsFiltersUpdated" />
-          <slot name="search-filters-controls" />
         </div>
         <modal-new-scenario-runs
           v-if="isModelMetadata && showNewRunsModal === true"
@@ -535,8 +534,7 @@ export default defineComponent({
   name: 'DatacubeCard',
   emits: [
     'on-map-load',
-    'update-model-parameter',
-    'search-filters-updated'
+    'update-model-parameter'
   ],
   props: {
     isPublishing: {
@@ -566,10 +564,6 @@ export default defineComponent({
     temporalResolutionOptions: {
       type: Array as PropType<AggregationOption[]>,
       default: []
-    },
-    initialSearchFilters: {
-      type: Object as PropType<any | null>,
-      default: null
     }
   },
   components: {
@@ -604,7 +598,6 @@ export default defineComponent({
       initialDataConfig,
       initialViewConfig,
       metadata,
-      initialSearchFilters,
       tabState
     } = toRefs(props);
 
@@ -759,12 +752,6 @@ export default defineComponent({
       emit('on-map-load');
     };
 
-    watchEffect(() => {
-      if (initialSearchFilters.value && !_.isEmpty(initialSearchFilters.value)) {
-        searchFilters.value = initialSearchFilters.value;
-      }
-    });
-
     // apply initial view config for this datacube
     watchEffect(() => {
       if (initialViewConfig.value && !_.isEmpty(initialViewConfig.value)) {
@@ -907,13 +894,12 @@ export default defineComponent({
         });
         selectedRunIDS.push(...filteredRuns.map(r => r.id));
       }
-      searchFilters.value = filters;
-      emit('search-filters-updated', searchFilters.value);
+      searchFilters.value = filters; // this should kick the watcher to update the content of the data-state object
       setSelectedScenarioIds(selectedRunIDS);
     };
 
     watch(
-      [initialDataConfig],
+      () => initialDataConfig.value,
       () => {
         if (initialDataConfig.value && !_.isEmpty(initialDataConfig.value)) {
           if (initialDataConfig.value.selectedScenarioIds !== undefined) {
@@ -926,8 +912,13 @@ export default defineComponent({
           if (initialDataConfig.value.selectedQualifierValues !== undefined) {
             initialSelectedQualifierValues.value = _.clone(initialDataConfig.value.selectedQualifierValues);
           }
+          if (initialDataConfig.value.searchFilters !== undefined && !_.isEmpty(initialDataConfig.value.searchFilters) && initialDataConfig.value.searchFilters.clauses.length > 0) {
+            toggleSearchBar.value = true;
+            searchFilters.value = _.clone(initialDataConfig.value.searchFilters);
+          }
         }
-      }
+      },
+      { immediate: true }
     );
 
     const clickData = (tab: string) => {
@@ -1131,6 +1122,10 @@ export default defineComponent({
           //  but will leave old code here for reference
           // selectedModelId.value = loadedInsight.data_state?.selectedModelId;
         }
+        if (loadedInsight.data_state?.searchFilters !== undefined && !_.isEmpty(loadedInsight.data_state.searchFilters) && loadedInsight.data_state.searchFilters.clauses.length > 0) {
+          toggleSearchBar.value = true;
+          searchFilters.value = _.clone(loadedInsight.data_state.searchFilters);
+        }
         if (loadedInsight.data_state?.selectedScenarioIds) {
           // this would only be valid and effective if/after datacube runs are reloaded
           setSelectedScenarioIds(loadedInsight.data_state?.selectedScenarioIds);
@@ -1322,6 +1317,7 @@ export default defineComponent({
         selectedScenarioIds,
         selectedTimestamp,
         selectedYears,
+        searchFilters,
         visibleTimeseriesData
       );
 
