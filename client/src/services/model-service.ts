@@ -506,12 +506,15 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
         id: '',
         concept: node.concept,
         label: node.label,
-        parameter: node.parameter
+        parameter: node.parameter,
+        components: node.components
       });
     } else {
       if (overwriteParameterization === true) {
         targetNode.parameter = node.parameter;
       }
+      // FIXME: need to check if this logic makes sense
+      targetNode.components = _.uniq([...targetNode.components, ...node.components]);
     }
   });
 
@@ -636,6 +639,11 @@ const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
   });
 };
 
+const renameNode = async (modelId: string, nodeId: string, concept: string) => {
+  const result = await API.post(`cags/${modelId}/change-concept`, { id: nodeId, concept });
+  return result;
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -644,6 +652,8 @@ export default {
   getModelStats,
   getEdgeStatements,
   getNodeStatements,
+
+  renameNode,
 
   initializeModel,
   runProjectionExperiment,
