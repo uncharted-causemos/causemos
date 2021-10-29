@@ -19,7 +19,7 @@
         </div>
       </div>
       <div class="tab-content insight-capture">
-        <qualitative-side-panel
+        <cag-side-panel
           class="side-panel"
           :is-experiment-download-visible="true"
           @download-experiment="downloadExperiment"
@@ -27,7 +27,7 @@
           <template #below-tabs>
             <cag-comments-button :model-summary="modelSummary" />
           </template>
-        </qualitative-side-panel>
+        </cag-side-panel>
         <main>
           <div
             v-if="activeTab === 'flow' && scenarioData && graphData"
@@ -104,7 +104,7 @@ import EvidencePane from '@/components/drilldown-panel/evidence-pane';
 import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
-import QualitativeSidePanel from '../qualitative/qualitative-side-panel.vue';
+import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 
 const PANE_ID = {
@@ -150,7 +150,7 @@ export default {
     EdgeWeightSlider,
     EvidencePane,
     ArrowButton,
-    QualitativeSidePanel,
+    CagSidePanel,
     CagCommentsButton
   },
   props: {

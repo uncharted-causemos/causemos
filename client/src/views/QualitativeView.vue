@@ -14,11 +14,11 @@
       @reset-cag="resetCAGLayout()"
     />
     <main>
-      <qualitative-side-panel class="side-panel">
+      <cag-side-panel class="side-panel">
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
         </template>
-      </qualitative-side-panel>
+      </cag-side-panel>
       <div class="graph-container" @dblclick="onBackgroundDblClick">
         <empty-state-instructions v-if="showEmptyStateInstructions" />
         <CAG-graph
@@ -221,7 +221,7 @@ import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
 import { DataState } from '@/types/Insight';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
-import QualitativeSidePanel from '@/components/qualitative/qualitative-side-panel.vue';
+import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import QualitativeAnalysisOptionsButton from '@/components/qualitative/qualitative-analysis-options-button.vue';
 
 const PANE_ID = {
@@ -277,7 +277,7 @@ export default defineComponent({
     ModalImportConflict,
     ModalPathFind,
     CagCommentsButton,
-    QualitativeSidePanel,
+    CagSidePanel,
     QualitativeAnalysisOptionsButton,
     RenameModal
   },
