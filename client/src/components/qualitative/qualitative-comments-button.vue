@@ -1,5 +1,8 @@
 <template>
-  <comments-button :comments="comments" @update-comments="updateComments" />
+  <comments-button-widget
+    :comments="comments"
+    @update-comments="updateComments"
+  />
 </template>
 
 <script lang="ts">
@@ -9,10 +12,10 @@ import { EXPORT_MESSAGES } from '@/utils/messages-util';
 import _ from 'lodash';
 import { computed, defineComponent, ref, toRefs, watchEffect } from 'vue';
 import { useStore } from 'vuex';
-import CommentsButton from '../widgets/comments-button.vue';
+import CommentsButtonWidget from '../widgets/comments-button-widget.vue';
 export default defineComponent({
   components: {
-    CommentsButton
+    CommentsButtonWidget
   },
   name: 'QualitativeCommentsButton',
   props: {

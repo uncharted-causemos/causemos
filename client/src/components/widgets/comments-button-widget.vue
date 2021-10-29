@@ -1,5 +1,5 @@
 <template>
-  <div class="comments-button-container">
+  <div class="comments-button-widget-container">
     <button
       v-tooltip.top-center="'Comments'"
       type="button"
@@ -31,7 +31,7 @@ import textAreaCard from '@/components/cards/text-area-card.vue';
 
 export default defineComponent({
   components: { textAreaCard },
-  name: 'CommentsButton',
+  name: 'CommentsButtonWidget',
   props: {
     comments: {
       type: String as PropType<null | string>,
@@ -60,7 +60,7 @@ export default defineComponent({
 $leftMargin: 5px;
 $diameter: #{$navbar-outer-height - $leftMargin};
 
-.comments-button-container {
+.comments-button-widget-container {
   isolation: isolate;
   position: relative;
   z-index: 1;

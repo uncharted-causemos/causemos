@@ -1,5 +1,5 @@
 <template>
-  <comments-button
+  <comments-button-widget
     :comments="description"
     @update-comments="updateDescription"
   />
@@ -8,12 +8,12 @@
 <script lang="ts">
 import { computed, defineComponent, onMounted, ref } from 'vue';
 import { useStore } from 'vuex';
-import commentsButton from '@/components/widgets/comments-button.vue';
+import CommentsButtonWidget from '@/components/widgets/comments-button-widget.vue';
 import { getAnalysis, updateAnalysis } from '@/services/analysis-service';
 import useToaster from '@/services/composables/useToaster';
 import { EXPORT_MESSAGES } from '@/utils/messages-util';
 export default defineComponent({
-  components: { commentsButton },
+  components: { CommentsButtonWidget },
   name: 'AnalysisCommentsButton',
   setup() {
     const store = useStore();
