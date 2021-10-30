@@ -197,6 +197,87 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   return finalResults;
 };
 
+
+const indicatorConceptFilter = (concepts) => {
+  /*
+  return {
+    nested: {
+      path: 'ontology_matches',
+      query: {
+        terms: {
+          'ontology_matches.name.raw': concepts
+        }
+      }
+    }
+  };
+  */
+  return {
+    nested: {
+      path: 'ontology_matches',
+      query: {
+        terms_set: {
+          'ontology_matches.name.raw': {
+            terms: concepts,
+            minimum_should_match_script: {
+              source: '1'
+            }
+          }
+        }
+      }
+    }
+  };
+};
+const indicatorSearchByConcepts = async (projectId, concepts) => {
+  const ontologyMap = getCache(projectId).ontologyMap;
+  const ontologyValues = Object.values(ontologyMap);
+  const ontologyKeys = Object.keys(ontologyMap);
+  const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
+
+  let allMembers = [];
+  for (let i = 0; i < concepts.length; i++) {
+    const flattenedConcept = concepts[i];
+    const memberStrings = reverseFlattenedConcept(flattenedConcept, set);
+
+    const members = ontologyValues.filter(d => {
+      return memberStrings.includes(_.last(d.label.split('/')));
+    }).map(d => d.label);
+
+    if (members.length) {
+      allMembers = allMembers.concat(members);
+    } else {
+      allMembers.push(flattenedConcept);
+    }
+  }
+
+  const searchPayload = {
+    index: RESOURCE.DATA_DATACUBE,
+    size: 10,
+    body: {
+      query: {
+        bool: {
+          must: [
+            {
+              bool: {
+                should: [
+                  indicatorConceptFilter(allMembers)
+                ]
+              }
+            },
+            { match: { type: 'indicator' } }
+          ]
+        }
+      }
+    }
+  };
+
+  console.log(JSON.stringify(searchPayload));
+  const results = await client.search(searchPayload);
+  return results.body.hits.hits.map(d => d._source);
+};
+
+
+
 module.exports = {
-  statementConceptEntitySearch
+  statementConceptEntitySearch,
+  indicatorSearchByConcepts
 };
