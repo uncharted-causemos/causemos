@@ -199,18 +199,6 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
 
 const indicatorConceptFilter = (concepts) => {
-  /*
-  return {
-    nested: {
-      path: 'ontology_matches',
-      query: {
-        terms: {
-          'ontology_matches.name.raw': concepts
-        }
-      }
-    }
-  };
-  */
   return {
     nested: {
       path: 'ontology_matches',
@@ -227,15 +215,15 @@ const indicatorConceptFilter = (concepts) => {
     }
   };
 };
-const indicatorSearchByConcepts = async (projectId, concepts) => {
+const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
   const ontologyMap = getCache(projectId).ontologyMap;
   const ontologyValues = Object.values(ontologyMap);
   const ontologyKeys = Object.keys(ontologyMap);
   const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
 
   let allMembers = [];
-  for (let i = 0; i < concepts.length; i++) {
-    const flattenedConcept = concepts[i];
+  for (let i = 0; i < flatConcepts.length; i++) {
+    const flattenedConcept = flatConcepts[i];
     const memberStrings = reverseFlattenedConcept(flattenedConcept, set);
 
     const members = ontologyValues.filter(d => {
