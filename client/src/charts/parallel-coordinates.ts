@@ -824,11 +824,12 @@ function renderParallelCoordinates(
               // make sure to place marker using correct data type
               /// each marker should have a unique id that is not based on pos/value since these can be updated
               /// each marker unique id must be stored in the rendered marker UI so that user events can target the correct marker
-              axisMarkersMap[dimName].push({
+              const newMarkerData = {
                 value: getValueInCorrectType(dimName, markerValue),
                 xPos: xLoc,
                 id: Date.now().toString()
-              }); // Push data to our array
+              };
+              axisMarkersMap[dimName].push(newMarkerData); // Push data to our array
 
               const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
                 .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
@@ -935,7 +936,7 @@ function renderParallelCoordinates(
 
               // first time the marker is added, show the UI
               //  markerData is simply the last element added to the markers array
-              showMarkerUI(axisMarkersMap[dimName][axisMarkersMap[dimName].length - 1]);
+              showMarkerUI(newMarkerData);
 
               //
               // marker click
