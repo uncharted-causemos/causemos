@@ -5,7 +5,7 @@ import { ProjectionConstraint, ScenarioProjection } from '@/types/CAG';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { chartValueFormatter } from '@/utils/string-util';
-import { calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
+import { calculateGenericTicks, calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import {
   confidenceArea,
@@ -112,6 +112,7 @@ export default function(
   const firstTimestamp = xScaleContext.domain()[0]; // potentially misleading as this isnt always the first day of the year
   const lastTimestamp = moment([moment(xScaleContext.domain()[1]).year()]).valueOf();
   const xAxisTicks = [firstTimestamp, lastTimestamp];
+  const yAxisTicks = [yScaleFocus.domain()[0], yScaleFocus.domain()[1]];
   const yOffset = contextHeight - X_AXIS_HEIGHT;
   const xOffset = totalWidth - PADDING_RIGHT;
 
@@ -125,6 +126,7 @@ export default function(
   renderYaxis(
     contextGroupElement,
     yScaleContext,
+    yAxisTicks,
     valueFormatter,
     xOffset,
     Y_AXIS_WIDTH
@@ -258,6 +260,10 @@ export default function(
       xScaleFocus.domain()[1],
       totalWidth
     );
+    const yAxisTicks = calculateGenericTicks(
+      yScaleFocus.domain()[0],
+      yScaleFocus.domain()[1]
+    );
     const yOffset = focusHeight - X_AXIS_HEIGHT;
     const xOffset = totalWidth - PADDING_RIGHT;
 
@@ -271,6 +277,7 @@ export default function(
     renderYaxis(
       focusGroupElement,
       yScaleFocus,
+      yAxisTicks,
       valueFormatter,
       xOffset,
       Y_AXIS_WIDTH
