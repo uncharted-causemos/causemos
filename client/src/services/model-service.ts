@@ -128,6 +128,16 @@ const removeComponents = async (modelId: string, nodes: { id: string }[], edges:
   return result.data;
 };
 
+const addGroups = async (modelId: string, groups: {id: string; children: string[]}[]) => {
+  const result = await API.put(`cags/${modelId}/groups`, { operation: 'update', groups });
+  return result;
+};
+
+const removeGroups = async (modelId: string, groups: { id: string }[]) => {
+  const result = await API.put(`cags/${modelId}/groups`, { operation: 'remove', groups });
+  return result;
+};
+
 const removeModel = async (modelId: string) => {
   const result = await API.delete(`models/${modelId}`);
   return result.data;
@@ -496,12 +506,15 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
         id: '',
         concept: node.concept,
         label: node.label,
-        parameter: node.parameter
+        parameter: node.parameter,
+        components: node.components
       });
     } else {
       if (overwriteParameterization === true) {
         targetNode.parameter = node.parameter;
       }
+      // FIXME: need to check if this logic makes sense
+      targetNode.components = _.uniq([...targetNode.components, ...node.components]);
     }
   });
 
@@ -626,6 +639,11 @@ const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
   });
 };
 
+const renameNode = async (modelId: string, nodeId: string, concept: string) => {
+  const result = await API.post(`cags/${modelId}/change-concept`, { id: nodeId, concept });
+  return result;
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -634,6 +652,8 @@ export default {
   getModelStats,
   getEdgeStatements,
   getNodeStatements,
+
+  renameNode,
 
   initializeModel,
   runProjectionExperiment,
@@ -655,6 +675,8 @@ export default {
   recalculate,
   addComponents,
   removeComponents,
+  addGroups,
+  removeGroups,
   removeModel,
   duplicateModel,
   newModel,

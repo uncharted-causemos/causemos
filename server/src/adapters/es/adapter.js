@@ -14,6 +14,7 @@ const RESOURCE = Object.freeze({
   MODEL: 'model',
   ANALYSIS: 'analysis',
   CAG: 'model', // Duplicate for the time being
+  NODE_GROUP: 'node-group',
 
   DOMAIN_PROJECT: 'domain-project',
 

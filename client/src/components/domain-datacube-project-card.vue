@@ -1,5 +1,5 @@
 <template>
-  <div :class="{ 'project-card-container': !showMore, 'project-card-container selected': showMore }">
+  <div class="project-card-container">
     <modal-confirmation
       v-if="showModal"
       :autofocus-confirm="false"
@@ -15,71 +15,26 @@
         />
       </template>
     </modal-confirmation>
-    <div
-      class="row project-card-header"
-      @click="toggleShowMore()">
-      <div class="col-sm-3 no-padding">
-        <i
-          :class="{ 'fa fa-angle-right': !showMore, 'fa fa-angle-down': showMore }"
-        />
-        <button
-          type="button"
-          class="btn btn-link no-padding"
-          style="margin-left: 1rem;"
-          @click="open()">
-          <span class="overflow-ellipsis project-name">{{project.name}}</span>
-        </button>
+    <div class="project-card-header" @click="open()">
+      <span class="table-column extra-wide overflow-ellipsis project-name">
+        {{project.name}}
+      </span>
+      <div class="table-column">
+        {{ project.ready_instances.length }}
       </div>
-      <div class="col-sm-2 text-center no-padding">
-        {{ project.ready_instances.length }} | <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
+      <div class="table-column">
+        <span :style="{color: project.draft_instances.length > 0 ? 'red' : 'black'}">{{ project.draft_instances.length }}</span>
       </div>
-      <div class="col-sm-2 text-center no-padding">
-        {{ project.type }}
+      <div class="table-column extra-wide overflow-ellipsis">
+        {{ projectSource }}
       </div>
-      <div class="col-sm-3 text-center no-padding overflow-ellipsis">
-        {{ project.source }}
+      <div class="table-column">
+        {{ dateFormatter(project.modified_at, 'MMM DD, YYYY') }}
       </div>
-      <div class="col-sm-2 no-padding">
-        {{ dateFormatter(project.modified_at, 'YYYY-MM-DD') }}
-      </div>
-    </div>
-    <div
-      v-if="showMore"
-      class="container-fluid project-card-content"
-      @click="toggleShowMore()">
-      <div class="row">
-        <div class="col-sm-12 details">
-          <div>
-            <p>{{project.description}}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-    <div
-      v-if="showMore"
-      class="project-card-footer"
-    >
-      <div class="row">
-        <div class="col-sm-8">
-          <button
-            v-tooltip.top-center="'Open the project'"
-            type="button"
-            class="btn btn-primary"
-            @click="open()"
-          ><i class="fa fa-folder-open-o" />
-            Open Project</button>
-        </div>
-        <div class="col-sm-4">
-          <!--
-          <button
-            v-tooltip.top-center="'Remove the project from the list'"
-            type="button"
-            class="remove-button"
-            @click.stop="showWarningModal"
-          ><i class="fa fa-trash" />
-            Remove Project</button>
-            -->
-        </div>
+      <div class="table-column extra-small">
+        <small-icon-button :use-white-bg="true" @click.stop="showWarningModal">
+          <i class="fa fa-fw fa-trash" />
+        </small-icon-button>
       </div>
     </div>
   </div>
@@ -95,6 +50,7 @@ import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import MessageDisplay from './widgets/message-display.vue';
 import dateFormatter from '@/formatters/date-formatter';
 import { DomainProject } from '@/types/Common';
+import SmallIconButton from './widgets/small-icon-button.vue';
 
 /**
  * A card-styled widget to view project summary
@@ -103,12 +59,26 @@ export default defineComponent({
   name: 'DomainDatacubeProjectCard',
   components: {
     ModalConfirmation,
-    MessageDisplay
+    MessageDisplay,
+    SmallIconButton
   },
   props: {
     project: {
       type: Object as PropType<DomainProject>,
       default: () => ({})
+    }
+  },
+  computed: {
+    projectSource(): string {
+      if (this.project) {
+        if (this.project.source) {
+          return this.project.source;
+        }
+        if (this.project.maintainer && this.project.maintainer.length > 0) {
+          return this.project.maintainer[0].organization;
+        }
+      }
+      return '';
     }
   },
   setup() {
@@ -157,70 +127,36 @@ export default defineComponent({
 @import "~styles/variables";
 
 .project-card-container {
-  cursor: pointer;
-  background: #fcfcfc;
-  border: 1px solid #dedede;
-  margin: 1px 0;
-  padding: 10px;
-  padding-top: 5px;
-  padding-bottom: 5px;
-}
-
-.project-card-container:hover {
-  border-color: $selected;
-  cursor: pointer;
-}
-
-.selected {
-  border-left: 4px solid $selected;
-  background-color: #ffffff;
+  background: white;
 }
 
 .project-card-header {
-  i {
-    margin-left: 15px;
+  padding: 10px;
+  display: flex;
+  cursor: pointer;
+  border-bottom: 1px solid $separator;
+}
+
+.project-card-header:hover .project-name {
+  color: $selected-dark;
+}
+
+.table-column {
+  flex: 1;
+  min-width: 0;
+
+  &:not(:first-child) {
+    margin-left: 5px;
   }
-}
 
-.project-card-content {
-  padding-bottom: 5px;
-  .details {
-    div {
-      margin-left: 10px;
-    }
+  &.extra-wide {
+    flex: 2;
   }
-}
 
-.project-name {
-  max-width: 40ch;
-  display: inline-block;
-  text-align: left;
-  text-decoration: underline;
-}
-
-.project-card-footer {
-  padding-bottom: 5px;
-  padding-top: 5px;
-  .btn {
-    margin-left: 20px;
-    margin-right: 10px;
+  &.extra-small {
+    width: 20px;
+    flex: 0;
+    min-width: auto;
   }
-}
-
-.text-center {
-  text-align: center;
-}
-
-.no-padding {
-  padding: 0;
-}
-
-.remove-button {
-  background: #F44336;
-  color: white;
-  font-weight: 600;
-  border: none;
-  padding: 8px 16px;
-  user-select: none;
 }
 </style>

@@ -14,14 +14,76 @@ const MODEL_STATUS = modelUtil.MODEL_STATUS;
 
 // Get model with no thumbnail
 const _getModel = async (modelId) => {
-  const connection = Adapter.get(RESOURCE.CAG);
-  const modelData = await connection.findOne([{ field: 'id', value: modelId }], {
+  const cagConnection = Adapter.get(RESOURCE.CAG);
+  const modelData = await cagConnection.findOne([{ field: 'id', value: modelId }], {
     excludes: ['thumbnail_source']
   });
+  const groupConnection = Adapter.get(RESOURCE.NODE_GROUP);
+  const modelGroups = await groupConnection.find([{ field: 'model_id', value: modelId }], {});
+  modelData.groups = modelGroups;
   return modelData;
 };
 
+/**
+ * Create or Update a new group(s)
+ *
+ * @param {string} modelId - model id
+ * @param {object} groups - groups
+ */
+const updateGroups = async(modelId, groups) => {
+  // If the components is an empty array return null
+  if (_.isEmpty(groups)) return null;
 
+  // Ensure components is an array
+  if (!_.isArray(groups)) {
+    groups = [groups]; // doesnt really need to be a array
+  }
+
+  Logger.info(`Adding ${groups.length} groups to: ${modelId}`);
+  const groupConnection = Adapter.get(RESOURCE.NODE_GROUP);
+  const keyFn = (doc) => {
+    return doc.id;
+  };
+
+  const modifiedAt = Date.now();
+  const indexList = [];
+
+  groups.forEach(group => {
+    group.model_id = modelId;
+    group.modified_at = modifiedAt;
+    if (_.isNil(group.id)) {
+      group.id = uuid();
+    }
+    indexList.push(group);
+  });
+
+  let results = null;
+  if (indexList.length > 0) {
+    results = await groupConnection.insert(indexList, keyFn);
+    if (results.errors) {
+      throw new Error(JSON.stringify(results.items[0]));
+    }
+  }
+};
+const deleteGroups = async(modelId, groups) => {
+  if (_.isEmpty(groups)) return null;
+
+  Logger.info(`Removing ${groups.length} group(s) from model: ` + modelId);
+  const groupConnection = Adapter.get(RESOURCE.NODE_GROUP);
+
+  // Check to see if edges is an array
+  if (!_.isArray(groups)) {
+    groups = [groups];
+  }
+
+  const results = await groupConnection.removeMany({ id: groups.map(group => group.id) });
+  if (!results.deleted) {
+    throw new Error(`Unable to delete group of model: ${modelId}`);
+  }
+
+  Logger.info('Deleted groups(s)');
+  return results;
+};
 // -------------- Helper Functions for Components of the CAG -----------------
 /**
  * Create or Update a new Component(s)
@@ -523,15 +585,11 @@ const recalculateCAG = async (modelId) => {
   // same composition with respect to the edge's source/target
   for (let i = 0; i < edges.length; i++) {
     const e = edges[i];
-    const subjConcept = e.source;
-    const objConcept = e.target;
     const referenceIds = e.reference_ids;
 
     // Filter out changed and discarded edges
     promises.push(statementAdapter.find({
       clauses: [
-        { field: 'subjConcept', values: [subjConcept], isNot: false, operand: 'OR' },
-        { field: 'objConcept', values: [objConcept], isNot: false, operand: 'OR' },
         { field: 'id', values: referenceIds }
       ]
     }, { size: SEARCH_LIMIT, includes: ['id', 'wm.statement_polarity'] }));
@@ -705,6 +763,8 @@ const changeConcept = async (modelId, change) => {
 module.exports = {
   createCAG,
   updateCAG,
+  updateGroups,
+  deleteGroups,
   updateCAGMetadata,
   getComponents,
   pruneCAG,

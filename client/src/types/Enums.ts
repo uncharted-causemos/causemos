@@ -32,19 +32,22 @@ export enum FeatureQualifierRoles {
   Tooltip = 'tooltip'
 }
 
-export enum DatacubeAttributeVariableType {
-  Int = 'int',
-  Float = 'float',
-  String = 'str',
-  Boolean = 'boolean',
-  Datetime = 'datetime',
-  Latitude = 'lat',
-  Longitude = 'lng',
+export enum DatacubeGeoAttributeVariableType {
   Country = 'country',
   Admin1 = 'admin1',
   Admin2 = 'admin2',
   Admin3 = 'admin3'
 }
+
+export enum DatacubeGenericAttributeVariableType {
+  Int = 'int',
+  Float = 'float',
+  String = 'str',
+  Boolean = 'boolean',
+  Datetime = 'datetime'
+}
+
+export type DatacubeAttributeVariableType = DatacubeGeoAttributeVariableType | DatacubeGenericAttributeVariableType;
 
 export enum ModelParameterDataType {
   Nominal = 'nominal', // discrete

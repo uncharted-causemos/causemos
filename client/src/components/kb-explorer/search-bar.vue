@@ -292,7 +292,6 @@ export default {
 @import '~@uncharted.software/lex/dist/lex.scss';
 @import '~styles/variables';
 
-
 // Lex expands if there are pills, this is to insure things don't jump around
 $searchbar-height: 40px;
 $clear-button-width: 80px;

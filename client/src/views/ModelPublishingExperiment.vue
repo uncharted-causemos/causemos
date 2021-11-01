@@ -9,19 +9,16 @@
     <main class="main">
       <analytical-questions-and-insights-panel />
       <div class="main insight-capture">
-        <!-- TODO: whether a card is actually expanded or not will
-        be dynamic later -->
         <datacube-card
-          :class="{ 'datacube-expanded': true }"
-          :isExpanded="false"
+          class="datacube-card"
           :isPublishing="true"
           :initial-data-config="initialDataConfig"
           :initial-view-config="initialViewConfig"
           :metadata="metadata"
-          :spatial-aggregation-options="Object.values(AggregationOption)"
-          :temporal-aggregation-options="Object.values(AggregationOption)"
+          :aggregation-options="Object.values(AggregationOption)"
           :temporal-resolution-options="Object.values(TemporalResolutionOption)"
           :tab-state="tabState"
+          @update-model-parameter="onModelParamUpdated"
         >
           <template v-slot:datacube-model-header>
             <datacube-model-header
@@ -54,7 +51,7 @@ import ModelPublishingChecklist from '@/components/widgets/model-publishing-chec
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import { fetchInsights, InsightFilterFields } from '@/services/insight-service';
 import { updateDatacube } from '@/services/new-datacube-service';
-import { DatacubeFeature, ModelPublishingStep } from '@/types/Datacube';
+import { DatacubeFeature, Model, ModelParameter, ModelPublishingStep } from '@/types/Datacube';
 import { AggregationOption, TemporalResolutionOption, DatacubeStatus, ModelPublishingStepID } from '@/types/Enums';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
@@ -266,6 +263,14 @@ export default defineComponent({
       }
     });
 
+    const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
+      if (metadata.value !== null) {
+        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(p => p.name === updatedModelParam.name);
+        (metadata.value as Model).parameters[updatedParamIndex] = updatedModelParam;
+        refreshMetadata();
+      }
+    };
+
     return {
       AggregationOption,
       currentPublishStep,
@@ -280,7 +285,8 @@ export default defineComponent({
       tabState,
       TemporalResolutionOption,
       initialDataConfig,
-      initialViewConfig
+      initialViewConfig,
+      onModelParamUpdated
     };
   },
   watch: {
@@ -368,7 +374,7 @@ export default defineComponent({
   min-height: 0;
 }
 
-.datacube-expanded {
+.datacube-card {
   min-width: 0;
   flex: 1;
   margin: 0 10px 10px 0;

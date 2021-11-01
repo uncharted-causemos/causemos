@@ -46,3 +46,9 @@ export interface ModelRun {
     post_processing: ModelRunRuntimeStage;
   };
 }
+
+export interface RunsTag {
+  label: string;
+  count: number;
+  selected: boolean;
+}

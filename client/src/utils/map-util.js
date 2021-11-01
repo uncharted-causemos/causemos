@@ -129,6 +129,20 @@ export function isLayerLoaded(map, layerId) {
   return typeof map.getLayer(layerId) !== 'undefined';
 }
 
+
+export function diffExpr(oldValExpr, newValExpr, showPercentChange = false) {
+  if (showPercentChange) {
+    return [
+      'case',
+      // Both zero, return 0
+      ['all', ['==', 0, oldValExpr], ['==', 0, newValExpr]], 0,
+      // Otherwise, calculate the percentage
+      ['*', ['/', ['-', newValExpr, oldValExpr], ['abs', oldValExpr]], 100]
+    ];
+  }
+  return ['-', newValExpr, oldValExpr];
+}
+
 /**
  * @param {String} property - Name of the property for the geojson feature for applying color
  * @param {Array} dataDomain - Data domain in the form of [min, max]
@@ -136,14 +150,14 @@ export function isLayerLoaded(map, layerId) {
  * @param {Function} scaleFn - d3 scale function
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-function discreteColors(property, domain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo) {
+function discreteColors(property, domain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo, showPercentChange = false) {
   const stops = !_.isNil(relativeTo)
     ? createDivergingColorStops(domain, colors, scaleFn)
     : createColorStops(domain, colors, scaleFn);
   const getter = useFeatureState ? 'feature-state' : 'get';
   const baselineValueExpr = ['case', ['!=', null, [getter, relativeTo]], [getter, relativeTo], [getter, '_baseline']];
   const valueExpr = !_.isNil(relativeTo)
-    ? ['-', [getter, property], baselineValueExpr]
+    ? diffExpr(baselineValueExpr, [getter, property], showPercentChange)
     : [getter, property];
   return [
     'step',
@@ -198,12 +212,12 @@ export function createDivergingColorStops(domain, colors, scaleFn) {
  * @param {Function} scaleFn - d3 scale function
  * @param {Boolean} useFeatureState - use feature state instead of a property
  */
-export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo) {
+export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colors, scaleFn = d3.scaleLinear, useFeatureState = false, relativeTo, showPercentChange = false) {
   const style = {
     type: 'fill',
     paint: {
       'fill-antialias': false,
-      'fill-color': discreteColors(property, dataDomain, colors, scaleFn, useFeatureState, relativeTo)
+      'fill-color': discreteColors(property, dataDomain, colors, scaleFn, useFeatureState, relativeTo, showPercentChange)
     }
   };
   if (useFeatureState) {
@@ -217,10 +231,11 @@ export function createHeatmapLayerStyle(property, dataDomain, filterDomain, colo
     const baselineValueExpr = ['case', ['!=', null, ['feature-state', relativeTo]], ['feature-state', relativeTo], ['feature-state', '_baseline']];
     const propertyGetter = _.isNil(relativeTo)
       ? ['feature-state', property]
-      : ['-', ['feature-state', property], baselineValueExpr];
+      : diffExpr(baselineValueExpr, ['feature-state', property], showPercentChange);
     style.paint['fill-opacity'] = [
       'case',
       ...missingProperty,
+      ['==', 'NaN', ['to-string', propertyGetter]], 0.0,
       ['<', propertyGetter, filterDomain.min], 0.0,
       ['>', propertyGetter, filterDomain.max], 0.0,
       ['==', true, ['feature-state', '_isHidden']], 0.0,

@@ -10,7 +10,7 @@ import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
-import { ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
+import { DatacubeGeoAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 
 import { colorFromIndex } from '@/utils/colors-util';
 
@@ -32,6 +32,7 @@ type D3AxisSelection = d3.Selection<SVGGElement, DimensionInfo, SVGGElement, any
 interface MarkerInfo {
   value: string | number;
   xPos: number;
+  id: string;
 }
 
 //
@@ -42,6 +43,8 @@ const margin = { top: 40, right: 30, bottom: 35, left: 35 };
 // line styling in normal mode
 const lineStrokeWidthNormal = 2;
 const lineStrokeWidthSelected = 4;
+const lineStrokeWidthDefault = 8;
+const lineStrokeWidthSelectedDefault = 10;
 const lineStrokeWidthHover = 2.5;
 const lineOpacityVisible = 1;
 const lineOpacityHidden = 0.25;
@@ -108,11 +111,22 @@ const brushes: Array<BrushType> = [];
 let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
-const isCategoricalAxis = (name: string) => {
-  const dim = dimensions.find(d => d.name === name) as ModelParameter;
-  return dim.type.startsWith('str') || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
+const isGeoParameter = (type: string) => {
+  return (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type);
 };
 
+const isCategoricalAxis = (name: string) => {
+  const dim = dimensions.find(d => d.name === name) as ModelParameter;
+  return dim.type.startsWith('str') || isGeoParameter(dim.type) || dim.data_type === ModelParameterDataType.Ordinal || dim.data_type === ModelParameterDataType.Nominal;
+};
+
+function getLineWidth(datum: any) {
+  return datum.is_default_run === 0 ? lineStrokeWidthNormal : lineStrokeWidthDefault;
+}
+
+function getLineSelectedWidth(datum: any) {
+  return datum.is_default_run === 0 ? lineStrokeWidthSelected : lineStrokeWidthSelectedDefault;
+}
 
 function renderParallelCoordinates(
   // root svg selection element
@@ -129,6 +143,8 @@ function renderParallelCoordinates(
   onLinesSelection: (selectedLines: Array<ScenarioData>) => void,
   // callback function that is called when one or more markers are added in the new-runs mode
   onNewRuns: (generatedLines: Array<ScenarioData>) => void,
+  // callback function to request showing the geo-selection modal
+  onGeoSelection: (d: ModelParameter) => void,
   // request re-render of the whole PC
   rerenderChart: () => void
 ) {
@@ -208,7 +224,7 @@ function renderParallelCoordinates(
   //
   // axis labels
   //
-  renderAxesLabels(svgElement, options, dimensions, rerenderChart);
+  renderAxesLabels(svgElement, options, dimensions, rerenderChart, onGeoSelection);
 
   //
   // hover tooltips
@@ -237,7 +253,7 @@ function renderParallelCoordinates(
         const selectedLine = d3.select<SVGPathElement, ScenarioData>(this as SVGPathElement);
         selectedLine.attr('selection-index', selectionIndex++);
 
-        selectLine(selectedLine, undefined /* event */, d, lineStrokeWidthSelected);
+        selectLine(selectedLine, undefined /* event */, d, getLineSelectedWidth(d));
       });
   }
 
@@ -307,10 +323,12 @@ function renderParallelCoordinates(
       .attr('class', function () { return 'line'; }) // @REVIEW: this could be used to style lines externally
       .attr('d', pathDefinitionFunc)
       .style('fill', 'none')
-      .attr('stroke-width', lineStrokeWidthNormal)
+      .attr('stroke-width', (d) => getLineWidth(d))
       .style('stroke', colorFunc)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden)
-      .style('stroke-dasharray', function(d) { return d.status === ModelRunStatus.Ready ? 0 : ('3, 3'); })
+      .style('stroke-dasharray', function(d) {
+        return d.status === ModelRunStatus.Ready ? 0 : ('3, 3');
+      })
     ;
 
     // scenario lines are only interactive in the normal mode
@@ -563,7 +581,7 @@ function renderParallelCoordinates(
             // set an incremental index for this line as part of the selected line collection
             selectedLine.attr('selection-index', selectionIndex++);
 
-            selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthNormal);
+            selectLine(selectedLine, undefined /* event */, lineData, getLineWidth(lineData));
             // save selected line
             selectedLines.push(lineData);
           }
@@ -630,7 +648,7 @@ function renderParallelCoordinates(
       if (selectedLineData) {
         if (_.find(currentLineSelection, (data) => data.run_id === selectedLineData.run_id)) {
           currentLineSelection = _.filter(currentLineSelection, (data) => data.run_id !== selectedLineData.run_id);
-          deselectLine(selectedLine, event, lineStrokeWidthNormal);
+          deselectLine(selectedLine, event, getLineWidth(selectedLineData));
           const lineDict = currentLineSelection.reduce((acc: Map<string|number, number>, sl, i) => {
             acc.set(sl.run_id, i);
             return acc;
@@ -643,14 +661,14 @@ function renderParallelCoordinates(
               if (lineData.status === ModelRunStatus.Ready) {
                 // set an incremental index for this line as part of the selected line collection
                 selectedLine.attr('selection-index', index);
-                selectLine(selectedLine, undefined /* event */, lineData, lineStrokeWidthSelected);
+                selectLine(selectedLine, undefined /* event */, lineData, getLineSelectedWidth(lineData));
               }
             }
           });
         } else {
           currentLineSelection.push(selectedLineData);
           updateSelectionTooltips(svgElement, selectedLine);
-          selectLine(selectedLine, event, d, lineStrokeWidthSelected);
+          selectLine(selectedLine, event, d, getLineSelectedWidth(selectedLineData));
         }
       } else {
         currentLineSelection.length = 0;
@@ -673,12 +691,18 @@ function renderParallelCoordinates(
       .transition().duration(highlightDuration)
       .style('opacity', options.newRunsMode ? lineOpacityNewRunsModeContext : lineOpacityHidden);
 
+    if (selectedLineData.is_default_run === 0) {
+      // stroke-width will overwrite for non default runs
+      selectedLine
+        .filter(function () { return d3.select(this).classed('selected') === false; })
+        .attr('stroke-width', lineStrokeWidthHover);
+    }
+
     // Use D3 to highlight the line; change its opacity
     selectedLine
       .filter(function() { return d3.select(this).classed('selected') === false; })
       .transition().duration(highlightDuration)
       .style('stroke', colorFunc)
-      .attr('stroke-width', lineStrokeWidthHover)
       .style('opacity', lineOpacityVisible);
 
     // show tooltips
@@ -772,6 +796,11 @@ function renderParallelCoordinates(
             // Normally we go from data to pixels, but here we're doing pixels to data
             return (xScale as D3ScaleLinear).invert(pos).toFixed(2);
           };
+          const getMarkerPosFromValue = (value: number) => {
+            const xScale = getXScaleFromMap(dimName);
+            // convert data to pixel position
+            return (xScale as D3ScaleLinear)(value);
+          };
           gElement
             .append('rect')
             .attr('class', 'overlay')
@@ -781,18 +810,26 @@ function renderParallelCoordinates(
             .attr('y', segmentsY)
             .attr('width', axisRange[1])
             .attr('height', segmentsHeight)
-            .on('click', function(event) {
+            .on('click', function(event: PointerEvent) {
               //
-              // user just clicked on the axis overlay to add a marker
+              // user just clicked on the axis overlay to add a new marker
               //
+
+              // do not allow the click event to automatically clear the marker UI which will be created shortly
+              event.stopPropagation();
+
               const xLoc = d3.pointer(event)[0];
               const markerValue = getMarkerValueFromPos(xLoc);
 
               // make sure to place marker using correct data type
-              axisMarkersMap[dimName].push({
+              /// each marker should have a unique id that is not based on pos/value since these can be updated
+              /// each marker unique id must be stored in the rendered marker UI so that user events can target the correct marker
+              const newMarkerData = {
                 value: getValueInCorrectType(dimName, markerValue),
-                xPos: xLoc
-              }); // Push data to our array
+                xPos: xLoc,
+                id: Date.now().toString()
+              };
+              axisMarkersMap[dimName].push(newMarkerData); // Push data to our array
 
               const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
                 .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
@@ -801,9 +838,9 @@ function renderParallelCoordinates(
               const markerRects = dataSelection
                 .enter().append('rect')
                 .attr('class', 'pc-marker')
-                .attr('id', function() {
-                  // Create an id for the marker for later removal
-                  return 'marker-' + markerValue;
+                .attr('id', function(d) {
+                  // Create an id for the marker for later update/removal
+                  return 'marker-' + d.id;
                 })
                 .style('stroke', baselineMarkerStroke)
                 .style('fill', baselineMarkerFill)
@@ -812,24 +849,104 @@ function renderParallelCoordinates(
                 .attr('width', baselineMarkerSize)
                 .attr('height', segmentsHeight);
 
+              const showMarkerUI = (markerData: MarkerInfo) => {
+                deleteFreeformInputs(svgElement); // remove prev marker UI, e.g., input fields
+
+                // add a temporarly input box allowing the user to directly adjust the value of newly added marker, if needed
+                const parentElement = this.parentElement as HTMLElement; // g element classed 'pc-marker-g'
+                const markerInputTextHeight = 24;
+                const markerInputTextWidth = axisRange[1] * 0.5;
+
+                const markerUIContainer = d3.select(parentElement)
+                  .append('foreignObject')
+                  .attr('class', 'freeform-input')
+                  .attr('width', markerInputTextWidth)
+                  .attr('height', markerInputTextHeight)
+                  .attr('x', markerData.xPos > markerInputTextWidth ? markerInputTextWidth : markerData.xPos) // move with the marker if enough space otherwise, place at the end
+                  .attr('y', markerInputTextHeight * 0.25)
+                  .append('xhtml:div')
+                  .style('display', 'flex')
+                ;
+
+                const inputField = markerUIContainer
+                  .append('xhtml:input')
+                  .attr('value', markerData.value)
+                  .attr('type', 'text')
+                  .style('font-size', 'small')
+                  .style('border-width', 'thin')
+                  .style('width', '80%') // leave the remaining space for the button
+                  .on('keyup', function(keyEvent) {
+                    if (keyEvent.keyCode === 13) {
+                      // Enter key pressed
+                      const inputElement = this as HTMLInputElement;
+                      const newInputValue = inputElement.value;
+                      // validate new input value
+                      if (newInputValue.length === 0 || isNaN(+newInputValue)) {
+                        return;
+                      }
+                      // clamp new input value
+                      const dimExtent = getXScaleFromMap(dimName).domain();
+                      const newValidInputVal = _.clamp(+newInputValue, dimExtent[0] as number, dimExtent[1] as number);
+                      // update the underlying marker data and re-render
+                      const newXPos = getMarkerPosFromValue(newValidInputVal);
+                      markerData.value = getValueInCorrectType(dimName, newValidInputVal.toString());
+                      markerData.xPos = newXPos;
+                      markerRects
+                        .attr('x', newXPos);
+                      // clear the input box
+                      deleteFreeformInputs(svgElement);
+
+                      // re-render all the new scenario lines, once a marker is updated
+                      renderNewRunsLines();
+                    }
+                  })
+                  .on('click', function(event: PointerEvent) {
+                    event.stopPropagation();
+                  });
+                (inputField.node() as any).focus();
+                (inputField.node() as any).select();
+
+                // remove button
+                markerUIContainer
+                  .append('xhtml:input')
+                  .attr('value', '-')
+                  .attr('type', 'button')
+                  .style('border-style', 'none')
+                  .style('border-radius', '12px')
+                  .style('color', 'white')
+                  .style('font-size', 'large')
+                  .style('line-height', 'normal')
+                  .style('font-weight', 'bold')
+                  .style('background-color', 'red')
+                  .on('click', function() {
+                    //
+                    // user just clicked on the remove button of a specific marker UI, so the marker should be removed
+                    //
+                    axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== getValueInCorrectType(dimName, markerData.value as string));
+                    gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
+                      .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
+                      .exit().remove()
+                    ;
+                    // remove all marker tooltips, if any
+                    gElement.selectAll('text').remove();
+                    // re-render all the new scenario lines
+                    renderNewRunsLines();
+                  });
+              };
+
+              // first time the marker is added, show the UI
+              //  markerData is simply the last element added to the markers array
+              showMarkerUI(newMarkerData);
+
               //
-              // marker click (i.e., deletion)
+              // marker click
               //
               markerRects
-                .on('click', function(d, i) {
-                  //
-                  // user just clicked on a specific marker, so for now it should be deleted
-                  //
-                  const markerValue = i.value as number;
-                  axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
-                  gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
-                    .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
-                    .exit().remove()
-                  ;
-                  // remove all marker tooltips, if any
-                  gElement.selectAll('text').remove();
-                  // re-render all the new scenario lines
-                  renderNewRunsLines();
+                .on('click', (event: PointerEvent) => {
+                  // first time the marker is added, show the UI
+                  event.stopPropagation();
+                  const markerData: MarkerInfo = d3.select(event.target as any).datum() as MarkerInfo;
+                  showMarkerUI(markerData);
                 });
 
               //
@@ -838,6 +955,8 @@ function renderParallelCoordinates(
               markerRects
                 .call(d3.drag<SVGRectElement, MarkerInfo>()
                   .on('drag', function(event) {
+                    deleteFreeformInputs(svgElement); // remove current marker UI, e.g., input fields, if any
+
                     let newXPos = d3.pointer(event, this)[0];
                     // limit the movement within the axis range
                     newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
@@ -856,16 +975,22 @@ function renderParallelCoordinates(
                     newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
                     newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
                     // update the underlying data
-                    const md = axisMarkersMap[dimName].find(m => m.value === d.value);
-                    if (md) {
-                      md.xPos = newXPos;
+                    const markerData = axisMarkersMap[dimName].find(m => m.value === d.value);
+                    if (markerData) {
+                      markerData.xPos = newXPos;
                       const mv = getMarkerValueFromPos(newXPos);
-                      md.value = getValueInCorrectType(dimName, mv);
+                      markerData.value = getValueInCorrectType(dimName, mv);
                     }
                     d3.select(this)
                       .attr('x', newXPos);
                     // remove all marker tooltips, if any
                     gElement.selectAll('text').remove();
+
+                    // after completing the update of the marker value on drag-end, we show the marker UI
+                    if (markerData) {
+                      showMarkerUI(markerData);
+                    }
+
                     // re-render all the new scenario lines
                     renderNewRunsLines();
                   }));
@@ -978,7 +1103,8 @@ function renderParallelCoordinates(
                 // Push data to our array
                 axisMarkersMap[dimName].push({
                   value: markerValue,
-                  xPos: xLoc
+                  xPos: xLoc,
+                  id: Date.now().toString()
                 });
 
                 const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
@@ -1308,7 +1434,7 @@ function renderAxes(gElement: D3GElementSelection, dimensions: Array<DimensionIn
   return axes;
 }
 
-function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesOptions, dimensions: Array<DimensionInfo>, rerenderChart: () => void) {
+function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesOptions, dimensions: Array<DimensionInfo>, rerenderChart: () => void, onGeoSelection: (d: ModelParameter) => void) {
   // Add label for each axis name
   const axesLabels = renderedAxes
     .append('text')
@@ -1364,11 +1490,10 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
       text.raise();
     });
 
-  // render additional UI for freeform params
+  // render additional UI for freeform and geo params
   renderedAxes
     .filter(d => (d as ModelParameter).data_type === ModelParameterDataType.Freeform)
-    // add a button to allow adding a new freeform value
-    // visibility should follow options.newRunsMode
+    // add a button to allow adding a new freeform value or a validated geo region
     .each(function() {
       const text = d3.select(this).select('.pc-axis-name-text');
       const textNode = text.node() as SVGGraphicsElement;
@@ -1396,40 +1521,53 @@ function renderAxesLabels(svgElement: D3Selection, options: ParallelCoordinatesO
           const d3Input = d3.select(this);
           const d = d3Input.datum() as ModelParameter;
           event.stopPropagation();
-          const parentElement = this.parentElement.parentElement; // the axis element
-          const inputField = d3.select(parentElement)
-            .append('foreignObject')
-            .attr('class', 'freeform-input')
-            .attr('width', axisRange[1])
-            .attr('height', '24')
-            .attr('x', axisLabelOffsetX + textBBox.width + 10)
-            .attr('y', axisLabelOffsetY - textBBox.height)
-            .append('xhtml:input')
-            .attr('placeholder', 'type new value')
-            .attr('type', 'text')
-            .style('font-size', 'small')
-            .style('border-width', 'thin')
-            .on('keyup', function(keyEvent) {
-              if (keyEvent.keyCode === 13) {
-                // Enter key pressed
-                const inputElement = this as HTMLInputElement;
-                const newInputValue = inputElement.value;
-                const currentChoices = d.choices as Array<string | number>;
-                if (!currentChoices.includes(newInputValue)) {
-                  // note that by adding the value, we have modified the metadata of the datacube
-                  // and that change will be discarded unless a model run is issued with this value
-                  currentChoices.push(newInputValue);
-                  // re-render (and possible add a marker)
-                  rerenderChart();
+
+          // is this a geo-parameter?
+          if (isGeoParameter(d.type)) {
+            //
+            // show a modal to enable searching for (one or more) valid GADM region name(s)
+            //
+            onGeoSelection(d);
+          } else {
+            //
+            // this is a normal freeform param, e.g., search-term, so add an input box for the user to enter a new value
+            //  note how the input-box is added as foreign object since it is added within the SVG element
+            //
+            const parentElement = this.parentElement.parentElement; // the axis element
+            const inputField = d3.select(parentElement)
+              .append('foreignObject')
+              .attr('class', 'freeform-input')
+              .attr('width', axisRange[1])
+              .attr('height', '24')
+              .attr('x', axisLabelOffsetX + textBBox.width + 10)
+              .attr('y', axisLabelOffsetY - textBBox.height)
+              .append('xhtml:input')
+              .attr('placeholder', 'type new value')
+              .attr('type', 'text')
+              .style('font-size', 'small')
+              .style('border-width', 'thin')
+              .on('keyup', function(keyEvent) {
+                if (keyEvent.keyCode === 13) {
+                  // Enter key pressed
+                  const inputElement = this as HTMLInputElement;
+                  const newInputValue = inputElement.value;
+                  const currentChoices = d.choices as Array<string | number>;
+                  if (!currentChoices.includes(newInputValue)) {
+                    // note that by adding the value, we have modified the metadata of the datacube
+                    // and that change will be discarded unless a model run is issued with this value
+                    currentChoices.push(newInputValue);
+                    // re-render (and possible add a marker)
+                    rerenderChart();
+                  }
+                  // clear the input box
+                  deleteFreeformInputs(svgElement);
                 }
-                // clear the input box
-                deleteFreeformInputs(svgElement);
-              }
-            })
-            .on('click', function(event: PointerEvent) {
-              event.stopPropagation();
-            });
-          (inputField.node() as any).focus();
+              })
+              .on('click', function(event: PointerEvent) {
+                event.stopPropagation();
+              });
+            (inputField.node() as any).focus();
+          }
         })
       ;
     });
@@ -1712,7 +1850,7 @@ const cancelPrevLineSelection = (svgElement: D3Selection) => {
     .classed('selected', false)
     .transition().duration(highlightDuration)
     .style('opacity', lineOpacityHidden)
-    .attr('stroke-width', lineStrokeWidthNormal)
+    .attr('stroke-width', (d) => getLineWidth(d))
     .attr('selection-index', 0);
 
   // hide tooltips
@@ -1859,7 +1997,7 @@ const createScales = (
 
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dim?.choices_labels ?? dim?.choices ?? [];
+      dataExtent = dim?.choices ?? dim?.choices ?? [];
     }
 
     const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs
@@ -1933,6 +2071,10 @@ const createScales = (
     str: stringFunc,
     boolean: numberFunc
   };
+  // add support for rendering geo-parameters
+  Object.values(DatacubeGeoAttributeVariableType).forEach(v => {
+    defaultScales[v] = stringFunc;
+  });
 
   // force some dimensions to be ordinal, if requested
   if (ordinalDimensions && Array.isArray(ordinalDimensions)) {

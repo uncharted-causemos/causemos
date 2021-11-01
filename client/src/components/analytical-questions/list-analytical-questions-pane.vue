@@ -590,9 +590,9 @@ export default defineComponent({
       };
 
       const stepTwo = {
-        id: 'step-2-select-spatial-aggregation',
-        text: `Select the appropriate <b>Spatial Aggregation</b>:
-               e.g. if there are values at regional level, how should they be aggregated at the country level?
+        id: 'step-2-select-aggregation',
+        text: `Select the appropriate <b>Aggregation Function</b>:
+               e.g. if there are multiple values in a region or a time period, how should they be aggregated?
           <br>
           <ul>
             <li>a count: <b>sum</b></li>
@@ -600,9 +600,9 @@ export default defineComponent({
             <li>an index: <b>mean</b></li>
           </ul>
         `,
-        title: 'Select Spatial Aggregation',
+        title: 'Select Aggregation Function',
         attachTo: {
-          element: '.tour-spatial-agg-dropdown-config',
+          element: '.tour-agg-dropdown-config',
           on: 'right'
         },
         buttons: [
@@ -650,43 +650,7 @@ export default defineComponent({
       };
 
       const stepThree = {
-        id: 'step-3-select-temporal-aggregation',
-        text: `Select the appropriate <b>Temporal Aggregation</b>:
-               e.g. if there are values for multiple days in a month, how should they be aggregated as one value for that month?
-          <br>
-          <ul>
-            <li>a count: <b>sum</b></li>
-            <li>a percentage, rate or probability: <b>mean</b></li>
-            <li>an index: <b>mean</b></li>
-          </ul>
-        `,
-        title: 'Select Temporal Aggregation',
-        attachTo: {
-          element: '.tour-temporal-agg-dropdown-config',
-          on: 'right'
-        },
-        buttons: [
-          {
-            text: 'Skip tutorial!',
-            action: function() {
-              return tour.cancel();
-            }
-          },
-          {
-            text: 'Next',
-            action: function() {
-              return tour.next();
-            }
-          }
-        ],
-        highlightClass: 'my-highlight',
-        // @FIXME: temp solution to expand the highlighted-target area to include
-        //  the dropdown config options to allow the user to select one of them before advancing the tour
-        modalOverlayOpeningPadding: 100
-      };
-
-      const stepFour = {
-        id: 'step-4-aggregation-summary',
+        id: 'step-3-aggregation-summary',
         text: 'These configuration options will be remembered in this quantitative analysis.',
         buttons: [
           {
@@ -698,7 +662,7 @@ export default defineComponent({
         ]
       };
 
-      tour.addSteps([stepOne, stepTwo, stepThree, stepFour]);
+      tour.addSteps([stepOne, stepTwo, stepThree]);
       tour.start();
 
       // save this newly created tour in the store

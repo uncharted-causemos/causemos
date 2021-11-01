@@ -103,6 +103,7 @@ export default defineComponent({
 
     const siteMap = computed<{ [key: string]: NavBarItem[] }>(() => ({
       home: [],
+      newDomainProject: [],
       domainDatacubeOverview: [datacubeProjectItem.value],
       modelPublishingExperiment: [
         datacubeProjectItem.value,

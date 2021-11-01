@@ -1,167 +1,131 @@
 <template>
-  <div class="container-fluid">
+  <div class="home-container">
     <div class="logo-container">
-        <img
-          class="logo"
-          src="../assets/causemos-logo-colour.svg"
-          alt="CauseMos logo"
-        >
-        <div class="descriptions">
-          Understand complex multi-domains issues leveraging integrated knowledge, data, and models
-        </div>
+      <img
+        class="logo"
+        src="../assets/causemos-logo-colour.svg"
+        alt="CauseMos logo"
+      />
+      <div class="descriptions">
+        Understand complex multi-domain issues by leveraging integrated
+        knowledge, data, and models
+      </div>
     </div>
-      <div class="row page-container">
-        <div class="col-md-6 page-content">
-          <div class="row title">
-            <h3>Analysis Projects</h3>
-            <message-display
-              v-if="newKnowledgeBase"
-              :message="'New Knowledge Base (KB): Create a new project to check out the newly created KB.'"
-              :message-type="'primary'"
-              :dismissable="true"
-              @dismiss="onDismiss" />
-            <button
-              v-tooltip.top-center="'Create a new project'"
-              type="button"
-              class="btn btn-primary"
-              @click="gotoNewProject"
-            >New Project</button>
-          </div>
-          <hr>
-          <div class="row">
-            <div class="controls">
-              <input
-                v-model="search"
-                type="text"
-                placeholder="Search projects..."
-                class="form-control"
-              >
-              <div class="sorting">
-                <div>
-                  <button
-                    type="button"
-                    class="btn btn-default"
-                    @click="toggleSortingDropdown"
-                  ><span class="lbl">Sort by</span> - {{ selectedSortingOption }}
-                    <i class="fa fa-caret-down" />
-                  </button>
-                </div>
-                <div v-if="showSortingDropdown">
-                  <dropdown-control class="dropdown">
-                    <template #content>
-                      <div
-                        v-for="option in sortingOptions"
-                        :key="option"
-                        class="dropdown-option"
-                        @click="sort(option)">
-                        {{ option }}
-                      </div>
-                    </template>
-                  </dropdown-control>
-                </div>
-              </div>
-            </div>
-          </div>
-          <div class="row projects-list">
-            <div class="row projects-list-header">
-              <div class="col-sm-4">
-                Name
-              </div>
-              <div class="col-sm-2 number-col">
-                Analyses
-              </div>
-              <div class="col-sm-4 number-col">
-                Knowledge Base
-              </div>
-              <div class="col-sm-2 number-col">
-                Updated
-              </div>
-            </div>
-            <div class="projects-list-elements">
-              <div
-                v-for="project in filteredProjects"
-                :key="project.id">
-                <project-card
-                  :project="project"
-                  @delete="deleteProject" />
-              </div>
-            </div>
-          </div>
+    <div class="columns">
+      <div class="project-column">
+        <div class="title">
+          <h3>Analysis Projects</h3>
+          <message-display
+            v-if="newKnowledgeBase"
+            :message="'New Knowledge Base (KB): Create a new project to check out the newly created KB.'"
+            :message-type="'primary'"
+            :dismissable="true"
+            @dismiss="onDismiss" />
+          <button
+            v-tooltip.top-center="'Create a new analysis project'"
+            type="button"
+            class="btn btn-primary"
+            @click="gotoNewProject"
+          >New Analysis Project</button>
         </div>
-        <div class="col-md-6 page-content">
-          <div class="row title">
-            <h3>Domain Model/Indicator Projects</h3>
-          </div>
-          <hr>
-          <div class="row">
-            <div class="controls">
-              <input
-                v-model="searchDomainDatacubes"
-                type="text"
-                placeholder="Search projects..."
-                class="form-control"
-              >
-              <div class="sorting">
-                <div>
-                  <button
-                    type="button"
-                    class="btn btn-default"
-                    @click="toggleSortingDropdownDomainDatacubes"
-                  ><span class="lbl">Sort by</span> - {{ selectedSortingOptionDomainDatacube }}
-                    <i class="fa fa-caret-down" />
-                  </button>
-                </div>
-                <div v-if="showSortingDropdownDomainDatacubes">
-                  <dropdown-control class="dropdown">
-                    <template #content>
-                      <div
-                        v-for="option in sortingOptionsDomainDatacubes"
-                        :key="option"
-                        class="dropdown-option"
-                        @click="sortDomainDatacubes(option)">
-                        {{ option }}
-                      </div>
-                    </template>
-                  </dropdown-control>
-                </div>
-              </div>
+        <div class="controls">
+          <input
+            v-model="search"
+            type="text"
+            placeholder="Search projects..."
+            class="form-control"
+          >
+          <dropdown-button
+            :inner-button-label="'Sort by'"
+            :items="sortingOptions"
+            :selected-item="selectedSortingOption"
+            @item-selected="sort"
+          />
+        </div>
+        <div class="projects-list">
+          <div class="projects-list-header">
+            <div class="table-column extra-wide">
+              Name
+            </div>
+            <div class="table-column">
+              Analyses
+            </div>
+            <div class="table-column extra-wide">
+              Knowledge Base
+            </div>
+            <div class="table-column">
+              Updated
+            </div>
+            <div class="table-column extra-small">
+              <!-- no title necessary for delete button column -->
             </div>
           </div>
-          <div class="row projects-list">
-            <div class="row projects-list-header">
-              <div class="col-sm-3">
-                Family name
-              </div>
-              <div class="col-sm-2 number-col" style="padding: 0;">
-                Ready (Y | N)
-              </div>
-              <div class="col-sm-2 number-col" style="padding: 0;">
-                <span>Type
-                (<span class="datacube-link" @click="addDomainModels=!addDomainModels">M</span>
-                    &nbsp;|&nbsp;
-                  <span class="datacube-link" @click="addDomainIndicators=!addDomainIndicators">I</span>)
-                </span>
-              </div>
-              <div class="col-sm-3 number-col" style="padding: 0;">
-                Source
-              </div>
-              <div class="col-sm-2 number-col" style="padding: 0;">
-                Updated
-              </div>
-            </div>
-            <div class="projects-list-elements">
-              <div
-                v-for="project in filteredDomainProjects"
-                :key="project.id">
-                <domain-datacube-project-card
-                  :project="project"
-                  @delete="deleteDomainProject" />
-              </div>
-            </div>
+          <div class="projects-list-elements">
+            <project-card
+              v-for="project in filteredProjects"
+              :key="project.id"
+              :project="project"
+              @delete="deleteProject"
+            />
           </div>
         </div>
       </div>
-
+      <div class="project-column">
+        <div class="title">
+          <h3>Domain Model Projects</h3>
+          <button
+            v-tooltip.top-center="'Create a new domain family project'"
+            type="button"
+            class="btn btn-primary"
+            @click="gotoNewFamilyProject"
+          >New Domain Model Project</button>
+        </div>
+        <div class="controls">
+          <input
+            v-model="searchDomainDatacubes"
+            type="text"
+            placeholder="Search projects..."
+            class="form-control"
+          >
+          <dropdown-button
+            :inner-button-label="'Sort by'"
+            :items="sortingOptions"
+            :selected-item="selectedSortingOptionDomainDatacube"
+            @item-selected="sortDomainDatacubes"
+          />
+        </div>
+        <div class="projects-list">
+          <div class="projects-list-header">
+            <div class="table-column extra-wide">
+              Family name
+            </div>
+            <div class="table-column">
+              Published Instances
+            </div>
+            <div class="table-column">
+              Registered Instances
+            </div>
+            <div class="table-column extra-wide">
+              Source
+            </div>
+            <div class="table-column">
+              Updated
+            </div>
+            <div class="table-column extra-small">
+              <!-- no title necessary for delete button column -->
+            </div>
+          </div>
+          <div class="projects-list-elements">
+            <domain-datacube-project-card
+              v-for="project in filteredDomainProjects"
+              :key="project.id"
+              :project="project"
+              @delete="deleteDomainProject"
+            />
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 </template>
 
@@ -172,35 +136,30 @@ import { mapActions } from 'vuex';
 import projectService from '@/services/project-service';
 import ProjectCard from '@/components/project-card.vue';
 import DomainDatacubeProjectCard from '@/components/domain-datacube-project-card.vue';
-import DropdownControl from '@/components/dropdown-control.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import { Project, DomainProject, KnowledgeBase } from '@/types/Common';
 import domainProjectService from '@/services/domain-project-service';
-import { DatacubeType } from '@/types/Enums';
+import DropdownButton from '@/components/dropdown-button.vue';
 
 export default defineComponent({
   name: 'Home',
   components: {
     ProjectCard,
     DomainDatacubeProjectCard,
-    DropdownControl,
-    MessageDisplay
+    MessageDisplay,
+    DropdownButton
   },
   data: () => ({
     search: '',
     projectsList: [] as Project[],
     showSortingDropdown: false,
-    sortingOptions: ['Most recent', 'Earliest'],
+    sortingOptions: ['Most recent', 'Oldest'],
     selectedSortingOption: 'Most recent',
     newKnowledgeBase: false,
-    //
     searchDomainDatacubes: '',
     projectsListDomainDatacubes: [] as DomainProject[],
     showSortingDropdownDomainDatacubes: false,
-    sortingOptionsDomainDatacubes: ['Most recent', 'Earliest'],
-    selectedSortingOptionDomainDatacube: 'Most recent',
-    addDomainModels: true,
-    addDomainIndicators: false
+    selectedSortingOptionDomainDatacube: 'Most recent'
   }),
   computed: {
     filteredProjects(): Project[] {
@@ -210,15 +169,10 @@ export default defineComponent({
     },
     filteredDomainProjects(): DomainProject[] {
       return this.projectsListDomainDatacubes.filter(project => {
-        const filteredProject = _.get(project, 'name', '').toLowerCase().includes(this.searchDomainDatacubes.toLowerCase());
-
-        if (project.type === DatacubeType.Indicator) {
-          return filteredProject && this.addDomainIndicators;
-        } else if (project.type === DatacubeType.Model) {
-          return filteredProject && this.addDomainModels;
-        } else {
-          return filteredProject;
-        }
+        const matchesSearchQuery = _.get(project, 'name', '')
+          .toLowerCase()
+          .includes(this.searchDomainDatacubes.toLowerCase());
+        return matchesSearchQuery;
       });
     }
   },
@@ -287,6 +241,9 @@ export default defineComponent({
     gotoNewProject() {
       this.$router.push('newProject');
     },
+    gotoNewFamilyProject() {
+      this.$router.push('newDomainProject');
+    },
     toggleSortingDropdown() {
       this.showSortingDropdown = !this.showSortingDropdown;
     },
@@ -331,10 +288,10 @@ export default defineComponent({
       this.selectedSortingOptionDomainDatacube = option;
       this.showSortingDropdownDomainDatacubes = false;
       switch (option) {
-        case this.sortingOptionsDomainDatacubes[0]:
+        case this.sortingOptions[0]:
           this.sortDomainDatacubesByMostRecentDate();
           break;
-        case this.sortingOptionsDomainDatacubes[1]:
+        case this.sortingOptions[1]:
           this.sortDomainDatacubesByEarliestDate();
           break;
         default:
@@ -349,12 +306,17 @@ export default defineComponent({
 @import "~styles/variables";
 $padding-size: 12.5vh;
 
-.container-fluid {
-  background-color: white;
+.home-container {
+  background: white;
+  height: $content-full-height;
+  display: flex;
+  flex-direction: column;
 }
 
-.page-container {
+.columns {
   display: flex;
+  flex: 1;
+  min-height: 0;
   padding: 2rem;
   background-color: ghostwhite;
 }
@@ -378,16 +340,6 @@ $padding-size: 12.5vh;
   }
 }
 
-.datacube-link {
-  color: blue;
-
-  &:hover {
-    border-bottom-width: 1px;
-    border-bottom-style: solid;
-    cursor: pointer;
-  }
-}
-
 .title {
   display: flex;
   align-items: center;
@@ -398,33 +350,53 @@ $padding-size: 12.5vh;
     flex: 1;
   }
 }
-hr {
-  margin: 5px;
-}
 .projects-list {
   flex: 1;
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin-bottom: 20px;
+
   .projects-list-header {
-    box-sizing: border-box;
-    border: 1px solid #bbb;
-    margin: 1px 0;
-    background: #fcfcfc;
-    font-weight: bold;
-    padding: 10px;
+    display: flex;
+    margin: 5px 0;
+    align-items: flex-end;
+    line-height: 20px;
+    min-height: 2 * 20px;
+    padding-left: 10px;
+    // Add 15px right padding to accommodate for scrollbar
+    padding-right: 25px;
   }
   .projects-list-elements {
     flex: 1;
+    min-height: 0;
     overflow-y: auto;
-    overflow-x: hidden;
+
+    & > *:not(:first-child) {
+      margin-top: 1px;
+    }
+  }
+}
+
+.table-column {
+  flex: 1;
+  min-width: 0;
+
+  &:not(:first-child) {
+    margin-left: 5px;
+  }
+
+  &.extra-wide {
+    flex: 2;
+  }
+
+  &.extra-small {
+    flex-grow: 0;
+    flex-shrink: 0;
+    flex-basis: 20px;
   }
 }
 .controls {
   display: flex;
-  padding-bottom: 5px;
-  margin-top: 5px;
   justify-content: space-between;
   input[type=text] {
     padding: 8px;
@@ -454,16 +426,19 @@ hr {
   }
 }
 
-.page-content {
-  max-height: calc(#{$content-full-height} - #{$padding-size * 2.5});
+.project-column {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  margin-left: 1rem;
-  margin-right: 1rem;
+  flex: 1;
+  min-width: 0;
+
+  &:not(:first-child) {
+    margin-left: 20px;
+  }
 }
 
 .number-col {
-  text-align: center;
+  text-align: right;
 }
 </style>

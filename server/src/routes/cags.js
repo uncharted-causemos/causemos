@@ -41,7 +41,7 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
   // to ignore the edges, nodes, and id.
   const modelData = {};
 
-  const attrBlacklist = ['edges', 'nodes', 'id', 'created_at', 'modified_at'];
+  const attrBlacklist = ['edges', 'nodes', 'id', 'created_at', 'modified_at', 'groups'];
   Object.keys(CAG).forEach(key => {
     if (attrBlacklist.indexOf(key) === -1) {
       if (key === 'name') {
@@ -68,7 +68,8 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
     return {
       concept: n.concept,
       parameter: n.parameter,
-      label: n.label
+      label: n.label,
+      components: n.components
     };
   });
 
@@ -113,6 +114,30 @@ router.put('/:mid/components/', asyncHandler(async (req, res) => {
     case OPERATION.UPDATE:
       await cagService.updateCAG(modelId, edges, nodes, updateType);
       historyService.logHistory(modelId, updateType, nodes, edges);
+      break;
+    default:
+      throw new Error('Operation not supported: ' + operation);
+  }
+
+  res.status(200).send({ updateToken: editTime });
+}));
+
+router.put('/:mid/groups/', asyncHandler(async (req, res) => {
+  const editTime = Date.now();
+  const modelId = req.params.mid;
+  const {
+    operation,
+    groups
+  } = req.body;
+
+  // Perform the specified operation, or if it's not a supported operation
+  // throw an error
+  switch (operation) {
+    case OPERATION.REMOVE:
+      await cagService.deleteGroups(modelId, groups);
+      break;
+    case OPERATION.UPDATE:
+      await cagService.updateGroups(modelId, groups);
       break;
     default:
       throw new Error('Operation not supported: ' + operation);

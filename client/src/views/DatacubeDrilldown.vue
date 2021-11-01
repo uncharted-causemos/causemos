@@ -3,16 +3,14 @@
     <main class="main">
       <analytical-questions-and-insights-panel />
       <div class="main insight-capture">
-        <!-- TODO: whether a card is actually expanded or not will
-        be dynamic later -->
         <datacube-card
-          :class="{ 'datacube-expanded': true }"
+          class="datacube-card"
           :initial-data-config="initialDataConfig"
           :metadata="metadata"
           :initial-view-config="initialViewConfig"
-          :spatial-aggregation-options="aggregationOptionFiltered"
-          :temporal-aggregation-options="aggregationOptionFiltered"
+          :aggregation-options="aggregationOptionFiltered"
           :temporal-resolution-options="temporalResolutionOptionFiltered"
+          @update-model-parameter="onModelParamUpdated"
         >
           <template #datacube-model-header>
             <h5
@@ -44,6 +42,7 @@
               <i class="fa fa-fw fa-compress" />
             </button>
           </template>
+
           <template #datacube-description>
             <datacube-description
               :metadata="metadata"
@@ -59,7 +58,7 @@
 import _ from 'lodash';
 import { computed, defineComponent, Ref, ref, watchEffect } from 'vue';
 import { useRoute } from 'vue-router';
-import { useStore } from 'vuex';
+import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import DatacubeCard from '@/components/data/datacube-card.vue';
@@ -69,11 +68,11 @@ import { getAnalysis } from '@/services/analysis-service';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 
 import { AnalysisItem } from '@/types/Analysis';
-import { DatacubeFeature } from '@/types/Datacube';
+import { DatacubeFeature, Model, ModelParameter } from '@/types/Datacube';
 import { ProjectType } from '@/types/Enums';
 import { DataState, ViewState } from '@/types/Insight';
 
-import { DATASET_NAME, isIndicator } from '@/utils/datacube-util';
+import { DATASET_NAME, isIndicator, getValidatedOutputs } from '@/utils/datacube-util';
 import { aggregationOptionFiltered, temporalResolutionOptionFiltered } from '@/utils/drilldown-util';
 import filtersUtil from '@/utils/filters-util';
 
@@ -87,6 +86,7 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     const store = useStore();
+
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);
@@ -174,6 +174,25 @@ export default defineComponent({
       store.dispatch('dataAnalysis/updateAnalysisItems', { currentAnalysisId: analysisId.value, analysisItems: updatedAnalysisItems });
     });
 
+    const refreshMetadata = () => {
+      if (metadata.value !== null) {
+        const cloneMetadata = _.cloneDeep(metadata.value);
+
+        // re-create the validatedOutputs array
+        cloneMetadata.validatedOutputs = getValidatedOutputs(cloneMetadata.outputs);
+
+        metadata.value = cloneMetadata;
+      }
+    };
+
+    const onModelParamUpdated = (updatedModelParam: ModelParameter) => {
+      if (metadata.value !== null) {
+        const updatedParamIndex = (metadata.value as Model).parameters.findIndex(p => p.name === updatedModelParam.name);
+        (metadata.value as Model).parameters[updatedParamIndex] = updatedModelParam;
+        refreshMetadata();
+      }
+    };
+
     return {
       aggregationOptionFiltered,
       analysisId,
@@ -189,11 +208,13 @@ export default defineComponent({
       outputs,
       projectType,
       selectedModelId,
-      temporalResolutionOptionFiltered
+      temporalResolutionOptionFiltered,
+      onModelParamUpdated
     };
   },
   data: () => ({
-    analysis: undefined,
+    // TODO: add Typescript type to replace `any`
+    analysis: undefined as (any | undefined),
     ProjectType
   }),
   async mounted() {
@@ -202,10 +223,19 @@ export default defineComponent({
     this.hideInsightPanel();
 
     if (this.projectType === ProjectType.Analysis) {
+      // If the analyst navigates directly to this page from another analysis,
+      //  the previous analysis's name will still be loaded. We clear it here
+      //  to prevent the previous name from showing while the getAnalysis
+      //  request is in flight.
+      this.setAnalysisName('');
       this.analysis = await getAnalysis(this.analysisId);
+      this.setAnalysisName(this.analysis?.title ?? '');
     }
   },
   methods: {
+    ...mapActions({
+      setAnalysisName: 'app/setAnalysisName'
+    }),
     onClickDatacubeName() {
       const analysisId = this.analysisId ?? '';
       const metadataName = this.metadata?.name ?? '';
@@ -233,7 +263,7 @@ export default defineComponent({
   min-width: 0;
 }
 
-.datacube-expanded {
+.datacube-card {
   min-width: 0;
   flex: 1;
   margin: 10px;

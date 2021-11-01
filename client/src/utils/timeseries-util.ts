@@ -3,6 +3,7 @@ import moment from 'moment';
 import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
 import { D3GElementSelection } from '@/types/D3';
 import { translate } from './svg-util';
+import { calculateDiff } from '@/utils/value-util';
 
 
 const DEFAULT_LINE_COLOR = '#000';
@@ -11,7 +12,8 @@ const DEFAULT_LINE_WIDTH = 2;
 
 export function applyRelativeTo(
   timeseriesData: Timeseries[],
-  relativeTo: string | null
+  relativeTo: string | null,
+  showPercentChange = false
 ) {
   const baselineData = timeseriesData.find(
     timeseries => timeseries.id === relativeTo
@@ -30,21 +32,22 @@ export function applyRelativeTo(
   const returnValue: Timeseries[] = [];
   timeseriesData.forEach(timeseries => {
     // Adjust values
-    const { id, name, color, points } = timeseries;
+    const { id, name, color, points, isDefaultRun } = timeseries;
     const adjustedPoints = points.map(({ timestamp, value }) => {
       const baselineValue =
         baselineData.points.find(point => point.timestamp === timestamp)
           ?.value ?? 0;
       return {
         timestamp,
-        value: value - baselineValue
+        value: calculateDiff(baselineValue, value, showPercentChange)
       };
     });
     returnValue.push({
       id,
+      isDefaultRun,
       name,
       color,
-      points: adjustedPoints
+      points: adjustedPoints.filter(point => !Number.isNaN(point.value))
     });
   });
   const baselineMetadata = {

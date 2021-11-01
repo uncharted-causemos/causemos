@@ -1,6 +1,11 @@
 <template>
   <div class="quantitative-view-container">
-    <analytical-questions-and-insights-panel />
+    <teleport to="#navbar-trailing-teleport-destination">
+      <cag-analysis-options-button
+        :model-summary="modelSummary"
+        :view-after-deletion="'overview'"
+      />
+    </teleport>
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -46,13 +51,13 @@ import modelService from '@/services/model-service';
 import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar.vue';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters.vue';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { getInsightById } from '@/services/insight-service';
 import { defineComponent } from '@vue/runtime-core';
 import useToaster from '@/services/composables/useToaster';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, NodeParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -63,7 +68,7 @@ export default defineComponent({
     TabPanel,
     ActionBar,
     ModalEditParameters,
-    AnalyticalQuestionsAndInsightsPanel
+    CagAnalysisOptionsButton
   },
   setup() {
     return {
@@ -555,6 +560,14 @@ export default defineComponent({
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;
     },
+    _getGraphDensity() {
+      if (_.isNil(this.modelComponents)) return 1;
+
+      const numEdges = this.modelComponents.edges.length;
+      const numNodes = this.modelComponents.nodes.length;
+
+      return 2 * numEdges / (numNodes * (numNodes - 1));
+    },
     async fetchSensitivityAnalysisResults() {
       if (
         this.currentEngine !== 'dyse' ||
@@ -596,8 +609,10 @@ export default defineComponent({
           this.enableOverlay(`Will await result for  ${(max - current) * 3} more seconds`);
         }
       };
+
       this.enableOverlay('Running sensitivity analysis');
-      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, 50, progressFn);
+      const numPolls = Math.max(10, Math.round(this._getGraphDensity() * 50));
+      const results = await modelService.getExperimentResult(this.modelSummary.id, experimentId, numPolls, progressFn);
       this.disableOverlay();
 
       if (this.sensitivityDataTimestamp !== now) return;
@@ -634,6 +649,7 @@ export default defineComponent({
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
+  isolation: isolate;
 
   .graph-container {
     width: 100%;

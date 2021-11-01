@@ -466,7 +466,7 @@ export default defineComponent({
     });
     const clearParameterization = async () => {
       if (selectedNode.value === null) return;
-      const { id, concept, label, model_id } = selectedNode.value;
+      const { id, concept, label, model_id, components } = selectedNode.value;
       const nodeParameters = {
         id,
         concept,
@@ -488,7 +488,8 @@ export default defineComponent({
           ],
           max: null, // filled in by server
           min: null // filled in by server
-        }
+        },
+        components
       };
 
       // save view config options when quantifying the node along with the node parameters
@@ -530,7 +531,7 @@ export default defineComponent({
     });
     const saveParameterValueChanges = async () => {
       if (selectedNode.value === null) return;
-      const { id, concept, label, model_id, parameter } = selectedNode.value;
+      const { id, concept, label, model_id, parameter, components } = selectedNode.value;
       const nodeParameters = {
         id,
         concept,
@@ -542,7 +543,8 @@ export default defineComponent({
           temporalResolution: selectedTemporalResolution.value,
           period: isSeasonalityActive.value ? indicatorPeriod.value : 1,
           timeseries: historicalTimeseries.value
-        })
+        }),
+        components
       };
       try {
         await modelService.updateNodeParameter(currentCAG.value, nodeParameters);
@@ -576,7 +578,8 @@ export default defineComponent({
           name: scenarioName,
           id: scenarioId,
           color,
-          points: values
+          points: values,
+          isDefaultRun: false
         };
       });
       // Rescale timeseries relative to the baseline
