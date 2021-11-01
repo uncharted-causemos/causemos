@@ -202,7 +202,7 @@ const getAllModelRuns = async(modelId, includeVersion) => {
   const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
   return connection.find(
     [{ field: 'model_id', value: modelId }],
-    { size: SEARCH_LIMIT, version: includeVersion ?? false }
+    { size: SEARCH_LIMIT, version: includeVersion }
   );
 };
 
