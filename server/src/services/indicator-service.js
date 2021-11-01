@@ -85,7 +85,7 @@ const getConceptIndicatorMap = async (model, nodeParameters) => {
 
   // 2. Run search against datacubes
   for (const node of nodesNotInHistory) {
-    const concepts = node.comonents;
+    const concepts = node.components;
     const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
     if (!_.isEmpty(candidates)) {
       result.set(node.concept, candidates[0]);
@@ -124,7 +124,8 @@ const setDefaultIndicators = async (modelId) => {
   const modelAdapter = Adapter.get(RESOURCE.MODEL);
   const model = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
   const nodeParameters = await _findAllWithoutIndicators(modelId);
-  const conceptIndicatorMap = getConceptIndicatorMap(model, nodeParameters);
+  const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
+
 
   // Defaults
   const geospatialAgg = 'mean';

@@ -193,25 +193,42 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   }
 
   // FIXME: Also attach concept matches
-
   return finalResults;
 };
 
 
 const indicatorConceptFilter = (concepts) => {
-  return {
-    nested: {
-      path: 'ontology_matches',
-      query: {
-        terms_set: {
-          'ontology_matches.name.raw': {
-            terms: concepts,
-            minimum_should_match_script: {
-              source: '1'
-            }
+  let minimumMatchNumber = 0;
+
+  const len = concepts.length;
+  if (len <= 2) {
+    minimumMatchNumber = len;
+  } else {
+    // At least half + 1
+    minimumMatchNumber = Math.floor(len / 2) + 1;
+  }
+
+  const termQueries = concepts.map(concept => {
+    return {
+      nested: {
+        path: 'ontology_matches',
+        query: {
+          term: {
+            'ontology_matches.name.raw': concept
           }
         }
       }
+      // term: {
+      //   // 'ontology_matches.name.raw': concept
+      //   'outputs.ontologies.concepts.name': concept
+      // }
+    };
+  });
+
+  return {
+    bool: {
+      should: termQueries,
+      minimum_should_match: minimumMatchNumber
     }
   };
 };
@@ -244,13 +261,7 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
       query: {
         bool: {
           must: [
-            {
-              bool: {
-                should: [
-                  indicatorConceptFilter(allMembers)
-                ]
-              }
-            },
+            indicatorConceptFilter(allMembers),
             { match: { type: 'indicator' } }
           ]
         }
@@ -258,7 +269,6 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
     }
   };
 
-  console.log(JSON.stringify(searchPayload));
   const results = await client.search(searchPayload);
   return results.body.hits.hits.map(d => d._source);
 };
