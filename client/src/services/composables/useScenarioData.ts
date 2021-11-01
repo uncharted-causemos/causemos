@@ -38,11 +38,11 @@ export default function useScenarioData(
         // we need to compare run status
         const runStatusMap: {[key: string]: string} = {};
         existingData.forEach(r => {
-          runStatusMap[r.id] = r.status;
+          runStatusMap[r.id] = r._version;
         });
         newMetadata.forEach(r => {
-          // if this is a new run, or if the exists but its status has changed, then we have new data
-          if (!runStatusMap[r.id] || runStatusMap[r.id] !== r.status) {
+          // if this is a new run, or if the exists but its _version has changed, then we have new data
+          if (!runStatusMap[r.id] || runStatusMap[r.id] !== r._version) {
             newDataIsDifferent = true;
           }
         });

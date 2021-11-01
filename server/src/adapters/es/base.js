@@ -248,7 +248,9 @@ class Base {
 
     const response = await this.client.search(searchPayload);
     if (options.version) {
-      response._source._version = response._version;
+      response.body.hits.hits.forEach(hit => {
+        hit._source._version = hit._version;
+      });
     }
     return response.body;
   }
