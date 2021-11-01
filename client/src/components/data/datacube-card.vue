@@ -1416,8 +1416,8 @@ export default defineComponent({
       updateScenarioSelection,
       visibleTimeseriesData,
       switchFacetData,
-      filterFacetData
-      showPercentChange,
+      filterFacetData,
+      showPercentChange
     };
   },
   watch: {
