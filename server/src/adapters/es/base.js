@@ -242,6 +242,9 @@ class Base {
         excludes: options.excludes
       };
     }
+    if (options.version) {
+      searchPayload.body.version = options.version;
+    }
 
     const response = await this.client.search(searchPayload);
     return response.body;
