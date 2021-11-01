@@ -13,7 +13,7 @@ export default function useOutputSpecs(
   selectedTemporalResolution: Ref<string>,
   metadata: Ref<Model | Indicator | null>,
   selectedTimeseriesPoints: Ref<TimeseriesPointSelection[]>,
-  allModelRunData?: Ref<ModelRun[]>
+  modelRunData?: Ref<ModelRun[]>
 ) {
   const { activeFeature } = useActiveDatacubeFeature(metadata);
   const outputSpecs = computed<OutputSpecWithId[]>(() => {
@@ -40,7 +40,7 @@ export default function useOutputSpecs(
         isDefaultRun: false
       };
 
-      const runModelData = allModelRunData?.value.find(run => run.id === scenarioId);
+      const runModelData = modelRunData?.value.find(run => run.id === scenarioId);
       const pregenDataForRun = runModelData?.pre_gen_output_paths;
       if (pregenDataForRun && pregenDataForRun.length > 0) {
         outputSpec.preGeneratedOutput = pregenDataForRun;
