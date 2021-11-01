@@ -1,6 +1,11 @@
 <template>
   <div class="quantitative-view-container">
-    <analytical-questions-and-insights-panel />
+    <teleport to="#navbar-trailing-teleport-destination">
+      <cag-analysis-options-button
+        :model-summary="modelSummary"
+        :view-after-deletion="'overview'"
+      />
+    </teleport>
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -46,13 +51,13 @@ import modelService from '@/services/model-service';
 import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar.vue';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters.vue';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { getInsightById } from '@/services/insight-service';
 import { defineComponent } from '@vue/runtime-core';
 import useToaster from '@/services/composables/useToaster';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, NodeParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -64,7 +69,7 @@ export default defineComponent({
     TabPanel,
     ActionBar,
     ModalEditParameters,
-    AnalyticalQuestionsAndInsightsPanel
+    CagAnalysisOptionsButton
   },
   setup() {
     return {
@@ -646,6 +651,7 @@ export default defineComponent({
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
+  isolation: isolate;
 
   .graph-container {
     width: 100%;

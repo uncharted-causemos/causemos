@@ -1,5 +1,11 @@
 <template>
   <div class="qualitative-view-container">
+    <teleport to="#navbar-trailing-teleport-destination">
+      <cag-analysis-options-button
+        :model-summary="modelSummary"
+        :view-after-deletion="'overview'"
+      />
+    </teleport>
     <action-bar
       :model-summary="modelSummary"
       :model-components="modelComponents"
@@ -8,7 +14,11 @@
       @reset-cag="resetCAGLayout()"
     />
     <main>
-      <analytical-questions-and-insights-panel />
+      <cag-side-panel class="side-panel">
+        <template #below-tabs>
+          <cag-comments-button :model-summary="modelSummary" />
+        </template>
+      </cag-side-panel>
       <div class="graph-container" @dblclick="onBackgroundDblClick">
         <empty-state-instructions v-if="showEmptyStateInstructions" />
         <CAG-graph
@@ -199,7 +209,6 @@ import ModalImportConflict from '@/components/qualitative/modal-import-conflict.
 
 import modelService from '@/services/model-service';
 import projectService from '@/services/project-service';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { defineComponent, ref } from '@vue/runtime-core';
 import {
   CAGGraph as CAGGraphInterface,
@@ -211,6 +220,9 @@ import {
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import useToaster from '@/services/composables/useToaster';
 import { DataState } from '@/types/Insight';
+import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
+import CagSidePanel from '@/components/cag/cag-side-panel.vue';
+import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -264,8 +276,10 @@ export default defineComponent({
     ModalImportCag,
     ModalImportConflict,
     ModalPathFind,
-    RenameModal,
-    AnalyticalQuestionsAndInsightsPanel
+    CagCommentsButton,
+    CagSidePanel,
+    CagAnalysisOptionsButton,
+    RenameModal
   },
   setup() {
     return {
@@ -1141,7 +1155,6 @@ export default defineComponent({
     display: flex;
     min-height: 0;
     flex: 1;
-    box-shadow: $shadow-level-2;
   }
 
   .graph-container {
@@ -1166,6 +1179,11 @@ export default defineComponent({
       margin-right: 5px;
     }
   }
+}
+
+.side-panel {
+  isolation: isolate;
+  z-index: 1;
 }
 
 .qualitative-drilldown {

@@ -42,6 +42,7 @@
               <i class="fa fa-fw fa-compress" />
             </button>
           </template>
+
           <template #datacube-description>
             <datacube-description
               :metadata="metadata"
@@ -85,6 +86,7 @@ export default defineComponent({
   setup() {
     const route = useRoute();
     const store = useStore();
+
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
     const analysisId = computed(() => store.getters['dataAnalysis/analysisId']);
     const analysisItems = computed(() => store.getters['dataAnalysis/analysisItems']);

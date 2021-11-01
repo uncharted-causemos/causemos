@@ -89,6 +89,7 @@ export interface DataState {
   datacubeRegions?: string[];
   relativeTo?: string | null;
   visibleTimeseriesData?: Timeseries[];
+  searchFilters?: any; // lex-bar search queries
 
   // knowledge/model space specific
   selectedScenarioId?: string;
