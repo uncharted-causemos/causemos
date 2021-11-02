@@ -66,7 +66,7 @@
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
 
-import { updateStatementsFactorGrounding } from '@/services/curation-service';
+import { updateStatementsFactorGrounding, trackCurations } from '@/services/curation-service';
 import ModalDocument from '@/components/modals/modal-document';
 import MessageDisplay from '@/components/widgets/message-display';
 import EvidenceGroup from '@/components/drilldown-panel/evidence-group';
@@ -92,6 +92,10 @@ export default {
     recommendations: {
       type: Array,
       default: () => []
+    },
+    curationTrackingId: {
+      type: String,
+      default: ''
     },
     isFetchingStatements: {
       type: Boolean,
@@ -226,6 +230,22 @@ export default {
       } else {
         this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
       }
+
+      const suggestedCurations = this.recommendations.map(r => {
+        return {
+          statementIds: r.statements.map(s => s.id),
+          factor: r.highlights,
+          score: r.score
+        };
+      });
+      const payload = {
+        suggestedCurations: suggestedCurations,
+        acceptedCurations: statementIds
+      };
+
+      await trackCurations(this.curationTrackingId, payload);
+
+
       this.closePane();
     }
   }

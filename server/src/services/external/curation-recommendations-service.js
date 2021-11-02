@@ -127,6 +127,32 @@ const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, nu
   return result;
 };
 
+
+/**
+ * Track curation and recommendations
+ *
+ * @param {string} trackingId - Identifier for the curation being upserted
+ * @param {object} payload - any additional logging data such as statementId, curationType etc...
+ */
+const trackCuration = async(trackingId, payload) => {
+  Logger.info(`Tracking curation with id: ${trackingId}`);
+
+  const curationTracking = Adapter.get(RESOURCE.CURATION_TRACKING);
+
+  const newDoc = { id: trackingId, tracking_data: payload };
+  const idFn = (d) => d.id;
+  const existingDoc = await curationTracking.findOne([
+    { field: 'id', value: trackingId }
+  ], {});
+
+  if (existingDoc === null) {
+    curationTracking.insert(newDoc, idFn);
+  } else {
+    const updatedDoc = _.merge(existingDoc, newDoc);
+    curationTracking.update(updatedDoc, idFn);
+  }
+};
+
 const _mapRegroundingRecommendationsToStatementIds = async (projectId, statementIds, recommendations) => {
   const statementDocs = await _getStatementsForRegroundingRecommendations(projectId, statementIds, recommendations);
   if (_.isEmpty(statementDocs)) return [];
@@ -295,6 +321,7 @@ const _getStatementsForEmptyEdgeRecommendations = async(projectId, statementIds)
 module.exports = {
   getFactorRecommendations,
   getPolarityRecommendations,
-  getEmptyEdgeRecommendations
+  getEmptyEdgeRecommendations,
+  trackCuration
 };
 

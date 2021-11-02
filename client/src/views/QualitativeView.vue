@@ -107,6 +107,7 @@
             "
             :correction="correction"
             :recommendations="factorRecommendationsList"
+            :curationTrackingId="curationTrackingId"
             :is-fetching-statements="isFetchingStatements"
             @close-overlay="onDrilldownOverlayBack"
           />
@@ -287,6 +288,7 @@ export default defineComponent({
       curGrounding: any;
     } | null,
     factorRecommendationsList: [] as any[],
+    curationTrackingId: '',
     pathSuggestionSource: '',
     pathSuggestionTarget: '',
     edgeToSelectOnNextRefresh: null as {
@@ -784,10 +786,12 @@ export default defineComponent({
       factor: string,
       curGrounding: string,
       newGrounding: string,
-      recommendations: any[]
+      recommendations: any[],
+      curationTrackingId: string
     ) {
       this.correction = { factor, newGrounding, curGrounding };
       this.factorRecommendationsList = recommendations;
+      this.curationTrackingId = curationTrackingId;
       this.openDrilldownOverlay(PANE_ID.FACTOR_RECOMMENDATIONS);
     },
     async runImportChecks(ids: string[]) {
