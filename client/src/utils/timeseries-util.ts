@@ -73,7 +73,6 @@ export function renderAxes(
   paddingRight: number,
   xAxisHeight: number,
   xAxisTickCount = 4,
-  yAxisTickCount = 2,
   xAxisTickSizePx = 2
 ) {
   const xAxis = d3
@@ -81,11 +80,16 @@ export function renderAxes(
     .tickSize(xAxisTickSizePx)
     .tickFormat(timestampFormatter)
     .ticks(xAxisTickCount);
+
+  const yAxisTicks = calculateGenericTicks(
+    yScale.domain()[0],
+    yScale.domain()[1]
+  );
   const yAxis = d3
     .axisLeft(yScale)
     .tickSize(width - yAxisWidth - paddingRight)
     .tickFormat(valueFormatter)
-    .ticks(yAxisTickCount);
+    .tickValues(yAxisTicks);
   selection
     .append('g')
     .classed('xAxis', true)
