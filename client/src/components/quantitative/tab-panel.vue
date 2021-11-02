@@ -2,11 +2,12 @@
   <div class="tab-panel-container">
     <div class="main-content h-100 flex flex-col">
       <div class="tab-nav-bar">
-        <tab-bar
-          class="tab-bar tour-matrix-tab"
-          :tabs="validTabs"
-          :active-tab-id="activeTab"
-          @tab-click="setActive"
+        <radio-button-group
+          v-if="isSensitivityAnalysisSupported"
+          class="tour-matrix-tab"
+          :buttons="[{'label': 'Causal Flow', value: 'flow'}, {'label': 'Matrix', value: 'matrix'}]"
+          :selected-button-value="activeTab"
+          @button-clicked="setActive"
         />
         <slot name="action-bar" />
         <div class="augment-model">
@@ -101,11 +102,11 @@ import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
-import TabBar from '../widgets/tab-bar.vue';
 import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
+import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
 const PANE_ID = {
   INDICATOR: 'indicator',
@@ -131,12 +132,6 @@ const PROJECTION_ENGINES = {
   DYSE: 'dyse'
 };
 
-const TABS = {
-  MATRIX: 'matrix',
-  FLOW: 'flow'
-};
-
-
 export default {
   name: 'TabPanel',
   components: {
@@ -144,14 +139,14 @@ export default {
     ModelGraph,
     SensitivityAnalysis,
     ColorLegend,
-    TabBar,
     DrilldownPanel,
     EdgePolaritySwitcher,
     EdgeWeightSlider,
     EvidencePane,
     ArrowButton,
     CagSidePanel,
-    CagCommentsButton
+    CagCommentsButton,
+    RadioButtonGroup
   },
   props: {
     currentEngine: {
@@ -187,16 +182,6 @@ export default {
     'background-click', 'show-model-parameters', 'refresh-model', 'set-sensitivity-analysis-type', 'tab-click'
   ],
   data: () => ({
-    tabs: [
-      {
-        name: 'Causal Flow',
-        id: TABS.FLOW
-      },
-      {
-        name: 'Matrix',
-        id: TABS.MATRIX
-      }
-    ],
     graphData: {},
     scenarioData: null,
 
@@ -213,16 +198,13 @@ export default {
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId'
     }),
+    isSensitivityAnalysisSupported() {
+      return this.currentEngine === PROJECTION_ENGINES.DYSE;
+    },
     activeTab() {
       // if we ever need more state than this
       // add a query store for model
       return this.$route.query?.activeTab || 'flow';
-    },
-    validTabs() {
-      if (this.currentEngine === PROJECTION_ENGINES.DELPHI) {
-        return this.tabs.filter((aTab) => aTab.id !== TABS.MATRIX);
-      }
-      return this.tabs;
     },
     showComponent() {
       return this.currentEngine !== PROJECTION_ENGINES.DELPHI;
@@ -370,7 +352,7 @@ export default {
 .tab-nav-bar {
   display: flex;
   align-items: center;
-  background: $background-light-3;
+  height: $navbar-outer-height;
 
   // Add an empty pseudo element at the left side of the bar to center the
   //  action buttons
@@ -387,8 +369,6 @@ export default {
   min-height: 0;
   position: relative;
   overflow: hidden;
-  background: $background-light-2;
-  box-shadow: $shadow-level-2;
   z-index: 1;
   display: flex;
 }
@@ -426,11 +406,5 @@ main {
       background-color: #255DCC;
     }
   }
-}
-
-::v-deep(.tab-bar li.active) {
-  background: $background-light-2;
-  box-shadow: 0px -8px 8px 4px rgba(0, 0, 0, 0.02);
-  z-index: 2;
 }
 </style>
