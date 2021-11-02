@@ -22,7 +22,9 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
-    <add-reference-box/>
+    <add-reference-box
+      :reference-checkboxes="[{id: 'sample', displayName: 'Sample', checked: true}]"
+    />
     <div class="sort-selection">
       <span>Sort by</span>
       <radio-button-group
