@@ -15,7 +15,7 @@ const setProcessingSucceeded = async(metadata) => {
         status: newStatus
       };
     });
-    await datacubeService.updateDatacube(metadataDelta);
+    await datacubeService.updateDatacubes(metadataDelta);
     return { result: { message: 'Datacube updated' }, code: 200 };
   } else {
     const modelRun = docIds.map(docId => {
@@ -49,7 +49,7 @@ const setProcessingFailed = async(metadata) => {
         status: newStatus
       };
     });
-    await datacubeService.updateDatacube(metadataDelta);
+    await datacubeService.updateDatacubes(metadataDelta);
     return { result: { message: 'Datacube updated' }, code: 200 };
   } else {
     const modelRun = docIds.map(docId => {
