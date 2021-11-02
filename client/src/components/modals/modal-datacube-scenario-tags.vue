@@ -84,7 +84,7 @@ export default defineComponent({
     'close'
   ],
   props: {
-    allModelRunData: {
+    modelRunData: {
       type: Array as PropType<ModelRun[]>,
       default: []
     }
@@ -92,8 +92,8 @@ export default defineComponent({
   computed: {
     runTags(): Array<RunsTag> {
       const tags: RunsTag[] = [];
-      if (this.allModelRunData && this.allModelRunData.length > 0) {
-        this.allModelRunData.forEach(run => {
+      if (this.modelRunData && this.modelRunData.length > 0) {
+        this.modelRunData.forEach(run => {
           run.tags.forEach(tag => {
             const existingTagIndx = tags.findIndex(t => t.label === tag);
             if (existingTagIndx >= 0) {
@@ -143,8 +143,8 @@ export default defineComponent({
       if (this.newTagText !== this.selectedTag?.label && this.newTagText.trim().length > 0) {
         // we have a new tag name
         const oldTagName = this.selectedTag?.label as string;
-        if (this.allModelRunData && this.allModelRunData.length > 0) {
-          this.allModelRunData.forEach(run => {
+        if (this.modelRunData && this.modelRunData.length > 0) {
+          this.modelRunData.forEach(run => {
             if (run.tags.includes(oldTagName)) {
               run.tags = run.tags.filter(t => t !== oldTagName);
               run.tags.push(this.newTagText);
@@ -156,8 +156,8 @@ export default defineComponent({
       this.isEditingTag = false;
     },
     removeTag() {
-      if (this.selectedTag !== null && this.allModelRunData && this.allModelRunData.length > 0) {
-        this.allModelRunData.forEach(run => {
+      if (this.selectedTag !== null && this.modelRunData && this.modelRunData.length > 0) {
+        this.modelRunData.forEach(run => {
           if (this.selectedTag !== null && run.tags.includes(this.selectedTag.label)) {
             // NOTE this will automatically refresh the rendered tags
             run.tags = run.tags.filter(t => t !== this.selectedTag?.label);

@@ -620,7 +620,10 @@ export default defineComponent({
     onModalClose() {
       this.showModalConfirmation = false;
     },
-    onDelete() {
+    onDelete(node: { data: NodeParameter }) {
+      if (node) {
+        this.selectNode(node);
+      }
       if (!_.isEmpty(this.selectedNode) || !_.isEmpty(this.selectedEdge)) {
         this.showModalConfirmation = true;
       }
