@@ -6,6 +6,7 @@ import { DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/En
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
 import dateFormatter from '@/formatters/date-formatter';
+import { getRandomInt } from '@/utils/random';
 
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
@@ -72,11 +73,18 @@ export default function useScenarioData(
       const end = new Date();
       const paramName = 'month';
       const dateFormat = dimensions.value.find(d => d.name === paramName)?.additional_options.date_display_format ?? 'YYYY-MM-DD';
+      const numRuns = (filteredRuns.length / 2) - 1;
+      const randomDates: Date[] = [];
+      for (let i = 0; i < numRuns; i++) {
+        const newRandomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+        randomDates.push(newRandomDate);
+      }
       filteredRuns.forEach(run => {
         const temporalParam = run.parameters.find(p => p.name === paramName);
         if (temporalParam) {
           temporalParam.name = 'date';
-          const newDateValue = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+          const randIndx = getRandomInt(0, numRuns);
+          const newDateValue = randomDates[randIndx];
           temporalParam.value = dateFormatter(newDateValue, dateFormat);
         }
       });

@@ -1,8 +1,6 @@
 <template>
   <facet-timeline
     :data.prop="facetData"
-    :filter.prop="facetFilter"
-    :domain.prop="facetDomain"
     :selection.prop="selection"
     :view.prop="[0, facetData.length]"
     ref="facet"
@@ -12,6 +10,7 @@
     <facet-template
       target="facet-bars-value"
       title="${tooltip}"
+      class="facet-pointer"
     />
 
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
@@ -74,6 +73,7 @@ export default {
           }
         }
       });
+      // Next TODO Work
       //       date range
       //       display format vs. output/model format
       //       resolution
@@ -113,31 +113,15 @@ export default {
     },
     facetData() {
       const bars = [];
+      const numAllRuns = this.modelRunData.length === 0 ? 1 : this.modelRunData.length; // avoid divide by zero
       for (const [key, value] of Object.entries(this.temporalDataMap)) {
         bars.push({
-          ratio: value.length,
+          ratio: value.length / numAllRuns, // normalized between 0 and 1
           label: key,
-          tooltip: value.map(r => r.name).toString()
+          tooltip: key + '\n' + value.map(r => r.name).join('\n')
         });
       }
       return bars;
-    },
-    facetDomain() {
-      // control which bars get actually rendered
-      return undefined; // [2, 5];
-    },
-    facetFilter() {
-      // add filter controls
-      /*
-      const facetElement = this.$refs.facet;
-      const filteredData = facetElement ? [facetElement.data] : undefined;
-      console.log(filteredData);
-      return facetElement ? [
-        { value: 0, label: 'label left' },
-        { value: 5, label: 'label right' }
-      ] : undefined;
-      */
-      return undefined;
     }
   },
   methods: {
@@ -154,17 +138,6 @@ export default {
           });
           this.$emit('update-scenario-selection', selectedScenarioIDs);
         }
-      }
-      if (event.detail.changedProperties.get('view') !== undefined) {
-        // filtered view
-        if (facet.view) {
-          // this will returns an array with two values reflection the range of the visible bars
-          // console.log(facet.view);
-        }
-      }
-      if (event.detail.changedProperties.get('hover') !== undefined) {
-        // @FIXME: need a way to control hover content
-        // console.log(facet.hover); // only prints true/false!!
       }
     }
   }
