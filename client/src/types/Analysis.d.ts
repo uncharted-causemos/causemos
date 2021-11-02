@@ -5,7 +5,6 @@ export interface AnalysisItemState {
   // this is simply very similar to the Insight's view config
   viewConfig: ViewState;
   dataConfig: DataState;
-  searchFilters: Array<any>;
 }
 
 export interface AnalysisItem extends AnalysisItemState {

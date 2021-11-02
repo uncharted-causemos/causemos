@@ -32,6 +32,7 @@ type D3AxisSelection = d3.Selection<SVGGElement, DimensionInfo, SVGGElement, any
 interface MarkerInfo {
   value: string | number;
   xPos: number;
+  id: string;
 }
 
 //
@@ -795,6 +796,11 @@ function renderParallelCoordinates(
             // Normally we go from data to pixels, but here we're doing pixels to data
             return (xScale as D3ScaleLinear).invert(pos).toFixed(2);
           };
+          const getMarkerPosFromValue = (value: number) => {
+            const xScale = getXScaleFromMap(dimName);
+            // convert data to pixel position
+            return (xScale as D3ScaleLinear)(value);
+          };
           gElement
             .append('rect')
             .attr('class', 'overlay')
@@ -804,18 +810,26 @@ function renderParallelCoordinates(
             .attr('y', segmentsY)
             .attr('width', axisRange[1])
             .attr('height', segmentsHeight)
-            .on('click', function(event) {
+            .on('click', function(event: PointerEvent) {
               //
-              // user just clicked on the axis overlay to add a marker
+              // user just clicked on the axis overlay to add a new marker
               //
+
+              // do not allow the click event to automatically clear the marker UI which will be created shortly
+              event.stopPropagation();
+
               const xLoc = d3.pointer(event)[0];
               const markerValue = getMarkerValueFromPos(xLoc);
 
               // make sure to place marker using correct data type
-              axisMarkersMap[dimName].push({
+              /// each marker should have a unique id that is not based on pos/value since these can be updated
+              /// each marker unique id must be stored in the rendered marker UI so that user events can target the correct marker
+              const newMarkerData = {
                 value: getValueInCorrectType(dimName, markerValue),
-                xPos: xLoc
-              }); // Push data to our array
+                xPos: xLoc,
+                id: Date.now().toString()
+              };
+              axisMarkersMap[dimName].push(newMarkerData); // Push data to our array
 
               const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
                 .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value);
@@ -824,9 +838,9 @@ function renderParallelCoordinates(
               const markerRects = dataSelection
                 .enter().append('rect')
                 .attr('class', 'pc-marker')
-                .attr('id', function() {
-                  // Create an id for the marker for later removal
-                  return 'marker-' + markerValue;
+                .attr('id', function(d) {
+                  // Create an id for the marker for later update/removal
+                  return 'marker-' + d.id;
                 })
                 .style('stroke', baselineMarkerStroke)
                 .style('fill', baselineMarkerFill)
@@ -835,24 +849,104 @@ function renderParallelCoordinates(
                 .attr('width', baselineMarkerSize)
                 .attr('height', segmentsHeight);
 
+              const showMarkerUI = (markerData: MarkerInfo) => {
+                deleteFreeformInputs(svgElement); // remove prev marker UI, e.g., input fields
+
+                // add a temporarly input box allowing the user to directly adjust the value of newly added marker, if needed
+                const parentElement = this.parentElement as HTMLElement; // g element classed 'pc-marker-g'
+                const markerInputTextHeight = 24;
+                const markerInputTextWidth = axisRange[1] * 0.5;
+
+                const markerUIContainer = d3.select(parentElement)
+                  .append('foreignObject')
+                  .attr('class', 'freeform-input')
+                  .attr('width', markerInputTextWidth)
+                  .attr('height', markerInputTextHeight)
+                  .attr('x', markerData.xPos > markerInputTextWidth ? markerInputTextWidth : markerData.xPos) // move with the marker if enough space otherwise, place at the end
+                  .attr('y', markerInputTextHeight * 0.25)
+                  .append('xhtml:div')
+                  .style('display', 'flex')
+                ;
+
+                const inputField = markerUIContainer
+                  .append('xhtml:input')
+                  .attr('value', markerData.value)
+                  .attr('type', 'text')
+                  .style('font-size', 'small')
+                  .style('border-width', 'thin')
+                  .style('width', '80%') // leave the remaining space for the button
+                  .on('keyup', function(keyEvent) {
+                    if (keyEvent.keyCode === 13) {
+                      // Enter key pressed
+                      const inputElement = this as HTMLInputElement;
+                      const newInputValue = inputElement.value;
+                      // validate new input value
+                      if (newInputValue.length === 0 || isNaN(+newInputValue)) {
+                        return;
+                      }
+                      // clamp new input value
+                      const dimExtent = getXScaleFromMap(dimName).domain();
+                      const newValidInputVal = _.clamp(+newInputValue, dimExtent[0] as number, dimExtent[1] as number);
+                      // update the underlying marker data and re-render
+                      const newXPos = getMarkerPosFromValue(newValidInputVal);
+                      markerData.value = getValueInCorrectType(dimName, newValidInputVal.toString());
+                      markerData.xPos = newXPos;
+                      markerRects
+                        .attr('x', newXPos);
+                      // clear the input box
+                      deleteFreeformInputs(svgElement);
+
+                      // re-render all the new scenario lines, once a marker is updated
+                      renderNewRunsLines();
+                    }
+                  })
+                  .on('click', function(event: PointerEvent) {
+                    event.stopPropagation();
+                  });
+                (inputField.node() as any).focus();
+                (inputField.node() as any).select();
+
+                // remove button
+                markerUIContainer
+                  .append('xhtml:input')
+                  .attr('value', '-')
+                  .attr('type', 'button')
+                  .style('border-style', 'none')
+                  .style('border-radius', '12px')
+                  .style('color', 'white')
+                  .style('font-size', 'large')
+                  .style('line-height', 'normal')
+                  .style('font-weight', 'bold')
+                  .style('background-color', 'red')
+                  .on('click', function() {
+                    //
+                    // user just clicked on the remove button of a specific marker UI, so the marker should be removed
+                    //
+                    axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== getValueInCorrectType(dimName, markerData.value as string));
+                    gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
+                      .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
+                      .exit().remove()
+                    ;
+                    // remove all marker tooltips, if any
+                    gElement.selectAll('text').remove();
+                    // re-render all the new scenario lines
+                    renderNewRunsLines();
+                  });
+              };
+
+              // first time the marker is added, show the UI
+              //  markerData is simply the last element added to the markers array
+              showMarkerUI(newMarkerData);
+
               //
-              // marker click (i.e., deletion)
+              // marker click
               //
               markerRects
-                .on('click', function(d, i) {
-                  //
-                  // user just clicked on a specific marker, so for now it should be deleted
-                  //
-                  const markerValue = i.value as number;
-                  axisMarkersMap[dimName] = axisMarkersMap[dimName].filter(el => el.value !== markerValue);
-                  gElement.selectAll<SVGSVGElement, MarkerInfo>('.pc-marker') // For existing markers
-                    .data<MarkerInfo>(axisMarkersMap[dimName], d => '' + d.value)
-                    .exit().remove()
-                  ;
-                  // remove all marker tooltips, if any
-                  gElement.selectAll('text').remove();
-                  // re-render all the new scenario lines
-                  renderNewRunsLines();
+                .on('click', (event: PointerEvent) => {
+                  // first time the marker is added, show the UI
+                  event.stopPropagation();
+                  const markerData: MarkerInfo = d3.select(event.target as any).datum() as MarkerInfo;
+                  showMarkerUI(markerData);
                 });
 
               //
@@ -861,6 +955,8 @@ function renderParallelCoordinates(
               markerRects
                 .call(d3.drag<SVGRectElement, MarkerInfo>()
                   .on('drag', function(event) {
+                    deleteFreeformInputs(svgElement); // remove current marker UI, e.g., input fields, if any
+
                     let newXPos = d3.pointer(event, this)[0];
                     // limit the movement within the axis range
                     newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
@@ -879,16 +975,22 @@ function renderParallelCoordinates(
                     newXPos = newXPos < axisRange[0] ? axisRange[0] : newXPos;
                     newXPos = newXPos > axisRange[1] ? axisRange[1] : newXPos;
                     // update the underlying data
-                    const md = axisMarkersMap[dimName].find(m => m.value === d.value);
-                    if (md) {
-                      md.xPos = newXPos;
+                    const markerData = axisMarkersMap[dimName].find(m => m.value === d.value);
+                    if (markerData) {
+                      markerData.xPos = newXPos;
                       const mv = getMarkerValueFromPos(newXPos);
-                      md.value = getValueInCorrectType(dimName, mv);
+                      markerData.value = getValueInCorrectType(dimName, mv);
                     }
                     d3.select(this)
                       .attr('x', newXPos);
                     // remove all marker tooltips, if any
                     gElement.selectAll('text').remove();
+
+                    // after completing the update of the marker value on drag-end, we show the marker UI
+                    if (markerData) {
+                      showMarkerUI(markerData);
+                    }
+
                     // re-render all the new scenario lines
                     renderNewRunsLines();
                   }));
@@ -1001,7 +1103,8 @@ function renderParallelCoordinates(
                 // Push data to our array
                 axisMarkersMap[dimName].push({
                   value: markerValue,
-                  xPos: xLoc
+                  xPos: xLoc,
+                  id: Date.now().toString()
                 });
 
                 const dataSelection = gElement.selectAll<SVGSVGElement, MarkerInfo>('rect') // For new markers
