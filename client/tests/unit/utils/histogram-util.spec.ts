@@ -497,18 +497,20 @@ describe('HistogramUtil', () => {
       expect(absoluteDifferences[0]).to.equal(absoluteDifferences[3]);
       expect(absoluteDifferences[1]).to.equal(absoluteDifferences[2]);
     });
-    it("returns ABSTRACT_NODE_BINS when there aren't enough data to split into 5 bins", () => {
+    it("returns nowValue + ABSTRACT_NODE_BINS when there aren't enough data to split into 5 bins", () => {
       const result = computeProjectionBins(
         [
           { timestamp: 662688000000, value: 11.6000003815 },
           { timestamp: 665366400000, value: 22.2999992371 },
           { timestamp: 667785600000, value: 61.7000007629 }
         ],
-        null,
+        100,
         12,
         0
       );
-      expect(result).to.equal(ABSTRACT_NODE_BINS);
+      expect(result).to.deep.equal(
+        ABSTRACT_NODE_BINS.map(binBoundary => binBoundary + 100)
+      );
     });
   });
 });

@@ -94,7 +94,10 @@ export const computeProjectionBins = (
     projectionStartMonth
   );
   // Split differences into positive and negative
-  // TODO: Years with no change are discarded. Is that correct?
+  // Intervals with no change are discarded. It would be nice to somehow take
+  //  these into account to reduce bin size, however this will almost never
+  //  make a difference in practice. Adding this extra logic is probably not
+  //  worth the added algorithm complexity.
   const negative_values = differences.filter(change => change < 0);
   const positive_values = differences.filter(change => change > 0);
 
@@ -132,8 +135,18 @@ export const computeProjectionBins = (
     Number.isNaN(higherMuchHigherCutoff);
 
   if (lowerBinsAreInvalid && higherBinsAreInvalid) {
-    // TODO: is there a more user-friendly way to handle this?
-    return ABSTRACT_NODE_BINS;
+    // There may be a more user-friendly way to handle the case where there
+    //  aren't enough data to split into 3 positive and 3 negative bins. e.g.
+    //  - Should we return something like `null` to signal to the UI that this
+    //    case is distinct from the abstract node case?
+    //  - Is there a fallback heuristic we can use to compute better bins?
+    //  - If so, is it worth the added algorithm complexity?
+    return ABSTRACT_NODE_BINS.map(binBoundary => binBoundary + nowValue) as [
+      number,
+      number,
+      number,
+      number
+    ];
   } else if (lowerBinsAreInvalid) {
     // Invert and copy positive cutoffs
     negligibleNegativeCutoff = -negligiblePositiveCutoff;
