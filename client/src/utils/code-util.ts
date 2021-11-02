@@ -145,10 +145,6 @@ export const CODE_TABLE: FieldMap = {
     ...field('meta_corpus', 'Corpus'),
     ...searchable('Corpus', false)
   },
-  DOC_SOURCE_DOMAIN: {
-    ...field('docSourceDomain', 'Document Source'),
-    ...searchable('Document Source', false)
-  },
   DOC_AUTHOR: {
     ...field('docAuthor', 'Author'),
     ...searchable('Author', false)
