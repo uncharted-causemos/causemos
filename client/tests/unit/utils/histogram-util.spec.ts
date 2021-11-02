@@ -373,7 +373,7 @@ const ETHIOPIA_MONTHLY_RAINFALL = [
 ];
 
 describe('HistogramUtil', () => {
-  describe('.partition()', () => {
+  describe('.findPartitionValue()', () => {
     it('works correctly with unsorted values', () => {
       const result = findPartitionValue([6, 8, 10, 4, 2], 0.2);
       expect(result)
