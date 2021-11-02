@@ -22,6 +22,7 @@
         @click="changeAggregationLevel(tickIndex - 1)"
       />
     </div>
+    <add-reference-box/>
     <div class="sort-selection">
       <span>Sort by</span>
       <radio-button-group
@@ -74,6 +75,7 @@
 <script lang="ts">
 import _ from 'lodash';
 import AggregationChecklistItem from '@/components/drilldown-panel/aggregation-checklist-item.vue';
+import AddReferenceBox from '@/components/drilldown-panel/add-reference-box.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BreakdownData } from '@/types/Datacubes';
 import { TimeseriesPointSelection } from '@/types/Timeseries';
@@ -268,6 +270,7 @@ const sortHierarchy = (newStatefulData: RootStatefulDataNode, sortValue: string)
 export default defineComponent({
   name: 'AggregationChecklistPane',
   components: {
+    AddReferenceBox,
     AggregationChecklistItem,
     RadioButtonGroup
   },
