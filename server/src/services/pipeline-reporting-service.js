@@ -67,7 +67,7 @@ const setProcessingFailed = async(metadata) => {
  * Sets the runtimes.queued status for some documents
  */
 const setRuntimeQueued = async(metadata) => {
-  if (metadata.isIndicator) {
+  if (metadata.is_indicator) {
     return { result: { error: 'Metadata is an indicator' }, code: 500 };
   } else {
     const docIds = metadata.doc_ids;
