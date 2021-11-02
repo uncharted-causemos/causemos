@@ -68,7 +68,6 @@ const reverseFlattenedConcept = (name, conceptSet) => {
       }
     }
     if (found === false) {
-      console.debug('Cannot translate', token);
       return [token];
     }
   }
@@ -218,10 +217,6 @@ const indicatorConceptFilter = (concepts) => {
           }
         }
       }
-      // term: {
-      //   // 'ontology_matches.name.raw': concept
-      //   'outputs.ontologies.concepts.name': concept
-      // }
     };
   });
 
