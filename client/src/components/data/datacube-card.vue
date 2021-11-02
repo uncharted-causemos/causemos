@@ -514,7 +514,6 @@ import { colorFromIndex } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
-import { REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
@@ -1440,7 +1439,7 @@ export default defineComponent({
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
           const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
           const formattedRegion = (region: GeoRegionDetail) => {
-            const validSelectedRegion = region.path.replaceAll(REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER);
+            const validSelectedRegion = region.path;
             switch (updatedModelParam.additional_options.geo_region_format) {
               case undefined: // undefined preference for region format -> fall back to full region path
               case GeoAttributeFormat.Full_GADM_PATH:

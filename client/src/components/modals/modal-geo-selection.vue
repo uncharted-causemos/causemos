@@ -141,7 +141,7 @@ export default defineComponent({
       return acceptableOrderedLevels;
     },
     selectedRegionForMap(): string {
-      return this.selectedRegions.length > 0 ? this.selectedRegions[0].path.replaceAll(REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER) : '';
+      return this.selectedRegions.length > 0 ? this.selectedRegions[0].path : '';
     }
   },
   data: () => ({
@@ -185,8 +185,7 @@ export default defineComponent({
       };
     },
     getGADMName(item: RegionalGADMDetail, delimter: string) {
-      const displayName = Object.values(DatacubeGeoAttributeVariableType).filter(l => item[l] !== undefined).map(l => item[l] + delimter).join('');
-      return displayName.substring(0, displayName.lastIndexOf(delimter));
+      return Object.values(DatacubeGeoAttributeVariableType).filter(l => item[l] !== undefined).map(l => item[l]).join(delimter);
     },
     searchRegions(query: string) {
       return new Promise(resolve => {
