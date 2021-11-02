@@ -19,7 +19,7 @@ export const ABSTRACT_NODE_BINS: [number, number, number, number] = [
 // Inspired by pandas' qcut function
 // https://github.com/pandas-dev/pandas/blob/v1.3.4/pandas/core/reshape/tile.py#L302-L382
 // https://github.com/pandas-dev/pandas/blob/v1.3.4/pandas/core/algorithms.py#L1116
-export const partition = (values: number[], fractionInLowerBin: number) => {
+export const findPartitionValue = (values: number[], fractionInLowerBin: number) => {
   if (values.length === 0) {
     return NaN;
   }
@@ -110,23 +110,23 @@ export const computeProjectionBins = (
   //  - the "much higher" bin contains the remaining roughly 46.02%
   const fractionInNegligibleBin = 0.0796;
 
-  let negligibleNegativeCutoff = partition(
+  let negligibleNegativeCutoff = findPartitionValue(
     negative_values,
     fractionInNegligibleBin
   );
   const nonNegligibleNegative = negative_values.filter(
     value => value < negligibleNegativeCutoff
   );
-  let lowerMuchLowerCutoff = partition(nonNegligibleNegative, 0.5);
+  let lowerMuchLowerCutoff = findPartitionValue(nonNegligibleNegative, 0.5);
 
-  let negligiblePositiveCutoff = partition(
+  let negligiblePositiveCutoff = findPartitionValue(
     positive_values,
     1 - fractionInNegligibleBin
   );
   const nonNegligiblePositive = positive_values.filter(
     value => value <= negligiblePositiveCutoff
   );
-  let higherMuchHigherCutoff = partition(nonNegligiblePositive, 0.5);
+  let higherMuchHigherCutoff = findPartitionValue(nonNegligiblePositive, 0.5);
 
   const lowerBinsAreInvalid =
     Number.isNaN(lowerMuchLowerCutoff) ||
