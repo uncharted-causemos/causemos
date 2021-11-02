@@ -67,20 +67,24 @@ const setProcessingFailed = async(metadata) => {
  * Sets the runtimes.queued status for some documents
  */
 const setRuntimeQueued = async(metadata) => {
-  const docIds = metadata.doc_ids;
-  const modelRun = docIds.map(docId => {
-    return {
-      id: docId,
-      runtimes: {
-        queued: {
-          end_time: metadata.end_time,
-          start_time: metadata.start_time
+  if (metadata.isIndicator) {
+    return { result: { error: 'Metadata is an indicator' }, code: 500 };
+  } else {
+    const docIds = metadata.doc_ids;
+    const modelRun = docIds.map(docId => {
+      return {
+        id: docId,
+        runtimes: {
+          queued: {
+            end_time: metadata.end_time,
+            start_time: metadata.start_time
+          }
         }
-      }
-    };
-  });
-  await maasService.updateModelRun(modelRun);
-  return { result: { message: 'Model run updated' }, code: 200 };
+      };
+    });
+    await maasService.updateModelRun(modelRun);
+    return { result: { message: 'Model run updated' }, code: 200 };
+  }
 };
 
 /**
