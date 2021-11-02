@@ -1,7 +1,7 @@
 /* eslint-disable no-unused-expressions */
 import { expect } from 'chai';
 import {
-  partition,
+  findPartitionValue,
   extractRelevantHistoricalChanges,
   computeProjectionBins,
   ABSTRACT_NODE_BINS
@@ -375,23 +375,23 @@ const ETHIOPIA_MONTHLY_RAINFALL = [
 describe('HistogramUtil', () => {
   describe('.partition()', () => {
     it('works correctly with unsorted values', () => {
-      const result = partition([6, 8, 10, 4, 2], 0.2);
+      const result = findPartitionValue([6, 8, 10, 4, 2], 0.2);
       expect(result)
         .to.be.greaterThan(2)
         .and.lessThan(4);
     });
     it('when passed an array of length 1, returns the value of its one element', () => {
-      const result = partition([6], 0.2);
+      const result = findPartitionValue([6], 0.2);
       expect(result).to.equal(6);
     });
     it('works correctly with an array of length 2', () => {
-      const result = partition([6, 4], 0.2);
+      const result = findPartitionValue([6, 4], 0.2);
       expect(result)
         .to.be.greaterThan(4)
         .and.lessThan(6);
     });
     it('when passed an array of several elements with the same value, returns that value', () => {
-      const result = partition([11, 11, 11, 11, 11], 0.2);
+      const result = findPartitionValue([11, 11, 11, 11, 11], 0.2);
       expect(result).to.equal(11);
     });
   });
