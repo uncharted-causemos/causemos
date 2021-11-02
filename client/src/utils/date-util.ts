@@ -6,6 +6,15 @@ export const getMonthFromTimestamp = (timestamp: number) => {
   return new Date(timestamp).getUTCMonth();
 };
 
+export const getTimestampAfterMonths = (timestamp: number, monthsElapsed: number) => {
+  const month = getMonthFromTimestamp(timestamp);
+  const year = getYearFromTimestamp(timestamp);
+  const newMonth = (month + monthsElapsed) % 12;
+  const yearsToAdd = ((month + monthsElapsed) - newMonth) / 12;
+  const newYear = year + yearsToAdd;
+  return getTimestampMillis(newYear, newMonth);
+};
+
 export const roundToNearestMonth = (timestamp: number) => {
   const year = getYearFromTimestamp(timestamp);
   const thisMonthIndex = getMonthFromTimestamp(timestamp);
