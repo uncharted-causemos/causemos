@@ -144,7 +144,7 @@ export function calculateGenericTicks (
 export function renderXaxis(
   selection: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
-  tickIncrements: Array<number>,
+  xTickValues: Array<number>,
   yOffset: number,
   timestampFormatter: (timestamp: any) => string,
   xAxisTickSizePx = 2
@@ -165,7 +165,7 @@ export function renderXaxis(
     .axisBottom(xScale)
     .tickSize(xAxisTickSizePx)
     .tickFormat(customTimestampFormatter)
-    .tickValues(tickIncrements);
+    .tickValues(xTickValues);
 
   selection
     .append('g')
@@ -179,7 +179,7 @@ export function renderXaxis(
 export function renderYaxis(
   selection: D3GElementSelection,
   yScale: d3.ScaleLinear<number, number>,
-  tickIncrements: Array<number>,
+  yTickValues: Array<number>,
   // The type of value can't be more specific than `any`
   //  because under the hood d3.tickFormat requires d3.NumberType.
   // It correctly converts, but its TypeScript definitions don't
@@ -192,7 +192,7 @@ export function renderYaxis(
     .axisLeft(yScale)
     .tickSize(xOffset - yAxisWidth)
     .tickFormat(valueFormatter)
-    .tickValues(tickIncrements);
+    .tickValues(yTickValues);
 
   selection
     .append('g')
