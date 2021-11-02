@@ -27,7 +27,7 @@ import {
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
-import { adminLevelToString } from '@/utils/map-util-new';
+import { adminLevelToString, BASE_LAYER } from '@/utils/map-util-new';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -58,10 +58,6 @@ export default {
     WmMapVector
   },
   props: {
-    selectedBaseLayer: {
-      type: String,
-      required: true
-    },
     selectedLayerId: {
       type: Number,
       default: 0
@@ -104,7 +100,7 @@ export default {
       return adminLevelToString(this.selectedLayerId);
     },
     selectedBaseLayerEndpoint() {
-      return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
+      return `${STYLE_URL_PREFIX}${BASE_LAYER.DEFAULT}`;
     },
     vectorSource() {
       return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
