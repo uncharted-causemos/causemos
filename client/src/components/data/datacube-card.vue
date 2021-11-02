@@ -76,20 +76,10 @@
                   @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
               </div>
             </div>
-            <button
-              @click="switchFacetData=!switchFacetData"
-            >
-              Switch
-            </button>
-            <button
-              @click="filterFacetData=!filterFacetData"
-            >
-              {{filterFacetData ? 'Unf' : 'F'}}ilter
-            </button>
             <temporal-facet
-              :apply-filter="filterFacetData"
-              :switch-data="switchFacetData"
-              :all-model-run-data="allModelRunData"
+              :model-run-data="filteredRunData"
+              :selected-scenarios="selectedScenarioIds"
+              @update-scenario-selection="onUpdateScenarioSelection"
             />
             <parallel-coordinates-chart
               class="pc-chart"
@@ -624,9 +614,6 @@ export default defineComponent({
     const tour = computed(() => store.getters['tour/tour']);
     const toaster = useToaster();
 
-    const switchFacetData = ref<boolean>(true);
-    const filterFacetData = ref<boolean>(false);
-
     const activeDrilldownTab = ref<string|null>('breakdown');
     const currentTabView = ref<string>('description');
     const potentialScenarioCount = ref<number|null>(0);
@@ -819,9 +806,8 @@ export default defineComponent({
     };
 
     const setSelectedScenarioIds = (newIds: string[]) => {
-      if (isIndicatorDatacube.value) {
-        if (_.isEqual(selectedScenarioIds.value, newIds)) return;
-      }
+      if (_.isEqual(selectedScenarioIds.value, newIds)) return;
+
       selectedScenarioIds.value = newIds;
 
       clearRouteParam();
@@ -992,6 +978,10 @@ export default defineComponent({
         const selectedRunIDs = selectedScenarios.map(s => s.run_id.toString());
         setSelectedScenarioIds(selectedRunIDs);
       }
+    };
+
+    const onUpdateScenarioSelection = (scenarioIDs: string[]) => {
+      setSelectedScenarioIds(scenarioIDs);
     };
 
     const headerGroupButtons = ref([
@@ -1355,6 +1345,7 @@ export default defineComponent({
       onNewScenarioRunsModalClose,
       onSyncMapBounds,
       onTabClick,
+      onUpdateScenarioSelection,
       ordinalDimensionNames,
       outputSpecs,
       potentialScenarios,
@@ -1415,8 +1406,6 @@ export default defineComponent({
       updateMapCurSyncedZoom,
       updateScenarioSelection,
       visibleTimeseriesData,
-      switchFacetData,
-      filterFacetData,
       showPercentChange
     };
   },

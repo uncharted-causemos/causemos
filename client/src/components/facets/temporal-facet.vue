@@ -3,10 +3,17 @@
     :data.prop="facetData"
     :filter.prop="facetFilter"
     :domain.prop="facetDomain"
+    :selection.prop="selection"
     :view.prop="[0, facetData.length]"
     ref="facet"
     @facet-element-updated="updateSelection"
     >
+
+    <facet-template
+      target="facet-bars-value"
+      title="${tooltip}"
+    />
+
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
     <facet-plugin-zoom-bar slot="scrollbar"
       min-bar-width="8"
@@ -19,94 +26,101 @@
 <script>
 import '@uncharted.software/facets-core';
 import '@uncharted.software/facets-plugins';
+import { DatacubeGenericAttributeVariableType } from '@/types/Enums';
 
 /**
  * Facet 3 component
  */
 export default {
   name: 'TemporalFacet',
+  emits: ['update-scenario-selection'],
   props: {
-    switchData: {
-      type: Boolean,
-      default: true
+    modelRunData: {
+      type: Array,
+      default: () => []
     },
-    applyFilter: {
-      type: Boolean,
-      default: false
-    },
-    allModelRunData: {
+    selectedScenarios: { // IDs
       type: Array,
       default: () => []
     }
   },
+  data: () => ({
+    selection: []
+  }),
+  watch: {
+    selectedScenarios() {
+      // update facet selection
+      //  find the bars that include the selected runs
+      let rangeStartIndex = -1;
+      let rangeEndIndex = -1;
+      this.selectedScenarios.forEach(runID => {
+        for (const [key, value] of Object.entries(this.temporalDataMap)) {
+          // note: each value is an array of model runs
+          if (value.map(r => r.id).includes(runID)) {
+            // use the key to find the bar index
+            if (this.facetData) {
+              const indx = this.facetData.findIndex(bar => bar.label === key);
+              if (indx !== -1) {
+                // include this index in the facet selection range
+                if (rangeStartIndex === -1) {
+                  rangeStartIndex = indx;
+                  rangeEndIndex = indx;
+                } else {
+                  rangeStartIndex = Math.min(rangeStartIndex, indx);
+                  rangeEndIndex = Math.max(rangeEndIndex, indx);
+                }
+              }
+            }
+          }
+        }
+      });
+      //       date range
+      //       display format vs. output/model format
+      //       resolution
+      //       include bars for missing date buckets!?
+
+      // @FIXME: there is a limitation where bar selection must be consecutive
+      //          if a range is provided and it is not consecutive, then all bars in the range will be selected
+
+      rangeEndIndex += 1; // facet range works by selecting all bars between start and end excluding the end
+      const sameSelection = this.selection[0] === rangeStartIndex && this.selection[1] === rangeEndIndex;
+      if (!sameSelection) {
+        this.selection = [rangeStartIndex, rangeEndIndex];
+      }
+    }
+  },
   computed: {
     temporalDataMap() {
-      // a model may expose one temporal param for month, one param for year, or two both month/year
-      //  case 1: only one month param
-      //  case 2: only one year param
-      //  case 3: one for month and one for year
-      //
-      // so, we need a computed map to track unique timestamps and the how many runs in each.
-      //  the key would be either month only (case 1), year only (case 2), or month-year (case 3)
-      //  the value for each key is an array of the run IDs with values matching the key
-      /*
-      {
-        Jan-2019: [run_11, run_14, run_15],
-        Feb-2019: [],
-        Mar-2019: [run_12, run_13],
-        Dec-2020: [run_19],
-      }
-      */
+      // build a map of unique temporal keys, e.g., timestamp or dates
+      //  for each key, the value would be an array of the matching model runs
       const temporalDataMap = {};
-      const Year = 'year';
-      const Month = 'month';
-      this.allModelRunData.forEach(modelRun => {
-        // supported temporal param types: year, month
-        //  or datetime?
-        let key = '';
-        const monthlyParam = modelRun.parameters.filter(p => p.name === Month);
-        if (monthlyParam.length > 0) {
-          key += monthlyParam[0].value;
-        }
-        const yearlyParam = modelRun.parameters.filter(p => p.name === Year);
-        if (yearlyParam.length > 0) {
-          if (key !== '') {
-            key += '-';
+      this.modelRunData.forEach(modelRun => {
+        // supported temporal param type: Date or DateRange
+        const dateParam = modelRun.parameters.filter(p => p.name === DatacubeGenericAttributeVariableType.Date);
+        // TODO: consider handling multiple generic date params
+        //  for now, assume it is only one date param
+        if (dateParam.length > 0) {
+          const key = dateParam[0].value;
+          if (temporalDataMap[key] !== undefined) {
+            // key exists
+            temporalDataMap[key].push(modelRun);
+          } else {
+            temporalDataMap[key] = [modelRun];
           }
-          key += yearlyParam[0].value;
-        }
-        if (temporalDataMap[key] !== undefined) {
-          // key exists
-          temporalDataMap[key].push(modelRun.id);
-        } else {
-          temporalDataMap[key] = [modelRun.id];
         }
       });
       return temporalDataMap;
     },
     facetData() {
-      if (this.switchData) {
-        //
-        //
-        return [
-          { ratio: 0.1, label: ['Sep', '2019'] },
-          { ratio: 0.2, label: ['Oct', '2019'] },
-          { ratio: 0.3, label: ['Dec', '2019'] },
-          { ratio: 0.4, label: ['Jan', '2020'] },
-          { ratio: 0.5, label: ['Feb', '2020'] },
-          { ratio: 0.6, label: ['Mar', '2020'] },
-          { ratio: 0.7, label: ['Apr', '2020'] },
-          { ratio: 0.8, label: ['May', '2020'] }
-        ];
-      } else {
-        //
-        //
-        const d = [];
-        for (const [key, value] of Object.entries(this.temporalDataMap)) {
-          d.push({ ratio: value.length, label: key });
-        }
-        return d;
+      const bars = [];
+      for (const [key, value] of Object.entries(this.temporalDataMap)) {
+        bars.push({
+          ratio: value.length,
+          label: key,
+          tooltip: value.map(r => r.name).toString()
+        });
       }
+      return bars;
     },
     facetDomain() {
       // control which bars get actually rendered
@@ -114,30 +128,37 @@ export default {
     },
     facetFilter() {
       // add filter controls
+      /*
       const facetElement = this.$refs.facet;
-      // const filteredData = this.applyFilter && facetElement ? [facetElement.data[0]] : undefined;
-      // console.log(filteredData);
-      // return filteredData;
-      return this.applyFilter && facetElement ? [
-        { value: 1.7, label: 'label left' },
-        { value: 6.5, label: 'label right' }
+      const filteredData = facetElement ? [facetElement.data] : undefined;
+      console.log(filteredData);
+      return facetElement ? [
+        { value: 0, label: 'label left' },
+        { value: 5, label: 'label right' }
       ] : undefined;
+      */
+      return undefined;
     }
-    // @TODO add selection support based on initial data selection
   },
   methods: {
     updateSelection(event) {
       const facet = event.currentTarget;
       if (event.detail.changedProperties.get('selection') !== undefined) {
-        if (facet.selection) {
+        if (facet.selection && facet.selection.length > 0) {
           // this will returns an array with two values reflection the lower/uppoer bounds of the selected bars
-          // console.log(facet.selection);
+          const selectedBars = this.facetData.slice(facet.selection[0], facet.selection[1]);
+          const selectedScenarioIDs = [];
+          selectedBars.forEach(bar => {
+            const runsForLabel = this.temporalDataMap[bar.label];
+            selectedScenarioIDs.push(...runsForLabel.map(run => run.id));
+          });
+          this.$emit('update-scenario-selection', selectedScenarioIDs);
         }
       }
       if (event.detail.changedProperties.get('view') !== undefined) {
         // filtered view
         if (facet.view) {
-          // this will returns an array with two values reflection the range of the filtered bars
+          // this will returns an array with two values reflection the range of the visible bars
           // console.log(facet.view);
         }
       }

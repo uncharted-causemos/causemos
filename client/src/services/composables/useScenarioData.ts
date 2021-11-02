@@ -5,7 +5,7 @@ import { isImage, isVideo, TAGS } from '@/utils/datacube-util';
 import { DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
-
+import dateFormatter from '@/formatters/date-formatter';
 
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
@@ -63,6 +63,22 @@ export default function useScenarioData(
             }
           }
         });
+      });
+    }
+
+    if (dataId.value === '897da460-6118-4a13-9d41-38e948792cb9') { // CHIRPS
+      // transform each 'month' value to be a date value for proper consumption by the temporal facet
+      const start = new Date(2012, 0, 1);
+      const end = new Date();
+      const paramName = 'month';
+      const dateFormat = dimensions.value.find(d => d.name === paramName)?.additional_options.date_display_format ?? 'YYYY-MM-DD';
+      filteredRuns.forEach(run => {
+        const temporalParam = run.parameters.find(p => p.name === paramName);
+        if (temporalParam) {
+          temporalParam.name = 'date';
+          const newDateValue = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+          temporalParam.value = dateFormatter(newDateValue, dateFormat);
+        }
       });
     }
 

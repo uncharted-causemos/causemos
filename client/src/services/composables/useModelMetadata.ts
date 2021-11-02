@@ -2,7 +2,7 @@ import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import { ModelParameterDataType } from '@/types/Enums';
+import { ModelParameterDataType, DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import _ from 'lodash';
 
 /**
@@ -80,6 +80,20 @@ export default function useModelMetadata(
             }
           }
         });
+      }
+
+      if (isModel(rawMetadata) && rawMetadata.name === 'CHIRPS - Climate Hazards Center Infrared Precipitation with Stations') {
+        // force the input param to be of type date: month
+        const p = rawMetadata.parameters.filter(p => p.name === 'month')[0];
+        p.type = DatacubeGenericAttributeVariableType.Date;
+        if (!p.additional_options) {
+          p.additional_options = {};
+        }
+        p.additional_options.date_display_format = 'YYYY-MM';
+
+        // for testing date-range, every run will have two date values
+        const p2 = rawMetadata.parameters.filter(p => p.name === 'year')[0];
+        p2.type = DatacubeGenericAttributeVariableType.DateRange;
       }
 
       metadata.value = rawMetadata;
