@@ -73,7 +73,7 @@ export default function useScenarioData(
       const end = new Date();
       const paramName = 'month';
       const dateFormat = dimensions.value.find(d => d.name === paramName)?.additional_options.date_display_format ?? 'YYYY-MM-DD';
-      const numRuns = (filteredRuns.length / 2) - 1;
+      const numRuns = Math.trunc((filteredRuns.length / 2) + 1);
       const randomDates: Date[] = [];
       for (let i = 0; i < numRuns; i++) {
         const newRandomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
@@ -83,7 +83,7 @@ export default function useScenarioData(
         const temporalParam = run.parameters.find(p => p.name === paramName);
         if (temporalParam) {
           temporalParam.name = 'date';
-          const randIndx = getRandomInt(0, numRuns);
+          const randIndx = getRandomInt(0, numRuns - 1);
           const newDateValue = randomDates[randIndx];
           temporalParam.value = dateFormatter(newDateValue, dateFormat);
         }
