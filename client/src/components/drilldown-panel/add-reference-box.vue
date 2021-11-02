@@ -1,16 +1,18 @@
 <template>
-  <div>Add Reference</div>
-  <label
-    v-for="referenceCheckbox in referenceCheckboxes"
-    v-bind:key="referenceCheckbox.id"
-  >
-    <input
-      v-model="referenceCheckbox.id"
-      type="checkbox"
-      @change="handleToggle"
+  <div class="add-reference-box">
+    <div>Add Reference</div>
+    <label
+      v-for="referenceCheckbox in referenceCheckboxes"
+      v-bind:key="referenceCheckbox.id"
     >
-    {{ referenceCheckbox.displayName }}
-  </label>
+      <input
+        v-model="referenceCheckbox.id"
+        type="checkbox"
+        @change="handleToggle"
+      >
+      {{ referenceCheckbox.displayName }}
+    </label>
+  </div>
 </template>
 
 <script lang="ts">
@@ -44,5 +46,9 @@ export default defineComponent({
 </script>
 
 <style scoped>
+
+.add-reference-box input {
+  appearance: auto;
+}
 
 </style>
