@@ -41,7 +41,7 @@ const setProcessingSucceeded = async(metadata) => {
 const setProcessingFailed = async(metadata) => {
   const docIds = metadata.doc_ids;
   const isIndicator = metadata.is_indicator;
-  const newStatus = 'PROCESSING_FAILED';
+  const newStatus = 'PROCESSING FAILED';
   if (isIndicator) {
     const metadataDelta = docIds.map(docId => {
       return {
