@@ -10,7 +10,8 @@ export const ABSTRACT_NODE_BINS: [number, number, number, number] = [
 ];
 
 /**
- * Partitions a list of numbers into two parts and returns the value that's between the two bins.
+ * Partitions a list of numbers into two parts and returns the value that's
+ * between the two bins.
  * @param values any list of sorted or unsorted numbers with length > 0.
  * @param fractionInLowerBin a value in the range [0, 1) that determines how many values fall into each of the partitions.
  * @returns a number that is higher than `fractionInLowerBin` of the values in `values`, and lower than the rest.
@@ -40,27 +41,27 @@ export const partition = (values: number[], fractionInLowerBin: number) => {
 };
 
 /**
- *  Find historical intervals that start in the same month as projections
- *  and have a length of `monthsElapsedSinceT0`. E.g. if projectionStartMonth
- *  is April (month index of 3), and `monthsElapsedSinceT0` is 8, find all
- *  historical intervals from April to the following December. From these
- *  intervals, calculate the difference in value between the start and end.
+ *  Find historical intervals that start in `intervalStartMonth` and have a
+ *  length of `intervalLengthInMonths`. E.g. if `intervalStartMonth` is April
+ *  (month index of 3), and `intervalLengthInMonths` is 8, find all historical
+ *  intervals from April to the following December. Then calculate the
+ *  difference in value between the start and end of each interval.
  * @param historicalData the array of timeseries points to search.
- * @param monthsElapsedSinceT0 the length of interval to look for.
- * @param projectionStartMonth an integer from 0(Jan) to 11(Dec).
+ * @param intervalLengthInMonths the length of interval to look for.
+ * @param intervalStartMonth an integer from 0(Jan) to 11(Dec).
  * @returns an array of numbers. A negative number indicates a decrease over the interval.
  */
 export const extractRelevantHistoricalChanges = (
   historicalData: TimeseriesPoint[],
-  monthsElapsedSinceT0: number,
-  projectionStartMonth: number
+  intervalLengthInMonths: number,
+  intervalStartMonth: number
 ) => {
   const changes: number[] = [];
   historicalData.forEach(point => {
-    if (getMonthFromTimestamp(point.timestamp) === projectionStartMonth) {
+    if (getMonthFromTimestamp(point.timestamp) === intervalStartMonth) {
       const timestampAfterInterval = getTimestampAfterMonths(
         point.timestamp,
-        monthsElapsedSinceT0
+        intervalLengthInMonths
       );
       const pointAfterInterval = historicalData.find(
         ({ timestamp }) => timestamp === timestampAfterInterval
