@@ -76,8 +76,8 @@ export const extractRelevantHistoricalChanges = (
 
 export const computeProjectionBins = (
   historicalData: TimeseriesPoint[],
-  t0ClampValue: number | null,
-  monthsElapsedSinceT0: number,
+  clampValueAtNow: number | null,
+  monthsElapsedSinceNow: number,
   projectionStartMonth: number
 ): [number, number, number, number] => {
   if (historicalData.length === 0) {
@@ -85,13 +85,13 @@ export const computeProjectionBins = (
     //  buckets between 0 and 1
     return ABSTRACT_NODE_BINS;
   }
-  // If there's a clamp at t0, use that as the "now" value,
+  // If there's a scenario clamp at "now", use that as the "now" value,
   //  otherwise use the last historical value
   const nowValue =
-    t0ClampValue ?? historicalData[historicalData.length - 1].value;
+    clampValueAtNow ?? historicalData[historicalData.length - 1].value;
   const differences = extractRelevantHistoricalChanges(
     historicalData,
-    monthsElapsedSinceT0,
+    monthsElapsedSinceNow,
     projectionStartMonth
   );
   // Split differences into positive and negative
