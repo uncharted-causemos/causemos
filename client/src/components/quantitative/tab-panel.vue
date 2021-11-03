@@ -1,90 +1,73 @@
 <template>
   <div class="tab-panel-container">
-    <div class="main-content h-100 flex flex-col">
-      <div class="tab-nav-bar">
-        <radio-button-group
-          v-if="isSensitivityAnalysisSupported"
-          class="tour-matrix-tab"
-          :buttons="[{'label': 'Causal Flow', value: 'flow'}, {'label': 'Matrix', value: 'matrix'}]"
-          :selected-button-value="activeTab"
-          @button-clicked="setActive"
-        />
-        <slot name="action-bar" />
-        <div class="augment-model">
-          <arrow-button
-            :text="'Augment Model'"
-            :icon="'fa-book'"
-            :is-pointing-left="true"
-            @click="onAugmentCAG"
-          />
-        </div>
-      </div>
-      <div class="tab-content insight-capture">
-        <cag-side-panel
-          class="side-panel"
-          :is-experiment-download-visible="true"
-          @download-experiment="downloadExperiment"
-        >
-          <template #below-tabs>
-            <cag-comments-button :model-summary="modelSummary" />
-          </template>
-        </cag-side-panel>
-        <main>
-          <div
-            v-if="activeTab === 'flow' && scenarioData && graphData"
-            class="model-graph-layout-container">
-            <model-graph
-              :data="graphData"
-              :scenario-data="scenarioData"
-              ref="modelGraph"
-              @background-click="onBackgroundClick"
-              @node-drilldown="onNodeDrilldown"
-              @edge-click="showRelation"
-            />
-            <color-legend
-              :show-cag-encodings="true" />
-          </div>
-          <sensitivity-analysis
-            v-if="activeTab === 'matrix'"
-            :model-summary="modelSummary"
-            :matrix-data="sensitivityMatrixData"
-            :analysis-type="sensitivityAnalysisType"
-            @set-analysis-type="setSensitivityAnalysisType"
-          />
-        </main>
-        <drilldown-panel
-          class="quantitative-drilldown"
-          :is-open="isDrilldownOpen"
-          :tabs="drilldownTabs"
-          :active-tab-id="activeDrilldownTab"
-          @close="closeDrilldown"
-          @tab-click="onDrilldownTabClick">
-
-          <template #content>
-            <evidence-pane
-              v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
-              :show-curation-actions="false"
-              :selected-relationship="selectedEdge"
-              :statements="selectedStatements"
-              :project="project"
-              :is-fetching-statements="isFetchingStatements"
-              :should-confirm-curations="true">
-              <edge-polarity-switcher
-                :selected-relationship="selectedEdge"
-                @edge-set-user-polarity="setEdgeUserPolarity" />
-              <edge-weight-slider
-                v-if="showComponent"
-                :selected-relationship="selectedEdge"
-                @set-edge-weights="setEdgeWeights" />
-            </evidence-pane>
-          </template>
-        </drilldown-panel>
-      </div>
-      <config-bar
-        :model-summary="modelSummary"
-        @edit-parameters="showModelParameters"
-      />
+    <div class="tab-nav-bar">
+      <slot name="action-bar" />
     </div>
+    <div class="tab-content insight-capture">
+      <cag-side-panel
+        class="side-panel"
+        :is-experiment-download-visible="true"
+        @download-experiment="downloadExperiment"
+      >
+        <template #below-tabs>
+          <cag-comments-button :model-summary="modelSummary" />
+        </template>
+      </cag-side-panel>
+      <main>
+        <div
+          v-if="activeTab === 'flow' && scenarioData && graphData"
+          class="model-graph-layout-container">
+          <model-graph
+            :data="graphData"
+            :scenario-data="scenarioData"
+            ref="modelGraph"
+            @background-click="onBackgroundClick"
+            @node-drilldown="onNodeDrilldown"
+            @edge-click="showRelation"
+          />
+          <color-legend
+            :show-cag-encodings="true" />
+        </div>
+        <sensitivity-analysis
+          v-if="activeTab === 'matrix'"
+          :model-summary="modelSummary"
+          :matrix-data="sensitivityMatrixData"
+          :analysis-type="sensitivityAnalysisType"
+          @set-analysis-type="setSensitivityAnalysisType"
+        />
+      </main>
+      <drilldown-panel
+        class="quantitative-drilldown"
+        :is-open="isDrilldownOpen"
+        :tabs="drilldownTabs"
+        :active-tab-id="activeDrilldownTab"
+        @close="closeDrilldown"
+        @tab-click="onDrilldownTabClick">
+
+        <template #content>
+          <evidence-pane
+            v-if="activeDrilldownTab === PANE_ID.EVIDENCE && selectedEdge !== null"
+            :show-curation-actions="false"
+            :selected-relationship="selectedEdge"
+            :statements="selectedStatements"
+            :project="project"
+            :is-fetching-statements="isFetchingStatements"
+            :should-confirm-curations="true">
+            <edge-polarity-switcher
+              :selected-relationship="selectedEdge"
+              @edge-set-user-polarity="setEdgeUserPolarity" />
+            <edge-weight-slider
+              v-if="showComponent"
+              :selected-relationship="selectedEdge"
+              @set-edge-weights="setEdgeWeights" />
+          </evidence-pane>
+        </template>
+      </drilldown-panel>
+    </div>
+    <config-bar
+      :model-summary="modelSummary"
+      @edit-parameters="showModelParameters"
+    />
   </div>
 </template>
 
@@ -92,7 +75,6 @@
 import { mapGetters } from 'vuex';
 import moment from 'moment';
 
-import router from '@/router';
 import ConfigBar from '@/components/quantitative/config-bar';
 import SensitivityAnalysis from '@/components/quantitative/sensitivity-analysis';
 import ModelGraph from '@/components/quantitative/model-graph';
@@ -102,11 +84,9 @@ import EdgeWeightSlider from '@/components/drilldown-panel/edge-weight-slider';
 import DrilldownPanel from '@/components/drilldown-panel';
 import EdgePolaritySwitcher from '@/components/drilldown-panel/edge-polarity-switcher';
 import EvidencePane from '@/components/drilldown-panel/evidence-pane';
-import ArrowButton from '../widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
-import RadioButtonGroup from '../widgets/radio-button-group.vue';
 
 const PANE_ID = {
   INDICATOR: 'indicator',
@@ -143,10 +123,8 @@ export default {
     EdgePolaritySwitcher,
     EdgeWeightSlider,
     EvidencePane,
-    ArrowButton,
     CagSidePanel,
-    CagCommentsButton,
-    RadioButtonGroup
+    CagCommentsButton
   },
   props: {
     currentEngine: {
@@ -198,9 +176,6 @@ export default {
       currentCAG: 'app/currentCAG',
       selectedScenarioId: 'model/selectedScenarioId'
     }),
-    isSensitivityAnalysisSupported() {
-      return this.currentEngine === PROJECTION_ENGINES.DYSE;
-    },
     activeTab() {
       // if we ever need more state than this
       // add a query store for model
@@ -235,20 +210,6 @@ export default {
 
       const scenarioData = modelService.buildNodeChartData(this.modelSummary, this.modelComponents.nodes, this.scenarios);
       this.scenarioData = scenarioData;
-    },
-    setActive (activeTab) {
-      router.push({ query: { activeTab } }).catch(() => {});
-      this.$emit('tab-click', activeTab);
-    },
-    onAugmentCAG() {
-      this.$router.push({
-        name: 'qualitative',
-        params: {
-          project: this.project,
-          currentCAG: this.currentCAG,
-          projectType: ProjectType.Analysis
-        }
-      });
     },
     onNodeDrilldown(node) {
       this.$router.push({
@@ -341,27 +302,11 @@ export default {
 
 .tab-panel-container {
   height: $content-full-height;
-}
-
-.main-content {
   position: relative;
   width: 100%;
   min-width: 0;
-}
-
-.tab-nav-bar {
   display: flex;
-  align-items: center;
-  height: $navbar-outer-height;
-
-  // Add an empty pseudo element at the left side of the bar to center the
-  //  action buttons
-  &::before {
-    display: block;
-    content: '';
-    flex: 1;
-    min-width: 0;
-  }
+  flex-direction: column;
 }
 
 .tab-content {

@@ -1,70 +1,93 @@
 <template>
   <div class="action-bar-container">
-    <ul class="unstyled-list">
-      <li class="nav-item">
-        <button
-          v-tooltip.top-center="'reset CAG positioning'"
-          type="button"
-          class="btn btn-primary"
-          @click="resetCAG"
-        ><i class="fa fa-fw fa-undo" />Reset Layout</button>
-      </li>
-      <li class="nav-item">
-        Scenario:
-        <button
-          v-if="isInDraftState"
-          class="btn btn-primary scenario-button"
-          @click="openModal"
-        >
-          <i class="fa fa-fw fa-save" />
-          Save As
-        </button>
-        <button
-          v-else
-          class="btn btn-primary scenario-button"
-          @click="toggleScenarioDropdownOpen"
-        >
-          <i class="fa fa-fw fa-sign-in" />
-          {{ selectedScenario.is_valid ? selectedScenario.name : selectedScenario.name + " (Stale)  " }}
-          <i class="fa fa-fw fa-angle-down" />
-          <dropdown-control
-            v-if="isScendarioDropdownOpen"
-            class="scenario-dropdown">
-            <template #content>
-              <div
-                v-for="scenario of scenarios"
-                :key="scenario.id"
-                class="dropdown-option"
-                :class="{'selected': scenario.id === selectedScenarioId}"
-                @click.stop="onClickScenario(scenario.id)">
-                {{ scenario.is_valid ? scenario.name : scenario.name + " (Stale - rerun scenario) " }}
-              </div>
-            </template>
-          </dropdown-control>
-        </button>
-      </li>
-      <li
+    <div>
+      Scenario
+      <button
         v-if="isInDraftState"
-        class="nav-item"
+        class="btn btn-primary scenario-button"
+        @click="openModal"
       >
-        <button
-          v-tooltip="'Revert all unsaved changes'"
-          class="btn btn-default"
-          @click="revertDraftChanges"
+        <i class="fa fa-fw fa-save" />
+        Save As
+      </button>
+      <button
+        v-else
+        class="btn btn-primary scenario-button"
+        @click="toggleScenarioDropdownOpen"
+      >
+        {{
+          selectedScenario.is_valid
+            ? selectedScenario.name
+            : selectedScenario.name + ' (Stale)  '
+        }}
+        <i class="fa fa-fw fa-angle-down" />
+        <dropdown-control
+          v-if="isScendarioDropdownOpen"
+          class="scenario-dropdown"
         >
-          <i class="fa fa-fw fa-refresh" />
-        </button>
-      </li>
-      <li class="nav-item">
-        <button
-          class="btn btn-primary"
-          :style="{background: isModelDirty? '#2A5': '#222'}"
-          @click="runModel">
-          Run
-        </button>
-      </li>
-    </ul>
-
+          <template #content>
+            <div
+              v-for="scenario of scenarios"
+              :key="scenario.id"
+              class="dropdown-option"
+              :class="{ selected: scenario.id === selectedScenarioId }"
+              @click.stop="onClickScenario(scenario.id)"
+            >
+              {{
+                scenario.is_valid
+                  ? scenario.name
+                  : scenario.name + ' (Stale - rerun scenario) '
+              }}
+            </div>
+          </template>
+        </dropdown-control>
+      </button>
+      <button
+        v-if="isInDraftState"
+        v-tooltip="'Discard all unsaved changes'"
+        class="btn btn-default"
+        @click="revertDraftChanges"
+      >
+        <i class="fa fa-fw fa-trash" />Discard
+      </button>
+      <button
+        class="btn btn-default"
+        :class="{ 'btn-primary btn-call-for-action': isModelDirty }"
+        @click="runModel"
+      >
+        Run
+      </button>
+    </div>
+    <div class="group">
+      <radio-button-group
+        v-if="isSensitivityAnalysisSupported"
+        class="tour-matrix-tab"
+        :buttons="[
+          { label: 'Causal Flow', value: 'flow' },
+          { label: 'Matrix', value: 'matrix' }
+        ]"
+        :selected-button-value="activeTab"
+        @button-clicked="setActive"
+      />
+      <button
+        v-tooltip.top-center="'reset CAG positioning'"
+        type="button"
+        class="btn btn-default"
+        @click="resetCAG"
+      >
+        <i class="fa fa-fw fa-undo" />Reset Layout
+      </button>
+    </div>
+    <div>
+      <div class="augment-model">
+        <arrow-button
+          :text="'Augment Model'"
+          :icon="'fa-book'"
+          :is-pointing-left="true"
+          @click="onAugmentCAG"
+        />
+      </div>
+    </div>
     <save-scenario-modal
       v-if="isModalOpen"
       :scenarios="scenarios"
@@ -80,14 +103,28 @@ import { mapGetters, mapActions } from 'vuex';
 
 import SaveScenarioModal from '../modals/modal-save-scenario';
 import DropdownControl from '../dropdown-control';
+import ArrowButton from '../widgets/arrow-button.vue';
+import { ProjectType } from '@/types/Enums';
+import RadioButtonGroup from '../widgets/radio-button-group.vue';
+
+const PROJECTION_ENGINES = {
+  DELPHI: 'delphi',
+  DYSE: 'dyse'
+};
 
 export default {
   name: 'QuantitativeActionBar',
   components: {
     SaveScenarioModal,
-    DropdownControl
+    DropdownControl,
+    ArrowButton,
+    RadioButtonGroup
   },
   props: {
+    currentEngine: {
+      type: String,
+      default: null
+    },
     modelSummary: {
       type: Object,
       required: true
@@ -98,7 +135,11 @@ export default {
     }
   },
   emits: [
-    'run-model', 'revert-draft-changes', 'overwrite-scenario', 'save-new-scenario', 'reset-cag'
+    'run-model',
+    'revert-draft-changes',
+    'overwrite-scenario',
+    'save-new-scenario',
+    'reset-cag'
   ],
   data: () => ({
     isModalOpen: false,
@@ -107,14 +148,18 @@ export default {
   computed: {
     ...mapGetters({
       selectedScenarioId: 'model/selectedScenarioId',
-      draftScenarioDirty: 'model/draftScenarioDirty'
+      draftScenarioDirty: 'model/draftScenarioDirty',
+      project: 'app/project',
+      currentCAG: 'app/currentCAG'
     }),
     isInDraftState() {
       return this.selectedScenarioId === 'draft';
     },
     selectedScenario() {
       if (this.isInDraftState) return null;
-      const found = this.scenarios.find(scenario => scenario.id === this.selectedScenarioId);
+      const found = this.scenarios.find(
+        scenario => scenario.id === this.selectedScenarioId
+      );
       if (found !== undefined) return found;
 
       console.error(
@@ -128,6 +173,14 @@ export default {
     },
     isModelDirty() {
       return this.modelSummary.status === 0 || this.draftScenarioDirty === true;
+    },
+    isSensitivityAnalysisSupported() {
+      return this.currentEngine === PROJECTION_ENGINES.DYSE;
+    },
+    activeTab() {
+      // if we ever need more state than this
+      // add a query store for model
+      return this.$route.query?.activeTab || 'flow';
     }
   },
   methods: {
@@ -162,6 +215,20 @@ export default {
     },
     saveNewScenario(metadata) {
       this.$emit('save-new-scenario', metadata);
+    },
+    onAugmentCAG() {
+      this.$router.push({
+        name: 'qualitative',
+        params: {
+          project: this.project,
+          currentCAG: this.currentCAG,
+          projectType: ProjectType.Analysis
+        }
+      });
+    },
+    setActive(activeTab) {
+      this.$router.push({ query: { activeTab } }).catch(() => {});
+      this.$emit('tab-click', activeTab);
     }
   }
 };
@@ -169,29 +236,41 @@ export default {
 
 <style lang="scss" scoped>
 @import '@/styles/variables';
-  .action-bar-container {
-    margin-left: 20px;
+.action-bar-container {
+  margin-left: $navbar-outer-height;
+  padding: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: $navbar-outer-height;
+}
+
+.group {
+  display: flex;
+
+  & > *:not(:first-child) {
+    margin-left: 5px;
   }
+}
 
-  .scenario-dropdown {
-    position: absolute;
-    top: calc(100% + 5px);
-    left: 0;
-    text-align: left;
-    font-weight: normal;
+.scenario-dropdown {
+  position: absolute;
+  top: calc(100% + 5px);
+  left: 0;
+  text-align: left;
+  font-weight: normal;
 
-    .selected {
-      color: $selected-dark;
-      cursor: not-allowed;
+  .selected {
+    color: $selected-dark;
+    cursor: not-allowed;
 
-      &:hover {
-        background: transparent;
-      }
+    &:hover {
+      background: transparent;
     }
   }
+}
 
-  li.nav-item, .scenario-button {
-    margin-left: 5px;
-    position: relative;
-  }
+.scenario-button {
+  position: relative;
+}
 </style>
