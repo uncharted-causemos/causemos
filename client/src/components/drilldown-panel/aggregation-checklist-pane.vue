@@ -23,6 +23,7 @@
       />
     </div>
     <add-reference-box
+      v-if="showReferences"
       :reference-checkboxes="[
         {id: 'sample', displayName: 'Sample', checked: true},
         {id: 'sample2', displayName: 'Sample2', checked: true}
@@ -316,6 +317,10 @@ export default defineComponent({
       default: []
     },
     shouldShowDeselectedBars: {
+      type: Boolean,
+      required: true
+    },
+    showReferences: {
       type: Boolean,
       required: true
     },
