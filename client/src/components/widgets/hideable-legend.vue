@@ -48,7 +48,7 @@ $padding: 10px;
   box-shadow: $shadow-level-1;
   position: absolute;
   bottom: 0;
-  left: 10px;
+  left: -51px;
   padding: $padding;
   padding-bottom: $padding + $hover-nudge-height;
   z-index: 20;
