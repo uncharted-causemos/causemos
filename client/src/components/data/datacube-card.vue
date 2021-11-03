@@ -42,7 +42,7 @@
         />
         <modal-geo-selection
           v-if="showGeoSelectionModal === true"
-          :model-param="modelParam"
+          :model-param="geoModelParam"
           @close="onGeoSelectionModalClose" />
         <rename-modal
           v-if="showTagNameModal"
@@ -79,6 +79,7 @@
             <temporal-facet
               :model-run-data="filteredRunData"
               :selected-scenarios="selectedScenarioIds"
+              :model-parameter="dateModelParam"
               @update-scenario-selection="onUpdateScenarioSelection"
             />
             <parallel-coordinates-chart
@@ -509,7 +510,8 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
-  GeoAttributeFormat
+  GeoAttributeFormat,
+  DatacubeGenericAttributeVariableType
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -622,7 +624,7 @@ export default defineComponent({
     const newRunsMode = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
     const showGeoSelectionModal = ref<boolean>(false);
-    const modelParam = ref<ModelParameter | null>(null);
+    const geoModelParam = ref<ModelParameter | null>(null);
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
     const showPercentChange = ref<boolean>(true);
@@ -660,6 +662,12 @@ export default defineComponent({
       dimensions,
       ordinalDimensionNames
     } = useDatacubeDimensions(metadata);
+
+    // FIXME: we only support one date param of each model datacube
+    const dateModelParam = computed(() => {
+      const dateParams = dimensions.value.filter(dim => dim.type === DatacubeGenericAttributeVariableType.Date);
+      return dateParams.length > 0 ? dateParams[0] : null;
+    });
 
     const { allModelRunData, filteredRunData } = useScenarioData(selectedModelId, modelRunsFetchedAt, searchFilters, dimensions);
 
@@ -1320,12 +1328,14 @@ export default defineComponent({
       canClickDataTab,
       colorFromIndex,
       currentTabView,
+      dateModelParam,
       dataPaths,
       defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
       fetchData,
       filteredRunData,
+      geoModelParam,
       getSelectedPreGenOutput,
       gridLayerStats,
       hasDefaultRun,
@@ -1337,7 +1347,6 @@ export default defineComponent({
       mapLegendData,
       mapReady,
       mapSelectedLayer,
-      modelParam,
       modelRunsSearchData,
       newRunsMode,
       onMapLoad,
@@ -1437,7 +1446,7 @@ export default defineComponent({
   methods: {
     openGeoSelectionModal(modelParam: ModelParameter) {
       this.showGeoSelectionModal = true;
-      this.modelParam = modelParam;
+      this.geoModelParam = modelParam;
     },
     onGeoSelectionModalClose(eventData: any) {
       this.showGeoSelectionModal = false;
@@ -1445,7 +1454,7 @@ export default defineComponent({
         const selectedRegions: GeoRegionDetail[] = eventData.selectedRegions;
         if (selectedRegions && selectedRegions.length > 0) {
           // update the PC with the selected region value(s)
-          const updatedModelParam = _.cloneDeep(this.modelParam) as ModelParameter;
+          const updatedModelParam = _.cloneDeep(this.geoModelParam) as ModelParameter;
           // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
           const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;

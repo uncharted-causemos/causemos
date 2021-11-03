@@ -89,6 +89,7 @@ export default function useModelMetadata(
         if (!p.additional_options) {
           p.additional_options = {};
         }
+        p.name = 'date';
         p.additional_options.date_display_format = 'YYYY-MM';
 
         // for testing date-range, every run will have two date values
