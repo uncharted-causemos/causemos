@@ -23,7 +23,10 @@
       />
     </div>
     <add-reference-box
-      :reference-checkboxes="[{id: 'sample', displayName: 'Sample', checked: true}]"
+      :reference-checkboxes="[
+        {id: 'sample', displayName: 'Sample', checked: true},
+        {id: 'sample2', displayName: 'Sample2', checked: true}
+        ]"
     />
     <div class="sort-selection">
       <span>Sort by</span>
