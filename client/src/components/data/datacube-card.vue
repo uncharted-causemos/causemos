@@ -1162,6 +1162,7 @@ export default defineComponent({
     const {
       datacubeHierarchy,
       selectedRegionIds,
+      selectedParentRegionIds,
       toggleIsRegionSelected
     } = useDatacubeHierarchy(
       selectedScenarioIds,
@@ -1356,6 +1357,7 @@ export default defineComponent({
       selectedPreGenDataItem,
       selectedQualifierValues,
       selectedRegionIds,
+      selectedParentRegionIds,
       selectedScenarioIds,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
