@@ -1,7 +1,9 @@
 <template>
   <div class="histogram-container">
-    <div class="column legend-column">
-      <!-- TODO: -->
+    <div class="y-axis-column">
+      <div class="arrow">↑</div>
+      <span>Projected change from now</span>
+      <div class="arrow">↓</div>
     </div>
     <div class="column bar-column">
       <div
@@ -49,6 +51,10 @@
         </span>
       </span>
     </div>
+    <div class="column x-axis-label">
+      <span>→</span>
+      <span># of trials in category</span>
+    </div>
   </div>
 </template>
 
@@ -90,18 +96,22 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import '@/styles/variables';
+$axis-line-height: $font-size-large;
 
 .histogram-container {
   display: flex;
-  height: 100px;
+  height: 100px + #{2 * $axis-line-height};
+  // TODO: remove
   background: white;
+  // Leave space for x axis label
+  padding-bottom: 2 * $axis-line-height;
+  position: relative;
 
   &:hover {
-    .value-column {
-      opacity: 1;
-    }
-
-    .summary {
+    .y-axis-column,
+    .value-column,
+    .summary,
+    .x-axis-label {
       opacity: 1;
     }
   }
@@ -118,6 +128,29 @@ export default defineComponent({
     &:not(:first-child) {
       margin-top: 2px;
     }
+  }
+}
+
+$y-axis-width: 60px;
+$y-axis-margin: 5px;
+
+.y-axis-column {
+  width: $y-axis-width;
+  margin-right: $y-axis-margin;
+  display: flex;
+  flex-direction: column;
+  align-items: flex-end;
+  opacity: 0;
+
+  .arrow {
+    flex: 1;
+    min-width: 0;
+  }
+
+  span {
+    flex-shrink: 0;
+    text-align: right;
+    line-height: $axis-line-height;
   }
 }
 
@@ -186,5 +219,13 @@ export default defineComponent({
     color: black;
     font-size: $font-size-large;
   }
+}
+
+.x-axis-label {
+  position: absolute;
+  left: $y-axis-width + $y-axis-margin;
+  bottom: 0;
+  line-height: $axis-line-height;
+  opacity: 0;
 }
 </style>
