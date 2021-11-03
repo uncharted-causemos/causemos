@@ -107,11 +107,20 @@ $axis-line-height: $font-size-large;
   padding-bottom: 2 * $axis-line-height;
   position: relative;
 
+  .y-axis-column,
+  .value-column,
+  .summary,
+  .x-axis-label {
+    transition: opacity 0.1s ease-out;
+  }
+
+  cursor: pointer;
   &:hover {
     .y-axis-column,
     .value-column,
     .summary,
     .x-axis-label {
+      transition: opacity 0.3s ease-out;
       opacity: 1;
     }
   }
