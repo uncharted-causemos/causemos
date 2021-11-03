@@ -70,6 +70,7 @@
         @button-clicked="setActive"
       />
       <button
+        v-if="activeTab === 'flow'"
         v-tooltip.top-center="'reset CAG positioning'"
         type="button"
         class="btn btn-default"
