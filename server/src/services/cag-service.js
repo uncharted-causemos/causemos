@@ -10,6 +10,7 @@ const { get, set } = rootRequire('/cache/node-lru-cache');
 const modelUtil = rootRequire('/util/model-util');
 
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
+const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 
 
 // Get model with no thumbnail
@@ -197,8 +198,8 @@ const createCAG = async (modelFields, edges, nodes) => {
     id: CAGId,
     ...modelFields,
     is_stale: false,
-    is_quantified: false,
-    status: MODEL_STATUS.UNSYNCED,
+    status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS,
     created_at: now,
     modified_at: now
   }, keyFn);
@@ -234,15 +235,13 @@ const updateCAGMetadata = async(modelId, modelFields) => {
   const modelData = await _getModel(modelId);
 
   let currentStatus = modelData.status;
-  let currentQuantified = _.get(modelData, 'is_quantified', false);
 
   const currentEngine = _.get(modelData.parameter, 'engine', '');
   const engine = _.get(modelFields.parameter, 'engine', '');
 
   if (engine !== '' && engine !== currentEngine) {
     Logger.info(`Engine changed from ${currentEngine} to ${engine} on ${modelId}`);
-    currentStatus = MODEL_STATUS.UNSYNCED;
-    currentQuantified = false;
+    currentStatus = MODEL_STATUS.NOT_REGISTERED;
   }
 
   const keyFn = (doc) => {
@@ -257,14 +256,12 @@ const updateCAGMetadata = async(modelId, modelFields) => {
     results = await CAGConnection.update({
       id: modelId,
       status: currentStatus,
-      is_quantified: currentQuantified,
       ...modelFields
     }, keyFn);
   } else {
     results = await CAGConnection.update({
       id: modelId,
       status: currentStatus,
-      is_quantified: currentQuantified,
       modified_at: Date.now(),
       ...modelFields
     }, keyFn);
@@ -372,8 +369,8 @@ const updateCAG = async(modelId, edges, nodes) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
-    is_quantified: false,
-    status: MODEL_STATUS.UNSYNCED,
+    status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS,
     modified_at: Date.now()
   }, d => d.id);
   if (results.errors) {
@@ -401,8 +398,8 @@ const pruneCAG = async(modelId, edges, nodes) => {
   const CAGConnection = Adapter.get(RESOURCE.CAG);
   const results = await CAGConnection.update({
     id: modelId,
-    is_quantified: false,
-    status: MODEL_STATUS.UNSYNCED,
+    status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS,
     modified_at: Date.now()
   }, d => d.id);
   if (results.errors) {
@@ -635,7 +632,8 @@ const recalculateCAG = async (modelId) => {
       {
         id: cag.id,
         is_stale: false,
-        status: MODEL_STATUS.UNSYNCED,
+        status: MODEL_STATUS.NOT_REGISTERED,
+        engine_status: RESET_ALL_ENGINE_STATUS,
         is_ambiguous: isAmbiguous,
         modified_at: timestamp
       }
