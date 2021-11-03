@@ -65,6 +65,7 @@
       </drilldown-panel>
     </div>
     <config-bar
+      class="config-bar"
       :model-summary="modelSummary"
       @edit-parameters="showModelParameters"
     />
@@ -351,5 +352,15 @@ main {
       background-color: #255DCC;
     }
   }
+}
+
+.config-bar {
+  position: absolute;
+  // FIXME: hideable legend contains its own absolute positioning styles.
+  //  Refactor it so that its parent determines its positioning, then put both
+  //  the legend and the config bar in a flexbox so we don't need hardcoded
+  //  positions like we have here.
+  left: 210px;
+  bottom: 0;
 }
 </style>
