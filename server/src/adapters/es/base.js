@@ -194,6 +194,31 @@ class Base {
   }
 
   /**
+   * Update docs using a script
+   * @param {array} simpleFilters - Basic filters to look up by fields
+   * @param {object} script - Basic filters to look up by fields
+   * @param {boolean} refreshOption - Refresh all shards after operation
+   */
+  async updateByQuery(simpleFilters, script, refreshOption = true) {
+    const payload = {
+      index: this.index,
+      refresh: refreshOption,
+      body: {
+        ...parseSimpleFilters(simpleFilters), // query
+        script: script
+      }
+    };
+
+    try {
+      const response = await this.client.updateByQuery(payload);
+      return response.body;
+    } catch (err) {
+      Logger.error(JSON.stringify(err));
+      return null;
+    }
+  }
+
+  /**
    * Bulk API for sending bulk create/delete/index/update operations
    *
    * @param {array<object>} requestBody - list of objects representing the bulk operations
