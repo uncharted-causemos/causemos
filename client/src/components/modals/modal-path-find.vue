@@ -66,6 +66,14 @@ export default {
     target: {
       type: String,
       required: true
+    },
+    sources: {
+      type: Array,
+      required: true
+    },
+    targets: {
+      type: String,
+      required: true
     }
   },
   emits: [
@@ -89,7 +97,7 @@ export default {
   },
   methods: {
     refresh() {
-      suggestionService.getPathSuggestions(this.project, this.source, this.target).then(paths => {
+      suggestionService.getGroupPathSuggestions(this.project, this.sources, this.targets).then(paths => {
         const sortedPaths = _.orderBy(paths, p => p.length);
         this.suggestions = [[this.source, this.target], ..._.take(sortedPaths, 5)];
         if (this.suggestions.length === 1) {

@@ -170,6 +170,8 @@
       v-if="showPathSuggestions"
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
+      :sources="pathSuggestionSources"
+      :targets="pathSuggestionTargets"
       @add-paths="addSuggestedPath"
       @close="showPathSuggestions = false"
     />
@@ -320,6 +322,8 @@ export default defineComponent({
     factorRecommendationsList: [] as any[],
     pathSuggestionSource: '',
     pathSuggestionTarget: '',
+    pathSuggestionSources: [] as string[],
+    pathSuggestionTargets: [] as string[],
     edgeToSelectOnNextRefresh: null as {
       source: string;
       target: string;
@@ -498,12 +502,22 @@ export default defineComponent({
 
         const backingStatements: string[] = _.uniq(_.flatten(Object.values(edgeData)));
         console.log('backing statements', backingStatements);
+        const formattedEdge = Object.assign(
+          { user_polarity: null, id: '' },
+          edge,
+          {
+            reference_ids: edgeData[edge.source + '///' + edge.target] || []
+          }
+        );
+        console.log(formattedEdge, edgeData);
 
         if (backingStatements.length === 0) {
           // FIXME: Initiates the path suggestions
-          // this.showPathSuggestions = true;
-          // this.pathSuggestionSource = formattedEdge.source;
-          // this.pathSuggestionTarget = formattedEdge.target;
+          this.showPathSuggestions = true;
+          this.pathSuggestionSource = formattedEdge.source;
+          this.pathSuggestionTarget = formattedEdge.target;
+          this.pathSuggestionSources = source.components;
+          this.pathSuggestionTargets = target.components;
           const newEdge = {
             id: '',
             user_polarity: null,

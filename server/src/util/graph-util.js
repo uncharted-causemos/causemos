@@ -62,28 +62,36 @@ const _crawler = (adjacencyMap, source, stack, goalFn, terminateFn) => {
   });
 };
 
-
 /**
- * Find neighborhood among some specified nodes
- * Basically for any given pair of nodes {x, y} in {v1, v2, v3, ... } we want to find
+ * Find neighborhood among two sets/groups of nodes, such as two merged nodes with some n concepts in each
+ * Basically for any given pair of nodes groups {x, y} in {v1, v2, v3, ... } we want to find
  * all path less then or equal to k hops away.
  *
  * @param {array} - graph edges
- * @param {array} nodes - array of node ids
+ * @param {array} sourceNodes - array of node ids
+ * @param {array} targetNodes - array of node ids
  * @param {number} k - maximum number of hops to check
  */
-const normalPath = (edges, nodes, k) => {
+const groupPath = (edges, sourceNodes, targetNodes, k) => {
   const neighborhoodNodes = [];
 
   // Guard against weird input
-  if (nodes.length < 2) {
+  if (sourceNodes.length < 1 && targetNodes.length < 1) {
     return [];
   }
 
   const adjacencyMap = buildAdjacency(edges).outgoing;
-  const links = combinatorics.combination(nodes, 2);
-  while (true) {
-    const link = links.next();
+
+  // for each source node, generate combinatorics for all target nodes
+  const links = sourceNodes
+    .map(sn => combinatorics.combination([sn, ...targetNodes], 2).toArray())
+    .reduce((flatComb, comb) => {
+      const result = flatComb.concat(comb);
+      return result;
+    }, []);
+  console.log('links:\n' + JSON.stringify(links) + '\n\n\n\n');
+  for (let i = 0; i < links.length; i++) {
+    const link = links[i];
     if (!link) {
       break;
     }
@@ -110,7 +118,28 @@ const normalPath = (edges, nodes, k) => {
   return neighborhoodNodes;
 };
 
+
+/**
+ * Find neighborhood among some specified nodes
+ * Basically for any given pair of nodes {x, y} in {v1, v2, v3, ... } we want to find
+ * all path less then or equal to k hops away.
+ *
+ * @param {array} - graph edges
+ * @param {array} nodes - array of node ids
+ * @param {number} k - maximum number of hops to check
+ */
+const normalPath = (edges, nodes, k) => {
+  // Guard against weird input
+  if (nodes.length < 2) {
+    return [];
+  }
+
+  const neighborhoodNodes = groupPath(edges, [nodes[0]], [nodes[1]], k);
+  return neighborhoodNodes;
+};
+
 module.exports = {
   buildAdjacency,
+  groupPath,
   normalPath
 };

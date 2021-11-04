@@ -93,9 +93,16 @@ const getPathSuggestions = async (projectId: string, source: string, target: str
   return result.data;
 };
 
+// Find indirect paths between sources/targets for merged nodes
+const getGroupPathSuggestions = async (projectId: string, sources: string[], targets: string[]) => {
+  const result = await API.post(`projects/${projectId}/group-path-suggestions`, { sources, targets });
+  return result.data;
+};
+
 export default {
   getConceptSuggestionFunction,
   getSuggestionFunction,
   getDatacubeSuggestionFunction,
-  getPathSuggestions
+  getPathSuggestions,
+  getGroupPathSuggestions
 };

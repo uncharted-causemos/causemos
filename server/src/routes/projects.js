@@ -317,6 +317,18 @@ router.get('/:projectId/path-suggestions', asyncHandler(async (req, res) => {
 }));
 
 /**
+ * POST Search path between source and target node sets
+ */
+router.post('/:projectId/group-path-suggestions', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const sources = req.body.sources;
+  const targets = req.body.targets;
+  const hops = req.query.hops || 2;
+  const result = await projectService.groupSearchPath(projectId, sources, targets, hops);
+  res.json(result);
+}));
+
+/**
  * GET Given a subject-concept and object-concept, grab the compositional constituents
  */
 router.get('/:projectId/ontology-composition', asyncHandler(async (req, res) => {
