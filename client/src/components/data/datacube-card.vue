@@ -77,6 +77,7 @@
               </div>
             </div>
             <temporal-facet
+              v-if="dateModelParam"
               :model-run-data="filteredRunData"
               :selected-scenarios="selectedScenarioIds"
               :model-parameter="dateModelParam"
