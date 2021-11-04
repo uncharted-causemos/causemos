@@ -36,8 +36,11 @@
 <script>
 import '@uncharted.software/facets-core';
 import '@uncharted.software/facets-plugins';
-import { TemporalResolution /* , DatacubeGenericAttributeVariableType */ } from '@/types/Enums';
+import { TemporalResolution, DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import _ from 'lodash';
+
+// NOTE: Honestly, for date range a Gantt-like chart is much better representation
+//  than the facet-timeline, which is more suitable for single date runs
 
 /**
  * Facet 3 component
@@ -62,7 +65,7 @@ export default {
   data: () => ({
     selection: [],
     facetView: [0, 0],
-    dateParamResolution: TemporalResolution.Other,
+    dateParamResolution: TemporalResolution.Annual,
     TemporalResolution
   }),
   watch: {
@@ -114,58 +117,126 @@ export default {
     temporalDataMap() {
       // build a map of unique temporal keys, e.g., timestamp or dates
       //  for each key, the value would be an array of the matching model runs
-      const temporalDataMap = {};
+      let temporalDataMap = {};
+      const delimiter = '__';
       // build a histogram for bins only relevant to the available model runs
       const isYearlyResolution = this.dateParamResolution === TemporalResolution.Annual;
       const isMonthlyResolution = this.dateParamResolution === TemporalResolution.Monthly;
-      // const isDateRange = this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
-      // console.log(isDateRange);
+      const isDateRange = this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
 
+      // key will always be either the full, original ISO, date or a combination of year+month
+      // const getKeyFromDate = (date) => date.getFullYear() + '_' + (date.getMonth() + 1); // e.g. 2015-05 (note getMonth() is zero-based)
+
+      // first pass, add all key date (based on run data)
       this.modelRunData.forEach(modelRun => {
         const dateParam = modelRun.parameters.find(p => p.name === this.modelParameter.name);
         if (dateParam) {
-          let key = dateParam.value; // FIXME: what if this is a range!?
-          if (isYearlyResolution) {
-            key = new Date(dateParam.value).getFullYear(); // e.g. 2015
+          const key = dateParam.value;
+          let k1 = ''; let k2 = '';
+          if (isDateRange) {
+            const k12 = key.split(delimiter);
+            k1 = k12[0];
+            k2 = k12[1];
           }
-          if (isMonthlyResolution) {
-            const keyAsDate = new Date(key);
-            key = keyAsDate.getFullYear() + '-' + (keyAsDate.getMonth() + 1); // e.g. 2015-05 (note getMonth() is zero-based)
-          }
-          if (temporalDataMap[key] !== undefined) {
-            // key exists
-            temporalDataMap[key].push(modelRun);
+          if (!isDateRange) {
+            if (isYearlyResolution || isMonthlyResolution) {
+              // data will be added later
+              if (temporalDataMap[key] === undefined) {
+                temporalDataMap[key] = [];
+              }
+            } else {
+              // for the histogram (No Gaps) mode, data is added now
+              if (temporalDataMap[key] !== undefined) {
+                temporalDataMap[key].push(modelRun);
+              } else {
+                temporalDataMap[key] = [modelRun];
+              }
+            }
           } else {
-            temporalDataMap[key] = [modelRun];
+            // just add the date as key, and the relevant runs will be added later
+            //  and the temporal resolution will be taking into account at that time
+            if (temporalDataMap[k1] === undefined) {
+              temporalDataMap[k1] = [];
+            }
+            if (temporalDataMap[k2] === undefined) {
+              temporalDataMap[k2] = [];
+            }
           }
         }
       });
+
+      const addRunsToDateBucket = (bucketDate) => {
+        // TODO: optimize: instead of search for every model run, utilize a map for quick access
+        const getDateKey = (date) => isYearlyResolution ? date.getFullYear() : date.getFullYear() + '-' + (date.getMonth() + 1);
+        this.modelRunData.forEach(modelRun => {
+          const dateParam = modelRun.parameters.find(p => p.name === this.modelParameter.name);
+          if (dateParam) {
+            let key = dateParam.value;
+            if (!isDateRange) {
+              const keyAsDate = new Date(key);
+              key = getDateKey(keyAsDate);
+              if (bucketDate === key) {
+                temporalDataMap[key].push(modelRun);
+              }
+            } else {
+              let k1 = ''; let k2 = '';
+              const k12 = key.split(delimiter);
+              k1 = k12[0];
+              k2 = k12[1];
+              const key1AsDate = new Date(k1);
+              const key2AsDate = new Date(k2);
+              k1 = getDateKey(key1AsDate);
+              k2 = getDateKey(key2AsDate);
+              if (isYearlyResolution) {
+                if (bucketDate >= k1 && bucketDate <= k2) {
+                  temporalDataMap[bucketDate].push(modelRun);
+                }
+              } else {
+                if (new Date(bucketDate) >= new Date(k1) && new Date(bucketDate) <= new Date(k2)) {
+                  temporalDataMap[bucketDate].push(modelRun);
+                }
+              }
+            }
+          }
+        });
+      };
+
       const allDateKeys = Object.keys(temporalDataMap);
-      if (allDateKeys.length > 0) {
+      if (allDateKeys.length > 0 && (isYearlyResolution || isMonthlyResolution)) {
+        // we are going to assign data, but we need to clear existing full-date keys
+        //  since now only yearly/monthly resolution will be the keys
+        temporalDataMap = {};
+
         // extract the first/last date to identify the full date range
         const allDates = allDateKeys.map(dateKeyStr => new Date(dateKeyStr));
         const allRunsStartDate = _.min(allDates);
         const allRunsEndDate = _.max(allDates);
 
         // add buckets/bins/bars (of height 0) covering gaps or missing parts according to selected resolution
-        if (isYearlyResolution || isMonthlyResolution) {
-          const yearStart = allRunsStartDate.getFullYear();
-          const yearEnd = allRunsEndDate.getFullYear();
-          for (let year = yearStart; year <= yearEnd; year++) {
-            if (isYearlyResolution) {
-              if (temporalDataMap[year] === undefined) {
-                temporalDataMap[year] = [];
-              }
+        const yearStart = allRunsStartDate.getFullYear();
+        const yearEnd = allRunsEndDate.getFullYear();
+
+        for (let year = yearStart; year <= yearEnd; year++) {
+          if (isYearlyResolution) {
+            // first, add the bucket if missing
+            if (temporalDataMap[year] === undefined) {
+              temporalDataMap[year] = [];
             }
-            if (isMonthlyResolution) {
-              const monthStart = year === yearStart ? (allRunsStartDate.getMonth() + 1) : 1;
-              const monthEnd = year === yearEnd ? (allRunsEndDate.getMonth() + 1) : 12;
-              for (let month = monthStart; month <= monthEnd; month++) {
-                const newKey = year + '-' + month;
-                if (temporalDataMap[newKey] === undefined) {
-                  temporalDataMap[newKey] = [];
-                }
+            // should some run(s) be added to this bucket
+            // loop through runs again to fill in the buckets
+            addRunsToDateBucket(year);
+          }
+          if (isMonthlyResolution) {
+            const monthStart = year === yearStart ? (allRunsStartDate.getMonth() + 1) : 1;
+            const monthEnd = year === yearEnd ? (allRunsEndDate.getMonth() + 1) : 12;
+            for (let month = monthStart; month <= monthEnd; month++) {
+              const newKey = year + '-' + month;
+              if (temporalDataMap[newKey] === undefined) {
+                temporalDataMap[newKey] = [];
               }
+              // should some run(s) be added to this bucket
+              // loop through runs again to fill in the buckets
+              addRunsToDateBucket(newKey);
             }
           }
         }
@@ -176,12 +247,22 @@ export default {
       const bars = [];
       const numAllRuns = this.modelRunData.length === 0 ? 1 : this.modelRunData.length; // avoid divide by zero
       const maxTooltipItems = 5;
-      const getBarTooltip = (key, values) => {
+      const isDateRange = this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
+
+      const getBarTooltip = (key, runNames) => {
         // if number of runs to be listed in a tooltip is too large, then truncate
-        if (values.length > maxTooltipItems) {
-          return key + '\n' + [...values.slice(0, maxTooltipItems), '... and more'].join('\n');
+        let runNamesAndValues = runNames;
+        if (isDateRange) {
+          runNamesAndValues = runNames.map(name => {
+            const run = this.modelRunData.find(run => run.name === name);
+            const dateParam = run.parameters.find(p => p.name === this.modelParameter.name);
+            return name + '\t' + dateParam.value;
+          });
         }
-        return key + '\n' + values.join('\n');
+        if (runNamesAndValues.length > maxTooltipItems) {
+          return key + '\n' + [...runNamesAndValues.slice(0, maxTooltipItems), '... and more'].join('\n');
+        }
+        return key + '\n' + runNamesAndValues.join('\n');
       };
       // ensure insertion in correct order to reflect a timeline
       const sortedKeys = _.sortBy(Object.keys(this.temporalDataMap), function (d) { return new Date(d); }); // Object.keys(this.temporalDataMap).sort(compFunc);
@@ -196,7 +277,7 @@ export default {
       return bars;
     },
     supportedResolutions() {
-      return [
+      const temporalResolutions = [
         {
           value: TemporalResolution.Annual,
           label: 'Annual'
@@ -204,11 +285,14 @@ export default {
         {
           value: TemporalResolution.Monthly,
           label: 'Monthly'
-        },
-        {
+        }];
+      if (this.modelParameter.type === DatacubeGenericAttributeVariableType.Date) {
+        temporalResolutions.push({
           value: TemporalResolution.Other,
           label: 'No Gaps'
-        }];
+        });
+      }
+      return temporalResolutions;
     }
   },
   methods: {
@@ -223,7 +307,7 @@ export default {
             const runsForLabel = this.temporalDataMap[bar.label];
             selectedScenarioIDs.push(...runsForLabel.map(run => run.id));
           });
-          this.$emit('update-scenario-selection', selectedScenarioIDs);
+          this.$emit('update-scenario-selection', _.uniq(selectedScenarioIDs));
         }
       }
     }

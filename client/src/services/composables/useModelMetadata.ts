@@ -1,4 +1,4 @@
-import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
+import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
@@ -84,7 +84,7 @@ export default function useModelMetadata(
 
       if (isModel(rawMetadata) && rawMetadata.name === 'CHIRPS - Climate Hazards Center Infrared Precipitation with Stations') {
         // force the input param to be of type date: month
-        const p = rawMetadata.parameters.filter(p => p.name === 'month')[0];
+        const p = rawMetadata.parameters.find(p => p.name === 'month') as ModelParameter;
         p.type = DatacubeGenericAttributeVariableType.Date;
         if (!p.additional_options) {
           p.additional_options = {};
@@ -92,9 +92,10 @@ export default function useModelMetadata(
         p.name = 'date';
         p.additional_options.date_display_format = 'YYYY-MM';
 
-        // for testing date-range, every run will have two date values
-        const p2 = rawMetadata.parameters.filter(p => p.name === 'year')[0];
+        // for testing date-range, every run will have two date values separated by some known delimiter
+        const p2 = rawMetadata.parameters.find(p => p.name === 'year') as ModelParameter;
         p2.type = DatacubeGenericAttributeVariableType.DateRange;
+        p2.name = 'daterange';
       }
 
       metadata.value = rawMetadata;
