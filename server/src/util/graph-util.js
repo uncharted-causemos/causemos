@@ -89,7 +89,6 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
       const result = flatComb.concat(comb);
       return result;
     }, []);
-  console.log('links:\n' + JSON.stringify(links) + '\n\n\n\n');
   for (let i = 0; i < links.length; i++) {
     const link = links[i];
     if (!link) {

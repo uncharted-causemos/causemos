@@ -498,7 +498,6 @@ export default defineComponent({
           relationsToAdd,
           filtersUtil.newFilters()
         );
-        console.log('edgedata', edgeData);
 
         const backingStatements: string[] = _.uniq(_.flatten(Object.values(edgeData)));
         console.log('backing statements', backingStatements);
@@ -512,7 +511,6 @@ export default defineComponent({
         console.log(formattedEdge, edgeData);
 
         if (backingStatements.length === 0) {
-          // FIXME: Initiates the path suggestions
           this.showPathSuggestions = true;
           this.pathSuggestionSource = formattedEdge.source;
           this.pathSuggestionTarget = formattedEdge.target;
