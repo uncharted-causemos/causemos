@@ -128,12 +128,40 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
  * @param {number} k - maximum number of hops to check
  */
 const normalPath = (edges, nodes, k) => {
+  const neighborhoodNodes = [];
+
   // Guard against weird input
   if (nodes.length < 2) {
     return [];
   }
 
-  const neighborhoodNodes = groupPath(edges, [nodes[0]], [nodes[1]], k);
+  const adjacencyMap = buildAdjacency(edges).outgoing;
+  const links = combinatorics.combination(nodes, 2);
+  while (true) {
+    const link = links.next();
+    if (!link) {
+      break;
+    }
+
+    // Generates a targetFn that checks against target
+    const goalFnGenerator = (target) => {
+      return (newNode, stack) => {
+        if (newNode === target) {
+          neighborhoodNodes.push(stack);
+          return true;
+        }
+        return false;
+      };
+    };
+
+    // Exceed allowed length or hitting a cycle
+    const terminateFn = (newNode, stack) => {
+      if (stack.length > k) return true;
+      return false;
+    };
+    _crawler(adjacencyMap, link[0], [link[0]], goalFnGenerator(link[1]), terminateFn);
+    // _crawler(adjacencyMap, link[1], [link[1]], goalFnGenerator(link[0]), terminateFn);
+  }
   return neighborhoodNodes;
 };
 
