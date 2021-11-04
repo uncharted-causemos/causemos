@@ -7,10 +7,9 @@ const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
 /**
  *  Find scenarios by model and engine
  * @param {string} modelId
- * @param {string} engine // FIXME: not used
  * @param {object} options - additiona options for ES search
  */
-const find = async(modelId, engine, options) => {
+const find = async(modelId, options) => {
   const scenarioConnection = Adapter.get(RESOURCE.SCENARIO);
   const scenarios = await scenarioConnection.find([{ field: 'model_id', value: modelId }], options);
   return scenarios;
@@ -28,16 +27,13 @@ const findOne = async(scenarioId) => {
 
 /**
  *
- * @param {map} result - experiment result
- * @param {array} parameter - constraints/perturbations set
+ * @param {array} parameter - constraints data
  * @param {string} name - scenario display name
  * @param {string} description - scenario description
  * @param {string} modelId - model id
- * @param {string} engine
- * @param {string} experimentId - external experiment id
  * @param {boolean} isBaseline
  */
-const create = async ({ result, parameter, name, description, model_id: modelId, engine, experiment_id: experimentId, isBaseline }) => {
+const createScenario = async ({ parameter, name, description, model_id: modelId, isBaseline }) => {
   const scenarioConnection = Adapter.get(RESOURCE.SCENARIO);
   const id = uuid();
 
@@ -45,8 +41,6 @@ const create = async ({ result, parameter, name, description, model_id: modelId,
   if (isBaseline === true) {
     const baseCount = await scenarioConnection.count([
       { field: 'is_baseline', value: true },
-      // FIXME: hardwiring to dyse, should remove engine criterion
-      { field: 'engine', value: 'dyse' },
       { field: 'model_id', value: modelId }
     ]);
 
@@ -62,17 +56,9 @@ const create = async ({ result, parameter, name, description, model_id: modelId,
     description,
     modified_at: Date.now(),
     model_id: modelId,
-    engine,
-    is_valid: true,
     is_baseline: isBaseline
   };
 
-  if (!_.isNil(experimentId)) {
-    payload.experiment_id = experimentId; // experimentId from engine
-  }
-  if (!_.isEmpty(result)) {
-    payload.result = result;
-  }
   if (!_.isEmpty(parameter)) {
     payload.parameter = parameter;
   }
@@ -86,6 +72,10 @@ const create = async ({ result, parameter, name, description, model_id: modelId,
 
   return { id };
 };
+
+
+
+
 
 /**
  * Update scenario fields
@@ -141,12 +131,14 @@ const removeAll = async (modelId) => {
 };
 
 
-// Mark scenario under modelid is invalid/stale
+// Mark scenario results under modelid as invalid
 const invalidateByModel = async(modelId) => {
   Logger.info('Invalidate scenario for model with id:' + modelId);
 
-  const scenarioConnection = Adapter.get(RESOURCE.SCENARIO);
-  const scenarios = await scenarioConnection.find([{ field: 'model_id', value: modelId }], {});
+  const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
+
+  // FIXME exclude results for smaller payload
+  const scenarios = await scenarioResultConnection.find([{ field: 'model_id', value: modelId }], {});
 
   // Nothing to do
   if (scenarios.length === 0) return;
@@ -159,19 +151,52 @@ const invalidateByModel = async(modelId) => {
   });
 
   // update scenario
-  const result = await scenarioConnection.update(updatePayload, d => d.id);
+  const result = await scenarioResultConnection.update(updatePayload, d => d.id);
   if (result.errors) {
     throw new Error(JSON.stringify(result.items[0]));
   }
 };
 
+const createScenarioResult = async (
+  modelId,
+  scenarioId,
+  engine,
+  experimentId,
+  resultData
+) => {
+  const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
+
+  const payload = {
+    id: `${scenarioId}-${engine}`,
+    engine: engine,
+    is_valid: true,
+    experiment_id: experimentId,
+    result: resultData
+  };
+  await scenarioResultConnection.insert([payload], d => d.id);
+};
+
+const findResults = async (modelId, engine) => {
+  const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
+
+  const r = await scenarioResultConnection.find(
+    [{ field: 'model_id', value: modelId }],
+    { size: 100 }
+  );
+  return r;
+};
+
+
 module.exports = {
   find,
   findOne,
-  create,
+  createScenario,
   update,
   remove,
   removeAll,
+
+  createScenarioResult,
+  findResults,
 
   invalidateByModel
 };
