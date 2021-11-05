@@ -49,6 +49,14 @@ export const findPartitionValue = (
  *  (month index of 3), and `intervalLengthInMonths` is 8, find all historical
  *  intervals from April to the following December. Then calculate the
  *  difference in value between the start and end of each interval.
+ *
+ *  Note that this method has the potential to throw out, e.g. 3/4 of the data.
+ *  The benefit is that it produces much better results for data with annual
+ *  (or sub-annual) seasonality. The downside is that it produces slightly
+ *  weaker (or much weaker depending on data scarcity) results for data without
+ *  annual seasonality. In the future we should consider making this toggleable
+ *  or dependent on the node's existing seasonality property.
+ *
  * @param historicalData the array of timeseries points to search.
  * @param intervalLengthInMonths the length of interval to look for.
  * @param intervalStartMonth an integer from 0(Jan) to 11(Dec).
