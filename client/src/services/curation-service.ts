@@ -335,3 +335,19 @@ export const updateStatementsPolarity = async (projectId: string, statementIds: 
   }
   return result;
 };
+
+
+/**
+ * Get curation recommendations for evidence
+ */
+// FIXME: Need to decompose to components
+export const getEvidenceRecommendations = async (projectId: string, subjConcept: string, objConcept: string) => {
+  const payload = {
+    project_id: projectId,
+    num_recommendations: 10,
+    subj_concept: subjConcept,
+    obj_concept: objConcept
+  };
+  const result = await (API.get('curation_recommendations/edge-regrounding', { params: payload }));
+  return result.data;
+};

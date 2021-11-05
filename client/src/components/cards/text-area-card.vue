@@ -49,7 +49,7 @@ export default defineComponent({
   }),
   watch: {
     enteredText(newText, oldText) {
-      if (newText && oldText !== '') {
+      if (oldText !== '') {
         this.hasUnsavedText = true;
         this.scheduleTextSave();
       }

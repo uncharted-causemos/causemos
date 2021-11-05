@@ -92,7 +92,8 @@ const updateStatements = async (projectId, updateConfig, statementIds) => {
     Logger.info(`Injecting compositional ontology concepts for factor regrounding ${JSON.stringify(updateConfig)}`);
   }
 
-  await batchUpdate(projectId, _.clone(statementIds), updateFnGenerator(projectId, updateConfig));
+  const batchId = await batchUpdate(projectId, _.clone(statementIds), updateFnGenerator(projectId, updateConfig));
+  return batchId;
 };
 
 const batchUpdate = async (projectId, statementIds, updateFn) => {
@@ -112,6 +113,7 @@ const batchUpdate = async (projectId, statementIds, updateFn) => {
 
     await updateFn(statements, batchId);
   }
+  return batchId;
 };
 
 

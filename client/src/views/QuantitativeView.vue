@@ -1,6 +1,11 @@
 <template>
   <div class="quantitative-view-container">
-    <analytical-questions-and-insights-panel />
+    <teleport to="#navbar-trailing-teleport-destination">
+      <cag-analysis-options-button
+        :model-summary="modelSummary"
+        :view-after-deletion="'overview'"
+      />
+    </teleport>
     <div class="graph-container">
       <tab-panel
         v-if="ready"
@@ -46,16 +51,17 @@ import modelService from '@/services/model-service';
 import csrUtil from '@/utils/csr-util';
 import ActionBar from '@/components/quantitative/action-bar.vue';
 import ModalEditParameters from '@/components/modals/modal-edit-parameters.vue';
-import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import { getInsightById } from '@/services/insight-service';
 import { defineComponent } from '@vue/runtime-core';
 import useToaster from '@/services/composables/useToaster';
 import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, NodeParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
+import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
+const MODEL_STATUS = modelService.MODEL_STATUS;
 
 export default defineComponent({
   name: 'QuantitativeView',
@@ -63,7 +69,7 @@ export default defineComponent({
     TabPanel,
     ActionBar,
     ModalEditParameters,
-    AnalyticalQuestionsAndInsightsPanel
+    CagAnalysisOptionsButton
   },
   setup() {
     return {
@@ -215,8 +221,10 @@ export default defineComponent({
         return;
       }
 
+      const engineStatus = this.modelSummary.engine_status[this.currentEngine];
+
       // If we have topology changes, then we should sync with inference engines
-      if (this.modelSummary.is_quantified === false) {
+      if (engineStatus === MODEL_STATUS.NOT_REGISTERED) {
         // Check model is ready to be used for experiments
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
@@ -232,10 +240,7 @@ export default defineComponent({
       this.disableOverlay();
 
       // Check if model is still training
-      if (
-        this.modelSummary &&
-        this.modelSummary.status === modelService.MODEL_STATUS.TRAINING
-      ) {
+      if (engineStatus === MODEL_STATUS.TRAINING) {
         const r = await modelService.checkAndUpdateRegisteredStatus(
           this.modelSummary.id,
           this.currentEngine
@@ -498,10 +503,11 @@ export default defineComponent({
 
       if (selectedScenario === undefined) return;
 
+      const engineStatus = this.modelSummary.engine_status[this.currentEngine];
 
       // 0. Refresh
       this.enableOverlay('Synchronizing model');
-      if (this.modelSummary && this.modelSummary.status === 0) {
+      if (this.modelSummary && engineStatus === MODEL_STATUS.NOT_REGISTERED) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
       }
@@ -581,7 +587,8 @@ export default defineComponent({
       }
 
       // Ensure we are ready to run, sync up with engines if necessary
-      if (this.modelSummary.status === 0) {
+      const engineStatus = this.modelSummary.engine_status[this.currentEngine];
+      if (engineStatus === MODEL_STATUS.NOT_REGISTERED) {
         await modelService.initializeModel(this.currentCAG);
         await this.refreshModel();
       }
@@ -644,6 +651,7 @@ export default defineComponent({
   box-sizing: border-box;
   overflow: hidden;
   display: flex;
+  isolation: isolate;
 
   .graph-container {
     width: 100%;

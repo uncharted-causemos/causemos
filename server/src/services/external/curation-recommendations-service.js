@@ -104,8 +104,9 @@ const getPolarityRecommendations = async (projectId, statementIds, subjFactor, o
  * @param {number} numRecommendations
  */
 const getEmptyEdgeRecommendations = async(projectId, subjConcept, objConcept, numRecommendations) => {
-  Logger.info(`Polarity recommendation: Project=${projectId}`);
+  Logger.info(`Edge recommendation: Project=${projectId}`);
   const payload = {
+    knowledge_base_id: cache.get(projectId).kb_id,
     subj_concept: subjConcept,
     obj_concept: objConcept,
     num_recommendations: numRecommendations

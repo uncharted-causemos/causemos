@@ -45,6 +45,8 @@ import { Filters, Clause, ClauseValue, ClauseField, ClauseNegation, ClauseOperan
  */
 function isEqual(a: Filters, b: Filters) {
   if (isEmpty(a) && isEmpty(b)) return true;
+  if (isEmpty(a) && !isEmpty(b)) return false;
+  if (!isEmpty(a) && isEmpty(b)) return false;
   if (a.clauses.length !== b.clauses.length) return false;
 
   for (let i = 0; i < a.clauses.length; i++) {

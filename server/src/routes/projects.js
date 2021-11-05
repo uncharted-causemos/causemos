@@ -85,7 +85,7 @@ router.put('/:projectId', asyncHandler(async (req, res) => {
     (!_.isEmpty(payload.obj) && !payload.obj.newValue)) {
     throw new Error(`Invalid update config ${JSON.stringify(payload)}`);
   }
-  await updateService.updateStatements(projectId, payload, ids);
+  const batchId = await updateService.updateStatements(projectId, payload, ids);
 
   // Send a background request to check if CAGs under the projects are stale
   const unaffectedCurations = ['vet_statement', 'factor_polarity'];
@@ -101,7 +101,7 @@ router.put('/:projectId', asyncHandler(async (req, res) => {
   }
 
   const editTime = Date.now();
-  res.status(200).send({ updateToken: editTime });
+  res.status(200).send({ updateToken: editTime, batchId });
 }));
 
 /* DELETE project */

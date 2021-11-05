@@ -1,14 +1,6 @@
 <template>
   <nav class="action-bar-container">
     <ul class="unstyled-list">
-      <!-- CAG rename/delete/duplicate dropdown -->
-      <model-options
-        :cag-name="cagNameToDisplay"
-        :view-after-deletion="'overview'"
-        @rename="openRenameModal"
-        @duplicate="openDuplicateModal"
-      />
-
       <!-- Actions -->
       <li class="nav-item">
         <button
@@ -54,41 +46,6 @@
         @click="onRunModel"
       />
     </div>
-    <div class="comment-btn">
-      <button
-        v-tooltip.top-center="'Comments'"
-        type="button"
-        class="btn btn-primary"
-        @click="toggleComments"
-      >
-        <i
-          class="fa fa-fw"
-          :class="{'fa-commenting': comment !== '', 'fa-commenting-o': comment === ''}"
-        />
-      </button>
-      <text-area-card
-        v-if="isCommentOpen"
-        class="comment-box"
-        :title="'Comments'"
-        :initial-text="comment"
-        @close="isCommentOpen = false"
-        @saveText="updateComments"
-      />
-    </div>
-    <rename-modal
-      v-if="showRenameModal"
-      :current-name="cagNameToDisplay"
-      @confirm="onRenameModalConfirm"
-      @cancel="closeRenameModal"
-    />
-    <duplicate-modal
-      v-if="showDuplicateModal"
-      :current-name="cagNameToDisplay"
-      :id-to-duplicate="currentCAG"
-      @success="onDuplicateSuccess"
-      @fail="closeDuplicateModal"
-      @cancel="closeDuplicateModal"
-    />
   </nav>
 </template>
 
@@ -97,21 +54,13 @@ import _ from 'lodash';
 import { mapActions, mapGetters } from 'vuex';
 
 import modelService from '@/services/model-service';
-import DuplicateModal from '@/components/action-bar/duplicate-modal';
-import RenameModal from '@/components/action-bar/rename-modal';
-import ModelOptions from '@/components/action-bar/model-options';
-import TextAreaCard from '../cards/text-area-card';
-import { CAG, EXPORT_MESSAGES } from '@/utils/messages-util';
+import { CAG } from '@/utils/messages-util';
 import ArrowButton from '@/components/widgets/arrow-button.vue';
 import { ProjectType } from '@/types/Enums';
 
 export default {
   name: 'ActionBar',
   components: {
-    DuplicateModal,
-    RenameModal,
-    ModelOptions,
-    TextAreaCard,
     ArrowButton
   },
   props: {
@@ -131,27 +80,16 @@ export default {
     showDuplicateModal: false,
     showRenameModal: false,
     newCagName: '',
-    isRunningModel: false,
-    savedComment: null,
-    isCommentOpen: false
+    isRunningModel: false
   }),
   computed: {
     ...mapGetters({
       project: 'app/project',
       currentCAG: 'app/currentCAG'
     }),
-    cagNameToDisplay() {
-      return !_.isEmpty(this.newCagName) ? this.newCagName : _.get(this.modelSummary, 'name');
-    },
-    comment() {
-      return this.savedComment === null ? _.get(this.modelSummary, 'description', null) : this.savedComment;
-    },
     numEdges() {
       return _.get(this.modelComponents, 'edges', []).length;
     }
-  },
-  mounted() {
-    this.savedComment = _.get(this.modelSummary, 'description', null);
   },
   methods: {
     ...mapActions({
@@ -170,54 +108,6 @@ export default {
     },
     resetCAG() {
       this.$emit('reset-cag');
-    },
-    onRenameModalConfirm(newCagNameInput) {
-      // Optimistically set new name
-      this.newCagName = newCagNameInput;
-      this.saveNewCagName();
-      this.closeRenameModal();
-    },
-    async saveNewCagName() {
-      const targetCagId = this.duplicateCagId ? this.duplicateCagId : this.currentCAG;
-      modelService.updateModelMetadata(targetCagId, { name: this.newCagName }).then(() => {
-        this.setAnalysisName(this.newCagName);
-      }).catch(() => {
-        this.newCagName = '';
-        this.toaster(CAG.ERRONEOUS_RENAME, 'error', true);
-      });
-    },
-    openRenameModal() {
-      this.showRenameModal = true;
-    },
-    closeRenameModal() {
-      this.showRenameModal = false;
-    },
-    onDuplicateSuccess(name, id) {
-      this.newCagName = name;
-      this.closeDuplicateModal();
-      this.$router.push({
-        name: 'qualitative',
-        params: {
-          project: this.project,
-          currentCAG: id,
-          projectType: ProjectType.Analysis
-        }
-      });
-    },
-    openDuplicateModal() {
-      this.showDuplicateModal = true;
-    },
-    closeDuplicateModal() {
-      this.showDuplicateModal = false;
-    },
-    toggleComments() {
-      this.isCommentOpen = !this.isCommentOpen;
-    },
-    async updateComments(commentsText) {
-      this.savedComment = commentsText;
-      modelService.updateModelMetadata(this.currentCAG, { description: commentsText }).catch(() => {
-        this.toaster(EXPORT_MESSAGES.COMMENT_NOT_SAVED, 'error', true);
-      });
     },
     async onRunModel() {
       this.isRunningModel = true;
@@ -253,31 +143,22 @@ export default {
   height: $navbar-outer-height;
   display: flex;
   align-items: center;
-  background: $background-light-3;
+
+  // Add an empty pseudo element at the left side of the bar to center the
+  //  action buttons
+  &::before {
+    display: block;
+    content: '';
+    flex: 1;
+    min-width: 0;
+  }
   .run-model {
     margin-right: 20px;
     display: flex;
-    flex-grow: 1;
+    flex: 1;
+    min-width: 0;
     justify-content: flex-end;
     box-sizing: border-box;
-  }
-  .comment-btn {
-    margin-right: 5px;
-    margin-left: 10px;
-    display: flex;
-    align-items: flex-end;
-    position: relative;
-
-    i {
-      margin-right: 0;
-    }
-
-    .comment-box {
-      position: absolute;
-      right: 0;
-      top: calc(100% + 3px);
-      width: 25vw;
-    }
   }
   .nav-item {
     margin-left: 5px;

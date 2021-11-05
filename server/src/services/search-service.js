@@ -68,7 +68,6 @@ const reverseFlattenedConcept = (name, conceptSet) => {
       }
     }
     if (found === false) {
-      console.debug('Cannot translate', token);
       return [token];
     }
   }
@@ -193,10 +192,85 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
   }
 
   // FIXME: Also attach concept matches
-
   return finalResults;
 };
 
+
+const indicatorConceptFilter = (concepts) => {
+  let minimumMatchNumber = 0;
+
+  const len = concepts.length;
+  if (len <= 2) {
+    minimumMatchNumber = len;
+  } else {
+    // At least half + 1
+    minimumMatchNumber = Math.floor(len / 2) + 1;
+  }
+
+  const termQueries = concepts.map(concept => {
+    return {
+      nested: {
+        path: 'ontology_matches',
+        query: {
+          term: {
+            'ontology_matches.name.raw': concept
+          }
+        }
+      }
+    };
+  });
+
+  return {
+    bool: {
+      should: termQueries,
+      minimum_should_match: minimumMatchNumber
+    }
+  };
+};
+const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
+  const ontologyMap = getCache(projectId).ontologyMap;
+  const ontologyValues = Object.values(ontologyMap);
+  const ontologyKeys = Object.keys(ontologyMap);
+  const set = new Set(ontologyKeys.map(d => _.last(d.split('/'))));
+
+  let allMembers = [];
+  for (let i = 0; i < flatConcepts.length; i++) {
+    const flattenedConcept = flatConcepts[i];
+    const memberStrings = reverseFlattenedConcept(flattenedConcept, set);
+
+    const members = ontologyValues.filter(d => {
+      return memberStrings.includes(_.last(d.label.split('/')));
+    }).map(d => d.label);
+
+    if (members.length) {
+      allMembers = allMembers.concat(members);
+    } else {
+      allMembers.push(flattenedConcept);
+    }
+  }
+
+  const searchPayload = {
+    index: RESOURCE.DATA_DATACUBE,
+    size: 10,
+    body: {
+      query: {
+        bool: {
+          must: [
+            indicatorConceptFilter(allMembers),
+            { match: { type: 'indicator' } }
+          ]
+        }
+      }
+    }
+  };
+
+  const results = await client.search(searchPayload);
+  return results.body.hits.hits.map(d => d._source);
+};
+
+
+
 module.exports = {
-  statementConceptEntitySearch
+  statementConceptEntitySearch,
+  indicatorSearchByConcepts
 };

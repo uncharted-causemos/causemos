@@ -98,6 +98,14 @@ const updateDatacube = async(metadataDelta) => {
 };
 
 /**
+ * Update datacubes with the specified changes
+ */
+const updateDatacubes = async(metadataDeltas) => {
+  const connection = Adapter.get(RESOURCE.DATA_DATACUBE);
+  return await connection.update(metadataDeltas);
+};
+
+/**
  * Returns field aggregations
  *
  * @param {object} filters
@@ -127,6 +135,7 @@ module.exports = {
 
   insertDatacube,
   updateDatacube,
+  updateDatacubes,
 
   facets,
   searchFields
