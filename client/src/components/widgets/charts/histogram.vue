@@ -96,7 +96,6 @@ export default defineComponent({
 </script>
 
 <style>
-
 /*
 There's currently a vue bug that keyframe animations don't work correctly
 with scoped style blocks. Fix has been merged but not released (Nov 2021):
@@ -117,7 +116,6 @@ In the meantime, use very specific animation names in the global scope.
   }
 }
 
-
 @keyframes histogram-bar-increase {
   0% {
     transform: scaleX(0);
@@ -129,7 +127,6 @@ In the meantime, use very specific animation names in the global scope.
     transform: scaleX(1);
   }
 }
-
 </style>
 
 <style lang="scss" scoped>
@@ -163,7 +160,8 @@ $axis-line-height: $font-size-large;
       transform: translate(0, 0);
     }
 
-    .bar, .bar::after {
+    .bar,
+    .bar::after {
       animation-iteration-count: infinite;
     }
   }
@@ -239,14 +237,14 @@ $y-axis-margin: 5px;
       left: 0;
       height: 100%;
       background: #747576;
-      animation: histogram-bar-reduce 2s linear backwards 0;
+      animation: histogram-bar-reduce 2s linear backwards 1;
     }
   }
 
   &.increased {
     background: #4dac26;
     transform-origin: left;
-    animation: histogram-bar-increase 2s linear backwards 0;
+    animation: histogram-bar-increase 2s linear backwards 1;
   }
 }
 
