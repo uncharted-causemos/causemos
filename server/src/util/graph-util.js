@@ -82,23 +82,23 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
 
   const adjacencyMap = buildAdjacency(edges).outgoing;
 
-  // for each source node, generate combinatorics for all target nodes
   const links = sourceNodes
-    .map(sn => combinatorics.combination([sn, ...targetNodes], 2).toArray())
+    .map(sn => combinatorics.combination([sn, targetNodes], 2).toArray())
     .reduce((flatComb, comb) => {
       const result = flatComb.concat(comb);
       return result;
     }, []);
+
   for (let i = 0; i < links.length; i++) {
     const link = links[i];
     if (!link) {
       break;
     }
 
-    // Generates a targetFn that checks against target
-    const goalFnGenerator = (target) => {
+    // Generates a targetFn that checks against our targets
+    const goalFnGenerator = (targets) => {
       return (newNode, stack) => {
-        if (newNode === target) {
+        if (targets.includes(newNode)) {
           neighborhoodNodes.push(stack);
           return true;
         }
@@ -112,7 +112,6 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
       return false;
     };
     _crawler(adjacencyMap, link[0], [link[0]], goalFnGenerator(link[1]), terminateFn);
-    // _crawler(adjacencyMap, link[1], [link[1]], goalFnGenerator(link[0]), terminateFn);
   }
   return neighborhoodNodes;
 };
