@@ -170,7 +170,9 @@ const createScenarioResult = async (
     id: `${scenarioId}-${engine}`,
     engine: engine,
     is_valid: true,
-    experiment_id: experimentId,
+    experiment_id: experimentId, // We don't use this in the app, it is purely for debugging against engines
+    model_id: modelId,
+    scenario_id: scenarioId,
     result: resultData
   };
   await scenarioResultConnection.insert([payload], d => d.id);

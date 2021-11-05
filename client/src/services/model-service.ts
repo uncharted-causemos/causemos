@@ -31,6 +31,43 @@ const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSu
   return result.data;
 };
 
+// FIXME: Hack until engines are ready with new format - DC Nov 2021
+const toHistogramFormat = (result: any) => {
+  result.forEach((r: any) => {
+    r.timeseries = [];
+    for (let i = 0; i < r.values.length; i++) {
+      const val = r.values[i];
+      const upper = r.confidenceInterval.upper[i];
+      const lower = r.confidenceInterval.lower[i];
+
+      r.timeseries.push({
+        timestamp: val.timestamp,
+        values: [val.value, upper.value, lower.value]
+      });
+    }
+    delete r.values;
+    delete r.confidenceInterval;
+  });
+  return result;
+};
+const fromHistogramFormat = (result: any) => {
+  result.forEach((r: any) => {
+    r.confidenceInterval = { upper: [], lower: [] };
+    r.values = [];
+    for (let i = 0; i < r.timeseries.length; i++) {
+      const t = r.timeseries[i].timestamp;
+      const val = r.timeseries[i].values[0];
+      const upper = r.timeseries[i].values[1];
+      const lower = r.timeseries[i].values[2];
+      r.values.push({ timestamp: t, value: val });
+      r.confidenceInterval.upper.push({ timestamp: t, value: upper });
+      r.confidenceInterval.lower.push({ timestamp: t, value: lower });
+    }
+  });
+  return result;
+};
+
+
 /**
  * Get basic model information without underyling data
  */
@@ -76,10 +113,22 @@ const syncModelWithEngine = async (modelId: string, engine: string) => {
  * Get model's scenarios, including baseline scenario
  */
 const getScenarios = async (modelId: string, engine: string) => {
-  const result = await API.get('scenarios', {
+  const scenarios = (await API.get('scenarios', {
     params: { model_id: modelId, engine: engine }
+  })).data;
+
+  const scenarioResults = (await API.get('scenario-results', {
+    params: { model_id: modelId, engine: engine }
+  })).data;
+
+  // Merge engine-specific results with scenario
+  scenarios.forEach((scenario: Scenario) => {
+    const r = scenarioResults.find((s: any) => s.scenario_id === scenario.id);
+    scenario.result = fromHistogramFormat(r.result);
   });
-  return result.data;
+
+  console.log('combiend scenarios', scenarios);
+  return scenarios;
 };
 
 /**
@@ -202,10 +251,6 @@ const getNodeStatements = async (modelId: string, concept: string) => {
  * @param {object} scenario.parameter
  * @param {array} scenario.paramter.constraints - [ {step, value}, {step, value} ... ]
  * @param {number} scenario.paramter.num_steps - number of projection steps
- *
- * With experiment result, additionally
- * @param {string} scenario.experimentId - the identifier used ty the engine
- * @param {array} result - array of projections, one per node in the model graph
  */
 const createScenario = async (scenario: NewScenario) => {
   const result = await API.post('scenarios', scenario);
@@ -434,8 +479,6 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
 
     const scenario: NewScenario = {
       model_id: modelId,
-      experiment_id: experimentId,
-      result: result.results.data,
       name: 'Baseline scenario',
       description: 'Baseline scenario',
       parameter: {
@@ -444,10 +487,11 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
         indicator_time_series_range: modelSummary.parameter.indicator_time_series_range,
         projection_start: modelSummary.parameter.projection_start
       },
-      engine: modelSummary.parameter.engine,
       is_baseline: true
     };
-    await createScenario(scenario);
+    const { id } = await createScenario(scenario);
+
+    await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, result.results.data);
   } catch (error) {
     console.log(error);
     throw new Error(`Failed creating baseline scenario ${modelSummary.parameter.engine}`);
@@ -642,6 +686,24 @@ const renameNode = async (modelId: string, nodeId: string, concept: string) => {
   return result;
 };
 
+
+
+const createScenarioResult = async (
+  modelId: string,
+  scenarioId: string,
+  engine: string,
+  experimentId: string,
+  result: any
+): Promise<void> => {
+  await API.post('/scenario-results', {
+    model_id: modelId,
+    scenario_id: scenarioId,
+    engine: engine,
+    experiment_id: experimentId,
+    result: toHistogramFormat(result) // FIXME: waiting for engines to comply with format
+  });
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -661,6 +723,7 @@ export default {
 
   getScenarios,
   createScenario,
+  createScenarioResult,
   updateScenario,
   deleteScenario,
   resetScenarioParameter,

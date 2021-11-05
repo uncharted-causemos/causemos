@@ -5,6 +5,7 @@ const router = express.Router();
 const scenarioService = rootRequire('/services/scenario-service');
 
 const DEFAULT_SCENARIO_SIZE = 50;
+
 /**
  * GET Find scenarios
  */
@@ -35,14 +36,14 @@ router.post('/', asyncHandler(async (req, res) => {
     is_baseline: isBaseline
   } = req.body;
 
-  const experiment = await scenarioService.createScenario({
+  const r = await scenarioService.createScenario({
     parameter,
     name,
     description,
     model_id,
     isBaseline
   });
-  res.json(experiment);
+  res.json(r);
 }));
 
 /**
@@ -64,5 +65,6 @@ router.delete('/:sId/', asyncHandler(async (req, res) => {
   await scenarioService.remove(scenarioId);
   res.status(200).send({ updateToken: Date.now() });
 }));
+
 
 module.exports = router;
