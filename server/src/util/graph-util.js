@@ -82,12 +82,7 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
 
   const adjacencyMap = buildAdjacency(edges).outgoing;
 
-  const links = sourceNodes
-    .map(sn => combinatorics.combination([sn, targetNodes], 2).toArray())
-    .reduce((flatComb, comb) => {
-      const result = flatComb.concat(comb);
-      return result;
-    }, []);
+  const links = sourceNodes.map(sn => [sn, targetNodes]);
 
   for (let i = 0; i < links.length; i++) {
     const link = links[i];
