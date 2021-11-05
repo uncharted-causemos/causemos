@@ -19,7 +19,10 @@ export const ABSTRACT_NODE_BINS: [number, number, number, number] = [
 // Inspired by pandas' qcut function
 // https://github.com/pandas-dev/pandas/blob/v1.3.4/pandas/core/reshape/tile.py#L302-L382
 // https://github.com/pandas-dev/pandas/blob/v1.3.4/pandas/core/algorithms.py#L1116
-export const findPartitionValue = (values: number[], fractionInLowerBin: number) => {
+export const findPartitionValue = (
+  values: number[],
+  fractionInLowerBin: number
+) => {
   if (values.length === 0) {
     return NaN;
   }
@@ -95,12 +98,16 @@ export const computeProjectionBins = (
     projectionStartMonth
   );
   // Split differences into positive and negative
-  // Intervals with no change are discarded. It would be nice to somehow take
-  //  these into account to reduce bin size, however this will almost never
-  //  make a difference in practice. Adding this extra logic is probably not
-  //  worth the added algorithm complexity.
   const negative_values = differences.filter(change => change < 0);
   const positive_values = differences.filter(change => change > 0);
+  // Distribute 0s evenly between negative/positive halves
+  differences
+    .filter(change => change === 0)
+    .forEach((zero, index) => {
+      if (index % 2 === 0) {
+        negative_values.push(zero);
+      }
+    });
 
   // Choose bin sizes for the positive values such that
   //  - the "negligible change" bin contains roughly 7.96% of positive values

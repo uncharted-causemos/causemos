@@ -473,7 +473,10 @@ describe('HistogramUtil', () => {
         const withOffsetRemoved = janToJanClampedT0Result2.map(
           value => value + (t0ClampValue1 - t0ClampValue2)
         );
-        expect(withOffsetRemoved).to.deep.equal(janToJanClampedT0Result1);
+        // Check that they're only approximately equal due to JS float rounding errors
+        withOffsetRemoved.forEach((binBoundary, index) => {
+          expect(binBoundary).to.be.approximately(janToJanClampedT0Result1[index], 0.001);
+        });
       });
     });
     it("produces wider bins when interval is Jan to June than when it's Jan to Jan", () => {
