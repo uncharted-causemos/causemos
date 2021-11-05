@@ -74,6 +74,7 @@ const _crawler = (adjacencyMap, source, stack, goalFn, terminateFn) => {
  */
 const groupPath = (edges, sourceNodes, targetNodes, k) => {
   const neighborhoodNodes = [];
+  const visitedPaths = new Set();
 
   // Guard against weird input
   if (sourceNodes.length < 1 && targetNodes.length < 1) {
@@ -93,8 +94,10 @@ const groupPath = (edges, sourceNodes, targetNodes, k) => {
     // Generates a targetFn that checks against our targets
     const goalFnGenerator = (targets) => {
       return (newNode, stack) => {
-        if (targets.includes(newNode)) {
+        const connectingPath = stack.filter(n => !sourceNodes.includes(n) && !targetNodes.includes(n)).toString();
+        if (targets.includes(newNode) && !visitedPaths.has(connectingPath)) {
           neighborhoodNodes.push(stack);
+          visitedPaths.add(connectingPath);
           return true;
         }
         return false;
