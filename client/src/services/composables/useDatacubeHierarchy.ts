@@ -175,16 +175,18 @@ export default function useDatacubeHierarchy(
     return selectedRegionsAtSelectedLevel.slice(0, 10); // FIXME: Quick guard to make sure we don't blow up
   });
 
-  const referenceRegionMap = computed(() => {
+  const referenceRegions = computed(() => {
     const delimiter = '__';
-    const subregionMap = _.groupBy(selectedRegionIds.value, regionId => regionId.split(delimiter).slice(0, -1).join(delimiter));
-    return _.filter(subregionMap, subregions => subregions.length < 25);
+    return new Set(selectedRegionIds.value
+      .map(regionId => regionId.split(delimiter).slice(0, -1).join(delimiter))
+      .filter(regionId => regionId !== '')
+    );
   });
 
   return {
     datacubeHierarchy,
     selectedRegionIds,
-    referenceRegionMap,
+    referenceRegions,
     toggleIsRegionSelected
   };
 }

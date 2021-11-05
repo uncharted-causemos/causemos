@@ -508,12 +508,12 @@ import {
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
-import { OutputSpecWithId } from '@/types/Runoutput';
+import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER, adminLevelToString } from '@/utils/map-util-new';
 
 import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
@@ -1162,7 +1162,7 @@ export default defineComponent({
     const {
       datacubeHierarchy,
       selectedRegionIds,
-      referenceRegionMap,
+      referenceRegions,
       toggleIsRegionSelected
     } = useDatacubeHierarchy(
       selectedScenarioIds,
@@ -1240,6 +1240,27 @@ export default defineComponent({
       datacubeHierarchy,
       relativeTo
     );
+
+    const regionsToSubregions = computed(() => {
+      const regionsToSubregionInternal: any = {};
+      referenceRegions.value.forEach(regionId => { regionsToSubregionInternal[regionId] = []; });
+      if (regionalData.value) {
+        const adminLevelAsString = adminLevelToString(selectedAdminLevel.value) as keyof RegionalAggregations;
+        if (adminLevelAsString) {
+          const regionsToConsider = regionalData.value[adminLevelAsString];
+          if (regionsToConsider) {
+            regionsToConsider.map(region => region.id).forEach(regionId => {
+              const delimiter = '__';
+              const parentRegionId: string = regionId.split(delimiter).slice(0, -1).join(delimiter);
+              if (parentRegionId in regionsToSubregionInternal) {
+                regionsToSubregionInternal[parentRegionId].push(regionId);
+              }
+            });
+          }
+        }
+      }
+      return regionsToSubregionInternal;
+    });
 
     const {
       onSyncMapBounds,
@@ -1345,6 +1366,7 @@ export default defineComponent({
       qualifierBreakdownData,
       recalculateGridMapDiffStats,
       regionalData,
+      regionsToSubregions,
       relativeTo,
       requestNewModelRuns,
       runningDefaultRun,
@@ -1357,7 +1379,7 @@ export default defineComponent({
       selectedPreGenDataItem,
       selectedQualifierValues,
       selectedRegionIds,
-      referenceRegionMap,
+      referenceRegions,
       selectedScenarioIds,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
