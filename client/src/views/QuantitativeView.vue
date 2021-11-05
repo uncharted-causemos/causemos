@@ -359,15 +359,24 @@ export default defineComponent({
       const existingScenario = {
         id: id,
         model_id: this.currentCAG,
-        is_valid: true,
-        experiment_id: draft.experiment_id,
-        parameter: draft.parameter,
-        result: draft.result
+        parameter: draft.parameter
       };
 
       // Save and reload scenarios
       this.enableOverlay('Saving Scenario');
+
       await modelService.updateScenario(existingScenario);
+      if (draft.experiment_id) {
+        console.log('!! Draft', draft);
+        await modelService.createScenarioResult(
+          this.currentCAG,
+          id,
+          this.currentEngine,
+          draft.experiment_id,
+          draft.result
+        );
+      }
+
       const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
       this.scenarios = scenarios;
@@ -396,18 +405,24 @@ export default defineComponent({
       }
       const newScenario = {
         model_id: this.currentCAG,
-        experiment_id: draft.experiment_id,
-        result: draft.result,
         name: name,
         description: description,
         parameter: draft.parameter,
-        engine: this.currentEngine,
         is_baseline: false
       };
 
       // Save and reload scenarios
       this.enableOverlay('Creating Scenario');
       const response = await modelService.createScenario(newScenario);
+      if (draft.experiment_id) {
+        await modelService.createScenarioResult(
+          this.currentCAG,
+          response.id,
+          this.currentEngine,
+          draft.experiment_id,
+          draft.result
+        );
+      }
       const scenarios = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
       this.scenarios = scenarios;
@@ -546,11 +561,15 @@ export default defineComponent({
         await modelService.updateScenario({
           id: selectedScenario.id,
           model_id: this.currentCAG,
-          is_valid: true,
-          experiment_id: selectedScenario.experiment_id,
-          parameter: selectedScenario.parameter,
-          result: selectedScenario.result
+          parameter: selectedScenario.parameter
         });
+        await modelService.createScenarioResult(
+          this.currentCAG,
+          selectedScenario.id,
+          this.currentEngine,
+          selectedScenario.experiment_id,
+          selectedScenario.result
+        );
       }
 
       this.disableOverlay();

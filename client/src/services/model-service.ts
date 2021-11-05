@@ -125,6 +125,8 @@ const getScenarios = async (modelId: string, engine: string) => {
   scenarios.forEach((scenario: Scenario) => {
     const r = scenarioResults.find((s: any) => s.scenario_id === scenario.id);
     scenario.result = fromHistogramFormat(r.result);
+    scenario.is_valid = r.is_valid;
+    scenario.experiment_id = r.experiment_id;
   });
 
   console.log('combiend scenarios', scenarios);
@@ -259,10 +261,7 @@ const createScenario = async (scenario: NewScenario) => {
 const updateScenario = async (scenario: {
   id: string;
   model_id: string;
-  is_valid: boolean;
-  experiment_id: string | undefined;
   parameter?: ScenarioParameter;
-  result?: ScenarioResult[];
 }) => {
   const result = await API.put(`scenarios/${scenario.id}`, scenario);
   return result.data;
@@ -685,7 +684,6 @@ const renameNode = async (modelId: string, nodeId: string, concept: string) => {
   const result = await API.post(`cags/${modelId}/change-concept`, { id: nodeId, concept });
   return result;
 };
-
 
 
 const createScenarioResult = async (
