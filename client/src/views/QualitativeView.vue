@@ -14,7 +14,10 @@
       @reset-cag="resetCAGLayout()"
     />
     <main>
-      <cag-side-panel class="side-panel">
+      <cag-side-panel
+        class="side-panel"
+        :model-components="modelComponents"
+      >
         <template #below-tabs>
           <cag-comments-button :model-summary="modelSummary" />
         </template>
