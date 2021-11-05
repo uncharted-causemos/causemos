@@ -114,6 +114,8 @@ export const computeProjectionBins = (
     .forEach((zero, index) => {
       if (index % 2 === 0) {
         negative_values.push(zero);
+      } else {
+        positive_values.push(zero);
       }
     });
 
