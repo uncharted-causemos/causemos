@@ -40,12 +40,13 @@
       </span>
     </div>
     <div class="column summary-column">
-      <span v-for="(baseValue, index) in binValues.base" :key="index">
-        <span
-          v-if="!isRelativeToActive"
-          class="summary"
-          :class="baseValue === maxValue ? 'emphasized' : ''"
-        >
+      <span
+        v-for="(baseValue, index) in binValues.base"
+        :key="index"
+        class="summary"
+        :class="baseValue === maxValue ? 'emphasized' : ''"
+      >
+        <span v-if="!isRelativeToActive">
           <span class="bin-label">{{ BIN_LABELS[index] }}</span>
           {{ index === 2 ? 'from' : 'than' }} now
         </span>
@@ -94,13 +95,50 @@ export default defineComponent({
 });
 </script>
 
+<style>
+
+/*
+There's currently a vue bug that keyframe animations don't work correctly
+with scoped style blocks. Fix has been merged but not released (Nov 2021):
+https://github.com/vuejs/vue-next/pull/3308
+
+In the meantime, use very specific animation names in the global scope.
+*/
+
+@keyframes histogram-bar-reduce {
+  0% {
+    width: 100%;
+  }
+  25% {
+    width: 0%;
+  }
+  100% {
+    width: 0%;
+  }
+}
+
+
+@keyframes histogram-bar-increase {
+  0% {
+    transform: scaleX(0);
+  }
+  25% {
+    transform: scaleX(1);
+  }
+  100% {
+    transform: scaleX(1);
+  }
+}
+
+</style>
+
 <style lang="scss" scoped>
 @import '@/styles/variables';
 $axis-line-height: $font-size-large;
 
 .histogram-container {
   display: flex;
-  height: 100px + #{2 * $axis-line-height};
+  height: calc(100px + #{2 * $axis-line-height});
   // TODO: remove
   background: white;
   // Leave space for x axis label
@@ -111,7 +149,7 @@ $axis-line-height: $font-size-large;
   .value-column,
   .summary,
   .x-axis-label {
-    transition: opacity 0.1s ease-out;
+    transition: opacity 0.1s ease-out, transform 0.1s ease-out;
   }
 
   cursor: pointer;
@@ -120,8 +158,13 @@ $axis-line-height: $font-size-large;
     .value-column,
     .summary,
     .x-axis-label {
-      transition: opacity 0.3s ease-out;
+      transition: opacity 0.3s ease-out, transform 0.3s ease-out;
       opacity: 1;
+      transform: translate(0, 0);
+    }
+
+    .bar, .bar::after {
+      animation-iteration-count: infinite;
     }
   }
 }
@@ -150,6 +193,7 @@ $y-axis-margin: 5px;
   flex-direction: column;
   align-items: flex-end;
   opacity: 0;
+  transform: translate(10%, 0);
 
   .arrow {
     flex: 1;
@@ -186,10 +230,23 @@ $y-axis-margin: 5px;
       #df85bd 3px,
       #df85bd 6px
     );
+    position: relative;
+    &::after {
+      display: block;
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      height: 100%;
+      background: #747576;
+      animation: histogram-bar-reduce 2s linear backwards 0;
+    }
   }
 
   &.increased {
     background: #4dac26;
+    transform-origin: left;
+    animation: histogram-bar-increase 2s linear backwards 0;
   }
 }
 
@@ -207,6 +264,7 @@ $y-axis-margin: 5px;
   }
 
   opacity: 0;
+  transform: translate(-3px, 0);
 }
 
 .summary-column {
@@ -219,9 +277,11 @@ $y-axis-margin: 5px;
   color: $label-color;
   line-height: $font-size-large;
   opacity: 0;
+  transform: translate(-3px, 0);
 
   &.emphasized {
     opacity: 1;
+    transform: translate(0);
   }
 
   &.emphasized .bin-label {
@@ -236,5 +296,6 @@ $y-axis-margin: 5px;
   bottom: 0;
   line-height: $axis-line-height;
   opacity: 0;
+  transform: translate(0, -3px);
 }
 </style>
