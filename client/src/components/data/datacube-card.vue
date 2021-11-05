@@ -1259,7 +1259,29 @@ export default defineComponent({
           }
         }
       }
-      return regionsToSubregionInternal;
+      return _.filter(regionsToSubregionInternal, subregions => subregions.length < 25);
+    });
+
+    const regionsToTimeseries = computed(() => {
+      const internalRegionsToTimeseries = {};
+      Object.keys(regionsToSubregions.value).forEach(regionId => {
+        internalRegionsToTimeseries[regionId] = useTimeseriesData(
+          metadata,
+          selectedScenarioIds,
+          selectedTemporalResolution,
+          selectedTemporalAggregation,
+          selectedSpatialAggregation,
+          breakdownOption,
+          selectedTimestamp,
+          setSelectedTimestamp,
+          regionsToSubregions.value[regionId],
+          selectedQualifierValues,
+          initialSelectedYears,
+          showPercentChange,
+          selectedScenarios
+        );
+      });
+      return internalRegionsToTimeseries;
     });
 
     const {
