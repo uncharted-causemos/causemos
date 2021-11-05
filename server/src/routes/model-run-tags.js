@@ -5,7 +5,7 @@ const Logger = rootRequire('/config/logger');
 const maasService = rootRequire('/services/external/maas-service');
 
 /**
- * Submit a new model run to Jataware and store information about it in ES.
+ * Add a tag to all the model runs that match the specified filter
  */
 router.put('/', asyncHandler(async (req, res) => {
   const filter = req.body.filter;
@@ -19,7 +19,7 @@ router.put('/', asyncHandler(async (req, res) => {
 }));
 
 /**
- * Submit a new model run to Jataware and store information about it in ES.
+ * Remove a tag from all the model runs that match the specified filter
  */
 router.delete('/', asyncHandler(async (req, res) => {
   const filter = JSON.parse(req.query.filter);
@@ -33,7 +33,7 @@ router.delete('/', asyncHandler(async (req, res) => {
 }));
 
 /**
- * Submit a new model run to Jataware and store information about it in ES.
+ * Rename a tag in all the model runs that match the specified filter
  */
 router.patch('/', asyncHandler(async (req, res) => {
   const filter = req.body.filter;

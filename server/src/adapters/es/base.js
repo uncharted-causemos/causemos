@@ -196,7 +196,7 @@ class Base {
   /**
    * Update docs using a script
    * @param {array} simpleFilters - Basic filters to look up by fields
-   * @param {object} script - Basic filters to look up by fields
+   * @param {object} script - The script to execute on each matched document
    * @param {boolean} refreshOption - Refresh all shards after operation
    */
   async updateByQuery(simpleFilters, script, refreshOption = true) {
