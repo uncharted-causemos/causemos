@@ -431,7 +431,7 @@ export default {
       let batchId = null;
       if (result.status === 200) {
         this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, 'success', false);
-        batchId = result.batchId;
+        batchId = result.data.batchId;
       } else {
         this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
       }
