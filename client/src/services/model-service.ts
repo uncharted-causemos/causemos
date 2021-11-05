@@ -11,7 +11,8 @@ import {
   CAGGraph,
   ScenarioResult,
   NodeScenarioData,
-  ScenarioParameter
+  ScenarioParameter,
+  CAGModelParameter
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
@@ -154,7 +155,8 @@ const updateModelMetadata = async (modelId: string, fields: { [key: string]: any
   return result.data;
 };
 
-const updateModelParameter = async (modelId: string, modelParameter: NodeParameter) => {
+// This is meant to only send the parameters that had changed
+const updateModelParameter = async (modelId: string, modelParameter: Partial<CAGModelParameter>) => {
   const result = await API.put(`models/${modelId}/model-parameter`, modelParameter);
   return result.data;
 };

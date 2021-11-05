@@ -55,7 +55,7 @@ import { getInsightById } from '@/services/insight-service';
 import { defineComponent } from '@vue/runtime-core';
 import useToaster from '@/services/composables/useToaster';
 import { CsrMatrix } from '@/types/CsrMatrix';
-import { CAGGraph, CAGModelSummary, NodeParameter, Scenario } from '@/types/CAG';
+import { CAGGraph, CAGModelSummary, CAGModelParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 
@@ -437,7 +437,7 @@ export default defineComponent({
     showModelParameters() {
       this.isModelParametersOpen = true;
     },
-    async saveModelParameter(newParameter: NodeParameter) {
+    async saveModelParameter(newParameter: Partial<CAGModelParameter>) {
       this.isModelParametersOpen = false;
       await modelService.updateModelParameter(this.currentCAG, newParameter);
       this.refresh();

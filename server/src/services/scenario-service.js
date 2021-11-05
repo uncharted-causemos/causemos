@@ -137,7 +137,7 @@ const invalidateByModel = async(modelId) => {
 
   const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
 
-  // FIXME exclude results for smaller payload
+  // FIXME: updateByQuery will be handy here once it is merged in - DC Nov 2021
   const scenarios = await scenarioResultConnection.find([{ field: 'model_id', value: modelId }], {});
 
   // Nothing to do
