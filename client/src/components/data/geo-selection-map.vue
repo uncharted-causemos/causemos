@@ -14,6 +14,10 @@
         :layer-id="baseLayerId"
         :layer="baseLayer"
       />
+
+      <wm-map-bounding-box
+        :bbox="bbox"
+      />
     </wm-map>
   </div>
 </template>
@@ -21,7 +25,7 @@
 <script>
 
 import _ from 'lodash';
-import { WmMap, WmMapVector } from '@/wm-map';
+import { WmMap, WmMapVector, WmMapBoundingBox } from '@/wm-map';
 import {
   BASE_MAP_OPTIONS,
   ETHIOPIA_BOUNDING_BOX,
@@ -55,7 +59,8 @@ export default {
   name: 'GeoSelectionMap',
   components: {
     WmMap,
-    WmMapVector
+    WmMapVector,
+    WmMapBoundingBox
   },
   props: {
     selectedLayerId: {
@@ -65,6 +70,10 @@ export default {
     selectedRegion: {
       type: String,
       default: ''
+    },
+    bbox: {
+      type: Array,
+      default: () => []
     }
   },
   data: () => ({
@@ -112,6 +121,17 @@ export default {
     },
     selectedRegion() {
       this.debouncedRefresh();
+    },
+    bbox() {
+      if (!this.bbox || this.bbox.length === 0) return;
+      const p1 = [this.bbox[0], this.bbox[3]];
+      const p2 = [this.bbox[1], this.bbox[2]];
+      const center = [p1[0] + (p2[0] - p1[0]) / 2, p1[1] + (p2[1] - p1[1]) / 2];
+      this.map.flyTo({
+        speed: 0.5,
+        center: center,
+        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+      });
     }
   },
   created() {
