@@ -231,20 +231,20 @@ export default {
         this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
       }
 
-      const suggestedCurations = this.recommendations.map(r => {
-        return {
-          statementIds: r.statements.map(s => s.id),
-          factor: r.highlights,
-          score: r.score
+      if (this.curationTrackingId !== null) {
+        const suggestedCurations = this.recommendations.map(r => {
+          return {
+            statementIds: r.statements.map(s => s.id),
+            factor: r.highlights,
+            score: r.score
+          };
+        });
+        const payload = {
+          suggestedCurations: suggestedCurations,
+          acceptedCurations: statementIds
         };
-      });
-      const payload = {
-        suggestedCurations: suggestedCurations,
-        acceptedCurations: statementIds
-      };
-
-      await trackCurations(this.curationTrackingId, payload);
-
+        await trackCurations(this.curationTrackingId, payload);
+      }
 
       this.closePane();
     }

@@ -134,9 +134,8 @@
 
 <script>
 import _ from 'lodash';
-import { v4 as uuidv4 } from 'uuid';
 import { mapGetters } from 'vuex';
-import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations, trackCurations, CORRECTION_TYPES } from '@/services/curation-service';
+import { getFactorConceptSuggestions, groupByConceptFactor, discardStatements, updateStatementsFactorGrounding, getFactorGroundingRecommendations, CORRECTION_TYPES } from '@/services/curation-service';
 import projectService from '@/services/project-service';
 import ModalDocument from '@/components/modals/modal-document';
 import EvidenceItem from '@/components/evidence-item';
@@ -427,42 +426,18 @@ export default {
         }
       }
 
+
       const result = await updateStatementsFactorGrounding(this.project, statementIds, subj, obj);
+      let batchId = null;
       if (result.status === 200) {
         this.toaster(CORRECTIONS.SUCCESSFUL_CORRECTION, 'success', false);
+        batchId = result.batchId;
       } else {
         this.toaster(CORRECTIONS.ERRONEOUS_CORRECTION, 'error', true);
       }
 
-      let curations = [];
-      const trackingId = uuidv4();
-
-      if (item !== null) {
-        curations = {
-          project: this.project,
-          curation_type: 'factor_regrounding', // TODO: Move this into an enum
-          factor: item.key,
-          statementIds: item.dataArray.map(statement => statement.id)
-        };
-      } else {
-        const selectedItems = this.summaryData.children
-          .filter(d => d.meta.checked === true)
-          .map(item => {
-            return {
-              factor: item.key,
-              statementIds: item.dataArray.map(statement => statement.id)
-            };
-          });
-        curations = {
-          project: this.project,
-          curation_type: 'multi_factor_regrounding',
-          statements: selectedItems
-        };
-      }
-      await trackCurations(trackingId, curations);
-
       if (item !== null && !_.isEmpty(recommendations)) {
-        this.$emit('show-factor-recommendations', item.key, curGrounding, newGrounding, recommendations, trackingId);
+        this.$emit('show-factor-recommendations', item.key, curGrounding, newGrounding, recommendations, batchId);
       }
     },
     openConfirmCurationModal(confirmedCallback) {
