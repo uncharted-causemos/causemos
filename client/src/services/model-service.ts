@@ -34,7 +34,8 @@ const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSu
 
 // FIXME: Hack until engines are ready with new format - DC Nov 2021
 const toHistogramFormat = (result: any) => {
-  result.forEach((r: any) => {
+  const result2 = _.cloneDeep(result);
+  result2.forEach((r: any) => {
     r.timeseries = [];
     for (let i = 0; i < r.values.length; i++) {
       const val = r.values[i];
@@ -49,10 +50,11 @@ const toHistogramFormat = (result: any) => {
     delete r.values;
     delete r.confidenceInterval;
   });
-  return result;
+  return result2;
 };
 const fromHistogramFormat = (result: any) => {
-  result.forEach((r: any) => {
+  const result2 = _.cloneDeep(result);
+  result2.forEach((r: any) => {
     r.confidenceInterval = { upper: [], lower: [] };
     r.values = [];
     for (let i = 0; i < r.timeseries.length; i++) {
@@ -65,7 +67,7 @@ const fromHistogramFormat = (result: any) => {
       r.confidenceInterval.lower.push({ timestamp: t, value: lower });
     }
   });
-  return result;
+  return result2;
 };
 
 
@@ -125,12 +127,17 @@ const getScenarios = async (modelId: string, engine: string) => {
   // Merge engine-specific results with scenario
   scenarios.forEach((scenario: Scenario) => {
     const r = scenarioResults.find((s: any) => s.scenario_id === scenario.id);
-    scenario.result = fromHistogramFormat(r.result);
-    scenario.is_valid = r.is_valid;
-    scenario.experiment_id = r.experiment_id;
+    if (r) {
+      scenario.result = fromHistogramFormat(r.result);
+      scenario.is_valid = r.is_valid;
+      scenario.experiment_id = r.experiment_id;
+    } else {
+      scenario.is_valid = false;
+      scenario.result = [];
+    }
   });
 
-  console.log('combiend scenarios', scenarios);
+  console.log('combining scenarios + scenario-results', scenarios);
   return scenarios;
 };
 
@@ -751,6 +758,11 @@ export default {
 
   calculateScenarioPercentageChange,
   cleanConstraints,
+
+
+  // temp
+  toHistogramFormat,
+  fromHistogramFormat,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,
