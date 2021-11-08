@@ -66,10 +66,18 @@
             @updated-relations="resolveUpdatedRelations"
             @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
-            <edge-polarity-switcher
-              :selected-relationship="selectedEdge"
-              @edge-set-user-polarity="setEdgeUserPolarity"
-            />
+            <div style="display: flex; margin-bottom: 10px">
+              <edge-polarity-switcher
+                :selected-relationship="selectedEdge"
+                @edge-set-user-polarity="setEdgeUserPolarity"
+              />
+              <button
+                style="margin-left: 5px; font-weight: normal"
+                class="btn"
+                @click="openPathFind">
+                Indirect path
+              </button>
+            </div>
           </evidence-pane>
           <relationships-pane
             v-if="
@@ -503,22 +511,7 @@ export default defineComponent({
         );
 
         const backingStatements: string[] = _.uniq(_.flatten(Object.values(edgeData)));
-        console.log('backing statements', backingStatements);
-        const formattedEdge = Object.assign(
-          { user_polarity: null, id: '' },
-          edge,
-          {
-            reference_ids: edgeData[edge.source + '///' + edge.target] || []
-          }
-        );
-        console.log(formattedEdge, edgeData);
-
         if (backingStatements.length === 0) {
-          this.showPathSuggestions = true;
-          this.pathSuggestionSource = formattedEdge.source;
-          this.pathSuggestionTarget = formattedEdge.target;
-          this.pathSuggestionSources = source.components;
-          this.pathSuggestionTargets = target.components;
           const newEdge = {
             id: '',
             user_polarity: null,
@@ -1154,6 +1147,21 @@ export default defineComponent({
       // 3. update the target node with new components and edges
       const result = await this.addCAGComponents([updatedNode], updatedEdges, 'manual');
       this.setUpdateToken(result.updateToken);
+    },
+    openPathFind() {
+      if (this.selectedEdge) {
+        const source = this.selectedEdge.source;
+        const target = this.selectedEdge.target;
+        const nodes = this.modelComponents.nodes;
+
+        const sourceNode = nodes.find(n => n.concept === source);
+        const targetNode = nodes.find(n => n.concept === target);
+        if (sourceNode && targetNode) {
+          this.pathSuggestionSources = sourceNode.components;
+          this.pathSuggestionTargets = targetNode.components;
+          this.showPathSuggestions = true;
+        }
+      }
     }
   }
 });

@@ -72,7 +72,7 @@ export default {
       required: true
     },
     targets: {
-      type: String,
+      type: Array,
       required: true
     }
   },
