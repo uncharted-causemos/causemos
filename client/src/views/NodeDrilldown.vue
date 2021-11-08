@@ -2,186 +2,188 @@
   <div class="node-drilldown-container">
     <analytical-questions-and-insights-panel />
     <main>
-      <div class="drivers">
-        <h5 v-if="drivers.length > 0">Top Drivers</h5>
-        <template v-if="scenarioData">
-          <neighbor-node
-            v-for="driver in drivers"
-            :key="driver.edge.id"
-            :node="driver.node"
-            :edge="driver.edge"
-            :is-driver="true"
-            :neighborhood-chart-data="scenarioData"
-            :selected-scenario-id="selectedScenarioId"
-            @click="openNeighborDrilldown(driver.node)"
-            class="neighbor-node"
-          />
-        </template>
-      </div>
-      <div class="selected-node-column">
-        <div class="scenario-selector-row">
-          <div>
-            <span>Selected scenario</span>
-            <dropdown-button
-              :items="scenarioSelectDropdownItems"
-              :selected-item="selectedScenarioId"
-              @item-selected="setSelectedScenarioId"
+      <div class="nodes-container">
+        <div class="drivers">
+          <h5 v-if="drivers.length > 0">Top Drivers</h5>
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="driver in drivers"
+              :key="driver.edge.id"
+              :node="driver.node"
+              :edge="driver.edge"
+              :is-driver="true"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+              @click="openNeighborDrilldown(driver.node)"
+              class="neighbor-node"
             />
-          </div>
-          <div>
-            <span v-if="comparisonDropdownOptions.length > 1">
-              Compare scenarios relative to
-            </span>
-            <dropdown-button
-              v-if="comparisonDropdownOptions.length > 1"
-              :items="comparisonDropdownOptions"
-              :selected-item="comparisonBaselineId"
-              @item-selected="(value) => comparisonBaselineId = value"
-            />
-          </div>
+          </template>
         </div>
-        <div class="expanded-node insight-capture">
-          <div class="expanded-node-header">
-            {{ nodeConceptName }}
-            <div class="button-group">
-              <button
-                v-if="areParameterValuesChanged"
-                class="btn btn-primary btn-call-for-action save-parameter-button"
-                @click="saveParameterValueChanges"
-              >
-                Save parameterization changes
-              </button>
-              <button
-                v-tooltip="'Collapse node'"
-                class="btn btn-default"
-                @click="collapseNode"
-              >
-                <i class="fa fa-fw fa-compress" />
-              </button>
-              <!-- TODO: New scenario button -->
-              <!-- TODO: Set goal button -->
+        <div class="selected-node-column">
+          <div class="scenario-selector-row">
+            <div>
+              <span>Selected scenario</span>
+              <dropdown-button
+                :items="scenarioSelectDropdownItems"
+                :selected-item="selectedScenarioId"
+                @item-selected="setSelectedScenarioId"
+              />
+            </div>
+            <div>
+              <span v-if="comparisonDropdownOptions.length > 1">
+                Compare scenarios relative to
+              </span>
+              <dropdown-button
+                v-if="comparisonDropdownOptions.length > 1"
+                :items="comparisonDropdownOptions"
+                :selected-item="comparisonBaselineId"
+                @item-selected="(value) => comparisonBaselineId = value"
+              />
             </div>
           </div>
-          <td-node-chart
-            v-if="comparisonBaselineId === null && selectedNodeScenarioData !== null"
-            class="scenario-chart"
-            :selected-scenario-id="selectedScenarioId"
-            :historical-timeseries="historicalTimeseries"
-            :projections="selectedNodeScenarioData.projections"
-            :min-value="indicatorMin"
-            :max-value="indicatorMax"
-            :constraints="constraints"
-            :viewing-extent="viewingExtent"
-            @set-constraints="modifyConstraints"
-            @set-historical-timeseries="setHistoricalTimeseries"
-          />
-          <timeseries-chart
-            v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
-            class="scenario-chart"
-            :timeseriesData="comparisonTimeseries.timeseriesData"
-            :selected-temporal-resolution="selectedTemporalResolution"
-          />
-        </div>
-        <p>
-          <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
-            by clicking on the chart. To remove a point, click on it again.
-        </p>
+          <div class="expanded-node insight-capture">
+            <div class="expanded-node-header">
+              {{ nodeConceptName }}
+              <div class="button-group">
+                <button
+                  v-if="areParameterValuesChanged"
+                  class="btn btn-primary btn-call-for-action save-parameter-button"
+                  @click="saveParameterValueChanges"
+                >
+                  Save parameterization changes
+                </button>
+                <button
+                  v-tooltip="'Collapse node'"
+                  class="btn btn-default"
+                  @click="collapseNode"
+                >
+                  <i class="fa fa-fw fa-compress" />
+                </button>
+                <!-- TODO: New scenario button -->
+                <!-- TODO: Set goal button -->
+              </div>
+            </div>
+            <td-node-chart
+              v-if="comparisonBaselineId === null && selectedNodeScenarioData !== null"
+              class="scenario-chart"
+              :selected-scenario-id="selectedScenarioId"
+              :historical-timeseries="historicalTimeseries"
+              :projections="selectedNodeScenarioData.projections"
+              :min-value="indicatorMin"
+              :max-value="indicatorMax"
+              :constraints="constraints"
+              :viewing-extent="viewingExtent"
+              @set-constraints="modifyConstraints"
+              @set-historical-timeseries="setHistoricalTimeseries"
+            />
+            <timeseries-chart
+              v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
+              class="scenario-chart"
+              :timeseriesData="comparisonTimeseries.timeseriesData"
+              :selected-temporal-resolution="selectedTemporalResolution"
+            />
+          </div>
+          <p>
+            <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
+              by clicking on the chart. To remove a point, click on it again.
+          </p>
 
-        <h5 class="indicator-section-header restrict-max-width">
-          Parameterization for <span class="node-name">{{ nodeConceptName }} - {{ indicatorRegions }}</span>
-        </h5>
-        <div class="restrict-max-width indicator-title-row">
-          <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
-          <div class="indicator-buttons">
-            <button
-              v-if="indicatorId !== null"
-              v-tooltip.top-center="'Edit datacube'"
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="openDataDrilldown">
-              Edit datacube
-            </button>
-            <button
-              v-if="indicatorId !== null"
-              v-tooltip.top-center="'Change datacube'"
-              type="button"
-              class="btn btn-primary btn-sm"
-              @click="openDataExplorer">
-              <i class="fa fa-fw fa-search" /> Change datacube
-            </button>
-            <button
-              v-else
-              v-tooltip.top-center="'Find datacube'"
-              type="button"
-              class="btn btn-primary btn-call-for-action btn-sm"
-              @click="openDataExplorer">
-              <i class="fa fa-fw fa-search" /> Find datacube
-            </button>
-            <button
-              v-tooltip.top-center="'Clear parameterization'"
-              type="button"
-              class="btn btn-danger btn-sm"
-              @click="clearParameterization">
-              Clear parameterization
-            </button>
-            <button
-              v-if="hasConstraints"
-              v-tooltip.top-center="'Clear constraints'"
-              type="button"
-              class="btn btn-danger btn-sm"
-              @click="clearConstraints">
-              Clear constraints
-            </button>
-          </div>
-        </div>
-        <p class="restrict-max-width">
-          {{ indicatorDescription }}
-        </p>
-        <div class="indicator-controls">
-          <div class="indicator-control-column">
-            <span>Minimum value</span>
-            <input class="form-control input-sm" v-model.number="indicatorMin"/>
-          </div>
-          <span class="from-to-separator">to</span>
-          <div class="indicator-control-column">
-            <span>Maximum value</span>
-            <input class="form-control input-sm" v-model.number="indicatorMax"/>
-          </div>
-          <div class=" indicator-control-column seasonality">
-            Seasonality
-            <div class="indicator-control-row">
-              <input type="radio" id="seasonality-true" :value="true" v-model="isSeasonalityActive">
-              <label for="seasonality-true">Yes</label>
-              <input
-                v-model.number="indicatorPeriod"
-                :disabled="isSeasonalityActive === false"
-                class="form-control input-sm"
-                type="number"
-              >
-              <span>{{ selectedTemporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
-            </div>
-            <div class="indicator-control-row">
-              <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
-              <label for="seasonality-false">No</label>
+          <h5 class="indicator-section-header restrict-max-width">
+            Parameterization for <span class="node-name">{{ nodeConceptName }} - {{ indicatorRegions }}</span>
+          </h5>
+          <div class="restrict-max-width indicator-title-row">
+            <span><strong>{{ selectedNodeScenarioData?.indicatorName ?? '' }}</strong></span>
+            <div class="indicator-buttons">
+              <button
+                v-if="indicatorId !== null"
+                v-tooltip.top-center="'Edit datacube'"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="openDataDrilldown">
+                Edit datacube
+              </button>
+              <button
+                v-if="indicatorId !== null"
+                v-tooltip.top-center="'Change datacube'"
+                type="button"
+                class="btn btn-primary btn-sm"
+                @click="openDataExplorer">
+                <i class="fa fa-fw fa-search" /> Change datacube
+              </button>
+              <button
+                v-else
+                v-tooltip.top-center="'Find datacube'"
+                type="button"
+                class="btn btn-primary btn-call-for-action btn-sm"
+                @click="openDataExplorer">
+                <i class="fa fa-fw fa-search" /> Find datacube
+              </button>
+              <button
+                v-tooltip.top-center="'Clear parameterization'"
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="clearParameterization">
+                Clear parameterization
+              </button>
+              <button
+                v-if="hasConstraints"
+                v-tooltip.top-center="'Clear constraints'"
+                type="button"
+                class="btn btn-danger btn-sm"
+                @click="clearConstraints">
+                Clear constraints
+              </button>
             </div>
           </div>
+          <p class="restrict-max-width">
+            {{ indicatorDescription }}
+          </p>
+          <div class="indicator-controls">
+            <div class="indicator-control-column">
+              <span>Minimum value</span>
+              <input class="form-control input-sm" v-model.number="indicatorMin"/>
+            </div>
+            <span class="from-to-separator">to</span>
+            <div class="indicator-control-column">
+              <span>Maximum value</span>
+              <input class="form-control input-sm" v-model.number="indicatorMax"/>
+            </div>
+            <div class=" indicator-control-column seasonality">
+              Seasonality
+              <div class="indicator-control-row">
+                <input type="radio" id="seasonality-true" :value="true" v-model="isSeasonalityActive">
+                <label for="seasonality-true">Yes</label>
+                <input
+                  v-model.number="indicatorPeriod"
+                  :disabled="isSeasonalityActive === false"
+                  class="form-control input-sm"
+                  type="number"
+                >
+                <span>{{ selectedTemporalResolution + (indicatorPeriod === 1 ? '' : 's') }}</span>
+              </div>
+              <div class="indicator-control-row">
+                <input type="radio" id="seasonality-false" :value="false" v-model="isSeasonalityActive">
+                <label for="seasonality-false">No</label>
+              </div>
+            </div>
+          </div>
         </div>
-      </div>
-      <div class="impacts">
-        <h5 v-if="impacts.length > 0">Top Impacts</h5>
-        <template v-if="scenarioData">
-          <neighbor-node
-            v-for="impact in impacts"
-            :key="impact.edge.id"
-            :node="impact.node"
-            :edge="impact.edge"
-            :is-driver="false"
-            class="neighbor-node"
-            :neighborhood-chart-data="scenarioData"
-            :selected-scenario-id="selectedScenarioId"
-            @click="openNeighborDrilldown(impact.node)"
-          />
-        </template>
+        <div class="impacts">
+          <h5 v-if="impacts.length > 0">Top Impacts</h5>
+          <template v-if="scenarioData">
+            <neighbor-node
+              v-for="impact in impacts"
+              :key="impact.edge.id"
+              :node="impact.node"
+              :edge="impact.edge"
+              :is-driver="false"
+              class="neighbor-node"
+              :neighborhood-chart-data="scenarioData"
+              :selected-scenario-id="selectedScenarioId"
+              @click="openNeighborDrilldown(impact.node)"
+            />
+          </template>
+        </div>
       </div>
     </main>
     <!-- TODO: Panes go here -->
@@ -733,11 +735,20 @@ main {
   flex: 1;
   min-width: 0;
   display: flex;
+  flex-direction: column;
   margin: 10px;
+  padding: 0 10px;
 }
 
 h4 {
   margin: 0;
+}
+
+.nodes-container {
+  display: flex;
+  flex: 1;
+  min-height: 0;
+  margin-bottom: 10px;
 }
 
 .selected-node-column {
