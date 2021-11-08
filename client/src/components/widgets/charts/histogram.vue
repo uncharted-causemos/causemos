@@ -44,7 +44,11 @@
         v-for="(baseValue, index) in binValues.base"
         :key="index"
         class="summary"
-        :class="baseValue === maxValue ? 'emphasized' : ''"
+        :class="
+          baseValue === maxValue || relativeToSummary?.messagePosition === index
+            ? 'emphasized'
+            : ''
+        "
       >
         <span v-if="!isRelativeToActive">
           <span class="bin-label">{{ BIN_LABELS[index] }}</span>

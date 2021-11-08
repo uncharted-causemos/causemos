@@ -35,6 +35,18 @@ export default defineComponent({
           change: [-20, -10, 0, 10, 20]
         },
         {
+          base: [20, 50, 20, 0, 0],
+          change: [0, 0, 0, 0, 0]
+        },
+        {
+          base: [10, 40, 10, 0, 0],
+          change: [20, -40, 20, 0, 0]
+        },
+        {
+          base: [10, 40, 10, 0, 0],
+          change: [-20, 40, -20, 0, 0]
+        },
+        {
           base: [30, 50, 20, 0, 0],
           change: null
         },
@@ -53,7 +65,6 @@ export default defineComponent({
 </script>
 
 <style lang="scss" scoped>
-
 .histogram-demo-container {
   background: white;
   max-width: 600px;
@@ -66,5 +77,4 @@ export default defineComponent({
 .histogram {
   margin-top: 20px;
 }
-
 </style>
