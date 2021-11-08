@@ -1241,7 +1241,7 @@ export default defineComponent({
       relativeTo
     );
 
-    const regionsToSubregions: any = computed(() => {
+    const regionsToSubregions = computed(() => {
       const regionsToSubregionInternal: any = {};
       referenceRegions.value.forEach(regionId => { regionsToSubregionInternal[regionId] = []; });
       if (regionalData.value) {
@@ -1259,7 +1259,7 @@ export default defineComponent({
           }
         }
       }
-      const toSubregionFiltered: any = {};
+      const toSubregionFiltered: {[ key: string ]: string[] } = {};
       for (const region in regionsToSubregionInternal) {
         const subregions = regionsToSubregionInternal[region];
         if (subregions.length < 25) {
@@ -1269,27 +1269,21 @@ export default defineComponent({
       return toSubregionFiltered;
     });
 
-    const regionsToTimeseries = computed(() => {
-      const internalRegionsToTimeseries: any = {};
-      Object.keys(regionsToSubregions.value).forEach(regionId => {
-        internalRegionsToTimeseries[regionId] = useTimeseriesData(
-          metadata,
-          selectedScenarioIds,
-          selectedTemporalResolution,
-          selectedTemporalAggregation,
-          selectedSpatialAggregation,
-          breakdownOption,
-          selectedTimestamp,
-          setSelectedTimestamp,
-          ref<string[]>(regionsToSubregions.value[regionId]),
-          selectedQualifierValues,
-          initialSelectedYears,
-          showPercentChange,
-          selectedScenarios
-        );
-      });
-      return internalRegionsToTimeseries;
-    });
+    const regionsToTimeseries: any = computed(() => useTimeseriesData(
+      metadata,
+      selectedScenarioIds,
+      selectedTemporalResolution,
+      selectedTemporalAggregation,
+      selectedSpatialAggregation,
+      breakdownOption,
+      selectedTimestamp,
+      setSelectedTimestamp,
+      ref<string[]>(Object.values(regionsToSubregions.value).flat()),
+      selectedQualifierValues,
+      initialSelectedYears,
+      showPercentChange,
+      selectedScenarios
+    ));
 
     const {
       onSyncMapBounds,
