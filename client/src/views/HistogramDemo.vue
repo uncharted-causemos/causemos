@@ -19,8 +19,20 @@ export default defineComponent({
     return {
       binValuesList: [
         {
-          base: [10, 40, 10, 0, 0],
+          base: [30, 40, 0, 0, 0],
+          change: [-20, 20, -10, 10, 0]
+        },
+        {
+          base: [10, 50, 10, 0, 0],
+          change: [-20, -10, 20, 10, 0]
+        },
+        {
+          base: [10, 50, 10, 0, 0],
           change: [-20, -10, 10, 20, 0]
+        },
+        {
+          base: [10, 50, 10, 0, 0],
+          change: [-20, -10, 0, 10, 20]
         },
         {
           base: [30, 50, 20, 0, 0],
