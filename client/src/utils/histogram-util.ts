@@ -188,7 +188,6 @@ export const computeProjectionBins = (
 
 interface RelativeChangeSummary {
   arrow1: null | { from: number; to: number };
-  binsBetweenLossAndGain: number;
   messagePosition: number;
   arrow2: null | { from: number; to: number };
 }
@@ -203,7 +202,6 @@ export const summarizeRelativeChange = (
     // No change
     return {
       arrow1: null,
-      binsBetweenLossAndGain: 0,
       messagePosition: 2,
       arrow2: null
     };
@@ -230,7 +228,6 @@ export const summarizeRelativeChange = (
     const messagePosition = binsWithGreatestGain[0];
     return {
       arrow1: { from: messagePosition - difference, to: messagePosition },
-      binsBetweenLossAndGain: Math.abs(difference),
       messagePosition,
       arrow2: null
     };
@@ -246,14 +243,12 @@ export const summarizeRelativeChange = (
   if (isMorePrecise) {
     return {
       arrow1: { from: messagePosition - 1, to: messagePosition },
-      binsBetweenLossAndGain: 0,
       messagePosition,
       arrow2: { from: messagePosition + 1, to: messagePosition }
     };
   }
   return {
     arrow1: { from: messagePosition, to: messagePosition - 1 },
-    binsBetweenLossAndGain: 0,
     messagePosition,
     arrow2: { from: messagePosition, to: messagePosition + 1 }
   };
