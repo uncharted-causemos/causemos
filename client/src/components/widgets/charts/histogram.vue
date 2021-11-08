@@ -1,9 +1,9 @@
 <template>
   <div class="histogram-container">
     <div class="y-axis-column">
-      <div class="arrow">↑</div>
+      <div class="axis-label-arrow">↑</div>
       <span>Projected change from now</span>
-      <div class="arrow">↓</div>
+      <div class="axis-label-arrow">↓</div>
     </div>
     <div class="column bar-column">
       <div
@@ -254,7 +254,7 @@ $y-axis-margin: 5px;
   opacity: 0;
   transform: translate(10%, 0);
 
-  .arrow {
+  .axis-label-arrow {
     flex: 1;
     min-width: 0;
   }
