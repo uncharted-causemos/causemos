@@ -1241,7 +1241,7 @@ export default defineComponent({
       relativeTo
     );
 
-    const regionsToSubregions = computed(() => {
+    const regionsToSubregions: any = computed(() => {
       const regionsToSubregionInternal: any = {};
       referenceRegions.value.forEach(regionId => { regionsToSubregionInternal[regionId] = []; });
       if (regionalData.value) {
@@ -1259,11 +1259,18 @@ export default defineComponent({
           }
         }
       }
-      return _.filter(regionsToSubregionInternal, subregions => subregions.length < 25);
+      const toSubregionFiltered: any = {};
+      for (const region in regionsToSubregionInternal) {
+        const subregions = regionsToSubregionInternal[region];
+        if (subregions.length < 25) {
+          toSubregionFiltered[region] = subregions;
+        }
+      }
+      return toSubregionFiltered;
     });
 
     const regionsToTimeseries = computed(() => {
-      const internalRegionsToTimeseries = {};
+      const internalRegionsToTimeseries: any = {};
       Object.keys(regionsToSubregions.value).forEach(regionId => {
         internalRegionsToTimeseries[regionId] = useTimeseriesData(
           metadata,
@@ -1274,7 +1281,7 @@ export default defineComponent({
           breakdownOption,
           selectedTimestamp,
           setSelectedTimestamp,
-          regionsToSubregions.value[regionId],
+          ref<string[]>(regionsToSubregions.value[regionId]),
           selectedQualifierValues,
           initialSelectedYears,
           showPercentChange,
@@ -1389,6 +1396,7 @@ export default defineComponent({
       recalculateGridMapDiffStats,
       regionalData,
       regionsToSubregions,
+      regionsToTimeseries,
       relativeTo,
       requestNewModelRuns,
       runningDefaultRun,
