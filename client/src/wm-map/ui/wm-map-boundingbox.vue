@@ -16,16 +16,16 @@ export default {
   mixins: [eventEmitter],
   props: {
     bbox: {
-      type: Array, // e.g., ETH [33.00153732, 47.95822906, 3.39882302, 14.8454771]
+      type: Array, // of two points (top-left, and bottom-right) ordered as lng/lat
       required: true
     }
   },
   computed: {
     geoPoint1() { // e.g. [33.346337, 14.703160]
-      return [this.bbox[0], this.bbox[3]];
+      return this.bbox[0];
     },
     geoPoint2() { // e.g. [47.850650, 3.443253]
-      return [this.bbox[1], this.bbox[2]];
+      return this.bbox[1];
     }
   },
   data: () => ({

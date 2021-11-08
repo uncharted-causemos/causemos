@@ -124,8 +124,8 @@ export default {
     },
     bbox() {
       if (!this.bbox || this.bbox.length === 0) return;
-      const p1 = [this.bbox[0], this.bbox[3]];
-      const p2 = [this.bbox[1], this.bbox[2]];
+      const p1 = this.bbox[0];
+      const p2 = this.bbox[1];
       const center = [p1[0] + (p2[0] - p1[0]) / 2, p1[1] + (p2[1] - p1[1]) / 2];
       this.map.flyTo({
         speed: 0.5,
