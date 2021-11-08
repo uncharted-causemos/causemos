@@ -63,9 +63,11 @@
 import _ from 'lodash';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 
+type FiveNumbers = [number, number, number, number, number];
+
 interface BinValues {
-  base: [number, number, number, number, number];
-  change: [number, number, number, number, number] | null;
+  base: FiveNumbers;
+  change: FiveNumbers | null;
 }
 
 const BIN_LABELS = [
@@ -75,6 +77,16 @@ const BIN_LABELS = [
   'Lower',
   'Much lower'
 ];
+
+const findFarthestBinIndex = (binIndices: number[], targetBinIndex: number) => {
+  let farthestBin = binIndices[0];
+  binIndices.forEach(currentBin => {
+    if (Math.abs(currentBin - targetBinIndex) > farthestBin - targetBinIndex) {
+      farthestBin = currentBin;
+    }
+  });
+  return farthestBin;
+};
 
 export default defineComponent({
   name: 'Histogram',
@@ -86,8 +98,178 @@ export default defineComponent({
   },
   setup(props) {
     const { binValues } = toRefs(props);
+
+    const isRelativeToActive = computed(() => binValues.value.change !== null);
+
+    const relativeToSummary = computed(() => {
+      if (!isRelativeToActive.value) return null;
+      // RelativeTo is active, so changes array is not null
+      const changes = binValues.value.change as FiveNumbers;
+      // ASSUMPTION: total losses should equal total gains in magnitude
+      const greatestLoss = _.min(changes) ?? 0;
+      if (greatestLoss >= 0) {
+        return {
+          arrow1: null,
+          binsBetweenLossAndGain: 0,
+          messagePosition: 2,
+          arrow2: null
+        };
+      }
+      const greatestGain = _.max(changes) ?? 0;
+      const binsWithGreatestLoss: number[] = [];
+      const binsWithGreatestGain: number[] = [];
+      changes.forEach((change, binIndex) => {
+        if (change === greatestLoss) {
+          binsWithGreatestLoss.push(binIndex);
+        } else if (change === greatestGain) {
+          binsWithGreatestGain.push(binIndex);
+        }
+      });
+      const isMultipleMinBins = binsWithGreatestLoss.length !== 1;
+      const isMultipleMaxBins = binsWithGreatestGain.length !== 1;
+      // Determine which arrows and text to show depending on the
+      //  number of bins that contain the min and max values
+      if (!isMultipleMinBins && !isMultipleMaxBins) {
+        // If there's only one min and max, arrow from min to max
+        const minBin = binsWithGreatestLoss[0];
+        const maxBin = binsWithGreatestGain[0];
+        return {
+          arrow1: { from: minBin, to: maxBin },
+          binsBetweenLossAndGain: Math.abs(maxBin - minBin),
+          messagePosition: maxBin,
+          arrow2: null
+        };
+      } else if (!isMultipleMinBins && isMultipleMaxBins) {
+        // If there's one min and multiple maxes
+        const minBin = binsWithGreatestLoss[0];
+        // FIXME: confusing that higher bins have lower indices
+        const maxBinsAboveMinBin = binsWithGreatestGain.filter(
+          maxBin => maxBin < minBin
+        );
+        const maxBinsBelowMinBin = binsWithGreatestGain.filter(
+          maxBin => maxBin > minBin
+        );
+        if (
+          maxBinsAboveMinBin.length === 0 ||
+          maxBinsBelowMinBin.length === 0
+        ) {
+          //  if all maxes are in one direction from min, arrow from min to farthest max
+          const farthestMax = findFarthestBinIndex(
+            binsWithGreatestGain,
+            minBin
+          );
+          return {
+            arrow1: { from: minBin, to: farthestMax },
+            binsBetweenLossAndGain: Math.abs(farthestMax - minBin),
+            messagePosition: farthestMax,
+            arrow2: null
+          };
+        } else {
+          //  if they're on both sides, arrows from min to farthest max in each direction
+          const farthestAbove = findFarthestBinIndex(
+            maxBinsAboveMinBin,
+            minBin
+          );
+          const farthestBelow = findFarthestBinIndex(
+            maxBinsBelowMinBin,
+            minBin
+          );
+          return {
+            arrow1: { from: minBin, to: farthestAbove },
+            binsBetweenLossAndGain: Math.abs(farthestAbove - minBin),
+            messagePosition: minBin,
+            arrow2: { from: minBin, to: farthestBelow }
+          };
+        }
+      } else if (isMultipleMinBins && !isMultipleMaxBins) {
+        // If there are multiple mins and one max
+        // FIXME: confusing that higher bins have lower indices
+        const maxBin = binsWithGreatestGain[0];
+        const minBinsAboveMaxBin = binsWithGreatestLoss.filter(
+          minBin => minBin < maxBin
+        );
+        const minBinsBelowMaxBin = binsWithGreatestLoss.filter(
+          minBin => minBin > maxBin
+        );
+        if (
+          minBinsAboveMaxBin.length === 0 ||
+          minBinsBelowMaxBin.length === 0
+        ) {
+          //  if all mins are in one direction from max, arrow from farthest min to max
+          const farthestMin = findFarthestBinIndex(
+            binsWithGreatestLoss,
+            maxBin
+          );
+          return {
+            arrow1: { from: farthestMin, to: maxBin },
+            binsBetweenLossAndGain: Math.abs(farthestMin - maxBin),
+            messagePosition: maxBin,
+            arrow2: null
+          };
+        } else {
+          //  if they're on both sides, arrows from farthest mins in each direction to max
+          const farthestAbove = findFarthestBinIndex(
+            minBinsAboveMaxBin,
+            maxBin
+          );
+          const farthestBelow = findFarthestBinIndex(
+            minBinsBelowMaxBin,
+            maxBin
+          );
+          return {
+            arrow1: { from: farthestAbove, to: maxBin },
+            binsBetweenLossAndGain: Math.abs(farthestAbove - maxBin),
+            messagePosition: maxBin,
+            arrow2: { from: farthestBelow, to: maxBin }
+          };
+        }
+      } else {
+        // If there are multiple mins and multiple maxes
+        //  This is an edge case with many possible sub-cases that each would
+        //  ideally have their own custom logic. Instead, use this simple rule
+        //  that works reasonably well for all sub-cases:
+        // Calculate the average bin index for the maxes, and the average
+        //  bin index for the mins.
+        const meanMaxValueBinIndex = _.mean(binsWithGreatestGain);
+        const meanMinValueBinIndex = _.mean(binsWithGreatestLoss);
+        const difference = Math.ceil(
+          meanMaxValueBinIndex - meanMinValueBinIndex
+        );
+        // Message goes in the center regardless
+        if (difference === 0) {
+          // No shift higher or lower, it's either more or less precise
+          //  so draw two arrows
+          const isMorePrecise =
+            (_.min(binsWithGreatestLoss) ?? 0) <
+            (_.min(binsWithGreatestGain) ?? 0);
+          if (isMorePrecise) {
+            return {
+              arrow1: { from: 1, to: 2 },
+              binsBetweenLossAndGain: difference,
+              messagePosition: 2,
+              arrow2: { from: 3, to: 2 }
+            };
+          }
+          return {
+            arrow1: { from: 2, to: 1 },
+            binsBetweenLossAndGain: difference,
+            messagePosition: 2,
+            arrow2: { from: 2, to: 1 }
+          };
+        }
+        // Draw one arrow from the center towards the mean max bin index
+        return {
+          arrow1: { from: 2, to: 2 + difference },
+          binsBetweenLossAndGain: difference,
+          messagePosition: 2,
+          arrow2: null
+        };
+      }
+    });
+
     return {
-      isRelativeToActive: computed(() => binValues.value.change !== null),
+      isRelativeToActive,
+      relativeToSummary,
       maxValue: computed(() => _.max(binValues.value.base)),
       BIN_LABELS
     };
