@@ -35,6 +35,10 @@ export default defineComponent({
           change: [-20, -10, 0, 10, 20]
         },
         {
+          base: [0, 0, 10, 50, 10],
+          change: [20, 10, 0, -10, -20]
+        },
+        {
           base: [20, 50, 20, 0, 0],
           change: [0, 0, 0, 0, 0]
         },

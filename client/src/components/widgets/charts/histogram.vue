@@ -63,6 +63,16 @@
           <span v-else />
         </span>
       </span>
+      <histogram-arrow
+        v-if="relativeToSummary && relativeToSummary.arrow1"
+        :arrow="relativeToSummary.arrow1"
+        class="histogram-arrow"
+      />
+      <histogram-arrow
+        v-if="relativeToSummary && relativeToSummary.arrow2"
+        :arrow="relativeToSummary.arrow2"
+        class="histogram-arrow"
+      />
     </div>
     <div class="column x-axis-label">
       <span>→</span>
@@ -75,6 +85,7 @@
 import _ from 'lodash';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import { summarizeRelativeChange } from '@/utils/histogram-util';
+import HistogramArrow from './histogram-arrow.vue';
 
 type FiveNumbers = [number, number, number, number, number];
 
@@ -93,6 +104,7 @@ const BIN_LABELS = [
 const MAGNITUDE_ADJECTIVES = ['', 'small', '', 'large', 'extreme'];
 
 export default defineComponent({
+  components: { HistogramArrow },
   name: 'Histogram',
   props: {
     binValues: {
@@ -224,7 +236,7 @@ $axis-line-height: $font-size-large;
     flex: 1;
     min-height: 0;
 
-    &:not(:first-child) {
+    &:not(:first-child):not(.histogram-arrow) {
       margin-top: 2px;
     }
   }
@@ -317,6 +329,7 @@ $y-axis-margin: 5px;
 .summary-column {
   width: 300px;
   margin-left: 5px;
+  position: relative;
 }
 
 .summary {

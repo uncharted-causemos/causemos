@@ -248,8 +248,8 @@ export const summarizeRelativeChange = (
     };
   }
   return {
-    arrow1: { from: messagePosition, to: messagePosition - 1 },
+    arrow1: { from: messagePosition - 1, to: messagePosition - 2 },
     messagePosition,
-    arrow2: { from: messagePosition, to: messagePosition + 1 }
+    arrow2: { from: messagePosition + 1, to: messagePosition + 2 }
   };
 };
