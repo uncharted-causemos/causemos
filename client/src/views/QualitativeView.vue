@@ -136,6 +136,7 @@
         </template>
       </drilldown-panel>
     </main>
+    <modal-time-scale />
     <modal-import-cag
       v-if="showModalImportCAG"
       @import-cag="runImportChecks"
@@ -236,6 +237,7 @@ import { DataState } from '@/types/Insight';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
+import ModalTimeScale from '@/components/qualitative/modal-time-scale.vue';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -292,7 +294,8 @@ export default defineComponent({
     CagCommentsButton,
     CagSidePanel,
     CagAnalysisOptionsButton,
-    RenameModal
+    RenameModal,
+    ModalTimeScale
   },
   setup() {
     return {
