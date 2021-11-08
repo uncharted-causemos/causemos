@@ -7,6 +7,7 @@ const modelUtil = rootRequire('/util/model-util');
 
 const DEFAULT_BATCH_SIZE = 1000;
 const MODEL_STATUS = modelUtil.MODEL_STATUS;
+const RESET_ALL_ENGINE_STATUS = modelUtil.RESET_ALL_ENGINE_STATUS;
 
 
 // Type of experiment that can be performed in modeling Engine
@@ -107,22 +108,39 @@ const _edge2statement = (edge, polarity) => {
       concept: edge.source,
       concept_score: 1,
       adjectives: [],
-      polarity: 1
+      polarity: 1,
+      theme: 'user',
+      theme_property: 'user',
+      process: 'user',
+      process_property: 'user'
     },
     obj: {
       factor: 'user',
       concept: edge.target,
       concept_score: 1,
       adjectives: [],
-      polarity
+      polarity,
+      theme: 'user',
+      theme_property: 'user',
+      process: 'user',
+      process_property: 'user'
     }
   };
+};
+
+const statementOptions = {
+  size: DEFAULT_BATCH_SIZE,
+  excludes: [
+    'wm',
+    'subj.candidates',
+    'obj.candidates',
+    'evidence.document_context.ner_analytics'
+  ]
 };
 
 const buildModelStatements = async (modelId) => {
   Logger.info(`Building raw indra statements ${modelId}`);
   const edgeParameterAdapter = Adapter.get(RESOURCE.EDGE_PARAMETER);
-
 
   // 1. Get and seperate statement edges from user defined edges
   const edgeParameters = await edgeParameterAdapter.find([
@@ -132,76 +150,39 @@ const buildModelStatements = async (modelId) => {
     includes: ['id', 'source', 'target', 'user_polarity', 'reference_ids']
   });
 
-  const statementEdges = edgeParameters.filter(e => !_.isEmpty(e.reference_ids));
-  const userEdges = edgeParameters.filter(e => _.isEmpty(e.reference_ids));
-
-  Logger.info(`Found ${statementEdges.length} with backing statements and ${userEdges.length} without`);
-
-  // 2. Get projectId associated to model
   const model = await findOne(modelId);
   const projectId = model.project_id;
   const statementAdapter = Adapter.get(RESOURCE.STATEMENT, projectId);
-  let modelStatements = [];
-  const statementOptions = {
-    size: DEFAULT_BATCH_SIZE,
-    excludes: [
-      'wm',
-      'subj.candidates',
-      'obj.candidates',
-      'evidence.document_context.ner_analytics'
-    ]
-  };
 
-  // 3. Retrieve and convert statements to statements with data structure that is compatible for use in modeling engine
-  const statementIds = statementEdges.reduce((acc, e) => {
-    acc = acc.concat(e.reference_ids);
-    return acc;
-  }, []);
-
-  // 3.1. Add polarity to list of statements (as a dict), if an edge user_polarity has been set then we need to filter them but we don't haven't fetched the statements and their polarities yet
-  const statementEdgeUserPolarities = Object.fromEntries(statementEdges.map(statementEdge => statementEdge.reference_ids.map(referenceId => [referenceId, { polarity: statementEdge.user_polarity, edgeId: statementEdge.id }])).flat());
-
-  while (true) {
-    if (statementIds.length === 0) {
-      break;
-    }
-    const batchedIds = statementIds.splice(0, DEFAULT_BATCH_SIZE);
-    const statements = await statementAdapter.find({
+  const results = [];
+  for (let i = 0; i < edgeParameters.length; i++) {
+    const userPolarity = edgeParameters[i].user_polarity;
+    const filters = {
       clauses: [
-        { field: 'id', values: batchedIds, operand: 'OR', isNot: false }
+        { field: 'id', values: edgeParameters[i].reference_ids, operand: 'OR', isNot: false }
       ]
-    }, statementOptions);
+    };
 
-    // if an edge had a user_polarity set, filter statements by that.
-    const statementsFiltered = statements.filter(s => _.isNil(statementEdgeUserPolarities[s.id].polarity) || ((s.subj.polarity * s.obj.polarity) === statementEdgeUserPolarities[s.id].polarity));
-
-    modelStatements = modelStatements.concat(statementsFiltered);
-  }
-
-  // 3.2. edges that didn't survive the filtering based on user_polarity need to be a 'userEdge' basically
-  let dummyStatements = [];
-  statementEdges.forEach(statementEdge => {
-    const isIncluded = modelStatements.some(modelStatement => statementEdgeUserPolarities[modelStatement.id].edgeId === statementEdge.id);
-    if (isIncluded === false) {
-      dummyStatements.push(_edge2statement(statementEdge, statementEdge.user_polarity));
+    if (!_.isNil(userPolarity)) {
+      filters.clauses.push({ field: 'statementPolarity', values: [userPolarity], operand: 'OR', isNot: false });
     }
-  });
-  if (dummyStatements.length > 0) {
-    modelStatements = modelStatements.concat(dummyStatements);
+    const statements = await statementAdapter.find(filters, statementOptions);
+
+    // Convert
+    if (statements.length === 0) {
+      results.push(_edge2statement(edgeParameters[i], userPolarity));
+    } else {
+      statements.forEach(statement => {
+        // We need to transform the statements concept to reflect the CAG's topology,
+        // we also need to sure the statement ids are unique
+        statement.subj.concept = edgeParameters[i].source;
+        statement.obj.concept = edgeParameters[i].target;
+        statement.id = `${edgeParameters[i].id}-${statement.id}`;
+        results.push(statement);
+      });
+    }
   }
-
-  // 4. Create dummy statement(s) for edges with no statements
-  dummyStatements = userEdges.map(e => {
-    if (_.isNil(e.user_polarity)) {
-      return [
-        _edge2statement(e, 1),
-        _edge2statement(e, -1)
-      ];
-    } else { return _edge2statement(e, e.user_polarity); }
-  }).flat();
-
-  modelStatements = modelStatements.concat(dummyStatements);
-  return modelStatements;
+  return results;
 };
 
 /**
@@ -383,7 +364,8 @@ const clearNodeParameter = async (modelId, nodeId) => {
   // Update sync status
   const modelPayload = {
     id: modelId,
-    status: MODEL_STATUS.UNSYNCED,
+    status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS,
     modified_at: modifiedAt
   };
   const modelAdapter = Adapter.get(RESOURCE.MODEL);

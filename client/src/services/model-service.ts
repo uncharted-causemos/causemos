@@ -15,7 +15,7 @@ import {
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
-  UNSYNCED: 0,
+  NOT_REGISTERED: 0,
   TRAINING: 1,
   READY: 2
 };
@@ -36,7 +36,7 @@ const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSu
  */
 const getSummary = async (modelId: string) => {
   const result = await API.get(`models/${modelId}`);
-  return result.data;
+  return result.data as CAGModelSummary;
 };
 
 /**
@@ -238,21 +238,19 @@ const deleteScenario = async (scenario: Scenario) => {
 const DEFAULT_ENGINE = 'dyse';
 const initializeModel = async (modelId: string) => {
   const model = await getSummary(modelId);
-  const engine = model.parameter.engine || DEFAULT_ENGINE;
+  const engine = _.get(model.parameter, 'engine', DEFAULT_ENGINE);
   const errors = [];
 
   if (model.is_stale === true) {
     errors.push(MODEL_MSGS.MODEL_STALE);
   }
-  // if (model.is_quantified === false) {
-  //   errors.push('Model is not quantified');
-  // }
   if (!_.isEmpty((errors))) {
     return errors;
   }
 
+  const engineStatus = model.engine_status[engine];
   // Model is not synced with the engine, initiate registeration request
-  if (model.status === MODEL_STATUS.UNSYNCED) {
+  if (engineStatus === MODEL_STATUS.NOT_REGISTERED) {
     try {
       const r = await syncModelWithEngine(modelId, engine);
       if (r.status === MODEL_STATUS.TRAINING) {
@@ -506,12 +504,15 @@ export const mergeCAG = (cagA: CAGGraph, cagB: CAGGraph, overwriteParameterizati
         id: '',
         concept: node.concept,
         label: node.label,
-        parameter: node.parameter
+        parameter: node.parameter,
+        components: node.components
       });
     } else {
       if (overwriteParameterization === true) {
         targetNode.parameter = node.parameter;
       }
+      // FIXME: need to check if this logic makes sense
+      targetNode.components = _.uniq([...targetNode.components, ...node.components]);
     }
   });
 
@@ -636,6 +637,11 @@ const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
   });
 };
 
+const renameNode = async (modelId: string, nodeId: string, concept: string) => {
+  const result = await API.post(`cags/${modelId}/change-concept`, { id: nodeId, concept });
+  return result;
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -644,6 +650,8 @@ export default {
   getModelStats,
   getEdgeStatements,
   getNodeStatements,
+
+  renameNode,
 
   initializeModel,
   runProjectionExperiment,

@@ -10,14 +10,14 @@
       </label>
       <div v-if="updatedParameter" class="param-choices-container">
         <div class="row">
-          <label class="col-md-3">Value(s)</label>
+          <label class="col-md-7">Value(s)</label>
           <label>Label(s)</label>
         </div>
         <div
           v-for="(choice, indx) in updatedParameter.choices"
           :key="choice"
           class="row" style="padding-bottom: 1rem;">
-          <label class="col-md-3">{{choice}}</label>
+          <label class="col-md-7">{{choice}}</label>
           <input
               v-model="updatedParameter.choices_labels[indx]"
               type="text"
@@ -98,6 +98,7 @@ export default defineComponent({
   max-width: 80vw;
   .modal-body {
     height: 300px;
+    width: 40vw;
     overflow-y: scroll;
   }
 }

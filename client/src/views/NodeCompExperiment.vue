@@ -24,7 +24,7 @@
         class="datacube-card"
         :initial-view-config="initialViewConfig"
         :metadata="metadata"
-        :spatial-aggregation-options="aggregationOptionFiltered"
+        :aggregation-options="aggregationOptionFiltered"
         @update-model-parameter="onModelParamUpdated"
       >
         <template #datacube-model-header>
@@ -209,7 +209,8 @@ export default defineComponent({
           timeseries,
           max: null, // filled in by server
           min: null // filled in by server
-        }
+        },
+        components: selectedNode?.value?.components
       };
 
       Object.keys(viewState).forEach(key => {

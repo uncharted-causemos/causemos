@@ -45,13 +45,13 @@ export default defineComponent({
       type: Object as PropType<Model | null>,
       default: null
     },
-    allModelRunData: {
+    modelRunData: {
       type: Array as PropType<ModelRun[]>,
       default: []
     }
   },
   setup(props) {
-    const { metadata, selectedScenarioIds, allModelRunData } = toRefs(props);
+    const { metadata, selectedScenarioIds, modelRunData } = toRefs(props);
     const inputNames = computed(() => {
       if (metadata.value === null) return {};
       const inputNamesMap: { [key: string]: string } = {};
@@ -63,10 +63,10 @@ export default defineComponent({
     const scenarioDescriptions = ref<ScenarioDescription[]>([]);
     watchEffect(() => {
       scenarioDescriptions.value = [];
-      if (metadata.value === null || selectedScenarioIds.value.length === 0 || allModelRunData.value.length === 0) {
+      if (metadata.value === null || selectedScenarioIds.value.length === 0 || modelRunData.value.length === 0) {
         return [];
       }
-      scenarioDescriptions.value = allModelRunData.value
+      scenarioDescriptions.value = modelRunData.value
         .filter((run) => selectedScenarioIds.value.includes(run.id))
         .map((scenarioMetadata) => {
           return scenarioMetadata.parameters;

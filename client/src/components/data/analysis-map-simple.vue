@@ -3,6 +3,7 @@
     <wm-map
       v-bind="mapFixedOptions"
       :bounds="mapBounds"
+      :class="{isDefaultRun: isDefaultRun}"
       @load="onMapLoad"
       @move="onMapMove"
       @mousemove="onMouseMove"
@@ -196,6 +197,10 @@ export default {
     unit: {
       type: String,
       default: null
+    },
+    isDefaultRun: {
+      type: Boolean,
+      default: false
     },
     showPercentChange: {
       type: Boolean,
@@ -594,5 +599,8 @@ export default {
 <style lang="scss" scoped>
 .analysis-map-container {
   position: relative;
+  .isDefaultRun {
+    border-width: 8px;
+  }
 }
 </style>

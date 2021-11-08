@@ -45,8 +45,7 @@
       </div>
     </main>
     <div>
-      <div class="col-md-9">Temporal Aggregation: {{ selectedTemporalAggregation }} </div>
-      <div class="col-md-3">Spatial Aggregation: {{ selectedSpatialAggregation }} </div>
+      <div class="col-md-9">Aggregated by: {{ selectedSpatialAggregation }} </div>
     </div>
   </div>
 </template>
@@ -65,6 +64,7 @@ import { mapActions, useStore } from 'vuex';
 import router from '@/router';
 import _ from 'lodash';
 import { DataState, ViewState } from '@/types/Insight';
+import useDatacubeDimensions from '@/services/composables/useDatacubeDimensions';
 
 export default defineComponent({
   name: 'DatacubeComparativeCard',
@@ -129,8 +129,12 @@ export default defineComponent({
       }
     });
 
+    const {
+      dimensions
+    } = useDatacubeDimensions(metadata);
+
     const modelRunsFetchedAt = ref(0);
-    const allModelRunData = useScenarioData(id, modelRunsFetchedAt);
+    const { allModelRunData } = useScenarioData(id, modelRunsFetchedAt, ref({}) /* search filters */, dimensions);
 
     const selectedRegionIds: string[] = [];
     let initialSelectedScenarioIds: string[] = [];
