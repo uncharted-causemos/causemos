@@ -66,10 +66,18 @@
             @updated-relations="resolveUpdatedRelations"
             @add-edge-evidence-recommendations="addEdgeEvidenceRecommendations"
           >
-            <edge-polarity-switcher
-              :selected-relationship="selectedEdge"
-              @edge-set-user-polarity="setEdgeUserPolarity"
-            />
+            <div style="display: flex; margin-bottom: 10px">
+              <edge-polarity-switcher
+                :selected-relationship="selectedEdge"
+                @edge-set-user-polarity="setEdgeUserPolarity"
+              />
+              <button
+                style="margin-left: 5px; font-weight: normal"
+                class="btn"
+                @click="openPathFind">
+                Indirect path
+              </button>
+            </div>
           </evidence-pane>
           <relationships-pane
             v-if="
@@ -173,6 +181,8 @@
       v-if="showPathSuggestions"
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
+      :sources="pathSuggestionSources"
+      :targets="pathSuggestionTargets"
       @add-paths="addSuggestedPath"
       @close="showPathSuggestions = false"
     />
@@ -323,6 +333,8 @@ export default defineComponent({
     factorRecommendationsList: [] as any[],
     pathSuggestionSource: '',
     pathSuggestionTarget: '',
+    pathSuggestionSources: [] as string[],
+    pathSuggestionTargets: [] as string[],
     edgeToSelectOnNextRefresh: null as {
       source: string;
       target: string;
@@ -497,16 +509,9 @@ export default defineComponent({
           relationsToAdd,
           filtersUtil.newFilters()
         );
-        console.log('edgedata', edgeData);
 
         const backingStatements: string[] = _.uniq(_.flatten(Object.values(edgeData)));
-        console.log('backing statements', backingStatements);
-
         if (backingStatements.length === 0) {
-          // FIXME: Initiates the path suggestions
-          // this.showPathSuggestions = true;
-          // this.pathSuggestionSource = formattedEdge.source;
-          // this.pathSuggestionTarget = formattedEdge.target;
           const newEdge = {
             id: '',
             user_polarity: null,
@@ -1142,6 +1147,21 @@ export default defineComponent({
       // 3. update the target node with new components and edges
       const result = await this.addCAGComponents([updatedNode], updatedEdges, 'manual');
       this.setUpdateToken(result.updateToken);
+    },
+    openPathFind() {
+      if (this.selectedEdge) {
+        const source = this.selectedEdge.source;
+        const target = this.selectedEdge.target;
+        const nodes = this.modelComponents.nodes;
+
+        const sourceNode = nodes.find(n => n.concept === source);
+        const targetNode = nodes.find(n => n.concept === target);
+        if (sourceNode && targetNode) {
+          this.pathSuggestionSources = sourceNode.components;
+          this.pathSuggestionTargets = targetNode.components;
+          this.showPathSuggestions = true;
+        }
+      }
     }
   }
 });
