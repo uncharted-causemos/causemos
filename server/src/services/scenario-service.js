@@ -182,7 +182,10 @@ const findResults = async (modelId, engine) => {
   const scenarioResultConnection = Adapter.get(RESOURCE.SCENARIO_RESULT);
 
   const r = await scenarioResultConnection.find(
-    [{ field: 'model_id', value: modelId }],
+    [
+      { field: 'model_id', value: modelId },
+      { field: 'engine', value: engine }
+    ],
     { size: 100 }
   );
   return r;

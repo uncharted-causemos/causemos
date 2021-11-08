@@ -228,6 +228,11 @@ export default defineComponent({
       this.enableOverlay('Loading');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
 
+      let scenarios: Scenario[] = await modelService.getScenarios(this.currentCAG, this.currentEngine);
+
+      const isScenariosImbalanced = _.isEmpty(scenarios) || _.some(scenarios, s => _.isEmpty(s.result));
+      console.log('Scenarios imbalanced ', isScenariosImbalanced);
+
       if (this.modelSummary === null) {
         console.error(`Failed to fetch model summary for "currentCAG" id: ${this.currentCAG}`);
         return;
@@ -236,7 +241,7 @@ export default defineComponent({
       const engineStatus = this.modelSummary.engine_status[this.currentEngine];
 
       // 1. If we have topology changes, then we should resync with inference engines
-      if (engineStatus === MODEL_STATUS.NOT_REGISTERED) {
+      if (engineStatus === MODEL_STATUS.NOT_REGISTERED && isScenariosImbalanced) {
         // Check model is ready to be used for experiments
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
@@ -266,7 +271,6 @@ export default defineComponent({
       }
 
       // 3. Check if we have scenarios, if not generate one
-      let scenarios: Scenario[] = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
       await this.refreshModel();
 
@@ -305,20 +309,13 @@ export default defineComponent({
       }
 
       // 6. Rebuild scenarios' result if necessary
-      for (const scenario of scenarios) {
-        console.log(scenario.id, scenario.is_valid);
+      if (isScenariosImbalanced) {
+        scenarios = await this.runScenarios(scenarios);
       }
-      scenarios = await this.runScenarios(scenarios);
 
       // 7. Finally we are done and kick off the relevant events
       this.setSelectedScenarioId(scenarioId);
       this.scenarios = scenarios;
-
-
-      // const selectedScenario = this.scenarios.find(s => s.id === this.selectedScenarioId);
-      // if (selectedScenario && selectedScenario.is_valid === false) {
-      //   this.runScenario();
-      // }
 
       if (this.onMatrixTab) {
         this.fetchSensitivityAnalysisResults();
@@ -522,6 +519,10 @@ export default defineComponent({
     async runScenariosWrapper() {
       if (!this.scenarios) return;
       const scenarios = await this.runScenarios(this.scenarios);
+      if (_.isEmpty(scenarios)) {
+        return;
+      }
+
       // Cycle the scenarios to force reactive to trigger
       this.scenarios = [...scenarios];
     },
@@ -548,7 +549,16 @@ export default defineComponent({
       // 0. Refresh, probably not needed ...
       this.enableOverlay('Synchronizing model');
       if (this.modelSummary && engineStatus === MODEL_STATUS.NOT_REGISTERED) {
-        await modelService.initializeModel(this.currentCAG);
+        const errors = await modelService.initializeModel(this.currentCAG);
+        if (errors.length) {
+          this.disableOverlay();
+          if (errors[0] === MODEL_MSGS.MODEL_TRAINING) {
+            this.enableOverlay(errors[0]);
+          }
+          this.toaster(errors[0], 'error', true);
+          console.error(errors);
+          return [];
+        }
         await this.refreshModel();
       }
 
@@ -568,7 +578,12 @@ export default defineComponent({
 
         try {
           this.enableOverlay(`Running ${scenario.name} on ${this.currentEngine}`);
-          const experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.cleanConstraints(scenario.parameter?.constraints ?? []));
+          const experimentId = await modelService.runProjectionExperiment(
+            this.currentCAG,
+            this.projectionSteps,
+            modelService.cleanConstraints(scenario.parameter?.constraints ?? [])
+          );
+
           const result = await modelService.getExperimentResult(this.currentCAG, experimentId);
           scenario.result = (result as any).results.data;
           scenario.experiment_id = experimentId;
@@ -599,51 +614,6 @@ export default defineComponent({
       // 4. Cycle the scenarios to force reactive to trigger
       this.disableOverlay();
       return scenarios;
-      // this.scenarios = [...this.scenarios];
-
-      // 2. Run experiment and wait for results
-      // this.enableOverlay(`Running experiment on ${this.currentEngine}`);
-      // let experimentId = '';
-      // let result = null;
-
-      // try {
-      //   experimentId = await modelService.runProjectionExperiment(this.currentCAG, this.projectionSteps, modelService.cleanConstraints(selectedScenario.parameter?.constraints ?? []));
-      //   result = await modelService.getExperimentResult(this.currentCAG, experimentId);
-      // } catch (error) {
-      //   console.error(error);
-      //   this.toaster(error, 'error', true);
-      //   this.disableOverlay();
-      //   return;
-      // }
-      // this.setDraftScenarioDirty(false);
-
-      // // FIXME: Not great to directly write into draft
-      // selectedScenario.experiment_id = experimentId;
-      // // FIXME: Add type for return value of modelService.getExperimentResult()
-      // selectedScenario.result = (result as any).results.data;
-      // selectedScenario.is_valid = true;
-
-      // 3. We have rerun an existing scenario, need to update
-      // if (this.selectedScenarioId !== DRAFT_SCENARIO_ID) {
-      //   this.enableOverlay('Writing result');
-      //   await modelService.updateScenario({
-      //     id: selectedScenario.id,
-      //     model_id: this.currentCAG,
-      //     parameter: selectedScenario.parameter
-      //   });
-      //   await modelService.createScenarioResult(
-      //     this.currentCAG,
-      //     selectedScenario.id,
-      //     this.currentEngine,
-      //     selectedScenario.experiment_id,
-      //     selectedScenario.result
-      //   );
-      // }
-
-      // this.disableOverlay();
-
-      // // 4. Cycle the scenarios to force reactive to trigger
-      // this.scenarios = [...this.scenarios];
     },
     closeEditConstraints() {
       this.isEditConstraintsOpen = false;

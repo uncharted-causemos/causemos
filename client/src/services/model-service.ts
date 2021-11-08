@@ -430,6 +430,13 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     graphData.scenarios = scenarioDataForThisNode;
 
+    // FIXME: hackin parameters from modelSummary
+    graphData.scenarios.forEach(scenario => {
+      if (scenario.parameter) {
+        scenario.parameter.num_steps = modelSummary.parameter.num_steps;
+      }
+    });
+
     result[concept] = graphData;
   });
   return result;
