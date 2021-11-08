@@ -50,6 +50,14 @@
           <span class="bin-label">{{ BIN_LABELS[index] }}</span>
           {{ index === 2 ? 'from' : 'than' }} now
         </span>
+        <span v-else>
+          <span v-if="relativeToSummary.messagePosition === index">
+            {{ relativeToSummaryMessage.before }}
+            <strong>{{ relativeToSummaryMessage.emphasized }}</strong>
+            {{ relativeToSummaryMessage.after }}
+          </span>
+          <span v-else />
+        </span>
       </span>
     </div>
     <div class="column x-axis-label">
@@ -78,6 +86,7 @@ const BIN_LABELS = [
   'Lower',
   'Much lower'
 ];
+const MAGNITUDE_ADJECTIVES = ['', 'small', '', 'large', 'extreme'];
 
 export default defineComponent({
   name: 'Histogram',
@@ -99,11 +108,35 @@ export default defineComponent({
       return summarizeRelativeChange(binValues.value.change as FiveNumbers);
     });
 
+    const relativeToSummaryMessage = computed(() => {
+      const summary = relativeToSummary.value;
+      if (summary === null) return { before: '', emphasized: '', after: '' };
+      const { arrow1, messagePosition, arrow2 } = summary;
+      if (arrow1 === null) {
+        return { before: 'No change.', emphasized: '', after: '' };
+      }
+      if (arrow2 !== null) {
+        // Either more or less certain
+        const isMoreCertain = arrow2.to === messagePosition;
+        const emphasized = (isMoreCertain ? 'More' : 'Less') + ' certain';
+        return { before: '', emphasized, after: ' values.' };
+      }
+      const magnitudeOfChange = Math.abs(arrow1.to - arrow1.from);
+      const magnitudeAdjective = MAGNITUDE_ADJECTIVES[magnitudeOfChange];
+      const directionOfChange = arrow1.to < arrow1.from ? 'higher' : 'lower';
+      return {
+        before: _.capitalize(`${magnitudeAdjective} shift toward `.trim()),
+        emphasized: directionOfChange,
+        after: ' values.'
+      };
+    });
+
     return {
       isRelativeToActive,
       relativeToSummary,
       maxValue: computed(() => _.max(binValues.value.base)),
-      BIN_LABELS
+      BIN_LABELS,
+      relativeToSummaryMessage
     };
   }
 });
@@ -278,7 +311,7 @@ $y-axis-margin: 5px;
 }
 
 .summary-column {
-  width: 200px;
+  width: 300px;
   margin-left: 5px;
 }
 
