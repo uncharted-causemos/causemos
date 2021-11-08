@@ -17,14 +17,14 @@
           <div>Loading suggestions...</div>
         </div>
         <div
-          v-for="(path, idx) in suggestions"
+          v-for="(suggestion, idx) in suggestions"
           :key="idx"
-          @click="toggleSelection(path)">
+          @click="toggleSelection(suggestion)">
           <i
             class="fa fa-fw fa-check-square-o"
-            :class="{'fa-square-o': path.selected === false, 'fa-check-square-o': path.selected === true}"
+            :class="{'fa-square-o': suggestion.selected === false, 'fa-check-square-o': suggestion.selected === true}"
           />
-          {{ path.map(d => ontologyFormatter(d)).join(" > ") }}
+          {{ suggestion.path.map(d => ontologyFormatter(d)).join(" > ") }}
           <hr v-if="idx === 0">
         </div>
       </div>
@@ -99,13 +99,25 @@ export default {
     refresh() {
       suggestionService.getGroupPathSuggestions(this.project, this.sources, this.targets).then(paths => {
         const sortedPaths = _.orderBy(paths, p => p.length);
-        this.suggestions = [[this.source, this.target], ..._.take(sortedPaths, 5)];
+        this.suggestions = [[this.source, this.target], ..._.take(sortedPaths, 5)].map(path => {
+          return {
+            // suggestions for grouped nodes may have source or target that are component concepts
+            // this normalizes those source and target concepts to the main concepts such that
+            // component concepts are not readded to the cag
+            path: path.map((concept, i) => {
+              if (i === 0) {
+                return this.source;
+              } else if (i === path.length - 1) {
+                return this.target;
+              } else {
+                return concept;
+              }
+            }),
+            selected: false
+          };
+        });
         if (this.suggestions.length === 1) {
           this.suggestions[0].selected = true;
-        } else {
-          this.suggestions.forEach(s => {
-            s.selected = false;
-          });
         }
       });
     },
@@ -116,7 +128,7 @@ export default {
       const selectedPathsRaw = this.suggestions.filter(s => s.selected === true);
       const selectedPaths = [];
       for (let i = 0; i < selectedPathsRaw.length; i++) {
-        const pathRaw = selectedPathsRaw[i];
+        const pathRaw = selectedPathsRaw[i].path;
         const path = [];
 
         for (let j = 0; j < pathRaw.length - 1; j++) {

@@ -1157,6 +1157,8 @@ export default defineComponent({
         const sourceNode = nodes.find(n => n.concept === source);
         const targetNode = nodes.find(n => n.concept === target);
         if (sourceNode && targetNode) {
+          this.pathSuggestionSource = source;
+          this.pathSuggestionTarget = target;
           this.pathSuggestionSources = sourceNode.components;
           this.pathSuggestionTargets = targetNode.components;
           this.showPathSuggestions = true;
