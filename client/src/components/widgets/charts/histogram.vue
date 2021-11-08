@@ -222,7 +222,8 @@ $axis-line-height: $font-size-large;
     }
 
     .bar,
-    .bar::after {
+    .bar::after,
+    .histogram-arrow {
       animation-iteration-count: infinite;
     }
   }
