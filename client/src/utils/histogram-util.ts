@@ -186,6 +186,14 @@ export const computeProjectionBins = (
   return bins;
 };
 
+// A histogram can show up to 2 arrows when "relative to" is active:
+//  - No arrows are shown when there's no change.
+//  - 1 arrow is shown if the change can be summarized as shifting higher or
+//    lower. `arrow2` is null in this case.
+//  - 2 arrows are shown if the change can be summarized as more or less
+//    precise.
+// The from/to properties of each arrow refer to the bin indices that the arrow
+//  starts/ends in, respectively.
 interface RelativeChangeSummary {
   arrow1: null | { from: number; to: number };
   messagePosition: number;
