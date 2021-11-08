@@ -1,4 +1,5 @@
 import { TimeseriesPoint } from '@/types/Timeseries';
+import _ from 'lodash';
 import { getMonthFromTimestamp, getTimestampAfterMonths } from './date-util';
 
 // The bin boundaries that are used when a node has no historical data.
@@ -183,4 +184,77 @@ export const computeProjectionBins = (
   ];
 
   return bins;
+};
+
+interface RelativeChangeSummary {
+  arrow1: null | { from: number; to: number };
+  binsBetweenLossAndGain: number;
+  messagePosition: number;
+  arrow2: null | { from: number; to: number };
+}
+
+export const summarizeRelativeChange = (
+  changes: [number, number, number, number, number]
+): RelativeChangeSummary => {
+  // ASSUMPTION: total losses should equal total gains in magnitude
+  const greatestLoss = _.min(changes) ?? 0;
+  const greatestGain = _.max(changes) ?? 0;
+  if (greatestLoss === 0 || greatestGain === 0) {
+    // No change
+    return {
+      arrow1: null,
+      binsBetweenLossAndGain: 0,
+      messagePosition: 2,
+      arrow2: null
+    };
+  }
+  const binsWithGreatestLoss: number[] = [];
+  const binsWithGreatestGain: number[] = [];
+  changes.forEach((change, binIndex) => {
+    if (change === greatestLoss) {
+      binsWithGreatestLoss.push(binIndex);
+    } else if (change === greatestGain) {
+      binsWithGreatestGain.push(binIndex);
+    }
+  });
+  // Calculate the average bin index for the maxes, and the average
+  //  bin index for the mins.
+  const meanMaxValueBinIndex = _.mean(binsWithGreatestGain);
+  const meanMinValueBinIndex = _.mean(binsWithGreatestLoss);
+  // Calculate the difference between the averages to get the magnitude and
+  //  direction of change
+  const difference = Math.ceil(meanMaxValueBinIndex - meanMinValueBinIndex);
+  // Determine which arrows and text to show depending on the
+  //  number of bins that contain the min and max values
+  if (difference !== 0) {
+    const messagePosition = binsWithGreatestGain[0];
+    return {
+      arrow1: { from: messagePosition - difference, to: messagePosition },
+      binsBetweenLossAndGain: Math.abs(difference),
+      messagePosition,
+      arrow2: null
+    };
+  }
+  // No shift higher or lower, it's either more or less precise
+  //  so we'll need to draw two arrows
+  const isMorePrecise =
+    (_.min(binsWithGreatestLoss) ?? 0) < (_.min(binsWithGreatestGain) ?? 0);
+  // If there's only one max bin, show the message there.
+  // Otherwise things get messy, so just put the message in the center
+  const isMultipleMaxBins = binsWithGreatestGain.length !== 1;
+  const messagePosition = isMultipleMaxBins ? 2 : binsWithGreatestGain[0];
+  if (isMorePrecise) {
+    return {
+      arrow1: { from: messagePosition - 1, to: messagePosition },
+      binsBetweenLossAndGain: 0,
+      messagePosition,
+      arrow2: { from: messagePosition + 1, to: messagePosition }
+    };
+  }
+  return {
+    arrow1: { from: messagePosition, to: messagePosition - 1 },
+    binsBetweenLossAndGain: 0,
+    messagePosition,
+    arrow2: { from: messagePosition, to: messagePosition + 1 }
+  };
 };
