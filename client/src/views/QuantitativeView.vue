@@ -29,7 +29,7 @@
             @revert-draft-changes="revertDraftChanges"
             @overwrite-scenario="overwriteScenario"
             @save-new-scenario="saveNewScenario"
-            @run-model="runScenarios"
+            @run-model="runScenariosWrapper()"
           />
         </template>
       </tab-panel>
@@ -44,6 +44,19 @@
 </template>
 
 <script lang="ts">
+// TODO
+// - Need one more status for tracking node-parameter changes (since it is a new view) so we don't constantly
+//   recreate the model.
+//
+// NOT_REGISTERED, READY, TRAINING
+//
+// NOT_REGISTERED, NOT_REGISTERED_DEFERRED, READY, TRAINING
+//
+// OR use the presence of whether we have scenarios
+// - if have scenarios then it is implied to be defferred
+// - else must re-register
+
+
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 import TabPanel from '@/components/quantitative/tab-panel.vue';
@@ -295,6 +308,7 @@ export default defineComponent({
       for (const scenario of scenarios) {
         console.log(scenario.id, scenario.is_valid);
       }
+      scenarios = await this.runScenarios(scenarios);
 
       // 7. Finally we are done and kick off the relevant events
       this.setSelectedScenarioId(scenarioId);
@@ -505,22 +519,28 @@ export default defineComponent({
       temp.push(this.draftScenario);
       this.scenarios = temp;
     },
-    async runScenarios() {
-      if (this.scenarios === null) {
+    async runScenariosWrapper() {
+      if (!this.scenarios) return;
+      const scenarios = await this.runScenarios(this.scenarios);
+      // Cycle the scenarios to force reactive to trigger
+      this.scenarios = [...scenarios];
+    },
+    async runScenarios(scenarios: Scenario[]): Promise<Scenario[]> {
+      if (scenarios === null) {
         console.error('Failed to run scenario, scenarios list is null.');
-        return;
+        return [];
       }
       if (this.modelSummary === null) {
         console.error('Failed to run scenario, modelSummary is null.');
-        return;
+        return [];
       }
       if (this.modelComponents === null) {
         console.error('Failed to run scenario, modelComponents is null.');
-        return;
+        return [];
       }
       if (this.projectionSteps === undefined) {
         console.error('Failed to run scenario, projectionSteps is undefined.');
-        return;
+        return [];
       }
 
       const engineStatus = this.modelSummary.engine_status[this.currentEngine];
@@ -533,7 +553,7 @@ export default defineComponent({
       }
 
       // 1. Readjust all scenarios according to current parameters
-      for (const scenario of this.scenarios) {
+      for (const scenario of scenarios) {
         if (scenario.is_valid === false) {
           modelService.resetScenarioParameter(scenario, this.modelSummary, this.modelComponents.nodes);
         }
@@ -543,7 +563,7 @@ export default defineComponent({
 
       // 2. Run experiments where necessary
       const updateList = [];
-      for (const scenario of this.scenarios) {
+      for (const scenario of scenarios) {
         if (scenario.is_valid === true) continue;
 
         try {
@@ -558,7 +578,7 @@ export default defineComponent({
           console.error(error);
           this.toaster(error, 'error', true);
           this.disableOverlay();
-          return;
+          return [];
         }
       }
 
@@ -578,10 +598,8 @@ export default defineComponent({
 
       // 4. Cycle the scenarios to force reactive to trigger
       this.disableOverlay();
-      this.scenarios = [...this.scenarios];
-      console.log(this.scenarios);
-      console.log(this.selectedScenarioId);
-      debugger;
+      return scenarios;
+      // this.scenarios = [...this.scenarios];
 
       // 2. Run experiment and wait for results
       // this.enableOverlay(`Running experiment on ${this.currentEngine}`);
