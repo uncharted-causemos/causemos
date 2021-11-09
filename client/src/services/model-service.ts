@@ -56,16 +56,18 @@ const fromHistogramFormat = (result: any) => {
   const result2 = _.cloneDeep(result);
   result2.forEach((r: any) => {
     r.confidenceInterval = { upper: [], lower: [] };
-    r.values = [];
-    for (let i = 0; i < r.timeseries.length; i++) {
-      const t = r.timeseries[i].timestamp;
-      const val = r.timeseries[i].values[0];
-      const upper = r.timeseries[i].values[1];
-      const lower = r.timeseries[i].values[2];
-      r.values.push({ timestamp: t, value: val });
+    r.valuesTmp = [];
+    for (let i = 0; i < r.values.length; i++) {
+      const t = r.values[i].timestamp;
+      const val = r.values[i].values[0];
+      const upper = r.values[i].values[1];
+      const lower = r.values[i].values[2];
+      r.valuesTmp.push({ timestamp: t, value: val });
       r.confidenceInterval.upper.push({ timestamp: t, value: upper });
       r.confidenceInterval.lower.push({ timestamp: t, value: lower });
     }
+    r.values = r.valuesTmp;
+    delete r.valuesTmp;
   });
   return result2;
 };
@@ -714,7 +716,7 @@ const createScenarioResult = async (
     scenario_id: scenarioId,
     engine: engine,
     experiment_id: experimentId,
-    result: toHistogramFormat(result) // FIXME: waiting for engines to comply with format
+    result: engine === 'dyse' ? result : toHistogramFormat(result) // FIXME: waiting for engines to comply with format
   });
 };
 
@@ -765,11 +767,6 @@ export default {
 
   calculateScenarioPercentageChange,
   cleanConstraints,
-
-
-  // temp
-  toHistogramFormat,
-  fromHistogramFormat,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,

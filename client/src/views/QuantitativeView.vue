@@ -29,7 +29,7 @@
           @revert-draft-changes="revertDraftChanges"
           @overwrite-scenario="overwriteScenario"
           @save-new-scenario="saveNewScenario"
-          @run-model="runScenario"
+          @run-model="runScenariosWrapper"
           @tab-click="tabClick"
         />
       </template>
