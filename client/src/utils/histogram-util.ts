@@ -186,20 +186,43 @@ export const computeProjectionBins = (
   return bins;
 };
 
-// A histogram can show up to 2 arrows when "relative to" is active:
-//  - No arrows are shown when there's no change.
-//  - 1 arrow is shown if the change can be summarized as shifting higher or
-//    lower. `arrow2` is null in this case.
-//  - 2 arrows are shown if the change can be summarized as more or less
-//    precise.
-// The from/to properties of each arrow refer to the bin indices that the arrow
-//  starts/ends in, respectively.
+/**
+ * A histogram can show up to 2 arrows when "relative to" is active:
+ *  - No arrows are shown when there's no change.
+ *  - 1 arrow is shown if the change can be summarized as shifting higher or
+ *    lower. `arrow2` is null in this case.
+ *  - 2 arrows are shown if the change can be summarized as more or less
+ *    precise.
+ * The from/to properties of each arrow refer to the bin indices that the arrow
+ *  starts/ends in, respectively.
+ * `messagePosition` refers to the index of the bin that the summary message
+ * should appear beside.
+ */
 interface RelativeChangeSummary {
   arrow1: null | { from: number; to: number };
   messagePosition: number;
   arrow2: null | { from: number; to: number };
 }
 
+/**
+ * An algorithm to produce a summary of the relative difference between two histograms.
+ * It follows these steps:
+ *  1. find the bins with the greatest loss and greatest gain.
+ *  2. discard the other bins.
+ *  3. find the average index of the bins with the greatest loss (and same for greatest gain)
+ *  4. if these average indices are the same, there's no higher/lower shift.
+ *      The change can be summarized as more/less precise and we'll use two arrows to show this.
+ *  5. else, the magnitude and direction of change can be summarized by the difference between the average indices.
+ *      We use one arrow from the farthest bin with the greatest loss to the bin with the greatest gain.
+ *
+ * One gotcha is that it's unclear where the message should be positioned when there are multiple
+ * bins with the greatest gain. In these cases we just put the message in the middle.
+ *
+ * In practice it is unlikely that there will frequently be multiple bins tied for greatest loss/gain.
+ *
+ * @param changes one number for each of the 5 bins. Negative numbers represent a relative decrease in that bin.
+ * @returns an object containing enough information to generate a one-sentence summary of the change, as well as the arrows used to support the sentence.See RelativeChangeSummary for more detail.
+ */
 export const summarizeRelativeChange = (
   changes: [number, number, number, number, number]
 ): RelativeChangeSummary => {
@@ -264,6 +287,16 @@ export const summarizeRelativeChange = (
 
 const MAGNITUDE_ADJECTIVES = ['', 'small', '', 'large', 'extreme'];
 
+/**
+ * Generates the user-friendly string to be displayed at `summary.messagePosition`.
+ *
+ * Output will typically be of the form
+ *
+ * `{ before: 'Large shift toward', emphasized: 'higher', after: ' values.' }`
+ *
+ * @param summary null when 'relative to" mode is not active. See RelativeChangeSummary for more detail.
+ * @returns an object containing three strings: an emphasized section as well as the text before and after that.
+ */
 export const generateRelativeSummaryMessage = (
   summary: RelativeChangeSummary | null
 ) => {
