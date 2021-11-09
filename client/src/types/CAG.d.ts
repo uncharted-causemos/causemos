@@ -144,8 +144,10 @@ export interface CAGModelSummary {
 
   is_stale: boolean;
   is_ambiguous: boolean;
-  is_quantified: boolean;
-  status: number;
+  is_quantified: boolean; // FIXME: Deprecated
+  status: number; // FIXME: Deprecated
+
+  engine_status: { [key: string]: number };
 
   created_at: number;
   modified_at: number;

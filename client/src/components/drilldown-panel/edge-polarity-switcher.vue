@@ -88,7 +88,6 @@ export default defineComponent({
 @import '~styles/variables';
 
 .polarity-button {
-  margin-bottom: 10px;
   font-weight: normal;
 }
 

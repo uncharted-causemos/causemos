@@ -515,7 +515,7 @@ import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER, adminLevelToString } from '@/utils/map-util-new';
 
-import { createModelRun, updateModelRun } from '@/services/new-datacube-service';
+import { createModelRun, updateModelRun, addModelRunsTag } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -696,7 +696,7 @@ export default defineComponent({
       selectedScenarios.value.forEach(s => s.tags.push(tagName));
       showTagNameModal.value = false;
       toaster('A new tag is added successfully for the selected run(s)', 'success', false);
-      // TODO: update the backend for persistence
+      addModelRunsTag(selectedScenarios.value.map(run => run.id), tagName);
     };
 
     const runTags = ref<RunsTag[]>([]);

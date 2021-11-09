@@ -31,9 +31,11 @@ const questionsRouter = rootRequire('/routes/questions');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
 const modelRunsRouter = rootRequire('/routes/model-runs');
+const modelRunTagsRouter = rootRequire('/routes/model-run-tags');
 const indicatorsRouter = rootRequire('/routes/indicators');
 const datacubeRouter = rootRequire('/routes/datacubes');
 const gadmRouter = rootRequire('/routes/gadm-names');
+const pipelineReportingRouter = rootRequire('/routes/pipeline-reporting');
 const fetchFileService = rootRequire('/services/external/fetch-file-service');
 const asyncHandler = require('express-async-handler');
 
@@ -138,12 +140,20 @@ app.use('/api/maas/model-runs', [
   modelRunsRouter
 ]);
 
+app.use('/api/maas/model-run-tags', [
+  modelRunTagsRouter
+]);
+
 app.use('/api/maas/indicators', [
   indicatorsRouter
 ]);
 
 app.use('/api/maas/datacubes', [
   datacubeRouter
+]);
+
+app.use('/api/maas/pipeline-reporting', [
+  pipelineReportingRouter
 ]);
 
 app.use('/api/gadm-names', [

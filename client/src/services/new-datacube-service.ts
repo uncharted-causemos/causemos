@@ -200,6 +200,33 @@ export const createModelRun = (model_id: string, model_name: string, parameters:
   });
 };
 
+export const addModelRunsTag = async (runIds: string[], tag: string) => {
+  if (!runIds || runIds.length === 0 || !tag) {
+    return null;
+  }
+  const filter = [{ field: 'id', value: runIds }];
+  const result = await API.put('maas/model-run-tags', { filter, tag });
+  return result.data;
+};
+
+export const removeModelRunsTag = async (runIds: string[], tag: string) => {
+  if (!runIds || runIds.length === 0 || !tag) {
+    return null;
+  }
+  const filter = JSON.stringify([{ field: 'id', value: runIds }]);
+  const result = await API.delete('maas/model-run-tags', { params: { filter, tag } });
+  return result.data;
+};
+
+export const renameModelRunsTag = async (runIds: string[], oldTag: string, newTag: string) => {
+  if (!runIds || runIds.length === 0 || !oldTag || !newTag) {
+    return null;
+  }
+  const filter = [{ field: 'id', value: runIds }];
+  const result = await API.patch('maas/model-run-tags', { filter, oldTag, newTag });
+  return result.data;
+};
+
 export default {
   updateDatacube,
   getDatacubes,
@@ -210,5 +237,8 @@ export default {
   getIndicatorDatacubesCount,
   getModelRunMetadata,
   getSuggestions,
-  createModelRun
+  createModelRun,
+  addModelRunsTag,
+  removeModelRunsTag,
+  renameModelRunsTag
 };

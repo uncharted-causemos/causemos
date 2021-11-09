@@ -51,13 +51,19 @@ const projectionValueRange = (values) => {
 
 
 const MODEL_STATUS = {
-  UNSYNCED: 0,
+  NOT_REGISTERED: 0,
   TRAINING: 1,
   READY: 2
+};
+
+const RESET_ALL_ENGINE_STATUS = {
+  delphi: MODEL_STATUS.NOT_REGISTERED,
+  dyse: MODEL_STATUS.NOT_REGISTERED
 };
 
 module.exports = {
   isEdgeAmbiguous,
   projectionValueRange,
-  MODEL_STATUS
+  MODEL_STATUS,
+  RESET_ALL_ENGINE_STATUS
 };

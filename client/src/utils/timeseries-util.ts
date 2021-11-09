@@ -73,7 +73,6 @@ export function renderAxes(
   paddingRight: number,
   xAxisHeight: number,
   xAxisTickCount = 4,
-  yAxisTickCount = 2,
   xAxisTickSizePx = 2
 ) {
   const xAxis = d3
@@ -81,11 +80,16 @@ export function renderAxes(
     .tickSize(xAxisTickSizePx)
     .tickFormat(timestampFormatter)
     .ticks(xAxisTickCount);
+
+  const yAxisTicks = calculateGenericTicks(
+    yScale.domain()[0],
+    yScale.domain()[1]
+  );
   const yAxis = d3
     .axisLeft(yScale)
     .tickSize(width - yAxisWidth - paddingRight)
     .tickFormat(valueFormatter)
-    .ticks(yAxisTickCount);
+    .tickValues(yAxisTicks);
   selection
     .append('g')
     .classed('xAxis', true)
@@ -130,10 +134,21 @@ export function calculateYearlyTicks (
 
   return tickIncrements;
 }
+export function calculateGenericTicks (
+  min: number,
+  max: number
+) {
+  const tickIncrements = [min];
+  if (min < 0 && max > 0) { // if zero is in range, include it
+    tickIncrements.push(0);
+  }
+  tickIncrements.push(max);
+  return tickIncrements;
+}
 export function renderXaxis(
   selection: D3GElementSelection,
   xScale: d3.ScaleLinear<number, number>,
-  tickIncrements: Array<number>,
+  xTickValues: Array<number>,
   yOffset: number,
   timestampFormatter: (timestamp: any) => string,
   xAxisTickSizePx = 2
@@ -154,7 +169,7 @@ export function renderXaxis(
     .axisBottom(xScale)
     .tickSize(xAxisTickSizePx)
     .tickFormat(customTimestampFormatter)
-    .tickValues(tickIncrements);
+    .tickValues(xTickValues);
 
   selection
     .append('g')
@@ -168,20 +183,20 @@ export function renderXaxis(
 export function renderYaxis(
   selection: D3GElementSelection,
   yScale: d3.ScaleLinear<number, number>,
+  yTickValues: Array<number>,
   // The type of value can't be more specific than `any`
   //  because under the hood d3.tickFormat requires d3.NumberType.
   // It correctly converts, but its TypeScript definitions don't
   //  seem to reflect that.
   valueFormatter: (value: any) => string,
   xOffset: number,
-  yAxisWidth: number,
-  yAxisTickCount = 2
+  yAxisWidth: number
 ) {
   const yAxis = d3
     .axisLeft(yScale)
     .tickSize(xOffset - yAxisWidth)
     .tickFormat(valueFormatter)
-    .ticks(yAxisTickCount);
+    .tickValues(yTickValues);
 
   selection
     .append('g')
