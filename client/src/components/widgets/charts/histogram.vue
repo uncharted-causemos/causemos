@@ -1,10 +1,5 @@
 <template>
   <div class="histogram-container">
-    <div class="y-axis-column">
-      <div class="axis-label-arrow">↑</div>
-      <span>Projected change from now</span>
-      <div class="axis-label-arrow">↓</div>
-    </div>
     <div class="column bar-column">
       <div
         v-for="(baseValue, index) in binValues.base"
@@ -203,7 +198,6 @@ $axis-line-height: $font-size-large;
   padding-bottom: 2 * $axis-line-height;
   position: relative;
 
-  .y-axis-column,
   .value-column,
   .summary,
   .x-axis-label {
@@ -212,7 +206,6 @@ $axis-line-height: $font-size-large;
 
   cursor: pointer;
   &:hover {
-    .y-axis-column,
     .value-column,
     .summary,
     .x-axis-label {
@@ -240,30 +233,6 @@ $axis-line-height: $font-size-large;
     &:not(:first-child):not(.histogram-arrow) {
       margin-top: 2px;
     }
-  }
-}
-
-$y-axis-width: 60px;
-$y-axis-margin: 5px;
-
-.y-axis-column {
-  width: $y-axis-width;
-  margin-right: $y-axis-margin;
-  display: flex;
-  flex-direction: column;
-  align-items: flex-end;
-  opacity: 0;
-  transform: translate(10%, 0);
-
-  .axis-label-arrow {
-    flex: 1;
-    min-width: 0;
-  }
-
-  span {
-    flex-shrink: 0;
-    text-align: right;
-    line-height: $axis-line-height;
   }
 }
 
@@ -352,7 +321,7 @@ $y-axis-margin: 5px;
 
 .x-axis-label {
   position: absolute;
-  left: $y-axis-width + $y-axis-margin;
+  left: 0;
   bottom: 0;
   line-height: $axis-line-height;
   opacity: 0;
