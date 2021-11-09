@@ -6,34 +6,34 @@
         :view-after-deletion="'overview'"
       />
     </teleport>
-    <div class="graph-container">
-      <tab-panel
-        v-if="ready"
-        :model-summary="modelSummary"
-        :model-components="modelComponents"
-        :sensitivity-matrix-data="sensitivityMatrixData"
-        :sensitivity-analysis-type="sensitivityAnalysisType"
-        :scenarios="scenarios"
-        :current-engine="currentEngine"
-        :reset-layout-token='resetLayoutToken'
-        @show-model-parameters="showModelParameters"
-        @set-sensitivity-analysis-type="setSensitivityAnalysisType"
-        @refresh-model="refreshModelAndScenarios"
-        @tab-click="tabClick"
-      >
-        <template #action-bar>
-          <action-bar
-            :model-summary="modelSummary"
-            :scenarios="scenarios"
-            @reset-cag="resetCAGLayout()"
-            @revert-draft-changes="revertDraftChanges"
-            @overwrite-scenario="overwriteScenario"
-            @save-new-scenario="saveNewScenario"
-            @run-model="runScenariosWrapper()"
-          />
-        </template>
-      </tab-panel>
-    </div>
+    <tab-panel
+      v-if="ready"
+      class="graph-container"
+      :model-summary="modelSummary"
+      :model-components="modelComponents"
+      :sensitivity-matrix-data="sensitivityMatrixData"
+      :sensitivity-analysis-type="sensitivityAnalysisType"
+      :scenarios="scenarios"
+      :current-engine="currentEngine"
+      :reset-layout-token='resetLayoutToken'
+      @show-model-parameters="showModelParameters"
+      @set-sensitivity-analysis-type="setSensitivityAnalysisType"
+      @refresh-model="refreshModelAndScenarios"
+    >
+      <template #action-bar>
+        <action-bar
+          :current-engine="currentEngine"
+          :model-summary="modelSummary"
+          :scenarios="scenarios"
+          @reset-cag="resetCAGLayout()"
+          @revert-draft-changes="revertDraftChanges"
+          @overwrite-scenario="overwriteScenario"
+          @save-new-scenario="saveNewScenario"
+          @run-model="runScenario"
+          @tab-click="tabClick"
+        />
+      </template>
+    </tab-panel>
     <modal-edit-parameters
       v-if="isModelParametersOpen"
       :model-summary="modelSummary"
@@ -44,19 +44,6 @@
 </template>
 
 <script lang="ts">
-// TODO
-// - Need one more status for tracking node-parameter changes (since it is a new view) so we don't constantly
-//   recreate the model.
-//
-// NOT_REGISTERED, READY, TRAINING
-//
-// NOT_REGISTERED, NOT_REGISTERED_DEFERRED, READY, TRAINING
-//
-// OR use the presence of whether we have scenarios
-// - if have scenarios then it is implied to be defferred
-// - else must re-register
-
-
 import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 import TabPanel from '@/components/quantitative/tab-panel.vue';
