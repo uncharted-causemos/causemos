@@ -7,8 +7,8 @@
     </template>
     <template #body>
       <p>
-        There is no evidence to support the edge <strong>{{ ontologyFormatter(source) }}</strong>
-        to <strong>{{ ontologyFormatter(target) }}</strong>. You can still use it
+        There is no evidence to support the edge <strong>{{ ontologyFormatter(source.concept) }}</strong>
+        to <strong>{{ ontologyFormatter(target.concept) }}</strong>. You can still use it
         <span v-if="suggestions.length === 1">.</span>
         <span v-else>, or select from the indirect paths listed below.</span>
       </p>
@@ -60,19 +60,11 @@ export default {
   },
   props: {
     source: {
-      type: String,
+      type: Object,
       required: true
     },
     target: {
-      type: String,
-      required: true
-    },
-    sources: {
-      type: Array,
-      required: true
-    },
-    targets: {
-      type: Array,
+      type: Object,
       required: true
     }
   },
@@ -97,18 +89,18 @@ export default {
   },
   methods: {
     refresh() {
-      suggestionService.getGroupPathSuggestions(this.project, this.sources, this.targets).then(paths => {
+      suggestionService.getGroupPathSuggestions(this.project, this.source.components, this.target.components).then(paths => {
         const sortedPaths = _.orderBy(paths, p => p.length);
-        this.suggestions = [[this.source, this.target], ..._.take(sortedPaths, 5)].map(path => {
+        this.suggestions = [[this.source.concept, this.target.concept], ..._.take(sortedPaths, 5)].map(path => {
           return {
             // suggestions for grouped nodes may have source or target that are component concepts
             // this normalizes those source and target concepts to the main concepts such that
             // component concepts are not readded to the cag
             path: path.map((concept, i) => {
               if (i === 0) {
-                return this.source;
+                return this.source.concept;
               } else if (i === path.length - 1) {
-                return this.target;
+                return this.target.concept;
               } else {
                 return concept;
               }

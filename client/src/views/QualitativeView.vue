@@ -181,8 +181,6 @@
       v-if="showPathSuggestions"
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
-      :sources="pathSuggestionSources"
-      :targets="pathSuggestionTargets"
       @add-paths="addSuggestedPath"
       @close="showPathSuggestions = false"
     />
@@ -331,10 +329,8 @@ export default defineComponent({
       curGrounding: any;
     } | null,
     factorRecommendationsList: [] as any[],
-    pathSuggestionSource: '',
-    pathSuggestionTarget: '',
-    pathSuggestionSources: [] as string[],
-    pathSuggestionTargets: [] as string[],
+    pathSuggestionSource: null as NodeParameter | null,
+    pathSuggestionTarget: null as NodeParameter | null,
     edgeToSelectOnNextRefresh: null as {
       source: string;
       target: string;
@@ -962,12 +958,12 @@ export default defineComponent({
           ) {
             // handling the grouped nodes and the possiblity we need to get backing
             // data for the components of the source and target nodes
-            if (this.pathSuggestionSources.includes(edge.source)) {
-              this.pathSuggestionSources.forEach((source) => {
+            if (this.pathSuggestionSource?.concept === edge.source) {
+              this.pathSuggestionSource.components.forEach((source) => {
                 newSourceTargetPairs.push({ source, target: edge.target });
               });
-            } else if (this.pathSuggestionTargets.includes(edge.target)) {
-              this.pathSuggestionTargets.forEach((target) => {
+            } else if (this.pathSuggestionTarget?.concept === edge.target) {
+              this.pathSuggestionTarget.components.forEach((target) => {
                 newSourceTargetPairs.push({ source: edge.source, target });
               });
             } else {
@@ -1010,20 +1006,20 @@ export default defineComponent({
           target
         };
 
-        if (this.pathSuggestionSources.includes(source)) {
-          const normalizedKey = key({ source: this.pathSuggestionSource, target });
+        if (this.pathSuggestionSource?.components.includes(source)) {
+          const normalizedKey = key({ source: this.pathSuggestionSource.concept, target });
           if (edges[normalizedKey]) {
             edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
           } else {
-            baseNewEdge.source = this.pathSuggestionSource;
+            baseNewEdge.source = this.pathSuggestionSource.concept;
             edges[normalizedKey] = baseNewEdge;
           }
-        } else if (this.pathSuggestionTargets.includes(target)) {
-          const normalizedKey = key({ source, target: this.pathSuggestionTarget });
+        } else if (this.pathSuggestionTarget?.components.includes(target)) {
+          const normalizedKey = key({ source, target: this.pathSuggestionTarget.concept });
           if (edges[normalizedKey]) {
             edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
           } else {
-            baseNewEdge.target = this.pathSuggestionTarget;
+            baseNewEdge.target = this.pathSuggestionTarget.concept;
             edges[normalizedKey] = baseNewEdge;
           }
         } else {
@@ -1197,10 +1193,8 @@ export default defineComponent({
         const sourceNode = nodes.find(n => n.concept === source);
         const targetNode = nodes.find(n => n.concept === target);
         if (sourceNode && targetNode) {
-          this.pathSuggestionSource = source;
-          this.pathSuggestionTarget = target;
-          this.pathSuggestionSources = sourceNode.components;
-          this.pathSuggestionTargets = targetNode.components;
+          this.pathSuggestionSource = sourceNode;
+          this.pathSuggestionTarget = targetNode;
           this.showPathSuggestions = true;
         }
       }
