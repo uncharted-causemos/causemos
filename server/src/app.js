@@ -32,6 +32,7 @@ const questionsRouter = rootRequire('/routes/questions');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
 const modelRunsRouter = rootRequire('/routes/model-runs');
+const modelRunTagsRouter = rootRequire('/routes/model-run-tags');
 const indicatorsRouter = rootRequire('/routes/indicators');
 const datacubeRouter = rootRequire('/routes/datacubes');
 const gadmRouter = rootRequire('/routes/gadm-names');
@@ -142,6 +143,10 @@ app.use('/api/audits', [
 // Handle some /api/mass calls ourselves. The rest get handled below.
 app.use('/api/maas/model-runs', [
   modelRunsRouter
+]);
+
+app.use('/api/maas/model-run-tags', [
+  modelRunTagsRouter
 ]);
 
 app.use('/api/maas/indicators', [
