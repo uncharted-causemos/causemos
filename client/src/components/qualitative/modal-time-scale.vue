@@ -1,8 +1,7 @@
 <template>
-  <modal @close="select">
+  <modal @close="close">
     <template #header>
       <h2 class="header-question">Which time scale are you interested in?</h2>
-      <p class="header-subtitle">This cannot be changed once set.</p>
     </template>
     <template #body>
       <div
@@ -32,8 +31,15 @@
       </div>
     </template>
     <template #footer>
-      <button type="button" class="btn" @click.stop="select">
+      <button type="button" class="btn" @click.stop="close">
         Close
+      </button>
+      <button
+        type="button"
+        class="btn btn-primary btn-call-for-action"
+        @click.stop="select"
+      >
+        Save
       </button>
     </template>
   </modal>
@@ -79,11 +85,14 @@ const TIME_SCALE_OPTIONS = [
 export default defineComponent({
   components: { modal },
   name: 'ModalTimeScale',
-  emits: ['select'],
+  emits: ['select', 'close'],
   setup() {
     return { TIME_SCALE_OPTIONS, selectedTimeScaleOption: ref('years') };
   },
   methods: {
+    close() {
+      this.$emit('close');
+    },
     select() {
       this.$emit('select', this.selectedTimeScaleOption);
     }
@@ -98,11 +107,6 @@ export default defineComponent({
   font-size: $font-size-extra-large;
   font-weight: normal;
   line-height: $font-size-extra-large;
-}
-
-.header-subtitle {
-  font-size: $font-size-medium;
-  line-height: $font-size-medium;
 }
 
 input[type='radio'] {
