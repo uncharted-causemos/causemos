@@ -1001,41 +1001,33 @@ export default defineComponent({
       // source or target node
       const newEdgeDictionary: {[key: string]: EdgeParameter} = newSourceTargetPairs.reduce((edges, sourceTargetPair) => {
         const { source, target } = sourceTargetPair;
+        const currentReferenceIds = edgeData[key(sourceTargetPair)] || [];
+        const baseNewEdge = {
+          id: '',
+          reference_ids: currentReferenceIds,
+          user_polarity: null,
+          source,
+          target
+        };
 
         if (this.pathSuggestionSources.includes(source)) {
           const normalizedKey = key({ source: this.pathSuggestionSource, target });
           if (edges[normalizedKey]) {
-            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(edgeData[key(sourceTargetPair)] || []);
+            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
           } else {
-            edges[normalizedKey] = {
-              id: '',
-              reference_ids: edgeData[key(sourceTargetPair)] || [],
-              user_polarity: null,
-              source: this.pathSuggestionSource,
-              target
-            };
+            baseNewEdge.source = this.pathSuggestionSource;
+            edges[normalizedKey] = baseNewEdge;
           }
         } else if (this.pathSuggestionTargets.includes(target)) {
           const normalizedKey = key({ source, target: this.pathSuggestionTarget });
           if (edges[normalizedKey]) {
-            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(edgeData[key(sourceTargetPair)] || []);
+            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
           } else {
-            edges[normalizedKey] = {
-              id: '',
-              reference_ids: edgeData[key(sourceTargetPair)] || [],
-              user_polarity: null,
-              source,
-              target: this.pathSuggestionTarget
-            };
+            baseNewEdge.target = this.pathSuggestionTarget;
+            edges[normalizedKey] = baseNewEdge;
           }
         } else {
-          edges[key(sourceTargetPair)] = {
-            id: '',
-            reference_ids: edgeData[key(sourceTargetPair)] || [],
-            user_polarity: null,
-            source,
-            target
-          };
+          edges[key(sourceTargetPair)] = baseNewEdge;
         }
         return edges;
       }, {} as {[key: string]: EdgeParameter});
