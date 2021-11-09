@@ -72,6 +72,11 @@ export default {
     selectedScenarios() {
       // update facet selection
       //  find the bars that include the selected runs
+
+      // FIXME: disable this feature for date-range since current facet limitation end up selecting bars which overlap with other runs date range causing a cycle ultimately that ends when all runs/bars are selected
+      const isDateRange = this.modelParameter.type === DatacubeGenericAttributeVariableType.DateRange;
+      if (isDateRange) return;
+
       let rangeStartIndex = -1;
       let rangeEndIndex = -1;
       this.selectedScenarios.forEach(runID => {
