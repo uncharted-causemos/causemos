@@ -261,3 +261,29 @@ export const summarizeRelativeChange = (
     arrow2: { from: messagePosition + 1, to: messagePosition + 2 }
   };
 };
+
+const MAGNITUDE_ADJECTIVES = ['', 'small', '', 'large', 'extreme'];
+
+export const generateRelativeSummaryMessage = (
+  summary: RelativeChangeSummary | null
+) => {
+  if (summary === null) return { before: '', emphasized: '', after: '' };
+  const { arrow1, messagePosition, arrow2 } = summary;
+  if (arrow1 === null) {
+    return { before: 'No change.', emphasized: '', after: '' };
+  }
+  if (arrow2 !== null) {
+    // Either more or less certain
+    const isMoreCertain = arrow2.to === messagePosition;
+    const emphasized = (isMoreCertain ? 'More' : 'Less') + ' certain';
+    return { before: '', emphasized, after: ' values.' };
+  }
+  const magnitudeOfChange = Math.abs(arrow1.to - arrow1.from);
+  const magnitudeAdjective = MAGNITUDE_ADJECTIVES[magnitudeOfChange];
+  const directionOfChange = arrow1.to < arrow1.from ? 'higher' : 'lower';
+  return {
+    before: _.capitalize(`${magnitudeAdjective} shift toward `.trim()),
+    emphasized: directionOfChange,
+    after: ' values.'
+  };
+};

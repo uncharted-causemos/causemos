@@ -79,7 +79,10 @@
 <script lang="ts">
 import _ from 'lodash';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
-import { summarizeRelativeChange } from '@/utils/histogram-util';
+import {
+  generateRelativeSummaryMessage,
+  summarizeRelativeChange
+} from '@/utils/histogram-util';
 import HistogramArrow from './histogram-arrow.vue';
 
 type FiveNumbers = [number, number, number, number, number];
@@ -96,7 +99,6 @@ const BIN_LABELS = [
   'Lower',
   'Much lower'
 ];
-const MAGNITUDE_ADJECTIVES = ['', 'small', '', 'large', 'extreme'];
 
 export default defineComponent({
   components: { HistogramArrow },
@@ -120,26 +122,7 @@ export default defineComponent({
     });
 
     const relativeToSummaryMessage = computed(() => {
-      const summary = relativeToSummary.value;
-      if (summary === null) return { before: '', emphasized: '', after: '' };
-      const { arrow1, messagePosition, arrow2 } = summary;
-      if (arrow1 === null) {
-        return { before: 'No change.', emphasized: '', after: '' };
-      }
-      if (arrow2 !== null) {
-        // Either more or less certain
-        const isMoreCertain = arrow2.to === messagePosition;
-        const emphasized = (isMoreCertain ? 'More' : 'Less') + ' certain';
-        return { before: '', emphasized, after: ' values.' };
-      }
-      const magnitudeOfChange = Math.abs(arrow1.to - arrow1.from);
-      const magnitudeAdjective = MAGNITUDE_ADJECTIVES[magnitudeOfChange];
-      const directionOfChange = arrow1.to < arrow1.from ? 'higher' : 'lower';
-      return {
-        before: _.capitalize(`${magnitudeAdjective} shift toward `.trim()),
-        emphasized: directionOfChange,
-        after: ' values.'
-      };
+      return generateRelativeSummaryMessage(relativeToSummary.value);
     });
 
     return {
