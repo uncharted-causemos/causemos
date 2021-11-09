@@ -1269,6 +1269,7 @@ export default defineComponent({
       return toSubregionFiltered;
     });
 
+    /*
     const regionsToTimeseries: any = computed(() => useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -1284,6 +1285,7 @@ export default defineComponent({
       showPercentChange,
       selectedScenarios
     ));
+    */
 
     const {
       onSyncMapBounds,
@@ -1390,7 +1392,7 @@ export default defineComponent({
       recalculateGridMapDiffStats,
       regionalData,
       regionsToSubregions,
-      regionsToTimeseries,
+      // regionsToTimeseries,
       relativeTo,
       requestNewModelRuns,
       runningDefaultRun,
