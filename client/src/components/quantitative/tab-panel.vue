@@ -7,6 +7,7 @@
       <cag-side-panel
         class="side-panel"
         :is-experiment-download-visible="true"
+        :model-components="modelComponents"
         @download-experiment="downloadExperiment"
       >
         <template #below-tabs>

@@ -62,6 +62,58 @@ const _crawler = (adjacencyMap, source, stack, goalFn, terminateFn) => {
   });
 };
 
+/**
+ * Find neighborhood among two sets/groups of nodes, such as two merged nodes with some n concepts in each
+ * Basically for any given pair of nodes groups {x, y} in {v1, v2, v3, ... } we want to find
+ * all path less then or equal to k hops away.
+ *
+ * @param {array} - graph edges
+ * @param {array} sourceNodes - array of node ids
+ * @param {array} targetNodes - array of node ids
+ * @param {number} k - maximum number of hops to check
+ */
+const groupPath = (edges, sourceNodes, targetNodes, k) => {
+  const neighborhoodNodes = [];
+  const visitedPaths = new Set();
+
+  // Guard against weird input
+  if (sourceNodes.length < 1 && targetNodes.length < 1) {
+    return [];
+  }
+
+  const adjacencyMap = buildAdjacency(edges).outgoing;
+
+  const links = sourceNodes.map(sn => [sn, targetNodes]);
+
+  for (let i = 0; i < links.length; i++) {
+    const link = links[i];
+    if (!link) {
+      break;
+    }
+
+    // Generates a targetFn that checks against our targets
+    const goalFnGenerator = (targets) => {
+      return (newNode, stack) => {
+        const connectingPath = stack.filter(n => !sourceNodes.includes(n) && !targetNodes.includes(n)).toString();
+        if (targets.includes(newNode) && !visitedPaths.has(connectingPath)) {
+          neighborhoodNodes.push(stack);
+          visitedPaths.add(connectingPath);
+          return true;
+        }
+        return false;
+      };
+    };
+
+    // Exceed allowed length or hitting a cycle
+    const terminateFn = (newNode, stack) => {
+      if (stack.length > k) return true;
+      return false;
+    };
+    _crawler(adjacencyMap, link[0], [link[0]], goalFnGenerator(link[1]), terminateFn);
+  }
+  return neighborhoodNodes;
+};
+
 
 /**
  * Find neighborhood among some specified nodes
@@ -112,5 +164,6 @@ const normalPath = (edges, nodes, k) => {
 
 module.exports = {
   buildAdjacency,
+  groupPath,
   normalPath
 };

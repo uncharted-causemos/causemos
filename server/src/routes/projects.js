@@ -85,7 +85,7 @@ router.put('/:projectId', asyncHandler(async (req, res) => {
     (!_.isEmpty(payload.obj) && !payload.obj.newValue)) {
     throw new Error(`Invalid update config ${JSON.stringify(payload)}`);
   }
-  await updateService.updateStatements(projectId, payload, ids);
+  const batchId = await updateService.updateStatements(projectId, payload, ids);
 
   // Send a background request to check if CAGs under the projects are stale
   const unaffectedCurations = ['vet_statement', 'factor_polarity'];
@@ -101,7 +101,7 @@ router.put('/:projectId', asyncHandler(async (req, res) => {
   }
 
   const editTime = Date.now();
-  res.status(200).send({ updateToken: editTime });
+  res.status(200).send({ updateToken: editTime, batchId });
 }));
 
 /* DELETE project */
@@ -313,6 +313,18 @@ router.get('/:projectId/path-suggestions', asyncHandler(async (req, res) => {
   const target = req.query.target;
   const hops = req.query.hops || 2;
   const result = await projectService.searchPath(projectId, source, target, hops);
+  res.json(result);
+}));
+
+/**
+ * POST Search path between source and target node sets
+ */
+router.post('/:projectId/group-path-suggestions', asyncHandler(async (req, res) => {
+  const projectId = req.params.projectId;
+  const sources = req.body.sources;
+  const targets = req.body.targets;
+  const hops = req.query.hops || 2;
+  const result = await projectService.groupSearchPath(projectId, sources, targets, hops);
   res.json(result);
 }));
 

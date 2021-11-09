@@ -66,8 +66,8 @@ const startBYOD = (interval) => {
       // Call the incremental assembly pipeline with each assembly request
       assemblyRequestIds.forEach(projectService.requestAssembly);
     } catch (err) {
-      Logger.error(err);
-      Logger.error(JSON.stringify(err));
+      Logger.error('Failed to fetch document ingestion data from DART');
+      Logger.error('\t' + JSON.stringify(err));
     }
   }, interval);
 };

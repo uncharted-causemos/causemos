@@ -10,7 +10,7 @@ import { DimensionInfo, ModelParameter } from '@/types/Datacube';
 
 import { ParallelCoordinatesOptions } from '@/types/ParallelCoordinates';
 import _ from 'lodash';
-import { DatacubeGeoAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
+import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType, ModelParameterDataType, ModelRunStatus } from '@/types/Enums';
 
 import { colorFromIndex } from '@/utils/colors-util';
 
@@ -112,7 +112,7 @@ let currentLineSelection: Array<ScenarioData> = [];
 let dimensions: Array<DimensionInfo> = [];
 
 const isGeoParameter = (type: string) => {
-  return (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type);
+  return type === DatacubeGenericAttributeVariableType.Geo || (Object.values(DatacubeGeoAttributeVariableType) as Array<string>).includes(type);
 };
 
 const isCategoricalAxis = (name: string) => {
@@ -1997,7 +1997,7 @@ const createScales = (
 
     if (useAxisRangeFromData) {
       // note this is only valid for inherently ordinal dimensions not those explicitly converted to be ordinal
-      dataExtent = dim?.choices ?? dim?.choices ?? [];
+      dataExtent = dim?.choices_labels ? dim?.choices_labels : (dim?.choices ?? dim?.choices ?? []);
     }
 
     const dataChoices = data.map(function(p) { return p[name]; }); // note this will return an array of values for all runs
@@ -2069,7 +2069,8 @@ const createScales = (
     float: numberFunc,
     string: stringFunc,
     str: stringFunc,
-    boolean: numberFunc
+    boolean: numberFunc,
+    geo: stringFunc
   };
   // add support for rendering geo-parameters
   Object.values(DatacubeGeoAttributeVariableType).forEach(v => {
