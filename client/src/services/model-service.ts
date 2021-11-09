@@ -768,6 +768,9 @@ export default {
   calculateScenarioPercentageChange,
   cleanConstraints,
 
+  // temp
+  fromHistogramFormat,
+
   ENGINE_OPTIONS,
   MODEL_STATUS,
   MODEL_MSGS

@@ -510,6 +510,13 @@ export default defineComponent({
         return;
       }
 
+      // FIXME
+      scenarios.forEach(sc => {
+        if (sc.result && !sc.result[0].confidenceInterval) {
+          sc.result = modelService.fromHistogramFormat(sc.result);
+        }
+      });
+
       // Cycle the scenarios to force reactive to trigger
       this.scenarios = [...scenarios];
     },
