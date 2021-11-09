@@ -283,6 +283,7 @@ $axis-line-height: $font-size-large;
   margin-left: 5px;
   font-size: $font-size-medium;
   width: 4ch;
+  text-align: right;
 
   .increased {
     color: #4dac26;
@@ -298,7 +299,7 @@ $axis-line-height: $font-size-large;
 
 .summary-column {
   width: 300px;
-  margin-left: 5px;
+  margin-left: 10px;
   position: relative;
 }
 
