@@ -79,6 +79,7 @@ export default function useTimeseriesData(
   const { activeFeature } = useActiveDatacubeFeature(metadata);
 
   watchEffect(onInvalidate => {
+    console.log('Parameters changed');
     const datacubeMetadata = metadata.value;
     if (modelRunIds.value.length === 0 || datacubeMetadata === null) {
       // Don't have the information needed to fetch the data
@@ -88,6 +89,8 @@ export default function useTimeseriesData(
     let isCancelled = false;
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
+      console.log('2');
+      console.log(rawTimeseriesData.value);
       const temporalRes =
         selectedTemporalResolution.value !== ''
           ? selectedTemporalResolution.value
@@ -170,6 +173,8 @@ export default function useTimeseriesData(
         //  fetch results to avoid a race condition.
         return;
       }
+      console.log('Fetched results');
+      console.log(fetchResults);
       // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref
       if (breakdownOption.value === SpatialAggregationLevel.Region) {
@@ -220,6 +225,8 @@ export default function useTimeseriesData(
     fetchTimeseries();
   });
 
+  console.log('Raw time series data:');
+  console.log(rawTimeseriesData.value);
   const relativeTo = ref<string | null>(null);
 
   const temporalBreakdownData = computed<BreakdownData | null>(() => {
@@ -353,6 +360,8 @@ export default function useTimeseriesData(
     );
     return applyRelativeTo(afterApplyingBreakdown, relativeTo.value, showPercentChange.value);
   });
+  console.log('Processed time series data:');
+  console.log(processedTimeseriesData.value);
 
   // Whenever the selected breakdown option or timeseries data changes,
   //  reselect the last timestamp across all series
@@ -389,6 +398,8 @@ export default function useTimeseriesData(
   // Whenever the selected runs change, reset "relative to" state
   //  and selected breakdown option
   watchEffect(() => {
+    console.log('3');
+    console.log(rawTimeseriesData.value);
     // Don't reset relativeTo until data has loaded, in case relativeTo is
     //  loaded from an insight and will be valid once timeseriesData has been
     //  populated.
