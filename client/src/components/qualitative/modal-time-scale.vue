@@ -32,12 +32,12 @@
     </template>
     <template #footer>
       <button type="button" class="btn" @click.stop="close">
-        Close
+        Remind me later
       </button>
       <button
         type="button"
         class="btn btn-primary btn-call-for-action"
-        @click.stop="select"
+        @click.stop="save"
       >
         Save
       </button>
@@ -86,16 +86,19 @@ const TIME_SCALE_OPTIONS = [
 export default defineComponent({
   components: { modal },
   name: 'ModalTimeScale',
-  emits: ['select', 'close'],
+  emits: ['save-time-scale', 'close'],
   setup() {
-    return { TIME_SCALE_OPTIONS, selectedTimeScaleOption: ref('years') };
+    return {
+      TIME_SCALE_OPTIONS,
+      selectedTimeScaleOption: ref(TimeScale.Years)
+    };
   },
   methods: {
     close() {
       this.$emit('close');
     },
-    select() {
-      this.$emit('select', this.selectedTimeScaleOption);
+    save() {
+      this.$emit('save-time-scale', this.selectedTimeScaleOption);
     }
   }
 });

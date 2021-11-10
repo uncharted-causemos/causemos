@@ -137,7 +137,11 @@
         </template>
       </drilldown-panel>
     </main>
-    <modal-time-scale />
+    <modal-time-scale
+      v-if="showModalTimeScale"
+      @save-time-scale="saveTimeScale"
+      @close="showModalTimeScale = false"
+    />
     <modal-import-cag
       v-if="showModalImportCAG"
       @import-cag="runImportChecks"
@@ -225,6 +229,7 @@ import projectService from '@/services/project-service';
 import { defineComponent, ref } from '@vue/runtime-core';
 import {
   CAGGraph as CAGGraphInterface,
+  CAGModelParameter,
   CAGModelSummary,
   EdgeParameter,
   NodeParameter,
@@ -237,6 +242,7 @@ import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
 import ModalTimeScale from '@/components/qualitative/modal-time-scale.vue';
+import { TimeScale } from '@/types/Enums';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -314,6 +320,7 @@ export default defineComponent({
     showModalConfirmation: false,
     showModalConflict: false,
     showModalImportCAG: false,
+    showModalTimeScale: false,
     showPathSuggestions: false,
 
     showModalRename: false,
@@ -445,6 +452,10 @@ export default defineComponent({
       // Get CAG data
       this.setAnalysisName('');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
+      // Prompt the analyst to select a time scale if none is set
+      this.showModalTimeScale =
+        this.modelSummary.parameter?.time_scale === undefined ||
+        this.modelSummary.parameter.time_scale === TimeScale.None;
       this.setAnalysisName(this.modelSummary?.name ?? '');
       this.modelComponents = await modelService.getComponents(this.currentCAG);
       if (this.edgeToSelectOnNextRefresh !== null) {
@@ -1205,6 +1216,11 @@ export default defineComponent({
           this.showPathSuggestions = true;
         }
       }
+    },
+    async saveTimeScale(newTimeScale: TimeScale) {
+      const newParameter: Partial<CAGModelParameter> = { time_scale: newTimeScale };
+      await modelService.updateModelParameter(this.currentCAG, newParameter);
+      this.refresh();
     }
   }
 });
