@@ -7,8 +7,8 @@
     </template>
     <template #body>
       <p>
-        There is no evidence to support the edge <strong>{{ ontologyFormatter(source) }}</strong>
-        to <strong>{{ ontologyFormatter(target) }}</strong>. You can still use it
+        There is no evidence to support the edge <strong>{{ ontologyFormatter(source.concept) }}</strong>
+        to <strong>{{ ontologyFormatter(target.concept) }}</strong>. You can still use it
         <span v-if="suggestions.length === 1">.</span>
         <span v-else>, or select from the indirect paths listed below.</span>
       </p>
@@ -17,14 +17,14 @@
           <div>Loading suggestions...</div>
         </div>
         <div
-          v-for="(path, idx) in suggestions"
+          v-for="(suggestion, idx) in suggestions"
           :key="idx"
-          @click="toggleSelection(path)">
+          @click="toggleSelection(suggestion)">
           <i
             class="fa fa-fw fa-check-square-o"
-            :class="{'fa-square-o': path.selected === false, 'fa-check-square-o': path.selected === true}"
+            :class="{'fa-square-o': suggestion.selected === false, 'fa-check-square-o': suggestion.selected === true}"
           />
-          {{ path.map(d => ontologyFormatter(d)).join(" > ") }}
+          {{ suggestion.path.map(d => ontologyFormatter(d)).join(" > ") }}
           <hr v-if="idx === 0">
         </div>
       </div>
@@ -60,11 +60,11 @@ export default {
   },
   props: {
     source: {
-      type: String,
+      type: Object,
       required: true
     },
     target: {
-      type: String,
+      type: Object,
       required: true
     }
   },
@@ -89,15 +89,27 @@ export default {
   },
   methods: {
     refresh() {
-      suggestionService.getPathSuggestions(this.project, this.source, this.target).then(paths => {
+      suggestionService.getGroupPathSuggestions(this.project, this.source.components, this.target.components).then(paths => {
         const sortedPaths = _.orderBy(paths, p => p.length);
-        this.suggestions = [[this.source, this.target], ..._.take(sortedPaths, 5)];
+        this.suggestions = [[this.source.concept, this.target.concept], ..._.take(sortedPaths, 5)].map(path => {
+          return {
+            // suggestions for grouped nodes may have source or target that are component concepts
+            // this normalizes those source and target concepts to the main concepts such that
+            // component concepts are not readded to the cag
+            path: path.map((concept, i) => {
+              if (i === 0) {
+                return this.source.concept;
+              } else if (i === path.length - 1) {
+                return this.target.concept;
+              } else {
+                return concept;
+              }
+            }),
+            selected: false
+          };
+        });
         if (this.suggestions.length === 1) {
           this.suggestions[0].selected = true;
-        } else {
-          this.suggestions.forEach(s => {
-            s.selected = false;
-          });
         }
       });
     },
@@ -108,7 +120,7 @@ export default {
       const selectedPathsRaw = this.suggestions.filter(s => s.selected === true);
       const selectedPaths = [];
       for (let i = 0; i < selectedPathsRaw.length; i++) {
-        const pathRaw = selectedPathsRaw[i];
+        const pathRaw = selectedPathsRaw[i].path;
         const path = [];
 
         for (let j = 0; j < pathRaw.length - 1; j++) {
