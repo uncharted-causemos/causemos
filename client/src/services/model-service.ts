@@ -529,19 +529,19 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
 
   if (!scenario.parameter) return scenario;
 
-  // Remove constraints if the concept is no longer in the model
+  // Remove constraints if the concept is no longer in the model's topology
   _.remove(scenario.parameter.constraints, constraint => {
     return !concepts.includes(constraint.concept);
   });
 
-  // Remove individual clamps if they fall outside of the available range
+  // Remove individual clamps if they fall outside of the projection parameter's range
   scenario.parameter.constraints.forEach(constraints => {
     _.remove(constraints.values, v => {
       return v.step >= modelParameter.num_steps;
     });
   });
 
-  // Reset time ranges
+  // Reset time ranges to match with the model's parameterization
   scenario.parameter.indicator_time_series_range = modelParameter.indicator_time_series_range;
   scenario.parameter.projection_start = modelParameter.projection_start;
   scenario.parameter.num_steps = modelParameter.num_steps;

@@ -561,7 +561,8 @@ export default defineComponent({
         await this.refreshModel();
       }
 
-      // 1. Readjust all scenarios according to current parameters
+      // 1. Readjust all scenarios according to current model parameters (steps, time range), and
+      // topology (if concepts still exist).
       for (const scenario of scenarios) {
         if (scenario.is_valid === false) {
           modelService.resetScenarioParameter(scenario, this.modelSummary, this.modelComponents.nodes);
