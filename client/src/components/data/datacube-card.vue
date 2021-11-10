@@ -76,13 +76,24 @@
                   @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
               </div>
             </div>
-            <temporal-facet
-              v-if="dateModelParam"
-              :model-run-data="filteredRunData"
-              :selected-scenarios="selectedScenarioIds"
-              :model-parameter="dateModelParam"
-              @update-scenario-selection="onUpdateScenarioSelection"
-            />
+            <div v-if="dateModelParam">
+              <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
+                <input @click.stop.prevent="" class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
+                <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
+                    <i class="fa fa-calendar"></i>
+                </a>
+                <a class="btn btn-default date-picker-buttons" title="clear" data-clear>
+                    <i class="fa fa-close"></i>
+                </a>
+              </div>
+              <temporal-facet
+                v-else
+                :model-run-data="filteredRunData"
+                :selected-scenarios="selectedScenarioIds"
+                :model-parameter="dateModelParam"
+                @update-scenario-selection="onUpdateScenarioSelection"
+              />
+            </div>
             <parallel-coordinates-chart
               class="pc-chart"
               :dimensions-data="runParameterValues"
@@ -463,9 +474,11 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
+import { computed, defineComponent, nextTick, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
+
+import flatpickr from 'flatpickr';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
@@ -645,6 +658,9 @@ export default defineComponent({
     const showTagNameModal = ref<boolean>(false);
     const showScenarioTagsModal = ref<boolean>(false);
 
+    const datePickerElement = ref<HTMLElement | null>(null);
+    const dateParamPickerValue = ref<any | null>(null);
+
     const searchFilters = ref<any>({});
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
@@ -666,7 +682,7 @@ export default defineComponent({
 
     // FIXME: we only support one date param of each model datacube
     const dateModelParam = computed(() => {
-      const dateParams = dimensions.value.filter(dim => dim.type === DatacubeGenericAttributeVariableType.Date);
+      const dateParams = dimensions.value.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
       return dateParams.length > 0 ? dateParams[0] : null;
     });
 
@@ -957,7 +973,41 @@ export default defineComponent({
         // clear any selected scenario and show the model desc page
         updateScenarioSelection({ scenarios: [] });
       }
+
+      nextTick(() => {
+        if (newRunsMode.value && dateModelParam.value !== null) {
+          const datePickerOptions: flatpickr.Options.Options = {
+            // defaultDate: initial date for the date picker
+            // altInput: true, // display date in a more readable, customizable, format
+            // mode: "multiple" is it possible to select multiple individual date(s)
+            mode: dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange ? 'range' : 'single', // enable date range selection
+            allowInput: false, // should the user be able to directly enter date value?
+            wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
+            clickOpens: false // do not allow click on the input date picker to open the calendar
+          };
+          if (dateModelParam.value.additional_options) {
+            // minimum allowed date
+            if (dateModelParam.value.additional_options.date_min) {
+              datePickerOptions.minDate = dateModelParam.value.additional_options.date_min;
+            }
+            // maximum allowed date
+            if (dateModelParam.value.additional_options.date_max) {
+              datePickerOptions.maxDate = dateModelParam.value.additional_options.date_max;
+            }
+          }
+          if (datePickerElement.value !== null) {
+            flatpickr(datePickerElement.value, datePickerOptions);
+          }
+        }
+      });
     };
+
+    watch(
+      () => [dateParamPickerValue.value],
+      () => {
+        updatePotentialScenarioDates();
+      }
+    );
 
     function fetchData() {
       if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
@@ -1089,6 +1139,22 @@ export default defineComponent({
     const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
       potentialScenarioCount.value = e.scenarios.length;
       potentialScenarios.value = e.scenarios;
+      updatePotentialScenarioDates();
+    };
+
+    const updatePotentialScenarioDates = () => {
+      // since any date or datarange params are not automatically considered,
+      //  we need to ensure they are added as part of potential scenarios data
+      if (dateModelParam.value !== null) {
+        // FIXME: handle the case of multiple date and/or daterange params
+        const delimiter = dateModelParam.value.additional_options && dateModelParam.value.additional_options.date_range_delimiter ? dateModelParam.value.additional_options.date_range_delimiter : '__';
+        const dateValue = dateModelParam.value.type === DatacubeGenericAttributeVariableType.Date ? dateParamPickerValue.value : dateParamPickerValue.value.replace(' to ', delimiter);
+        potentialScenarios.value.forEach(run => {
+          if (dateModelParam.value !== null) {
+            run[dateModelParam.value.type] = dateParamPickerValue.value === null || dateParamPickerValue.value === '' ? dateModelParam.value.default : dateValue;
+          }
+        });
+      }
     };
 
     const updateStateFromInsight = async (insight_id: string) => {
@@ -1330,6 +1396,8 @@ export default defineComponent({
       colorFromIndex,
       currentTabView,
       dateModelParam,
+      datePickerElement,
+      dateParamPickerValue,
       dataPaths,
       defaultRunButtonCaption,
       dimensions,
@@ -1411,6 +1479,7 @@ export default defineComponent({
       toggleNewRunsMode,
       toggleSearchBar,
       unit,
+      updatePotentialScenarioDates,
       updateStateFromInsight,
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
@@ -1442,7 +1511,8 @@ export default defineComponent({
   },
   data: () => ({
     idToDelete: '',
-    showDelete: false
+    showDelete: false,
+    DatacubeGenericAttributeVariableType
   }),
   methods: {
     openGeoSelectionModal(modelParam: ModelParameter) {
@@ -1547,6 +1617,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 
 @import '~styles/variables';
+@import '~flatpickr/dist/flatpickr.css';
 
 $fullscreenTransition: all 0.5s ease-in-out;
 
@@ -1823,5 +1894,22 @@ $marginSize: 5px;
 .scenario-count {
   color: $label-color;
 }
+
+.new-runs-date-picker-container {
+  display: flex;
+  width: 100%;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  .date-picker-input {
+    border-width: thin;
+    width: 100%;
+    background-color: lightgray;
+    cursor: auto;
+  }
+  .date-picker-buttons {
+      padding: 4px 8px;
+    }
+}
+
 
 </style>
