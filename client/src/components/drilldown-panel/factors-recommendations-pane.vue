@@ -243,7 +243,7 @@ export default {
           suggestedCurations: suggestedCurations,
           acceptedCurations: statementIds
         };
-        await trackCurations(this.curationTrackingId, payload);
+        trackCurations(this.curationTrackingId, payload);
       }
 
       this.closePane();

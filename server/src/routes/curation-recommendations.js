@@ -118,8 +118,7 @@ router.get('/edge-regrounding', asyncHandler(async (req, res) => {
 router.put('/tracking/:trackingId', asyncHandler(async (req, res) => {
   const payload = req.body.payload;
   const trackingId = req.params.trackingId;
-  const result = await curationRecommendationsService.trackCuration(trackingId, payload);
-  res.json(result);
+  await curationRecommendationsService.trackCuration(trackingId, payload);
 }));
 
 module.exports = router;

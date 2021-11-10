@@ -426,7 +426,6 @@ export default {
         }
       }
 
-
       const result = await updateStatementsFactorGrounding(this.project, statementIds, subj, obj);
       let batchId = null;
       if (result.status === 200) {
