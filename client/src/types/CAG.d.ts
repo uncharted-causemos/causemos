@@ -45,11 +45,8 @@ export interface NewScenario {
   name: string;
   description: string;
   model_id: string;
-  engine: string;
   is_baseline: boolean;
   parameter?: ScenarioParameter;
-  result?: ScenarioResult[];
-  experiment_id?: string;
 }
 
 export interface Scenario {
@@ -62,7 +59,7 @@ export interface Scenario {
   is_valid: boolean;
   is_baseline: boolean;
   parameter?: ScenarioParameter;
-  result?: ScenarioResult[];
+  result?: ScenarioResult[]; // FIXME: technically result is not a part of scenario in ES datastore
   experiment_id?: string;
 }
 

@@ -50,6 +50,7 @@
           class="card-map"
           :selected-layer-id="selectedLayer"
           :selected-region="selectedRegionForMap"
+          :bbox="selectedRegionBBox"
         />
       </div>
 
@@ -142,6 +143,9 @@ export default defineComponent({
     },
     selectedRegionForMap(): string {
       return this.selectedRegions.length > 0 ? this.selectedRegions[0].path : '';
+    },
+    selectedRegionBBox(): number[] {
+      return this.selectedRegions.length > 0 && this.selectedRegions[0].bbox ? this.selectedRegions[0].bbox.coordinates : [];
     }
   },
   data: () => ({
@@ -201,7 +205,6 @@ export default defineComponent({
             suggestionResults = res.map(item => {
               const regionLabel = this.getGADMName(item, REGION_ID_DISPLAY_DELIMETER);
               // cache suggestion result
-              console.log(item);
               if (!this.allRegions[regionLabel]) {
                 this.allRegions[regionLabel] = {
                   label: regionLabel,

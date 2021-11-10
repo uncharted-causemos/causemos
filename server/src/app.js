@@ -24,6 +24,7 @@ const modelsRouter = rootRequire('/routes/models');
 const analysesRouter = rootRequire('/routes/analyses');
 const documentsRouter = rootRequire('/routes/documents');
 const scenariosRouter = rootRequire('/routes/scenario');
+const scenarioResultsRouter = rootRequire('/routes/scenario-results');
 const settingsRouter = rootRequire('/routes/settings');
 const dartRouter = rootRequire('/routes/dart');
 const insightsRouter = rootRequire('/routes/insights');
@@ -118,6 +119,10 @@ app.use('/api/analyses', [
 
 app.use('/api/scenarios', [
   scenariosRouter
+]);
+
+app.use('/api/scenario-results', [
+  scenarioResultsRouter
 ]);
 
 // Routes for fetching document

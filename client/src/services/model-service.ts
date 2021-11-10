@@ -11,7 +11,8 @@ import {
   CAGGraph,
   ScenarioResult,
   NodeScenarioData,
-  ScenarioParameter
+  ScenarioParameter,
+  CAGModelParameter
 } from '@/types/CAG';
 
 const MODEL_STATUS = {
@@ -30,6 +31,47 @@ const getProjectModels = async (projectId: string): Promise<{ models: CAGModelSu
   const result = await API.get('models', { params: { project_id: projectId, size: 200 } });
   return result.data;
 };
+
+// FIXME: Hack until engines are ready with new format - DC Nov 2021
+const toHistogramFormat = (result: any) => {
+  const result2 = _.cloneDeep(result);
+  result2.forEach((r: any) => {
+    r.timeseries = [];
+    for (let i = 0; i < r.values.length; i++) {
+      const val = r.values[i];
+      const upper = r.confidenceInterval.upper[i];
+      const lower = r.confidenceInterval.lower[i];
+
+      r.timeseries.push({
+        timestamp: val.timestamp,
+        values: [val.value, upper.value, lower.value]
+      });
+    }
+    delete r.values;
+    delete r.confidenceInterval;
+  });
+  return result2;
+};
+const fromHistogramFormat = (result: any) => {
+  const result2 = _.cloneDeep(result);
+  result2.forEach((r: any) => {
+    r.confidenceInterval = { upper: [], lower: [] };
+    r.valuesTmp = [];
+    for (let i = 0; i < r.values.length; i++) {
+      const t = r.values[i].timestamp;
+      const val = r.values[i].values[0];
+      const upper = r.values[i].values[1];
+      const lower = r.values[i].values[2];
+      r.valuesTmp.push({ timestamp: t, value: val });
+      r.confidenceInterval.upper.push({ timestamp: t, value: upper });
+      r.confidenceInterval.lower.push({ timestamp: t, value: lower });
+    }
+    r.values = r.valuesTmp;
+    delete r.valuesTmp;
+  });
+  return result2;
+};
+
 
 /**
  * Get basic model information without underyling data
@@ -76,10 +118,29 @@ const syncModelWithEngine = async (modelId: string, engine: string) => {
  * Get model's scenarios, including baseline scenario
  */
 const getScenarios = async (modelId: string, engine: string) => {
-  const result = await API.get('scenarios', {
+  const scenarios = (await API.get('scenarios', {
     params: { model_id: modelId, engine: engine }
+  })).data;
+
+  const scenarioResults = (await API.get('scenario-results', {
+    params: { model_id: modelId, engine: engine }
+  })).data;
+
+  // Merge engine-specific results with scenario
+  scenarios.forEach((scenario: Scenario) => {
+    const r = scenarioResults.find((s: any) => s.scenario_id === scenario.id);
+    if (r) {
+      scenario.result = fromHistogramFormat(r.result);
+      scenario.is_valid = r.is_valid;
+      scenario.experiment_id = r.experiment_id;
+    } else {
+      scenario.is_valid = false;
+      scenario.result = [];
+    }
   });
-  return result.data;
+
+  console.log('combining scenarios + scenario-results', scenarios);
+  return scenarios;
 };
 
 /**
@@ -103,7 +164,8 @@ const updateModelMetadata = async (modelId: string, fields: { [key: string]: any
   return result.data;
 };
 
-const updateModelParameter = async (modelId: string, modelParameter: NodeParameter) => {
+// This is meant to only send the parameters that had changed
+const updateModelParameter = async (modelId: string, modelParameter: Partial<CAGModelParameter>) => {
   const result = await API.put(`models/${modelId}/model-parameter`, modelParameter);
   return result.data;
 };
@@ -202,10 +264,6 @@ const getNodeStatements = async (modelId: string, concept: string) => {
  * @param {object} scenario.parameter
  * @param {array} scenario.paramter.constraints - [ {step, value}, {step, value} ... ]
  * @param {number} scenario.paramter.num_steps - number of projection steps
- *
- * With experiment result, additionally
- * @param {string} scenario.experimentId - the identifier used ty the engine
- * @param {array} result - array of projections, one per node in the model graph
  */
 const createScenario = async (scenario: NewScenario) => {
   const result = await API.post('scenarios', scenario);
@@ -214,10 +272,7 @@ const createScenario = async (scenario: NewScenario) => {
 const updateScenario = async (scenario: {
   id: string;
   model_id: string;
-  is_valid: boolean;
-  experiment_id: string | undefined;
   parameter?: ScenarioParameter;
-  result?: ScenarioResult[];
 }) => {
   const result = await API.put(`scenarios/${scenario.id}`, scenario);
   return result.data;
@@ -377,6 +432,13 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     graphData.scenarios = scenarioDataForThisNode;
 
+    // FIXME: hackin parameters from modelSummary
+    graphData.scenarios.forEach(scenario => {
+      if (scenario.parameter) {
+        scenario.parameter.num_steps = modelSummary.parameter.num_steps;
+      }
+    });
+
     result[concept] = graphData;
   });
   return result;
@@ -434,8 +496,6 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
 
     const scenario: NewScenario = {
       model_id: modelId,
-      experiment_id: experimentId,
-      result: result.results.data,
       name: 'Baseline scenario',
       description: 'Baseline scenario',
       parameter: {
@@ -444,10 +504,11 @@ const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
         indicator_time_series_range: modelSummary.parameter.indicator_time_series_range,
         projection_start: modelSummary.parameter.projection_start
       },
-      engine: modelSummary.parameter.engine,
       is_baseline: true
     };
-    await createScenario(scenario);
+    const { id } = await createScenario(scenario);
+
+    await createScenarioResult(modelId, id, modelSummary.parameter.engine, experimentId, result.results.data);
   } catch (error) {
     console.log(error);
     throw new Error(`Failed creating baseline scenario ${modelSummary.parameter.engine}`);
@@ -468,19 +529,19 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
 
   if (!scenario.parameter) return scenario;
 
-  // Remove constraints if the concept is no longer in the model
+  // Remove constraints if the concept is no longer in the model's topology
   _.remove(scenario.parameter.constraints, constraint => {
     return !concepts.includes(constraint.concept);
   });
 
-  // Remove individual clamps if they fall outside of the available range
+  // Remove individual clamps if they fall outside of the projection parameter's range
   scenario.parameter.constraints.forEach(constraints => {
     _.remove(constraints.values, v => {
       return v.step >= modelParameter.num_steps;
     });
   });
 
-  // Reset time ranges
+  // Reset time ranges to match with the model's parameterization
   scenario.parameter.indicator_time_series_range = modelParameter.indicator_time_series_range;
   scenario.parameter.projection_start = modelParameter.projection_start;
   scenario.parameter.num_steps = modelParameter.num_steps;
@@ -642,6 +703,23 @@ const renameNode = async (modelId: string, nodeId: string, concept: string) => {
   return result;
 };
 
+
+const createScenarioResult = async (
+  modelId: string,
+  scenarioId: string,
+  engine: string,
+  experimentId: string,
+  result: any
+): Promise<void> => {
+  await API.post('/scenario-results', {
+    model_id: modelId,
+    scenario_id: scenarioId,
+    engine: engine,
+    experiment_id: experimentId,
+    result: engine === 'dyse' ? result : toHistogramFormat(result) // FIXME: waiting for engines to comply with format
+  });
+};
+
 export default {
   getProjectModels,
   getSummary,
@@ -661,6 +739,7 @@ export default {
 
   getScenarios,
   createScenario,
+  createScenarioResult,
   updateScenario,
   deleteScenario,
   resetScenarioParameter,
@@ -688,6 +767,9 @@ export default {
 
   calculateScenarioPercentageChange,
   cleanConstraints,
+
+  // temp
+  fromHistogramFormat,
 
   ENGINE_OPTIONS,
   MODEL_STATUS,

@@ -66,7 +66,7 @@ import { ScenarioData } from '@/types/Common';
 import { DimensionInfo, Model, ModelParameter } from '@/types/Datacube';
 import _ from 'lodash';
 import { mapGetters } from 'vuex';
-import datacubeService from '@/services/new-datacube-service.ts';
+import datacubeService from '@/services/new-datacube-service';
 
 // allow the user to review potential mode runs before kicking off execution
 export default defineComponent({
