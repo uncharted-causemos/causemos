@@ -181,8 +181,6 @@
       v-if="showPathSuggestions"
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
-      :sources="pathSuggestionSources"
-      :targets="pathSuggestionTargets"
       @add-paths="addSuggestedPath"
       @close="showPathSuggestions = false"
     />
@@ -331,10 +329,8 @@ export default defineComponent({
       curGrounding: any;
     } | null,
     factorRecommendationsList: [] as any[],
-    pathSuggestionSource: '',
-    pathSuggestionTarget: '',
-    pathSuggestionSources: [] as string[],
-    pathSuggestionTargets: [] as string[],
+    pathSuggestionSource: null as NodeParameter | null,
+    pathSuggestionTarget: null as NodeParameter | null,
     edgeToSelectOnNextRefresh: null as {
       source: string;
       target: string;
@@ -498,7 +494,7 @@ export default defineComponent({
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
         const relationsToAdd: SourceTargetPair[] = [];
 
-        // Search for all possible combinations of soruce/target
+        // Search for all possible combinations of source/target
         source.components.forEach(source => {
           target.components.forEach(target => {
             relationsToAdd.push({ source, target });
@@ -960,7 +956,19 @@ export default defineComponent({
               e => e.source === edge.source && e.target === edge.target
             )
           ) {
-            newSourceTargetPairs.push(edge);
+            // handling the grouped nodes and the possiblity we need to get backing
+            // data for the components of the source and target nodes
+            if (this.pathSuggestionSource?.concept === edge.source) {
+              this.pathSuggestionSource.components.forEach((source) => {
+                newSourceTargetPairs.push({ source, target: edge.target });
+              });
+            } else if (this.pathSuggestionTarget?.concept === edge.target) {
+              this.pathSuggestionTarget.components.forEach((target) => {
+                newSourceTargetPairs.push({ source: edge.source, target });
+              });
+            } else {
+              newSourceTargetPairs.push(edge);
+            }
           }
           if (
             !nodeSet.has(edge.source) &&
@@ -983,16 +991,44 @@ export default defineComponent({
         newSourceTargetPairs,
         filtersUtil.newFilters()
       );
-      const newEdges: EdgeParameter[] = newSourceTargetPairs.map(sourceTargetPair => {
+
+      // build a dictionary of the new edges with the backing data/reference ids
+      // being aggregated for all of the components when the edge references a
+      // source or target node
+      const newEdgeDictionary: {[key: string]: EdgeParameter} = newSourceTargetPairs.reduce((edges, sourceTargetPair) => {
         const { source, target } = sourceTargetPair;
-        return {
+        const currentReferenceIds = edgeData[key(sourceTargetPair)] || [];
+        const baseNewEdge = {
           id: '',
-          reference_ids: edgeData[key(sourceTargetPair)] || [],
+          reference_ids: currentReferenceIds,
           user_polarity: null,
           source,
           target
         };
-      });
+
+        if (this.pathSuggestionSource?.components.includes(source)) {
+          const normalizedKey = key({ source: this.pathSuggestionSource.concept, target });
+          if (edges[normalizedKey]) {
+            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
+          } else {
+            baseNewEdge.source = this.pathSuggestionSource.concept;
+            edges[normalizedKey] = baseNewEdge;
+          }
+        } else if (this.pathSuggestionTarget?.components.includes(target)) {
+          const normalizedKey = key({ source, target: this.pathSuggestionTarget.concept });
+          if (edges[normalizedKey]) {
+            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
+          } else {
+            baseNewEdge.target = this.pathSuggestionTarget.concept;
+            edges[normalizedKey] = baseNewEdge;
+          }
+        } else {
+          edges[key(sourceTargetPair)] = baseNewEdge;
+        }
+        return edges;
+      }, {} as {[key: string]: EdgeParameter});
+
+      const newEdges: EdgeParameter[] = Object.values(newEdgeDictionary);
 
       // 3 Save
       const newNodesPayload = newNodes.map(concept => {
@@ -1157,8 +1193,8 @@ export default defineComponent({
         const sourceNode = nodes.find(n => n.concept === source);
         const targetNode = nodes.find(n => n.concept === target);
         if (sourceNode && targetNode) {
-          this.pathSuggestionSources = sourceNode.components;
-          this.pathSuggestionTargets = targetNode.components;
+          this.pathSuggestionSource = sourceNode;
+          this.pathSuggestionTarget = targetNode;
           this.showPathSuggestions = true;
         }
       }
