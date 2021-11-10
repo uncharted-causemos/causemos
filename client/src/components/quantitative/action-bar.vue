@@ -52,7 +52,7 @@
       </button>
       <button
         class="btn btn-default"
-        :class="{ 'btn-primary btn-call-for-action': isModelDirty }"
+        :class="{ 'btn-primary btn-call-for-action': isDirty }"
         @click="runModel"
       >
         Run
@@ -100,6 +100,7 @@
 </template>
 
 <script>
+import _ from 'lodash';
 import { mapGetters, mapActions } from 'vuex';
 
 import SaveScenarioModal from '../modals/modal-save-scenario';
@@ -172,8 +173,8 @@ export default {
         name: '[No Scenarios Exist]'
       };
     },
-    isModelDirty() {
-      return this.modelSummary.status === 0 || this.draftScenarioDirty === true;
+    isDirty() {
+      return _.some(this.scenarios, s => s.is_valid === false);
     },
     isSensitivityAnalysisSupported() {
       return this.currentEngine === PROJECTION_ENGINES.DYSE;

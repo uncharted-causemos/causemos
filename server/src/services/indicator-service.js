@@ -126,7 +126,6 @@ const setDefaultIndicators = async (modelId) => {
   const nodeParameters = await _findAllWithoutIndicators(modelId);
   const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
 
-
   // Defaults
   const geospatialAgg = 'mean';
   const temporalAgg = 'mean';
@@ -183,13 +182,15 @@ const setDefaultIndicators = async (modelId) => {
     updates.push(updatePayload);
   }
 
-  const keyFn = (doc) => { return doc.id; };
-  const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
-  const result = await nodeParameterAdapter.update(updates, keyFn);
-  if (result.errors) {
-    throw new Error(JSON.stringify(result.items[0]));
+  if (!_.isEmpty(updates)) {
+    Logger.info(`Updating ${updates.length} node-parameters`);
+    const keyFn = (doc) => { return doc.id; };
+    const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+    const result = await nodeParameterAdapter.update(updates, keyFn);
+    if (result.errors) {
+      throw new Error(JSON.stringify(result.items[0]));
+    }
   }
-  return result;
 };
 
 module.exports = {

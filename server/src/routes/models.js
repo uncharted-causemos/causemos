@@ -105,6 +105,8 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     num_steps: numSteps
   } = req.body;
 
+  let invalidateScenarios = false;
+
   // 1. Build update params
   const modelFields = {};
   const parameter = {};
@@ -114,12 +116,14 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
   if (projectionStart) {
     parameter.projection_start = projectionStart;
+    invalidateScenarios = true;
   }
   if (indicatorTimeSeriesRange) {
     parameter.indicator_time_series_range = indicatorTimeSeriesRange;
   }
   if (numSteps) {
     parameter.num_steps = numSteps;
+    invalidateScenarios = true;
   }
 
   // Reset sync flag
@@ -138,7 +142,9 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
 
   // 4. Invalidate existing scenarios
-  await scenarioService.invalidateByModel(modelId);
+  if (invalidateScenarios === true) {
+    await scenarioService.invalidateByModel(modelId);
+  }
 
   res.status(200).send({ updateToken: editTime });
 }));

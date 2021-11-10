@@ -86,7 +86,6 @@ router.post('/:mid/', asyncHandler(async (req, res) => {
     name: name,
     status: MODEL_STATUS.NOT_REGISTERED,
     is_stale: CAG.is_stale,
-    is_quantified: false,
     engine_status: RESET_ALL_ENGINE_STATUS
   });
 
