@@ -331,8 +331,8 @@ export default defineComponent({
     } | null,
     factorRecommendationsList: [] as any[],
     curationTrackingId: '',
-    pathSuggestionSource: '',
-    pathSuggestionTarget: '',
+    pathSuggestionSource: null as NodeParameter | null,
+    pathSuggestionTarget: null as NodeParameter | null,
     edgeToSelectOnNextRefresh: null as {
       source: string;
       target: string;
