@@ -90,7 +90,6 @@ export default function useTimeseriesData(
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
       console.log('2');
-      console.log(rawTimeseriesData.value);
       const temporalRes =
         selectedTemporalResolution.value !== ''
           ? selectedTemporalResolution.value
@@ -225,8 +224,6 @@ export default function useTimeseriesData(
     fetchTimeseries();
   });
 
-  console.log('Raw time series data:');
-  console.log(rawTimeseriesData.value);
   const relativeTo = ref<string | null>(null);
 
   const temporalBreakdownData = computed<BreakdownData | null>(() => {
@@ -360,14 +357,14 @@ export default function useTimeseriesData(
     );
     return applyRelativeTo(afterApplyingBreakdown, relativeTo.value, showPercentChange.value);
   });
-  console.log('Processed time series data:');
-  console.log(processedTimeseriesData.value);
 
   // Whenever the selected breakdown option or timeseries data changes,
   //  reselect the last timestamp across all series
   watch(
     () => [breakdownOption.value, processedTimeseriesData.value],
     () => {
+      console.log('Processed time series data:');
+      console.log(processedTimeseriesData.value);
       const allTimestamps = processedTimeseriesData.value.timeseriesData
         .map(timeseries => timeseries.points)
         .flat()

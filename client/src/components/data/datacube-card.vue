@@ -1269,8 +1269,7 @@ export default defineComponent({
       return toSubregionFiltered;
     });
 
-    /*
-    const regionsToTimeseries: any = computed(() => useTimeseriesData(
+    const regionsToTimeseries: any = useTimeseriesData(
       metadata,
       selectedScenarioIds,
       selectedTemporalResolution,
@@ -1284,8 +1283,11 @@ export default defineComponent({
       initialSelectedYears,
       showPercentChange,
       selectedScenarios
-    ));
-    */
+    );
+    const myProcessedTimeseries = ref({});
+    watchEffect(() => {
+      myProcessedTimeseries.value = regionsToTimeseries.value;
+    });
 
     const {
       onSyncMapBounds,
@@ -1376,6 +1378,7 @@ export default defineComponent({
       mapSelectedLayer,
       modelParam,
       modelRunsSearchData,
+      myProcessedTimeseries,
       newRunsMode,
       onMapLoad,
       onModelRunsFiltersUpdated,
@@ -1392,7 +1395,7 @@ export default defineComponent({
       recalculateGridMapDiffStats,
       regionalData,
       regionsToSubregions,
-      // regionsToTimeseries,
+      regionsToTimeseries,
       relativeTo,
       requestNewModelRuns,
       runningDefaultRun,
