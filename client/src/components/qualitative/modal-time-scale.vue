@@ -46,12 +46,13 @@
 </template>
 
 <script lang="ts">
+import { TimeScale } from '@/types/Enums';
 import { defineComponent, ref } from 'vue';
 import modal from '../modals/modal.vue';
 
 const TIME_SCALE_OPTIONS = [
   {
-    id: 'months',
+    id: TimeScale.Months,
     label: 'Months',
     timeSlices: [
       { months: 1, label: 'several weeks' },
@@ -61,7 +62,7 @@ const TIME_SCALE_OPTIONS = [
     example: 'Locust outbreaks'
   },
   {
-    id: 'years',
+    id: TimeScale.Years,
     label: 'Years',
     timeSlices: [
       { months: 3, label: 'a few months' },
@@ -71,7 +72,7 @@ const TIME_SCALE_OPTIONS = [
     example: 'Malnutrition'
   },
   {
-    id: 'decades',
+    id: TimeScale.Decades,
     label: 'Decades',
     timeSlices: [
       { months: 36, label: 'a few years' },

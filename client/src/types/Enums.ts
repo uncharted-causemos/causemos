@@ -106,3 +106,10 @@ export enum TemporalResolutionOption {
   Year = 'year',
   Month = 'month'
 }
+
+export enum TimeScale {
+  None = '',
+  Months = 'MONTHS',
+  Years = 'YEARS',
+  Decades = 'DECADES'
+}
