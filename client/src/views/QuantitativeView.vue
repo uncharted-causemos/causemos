@@ -217,8 +217,10 @@ export default defineComponent({
 
       let scenarios: Scenario[] = await modelService.getScenarios(this.currentCAG, this.currentEngine);
 
-      const isScenariosImbalanced = _.isEmpty(scenarios) || _.some(scenarios, s => _.isEmpty(s.result));
-      console.log('Scenarios imbalanced ', isScenariosImbalanced);
+      // This is used to denote either
+      // - A fresh start, or
+      // - A case where you may have 3 scenarios but less than 3 results, this happens with we switch engines
+      const hasEmptyScenarioResults = _.isEmpty(scenarios) || _.some(scenarios, s => _.isEmpty(s.result));
 
       if (this.modelSummary === null) {
         console.error(`Failed to fetch model summary for "currentCAG" id: ${this.currentCAG}`);
@@ -227,8 +229,12 @@ export default defineComponent({
 
       const engineStatus = this.modelSummary.engine_status[this.currentEngine];
 
-      // 1. If we have topology changes, then we should resync with inference engines
-      if (engineStatus === MODEL_STATUS.NOT_REGISTERED && isScenariosImbalanced) {
+      // 1. Check if we want to run re-register against the engine
+      // Topology and parameterization changes are reflected as NOT_REGISTERD, we can hold off
+      // to avoid excessive waiting times. However if there are unset/empty scenario-results it
+      // creates a lot of data problems downstream and we are better off kicking off the reregister
+      // process.
+      if (engineStatus === MODEL_STATUS.NOT_REGISTERED && hasEmptyScenarioResults) {
         // Check model is ready to be used for experiments
         const errors = await modelService.initializeModel(this.currentCAG);
         if (errors.length) {
@@ -296,7 +302,7 @@ export default defineComponent({
       }
 
       // 6. Rebuild scenarios' result if necessary
-      if (isScenariosImbalanced) {
+      if (hasEmptyScenarioResults) {
         scenarios = await this.runScenarios(scenarios);
       }
 
@@ -373,7 +379,6 @@ export default defineComponent({
 
       await modelService.updateScenario(existingScenario);
       if (draft.experiment_id) {
-        console.log('!! Draft', draft);
         await modelService.createScenarioResult(
           this.currentCAG,
           id,
