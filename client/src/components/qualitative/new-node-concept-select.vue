@@ -22,7 +22,7 @@
     </div>
     <dropdown-control class="suggestion-dropdown">
       <template #content>
-        <div style="display: flex; flex-direction: row">
+        <div style="display: flex; flex-direction: row" ref="myDropdown">
           <div class="left-column">
             <div
               v-for="(suggestion, index) in suggestions"
@@ -117,6 +117,7 @@ export default {
   watch: {
     userInput() {
       this.getSuggestions();
+      this.testing();
     },
     suggestions(n, o) {
       if (!_.isEqual(n, o)) {
@@ -178,6 +179,14 @@ export default {
     },
     conceptNotInCag(concept) {
       return this.conceptsInCag.indexOf(concept.concept) === -1;
+    },
+    testing() {
+      const dropdownBoundingBox = this.$refs.myDropdown.getBoundingClientRect();
+      const cagContainerBoundingBox = this.$parent.$refs.container.getBoundingClientRect();
+
+      if (dropdownBoundingBox.bottom > cagContainerBoundingBox.bottom || dropdownBoundingBox.right > cagContainerBoundingBox.right) {
+        console.log('DROPDOWN OUT OF BOUNDS');
+      }
     },
     getSuggestions: _.throttle(async function() {
       if (_.isEmpty(this.userInput)) {
