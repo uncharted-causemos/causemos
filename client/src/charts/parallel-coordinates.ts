@@ -161,6 +161,7 @@ function renderParallelCoordinates(
   //
   dimensions = filterDrilldownDimensionData(dimensionsList as ModelParameter[]);
   dimensions = filterInvisibleDimensionData(dimensions as ModelParameter[]);
+  dimensions = filterDateDimensionData(dimensions as ModelParameter[]);
 
   const detectTypeFromData = false;
   // process data and detect data type for each dimension
@@ -1812,6 +1813,12 @@ const filterInvisibleDimensionData = (dimensions: Array<ModelParameter>) => {
       if (isOutputDimension(dimensions, d.name)) return true;
       return d.is_visible;
     });
+};
+
+const filterDateDimensionData = (dimensions: Array<ModelParameter>) => {
+  // this should only filter input parameters
+  return dimensions
+    .filter(d => d.type !== DatacubeGenericAttributeVariableType.Date && d.type !== DatacubeGenericAttributeVariableType.DateRange);
 };
 
 function isOutputDimension(dimensions: Array<DimensionInfo>, dimName: string) {
