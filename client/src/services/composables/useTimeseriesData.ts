@@ -90,6 +90,7 @@ export default function useTimeseriesData(
     async function fetchTimeseries() {
       // Fetch the timeseries data for each modelRunId
       console.log('2');
+      console.log(regionIds);
       const temporalRes =
         selectedTemporalResolution.value !== ''
           ? selectedTemporalResolution.value
@@ -173,6 +174,7 @@ export default function useTimeseriesData(
         return;
       }
       console.log('Fetched results');
+      console.log(regionIds);
       console.log(fetchResults);
       // Assign a name, id, and colour to each timeseries and store it in the
       //  `rawTimeseriesData` ref

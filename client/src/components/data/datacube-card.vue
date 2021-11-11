@@ -1287,6 +1287,8 @@ export default defineComponent({
     const myProcessedTimeseries = ref({});
     watchEffect(() => {
       myProcessedTimeseries.value = regionsToTimeseries.value;
+      console.log('Processed time series inside watch effect');
+      console.log(myProcessedTimeseries.value);
     });
 
     const {
