@@ -106,7 +106,7 @@ h3 {
 
 .scenario-row {
   padding-bottom: 10px;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   h3 {
     // Give this column half of the space
     flex: 1;

@@ -799,11 +799,12 @@ input[type="radio"] {
 }
 
 .expanded-node-header {
-  background: #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 5px;
+  padding-left: 10px;
+  font-size: $font-size-extra-large;
 }
 
 .expanded-node-body {
