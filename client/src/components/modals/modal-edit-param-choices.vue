@@ -1,7 +1,7 @@
 <template>
   <modal>
     <template #header>
-      <h4 class="title"><i class="fa fa-fw fa-book" /> Rename Parameter Options</h4>
+      <h4 class="title"><i class="fa fa-fw fa-book" /> Edit Parameter Options</h4>
     </template>
     <template #body v-if="updatedParameter">
       <label>
@@ -168,7 +168,6 @@ export default defineComponent({
   },
   data: () => ({
     updatedParameter: undefined as ModelParameter | undefined
-    // geo_acceptable_levels?: string[]; // specific geo type flag
   }),
   mounted() {
     this.updatedParameter = _.cloneDeep(this.selectedParameter);
