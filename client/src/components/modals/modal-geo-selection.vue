@@ -145,7 +145,7 @@ export default defineComponent({
       return this.selectedRegions.length > 0 ? this.selectedRegions[0].path : '';
     },
     selectedRegionBBox(): number[] {
-      return this.selectedRegions.length > 0 && this.selectedRegions[0].bbox ? this.selectedRegions[0].bbox.coordinates : [];
+      return this.selectedRegions.length > 0 && this.selectedRegions[0].bbox ? this.selectedRegions[0].bbox : [];
     }
   },
   data: () => ({
@@ -210,7 +210,7 @@ export default defineComponent({
                   label: regionLabel,
                   path: this.getGADMName(item, REGION_ID_DELIMETER),
                   code: item.code as string,
-                  bbox: item.bbox
+                  bbox: item.bbox ? item.bbox.coordinates : []
                 };
               }
               return regionLabel; // this will be displayed in the autocomplete dropdown
