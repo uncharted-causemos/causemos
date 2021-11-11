@@ -1269,7 +1269,16 @@ export default defineComponent({
       return toSubregionFiltered;
     });
 
-    const regionsToTimeseries: any = useTimeseriesData(
+    const {
+      subregionTimeseriesData: timeseriesData,
+      subregionVisibleTimeseriesData: visibleTimeseriesData,
+      subregionRelativeToTimeseriesData: relativeTo,
+      subregionBaselineMetadata: baselineMetadata,
+      subregionSetRelativeTo: setRelativeTo,
+      subregionTemporalBreakdownData: temporalBreakdownData,
+      subregionSelectedYears: selectedYears,
+      subregionToggleIsYearSelected: toggleIsYearSelected
+    } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
       selectedTemporalResolution,
@@ -1284,6 +1293,16 @@ export default defineComponent({
       showPercentChange,
       selectedScenarios
     );
+    const regionsToTimeseries: any = {
+      subregionTimeseriesData,
+      subregionVisibleTimeseriesData,
+      subregionRelativeToTimeseriesData,
+      subregionBaselineMetadata,
+      subregionSetRelativeTo,
+      subregionTemporalBreakdownData,
+      subregionSelectedYears,
+      subregionToggleIsYearSelected
+    };
     const myProcessedTimeseries = ref({});
     watchEffect(() => {
       myProcessedTimeseries.value = regionsToTimeseries.value;
