@@ -915,6 +915,7 @@ export default {
       const nodeUI = node.select('.node-ui');
       const rect = nodeUI.select(targetNodeSelector);
       const nodeUIRect = rect.node();
+      this.renderer.disableNodeHandles();
 
       // FIXME: Should do this in drag-start
       if (nodeUI.select('.node-control').size() > 0) {
@@ -945,7 +946,6 @@ export default {
             .style('stroke-width', 12);
         }
       });
-
       this.targetNode = targetNode;
     },
     async dragEndCallback(node) {
