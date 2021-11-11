@@ -63,19 +63,32 @@
               <!-- TODO: Set goal button -->
             </div>
           </div>
-          <td-node-chart
-            v-if="comparisonBaselineId === null && selectedNodeScenarioData !== null"
-            class="scenario-chart"
-            :selected-scenario-id="selectedScenarioId"
-            :historical-timeseries="historicalTimeseries"
-            :projections="selectedNodeScenarioData.projections"
-            :min-value="indicatorMin"
-            :max-value="indicatorMax"
-            :constraints="constraints"
-            :viewing-extent="viewingExtent"
-            @set-constraints="modifyConstraints"
-            @set-historical-timeseries="setHistoricalTimeseries"
-          />
+          <div class="expanded-node-body">
+            <td-node-chart
+              v-if="selectedNodeScenarioData !== null"
+              class="scenario-chart"
+              :class="{'is-expanded': isHistoricalDataExpanded}"
+              :is-expanded="isHistoricalDataExpanded"
+              :selected-scenario-id="selectedScenarioId"
+              :historical-timeseries="historicalTimeseries"
+              :projections="selectedNodeScenarioData.projections"
+              :min-value="indicatorMin"
+              :max-value="indicatorMax"
+              :constraints="constraints"
+              :viewing-extent="viewingExtent"
+              @set-constraints="modifyConstraints"
+              @set-historical-timeseries="setHistoricalTimeseries"
+            />
+            <projection-histograms
+              v-if="
+                selectedNodeScenarioData !== null && !isHistoricalDataExpanded
+              "
+              class="projection-histograms"
+              :comparison-baseline-id="comparisonBaselineId"
+              :historical-timeseries="historicalTimeseries"
+              :projections="selectedNodeScenarioData.projections"
+            />
+          </div>
         </div>
         <p>
           <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
@@ -180,16 +193,6 @@
         </template>
       </div>
     </main>
-    <!-- TODO: Panes go here -->
-    <!-- <drilldown-panel
-      class="drilldown-panel"
-      :tabs="drilldownPanelTabs"
-      :active-tab-id="'only-tab'"
-    >
-      <template #content>
-        (Panes go here)
-      </template>
-    </drilldown-panel> -->
   </div>
 </template>
 
@@ -213,6 +216,7 @@ import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questio
 import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
+import ProjectionHistograms from '@/components/node-drilldown/projection-histograms.vue';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -220,7 +224,8 @@ export default defineComponent({
     // NeighborNode,
     TdNodeChart,
     DropdownButton,
-    AnalyticalQuestionsAndInsightsPanel
+    AnalyticalQuestionsAndInsightsPanel,
+    ProjectionHistograms
   },
   props: {},
   setup() {
@@ -544,7 +549,7 @@ export default defineComponent({
       }
     };
 
-    const comparisonBaselineId = ref(null);
+    const comparisonBaselineId = ref<string | null>(null);
     const comparisonDropdownOptions = computed<DropdownItem[]>(() => {
       const _projections = selectedNodeScenarioData.value?.projections ?? [];
       if (_projections.length < 2) {
@@ -653,6 +658,9 @@ export default defineComponent({
       scenarioData
     };
   },
+  data: () => ({
+    isHistoricalDataExpanded: false
+  }),
   methods: {
     openDataExplorer() {
       this.$router.push({
@@ -780,7 +788,6 @@ input[type="radio"] {
 }
 
 .expanded-node {
-  height: 350px;
   flex-shrink: 0;
   border: 1px solid #bbb;
   border-radius: 4px;
@@ -799,13 +806,23 @@ input[type="radio"] {
   padding: 5px;
 }
 
+.expanded-node-body {
+  height: 450px;
+  display: flex;
+}
+
 .button-group > *:not(:first-child) {
   margin-left: 5px;
 }
 
 .scenario-chart {
   flex: 1;
-  min-height: 0;
+  min-width: 0;
+}
+
+.projection-histograms {
+  flex: 3;
+  min-width: 0;
 }
 
 .neighbor-node {
