@@ -682,7 +682,9 @@ export default defineComponent({
 
     // FIXME: we only support one date param of each model datacube
     const dateModelParam = computed(() => {
-      const dateParams = dimensions.value.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
+      if (metadata.value === null || !isModelMetadata.value) return null;
+      const modelMetadata = metadata.value as Model;
+      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
       return dateParams.length > 0 ? dateParams[0] : null;
     });
 
@@ -1002,11 +1004,11 @@ export default defineComponent({
               clickOpens: false // do not allow click on the input date picker to open the calendar
             };
             // minimum allowed date
-            if (dateModelParam.value.additional_options.date_min) {
+            if (dateModelParam.value.additional_options?.date_min) {
               datePickerOptions.minDate = dateModelParam.value.additional_options.date_min;
             }
             // maximum allowed date
-            if (dateModelParam.value.additional_options.date_max) {
+            if (dateModelParam.value.additional_options?.date_max) {
               datePickerOptions.maxDate = dateModelParam.value.additional_options.date_max;
             }
             if (datePickerElement.value !== null) {
