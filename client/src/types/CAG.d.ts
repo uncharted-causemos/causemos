@@ -131,9 +131,7 @@ export interface CAGModelParameter {
   };
   projection_start: number;
   engine: string;
-  // FIXME: Once pre-existing CAGs are ported over time_scale should no longer
-  //  be optional - BC Nov 2021
-  time_scale?: TimeScale;
+  time_scale: TimeScale;
 }
 
 export interface CAGModelSummary {
