@@ -1270,14 +1270,14 @@ export default defineComponent({
     });
 
     const {
-      subregionTimeseriesData: timeseriesData,
-      subregionVisibleTimeseriesData: visibleTimeseriesData,
-      subregionRelativeToTimeseriesData: relativeTo,
-      subregionBaselineMetadata: baselineMetadata,
-      subregionSetRelativeTo: setRelativeTo,
-      subregionTemporalBreakdownData: temporalBreakdownData,
-      subregionSelectedYears: selectedYears,
-      subregionToggleIsYearSelected: toggleIsYearSelected
+      timeseriesData: subregionTimeseriesData,
+      visibleTimeseriesData: subregionVisibleTimeseriesData,
+      relativeTo: subregionRelativeToTimeseriesData,
+      baselineMetadata: subregionBaselineMetadata,
+      setRelativeTo: subregionSetRelativeTo,
+      temporalBreakdownData: subregionTemporalBreakdownData,
+      selectedYears: subregionSelectedYears,
+      toggleIsYearSelected: subregionToggleIsYearSelected
     } = useTimeseriesData(
       metadata,
       selectedScenarioIds,
@@ -1305,7 +1305,7 @@ export default defineComponent({
     };
     const myProcessedTimeseries = ref({});
     watchEffect(() => {
-      myProcessedTimeseries.value = regionsToTimeseries.value;
+      myProcessedTimeseries.value = regionsToTimeseries;
       console.log('Processed time series inside watch effect');
       console.log(myProcessedTimeseries.value);
     });
