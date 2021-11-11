@@ -1,5 +1,5 @@
 <template>
-  <modal @close="close">
+  <modal @close="save">
     <template #header>
       <h2 class="header-question">Which time scale are you interested in?</h2>
     </template>
@@ -31,9 +31,6 @@
       </div>
     </template>
     <template #footer>
-      <button type="button" class="btn" @click.stop="close">
-        Remind me later
-      </button>
       <button
         type="button"
         class="btn btn-primary btn-call-for-action"
@@ -86,7 +83,7 @@ const TIME_SCALE_OPTIONS = [
 export default defineComponent({
   components: { modal },
   name: 'ModalTimeScale',
-  emits: ['save-time-scale', 'close'],
+  emits: ['save-time-scale'],
   setup() {
     return {
       TIME_SCALE_OPTIONS,
@@ -94,9 +91,6 @@ export default defineComponent({
     };
   },
   methods: {
-    close() {
-      this.$emit('close');
-    },
     save() {
       this.$emit('save-time-scale', this.selectedTimeScaleOption);
     }
