@@ -1,3 +1,4 @@
+import { TimeScale } from './Enums';
 import { TimeseriesPoint } from './Timeseries';
 
 export interface ConceptProjectionConstraints {
@@ -62,7 +63,6 @@ export interface Scenario {
   result?: ScenarioResult[]; // FIXME: technically result is not a part of scenario in ES datastore
   experiment_id?: string;
 }
-
 
 export interface NodeScenarioData {
   initial_value: number;
@@ -131,6 +131,7 @@ export interface CAGModelParameter {
   };
   projection_start: number;
   engine: string;
+  time_scale: TimeScale;
 }
 
 export interface CAGModelSummary {
