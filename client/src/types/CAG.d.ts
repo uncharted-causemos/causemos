@@ -1,4 +1,5 @@
 import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
+import { TimeScale } from './Enums';
 
 export interface ConceptProjectionConstraints {
   concept: string;
@@ -118,6 +119,7 @@ export interface CAGModelParameter {
   };
   projection_start: number;
   engine: string;
+  time_scale: TimeScale;
 }
 
 export interface CAGModelSummary {

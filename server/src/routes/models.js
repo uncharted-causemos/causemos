@@ -22,6 +22,7 @@ const HISTORY_START_DATE = '2015-01-01';
 const HISTORY_END_DATE = '2020-12-01';
 const PROJECTION_START_DATE = '2021-01-01';
 const DEFAULT_NUM_STEPS = 12;
+const DEFAULT_TIME_SCALE = '';
 
 
 const DYSE = 'dyse';
@@ -57,7 +58,8 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
       },
       num_steps: DEFAULT_NUM_STEPS,
       projection_start: defaultProjectionStartDate,
-      engine: 'dyse'
+      engine: 'dyse',
+      time_scale: DEFAULT_TIME_SCALE
     };
   }
   modelFields.status = 0;
@@ -102,7 +104,8 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     engine,
     projection_start: projectionStart,
     indicator_time_series_range: indicatorTimeSeriesRange,
-    num_steps: numSteps
+    num_steps: numSteps,
+    time_scale: timeScale
   } = req.body;
 
   let invalidateScenarios = false;
@@ -123,6 +126,10 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
   if (numSteps) {
     parameter.num_steps = numSteps;
+    invalidateScenarios = true;
+  }
+  if (timeScale) {
+    parameter.time_scale = timeScale;
     invalidateScenarios = true;
   }
 
