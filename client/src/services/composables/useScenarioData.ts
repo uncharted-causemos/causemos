@@ -6,7 +6,6 @@ import { DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/En
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
 
-
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
  * returns the metadata for each scenario in one list.

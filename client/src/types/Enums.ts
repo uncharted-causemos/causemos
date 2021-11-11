@@ -44,7 +44,8 @@ export enum DatacubeGenericAttributeVariableType {
   Float = 'float',
   String = 'str',
   Boolean = 'boolean',
-  Datetime = 'datetime',
+  Date = 'date', // a model param (within a run) would only have a single date value
+  DateRange = 'daterange', // a model param (within a run) would only have two date values
   Geo = 'geo'
 }
 

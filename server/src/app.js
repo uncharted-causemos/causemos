@@ -24,6 +24,7 @@ const modelsRouter = rootRequire('/routes/models');
 const analysesRouter = rootRequire('/routes/analyses');
 const documentsRouter = rootRequire('/routes/documents');
 const scenariosRouter = rootRequire('/routes/scenario');
+const scenarioResultsRouter = rootRequire('/routes/scenario-results');
 const settingsRouter = rootRequire('/routes/settings');
 const dartRouter = rootRequire('/routes/dart');
 const insightsRouter = rootRequire('/routes/insights');
@@ -31,6 +32,7 @@ const questionsRouter = rootRequire('/routes/questions');
 const cagsRouter = rootRequire('/routes/cags');
 const curationRecommendationsRouter = rootRequire('/routes/curation-recommendations');
 const modelRunsRouter = rootRequire('/routes/model-runs');
+const modelRunTagsRouter = rootRequire('/routes/model-run-tags');
 const indicatorsRouter = rootRequire('/routes/indicators');
 const datacubeRouter = rootRequire('/routes/datacubes');
 const gadmRouter = rootRequire('/routes/gadm-names');
@@ -119,6 +121,10 @@ app.use('/api/scenarios', [
   scenariosRouter
 ]);
 
+app.use('/api/scenario-results', [
+  scenarioResultsRouter
+]);
+
 // Routes for fetching document
 app.use('/api/documents', [
   documentsRouter
@@ -137,6 +143,10 @@ app.use('/api/audits', [
 // Handle some /api/mass calls ourselves. The rest get handled below.
 app.use('/api/maas/model-runs', [
   modelRunsRouter
+]);
+
+app.use('/api/maas/model-run-tags', [
+  modelRunTagsRouter
 ]);
 
 app.use('/api/maas/indicators', [

@@ -113,24 +113,6 @@ class CAGRenderer extends BaseCAGRenderer {
       .style('pointer-events', 'none')
       .text(d => d.label)
       .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
-
-
-    // FIXME: weird, seem like there is a double-render issue
-    if (nodeSelection.size() === 0) return;
-
-    // Show components
-    const components = nodeSelection.datum().data.components;
-    for (let i = 0; i < components.length; i++) {
-      nodeSelection
-        .append('text')
-        .classed('node-component-abel', true)
-        .attr('x', 10)
-        .attr('y', 40 + i * 15)
-        .style('pointer-events', 'none')
-        .style('fill', '#888')
-        .text(components[i])
-        .each(function () { svgUtil.truncateTextToWidth(this, d3.select(this).datum().width - 20); });
-    }
   }
 
   // Override render function to also check for ambigous edges and highlight them
@@ -734,7 +716,7 @@ export default {
   mounted() {
     this.renderer = new CAGRenderer({
       el: this.$refs.container,
-      adapter: new Adapter({ nodeWidth: 130, nodeHeight: 50, layout: layered }),
+      adapter: new Adapter({ nodeWidth: 130, nodeHeight: 30, layout: layered }),
       renderMode: 'delta',
       addons: [highlight, nodeDrag, panZoom],
       useEdgeControl: true,
@@ -933,6 +915,7 @@ export default {
       const nodeUI = node.select('.node-ui');
       const rect = nodeUI.select(targetNodeSelector);
       const nodeUIRect = rect.node();
+      this.renderer.disableNodeHandles();
 
       // FIXME: Should do this in drag-start
       if (nodeUI.select('.node-control').size() > 0) {

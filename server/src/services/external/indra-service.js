@@ -6,6 +6,8 @@ const Logger = rootRequire('/config/logger');
 // Changes for August
 const INDRA_URL = 'http://ec2-44-192-73-245.compute-1.amazonaws.com:8001';
 
+const INDRA_TIMEOUT = 5000; // 5 seconds
+
 /**
  * Let INDRA know we have a new project
  */
@@ -15,6 +17,7 @@ const sendNewProject = async (id, name, corpusId) => {
     url: INDRA_URL + '/assembly/new_project',
     method: 'POST',
     headers: { 'content-type': 'application/json' },
+    timeout: INDRA_TIMEOUT,
     json: {
       project_id: id,
       project_name: name,

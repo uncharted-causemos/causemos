@@ -647,6 +647,24 @@ const searchPath = async (projectId, sourceConcept, targetConcept, hops) => {
   return graphUtil.normalPath(g, [sourceConcept, targetConcept], hops);
 };
 
+/**
+ * @param {string} projectId
+ * @param {string} sourceConcept
+ * @param {string} targetConcept
+ * @param {number} hops
+ */
+const groupSearchPath = async (projectId, sourceConcepts, targetConcepts, hops) => {
+  let promise = null;
+  promise = get(_graphKey(projectId));
+
+  if (!promise) {
+    promise = getProjectEdges(projectId, null);
+    set(_graphKey(projectId), promise);
+  }
+  const g = await promise;
+  return graphUtil.groupPath(g, sourceConcepts, targetConcepts, hops);
+};
+
 const bustProjectGraphCache = async (projectId) => {
   Logger.info(`Busting/reset project ${projectId} graph cache`);
   const promise = getProjectEdges(projectId, null);
@@ -852,6 +870,7 @@ module.exports = {
   getProjectStatementsScores,
   getProjectEdges,
 
+  groupSearchPath,
   searchFields,
   searchPath,
   bustProjectGraphCache,

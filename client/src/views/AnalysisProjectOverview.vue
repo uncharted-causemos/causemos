@@ -102,14 +102,10 @@
           </div>
         </div>
         <div class="analysis-list">
-          <!-- the z-index of each card is lower than the previous card, so
-          earlier cards display over later ones and each card's dropdown
-          doesn't get clipped -->
           <analysis-overview-card
-            v-for="(analysis, index) in filteredAnalyses"
+            v-for="analysis in filteredAnalyses"
             :key="analysis.id"
             class="analysis-overview-card"
-            :style="{'z-index': filteredAnalyses.length - index}"
             :analysis="analysis"
             @open="onOpen(analysis)"
             @delete="onDelete(analysis)"
