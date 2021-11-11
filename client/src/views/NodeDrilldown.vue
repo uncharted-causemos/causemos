@@ -796,6 +796,8 @@ input[type="radio"] {
   display: flex;
   flex-direction: column;
   background: white;
+  flex: 1;
+  min-height: 400px;
 }
 
 .expanded-node-header {
@@ -808,7 +810,8 @@ input[type="radio"] {
 }
 
 .expanded-node-body {
-  height: 450px;
+  flex: 1;
+  min-height: 0;
   display: flex;
 }
 
