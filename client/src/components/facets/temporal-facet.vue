@@ -38,6 +38,7 @@ import '@uncharted.software/facets-core';
 import '@uncharted.software/facets-plugins';
 import { TemporalResolution, DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import _ from 'lodash';
+import { DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 
 // NOTE: Honestly, for date range a Gantt-like chart is much better representation
 //  than the facet-timeline, which is more suitable for single date runs
@@ -123,7 +124,7 @@ export default {
       // build a map of unique temporal keys, e.g., timestamp or dates
       //  for each key, the value would be an array of the matching model runs
       let temporalDataMap = {};
-      const delimiter = '__';
+      const delimiter = DEFAULT_DATE_RANGE_DELIMETER;
       // build a histogram for bins only relevant to the available model runs
       const isYearlyResolution = this.dateParamResolution === TemporalResolution.Annual;
       const isMonthlyResolution = this.dateParamResolution === TemporalResolution.Monthly;

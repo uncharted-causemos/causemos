@@ -210,7 +210,7 @@ export default defineComponent({
                   label: regionLabel,
                   path: this.getGADMName(item, REGION_ID_DELIMETER),
                   code: item.code as string,
-                  bbox: item.bbox
+                  bbox: item.bbox ? item.bbox.coordinates : []
                 };
               }
               return regionLabel; // this will be displayed in the autocomplete dropdown

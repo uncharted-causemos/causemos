@@ -1,8 +1,8 @@
-import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
+import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { Ref, ref, watchEffect } from 'vue';
 import { getDatacubeById } from '@/services/new-datacube-service';
 import { getValidatedOutputs, isModel } from '@/utils/datacube-util';
-import { ModelParameterDataType } from '@/types/Enums';
+import { DatacubeGenericAttributeVariableType, DatacubeGeoAttributeVariableType, GeoAttributeFormat, ModelParameterDataType } from '@/types/Enums';
 import _ from 'lodash';
 
 /**
@@ -80,6 +80,31 @@ export default function useModelMetadata(
             }
           }
         });
+      }
+
+      if (isModel(rawMetadata) && rawMetadata.name === 'CHIRPS - Climate Hazards Center Infrared Precipitation with Stations') {
+        // force the input param to be of type date: month
+        const p = rawMetadata.parameters.find(p => p.name === 'month') as ModelParameter;
+        p.type = DatacubeGenericAttributeVariableType.Date;
+        if (!p.additional_options) {
+          p.additional_options = {};
+        }
+        p.name = 'date';
+        p.additional_options.date_display_format = 'YYYY-MM';
+
+        // for testing date-range, every run will have two date values separated by some known delimiter
+        const p2 = rawMetadata.parameters.find(p => p.name === 'year') as ModelParameter;
+        p2.type = DatacubeGenericAttributeVariableType.DateRange;
+        p2.name = 'daterange';
+      }
+
+      if (isModel(rawMetadata) && rawMetadata.name === 'MaxHop') {
+        // force its country input param to be of type geo
+        const p = rawMetadata.parameters.filter(p => p.name === DatacubeGeoAttributeVariableType.Country)[0];
+        p.type = DatacubeGeoAttributeVariableType.Country;
+        p.type = DatacubeGenericAttributeVariableType.Geo;
+        p.data_type = ModelParameterDataType.Freeform;
+        p.additional_options.geo_region_format = GeoAttributeFormat.Bounding_Box;
       }
 
       metadata.value = rawMetadata;

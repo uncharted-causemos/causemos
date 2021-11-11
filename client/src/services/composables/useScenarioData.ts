@@ -5,6 +5,9 @@ import { isImage, isVideo, TAGS } from '@/utils/datacube-util';
 import { DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/Enums';
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
+import dateFormatter from '@/formatters/date-formatter';
+import { getRandomInt } from '@/utils/random';
+import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
@@ -62,6 +65,61 @@ export default function useScenarioData(
             }
           }
         });
+      });
+    }
+
+    if (dataId.value === '897da460-6118-4a13-9d41-38e948792cb9') { // CHIRPS
+      // transform each 'month' value to be a date value for proper consumption by the temporal facet
+      const numRuns = Math.trunc((filteredRuns.length / 2) + 1);
+      const delimiter = REGION_ID_DELIMETER;
+      //
+      // date / month
+      //
+      const start = new Date(2012, 0, 1);
+      const end = new Date();
+      const paramName = 'month';
+      const dateFormat = dimensions.value.find(d => d.name === paramName)?.additional_options.date_display_format ?? 'YYYY-MM-DD';
+      const randomDates: Date[] = [];
+      for (let i = 0; i < numRuns; i++) {
+        const newRandomDate = new Date(start.getTime() + Math.random() * (end.getTime() - start.getTime()));
+        randomDates.push(newRandomDate);
+      }
+      filteredRuns.forEach(run => {
+        const temporalParam = run.parameters.find(p => p.name === paramName);
+        if (temporalParam) {
+          temporalParam.name = 'date';
+          const randIndx = getRandomInt(0, numRuns - 1);
+          const newDateValue = randomDates[randIndx];
+          temporalParam.value = dateFormatter(newDateValue, dateFormat);
+        }
+      });
+
+      //
+      // daterange / year
+      //
+      const start1 = new Date(2012, 0, 1);
+      const end1 = new Date(2014, 0, 1);
+      const start2 = new Date(2015, 0, 1);
+      const end2 = new Date(2019, 0, 1);
+      const paramName2 = 'year';
+      const dateFormat2 = 'YYYY-MM-DD';
+      const randomDatesStart: Date[] = [];
+      const randomDatesEnd: Date[] = [];
+      for (let i = 0; i < numRuns; i++) {
+        const newRandomDate1 = new Date(start1.getTime() + Math.random() * (end1.getTime() - start1.getTime()));
+        const newRandomDate2 = new Date(start2.getTime() + Math.random() * (end2.getTime() - start2.getTime()));
+        randomDatesStart.push(newRandomDate1);
+        randomDatesEnd.push(newRandomDate2);
+      }
+      filteredRuns.forEach(run => {
+        const temporalParam = run.parameters.find(p => p.name === paramName2);
+        if (temporalParam) {
+          temporalParam.name = 'daterange';
+          const randIndx = getRandomInt(0, numRuns - 1);
+          const newDateValue1 = randomDatesStart[randIndx];
+          const newDateValue2 = randomDatesEnd[randIndx];
+          temporalParam.value = dateFormatter(newDateValue1, dateFormat2) + delimiter + dateFormatter(newDateValue2, dateFormat2);
+        }
       });
     }
 
