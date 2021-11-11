@@ -1,4 +1,4 @@
-import { TimeseriesPoint } from './Timeseries';
+import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
 
 export interface ConceptProjectionConstraints {
   concept: string;
@@ -24,21 +24,13 @@ export interface ScenarioParameter {
 export interface ScenarioProjection {
   scenarioName: string;
   scenarioId: string;
-  values: TimeseriesPoint[];
-  confidenceInterval: {
-    upper: TimeseriesPoint[];
-    lower: TimeseriesPoint[];
-  };
+  values: TimeseriesDistributionPoint[];
   constraints: { step: number; value: number }[];
 }
 
 export interface ScenarioResult {
   concept: string;
-  values: TimeseriesPoint[];
-  confidenceInterval: {
-    upper: TimeseriesPoint[];
-    lower: TimeseriesPoint[];
-  };
+  values: TimeseriesDistributionPoint[];
 }
 
 export interface NewScenario {
@@ -63,7 +55,6 @@ export interface Scenario {
   experiment_id?: string;
 }
 
-
 export interface NodeScenarioData {
   initial_value: number;
   indicator_name?: string;
@@ -84,11 +75,7 @@ export interface NodeScenarioData {
     // A list of constraints for this one node in this one scenario
     constraints?: { step: number; value: number }[];
     result?: {
-      values: TimeseriesPoint[];
-      confidenceInterval: {
-        upper: TimeseriesPoint[];
-        lower: TimeseriesPoint[];
-      };
+      values: TimeseriesDistributionPoint[];
     };
   }[];
 }

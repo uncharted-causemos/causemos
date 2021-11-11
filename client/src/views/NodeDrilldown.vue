@@ -5,7 +5,8 @@
       <div class="drivers">
         <h5 v-if="drivers.length > 0">Top Drivers</h5>
         <template v-if="scenarioData">
-          <neighbor-node
+          <!-- FIXME: still relies on confidence interval -->
+          <!-- <neighbor-node
             v-for="driver in drivers"
             :key="driver.edge.id"
             :node="driver.node"
@@ -15,7 +16,7 @@
             :selected-scenario-id="selectedScenarioId"
             @click="openNeighborDrilldown(driver.node)"
             class="neighbor-node"
-          />
+          /> -->
         </template>
       </div>
       <div class="selected-node-column">
@@ -74,12 +75,6 @@
             :viewing-extent="viewingExtent"
             @set-constraints="modifyConstraints"
             @set-historical-timeseries="setHistoricalTimeseries"
-          />
-          <timeseries-chart
-            v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
-            class="scenario-chart"
-            :timeseriesData="comparisonTimeseries.timeseriesData"
-            :selected-temporal-resolution="selectedTemporalResolution"
           />
         </div>
         <p>
@@ -170,7 +165,8 @@
       <div class="impacts">
         <h5 v-if="impacts.length > 0">Top Impacts</h5>
         <template v-if="scenarioData">
-          <neighbor-node
+          <!-- FIXME: still relies on confidence interval -->
+          <!-- <neighbor-node
             v-for="impact in impacts"
             :key="impact.edge.id"
             :node="impact.node"
@@ -180,7 +176,7 @@
             :neighborhood-chart-data="scenarioData"
             :selected-scenario-id="selectedScenarioId"
             @click="openNeighborDrilldown(impact.node)"
-          />
+          /> -->
         </template>
       </div>
     </main>
@@ -203,19 +199,16 @@ import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
-import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
+// import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
 import modelService from '@/services/model-service';
 import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
+import { TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDraftScenario from '@/services/composables/useDraftScenario';
 import useQualitativeModel from '@/services/composables/useQualitativeModel';
-import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
-import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
@@ -224,10 +217,9 @@ import { QUANTIFICATION } from '@/utils/messages-util';
 export default defineComponent({
   name: 'NodeDrilldown',
   components: {
-    NeighborNode,
+    // NeighborNode,
     TdNodeChart,
     DropdownButton,
-    TimeseriesChart,
     AnalyticalQuestionsAndInsightsPanel
   },
   props: {},
@@ -321,7 +313,6 @@ export default defineComponent({
           scenarioName: name,
           scenarioId: id,
           values: result?.values ?? [],
-          confidenceInterval: result?.confidenceInterval ?? { upper: [], lower: [] },
           constraints: constraints ?? []
         });
       });
@@ -554,35 +545,6 @@ export default defineComponent({
     };
 
     const comparisonBaselineId = ref(null);
-    const comparisonTimeseries = computed<{
-      baselineMetadata: { name: string; color: string} | null;
-      timeseriesData: Timeseries[];
-    } | null>(() => {
-      if (
-        comparisonBaselineId.value === null ||
-        selectedNodeScenarioData.value === null
-      ) {
-        return null;
-      }
-      const { projections: _projections } = selectedNodeScenarioData.value;
-      if (_projections.length < 2) return null;
-      // Convert projections to the Timeseries data structure
-      const timeseries = _projections.map(projection => {
-        const { scenarioName, scenarioId, values } = projection;
-        const color = scenarioId === selectedScenarioId.value
-          ? SELECTED_COLOR_DARK
-          : 'black';
-        return {
-          name: scenarioName,
-          id: scenarioId,
-          color,
-          points: values,
-          isDefaultRun: false
-        };
-      });
-      // Rescale timeseries relative to the baseline
-      return applyRelativeTo(timeseries, comparisonBaselineId.value);
-    });
     const comparisonDropdownOptions = computed<DropdownItem[]>(() => {
       const _projections = selectedNodeScenarioData.value?.projections ?? [];
       if (_projections.length < 2) {
@@ -678,7 +640,6 @@ export default defineComponent({
       saveParameterValueChanges,
       selectedTemporalResolution,
       comparisonBaselineId,
-      comparisonTimeseries,
       comparisonDropdownOptions,
       constraints,
       modifyConstraints,

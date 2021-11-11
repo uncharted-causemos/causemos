@@ -517,7 +517,7 @@ export default defineComponent({
 
       // FIXME
       scenarios.forEach(sc => {
-        if (sc.result && !sc.result[0].confidenceInterval) {
+        if (sc.result) {
           sc.result = modelService.fromHistogramFormat(sc.result);
         }
       });
