@@ -946,6 +946,7 @@ export default {
             .style('stroke-width', 12);
         }
       });
+
       this.targetNode = targetNode;
     },
     async dragEndCallback(node) {
