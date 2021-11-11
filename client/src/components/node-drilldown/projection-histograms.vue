@@ -77,7 +77,8 @@ h4 {
 }
 
 h3 {
-  font-size: $font-size-large;
+  font-size: $font-size-extra-large;
+  font-weight: normal;
 }
 
 .grid-row {
@@ -104,7 +105,8 @@ h3 {
 }
 
 .scenario-row {
-  padding: 30px 0 10px;
+  padding-bottom: 10px;
+  margin-bottom: 20px;
   h3 {
     // Give this column half of the space
     flex: 1;
