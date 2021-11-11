@@ -682,8 +682,8 @@ export default defineComponent({
 
     // FIXME: we only support one date param of each model datacube
     const dateModelParam = computed(() => {
-      if (metadata.value === null || !isModelMetadata.value) return null;
-      const modelMetadata = metadata.value as Model;
+      const modelMetadata = metadata.value;
+      if (modelMetadata === null || !isModel(modelMetadata)) return null;
       const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
       return dateParams.length > 0 ? dateParams[0] : null;
     });
