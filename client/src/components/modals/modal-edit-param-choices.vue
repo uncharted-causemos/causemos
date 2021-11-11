@@ -211,9 +211,9 @@ export default defineComponent({
     }
   },
   methods: {
-    updateAcceptableGeoFormat(val: string) {
+    updateAcceptableGeoFormat(val: GeoAttributeFormat) {
       if (this.updatedParameter) {
-        this.updatedParameter.additional_options.geo_region_format = val as GeoAttributeFormat;
+        this.updatedParameter.additional_options.geo_region_format = val;
       }
     },
     updateAcceptableGeoLevels(val: string) {
@@ -221,7 +221,7 @@ export default defineComponent({
         //
         // toggle level
         //
-        const acceptableLevels = this.updatedParameter.additional_options.geo_acceptable_levels as string[];
+        const acceptableLevels = this.updatedParameter.additional_options.geo_acceptable_levels ?? [];
         if (acceptableLevels.includes(val)) {
           // only remove this level if there is at least one other acceptable level
           if (acceptableLevels.length > 1) {

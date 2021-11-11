@@ -985,37 +985,35 @@ export default defineComponent({
 
     watchEffect(() => {
       // if date/geo param exist and the metadata has been updated, then we may need to re-create the date picker if we are in the new runs mode
-      if (metadata.value !== null) {
-        if (newRunsMode.value && dateModelParam.value !== null) {
-          nextTick(() => {
-            if (dateModelParam.value !== null) {
-              // clear existing scenarios, if any since the date/goe param formatting may have changed
-              potentialScenarioCount.value = 0;
-              potentialScenarios.value.length = 0;
+      if (metadata.value !== null && newRunsMode.value && dateModelParam.value !== null) {
+        nextTick(() => {
+          if (dateModelParam.value !== null) {
+            // clear existing scenarios, if any since the date/goe param formatting may have changed
+            potentialScenarioCount.value = 0;
+            potentialScenarios.value.length = 0;
 
-              const datePickerOptions: flatpickr.Options.Options = {
-                // defaultDate: initial date for the date picker
-                // altInput: true, // display date in a more readable, customizable, format
-                // mode: "multiple" is it possible to select multiple individual date(s)
-                mode: dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange ? 'range' : 'single', // enable date range selection
-                allowInput: false, // should the user be able to directly enter date value?
-                wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
-                clickOpens: false // do not allow click on the input date picker to open the calendar
-              };
-              // minimum allowed date
-              if (dateModelParam.value.additional_options.date_min) {
-                datePickerOptions.minDate = dateModelParam.value.additional_options.date_min;
-              }
-              // maximum allowed date
-              if (dateModelParam.value.additional_options.date_max) {
-                datePickerOptions.maxDate = dateModelParam.value.additional_options.date_max;
-              }
-              if (datePickerElement.value !== null) {
-                flatpickr(datePickerElement.value, datePickerOptions);
-              }
+            const datePickerOptions: flatpickr.Options.Options = {
+              // defaultDate: initial date for the date picker
+              // altInput: true, // display date in a more readable, customizable, format
+              // mode: "multiple" is it possible to select multiple individual date(s)
+              mode: dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange ? 'range' : 'single', // enable date range selection
+              allowInput: false, // should the user be able to directly enter date value?
+              wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
+              clickOpens: false // do not allow click on the input date picker to open the calendar
+            };
+            // minimum allowed date
+            if (dateModelParam.value.additional_options.date_min) {
+              datePickerOptions.minDate = dateModelParam.value.additional_options.date_min;
             }
-          });
-        }
+            // maximum allowed date
+            if (dateModelParam.value.additional_options.date_max) {
+              datePickerOptions.maxDate = dateModelParam.value.additional_options.date_max;
+            }
+            if (datePickerElement.value !== null) {
+              flatpickr(datePickerElement.value, datePickerOptions);
+            }
+          }
+        });
       }
     });
 
