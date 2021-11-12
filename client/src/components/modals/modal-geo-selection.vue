@@ -1,17 +1,38 @@
 <template>
   <modal>
     <template #header>
-      <h4 class="title"><i class="fa fa-fw fa-book" />Geo selection ({{modelParam ? modelParam.type : ''}})</h4>
+      <h4 class="title"><i class="fa fa-fw fa-book" />Region selection ({{aggregationLevelTitle}})</h4>
     </template>
     <template #body>
       <div class="geo-container">
+        <div v-if="modelParam.type === DatacubeGenericAttributeVariableType.Geo">
+          <h5>Selected geo level: <span style="font-weight: bold">{{ aggregationLevelTitle }}</span></h5>
+          <div v-if="aggregationLevelCount > 1" class="aggregation-level-range-container">
+            <input
+              type="range"
+              class="aggregation-level-range"
+              :value="aggregationLevel"
+              :min="0"
+              :max="aggregationLevelCount - 1"
+              @input="onRangeValueChanged"
+            />
+            <div
+              v-for="tickIndex in aggregationLevelCount"
+              :key="tickIndex"
+              class="aggregation-level-tick"
+              :class="{ hidden: tickIndex - 1 === aggregationLevel }"
+              :style="tickStyle(tickIndex)"
+              @click="changeAggregationLevel(tickIndex - 1)"
+            />
+          </div>
+        </div>
         <div class="flex-aligned">
           <span>Search: </span>
           <auto-complete
-            focus-input="true"
-            style-results="true"
-            placeholder-color="gray"
-            placeholder-message="Type region name..."
+            :focus-input="true"
+            :style-results="true"
+            :placeholder-color="'gray'"
+            :placeholder-message="'Type region name...'"
             :search-fn="searchRegions"
             @item-selected="addSelectedRegion"
           />
@@ -20,16 +41,16 @@
           <label class="selected-region">Selected Region(s):</label>
           <div
             v-for="region in selectedRegions"
-            :key="region"
+            :key="region.path"
             class="flex-aligned">
-              {{region}} <i class="fa fa-fw fa-close delete-region" @click.stop="removeSelectedRegion(region)" />
+              {{region.label}} <i class="fa fa-fw fa-close delete-region" @click.stop="removeSelectedRegion(region.label)" />
           </div>
         </div>
         <geo-selection-map
           class="card-map"
           :selected-layer-id="selectedLayer"
-          :selected-base-layer="BASE_LAYER.DEFAULT"
-          :selected-region="selectedRegions.length > 0 ? selectedRegions[0] : ''"
+          :selected-region="selectedRegionForMap"
+          :bbox="selectedRegionBBox"
         />
       </div>
 
@@ -62,9 +83,9 @@ import { ModelParameter } from '@/types/Datacube';
 import GeoSelectionMap from '@/components/data/geo-selection-map.vue';
 import { stringToAdminLevel, BASE_LAYER } from '@/utils/map-util-new';
 import { getGADMSuggestions } from '@/services/suggestion-service';
-import { DatacubeGeoAttributeVariableType } from '@/types/Enums';
-import { RegionalGADMDetail } from '@/types/Common';
-import { REGION_ID_DELIMETER } from '@/utils/admin-level-util';
+import { DatacubeGeoAttributeVariableType, DatacubeGenericAttributeVariableType } from '@/types/Enums';
+import { GeoRegionDetail, RegionalGADMDetail } from '@/types/Common';
+import { REGION_ID_DISPLAY_DELIMETER, REGION_ID_DELIMETER } from '@/utils/admin-level-util';
 
 export default defineComponent({
   name: 'ModalGeoSelection',
@@ -87,17 +108,88 @@ export default defineComponent({
     //  e.g., 0 for country, 1 for admin1 and so on
     //  assume layer at country level if invalid model param is given
     selectedLayer(): number {
-      return this.modelParam ? stringToAdminLevel(this.modelParam.type as string) : 0;
+      if (this.modelParam === null) {
+        return 0;
+      }
+      if (this.modelParam.type === DatacubeGenericAttributeVariableType.Geo) {
+        return this.aggregationLevel;
+      } else {
+        return stringToAdminLevel(this.modelParam.type as string);
+      }
+    },
+    aggregationLevelCount(): number {
+      return this.acceptableGeoLevels.length;
+    },
+    aggregationLevelTitle(): string {
+      return this.modelParam.type === DatacubeGenericAttributeVariableType.Geo && this.aggregationLevelCount > 0 ? this.acceptableGeoLevels[this.aggregationLevel] : this.modelParam.type;
+    },
+    acceptableGeoLevels(): string[] {
+      if (this.modelParam === null || this.modelParam.type !== DatacubeGenericAttributeVariableType.Geo) {
+        return [];
+      }
+      // now this is a geo param, so we should expect valid geo_acceptable_levels
+      // if no geo_acceptable_levels are provided, revert to allowing all geo levels
+      const allGeoLevels = Object.values(DatacubeGeoAttributeVariableType);
+      if (this.modelParam.additional_options.geo_acceptable_levels === undefined) {
+        return allGeoLevels;
+      }
+      // note that the geo_acceptable_levels could have entries missing or out of order
+      //  (e.g., ['admin1', 'admin2'] or ['admin1', 'country'])
+      const acceptableOrderedLevels: string[] = [];
+      allGeoLevels.forEach(level => {
+        acceptableOrderedLevels.push(this.modelParam.additional_options.geo_acceptable_levels?.includes(level) ? level : '');
+      });
+      return acceptableOrderedLevels;
+    },
+    selectedRegionForMap(): string {
+      return this.selectedRegions.length > 0 ? this.selectedRegions[0].path : '';
+    },
+    selectedRegionBBox(): number[] {
+      return this.selectedRegions.length > 0 && this.selectedRegions[0].bbox ? this.selectedRegions[0].bbox : [];
     }
   },
   data: () => ({
-    selectedRegions: [] as Array<string>,
-    BASE_LAYER
+    selectedRegions: [] as Array<GeoRegionDetail>,
+    aggregationLevel: 0,
+    BASE_LAYER,
+    DatacubeGenericAttributeVariableType,
+    allRegions: {} as {[key: string]: GeoRegionDetail}
   }),
+  mounted() {
+    // validate initial aggregationLevel
+    while (this.acceptableGeoLevels[this.aggregationLevel] === '') {
+      this.aggregationLevel++;
+    }
+  },
   methods: {
-    getGADMDisplayName(item: RegionalGADMDetail) {
-      const displayName = Object.values(DatacubeGeoAttributeVariableType).filter(l => item[l] !== undefined).map(l => item[l] + REGION_ID_DELIMETER).join('');
-      return displayName.substring(0, displayName.lastIndexOf(REGION_ID_DELIMETER));
+    onRangeValueChanged(event: any) {
+      this.changeAggregationLevel(event.target.valueAsNumber);
+    },
+    changeAggregationLevel(newLevel: number) {
+      if (this.acceptableGeoLevels[newLevel] !== '') {
+        this.aggregationLevel = newLevel;
+      }
+      // TODO: clear existing search text/suggestions
+    },
+    tickStyle(tickIndex: number) {
+      const TICK_WIDTH = 8; // px
+      // Tick indices are in 1..aggregationLevelCount.
+      // Adjust both to be 0-indexed
+      const cleanedIndex = tickIndex - 1;
+      const cleanedCount = this.aggregationLevelCount - 1;
+      // Space out each tick horizontally
+      const percentage = cleanedIndex / cleanedCount;
+      // Adjust each tick to the left so that the last one isn't overflowing
+      const errorCorrect = percentage * TICK_WIDTH;
+      // update color/hover style for ticks following whether they are acceptable levels or not
+      return {
+        left: `calc(${percentage * 100}% - ${errorCorrect}px)`,
+        backgroundColor: this.acceptableGeoLevels[cleanedIndex] !== '' ? 'white' : 'gray',
+        cursor: this.acceptableGeoLevels[cleanedIndex] !== '' ? 'pointer' : 'not-allowed'
+      };
+    },
+    getGADMName(item: RegionalGADMDetail, delimter: string) {
+      return Object.values(DatacubeGeoAttributeVariableType).filter(l => item[l] !== undefined).map(l => item[l]).join(delimter);
     },
     searchRegions(query: string) {
       return new Promise(resolve => {
@@ -105,13 +197,23 @@ export default defineComponent({
 
         if (query.length < 1) resolve(suggestionResults); // early exit
 
-        const level = this.modelParam.type as string; // e.g., country
+        const level = this.aggregationLevelTitle; // e.g., country
         const debouncedFetchFunction = getGADMSuggestions(level, query);
         const fetchedResults = debouncedFetchFunction(); // NOTE: a debounced function may return undefined
         if (fetchedResults !== undefined) {
           fetchedResults.then((res) => {
             suggestionResults = res.map(item => {
-              return this.getGADMDisplayName(item);
+              const regionLabel = this.getGADMName(item, REGION_ID_DISPLAY_DELIMETER);
+              // cache suggestion result
+              if (!this.allRegions[regionLabel]) {
+                this.allRegions[regionLabel] = {
+                  label: regionLabel,
+                  path: this.getGADMName(item, REGION_ID_DELIMETER),
+                  code: item.code as string,
+                  bbox: item.bbox ? item.bbox.coordinates : []
+                };
+              }
+              return regionLabel; // this will be displayed in the autocomplete dropdown
             });
             resolve(suggestionResults);
           });
@@ -120,17 +222,13 @@ export default defineComponent({
         }
       });
     },
-    addSelectedRegion(region: string) {
-      if (region && region !== '') {
-        this.selectedRegions = [region];
-        // alternatively, enable multiple region selection
-        // if (!this.selectedRegions.includes(region)) {
-        //   this.selectedRegions.push(region);
-        // }
+    addSelectedRegion(regionLabel: string) {
+      if (regionLabel && regionLabel !== '') {
+        this.selectedRegions = [this.allRegions[regionLabel]];
       }
     },
     removeSelectedRegion(region: string) {
-      this.selectedRegions = this.selectedRegions.filter(r => r !== region);
+      this.selectedRegions = this.selectedRegions.filter(r => r.label !== region);
     },
     saveSelectedRegions() {
       this.$emit('close', { cancel: false, selectedRegions: this.selectedRegions });
@@ -144,6 +242,12 @@ export default defineComponent({
 
 <style lang="scss" scoped>
 @import "~styles/variables";
+
+$un-color-surface-30: #b3b4b5;
+
+$track-height: 2px;
+$thumb-size: 16px;
+$tick-size: 8px;
 
 ::v-deep(.modal-container) {
   max-width: 80vw;
@@ -196,6 +300,39 @@ export default defineComponent({
 
 .card-map {
   flex-grow: 1;
+}
+
+.aggregation-level-range {
+  margin-top: 10px;
+
+  &::-webkit-slider-runnable-track {
+    background: $un-color-surface-30;
+    height: $track-height;
+  }
+
+  &::-webkit-slider-thumb {
+    margin-top: -1 * ($thumb-size - $track-height) / 2;
+  }
+}
+
+.aggregation-level-tick {
+  width: $tick-size;
+  height: $tick-size;
+  border: 2px solid $un-color-surface-30;
+  border-radius: 50%;
+  position: absolute;
+  top: -1 * ($tick-size - $track-height) / 2;
+}
+
+
+.aggregation-level-range-container {
+  position: relative;
+  // margin: 15px 0;
+}
+
+h5 {
+  margin: 0;
+  margin-bottom: 5px;
 }
 
 </style>

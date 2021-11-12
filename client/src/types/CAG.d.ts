@@ -1,3 +1,4 @@
+import { TimeScale } from './Enums';
 import { TimeseriesPoint } from './Timeseries';
 
 export interface ConceptProjectionConstraints {
@@ -45,11 +46,8 @@ export interface NewScenario {
   name: string;
   description: string;
   model_id: string;
-  engine: string;
   is_baseline: boolean;
   parameter?: ScenarioParameter;
-  result?: ScenarioResult[];
-  experiment_id?: string;
 }
 
 export interface Scenario {
@@ -62,10 +60,9 @@ export interface Scenario {
   is_valid: boolean;
   is_baseline: boolean;
   parameter?: ScenarioParameter;
-  result?: ScenarioResult[];
+  result?: ScenarioResult[]; // FIXME: technically result is not a part of scenario in ES datastore
   experiment_id?: string;
 }
-
 
 export interface NodeScenarioData {
   initial_value: number;
@@ -134,6 +131,7 @@ export interface CAGModelParameter {
   };
   projection_start: number;
   engine: string;
+  time_scale: TimeScale;
 }
 
 export interface CAGModelSummary {
@@ -144,8 +142,10 @@ export interface CAGModelSummary {
 
   is_stale: boolean;
   is_ambiguous: boolean;
-  is_quantified: boolean;
-  status: number;
+  is_quantified: boolean; // FIXME: Deprecated
+  status: number; // FIXME: Deprecated
+
+  engine_status: { [key: string]: number };
 
   created_at: number;
   modified_at: number;

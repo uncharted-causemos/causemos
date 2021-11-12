@@ -44,10 +44,18 @@ export enum DatacubeGenericAttributeVariableType {
   Float = 'float',
   String = 'str',
   Boolean = 'boolean',
-  Datetime = 'datetime'
+  Date = 'date', // a model param (within a run) would only have a single date value
+  DateRange = 'daterange', // a model param (within a run) would only have two date values
+  Geo = 'geo'
 }
 
 export type DatacubeAttributeVariableType = DatacubeGeoAttributeVariableType | DatacubeGenericAttributeVariableType;
+
+export enum GeoAttributeFormat {
+  Full_GADM_PATH = 'full_gadm_path',
+  GADM_Code = 'gadm_code',
+  Bounding_Box = 'bounding_box'
+}
 
 export enum ModelParameterDataType {
   Nominal = 'nominal', // discrete
@@ -98,4 +106,11 @@ export enum TemporalResolutionOption {
   None = '',
   Year = 'year',
   Month = 'month'
+}
+
+export enum TimeScale {
+  None = '',
+  Months = 'MONTHS',
+  Years = 'YEARS',
+  Decades = 'DECADES'
 }

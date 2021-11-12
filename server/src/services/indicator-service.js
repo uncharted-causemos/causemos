@@ -2,10 +2,9 @@ const _ = require('lodash');
 const Logger = rootRequire('/config/logger');
 const requestAsPromise = rootRequire('/util/request-as-promise');
 const modelUtil = rootRequire('/util/model-util');
+const searchService = rootRequire('/services/search-service');
 
-const { Adapter, RESOURCE } = rootRequire('/adapters/es/adapter');
-
-const DEFAULT_SIZE = 10000;
+const { Adapter, RESOURCE, SEARCH_LIMIT } = rootRequire('/adapters/es/adapter');
 
 const getIndicatorData = async (dataId, feature, temporalResolution, temporalAggregation, geospatialAggregation) => {
   Logger.info(`Get indicator data from wm-go: ${dataId} ${feature}`);
@@ -23,7 +22,6 @@ const getIndicatorData = async (dataId, feature, temporalResolution, temporalAgg
   const response = await requestAsPromise(options);
   return response;
 };
-
 
 /**
  * Find all node parameters (concepts) without indicators
@@ -49,7 +47,7 @@ const _findAllWithoutIndicators = async (modelId) => {
   };
   const searchPayload = {
     index: RESOURCE.NODE_PARAMETER,
-    size: DEFAULT_SIZE,
+    size: SEARCH_LIMIT,
     body: { query }
   };
 
@@ -60,163 +58,41 @@ const _findAllWithoutIndicators = async (modelId) => {
   return response.body.hits.hits.map(d => d._source);
 };
 
-/**
- * Match against previous user selected indicator groundings in the same project
- */
-const checkAndApplyIndicatorMatchHistory = async (ontologyCandidates, model, filteredNodeParameters) => {
-  const indicatorMatchHistoryAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
+// Returns top concept->datacube mappings
+const getConceptIndicatorMap = async (model, nodeParameters) => {
+  const historyAdapter = Adapter.get(RESOURCE.INDICATOR_MATCH_HISTORY);
   const datacubeAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
-  const conceptsWithoutHistory = [];
+  const nodesNotInHistory = [];
+  const result = new Map();
 
-  for (const node of filteredNodeParameters) {
-    const topUsedIndicator = await indicatorMatchHistoryAdapter.findOne([
+  // 1. Check against historical matches
+  for (const node of nodeParameters) {
+    const topUsedIndicator = await historyAdapter.findOne([
       { field: 'project_id', value: model.project_id },
       { field: 'concept', value: node.concept }
-    ], {
-      sort: [{ frequency: { order: 'desc' } }]
-    });
+    ], { sort: [{ frequency: { order: 'desc' } }] });
 
     if (!_.isNil(topUsedIndicator)) {
       Logger.info(`Using previous selection ${node.concept} => ${topUsedIndicator.indicator_id}`);
-      ontologyCandidates[node.concept] = await datacubeAdapter.findOne([{ field: 'id', value: topUsedIndicator.indicator_id }], {});
+      const cube = await datacubeAdapter.findOne([{ field: 'id', value: topUsedIndicator.indicator_id }], {});
+      if (cube) {
+        result.set(node.concept, cube);
+      }
     } else {
-      conceptsWithoutHistory.push(node.concept);
+      nodesNotInHistory.push(node);
     }
   }
-  return conceptsWithoutHistory;
-};
 
-const getOntologyCandidates = async (modelId, filteredNodeParameters) => {
-  const ontologyCandidates = {};
-
-  const indicatorMetadataAdapter = Adapter.get(RESOURCE.DATA_DATACUBE);
-  const esClient = indicatorMetadataAdapter.client;
-
-  const modelAdapter = Adapter.get(RESOURCE.MODEL);
-  const modelData = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
-
-  const conceptsWithoutIndicators = await checkAndApplyIndicatorMatchHistory(ontologyCandidates, modelData, filteredNodeParameters);
-
-  for (const concept of conceptsWithoutIndicators) {
-    let compositionalConcepts = [];
-    const projectDataAdapter = Adapter.get(RESOURCE.STATEMENT, modelData.project_id);
-    const query = {
-      bool: {
-        should: [
-          {
-            term: {
-              'subj.concept': concept
-            }
-          },
-          {
-            term: {
-              'obj.concept': concept
-            }
-          }
-        ]
-      }
-    };
-    const projectData = await projectDataAdapter.client.search({
-      index: projectDataAdapter.index,
-      body: {
-        size: 1, query
-      }
-    });
-    const results = projectData.body.hits.hits;
-    if (_.isEmpty(results)) {
-      compositionalConcepts = [concept];
-    } else {
-      results.forEach(r => {
-        const source = r._source;
-        if (source.subj.concept === concept) {
-          compositionalConcepts = [
-            source.subj.theme,
-            source.subj.theme_property,
-            source.subj.process,
-            source.subj.process_property
-          ].filter(d => d !== '');
-        } else {
-          compositionalConcepts = [
-            source.obj.theme,
-            source.obj.theme_property,
-            source.obj.process,
-            source.obj.process_property
-          ].filter(d => d !== '');
-        }
-      });
-    }
-    // make sure array contains unique values
-    compositionalConcepts = [...new Set(compositionalConcepts)];
-
-    const compositionalKeywords = [...new Set(compositionalConcepts.map(comp => {
-      const words = comp.split('/').slice(2);
-      return words.map(word => word.split('_')).flat(1);
-    }).flat(1))];
-
-    // to match at least the number of words in the original concepts
-    // const minimumConceptWords = concept.split('/').slice(3)[0].split('_').length;
-
-    const searchPayload = {
-      index: RESOURCE.DATA_DATACUBE,
-      size: 1,
-      body: {
-        query: {
-          bool: {
-            must: [
-              {
-                bool: {
-                  should: [
-                    {
-                      nested: {
-                        path: 'ontology_matches',
-                        query: {
-                          terms: {
-                            'ontology_matches.name': compositionalConcepts
-                          }
-                        }
-                      }
-                    },
-                    {
-                      terms: {
-                        description: compositionalKeywords
-                      }
-                    }
-                    // {
-                    //   terms: {
-                    //     'outputs.description': compositionalKeywords
-                    //   }
-                    // }
-                  ]
-                  // minimum_should_match: minimumConceptWords
-                }
-              },
-              {
-                match: {
-                  type: 'indicator'
-                }
-              }
-            ]
-          }
-        },
-        sort: [
-          {
-            _score: {
-              order: 'desc'
-            }
-          }
-        ]
-      }
-    };
-    const response = await esClient.search(searchPayload);
-    const foundIndicatorMetadata = response.body.hits.hits;
-
-    if (!_.isEmpty(foundIndicatorMetadata)) {
-      ontologyCandidates[concept] = foundIndicatorMetadata[0]._source;
+  // 2. Run search against datacubes
+  for (const node of nodesNotInHistory) {
+    const concepts = node.components;
+    const candidates = await searchService.indicatorSearchByConcepts(model.project_id, concepts);
+    if (!_.isEmpty(candidates)) {
+      result.set(node.concept, candidates[0]);
     }
   }
-  return ontologyCandidates;
+  return result;
 };
-
 
 const ABSTRACT_INDICATOR = {
   id: null,
@@ -239,43 +115,34 @@ const ABSTRACT_INDICATOR = {
   max: 1
 };
 
-
 /**
  * Attempt to set or reset default indicators for concepts
  * @param {string} modelId - model id
  */
 const setDefaultIndicators = async (modelId) => {
   Logger.info(`Setting default indicators for: ${modelId}`);
+  const modelAdapter = Adapter.get(RESOURCE.MODEL);
+  const model = await modelAdapter.findOne([{ field: 'id', value: modelId }], {});
   const nodeParameters = await _findAllWithoutIndicators(modelId);
+  const conceptIndicatorMap = await getConceptIndicatorMap(model, nodeParameters);
 
-  // Remove node parameters without concepts
-  const filteredNodeParameters = nodeParameters.filter(n => !_.isNil(n.concept));
-
-  const ontologyCandidates = await getOntologyCandidates(modelId, filteredNodeParameters);
-
-  // All of these indicators are set by the same action, so they should
-  // all have the same modified_at time
-  const editTime = Date.now();
-
-
-  // Set default candidates
-  const conceptMatches = {};
-  const matchedKeys = Object.keys(ontologyCandidates);
-  // params that will be hard coded for the time being
+  // Defaults
   const geospatialAgg = 'mean';
   const temporalAgg = 'mean';
   const resolution = 'month';
 
-  for (const conceptKey of matchedKeys) {
-    const topMatch = ontologyCandidates[conceptKey];
+  const updates = [];
 
-    // Medata and default configuration
-    conceptMatches[conceptKey] = {
-      modified_at: editTime,
-      parameter: {
-        id: topMatch.id,
-        name: topMatch.outputs[0].display_name,
-        unit: topMatch.outputs[0].unit,
+  for (const node of nodeParameters) {
+    const updatePayload = {
+      id: node.id
+    };
+    if (conceptIndicatorMap.has(node.concept)) {
+      const cube = conceptIndicatorMap.get(node.concept);
+      updatePayload.parameter = {
+        id: cube.id,
+        name: cube.outputs[0].display_name,
+        unit: cube.outputs[0].unit,
         country: '',
         admin1: '',
         admin2: '',
@@ -284,62 +151,46 @@ const setDefaultIndicators = async (modelId) => {
         temporalAggregation: temporalAgg,
         temporalResolution: resolution,
         period: 12
-      }
-    };
-
-    // Time series, min, max
-    try {
-      const feature = topMatch.default_feature;
-      const dataId = topMatch.data_id;
-      const parameter = conceptMatches[conceptKey].parameter;
-
-      const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
-      if (_.isEmpty(timeseries)) {
-        parameter.timeseries = [];
-        parameter.min = 0;
-        parameter.max = 1;
-      } else {
-        parameter.timeseries = timeseries;
-        const values = timeseries.map(d => d.value);
-        const { max, min } = modelUtil.projectionValueRange(values);
-        parameter.min = min;
-        parameter.max = max;
-      }
-    } catch (err) {
-      Logger.warn(err);
-      Logger.warn(`Failed getting data, reset ${conceptKey} to abstract`);
-      conceptMatches[conceptKey].parameter = _.cloneDeep(ABSTRACT_INDICATOR);
-    }
-  }
-
-  // Go through concept without indicator association and set default abstract indicators
-  let patchedCount = 0;
-  filteredNodeParameters.forEach(node => {
-    const concept = node.concept;
-    if (_.isEmpty(conceptMatches[concept])) {
-      conceptMatches[concept] = {
-        modified_at: editTime,
-        parameter: _.cloneDeep(ABSTRACT_INDICATOR)
       };
-      patchedCount += 1;
+
+      // Set time series, min, max
+      try {
+        const feature = cube.default_feature;
+        const dataId = cube.data_id;
+        const parameter = updatePayload.parameter;
+
+        const timeseries = await getIndicatorData(dataId, feature, resolution, temporalAgg, geospatialAgg);
+        if (_.isEmpty(timeseries)) {
+          parameter.timeseries = [];
+          parameter.min = 0;
+          parameter.max = 1;
+        } else {
+          parameter.timeseries = timeseries;
+          const values = timeseries.map(d => d.value);
+          const { max, min } = modelUtil.projectionValueRange(values);
+          parameter.min = min;
+          parameter.max = max;
+        }
+      } catch (err) {
+        Logger.warn(err);
+        Logger.warn(`Failed getting data, reset ${node.concept} to abstract`);
+        updatePayload.parameter = _.cloneDeep(ABSTRACT_INDICATOR);
+      }
+    } else {
+      updatePayload.parameter = _.cloneDeep(ABSTRACT_INDICATOR);
     }
-
-    // Set id for ES update
-    conceptMatches[concept].id = node.id;
-  });
-  Logger.info('Patched unmatched concepts ' + patchedCount);
-
-  if (_.isEmpty(conceptMatches)) return;
-  // Write back to database
-  const keyFn = (doc) => {
-    return doc.id;
-  };
-  const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
-  const result = await nodeParameterAdapter.update(Object.values(conceptMatches), keyFn);
-  if (result.errors) {
-    throw new Error(JSON.stringify(result.items[0]));
+    updates.push(updatePayload);
   }
-  return result;
+
+  if (!_.isEmpty(updates)) {
+    Logger.info(`Updating ${updates.length} node-parameters`);
+    const keyFn = (doc) => { return doc.id; };
+    const nodeParameterAdapter = Adapter.get(RESOURCE.NODE_PARAMETER);
+    const result = await nodeParameterAdapter.update(updates, keyFn);
+    if (result.errors) {
+      throw new Error(JSON.stringify(result.items[0]));
+    }
+  }
 };
 
 module.exports = {

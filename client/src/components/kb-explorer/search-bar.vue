@@ -155,7 +155,6 @@ export default {
       new TextPill(CODE_TABLE.KEYWORD),
       new TextPill(CODE_TABLE.DOC_FILE_TYPE),
       new TextPill(CODE_TABLE.DOC_PUBLICATION_YEAR),
-      new TextPill(CODE_TABLE.DOC_SOURCE_DOMAIN),
       new TextPill(CODE_TABLE.DOC_ID),
       new DynamicValuePill(CODE_TABLE.DOC_LABEL,
         suggestionService.getSuggestionFunction(this.project, CODE_TABLE.DOC_LABEL.field),

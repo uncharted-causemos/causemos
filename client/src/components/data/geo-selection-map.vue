@@ -14,6 +14,10 @@
         :layer-id="baseLayerId"
         :layer="baseLayer"
       />
+
+      <wm-map-bounding-box
+        :bbox="bbox"
+      />
     </wm-map>
   </div>
 </template>
@@ -21,13 +25,13 @@
 <script>
 
 import _ from 'lodash';
-import { WmMap, WmMapVector } from '@/wm-map';
+import { WmMap, WmMapVector, WmMapBoundingBox } from '@/wm-map';
 import {
   BASE_MAP_OPTIONS,
   ETHIOPIA_BOUNDING_BOX,
   STYLE_URL_PREFIX
 } from '@/utils/map-util';
-import { adminLevelToString } from '@/utils/map-util-new';
+import { adminLevelToString, BASE_LAYER } from '@/utils/map-util-new';
 
 // selectedLayer cycles one by one through these layers
 const layers = Object.freeze([0, 1, 2, 3].map(i => ({
@@ -55,13 +59,10 @@ export default {
   name: 'GeoSelectionMap',
   components: {
     WmMap,
-    WmMapVector
+    WmMapVector,
+    WmMapBoundingBox
   },
   props: {
-    selectedBaseLayer: {
-      type: String,
-      required: true
-    },
     selectedLayerId: {
       type: Number,
       default: 0
@@ -69,6 +70,10 @@ export default {
     selectedRegion: {
       type: String,
       default: ''
+    },
+    bbox: {
+      type: Array,
+      default: () => []
     }
   },
   data: () => ({
@@ -104,7 +109,7 @@ export default {
       return adminLevelToString(this.selectedLayerId);
     },
     selectedBaseLayerEndpoint() {
-      return `${STYLE_URL_PREFIX}${this.selectedBaseLayer}`;
+      return `${STYLE_URL_PREFIX}${BASE_LAYER.DEFAULT}`;
     },
     vectorSource() {
       return `${window.location.protocol}/${window.location.host}/api/maas/tiles/cm-${this.selectedLayer.vectorSourceLayer}/{z}/{x}/{y}`;
@@ -116,6 +121,17 @@ export default {
     },
     selectedRegion() {
       this.debouncedRefresh();
+    },
+    bbox() {
+      if (!this.bbox || this.bbox.length === 0) return;
+      const p1 = this.bbox[0];
+      const p2 = this.bbox[1];
+      const center = [p1[0] + (p2[0] - p1[0]) / 2, p1[1] + (p2[1] - p1[1]) / 2];
+      this.map.flyTo({
+        speed: 0.5,
+        center: center,
+        essential: true // this animation is considered essential with respect to prefers-reduced-motion
+      });
     }
   },
   created() {

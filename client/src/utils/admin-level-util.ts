@@ -12,4 +12,5 @@ export const ADMIN_LEVEL_TITLES: { [key in AdminLevel]: string } = {
 // Ordered list of the admin region levels
 export const ADMIN_LEVEL_KEYS = Object.values(AdminLevel);
 
-export const REGION_ID_DELIMETER = '__';
+export const REGION_ID_DELIMETER = '__'; // Used to construct full GADM path as the shape file vector source for map rendering
+export const REGION_ID_DISPLAY_DELIMETER = ', '; // Used for nicer display of GADM name/path in the UI

@@ -153,7 +153,7 @@ export default {
     min-width: 0;
   }
   .run-model {
-    margin-right: 20px;
+    margin-right: 10px;
     display: flex;
     flex: 1;
     min-width: 0;

@@ -6,7 +6,8 @@ import {
   ModelParameterDataType,
   TemporalResolution,
   ModelPublishingStepID,
-  FeatureQualifierRoles
+  FeatureQualifierRoles,
+  GeoAttributeFormat
 } from '@/types/Enums';
 
 export interface DatacubeMaintainer {
@@ -33,7 +34,14 @@ export interface DatacubeAttribute {
     processes: OntologyMatch[];
     properties: OntologyMatch[];
   };
-  additional_options: {};
+  additional_options: {
+    geo_acceptable_levels?: string[]; // specific geo type flag
+    geo_region_format?: GeoAttributeFormat; // specific geo type flag
+    date_display_format?: string; // when model param is of type date, how it should be displayed
+    date_range_delimiter?: string;
+    date_min?: string;
+    date_max?: string;
+  };
   tags: string[];
   choices?: string[]; // FIXME: this should be of type that match the 'type'
   choices_labels?: string[]; // FIXME: this should be of type that match the 'type'

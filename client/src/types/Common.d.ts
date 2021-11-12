@@ -60,7 +60,16 @@ export interface RegionalGADMDetail {
   admin1?: string;
   admin2?: string;
   admin3?: string;
+  code?: string; // unique GADM code
+  bbox?: any;
   [key: string]: string;
+}
+
+export interface GeoRegionDetail {
+  label: string;
+  path: string;
+  code: string; // unique GADM code
+  bbox?: any;
 }
 
 export interface DatacubePeriod {

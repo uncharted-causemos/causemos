@@ -15,13 +15,14 @@ const modelService = rootRequire('/services/model-service');
 const historyService = rootRequire('/services/history-service');
 const dyseService = rootRequire('/services/external/dyse-service');
 const delphiService = rootRequire('/services/external/delphi-service');
-const { MODEL_STATUS } = rootRequire('/util/model-util');
+const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util');
 const modelUtil = rootRequire('util/model-util');
 
 const HISTORY_START_DATE = '2015-01-01';
 const HISTORY_END_DATE = '2020-12-01';
 const PROJECTION_START_DATE = '2021-01-01';
 const DEFAULT_NUM_STEPS = 12;
+const DEFAULT_TIME_SCALE = '';
 
 
 const DYSE = 'dyse';
@@ -37,11 +38,12 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
   Logger.info(`initializing model with id ${modelId}`);
 
   const model = await modelService.findOne(modelId);
-  if (model.status === 2 && model.is_stale === false) {
-    Logger.info(`Model is alraedy initialized ${modelId}`);
-    res.status(200).send({ updateToken: moment().valueOf() });
-    return;
-  }
+
+  // if (model.is_stale === false) {
+  //   Logger.info(`Model is alraedy initialized ${modelId}`);
+  //   res.status(200).send({ updateToken: moment().valueOf() });
+  //   return;
+  // }
 
   const modelFields = {};
   if (_.isEmpty(model.parameter)) {
@@ -55,10 +57,11 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
         end: defaultTimeSeriesEnd
       },
       num_steps: DEFAULT_NUM_STEPS,
-      projection_start: defaultProjectionStartDate
+      projection_start: defaultProjectionStartDate,
+      engine: 'dyse',
+      time_scale: DEFAULT_TIME_SCALE
     };
   }
-  // modelFields.is_quantified = true;
   modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
@@ -101,8 +104,11 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     engine,
     projection_start: projectionStart,
     indicator_time_series_range: indicatorTimeSeriesRange,
-    num_steps: numSteps
+    num_steps: numSteps,
+    time_scale: timeScale
   } = req.body;
+
+  let invalidateScenarios = false;
 
   // 1. Build update params
   const modelFields = {};
@@ -113,12 +119,18 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
   if (projectionStart) {
     parameter.projection_start = projectionStart;
+    invalidateScenarios = true;
   }
   if (indicatorTimeSeriesRange) {
     parameter.indicator_time_series_range = indicatorTimeSeriesRange;
   }
   if (numSteps) {
     parameter.num_steps = numSteps;
+    invalidateScenarios = true;
+  }
+  if (timeScale) {
+    parameter.time_scale = timeScale;
+    invalidateScenarios = true;
   }
 
   // Reset sync flag
@@ -137,7 +149,9 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
 
   // 4. Invalidate existing scenarios
-  await scenarioService.invalidateByModel(modelId);
+  if (invalidateScenarios === true) {
+    await scenarioService.invalidateByModel(modelId);
+  }
 
   res.status(200).send({ updateToken: editTime });
 }));
@@ -376,7 +390,9 @@ router.post('/:modelId/register', asyncHandler(async (req, res) => {
   const modelPayload = {
     id: modelId,
     status: status,
-    is_quantified: true,
+    engine_status: {
+      [engine]: status
+    },
     parameter: {
       engine: engine
     },
@@ -412,7 +428,12 @@ router.get('/:modelId/registered-status', asyncHandler(async (req, res) => {
   // FIXME: Different engines have slightly different status codes
   // Update model
   const v = modelStatus.status === 'training' ? MODEL_STATUS.TRAINING : MODEL_STATUS.READY;
-  await cagService.updateCAGMetadata(modelId, { status: v });
+  await cagService.updateCAGMetadata(modelId, {
+    status: v,
+    engine_status: {
+      [engine]: v
+    }
+  });
 
   res.json(modelStatus);
 }));
@@ -601,7 +622,10 @@ router.post('/:modelId/node-parameter', asyncHandler(async (req, res) => {
 
   await scenarioService.invalidateByModel(modelId);
 
-  await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
+  await cagService.updateCAGMetadata(modelId, {
+    status: MODEL_STATUS.NOT_REGISTERED,
+    engine_status: RESET_ALL_ENGINE_STATUS
+  });
 
   historyService.logHistory(modelId, 'set parameter', [nodeBeforeUpdate], []);
 
@@ -654,7 +678,8 @@ router.post('/:modelId/edge-parameter', asyncHandler(async (req, res) => {
 
   await scenarioService.invalidateByModel(modelId);
 
-  await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.UNSYNCED });
+  // FIXME: double check we do not need to flag cag as unregistered
+  // await cagService.updateCAGMetadata(modelId, { status: MODEL_STATUS.NOT_REGISTERED });
 
   historyService.logHistory(modelId, 'set weights', [], [{ source, target, parameter }]);
 

@@ -45,13 +45,10 @@ export default defineComponent({
 @import "~styles/variables";
 
 .config-bar-container {
-  background: $background-light-1;
-  box-shadow: $shadow-level-1;
   height: $navbar-outer-height;
   display: flex;
   align-items: center;
-  justify-content: space-between;
-  padding: 0 20px;
+  padding: 0 10px;
   z-index: 1;
 
   p {

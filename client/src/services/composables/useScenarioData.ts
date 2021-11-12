@@ -1,9 +1,10 @@
 import { ModelRun, PreGeneratedModelRunData } from '@/types/ModelRun';
 import { computed, ref, Ref, watchEffect } from 'vue';
 import { getModelRunMetadata } from '@/services/new-datacube-service';
-import { isImage, isVideo } from '@/utils/datacube-util';
-import { ModelRunStatus } from '@/types/Enums';
-
+import { isImage, isVideo, TAGS } from '@/utils/datacube-util';
+import { DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/Enums';
+import _ from 'lodash';
+import { ModelParameter } from '@/types/Datacube';
 
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
@@ -11,12 +12,63 @@ import { ModelRunStatus } from '@/types/Enums';
  */
 export default function useScenarioData(
   dataId: Ref<string | null>,
-  modelRunsFetchedAt: Ref<number>
+  modelRunsFetchedAt: Ref<number>,
+  searchFilters: Ref<any>,
+  dimensions: Ref<ModelParameter[]>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
-  const filteredRunData = computed(() => runData.value
+
+  const allModelRunData = computed(() => runData.value
     .filter(modelRun => modelRun.status !== ModelRunStatus.Deleted)
     .map(modelRun => { return { ...modelRun, _version: undefined }; }));
+
+  const filteredRunData = computed(() => {
+    let filteredRuns = allModelRunData.value;
+
+    // apply search filters, if any
+    // parse and apply filters to the model runs data
+    if (_.isEmpty(searchFilters.value) || searchFilters.value.clauses.length === 0) {
+      // do nothing; since we need to cancel existing filters, if any
+    } else {
+      const dimTypeMap: { [key: string]: string } = dimensions.value.reduce(
+        (obj, item) => Object.assign(obj, { [item.name]: item.type }), {});
+      const clauses = searchFilters.value.clauses;
+      clauses.forEach((c: any) => {
+        const filterField: string = c.field; // the field to filter on
+        const filterValues = c.values; // array of values to filter upon
+        const isNot = !c.isNot; // is the filter reversed?
+        filteredRuns = filteredRuns.filter(v => {
+          if (filterField === TAGS) {
+            // special search, e.g. by keyword or tags
+            return v.tags && v.tags.length > 0 && filterValues.some((val: string) => v.tags.includes(val) === isNot);
+          } else {
+            // direct query against parameters or output features
+            const paramsMatchingFilterField = v.parameters.find(p => p.name === filterField);
+            if (paramsMatchingFilterField !== undefined) {
+              // this is a param filter
+              // so we can search this parameters array directly
+              //  depending on the param type, we could have range (e.g., rainful multiplier range) or a set of values (e.g., one or more selected countries)
+              if (dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Int || dimTypeMap[filterField] === DatacubeGenericAttributeVariableType.Float) {
+                const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+                return paramsMatchingFilterField.value >= filterRange[0] && paramsMatchingFilterField.value <= filterRange[1];
+              } else {
+                return filterValues.includes(paramsMatchingFilterField.value.toString()) === isNot;
+              }
+            } else {
+              // this is an output filter
+              //  we need to search the array of v.output_agg_values
+              // note: this will always be a numeric range
+              const runOutputValue = v.output_agg_values[0].value;
+              const filterRange = filterValues[0]; // range bill provides the filter range as array of two values within an array
+              return runOutputValue >= filterRange[0] && runOutputValue <= filterRange[1];
+            }
+          }
+        });
+      });
+    }
+
+    return filteredRuns;
+  });
 
   watchEffect(onInvalidate => {
     console.log('refetching scenario-data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
@@ -111,5 +163,8 @@ export default function useScenarioData(
     fetchRunData();
   });
 
-  return filteredRunData;
+  return {
+    filteredRunData,
+    allModelRunData
+  };
 }

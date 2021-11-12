@@ -395,6 +395,77 @@ const updateModelRun = async(modelRun) => {
   return await connection.update(modelRun, doc => doc.id);
 };
 
+/**
+ * Add a tag to multiple model runs
+ */
+const addModelTag = async(filter, tag) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+
+  const script = {
+    lang: 'painless',
+    params: {
+      tag: tag
+    },
+    source: `
+      if (ctx._source.tags != null) {
+        if (!ctx._source.tags.contains(params.tag)) {
+          ctx._source.tags.add(params.tag);
+        }
+      } else {
+        ctx._source.tags = [params.tag];
+      }
+    `
+  };
+  return await connection.updateByQuery(filter, script);
+};
+
+/**
+ * Remove a tag from multiple model runs
+ */
+const removeModelTag = async(filter, tag) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+
+  const script = {
+    lang: 'painless',
+    params: {
+      tag: tag
+    },
+    source: `
+      if (ctx._source.tags != null) {
+        int i = ctx._source.tags.indexOf(params.tag);
+        if (i >= 0) {
+          ctx._source.tags.remove(i);
+        }
+      }
+    `
+  };
+  return await connection.updateByQuery(filter, script);
+};
+
+/**
+ * Rename a tag used multiple model runs
+ */
+const renameModelTag = async(filter, oldTag, newTag) => {
+  const connection = Adapter.get(RESOURCE.DATA_MODEL_RUN);
+
+  const script = {
+    lang: 'painless',
+    params: {
+      oldTag: oldTag,
+      newTag: newTag
+    },
+    source: `
+      if (ctx._source.tags != null) {
+        int i = ctx._source.tags.indexOf(params.oldTag);
+        if (i >= 0) {
+          ctx._source.tags.set(i, params.newTag);
+        }
+      }
+    `
+  };
+  return await connection.updateByQuery(filter, script);
+};
+
 module.exports = {
   submitModelRun,
   startModelOutputPostProcessing,
@@ -402,6 +473,9 @@ module.exports = {
   getAllModelRuns,
   getJobStatus,
   startIndicatorPostProcessing,
-  updateModelRun
+  updateModelRun,
+  addModelTag,
+  removeModelTag,
+  renameModelTag
 };
 
