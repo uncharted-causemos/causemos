@@ -78,7 +78,7 @@
             </div>
             <div v-if="dateModelParam">
               <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
-                <input @click.stop.prevent="" class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
+                <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
                 <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
                     <i class="fa fa-calendar"></i>
                 </a>
@@ -533,7 +533,7 @@ import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
-import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
+import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
@@ -682,7 +682,9 @@ export default defineComponent({
 
     // FIXME: we only support one date param of each model datacube
     const dateModelParam = computed(() => {
-      const dateParams = dimensions.value.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
+      const modelMetadata = metadata.value;
+      if (modelMetadata === null || !isModel(modelMetadata)) return null;
+      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
       return dateParams.length > 0 ? dateParams[0] : null;
     });
 
@@ -968,38 +970,12 @@ export default defineComponent({
     const toggleNewRunsMode = () => {
       newRunsMode.value = !newRunsMode.value;
       potentialScenarioCount.value = 0;
+      potentialScenarios.value.length = 0;
 
       if (newRunsMode.value) {
         // clear any selected scenario and show the model desc page
         updateScenarioSelection({ scenarios: [] });
       }
-
-      nextTick(() => {
-        if (newRunsMode.value && dateModelParam.value !== null) {
-          const datePickerOptions: flatpickr.Options.Options = {
-            // defaultDate: initial date for the date picker
-            // altInput: true, // display date in a more readable, customizable, format
-            // mode: "multiple" is it possible to select multiple individual date(s)
-            mode: dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange ? 'range' : 'single', // enable date range selection
-            allowInput: false, // should the user be able to directly enter date value?
-            wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
-            clickOpens: false // do not allow click on the input date picker to open the calendar
-          };
-          if (dateModelParam.value.additional_options) {
-            // minimum allowed date
-            if (dateModelParam.value.additional_options.date_min) {
-              datePickerOptions.minDate = dateModelParam.value.additional_options.date_min;
-            }
-            // maximum allowed date
-            if (dateModelParam.value.additional_options.date_max) {
-              datePickerOptions.maxDate = dateModelParam.value.additional_options.date_max;
-            }
-          }
-          if (datePickerElement.value !== null) {
-            flatpickr(datePickerElement.value, datePickerOptions);
-          }
-        }
-      });
     };
 
     watch(
@@ -1008,6 +984,40 @@ export default defineComponent({
         updatePotentialScenarioDates();
       }
     );
+
+    watchEffect(() => {
+      // if date/geo param exist and the metadata has been updated, then we may need to re-create the date picker if we are in the new runs mode
+      if (metadata.value !== null && newRunsMode.value && dateModelParam.value !== null) {
+        nextTick(() => {
+          if (dateModelParam.value !== null) {
+            // clear existing scenarios, if any since the date/goe param formatting may have changed
+            potentialScenarioCount.value = 0;
+            potentialScenarios.value.length = 0;
+
+            const datePickerOptions: flatpickr.Options.Options = {
+              // defaultDate: initial date for the date picker
+              // altInput: true, // display date in a more readable, customizable, format
+              // mode: "multiple" is it possible to select multiple individual date(s)
+              mode: dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange ? 'range' : 'single', // enable date range selection
+              allowInput: false, // should the user be able to directly enter date value?
+              wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
+              clickOpens: false // do not allow click on the input date picker to open the calendar
+            };
+            // minimum allowed date
+            if (dateModelParam.value.additional_options?.date_min) {
+              datePickerOptions.minDate = dateModelParam.value.additional_options.date_min;
+            }
+            // maximum allowed date
+            if (dateModelParam.value.additional_options?.date_max) {
+              datePickerOptions.maxDate = dateModelParam.value.additional_options.date_max;
+            }
+            if (datePickerElement.value !== null) {
+              flatpickr(datePickerElement.value, datePickerOptions);
+            }
+          }
+        });
+      }
+    });
 
     function fetchData() {
       if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
@@ -1147,11 +1157,16 @@ export default defineComponent({
       //  we need to ensure they are added as part of potential scenarios data
       if (dateModelParam.value !== null) {
         // FIXME: handle the case of multiple date and/or daterange params
-        const delimiter = dateModelParam.value.additional_options && dateModelParam.value.additional_options.date_range_delimiter ? dateModelParam.value.additional_options.date_range_delimiter : '__';
-        const dateValue = dateModelParam.value.type === DatacubeGenericAttributeVariableType.Date ? dateParamPickerValue.value : dateParamPickerValue.value.replace(' to ', delimiter);
+        const delimiter = dateModelParam.value.additional_options?.date_range_delimiter ?? DEFAULT_DATE_RANGE_DELIMETER;
+        let dateValue = '';
+        if (dateParamPickerValue.value === null || dateParamPickerValue.value === '') {
+          dateValue = dateModelParam.value.default;
+        } else {
+          dateValue = dateModelParam.value.type === DatacubeGenericAttributeVariableType.Date ? dateParamPickerValue.value : dateParamPickerValue.value.replace(' to ', delimiter);
+        }
         potentialScenarios.value.forEach(run => {
           if (dateModelParam.value !== null) {
-            run[dateModelParam.value.type] = dateParamPickerValue.value === null || dateParamPickerValue.value === '' ? dateModelParam.value.default : dateValue;
+            run[dateModelParam.value.type] = dateValue;
           }
         });
       }
@@ -1910,6 +1925,5 @@ $marginSize: 5px;
       padding: 4px 8px;
     }
 }
-
 
 </style>

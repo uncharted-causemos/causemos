@@ -61,6 +61,7 @@ export interface RegionalGADMDetail {
   admin2?: string;
   admin3?: string;
   code?: string; // unique GADM code
+  bbox?: any;
   [key: string]: string;
 }
 
