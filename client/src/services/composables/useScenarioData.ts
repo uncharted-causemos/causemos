@@ -14,7 +14,9 @@ export default function useScenarioData(
   modelRunsFetchedAt: Ref<number>
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
-  const filteredRunData = computed(() => runData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted));
+  const filteredRunData = computed(() => runData.value
+    .filter(modelRun => modelRun.status !== ModelRunStatus.Deleted)
+    .map(modelRun => { return { ...modelRun, _version: undefined }; }));
 
   watchEffect(onInvalidate => {
     console.log('refetching scenario-data at: ' + new Date(modelRunsFetchedAt.value).toTimeString());
@@ -36,16 +38,15 @@ export default function useScenarioData(
         newDataIsDifferent = true;
       } else {
         // we need to compare run status
-        const runVersionMap: {[key: string]: string} = {};
+        const runVersionMap: {[key: string]: number} = {};
         existingData.forEach(r => {
-          runVersionMap[r.id] = r._version ?? '';
+          runVersionMap[r.id] = r._version ?? 0;
         });
         newMetadata.forEach(r => {
           // if this is a new run, or if the exists but its _version has changed, then we have new data
           if (!runVersionMap[r.id] || runVersionMap[r.id] !== r._version) {
             newDataIsDifferent = true;
           }
-          delete r._version;
         });
       }
       if (newDataIsDifferent) {

@@ -45,7 +45,7 @@ export interface ModelRun {
     execution: ModelRunRuntimeStage;
     post_processing: ModelRunRuntimeStage;
   };
-  _version?: string
+  _version?: number
 }
 
 export interface RunsTag {
