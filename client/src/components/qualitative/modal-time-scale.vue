@@ -44,41 +44,9 @@
 
 <script lang="ts">
 import { TimeScale } from '@/types/Enums';
+import { TIME_SCALE_OPTIONS } from '@/utils/time-scale-util';
 import { defineComponent, ref } from 'vue';
 import modal from '../modals/modal.vue';
-
-const TIME_SCALE_OPTIONS = [
-  {
-    id: TimeScale.Months,
-    label: 'Months',
-    timeSlices: [
-      { months: 1, label: 'several weeks' },
-      { months: 3, label: 'a few months' },
-      { months: 12, label: 'about a year' }
-    ],
-    example: 'Locust outbreaks'
-  },
-  {
-    id: TimeScale.Years,
-    label: 'Years',
-    timeSlices: [
-      { months: 3, label: 'a few months' },
-      { months: 12, label: 'about a year' },
-      { months: 36, label: 'a few years' }
-    ],
-    example: 'Malnutrition'
-  },
-  {
-    id: TimeScale.Decades,
-    label: 'Decades',
-    timeSlices: [
-      { months: 36, label: 'a few years' },
-      { months: 120, label: 'about a decade' },
-      { months: 360, label: 'a few decades' }
-    ],
-    example: 'Climate change'
-  }
-];
 
 export default defineComponent({
   components: { modal },
