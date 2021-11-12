@@ -21,7 +21,7 @@ const rawConceptEntitySearch = async (projectId, queryString) => {
     }
   }];
 
-  const builder = queryStringBuilder().setOperator('AND');
+  const builder = queryStringBuilder().setOperator('OR');
   queryString.split(' ').forEach(v => builder.addWildCard(v));
 
   const results = await searchAndHighlight(RESOURCE.ONTOLOGY, builder.build(), filters, [
@@ -86,9 +86,11 @@ const reverseFlattenedConcept = (name, conceptSet) => {
  * Build an ES query to search by compositional ontology concepts
  *
  * FIXME: Need to handle user-created??
+ * FIXME: Maybe checkout sampler aggregations: https://www.elastic.co/guide/en/elasticsearch/reference/current/search-aggregations-bucket-sampler-aggregation.html
  */
 const buildSubjObjAggregation = (concepts) => {
   const limit = 10;
+  const minimumShouldMatch = concepts.length < 2 ? 1 : 2;
   return {
     filteredSubj: {
       filter: {
@@ -98,7 +100,8 @@ const buildSubjObjAggregation = (concepts) => {
             { terms: { 'subj.theme_property': concepts } },
             { terms: { 'subj.process': concepts } },
             { terms: { 'subj.process_property': concepts } }
-          ]
+          ],
+          minimum_should_match: minimumShouldMatch
         }
       },
       aggs: {
@@ -118,7 +121,8 @@ const buildSubjObjAggregation = (concepts) => {
             { terms: { 'obj.theme_property': concepts } },
             { terms: { 'obj.process': concepts } },
             { terms: { 'obj.process_property': concepts } }
-          ]
+          ],
+          minimum_should_match: minimumShouldMatch
         }
       },
       aggs: {
@@ -173,8 +177,10 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
     if (dupeMap.has(item.key)) continue;
 
     const memberStrings = reverseFlattenedConcept(item.key, set);
+
     const members = ontologyValues.filter(d => {
-      return memberStrings.includes(_.last(d.label.split('/'))) && !_.isEmpty(d.examples);
+      // return memberStrings.includes(_.last(d.label.split('/'))) && !_.isEmpty(d.examples);
+      return memberStrings.includes(_.last(d.label.split('/')));
     }).map(formatOntologyDoc);
 
     // Attach highlight if applicable
