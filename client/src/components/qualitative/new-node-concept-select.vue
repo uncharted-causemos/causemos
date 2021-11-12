@@ -186,6 +186,9 @@ export default {
 
       if (dropdownBoundingBox.bottom > cagContainerBoundingBox.bottom || dropdownBoundingBox.right > cagContainerBoundingBox.right) {
         console.log('DROPDOWN OUT OF BOUNDS');
+        console.log('dropDownBoundingBox: ', dropdownBoundingBox);
+        console.log('placement x: ', this.placement.x);
+        console.log('placement : ', this.placement.y);
       }
     },
     getSuggestions: _.throttle(async function() {
