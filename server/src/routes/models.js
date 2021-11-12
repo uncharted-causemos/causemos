@@ -45,12 +45,17 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
   //   return;
   // }
 
+
   const modelFields = {};
-  if (_.isEmpty(model.parameter)) {
+  if (_.isEmpty(model.parameter) || _.isEmpty(model.parameter.num_steps)) {
     // initialize model parameters
     const defaultTimeSeriesStart = moment.utc(HISTORY_START_DATE).valueOf();
     const defaultTimeSeriesEnd = moment.utc(HISTORY_END_DATE).valueOf();
     const defaultProjectionStartDate = moment.utc(PROJECTION_START_DATE).valueOf();
+
+    // FIXME: handle this more gracefully
+    const timeScale = _.get(model.parameter, 'time_scale', DEFAULT_TIME_SCALE);
+
     modelFields.parameter = {
       indicator_time_series_range: {
         start: defaultTimeSeriesStart,
@@ -59,10 +64,9 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
       num_steps: DEFAULT_NUM_STEPS,
       projection_start: defaultProjectionStartDate,
       engine: 'dyse',
-      time_scale: DEFAULT_TIME_SCALE
+      time_scale: timeScale
     };
   }
-  modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
   // Set initial time series
@@ -132,9 +136,6 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     parameter.time_scale = timeScale;
     invalidateScenarios = true;
   }
-
-  // Reset sync flag
-  modelFields.status = 0;
 
   if (!_.isEmpty(parameter)) {
     modelFields.parameter = parameter;
