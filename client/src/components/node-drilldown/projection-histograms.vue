@@ -30,15 +30,23 @@
 </template>
 
 <script lang="ts">
-import { ScenarioProjection } from '@/types/CAG';
+import { CAGModelSummary, ScenarioProjection } from '@/types/CAG';
 import { TimeseriesPoint } from '@/types/Timeseries';
 import { defineComponent, PropType } from 'vue';
 import Histogram from '@/components/widgets/charts/histogram.vue';
+import {
+  convertTimeseriesDistributionToHistograms,
+  ProjectionHistograms
+} from '@/utils/histogram-util';
 
 export default defineComponent({
   components: { Histogram },
   name: 'ProjectionHistograms',
   props: {
+    modelSummary: {
+      type: Object as PropType<CAGModelSummary>,
+      required: true
+    },
     comparisonBaselineId: {
       type: String,
       default: null
@@ -50,6 +58,18 @@ export default defineComponent({
     projections: {
       type: Array as PropType<ScenarioProjection[]>,
       default: []
+    }
+  },
+  computed: {
+    binnedResults(): ProjectionHistograms[] {
+      return this.projections.map(projection =>
+        convertTimeseriesDistributionToHistograms(
+          this.modelSummary,
+          this.historicalTimeseries,
+          null, // TODO: clampedNowValue
+          projection.values
+        )
+      );
     }
   }
 });

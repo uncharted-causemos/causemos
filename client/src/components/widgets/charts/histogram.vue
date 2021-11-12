@@ -81,11 +81,10 @@ import _ from 'lodash';
 import { computed, defineComponent, PropType, toRefs } from 'vue';
 import {
   generateRelativeSummaryMessage,
+  HistogramData,
   summarizeRelativeChange
 } from '@/utils/histogram-util';
 import HistogramArrow from './histogram-arrow.vue';
-
-type FiveNumbers = [number, number, number, number, number];
 
 /**
  * `base`: these values represent the grey part of each histogram bar.
@@ -100,8 +99,8 @@ type FiveNumbers = [number, number, number, number, number];
  * compared to the baseline
  */
 interface BinValues {
-  base: FiveNumbers;
-  change: FiveNumbers | null;
+  base: HistogramData;
+  change: HistogramData | null;
 }
 
 const BIN_LABELS = [
@@ -130,7 +129,7 @@ export default defineComponent({
       if (!isRelativeToActive.value) return null;
       // RelativeTo is active, so we can safely assert that changes array is
       //  not null
-      return summarizeRelativeChange(binValues.value.change as FiveNumbers);
+      return summarizeRelativeChange(binValues.value.change as HistogramData);
     });
 
     const relativeToSummaryMessage = computed(() => {

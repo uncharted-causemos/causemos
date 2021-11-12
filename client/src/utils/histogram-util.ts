@@ -1,6 +1,16 @@
-import { TimeseriesPoint } from '@/types/Timeseries';
+import dateFormatter from '@/formatters/date-formatter';
+import { CAGModelSummary } from '@/types/CAG';
+import { TimeScale } from '@/types/Enums';
+import {
+  TimeseriesDistributionPoint,
+  TimeseriesPoint
+} from '@/types/Timeseries';
 import _ from 'lodash';
 import { getMonthFromTimestamp, getTimestampAfterMonths } from './date-util';
+import { TIME_SCALE_OPTIONS } from './time-scale-util';
+
+export type HistogramData = [number, number, number, number, number];
+export type ProjectionHistograms = [HistogramData, HistogramData, HistogramData];
 
 // The bin boundaries that are used when a node has no historical data.
 export const ABSTRACT_NODE_BINS: [number, number, number, number] = [
@@ -184,6 +194,81 @@ export const computeProjectionBins = (
   ];
 
   return bins;
+};
+
+export const convertTimeseriesDistributionToHistograms = (
+  modelSummary: CAGModelSummary,
+  historicalData: TimeseriesPoint[],
+  clampValueAtNow: number | null,
+  projection: TimeseriesDistributionPoint[]
+): ProjectionHistograms => {
+  // 1. Get selected timescale from modelSummary
+  const timeScale = modelSummary.parameter.time_scale;
+  // Default to "Years"
+  const selectedTimeScale =
+    timeScale === TimeScale.None ? TimeScale.Years : timeScale;
+  // 2. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
+  // This represents how many months from "now" each displayed time slice will be
+  const timeScaleOption = TIME_SCALE_OPTIONS.find(
+    option => option.id === selectedTimeScale
+  );
+  if (timeScaleOption === undefined) {
+    console.error(
+      'Unable to find time scale option with ID ' + selectedTimeScale
+    );
+  }
+  const relevantMonthOffsets = timeScaleOption?.timeSlices?.map(
+    timeSlice => timeSlice.months
+  ) ?? [3, 12, 36];
+  const projectionStartTimestamp = projection[0].timestamp;
+  const projectionStartMonth = getMonthFromTimestamp(projectionStartTimestamp);
+  // For each timeslice:
+  return relevantMonthOffsets.map(monthIndex => {
+    // 3. Get bins from historical data using computeProjectionBins()
+    const bins = computeProjectionBins(
+      historicalData,
+      clampValueAtNow,
+      monthIndex,
+      projectionStartMonth
+    );
+    const monthTimestamp = getTimestampAfterMonths(
+      projectionStartTimestamp,
+      monthIndex
+    );
+    // 4. Filter projection.values to get distribution
+    const found = projection.find(
+      distribution => distribution.timestamp === monthTimestamp
+    );
+    if (found === undefined) {
+      console.error(
+        'Unable to find projected distribution at timestamp ' +
+          dateFormatter(monthTimestamp, 'MMM YYYY') +
+          '.'
+      );
+    }
+    const distribution = found?.values ?? ([] as number[]);
+    // 5. Feed distribution into bins to get histogram
+    const histogram: HistogramData = [0, 0, 0, 0, 0];
+    distribution.forEach(value => {
+      if (value < bins[0]) {
+        // Much lower
+        histogram[4]++;
+      } else if (value < bins[1]) {
+        // Lower
+        histogram[3]++;
+      } else if (value < bins[2]) {
+        // Negligible change
+        histogram[2]++;
+      } else if (value < bins[3]) {
+        // Higher
+        histogram[1]++;
+      } else {
+        // Much higher
+        histogram[0]++;
+      }
+    });
+    return histogram;
+  }) as [HistogramData, HistogramData, HistogramData];
 };
 
 /**

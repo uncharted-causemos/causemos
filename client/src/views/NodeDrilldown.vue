@@ -87,6 +87,7 @@
               :comparison-baseline-id="comparisonBaselineId"
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
+              :model-summary="modelSummary"
             />
           </div>
         </div>
