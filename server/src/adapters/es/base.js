@@ -267,8 +267,16 @@ class Base {
         excludes: options.excludes
       };
     }
+    if (options.version) {
+      searchPayload.body.version = options.version;
+    }
 
     const response = await this.client.search(searchPayload);
+    if (options.version) {
+      response.body.hits.hits.forEach(hit => {
+        hit._source._version = hit._version;
+      });
+    }
     return response.body;
   }
 
