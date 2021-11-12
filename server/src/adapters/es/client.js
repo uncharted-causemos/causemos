@@ -95,7 +95,7 @@ const getBulkErrors = (body, num = 2) => {
  * @param {array} filters - additional filter criteria
  * @param {array} fields - optional, fields to highlight
  */
-const searchAndHighlight = async (index, queryStringObject, filters, fields) => {
+const searchAndHighlight = async (index, queryStringObject, filters, highlightFields) => {
   const query = _.isEmpty(filters)
     ? queryStringObject
     : {
@@ -108,12 +108,16 @@ const searchAndHighlight = async (index, queryStringObject, filters, fields) => 
     };
 
   const searchBody = { query };
-  if (!_.isEmpty(fields)) {
+  if (!_.isEmpty(highlightFields)) {
     const fieldsToHighlight = {};
-    fields.forEach(f => {
+    highlightFields.forEach(f => {
       fieldsToHighlight[f] = {};
     });
-    searchBody.highlight = { fields: fieldsToHighlight };
+    searchBody.highlight = {
+      fields: fieldsToHighlight,
+      pre_tags: '',
+      post_tags: ''
+    };
   }
 
   const matches = await client.search({
