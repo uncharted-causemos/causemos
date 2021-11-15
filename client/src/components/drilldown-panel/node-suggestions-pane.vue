@@ -195,7 +195,6 @@ export default {
       };
       const edgeSorter = (a, b) => b.meta.numEvidence - a.meta.numEvidence;
 
-
       // Map to node-container level if applicable
       const causeMap = new Map();
       for (let i = 0; i < causeStatements.length; i++) {
@@ -206,9 +205,10 @@ export default {
         } else {
           for (let j = 0; j < nodeContainters.length; j++) {
             const causeConcept = nodeContainters[j].concept;
-            if (_.some(graphData.edges, edge => edge.source === causeConcept && edge.target === this.selectedNode.concept)) {
-              continue;
-            }
+            /* Relax duplicate constraint DC Nov 2021 */
+            // if (_.some(graphData.edges, edge => edge.source === causeConcept && edge.target === this.selectedNode.concept)) {
+            //   continue;
+            // }
             addToMap(causeMap, causeConcept, statement);
           }
         }
@@ -224,9 +224,10 @@ export default {
         } else {
           for (let j = 0; j < nodeContainters.length; j++) {
             const effectConcept = nodeContainters[j].concept;
-            if (_.some(graphData.edges, edge => edge.source === this.selectedNode.concept && edge.target === effectConcept)) {
-              continue;
-            }
+            /* Relax duplicate constraint DC Nov 2021 */
+            // if (_.some(graphData.edges, edge => edge.source === this.selectedNode.concept && edge.target === effectConcept)) {
+            //   continue;
+            // }
             addToMap(effectMap, effectConcept, statement);
           }
         }
