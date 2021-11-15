@@ -3,11 +3,9 @@ import * as d3 from 'd3';
 import moment from 'moment';
 
 import initialize from '@/charts/initialize';
-import { timeseriesLine, confidenceArea, translate } from '@/utils/svg-util';
-import { DEFAULT_COLOR, SELECTED_COLOR } from '@/utils/colors-util';
+import { timeseriesLine, translate } from '@/utils/svg-util';
+import { DEFAULT_COLOR } from '@/utils/colors-util';
 import { chartValueFormatter } from '@/utils/string-util';
-
-const CONFIDENCE_BAND_OPACITY = 0.2;
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 
@@ -157,7 +155,10 @@ function render(chart, data, runOptions) {
     .attr('transform', miniGraph ? translate(2, 0) : null);
 }
 
-function renderScenarioProjections(svgGroup, scenarios, runOptions, xscale, yscale, formatter, constraints) {
+function renderScenarioProjections(svgGroup, scenarios, runOptions, xscale, yscale, constraints) {
+  // FIXME: we'll use the constraints parameter again, but for now just log it
+  //  to prevent "defined but never used" errors
+  console.log(constraints.length);
   svgGroup.selectAll('.scenario').remove();
 
   // Selected goes last so it is not occluded
@@ -165,58 +166,59 @@ function renderScenarioProjections(svgGroup, scenarios, runOptions, xscale, ysca
   const selectedScenario = _.remove(sortedScenarios, s => s.id === runOptions.selectedScenarioId)[0];
   sortedScenarios.push(selectedScenario);
 
-  sortedScenarios.forEach(scenario => {
-    // if (_.isEmpty(scenario.result)) return;
+  // FIXME: render histograms instead of line charts
+  // sortedScenarios.forEach(scenario => {
+  //   if (_.isEmpty(scenario.result)) return;
 
-    const param = scenario.parameter;
-    const xExtent = xscale.domain();
-    const stepSize = (xExtent[1] - param.projection_start) / (param.num_steps - 1);
+  //   const param = scenario.parameter;
+  //   const xExtent = xscale.domain();
+  //   const stepSize = (xExtent[1] - param.projection_start) / (param.num_steps - 1);
 
-    const scenarioG = svgGroup.append('g').attr('class', 'scenario');
-    if (!_.isEmpty(scenario.result)) {
-      scenarioG.append('path')
-        .attr('class', 'scenario-path')
-        .attr('d', timeseriesLine(xscale, yscale)(scenario.result.values))
-        .style('stroke', () => {
-          if (scenario.is_baseline) {
-            return '#222';
-          } else if (scenario.id === runOptions.selectedScenarioId) {
-            return SELECTED_COLOR;
-          } else {
-            return '#BBB';
-          }
-        })
-        .style('pointer-events', 'none')
-        .style('fill', 'none');
-    }
+  //   const scenarioG = svgGroup.append('g').attr('class', 'scenario');
+  //   if (!_.isEmpty(scenario.result)) {
+  //     scenarioG.append('path')
+  //       .attr('class', 'scenario-path')
+  //       .attr('d', timeseriesLine(xscale, yscale)(scenario.result.values))
+  //       .style('stroke', () => {
+  //         if (scenario.is_baseline) {
+  //           return '#222';
+  //         } else if (scenario.id === runOptions.selectedScenarioId) {
+  //           return SELECTED_COLOR;
+  //         } else {
+  //           return '#BBB';
+  //         }
+  //       })
+  //       .style('pointer-events', 'none')
+  //       .style('fill', 'none');
+  //   }
 
-    // Show show confidence interval and constraint for selectedScenario to avoid cluttering
-    if (scenario.id === runOptions.selectedScenarioId) {
-      scenarioG.classed('selected-scenario', true);
+  //   // Show show confidence interval and constraint for selectedScenario to avoid cluttering
+  //   if (scenario.id === runOptions.selectedScenarioId) {
+  //     scenarioG.classed('selected-scenario', true);
 
-      if (!_.isEmpty(scenario.result)) {
-        scenarioG
-          .append('path')
-          .attr('class', 'confidence-band')
-          .attr('d', confidenceArea(xscale, yscale, scenario.result)(scenario.result.values))
-          .style('stroke', 'none')
-          .style('fill-opacity', CONFIDENCE_BAND_OPACITY)
-          .style('fill', SELECTED_COLOR)
-          .style('pointer-events', 'none');
-      }
+  //     if (!_.isEmpty(scenario.result)) {
+  //       scenarioG
+  //         .append('path')
+  //         .attr('class', 'confidence-band')
+  //         .attr('d', confidenceArea(xscale, yscale, scenario.result)(scenario.result.values))
+  //         .style('stroke', 'none')
+  //         .style('fill-opacity', CONFIDENCE_BAND_OPACITY)
+  //         .style('fill', SELECTED_COLOR)
+  //         .style('pointer-events', 'none');
+  //     }
 
-      scenarioG.selectAll('.constraint')
-        .data(constraints)
-        .enter()
-        .append('circle')
-        .classed('constraint', true)
-        .attr('cx', constraint => xscale(param.projection_start + constraint.step * stepSize))
-        .attr('cy', constraint => yscale(constraint.value))
-        .style('stroke', SELECTED_COLOR)
-        .style('stroke-width', 2)
-        .style('pointer-events', 'none')
-        .style('fill', 'white')
-        .attr('r', runOptions.miniGraph ? 1.5 : 5);
-    }
-  });
+  //     scenarioG.selectAll('.constraint')
+  //       .data(constraints)
+  //       .enter()
+  //       .append('circle')
+  //       .classed('constraint', true)
+  //       .attr('cx', constraint => xscale(param.projection_start + constraint.step * stepSize))
+  //       .attr('cy', constraint => yscale(constraint.value))
+  //       .style('stroke', SELECTED_COLOR)
+  //       .style('stroke-width', 2)
+  //       .style('pointer-events', 'none')
+  //       .style('fill', 'white')
+  //       .attr('r', runOptions.miniGraph ? 1.5 : 5);
+  //   }
+  // });
 }
