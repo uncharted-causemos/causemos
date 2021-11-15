@@ -36,10 +36,6 @@
           @confirm="addNewTag"
           @cancel="showTagNameModal = false"
         />
-        <modal-datacube-scenario-tags
-          v-if="showScenarioTagsModal === true"
-          :model-run-data="filteredRunData"
-          @close="showScenarioTagsModal=false" />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
@@ -47,10 +43,19 @@
               <span class="scenario-count">
                 {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
               </span>
-              <small-text-button
-                :label="`Tag ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
-                @click="showTagNameModal = true"
-              />
+              <div class="tag-buttons">
+                <small-text-button
+                  v-if="selectedScenarioIds.length > 0"
+                  :label="`Tag ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
+                  @click="showTagNameModal = true"
+                />
+                <small-text-button
+                  v-for="(tag, index) in tagsSharedBySelectedRuns"
+                  :key="index"
+                  :label="`Remove '${tag}' from selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
+                  @click="removeTagFromSelectedRuns(tag)"
+                />
+              </div>
             </div>
             <model-runs-search-bar
               class="model-runs-search-bar"
@@ -476,7 +481,6 @@ import Modal from '@/components/modals/modal.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalGeoSelection from '@/components/modals/modal-geo-selection.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
-import ModalDatacubeScenarioTags from '@/components/modals/modal-datacube-scenario-tags.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import ModelRunsSearchBar from '@/components/data/model-runs-search-bar.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -520,7 +524,7 @@ import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/util
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
-import { createModelRun, updateModelRun, addModelRunsTag } from '@/services/new-datacube-service';
+import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -586,7 +590,6 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus,
     ModalConfirmation,
     ModalGeoSelection,
-    ModalDatacubeScenarioTags,
     ModalNewScenarioRuns,
     ModelRunsSearchBar,
     ParallelCoordinatesChart,
@@ -1441,6 +1444,7 @@ export default defineComponent({
       selectedQualifierValues,
       selectedRegionIds,
       selectedScenarioIds,
+      selectedScenarios,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
@@ -1508,6 +1512,17 @@ export default defineComponent({
     showDelete: false,
     DatacubeGenericAttributeVariableType
   }),
+  computed: {
+    tagsSharedBySelectedRuns() {
+      if (this.selectedScenarios.length === 0) return [];
+      let result: string[] = this.selectedScenarios[0].tags;
+      this.selectedScenarios.slice(1).forEach(scenario => {
+        const tags = scenario.tags;
+        result = result.filter(tag => tags.includes(tag));
+      });
+      return result;
+    }
+  },
   methods: {
     openGeoSelectionModal(modelParam: ModelParameter) {
       this.showGeoSelectionModal = true;
@@ -1603,6 +1618,13 @@ export default defineComponent({
       } catch (e) {
         this.toaster('Run failed', 'error', true);
       }
+    },
+    removeTagFromSelectedRuns(tag: string) {
+      this.selectedScenarios.forEach(run => {
+        // NOTE: this will automatically refresh the rendered tags
+        run.tags = run.tags.filter(_tag => _tag !== tag);
+      });
+      removeModelRunsTag(this.selectedScenarios.map(run => run.id), tag);
     }
   }
 });
@@ -1857,8 +1879,18 @@ $marginSize: 5px;
 
 .tags-area-container {
   display: flex;
-  align-items: center;
-  justify-content: space-between;
+}
+
+.tag-buttons {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+
+  > *:not(:first-child) {
+    margin-top: 2px;
+  }
 }
 
 .model-runs-search-bar {
