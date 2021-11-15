@@ -247,15 +247,6 @@ export const convertTimeseriesDistributionToHistograms = (
       monthIndex,
       projectionStartMonth
     );
-    console.log(
-      'month',
-      monthIndex,
-      'bins',
-      bins[0],
-      bins[1],
-      bins[2],
-      bins[3]
-    );
     const monthTimestamp = getTimestampAfterMonths(
       projectionStartTimestamp,
       monthIndex
