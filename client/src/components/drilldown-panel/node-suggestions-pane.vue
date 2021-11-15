@@ -205,10 +205,12 @@ export default {
         } else {
           for (let j = 0; j < nodeContainters.length; j++) {
             const causeConcept = nodeContainters[j].concept;
-            /* Relax duplicate constraint DC Nov 2021 */
-            // if (_.some(graphData.edges, edge => edge.source === causeConcept && edge.target === this.selectedNode.concept)) {
-            //   continue;
-            // }
+
+            /* Skip if edge exists and statement exists on edge */
+            const exist = graphData.edges.find(edge => edge.source === causeConcept && edge.target === this.selectedNode.concept);
+            if (exist && exist.reference_ids.includes(statement.id)) {
+              continue;
+            }
             addToMap(causeMap, causeConcept, statement);
           }
         }
@@ -224,10 +226,12 @@ export default {
         } else {
           for (let j = 0; j < nodeContainters.length; j++) {
             const effectConcept = nodeContainters[j].concept;
-            /* Relax duplicate constraint DC Nov 2021 */
-            // if (_.some(graphData.edges, edge => edge.source === this.selectedNode.concept && edge.target === effectConcept)) {
-            //   continue;
-            // }
+
+            /* Skip if edge exists and statement exists on edge */
+            const exist = graphData.edges.find(edge => edge.source === this.selectedNode.concept && edge.target === effectConcept);
+            if (exist && exist.reference_ids.includes(statement.id)) {
+              continue;
+            }
             addToMap(effectMap, effectConcept, statement);
           }
         }
@@ -394,7 +398,28 @@ export default {
           }
         }
       }
-      this.$emit('add-to-CAG', { nodes: newNodes, edges: newEdges });
+
+      // Normalize edges to ensure no duplicates
+      const normalizedEdges = [];
+      const graphEdges = this.graphData.edges;
+      for (let i = 0; i < newEdges.length; i++) {
+        const newEdge = newEdges[i];
+        const existingEdge = graphEdges.find(e => {
+          return e.source === newEdge.source && e.target === newEdge.target;
+        });
+        if (existingEdge) {
+          normalizedEdges.push({
+            id: existingEdge.id,
+            source: existingEdge.source,
+            target: existingEdge.target,
+            reference_ids: existingEdge.reference_ids.concat(newEdge.reference_ids)
+          });
+        } else {
+          normalizedEdges.push(newEdge);
+        }
+      }
+
+      this.$emit('add-to-CAG', { nodes: newNodes, edges: normalizedEdges });
     }
   }
 };
