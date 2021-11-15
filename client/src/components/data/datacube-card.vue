@@ -18,14 +18,6 @@
           </button>
           <slot name="datacube-model-header-collapse" />
         </header>
-        <div
-          v-if="isModelMetadata && toggleSearchBar"
-          style="display: flex; align-items: center">
-          <model-runs-search-bar
-            :data="modelRunsSearchData"
-            :filters="searchFilters"
-            @filters-updated="onModelRunsFiltersUpdated" />
-        </div>
         <modal-new-scenario-runs
           v-if="isModelMetadata && showNewRunsModal === true"
           :metadata="metadata"
@@ -76,6 +68,13 @@
                   @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
               </div>
             </div>
+            <model-runs-search-bar
+              class="model-runs-search-bar"
+              v-if="isModelMetadata && toggleSearchBar"
+              :data="modelRunsSearchData"
+              :filters="searchFilters"
+              @filters-updated="onModelRunsFiltersUpdated"
+            />
             <div v-if="dateModelParam">
               <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
                 <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
