@@ -303,8 +303,6 @@ export default class ModelRenderer extends BaseCAGRenderer {
       const graphHeight = 32;
       const xAxisLeftPadding = 14;
       const nodeBodyGroup = d3.select(node).select('.node-body-group');
-      // FIXME: remove
-      // const nodeHeaderGroup = d3.select(node).select('.node-header-group');
 
       d3.select(node).style('cursor', 'pointer');
 
