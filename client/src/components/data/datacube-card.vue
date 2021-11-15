@@ -1887,10 +1887,7 @@ $marginSize: 5px;
   display: flex;
   justify-content: flex-end;
   flex-wrap: wrap;
-
-  > *:not(:first-child) {
-    margin-top: 2px;
-  }
+  gap: 2px;
 }
 
 .model-runs-search-bar {
