@@ -7,24 +7,17 @@
       <h3>In about a year</h3>
       <h3>In a few years</h3>
     </div>
-    <!-- TODO: for each scenario -->
-    <div class="grid-row scenario-row">
-      <h3>Baseline</h3>
-      <histogram :bin-values="{ base: [10, 80, 10, 0, 0], change: null }" />
-      <histogram :bin-values="{ base: [30, 70, 0, 0, 0], change: null }" />
-      <histogram :bin-values="{ base: [70, 20, 10, 0, 0], change: null }" />
-    </div>
-    <div class="grid-row scenario-row">
-      <h3>Scenario 1</h3>
-      <histogram :bin-values="{ base: [80, 10, 10, 0, 0], change: null }" />
-      <histogram :bin-values="{ base: [10, 50, 20, 20, 0], change: null }" />
-      <histogram :bin-values="{ base: [0, 20, 20, 50, 10], change: null }" />
-    </div>
-    <div class="grid-row scenario-row">
-      <h3>Scenario 2</h3>
-      <histogram :bin-values="{ base: [0, 60, 20, 20, 0], change: null }" />
-      <histogram :bin-values="{ base: [20, 40, 20, 20, 0], change: null }" />
-      <histogram :bin-values="{ base: [60, 20, 120, 8, 10], change: null }" />
+    <div
+      v-for="(scenario, index) of projections"
+      :key="scenario.scenarioId"
+      class="grid-row scenario-row"
+    >
+      <h3>{{ scenario.scenarioName }}</h3>
+      <histogram
+        v-for="(histogramData, timeSliceIndex) of binnedResults[index]"
+        :key="timeSliceIndex"
+        :bin-values="{ base: histogramData, change: null }"
+      />
     </div>
   </div>
 </template>

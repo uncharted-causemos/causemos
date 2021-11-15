@@ -1,4 +1,3 @@
-import dateFormatter from '@/formatters/date-formatter';
 import { CAGModelSummary } from '@/types/CAG';
 import { TimeScale } from '@/types/Enums';
 import {
@@ -10,7 +9,11 @@ import { getMonthFromTimestamp, getTimestampAfterMonths } from './date-util';
 import { TIME_SCALE_OPTIONS } from './time-scale-util';
 
 export type HistogramData = [number, number, number, number, number];
-export type ProjectionHistograms = [HistogramData, HistogramData, HistogramData];
+export type ProjectionHistograms = [
+  HistogramData,
+  HistogramData,
+  HistogramData
+];
 
 // The bin boundaries that are used when a node has no historical data.
 export const ABSTRACT_NODE_BINS: [number, number, number, number] = [
@@ -96,13 +99,26 @@ export const extractRelevantHistoricalChanges = (
   return changes;
 };
 
+// When nodes have no historical data, there is a hack in place to give them
+//  three data points with a value of 0.5. This function can be simplified to
+//  just `historicalData.length === 0` if and when that hack is removed
+const isAbstractNode = (historicalData: TimeseriesPoint[]) => {
+  return (
+    historicalData.length === 0 ||
+    (historicalData.length === 3 &&
+      historicalData[0].value === 0.5 &&
+      historicalData[1].value === 0.5 &&
+      historicalData[2].value === 0.5)
+  );
+};
+
 export const computeProjectionBins = (
   historicalData: TimeseriesPoint[],
   clampValueAtNow: number | null,
   monthsElapsedSinceNow: number,
   projectionStartMonth: number
 ): [number, number, number, number] => {
-  if (historicalData.length === 0) {
+  if (isAbstractNode(historicalData)) {
     // Abstract node: There is no historical data, so return arbitrary
     //  buckets between 0 and 1
     return ABSTRACT_NODE_BINS;
@@ -231,25 +247,42 @@ export const convertTimeseriesDistributionToHistograms = (
       monthIndex,
       projectionStartMonth
     );
+    console.log(
+      'month',
+      monthIndex,
+      'bins',
+      bins[0],
+      bins[1],
+      bins[2],
+      bins[3]
+    );
     const monthTimestamp = getTimestampAfterMonths(
       projectionStartTimestamp,
       monthIndex
     );
-    // 4. Filter projection.values to get distribution
-    const found = projection.find(
-      distribution => distribution.timestamp === monthTimestamp
-    );
-    if (found === undefined) {
+    // 4. Find distribution that's nearest to this timestep
+    let closestDistribution: number[] | null = null;
+    let closestTimestamp: number | null = null;
+    projection.forEach(({ values, timestamp }) => {
+      if (
+        closestTimestamp === null ||
+        Math.abs(timestamp - monthTimestamp) <
+          Math.abs(closestTimestamp - monthTimestamp)
+      ) {
+        closestTimestamp = timestamp;
+        closestDistribution = values;
+      }
+    });
+    if (closestDistribution === null) {
       console.error(
-        'Unable to find projected distribution at timestamp ' +
-          dateFormatter(monthTimestamp, 'MMM YYYY') +
-          '.'
+        'Unable to convert projection to histogram, projection array is likely empty:',
+        projection
       );
+      closestDistribution = [];
     }
-    const distribution = found?.values ?? ([] as number[]);
     // 5. Feed distribution into bins to get histogram
     const histogram: HistogramData = [0, 0, 0, 0, 0];
-    distribution.forEach(value => {
+    closestDistribution.forEach(value => {
       if (value < bins[0]) {
         // Much lower
         histogram[4]++;
