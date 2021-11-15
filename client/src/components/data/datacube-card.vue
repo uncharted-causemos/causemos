@@ -159,51 +159,61 @@
                   @click="showDatasets = true"
                 />
               </div>
-              <div
-                v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
-                class="relative-box"
-              >
-                <div class="checkbox" v-if="relativeTo">
-                  <label
-                    @click="showPercentChange = !showPercentChange"
-                    style="cursor: pointer; color: black;">
-                    <i
-                      class="fa fa-lg fa-fw"
-                      :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
-                    />
-                    Use % Change
-                  </label>
+              <div style="display: flex">
+                <div
+                  v-if="currentTabView === 'data' && (visibleTimeseriesData.length > 1 || relativeTo !== null)"
+                  class="relative-box"
+                >
+                  <div class="checkbox" v-if="relativeTo">
+                    <label
+                      @click="showPercentChange = !showPercentChange"
+                      style="cursor: pointer; color: black;">
+                      <i
+                        class="fa fa-lg fa-fw"
+                        :class="{ 'fa-check-square-o': showPercentChange, 'fa-square-o': !showPercentChange }"
+                      />
+                      Use % Change
+                    </label>
+                  </div>
+                  Relative to
+                  <button
+                    class="btn btn-default"
+                    @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
+                    :style="{ color: baselineMetadata?.color ?? 'black' }"
+                  >
+                    {{baselineMetadata?.name ?? 'none'}}</button
+                  >
+                  <dropdown-control
+                    v-if="isRelativeDropdownOpen"
+                    class="relative-dropdown">
+                    <template #content>
+                      <div
+                        v-if="relativeTo !== null"
+                        class="dropdown-option"
+                        @click="setRelativeTo(null); isRelativeDropdownOpen = false;"
+                      >
+                        none
+                      </div>
+                      <div
+                        v-for="(timeseries, index) in visibleTimeseriesData"
+                        class="dropdown-option"
+                        :style="{ color: timeseries.color }"
+                        :key="index"
+                        @click="setRelativeTo(timeseries.id); isRelativeDropdownOpen = false;"
+                      >
+                        {{timeseries.name}}
+                      </div>
+                    </template>
+                  </dropdown-control>
                 </div>
-                Relative to
                 <button
-                  class="btn btn-default"
-                  @click="isRelativeDropdownOpen = !isRelativeDropdownOpen"
-                  :style="{ color: baselineMetadata?.color ?? 'black' }"
+                  class="btn btn-default toggle-viz-button"
+                  :class="{ 'toggle-viz-button-pressed': activeVizOptionsTab !== null }"
+                  title="Toggle visualization options"
+                  :onClick="() => activeVizOptionsTab = (activeVizOptionsTab === null ? 'vizoptions' : null)"
                 >
-                  {{baselineMetadata?.name ?? 'none'}}</button
-                >
-                <dropdown-control
-                  v-if="isRelativeDropdownOpen"
-                  class="relative-dropdown">
-                  <template #content>
-                    <div
-                      v-if="relativeTo !== null"
-                      class="dropdown-option"
-                      @click="setRelativeTo(null); isRelativeDropdownOpen = false;"
-                    >
-                      none
-                    </div>
-                    <div
-                      v-for="(timeseries, index) in visibleTimeseriesData"
-                      class="dropdown-option"
-                      :style="{ color: timeseries.color }"
-                      :key="index"
-                      @click="setRelativeTo(timeseries.id); isRelativeDropdownOpen = false;"
-                    >
-                      {{timeseries.name}}
-                    </div>
-                  </template>
-                </dropdown-control>
+                  <i class="fa fa-gear"></i>
+                </button>
               </div>
             </div>
 
@@ -301,37 +311,6 @@
 
             <!-- Data tab content -->
             <div v-if="currentTabView === 'data'" class="column">
-              <div
-                class="dropdown-row"
-                v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
-              >
-                <dropdown-button
-                  v-if="aggregationOptions.length > 0"
-                  class="dropdown-config tour-agg-dropdown-config"
-                  :class="{ 'attribute-invalid': selectedTemporalAggregation === '' || selectedSpatialAggregation === '' }"
-                  :inner-button-label="'Aggregated by'"
-                  :items="aggregationOptions"
-                  :selected-item="selectedSpatialAggregation"
-                  @item-selected="setAggregationSelection"
-                />
-                <dropdown-button
-                  v-if="temporalResolutionOptions.length > 0"
-                  class="dropdown-config"
-                  :class="{ 'attribute-invalid': selectedTemporalResolution === '' }"
-                  :inner-button-label="'Temporal Resolution'"
-                  :items="temporalResolutionOptions"
-                  :selected-item="selectedTemporalResolution"
-                  @item-selected="setTemporalResolutionSelection"
-                />
-                <map-dropdown
-                  v-if="mapReady && regionalData !== null && outputSpecs.length > 0"
-                  class="dropdown-config"
-                  :selectedBaseLayer="selectedBaseLayer"
-                  :selectedDataLayer="selectedDataLayer"
-                  @set-base-layer="setBaseLayer"
-                  @set-data-layer="setDataLayer"
-                />
-              </div>
               <timeseries-chart
                 v-if="currentTabView === 'data' && visibleTimeseriesData.length > 0"
                 class="timeseries-chart"
@@ -398,6 +377,7 @@
                       :grid-layer-stats="gridLayerStats"
                       :selected-base-layer="selectedBaseLayer"
                       :unit="unit"
+                      :selected-color-scheme="finalColorScheme"
                       :show-percent-change="showPercentChange"
                       @sync-bounds="onSyncMapBounds"
                       @on-map-load="onMapLoad"
@@ -420,41 +400,82 @@
               </div>
             </div>
           </div>
-          <drilldown-panel
-            class="drilldown"
-            :active-tab-id="activeDrilldownTab"
-            :has-transition="false"
-            :hide-close="true"
-            :is-open="activeDrilldownTab !== null"
-            :tabs="drilldownTabs"
-            @close="() => { activeDrilldownTab = null }"
-          >
-            <template #content>
-              <breakdown-pane
-                v-if="activeDrilldownTab ==='breakdown'"
-                :selected-admin-level="selectedAdminLevel"
-                :qualifier-breakdown-data="qualifierBreakdownData"
-                :regional-data="regionalData"
-                :temporal-breakdown-data="temporalBreakdownData"
-                :selected-spatial-aggregation="selectedSpatialAggregation"
-                :selected-temporal-aggregation="selectedTemporalAggregation"
-                :selected-temporal-resolution="selectedTemporalResolution"
-                :selected-timestamp="selectedTimestamp"
-                :selected-scenario-ids="selectedScenarioIds"
-                :selected-region-ids="selectedRegionIds"
-                :selected-qualifier-values="selectedQualifierValues"
-                :selected-breakdown-option="breakdownOption"
-                :selected-timeseries-points="selectedTimeseriesPoints"
-                :selected-years="selectedYears"
-                :unit="unit"
-                @toggle-is-region-selected="toggleIsRegionSelected"
-                @toggle-is-qualifier-selected="toggleIsQualifierSelected"
-                @toggle-is-year-selected="toggleIsYearSelected"
-                @set-selected-admin-level="setSelectedAdminLevel"
-                @set-breakdown-option="setBreakdownOption"
-              />
-            </template>
-          </drilldown-panel>
+          <div style="position: relative">
+            <drilldown-panel
+              class="drilldown"
+              :active-tab-id="activeDrilldownTab"
+              :has-transition="false"
+              :hide-close="true"
+              :is-open="activeDrilldownTab !== null"
+              :tabs="drilldownTabs"
+              @close="() => { activeDrilldownTab = null }"
+            >
+              <template #content>
+                <breakdown-pane
+                  v-if="activeDrilldownTab ==='breakdown'"
+                  :selected-admin-level="selectedAdminLevel"
+                  :qualifier-breakdown-data="qualifierBreakdownData"
+                  :regional-data="regionalData"
+                  :temporal-breakdown-data="temporalBreakdownData"
+                  :selected-spatial-aggregation="selectedSpatialAggregation"
+                  :selected-temporal-aggregation="selectedTemporalAggregation"
+                  :selected-temporal-resolution="selectedTemporalResolution"
+                  :selected-timestamp="selectedTimestamp"
+                  :selected-scenario-ids="selectedScenarioIds"
+                  :selected-region-ids="selectedRegionIds"
+                  :selected-qualifier-values="selectedQualifierValues"
+                  :selected-breakdown-option="breakdownOption"
+                  :selected-timeseries-points="selectedTimeseriesPoints"
+                  :selected-years="selectedYears"
+                  :unit="unit"
+                  @toggle-is-region-selected="toggleIsRegionSelected"
+                  @toggle-is-qualifier-selected="toggleIsQualifierSelected"
+                  @toggle-is-year-selected="toggleIsYearSelected"
+                  @set-selected-admin-level="setSelectedAdminLevel"
+                  @set-breakdown-option="setBreakdownOption"
+                />
+              </template>
+            </drilldown-panel>
+            <!-- viz options if visible will always be on top of the breakdown panel -->
+            <drilldown-panel
+              class="drilldown"
+              style="top: 0"
+              :style="{ position: activeDrilldownTab !== null ? 'absolute' : 'relative' }"
+              :active-tab-id="activeVizOptionsTab"
+              :has-transition="false"
+              :hide-close="true"
+              :is-open="activeVizOptionsTab !== null"
+              :tabs="vizOptionsTabs"
+              @close="() => { activeVizOptionsTab = null }"
+            >
+              <template #content>
+                <viz-options-pane
+                  :metadata="metadata"
+                  :aggregation-options="aggregationOptions"
+                  :selected-aggregation="selectedSpatialAggregation"
+                  :selected-unit="unit"
+                  :selected-resolution="selectedTemporalResolution"
+                  :selected-base-layer="selectedBaseLayer"
+                  :selected-base-layer-transparency="selectedBaseLayerTransparency"
+                  :selected-data-layer="selectedDataLayer"
+                  :color-scheme-reversed="colorSchemeReversed"
+                  :selected-color-scheme-name="selectedColorSchemeName"
+                  :selected-color-scale-type="selectedColorScaleType"
+                  :number-of-color-bins="numberOfColorBins"
+                  @set-aggregation-selection="setAggregationSelection"
+                  @set-resolution-selection="setTemporalResolutionSelection"
+                  @set-base-layer-selection="setBaseLayer"
+                  @set-base-layer-transparency-selection="setBaseLayerTransparency"
+                  @set-data-layer-selection="setDataLayer"
+                  @set-final-color-scheme="setFinalColorScheme"
+                  @set-color-scheme-reversed="setColorSchemeReversed"
+                  @set-color-scheme-name="setColorSchemeName"
+                  @set-color-scale-type="setColorScaleType"
+                  @set-number-color-bins="setNumberOfColorBins"
+                />
+              </template>
+            </drilldown-panel>
+          </div>
         </div>
       </div>
     </div>
@@ -481,12 +502,11 @@ import router from '@/router';
 import flatpickr from 'flatpickr';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
+import VizOptionsPane from '@/components/drilldown-panel/viz-options-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
 import DatacubeScenarioHeader from '@/components/data/datacube-scenario-header.vue';
 import DropdownControl from '@/components/dropdown-control.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
-import DropdownButton from '@/components/dropdown-button.vue';
-import MapDropdown from '@/components/data/map-dropdown.vue';
 import MapLegend from '@/components/widgets/map-legend.vue';
 import MessageDisplay from '@/components/widgets/message-display.vue';
 import Modal from '@/components/modals/modal.vue';
@@ -532,10 +552,10 @@ import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
-import { colorFromIndex } from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, COLOR_SCHEMES } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 
 import { createModelRun, updateModelRun, addModelRunsTag } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
@@ -550,6 +570,15 @@ const DRILLDOWN_TABS = [
     id: 'breakdown',
     // TODO: our version of FA doesn't include fa-chart
     icon: 'fa-question'
+  }
+];
+
+const VIZ_OPTIONS_TABS = [
+  {
+    name: 'Viz Options',
+    id: 'vizoptions',
+    // TODO: our version of FA doesn't include fa-chart
+    icon: 'fa-gear'
   }
 ];
 
@@ -591,12 +620,11 @@ export default defineComponent({
   },
   components: {
     BreakdownPane,
+    VizOptionsPane,
     DataAnalysisMap,
     DatacubeScenarioHeader,
     DrilldownPanel,
-    DropdownButton,
     DropdownControl,
-    MapDropdown,
     MapLegend,
     MessageDisplay,
     Modal,
@@ -631,6 +659,7 @@ export default defineComponent({
     const toaster = useToaster();
 
     const activeDrilldownTab = ref<string|null>('breakdown');
+    const activeVizOptionsTab = ref<string|null>(null);
     const currentTabView = ref<string>('description');
     const potentialScenarioCount = ref<number|null>(0);
     const potentialScenarios = ref<ScenarioData[]>([]);
@@ -647,6 +676,7 @@ export default defineComponent({
     const breakdownOption = ref<string | null>(null);
     const selectedAdminLevel = ref(0);
     const selectedBaseLayer = ref(BASE_LAYER.DEFAULT);
+    const selectedBaseLayerTransparency = ref(BASE_LAYER_TRANSPARENCY['50% Transparency']);
     const selectedDataLayer = ref(DATA_LAYER.ADMIN);
     const selectedScenarioIds = ref([] as string[]);
     const selectedScenarios = ref([] as ModelRun[]);
@@ -760,6 +790,10 @@ export default defineComponent({
 
     const setBaseLayer = (val: BASE_LAYER) => {
       selectedBaseLayer.value = val;
+    };
+
+    const setBaseLayerTransparency = (val: BASE_LAYER_TRANSPARENCY) => {
+      selectedBaseLayerTransparency.value = val;
     };
 
     const setDataLayer = (val: DATA_LAYER) => {
@@ -1340,6 +1374,37 @@ export default defineComponent({
       relativeTo
     );
 
+    //
+    // color scheme options
+    //
+    const colorSchemeReversed = ref(false);
+    const selectedColorSchemeName = ref(Object.keys(COLOR_SCHEMES)[0]); // DEFAULT
+    const selectedColorScaleType = ref(ColorScaleType.Discrete);
+    const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
+
+    const setColorSchemeReversed = (reversed: boolean) => {
+      colorSchemeReversed.value = reversed;
+    };
+
+    const setColorSchemeName = (schemeName: string) => {
+      selectedColorSchemeName.value = schemeName;
+    };
+
+    const setColorScaleType = (scaleType: ColorScaleType) => {
+      selectedColorScaleType.value = scaleType;
+    };
+
+    const setNumberOfColorBins = (numBins: number) => {
+      numberOfColorBins.value = numBins;
+    };
+
+    // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
+    // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
+    const finalColorScheme = ref(COLOR_SCHEMES.DEFAULT);
+    const setFinalColorScheme = (colorScheme: string[]) => {
+      finalColorScheme.value = colorScheme;
+    };
+
     const {
       onSyncMapBounds,
       mapBounds,
@@ -1349,7 +1414,7 @@ export default defineComponent({
       gridLayerStats,
       mapLegendData,
       mapSelectedLayer
-    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange);
+    } = useAnalysisMapStats(outputSpecs, regionalData, relativeTo, selectedDataLayer, selectedAdminLevel, showPercentChange, finalColorScheme);
 
     watchEffect(() => {
       if (metadata.value && currentOutputIndex.value >= 0) {
@@ -1404,6 +1469,7 @@ export default defineComponent({
       addNewTag,
       allModelRunData,
       activeDrilldownTab,
+      activeVizOptionsTab,
       adminLayerStats,
       baselineMetadata,
       breakdownOption,
@@ -1417,6 +1483,7 @@ export default defineComponent({
       defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
+      vizOptionsTabs: VIZ_OPTIONS_TABS,
       fetchData,
       filteredRunData,
       geoModelParam,
@@ -1456,6 +1523,16 @@ export default defineComponent({
       searchFilters,
       selectedAdminLevel,
       selectedBaseLayer,
+      selectedBaseLayerTransparency,
+      finalColorScheme,
+      setColorSchemeReversed,
+      colorSchemeReversed,
+      setColorSchemeName,
+      selectedColorSchemeName,
+      setColorScaleType,
+      selectedColorScaleType,
+      setNumberOfColorBins,
+      numberOfColorBins,
       selectedDataLayer,
       selectedPreGenDataItem,
       selectedQualifierValues,
@@ -1470,8 +1547,10 @@ export default defineComponent({
       setSelectedAdminLevel,
       setBreakdownOption,
       setBaseLayer,
+      setBaseLayerTransparency,
       setDataLayer,
       setRelativeTo,
+      setFinalColorScheme,
       setSelectedTimestamp,
       setAggregationSelection,
       setTemporalResolutionSelection,
@@ -1661,6 +1740,19 @@ $fullscreenTransition: all 0.5s ease-in-out;
 
 .drilldown {
   margin-left: 1rem;
+  height: 100%;
+}
+
+.toggle-viz-button {
+  background-color: lightgray;
+  margin: 0 1px;
+  padding: 2px 4px;
+}
+.toggle-viz-button-pressed {
+  background-color: darkgray;
+  &:hover, &:active, &:focus {
+    background-color: darkgray;
+  }
 }
 
 .capture-box {

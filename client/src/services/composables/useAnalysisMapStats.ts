@@ -16,7 +16,8 @@ export default function useAnalysisMapStats(
   relativeTo: Ref<string | null>,
   selectedDataLayer: Ref<string>,
   selectedAdminLevel: Ref<number>,
-  showPercentChange: Ref<boolean>
+  showPercentChange: Ref<boolean>,
+  selectedColorScheme: Ref<string[]>
 ) {
   const adminMapLayerLegendData = ref<MapLegendColor[][]>([]);
   const gridMapLayerLegendData = ref<MapLegendColor[][]>([]);
@@ -37,7 +38,7 @@ export default function useAnalysisMapStats(
     } else {
       const globalStats = adminLayerStats.value.global[adminLevelToString(selectedAdminLevel.value)];
       adminMapLayerLegendData.value = globalStats ? [
-        createMapLegendData([globalStats.min, globalStats.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+        createMapLegendData([globalStats.min, globalStats.max], selectedColorScheme.value, d3.scaleLinear)
       ] : [];
     }
   });
@@ -103,7 +104,7 @@ export default function useAnalysisMapStats(
     } else {
       const globalStats = gridLayerStats.value?.global[String(mapCurZoom.value)];
       gridMapLayerLegendData.value = globalStats ? [
-        createMapLegendData([globalStats.min, globalStats.max], COLOR_SCHEME.PURPLES_7, d3.scaleLinear)
+        createMapLegendData([globalStats.min, globalStats.max], selectedColorScheme.value, d3.scaleLinear)
       ] : [];
     }
   });
