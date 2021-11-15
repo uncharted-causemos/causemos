@@ -63,7 +63,7 @@ const getModelStats = async (modelIDs) => {
       value: modelIDs
     }
   ]);
-  // dict[pair.key] = { edgeCount: pair.doc_count };
+
   nodeResult.forEach(pair => {
     dict[pair.key] = { nodeCount: pair.doc_count };
   });
@@ -76,9 +76,8 @@ const getModelStats = async (modelIDs) => {
     }
   ]);
 
-  // dict[pair.key].nodeCount = pair.doc_count;
   edgeResult.forEach(pair => {
-    dict[pair.key].edgeCount = pair.doc_count;
+    if (dict[pair.key]) dict[pair.key].edgeCount = pair.doc_count;
   });
 
   return dict;

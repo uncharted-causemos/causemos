@@ -16,7 +16,7 @@ router.post('/', asyncHandler(async (req, res) => {
  */
 router.get('/', asyncHandler(async (req, res) => {
   const modelId = req.query.modelId;
-  const result = await maasService.getAllModelRuns(modelId);
+  const result = await maasService.getAllModelRuns(modelId, true);
   res.status(200).json(result);
 }));
 
