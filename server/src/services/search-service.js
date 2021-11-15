@@ -159,8 +159,14 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
   const aggResult = result.body.aggregations;
   const items = [
+    // Search results in project
     ...aggResult.filteredSubj.fieldAgg.buckets,
-    ...aggResult.filteredObj.fieldAgg.buckets
+    ...aggResult.filteredObj.fieldAgg.buckets,
+
+    // Search result in raw ontology space
+    ...matchedRawConcepts.map(d => {
+      return { key: d };
+    })
   ];
 
   // Start post processing, unique and attach matched metadata
@@ -282,5 +288,6 @@ const indicatorSearchByConcepts = async (projectId, flatConcepts) => {
 
 module.exports = {
   statementConceptEntitySearch,
+  rawConceptEntitySearch,
   indicatorSearchByConcepts
 };
