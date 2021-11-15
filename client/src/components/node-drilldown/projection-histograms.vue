@@ -64,14 +64,18 @@ export default defineComponent({
       );
     },
     binnedResults(): ProjectionHistograms[] {
-      return this.projections.map(projection =>
-        convertTimeseriesDistributionToHistograms(
-          this.modelSummary,
-          this.historicalTimeseries,
-          null, // TODO: clampedNowValue
-          projection.values
-        )
-      );
+      // Filter out the scenarios that haven't been run yet (typically just
+      //  draft) and then convert all projection results into histograms
+      return this.projections
+        .filter(projection => projection.values.length > 0)
+        .map(projection =>
+          convertTimeseriesDistributionToHistograms(
+            this.modelSummary,
+            this.historicalTimeseries,
+            null, // TODO: clampedNowValue
+            projection.values
+          )
+        );
     }
   }
 });
