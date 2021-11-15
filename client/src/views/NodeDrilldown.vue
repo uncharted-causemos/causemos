@@ -5,8 +5,7 @@
       <div class="drivers">
         <h5 v-if="drivers.length > 0">Top Drivers</h5>
         <template v-if="scenarioData">
-          <!-- FIXME: still relies on confidence interval -->
-          <!-- <neighbor-node
+          <neighbor-node
             v-for="driver in drivers"
             :key="driver.edge.id"
             :node="driver.node"
@@ -16,7 +15,7 @@
             :selected-scenario-id="selectedScenarioId"
             @click="openNeighborDrilldown(driver.node)"
             class="neighbor-node"
-          /> -->
+          />
         </template>
       </div>
       <div class="selected-node-column">
@@ -179,8 +178,7 @@
       <div class="impacts">
         <h5 v-if="impacts.length > 0">Top Impacts</h5>
         <template v-if="scenarioData">
-          <!-- FIXME: still relies on confidence interval -->
-          <!-- <neighbor-node
+          <neighbor-node
             v-for="impact in impacts"
             :key="impact.edge.id"
             :node="impact.node"
@@ -190,7 +188,7 @@
             :neighborhood-chart-data="scenarioData"
             :selected-scenario-id="selectedScenarioId"
             @click="openNeighborDrilldown(impact.node)"
-          /> -->
+          />
         </template>
       </div>
     </main>
@@ -203,7 +201,7 @@ import { computed, defineComponent, ref, watchEffect, watch } from 'vue';
 import { useStore } from 'vuex';
 
 import { AggregationOption, ProjectType, TemporalResolutionOption } from '@/types/Enums';
-// import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
+import NeighborNode from '@/components/node-drilldown/neighbor-node.vue';
 import TdNodeChart from '@/components/widgets/charts/td-node-chart.vue';
 import router from '@/router';
 import modelService from '@/services/model-service';
@@ -222,7 +220,7 @@ import ProjectionHistograms from '@/components/node-drilldown/projection-histogr
 export default defineComponent({
   name: 'NodeDrilldown',
   components: {
-    // NeighborNode,
+    NeighborNode,
     TdNodeChart,
     DropdownButton,
     AnalyticalQuestionsAndInsightsPanel,
