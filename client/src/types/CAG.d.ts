@@ -112,7 +112,7 @@ export interface SourceTargetPair {
 }
 
 export interface CAGModelParameter {
-  num_steps: number;
+  num_steps: number; // Deprecated, should now be derived from time_scale
   indicator_time_series_range: {
     start: number;
     end: number;

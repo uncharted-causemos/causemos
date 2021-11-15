@@ -58,6 +58,8 @@ import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, CAGModelParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
+import { TimeScale } from '@/types/Enums';
+import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -120,7 +122,10 @@ export default defineComponent({
       return this.modelSummary?.parameter?.engine ?? 'dyse';
     },
     projectionSteps(): number | undefined {
-      return this.modelSummary?.parameter.num_steps;
+      const timeSliceMonths = getSliceMonthsFromTimeScale(
+        this.modelSummary?.parameter?.time_scale ?? TimeScale.None
+      );
+      return timeSliceMonths[timeSliceMonths.length - 1];
     },
     onMatrixTab(): boolean {
       return !!(this.$route.query && this.$route.query.activeTab === 'matrix');

@@ -6,7 +6,7 @@ import {
 } from '@/types/Timeseries';
 import _ from 'lodash';
 import { getMonthFromTimestamp, getTimestampAfterMonths } from './date-util';
-import { TIME_SCALE_OPTIONS } from './time-scale-util';
+import { getSliceMonthsFromTimeScale } from './time-scale-util';
 
 export type HistogramData = [number, number, number, number, number];
 export type ProjectionHistograms = [
@@ -225,17 +225,7 @@ export const convertTimeseriesDistributionToHistograms = (
     timeScale === TimeScale.None ? TimeScale.Years : timeScale;
   // 2. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
   // This represents how many months from "now" each displayed time slice will be
-  const timeScaleOption = TIME_SCALE_OPTIONS.find(
-    option => option.id === selectedTimeScale
-  );
-  if (timeScaleOption === undefined) {
-    console.error(
-      'Unable to find time scale option with ID ' + selectedTimeScale
-    );
-  }
-  const relevantMonthOffsets = timeScaleOption?.timeSlices?.map(
-    timeSlice => timeSlice.months
-  ) ?? [3, 12, 36];
+  const relevantMonthOffsets = getSliceMonthsFromTimeScale(selectedTimeScale);
   const projectionStartTimestamp = projection[0].timestamp;
   const projectionStartMonth = getMonthFromTimestamp(projectionStartTimestamp);
   // For each timeslice:

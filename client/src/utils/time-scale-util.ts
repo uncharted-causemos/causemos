@@ -43,3 +43,19 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
     example: 'Climate change'
   }
 ];
+
+export const getSliceMonthsFromTimeScale = (timeScale: TimeScale) => {
+  const timeScaleOption = TIME_SCALE_OPTIONS.find(
+    option => option.id === timeScale
+  );
+  if (timeScaleOption === undefined) {
+    console.error('Unable to find time scale option with ID ' + timeScale);
+  }
+  return (
+    timeScaleOption?.timeSlices?.map(timeSlice => timeSlice.months) ?? [
+      3,
+      12,
+      36
+    ]
+  );
+};

@@ -14,6 +14,7 @@ import {
   ScenarioParameter,
   CAGModelParameter
 } from '@/types/CAG';
+import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
 
 const MODEL_STATUS = {
   NOT_REGISTERED: 0,
@@ -433,8 +434,12 @@ const buildNodeChartData = (modelSummary: CAGModelSummary, nodes: NodeParameter[
 
     // FIXME: hackin parameters from modelSummary
     graphData.scenarios.forEach(scenario => {
+      const timeSliceMonths = getSliceMonthsFromTimeScale(
+        modelSummary.parameter.time_scale
+      );
+      const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
       if (scenario.parameter) {
-        scenario.parameter.num_steps = modelSummary.parameter.num_steps;
+        scenario.parameter.num_steps = numSteps;
       }
     });
 
@@ -460,7 +465,10 @@ const runSensitivityAnalysis = async (
   constraints: ConceptProjectionConstraints[]
 ) => {
   const { id: modelId } = modelSummary;
-  const { engine, num_steps: numTimeSteps, projection_start: experimentStart } = modelSummary.parameter;
+  const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
+
+  const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
+  const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
 
   const analysisParams = {
     numPath: 0,
@@ -478,7 +486,7 @@ const runSensitivityAnalysis = async (
       constraints,
       engine,
       experimentStart,
-      numTimeSteps
+      numSteps
     }
   );
 
@@ -488,7 +496,10 @@ const runSensitivityAnalysis = async (
 
 const createBaselineScenario = async (modelSummary: CAGModelSummary) => {
   const modelId = modelSummary.id;
-  const numSteps = modelSummary.parameter.num_steps;
+  const timeSliceMonths = getSliceMonthsFromTimeScale(
+    modelSummary.parameter.time_scale
+  );
+  const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
   try {
     const experimentId = await runProjectionExperiment(modelId, numSteps, cleanConstraints([]));
     const result: any = await getExperimentResult(modelId, experimentId, 30);
@@ -528,6 +539,11 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
 
   if (!scenario.parameter) return scenario;
 
+  const timeSliceMonths = getSliceMonthsFromTimeScale(
+    modelParameter.time_scale
+  );
+  const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
+
   // Remove constraints if the concept is no longer in the model's topology
   _.remove(scenario.parameter.constraints, constraint => {
     return !concepts.includes(constraint.concept);
@@ -536,14 +552,14 @@ const resetScenarioParameter = (scenario: Scenario, modelSummary: CAGModelSummar
   // Remove individual clamps if they fall outside of the projection parameter's range
   scenario.parameter.constraints.forEach(constraints => {
     _.remove(constraints.values, v => {
-      return v.step >= modelParameter.num_steps;
+      return v.step >= numSteps;
     });
   });
 
   // Reset time ranges to match with the model's parameterization
   scenario.parameter.indicator_time_series_range = modelParameter.indicator_time_series_range;
   scenario.parameter.projection_start = modelParameter.projection_start;
-  scenario.parameter.num_steps = modelParameter.num_steps;
+  scenario.parameter.num_steps = numSteps;
   return scenario;
 };
 
