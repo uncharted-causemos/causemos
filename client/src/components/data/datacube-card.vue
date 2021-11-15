@@ -10,12 +10,6 @@
           >
             {{ activeDrilldownTab === null ? 'Show' : 'Hide' }} Breakdown
           </button>
-          <button
-            class="btn btn-default breakdown-button"
-            @click="toggleSearchBar=!toggleSearchBar"
-          >
-            <i class="fa fa-search"></i>
-          </button>
           <slot name="datacube-model-header-collapse" />
         </header>
         <modal-new-scenario-runs
@@ -70,7 +64,7 @@
             </div>
             <model-runs-search-bar
               class="model-runs-search-bar"
-              v-if="isModelMetadata && toggleSearchBar"
+              v-if="isModelMetadata"
               :data="modelRunsSearchData"
               :filters="searchFilters"
               @filters-updated="onModelRunsFiltersUpdated"
@@ -653,7 +647,6 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
 
-    const toggleSearchBar = ref<boolean>(false);
     const showTagNameModal = ref<boolean>(false);
     const showScenarioTagsModal = ref<boolean>(false);
 
@@ -908,7 +901,6 @@ export default defineComponent({
           if (initialDataConfig.value.searchFilters !== undefined) {
             // restoring a state where some searchFilters were defined
             if (!_.isEmpty(initialDataConfig.value.searchFilters) && initialDataConfig.value.searchFilters.clauses.length > 0) {
-              toggleSearchBar.value = true;
               searchFilters.value = _.clone(initialDataConfig.value.searchFilters);
             }
           } else {
@@ -1193,7 +1185,6 @@ export default defineComponent({
         if (loadedInsight.data_state?.searchFilters !== undefined) {
           // restoring a state where some searchFilters were defined
           if (!_.isEmpty(loadedInsight.data_state?.searchFilters) && loadedInsight.data_state?.searchFilters.clauses.length > 0) {
-            toggleSearchBar.value = true;
             searchFilters.value = _.clone(loadedInsight.data_state?.searchFilters);
           }
         } else {
@@ -1491,7 +1482,6 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
-      toggleSearchBar,
       unit,
       updatePotentialScenarioDates,
       updateStateFromInsight,
