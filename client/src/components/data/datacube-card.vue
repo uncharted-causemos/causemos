@@ -47,20 +47,10 @@
               <span class="scenario-count">
                 {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
               </span>
-              <div style="font-size: small; display: flex; align-items: center">
-                <a
-                  class="see-all-tags"
-                  @click="showScenarioTagsModal=true">
-                  see all tags
-                </a>
-                <i
-                  class="fa fa-plus-circle"
-                  :class="{
-                    'add-new-tag-disabled': selectedScenarioIds.length === 0,
-                    'add-new-tag': selectedScenarioIds.length > 0
-                  }"
-                  @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
-              </div>
+              <small-text-button
+                :label="`Tag ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
+                @click="showTagNameModal = true"
+              />
             </div>
             <model-runs-search-bar
               class="model-runs-search-bar"
@@ -1868,31 +1858,11 @@ $marginSize: 5px;
 .tags-area-container {
   display: flex;
   align-items: center;
-  font-size: smaller;
-  text-align: center;
   justify-content: space-between;
+}
 
-  .see-all-tags {
-    color: blue;
-    cursor: pointer;
-    margin-left: 2px;
-    margin-right: 2px;
-  }
-
-  .add-new-tag {
-    cursor: pointer;
-    font-size: medium;
-    &:hover {
-      color: blue;
-    }
-  }
-  .add-new-tag-disabled {
-    color: lightgray;
-    font-size: medium;
-    &:hover {
-      cursor: not-allowed;
-    }
-  }
+.model-runs-search-bar {
+  margin-top: 2px;
 }
 
 .scenario-count {
