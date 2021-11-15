@@ -9,8 +9,7 @@ import {
 } from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
-import { SELECTED_COLOR, EDGE_COLOR_PALETTE } from '@/utils/colors-util';
-import modelService from '@/services/model-service';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { interpolatePath } from 'd3-interpolate-path';
 import BaseCAGRenderer from '@/graphs/base-cag-renderer';
@@ -304,7 +303,8 @@ export default class ModelRenderer extends BaseCAGRenderer {
       const graphHeight = 32;
       const xAxisLeftPadding = 14;
       const nodeBodyGroup = d3.select(node).select('.node-body-group');
-      const nodeHeaderGroup = d3.select(node).select('.node-header-group');
+      // FIXME: remove
+      // const nodeHeaderGroup = d3.select(node).select('.node-header-group');
 
       d3.select(node).style('cursor', 'pointer');
 
@@ -330,31 +330,6 @@ export default class ModelRenderer extends BaseCAGRenderer {
         .each(function () { truncateTextToWidth(this, d3.select(this).attr('width') - 10); });
 
       const selectedScenario = nodeScenarioData.scenarios.find(s => s.id === selectedScenarioId);
-
-      // Adjust node appearence based on result
-      if (!_.isEmpty(selectedScenario.result)) {
-        const percentageChange = modelService.calculateScenarioPercentageChange(selectedScenario.result, _.first(selectedScenario.result.values).value);
-        const absoluteChange = _.last(selectedScenario.result.values).value - _.first(selectedScenario.result.values).value;
-
-        // if first value is 0.0 then percentageChange is 0.0, so check absolute change as well
-        if (percentageChange === 0.0 && absoluteChange === 0.0) {
-          nodeHeaderGroup.select('.node-header')
-            .style('fill', DEFAULT_STYLE.nodeHeader.fill)
-            .style('stroke', DEFAULT_STYLE.nodeHeader.stroke);
-        } else {
-          // if percentageChange is 0, then absoluteChange defines the colour, as requested by the users
-          const colour = (percentageChange === 0.0)
-            ? ((absoluteChange < 0) ? EDGE_COLOR_PALETTE[0] : EDGE_COLOR_PALETTE[2])
-            : ((percentageChange < 0) ? EDGE_COLOR_PALETTE[0] : EDGE_COLOR_PALETTE[2]);
-
-          nodeHeaderGroup.select('.node-header')
-            .style('fill', colour)
-            .style('stroke', colour)
-            .style('fill-opacity', 0.4);
-
-          nodeHeaderGroup.style('stroke', colour);
-        }
-      }
       d3.select(nodes[index]).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
 
       const runOptions = {

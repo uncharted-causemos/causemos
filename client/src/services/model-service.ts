@@ -9,7 +9,6 @@ import {
   EdgeParameter,
   CAGModelSummary,
   CAGGraph,
-  ScenarioResult,
   NodeScenarioData,
   ScenarioParameter,
   CAGModelParameter
@@ -679,28 +678,6 @@ export const ENGINE_OPTIONS = [
   { key: 'delphi', value: 'Delphi', maxSteps: 36 }
 ];
 
-// FIXME: Now that we're displaying histograms, there are no plans to colour
-//  the node headers and if so, we'd use the calculations done to generate the
-//  histograms and their summaries. This function will then be removed.
-export const calculateScenarioPercentageChange = (experiment: ScenarioResult, initValue: number) => {
-  // We just calculate the percent change when: 1) when initial and last value are the same sign; and 2) initial value is not 0
-  // We will be asking users about utility of this percent change
-
-  // When dealing with dyse, we can calculate the percentage using:
-  // 1. the intial value, which is in turn based on time series data
-  // 2. the clamp that the user set at t0, which is by default the initial value if the user hasn't set a clamp at t0
-  // We've opted to use option 2
-  const last = _.last(experiment.values);
-  const lastValue = last ? last.values[0] : 0;
-
-  if ((initValue * lastValue > 0)) {
-    return ((lastValue - initValue) / Math.abs(initValue)) * 100; // %Delta = (C-P)/|P
-  } else {
-    return 0.0;
-  }
-};
-
-
 // Cleanse constraint payload
 const cleanConstraints = (constraints: ConceptProjectionConstraints[]) => {
   const result = _.cloneDeep(constraints);
@@ -783,7 +760,6 @@ export default {
   hasMergeConflictNodes,
   hasMergeConflictEdges,
 
-  calculateScenarioPercentageChange,
   cleanConstraints,
 
   // temp
