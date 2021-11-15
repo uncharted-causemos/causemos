@@ -32,7 +32,7 @@
           @close="onGeoSelectionModalClose" />
         <rename-modal
           v-if="showTagNameModal"
-          :modal-title="'Tag Name'"
+          :modal-title="`Add new tag to ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
           @confirm="addNewTag"
           @cancel="showTagNameModal = false"
         />
