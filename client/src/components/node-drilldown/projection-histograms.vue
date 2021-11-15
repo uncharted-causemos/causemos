@@ -1,6 +1,6 @@
 <template>
   <div class="projection-histograms-container">
-    <h4 class="x-axis-label">Projected value</h4>
+    <h4 class="x-axis-label">Change in value</h4>
     <div class="grid-row slice-labels">
       <h3 v-for="(timeSliceLabel, index) in timeSliceLabels" :key="index">
         {{ timeSliceLabel }}
