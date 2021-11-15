@@ -2,10 +2,9 @@
   <div class="projection-histograms-container">
     <h4 class="x-axis-label">Projected value</h4>
     <div class="grid-row slice-labels">
-      <!-- TODO: for each timeslice -->
-      <h3>In a few months</h3>
-      <h3>In about a year</h3>
-      <h3>In a few years</h3>
+      <h3 v-for="(timeSliceLabel, index) in timeSliceLabels" :key="index">
+        {{ timeSliceLabel }}
+      </h3>
     </div>
     <div
       v-for="(scenario, index) of projections"
@@ -31,6 +30,8 @@ import {
   convertTimeseriesDistributionToHistograms,
   ProjectionHistograms
 } from '@/utils/histogram-util';
+import { TIME_SCALE_OPTIONS } from '@/utils/time-scale-util';
+import _ from 'lodash';
 
 export default defineComponent({
   components: { Histogram },
@@ -54,6 +55,14 @@ export default defineComponent({
     }
   },
   computed: {
+    timeSliceLabels(): string[] {
+      const timeScale = this.modelSummary.parameter.time_scale;
+      const timeSlices = TIME_SCALE_OPTIONS.find(({ id }) => id === timeScale)
+        ?.timeSlices;
+      return (
+        timeSlices?.map(({ label }) => _.capitalize(label)) ?? ['', '', '']
+      );
+    },
     binnedResults(): ProjectionHistograms[] {
       return this.projections.map(projection =>
         convertTimeseriesDistributionToHistograms(
