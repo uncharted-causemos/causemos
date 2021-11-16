@@ -23,11 +23,7 @@
     >
       <template #title>Update Datacube Instance in DOJO</template>
       <template #message>
-        <p>Are you sure you want to leave Causemos and navigate to DOJO to update the <strong>{{ datacube.name }}</strong> model instance?</p>
-        <message-display
-          :message="'Warning: This action cannot be undone.'"
-          :message-type="'alert-warning'"
-        />
+        <p>Are you sure you want to update the <strong>{{ datacube.name }}</strong> model instance? This will deprecate the current model instance and create a new version.</p>
       </template>
     </modal-confirmation>
     <div>
