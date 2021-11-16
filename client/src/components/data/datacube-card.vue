@@ -40,22 +40,34 @@
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
             <div class="tags-area-container">
-              <span class="scenario-count">
+              <span class="scenario-count" v-if="selectedScenarioIds.length === 0">
                 {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
               </span>
-              <div class="tag-buttons">
-                <small-text-button
-                  v-if="selectedScenarioIds.length > 0"
-                  :label="`Tag ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
-                  @click="showTagNameModal = true"
-                />
-                <small-text-button
-                  v-for="(tag, index) in tagsSharedBySelectedRuns"
-                  :key="index"
-                  :label="`Remove '${tag}' from selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
-                  @click="removeTagFromSelectedRuns(tag)"
-                />
-              </div>
+              <span class="scenario-count" v-if="selectedScenarioIds.length > 0">
+                {{selectedScenarioIds.length}} model run{{selectedScenarioIds.length === 1 ? '' : 's'}} selected.
+              </span>
+              <span v-if="selectedScenarioIds.length > 0">Tags:</span>
+              <small-text-button
+                v-for="(tag, index) in tagsSharedBySelectedRuns"
+                v-tooltip="'Remove from selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
+                :key="index"
+                :label="tag"
+                @click="removeTagFromSelectedRuns(tag)"
+              >
+                <template #trailing>
+                  <i class="fa fa-close" />
+                </template>
+              </small-text-button>
+              <small-text-button
+                v-if="selectedScenarioIds.length > 0"
+                v-tooltip="'Add to selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
+                :label="`Add tag`"
+                @click="showTagNameModal = true"
+              >
+                <template #leading>
+                  <i class="fa fa-plus-circle" />
+                </template>
+              </small-text-button>
             </div>
             <model-runs-search-bar
               class="model-runs-search-bar"
@@ -1880,13 +1892,6 @@ $marginSize: 5px;
 
 .tags-area-container {
   display: flex;
-}
-
-.tag-buttons {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  justify-content: flex-end;
   flex-wrap: wrap;
   gap: 2px;
 }
