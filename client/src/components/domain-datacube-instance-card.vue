@@ -1,14 +1,29 @@
 <template>
   <div class="project-card-container">
     <modal-confirmation
-      v-if="showModal"
+      v-if="showUnpublishModal"
       :autofocus-confirm="false"
       @confirm="unpublish"
-      @close="showModal = false"
+      @close="showUnpublishModal = false"
     >
       <template #title>Unpublish Datacube Instance</template>
       <template #message>
         <p>Are you sure you want to unpublish<strong>{{ datacube.name }}</strong>?</p>
+        <message-display
+          :message="'Warning: This action cannot be undone.'"
+          :message-type="'alert-warning'"
+        />
+      </template>
+    </modal-confirmation>
+    <modal-confirmation
+      v-if="showEditInDojoModal"
+      :autofocus-confirm="false"
+      @confirm="requestEditInDojo"
+      @close="showEditInDojoModal = false"
+    >
+      <template #title>Update Datacube Instance in DOJO</template>
+      <template #message>
+        <p>Are you sure you want to leave Causemos and navigate to DOJO to update the <strong>{{ datacube.name }}</strong> model instance?</p>
         <message-display
           :message="'Warning: This action cannot be undone.'"
           :message-type="'alert-warning'"
@@ -76,8 +91,8 @@
       <button
         v-tooltip.top-center="'Update the model instance in Dojo'"
         type="button"
-        disabled
         class="btn btn-primary"
+        @click="showEditInDojoModal=true"
       >
         Update in DOJO
       </button>
@@ -96,7 +111,7 @@
         class="remove-button"
         :class="{ 'disabled': datacube.status === DatacubeStatus.Registered}"
         :disabled="datacube.status === DatacubeStatus.Registered"
-        @click.stop="showWarningModal"
+        @click.stop="showUnpublishModal = true"
       >
         <i class="fa fa-trash" />
         Unpublish
@@ -127,6 +142,7 @@ export default defineComponent({
     ModalConfirmation,
     MessageDisplay
   },
+  emits: ['unpublish'],
   props: {
     datacube: {
       type: Object as PropType<Datacube>,
@@ -172,10 +188,12 @@ export default defineComponent({
     }
   },
   setup() {
-    const showModal = ref(false);
+    const showUnpublishModal = ref(false);
+    const showEditInDojoModal = ref(false);
 
     return {
-      showModal,
+      showUnpublishModal,
+      showEditInDojoModal,
       DatacubeStatus
     };
   },
@@ -187,13 +205,14 @@ export default defineComponent({
     dateFormatter,
     unpublish() {
       this.$emit('unpublish', this.datacube);
-      this.showModal = false;
+      this.showUnpublishModal = false;
     },
-    showWarningModal() {
-      this.showModal = true;
-    },
-    closeWarning() {
-      this.showModal = false;
+    requestEditInDojo() {
+      this.showEditInDojoModal = false;
+      // redirect to DOJO to update the datacube
+      const BASE_DOJO_URL = 'https://phantom.dojo-test.com/summary?model=';
+      const redirectURL = BASE_DOJO_URL + this.datacube.data_id;
+      window.location.href = redirectURL;
     },
     async open(id: string) {
       // Reset filters every time we open
