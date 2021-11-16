@@ -253,7 +253,8 @@ export default defineComponent({
           // for each datacube, save its name and output-name
           datacubeTitles.push(title);
           // also, save a list of all regions (into a big list for all datacubes)
-          regions.push(...this.allDatacubesMetadataMap[key].region);
+          const datacubeRegions = this.allDatacubesMetadataMap[key].region && _.isArray(this.allDatacubesMetadataMap[key].region) ? this.allDatacubesMetadataMap[key].region : [];
+          regions.push(...datacubeRegions);
         });
         const dataState: DataState = {
           datacubeTitles: datacubeTitles,
