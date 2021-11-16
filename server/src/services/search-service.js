@@ -184,10 +184,14 @@ const statementConceptEntitySearch = async (projectId, queryString) => {
 
     const memberStrings = reverseFlattenedConcept(item.key, set);
 
-    const members = ontologyValues.filter(d => {
-      // return memberStrings.includes(_.last(d.label.split('/'))) && !_.isEmpty(d.examples);
-      return memberStrings.includes(_.last(d.label.split('/')));
-    }).map(formatOntologyDoc);
+    let members = [];
+    if (ontologyMap[item.key]) {
+      members = ontologyValues.filter(d => d.label === item.key).map(formatOntologyDoc);
+    } else {
+      members = ontologyValues.filter(d => {
+        return memberStrings.includes(_.last(d.label.split('/')));
+      }).map(formatOntologyDoc);
+    }
 
     // Attach highlight if applicable
     for (let j = 0; j < members.length; j++) {
