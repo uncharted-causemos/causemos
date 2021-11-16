@@ -90,7 +90,7 @@
         class="btn btn-primary"
         @click="showEditInDojoModal=true"
       >
-        Update in DOJO
+        Update model
       </button>
       <button
         v-tooltip.top-center="'Edit the metadata and visualization'"
