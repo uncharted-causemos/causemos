@@ -1,5 +1,5 @@
+import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
 import { TimeScale } from './Enums';
-import { TimeseriesPoint } from './Timeseries';
 
 export interface ConceptProjectionConstraints {
   concept: string;
@@ -25,21 +25,13 @@ export interface ScenarioParameter {
 export interface ScenarioProjection {
   scenarioName: string;
   scenarioId: string;
-  values: TimeseriesPoint[];
-  confidenceInterval: {
-    upper: TimeseriesPoint[];
-    lower: TimeseriesPoint[];
-  };
+  values: TimeseriesDistributionPoint[];
   constraints: { step: number; value: number }[];
 }
 
 export interface ScenarioResult {
   concept: string;
-  values: TimeseriesPoint[];
-  confidenceInterval: {
-    upper: TimeseriesPoint[];
-    lower: TimeseriesPoint[];
-  };
+  values: TimeseriesDistributionPoint[];
 }
 
 export interface NewScenario {
@@ -84,11 +76,7 @@ export interface NodeScenarioData {
     // A list of constraints for this one node in this one scenario
     constraints?: { step: number; value: number }[];
     result?: {
-      values: TimeseriesPoint[];
-      confidenceInterval: {
-        upper: TimeseriesPoint[];
-        lower: TimeseriesPoint[];
-      };
+      values: TimeseriesDistributionPoint[];
     };
   }[];
 }
@@ -124,7 +112,7 @@ export interface SourceTargetPair {
 }
 
 export interface CAGModelParameter {
-  num_steps: number;
+  num_steps: number; // Deprecated, should now be derived from time_scale
   indicator_time_series_range: {
     start: number;
     end: number;
