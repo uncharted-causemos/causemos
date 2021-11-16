@@ -168,6 +168,9 @@ export default {
 // Override lex box styles to allow for pills to wrap
 ::v-deep(.lex-box) {
   padding: 2px;
+  // Lex has a min-height of 40px by default, but it's 41px when active/focused
+  // Keeping this constant avoids a page reflow (and rerendering of PC chart)
+  min-height: 41px;
   // Be sure to leave room to the right of long pills to allow the analyst
   //  to click to add new pills
   padding-right: 20px;
