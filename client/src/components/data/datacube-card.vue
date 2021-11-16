@@ -841,6 +841,7 @@ export default defineComponent({
           return filteredRuns;
         }, []);
       } else {
+        selectedScenarios.value = [];
         updateTabView('description');
       }
     };
