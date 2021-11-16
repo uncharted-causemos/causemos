@@ -30,7 +30,7 @@ import {
   convertTimeseriesDistributionToHistograms,
   ProjectionHistograms
 } from '@/utils/histogram-util';
-import { TIME_SCALE_OPTIONS } from '@/utils/time-scale-util';
+import { TIME_SCALE_OPTIONS_MAP } from '@/utils/time-scale-util';
 import _ from 'lodash';
 
 export default defineComponent({
@@ -57,8 +57,7 @@ export default defineComponent({
   computed: {
     timeSliceLabels(): string[] {
       const timeScale = this.modelSummary.parameter.time_scale;
-      const timeSlices = TIME_SCALE_OPTIONS.find(({ id }) => id === timeScale)
-        ?.timeSlices;
+      const timeSlices = TIME_SCALE_OPTIONS_MAP.get(timeScale)?.timeSlices;
       return (
         timeSlices?.map(({ label }) => _.capitalize(label)) ?? ['', '', '']
       );

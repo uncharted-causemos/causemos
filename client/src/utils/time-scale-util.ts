@@ -44,10 +44,17 @@ export const TIME_SCALE_OPTIONS: TimeScaleOption[] = [
   }
 ];
 
+// Make a map version of the time scale options for faster and simpler retrieval
+export const TIME_SCALE_OPTIONS_MAP = TIME_SCALE_OPTIONS.reduce(
+  (existingMap, currentTimeScaleOption) => {
+    existingMap.set(currentTimeScaleOption.id, currentTimeScaleOption);
+    return existingMap;
+  },
+  new Map<string, TimeScaleOption>()
+);
+
 export const getSliceMonthsFromTimeScale = (timeScale: TimeScale) => {
-  const timeScaleOption = TIME_SCALE_OPTIONS.find(
-    option => option.id === timeScale
-  );
+  const timeScaleOption = TIME_SCALE_OPTIONS_MAP.get(timeScale);
   if (timeScaleOption === undefined) {
     console.error('Unable to find time scale option with ID ' + timeScale);
   }
