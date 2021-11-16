@@ -462,12 +462,12 @@
                   :selected-color-scheme-name="selectedColorSchemeName"
                   :selected-color-scale-type="selectedColorScaleType"
                   :number-of-color-bins="numberOfColorBins"
+                  :selected-color-scheme="finalColorScheme"
                   @set-aggregation-selection="setAggregationSelection"
                   @set-resolution-selection="setTemporalResolutionSelection"
                   @set-base-layer-selection="setBaseLayer"
                   @set-base-layer-transparency-selection="setBaseLayerTransparency"
                   @set-data-layer-selection="setDataLayer"
-                  @set-final-color-scheme="setFinalColorScheme"
                   @set-color-scheme-reversed="setColorSchemeReversed"
                   @set-color-scheme-name="setColorSchemeName"
                   @set-color-scale-type="setColorScaleType"
@@ -552,7 +552,7 @@ import { DataState, Insight, ViewState } from '@/types/Insight';
 import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
-import { colorFromIndex, ColorScaleType, COLOR_SCHEMES } from '@/utils/colors-util';
+import { colorFromIndex, ColorScaleType, COLOR_SCHEMES, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
 import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
@@ -561,6 +561,7 @@ import { createModelRun, updateModelRun, addModelRunsTag } from '@/services/new-
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
+import * as d3 from 'd3';
 
 const defaultRunButtonCaption = 'Run with default parameters';
 
@@ -683,6 +684,14 @@ export default defineComponent({
     const selectedSpatialAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
+
+    //
+    // color scheme options
+    //
+    const colorSchemeReversed = ref(false);
+    const selectedColorSchemeName = ref(Object.keys(COLOR_SCHEMES)[0]); // DEFAULT
+    const selectedColorScaleType = ref(ColorScaleType.Discrete);
+    const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
     const toggleSearchBar = ref<boolean>(false);
     const showTagNameModal = ref<boolean>(false);
@@ -817,6 +826,57 @@ export default defineComponent({
       breakdownOption.value = newValue;
     };
 
+    const setColorSchemeReversed = (reversed: boolean) => {
+      colorSchemeReversed.value = reversed;
+    };
+
+    const setColorSchemeName = (schemeName: string) => {
+      selectedColorSchemeName.value = schemeName;
+    };
+
+    const setColorScaleType = (scaleType: ColorScaleType) => {
+      selectedColorScaleType.value = scaleType;
+    };
+
+    const setNumberOfColorBins = (numBins: number) => {
+      numberOfColorBins.value = numBins;
+    };
+
+    // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
+    // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
+    const finalColorScheme = computed(() => {
+      // Note: should/can not reverse the original array. Instead, clone and reverse
+      const rawScheme = _.clone((COLOR_SCHEMES as any)[selectedColorSchemeName.value]);
+      const scheme: string[] = colorSchemeReversed.value ? rawScheme.reverse() : rawScheme;
+      const n = scheme.length * COLOR_SWATCH_SIZE;
+
+      const getColorScale = () => {
+        if (selectedColorScaleType.value === ColorScaleType.Log) {
+          return d3.scaleLog<string>()
+            .domain([1 / n, 1])
+            .range([scheme[0], scheme[scheme.length - 1]]);
+        }
+        // NOTE: The following 3 ways are the same when creating the color scale
+        // return d3.scaleSequential([scheme[0], scheme[scheme.length - 1]]);
+        // return d3.interpolateRgb(scheme[0], scheme[scheme.length - 1]);
+        return d3.scaleLinear<string>().range([scheme[0], scheme[scheme.length - 1]]);
+      };
+
+      const colorScale = getColorScale();
+
+      // limit the availabe scheme colors to the user selected number of bins, if needed
+      const numColors = selectedColorScaleType.value === ColorScaleType.Discrete ? numberOfColorBins.value : n;
+
+      // re-create the color scheme with the final list of colors
+      scheme.length = 0;
+      for (let i = 0; i < numColors; ++i) {
+        const color: string = colorScale ? colorScale(i / (numColors - 1)) : 'black';
+        scheme.push(d3.color(color)?.formatHex() ?? '');
+      }
+
+      return scheme;
+    });
+
     const updateTabView = (val: string) => {
       currentTabView.value = val;
     };
@@ -848,6 +908,23 @@ export default defineComponent({
         if (initialViewConfig.value.selectedAdminLevel !== undefined) {
           selectedAdminLevel.value = initialViewConfig.value.selectedAdminLevel;
         }
+        if (initialViewConfig.value.baseLayerTransparency !== undefined) {
+          selectedBaseLayerTransparency.value = initialViewConfig.value.baseLayerTransparency;
+        }
+        if (initialViewConfig.value.colorSchemeReversed !== undefined) {
+          colorSchemeReversed.value = initialViewConfig.value.colorSchemeReversed;
+        }
+        if (initialViewConfig.value.colorSchemeName !== undefined) {
+          selectedColorSchemeName.value = initialViewConfig.value.colorSchemeName;
+        }
+        if (initialViewConfig.value.colorScaleType !== undefined) {
+          selectedColorScaleType.value = initialViewConfig.value.colorScaleType;
+        }
+        if (initialViewConfig.value.numberOfColorBins !== undefined) {
+          numberOfColorBins.value = initialViewConfig.value.numberOfColorBins;
+        }
+        // FIXME: although we have restored the color palette/scale/options,
+        //  none of those will look applied since the final color list is only generated when the viz-option is opened
       }
     });
 
@@ -1278,6 +1355,21 @@ export default defineComponent({
         if (loadedInsight.view_state?.selectedAdminLevel !== undefined) {
           setSelectedAdminLevel(loadedInsight.view_state?.selectedAdminLevel);
         }
+        if (loadedInsight.view_state?.baseLayerTransparency !== undefined) {
+          setBaseLayerTransparency(loadedInsight.view_state?.baseLayerTransparency);
+        }
+        if (loadedInsight.view_state?.colorSchemeReversed !== undefined) {
+          setColorSchemeReversed(loadedInsight.view_state?.colorSchemeReversed);
+        }
+        if (loadedInsight.view_state?.colorSchemeName !== undefined) {
+          setColorSchemeName(loadedInsight.view_state?.colorSchemeName);
+        }
+        if (loadedInsight.view_state?.colorScaleType !== undefined) {
+          setColorScaleType(loadedInsight.view_state?.colorScaleType);
+        }
+        if (loadedInsight.view_state?.numberOfColorBins !== undefined) {
+          setNumberOfColorBins(loadedInsight.view_state?.numberOfColorBins);
+        }
         // @NOTE: 'initialSelectedRegionIds' must be set after 'selectedAdminLevel'
         if (loadedInsight.data_state?.selectedRegionIds !== undefined) {
           initialSelectedRegionIds.value = _.clone(loadedInsight.data_state?.selectedRegionIds);
@@ -1374,37 +1466,6 @@ export default defineComponent({
       relativeTo
     );
 
-    //
-    // color scheme options
-    //
-    const colorSchemeReversed = ref(false);
-    const selectedColorSchemeName = ref(Object.keys(COLOR_SCHEMES)[0]); // DEFAULT
-    const selectedColorScaleType = ref(ColorScaleType.Discrete);
-    const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
-
-    const setColorSchemeReversed = (reversed: boolean) => {
-      colorSchemeReversed.value = reversed;
-    };
-
-    const setColorSchemeName = (schemeName: string) => {
-      selectedColorSchemeName.value = schemeName;
-    };
-
-    const setColorScaleType = (scaleType: ColorScaleType) => {
-      selectedColorScaleType.value = scaleType;
-    };
-
-    const setNumberOfColorBins = (numBins: number) => {
-      numberOfColorBins.value = numBins;
-    };
-
-    // note that final color scheme represents the list of final colors that should be used, for example, in the map and its legend
-    // however, the map/legend may ignore the generated final color list and instead use the color-related viz options to generate a slightly different color array that can be used when rendering the map/legend
-    const finalColorScheme = ref(COLOR_SCHEMES.DEFAULT);
-    const setFinalColorScheme = (colorScheme: string[]) => {
-      finalColorScheme.value = colorScheme;
-    };
-
     const {
       onSyncMapBounds,
       mapBounds,
@@ -1444,7 +1505,12 @@ export default defineComponent({
         selectedDataLayer,
         selectedSpatialAggregation,
         selectedTemporalAggregation,
-        selectedTemporalResolution
+        selectedTemporalResolution,
+        selectedBaseLayerTransparency,
+        colorSchemeReversed,
+        selectedColorSchemeName,
+        selectedColorScaleType,
+        numberOfColorBins
       );
       store.dispatch('insightPanel/setViewState', viewState);
 
@@ -1550,7 +1616,6 @@ export default defineComponent({
       setBaseLayerTransparency,
       setDataLayer,
       setRelativeTo,
-      setFinalColorScheme,
       setSelectedTimestamp,
       setAggregationSelection,
       setTemporalResolutionSelection,

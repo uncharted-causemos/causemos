@@ -1,5 +1,6 @@
 import { Timeseries } from '@/types/Timeseries';
-import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
+import { BASE_LAYER, DATA_LAYER, BASE_LAYER_TRANSPARENCY } from '@/utils/map-util-new';
+import { ColorScaleType } from '@/utils/colors-util';
 
 // @base/abstract type
 export interface Snapshot {
@@ -63,6 +64,11 @@ export interface ViewState {
   selectedMapBaseLayer?: BASE_LAYER;
   selectedMapDataLayer?: DATA_LAYER;
   breakdownOption?: string | null;
+  baseLayerTransparency?: BASE_LAYER_TRANSPARENCY;
+  colorSchemeReversed?: boolean;
+  colorSchemeName?: string;
+  colorScaleType?: ColorScaleType;
+  numberOfColorBins?: number;
 
   // knowledge/model space specific
   sensitivityToggle?: any;

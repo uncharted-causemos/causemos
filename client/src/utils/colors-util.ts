@@ -37,6 +37,8 @@ export const COLOR_SCHEMES = Object.freeze({
   OTHER: ['#feedde', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#8c2d04']
 });
 
+export const COLOR_SWATCH_SIZE = 25;
+
 export const UNDEFINED_COLOR = '#000000';
 export const GRAPH_BACKGROUND_COLOR = '#FFFFFF';
 export const SELECTED_COLOR = '#56b3e9';

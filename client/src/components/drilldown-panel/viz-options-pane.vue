@@ -122,9 +122,8 @@ import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 import { DatacubeFeature, Model } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { COLOR_SCHEMES, ColorScaleType } from '@/utils/colors-util';
+import { COLOR_SCHEMES, ColorScaleType, COLOR_SWATCH_SIZE } from '@/utils/colors-util';
 import * as d3 from 'd3';
-import _ from 'lodash';
 
 export default defineComponent({
   components: {
@@ -177,6 +176,10 @@ export default defineComponent({
       type: Number,
       default: 5
     },
+    selectedColorScheme: {
+      type: Array as PropType<string[]>,
+      default: COLOR_SCHEMES.DEFAULT
+    },
     metadata: {
       type: Object as PropType<Model | null>,
       default: null
@@ -188,7 +191,6 @@ export default defineComponent({
     'set-resolution-selection',
     'set-base-layer-selection',
     'set-data-layer-selection',
-    'set-final-color-scheme',
     'set-base-layer-transparency-selection',
     'set-color-scheme-reversed',
     'set-color-scheme-name',
@@ -199,8 +201,6 @@ export default defineComponent({
     const {
       metadata
     } = toRefs(props);
-
-    const colorSwatchSize = 25;
 
     const capitalize = (str: string) => {
       return str[0].toUpperCase() + str.slice(1);
@@ -253,7 +253,6 @@ export default defineComponent({
       colorScaleGroupButtons,
       modelOutputsDisplayNames,
       currentOutputDisplayName,
-      colorSwatchSize,
       colorSchemes,
       ColorScaleType,
       baseLayerTransparecyOptions,
@@ -272,43 +271,14 @@ export default defineComponent({
     },
     numberOfColorBins() {
       this.renderColorScale();
+    },
+    selectedColorScheme() {
+      this.renderColorScale();
     }
   },
   computed: {
     maxNumberOfColorBins(): number {
       return (COLOR_SCHEMES as any)[this.selectedColorSchemeName].length;
-    },
-    getColorScheme(): string[] {
-      // Note: should/can not reverse the original array. Instead, clone and reverse
-      const rawScheme = _.clone((COLOR_SCHEMES as any)[this.selectedColorSchemeName]);
-      const scheme: string[] = this.colorSchemeReversed ? rawScheme.reverse() : rawScheme;
-      const n = scheme.length * this.colorSwatchSize;
-
-      const getColorScale = () => {
-        if (this.selectedColorScaleType === ColorScaleType.Log) {
-          return d3.scaleLog<string>()
-            .domain([1 / n, 1])
-            .range([scheme[0], scheme[scheme.length - 1]]);
-        }
-        // NOTE: The following 3 ways are the same when creating the color scale
-        // return d3.scaleSequential([scheme[0], scheme[scheme.length - 1]]);
-        // return d3.interpolateRgb(scheme[0], scheme[scheme.length - 1]);
-        return d3.scaleLinear<string>().range([scheme[0], scheme[scheme.length - 1]]);
-      };
-
-      const colorScale = getColorScale();
-
-      // limit the availabe scheme colors to the user selected number of bins, if needed
-      const numColors = this.selectedColorScaleType === ColorScaleType.Discrete ? this.numberOfColorBins : n;
-
-      // re-create the color scheme with the final list of colors
-      scheme.length = 0;
-      for (let i = 0; i < numColors; ++i) {
-        const color: string = colorScale ? colorScale(i / (numColors - 1)) : 'black';
-        scheme.push(d3.color(color)?.formatHex() ?? '');
-      }
-
-      return scheme;
     }
   },
   mounted() {
@@ -359,13 +329,10 @@ export default defineComponent({
     setColorSchemeSelection(colorScheme: string) {
       this.$emit('set-color-scheme-name', colorScheme);
     },
-    publishUpdatedColorMap(updatedScheme: string[]) {
-      this.$emit('set-final-color-scheme', updatedScheme);
-    },
     renderColorScale() {
-      const colors = this.getColorScheme;
+      const colors = this.selectedColorScheme;
       const n = colors.length;
-      const width = this.selectedColorScaleType === ColorScaleType.Discrete ? (n * this.colorSwatchSize) : n;
+      const width = this.selectedColorScaleType === ColorScaleType.Discrete ? (n * COLOR_SWATCH_SIZE) : n;
       const refSelection = d3.select((this.$refs as any).colorPalette);
       refSelection.selectAll('*').remove();
       refSelection
@@ -373,7 +340,7 @@ export default defineComponent({
         .attr('preserveAspectRatio', 'none')
         .style('display', 'block')
         .style('width', width + 'px')
-        .style('height', this.colorSwatchSize + 'px')
+        .style('height', COLOR_SWATCH_SIZE + 'px')
       ;
       refSelection
         .selectAll('rect')
@@ -383,8 +350,6 @@ export default defineComponent({
         .attr('x', function(d, i) { return i; })
         .attr('width', 1)
         .attr('height', 1);
-
-      this.publishUpdatedColorMap(colors);
     }
   }
 });
