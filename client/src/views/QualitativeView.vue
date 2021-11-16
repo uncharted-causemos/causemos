@@ -452,12 +452,14 @@ export default defineComponent({
       // Get CAG data
       this.setAnalysisName('');
       this.modelSummary = await modelService.getSummary(this.currentCAG);
-      // Prompt the analyst to select a time scale if none is set
-      this.showModalTimeScale =
-        this.modelSummary.parameter?.time_scale === undefined ||
-        this.modelSummary.parameter.time_scale === TimeScale.None;
       this.setAnalysisName(this.modelSummary?.name ?? '');
       this.modelComponents = await modelService.getComponents(this.currentCAG);
+      // Prompt the analyst to select a time scale if this is the first time
+      //  the CAG has been opened. As a heuristic, check that no nodes/edges
+      //  have been created.
+      this.showModalTimeScale =
+        this.modelComponents.nodes.length === 0 &&
+        this.modelComponents.edges.length === 0;
       if (this.edgeToSelectOnNextRefresh !== null) {
         const { source, target } = this.edgeToSelectOnNextRefresh;
         const foundEdge = this.modelComponents.edges.find(

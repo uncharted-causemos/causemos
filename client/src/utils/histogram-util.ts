@@ -1,5 +1,4 @@
 import { CAGModelSummary } from '@/types/CAG';
-import { TimeScale } from '@/types/Enums';
 import {
   TimeseriesDistributionPoint,
   TimeseriesPoint
@@ -211,12 +210,9 @@ export const convertTimeseriesDistributionToHistograms = (
 ): ProjectionHistograms => {
   // 1. Get selected timescale from modelSummary
   const timeScale = modelSummary.parameter.time_scale;
-  // Default to "Years"
-  const selectedTimeScale =
-    timeScale === TimeScale.None ? TimeScale.Years : timeScale;
   // 2. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
   // This represents how many months from "now" each displayed time slice will be
-  const relevantMonthOffsets = getSliceMonthsFromTimeScale(selectedTimeScale);
+  const relevantMonthOffsets = getSliceMonthsFromTimeScale(timeScale);
   const projectionStartTimestamp = projection[0].timestamp;
   const projectionStartMonth = getMonthFromTimestamp(projectionStartTimestamp);
   // For each timeslice:
