@@ -99,17 +99,8 @@ export const extractRelevantHistoricalChanges = (
   return changes;
 };
 
-// When nodes have no historical data, there is a hack in place to give them
-//  three data points with a value of 0.5. This function can be simplified to
-//  just `historicalData.length === 0` if and when that hack is removed
 const isAbstractNode = (historicalData: TimeseriesPoint[]) => {
-  return (
-    historicalData.length === 0 ||
-    (historicalData.length === 3 &&
-      historicalData[0].value === 0.5 &&
-      historicalData[1].value === 0.5 &&
-      historicalData[2].value === 0.5)
-  );
+  return historicalData.length === 0;
 };
 
 export const computeProjectionBins = (
@@ -119,7 +110,7 @@ export const computeProjectionBins = (
   projectionStartMonth: number
 ): [number, number, number, number] => {
   if (isAbstractNode(historicalData)) {
-    // Abstract node: There is no historical data, so return arbitrary
+    // There is no historical data, so return arbitrary
     //  buckets between 0 and 1
     return ABSTRACT_NODE_BINS;
   }

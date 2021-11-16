@@ -87,6 +87,7 @@
               :historical-timeseries="historicalTimeseries"
               :projections="selectedNodeScenarioData.projections"
               :model-summary="modelSummary"
+              :indicator-id="indicatorId"
             />
           </div>
         </div>

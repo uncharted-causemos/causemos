@@ -52,6 +52,10 @@ export default defineComponent({
     projections: {
       type: Array as PropType<ScenarioProjection[]>,
       default: []
+    },
+    indicatorId: {
+      type: String,
+      default: null
     }
   },
   computed: {
@@ -65,12 +69,17 @@ export default defineComponent({
     binnedResults(): ProjectionHistograms[] {
       // Filter out the scenarios that haven't been run yet (typically just
       //  draft) and then convert all projection results into histograms
+
+      // Ensure we pass an empty array of historical data if no indicator is
+      //  being used to ground this node, since we currently (Nov 2021)
+      //  artificially add 3 points with a value of 0.5 to abstract nodes
+      const isAbstractNode = this.indicatorId === null;
       return this.projections
         .filter(projection => projection.values.length > 0)
         .map(projection =>
           convertTimeseriesDistributionToHistograms(
             this.modelSummary,
-            this.historicalTimeseries,
+            isAbstractNode ? [] : this.historicalTimeseries,
             null, // TODO: clampedNowValue
             projection.values
           )
