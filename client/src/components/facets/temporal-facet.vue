@@ -87,7 +87,6 @@ export default {
         .querySelector('.facet-blueprint-body .facet-blueprint-content');
       content.style.padding = '0';
       const zoomBar = this.$refs.zoomBar.shadowRoot.querySelector('.zoom-bar-container');
-      console.log(zoomBar, zoomBar.style);
       zoomBar.style.marginBottom = '0';
       zoomBar.querySelector('.zoom-bar-background').style.margin = '0';
     } catch (e) {
