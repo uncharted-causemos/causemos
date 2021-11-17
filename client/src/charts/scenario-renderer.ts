@@ -7,7 +7,7 @@ import { timeseriesLine } from '@/utils/svg-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { Chart } from '@/types/Chart';
-import { NodeScenarioData, ScenarioParameter } from '@/types/CAG';
+import { NodeScenarioData } from '@/types/CAG';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 
@@ -44,21 +44,22 @@ function render(
   let globalStart = Number.POSITIVE_INFINITY;
   let globalEnd = Number.NEGATIVE_INFINITY;
   nodeScenarioData.scenarios.forEach(scenario => {
-    // TODO: is it safe to assume scenario.parameter is not undefined?
-    const param = scenario.parameter as ScenarioParameter;
-    const start = param.indicator_time_series_range.start;
+    const {
+      indicator_time_series_range,
+      projection_start,
+      num_steps
+    } = scenario.parameter;
+    const start = indicator_time_series_range.start;
     const end = moment
-      .utc(param.projection_start)
-      .add(param.num_steps, 'months')
+      .utc(projection_start)
+      .add(num_steps, 'months')
       .valueOf();
     if (start < globalStart) globalStart = start;
     if (end > globalEnd) globalEnd = end;
   });
 
   // Portion of time series relating to current scenario
-  // TODO: is it safe to assume scenario.parameter is not undefined?
-  const historyRange = (selectedScenario.parameter as ScenarioParameter)
-    .indicator_time_series_range;
+  const historyRange = selectedScenario.parameter.indicator_time_series_range;
   const filteredTimeSeries = nodeScenarioData.indicator_time_series.filter(
     d => d.timestamp >= historyRange.start && d.timestamp <= historyRange.end
   );
