@@ -301,7 +301,7 @@ export default class ModelRenderer extends BaseCAGRenderer {
 
       const nodeWidth = datum.width;
       const nodeHeight = datum.height;
-      const graphHeight = 35;
+      const graphHeight = 37;
       const nodeBodyGroup = d3.select(node).select('.node-body-group');
 
       d3.select(node).style('cursor', 'pointer');
@@ -320,7 +320,7 @@ export default class ModelRenderer extends BaseCAGRenderer {
         .append('text')
         .classed('indicator-label', true)
         .attr('x', PADDING_HORIZONTAL)
-        .attr('y', nodeHeight - graphHeight - 2)
+        .attr('y', nodeHeight - graphHeight)
         .attr('width', nodeWidth)
         .style('font-size', '7px')
         .attr('fill', '#999')
@@ -333,7 +333,7 @@ export default class ModelRenderer extends BaseCAGRenderer {
       const runOptions = { selectedScenarioId };
       const renderOptions = {
         margin: {
-          top: 2, bottom: 2, left: 0, right: 0
+          top: 4, bottom: 2, left: 0, right: 0
         },
         width: nodeWidth - (PADDING_HORIZONTAL * 2) - (DEFAULT_STYLE.node.strokeWidth * 2),
         height: graphHeight
