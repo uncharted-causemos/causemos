@@ -57,7 +57,6 @@ export interface Scenario {
 }
 
 export interface NodeScenarioData {
-  initial_value: number;
   indicator_name?: string;
   indicator_time_series?: TimeseriesPoint[];
   indicator_time_series_range: {

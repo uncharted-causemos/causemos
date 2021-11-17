@@ -23,7 +23,6 @@ export default function(selection, data, renderOptions, runOptions) {
  * @param {function} updateCallback - when constraints are changed, this function is called
  */
 function render(chart, data, runOptions) {
-  // const selectedScenarioId = runOptions.selectedScenarioId;
   const selectedScenario = data.scenarios.find(
     s => s.id === runOptions.selectedScenarioId
   );
