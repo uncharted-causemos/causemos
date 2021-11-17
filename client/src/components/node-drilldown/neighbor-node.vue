@@ -104,8 +104,7 @@ export default defineComponent({
       };
 
       renderHistoricalProjectionsChart(el, this.nodeChartData, renderOptions, {
-        selectedScenarioId: this.selectedScenarioId,
-        miniGraph: true
+        selectedScenarioId: this.selectedScenarioId
       });
     }
   }
