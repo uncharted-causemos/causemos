@@ -10,6 +10,7 @@ import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
+const HISTORY_LINE_COLOR = '#AAA';
 
 export default function(
   selection: D3Selection,
@@ -74,6 +75,8 @@ function render(
   if (_.isEmpty(filteredTimeSeries)) {
     yExtent = [0, 0];
   } else {
+    // Safe to assume yExtent is not [undefined, undefined] since
+    //  filteredTimeSeries is not empty
     yExtent = d3.extent(filteredTimeSeries.map(d => d.value)) as [
       number,
       number
@@ -130,7 +133,7 @@ function render(
         yscale
       )((filteredTimeSeries as any) as [number, number][]) as string
     )
-    .style('stroke', '#AAA')
+    .style('stroke', HISTORY_LINE_COLOR)
     .style('stroke-width', 1)
     .style('pointer-events', 'none')
     .style('fill', 'none');
@@ -160,9 +163,7 @@ function render(
     .style('pointer-events', 'none')
     .call(yaxis)
     .style('font-size', '5px');
-
   yAxisElement.select('.domain').attr('stroke-width', 0);
-
   yAxisElement.selectAll('text').attr('x', 0);
 }
 
