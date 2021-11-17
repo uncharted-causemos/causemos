@@ -457,9 +457,15 @@ export default defineComponent({
       // Prompt the analyst to select a time scale if this is the first time
       //  the CAG has been opened. As a heuristic, check that no nodes/edges
       //  have been created.
+      // Note that there is a hole in our TS definitions:
+      //  modelSummary.parameter can be undefined until time_scale is set or
+      //  the model is first registered. For simplicity, we'll do the check
+      //  once here rather than update the TS definition and have to check in
+      //  every other place modelSummary.parameter is used.
       this.showModalTimeScale =
         this.modelComponents.nodes.length === 0 &&
-        this.modelComponents.edges.length === 0;
+        this.modelComponents.edges.length === 0 &&
+        this.modelSummary.parameter?.time_scale === undefined;
       if (this.edgeToSelectOnNextRefresh !== null) {
         const { source, target } = this.edgeToSelectOnNextRefresh;
         const foundEdge = this.modelComponents.edges.find(
