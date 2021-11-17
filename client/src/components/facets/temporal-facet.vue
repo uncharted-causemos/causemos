@@ -3,19 +3,20 @@
     :data.prop="facetData"
     :selection.prop="selection"
     :view.prop="facetView"
-    ref="facet"
+    ref="timeline"
     @facet-element-updated="updateSelection"
-    >
+  >
 
     <!-- eslint-disable-next-line vue/no-deprecated-slot-attribute -->
-    <div slot="header" style="display: flex;">
-      <a v-for="resolution in supportedResolutions"
+    <div slot="header" class="temporal-resolution-buttons">
+      <small-text-button
+        v-for="resolution in supportedResolutions"
         :key="resolution.value"
-        class="temporal-facet-resolution"
-        :class="{'temporal-facet-resolution-selected': resolution.value === dateParamResolution}"
-        @click="dateParamResolution = resolution.value">
-        {{resolution.label}}
-      </a>
+        :label="resolution.label"
+        :disabled="resolution.value === dateParamResolution"
+        class="temporal-resolution-button"
+        @click="dateParamResolution = resolution.value"
+      />
     </div>
 
     <facet-template
@@ -28,7 +29,9 @@
     <facet-plugin-zoom-bar slot="scrollbar"
       min-bar-width="8"
       auto-hide="true"
-      round-caps="true"/>
+      round-caps="true"
+      ref="zoomBar"
+    />
   </facet-timeline>
 </template>
 
@@ -39,6 +42,7 @@ import '@uncharted.software/facets-plugins';
 import { TemporalResolution, DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import _ from 'lodash';
 import { DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
+import smallTextButton from '../widgets/small-text-button.vue';
 
 // NOTE: Honestly, for date range a Gantt-like chart is much better representation
 //  than the facet-timeline, which is more suitable for single date runs
@@ -47,6 +51,7 @@ import { DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
  * Facet 3 component
  */
 export default {
+  components: { smallTextButton },
   name: 'TemporalFacet',
   emits: ['update-scenario-selection'],
   props: {
@@ -69,6 +74,26 @@ export default {
     dateParamResolution: TemporalResolution.Annual,
     TemporalResolution
   }),
+  async mounted() {
+    // The Facets 3.0 library doesn't expose the style options we need, so we
+    //  need to use JS to override the styles.
+    // Wait for the custom element to render (undefined when component is
+    //  first mounted)
+    await customElements.whenDefined('facet-timeline');
+    try {
+      const facetBlueprint = this.$refs.timeline.shadowRoot.querySelector('.facet-blueprint');
+      facetBlueprint.style.background = 'none';
+      const content = facetBlueprint
+        .querySelector('.facet-blueprint-body .facet-blueprint-content');
+      content.style.padding = '0';
+      const zoomBar = this.$refs.zoomBar.shadowRoot.querySelector('.zoom-bar-container');
+      console.log(zoomBar, zoomBar.style);
+      zoomBar.style.marginBottom = '0';
+      zoomBar.querySelector('.zoom-bar-background').style.margin = '0';
+    } catch (e) {
+      console.error('Unable to override temporal facet styles.', e);
+    }
+  },
   watch: {
     selectedScenarios() {
       // update facet selection
@@ -323,21 +348,17 @@ export default {
 </script>
 
 <style scoped lang="scss">
-.facet-font {
-  font-family: "Source Sans Pro", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
-}
 .facet-pointer {
   cursor: pointer;
 }
-.temporal-facet-resolution {
-  color: blue;
-  cursor: pointer;
-  margin-left: 2px;
-  margin-right: 2px;
-  font-size: x-small;
+
+.temporal-resolution-buttons {
+  display: flex;
+  margin-top: 3px;
 }
 
-.temporal-facet-resolution-selected {
-  background-color: lightgray;
+.temporal-resolution-button:not(:first-child) {
+  margin-left: 5px;
 }
+
 </style>
