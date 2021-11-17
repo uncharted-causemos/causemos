@@ -62,25 +62,34 @@
               <!-- TODO: Set goal button -->
             </div>
           </div>
-          <td-node-chart
-            v-if="comparisonBaselineId === null && selectedNodeScenarioData !== null"
-            class="scenario-chart"
-            :selected-scenario-id="selectedScenarioId"
-            :historical-timeseries="historicalTimeseries"
-            :projections="selectedNodeScenarioData.projections"
-            :min-value="indicatorMin"
-            :max-value="indicatorMax"
-            :constraints="constraints"
-            :viewing-extent="viewingExtent"
-            @set-constraints="modifyConstraints"
-            @set-historical-timeseries="setHistoricalTimeseries"
-          />
-          <timeseries-chart
-            v-else-if="comparisonBaselineId !== null && comparisonTimeseries !== null"
-            class="scenario-chart"
-            :timeseriesData="comparisonTimeseries.timeseriesData"
-            :selected-temporal-resolution="selectedTemporalResolution"
-          />
+          <div class="expanded-node-body">
+            <td-node-chart
+              v-if="selectedNodeScenarioData !== null"
+              class="scenario-chart"
+              :class="{'is-expanded': isHistoricalDataExpanded}"
+              :is-expanded="isHistoricalDataExpanded"
+              :selected-scenario-id="selectedScenarioId"
+              :historical-timeseries="historicalTimeseries"
+              :projections="selectedNodeScenarioData.projections"
+              :min-value="indicatorMin"
+              :max-value="indicatorMax"
+              :constraints="constraints"
+              :viewing-extent="viewingExtent"
+              @set-constraints="modifyConstraints"
+              @set-historical-timeseries="setHistoricalTimeseries"
+            />
+            <projection-histograms
+              v-if="
+                selectedNodeScenarioData !== null && !isHistoricalDataExpanded
+              "
+              class="projection-histograms"
+              :comparison-baseline-id="comparisonBaselineId"
+              :historical-timeseries="historicalTimeseries"
+              :projections="selectedNodeScenarioData.projections"
+              :model-summary="modelSummary"
+              :indicator-id="indicatorId"
+            />
+          </div>
         </div>
         <p>
           <i class="fa fa-fw fa-info-circle" />To create a scenario, set values
@@ -184,16 +193,6 @@
         </template>
       </div>
     </main>
-    <!-- TODO: Panes go here -->
-    <!-- <drilldown-panel
-      class="drilldown-panel"
-      :tabs="drilldownPanelTabs"
-      :active-tab-id="'only-tab'"
-    >
-      <template #content>
-        (Panes go here)
-      </template>
-    </drilldown-panel> -->
   </div>
 </template>
 
@@ -209,17 +208,15 @@ import router from '@/router';
 import modelService from '@/services/model-service';
 import { ProjectionConstraint, Scenario, ScenarioProjection } from '@/types/CAG';
 import DropdownButton, { DropdownItem } from '@/components/dropdown-button.vue';
-import { Timeseries, TimeseriesPoint } from '@/types/Timeseries';
+import { TimeseriesPoint } from '@/types/Timeseries';
 import useModelMetadata from '@/services/composables/useModelMetadata';
 import useDraftScenario from '@/services/composables/useDraftScenario';
 import useQualitativeModel from '@/services/composables/useQualitativeModel';
-import TimeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
-import { SELECTED_COLOR_DARK } from '@/utils/colors-util';
-import { applyRelativeTo } from '@/utils/timeseries-util';
 import AnalyticalQuestionsAndInsightsPanel from '@/components/analytical-questions/analytical-questions-and-insights-panel.vue';
 import useToaster from '@/services/composables/useToaster';
 import { ViewState } from '@/types/Insight';
 import { QUANTIFICATION } from '@/utils/messages-util';
+import ProjectionHistograms from '@/components/node-drilldown/projection-histograms.vue';
 
 export default defineComponent({
   name: 'NodeDrilldown',
@@ -227,8 +224,8 @@ export default defineComponent({
     NeighborNode,
     TdNodeChart,
     DropdownButton,
-    TimeseriesChart,
-    AnalyticalQuestionsAndInsightsPanel
+    AnalyticalQuestionsAndInsightsPanel,
+    ProjectionHistograms
   },
   props: {},
   setup() {
@@ -321,7 +318,6 @@ export default defineComponent({
           scenarioName: name,
           scenarioId: id,
           values: result?.values ?? [],
-          confidenceInterval: result?.confidenceInterval ?? { upper: [], lower: [] },
           constraints: constraints ?? []
         });
       });
@@ -553,36 +549,7 @@ export default defineComponent({
       }
     };
 
-    const comparisonBaselineId = ref(null);
-    const comparisonTimeseries = computed<{
-      baselineMetadata: { name: string; color: string} | null;
-      timeseriesData: Timeseries[];
-    } | null>(() => {
-      if (
-        comparisonBaselineId.value === null ||
-        selectedNodeScenarioData.value === null
-      ) {
-        return null;
-      }
-      const { projections: _projections } = selectedNodeScenarioData.value;
-      if (_projections.length < 2) return null;
-      // Convert projections to the Timeseries data structure
-      const timeseries = _projections.map(projection => {
-        const { scenarioName, scenarioId, values } = projection;
-        const color = scenarioId === selectedScenarioId.value
-          ? SELECTED_COLOR_DARK
-          : 'black';
-        return {
-          name: scenarioName,
-          id: scenarioId,
-          color,
-          points: values,
-          isDefaultRun: false
-        };
-      });
-      // Rescale timeseries relative to the baseline
-      return applyRelativeTo(timeseries, comparisonBaselineId.value);
-    });
+    const comparisonBaselineId = ref<string | null>(null);
     const comparisonDropdownOptions = computed<DropdownItem[]>(() => {
       const _projections = selectedNodeScenarioData.value?.projections ?? [];
       if (_projections.length < 2) {
@@ -678,7 +645,6 @@ export default defineComponent({
       saveParameterValueChanges,
       selectedTemporalResolution,
       comparisonBaselineId,
-      comparisonTimeseries,
       comparisonDropdownOptions,
       constraints,
       modifyConstraints,
@@ -692,6 +658,9 @@ export default defineComponent({
       scenarioData
     };
   },
+  data: () => ({
+    isHistoricalDataExpanded: false
+  }),
   methods: {
     openDataExplorer() {
       this.$router.push({
@@ -819,7 +788,6 @@ input[type="radio"] {
 }
 
 .expanded-node {
-  height: 350px;
   flex-shrink: 0;
   border: 1px solid #bbb;
   border-radius: 4px;
@@ -828,14 +796,23 @@ input[type="radio"] {
   display: flex;
   flex-direction: column;
   background: white;
+  flex: 1;
+  min-height: 400px;
 }
 
 .expanded-node-header {
-  background: #eee;
   display: flex;
   justify-content: space-between;
   align-items: center;
   padding: 5px;
+  padding-left: 10px;
+  font-size: $font-size-extra-large;
+}
+
+.expanded-node-body {
+  flex: 1;
+  min-height: 0;
+  display: flex;
 }
 
 .button-group > *:not(:first-child) {
@@ -844,7 +821,12 @@ input[type="radio"] {
 
 .scenario-chart {
   flex: 1;
-  min-height: 0;
+  min-width: 0;
+}
+
+.projection-histograms {
+  flex: 3;
+  min-width: 0;
 }
 
 .neighbor-node {

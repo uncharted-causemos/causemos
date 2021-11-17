@@ -10,22 +10,8 @@
           >
             {{ activeDrilldownTab === null ? 'Show' : 'Hide' }} Breakdown
           </button>
-          <button
-            class="btn btn-default breakdown-button"
-            @click="toggleSearchBar=!toggleSearchBar"
-          >
-            <i class="fa fa-search"></i>
-          </button>
           <slot name="datacube-model-header-collapse" />
         </header>
-        <div
-          v-if="isModelMetadata && toggleSearchBar"
-          style="display: flex; align-items: center">
-          <model-runs-search-bar
-            :data="modelRunsSearchData"
-            :filters="searchFilters"
-            @filters-updated="onModelRunsFiltersUpdated" />
-        </div>
         <modal-new-scenario-runs
           v-if="isModelMetadata && showNewRunsModal === true"
           :metadata="metadata"
@@ -46,36 +32,50 @@
           @close="onGeoSelectionModalClose" />
         <rename-modal
           v-if="showTagNameModal"
-          :modal-title="'Tag Name'"
+          :modal-title="`Add new tag to ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
           @confirm="addNewTag"
           @cancel="showTagNameModal = false"
         />
-        <modal-datacube-scenario-tags
-          v-if="showScenarioTagsModal === true"
-          :model-run-data="filteredRunData"
-          @close="showScenarioTagsModal=false" />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
             <div class="tags-area-container">
-              <span class="scenario-count">
+              <span class="scenario-count" v-if="selectedScenarioIds.length === 0">
                 {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
               </span>
-              <div style="font-size: small; display: flex; align-items: center">
-                <a
-                  class="see-all-tags"
-                  @click="showScenarioTagsModal=true">
-                  see all tags
-                </a>
-                <i
-                  class="fa fa-plus-circle"
-                  :class="{
-                    'add-new-tag-disabled': selectedScenarioIds.length === 0,
-                    'add-new-tag': selectedScenarioIds.length > 0
-                  }"
-                  @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
-              </div>
+              <span class="scenario-count" v-if="selectedScenarioIds.length > 0">
+                {{selectedScenarioIds.length}} model run{{selectedScenarioIds.length === 1 ? '' : 's'}} selected.
+              </span>
+              <span v-if="selectedScenarioIds.length > 0">Tags:</span>
+              <small-text-button
+                v-for="(tag, index) in tagsSharedBySelectedRuns"
+                v-tooltip="'Remove from selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
+                :key="index"
+                :label="tag"
+                @click="removeTagFromSelectedRuns(tag)"
+              >
+                <template #trailing>
+                  <i class="fa fa-close" />
+                </template>
+              </small-text-button>
+              <small-text-button
+                v-if="selectedScenarioIds.length > 0"
+                v-tooltip="'Add to selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
+                :label="`Add tag`"
+                @click="showTagNameModal = true"
+              >
+                <template #leading>
+                  <i class="fa fa-plus-circle" />
+                </template>
+              </small-text-button>
             </div>
+            <model-runs-search-bar
+              class="model-runs-search-bar"
+              v-if="isModelMetadata"
+              :data="modelRunsSearchData"
+              :filters="searchFilters"
+              @filters-updated="onModelRunsFiltersUpdated"
+            />
             <div v-if="dateModelParam">
               <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
                 <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
@@ -513,7 +513,6 @@ import Modal from '@/components/modals/modal.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalGeoSelection from '@/components/modals/modal-geo-selection.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
-import ModalDatacubeScenarioTags from '@/components/modals/modal-datacube-scenario-tags.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import ModelRunsSearchBar from '@/components/data/model-runs-search-bar.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
@@ -557,7 +556,7 @@ import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/util
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, BASE_LAYER_TRANSPARENCY, DATA_LAYER } from '@/utils/map-util-new';
 
-import { createModelRun, updateModelRun, addModelRunsTag } from '@/services/new-datacube-service';
+import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -632,7 +631,6 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus,
     ModalConfirmation,
     ModalGeoSelection,
-    ModalDatacubeScenarioTags,
     ModalNewScenarioRuns,
     ModelRunsSearchBar,
     ParallelCoordinatesChart,
@@ -766,9 +764,19 @@ export default defineComponent({
     const initialSelectedYears = ref<string[]>([]);
 
     const addNewTag = (tagName: string) => {
-      selectedScenarios.value.forEach(s => s.tags.push(tagName));
+      let numAdded = 0;
+      selectedScenarios.value.forEach(s => {
+        if (!s.tags.includes(tagName)) {
+          numAdded++;
+          s.tags.push(tagName);
+        }
+      });
       showTagNameModal.value = false;
-      toaster('A new tag is added successfully for the selected run(s)', 'success', false);
+      if (numAdded > 0) {
+        toaster(`Successfully added '${tagName}' to ${numAdded} run${numAdded === 1 ? '' : 's'}`, 'success', false);
+      } else {
+        toaster(`Selected run${selectedScenarios.value.length === 1 ? ' is' : 's are'} already tagged with '${tagName}'`, 'success', false);
+      }
       addModelRunsTag(selectedScenarios.value.map(run => run.id), tagName);
     };
 
@@ -967,6 +975,7 @@ export default defineComponent({
           return filteredRuns;
         }, []);
       } else {
+        selectedScenarios.value = [];
         updateTabView('description');
       }
     };
@@ -1020,7 +1029,6 @@ export default defineComponent({
           if (initialDataConfig.value.searchFilters !== undefined) {
             // restoring a state where some searchFilters were defined
             if (!_.isEmpty(initialDataConfig.value.searchFilters) && initialDataConfig.value.searchFilters.clauses.length > 0) {
-              toggleSearchBar.value = true;
               searchFilters.value = _.clone(initialDataConfig.value.searchFilters);
             }
           } else {
@@ -1305,7 +1313,6 @@ export default defineComponent({
         if (loadedInsight.data_state?.searchFilters !== undefined) {
           // restoring a state where some searchFilters were defined
           if (!_.isEmpty(loadedInsight.data_state?.searchFilters) && loadedInsight.data_state?.searchFilters.clauses.length > 0) {
-            toggleSearchBar.value = true;
             searchFilters.value = _.clone(loadedInsight.data_state?.searchFilters);
           }
         } else {
@@ -1604,6 +1611,7 @@ export default defineComponent({
       selectedQualifierValues,
       selectedRegionIds,
       selectedScenarioIds,
+      selectedScenarios,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
@@ -1636,7 +1644,6 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
-      toggleSearchBar,
       unit,
       updatePotentialScenarioDates,
       updateStateFromInsight,
@@ -1673,6 +1680,17 @@ export default defineComponent({
     showDelete: false,
     DatacubeGenericAttributeVariableType
   }),
+  computed: {
+    tagsSharedBySelectedRuns() {
+      if (this.selectedScenarios.length === 0) return [];
+      let result: string[] = this.selectedScenarios[0].tags;
+      this.selectedScenarios.slice(1).forEach(scenario => {
+        const tags = scenario.tags;
+        result = result.filter(tag => tags.includes(tag));
+      });
+      return result;
+    }
+  },
   methods: {
     openGeoSelectionModal(modelParam: ModelParameter) {
       this.showGeoSelectionModal = true;
@@ -1768,6 +1786,13 @@ export default defineComponent({
       } catch (e) {
         this.toaster('Run failed', 'error', true);
       }
+    },
+    removeTagFromSelectedRuns(tag: string) {
+      this.selectedScenarios.forEach(run => {
+        // NOTE: this will automatically refresh the rendered tags
+        run.tags = run.tags.filter(_tag => _tag !== tag);
+      });
+      removeModelRunsTag(this.selectedScenarios.map(run => run.id), tag);
     }
   }
 });
@@ -2035,32 +2060,14 @@ $marginSize: 5px;
 
 .tags-area-container {
   display: flex;
-  align-items: center;
-  font-size: smaller;
-  text-align: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px;
+  max-height: 41px;
+  overflow: auto;
+}
 
-  .see-all-tags {
-    color: blue;
-    cursor: pointer;
-    margin-left: 2px;
-    margin-right: 2px;
-  }
-
-  .add-new-tag {
-    cursor: pointer;
-    font-size: medium;
-    &:hover {
-      color: blue;
-    }
-  }
-  .add-new-tag-disabled {
-    color: lightgray;
-    font-size: medium;
-    &:hover {
-      cursor: not-allowed;
-    }
-  }
+.model-runs-search-bar {
+  margin-top: 2px;
 }
 
 .scenario-count {

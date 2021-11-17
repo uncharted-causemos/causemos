@@ -56,6 +56,10 @@ export default defineComponent({
     constraints: {
       type: Array as PropType<ProjectionConstraint[]>,
       required: true
+    },
+    isExpanded: {
+      type: Boolean,
+      default: false
     }
   },
   setup(props, { emit }) {

@@ -1,8 +1,8 @@
 <template>
-  <button
-    :disabled="disabled"
-    @click="onClick">
+  <button :disabled="disabled" @click="onClick">
+    <slot name="leading" />
     {{ label }}
+    <slot name="trailing" />
   </button>
 </template>
 
@@ -30,12 +30,11 @@ export default defineComponent({
 });
 </script>
 
-
 <style lang="scss" scoped>
-@import "~styles/variables";
+@import '~styles/variables';
 button {
-  background: #F0F0F0;
-  color: #5A5A5A;
+  background: #f0f0f0;
+  color: #5a5a5a;
   border: none;
   padding: 1px 8px 3px; // Hack to center text
   border-radius: 2px;
