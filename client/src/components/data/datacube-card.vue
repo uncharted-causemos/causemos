@@ -691,7 +691,6 @@ export default defineComponent({
     const selectedColorScaleType = ref(ColorScaleType.Discrete);
     const numberOfColorBins = ref(5); // assume default number of 5 bins on startup
 
-    const toggleSearchBar = ref<boolean>(false);
     const showTagNameModal = ref<boolean>(false);
     const showScenarioTagsModal = ref<boolean>(false);
 
