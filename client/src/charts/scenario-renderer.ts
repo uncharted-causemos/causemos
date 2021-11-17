@@ -5,34 +5,47 @@ import moment from 'moment';
 import initialize from '@/charts/initialize';
 import { timeseriesLine } from '@/utils/svg-util';
 import { chartValueFormatter } from '@/utils/string-util';
+import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
+import { Chart } from '@/types/Chart';
+import { NodeScenarioData, ScenarioParameter } from '@/types/CAG';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 
-export default function(selection, data, renderOptions, runOptions) {
-  const chart = initialize(selection, renderOptions);
-  render(chart, data, runOptions);
+export default function(
+  selection: D3Selection,
+  nodeScenarioData: NodeScenarioData,
+  renderOptions: any,
+  runOptions: any
+) {
+  const chart: Chart = initialize(selection, renderOptions);
+  render(chart, nodeScenarioData, runOptions);
 }
 
 /**
- * Draws the historic and projection graphs from the prepared 'data'.
- *
- * @param {object} svgGroup - svg element that all graph objects will been appended to
- * @param {object} data - historic and projection data - layout set by modelService.buildNodeChartData()
- * @param {string} selectedScenarioId
- * @param {object} options - width, height, padY
- * @param {function} updateCallback - when constraints are changed, this function is called
+ * Draws the historic and projection graphs from the prepared `nodeScenarioData`.
  */
-function render(chart, data, runOptions) {
-  const selectedScenario = data.scenarios.find(
+function render(
+  chart: Chart,
+  nodeScenarioData: NodeScenarioData,
+  // TODO: better type for runOptions
+  runOptions: any
+) {
+  const selectedScenario = nodeScenarioData.scenarios.find(
     s => s.id === runOptions.selectedScenarioId
   );
-  const constraints = _.cloneDeep(selectedScenario.constraints);
+  if (selectedScenario === undefined) {
+    console.error(
+      'Unable to find scenario with ID ' + runOptions.selectedScenarioId + '.'
+    );
+    return;
+  }
 
   // Figure out the [start, end] ranges
   let globalStart = Number.POSITIVE_INFINITY;
   let globalEnd = Number.NEGATIVE_INFINITY;
-  data.scenarios.forEach(scenario => {
-    const param = scenario.parameter;
+  nodeScenarioData.scenarios.forEach(scenario => {
+    // TODO: is it safe to assume scenario.parameter is not undefined?
+    const param = scenario.parameter as ScenarioParameter;
     const start = param.indicator_time_series_range.start;
     const end = moment
       .utc(param.projection_start)
@@ -43,8 +56,10 @@ function render(chart, data, runOptions) {
   });
 
   // Portion of time series relating to current scenario
-  const historyRange = selectedScenario.parameter.indicator_time_series_range;
-  const filteredTimeSeries = data.indicator_time_series.filter(
+  // TODO: is it safe to assume scenario.parameter is not undefined?
+  const historyRange = (selectedScenario.parameter as ScenarioParameter)
+    .indicator_time_series_range;
+  const filteredTimeSeries = nodeScenarioData.indicator_time_series.filter(
     d => d.timestamp >= historyRange.start && d.timestamp <= historyRange.end
   );
 
@@ -58,7 +73,10 @@ function render(chart, data, runOptions) {
   if (_.isEmpty(filteredTimeSeries)) {
     yExtent = [0, 0];
   } else {
-    yExtent = d3.extent(filteredTimeSeries.map(d => d.value));
+    yExtent = d3.extent(filteredTimeSeries.map(d => d.value)) as [
+      number,
+      number
+    ];
   }
   if (yExtent[1] === yExtent[0] && yExtent[0] === 0) {
     yExtent = [0, 1];
@@ -70,7 +88,7 @@ function render(chart, data, runOptions) {
     ];
   }
 
-  yExtent = [data.min, data.max];
+  yExtent = [nodeScenarioData.min, nodeScenarioData.max];
 
   const formatter = chartValueFormatter(...yExtent);
   const xscale = d3
@@ -102,30 +120,38 @@ function render(chart, data, runOptions) {
   historicG
     .append('path')
     .attr('class', 'historical')
-    .attr('d', timeseriesLine(xscale, yscale)(filteredTimeSeries))
+    .attr(
+      'd',
+      // FIXME: TypeScript shenanigans are necessary because timeseriesLine()
+      //  is in a JS file. See svg-util.js for more details.
+      timeseriesLine(
+        xscale,
+        yscale
+      )((filteredTimeSeries as any) as [number, number][]) as string
+    )
     .style('stroke', '#AAA')
     .style('stroke-width', 1)
     .style('pointer-events', 'none')
     .style('fill', 'none');
 
-  // Render scenario projections - stale scenarios may appear weird due to different time ranges
   renderScenarioProjections(
     svgGroup,
-    data.scenarios,
+    nodeScenarioData,
     runOptions,
     xscale,
-    yscale,
-    formatter,
-    constraints
+    yscale
   );
 
   // Axes
   const yaxis = d3
-    .axisRight()
-    .scale(yscale)
+    .axisRight(yscale)
     .ticks(2)
     .tickSize(0)
-    .tickFormat(formatter);
+    // The type of formatter can't be more specific than `any`
+    //  because under the hood d3.tickFormat requires d3.NumberType.
+    // It correctly converts, but its TypeScript definitions don't
+    //  seem to reflect that.
+    .tickFormat(formatter as any);
 
   const yAxisElement = svgGroup
     .append('g')
@@ -140,25 +166,22 @@ function render(chart, data, runOptions) {
 }
 
 function renderScenarioProjections(
-  svgGroup,
-  scenarios,
-  runOptions,
-  xscale,
-  yscale,
-  constraints
+  svgGroup: D3GElementSelection,
+  nodeScenarioData: NodeScenarioData,
+  runOptions: any,
+  xScale: D3ScaleLinear,
+  yScale: D3ScaleLinear
+  // FIXME: render constraints
+  // constraints
 ) {
-  // FIXME: we'll use the constraints parameter again, but for now just log it
-  //  to prevent "defined but never used" errors
-  console.log(constraints.length);
   svgGroup.selectAll('.scenario').remove();
-
-  // Selected goes last so it is not occluded
-  const sortedScenarios = scenarios;
-  const selectedScenario = _.remove(
-    sortedScenarios,
-    s => s.id === runOptions.selectedScenarioId
-  )[0];
-  sortedScenarios.push(selectedScenario);
+  console.log(yScale.range());
 
   // FIXME: render histograms instead of line charts
+  // convertTimeseriesDistributionToHistograms(
+  //   this.modelSummary,
+  //   isAbstractNode ? [] : this.historicalTimeseries,
+  //   null, // TODO: clampedNowValue
+  //   projection.values
+  // )
 }
