@@ -724,9 +724,19 @@ export default defineComponent({
     const initialSelectedYears = ref<string[]>([]);
 
     const addNewTag = (tagName: string) => {
-      selectedScenarios.value.forEach(s => s.tags.push(tagName));
+      let numAdded = 0;
+      selectedScenarios.value.forEach(s => {
+        if (!s.tags.includes(tagName)) {
+          numAdded++;
+          s.tags.push(tagName);
+        }
+      });
       showTagNameModal.value = false;
-      toaster('A new tag is added successfully for the selected run(s)', 'success', false);
+      if (numAdded > 0) {
+        toaster(`Successfully added '${tagName}' to ${numAdded} run${numAdded === 1 ? '' : 's'}`, 'success', false);
+      } else {
+        toaster(`Selected run${selectedScenarios.value.length === 1 ? ' is' : 's are'} already tagged with '${tagName}'`, 'success', false);
+      }
       addModelRunsTag(selectedScenarios.value.map(run => run.id), tagName);
     };
 
@@ -1894,6 +1904,8 @@ $marginSize: 5px;
   display: flex;
   flex-wrap: wrap;
   gap: 2px;
+  max-height: 41px;
+  overflow: auto;
 }
 
 .model-runs-search-bar {
