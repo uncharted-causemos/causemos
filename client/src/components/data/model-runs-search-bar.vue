@@ -1,15 +1,11 @@
 <template>
-  <div class="row no-gutter" style="width: 100%">
-    <div class="col-md-12 search-bar lex-bar-container">
-      <div ref="lexContainer" class="lex-box-container" />
-      <div class="clear-button-container">
-        <button
-          class="btn btn-default clear-button"
-          @click="clearSearch()">
-          <i class="fa fa-remove" />
-        </button>
-      </div>
-    </div>
+  <div class="model-runs-search-bar-container">
+    <div ref="lexContainer"/>
+    <button
+      class="btn btn-default clear-button"
+      @click="clearSearch()">
+      <i class="fa fa-remove" />
+    </button>
   </div>
 </template>
 
@@ -111,7 +107,7 @@ export default {
 
     this.lexRef = new Lex({
       language: language,
-      placeholder: 'Search items...',
+      placeholder: 'Filter runs',
       tokenXIcon: '<i class="fa fa-remove"></i>'
     });
 
@@ -159,6 +155,51 @@ export default {
 };
 </script>
 
-<style lang='scss'>
+<style lang='scss' scoped>
+.model-runs-search-bar-container {
+  display: flex;
+
+  & > ::v-deep(div) {
+    flex: 1;
+    min-width: 0p;
+  }
+}
+
+// Override lex box styles to allow for pills to wrap
+::v-deep(.lex-box) {
+  padding: 2px;
+  // Lex has a min-height of 40px by default, but it's 41px when active/focused
+  // Keeping this constant avoids a page reflow (and rerendering of PC chart)
+  min-height: 41px;
+  // Be sure to leave room to the right of long pills to allow the analyst
+  //  to click to add new pills
+  padding-right: 20px;
+
+  .token-container:not(:first-child) {
+    margin-top: 2px;
+  }
+
+  .token {
+    margin: 0;
+    font-size: 1.4rem;
+    white-space: normal;
+
+    button.token-remove,
+    button.token-cancel {
+      position: relative;
+      top: unset;
+      transform: none;
+    }
+  }
+
+  .token-icon {
+    display: none !important;
+  }
+}
+
+.clear-button {
+  flex: 0;
+  padding: 5px;
+}
 
 </style>

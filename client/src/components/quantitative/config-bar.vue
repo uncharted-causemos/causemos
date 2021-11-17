@@ -11,6 +11,7 @@
 </template>
 
 <script lang="ts">
+import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
 import { defineComponent } from 'vue';
 
 export default defineComponent({
@@ -26,7 +27,10 @@ export default defineComponent({
   ],
   computed: {
     projectionSteps(): number {
-      return this.modelSummary.parameter.num_steps;
+      const timeSliceMonths = getSliceMonthsFromTimeScale(
+        this.modelSummary.parameter.time_scale
+      );
+      return timeSliceMonths[timeSliceMonths.length - 1];
     },
     currentEngine(): string {
       return this.modelSummary.parameter.engine;
