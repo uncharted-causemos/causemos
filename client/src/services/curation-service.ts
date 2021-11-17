@@ -296,6 +296,20 @@ export const updateStatementsFactorGrounding = async (projectId: string, stateme
 };
 
 /**
+ * Track data around curations, such as when factors are regrounded, or when recommendations are accepted
+ *
+ * @param {string} trackingId - unique trackingId for a curation
+ * @param {object} payload - any additional logging data such as statementId, factorType etc...
+ */
+export const trackCurations = async (trackingId: string, payload: object) => {
+  const result = await API.put(`/curation_recommendations/tracking/${trackingId}`, {
+    payload: payload
+  });
+  return result;
+};
+
+
+/**
  * Update statement polarity.
  * Note: There is no CAG recalculation as polarity does not affect edge directions.
  *

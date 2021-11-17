@@ -1,5 +1,18 @@
-import { TimeseriesPoint } from '@/types/Timeseries';
+import { CAGModelSummary } from '@/types/CAG';
+import {
+  TimeseriesDistributionPoint,
+  TimeseriesPoint
+} from '@/types/Timeseries';
+import _ from 'lodash';
 import { getMonthFromTimestamp, getTimestampAfterMonths } from './date-util';
+import { getSliceMonthsFromTimeScale } from './time-scale-util';
+
+export type HistogramData = [number, number, number, number, number];
+export type ProjectionHistograms = [
+  HistogramData,
+  HistogramData,
+  HistogramData
+];
 
 // The bin boundaries that are used when a node has no historical data.
 export const ABSTRACT_NODE_BINS: [number, number, number, number] = [
@@ -85,14 +98,18 @@ export const extractRelevantHistoricalChanges = (
   return changes;
 };
 
+const isAbstractNode = (historicalData: TimeseriesPoint[]) => {
+  return historicalData.length === 0;
+};
+
 export const computeProjectionBins = (
   historicalData: TimeseriesPoint[],
   clampValueAtNow: number | null,
   monthsElapsedSinceNow: number,
   projectionStartMonth: number
 ): [number, number, number, number] => {
-  if (historicalData.length === 0) {
-    // Abstract node: There is no historical data, so return arbitrary
+  if (isAbstractNode(historicalData)) {
+    // There is no historical data, so return arbitrary
     //  buckets between 0 and 1
     return ABSTRACT_NODE_BINS;
   }
@@ -183,4 +200,209 @@ export const computeProjectionBins = (
   ];
 
   return bins;
+};
+
+export const convertTimeseriesDistributionToHistograms = (
+  modelSummary: CAGModelSummary,
+  historicalData: TimeseriesPoint[],
+  clampValueAtNow: number | null,
+  projection: TimeseriesDistributionPoint[]
+): ProjectionHistograms => {
+  // 1. Get selected timescale from modelSummary
+  const timeScale = modelSummary.parameter.time_scale;
+  // 2. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
+  // This represents how many months from "now" each displayed time slice will be
+  const relevantMonthOffsets = getSliceMonthsFromTimeScale(timeScale);
+  const projectionStartTimestamp = projection[0].timestamp;
+  const projectionStartMonth = getMonthFromTimestamp(projectionStartTimestamp);
+  // For each timeslice:
+  return relevantMonthOffsets.map(monthIndex => {
+    // 3. Get bins from historical data using computeProjectionBins()
+    const bins = computeProjectionBins(
+      historicalData,
+      clampValueAtNow,
+      monthIndex,
+      projectionStartMonth
+    );
+    const monthTimestamp = getTimestampAfterMonths(
+      projectionStartTimestamp,
+      monthIndex
+    );
+    // 4. Find distribution that's nearest to this timestep
+    let closestDistribution: number[] | null = null;
+    let closestTimestamp: number | null = null;
+    projection.forEach(({ values, timestamp }) => {
+      if (
+        closestTimestamp === null ||
+        Math.abs(timestamp - monthTimestamp) <
+          Math.abs(closestTimestamp - monthTimestamp)
+      ) {
+        closestTimestamp = timestamp;
+        closestDistribution = values;
+      }
+    });
+    if (closestDistribution === null) {
+      console.error(
+        'Unable to convert projection to histogram, projection array is likely empty:',
+        projection
+      );
+      closestDistribution = [];
+    }
+    // 5. Feed distribution into bins to get histogram
+    const histogram: HistogramData = [0, 0, 0, 0, 0];
+    closestDistribution.forEach(value => {
+      if (value < bins[0]) {
+        // Much lower
+        histogram[4]++;
+      } else if (value < bins[1]) {
+        // Lower
+        histogram[3]++;
+      } else if (value < bins[2]) {
+        // Negligible change
+        histogram[2]++;
+      } else if (value < bins[3]) {
+        // Higher
+        histogram[1]++;
+      } else {
+        // Much higher
+        histogram[0]++;
+      }
+    });
+    return histogram;
+  }) as [HistogramData, HistogramData, HistogramData];
+};
+
+/**
+ * A histogram can show up to 2 arrows when "relative to" is active:
+ *  - No arrows are shown when there's no change.
+ *  - 1 arrow is shown if the change can be summarized as shifting higher or
+ *    lower. `arrow2` is null in this case.
+ *  - 2 arrows are shown if the change can be summarized as more or less
+ *    precise.
+ * The from/to properties of each arrow refer to the bin indices that the arrow
+ *  starts/ends in, respectively.
+ * `messagePosition` refers to the index of the bin that the summary message
+ * should appear beside.
+ */
+interface RelativeChangeSummary {
+  arrow1: null | { from: number; to: number };
+  messagePosition: number;
+  arrow2: null | { from: number; to: number };
+}
+
+/**
+ * An algorithm to produce a summary of the relative difference between two histograms.
+ * It follows these steps:
+ *  1. find the bins with the greatest loss and greatest gain.
+ *  2. discard the other bins.
+ *  3. find the average index of the bins with the greatest loss (and same for greatest gain)
+ *  4. if these average indices are the same, there's no higher/lower shift.
+ *      The change can be summarized as more/less precise and we'll use two arrows to show this.
+ *  5. else, the magnitude and direction of change can be summarized by the difference between the average indices.
+ *      We use one arrow from the farthest bin with the greatest loss to the bin with the greatest gain.
+ *
+ * One gotcha is that it's unclear where the message should be positioned when there are multiple
+ * bins with the greatest gain. In these cases we just put the message in the middle.
+ *
+ * In practice it is unlikely that there will frequently be multiple bins tied for greatest loss/gain.
+ *
+ * @param changes one number for each of the 5 bins. Negative numbers represent a relative decrease in that bin.
+ * @returns an object containing enough information to generate a one-sentence summary of the change, as well as the arrows used to support the sentence.See RelativeChangeSummary for more detail.
+ */
+export const summarizeRelativeChange = (
+  changes: [number, number, number, number, number]
+): RelativeChangeSummary => {
+  // ASSUMPTION: total losses should equal total gains in magnitude
+  const greatestLoss = _.min(changes) ?? 0;
+  const greatestGain = _.max(changes) ?? 0;
+  if (greatestLoss === 0 || greatestGain === 0) {
+    // No change
+    return {
+      arrow1: null,
+      messagePosition: 2,
+      arrow2: null
+    };
+  }
+  const binsWithGreatestLoss: number[] = [];
+  const binsWithGreatestGain: number[] = [];
+  changes.forEach((change, binIndex) => {
+    if (change === greatestLoss) {
+      binsWithGreatestLoss.push(binIndex);
+    } else if (change === greatestGain) {
+      binsWithGreatestGain.push(binIndex);
+    }
+  });
+  // Calculate the average bin index for the maxes, and the average
+  //  bin index for the mins.
+  const meanMaxValueBinIndex = _.mean(binsWithGreatestGain);
+  const meanMinValueBinIndex = _.mean(binsWithGreatestLoss);
+  // Calculate the difference between the averages to get the magnitude and
+  //  direction of change
+  const difference = Math.ceil(meanMaxValueBinIndex - meanMinValueBinIndex);
+  // Determine which arrows and text to show depending on the
+  //  number of bins that contain the min and max values
+  if (difference !== 0) {
+    const messagePosition = binsWithGreatestGain[0];
+    return {
+      arrow1: { from: messagePosition - difference, to: messagePosition },
+      messagePosition,
+      arrow2: null
+    };
+  }
+  // No shift higher or lower, it's either more or less precise
+  //  so we'll need to draw two arrows
+  const isMorePrecise =
+    (_.min(binsWithGreatestLoss) ?? 0) < (_.min(binsWithGreatestGain) ?? 0);
+  // If there's only one max bin, show the message there.
+  // Otherwise things get messy, so just put the message in the center
+  const isMultipleMaxBins = binsWithGreatestGain.length !== 1;
+  const messagePosition = isMultipleMaxBins ? 2 : binsWithGreatestGain[0];
+  if (isMorePrecise) {
+    return {
+      arrow1: { from: messagePosition - 1, to: messagePosition },
+      messagePosition,
+      arrow2: { from: messagePosition + 1, to: messagePosition }
+    };
+  }
+  return {
+    arrow1: { from: messagePosition - 1, to: messagePosition - 2 },
+    messagePosition,
+    arrow2: { from: messagePosition + 1, to: messagePosition + 2 }
+  };
+};
+
+const MAGNITUDE_ADJECTIVES = ['', 'small', '', 'large', 'extreme'];
+
+/**
+ * Generates the user-friendly string to be displayed at `summary.messagePosition`.
+ *
+ * Output will typically be of the form
+ *
+ * `{ before: 'Large shift toward', emphasized: 'higher', after: ' values.' }`
+ *
+ * @param summary null when 'relative to" mode is not active. See RelativeChangeSummary for more detail.
+ * @returns an object containing three strings: an emphasized section as well as the text before and after that.
+ */
+export const generateRelativeSummaryMessage = (
+  summary: RelativeChangeSummary | null
+) => {
+  if (summary === null) return { before: '', emphasized: '', after: '' };
+  const { arrow1, messagePosition, arrow2 } = summary;
+  if (arrow1 === null) {
+    return { before: 'No change.', emphasized: '', after: '' };
+  }
+  if (arrow2 !== null) {
+    // Either more or less certain
+    const isMoreCertain = arrow2.to === messagePosition;
+    const emphasized = (isMoreCertain ? 'More' : 'Less') + ' certain';
+    return { before: '', emphasized, after: ' values.' };
+  }
+  const magnitudeOfChange = Math.abs(arrow1.to - arrow1.from);
+  const magnitudeAdjective = MAGNITUDE_ADJECTIVES[magnitudeOfChange];
+  const directionOfChange = arrow1.to < arrow1.from ? 'higher' : 'lower';
+  return {
+    before: _.capitalize(`${magnitudeAdjective} shift toward `.trim()),
+    emphasized: directionOfChange,
+    after: ' values.'
+  };
 };

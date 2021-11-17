@@ -80,7 +80,7 @@ import Modal from '@/components/modals/modal.vue';
 import DateDropdown from '@/components/widgets/date-dropdown.vue';
 import { DATE_SELECTION } from '@/utils/messages-util';
 import modelService from '@/services/model-service';
-import { CAGModelSummary } from '@/types/CAG';
+import { CAGModelSummary, CAGModelParameter } from '@/types/CAG';
 
 export default defineComponent({
   name: 'ModalEditParameters',
@@ -137,16 +137,18 @@ export default defineComponent({
       this.$emit('close', null);
     },
     save() {
-      this.$emit('save', {
-        // FIXME: not needed anymore, remove when update mapping
-        // indicator_time_series_range: {
-        //   start: 0,
-        //   end: 1
-        // },
-        projection_start: this.selectedProjectionStartDate,
-        num_steps: this.selectedNumSteps,
-        engine: this.selectedEngine
-      });
+      const payload: Partial<CAGModelParameter> = {};
+      const currentParameter = this.modelSummary.parameter;
+      if (this.selectedEngine !== currentParameter.engine) {
+        payload.engine = this.selectedEngine;
+      }
+      if (this.selectedNumSteps !== currentParameter.num_steps) {
+        payload.num_steps = this.selectedNumSteps;
+      }
+      if (this.selectedProjectionStartDate !== currentParameter.projection_start) {
+        payload.projection_start = this.selectedProjectionStartDate;
+      }
+      this.$emit('save', payload);
     },
     onUpdateProjectionStartDate(newTimeStamp: number) {
       this.selectedProjectionStartDate = newTimeStamp;

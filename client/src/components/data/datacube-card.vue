@@ -10,22 +10,8 @@
           >
             {{ activeDrilldownTab === null ? 'Show' : 'Hide' }} Breakdown
           </button>
-          <button
-            class="btn btn-default breakdown-button"
-            @click="toggleSearchBar=!toggleSearchBar"
-          >
-            <i class="fa fa-search"></i>
-          </button>
           <slot name="datacube-model-header-collapse" />
         </header>
-        <div
-          v-if="isModelMetadata && toggleSearchBar"
-          style="display: flex; align-items: center">
-          <model-runs-search-bar
-            :data="modelRunsSearchData"
-            :filters="searchFilters"
-            @filters-updated="onModelRunsFiltersUpdated" />
-        </div>
         <modal-new-scenario-runs
           v-if="isModelMetadata && showNewRunsModal === true"
           :metadata="metadata"
@@ -42,39 +28,71 @@
         />
         <modal-geo-selection
           v-if="showGeoSelectionModal === true"
-          :model-param="modelParam"
+          :model-param="geoModelParam"
           @close="onGeoSelectionModalClose" />
         <rename-modal
           v-if="showTagNameModal"
-          :modal-title="'Tag Name'"
+          :modal-title="`Add new tag to ${selectedScenarioIds.length} selected run${selectedScenarioIds.length !== 1 ? 's' : ''}`"
           @confirm="addNewTag"
           @cancel="showTagNameModal = false"
         />
-        <modal-datacube-scenario-tags
-          v-if="showScenarioTagsModal === true"
-          :model-run-data="filteredRunData"
-          @close="showScenarioTagsModal=false" />
         <div class="flex-row">
           <!-- if has multiple scenarios -->
           <div v-if="isModelMetadata" class="scenario-selector">
             <div class="tags-area-container">
-              <span class="scenario-count">
+              <span class="scenario-count" v-if="selectedScenarioIds.length === 0">
                 {{scenarioCount}} model run{{scenarioCount === 1 ? '' : 's'}}.
               </span>
-              <div style="font-size: small; display: flex; align-items: center">
-                <a
-                  class="see-all-tags"
-                  @click="showScenarioTagsModal=true">
-                  see all tags
+              <span class="scenario-count" v-if="selectedScenarioIds.length > 0">
+                {{selectedScenarioIds.length}} model run{{selectedScenarioIds.length === 1 ? '' : 's'}} selected.
+              </span>
+              <span v-if="selectedScenarioIds.length > 0">Tags:</span>
+              <small-text-button
+                v-for="(tag, index) in tagsSharedBySelectedRuns"
+                v-tooltip="'Remove from selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
+                :key="index"
+                :label="tag"
+                @click="removeTagFromSelectedRuns(tag)"
+              >
+                <template #trailing>
+                  <i class="fa fa-close" />
+                </template>
+              </small-text-button>
+              <small-text-button
+                v-if="selectedScenarioIds.length > 0"
+                v-tooltip="'Add to selected run' + (selectedScenarioIds.length === 1 ? '' : 's')"
+                :label="`Add tag`"
+                @click="showTagNameModal = true"
+              >
+                <template #leading>
+                  <i class="fa fa-plus-circle" />
+                </template>
+              </small-text-button>
+            </div>
+            <model-runs-search-bar
+              class="model-runs-search-bar"
+              v-if="isModelMetadata"
+              :data="modelRunsSearchData"
+              :filters="searchFilters"
+              @filters-updated="onModelRunsFiltersUpdated"
+            />
+            <div v-if="dateModelParam">
+              <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
+                <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
+                <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
+                    <i class="fa fa-calendar"></i>
                 </a>
-                <i
-                  class="fa fa-plus-circle"
-                  :class="{
-                    'add-new-tag-disabled': selectedScenarioIds.length === 0,
-                    'add-new-tag': selectedScenarioIds.length > 0
-                  }"
-                  @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
+                <a class="btn btn-default date-picker-buttons" title="clear" data-clear>
+                    <i class="fa fa-close"></i>
+                </a>
               </div>
+              <temporal-facet
+                v-else
+                :model-run-data="filteredRunData"
+                :selected-scenarios="selectedScenarioIds"
+                :model-parameter="dateModelParam"
+                @update-scenario-selection="onUpdateScenarioSelection"
+              />
             </div>
             <parallel-coordinates-chart
               class="pc-chart"
@@ -456,9 +474,11 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
+import { computed, defineComponent, nextTick, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
+
+import flatpickr from 'flatpickr';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
@@ -473,13 +493,13 @@ import Modal from '@/components/modals/modal.vue';
 import ModalConfirmation from '@/components/modals/modal-confirmation.vue';
 import ModalGeoSelection from '@/components/modals/modal-geo-selection.vue';
 import ModalNewScenarioRuns from '@/components/modals/modal-new-scenario-runs.vue';
-import ModalDatacubeScenarioTags from '@/components/modals/modal-datacube-scenario-tags.vue';
 import ModalCheckRunsExecutionStatus from '@/components/modals/modal-check-runs-execution-status.vue';
 import ModelRunsSearchBar from '@/components/data/model-runs-search-bar.vue';
 import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coordinates.vue';
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
+import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
@@ -503,7 +523,8 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
-  GeoAttributeFormat
+  GeoAttributeFormat,
+  DatacubeGenericAttributeVariableType
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -511,11 +532,11 @@ import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
-import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
+import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER } from '@/utils/map-util-new';
 
-import { createModelRun, updateModelRun, addModelRunsTag } from '@/services/new-datacube-service';
+import { createModelRun, updateModelRun, addModelRunsTag, removeModelRunsTag } from '@/services/new-datacube-service';
 import { disableConcurrentTileRequestsCaching, enableConcurrentTileRequestsCaching } from '@/utils/map-util';
 import API from '@/api/api';
 import useToaster from '@/services/composables/useToaster';
@@ -581,13 +602,13 @@ export default defineComponent({
     ModalCheckRunsExecutionStatus,
     ModalConfirmation,
     ModalGeoSelection,
-    ModalDatacubeScenarioTags,
     ModalNewScenarioRuns,
     ModelRunsSearchBar,
     ParallelCoordinatesChart,
     RadioButtonGroup,
     RenameModal,
     SmallTextButton,
+    TemporalFacet,
     timeseriesChart
   },
   setup(props, { emit }) {
@@ -615,7 +636,7 @@ export default defineComponent({
     const newRunsMode = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
     const showGeoSelectionModal = ref<boolean>(false);
-    const modelParam = ref<ModelParameter | null>(null);
+    const geoModelParam = ref<ModelParameter | null>(null);
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
     const showPercentChange = ref<boolean>(true);
@@ -631,9 +652,11 @@ export default defineComponent({
     const selectedTemporalAggregation = ref<AggregationOption>(AggregationOption.Mean);
     const selectedTemporalResolution = ref<TemporalResolutionOption>(TemporalResolutionOption.Month);
 
-    const toggleSearchBar = ref<boolean>(false);
     const showTagNameModal = ref<boolean>(false);
     const showScenarioTagsModal = ref<boolean>(false);
+
+    const datePickerElement = ref<HTMLElement | null>(null);
+    const dateParamPickerValue = ref<any | null>(null);
 
     const searchFilters = ref<any>({});
 
@@ -653,6 +676,14 @@ export default defineComponent({
       dimensions,
       ordinalDimensionNames
     } = useDatacubeDimensions(metadata);
+
+    // FIXME: we only support one date param of each model datacube
+    const dateModelParam = computed(() => {
+      const modelMetadata = metadata.value;
+      if (modelMetadata === null || !isModel(modelMetadata)) return null;
+      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
+      return dateParams.length > 0 ? dateParams[0] : null;
+    });
 
     const { allModelRunData, filteredRunData } = useScenarioData(selectedModelId, modelRunsFetchedAt, searchFilters, dimensions);
 
@@ -693,9 +724,19 @@ export default defineComponent({
     const initialSelectedYears = ref<string[]>([]);
 
     const addNewTag = (tagName: string) => {
-      selectedScenarios.value.forEach(s => s.tags.push(tagName));
+      let numAdded = 0;
+      selectedScenarios.value.forEach(s => {
+        if (!s.tags.includes(tagName)) {
+          numAdded++;
+          s.tags.push(tagName);
+        }
+      });
       showTagNameModal.value = false;
-      toaster('A new tag is added successfully for the selected run(s)', 'success', false);
+      if (numAdded > 0) {
+        toaster(`Successfully added '${tagName}' to ${numAdded} run${numAdded === 1 ? '' : 's'}`, 'success', false);
+      } else {
+        toaster(`Selected run${selectedScenarios.value.length === 1 ? ' is' : 's are'} already tagged with '${tagName}'`, 'success', false);
+      }
       addModelRunsTag(selectedScenarios.value.map(run => run.id), tagName);
     };
 
@@ -799,9 +840,8 @@ export default defineComponent({
     };
 
     const setSelectedScenarioIds = (newIds: string[]) => {
-      if (isIndicatorDatacube.value) {
-        if (_.isEqual(selectedScenarioIds.value, newIds)) return;
-      }
+      if (_.isEqual(selectedScenarioIds.value, newIds)) return;
+
       selectedScenarioIds.value = newIds;
 
       clearRouteParam();
@@ -823,6 +863,7 @@ export default defineComponent({
           return filteredRuns;
         }, []);
       } else {
+        selectedScenarios.value = [];
         updateTabView('description');
       }
     };
@@ -876,7 +917,6 @@ export default defineComponent({
           if (initialDataConfig.value.searchFilters !== undefined) {
             // restoring a state where some searchFilters were defined
             if (!_.isEmpty(initialDataConfig.value.searchFilters) && initialDataConfig.value.searchFilters.clauses.length > 0) {
-              toggleSearchBar.value = true;
               searchFilters.value = _.clone(initialDataConfig.value.searchFilters);
             }
           } else {
@@ -937,12 +977,54 @@ export default defineComponent({
     const toggleNewRunsMode = () => {
       newRunsMode.value = !newRunsMode.value;
       potentialScenarioCount.value = 0;
+      potentialScenarios.value.length = 0;
 
       if (newRunsMode.value) {
         // clear any selected scenario and show the model desc page
         updateScenarioSelection({ scenarios: [] });
       }
     };
+
+    watch(
+      () => [dateParamPickerValue.value],
+      () => {
+        updatePotentialScenarioDates();
+      }
+    );
+
+    watchEffect(() => {
+      // if date/geo param exist and the metadata has been updated, then we may need to re-create the date picker if we are in the new runs mode
+      if (metadata.value !== null && newRunsMode.value && dateModelParam.value !== null) {
+        nextTick(() => {
+          if (dateModelParam.value !== null) {
+            // clear existing scenarios, if any since the date/goe param formatting may have changed
+            potentialScenarioCount.value = 0;
+            potentialScenarios.value.length = 0;
+
+            const datePickerOptions: flatpickr.Options.Options = {
+              // defaultDate: initial date for the date picker
+              // altInput: true, // display date in a more readable, customizable, format
+              // mode: "multiple" is it possible to select multiple individual date(s)
+              mode: dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange ? 'range' : 'single', // enable date range selection
+              allowInput: false, // should the user be able to directly enter date value?
+              wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
+              clickOpens: false // do not allow click on the input date picker to open the calendar
+            };
+            // minimum allowed date
+            if (dateModelParam.value.additional_options?.date_min) {
+              datePickerOptions.minDate = dateModelParam.value.additional_options.date_min;
+            }
+            // maximum allowed date
+            if (dateModelParam.value.additional_options?.date_max) {
+              datePickerOptions.maxDate = dateModelParam.value.additional_options.date_max;
+            }
+            if (datePickerElement.value !== null) {
+              flatpickr(datePickerElement.value, datePickerOptions);
+            }
+          }
+        });
+      }
+    });
 
     function fetchData() {
       if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
@@ -972,6 +1054,10 @@ export default defineComponent({
         const selectedRunIDs = selectedScenarios.map(s => s.run_id.toString());
         setSelectedScenarioIds(selectedRunIDs);
       }
+    };
+
+    const onUpdateScenarioSelection = (scenarioIDs: string[]) => {
+      setSelectedScenarioIds(scenarioIDs);
     };
 
     const headerGroupButtons = ref([
@@ -1070,6 +1156,27 @@ export default defineComponent({
     const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
       potentialScenarioCount.value = e.scenarios.length;
       potentialScenarios.value = e.scenarios;
+      updatePotentialScenarioDates();
+    };
+
+    const updatePotentialScenarioDates = () => {
+      // since any date or datarange params are not automatically considered,
+      //  we need to ensure they are added as part of potential scenarios data
+      if (dateModelParam.value !== null) {
+        // FIXME: handle the case of multiple date and/or daterange params
+        const delimiter = dateModelParam.value.additional_options?.date_range_delimiter ?? DEFAULT_DATE_RANGE_DELIMETER;
+        let dateValue = '';
+        if (dateParamPickerValue.value === null || dateParamPickerValue.value === '') {
+          dateValue = dateModelParam.value.default;
+        } else {
+          dateValue = dateModelParam.value.type === DatacubeGenericAttributeVariableType.Date ? dateParamPickerValue.value : dateParamPickerValue.value.replace(' to ', delimiter);
+        }
+        potentialScenarios.value.forEach(run => {
+          if (dateModelParam.value !== null) {
+            run[dateModelParam.value.type] = dateValue;
+          }
+        });
+      }
     };
 
     const updateStateFromInsight = async (insight_id: string) => {
@@ -1094,7 +1201,6 @@ export default defineComponent({
         if (loadedInsight.data_state?.searchFilters !== undefined) {
           // restoring a state where some searchFilters were defined
           if (!_.isEmpty(loadedInsight.data_state?.searchFilters) && loadedInsight.data_state?.searchFilters.clauses.length > 0) {
-            toggleSearchBar.value = true;
             searchFilters.value = _.clone(loadedInsight.data_state?.searchFilters);
           }
         } else {
@@ -1310,12 +1416,16 @@ export default defineComponent({
       canClickDataTab,
       colorFromIndex,
       currentTabView,
+      dateModelParam,
+      datePickerElement,
+      dateParamPickerValue,
       dataPaths,
       defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
       fetchData,
       filteredRunData,
+      geoModelParam,
       getSelectedPreGenOutput,
       gridLayerStats,
       hasDefaultRun,
@@ -1327,7 +1437,6 @@ export default defineComponent({
       mapLegendData,
       mapReady,
       mapSelectedLayer,
-      modelParam,
       modelRunsSearchData,
       newRunsMode,
       onMapLoad,
@@ -1335,6 +1444,7 @@ export default defineComponent({
       onNewScenarioRunsModalClose,
       onSyncMapBounds,
       onTabClick,
+      onUpdateScenarioSelection,
       ordinalDimensionNames,
       outputSpecs,
       potentialScenarios,
@@ -1357,6 +1467,7 @@ export default defineComponent({
       selectedQualifierValues,
       selectedRegionIds,
       selectedScenarioIds,
+      selectedScenarios,
       selectedSpatialAggregation,
       selectedTemporalAggregation,
       selectedTemporalResolution,
@@ -1388,14 +1499,14 @@ export default defineComponent({
       toggleIsRegionSelected,
       toggleIsYearSelected,
       toggleNewRunsMode,
-      toggleSearchBar,
       unit,
+      updatePotentialScenarioDates,
       updateStateFromInsight,
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
       updateScenarioSelection,
-      showPercentChange,
-      visibleTimeseriesData
+      visibleTimeseriesData,
+      showPercentChange
     };
   },
   watch: {
@@ -1421,12 +1532,24 @@ export default defineComponent({
   },
   data: () => ({
     idToDelete: '',
-    showDelete: false
+    showDelete: false,
+    DatacubeGenericAttributeVariableType
   }),
+  computed: {
+    tagsSharedBySelectedRuns() {
+      if (this.selectedScenarios.length === 0) return [];
+      let result: string[] = this.selectedScenarios[0].tags;
+      this.selectedScenarios.slice(1).forEach(scenario => {
+        const tags = scenario.tags;
+        result = result.filter(tag => tags.includes(tag));
+      });
+      return result;
+    }
+  },
   methods: {
     openGeoSelectionModal(modelParam: ModelParameter) {
       this.showGeoSelectionModal = true;
-      this.modelParam = modelParam;
+      this.geoModelParam = modelParam;
     },
     onGeoSelectionModalClose(eventData: any) {
       this.showGeoSelectionModal = false;
@@ -1434,7 +1557,7 @@ export default defineComponent({
         const selectedRegions: GeoRegionDetail[] = eventData.selectedRegions;
         if (selectedRegions && selectedRegions.length > 0) {
           // update the PC with the selected region value(s)
-          const updatedModelParam = _.cloneDeep(this.modelParam) as ModelParameter;
+          const updatedModelParam = _.cloneDeep(this.geoModelParam) as ModelParameter;
           // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
           const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
@@ -1518,6 +1641,13 @@ export default defineComponent({
       } catch (e) {
         this.toaster('Run failed', 'error', true);
       }
+    },
+    removeTagFromSelectedRuns(tag: string) {
+      this.selectedScenarios.forEach(run => {
+        // NOTE: this will automatically refresh the rendered tags
+        run.tags = run.tags.filter(_tag => _tag !== tag);
+      });
+      removeModelRunsTag(this.selectedScenarios.map(run => run.id), tag);
     }
   }
 });
@@ -1526,6 +1656,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 
 @import '~styles/variables';
+@import '~flatpickr/dist/flatpickr.css';
 
 $fullscreenTransition: all 0.5s ease-in-out;
 
@@ -1771,36 +1902,34 @@ $marginSize: 5px;
 
 .tags-area-container {
   display: flex;
-  align-items: center;
-  font-size: smaller;
-  text-align: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
+  gap: 2px;
+  max-height: 41px;
+  overflow: auto;
+}
 
-  .see-all-tags {
-    color: blue;
-    cursor: pointer;
-    margin-left: 2px;
-    margin-right: 2px;
-  }
-
-  .add-new-tag {
-    cursor: pointer;
-    font-size: medium;
-    &:hover {
-      color: blue;
-    }
-  }
-  .add-new-tag-disabled {
-    color: lightgray;
-    font-size: medium;
-    &:hover {
-      cursor: not-allowed;
-    }
-  }
+.model-runs-search-bar {
+  margin-top: 2px;
 }
 
 .scenario-count {
   color: $label-color;
+}
+
+.new-runs-date-picker-container {
+  display: flex;
+  width: 100%;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  .date-picker-input {
+    border-width: thin;
+    width: 100%;
+    background-color: lightgray;
+    cursor: auto;
+  }
+  .date-picker-buttons {
+      padding: 4px 8px;
+    }
 }
 
 </style>

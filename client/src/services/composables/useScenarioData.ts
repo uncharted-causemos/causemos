@@ -6,7 +6,6 @@ import { DatacubeGenericAttributeVariableType, ModelRunStatus } from '@/types/En
 import _ from 'lodash';
 import { ModelParameter } from '@/types/Datacube';
 
-
 /**
  * Takes a datacube data ID and a list of scenario IDs, then fetches and
  * returns the metadata for each scenario in one list.
@@ -19,10 +18,12 @@ export default function useScenarioData(
 ) {
   const runData = ref([]) as Ref<ModelRun[]>;
 
-  const allModelRunData = computed(() => runData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted));
+  const allModelRunData = computed(() => runData.value
+    .filter(modelRun => modelRun.status !== ModelRunStatus.Deleted)
+    .map(modelRun => { return { ...modelRun, _version: undefined }; }));
 
   const filteredRunData = computed(() => {
-    let filteredRuns = runData.value.filter(modelRun => modelRun.status !== ModelRunStatus.Deleted);
+    let filteredRuns = allModelRunData.value;
 
     // apply search filters, if any
     // parse and apply filters to the model runs data
@@ -89,13 +90,13 @@ export default function useScenarioData(
         newDataIsDifferent = true;
       } else {
         // we need to compare run status
-        const runStatusMap: {[key: string]: string} = {};
+        const runVersionMap: {[key: string]: number} = {};
         existingData.forEach(r => {
-          runStatusMap[r.id] = r.status;
+          runVersionMap[r.id] = r._version ?? 0;
         });
         newMetadata.forEach(r => {
-          // if this is a new run, or if the exists but its status has changed, then we have new data
-          if (!runStatusMap[r.id] || runStatusMap[r.id] !== r.status) {
+          // if this is a new run, or if the exists but its _version has changed, then we have new data
+          if (!runVersionMap[r.id] || runVersionMap[r.id] !== r._version) {
             newDataIsDifferent = true;
           }
         });

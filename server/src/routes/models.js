@@ -22,6 +22,7 @@ const HISTORY_START_DATE = '2015-01-01';
 const HISTORY_END_DATE = '2020-12-01';
 const PROJECTION_START_DATE = '2021-01-01';
 const DEFAULT_NUM_STEPS = 12;
+const DEFAULT_TIME_SCALE = 'MONTHS';
 
 
 const DYSE = 'dyse';
@@ -44,12 +45,17 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
   //   return;
   // }
 
+
   const modelFields = {};
-  if (_.isEmpty(model.parameter)) {
+  if (_.isEmpty(model.parameter) || _.isEmpty(model.parameter.num_steps)) {
     // initialize model parameters
     const defaultTimeSeriesStart = moment.utc(HISTORY_START_DATE).valueOf();
     const defaultTimeSeriesEnd = moment.utc(HISTORY_END_DATE).valueOf();
     const defaultProjectionStartDate = moment.utc(PROJECTION_START_DATE).valueOf();
+
+    // FIXME: handle this more gracefully
+    const timeScale = _.get(model.parameter, 'time_scale', DEFAULT_TIME_SCALE);
+
     modelFields.parameter = {
       indicator_time_series_range: {
         start: defaultTimeSeriesStart,
@@ -57,10 +63,10 @@ router.post('/:modelId', asyncHandler(async (req, res) => {
       },
       num_steps: DEFAULT_NUM_STEPS,
       projection_start: defaultProjectionStartDate,
-      engine: 'dyse'
+      engine: 'dyse',
+      time_scale: timeScale
     };
   }
-  modelFields.status = 0;
   await cagService.updateCAGMetadata(modelId, modelFields);
 
   // Set initial time series
@@ -102,8 +108,11 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
     engine,
     projection_start: projectionStart,
     indicator_time_series_range: indicatorTimeSeriesRange,
-    num_steps: numSteps
+    num_steps: numSteps,
+    time_scale: timeScale
   } = req.body;
+
+  let invalidateScenarios = false;
 
   // 1. Build update params
   const modelFields = {};
@@ -114,16 +123,19 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
   if (projectionStart) {
     parameter.projection_start = projectionStart;
+    invalidateScenarios = true;
   }
   if (indicatorTimeSeriesRange) {
     parameter.indicator_time_series_range = indicatorTimeSeriesRange;
   }
   if (numSteps) {
     parameter.num_steps = numSteps;
+    invalidateScenarios = true;
   }
-
-  // Reset sync flag
-  modelFields.status = 0;
+  if (timeScale) {
+    parameter.time_scale = timeScale;
+    invalidateScenarios = true;
+  }
 
   if (!_.isEmpty(parameter)) {
     modelFields.parameter = parameter;
@@ -138,7 +150,9 @@ router.put('/:modelId/model-parameter', asyncHandler(async (req, res) => {
   }
 
   // 4. Invalidate existing scenarios
-  await scenarioService.invalidateByModel(modelId);
+  if (invalidateScenarios === true) {
+    await scenarioService.invalidateByModel(modelId);
+  }
 
   res.status(200).send({ updateToken: editTime });
 }));

@@ -1,8 +1,8 @@
 <template>
   <modal-edit-param-choices
-    v-if="showEditParamChoicesModal === true"
+    v-if="showEditParamOptionsModal === true"
     :selected-parameter="selectedParameter"
-    @close="onEditParamChoicesModalClose" />
+    @close="onEditParamOptionsModalClose" />
   <div class="desc-header">
     <a @click="scrollToSection('inputknobs')">
       Input Knobs
@@ -51,7 +51,7 @@
             />
           </td>
           <td style="padding-right: 0; padding-left: 0; display: flex; flex-direction: column">
-            <div class="checkbox">
+            <div v-if="isDateParam(param) === false" class="checkbox">
               <label
                 @click="updateInputKnobVisibility(param)"
                 style="cursor: pointer; color: black;">
@@ -63,10 +63,10 @@
               </label>
             </div>
             <button
-              v-if="param.choices_labels"
+              v-if="param.choices_labels || isDateParam(param) || isGeoParam(param)"
               type="button"
               class="btn btn-link edit-choices"
-              @click="editParamChoices(param)">
+              @click="editParamOptions(param)">
               Edit Options
             </button>
           </td>
@@ -219,7 +219,7 @@ import { computed, defineComponent, PropType, ComputedRef, toRefs, Ref, ref } fr
 import _ from 'lodash';
 import { DatacubeFeature, FeatureQualifier, Model, ModelParameter } from '@/types/Datacube';
 import { mapActions, useStore } from 'vuex';
-import { FeatureQualifierRoles, ModelParameterDataType } from '@/types/Enums';
+import { DatacubeGenericAttributeVariableType, FeatureQualifierRoles, ModelParameterDataType } from '@/types/Enums';
 import ModalEditParamChoices from '@/components/modals/modal-edit-param-choices.vue';
 import { QUALIFIERS_TO_EXCLUDE } from '@/utils/qualifier-util';
 
@@ -263,7 +263,7 @@ export default defineComponent({
     });
 
     const selectedParameter = ref(null) as Ref<ModelParameter | null>;
-    const showEditParamChoicesModal = ref(false);
+    const showEditParamOptionsModal = ref(false);
 
     return {
       datacubeCurrentOutputsMap,
@@ -273,7 +273,7 @@ export default defineComponent({
       outputVariables,
       FeatureQualifierRoles,
       ModelParameterDataType,
-      showEditParamChoicesModal,
+      showEditParamOptionsModal,
       selectedParameter
     };
   },
@@ -320,6 +320,12 @@ export default defineComponent({
     ...mapActions({
       setDatacubeCurrentOutputsMap: 'app/setDatacubeCurrentOutputsMap'
     }),
+    isDateParam(param: ModelParameter) {
+      return param.type === DatacubeGenericAttributeVariableType.Date || param.type === DatacubeGenericAttributeVariableType.DateRange;
+    },
+    isGeoParam(param: ModelParameter) {
+      return param.type === DatacubeGenericAttributeVariableType.Geo;
+    },
     scrollToSection(sectionName: string) {
       const elm = document.getElementById(sectionName) as HTMLElement;
       const scrollViewOptions: ScrollIntoViewOptions = {
@@ -329,16 +335,19 @@ export default defineComponent({
       };
       elm.scrollIntoView(scrollViewOptions);
     },
-    editParamChoices(param: ModelParameter) {
-      // show a modal to edit param choices
+    editParamOptions(param: ModelParameter) {
+      // show a modal to edit param options
       this.selectedParameter = param;
-      this.showEditParamChoicesModal = true;
+      this.showEditParamOptionsModal = true;
     },
-    onEditParamChoicesModalClose(status: any) {
-      this.showEditParamChoicesModal = false;
+    onEditParamOptionsModalClose(status: any) {
+      this.showEditParamOptionsModal = false;
       if (status.cancel === false) {
         const updatedParam = status.updatedParameter;
         if (this.selectedParameter !== null) {
+          if (this.isDateParam(this.selectedParameter) || this.isGeoParam(this.selectedParameter)) {
+            this.selectedParameter.additional_options = updatedParam.additional_options;
+          }
           this.selectedParameter.choices_labels = updatedParam.choices_labels;
 
           // need to emit an event for the metadata to refresh the sync with all components

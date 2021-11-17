@@ -130,12 +130,18 @@
             "
             :correction="correction"
             :recommendations="factorRecommendationsList"
+            :curationTrackingId="curationTrackingId"
             :is-fetching-statements="isFetchingStatements"
             @close-overlay="onDrilldownOverlayBack"
           />
         </template>
       </drilldown-panel>
     </main>
+    <modal-time-scale
+      v-if="showModalTimeScale"
+      @save-time-scale="saveTimeScale"
+      @close="showModalTimeScale = false"
+    />
     <modal-import-cag
       v-if="showModalImportCAG"
       @import-cag="runImportChecks"
@@ -181,8 +187,6 @@
       v-if="showPathSuggestions"
       :source="pathSuggestionSource"
       :target="pathSuggestionTarget"
-      :sources="pathSuggestionSources"
-      :targets="pathSuggestionTargets"
       @add-paths="addSuggestedPath"
       @close="showPathSuggestions = false"
     />
@@ -225,6 +229,7 @@ import projectService from '@/services/project-service';
 import { defineComponent, ref } from '@vue/runtime-core';
 import {
   CAGGraph as CAGGraphInterface,
+  CAGModelParameter,
   CAGModelSummary,
   EdgeParameter,
   NodeParameter,
@@ -236,6 +241,8 @@ import { DataState } from '@/types/Insight';
 import CagCommentsButton from '@/components/cag/cag-comments-button.vue';
 import CagSidePanel from '@/components/cag/cag-side-panel.vue';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
+import ModalTimeScale from '@/components/qualitative/modal-time-scale.vue';
+import { TimeScale } from '@/types/Enums';
 
 const PANE_ID = {
   FACTORS: 'factors',
@@ -292,7 +299,8 @@ export default defineComponent({
     CagCommentsButton,
     CagSidePanel,
     CagAnalysisOptionsButton,
-    RenameModal
+    RenameModal,
+    ModalTimeScale
   },
   setup() {
     return {
@@ -312,6 +320,7 @@ export default defineComponent({
     showModalConfirmation: false,
     showModalConflict: false,
     showModalImportCAG: false,
+    showModalTimeScale: false,
     showPathSuggestions: false,
 
     showModalRename: false,
@@ -331,10 +340,9 @@ export default defineComponent({
       curGrounding: any;
     } | null,
     factorRecommendationsList: [] as any[],
-    pathSuggestionSource: '',
-    pathSuggestionTarget: '',
-    pathSuggestionSources: [] as string[],
-    pathSuggestionTargets: [] as string[],
+    curationTrackingId: '',
+    pathSuggestionSource: null as NodeParameter | null,
+    pathSuggestionTarget: null as NodeParameter | null,
     edgeToSelectOnNextRefresh: null as {
       source: string;
       target: string;
@@ -446,6 +454,18 @@ export default defineComponent({
       this.modelSummary = await modelService.getSummary(this.currentCAG);
       this.setAnalysisName(this.modelSummary?.name ?? '');
       this.modelComponents = await modelService.getComponents(this.currentCAG);
+      // Prompt the analyst to select a time scale if this is the first time
+      //  the CAG has been opened. As a heuristic, check that no nodes/edges
+      //  have been created.
+      // Note that there is a hole in our TS definitions:
+      //  modelSummary.parameter can be undefined until time_scale is set or
+      //  the model is first registered. For simplicity, we'll do the check
+      //  once here rather than update the TS definition and have to check in
+      //  every other place modelSummary.parameter is used.
+      this.showModalTimeScale =
+        this.modelComponents.nodes.length === 0 &&
+        this.modelComponents.edges.length === 0 &&
+        this.modelSummary.parameter?.time_scale === undefined;
       if (this.edgeToSelectOnNextRefresh !== null) {
         const { source, target } = this.edgeToSelectOnNextRefresh;
         const foundEdge = this.modelComponents.edges.find(
@@ -498,7 +518,7 @@ export default defineComponent({
       if (edges.indexOf(edge.source + '///' + edge.target) === -1) {
         const relationsToAdd: SourceTargetPair[] = [];
 
-        // Search for all possible combinations of soruce/target
+        // Search for all possible combinations of source/target
         source.components.forEach(source => {
           target.components.forEach(target => {
             relationsToAdd.push({ source, target });
@@ -853,10 +873,12 @@ export default defineComponent({
       factor: string,
       curGrounding: string,
       newGrounding: string,
-      recommendations: any[]
+      recommendations: any[],
+      curationTrackingId: string
     ) {
       this.correction = { factor, newGrounding, curGrounding };
       this.factorRecommendationsList = recommendations;
+      this.curationTrackingId = curationTrackingId;
       this.openDrilldownOverlay(PANE_ID.FACTOR_RECOMMENDATIONS);
     },
     async runImportChecks(ids: string[]) {
@@ -960,7 +982,19 @@ export default defineComponent({
               e => e.source === edge.source && e.target === edge.target
             )
           ) {
-            newSourceTargetPairs.push(edge);
+            // handling the grouped nodes and the possiblity we need to get backing
+            // data for the components of the source and target nodes
+            if (this.pathSuggestionSource?.concept === edge.source) {
+              this.pathSuggestionSource.components.forEach((source) => {
+                newSourceTargetPairs.push({ source, target: edge.target });
+              });
+            } else if (this.pathSuggestionTarget?.concept === edge.target) {
+              this.pathSuggestionTarget.components.forEach((target) => {
+                newSourceTargetPairs.push({ source: edge.source, target });
+              });
+            } else {
+              newSourceTargetPairs.push(edge);
+            }
           }
           if (
             !nodeSet.has(edge.source) &&
@@ -983,16 +1017,44 @@ export default defineComponent({
         newSourceTargetPairs,
         filtersUtil.newFilters()
       );
-      const newEdges: EdgeParameter[] = newSourceTargetPairs.map(sourceTargetPair => {
+
+      // build a dictionary of the new edges with the backing data/reference ids
+      // being aggregated for all of the components when the edge references a
+      // source or target node
+      const newEdgeDictionary: {[key: string]: EdgeParameter} = newSourceTargetPairs.reduce((edges, sourceTargetPair) => {
         const { source, target } = sourceTargetPair;
-        return {
+        const currentReferenceIds = edgeData[key(sourceTargetPair)] || [];
+        const baseNewEdge = {
           id: '',
-          reference_ids: edgeData[key(sourceTargetPair)] || [],
+          reference_ids: currentReferenceIds,
           user_polarity: null,
           source,
           target
         };
-      });
+
+        if (this.pathSuggestionSource?.components.includes(source)) {
+          const normalizedKey = key({ source: this.pathSuggestionSource.concept, target });
+          if (edges[normalizedKey]) {
+            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
+          } else {
+            baseNewEdge.source = this.pathSuggestionSource.concept;
+            edges[normalizedKey] = baseNewEdge;
+          }
+        } else if (this.pathSuggestionTarget?.components.includes(target)) {
+          const normalizedKey = key({ source, target: this.pathSuggestionTarget.concept });
+          if (edges[normalizedKey]) {
+            edges[normalizedKey].reference_ids = edges[normalizedKey].reference_ids.concat(currentReferenceIds);
+          } else {
+            baseNewEdge.target = this.pathSuggestionTarget.concept;
+            edges[normalizedKey] = baseNewEdge;
+          }
+        } else {
+          edges[key(sourceTargetPair)] = baseNewEdge;
+        }
+        return edges;
+      }, {} as {[key: string]: EdgeParameter});
+
+      const newEdges: EdgeParameter[] = Object.values(newEdgeDictionary);
 
       // 3 Save
       const newNodesPayload = newNodes.map(concept => {
@@ -1157,11 +1219,16 @@ export default defineComponent({
         const sourceNode = nodes.find(n => n.concept === source);
         const targetNode = nodes.find(n => n.concept === target);
         if (sourceNode && targetNode) {
-          this.pathSuggestionSources = sourceNode.components;
-          this.pathSuggestionTargets = targetNode.components;
+          this.pathSuggestionSource = sourceNode;
+          this.pathSuggestionTarget = targetNode;
           this.showPathSuggestions = true;
         }
       }
+    },
+    async saveTimeScale(newTimeScale: TimeScale) {
+      const newParameter: Partial<CAGModelParameter> = { time_scale: newTimeScale };
+      await modelService.updateModelParameter(this.currentCAG, newParameter);
+      this.refresh();
     }
   }
 });

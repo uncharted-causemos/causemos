@@ -1,4 +1,5 @@
-import { TimeseriesPoint } from './Timeseries';
+import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
+import { TimeScale } from './Enums';
 
 export interface ConceptProjectionConstraints {
   concept: string;
@@ -24,32 +25,21 @@ export interface ScenarioParameter {
 export interface ScenarioProjection {
   scenarioName: string;
   scenarioId: string;
-  values: TimeseriesPoint[];
-  confidenceInterval: {
-    upper: TimeseriesPoint[];
-    lower: TimeseriesPoint[];
-  };
+  values: TimeseriesDistributionPoint[];
   constraints: { step: number; value: number }[];
 }
 
 export interface ScenarioResult {
   concept: string;
-  values: TimeseriesPoint[];
-  confidenceInterval: {
-    upper: TimeseriesPoint[];
-    lower: TimeseriesPoint[];
-  };
+  values: TimeseriesDistributionPoint[];
 }
 
 export interface NewScenario {
   name: string;
   description: string;
   model_id: string;
-  engine: string;
   is_baseline: boolean;
   parameter?: ScenarioParameter;
-  result?: ScenarioResult[];
-  experiment_id?: string;
 }
 
 export interface Scenario {
@@ -62,10 +52,9 @@ export interface Scenario {
   is_valid: boolean;
   is_baseline: boolean;
   parameter?: ScenarioParameter;
-  result?: ScenarioResult[];
+  result?: ScenarioResult[]; // FIXME: technically result is not a part of scenario in ES datastore
   experiment_id?: string;
 }
-
 
 export interface NodeScenarioData {
   initial_value: number;
@@ -87,11 +76,7 @@ export interface NodeScenarioData {
     // A list of constraints for this one node in this one scenario
     constraints?: { step: number; value: number }[];
     result?: {
-      values: TimeseriesPoint[];
-      confidenceInterval: {
-        upper: TimeseriesPoint[];
-        lower: TimeseriesPoint[];
-      };
+      values: TimeseriesDistributionPoint[];
     };
   }[];
 }
@@ -127,13 +112,14 @@ export interface SourceTargetPair {
 }
 
 export interface CAGModelParameter {
-  num_steps: number;
+  num_steps: number; // Deprecated, should now be derived from time_scale
   indicator_time_series_range: {
     start: number;
     end: number;
   };
   projection_start: number;
   engine: string;
+  time_scale: TimeScale;
 }
 
 export interface CAGModelSummary {
