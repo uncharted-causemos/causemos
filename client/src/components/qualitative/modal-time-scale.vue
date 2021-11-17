@@ -55,7 +55,7 @@ export default defineComponent({
   setup() {
     return {
       TIME_SCALE_OPTIONS,
-      selectedTimeScaleOption: ref(TimeScale.Years)
+      selectedTimeScaleOption: ref(TimeScale.Months)
     };
   },
   methods: {
