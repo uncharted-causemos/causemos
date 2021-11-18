@@ -611,10 +611,9 @@ export default defineComponent({
             }
           }
         }
-        return [
-          Math.min(parameter.indicator_time_series_range.start, parameter.projection_start),
-          Math.max(parameter.indicator_time_series_range.end, max)
-        ];
+        // FIXME: default viewing extent should be equal to whatever is
+        //  displayed on the graph view
+        return [parameter.projection_start, max];
       }
     });
 
