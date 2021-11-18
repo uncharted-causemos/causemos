@@ -76,14 +76,17 @@ export default defineComponent({
       const isAbstractNode = this.indicatorId === null;
       return this.projections
         .filter(projection => projection.values.length > 0)
-        .map(projection =>
-          convertTimeseriesDistributionToHistograms(
+        .map(projection => {
+          const clampAtProjectionStart = projection.constraints?.find(
+            constraint => constraint.step === 0
+          );
+          return convertTimeseriesDistributionToHistograms(
             this.modelSummary.parameter.time_scale,
             isAbstractNode ? [] : this.historicalTimeseries,
-            null, // TODO: clampedNowValue
+            clampAtProjectionStart?.value ?? null,
             projection.values
-          )
-        );
+          );
+        });
     }
   }
 });
