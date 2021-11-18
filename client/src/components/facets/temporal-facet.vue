@@ -42,7 +42,7 @@ import '@uncharted.software/facets-plugins';
 import { TemporalResolution, DatacubeGenericAttributeVariableType } from '@/types/Enums';
 import _ from 'lodash';
 import { DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
-import smallTextButton from '../widgets/small-text-button.vue';
+import smallTextButton from '@/components/widgets/small-text-button.vue';
 
 // NOTE: Honestly, for date range a Gantt-like chart is much better representation
 //  than the facet-timeline, which is more suitable for single date runs
@@ -90,7 +90,7 @@ export default {
       zoomBar.style.marginBottom = '0';
       zoomBar.querySelector('.zoom-bar-background').style.margin = '0';
     } catch (e) {
-      console.error('Unable to override temporal facet styles.', e);
+      console.log('Unable to override temporal facet styles.', e);
     }
   },
   watch: {
