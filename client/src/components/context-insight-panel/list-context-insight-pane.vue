@@ -158,6 +158,7 @@ export default {
     }),
     newInsight() {
       this.showInsightPanel();
+      this.setUpdatedInsight(null);
       this.setCurrentPane('review-new-insight');
     },
     openInsightsExplorer() {
