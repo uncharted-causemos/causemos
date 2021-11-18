@@ -199,11 +199,15 @@ function renderScenarioProjections(
   const clampAtProjectionStart = projection.constraints?.find(
     constraint => constraint.step === 0
   );
+  const projectionValues = projection.result?.values ?? [];
+  if (projectionValues.length === 0) {
+    return;
+  }
   const histograms = convertTimeseriesDistributionToHistograms(
     nodeScenarioData.time_scale,
     isAbstractNode ? [] : historicalTimeseries,
     clampAtProjectionStart?.value ?? null,
-    projection.result?.values ?? []
+    projectionValues
   );
   // FIXME: only render some slices depending on which are selected
   const availableWidth =
