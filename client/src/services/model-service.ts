@@ -467,7 +467,7 @@ const runSensitivityAnalysis = async (
   const { engine, time_scale: timeScale, projection_start: experimentStart } = modelSummary.parameter;
 
   const timeSliceMonths = getSliceMonthsFromTimeScale(timeScale);
-  const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
+  const numTimeSteps = timeSliceMonths[timeSliceMonths.length - 1];
 
   const analysisParams = {
     numPath: 0,
@@ -485,7 +485,7 @@ const runSensitivityAnalysis = async (
       constraints,
       engine,
       experimentStart,
-      numSteps
+      numTimeSteps
     }
   );
 

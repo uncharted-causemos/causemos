@@ -5,7 +5,6 @@ import {
   ProjectionConstraint,
   Scenario
 } from '@/types/CAG';
-import { TimeScale } from '@/types/Enums';
 import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
 import _ from 'lodash';
 import { computed, Ref, ref } from 'vue';
@@ -69,7 +68,7 @@ export default function useDraftScenario(
         s => s.id === selectedScenarioId.value
       );
       const timeSliceMonths = getSliceMonthsFromTimeScale(
-        _modelSummary.parameter.time_scale ?? TimeScale.None
+        _modelSummary.parameter.time_scale
       );
       const numSteps = timeSliceMonths[timeSliceMonths.length - 1];
       const draft: Scenario = {
