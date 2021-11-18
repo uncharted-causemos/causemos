@@ -239,6 +239,7 @@ export default {
   getSuggestions,
   createModelRun,
   addModelRunsTag,
+  updateModelRun,
   removeModelRunsTag,
   renameModelRunsTag
 };
