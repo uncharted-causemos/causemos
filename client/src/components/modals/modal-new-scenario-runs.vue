@@ -139,7 +139,7 @@ export default defineComponent({
             const currLabelValue = (gl[d.name]).toString();
             const labelIndex = d.choices_labels?.findIndex(l => l === currLabelValue) ?? 0;
             if (d.choices !== undefined) {
-              gl[d.name] = d.choices[labelIndex];
+              gl[d.name] = d.choices[labelIndex] ?? currLabelValue;
             }
           });
         }

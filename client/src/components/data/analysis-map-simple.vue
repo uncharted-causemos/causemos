@@ -56,7 +56,7 @@
 import _ from 'lodash';
 import * as d3 from 'd3';
 import { WmMap, WmMapVector, WmMapImage, WmMapPopup } from '@/wm-map';
-import { COLOR_SCHEME } from '@/utils/colors-util';
+import { COLOR_SCHEME, COLOR_SCHEMES } from '@/utils/colors-util';
 import {
   BASE_MAP_OPTIONS,
   createHeatmapLayerStyle,
@@ -205,6 +205,10 @@ export default {
     showPercentChange: {
       type: Boolean,
       default: false
+    },
+    selectedColorScheme: {
+      type: Array,
+      default: () => COLOR_SCHEMES.DEFAULT
     }
   },
   data: () => ({
@@ -284,7 +288,7 @@ export default {
       if (!_.isNil(this.relativeTo)) {
         return this.relativeTo === this.outputSelection ? COLOR_SCHEME.GREYS_7 : COLOR_SCHEME.PIYG_7;
       }
-      return COLOR_SCHEME.PURPLES_7;
+      return this.selectedColorScheme;
     },
     filter() {
       return this.filters.find(filter => filter.id === this.valueProp);

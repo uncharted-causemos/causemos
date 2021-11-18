@@ -1,5 +1,5 @@
+import { TimeseriesDistributionPoint, TimeseriesPoint } from './Timeseries';
 import { TimeScale } from './Enums';
-import { TimeseriesPoint } from './Timeseries';
 
 export interface ConceptProjectionConstraints {
   concept: string;
@@ -25,21 +25,13 @@ export interface ScenarioParameter {
 export interface ScenarioProjection {
   scenarioName: string;
   scenarioId: string;
-  values: TimeseriesPoint[];
-  confidenceInterval: {
-    upper: TimeseriesPoint[];
-    lower: TimeseriesPoint[];
-  };
+  values: TimeseriesDistributionPoint[];
   constraints: { step: number; value: number }[];
 }
 
 export interface ScenarioResult {
   concept: string;
-  values: TimeseriesPoint[];
-  confidenceInterval: {
-    upper: TimeseriesPoint[];
-    lower: TimeseriesPoint[];
-  };
+  values: TimeseriesDistributionPoint[];
 }
 
 export interface NewScenario {
@@ -47,7 +39,7 @@ export interface NewScenario {
   description: string;
   model_id: string;
   is_baseline: boolean;
-  parameter?: ScenarioParameter;
+  parameter: ScenarioParameter;
 }
 
 export interface Scenario {
@@ -59,15 +51,14 @@ export interface Scenario {
   engine: string;
   is_valid: boolean;
   is_baseline: boolean;
-  parameter?: ScenarioParameter;
+  parameter: ScenarioParameter;
   result?: ScenarioResult[]; // FIXME: technically result is not a part of scenario in ES datastore
   experiment_id?: string;
 }
 
 export interface NodeScenarioData {
-  initial_value: number;
   indicator_name?: string;
-  indicator_time_series?: TimeseriesPoint[];
+  indicator_time_series: TimeseriesPoint[];
   indicator_time_series_range: {
     start: number;
     end: number;
@@ -80,15 +71,11 @@ export interface NodeScenarioData {
     is_baseline: boolean;
     is_valid: boolean;
     name: string;
-    parameter?: ScenarioParameter;
+    parameter: ScenarioParameter;
     // A list of constraints for this one node in this one scenario
     constraints?: { step: number; value: number }[];
     result?: {
-      values: TimeseriesPoint[];
-      confidenceInterval: {
-        upper: TimeseriesPoint[];
-        lower: TimeseriesPoint[];
-      };
+      values: TimeseriesDistributionPoint[];
     };
   }[];
 }
@@ -124,7 +111,7 @@ export interface SourceTargetPair {
 }
 
 export interface CAGModelParameter {
-  num_steps: number;
+  num_steps: number; // Deprecated, should now be derived from time_scale
   indicator_time_series_range: {
     start: number;
     end: number;

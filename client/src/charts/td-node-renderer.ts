@@ -8,7 +8,6 @@ import { chartValueFormatter } from '@/utils/string-util';
 import { calculateGenericTicks, calculateYearlyTicks, renderLine, renderXaxis, renderYaxis } from '@/utils/timeseries-util';
 import * as d3 from 'd3';
 import {
-  confidenceArea,
   hideSvgTooltip,
   showSvgTooltip,
   translate
@@ -29,7 +28,6 @@ const Y_AXIS_WIDTH = 40;
 const PADDING_TOP = 10;
 const PADDING_RIGHT = 40;
 
-const CONFIDENCE_BAND_OPACITY = 0.2;
 const CONSTRAINT_RADIUS = 4;
 const CONSTRAINT_HOVER_RADIUS = CONSTRAINT_RADIUS * 1.5;
 
@@ -154,13 +152,6 @@ export default function(
     contextGroupElement,
     xScaleContext,
     yScaleContext
-  );
-  renderProjections(
-    projections,
-    contextGroupElement,
-    xScaleContext,
-    yScaleContext,
-    selectedScenarioId
   );
   contextGroupElement
     .selectAll('.segment-line')
@@ -304,13 +295,6 @@ export default function(
       xScaleFocus,
       yScaleFocus
     );
-    renderProjections(
-      projections,
-      focusGroupElement,
-      xScaleFocus,
-      yScaleFocus,
-      selectedScenarioId
-    );
     generateClickableAreas(
       focusGroupElement,
       xScaleFocus,
@@ -334,7 +318,7 @@ const calculateExtents = (
   minValue: number,
   maxValue: number
 ) => {
-  const getTimestampFromPoint = (point: TimeseriesPoint) => point.timestamp;
+  const getTimestampFromPoint = (point: { timestamp: number }) => point.timestamp;
   const projectedPoints = projections.flatMap(projection => projection.values);
   const projectedTimestamps = projectedPoints.map(getTimestampFromPoint);
   const xExtent = d3.extent([
@@ -474,45 +458,6 @@ const renderConstraints = (
     .attr('r', CONSTRAINT_RADIUS);
 };
 
-const renderProjections = (
-  projections: ScenarioProjection[],
-  parentGroupElement: D3GElementSelection,
-  xScale: d3.ScaleLinear<number, number>,
-  yScale: d3.ScaleLinear<number, number>,
-  selectedScenarioId: string
-) => {
-  const selectedScenario = projections.find(
-    projection => projection.scenarioId === selectedScenarioId
-  );
-  // Render confidence interval
-  if (selectedScenario !== undefined) {
-    const { values, confidenceInterval } = selectedScenario;
-    // FIXME: when svg-util is converted to TS, confidenceArea will know that it actually
-    //  wants TimeseriesPoint[], not [number, number][].
-    const valuesAsArray = (values as unknown) as [number, number][];
-    const area =
-      confidenceArea(xScale, yScale, { confidenceInterval })(valuesAsArray) ??
-      '';
-    parentGroupElement
-      .append('path')
-      .attr('class', 'confidence-band')
-      .attr('d', area)
-      .style('stroke', 'none')
-      .style('fill-opacity', CONFIDENCE_BAND_OPACITY)
-      .style('fill', SELECTED_COLOR)
-      .style('pointer-events', 'none');
-  }
-
-  // Render each projection line
-  projections.forEach(projection => {
-    const color =
-      projection.scenarioId === selectedScenarioId
-        ? SELECTED_COLOR_DARK
-        : 'grey';
-    renderLine(parentGroupElement, projection.values, xScale, yScale, color);
-  });
-};
-
 const generateClickableAreas = (
   parentGroupElement: D3GElementSelection,
   xScale: D3ScaleLinear,
@@ -581,22 +526,9 @@ const generateClickableAreas = (
 
     const value = yScale.invert(discreteYPosition);
     const timestamp = roundToNearestMonth(xScale.invert(discreteXPosition));
-    const tooltipRows = [
-      `${DATE_FORMATTER(timestamp)}: ${valueFormatter(value)}\n`
-    ];
-    scenarios.forEach(scenario => {
-      const point = scenario.values.find(
-        point => roundToNearestMonth(point.timestamp) === timestamp
-      );
-      if (point !== undefined) {
-        tooltipRows.push(
-          `${scenario.scenarioName}: ${valueFormatter(point.value)}`
-        );
-      }
-    });
     showSvgTooltip(
       parentGroupElement,
-      tooltipRows.join('\n'),
+      `${DATE_FORMATTER(timestamp)}: ${valueFormatter(value)}`,
       [discreteXPosition, discreteYPosition],
       0,
       true

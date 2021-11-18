@@ -9,6 +9,14 @@ export enum BASE_LAYER {
   DEFAULT = 'default'
 }
 
+export enum BASE_LAYER_TRANSPARENCY {
+  '0% Transparency' = '0',
+  '25% Transparency' = '0.25',
+  '50% Transparency' = '0.5',
+  '75% Transparency' = '0.75',
+  '100% Transparency' = '1'
+}
+
 export enum DATA_LAYER {
   ADMIN = 'admin',
   TILES = 'tiles'

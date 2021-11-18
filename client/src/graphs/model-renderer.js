@@ -9,8 +9,7 @@ import {
 } from '@/utils/svg-util';
 import { calcEdgeColor, scaleByWeight } from '@/utils/scales-util';
 import { hasBackingEvidence } from '@/utils/graphs-util';
-import { SELECTED_COLOR, EDGE_COLOR_PALETTE } from '@/utils/colors-util';
-import modelService from '@/services/model-service';
+import { SELECTED_COLOR } from '@/utils/colors-util';
 import renderHistoricalProjectionsChart from '@/charts/scenario-renderer';
 import { interpolatePath } from 'd3-interpolate-path';
 import BaseCAGRenderer from '@/graphs/base-cag-renderer';
@@ -40,7 +39,7 @@ const DEFAULT_STYLE = {
     stroke: '#F2F2F2'
   },
   nodeHeader: {
-    fill: '#F2F2F2',
+    fill: 'none',
     stroke: '#999',
     strokeWidth: 0,
     borderRadius: 3
@@ -49,6 +48,11 @@ const DEFAULT_STYLE = {
 
 const OPACITY = 0.2;
 const GRAPH_HEIGHT = 40;
+const GRAPH_VERTICAL_MARGIN = 6;
+const PADDING_HORIZONTAL = 5;
+const PADDING_BOTTOM = 3;
+const INDICATOR_NAME_SIZE = 7;
+const INDICATOR_NAME_COLOR = '#999';
 
 const lineFn = pathFn.curve(d3.curveBasis);
 
@@ -134,12 +138,12 @@ export default class ModelRenderer extends BaseCAGRenderer {
 
         selection.append('text')
           .classed('node-label', true)
-          .attr('transform', translate(20, GRAPH_HEIGHT * 0.5 - 6))
+          .attr('transform', translate(PADDING_HORIZONTAL, GRAPH_HEIGHT * 0.5 - 6))
           .style('stroke', 'none')
           .style('fill', '#888')
           .style('font-weight', '600')
           .text(d => d.label)
-          .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 30); });
+          .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 2 * PADDING_HORIZONTAL); });
       } else {
         selection.append('rect')
           .classed('node-container', true)
@@ -172,11 +176,11 @@ export default class ModelRenderer extends BaseCAGRenderer {
 
         selection.append('text')
           .classed('node-label', true)
-          .attr('transform', translate(10, GRAPH_HEIGHT * 0.5 - 6))
+          .attr('transform', translate(PADDING_HORIZONTAL, GRAPH_HEIGHT * 0.5 - 6))
           .style('stroke', 'none')
           .style('fill', '#000')
           .text(d => d.label)
-          .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 20); });
+          .each(function () { truncateTextToWidth(this, d3.select(this).datum().width - 2 * PADDING_HORIZONTAL); });
 
         selection.append('g')
           .classed('node-body-group', true)
@@ -301,10 +305,8 @@ export default class ModelRenderer extends BaseCAGRenderer {
 
       const nodeWidth = datum.width;
       const nodeHeight = datum.height;
-      const graphHeight = 32;
-      const xAxisLeftPadding = 14;
+      const graphHeight = 37;
       const nodeBodyGroup = d3.select(node).select('.node-body-group');
-      const nodeHeaderGroup = d3.select(node).select('.node-header-group');
 
       d3.select(node).style('cursor', 'pointer');
 
@@ -316,57 +318,46 @@ export default class ModelRenderer extends BaseCAGRenderer {
       const graphEl = nodeBodyGroup
         .append('g')
         .classed('historic-graph', true)
-        .attr('transform', translate(xAxisLeftPadding, nodeHeight - graphHeight));
+        .attr('transform',
+          translate(
+            PADDING_HORIZONTAL,
+            nodeHeight -
+              PADDING_BOTTOM -
+              INDICATOR_NAME_SIZE -
+              GRAPH_HEIGHT +
+              GRAPH_VERTICAL_MARGIN
+          )
+        );
 
       nodeBodyGroup
         .append('text')
         .classed('indicator-label', true)
-        .attr('x', 5)
-        .attr('y', nodeHeight - graphHeight - 1.5)
+        .attr('x', PADDING_HORIZONTAL)
+        .attr('y', nodeHeight - PADDING_BOTTOM)
         .attr('width', nodeWidth)
-        .style('font-size', '7px')
-        .attr('fill', '#999')
+        .style('font-size', INDICATOR_NAME_SIZE + 'px')
+        .attr('fill', INDICATOR_NAME_COLOR)
         .text(nodeScenarioData.indicator_name)
-        .each(function () { truncateTextToWidth(this, d3.select(this).attr('width') - 10); });
+        .each(function () {
+          truncateTextToWidth(
+            this,
+            d3.select(this).attr('width') - (2 * PADDING_HORIZONTAL)
+          );
+        });
 
       const selectedScenario = nodeScenarioData.scenarios.find(s => s.id === selectedScenarioId);
-
-      // Adjust node appearence based on result
-      if (!_.isEmpty(selectedScenario.result)) {
-        const percentageChange = modelService.calculateScenarioPercentageChange(selectedScenario.result, _.first(selectedScenario.result.values).value);
-        const absoluteChange = _.last(selectedScenario.result.values).value - _.first(selectedScenario.result.values).value;
-
-        // if first value is 0.0 then percentageChange is 0.0, so check absolute change as well
-        if (percentageChange === 0.0 && absoluteChange === 0.0) {
-          nodeHeaderGroup.select('.node-header')
-            .style('fill', DEFAULT_STYLE.nodeHeader.fill)
-            .style('stroke', DEFAULT_STYLE.nodeHeader.stroke);
-        } else {
-          // if percentageChange is 0, then absoluteChange defines the colour, as requested by the users
-          const colour = (percentageChange === 0.0)
-            ? ((absoluteChange < 0) ? EDGE_COLOR_PALETTE[0] : EDGE_COLOR_PALETTE[2])
-            : ((percentageChange < 0) ? EDGE_COLOR_PALETTE[0] : EDGE_COLOR_PALETTE[2]);
-
-          nodeHeaderGroup.select('.node-header')
-            .style('fill', colour)
-            .style('stroke', colour)
-            .style('fill-opacity', 0.4);
-
-          nodeHeaderGroup.style('stroke', colour);
-        }
-      }
       d3.select(nodes[index]).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
 
-      const runOptions = {
-        selectedScenarioId,
-        miniGraph: true
-      };
+      const runOptions = { selectedScenarioId };
       const renderOptions = {
         margin: {
-          top: 3, bottom: 3, left: 0, right: 0
+          top: GRAPH_VERTICAL_MARGIN,
+          bottom: GRAPH_VERTICAL_MARGIN,
+          left: 0,
+          right: 0
         },
-        width: nodeWidth - xAxisLeftPadding - (DEFAULT_STYLE.node.strokeWidth / 2),
-        height: graphHeight - 0.5
+        width: nodeWidth - (PADDING_HORIZONTAL * 2) - (DEFAULT_STYLE.node.strokeWidth * 2),
+        height: graphHeight
       };
 
       renderHistoricalProjectionsChart(graphEl, nodeScenarioData, renderOptions, runOptions);

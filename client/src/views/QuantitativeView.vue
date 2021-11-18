@@ -58,6 +58,7 @@ import { CsrMatrix } from '@/types/CsrMatrix';
 import { CAGGraph, CAGModelSummary, CAGModelParameter, Scenario } from '@/types/CAG';
 import useOntologyFormatter from '@/services/composables/useOntologyFormatter';
 import CagAnalysisOptionsButton from '@/components/cag/cag-analysis-options-button.vue';
+import { getSliceMonthsFromTimeScale } from '@/utils/time-scale-util';
 
 const DRAFT_SCENARIO_ID = 'draft';
 const MODEL_MSGS = modelService.MODEL_MSGS;
@@ -119,8 +120,12 @@ export default defineComponent({
     currentEngine(): string {
       return this.modelSummary?.parameter?.engine ?? 'dyse';
     },
-    projectionSteps(): number | undefined {
-      return this.modelSummary?.parameter.num_steps;
+    projectionSteps(): number {
+      if (this.modelSummary === null) return 12;
+      const timeSliceMonths = getSliceMonthsFromTimeScale(
+        this.modelSummary.parameter.time_scale
+      );
+      return timeSliceMonths[timeSliceMonths.length - 1];
     },
     onMatrixTab(): boolean {
       return !!(this.$route.query && this.$route.query.activeTab === 'matrix');
@@ -517,7 +522,7 @@ export default defineComponent({
 
       // FIXME
       scenarios.forEach(sc => {
-        if (sc.result && !sc.result[0].confidenceInterval) {
+        if (sc.result) {
           sc.result = modelService.fromHistogramFormat(sc.result);
         }
       });
