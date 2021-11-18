@@ -117,21 +117,7 @@ export default {
     }
   },
   mounted() {
-    // calculate if dropdown will collide with edge of screen and then translate if required
-    const inputBoundingBox = this.$refs.input.getBoundingClientRect();
-    const cagContainerBoundingBox = this.$parent.$refs.container.getBoundingClientRect();
-
-    const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
-    const dropdownHeight = 36 * 8; // FIXME, this is a hack: ~dropdownEntryHeight * usualNumDropdownItems
-    const inputWidth = 13 * parseFloat(getComputedStyle(document.documentElement).fontSize); // convert rem to px
-    const inputHeight = 3 * parseFloat(getComputedStyle(document.documentElement).fontSize); // convert rem to px
-
-    if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
-      this.dropdownLeftOffset = -dropdownWidth + inputWidth;
-    }
-    if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom) {
-      this.dropdownTopOffset = -dropdownHeight - inputHeight;
-    }
+    this.calculateDropdownOffset();
   },
   watch: {
     userInput() {
@@ -197,6 +183,23 @@ export default {
     },
     conceptNotInCag(concept) {
       return this.conceptsInCag.indexOf(concept.concept) === -1;
+    },
+    calculateDropdownOffset() {
+      // calculate if dropdown will collide with edge of screen and then translate if required
+      const inputBoundingBox = this.$refs.input.getBoundingClientRect();
+      const cagContainerBoundingBox = this.$parent.$refs.container.getBoundingClientRect();
+
+      const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
+      const dropdownHeight = 36 * 8; // FIXME, this is a hack: ~dropdownEntryHeight * usualNumDropdownItems
+      const inputWidth = 13 * parseFloat(getComputedStyle(document.documentElement).fontSize); // convert rem to px
+      const inputHeight = 3 * parseFloat(getComputedStyle(document.documentElement).fontSize); // convert rem to px
+
+      if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
+        this.dropdownLeftOffset = -dropdownWidth + inputWidth;
+      }
+      if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom) {
+        this.dropdownTopOffset = -dropdownHeight - inputHeight;
+      }
     },
     getSuggestions: _.throttle(async function() {
       if (_.isEmpty(this.userInput)) {
