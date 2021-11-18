@@ -801,7 +801,18 @@ export default {
         .attr('y', H + 4)
         .attr('width', 60)
         .attr('height', 20)
+        .attr('rx', 2)
+        .attr('ry', 2)
+        .style('stroke', '#333')
         .style('fill', '#333')
+        .style('opacity', 0.80)
+        .style('cursor', 'pointer')
+        .on('mouseenter', function() {
+          d3.select(this).style('opacity', 1.0);
+        })
+        .on('mouseleave', function() {
+          d3.select(this).style('opacity', 0.80);
+        })
         .on('click', (evt, node) => {
           renderer.options.renameFn(node.data);
           evt.stopPropagation();
@@ -819,7 +830,18 @@ export default {
         .attr('y', H + 4)
         .attr('width', 60)
         .attr('height', 20)
+        .attr('rx', 2)
+        .attr('ry', 2)
+        .style('stroke', '#E11')
         .style('fill', '#E11')
+        .style('opacity', 0.80)
+        .style('cursor', 'pointer')
+        .on('mouseenter', function() {
+          d3.select(this).style('opacity', 1.0);
+        })
+        .on('mouseleave', function() {
+          d3.select(this).style('opacity', 0.80);
+        })
         .on('click', (evt) => {
           renderer.options.deleteFn(node);
           evt.stopPropagation();
@@ -915,7 +937,10 @@ export default {
       const nodeUI = node.select('.node-ui');
       const rect = nodeUI.select(targetNodeSelector);
       const nodeUIRect = rect.node();
+
+      // Hide ephemeral UI/controls
       this.renderer.disableNodeHandles();
+      svgUtil.hideSvgTooltip(this.renderer.chart);
 
       // FIXME: Should do this in drag-start
       if (nodeUI.select('.node-control').size() > 0) {
