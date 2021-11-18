@@ -61,13 +61,6 @@
 
       <div class="config-sub-group">
         <label class="header-secondary">Blending into base layer:</label>
-        <dropdown-button
-          class="dropdown-button"
-          :is-dropdown-left-aligned="true"
-          :items="baseLayerTransparecyOptions"
-          :selected-item="selectedTransparency"
-          @item-selected="setTransparencySelection"
-        />
       </div>
 
       <div class="config-sub-group">
@@ -76,6 +69,14 @@
           :selected-button-value="selectedDataLayer"
           :buttons="dataLayerGroupButtons"
           @button-clicked="setDataLayerSelection"
+        />
+        <dropdown-button
+          class="dropdown-button"
+          :is-dropdown-left-aligned="true"
+          :items="baseLayerTransparencyOptions"
+          :selected-item="selectedTransparency"
+          :inner-button-label="'Transparency'"
+          @item-selected="setTransparencySelection"
         />
       </div>
 
@@ -88,9 +89,6 @@
           :selected-item="selectedColorSchemeName"
           @item-selected="setColorSchemeSelection"
         />
-      </div>
-
-      <div class="config-sub-group">
         <svg ref="colorPalette" />
         <dropdown-button
           class="dropdown-button"
@@ -180,7 +178,7 @@ export default defineComponent({
     },
     selectedTransparency: {
       type: String,
-      default: BASE_LAYER_TRANSPARENCY['50% Transparency']
+      default: BASE_LAYER_TRANSPARENCY['50%']
     },
     colorSchemeReversed: {
       type: Boolean,
@@ -234,13 +232,13 @@ export default defineComponent({
     const dataLayerGroupButtons = ref(Object.values(DATA_LAYER)
       .map(val => ({ label: capitalize(val), value: val })));
 
-    const baseLayerTransparecyOptions = ref(Object.keys(BASE_LAYER_TRANSPARENCY)
+    const baseLayerTransparencyOptions = ref(Object.keys(BASE_LAYER_TRANSPARENCY)
       .map(key => ({ displayName: key, value: (BASE_LAYER_TRANSPARENCY as any)[key] })));
 
     const colorScaleGroupButtons = ref(Object.values(ColorScaleType)
       .map(val => ({ displayName: capitalize(val), value: val })));
     const colorSchemes = ref(Object.keys(COLOR_SCHEMES)
-      .map(val => ({ displayName: val, value: val })));
+      .map(val => ({ displayName: capitalize(val.toLowerCase()), value: val })));
 
     const store = useStore();
     const datacubeCurrentOutputsMap = computed(() => store.getters['app/datacubeCurrentOutputsMap']);
@@ -277,7 +275,7 @@ export default defineComponent({
       currentOutputDisplayName,
       colorSchemes,
       ColorScaleType,
-      baseLayerTransparecyOptions,
+      baseLayerTransparencyOptions,
       unitOptions
     };
   },
