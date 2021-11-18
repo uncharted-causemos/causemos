@@ -19,7 +19,6 @@ const { MODEL_STATUS, RESET_ALL_ENGINE_STATUS } = rootRequire('/util/model-util'
 const modelUtil = rootRequire('util/model-util');
 
 
-
 const DYSE = 'dyse';
 const DELPHI = 'delphi';
 
@@ -28,13 +27,12 @@ const DELPHI = 'delphi';
 /**
  * Set node quantifications
  */
-router.post('/:modelId', asyncHandler(async (req, res) => {
+router.post('/:modelId/quantify-nodes', asyncHandler(async (req, res) => {
   const { modelId } = req.params;
-  Logger.info(`initializing model with id ${modelId}`);
+  Logger.info(`Quantifying model ${modelId} nodes`);
 
-  // Set initial time series
+  // Set indicator to node groundings
   await indicatorService.setDefaultIndicators(modelId);
-
   res.status(200).send({ updateToken: moment().valueOf() });
 }));
 
