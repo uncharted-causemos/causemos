@@ -20,9 +20,9 @@
         </span>
       </button>
     </div>
-    <dropdown-control class="suggestion-dropdown">
+    <dropdown-control class="suggestion-dropdown" :style="{left: dropdownLeftOffset + 'px'}">
       <template #content>
-        <div style="display: flex; flex-direction: row" ref="myDropdown">
+        <div style="display: flex; flex-direction: row">
           <div class="left-column">
             <div
               v-for="(suggestion, index) in suggestions"
@@ -100,7 +100,8 @@ export default {
     userInput: '',
     suggestions: [],
     focusedSuggestionIndex: 0,
-    mouseOverIndex: -1
+    mouseOverIndex: -1,
+    dropdownLeftOffset: 0
   }),
   computed: {
     ...mapGetters({
@@ -114,10 +115,17 @@ export default {
       return null;
     }
   },
+  mounted() {
+    const inputBoundingBox = this.$refs.input.getBoundingClientRect();
+    const dropdownWidth = 0.45 * window.innerWidth;
+    if (inputBoundingBox.left + dropdownWidth > window.innerWidth) {
+      this.dropdownLeftOffset = -dropdownWidth;
+    }
+    console.log(this.dropdownLeftOffset);
+  },
   watch: {
     userInput() {
       this.getSuggestions();
-      this.testing();
     },
     suggestions(n, o) {
       if (!_.isEqual(n, o)) {
@@ -179,17 +187,6 @@ export default {
     },
     conceptNotInCag(concept) {
       return this.conceptsInCag.indexOf(concept.concept) === -1;
-    },
-    testing() {
-      const dropdownBoundingBox = this.$refs.myDropdown.getBoundingClientRect();
-      const cagContainerBoundingBox = this.$parent.$refs.container.getBoundingClientRect();
-
-      if (dropdownBoundingBox.bottom > cagContainerBoundingBox.bottom || dropdownBoundingBox.right > cagContainerBoundingBox.right) {
-        console.log('DROPDOWN OUT OF BOUNDS');
-        console.log('dropDownBoundingBox: ', dropdownBoundingBox);
-        console.log('placement x: ', this.placement.x);
-        console.log('placement : ', this.placement.y);
-      }
     },
     getSuggestions: _.throttle(async function() {
       if (_.isEmpty(this.userInput)) {
