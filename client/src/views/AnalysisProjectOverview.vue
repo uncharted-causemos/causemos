@@ -20,13 +20,31 @@
             type="text"
             class="model-attribute-desc"
           />
-          <span
+          <div
+            v-if="!isEditingDesc"
             class="edit-model-desc"
-            @click="updateDesc"
-            v-tooltip.top-center="'Edit description'"
           >
-            <i class="fa fa-edit" />
-          </span>
+            <i
+              class="fa fa-edit"
+              @click="editDesc"
+              v-tooltip.top-center="'Edit description'"
+            />
+          </div>
+          <div
+            v-else
+            class="edit-model-desc"
+          >
+            <i
+              class="fa fa-check"
+              @click="saveDesc"
+              v-tooltip.top-center="'Save changes'"
+            />
+            <i
+              class="fa fa-close"
+              @click="discardDesc"
+              v-tooltip.top-center="'Discard changes'"
+            />
+          </div>
         </div>
         <div>
           <strong>Contributors</strong>
@@ -217,16 +235,18 @@ export default {
       this.showInsightPanel();
       this.setCurrentPane('list-insights');
     },
-    updateDesc() {
-      if (this.isEditingDesc) {
-        this.projectMetadata.description = this.projectDesc;
-        // we may have just modified the desc text, so update the server value
-        projectService.updateProjectMetadata(this.project, { description: this.projectMetadata.description });
-      } else {
-        // make sure that local description value is up to date
-        this.projectDesc = this.projectMetadata.description;
-      }
-      this.isEditingDesc = !this.isEditingDesc;
+    editDesc() {
+      this.projectDesc = this.projectMetadata.description;
+      this.isEditingDesc = true;
+    },
+    discardDesc() {
+      this.projectMetadata.description = this.projectDesc;
+      this.isEditingDesc = false;
+    },
+    saveDesc() {
+      // we may have just modified the desc text, so update the server value
+      projectService.updateProjectMetadata(this.project, { description: this.projectMetadata.description });
+      this.isEditingDesc = false;
     },
     async fetchAnalyses() {
       if (_.isEmpty(this.projectMetadata)) {
@@ -501,9 +521,12 @@ header {
 }
 
 .edit-model-desc {
-  font-size: medium;
-  color: blue;
-  cursor: pointer;
+    font-size: medium;
+    color: blue;
+    cursor: pointer;
+    i {
+      margin-right: 5px;
+    }
 }
 
 .model-attribute-desc {
