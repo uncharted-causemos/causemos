@@ -1,18 +1,17 @@
 const express = require('express');
 const asyncHandler = require('express-async-handler');
-const _ = require('lodash');
 const router = express.Router();
 
 const scenarioService = rootRequire('/services/scenario-service');
 
 const DEFAULT_SCENARIO_SIZE = 50;
+
 /**
  * GET Find scenarios
  */
 router.get('/', asyncHandler(async (req, res) => {
-  const engine = req.query.engine;
   const modelId = req.query.model_id;
-  const results = await scenarioService.find(modelId, engine, { size: DEFAULT_SCENARIO_SIZE });
+  const results = await scenarioService.find(modelId, { size: DEFAULT_SCENARIO_SIZE });
   res.json(results);
 }));
 
@@ -30,31 +29,21 @@ router.get('/:scenarioId', asyncHandler(async (req, res) => {
  */
 router.post('/', asyncHandler(async (req, res) => {
   const {
-    result,
     parameter,
     name,
     description,
-    engine,
-    experiment_id,
     model_id,
     is_baseline: isBaseline
   } = req.body;
 
-  if (_.isNil(engine)) {
-    throw new Error('Engine cannot be empty');
-  }
-
-  const experiment = await scenarioService.create({
-    result,
+  const r = await scenarioService.createScenario({
     parameter,
     name,
     description,
     model_id,
-    engine,
-    experiment_id,
     isBaseline
   });
-  res.json(experiment);
+  res.json(r);
 }));
 
 /**
@@ -76,5 +65,6 @@ router.delete('/:sId/', asyncHandler(async (req, res) => {
   await scenarioService.remove(scenarioId);
   res.status(200).send({ updateToken: Date.now() });
 }));
+
 
 module.exports = router;

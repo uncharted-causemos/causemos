@@ -2,6 +2,8 @@ import { DatacubeFeature, Model, Indicator, Datacube } from '@/types/Datacube';
 import { DatacubeType } from '@/types/Enums';
 import { Field, FieldMap, field, searchable } from './lex-util';
 
+export const DEFAULT_DATE_RANGE_DELIMETER = '__';
+
 export interface SuggestionField extends Field {
   searchMessage: string;
   filterFunc?: Function;

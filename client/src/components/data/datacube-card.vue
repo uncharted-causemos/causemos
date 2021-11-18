@@ -42,7 +42,7 @@
         />
         <modal-geo-selection
           v-if="showGeoSelectionModal === true"
-          :model-param="modelParam"
+          :model-param="geoModelParam"
           @close="onGeoSelectionModalClose" />
         <rename-modal
           v-if="showTagNameModal"
@@ -75,6 +75,24 @@
                   }"
                   @click="if(selectedScenarioIds.length > 0) {showTagNameModal=true;}" ></i>
               </div>
+            </div>
+            <div v-if="dateModelParam">
+              <div v-if="newRunsMode" ref="datePickerElement" class="new-runs-date-picker-container">
+                <input class="date-picker-input" :placeholder="dateModelParam.type === DatacubeGenericAttributeVariableType.DateRange ? 'Select date range..' : 'Select date..'" type="text" v-model="dateParamPickerValue" autocomplete="off" data-input />
+                <a class="btn btn-default date-picker-buttons" title="toggle" data-toggle>
+                    <i class="fa fa-calendar"></i>
+                </a>
+                <a class="btn btn-default date-picker-buttons" title="clear" data-clear>
+                    <i class="fa fa-close"></i>
+                </a>
+              </div>
+              <temporal-facet
+                v-else
+                :model-run-data="filteredRunData"
+                :selected-scenarios="selectedScenarioIds"
+                :model-parameter="dateModelParam"
+                @update-scenario-selection="onUpdateScenarioSelection"
+              />
             </div>
             <parallel-coordinates-chart
               class="pc-chart"
@@ -456,9 +474,11 @@
 
 <script lang="ts">
 import _ from 'lodash';
-import { computed, defineComponent, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
+import { computed, defineComponent, nextTick, PropType, ref, Ref, toRefs, watch, watchEffect } from 'vue';
 import { useStore } from 'vuex';
 import router from '@/router';
+
+import flatpickr from 'flatpickr';
 
 import BreakdownPane from '@/components/drilldown-panel/breakdown-pane.vue';
 import DataAnalysisMap from '@/components/data/analysis-map-simple.vue';
@@ -480,6 +500,7 @@ import ParallelCoordinatesChart from '@/components/widgets/charts/parallel-coord
 import RadioButtonGroup from '@/components/widgets/radio-button-group.vue';
 import RenameModal from '@/components/action-bar/rename-modal.vue';
 import SmallTextButton from '@/components/widgets/small-text-button.vue';
+import TemporalFacet from '@/components/facets/temporal-facet.vue';
 import timeseriesChart from '@/components/widgets/charts/timeseries-chart.vue';
 
 import useAnalysisMapStats from '@/services/composables/useAnalysisMapStats';
@@ -503,7 +524,8 @@ import {
   SpatialAggregationLevel,
   TemporalAggregationLevel,
   TemporalResolutionOption,
-  GeoAttributeFormat
+  GeoAttributeFormat,
+  DatacubeGenericAttributeVariableType
 } from '@/types/Enums';
 import { DatacubeFeature, Indicator, Model, ModelParameter } from '@/types/Datacube';
 import { DataState, Insight, ViewState } from '@/types/Insight';
@@ -511,7 +533,7 @@ import { ModelRun, PreGeneratedModelRunData, RunsTag } from '@/types/ModelRun';
 import { OutputSpecWithId, RegionalAggregations } from '@/types/Runoutput';
 
 import { colorFromIndex } from '@/utils/colors-util';
-import { isIndicator, isModel, TAGS } from '@/utils/datacube-util';
+import { isIndicator, isModel, TAGS, DEFAULT_DATE_RANGE_DELIMETER } from '@/utils/datacube-util';
 import { initDataStateFromRefs, initViewStateFromRefs } from '@/utils/drilldown-util';
 import { BASE_LAYER, DATA_LAYER, adminLevelToString } from '@/utils/map-util-new';
 
@@ -588,6 +610,7 @@ export default defineComponent({
     RadioButtonGroup,
     RenameModal,
     SmallTextButton,
+    TemporalFacet,
     timeseriesChart
   },
   setup(props, { emit }) {
@@ -615,7 +638,7 @@ export default defineComponent({
     const newRunsMode = ref<boolean>(false);
     const isRelativeDropdownOpen = ref<boolean>(false);
     const showGeoSelectionModal = ref<boolean>(false);
-    const modelParam = ref<ModelParameter | null>(null);
+    const geoModelParam = ref<ModelParameter | null>(null);
     const showNewRunsModal = ref<boolean>(false);
     const showModelRunsExecutionStatus = ref<boolean>(false);
     const showPercentChange = ref<boolean>(true);
@@ -635,6 +658,9 @@ export default defineComponent({
     const showTagNameModal = ref<boolean>(false);
     const showScenarioTagsModal = ref<boolean>(false);
 
+    const datePickerElement = ref<HTMLElement | null>(null);
+    const dateParamPickerValue = ref<any | null>(null);
+
     const searchFilters = ref<any>({});
 
     const mainModelOutput = ref<DatacubeFeature | undefined>(undefined);
@@ -653,6 +679,14 @@ export default defineComponent({
       dimensions,
       ordinalDimensionNames
     } = useDatacubeDimensions(metadata);
+
+    // FIXME: we only support one date param of each model datacube
+    const dateModelParam = computed(() => {
+      const modelMetadata = metadata.value;
+      if (modelMetadata === null || !isModel(modelMetadata)) return null;
+      const dateParams = modelMetadata.parameters.filter(dim => dim.type === DatacubeGenericAttributeVariableType.DateRange);
+      return dateParams.length > 0 ? dateParams[0] : null;
+    });
 
     const { allModelRunData, filteredRunData } = useScenarioData(selectedModelId, modelRunsFetchedAt, searchFilters, dimensions);
 
@@ -799,9 +833,8 @@ export default defineComponent({
     };
 
     const setSelectedScenarioIds = (newIds: string[]) => {
-      if (isIndicatorDatacube.value) {
-        if (_.isEqual(selectedScenarioIds.value, newIds)) return;
-      }
+      if (_.isEqual(selectedScenarioIds.value, newIds)) return;
+
       selectedScenarioIds.value = newIds;
 
       clearRouteParam();
@@ -937,12 +970,54 @@ export default defineComponent({
     const toggleNewRunsMode = () => {
       newRunsMode.value = !newRunsMode.value;
       potentialScenarioCount.value = 0;
+      potentialScenarios.value.length = 0;
 
       if (newRunsMode.value) {
         // clear any selected scenario and show the model desc page
         updateScenarioSelection({ scenarios: [] });
       }
     };
+
+    watch(
+      () => [dateParamPickerValue.value],
+      () => {
+        updatePotentialScenarioDates();
+      }
+    );
+
+    watchEffect(() => {
+      // if date/geo param exist and the metadata has been updated, then we may need to re-create the date picker if we are in the new runs mode
+      if (metadata.value !== null && newRunsMode.value && dateModelParam.value !== null) {
+        nextTick(() => {
+          if (dateModelParam.value !== null) {
+            // clear existing scenarios, if any since the date/goe param formatting may have changed
+            potentialScenarioCount.value = 0;
+            potentialScenarios.value.length = 0;
+
+            const datePickerOptions: flatpickr.Options.Options = {
+              // defaultDate: initial date for the date picker
+              // altInput: true, // display date in a more readable, customizable, format
+              // mode: "multiple" is it possible to select multiple individual date(s)
+              mode: dateModelParam.value.type === DatacubeGenericAttributeVariableType.DateRange ? 'range' : 'single', // enable date range selection
+              allowInput: false, // should the user be able to directly enter date value?
+              wrap: true, // enable the flatpickr lib to utilize toggle/clear buttons
+              clickOpens: false // do not allow click on the input date picker to open the calendar
+            };
+            // minimum allowed date
+            if (dateModelParam.value.additional_options?.date_min) {
+              datePickerOptions.minDate = dateModelParam.value.additional_options.date_min;
+            }
+            // maximum allowed date
+            if (dateModelParam.value.additional_options?.date_max) {
+              datePickerOptions.maxDate = dateModelParam.value.additional_options.date_max;
+            }
+            if (datePickerElement.value !== null) {
+              flatpickr(datePickerElement.value, datePickerOptions);
+            }
+          }
+        });
+      }
+    });
 
     function fetchData() {
       if (!newRunsMode.value && metadata.value?.type === DatacubeType.Model) {
@@ -972,6 +1047,10 @@ export default defineComponent({
         const selectedRunIDs = selectedScenarios.map(s => s.run_id.toString());
         setSelectedScenarioIds(selectedRunIDs);
       }
+    };
+
+    const onUpdateScenarioSelection = (scenarioIDs: string[]) => {
+      setSelectedScenarioIds(scenarioIDs);
     };
 
     const headerGroupButtons = ref([
@@ -1070,6 +1149,27 @@ export default defineComponent({
     const updateGeneratedScenarios = (e: { scenarios: Array<ScenarioData> }) => {
       potentialScenarioCount.value = e.scenarios.length;
       potentialScenarios.value = e.scenarios;
+      updatePotentialScenarioDates();
+    };
+
+    const updatePotentialScenarioDates = () => {
+      // since any date or datarange params are not automatically considered,
+      //  we need to ensure they are added as part of potential scenarios data
+      if (dateModelParam.value !== null) {
+        // FIXME: handle the case of multiple date and/or daterange params
+        const delimiter = dateModelParam.value.additional_options?.date_range_delimiter ?? DEFAULT_DATE_RANGE_DELIMETER;
+        let dateValue = '';
+        if (dateParamPickerValue.value === null || dateParamPickerValue.value === '') {
+          dateValue = dateModelParam.value.default;
+        } else {
+          dateValue = dateModelParam.value.type === DatacubeGenericAttributeVariableType.Date ? dateParamPickerValue.value : dateParamPickerValue.value.replace(' to ', delimiter);
+        }
+        potentialScenarios.value.forEach(run => {
+          if (dateModelParam.value !== null) {
+            run[dateModelParam.value.type] = dateValue;
+          }
+        });
+      }
     };
 
     const updateStateFromInsight = async (insight_id: string) => {
@@ -1380,12 +1480,16 @@ export default defineComponent({
       canClickDataTab,
       colorFromIndex,
       currentTabView,
+      dateModelParam,
+      datePickerElement,
+      dateParamPickerValue,
       dataPaths,
       defaultRunButtonCaption,
       dimensions,
       drilldownTabs: DRILLDOWN_TABS,
       fetchData,
       filteredRunData,
+      geoModelParam,
       getSelectedPreGenOutput,
       gridLayerStats,
       hasDefaultRun,
@@ -1397,7 +1501,6 @@ export default defineComponent({
       mapLegendData,
       mapReady,
       mapSelectedLayer,
-      modelParam,
       modelRunsSearchData,
       myProcessedTimeseries,
       newRunsMode,
@@ -1406,6 +1509,7 @@ export default defineComponent({
       onNewScenarioRunsModalClose,
       onSyncMapBounds,
       onTabClick,
+      onUpdateScenarioSelection,
       ordinalDimensionNames,
       outputSpecs,
       potentialScenarios,
@@ -1464,12 +1568,13 @@ export default defineComponent({
       toggleNewRunsMode,
       toggleSearchBar,
       unit,
+      updatePotentialScenarioDates,
       updateStateFromInsight,
       updateGeneratedScenarios,
       updateMapCurSyncedZoom,
       updateScenarioSelection,
-      showPercentChange,
-      visibleTimeseriesData
+      visibleTimeseriesData,
+      showPercentChange
     };
   },
   watch: {
@@ -1495,12 +1600,13 @@ export default defineComponent({
   },
   data: () => ({
     idToDelete: '',
-    showDelete: false
+    showDelete: false,
+    DatacubeGenericAttributeVariableType
   }),
   methods: {
     openGeoSelectionModal(modelParam: ModelParameter) {
       this.showGeoSelectionModal = true;
-      this.modelParam = modelParam;
+      this.geoModelParam = modelParam;
     },
     onGeoSelectionModalClose(eventData: any) {
       this.showGeoSelectionModal = false;
@@ -1508,7 +1614,7 @@ export default defineComponent({
         const selectedRegions: GeoRegionDetail[] = eventData.selectedRegions;
         if (selectedRegions && selectedRegions.length > 0) {
           // update the PC with the selected region value(s)
-          const updatedModelParam = _.cloneDeep(this.modelParam) as ModelParameter;
+          const updatedModelParam = _.cloneDeep(this.geoModelParam) as ModelParameter;
           // ensure that both choices and labels exist
           const updatedChoices = _.clone(updatedModelParam.choices) as Array<string>;
           const updatedChoicesLabels = updatedModelParam.choices_labels === undefined || updatedModelParam.choices_labels.length === 0 ? _.clone(updatedModelParam.choices) as Array<string> : _.clone(updatedModelParam.choices_labels) as Array<string>;
@@ -1600,6 +1706,7 @@ export default defineComponent({
 <style lang="scss" scoped>
 
 @import '~styles/variables';
+@import '~flatpickr/dist/flatpickr.css';
 
 $fullscreenTransition: all 0.5s ease-in-out;
 
@@ -1875,6 +1982,22 @@ $marginSize: 5px;
 
 .scenario-count {
   color: $label-color;
+}
+
+.new-runs-date-picker-container {
+  display: flex;
+  width: 100%;
+  margin-left: 0.5rem;
+  margin-right: 0.5rem;
+  .date-picker-input {
+    border-width: thin;
+    width: 100%;
+    background-color: lightgray;
+    cursor: auto;
+  }
+  .date-picker-buttons {
+      padding: 4px 8px;
+    }
 }
 
 </style>
