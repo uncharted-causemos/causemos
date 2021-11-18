@@ -1,6 +1,6 @@
 <template>
-  <div class="new-node-container" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
-    <div class="new-node-top">
+  <div class="new-node-container" ref="newNodeContainer" :style="{left: placement.x + 'px', top: placement.y + 'px' }">
+    <div class="new-node-top" ref="newNodeTop">
       <input
         ref="input"
         v-model="userInput"
@@ -102,7 +102,7 @@ export default {
     focusedSuggestionIndex: 0,
     mouseOverIndex: -1,
     dropdownLeftOffset: 0,
-    dropdownTopOffset: 0
+    dropdownTopOffset: 4 // prevent overlap with input box
   }),
   computed: {
     ...mapGetters({
@@ -186,19 +186,17 @@ export default {
     },
     calculateDropdownOffset() {
       // calculate if dropdown will collide with edge of screen and then translate if required
-      const inputBoundingBox = this.$refs.input.getBoundingClientRect();
+      const inputBoundingBox = this.$refs.newNodeTop.getBoundingClientRect();
       const cagContainerBoundingBox = this.$parent.$refs.container.getBoundingClientRect();
 
       const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
       const dropdownHeight = 36 * 8; // FIXME, this is a hack: ~dropdownEntryHeight * usualNumDropdownItems
-      const inputWidth = 13 * parseFloat(getComputedStyle(document.documentElement).fontSize); // convert rem to px
-      const inputHeight = 3 * parseFloat(getComputedStyle(document.documentElement).fontSize); // convert rem to px
 
       if (inputBoundingBox.left + dropdownWidth > cagContainerBoundingBox.right) {
-        this.dropdownLeftOffset = -dropdownWidth + inputWidth;
+        this.dropdownLeftOffset = -dropdownWidth + inputBoundingBox.width;
       }
       if (inputBoundingBox.bottom + dropdownHeight > cagContainerBoundingBox.bottom) {
-        this.dropdownTopOffset = -dropdownHeight - inputHeight;
+        this.dropdownTopOffset = -dropdownHeight - (inputBoundingBox.height + 4); // +4 to prevent overlap with input box
       }
     },
     getSuggestions: _.throttle(async function() {
@@ -241,7 +239,6 @@ export default {
 }
 
 .suggestion-dropdown {
-  top: 3px; /* Don't overlap border */
   width: 45vw;
 }
 
