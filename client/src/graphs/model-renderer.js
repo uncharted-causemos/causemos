@@ -52,6 +52,7 @@ const GRAPH_VERTICAL_MARGIN = 6;
 const PADDING_HORIZONTAL = 5;
 const PADDING_BOTTOM = 3;
 const INDICATOR_NAME_SIZE = 7;
+const INDICATOR_NAME_COLOR = '#999';
 
 const lineFn = pathFn.curve(d3.curveBasis);
 
@@ -335,7 +336,7 @@ export default class ModelRenderer extends BaseCAGRenderer {
         .attr('y', nodeHeight - PADDING_BOTTOM)
         .attr('width', nodeWidth)
         .style('font-size', INDICATOR_NAME_SIZE + 'px')
-        .attr('fill', '#999')
+        .attr('fill', INDICATOR_NAME_COLOR)
         .text(nodeScenarioData.indicator_name)
         .each(function () {
           truncateTextToWidth(

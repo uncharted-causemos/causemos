@@ -11,7 +11,7 @@ import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
-const HISTORY_LINE_COLOR = '#AAA';
+const HISTORY_LINE_COLOR = '#999';
 
 export default function(
   selection: D3Selection,
@@ -163,7 +163,8 @@ function render(
     .classed('yaxis', true)
     .style('pointer-events', 'none')
     .call(yaxis)
-    .style('font-size', '5px');
+    .style('font-size', '5px')
+    .style('color', HISTORY_LINE_COLOR);
   yAxisElement.select('.domain').attr('stroke-width', 0);
   yAxisElement.selectAll('text').attr('x', 0);
 }
