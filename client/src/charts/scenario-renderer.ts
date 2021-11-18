@@ -3,21 +3,26 @@ import * as d3 from 'd3';
 import moment from 'moment';
 
 import initialize from '@/charts/initialize';
-import { timeseriesLine } from '@/utils/svg-util';
+import { timeseriesLine, translate } from '@/utils/svg-util';
 import { chartValueFormatter } from '@/utils/string-util';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
 import { calculateGenericTicks } from '@/utils/timeseries-util';
+import { convertTimeseriesDistributionToHistograms } from '@/utils/histogram-util';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
+const SPACE_BETWEEN_HISTOGRAMS = 2;
+const SPACE_BETWEEN_HISTOGRAM_BARS = 1;
+const HISTOGRAM_BACKGROUND_COLOR = '#F3F3F3';
+const HISTOGRAM_FOREGROUND_COLOR = '#747576';
 
 export default function(
   selection: D3Selection,
   nodeScenarioData: NodeScenarioData,
   renderOptions: any,
-  runOptions: any
+  runOptions: { selectedScenarioId: string }
 ) {
   const chart: Chart = initialize(selection, renderOptions);
   render(chart, nodeScenarioData, runOptions);
@@ -29,8 +34,7 @@ export default function(
 function render(
   chart: Chart,
   nodeScenarioData: NodeScenarioData,
-  // TODO: better type for runOptions
-  runOptions: any
+  runOptions: { selectedScenarioId: string }
 ) {
   const selectedScenario = nodeScenarioData.scenarios.find(
     s => s.id === runOptions.selectedScenarioId
@@ -141,10 +145,10 @@ function render(
 
   renderScenarioProjections(
     svgGroup,
-    nodeScenarioData,
-    runOptions,
     xscale,
-    yscale
+    yscale,
+    nodeScenarioData,
+    runOptions
   );
 
   // Axes
@@ -171,21 +175,73 @@ function render(
 
 function renderScenarioProjections(
   svgGroup: D3GElementSelection,
-  nodeScenarioData: NodeScenarioData,
-  runOptions: any,
   xScale: D3ScaleLinear,
-  yScale: D3ScaleLinear
-  // FIXME: render constraints
-  // constraints
+  yScale: D3ScaleLinear,
+  nodeScenarioData: NodeScenarioData,
+  runOptions: { selectedScenarioId: string }
+  // FIXME: constraints
 ) {
-  svgGroup.selectAll('.scenario').remove();
-  console.log(yScale.range());
+  const { selectedScenarioId } = runOptions;
+  const projection = nodeScenarioData.scenarios.find(
+    scenario => scenario.id === selectedScenarioId
+  );
+  if (projection === undefined) {
+    console.error(
+      'Scenario renderer is unable to find selected scenario with ID',
+      selectedScenarioId,
+      'in scenarios list',
+      nodeScenarioData.scenarios
+    );
+    return;
+  }
+  const historicalTimeseries = nodeScenarioData.indicator_time_series;
 
-  // FIXME: render histograms instead of line charts
-  // convertTimeseriesDistributionToHistograms(
-  //   this.modelSummary,
-  //   isAbstractNode ? [] : this.historicalTimeseries,
-  //   null, // TODO: clampedNowValue
-  //   projection.values
-  // )
+  const isAbstractNode = nodeScenarioData.indicator_id === null;
+  const histograms = convertTimeseriesDistributionToHistograms(
+    nodeScenarioData.time_scale,
+    isAbstractNode ? [] : historicalTimeseries,
+    null, // TODO: clampedNowValue
+    projection.result?.values ?? []
+  );
+  // FIXME: only render some slices depending on which are selected
+  const availableWidth =
+    xScale.range()[1] - xScale(nodeScenarioData.projection_start);
+  const widthPerHistogram = availableWidth / histograms.length;
+  const availableHeight = Math.abs(yScale.range()[1] - yScale.range()[0]);
+  const heightPerHistogramBar = availableHeight / histograms[0].length;
+  const histogramElements = svgGroup
+    .selectAll('.histogram')
+    .data(histograms)
+    .join('g')
+    .classed('histogram', true)
+    .attr('transform', (d, i) =>
+      translate(
+        xScale(nodeScenarioData.projection_start) + i * widthPerHistogram,
+        0
+      )
+    );
+  const histogramBarElements = histogramElements
+    .selectAll('.histogram-bar')
+    .data(d => d)
+    .join('g')
+    .classed('histogram-bar', true);
+  histogramBarElements
+    .append('rect')
+    .attr('width', widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
+    .attr('height', heightPerHistogramBar - SPACE_BETWEEN_HISTOGRAM_BARS)
+    .attr('fill', HISTOGRAM_BACKGROUND_COLOR)
+    .attr('transform', (d, j) =>
+      translate(SPACE_BETWEEN_HISTOGRAMS, j * heightPerHistogramBar)
+    );
+  histogramBarElements
+    .append('rect')
+    .attr(
+      'width',
+      d => (d / 100) * (widthPerHistogram - SPACE_BETWEEN_HISTOGRAMS)
+    )
+    .attr('height', heightPerHistogramBar - SPACE_BETWEEN_HISTOGRAM_BARS)
+    .attr('fill', HISTOGRAM_FOREGROUND_COLOR)
+    .attr('transform', (d, j) =>
+      translate(SPACE_BETWEEN_HISTOGRAMS, j * heightPerHistogramBar)
+    );
 }

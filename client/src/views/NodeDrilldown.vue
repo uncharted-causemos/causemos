@@ -323,7 +323,7 @@ export default defineComponent({
       });
 
       return {
-        indicatorName: selectedNodeScenarioData.indicator_name ?? 'Missing indicator name',
+        indicatorName: selectedNodeScenarioData.indicator_name,
         historicalTimeseries: selectedNodeScenarioData.indicator_time_series ?? [],
         historicalConstraints: [],
         projections

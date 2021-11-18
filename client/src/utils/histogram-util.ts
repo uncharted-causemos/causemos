@@ -1,4 +1,4 @@
-import { CAGModelSummary } from '@/types/CAG';
+import { TimeScale } from '@/types/Enums';
 import {
   TimeseriesDistributionPoint,
   TimeseriesPoint
@@ -203,21 +203,19 @@ export const computeProjectionBins = (
 };
 
 export const convertTimeseriesDistributionToHistograms = (
-  modelSummary: CAGModelSummary,
+  timeScale: TimeScale,
   historicalData: TimeseriesPoint[],
   clampValueAtNow: number | null,
   projection: TimeseriesDistributionPoint[]
 ): ProjectionHistograms => {
-  // 1. Get selected timescale from modelSummary
-  const timeScale = modelSummary.parameter.time_scale;
-  // 2. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
+  // 1. Use selected timescale to get relevant month offsets from TIME_SCALE_OPTIONS constant
   // This represents how many months from "now" each displayed time slice will be
   const relevantMonthOffsets = getSliceMonthsFromTimeScale(timeScale);
   const projectionStartTimestamp = projection[0].timestamp;
   const projectionStartMonth = getMonthFromTimestamp(projectionStartTimestamp);
   // For each timeslice:
   return relevantMonthOffsets.map(monthIndex => {
-    // 3. Get bins from historical data using computeProjectionBins()
+    // 2. Get bins from historical data using computeProjectionBins()
     const bins = computeProjectionBins(
       historicalData,
       clampValueAtNow,
@@ -228,7 +226,7 @@ export const convertTimeseriesDistributionToHistograms = (
       projectionStartTimestamp,
       monthIndex
     );
-    // 4. Find distribution that's nearest to this timestep
+    // 3. Find distribution that's nearest to this timestep
     let closestDistribution: number[] | null = null;
     let closestTimestamp: number | null = null;
     projection.forEach(({ values, timestamp }) => {
@@ -248,7 +246,7 @@ export const convertTimeseriesDistributionToHistograms = (
       );
       closestDistribution = [];
     }
-    // 5. Feed distribution into bins to get histogram
+    // 4. Feed distribution into bins to get histogram
     const histogram: HistogramData = [0, 0, 0, 0, 0];
     closestDistribution.forEach(value => {
       if (value < bins[0]) {
