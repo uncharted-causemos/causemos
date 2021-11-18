@@ -241,7 +241,9 @@ export default {
     },
     editInsight(insight) {
       this.setUpdatedInsight(insight);
-      this.setCurrentPane('edit-insight');
+      this.setInsightList(this.searchedInsights);
+      // open the preview in the edit mode
+      this.setCurrentPane('review-edit-insight');
     },
     removeInsight(id) {
       // remove the insight from the server

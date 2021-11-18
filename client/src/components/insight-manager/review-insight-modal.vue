@@ -2,13 +2,14 @@
   <div class="new-insight-modal-container">
     <full-screen-modal-header
       icon="angle-left"
-      nav-back-label="All Insights"
+      :nav-back-label="newMode ? 'Close' : 'All Insights'"
       @close="closeInsightReview"
     >
-      <div v-if="updatedInsight !== null" class="header">
+      <div class="header">
         <div class="control-buttons">
           <div style="display: flex; align-items: center">
             <button
+              v-if="updatedInsight !== null && !isEditingInsight"
               type="button"
               class="btn btn-primary header-button"
               v-tooltip="'Edit insight'"
@@ -16,7 +17,27 @@
               >
               <i class="fa fa-edit" />
             </button>
+            <div v-else class="insight-edit-controls">
+              <button
+                type="button"
+                class="btn btn-primary header-button"
+                v-tooltip="'Cancel editing!'"
+                @click="cancelInsightEdit"
+              >
+                Cancel
+              </button>
+              <button
+                :disabled="hasError"
+                type="button"
+                class="btn btn-primary header-button"
+                v-tooltip="'Save insight'"
+                @click="confirmInsightEdit"
+              >
+                Done
+              </button>
+            </div>
             <button
+              v-if="updatedInsight !== null"
               type="button"
               class="btn btn-primary header-button"
               v-tooltip="'Toggle metadata'"
@@ -25,6 +46,7 @@
               <i class="fa fa-info" />
             </button>
             <button
+              v-if="updatedInsight !== null"
               type="button"
               class="btn btn-primary header-button"
               v-tooltip="'Jump to live context'"
@@ -33,6 +55,7 @@
               <i class="fa fa-level-up" />
             </button>
             <dropdown-button
+              v-if="updatedInsight !== null"
               v-tooltip="'Export insight'"
               :inner-button-label="'Export'"
               :is-dropdown-left-aligned="true"
@@ -42,6 +65,7 @@
             />
           </div>
           <button
+            v-if="updatedInsight !== null"
             type="button"
             class="btn btn-primary header-button"
             style="backgroundColor: red; color: white"
@@ -66,11 +90,31 @@
         </button>
         <div class="content">
           <div class="fields">
-            <div class="title">{{insightTitle}}</div>
-            <div class="desc">{{insightDesc}}</div>
+            <div v-if="!isEditingInsight" class="title">{{previewInsightTitle}}</div>
+            <input
+              v-else
+              v-model="insightTitle"
+              v-focus
+              type="text"
+              class="form-control"
+              placeholder="Untitled insight name"
+            />
+            <div
+              v-if="isEditingInsight && hasError"
+              class="error-msg">
+              {{ errorMsg }}
+            </div>
+            <div v-if="!isEditingInsight" class="desc">{{previewInsightDesc}}</div>
+            <textarea
+              v-else
+              v-model="insightDesc"
+              rows="2"
+              class="form-control"
+              placeholder="Untitled insight description" />
             <div class="image-preview-and-metadata">
-              <div v-if="imagePreview !== null" class="preview">
-                <img :src="imagePreview">
+              <div v-if="imagePreview !== null || newImagePreview !== null" class="preview">
+                <img v-if="newImagePreview !== null" :src="newImagePreview">
+                <img v-if="imagePreview !== null" :src="imagePreview">
               </div>
               <disclaimer
                 v-else
@@ -126,6 +170,14 @@ import { Insight } from '@/types/Insight';
 import router from '@/router';
 import DropdownButton from '@/components/dropdown-button.vue';
 import DrilldownPanel from '@/components/drilldown-panel.vue';
+import { addInsight, updateInsight } from '@/services/insight-service';
+import { INSIGHTS } from '@/utils/messages-util';
+import useToaster from '@/services/composables/useToaster';
+import html2canvas from 'html2canvas';
+import _ from 'lodash';
+import { ProjectType } from '@/types/Enums';
+
+const MSG_EMPTY_INSIGHT_NAME = 'Insight name cannot be blank';
 
 const METDATA_DRILLDOWN_TABS = [
   {
@@ -134,8 +186,6 @@ const METDATA_DRILLDOWN_TABS = [
     icon: 'fa-info-circle'
   }
 ];
-
-// use the review-insight view as one common view for previewing, editing, and creating new insights
 
 export default defineComponent({
   name: 'ReviewInsightModal',
@@ -146,26 +196,75 @@ export default defineComponent({
     DrilldownPanel
   },
   props: {
+    editMode: {
+      type: Boolean,
+      default: false
+    },
+    newMode: {
+      type: Boolean,
+      default: false
+    }
   },
   emits: ['cancel', 'delete-insight'],
   setup() {
     const store = useStore();
+    const toaster = useToaster();
     return {
+      toaster,
       store
     };
   },
   data: () => ({
+    errorMsg: MSG_EMPTY_INSIGHT_NAME,
     drilldownTabs: METDATA_DRILLDOWN_TABS,
-    showMetadataPanel: true
+    showMetadataPanel: true,
+    isEditingInsight: false,
+    insightTitle: '',
+    insightDesc: '',
+    newImagePreview: null as string | null,
+    hasError: false // true when insight name is invalid
   }),
+  watch: {
+    insightTitle: {
+      handler(n) {
+        if (n.length === 0) {
+          this.hasError = true;
+        } else {
+          this.hasError = false;
+        }
+      },
+      immediate: true
+    },
+    editMode: {
+      handler(/* newValue, oldValue */) {
+        if (this.updatedInsight && this.editMode) {
+          this.editInsight();
+        }
+      },
+      immediate: true
+    },
+    newMode: {
+      handler(/* newValue, oldValue */) {
+        // clear insight fields: name/desc
+        // capture the image
+      },
+      immediate: true
+    }
+  },
   computed: {
     ...mapGetters({
+      project: 'app/project',
+      projectType: 'app/projectType',
       currentView: 'app/currentView',
+      dataState: 'insightPanel/dataState',
+      viewState: 'insightPanel/viewState',
+      contextId: 'insightPanel/contextId',
       projectMetadata: 'app/projectMetadata',
       currentPane: 'insightPanel/currentPane',
       isPanelOpen: 'insightPanel/isPanelOpen',
       updatedInsight: 'insightPanel/updatedInsight',
       insightList: 'insightPanel/insightList',
+      countInsights: 'insightPanel/countInsights',
       filters: 'dataSearch/filters'
     }),
     imagePreview(): string | null {
@@ -194,17 +293,36 @@ export default defineComponent({
       }
       return null;
     },
-    insightTitle(): string {
-      return this.updatedInsight && this.updatedInsight.name.length > 0 ? this.updatedInsight.name : '<Insight title missing...>';
-    },
-    insightDesc(): string {
-      return this.updatedInsight && this.updatedInsight.description.length > 0 ? this.updatedInsight.description : '<Insight description missing...>';
-    },
     formattedFilterString(): string {
       return InsightUtil.getFormattedFilterString(this.filters);
     },
     metadataDetails(): MetadataSummary[] {
-      return InsightUtil.parseMetadataDetails(this.updatedInsight.data_state, this.projectMetadata, this.formattedFilterString, this.currentView);
+      const dState = this.newMode ? this.dataState : this.updatedInsight.data_state;
+      return InsightUtil.parseMetadataDetails(dState, this.projectMetadata, this.formattedFilterString, this.currentView);
+    },
+    previewInsightTitle(): string {
+      return this.updatedInsight && this.updatedInsight.name.length > 0 ? this.updatedInsight.name : '<Insight title missing...>';
+    },
+    previewInsightDesc(): string {
+      return this.updatedInsight && this.updatedInsight.description.length > 0 ? this.updatedInsight.description : '<Insight description missing...>';
+    },
+    insightVisibility(): string {
+      return this.projectType === ProjectType.Analysis ? 'private' : 'public';
+      // return (this.currentView === 'modelPublishingExperiment' || this.currentView === 'dataPreview') ? 'public' : 'private';
+    },
+    insightTargetView(): string[] {
+      // an insight created during model publication should be listed either
+      //  in the full list of insights,
+      //  or as a context specific insight when opening the page of the corresponding model family instance
+      //  (the latter is currently supported via a special route named dataPreview)
+      // return this.currentView === 'modelPublishingExperiment' ? ['data', 'dataPreview', 'domainDatacubeOverview', 'overview', 'modelPublishingExperiment'] : [this.currentView, 'overview'];
+      return this.projectType === ProjectType.Analysis ? [this.currentView, 'overview', 'dataComparative'] : ['data', 'nodeDrilldown', 'dataComparative', 'overview', 'dataPreview', 'domainDatacubeOverview', 'modelPublishingExperiment'];
+    }
+  },
+  async mounted() {
+    if (this.newMode) {
+      this.newImagePreview = await this.takeSnapshot();
+      this.editInsight();
     }
   },
   methods: {
@@ -213,11 +331,26 @@ export default defineComponent({
       showInsightPanel: 'insightPanel/showInsightPanel',
       setUpdatedInsight: 'insightPanel/setUpdatedInsight',
       setInsightList: 'insightPanel/setInsightList',
-      hideInsightPanel: 'insightPanel/hideInsightPanel'
+      hideInsightPanel: 'insightPanel/hideInsightPanel',
+      setCountInsights: 'insightPanel/setCountInsights',
+      hideContextInsightPanel: 'contextInsightPanel/hideContextInsightPanel',
+      setCurrentContextInsightPane: 'contextInsightPanel/setCurrentPane',
+      setRefetchInsights: 'contextInsightPanel/setRefetchInsights'
     }),
+    async takeSnapshot() {
+      const el = document.getElementsByClassName('insight-capture')[0] as HTMLElement;
+      const image = _.isNil(el) ? null : (await html2canvas(el, { scale: 1 })).toDataURL();
+      return image;
+    },
     closeInsightReview() {
-      this.showInsightPanel();
-      this.setCurrentPane('list-insights');
+      if (this.newMode) {
+        this.hideInsightPanel();
+        this.setCurrentPane('');
+      } else {
+        this.cancelInsightEdit();
+        this.showInsightPanel();
+        this.setCurrentPane('list-insights');
+      }
     },
     removeInsight() {
       // before deletion, find the index of the insight to be removed
@@ -240,13 +373,103 @@ export default defineComponent({
       }
     },
     goToPreviousInsight() {
+      if (this.isEditingInsight) {
+        this.cancelInsightEdit();
+      }
       this.setUpdatedInsight(this.prevInsight);
     },
     goToNextInsight() {
+      if (this.isEditingInsight) {
+        this.cancelInsightEdit();
+      }
       this.setUpdatedInsight(this.nextInsight);
     },
     editInsight() {
-      this.setCurrentPane('edit-insight');
+      this.isEditingInsight = true;
+      // save current insight name/desc in case the user cancels the edit action
+      this.insightTitle = this.newMode ? '' : this.updatedInsight.name;
+      this.insightDesc = this.newMode ? '' : this.updatedInsight.description;
+    },
+    cancelInsightEdit() {
+      this.isEditingInsight = false;
+      if (this.newMode) {
+        this.closeInsightReview();
+      }
+    },
+    confirmInsightEdit() {
+      this.isEditingInsight = false;
+      // save the updated insight in the backend
+      this.saveInsight();
+    },
+    getAnnotatedState(eventData: any) {
+      return !eventData ? undefined : {
+        markerAreaState: eventData.markerAreaState,
+        cropAreaState: eventData.cropState,
+        imagePreview: eventData.croppedNonAnnotatedImagePreview
+      };
+    },
+    closeContextInsightPanel() {
+      this.hideContextInsightPanel();
+      this.setCurrentContextInsightPane('');
+    },
+    saveInsight() {
+      if (this.hasError || this.insightTitle.trim().length === 0) return;
+
+      if (this.newMode) {
+        // saving a new insight
+        const url = this.$route.fullPath;
+        const newInsight: Insight = {
+          name: this.insightTitle,
+          description: this.insightDesc,
+          visibility: this.insightVisibility,
+          project_id: this.project,
+          context_id: this.contextId,
+          url,
+          target_view: this.insightTargetView,
+          pre_actions: null,
+          post_actions: null,
+          is_default: true,
+          analytical_question: [],
+          thumbnail: this.newImagePreview as string,
+          annotation_state: undefined, // this.getAnnotatedState(eventData),
+          view_state: this.viewState,
+          data_state: this.dataState
+        };
+        addInsight(newInsight)
+          .then((result) => {
+            const message = result.status === 200 ? INSIGHTS.SUCCESSFUL_ADDITION : INSIGHTS.ERRONEOUS_ADDITION;
+            if (message === INSIGHTS.SUCCESSFUL_ADDITION) {
+              this.toaster(message, 'success', false);
+              const count = this.countInsights + 1;
+              this.setCountInsights(count);
+            } else {
+              this.toaster(message, 'error', true);
+            }
+            this.closeInsightReview();
+            this.closeContextInsightPanel();
+            this.setRefetchInsights(true);
+          });
+        // just in case the call to the server fails
+        this.closeInsightReview();
+        this.closeContextInsightPanel();
+      } else {
+        // saving an existing insight
+        if (!this.updatedInsight) {
+          const updatedInsight = this.updatedInsight;
+          updatedInsight.name = this.insightTitle;
+          updatedInsight.description = this.insightDesc;
+          // updatedInsight.thumbnail = eventData ? eventData.annotatedImagePreview : updatedInsight.thumbnail;
+          // updatedInsight.annotation_state = this.getAnnotatedState(eventData);
+          updateInsight(this.updatedInsight.id, updatedInsight)
+            .then((result) => {
+              if (result.updated === 'success') {
+                this.toaster(INSIGHTS.SUCCESFUL_UPDATE, 'success', false);
+              } else {
+                this.toaster(INSIGHTS.ERRONEOUS_UPDATE, 'error', true);
+              }
+            });
+        }
+      }
     },
     selectInsight() {
       const insight = this.updatedInsight;
@@ -327,6 +550,10 @@ export default defineComponent({
   }
 }
 
+.insight-edit-controls {
+  padding-right: 2rem;
+}
+
 .new-insight-modal-container {
   display: flex;
   flex-direction: column;
@@ -379,6 +606,7 @@ export default defineComponent({
             display: flex;
             overflow: auto;
             height: 100%;
+            padding-top: 5px;
             .preview {
               overflow: auto;
               align-self: flex-start;

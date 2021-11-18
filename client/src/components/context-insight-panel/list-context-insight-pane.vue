@@ -153,11 +153,12 @@ export default {
       showContextInsightPanel: 'contextInsightPanel/showContextInsightPanel',
       showInsightPanel: 'insightPanel/showInsightPanel',
       setCurrentPane: 'insightPanel/setCurrentPane',
-      setUpdatedInsight: 'insightPanel/setUpdatedInsight'
+      setUpdatedInsight: 'insightPanel/setUpdatedInsight',
+      setInsightList: 'insightPanel/setInsightList'
     }),
     newInsight() {
       this.showInsightPanel();
-      this.setCurrentPane('new-insight');
+      this.setCurrentPane('review-new-insight');
     },
     openInsightsExplorer() {
       this.showInsightPanel();
@@ -221,7 +222,8 @@ export default {
     editContextInsight(insight) {
       this.showInsightPanel();
       this.setUpdatedInsight(insight);
-      this.setCurrentPane('edit-insight');
+      this.setInsightList(this.listContextInsights);
+      this.setCurrentPane('review-edit-insight');
     }
   }
 };
