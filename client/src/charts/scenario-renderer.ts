@@ -180,6 +180,8 @@ function renderScenarioProjections(
   nodeScenarioData: NodeScenarioData,
   runOptions: { selectedScenarioId: string }
 ) {
+  // Collect/extract all the pieces of data needed to convert projections into
+  //  histogram format.
   const { selectedScenarioId } = runOptions;
   const projection = nodeScenarioData.scenarios.find(
     scenario => scenario.id === selectedScenarioId
@@ -194,7 +196,6 @@ function renderScenarioProjections(
     return;
   }
   const historicalTimeseries = nodeScenarioData.indicator_time_series;
-
   const isAbstractNode = nodeScenarioData.indicator_id === null;
   const clampAtProjectionStart = projection.constraints?.find(
     constraint => constraint.step === 0
@@ -203,13 +204,18 @@ function renderScenarioProjections(
   if (projectionValues.length === 0) {
     return;
   }
+
+  // Convert projections into histogram format.
   const histograms = convertTimeseriesDistributionToHistograms(
     nodeScenarioData.time_scale,
     isAbstractNode ? [] : historicalTimeseries,
     clampAtProjectionStart?.value ?? null,
     projectionValues
   );
-  // FIXME: only render some slices depending on which are selected
+
+  // Render one histogram for each selected time slice
+  // FIXME: only render some slices depending on which ones are selected
+  // FIXME: we should exit much earlier if no slices are selected
   const availableWidth =
     xScale.range()[1] - xScale(nodeScenarioData.projection_start);
   const widthPerHistogram = availableWidth / histograms.length;
