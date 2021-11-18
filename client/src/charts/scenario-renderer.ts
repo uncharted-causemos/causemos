@@ -8,6 +8,7 @@ import { chartValueFormatter } from '@/utils/string-util';
 import { D3GElementSelection, D3ScaleLinear, D3Selection } from '@/types/D3';
 import { Chart } from '@/types/Chart';
 import { NodeScenarioData } from '@/types/CAG';
+import { calculateGenericTicks } from '@/utils/timeseries-util';
 
 const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#AAA';
@@ -149,7 +150,7 @@ function render(
   // Axes
   const yaxis = d3
     .axisRight(yscale)
-    .ticks(2)
+    .tickValues(calculateGenericTicks(yscale.domain()[0], yscale.domain()[1]))
     .tickSize(0)
     // The type of formatter can't be more specific than `any`
     //  because under the hood d3.tickFormat requires d3.NumberType.
