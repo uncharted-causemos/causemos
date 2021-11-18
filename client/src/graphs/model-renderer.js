@@ -48,7 +48,10 @@ const DEFAULT_STYLE = {
 
 const OPACITY = 0.2;
 const GRAPH_HEIGHT = 40;
+const GRAPH_VERTICAL_MARGIN = 6;
 const PADDING_HORIZONTAL = 5;
+const PADDING_BOTTOM = 3;
+const INDICATOR_NAME_SIZE = 7;
 
 const lineFn = pathFn.curve(d3.curveBasis);
 
@@ -314,18 +317,32 @@ export default class ModelRenderer extends BaseCAGRenderer {
       const graphEl = nodeBodyGroup
         .append('g')
         .classed('historic-graph', true)
-        .attr('transform', translate(PADDING_HORIZONTAL, nodeHeight - graphHeight));
+        .attr('transform',
+          translate(
+            PADDING_HORIZONTAL,
+            nodeHeight -
+              PADDING_BOTTOM -
+              INDICATOR_NAME_SIZE -
+              GRAPH_HEIGHT +
+              GRAPH_VERTICAL_MARGIN
+          )
+        );
 
       nodeBodyGroup
         .append('text')
         .classed('indicator-label', true)
         .attr('x', PADDING_HORIZONTAL)
-        .attr('y', nodeHeight - graphHeight)
+        .attr('y', nodeHeight - PADDING_BOTTOM)
         .attr('width', nodeWidth)
-        .style('font-size', '7px')
+        .style('font-size', INDICATOR_NAME_SIZE + 'px')
         .attr('fill', '#999')
         .text(nodeScenarioData.indicator_name)
-        .each(function () { truncateTextToWidth(this, d3.select(this).attr('width') - 10); });
+        .each(function () {
+          truncateTextToWidth(
+            this,
+            d3.select(this).attr('width') - (2 * PADDING_HORIZONTAL)
+          );
+        });
 
       const selectedScenario = nodeScenarioData.scenarios.find(s => s.id === selectedScenarioId);
       d3.select(nodes[index]).attr('filter', (selectedScenario.constraints.length > 0) ? 'url(#node-shadow)' : null);
@@ -333,7 +350,10 @@ export default class ModelRenderer extends BaseCAGRenderer {
       const runOptions = { selectedScenarioId };
       const renderOptions = {
         margin: {
-          top: 4, bottom: 2, left: 0, right: 0
+          top: GRAPH_VERTICAL_MARGIN,
+          bottom: GRAPH_VERTICAL_MARGIN,
+          left: 0,
+          right: 0
         },
         width: nodeWidth - (PADDING_HORIZONTAL * 2) - (DEFAULT_STYLE.node.strokeWidth * 2),
         height: graphHeight
