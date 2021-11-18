@@ -243,6 +243,7 @@ export default {
   },
   async created() {
     this.PANE_ID = PANE_ID;
+    this.leavingComponent = false; // A flag to not trigger refresh when route change
 
     // NOTEL this might be simplified using async computed properties
     // https://github.com/foxbenjaminfox/vue-async-computed
@@ -261,6 +262,7 @@ export default {
       setSelectedEdge: 'graph/setSelectedEdge'
     }),
     async refresh() {
+      if (this.leavingComponent) return;
       this.graphData = await modelService.getComponents(this.cag);
 
       const counts = await projectService.getProjectStats(this.project, this.filters);
@@ -352,10 +354,12 @@ export default {
     onViewCag() {
       this.showModalAddedToCag = false;
       this.setSelectedSubgraphEdges([]);
+      this.leavingComponent = true;
       this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis } });
     },
     onCancel() {
       this.setSelectedSubgraphEdges([]);
+      this.leavingComponent = true;
       this.$router.push({ name: 'qualitative', params: { project: this.project, currentCAG: this.cag, projectType: ProjectType.Analysis } });
     },
     onRelationshipClick(relationship) {
