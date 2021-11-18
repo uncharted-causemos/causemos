@@ -117,9 +117,10 @@ export default {
   },
   mounted() {
     const inputBoundingBox = this.$refs.input.getBoundingClientRect();
-    const dropdownWidth = 0.45 * window.innerWidth;
+    const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
+    const inputWidth = 13 * parseFloat(getComputedStyle(document.documentElement).fontSize); // convert rem to px
     if (inputBoundingBox.left + dropdownWidth > window.innerWidth) {
-      this.dropdownLeftOffset = -dropdownWidth;
+      this.dropdownLeftOffset = -dropdownWidth + inputWidth;
     }
     console.log(this.dropdownLeftOffset);
   },
