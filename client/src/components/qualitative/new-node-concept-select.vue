@@ -187,7 +187,7 @@ export default {
     calculateDropdownOffset() {
       // calculate if dropdown will collide with edge of screen and then translate if required
       const inputBoundingBox = this.$refs.newNodeTop.getBoundingClientRect();
-      const cagContainerBoundingBox = this.$parent.$refs.container.getBoundingClientRect();
+      const cagContainerBoundingBox = this.$refs.newNodeContainer.parentNode.getBoundingClientRect();
 
       const dropdownWidth = 0.45 * window.innerWidth; // convert vw to px
       const dropdownHeight = 36 * 8; // FIXME, this is a hack: ~dropdownEntryHeight * usualNumDropdownItems
