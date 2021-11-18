@@ -15,8 +15,8 @@ const HISTORY_BACKGROUND_COLOR = '#F3F3F3';
 const HISTORY_LINE_COLOR = '#999';
 const SPACE_BETWEEN_HISTOGRAMS = 2;
 const SPACE_BETWEEN_HISTOGRAM_BARS = 1;
-const HISTOGRAM_BACKGROUND_COLOR = '#F3F3F3';
-const HISTOGRAM_FOREGROUND_COLOR = '#747576';
+const HISTOGRAM_BACKGROUND_COLOR = HISTORY_BACKGROUND_COLOR;
+const HISTOGRAM_FOREGROUND_COLOR = HISTORY_LINE_COLOR;
 
 export default function(
   selection: D3Selection,
@@ -179,7 +179,6 @@ function renderScenarioProjections(
   yScale: D3ScaleLinear,
   nodeScenarioData: NodeScenarioData,
   runOptions: { selectedScenarioId: string }
-  // FIXME: constraints
 ) {
   const { selectedScenarioId } = runOptions;
   const projection = nodeScenarioData.scenarios.find(
@@ -197,10 +196,13 @@ function renderScenarioProjections(
   const historicalTimeseries = nodeScenarioData.indicator_time_series;
 
   const isAbstractNode = nodeScenarioData.indicator_id === null;
+  const clampAtProjectionStart = projection.constraints?.find(
+    constraint => constraint.step === 0
+  );
   const histograms = convertTimeseriesDistributionToHistograms(
     nodeScenarioData.time_scale,
     isAbstractNode ? [] : historicalTimeseries,
-    null, // TODO: clampedNowValue
+    clampAtProjectionStart?.value ?? null,
     projection.result?.values ?? []
   );
   // FIXME: only render some slices depending on which are selected
@@ -244,4 +246,5 @@ function renderScenarioProjections(
     .attr('transform', (d, j) =>
       translate(SPACE_BETWEEN_HISTOGRAMS, j * heightPerHistogramBar)
     );
+  // TODO: render constraints
 }
