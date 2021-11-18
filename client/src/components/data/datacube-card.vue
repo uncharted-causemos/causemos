@@ -575,9 +575,8 @@ const DRILLDOWN_TABS = [
 
 const VIZ_OPTIONS_TABS = [
   {
-    name: 'Viz Options',
+    name: 'Edit datacube configuration',
     id: 'vizoptions',
-    // TODO: our version of FA doesn't include fa-chart
     icon: 'fa-gear'
   }
 ];
@@ -1834,8 +1833,8 @@ $fullscreenTransition: all 0.5s ease-in-out;
 
 .toggle-viz-button {
   background-color: lightgray;
-  margin: 0 1px;
-  padding: 2px 4px;
+  margin: 0;
+  margin-left: 10px;
 }
 .toggle-viz-button-pressed {
   background-color: darkgray;

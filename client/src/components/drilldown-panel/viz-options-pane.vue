@@ -1,98 +1,119 @@
 <template>
   <div class="breakdown-pane-container">
 
-    <label class="label-header">Data</label>
     <div class="config-group">
-      <dropdown-button
-        class="dropdown-button"
-        :inner-button-label="'Variable'"
-        :items="modelOutputsDisplayNames"
-        :selected-item="currentOutputDisplayName"
-        @item-selected="setOutputVariable"
-      />
-      <dropdown-button
-        class="dropdown-button"
-        :inner-button-label="'Unit'"
-        :items="unitOptions"
-        :selected-item="selectedUnit"
-        @item-selected="setUnitSelection"
-      />
-      <dropdown-button
-        class="dropdown-button"
-        :inner-button-label="'Aggregated by'"
-        :items="aggregationOptions"
-        :selected-item="selectedAggregation"
-        @item-selected="setAggregationSelection"
-      />
-      <div style="font-size: small;">
+      <label class="label-header">Data</label>
+      <div class="config-sub-group">
+        <dropdown-button
+          class="dropdown-button"
+          :is-dropdown-left-aligned="true"
+          :inner-button-label="'Variable'"
+          :items="modelOutputsDisplayNames"
+          :selected-item="currentOutputDisplayName"
+          @item-selected="setOutputVariable"
+        />
+        <dropdown-button
+          class="dropdown-button"
+          :is-dropdown-left-aligned="true"
+          :inner-button-label="'Unit'"
+          :items="unitOptions"
+          :selected-item="selectedUnit"
+          @item-selected="setUnitSelection"
+        />
+        <dropdown-button
+          class="dropdown-button"
+          :is-dropdown-left-aligned="true"
+          :inner-button-label="'Aggregated by'"
+          :items="aggregationOptions"
+          :selected-item="selectedAggregation"
+          @item-selected="setAggregationSelection"
+        />
+      </div>
+      <div class="config-sub-group">
         <a class="add-second-variable">
-          <i class="fa fa-plus-circle"></i> add a second variable
+          <i class="fa fa-plus-circle"></i> Add a second variable
         </a>
       </div>
     </div>
 
-    <label class="label-header">Timeseries</label>
     <div class="config-group">
-      <label>Resolution</label>
-      <radio-button-group
-        style="border-style: none"
-        :selected-button-value="selectedResolution"
-        :buttons="resolutionGroupButtons"
-        @button-clicked="setResolutionSelection"
-      />
-    </div>
-
-    <label class="label-header">Map</label>
-    <div class="config-group">
-      <label>Base layer</label>
-      <radio-button-group
-        style="border-style: none"
-        :selected-button-value="selectedBaseLayer"
-        :buttons="baseLayerGroupButtons"
-        @button-clicked="setBaseLayerSelection"
-      />
-      <label>Blending into base layer:</label>
-      <dropdown-button
-        class="dropdown-button"
-        :items="baseLayerTransparecyOptions"
-        :selected-item="selectedTransparency"
-        @item-selected="setTransparencySelection"
-      />
-      <label>Show data as</label>
-      <radio-button-group
-        style="border-style: none"
-        :selected-button-value="selectedDataLayer"
-        :buttons="dataLayerGroupButtons"
-        @button-clicked="setDataLayerSelection"
-      />
-      <label>Color palette</label>
-      <dropdown-button
-        class="dropdown-button"
-        :items="colorSchemes"
-        :selected-item="selectedColorSchemeName"
-        @item-selected="setColorSchemeSelection"
-      />
-      <div class="color-scale">
-        <svg
-          ref="colorPalette"
+      <label class="label-header">Timeseries</label>
+      <div class="config-sub-group">
+        <label class="header-secondary">Aggregated up to</label>
+        <radio-button-group
+          :selected-button-value="selectedResolution"
+          :buttons="resolutionGroupButtons"
+          @button-clicked="setResolutionSelection"
         />
       </div>
-      <dropdown-button
-        class="dropdown-button"
-        :inner-button-label="'Scale'"
-        :items="colorScaleGroupButtons"
-        :selected-item="selectedColorScaleType"
-        @item-selected="setColorScaleTypeSelection"
-      />
-      <button
-        type="button"
-        class="btn btn-default dropdown-button"
-        @click="reverseColorScale">
-          <i class="fa fa-arrows-h" />
-          Reverse Scale
-      </button>
-      <div v-if="selectedColorScaleType === ColorScaleType.Discrete">
-        <label>Number of bins: {{numberOfColorBins}}</label>
+    </div>
+
+    <div class="config-group">
+      <label class="label-header">Map</label>
+      <div class="config-sub-group">
+        <label class="header-secondary">Base</label>
+        <radio-button-group
+          :selected-button-value="selectedBaseLayer"
+          :buttons="baseLayerGroupButtons"
+          @button-clicked="setBaseLayerSelection"
+        />
+      </div>
+
+      <div class="config-sub-group">
+        <label class="header-secondary">Blending into base layer:</label>
+        <dropdown-button
+          class="dropdown-button"
+          :is-dropdown-left-aligned="true"
+          :items="baseLayerTransparecyOptions"
+          :selected-item="selectedTransparency"
+          @item-selected="setTransparencySelection"
+        />
+      </div>
+
+      <div class="config-sub-group">
+        <label class="header-secondary">Show data as</label>
+        <radio-button-group
+          :selected-button-value="selectedDataLayer"
+          :buttons="dataLayerGroupButtons"
+          @button-clicked="setDataLayerSelection"
+        />
+      </div>
+
+      <div class="config-sub-group">
+        <label class="header-secondary">Color palette</label>
+        <dropdown-button
+          class="dropdown-button"
+          :is-dropdown-left-aligned="true"
+          :items="colorSchemes"
+          :selected-item="selectedColorSchemeName"
+          @item-selected="setColorSchemeSelection"
+        />
+      </div>
+
+      <div class="config-sub-group">
+        <svg ref="colorPalette" />
+        <dropdown-button
+          class="dropdown-button"
+          :is-dropdown-left-aligned="true"
+          :inner-button-label="'Scale'"
+          :items="colorScaleGroupButtons"
+          :selected-item="selectedColorScaleType"
+          @item-selected="setColorScaleTypeSelection"
+        />
+        <button
+          type="button"
+          class="btn btn-default dropdown-button"
+          @click="reverseColorScale">
+            <i class="fa fa-arrows-h" />
+            Reverse Scale
+        </button>
+      </div>
+
+      <div
+        v-if="selectedColorScaleType === ColorScaleType.Discrete"
+        class="config-sub-group"
+      >
+        <label class="header-secondary">Number of bins: {{numberOfColorBins}}</label>
         <input
           type="range"
           style="margin-bottom: 1rem;"
@@ -103,9 +124,10 @@
           :value="numberOfColorBins"
           @change="updateNumberOfColorBins"
         />
-        <label>Bins chosen so that</label>
+        <label class="header-secondary">Bins chosen so that</label>
         <dropdown-button
           class="dropdown-button"
+          :is-dropdown-left-aligned="true"
           :items="['each bin has same range of values']"
           :selected-item="'each bin has same range of values'"
         />
@@ -363,35 +385,42 @@ export default defineComponent({
 }
 
 .dropdown-button {
-  margin-bottom: 4px;
   width: max-content;
 }
 
 .add-second-variable {
   color: blue;
   cursor: pointer;
-  margin-left: 2px;
-  margin-right: 2px;
 }
 
 .config-group {
-  padding-bottom: 1rem;
   display: flex;
   flex-direction: column;
+
+  &:not(:first-child) {
+    margin-top: 3rem;
+  }
 }
 
-label {
-  font-weight: normal;
+.config-sub-group {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+
+  > *:not(:first-child) {
+    margin-top: 5px;
+  }
 }
 
 .label-header {
-  font-weight: bold;
-  font-size: medium;
+  font-weight: 600;
+  font-size: $font-size-large;
+  margin-bottom: 0;
 }
 
-.color-scale {
-  padding-top: 1rem;
-  padding-bottom: 1rem;
+.header-secondary {
+  @include header-secondary;
+  margin: 0;
 }
 
 </style>
