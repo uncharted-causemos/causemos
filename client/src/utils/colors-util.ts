@@ -24,11 +24,20 @@ const COLOR_SCALES: { [key: string]: (v: number) => string } = Object.freeze({
 });
 
 export const COLOR_SCHEME = Object.freeze({
-  WM_GREEN: getColors(COLOR.WM_GREEN, 2),
   GREYS_7: ['#f7f7f7', '#d9d9d9', '#bdbdbd', '#969696', '#737373', '#525252', '#252525'], // https://colorbrewer2.org/?type=sequential&scheme=Greys&n=7
-  PURPLES_7: ['#f2f0f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'], // https://colorbrewer2.org/?type=sequential&scheme=Purples&n=7
   PIYG_7: ['#c51b7d', '#e9a3c9', '#fde0ef', '#f7f7f7', '#e6f5d0', '#a1d76a', '#4d9221'] // https://colorbrewer2.org/#type=diverging&scheme=PiYG&n=7
 });
+
+// All colors generated as single-hue palettes from:
+// https://colorbrewer2.org
+export const COLOR_SCHEMES = Object.freeze({
+  DEFAULT: ['#f2f0f7', '#dadaeb', '#bcbddc', '#9e9ac8', '#807dba', '#6a51a3', '#4a1486'],
+  VEGETATION: ['#edf8e9', '#c7e9c0', '#a1d99b', '#74c476', '#41ab5d', '#238b45', '#005a32'],
+  WATER: ['#eff3ff', '#c6dbef', '#9ecae1', '#6baed6', '#4292c6', '#2171b5', '#084594'],
+  OTHER: ['#feedde', '#fdd0a2', '#fdae6b', '#fd8d3c', '#f16913', '#d94801', '#8c2d04']
+});
+
+export const COLOR_SWATCH_SIZE = 25;
 
 export const UNDEFINED_COLOR = '#000000';
 export const GRAPH_BACKGROUND_COLOR = '#FFFFFF';
@@ -74,8 +83,16 @@ export function colorFromIndex(index: number) {
   return COLORS[index % COLORS.length];
 }
 
+export enum ColorScaleType {
+  Linear = 'linear',
+  Discrete = 'discrete',
+  Log = 'log'
+}
+
 export default {
+  ColorScaleType,
   COLOR_SCHEME,
+  COLOR_SCHEMES,
   SELECTED_COLOR,
   BORDER_COLOR,
   DEFAULT_COLOR,

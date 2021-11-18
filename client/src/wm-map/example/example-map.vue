@@ -76,7 +76,7 @@
  */
 
 import API from '@/api/api';
-import { COLOR_SCHEME, SELECTED_COLOR } from '@/utils/colors-util';
+import { getColors, COLOR, SELECTED_COLOR } from '@/utils/colors-util';
 
 import { WmMap, WmMapGeojson, WmMapSelectbox } from '../';
 import FilterExample from './filter-example';
@@ -201,7 +201,7 @@ export default {
           sourceId: 'poverty',
           source: poverty.geojson,
           layers: {
-            data: createPolygonLayerStyle('value', [poverty.min, poverty.max], COLOR_SCHEME.WM_GREEN),
+            data: createPolygonLayerStyle('value', [poverty.min, poverty.max], getColors(COLOR.WM_GREEN, 2)),
             highlights: { ...highlightsLayer }
           }
         }

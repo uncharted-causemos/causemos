@@ -3,8 +3,9 @@ import { ComputedRef, Ref } from 'vue';
 import { DatacubeFeature, Indicator, Model } from '@/types/Datacube';
 import { DataState, ViewState } from '@/types/Insight';
 import { AggregationOption, TemporalResolutionOption } from '@/types/Enums';
-import { BASE_LAYER, DATA_LAYER } from './map-util-new';
+import { BASE_LAYER, DATA_LAYER, BASE_LAYER_TRANSPARENCY } from './map-util-new';
 import { Timeseries } from '@/types/Timeseries';
+import { ColorScaleType } from '@/utils/colors-util';
 
 export const aggregationOptionFiltered = Object.values(AggregationOption).filter(ao => AggregationOption.None as string !== ao);
 export const temporalResolutionOptionFiltered = Object.values(TemporalResolutionOption).filter(tro => TemporalResolutionOption.None as string !== tro);
@@ -49,7 +50,12 @@ export function initViewStateFromRefs (
   selectedDataLayer: Ref<DATA_LAYER>,
   selectedSpatialAggregation: Ref<AggregationOption>,
   selectedTemporalAggregation: Ref<AggregationOption>,
-  selectedTemporalResolution: Ref<TemporalResolutionOption>
+  selectedTemporalResolution: Ref<TemporalResolutionOption>,
+  baseLayerTransparency: Ref<BASE_LAYER_TRANSPARENCY>,
+  colorSchemeReversed: Ref<boolean>,
+  colorSchemeName: Ref<string>,
+  colorScaleType: Ref<ColorScaleType>,
+  numberOfColorBins: Ref<number>
 ): ViewState {
   return {
     spatialAggregation: selectedSpatialAggregation.value,
@@ -60,6 +66,11 @@ export function initViewStateFromRefs (
     selectedMapBaseLayer: selectedBaseLayer.value,
     selectedMapDataLayer: selectedDataLayer.value,
     breakdownOption: breakdownOption.value,
-    selectedAdminLevel: selectedAdminLevel.value
+    selectedAdminLevel: selectedAdminLevel.value,
+    baseLayerTransparency: baseLayerTransparency.value,
+    colorSchemeReversed: colorSchemeReversed.value,
+    colorSchemeName: colorSchemeName.value,
+    colorScaleType: colorScaleType.value,
+    numberOfColorBins: numberOfColorBins.value
   };
 }
