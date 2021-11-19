@@ -16,6 +16,8 @@ const SPACE_BETWEEN_HISTOGRAMS = 2;
 const SPACE_BETWEEN_HISTOGRAM_BARS = 1;
 const HISTOGRAM_BACKGROUND_COLOR = HISTORY_BACKGROUND_COLOR;
 const HISTOGRAM_FOREGROUND_COLOR = HISTORY_LINE_COLOR;
+// How much of the node is taken up by the history chart
+// TODO: If all projections are hidden, this will expand to take the full width
 const HISTORY_WIDTH_PERCENTAGE = 0.5;
 
 export default function(
